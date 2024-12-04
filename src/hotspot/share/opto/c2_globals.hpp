@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -480,6 +481,14 @@
                                                                             \
   product(bool, UseBimorphicInlining, true,                                 \
           "Profiling based inlining for two receivers")                     \
+                                                                            \
+  product(bool, PolymorphicInlining, false, EXPERIMENTAL,                    \
+          "Inline the leading receiver and devirtualize additional "       \
+          "receivers; requires wider TypeProfileWidth and MorphismLimit")   \
+                                                                            \
+  product(uintx, MorphismLimit, 2, EXPERIMENTAL,                             \
+          "Maximum receiver count used by PolymorphicInlining")            \
+          range(2, 8)                                                       \
                                                                             \
   product(bool, UseOnlyInlinedBimorphic, true,                              \
           "Don't use BimorphicInlining if can't inline a second method")    \

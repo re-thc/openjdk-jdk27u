@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +24,7 @@
  */
 
 #include "ci/ciCallProfile.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "ci/ciExceptionHandler.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciMethod.hpp"
@@ -505,13 +507,11 @@ ciCallProfile ciMethod::call_profile_at_bci(int bci) {
           // we will set result._method also.
         }
         // Determine call site's morphism.
-        // The call site count is 0 with known morphism (only 1 or 2 receivers)
+        // The call site count is 0 with known morphism
         // or < 0 in the case of a type check failure for checkcast, aastore, instanceof.
         // The call site count is > 0 in the case of a polymorphic virtual call.
         if (morphism > 0 && morphism == result._limit) {
-           // The morphism <= MorphismLimit.
-           if ((morphism <  ciCallProfile::MorphismLimit) ||
-               (morphism == ciCallProfile::MorphismLimit && count == 0)) {
+           if (morphism == 1 || (morphism <= ciCallProfile::morphism_limit() && count == 0)) {
 #ifdef ASSERT
              if (count > 0) {
                this->print_short_name(tty);
@@ -551,7 +551,15 @@ void ciCallProfile::add_receiver(ciKlass* receiver, int receiver_count) {
   }
   _receiver[i] = receiver;
   _receiver_count[i] = receiver_count;
-  if (_limit < MorphismLimit) _limit++;
+  if (_limit < morphism_limit()) _limit++;
+}
+
+int ciCallProfile::morphism_limit() {
+#ifdef COMPILER2
+  return PolymorphicInlining ? (int)MorphismLimit : 2;
+#else
+  return 2;
+#endif
 }
 
 

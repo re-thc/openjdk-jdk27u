@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,7 +257,8 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
       }
       if (receiver_method == nullptr &&
           (have_major_receiver || morphism == 1 ||
-           (morphism == 2 && UseBimorphicInlining))) {
+           (morphism == 2 && UseBimorphicInlining) ||
+           (morphism > 2 && PolymorphicInlining))) {
         // receiver_method = profile.method();
         // Profiles do not suggest methods now.  Look it up in the major receiver.
         assert(check_access, "required");
@@ -286,6 +288,20 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
               }
             }
           }
+          // Preserve bimorphic inlining. For wider profiles, inline only the
+          // leading receiver and add direct calls for the third and subsequent
+          // receivers, following Dragonwell's devirtualization policy. The
+          // second receiver and unprofiled receivers use the virtual fallback.
+          int devirtualize_count = PolymorphicInlining && morphism > 2 ? morphism : 0;
+          CallGenerator* direct_cg[ciCallProfile::MaxMorphismLimit] = {};
+          ciMethod* direct_method[ciCallProfile::MaxMorphismLimit] = {};
+          for (int i = 2; i < devirtualize_count; i++) {
+            direct_method[i] = callee->resolve_invoke(jvms->method()->holder(), profile.receiver(i));
+            if (direct_method[i] != nullptr && !(direct_method[i]->is_native() && cg_intrinsic != nullptr)) {
+              direct_cg[i] = call_generator(direct_method[i], vtable_index, !call_does_dispatch,
+                                            jvms, false, prof_factor);
+            }
+          }
           CallGenerator* miss_cg;
           Deoptimization::DeoptReason reason = (morphism == 2
                                                ? Deoptimization::Reason_bimorphic
@@ -304,6 +320,14 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
                                                 : CallGenerator::for_virtual_call(callee, vtable_index));
           }
           if (miss_cg != nullptr) {
+            for (int i = devirtualize_count - 1; i >= 2; i--) {
+              if (direct_cg[i] != nullptr) {
+                assert(speculative_receiver_type == nullptr, "shouldn't use a wider profile with speculation");
+                trace_type_profile(C, jvms->method(), jvms, direct_method[i], profile.receiver(i),
+                                   site_count, profile.receiver_count(i));
+                miss_cg = CallGenerator::for_predicted_call(profile.receiver(i), miss_cg, direct_cg[i], PROB_MAX);
+              }
+            }
             if (next_hit_cg != nullptr) {
               assert(speculative_receiver_type == nullptr, "shouldn't end up here if we used speculation");
               trace_type_profile(C, jvms->method(), jvms, next_receiver_method, profile.receiver(1), site_count, profile.receiver_count(1));

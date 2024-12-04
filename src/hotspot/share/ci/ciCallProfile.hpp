@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,17 +34,20 @@
 // This class is used to determine the frequently called method
 // at some call site
 class ciCallProfile : StackObj {
+public:
+  enum { MaxMorphismLimit = 8 };
+
 private:
   // Fields are initialized directly by ciMethod::call_profile_at_bci.
   friend class ciMethod;
   friend class ciMethodHandle;
 
-  enum { MorphismLimit = 2 }; // Max call site's morphism we care about
+  static int morphism_limit(); // Max call site's morphism we care about
   int  _limit;                // number of receivers have been determined
   int  _morphism;             // determined call site's morphism
   int  _count;                // # times has this call been executed
-  int  _receiver_count[MorphismLimit + 1]; // # times receivers have been seen
-  ciKlass*  _receiver[MorphismLimit + 1];  // receivers (exact)
+  int  _receiver_count[MaxMorphismLimit + 1]; // # times receivers have been seen
+  ciKlass*  _receiver[MaxMorphismLimit + 1];  // receivers (exact)
 
   ciCallProfile() {
     _limit = 0;
