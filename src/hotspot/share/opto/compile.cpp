@@ -2677,7 +2677,8 @@ bool Compile::has_vbox_nodes() {
 
 static bool is_vector_unary_bitwise_op(Node* n) {
   return n->Opcode() == Op_XorV &&
-         VectorNode::is_vector_bitwise_not_pattern(n);
+         VectorNode::is_vector_bitwise_not_pattern(n) &&
+         !n->is_predicated_vector();
 }
 
 static bool is_vector_binary_bitwise_op(Node* n) {
@@ -2720,7 +2721,7 @@ static uint collect_unique_inputs(Node* n, Unique_Node_List& inputs) {
   uint cnt = 0;
   if (is_vector_bitwise_op(n)) {
     uint inp_cnt = n->is_predicated_vector() ? n->req()-1 : n->req();
-    if (VectorNode::is_vector_bitwise_not_pattern(n)) {
+    if (is_vector_unary_bitwise_op(n)) {
       for (uint i = 1; i < inp_cnt; i++) {
         Node* in = n->in(i);
         bool skip = VectorNode::is_all_ones_vector(in);
@@ -2883,7 +2884,7 @@ uint Compile::compute_truth_table(Unique_Node_List& partition, Unique_Node_List&
         res = func1 & func2;
         break;
       case Op_XorV:
-        if (VectorNode::is_vector_bitwise_not_pattern(n)) {
+        if (is_vector_unary_bitwise_op(n)) {
           assert(func2 == 0 && func3 == 0, "not unary");
           res = (~func1) & 0xFF;
         } else {
