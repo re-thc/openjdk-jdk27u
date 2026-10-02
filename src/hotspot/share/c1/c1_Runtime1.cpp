@@ -61,6 +61,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/tmfyStringCoding.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubInfo.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -319,6 +320,10 @@ const char* Runtime1::name_for_address(address entry) {
 
 #define FUNCTION_CASE(a, f) \
   if ((intptr_t)a == CAST_FROM_FN_PTR(intptr_t, f))  return #f
+
+#define TMFY_FUNCTION_CASE(name, shape, helper, bound, audited) FUNCTION_CASE(entry, TmfyStringCoding::helper);
+  TMFY_KERNELS_DO(TMFY_FUNCTION_CASE)
+#undef TMFY_FUNCTION_CASE
 
   FUNCTION_CASE(entry, os::javaTimeMillis);
   FUNCTION_CASE(entry, os::javaTimeNanos);

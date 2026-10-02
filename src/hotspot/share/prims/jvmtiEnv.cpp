@@ -67,6 +67,7 @@
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mountUnmountDisabler.hpp"
+#include "runtime/tmfyStringCodingTooling.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
@@ -635,6 +636,13 @@ JvmtiEnv::GetPotentialCapabilities(jvmtiCapabilities* capabilities_ptr) {
 // capabilities_ptr - pre-checked for null
 jvmtiError
 JvmtiEnv::AddCapabilities(const jvmtiCapabilities* capabilities_ptr) {
+  // Revoke before granting the capability: another thread using this env may
+  // enable callbacks as soon as the capability becomes visible. No capabilities
+  // lock is held here. A rejected multi-capability request may conservatively
+  // revoke TmfyStringCoding, which is preferable to a post-grant race.
+  if (capabilities_ptr->can_generate_native_method_bind_events) {
+    TmfyStringCodingTooling::revoke();
+  }
   return JvmtiManageCapabilities::add_capabilities(get_capabilities(),
                                                    get_prohibited_capabilities(),
                                                    capabilities_ptr,

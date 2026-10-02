@@ -52,6 +52,8 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/tmfyStringCoding.hpp"
+#include "runtime/tmfyStringCodingTooling.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vframeArray.hpp"
@@ -2154,3 +2156,41 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
 }
 
 #endif // !PRODUCT
+
+#ifdef LINUX
+address TemplateInterpreterGenerator::generate_tmfy_entry(AbstractInterpreter::MethodKind kind) {
+  vmIntrinsics::ID id = AbstractInterpreter::method_intrinsic(kind);
+  if (!TmfyStringCoding::is_supported(id)) return nullptr;
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
+  __ mov(rscratch1, (uintptr_t)TmfyStringCodingTooling::revoked_address());
+  __ ldarb(rscratch1, rscratch1);
+  __ cbnz(rscratch1, slow_path);
+  __ ldrw(rscratch1, Address(rthread, JavaThread::interp_only_mode_offset()));
+  __ cbnz(rscratch1, slow_path);
+
+  BasicType types[6], result;
+  int count = TmfyStringCoding::signature(id, types, &result);
+  const Register args[] = { c_rarg0, c_rarg1, c_rarg2, c_rarg3, c_rarg4, c_rarg5 };
+  int slots = count + (types[0] == T_LONG ? 1 : 0);
+  int position = slots - 1;
+  for (int i = 0; i < count; ++i) {
+    if (types[i] == T_LONG) --position;
+    if (types[i] == T_INT) __ ldrw(args[i], Address(esp, position * wordSize));
+    else __ ldr(args[i], Address(esp, position * wordSize));
+    --position;
+  }
+  // Match the existing frameless CRC32 entry's sender-SP/LR convention. Use an
+  // indirect branch because a C helper need not be within an immediate B range.
+  // AAPCS64 preserves the interpreter's callee-saved state; the C helper returns
+  // the primitive result directly to the original Java caller through LR.
+  __ andr(sp, r19_sender_sp, -16);
+  __ mov(rscratch1, RuntimeAddress(TmfyStringCoding::entry_for(id)));
+  __ br(rscratch1);
+
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}
+#endif // LINUX

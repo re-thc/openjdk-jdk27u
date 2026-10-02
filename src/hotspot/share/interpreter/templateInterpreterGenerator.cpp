@@ -235,6 +235,10 @@ void TemplateInterpreterGenerator::generate_all() {
   native_method_entry(java_util_zip_CRC32_updateBytes)
   native_method_entry(java_util_zip_CRC32_updateByteBuffer)
 
+#define TMFY_GENERATE(name, shape, helper, bound, audited) native_method_entry(tmfy_##name)
+  TMFY_KERNELS_DO(TMFY_GENERATE)
+#undef TMFY_GENERATE
+
 #undef native_method_entry
 
   // Bytecodes
@@ -452,6 +456,11 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   address entry_point = nullptr;
 
   switch (kind) {
+#define TMFY_GENERATE_CASE(name, shape, helper, bound, audited) case Interpreter::tmfy_##name:
+    TMFY_KERNELS_DO(TMFY_GENERATE_CASE)
+#undef TMFY_GENERATE_CASE
+      entry_point = generate_tmfy_entry(kind); break;
+
   case Interpreter::java_lang_math_sin     : // fall thru
   case Interpreter::java_lang_math_cos     : // fall thru
   case Interpreter::java_lang_math_tan     : // fall thru
@@ -492,3 +501,9 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   }
   return entry_point;
 }
+
+#if !defined(LINUX) || (!defined(AMD64) && !defined(AARCH64))
+address TemplateInterpreterGenerator::generate_tmfy_entry(AbstractInterpreter::MethodKind kind) {
+  return nullptr; // All unreviewed ports use the ordinary native entry.
+}
+#endif

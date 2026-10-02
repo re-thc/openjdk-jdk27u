@@ -347,6 +347,12 @@ const int ObjectAlignmentInBytes = 8;
           "Use intrinsics for SHA3 crypto hash function. "                  \
           "Requires that UseSHA is enabled.")                               \
                                                                             \
+  product(bool, UseTmfyStringCoding, true,                                   \
+          "Enable bounded native String UTF-8 conversion intrinsics")              \
+                                                                            \
+  product(bool, TmfyStringCodingCounters, false, DIAGNOSTIC,                  \
+          "Count TmfyStringCoding paths (not for performance measurement)")        \
+                                                                            \
   product(bool, UseCRC32Intrinsics, false, DIAGNOSTIC,                      \
           "use intrinsics for java.util.zip.CRC32")                         \
                                                                             \

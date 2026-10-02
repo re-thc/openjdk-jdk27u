@@ -41,6 +41,7 @@
 #include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/tmfyStringCoding.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
@@ -3689,6 +3690,9 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
     } else {
       return false;
     }
+  }
+  if (TmfyStringCoding::is_intrinsic(callee->intrinsic_id())) {
+    compilation()->env()->record_tmfy_dependency(callee);
   }
   build_graph_for_intrinsic(callee, ignore_return);
   if (_inline_bailout_msg != nullptr) {

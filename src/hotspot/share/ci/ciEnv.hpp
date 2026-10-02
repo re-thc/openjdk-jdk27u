@@ -79,6 +79,8 @@ private:
   bool  _jvmti_can_get_owned_monitor_info; // includes can_get_owned_monitor_stack_depth_info
   bool  _jvmti_can_walk_any_space;
 
+  bool _has_tmfy; // Exact leaf-method dependencies require revocation checks.
+
   // Cache DTrace flags
   bool  _dtrace_method_probes;
   bool  _dtrace_alloc_probes;
@@ -343,6 +345,8 @@ public:
   void set_break_at_compile(bool z) { _break_at_compile = z; }
 
   // Cache Jvmti state
+  void record_tmfy_dependency(ciMethod* method);
+
   bool  cache_jvmti_state();
   bool  jvmti_state_changed() const;
   bool  should_retain_local_variables() const {

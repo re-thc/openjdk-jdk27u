@@ -209,6 +209,7 @@ class outputStream;
   LOG_TAG(throttle) \
   LOG_TAG(timer) \
   LOG_TAG(tlab) \
+  LOG_TAG(tmfy) \
   LOG_TAG(tracking) \
   LOG_TAG(training) \
   LOG_TAG(trimnative) /* trim native heap */ \

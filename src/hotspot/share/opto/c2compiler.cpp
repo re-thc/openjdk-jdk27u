@@ -22,6 +22,7 @@
  *
  */
 
+#include "runtime/tmfyStringCoding.hpp"
 #include "classfile/vmClasses.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
@@ -228,6 +229,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
 }
 
 bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
+  if (TmfyStringCoding::is_intrinsic(id)) return TmfyStringCoding::is_supported(id);
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 
   if (id < vmIntrinsics::FIRST_ID || id > vmIntrinsics::LAST_COMPILER_INLINE) {

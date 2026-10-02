@@ -30,6 +30,8 @@
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/tmfyStringCoding.hpp"
+#include "runtime/tmfyStringCodingTooling.hpp"
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
@@ -514,3 +516,46 @@ address TemplateInterpreterGenerator::generate_currentThread() {
 
   return entry_point;
 }
+
+#ifdef LINUX
+// All shapes use Linux x86-64 C argument registers. The callee performs every
+// range/work check before extracting an array pointer. No heap address escapes.
+address TemplateInterpreterGenerator::generate_tmfy_entry(AbstractInterpreter::MethodKind kind) {
+  vmIntrinsics::ID id = AbstractInterpreter::method_intrinsic(kind);
+  if (!TmfyStringCoding::is_supported(id)) return nullptr;
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
+  // Sticky revocation also covers agents/callbacks acquired after entry creation.
+  // x86 loads have acquire ordering; no array pointer has been formed yet.
+  __ movptr(rax, (intptr_t)TmfyStringCodingTooling::revoked_address());
+  __ cmpb(Address(rax, 0), 0);
+  __ jcc(Assembler::notEqual, slow_path);
+  // This check remains present even when no JVMTI agent was loaded at startup.
+  __ cmpl(Address(r15_thread, JavaThread::interp_only_mode_offset()), 0);
+  __ jcc(Assembler::notEqual, slow_path);
+
+  BasicType types[6], result;
+  int count = TmfyStringCoding::signature(id, types, &result);
+  const Register args[] = { c_rarg0, c_rarg1, c_rarg2, c_rarg3, c_rarg4, c_rarg5 };
+  int slots = count + (types[0] == T_LONG ? 1 : 0);
+  int position = slots;
+  for (int i = 0; i < count; ++i) {
+    // A Java long occupies two slots; its value is in the lower addressed slot.
+    if (types[i] == T_LONG) --position;
+    if (types[i] == T_INT) __ movl(args[i], Address(rsp, position * wordSize));
+    else __ movptr(args[i], Address(rsp, position * wordSize));
+    --position;
+  }
+  // Bypass the frame-dependent interpreter override, as the CRC32 entry does.
+  // The common x86 leaf call aligns/restores rsp and supports all six SysV args.
+  __ MacroAssembler::call_VM_leaf_base(TmfyStringCoding::entry_for(id), count);
+  __ pop(rdi);
+  __ mov(rsp, r13);
+  __ jmp(rdi);
+
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}
+#endif // LINUX

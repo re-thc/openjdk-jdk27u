@@ -122,6 +122,12 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
 
     switch (iid) {
 #ifndef ZERO
+#define TMFY_METHOD_KIND(name, shape, helper, bound, audited) case vmIntrinsics::_tmfy_##name: return tmfy_##name;
+      TMFY_KERNELS_DO(TMFY_METHOD_KIND)
+#undef TMFY_METHOD_KIND
+#endif
+
+#ifndef ZERO
       // Use optimized stub code for CRC32 native methods.
       case vmIntrinsics::_updateCRC32:       return java_util_zip_CRC32_update;
       case vmIntrinsics::_updateBytesCRC32:  return java_util_zip_CRC32_updateBytes;
@@ -196,6 +202,10 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
 
 vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   switch (kind) {
+#define TMFY_INTRINSIC(name, shape, helper, bound, audited) case tmfy_##name: return vmIntrinsics::_tmfy_##name;
+    TMFY_KERNELS_DO(TMFY_INTRINSIC)
+#undef TMFY_INTRINSIC
+
   case java_lang_math_sin         : return vmIntrinsics::_dsin;
   case java_lang_math_cos         : return vmIntrinsics::_dcos;
   case java_lang_math_tan         : return vmIntrinsics::_dtan;
@@ -295,6 +305,10 @@ bool AbstractInterpreter::is_not_reached(const methodHandle& method, int bci) {
 #ifndef PRODUCT
 void AbstractInterpreter::print_method_kind(MethodKind kind) {
   switch (kind) {
+#define TMFY_PRINT(name, shape, helper, bound, audited) case tmfy_##name: tty->print("tmfy_" #name); break;
+    TMFY_KERNELS_DO(TMFY_PRINT)
+#undef TMFY_PRINT
+
     case zerolocals             : tty->print("zerolocals"             ); break;
     case zerolocals_synchronized: tty->print("zerolocals_synchronized"); break;
     case native                 : tty->print("native"                 ); break;

@@ -28,6 +28,7 @@
 #include "jvm_constants.h"
 #include "jvm_io.h"
 #include "runtime/vm_version.hpp"
+#include "runtime/tmfyStringCoding.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/tribool.hpp"
 #ifdef COMPILER2
@@ -210,6 +211,7 @@ int vmIntrinsics::predicates_needed(vmIntrinsics::ID id) {
 }
 
 bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
+  if (TmfyStringCoding::is_intrinsic(id) && !TmfyStringCoding::is_supported(id)) return true;
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 
   // -XX:-InlineNatives disables nearly all intrinsics except the ones listed in

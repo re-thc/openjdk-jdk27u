@@ -40,6 +40,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/methodCounters.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/tmfyStringCoding.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -2808,7 +2809,31 @@ void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
 
 
 
+void LIRGenerator::do_TmfyStringCoding(Intrinsic* x) {
+  assert(TmfyStringCoding::is_intrinsic(x->id()), "typed TmfyStringCoding intrinsic required");
+  // Tooling may revoke eligibility after graph construction. The ciEnv install
+  // check rejects that compilation; do not assert a mutable admission decision.
+  BasicType types[6], result_type;
+  int count = TmfyStringCoding::signature(x->id(), types, &result_type);
+  BasicTypeList signature(count);
+  LIRItemList arguments(count);
+  assert(count == x->number_of_arguments(), "typed TmfyStringCoding signature");
+  for (int i = 0; i < count; ++i) {
+    signature.append(types[i]);
+    arguments.append(new LIRItem(x->argument_at(i), this));
+  }
+  // The existing common leaf-call helper handles both architecture ABIs. Oops
+  // are arguments, not precomputed raw addresses, until the guarded VM adapter.
+  // No safepoint/deoptimization is inserted between argument setup and return.
+  set_result(x, call_runtime(&signature, &arguments, TmfyStringCoding::entry_for(x->id()), x->type(), nullptr));
+}
+
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
+  if (TmfyStringCoding::is_intrinsic(x->id())) {
+    do_TmfyStringCoding(x);
+    return;
+  }
+
   switch (x->id()) {
   case vmIntrinsics::_intBitsToFloat      :
   case vmIntrinsics::_doubleToRawLongBits :

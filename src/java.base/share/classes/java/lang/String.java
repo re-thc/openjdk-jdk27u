@@ -1480,14 +1480,20 @@ public final class String
             System.arraycopy(val, 0, dst, 0, positives);
         }
         int dp = positives;
-        for (int i = dp; i < val.length; i++) {
-            byte c = val[i];
-            if (c < 0) {
-                dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
-                dst[dp++] = (byte) (0x80 | (c & 0x3f));
-            } else {
-                dst[dp++] = c;
+        // A short suffix does not amortize the native conversion boundary.
+        if (val.length - positives < 16) {
+            for (int i = dp; i < val.length; i++) {
+                byte c = val[i];
+                if (c < 0) {
+                    dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
+                    dst[dp++] = (byte) (0x80 | (c & 0x3f));
+                } else {
+                    dst[dp++] = c;
+                }
             }
+        } else {
+            dp += jdk.internal.tmfy.Utf8Codec.encodeLatin1(
+                    val, positives, val.length - positives, dst, positives, dst.length - positives);
         }
         if (dp == dst.length) {
             return dst;

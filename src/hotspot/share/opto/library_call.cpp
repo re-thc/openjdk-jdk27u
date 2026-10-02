@@ -58,6 +58,7 @@
 #include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/tmfyStringCoding.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -234,6 +235,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     set_all_memory(reset_memory());
   }
   assert(merged_memory(), "");
+
+  if (TmfyStringCoding::is_intrinsic(intrinsic_id())) return inline_tmfy();
 
   switch (intrinsic_id()) {
   case vmIntrinsics::_hashCode:                 return inline_native_hashcode(intrinsic()->is_virtual(), !is_static);
@@ -9275,3 +9278,46 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
   return true;
 }
 
+
+// All catalogue entries share these fixed typed templates. Conservative bottom
+// memory effects deliberately include output stores and diagnostic counters.
+// The helper validates bounds before forming pointers and never safepoints.
+bool LibraryCallKit::inline_tmfy() {
+  vmIntrinsics::ID id = intrinsic_id();
+  if (!TmfyStringCoding::is_supported(id)) return false;
+  BasicType types[6], result_type;
+  int count = TmfyStringCoding::signature(id, types, &result_type);
+  bool wide = types[0] == T_LONG;
+  int slots = count + (wide ? 1 : 0);
+  const Type** domain_fields = TypeTuple::fields(slots);
+  Node* arguments[8] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+  int slot = 0;
+  for (int i = 0; i < count; ++i) {
+    switch (types[i]) {
+      case T_OBJECT: domain_fields[TypeFunc::Parms + slot] = TypeOopPtr::BOTTOM; break;
+      case T_INT: domain_fields[TypeFunc::Parms + slot] = TypeInt::INT; break;
+      case T_LONG: domain_fields[TypeFunc::Parms + slot] = TypeLong::LONG; break;
+      default: ShouldNotReachHere();
+    }
+    arguments[slot] = argument(slot);
+    ++slot;
+    if (types[i] == T_LONG) {
+      domain_fields[TypeFunc::Parms + slot] = Type::HALF;
+      arguments[slot++] = top();
+    }
+  }
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + slots, domain_fields);
+  int result_slots = result_type == T_LONG ? 2 : 1;
+  const Type** range_fields = TypeTuple::fields(result_slots);
+  range_fields[TypeFunc::Parms] = result_type == T_LONG ? (const Type*)TypeLong::LONG : (const Type*)TypeInt::INT;
+  if (result_slots == 2) range_fields[TypeFunc::Parms + 1] = Type::HALF;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + result_slots, range_fields);
+  const TypeFunc* call_type = TypeFunc::make(domain, range);
+  C->env()->record_tmfy_dependency(callee());
+  Node* call = make_runtime_call(RC_LEAF, call_type, TmfyStringCoding::entry_for(id),
+                                vmIntrinsics::name_at(id), TypePtr::BOTTOM,
+                                arguments[0], arguments[1], arguments[2], arguments[3],
+                                arguments[4], arguments[5], arguments[6], arguments[7]);
+  set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  return true;
+}

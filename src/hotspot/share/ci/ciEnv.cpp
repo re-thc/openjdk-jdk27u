@@ -73,6 +73,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/reflection.hpp"
+#include "runtime/tmfyStringCodingTooling.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/dtrace.hpp"
@@ -116,6 +117,7 @@ ciEnv::ciEnv(CompileTask* task)
   _oop_recorder = nullptr;
   _debug_info = nullptr;
   _dependencies = nullptr;
+  _has_tmfy = false;
   _inc_decompile_count_on_failure = true;
   _compilable = MethodCompilable;
   _break_at_compile = false;
@@ -250,6 +252,7 @@ ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler, Arena::Tag::tag_cienv) {
   _oop_recorder = nullptr;
   _debug_info = nullptr;
   _dependencies = nullptr;
+  _has_tmfy = false;
   _inc_decompile_count_on_failure = true;
   _compilable = MethodCompilable_never;
   _break_at_compile = false;
@@ -307,6 +310,17 @@ ciEnv::~ciEnv() {
 }
 
 // ------------------------------------------------------------------
+// Every TmfyStringCoding leaf call records its exact Java native method, regardless
+// of whether a JVMTI agent existed when compilation began.
+void ciEnv::record_tmfy_dependency(ciMethod* method) {
+  _has_tmfy = true;
+  dependencies()->assert_evol_method(method);
+  GUARDED_VM_ENTRY(
+    methodHandle target(JavaThread::current(), method->get_Method());
+    TmfyStringCodingTooling::record_method(target());
+  )
+}
+
 // Cache Jvmti state
 bool ciEnv::cache_jvmti_state() {
   VM_ENTRY_MARK;
@@ -1011,6 +1025,12 @@ void ciEnv::register_method(ciMethod* target,
     // No safepoints are allowed. Otherwise, class redefinition can occur in between.
     MutexLocker ml(Compile_lock);
     NoSafepointVerifier nsv;
+
+    // Serialized with TmfyStringCodingTooling::revoke() by Compile_lock. This covers
+    // compilation that selected a leaf before revocation but installs afterward.
+    if (!failing() && _has_tmfy && TmfyStringCodingTooling::revoked()) {
+      record_failure("TmfyStringCoding tooling revocation invalidated compilation");
+    }
 
     // Change in Jvmti state may invalidate compilation.
     if (!failing() && jvmti_state_changed()) {

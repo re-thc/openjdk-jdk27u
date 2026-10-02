@@ -79,6 +79,7 @@
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/reflection.hpp"
+#include "runtime/tmfyStringCodingTooling.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
@@ -2655,6 +2656,9 @@ JNI_ENTRY(jint, jni_RegisterNatives(JNIEnv *env, jclass clazz,
 
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
 
+  // Complete feature-local leaf revocation before any replacement is visible.
+  TmfyStringCodingTooling::before_register(k, methods, nMethods);
+
   // There are no restrictions on native code registering native methods,
   // which allows agents to redefine the bindings to native methods, however
   // we issue a warning if any code running outside of the boot/platform
@@ -2717,6 +2721,7 @@ JNI_END
 JNI_ENTRY(jint, jni_UnregisterNatives(JNIEnv *env, jclass clazz))
  HOTSPOT_JNI_UNREGISTERNATIVES_ENTRY(env, clazz);
   Klass* k   = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
+  TmfyStringCodingTooling::before_unregister(k);
   //%note jni_2
   if (k->is_instance_klass()) {
     for (int index = 0; index < InstanceKlass::cast(k)->methods()->length(); index++) {

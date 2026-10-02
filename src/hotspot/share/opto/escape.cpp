@@ -43,6 +43,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "utilities/macros.hpp"
+#include "runtime/tmfyStringCoding.hpp"
 
 ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn, int invocation) :
   // If ReduceAllocationMerges is enabled we might call split_through_phi during
@@ -2256,6 +2257,7 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                                        arg_has_oops && (i > TypeFunc::Parms);
 #ifdef ASSERT
           if (!(is_arraycopy ||
+                TmfyStringCoding::is_entry(call->as_CallLeaf()->entry_point()) ||
                 BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(call) ||
                 (call->as_CallLeaf()->_name != nullptr &&
                  (strcmp(call->as_CallLeaf()->_name, "updateBytesCRC32") == 0 ||
