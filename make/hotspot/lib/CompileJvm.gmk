@@ -66,6 +66,14 @@ JVM_LIBS += \
 JVM_EXCLUDE_FILES += args.cc
 JVM_EXCLUDES += adlc
 
+# Keep the pinned SIMD conversion implementation outside HotSpot's allocation
+# overrides. Only the bounded, allocation-free converter is used by leaf calls.
+JVM_EXCLUDES += tmfy
+TMFY_DEFINES :=
+ifneq ($(filter gcc clang, $(TOOLCHAIN_TYPE)), )
+  TMFY_DEFINES += -fno-lto
+endif
+
 # Needed by abstract_vm_version.cpp
 ifeq ($(call isTargetCpu, x86_64), true)
   OPENJDK_TARGET_CPU_VM_VERSION := amd64
@@ -177,8 +185,30 @@ endif
 ## Build libjvm
 ################################################################################
 
+# Use the same portable objects in the native conversion and ordinary JNI fallback.
+# There is no HotSpot precompiled header or whole-program LTO in this component.
+$(eval $(call SetupJdkLibrary, BUILD_TMFY_KERNELS, \
+    NAME := tmfy_kernels, \
+    TYPE := STATIC_LIBRARY, \
+    LINK_TYPE := C++, \
+    OUTPUT_DIR := $(JVM_OUTPUTDIR)/tmfy, \
+    OBJECT_DIR := $(JVM_OUTPUTDIR)/tmfy/objs, \
+    SRC := $(TOPDIR)/src/hotspot/share/tmfy, \
+    INCLUDE_FILES := kernels.cpp vendor/simdutf/simdutf.cpp, \
+    DEFAULT_CFLAGS := false, \
+    CFLAGS := $(JVM_CFLAGS) $(TMFY_DEFINES), \
+    DISABLED_WARNINGS_gcc := undef unused-function unused-const-variable, \
+    DISABLED_WARNINGS_clang := undef unused-function unused-const-variable, \
+    OPTIMIZATION := $(JVM_OPTIMIZATION), \
+))
+JVM_LIBS += $(BUILD_TMFY_KERNELS_TARGET)
+ifeq ($(call isTargetOs, linux), true)
+  JVM_LIBS += -ldl -lpthread -lm
+endif
+
 $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     NAME := jvm, \
+    EXTRA_LINK_DEPS := $(BUILD_TMFY_KERNELS), \
     LINK_TYPE := C++, \
     OUTPUT_DIR := $(JVM_LIB_OUTPUTDIR), \
     SRC := $(JVM_SRC_DIRS), \
