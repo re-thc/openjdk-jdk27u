@@ -2167,6 +2167,8 @@ void AOTCodeAddressTable::init_extrs2() {
   {
   ADD_EXTERNAL_ADDRESS(Continuation::prepare_thaw); // used by cont_thaw
   ADD_EXTERNAL_ADDRESS(Continuation::thaw_entry()); // used by cont_thaw
+  ADD_EXTERNAL_ADDRESS(TmfyStringCoding::encode_utf16_array_utf8);
+  ADD_EXTERNAL_ADDRESS(TmfyStringCoding::charset_admitted);
   ADD_EXTERNAL_ADDRESS(ContinuationEntry::thaw_call_pc_address()); // used by cont_preempt_stub
   }
   _extrs_complete = true;

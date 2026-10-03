@@ -31,6 +31,18 @@ extern "C" {
 #endif
 
 #define TMFY_CONVERT_MAX_BYTES 4096u
+#define TMFY_CHARSET_MAX_UNITS (TMFY_CONVERT_MAX_BYTES / 2u)
+#define TMFY_CHARSET_PREVIEW_UNITS 17u
+#define TMFY_CHARSET_BYTES_MASK 0x1fffu
+#define TMFY_CHARSET_UNITS_SHIFT 13u
+#define TMFY_CHARSET_UNITS_MASK 0xfffu
+#define TMFY_CHARSET_STATUS_SHIFT 25u
+
+enum tmfy_charset_status {
+  TMFY_CHARSET_COMPLETE = 0,
+  TMFY_CHARSET_MALFORMED_1 = 1,
+  TMFY_CHARSET_INCOMPLETE_HIGH_AT_BLOCK_END = 2
+};
 
 enum tmfy_status {
   TMFY_NEEDS_GENERAL = -1,
@@ -104,6 +116,36 @@ int32_t tmfy_encode_latin1_utf8(const uint8_t* input, size_t length,
  */
 int32_t tmfy_encode_utf16_utf8(const uint8_t* input, size_t length,
                              uint8_t* output, size_t capacity);
+
+/* Strict CharsetEncoder UTF16 -> UTF8 with prefix progress, no replacement.
+ * This has a separate mutable-input contract from the byte-span APIs above:
+ * - units is a count of native-endian UTF16 code units, at most 2048
+ * - reserve 3 * units output bytes (up to 6144), even on malformed input
+ * - input may be mutable, but its storage remains accessible during the call;
+ *   selected bytes are copied once into a private, aligned stack snapshot
+ *   before validation/conversion; no borrowed pointer is retained
+ * - the snapshot need not be an atomic view of concurrent Java char[] writes;
+ *   all validation and conversion nevertheless use the SAME captured values
+ * - unaligned input is accepted via memcpy, with no typed input dereference
+ * - input and reserved output spans must not overlap; range overflow, nulls,
+ *   reservation, and initialization are checked before any output store
+ * - empty input returns 0 without examining pointers or initialization
+ * - nonnegative result = bytes | (consumed_units << 13) | (status << 25)
+ *   COMPLETE consumes all units; MALFORMED_1 stops before the first unpaired
+ *   surrogate; INCOMPLETE_HIGH_AT_BLOCK_END stops before a final high surrogate
+ * - incomplete refers only to this call's requested block, not a preview;
+ *   the Java caller decides whether to resume across a chunk boundary or
+ *   report underflow/end-of-input malformed according to CharsetEncoder
+ * - a 17-unit preview (16 candidates plus one lookahead) can find an early
+ *   error without copying the suffix; a high surrogate at its final position
+ *   needs the remainder unless it is also the requested block's final unit
+ * - bytes contain only the verified valid prefix; no CoderResult or callbacks
+ * - -1/-2/-3 are pre-store; -4 is a possible post-store invariant failure and
+ *   MUST NOT cause Java replay on the same output
+ * No allocation, locks, syscalls, lazy ISA dispatch, or unwinding in this call.
+ */
+int32_t tmfy_encode_utf16_array_utf8(const uint16_t* input, size_t units,
+                                   uint8_t* output, size_t capacity);
 
 /* UTF8 -> UTF16 with JDK String replacement: U+FFFD, consuming each malformed
  * sequence exactly as String.decodeUTF8_UTF16 does. Reserve 2 * length bytes.

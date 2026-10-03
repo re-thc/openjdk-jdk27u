@@ -239,6 +239,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   if (TmfyStringCoding::is_intrinsic(intrinsic_id())) return inline_tmfy();
 
   switch (intrinsic_id()) {
+  case vmIntrinsics::_tmfy_useNativeEncoder:    return inline_tmfy_charset_admission();
   case vmIntrinsics::_hashCode:                 return inline_native_hashcode(intrinsic()->is_virtual(), !is_static);
   case vmIntrinsics::_identityHashCode:         return inline_native_hashcode(/*!virtual*/ false,         is_static);
   case vmIntrinsics::_getClass:                 return inline_native_getClass();
@@ -9282,6 +9283,31 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
 // All catalogue entries share these fixed typed templates. Conservative bottom
 // memory effects deliberately include output stores and diagnostic counters.
 // The helper validates bounds before forming pointers and never safepoints.
+bool LibraryCallKit::inline_tmfy_charset_admission() {
+  if (C->method() == callee()) return false; // Reusable compiled policy stays false.
+  ciMethod* target = callee()->holder()->find_method(ciSymbol::make("encodeUtf16ArrayUtf80"),
+                                                  ciSymbol::make("([CII[BII)I"));
+  if (target == nullptr) return false;
+  bool admitted = false;
+  {
+    VM_ENTRY_MARK;
+    Method* policy = callee()->get_Method();
+    Method* native = TmfyStringCoding::charset_admission_target(policy);
+    if (native == nullptr || native != target->get_Method()) return false;
+    AbstractCompiler* compiler = CompileBroker::compiler(CompLevel_full_optimization);
+    admitted = TmfyStringCoding::charset_admitted(policy) > 0 && compiler != nullptr &&
+        compiler->is_intrinsic_available(methodHandle(THREAD, native), C->directive());
+  }
+  admitted = admitted && !target->dont_inline() &&
+      !C->directive()->should_not_inline(target, CompLevel_full_optimization);
+  if (admitted) {
+    C->env()->dependencies()->assert_evol_method(callee());
+    C->env()->record_tmfy_dependency(target);
+  }
+  set_result(intcon(admitted ? 1 : 0));
+  return true;
+}
+
 bool LibraryCallKit::inline_tmfy() {
   vmIntrinsics::ID id = intrinsic_id();
   if (!TmfyStringCoding::is_supported(id)) return false;

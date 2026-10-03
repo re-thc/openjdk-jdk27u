@@ -93,6 +93,7 @@ class AbstractInterpreter: AllStatic {
     java_lang_Float_float16ToFloat,                             // implementation of java.lang.Float.float16ToFloat()
     java_lang_Float_floatToFloat16,                             // implementation of java.lang.Float.floatToFloat16()
     java_lang_Thread_currentThread,                             // implementation of java.lang.Thread.currentThread()
+    tmfy_useNativeEncoder,
 #define TMFY_METHOD_KIND(name, shape, helper, bound, audited) tmfy_##name,
     TMFY_KERNELS_DO(TMFY_METHOD_KIND)
 #undef TMFY_METHOD_KIND

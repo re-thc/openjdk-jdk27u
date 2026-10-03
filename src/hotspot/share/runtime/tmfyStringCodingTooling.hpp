@@ -37,12 +37,14 @@ class TmfyStringCodingTooling : AllStatic {
   // Bootstrap classes cannot unload. Stable JNI method IDs also follow class
   // redefinition, unlike retaining unrooted raw Method* values indefinitely.
   static jmethodID _methods[kernel_count];
-  static const JNINativeMethod* _initial_table;
-  static JavaThread* _initial_thread;
-  static int _initial_count;
-  static bool _initial_registration_available;
+  enum Owner { string_owner, charset_owner, owner_count, no_owner = -1 };
+  static const JNINativeMethod* _initial_table[owner_count];
+  static JavaThread* _initial_thread[owner_count];
+  static int _initial_count[owner_count];
+  static bool _initial_registration_available[owner_count];
+  static Owner bindings_owner(Klass* klass);
   static bool is_bindings_class(Klass* klass);
-  static bool contains_catalogue_method(const JNINativeMethod* methods, int count);
+  static bool contains_catalogue_method(Owner owner, const JNINativeMethod* methods, int count);
 
  public:
   static bool revoked() { return _revoked.load_acquire() != 0; }
@@ -51,7 +53,7 @@ class TmfyStringCodingTooling : AllStatic {
   }
 
   // Called by the trusted registration bridge in VM state, before its
-  // ThreadToNativeFromVM. Only its first exact table/thread gets an exemption;
+  // ThreadToNativeFromVM. Each holder's first exact table/thread gets an exemption;
   // repeat bridge calls permanently revoke leaf support.
   static bool prepare_registration(Klass* klass, const JNINativeMethod* methods, int count);
   // Also called from ciEnv before a leaf caller can install, without relying on

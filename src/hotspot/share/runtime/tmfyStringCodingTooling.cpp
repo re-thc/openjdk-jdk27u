@@ -29,28 +29,40 @@
 
 Atomic<uint8_t> TmfyStringCodingTooling::_revoked{0};
 jmethodID TmfyStringCodingTooling::_methods[TmfyStringCodingTooling::kernel_count] = {};
-const JNINativeMethod* TmfyStringCodingTooling::_initial_table = nullptr;
-JavaThread* TmfyStringCodingTooling::_initial_thread = nullptr;
-int TmfyStringCodingTooling::_initial_count = 0;
-bool TmfyStringCodingTooling::_initial_registration_available = false;
+const JNINativeMethod* TmfyStringCodingTooling::_initial_table[TmfyStringCodingTooling::owner_count] = {};
+JavaThread* TmfyStringCodingTooling::_initial_thread[TmfyStringCodingTooling::owner_count] = {};
+int TmfyStringCodingTooling::_initial_count[TmfyStringCodingTooling::owner_count] = {};
+bool TmfyStringCodingTooling::_initial_registration_available[TmfyStringCodingTooling::owner_count] = {};
 
-bool TmfyStringCodingTooling::is_bindings_class(Klass* klass) {
-  return klass->is_instance_klass() && klass->class_loader() == nullptr &&
-         klass->name()->equals("java/lang/StringCoding");
+TmfyStringCodingTooling::Owner TmfyStringCodingTooling::bindings_owner(Klass* klass) {
+  if (!klass->is_instance_klass() || klass->class_loader() != nullptr) return no_owner;
+  if (klass->name()->equals("java/lang/StringCoding")) return string_owner;
+  if (klass->name()->equals("sun/nio/cs/UTF_8$Encoder")) return charset_owner;
+  return no_owner;
 }
 
-bool TmfyStringCodingTooling::contains_catalogue_method(const JNINativeMethod* methods, int count) {
+bool TmfyStringCodingTooling::is_bindings_class(Klass* klass) {
+  return bindings_owner(klass) != no_owner;
+}
+
+bool TmfyStringCodingTooling::contains_catalogue_method(Owner owner, const JNINativeMethod* methods, int count) {
 #define TMFY_DESCRIPTOR_output "([BII[BII)I"
+#define TMFY_DESCRIPTOR_char_output "([CII[BII)I"
   for (int i = 0; i < count; ++i) {
     if (strcmp(methods[i].name, "registerNatives") == 0 &&
         strcmp(methods[i].signature, "()Z") == 0) return true;
 #define TMFY_MATCH(kernel_name, shape, helper, bound, audited) \
     if (strcmp(methods[i].name, #kernel_name "0") == 0 && \
         strcmp(methods[i].signature, TMFY_DESCRIPTOR_##shape) == 0) return true;
-    TMFY_KERNELS_DO(TMFY_MATCH)
+    if (owner == string_owner) {
+      TMFY_STRING_KERNELS_DO(TMFY_MATCH)
+    } else if (owner == charset_owner) {
+      TMFY_CHARSET_KERNELS_DO(TMFY_MATCH)
+    }
 #undef TMFY_MATCH
   }
 #undef TMFY_DESCRIPTOR_output
+#undef TMFY_DESCRIPTOR_char_output
   return false;
 }
 
@@ -83,6 +95,11 @@ void TmfyStringCodingTooling::record_method(Method* method) {
 
 bool TmfyStringCodingTooling::prepare_registration(Klass* klass, const JNINativeMethod* methods, int count) {
   guarantee(is_bindings_class(klass), "only the bootstrap TmfyStringCoding bindings may register");
+  Owner owner = bindings_owner(klass);
+#define TMFY_COUNT(name, shape, helper, bound, audited) + 1
+  const int expected = owner == string_owner ? 0 TMFY_STRING_KERNELS_DO(TMFY_COUNT)
+                                             : 0 TMFY_CHARSET_KERNELS_DO(TMFY_COUNT);
+#undef TMFY_COUNT
   JavaThread* thread = JavaThread::current();
   assert(thread->thread_state() == _thread_in_vm, "VM state required");
   int found = 0;
@@ -90,11 +107,11 @@ bool TmfyStringCodingTooling::prepare_registration(Klass* klass, const JNINative
   for (int i = 0; i < ik->methods()->length(); ++i) {
     methodHandle method(thread, ik->methods()->at(i));
     if (TmfyStringCoding::is_intrinsic(method->intrinsic_id())) {
-      guarantee(found < kernel_count, "unexpected TmfyStringCoding method count");
+      guarantee(found < expected, "unexpected per-holder TmfyStringCoding method count");
       ++found;
     }
   }
-  if (found != kernel_count) {
+  if (found != expected) {
     // A transformer/native-prefix agent may replace an intrinsic native method
     // with a wrapper. Disable intrinsic bypasses, but let RegisterNatives bind
     // the prefixed native through Method::register_native as usual.
@@ -104,18 +121,18 @@ bool TmfyStringCodingTooling::prepare_registration(Klass* klass, const JNINative
   bool repeated;
   {
     MutexLocker ml(Compile_lock);
-    repeated = _initial_table != nullptr;
+    repeated = _initial_table[owner] != nullptr;
     if (repeated) {
       // Reflection may invoke the private registration bridge again. Treat it
       // as an ordinary rebind, retaining stable IDs and never granting another
       // bootstrap exemption, even if the first registration is still running.
-      _initial_registration_available = false;
-      _initial_thread = nullptr;
+      _initial_registration_available[owner] = false;
+      _initial_thread[owner] = nullptr;
     } else {
-      _initial_table = methods;
-      _initial_count = count;
-      _initial_thread = thread;
-      _initial_registration_available = true;
+      _initial_table[owner] = methods;
+      _initial_count[owner] = count;
+      _initial_thread[owner] = thread;
+      _initial_registration_available[owner] = true;
     }
   }
   if (repeated) revoke();
@@ -123,13 +140,14 @@ bool TmfyStringCodingTooling::prepare_registration(Klass* klass, const JNINative
 }
 
 void TmfyStringCodingTooling::before_register(Klass* klass, const JNINativeMethod* methods, int count) {
-  if (!is_bindings_class(klass) || !contains_catalogue_method(methods, count)) return;
+  Owner owner = bindings_owner(klass);
+  if (owner == no_owner || !contains_catalogue_method(owner, methods, count)) return;
   {
     MutexLocker ml(Compile_lock);
-    if (_initial_registration_available && methods == _initial_table &&
-        count == _initial_count && JavaThread::current() == _initial_thread) {
-      _initial_registration_available = false;
-      _initial_thread = nullptr;
+    if (_initial_registration_available[owner] && methods == _initial_table[owner] &&
+        count == _initial_count[owner] && JavaThread::current() == _initial_thread[owner]) {
+      _initial_registration_available[owner] = false;
+      _initial_thread[owner] = nullptr;
       return;
     }
   }

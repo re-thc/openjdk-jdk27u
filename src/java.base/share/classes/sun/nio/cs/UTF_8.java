@@ -27,6 +27,7 @@ package sun.nio.cs;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -416,6 +417,46 @@ public final class UTF_8 extends Unicode {
 
     private static final class Encoder extends CharsetEncoder {
 
+        // This policy is intrinsified only where the typed native call is
+        // admitted too. Ordinary bytecode stays on the scalar implementation.
+        @IntrinsicCandidate
+        private static boolean useNativeEncoder() {
+            return false;
+        }
+
+        private static volatile boolean utf8Ready;
+        private static boolean utf8Initializing;
+
+        private static boolean utf8Ready() {
+            return utf8Ready || initializeUtf8();
+        }
+
+        private static boolean initializeUtf8() {
+            synchronized (Encoder.class) {
+                if (utf8Ready) return true;
+                if (utf8Initializing) return false;
+                utf8Initializing = true;
+            }
+            // RegisterNatives can call an agent that reenters this encoder,
+            // including from another thread. Never hold the monitor here.
+            boolean initialized = false;
+            try {
+                initialized = registerNatives();
+                return initialized;
+            } finally {
+                synchronized (Encoder.class) {
+                    utf8Ready = initialized;
+                    utf8Initializing = false;
+                }
+            }
+        }
+
+        private static native boolean registerNatives();
+
+        @IntrinsicCandidate
+        private static native int encodeUtf16ArrayUtf80(char[] input, int offset, int length,
+                                                       byte[] output, int outputOffset, int capacity);
+
         private Encoder(Charset cs) {
             super(cs, 1.1f, 3.0f);
         }
@@ -470,6 +511,43 @@ public final class UTF_8 extends Unicode {
 
         private CoderResult encodeArrayLoopSlow(CharBuffer src, char[] sa, int sp, int sl,
                                                 ByteBuffer dst, byte[] da, int dp, int dl) {
+            // Small and tight-output requests retain the scalar path. Each
+            // native call snapshots at most 2048 code units; this Java backedge
+            // is an ordinary safepointing loop between bounded leaf calls.
+            if (sl - sp >= 128 && dl - dp >= 384 &&
+                    useNativeEncoder() && utf8Ready()) {
+                while (sl - sp >= 128 && dl - dp >= 384) {
+                    int count = Math.min(Math.min(sl - sp, 2048), (dl - dp) / 3);
+                    int progress = encodeUtf16ArrayUtf80(sa, sp, count, da, dp, dl - dp);
+                    if (progress < 0) {
+                        // All other rejections precede stores. An internal
+                        // conversion invariant failure must never be replayed.
+                        if (progress == -4) throw new InternalError("UTF-8 conversion invariant");
+                        break;
+                    }
+                    int written = progress & 0x1fff;
+                    int consumed = (progress >>> 13) & 0xfff;
+                    int status = progress >>> 25;
+                    if (consumed > count || written > 3 * consumed ||
+                            (status == 0 && consumed != count) ||
+                            (status == 1 && consumed >= count) ||
+                            (status == 2 && consumed != count - 1) || status > 2) {
+                        throw new InternalError("UTF-8 conversion progress");
+                    }
+                    sp += consumed;
+                    dp += written;
+                    if (status == 1) {
+                        updatePositions(src, sp, dst, dp);
+                        return CoderResult.malformedForLength(1);
+                    }
+                    if (status == 2 && sp + 1 == sl) {
+                        updatePositions(src, sp, dst, dp);
+                        return CoderResult.UNDERFLOW;
+                    }
+                    // An internal chunk's final high surrogate remains at sp;
+                    // the next chunk (or scalar tail) sees its following unit.
+                }
+            }
             while (sp < sl) {
                 char c = sa[sp];
                 if (c < 0x80) {

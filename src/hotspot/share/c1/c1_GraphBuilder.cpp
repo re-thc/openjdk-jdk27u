@@ -4080,6 +4080,30 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
   if (TmfyStringCoding::is_intrinsic(callee->intrinsic_id())) {
     compilation()->env()->record_tmfy_dependency(callee);
   }
+  if (callee->intrinsic_id() == vmIntrinsics::_tmfy_useNativeEncoder) {
+    ciMethod* target = callee->holder()->find_method(ciSymbol::make("encodeUtf16ArrayUtf80"),
+                                                  ciSymbol::make("([CII[BII)I"));
+    if (target == nullptr) return false;
+    bool admitted = false;
+    {
+      VM_ENTRY_MARK;
+      Method* policy = callee->get_Method();
+      Method* native = TmfyStringCoding::charset_admission_target(policy);
+      if (native == nullptr || native != target->get_Method()) return false;
+      admitted = TmfyStringCoding::charset_admitted(policy) > 0 &&
+          compilation()->compiler()->is_intrinsic_available(methodHandle(THREAD, native), compilation()->directive());
+    }
+    // A native-call exclusion must not turn public encoding into an unqualified
+    // JNI route. The explicitly called private native remains usable through JNI.
+    admitted = admitted && !target->dont_inline() &&
+        !compilation()->directive()->should_not_inline(target, compilation()->env()->comp_level());
+    if (admitted) {
+      compilation()->env()->dependencies()->assert_evol_method(callee);
+      compilation()->env()->record_tmfy_dependency(target);
+    }
+    if (!ignore_return) ipush(append(new Constant(new IntConstant(admitted ? 1 : 0))));
+    return true;
+  }
   build_graph_for_intrinsic(callee, ignore_return);
   if (_inline_bailout_msg != nullptr) {
     return false;

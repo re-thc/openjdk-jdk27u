@@ -18,6 +18,8 @@
 #define TMFY_AUDITED_encodeLatin1Utf8 true
 #define TMFY_AUDITED_encodeUtf16Utf8 true
 #define TMFY_AUDITED_decodeUtf8Utf16 true
+// Mutable char[] snapshot/stack path requires its own audit and qualification.
+#define TMFY_AUDITED_encodeUtf16ArrayUtf8 true
 #define TMFY_X86_AUDITED 1
 #define TMFY_AARCH64_AUDITED 0
 #endif // SHARE_TMFY_TMFYPOLICY_HPP

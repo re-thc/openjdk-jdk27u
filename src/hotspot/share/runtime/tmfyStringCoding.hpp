@@ -22,13 +22,14 @@
 #include "runtime/atomic.hpp"
 
 class JavaThread;
+class Method;
 
 // VM-only adapters. Portable engines never see oops, JNI or HotSpot headers.
 // Machine-facing arguments MUST be raw descriptor pointers: typeArrayOop is a
 // nontrivial wrapper under CHECK_UNHANDLED_OOPS and has a different C ABI.
 class TmfyStringCoding : AllStatic {
  public:
-  enum Counter { leaf_calls, jni_calls, rejections, counter_count };
+  enum Counter { leaf_calls, jni_calls, rejections, charset_leaf_calls, charset_jni_calls, counter_count };
   static bool is_intrinsic(vmIntrinsics::ID id);
   static bool is_supported(vmIntrinsics::ID id);
   static int signature(vmIntrinsics::ID id, BasicType* arguments, BasicType* result);
@@ -38,6 +39,12 @@ class TmfyStringCoding : AllStatic {
   static jlong counter(Counter counter);
   static bool initialize();
   static jint initialize_from_java(JavaThread* thread);
+  // Returns the exact typed target only for the pristine bootstrap policy body.
+  // Does not resolve classes, allocate, initialize the backend, or safepoint.
+  static Method* charset_admission_target(Method* policy);
+  // A non-null return PC restricts interpreter admission to interpreted callers.
+  // -1 requests the ordinary Java entry so tooling can observe method events.
+  static jint charset_admitted(Method* policy, address caller_pc = nullptr);
   static address initialized_address() {
     return reinterpret_cast<address>(&_initialized) + _initialized.value_offset_in_bytes();
   }
@@ -48,6 +55,8 @@ class TmfyStringCoding : AllStatic {
                                typeArrayOopDesc* output, jint output_offset, jint capacity);
   static jint decode_utf8_utf16(typeArrayOopDesc* input, jint offset, jint length,
                                typeArrayOopDesc* output, jint output_offset, jint capacity);
+  static jint encode_utf16_array_utf8(typeArrayOopDesc* input, jint offset, jint length,
+                                    typeArrayOopDesc* output, jint output_offset, jint capacity);
 
  private:
   static Atomic<jlong> _counters[counter_count];

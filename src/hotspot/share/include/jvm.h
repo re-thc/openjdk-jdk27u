@@ -339,6 +339,9 @@ JVM_RegisterContinuationMethods(JNIEnv *env, jclass cls);
 JNIEXPORT jboolean JNICALL
 JVM_RegisterTmfyStringCodingMethods(JNIEnv *env, jclass cls);
 
+JNIEXPORT jboolean JNICALL
+JVM_RegisterTmfyCharsetEncoderMethods(JNIEnv *env, jclass cls);
+
 /*
  * java.lang.Package
  */

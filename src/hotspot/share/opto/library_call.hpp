@@ -355,6 +355,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_encodeISOArray(bool ascii);
   bool inline_updateCRC32();
   bool inline_tmfy();
+  bool inline_tmfy_charset_admission();
   bool inline_updateBytesCRC32();
   bool inline_updateByteBufferCRC32();
   Node* get_table_from_crc32c_class(ciInstanceKlass *crc32c_class);

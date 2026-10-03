@@ -30,6 +30,10 @@
 static std::atomic<const simdutf::implementation*> implementation(nullptr);
 static_assert(ATOMIC_POINTER_LOCK_FREE == 2, "leaf dispatch requires lock-free pointer loads");
 static_assert(sizeof(char16_t) == 2, "UTF16 storage uses two-byte code units");
+static_assert(TMFY_CHARSET_MAX_UNITS <= TMFY_CHARSET_UNITS_MASK,
+              "CharsetEncoder consumed count must fit packed result");
+static_assert(3 * TMFY_CHARSET_MAX_UNITS <= TMFY_CHARSET_BYTES_MASK,
+              "CharsetEncoder output count must fit packed result");
 static_assert(simdutf::SIMDUTF_VERSION_MAJOR == 9 &&
               simdutf::SIMDUTF_VERSION_MINOR == 2 &&
               simdutf::SIMDUTF_VERSION_REVISION == 1,
@@ -259,6 +263,101 @@ extern "C" int32_t tmfy_encode_utf16_utf8(const uint8_t* input, size_t length,
     written = encode_replacing(input, units, output);
   }
   return written > 0 && written <= reserved ? int32_t(written) : TMFY_INTERNAL_ERROR;
+}
+
+static simdutf::result validate_charset_snapshot(const simdutf::implementation* selected,
+                                                 const char16_t* snapshot, size_t units) {
+#if SIMDUTF_IS_BIG_ENDIAN
+  return selected->validate_utf16be_with_errors(snapshot, units);
+#else
+  return selected->validate_utf16le_with_errors(snapshot, units);
+#endif
+}
+
+static bool high_surrogate(char16_t value) {
+  return value >= 0xd800 && value <= 0xdbff;
+}
+
+static bool low_surrogate(char16_t value) {
+  return value >= 0xdc00 && value <= 0xdfff;
+}
+
+extern "C" int32_t tmfy_encode_utf16_array_utf8(const uint16_t* input, size_t units,
+                                               uint8_t* output, size_t capacity) {
+  if (units > TMFY_CHARSET_MAX_UNITS) return TMFY_NEEDS_GENERAL;
+  if (units == 0) return 0;
+  const size_t length = 2 * units;
+  const size_t reserved = 3 * units;
+  const uint8_t* source = reinterpret_cast<const uint8_t*>(input);
+  if (!valid_spans(source, length, output, capacity, reserved)) return TMFY_BAD_ARGUMENT;
+  const simdutf::implementation* selected = implementation.load(std::memory_order_acquire);
+  if (selected == nullptr) return TMFY_NOT_INITIALIZED;
+
+  // Do not clear the whole buffer: early malformed input reads/copies only
+  // 16 candidate code units plus a lookahead, at most 34 bytes. Mutable source
+  // bytes already captured here must not be reloaded when taking the full path.
+  alignas(64) char16_t snapshot[TMFY_CHARSET_MAX_UNITS];
+  const size_t preview = units < TMFY_CHARSET_PREVIEW_UNITS ?
+      units : TMFY_CHARSET_PREVIEW_UNITS;
+  std::memcpy(snapshot, source, 2 * preview);
+  simdutf::result checked = validate_charset_snapshot(selected, snapshot, preview);
+  size_t captured = preview;
+  // A final high surrogate is inconclusive only at an internal preview edge.
+  // All other preview errors have enough immutable lookahead to finish now.
+  const bool preview_high = checked.error == simdutf::SURROGATE &&
+      checked.count == preview - 1 && high_surrogate(snapshot[preview - 1]);
+  if (preview < units && (checked.error == simdutf::SUCCESS || preview_high)) {
+    if (checked.error == simdutf::SUCCESS && checked.count != preview) {
+      return TMFY_INTERNAL_ERROR;
+    }
+    std::memcpy(snapshot + preview, source + 2 * preview, 2 * (units - preview));
+    captured = units;
+    checked = validate_charset_snapshot(selected, snapshot, captured);
+  }
+
+  size_t consumed;
+  uint32_t status;
+  if (checked.error == simdutf::SUCCESS) {
+    if (captured != units || checked.count != units) return TMFY_INTERNAL_ERROR;
+    consumed = units;
+    status = TMFY_CHARSET_COMPLETE;
+  } else {
+    if (checked.error != simdutf::SURROGATE || checked.count >= captured) {
+      return TMFY_INTERNAL_ERROR;
+    }
+    consumed = checked.count;
+    const char16_t bad = snapshot[consumed];
+    if (high_surrogate(bad)) {
+      if (consumed + 1 == units) {
+        status = TMFY_CHARSET_INCOMPLETE_HIGH_AT_BLOCK_END;
+      } else {
+        if (consumed + 1 >= captured || low_surrogate(snapshot[consumed + 1])) {
+          return TMFY_INTERNAL_ERROR;
+        }
+        status = TMFY_CHARSET_MALFORMED_1;
+      }
+    } else if (low_surrogate(bad)) {
+      status = TMFY_CHARSET_MALFORMED_1;
+    } else {
+      return TMFY_INTERNAL_ERROR;
+    }
+  }
+
+  // Error-position validation proves [0, consumed) valid. A converter's own
+  // partial-write error result is never used, nor is a mutable input re-read.
+  size_t written = 0;
+  if (consumed != 0) {
+#if SIMDUTF_IS_BIG_ENDIAN
+    written = selected->convert_valid_utf16be_to_utf8(
+        snapshot, consumed, reinterpret_cast<char*>(output));
+#else
+    written = selected->convert_valid_utf16le_to_utf8(
+        snapshot, consumed, reinterpret_cast<char*>(output));
+#endif
+    if (written < consumed || written > 3 * consumed) return TMFY_INTERNAL_ERROR;
+  }
+  return int32_t(uint32_t(written) | (uint32_t(consumed) << TMFY_CHARSET_UNITS_SHIFT) |
+                 (status << TMFY_CHARSET_STATUS_SHIFT));
 }
 
 extern "C" int32_t tmfy_decode_utf8_utf16(const uint8_t* input, size_t length,

@@ -518,6 +518,31 @@ address TemplateInterpreterGenerator::generate_currentThread() {
 }
 
 #ifdef LINUX
+address TemplateInterpreterGenerator::generate_tmfy_charset_admission_entry() {
+  if (!TmfyStringCoding::is_supported(vmIntrinsics::_tmfy_encodeUtf16ArrayUtf8) ||
+      !vmIntrinsics::is_intrinsic_available(vmIntrinsics::_tmfy_encodeUtf16ArrayUtf8)) return nullptr;
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
+  __ movptr(rax, (intptr_t)TmfyStringCodingTooling::revoked_address());
+  __ cmpb(Address(rax, 0), 0);
+  __ jcc(Assembler::notEqual, slow_path);
+  __ cmpl(Address(r15_thread, JavaThread::interp_only_mode_offset()), 0);
+  __ jcc(Assembler::notEqual, slow_path);
+  __ movptr(c_rarg0, rbx); // Interpreter method register, not a heap pointer.
+  __ movptr(c_rarg1, Address(rsp, 0)); // c2i preserves the compiled return PC.
+  __ MacroAssembler::call_VM_leaf_base(CAST_FROM_FN_PTR(address, TmfyStringCoding::charset_admitted), 2);
+  __ testl(rax, rax);
+  __ jcc(Assembler::negative, slow_path);
+  __ pop(rdi);
+  __ mov(rsp, r13);
+  __ jmp(rdi);
+  __ bind(slow_path);
+  // Preserve ordinary method events after late tooling admission/revocation.
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}
+
 // All shapes use Linux x86-64 C argument registers. The callee performs every
 // range/work check before extracting an array pointer. No heap address escapes.
 address TemplateInterpreterGenerator::generate_tmfy_entry(AbstractInterpreter::MethodKind kind) {

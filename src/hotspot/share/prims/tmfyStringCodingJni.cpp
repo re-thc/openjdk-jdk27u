@@ -101,6 +101,32 @@ static JNINativeMethod tmfy_methods[] = {
   { (char*)"counters0", (char*)"()[J", (void*)&tmfy_counters }
 };
 
+static jint JNICALL tmfy_encode_utf16_array(JNIEnv* env, jclass, jcharArray input, jint offset, jint length,
+                                          jbyteArray output, jint output_offset, jint capacity) {
+  TmfyStringCoding::count(TmfyStringCoding::jni_calls);
+  TmfyStringCoding::count(TmfyStringCoding::charset_jni_calls);
+  if (!jni_range(env, input, offset, length) || !jni_range(env, output, output_offset, capacity) ||
+      (jlong)length * 3 > capacity) return TMFY_BAD_ARGUMENT;
+  if ((uint32_t)length > TMFY_CHARSET_MAX_UNITS) return TMFY_NEEDS_GENERAL;
+  // Ordinary JNI uses bounded copies; no pin survives a JNI operation. The
+  // kernel returns the verified prefix even when its next character is invalid.
+  uint16_t source[TMFY_CHARSET_MAX_UNITS];
+  uint8_t destination[TMFY_CHARSET_MAX_UNITS * 3];
+  if (length != 0) env->GetCharArrayRegion(input, offset, length, (jchar*)source);
+  if (env->ExceptionCheck()) return TMFY_BAD_ARGUMENT;
+  jint result = tmfy_encode_utf16_array_utf8(source, length, destination, sizeof(destination));
+  if (result >= 0) {
+    jint written = result & 0x1fff;
+    if (written > capacity || written > (jint)sizeof(destination)) return TMFY_INTERNAL_ERROR;
+    if (written != 0) env->SetByteArrayRegion(output, output_offset, written, (const jbyte*)destination);
+  }
+  return result;
+}
+
+static JNINativeMethod tmfy_charset_methods[] = {
+  { (char*)"encodeUtf16ArrayUtf80", (char*)"([CII[BII)I", (void*)&tmfy_encode_utf16_array }
+};
+
 JVM_ENTRY(jboolean, JVM_RegisterTmfyStringCodingMethods(JNIEnv* env, jclass cls))
   if (!is_init_completed() || !TmfyStringCoding::initialize()) return JNI_FALSE;
   if (!TmfyStringCodingTooling::prepare_registration(
@@ -110,5 +136,15 @@ JVM_ENTRY(jboolean, JVM_RegisterTmfyStringCodingMethods(JNIEnv* env, jclass cls)
   if (env->RegisterNatives(cls, tmfy_methods, ARRAY_SIZE(tmfy_methods)) != 0) return JNI_FALSE;
   log_info(tmfy)("UTF-8 conversion backend=%s intrinsic_requested=%s", tmfy_implementation_name(),
                  UseTmfyStringCoding ? "true" : "false");
+  return JNI_TRUE;
+JVM_END
+
+JVM_ENTRY(jboolean, JVM_RegisterTmfyCharsetEncoderMethods(JNIEnv* env, jclass cls))
+  if (!is_init_completed() || !TmfyStringCoding::initialize()) return JNI_FALSE;
+  if (!TmfyStringCodingTooling::prepare_registration(
+          java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls)),
+          tmfy_charset_methods, ARRAY_SIZE(tmfy_charset_methods))) return JNI_FALSE;
+  ThreadToNativeFromVM ttnfv(thread);
+  if (env->RegisterNatives(cls, tmfy_charset_methods, ARRAY_SIZE(tmfy_charset_methods)) != 0) return JNI_FALSE;
   return JNI_TRUE;
 JVM_END
