@@ -3794,6 +3794,28 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 return false;
             }
             int guard = matcher.to - minLength;
+            // Nearby matches need no scan preparation. Keep the general loop
+            // below at its original call depth for unsupported or dense input.
+            if (next.match(matcher, i, seq) ||
+                    (i < guard && (next.match(matcher, ++i, seq) ||
+                    (i < guard && next.match(matcher, ++i, seq))))) {
+                matcher.first = i;
+                matcher.groups[0] = matcher.first;
+                matcher.groups[1] = matcher.last;
+                return true;
+            }
+            i++;
+            if (guard - i >= 64 && matcher.parentPattern.hasBmpLiteralPrefix &&
+                    seq instanceof String str) {
+                int result = matchLiteralPrefix(matcher, i, str, guard);
+                if (result >= 0) {
+                    return true;
+                }
+                if (result == -1) {
+                    return false;
+                }
+                i = ~result;
+            }
             for (; i <= guard; i++) {
                 if (next.match(matcher, i, seq)) {
                     matcher.first = i;
@@ -3806,28 +3828,14 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             return false;
         }
 
-        boolean matchLiteralPrefix(Matcher matcher, int i, String str) {
-            int guard = matcher.to - minLength;
-            if (i > guard) {
-                matcher.hitEnd = true;
-                return false;
-            }
-            // Preserve the direct node path for matches at the first few
-            // positions, before preparing a character scan over a longer input.
-            if (next.match(matcher, i, str) ||
-                    (i < guard && (next.match(matcher, ++i, str) ||
-                    (i < guard && next.match(matcher, ++i, str))))) {
-                matcher.first = i;
-                matcher.groups[0] = matcher.first;
-                matcher.groups[1] = matcher.last;
-                return true;
-            }
-            i++;
+        // A match returns its start, failure returns -1, and a dense-candidate
+        // fallback returns the complemented start for the general loop.
+        private int matchLiteralPrefix(Matcher matcher, int i, String str, int guard) {
             int[] prefix = ((Slice) next).buffer;
             // A very large counted repetition can overflow the studied minimum.
             // Retain the original scanner if it cannot bound this prefix safely.
             if (guard - i < 64 || minLength < prefix.length) {
-                return match(matcher, i, str);
+                return ~i;
             }
             // Both characters are necessary for a match. If the leading
             // character is common here, scan for the last character instead.
@@ -3839,11 +3847,11 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 int found = str.indexOf(ch, i + offset, guard + offset + 1);
                 if (found < 0) {
                     matcher.hitEnd = true;
-                    return false;
+                    return -1;
                 }
                 int start = found - offset;
                 if (start - i < 8) {
-                    return match(matcher, start, str);
+                    return ~start;
                 }
                 i = start;
                 // The original node chain decides the full match, including
@@ -3852,12 +3860,12 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                     matcher.first = i;
                     matcher.groups[0] = matcher.first;
                     matcher.groups[1] = matcher.last;
-                    return true;
+                    return i;
                 }
                 i++;
             }
             matcher.hitEnd = true;
-            return false;
+            return -1;
         }
         boolean study(TreeInfo info) {
             next.study(info);
