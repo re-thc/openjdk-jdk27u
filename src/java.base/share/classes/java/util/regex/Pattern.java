@@ -1961,7 +1961,9 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         if (matchRoot instanceof Slice) {
             root = BnM.optimize(matchRoot);
             if (root == matchRoot) {
-                root = hasSupplementary ? new StartS(matchRoot) : new Start(matchRoot);
+                root = hasSupplementary ? new StartS(matchRoot)
+                        : ((Slice) matchRoot).buffer.length == 0 ? new Start(matchRoot)
+                        : new StartBmp(matchRoot);
             }
         } else if (matchRoot instanceof Begin || matchRoot instanceof First) {
             root = matchRoot;
@@ -3790,35 +3792,6 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 return false;
             }
             int guard = matcher.to - minLength;
-            // Short BMP literal prefixes do not use Boyer-Moore. On String
-            // input, skip positions that cannot match their first character
-            // with the Latin-1/UTF-16 indexOf intrinsic. Keep the node chain
-            // responsible for captures, assertions and the rest of the match.
-            if (guard - i >= 64 && next.getClass() == Slice.class &&
-                    ((Slice) next).buffer.length != 0 &&
-                    seq instanceof String str) {
-                int first = ((Slice) next).buffer[0];
-                while (i <= guard) {
-                    int start = str.indexOf(first, i, guard + 1);
-                    if (start < 0) {
-                        matcher.hitEnd = true;
-                        return false;
-                    }
-                    // Dense candidates are better served by the original loop.
-                    if (start - i < 8) {
-                        i = start;
-                        break;
-                    }
-                    i = start;
-                    if (next.match(matcher, i, seq)) {
-                        matcher.first = i;
-                        matcher.groups[0] = matcher.first;
-                        matcher.groups[1] = matcher.last;
-                        return true;
-                    }
-                    i++;
-                }
-            }
             for (; i <= guard; i++) {
                 if (next.match(matcher, i, seq)) {
                     matcher.first = i;
@@ -3835,6 +3808,61 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             info.maxValid = false;
             info.deterministic = false;
             return false;
+        }
+    }
+
+    /**
+     * Searches a short, case-sensitive BMP literal prefix. String input can
+     * use the Latin-1/UTF-16 character-search intrinsic to skip impossible
+     * starts; the existing node chain still handles the full match.
+     */
+    static final class StartBmp extends Start {
+        final int firstChar;
+
+        StartBmp(Node node) {
+            super(node);
+            firstChar = ((Slice) node).buffer[0];
+        }
+
+        boolean match(Matcher matcher, int i, CharSequence seq) {
+            int guard = matcher.to - minLength;
+            if (i > guard) {
+                matcher.hitEnd = true;
+                return false;
+            }
+            // Try the initial position before preparing a search. This keeps
+            // immediate matches on the original matching path.
+            if (next.match(matcher, i, seq)) {
+                matcher.first = i;
+                matcher.groups[0] = matcher.first;
+                matcher.groups[1] = matcher.last;
+                return true;
+            }
+            i++;
+            if (guard - i >= 64 && seq instanceof String str &&
+                    str.charAt(i) != firstChar) {
+                while (i <= guard) {
+                    int start = str.indexOf(firstChar, i, guard + 1);
+                    if (start < 0) {
+                        matcher.hitEnd = true;
+                        return false;
+                    }
+                    // Retain the general loop when candidate starts are dense.
+                    if (start - i < 8) {
+                        i = start;
+                        break;
+                    }
+                    i = start;
+                    if (next.match(matcher, i, seq)) {
+                        matcher.first = i;
+                        matcher.groups[0] = matcher.first;
+                        matcher.groups[1] = matcher.last;
+                        return true;
+                    }
+                    i++;
+                }
+            }
+            return super.match(matcher, i, seq);
         }
     }
 
