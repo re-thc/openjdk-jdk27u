@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,10 @@ public final class SegmentBulkOperations {
     private static final int NATIVE_THRESHOLD_FILL = powerOfPropertyOr("fill", 5);
     private static final int NATIVE_THRESHOLD_MISMATCH = powerOfPropertyOr("mismatch", 6);
     private static final int NATIVE_THRESHOLD_COPY = powerOfPropertyOr("copy", 6);
+
+    // Keep native mismatch leaf calls bounded so that larger scans retain the
+    // safepointing fallback rather than spending an unbounded time in a stub.
+    private static final int MAX_NATIVE_MISMATCH_SIZE = 1 << 20;
 
     @ForceInline
     public static MemorySegment fill(AbstractMemorySegmentImpl dst, byte value) {
@@ -266,7 +270,7 @@ public final class SegmentBulkOperations {
                     SCOPED_MEMORY_ACCESS.getByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset)) {
                 return 0;
             }
-            i = vectorizedMismatchLargeForBytes(src.sessionImpl(), dst.sessionImpl(),
+            i = vectorizedMismatchForBytes(src.sessionImpl(), dst.sessionImpl(),
                     src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset,
                     dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset,
                     length);
@@ -343,6 +347,23 @@ public final class SegmentBulkOperations {
     @ForceInline
     private static int mismatch(short first, short second) {
         return ((0xff & first) == (0xff & second)) ? 1 : 0;
+    }
+
+    /**
+     * Preserve the base types at the intrinsic call site for bounded native scans.
+     */
+    @ForceInline
+    private static long vectorizedMismatchForBytes(MemorySessionImpl aSession, MemorySessionImpl bSession,
+                                                   Object a, long aOffset,
+                                                   Object b, long bOffset,
+                                                   long length) {
+        if (Architecture.isX64() && length <= MAX_NATIVE_MISMATCH_SIZE && (a == null || b == null)) {
+            // Convey the guarded range to C2's native intrinsic validation.
+            int size = Math.clamp(length, 1, MAX_NATIVE_MISMATCH_SIZE);
+            return SCOPED_MEMORY_ACCESS.vectorizedMismatch(aSession, bSession,
+                    a, aOffset, b, bOffset, size, ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
+        }
+        return vectorizedMismatchLargeForBytes(aSession, bSession, a, aOffset, b, bOffset, length);
     }
 
     /**

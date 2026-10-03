@@ -6589,10 +6589,23 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
 
   const TypeAryPtr* obja_t = _gvn.type(obja)->isa_aryptr();
   const TypeAryPtr* objb_t = _gvn.type(objb)->isa_aryptr();
-  if (obja_t == nullptr || obja_t->elem() == Type::BOTTOM ||
-      objb_t == nullptr || objb_t->elem() == Type::BOTTOM ||
+  const bool native_a = _gvn.type(obja) == TypePtr::NULL_PTR;
+  const bool native_b = _gvn.type(objb) == TypePtr::NULL_PTR;
+  const bool native_access = native_a || native_b;
+  if ((!native_a && (obja_t == nullptr || obja_t->elem() == Type::BOTTOM)) ||
+      (!native_b && (objb_t == nullptr || objb_t->elem() == Type::BOTTOM)) ||
       scale == top()) {
     return false; // failed input validation
+  }
+  if (native_access) {
+    // Native leaf calls must be nonempty and bounded. In particular, do not
+    // intrinsify the large, safepointing fallback in SegmentBulkOperations.
+    const TypeInt* length_t = _gvn.type(length)->isa_int();
+    const TypeInt* scale_t = _gvn.type(scale)->isa_int();
+    if (length_t == nullptr || length_t->_lo <= 0 || length_t->_hi > (1 << 20) ||
+        scale_t == nullptr || !scale_t->is_con() || scale_t->get_con() != 0) {
+      return false;
+    }
   }
 
   Node* obja_adr = make_unsafe_address(obja, aoffset);
@@ -6642,7 +6655,7 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   int inline_limit = 0;
   bool do_partial_inline = false;
 
-  if (elem_bt != T_ILLEGAL && ArrayOperationPartialInlineSize > 0) {
+  if (!native_access && elem_bt != T_ILLEGAL && ArrayOperationPartialInlineSize > 0) {
     inline_limit = ArrayOperationPartialInlineSize / type2aelembytes(elem_bt);
     do_partial_inline = inline_limit >= 16;
   }
@@ -6686,10 +6699,22 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   if (call_stub_path != nullptr) {
     set_control(call_stub_path);
 
+    Node* doing_unsafe_access_addr = nullptr;
+    if (native_access) {
+      C->set_has_unsafe_access(true);
+      Node* thread = _gvn.transform(new ThreadLocalNode());
+      doing_unsafe_access_addr = off_heap_plus_addr(thread, in_bytes(JavaThread::doing_unsafe_access_offset()));
+      store_to_memory(control(), doing_unsafe_access_addr, intcon(1), T_BYTE, MemNode::unordered);
+    }
+
     Node* call = make_runtime_call(RC_LEAF,
                                    OptoRuntime::vectorizedMismatch_Type(),
                                    StubRoutines::vectorizedMismatch(), "vectorizedMismatch", TypePtr::BOTTOM,
                                    obja_adr, objb_adr, length, scale);
+
+    if (native_access) {
+      store_to_memory(control(), doing_unsafe_access_addr, intcon(0), T_BYTE, MemNode::unordered);
+    }
 
     exit_block->init_req(stub_path, control());
     memory_phi->init_req(stub_path, map()->memory());
@@ -9274,4 +9299,3 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
   set_result(box_fp16_value(float16_box_type, field, result));
   return true;
 }
-

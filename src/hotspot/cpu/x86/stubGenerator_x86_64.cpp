@@ -3747,8 +3747,12 @@ address StubGenerator::generate_vectorizedMismatch() {
   StubId stub_id = StubId::stubgen_vectorizedMismatch_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  address start = load_archive_data(stub_id);
+  GrowableArray<address> extras;
+  address start = load_archive_data(stub_id, nullptr, &extras);
   if (start != nullptr) {
+    assert(extras.length() == UnsafeMemoryAccess::COLUMN_COUNT,
+           "unexpected handler addresses count %d", extras.length());
+    register_unsafe_access_handlers(extras, 0, 1);
     return start;
   }
   __ align(CodeEntryAlignment);
@@ -3781,14 +3785,18 @@ address StubGenerator::generate_vectorizedMismatch() {
   const XMMRegister vec1 = xmm1;
   const XMMRegister vec2 = xmm2;
 
-  __ vectorized_mismatch(obja, objb, length, scale, result, tmp1, tmp2, vec0, vec1, vec2);
+  {
+    UnsafeMemoryAccessMark umam(this, true, true);
+    __ vectorized_mismatch(obja, objb, length, scale, result, tmp1, tmp2, vec0, vec1, vec2);
+  }
 
   __ vzeroupper();
   __ leave();
   __ ret(0);
 
   // record the stub entry and end
-  store_archive_data(stub_id, start, __ pc());
+  retrieve_unsafe_access_handlers(start, __ pc(), extras);
+  store_archive_data(stub_id, start, __ pc(), nullptr, &extras);
 
   return start;
 }
@@ -4736,7 +4744,7 @@ void StubGenerator::generate_initial_stubs() {
 
   // Initialize table for unsafe copy memeory check.
   if (UnsafeMemoryAccess::_table == nullptr) {
-    UnsafeMemoryAccess::create_table(16 + 4); // 16 for copyMemory; 4 for setMemory
+    UnsafeMemoryAccess::create_table(16 + 4 + 1); // copyMemory, setMemory, vectorizedMismatch
   }
 
   // entry points that exist in all platforms Note: This is code
