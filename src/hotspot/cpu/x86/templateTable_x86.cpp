@@ -626,15 +626,18 @@ void TemplateTable::iload_internal(RewriteControl rc) {
 }
 
 #ifdef AMD64
-// This opcode exists only at the proven String.encodeUTF8_UTF16 BCI 37.
+// This opcode exists only at the proven String.encodeUTF8_UTF16 BCI 35.
 // No Java bytecode, allocation, call frame, compiler policy or BCI is changed.
 void TemplateTable::string_utf8_cold() {
-  transition(vtos, itos);
+  transition(vtos, vtos);
+  // Complete the required astore 6 before deciding optional admission. The
+  // destination remains rooted in its original local at every dispatch poll.
+  __ pop_ptr(rax);
+  __ movptr(aaddress(6), rax);
   Label ordinary;
-  // Reuse the original iload value on every fallback. Bulk and initialized
-  // work decline before the instrumentation/profile checks.
-  __ movl(rax, iaddress(4));
+  // Bulk and initialized work decline before the instrumentation/profile checks.
   if (RewriteBytecodes) {
+    __ movl(rax, iaddress(4));
     __ cmpl(rax, 512);
     __ jcc(Assembler::aboveEqual, ordinary);
     __ movptr(rbx, (intptr_t)TmfyStringCoding::initialized_address());
@@ -652,7 +655,7 @@ void TemplateTable::string_utf8_cold() {
       __ cmpptr(Address(rbp, frame::interpreter_frame_mdp_offset * wordSize), 0);
       __ jcc(Assembler::notEqual, ordinary);
     }
-    // The operand stack is empty and dst was allocated at BCI 33. A null MDP
+    // The operand stack is empty after storing dst. A null MDP
     // means there are no branch cells or data-pointer updates to synthesize.
     // Advance bcp before the dispatch safepoint check, with the normal vtos map.
     __ dispatch_next(vtos, TmfyStringCoding::utf16_encode_java_bci -
@@ -660,7 +663,7 @@ void TemplateTable::string_utf8_cold() {
   }
   __ bind(ordinary);
   // Do not quicken again: this bytecode may live in an archived RO ConstMethod.
-  __ dispatch_next(itos, Bytecodes::length_for(Bytecodes::_iload));
+  __ dispatch_next(vtos, Bytecodes::length_for(Bytecodes::_astore));
 }
 
 #endif // AMD64

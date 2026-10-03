@@ -412,7 +412,7 @@ void Rewriter::scan_method(Thread* thread, Method* method, bool reverse, bool* i
     switch (c) {
       case Bytecodes::_string_utf8_cold:
         assert(reverse, "only undo a previously proven origin rewrite");
-        *bcp = Bytecodes::_iload;
+        *bcp = Bytecodes::_astore;
         break;
       case Bytecodes::_lookupswitch   : {
 #ifndef ZERO

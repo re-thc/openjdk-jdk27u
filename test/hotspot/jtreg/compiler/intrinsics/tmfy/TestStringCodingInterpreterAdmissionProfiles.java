@@ -59,8 +59,8 @@ public class TestStringCodingInterpreterAdmissionProfiles {
         check(!ready.getBoolean(null), "converter is already ready");
         check(wb.getMethodData(origin) == 0, "startup allocated an origin MDO");
         String bytecodes = wb.printMethods("java.lang.String", "encodeUTF8_UTF16", 0x3);
-        String opcode = rewrite ? "string_utf8_cold" : "iload";
-        check(Pattern.compile("(?m)^\\s*37\\s+" + opcode + "(?:\\s|$)").matcher(bytecodes).find(),
+        String opcode = rewrite ? "string_utf8_cold" : "astore";
+        check(Pattern.compile("(?m)^\\s*35\\s+" + opcode + "(?:\\s|$)").matcher(bytecodes).find(),
                 "unexpected raw admission opcode, rewrite=" + rewrite + "\n" + bytecodes);
         check(rewrite || !bytecodes.contains("string_utf8_cold"), "rewrite-disabled origin contains cold marker");
         // Execute the cold origin first, before allocating its first MDO. The

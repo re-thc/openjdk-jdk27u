@@ -157,9 +157,9 @@ public class TestStringCodingInterpreterAdmission {
             check(wb.isSharedClass(String.class) && wb.isSharedClass(ready.getDeclaringClass()),
                     "String and StringCoding must come from the archive");
             // The raw archived marker survives even when runtime rewriting is
-            // disabled; the template must then execute the ordinary iload.
+            // disabled; the template must then execute the ordinary astore.
             String bytecodes = wb.printMethods("java.lang.String", "encodeUTF8_UTF16", 0x3);
-            check(Pattern.compile("(?m)^\\s*37\\s+string_utf8_cold(?:\\s|$)").matcher(bytecodes).find(),
+            check(Pattern.compile("(?m)^\\s*35\\s+string_utf8_cold(?:\\s|$)").matcher(bytecodes).find(),
                     "archive did not retain the cold admission marker\n" + bytecodes);
         }
         check(!ready.getBoolean(null), "converter initialized before the first test conversion");

@@ -498,10 +498,10 @@ void TemplateTable::initialize() {
 
   def(Bytecodes::_shouldnotreachhere   , ____|____|____|____, vtos, vtos, shouldnotreachhere ,  _           );
 #ifdef AMD64
-  def(Bytecodes::_string_utf8_cold     , ubcp|disp|____|____, vtos, itos, string_utf8_cold   ,  _           );
+  def(Bytecodes::_string_utf8_cold     , ubcp|disp|____|____, vtos, vtos, string_utf8_cold   ,  _           );
 #else
   // Only AMD64 emits this origin rewrite. Keep an ordinary portable template.
-  def(Bytecodes::_string_utf8_cold     , ubcp|____|____|____, vtos, itos, nofast_iload       ,  _           );
+  def(Bytecodes::_string_utf8_cold     , ubcp|____|____|____, vtos, vtos, astore             ,  _           );
 #endif
 }
 

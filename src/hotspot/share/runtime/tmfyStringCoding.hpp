@@ -30,7 +30,7 @@ class Method;
 class TmfyStringCoding : AllStatic {
  public:
   enum Counter { leaf_calls, jni_calls, rejections, counter_count };
-  enum { utf16_encode_admission_bci = 37, utf16_encode_java_bci = 162 };
+  enum { utf16_encode_admission_bci = 35, utf16_encode_java_bci = 162 };
   // Called once by Rewriter, before constant-pool operands are rewritten.
   static bool can_rewrite_cold_utf16_encode(Method* method);
   static bool is_intrinsic(vmIntrinsics::ID id);

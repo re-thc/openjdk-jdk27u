@@ -570,7 +570,7 @@ static void rewrite_bytecodes(const methodHandle& method) {
   while (!bcs.is_last_bytecode()) {
     Bytecodes::Code opcode = bcs.next();
     // This marker never rewrites itself and checks live readiness, profiling
-    // and tooling state. Retain it in RO archives; Java/CI still see iload.
+    // and tooling state. Retain it in RO archives; Java/CI still see astore.
     if (bcs.raw_code() == Bytecodes::_string_utf8_cold) continue;
     // Use current opcode as the default value of new_code
     new_code = opcode;
