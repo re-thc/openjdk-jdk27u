@@ -3817,11 +3817,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      * starts; the existing node chain still handles the full match.
      */
     static final class StartBmp extends Start {
-        final int firstChar;
-
         StartBmp(Node node) {
             super(node);
-            firstChar = ((Slice) node).buffer[0];
         }
 
         boolean match(Matcher matcher, int i, CharSequence seq) {
@@ -3839,8 +3836,11 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 return true;
             }
             i++;
-            if (guard - i >= 64 && seq instanceof String str &&
-                    str.charAt(i) != firstChar) {
+            if (guard - i >= 64 && seq instanceof String str) {
+                int firstChar = ((Slice) next).buffer[0];
+                if (str.charAt(i) == firstChar) {
+                    return super.match(matcher, i, seq);
+                }
                 while (i <= guard) {
                     int start = str.indexOf(firstChar, i, guard + 1);
                     if (start < 0) {
