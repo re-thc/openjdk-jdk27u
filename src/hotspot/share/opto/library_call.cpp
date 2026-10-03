@@ -6771,7 +6771,11 @@ bool LibraryCallKit::inline_vectorizedMismatch(int predicate) {
       Node* index = _gvn.transform(new CountTrailingZerosLNode(difference));
       index = _gvn.transform(new RShiftINode(index, intcon(3)));
       exit_block->init_req(inline_path, early);
-      memory_phi->init_req(inline_path, map()->memory());
+      Node* prefix_memory = reset_memory();
+      memory_phi->init_req(inline_path, prefix_memory);
+      // Isolate the early return from subsequent mutation of the stub arm's
+      // MergeMem by its TLS store and wide-memory call.
+      set_all_memory(prefix_memory);
       result_phi->init_req(inline_path, index);
     }
 
