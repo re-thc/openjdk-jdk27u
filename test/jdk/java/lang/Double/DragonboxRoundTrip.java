@@ -72,6 +72,17 @@ public class DragonboxRoundTrip {
             }
         }
     }
+    private static void canary(Class<?> c, Class<?> type, Object value, int capacity) throws Exception {
+        Method m = c.getDeclaredMethod("toShortestDecimal", byte[].class, type);
+        m.setAccessible(true);
+        byte[] destination = new byte[capacity + 32];
+        java.util.Arrays.fill(destination, (byte) 0x5a);
+        int length = (int) m.invoke(null, destination, value);
+        if (length < 1 || length > capacity) throw new AssertionError("native output length");
+        for (int i = length; i < destination.length; i++) {
+            if (destination[i] != (byte) 0x5a) throw new AssertionError("native output overrun");
+        }
+    }
     public static void main(String[] args) throws Exception {
         Class<?> dc = Class.forName("jdk.internal.math.DoubleToDecimal");
         Method enabled = dc.getDeclaredMethod("isNativeFormattingEnabled");
@@ -80,7 +91,6 @@ public class DragonboxRoundTrip {
         if (nativeEnabled) {
             text("5E-324", Double.toString(Double.MIN_VALUE));
             text("1E-45", Float.toString(Float.MIN_VALUE));
-            text("1.234E0", Double.toString(1.234));
         } else {
             text("4.9E-324", Double.toString(Double.MIN_VALUE));
             text("1.4E-45", Float.toString(Float.MIN_VALUE));
@@ -94,8 +104,9 @@ public class DragonboxRoundTrip {
         text("-Infinity", Float.toString(Float.NEGATIVE_INFINITY));
         text("4.9E-324", new StringBuilder().append(Double.MIN_VALUE).toString());
         text("1.4E-45", new StringBuilder().append(Float.MIN_VALUE).toString());
-        text(nativeEnabled ? "1E0" : "1.0", Double.toString(1.0));
-        text(nativeEnabled ? "1E0" : "1.0", Float.toString(1.0f));
+        text("1.234", Double.toString(1.234));
+        text("1.0", Double.toString(1.0));
+        text("1.0", Float.toString(1.0f));
         for (long b = 1; b <= 65536; b++) {
             check(Double.longBitsToDouble(b)); check(-Double.longBitsToDouble(b));
             check(Float.intBitsToFloat((int)b)); check(-Float.intBitsToFloat((int)b));
@@ -114,6 +125,10 @@ public class DragonboxRoundTrip {
         }
         bounds(dc, double.class, 1.234, 24);
         bounds(Class.forName("jdk.internal.math.FloatToDecimal"), float.class, 1.234f, 15);
-        System.out.println("roundtrip/special/append/bounds passed; native=" + nativeEnabled);
+        if (nativeEnabled) {
+            canary(dc, double.class, Double.MIN_VALUE, 24);
+            canary(Class.forName("jdk.internal.math.FloatToDecimal"), float.class, Float.MIN_VALUE, 15);
+        }
+        System.out.println("roundtrip/special/append/bounds/canary passed; native=" + nativeEnabled);
     }
 }

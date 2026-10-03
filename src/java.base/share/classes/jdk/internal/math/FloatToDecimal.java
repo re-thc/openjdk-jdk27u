@@ -153,6 +153,12 @@ public final class FloatToDecimal extends ToDecimal {
     @IntrinsicCandidate
     private static native int toShortestDecimal(byte[] destination, float value);
 
+    // This range contains the upstream integer fast path too. Native
+    // scientific notation can increase String allocation in the plain range.
+    private static boolean useNativeFormatting(int magnitude) {
+        return magnitude < 0x3a83126f || 0x4b189680 <= magnitude;
+    }
+
     /**
      * Returns a string representation of the {@code float}
      * argument. All characters mentioned below are ASCII characters.
@@ -171,7 +177,7 @@ public final class FloatToDecimal extends ToDecimal {
             return special((bits & T_MASK) != 0 ? NAN : bits > 0 ? PLUS_INF : MINUS_INF);
         }
         byte[] str = new byte[MAX_CHARS];
-        int pair = NATIVE_FORMATTING
+        int pair = NATIVE_FORMATTING && useNativeFormatting(magnitude)
                 ? toShortestDecimal(str, v)
                 : LATIN1.toDecimal(str, 0, v);
         int type = pair & 0xFF00;
@@ -185,7 +191,9 @@ public final class FloatToDecimal extends ToDecimal {
     /**
      * Appends the rendering of the {@code v} to {@code str}.
      *
-     * <p>The outcome is the same as if {@code v} were first
+     * <p>This retains the upstream canonical text policy. In this fork,
+     * qualified public toString values can instead use library scientific text.
+     * The upstream outcome is the same as if {@code v} were first
      * {@link #toString(float) rendered} and the resulting string were then
      *
      * @param str the String byte array to append to

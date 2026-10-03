@@ -153,6 +153,17 @@ public final class DoubleToDecimal extends ToDecimal {
     @IntrinsicCandidate
     private static native int toShortestDecimal(byte[] destination, double value);
 
+    // Keep the upstream plain-format range and its integer fast path. Native
+    // scientific notation can increase String allocation in the plain range.
+    private static boolean useNativeFormatting(long magnitude) {
+        if (0x3f50624dd2f1a9fcL <= magnitude && magnitude < 0x416312d000000000L) {
+            return false;  // 1e-3 <= abs(v) < 1e7
+        }
+        int shift = 1075 - (int) (magnitude >>> 52);
+        return !(0 < shift && shift < P
+                && (magnitude & ((1L << shift) - 1)) == 0);
+    }
+
     /**
      * Returns a string representation of the {@code double}
      * argument. All characters mentioned below are ASCII characters.
@@ -171,7 +182,7 @@ public final class DoubleToDecimal extends ToDecimal {
             return special((bits & T_MASK) != 0 ? NAN : bits > 0 ? PLUS_INF : MINUS_INF);
         }
         byte[] str = new byte[MAX_CHARS];
-        int pair = NATIVE_FORMATTING
+        int pair = NATIVE_FORMATTING && useNativeFormatting(magnitude)
                 ? toShortestDecimal(str, v)
                 : LATIN1.toDecimal(str, 0, v, null);
         int type = pair & 0xFF00;
@@ -183,7 +194,7 @@ public final class DoubleToDecimal extends ToDecimal {
     }
 
     /**
-     * Splits the decimal <i>d</i> described in
+     * Splits the upstream canonical decimal <i>d</i> described in
      * {@link Double#toString(double)} in integers <i>f</i> and <i>e</i>
      * such that <i>d</i> = <i>f</i> 10<sup><i>e</i></sup>.
      *
@@ -207,7 +218,9 @@ public final class DoubleToDecimal extends ToDecimal {
     /**
      * Appends the rendering of the {@code v} to {@code str}.
      *
-     * <p>The outcome is the same as if {@code v} were first
+     * <p>This retains the upstream canonical text policy. In this fork,
+     * qualified public toString values can instead use library scientific text.
+     * The upstream outcome is the same as if {@code v} were first
      * {@link #toString(double) rendered} and the resulting string were then
      *
      * @param str the String byte array to append to
