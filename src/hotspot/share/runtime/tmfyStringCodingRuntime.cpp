@@ -40,8 +40,9 @@
 Atomic<jlong> TmfyStringCoding::_counters[TmfyStringCoding::counter_count];
 Atomic<uint8_t> TmfyStringCoding::_initialized{0};
 
-// This proof runs before Rewriter changes constant-pool indexes. Keep the
-// admitted prefix identical to ciStringUtf8's existing compiler-origin proof.
+// This proof runs before Rewriter changes constant-pool indexes. The optional
+// region matches ciStringUtf8's compiler-origin proof; also prove the initial
+// loop comparison executed by the cold interpreter template.
 // There is no class resolution, initialization or per-call VM transition here.
 bool TmfyStringCoding::can_rewrite_cold_utf16_encode(Method* method) {
 #if defined(AMD64) && !defined(ZERO)
