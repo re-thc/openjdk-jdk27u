@@ -514,7 +514,11 @@ public final class UTF_8 extends Unicode {
             // Small and tight-output requests retain the scalar path. Each
             // native call snapshots at most 2048 code units; this Java backedge
             // is an ordinary safepointing loop between bounded leaf calls.
+            // Initialize only for bulk work. A direct readiness read retains
+            // the warm threshold without charging smaller first calls for
+            // backend selection and native registration.
             if (sl - sp >= 128 && dl - dp >= 384 &&
+                    (sl - sp >= 1024 || utf8Ready) &&
                     useNativeEncoder() && utf8Ready()) {
                 while (sl - sp >= 128 && dl - dp >= 384) {
                     int count = Math.min(Math.min(sl - sp, 2048), (dl - dp) / 3);

@@ -30,7 +30,7 @@ final class CharsetEncoderTestSupport {
     static final String NATIVE_TYPE = "([CII[BII)I";
     static final int LEAF = 3;
     static final int JNI = 4;
-    static final int UNITS = 256;
+    static final int UNITS = 1024;
     static final byte SENTINEL = 0x5a;
     static final Class<?> TYPE;
     static final Method READY;
