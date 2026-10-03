@@ -136,15 +136,19 @@ bool TmfyStringCoding::can_rewrite_cold_utf16_encode(Method* method) {
     Bytecodes::_invokevirtual, 0, 0, // 155
     Bytecodes::_invokespecial, 0, 0, // 158
     Bytecodes::_athrow, // 161
+    Bytecodes::_iload_3, // 162
+    Bytecodes::_iload, 4, // 163
+    Bytecodes::_if_icmpge, 0, 37, // 165
   };
-  static_assert(sizeof(encode_shape) == utf16_encode_java_bci, "String encode admission shape");
+  // Also prove the first loop comparison that the cold template executes.
+  static_assert(sizeof(encode_shape) == utf16_encode_java_bci + 6, "String encode admission and loop shape");
   ConstantPool* cp = method->constants();
   const address bytes = method->code_base();
-  for (int bci = 0; bci < utf16_encode_java_bci;) {
+  for (int bci = 0; bci < (int)sizeof(encode_shape);) {
     Bytecodes::Code code = static_cast<Bytecodes::Code>(bytes[bci]);
     if (code != encode_shape[bci]) return false;
     int length = Bytecodes::length_for(code);
-    if (length <= 0 || bci + length > utf16_encode_java_bci) return false;
+    if (length <= 0 || bci + length > (int)sizeof(encode_shape)) return false;
     if (Bytecodes::is_invoke(code) || code == Bytecodes::_getstatic) {
       int index = Bytes::get_Java_u2(bytes + bci + 1);
       if (index <= 0 || index >= cp->length() ||
@@ -238,6 +242,10 @@ bool TmfyStringCoding::initialize() {
   // Other platforms use the portable engine until their VM/OS ISA policy has
   // been audited. Ordinary JNI remains available without borrowed pointers.
   if (tmfy_runtime_initialize_with_isa(mask) != 0) return false;
+  // The interpreter tests this single sufficient cold proof, rather than
+  // loading backend and tooling state from separate cache lines. Publish
+  // closure first; false never needs to prove Java registration complete.
+  TmfyStringCodingTooling::close_cold_admission();
   _initialized.release_store(1);
   return true;
 }

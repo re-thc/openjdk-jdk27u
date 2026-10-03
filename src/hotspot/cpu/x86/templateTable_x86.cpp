@@ -640,12 +640,9 @@ void TemplateTable::string_utf8_cold() {
     __ movl(rax, iaddress(4));
     __ cmpl(rax, 512);
     __ jcc(Assembler::aboveEqual, ordinary);
-    __ movptr(rbx, (intptr_t)TmfyStringCoding::initialized_address());
-    __ cmpb(Address(rbx, 0), 0);
-    __ jcc(Assembler::notEqual, ordinary);
-    // The false backend state is only a sufficient cold proof. In particular,
-    // true does not prove this Java owner's native registration is complete.
-    __ movptr(rbx, (intptr_t)TmfyStringCodingTooling::cold_admission_revoked_address());
+    // Closure combines backend initialization with tooling revocation. A
+    // false observation is sufficient to skip optional small native work.
+    __ movptr(rbx, (intptr_t)TmfyStringCodingTooling::cold_admission_closed_address());
     __ cmpb(Address(rbx, 0), 0);
     __ jcc(Assembler::notEqual, ordinary);
     __ movptr(rbx, (intptr_t)&DTraceMethodProbes);
@@ -655,10 +652,17 @@ void TemplateTable::string_utf8_cold() {
       __ cmpptr(Address(rbp, frame::interpreter_frame_mdp_offset * wordSize), 0);
       __ jcc(Assembler::notEqual, ordinary);
     }
-    // The operand stack is empty after storing dst. A null MDP
-    // means there are no branch cells or data-pointer updates to synthesize.
-    // Advance bcp before the dispatch safepoint check, with the normal vtos map.
-    __ dispatch_next(vtos, TmfyStringCoding::utf16_encode_java_bci -
+    // A null MDP leaves no branch cells or data-pointer updates to synthesize.
+    // The proven prefix leaves sp == 0. Execute the first loop comparison here,
+    // with its original empty-stack continuation, rather than dispatching the
+    // two loads and branch separately. No character helper is bypassed.
+    Label empty;
+    __ testl(rax, rax);
+    __ jcc(Assembler::zero, empty);
+    __ dispatch_next(vtos, TmfyStringCoding::utf16_encode_java_bci + 6 -
+                          TmfyStringCoding::utf16_encode_admission_bci);
+    __ bind(empty);
+    __ dispatch_next(vtos, TmfyStringCoding::utf16_encode_java_bci + 40 -
                           TmfyStringCoding::utf16_encode_admission_bci);
   }
   __ bind(ordinary);

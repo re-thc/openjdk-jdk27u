@@ -30,7 +30,7 @@
 #include "runtime/vmThread.hpp"
 
 Atomic<uint8_t> TmfyStringCodingTooling::_revoked{0};
-Atomic<uint8_t> TmfyStringCodingTooling::_cold_admission_revoked{0};
+Atomic<uint8_t> TmfyStringCodingTooling::_cold_admission_closed{0};
 jmethodID TmfyStringCodingTooling::_methods[TmfyStringCodingTooling::kernel_count] = {};
 const JNINativeMethod* TmfyStringCodingTooling::_initial_table = nullptr;
 JavaThread* TmfyStringCodingTooling::_initial_thread = nullptr;
@@ -145,7 +145,7 @@ void TmfyStringCodingTooling::before_unregister(Klass* klass) {
 
 void TmfyStringCodingTooling::revoke_cold_admission() {
 #if defined(AMD64) && !defined(ZERO)
-  _cold_admission_revoked.release_store(1);
+  close_cold_admission();
   if (!Universe::is_fully_initialized() || VMThread::vm_thread() == nullptr ||
       !VMThread::vm_thread()->is_running()) return;
   assert(JavaThread::current()->thread_state() == _thread_in_vm, "VM state required");

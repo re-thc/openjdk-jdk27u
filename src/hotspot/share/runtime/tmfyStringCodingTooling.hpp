@@ -34,9 +34,9 @@ class TmfyStringCodingTooling : AllStatic {
   enum { TMFY_KERNELS_DO(TMFY_SLOT) kernel_count };
 #undef TMFY_SLOT
   static Atomic<uint8_t> _revoked;
-  // Interpreter-origin admission has stricter observability requirements than
-  // the native leaves. Its revocation does not disable compiler/native support.
-  static Atomic<uint8_t> _cold_admission_revoked;
+  // Cold admission closes on backend initialization or stricter tooling
+  // observation. Closing it does not disable compiler/native support.
+  static Atomic<uint8_t> _cold_admission_closed;
   // Bootstrap classes cannot unload. Stable JNI method IDs also follow class
   // redefinition, unlike retaining unrooted raw Method* values indefinitely.
   static jmethodID _methods[kernel_count];
@@ -53,10 +53,14 @@ class TmfyStringCodingTooling : AllStatic {
     return reinterpret_cast<address>(&_revoked) + _revoked.value_offset_in_bytes();
   }
 
-  static address cold_admission_revoked_address() {
-    return reinterpret_cast<address>(&_cold_admission_revoked) +
-           _cold_admission_revoked.value_offset_in_bytes();
+  static address cold_admission_closed_address() {
+    return reinterpret_cast<address>(&_cold_admission_closed) +
+           _cold_admission_closed.value_offset_in_bytes();
   }
+  // Closing on initialization needs no drain: an earlier cold observation
+  // may keep optional native admission skipped, just as before publication.
+  static void close_cold_admission() { _cold_admission_closed.release_store(1); }
+
   // Publish before JVMTI capabilities/events; drain each concurrent enabler.
   // Safe during Agent_OnLoad, before Thread::current/Universe exist.
   static void revoke_cold_admission();
