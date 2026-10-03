@@ -626,7 +626,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_bigIntegerShift(false);
 
   case vmIntrinsics::_vectorizedMismatch:
-    return inline_vectorizedMismatch();
+    return inline_vectorizedMismatch(predicate);
 
   case vmIntrinsics::_ghash_processBlocks:
     return inline_ghash_processBlocks();
@@ -807,6 +807,8 @@ Node* LibraryCallKit::try_to_predicate(int predicate) {
   assert(merged_memory(), "");
 
   switch (intrinsic_id()) {
+  case vmIntrinsics::_vectorizedMismatch:
+    return inline_vectorizedMismatch_predicate(predicate);
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
     return inline_cipherBlockChaining_AESCrypt_predicate(false);
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
@@ -6576,7 +6578,55 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
 }
 
 //-------------inline_vectorizedMismatch------------------------------
-bool LibraryCallKit::inline_vectorizedMismatch() {
+static constexpr int max_native_mismatch_size = 1 << 20;
+
+Node* LibraryCallKit::inline_vectorizedMismatch_predicate(int predicate) {
+  Node* obja = argument(0);
+  Node* objb = argument(3);
+  if (predicate == 0) {
+    // Retain the existing intrinsic decisions for typed heap arrays.
+    const TypeAryPtr* a = _gvn.type(obja)->isa_aryptr();
+    const TypeAryPtr* b = _gvn.type(objb)->isa_aryptr();
+    if (a != nullptr && a->elem() != Type::BOTTOM &&
+        b != nullptr && b->elem() != Type::BOTTOM && argument(7) != top()) {
+      return nullptr;
+    }
+    Node* slow = control();
+    set_control(top());
+    return slow;
+  }
+
+  assert(predicate >= 1 && predicate <= 3, "unexpected predicate");
+  RegionNode* slow = new RegionNode(1);
+  Node* bases[] = { obja, objb };
+  for (int i = 0; i < 2 && !stopped(); i++) {
+    const bool native_base = predicate == 1 || (predicate == 2 ? i == 0 : i == 1);
+    if (native_base) {
+      Node* cmp = _gvn.transform(new CmpPNode(bases[i], null()));
+      generate_guard(_gvn.transform(new BoolNode(cmp, BoolTest::ne)), slow, PROB_MIN);
+    } else {
+      // A generic heap partner is conservatively limited to byte arrays.
+      Node* klass = makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_BYTE)));
+      Node* instance = gen_instanceof(bases[i], klass);
+      Node* cmp = _gvn.transform(new CmpINode(instance, intcon(1)));
+      generate_guard(_gvn.transform(new BoolNode(cmp, BoolTest::ne)), slow, PROB_MIN);
+    }
+  }
+  if (!stopped()) {
+    Node* cmp = _gvn.transform(new CmpINode(argument(7), intcon(0)));
+    generate_guard(_gvn.transform(new BoolNode(cmp, BoolTest::ne)), slow, PROB_MIN);
+  }
+  if (!stopped()) {
+    // One unsigned check accepts only [8, 1 MiB]. Larger scans keep the
+    // original safepointing Java fallback, and zero-length scans read nothing.
+    Node* size = _gvn.transform(new SubINode(argument(6), intcon(8)));
+    Node* cmp = _gvn.transform(new CmpUINode(size, intcon(max_native_mismatch_size - 8)));
+    generate_guard(_gvn.transform(new BoolNode(cmp, BoolTest::gt)), slow, PROB_MIN);
+  }
+  return slow->req() > 1 ? _gvn.transform(slow) : nullptr;
+}
+
+bool LibraryCallKit::inline_vectorizedMismatch(int predicate) {
   assert(UseVectorizedMismatchIntrinsic, "not implemented on this platform");
 
   assert(callee()->signature()->size() == 8, "vectorizedMismatch has 6 parameters");
@@ -6587,25 +6637,25 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   Node* length  = argument(6); // int
   Node* scale   = argument(7); // int
 
+  const bool native_access = predicate != 0;
+  const bool native_a = native_access && predicate != 3;
+  const bool native_b = native_access && predicate != 2;
+  if (native_access) {
+    // Predicate casts are local to the fast path: the fallback argument map
+    // must retain the original generic bases and unrestricted length.
+    const TypePtr* bytes = TypeAryPtr::BYTES->cast_to_ptr_type(TypePtr::NotNull);
+    obja = native_a ? null() : _gvn.transform(new CheckCastPPNode(control(), obja, bytes));
+    objb = native_b ? null() : _gvn.transform(new CheckCastPPNode(control(), objb, bytes));
+    length = _gvn.transform(new CastIINode(control(), length,
+                           TypeInt::make(8, max_native_mismatch_size, Type::WidenMin)));
+    scale = intcon(0);
+  }
   const TypeAryPtr* obja_t = _gvn.type(obja)->isa_aryptr();
   const TypeAryPtr* objb_t = _gvn.type(objb)->isa_aryptr();
-  const bool native_a = _gvn.type(obja) == TypePtr::NULL_PTR;
-  const bool native_b = _gvn.type(objb) == TypePtr::NULL_PTR;
-  const bool native_access = native_a || native_b;
   if ((!native_a && (obja_t == nullptr || obja_t->elem() == Type::BOTTOM)) ||
       (!native_b && (objb_t == nullptr || objb_t->elem() == Type::BOTTOM)) ||
       scale == top()) {
     return false; // failed input validation
-  }
-  if (native_access) {
-    // Native leaf calls must be nonempty and bounded. In particular, do not
-    // intrinsify the large, safepointing fallback in SegmentBulkOperations.
-    const TypeInt* length_t = _gvn.type(length)->isa_int();
-    const TypeInt* scale_t = _gvn.type(scale)->isa_int();
-    if (length_t == nullptr || length_t->_lo <= 0 || length_t->_hi > (1 << 20) ||
-        scale_t == nullptr || !scale_t->is_con() || scale_t->get_con() != 0) {
-      return false;
-    }
   }
 
   Node* obja_adr = make_unsafe_address(obja, aoffset);
@@ -6698,6 +6748,26 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
 
   if (call_stub_path != nullptr) {
     set_control(call_stub_path);
+
+    if (native_access) {
+      // Replace the first word read by the Java fallback through the usual
+      // scoped unsafe-load lowering. Early differences avoid the stub and
+      // its TLS stores. Retain the full length for its existing SIMD tiers.
+      DecoratorSet decorators = MO_UNORDERED | C2_UNSAFE_ACCESS | C2_UNALIGNED |
+                                C2_CONTROL_DEPENDENT_LOAD;
+      Node* first = access_load_at(obja, obja_adr, _gvn.type(obja_adr)->is_ptr(), TypeLong::LONG,
+                                  T_LONG, decorators | (native_a ? IN_NATIVE : IN_HEAP | C2_MISMATCHED));
+      Node* second = access_load_at(objb, objb_adr, _gvn.type(objb_adr)->is_ptr(), TypeLong::LONG,
+                                   T_LONG, decorators | (native_b ? IN_NATIVE : IN_HEAP | C2_MISMATCHED));
+      Node* difference = _gvn.transform(new XorLNode(first, second));
+      Node* cmp = _gvn.transform(new CmpLNode(difference, longcon(0)));
+      Node* early = generate_guard(_gvn.transform(new BoolNode(cmp, BoolTest::ne)), nullptr, PROB_MIN);
+      Node* index = _gvn.transform(new CountTrailingZerosLNode(difference));
+      index = _gvn.transform(new RShiftINode(index, intcon(3)));
+      exit_block->init_req(inline_path, early);
+      memory_phi->init_req(inline_path, map()->memory());
+      result_phi->init_req(inline_path, index);
+    }
 
     Node* doing_unsafe_access_addr = nullptr;
     if (native_access) {
