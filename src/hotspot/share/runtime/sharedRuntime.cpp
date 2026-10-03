@@ -323,6 +323,13 @@ void SharedRuntime::debug_print_value(oopDesc* x) {
 
 
 #ifdef USE_LIBDEFLATE
+void SharedRuntime::initialize_libdeflate() {
+  // Feature detection may perform system calls on some platforms. Resolve it
+  // in VM/compiler context, before any leaf receives a raw Java array address.
+  unsigned char empty = 0;
+  ::libdeflate_adler32(1, &empty, 0);
+}
+
 JRT_LEAF(jint, SharedRuntime::libdeflate_adler32(jint adler, address bytes, jint length))
   assert(length >= 0, "Adler32 caller must check the range");
   // A jint argument need not have zeroed upper bits in a machine register.

@@ -170,6 +170,7 @@ class SharedRuntime: AllStatic {
   static jdouble dpow(jdouble x, jdouble y);
 
 #ifdef USE_LIBDEFLATE
+  static void initialize_libdeflate();
   static jint libdeflate_adler32(jint adler, address bytes, jint length);
 #endif
 

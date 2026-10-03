@@ -6967,8 +6967,7 @@ Node* LibraryCallKit::updateBytesAdler32(Node* adler, Node* src_start, Node* len
   if (length_type != nullptr && length_type->_lo >= 512) {
     // Resolve the library's CPU dispatch on the compiler thread, before a leaf
     // can receive a raw Java array address. This also avoids first-call latency.
-    unsigned char empty = 0;
-    SharedRuntime::libdeflate_adler32(1, &empty, 0);
+    SharedRuntime::initialize_libdeflate();
     stubAddr = CAST_FROM_FN_PTR(address, SharedRuntime::libdeflate_adler32);
     stubName = "libdeflateAdler32";
   }
