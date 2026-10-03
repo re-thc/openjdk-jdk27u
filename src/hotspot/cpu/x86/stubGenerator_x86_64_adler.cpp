@@ -81,6 +81,8 @@ address StubGenerator::generate_updateBytesAdler32() {
   // results does not overflow Integer.MAX_VALUE before modulo operations.
   const int LIMIT = 5552;
   const int BASE = 65521;
+  // For every unsigned 32-bit n, floor(n / BASE) = (n * RECIPROCAL) >> 47.
+  const uint32_t RECIPROCAL = 0x80078071;
   const int CHUNKSIZE =  16;
   const int CHUNKSIZE_M1 = CHUNKSIZE - 1;
 
@@ -118,6 +120,16 @@ address StubGenerator::generate_updateBytesAdler32() {
 
   Label SLOOP1, SLOOP1A_AVX2, SLOOP1A_AVX3, AVX3_REDUCE, SKIP_LOOP_1A;
   Label SKIP_LOOP_1A_AVX3, FINISH, LT64, DO_FINAL, FINAL_LOOP, ZERO_SIZE, END;
+
+  // rcx holds the reciprocal. Zero-extend the sum before the 64-bit product;
+  // the upper checksum sum can exceed INT_MAX within a LIMIT-sized block.
+  auto mod_base = [&](Register sum) {
+    __ movl(rax, sum);
+    __ imulq(rax, rcx);
+    __ shrq(rax, 47);
+    __ imull(rax, rax, BASE);
+    __ subl(sum, rax);
+  };
 
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
@@ -267,18 +279,12 @@ address StubGenerator::generate_updateBytesAdler32() {
   // either we're done, or we just did LIMIT
   __ subl(size, s);
 
-  __ movdl(rax, xa);
-  __ xorl(rdx, rdx);
-  __ movl(rcx, BASE);
-  __ divl(rcx); // divide edx:eax by ecx, quot->eax, rem->edx
-  __ movl(a_d, rdx);
-
+  __ movdl(a_d, xa);
   __ movdl(rax, xb);
-  __ addl(rax, b_d);
-  __ xorl(rdx, rdx);
-  __ movl(rcx, BASE);
-  __ divl(rcx); // divide edx:eax by ecx, quot->eax, rem->edx
-  __ movl(b_d, rdx);
+  __ addl(b_d, rax);
+  __ movl(rcx, (int)RECIPROCAL);
+  mod_base(a_d);
+  mod_base(b_d);
 
   __ testl(size, size);
   __ jcc(Assembler::zero, FINISH);
@@ -316,19 +322,12 @@ address StubGenerator::generate_updateBytesAdler32() {
 
   __ bind(ZERO_SIZE);
 
-  __ movl(rax, a_d);
-  __ xorl(rdx, rdx);
-  __ movl(rcx, BASE);
-  __ divl(rcx); // div ecx -- divide edx:eax by ecx, quot->eax, rem->edx
-  __ movl(a_d, rdx);
-
+  __ movl(rcx, (int)RECIPROCAL);
+  mod_base(a_d);
+  mod_base(b_d);
   __ movl(rax, b_d);
-  __ xorl(rdx, rdx);
-  __ movl(rcx, BASE);
-  __ divl(rcx); // divide edx:eax by ecx, quot->eax, rem->edx
-  __ shll(rdx, 16);
-  __ orl(rdx, a_d);
-  __ movl(rax, rdx);
+  __ shll(rax, 16);
+  __ orl(rax, a_d);
 
   __ bind(END);
 
