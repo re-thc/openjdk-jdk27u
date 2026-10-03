@@ -153,19 +153,6 @@ public final class FloatToDecimal extends ToDecimal {
     @IntrinsicCandidate
     private static native int toShortestDecimal(byte[] destination, float value);
 
-    /* Preserve upstream special values and the existing exact-integer fast path. */
-    private static boolean useNativeFormatting(float v) {
-        int bits = floatToRawIntBits(v);
-        int magnitude = bits & Integer.MAX_VALUE;
-        int bq = magnitude >>> 23;
-        if (magnitude == 0 || bq == 0xff) {
-            return false;
-        }
-        int mq = 150 - bq;
-        int c = C_MIN | (bits & T_MASK);
-        return !(bq != 0 && 0 < mq && mq < P && (c >> mq << mq) == c);
-    }
-
     /**
      * Returns a string representation of the {@code float}
      * argument. All characters mentioned below are ASCII characters.
@@ -175,8 +162,16 @@ public final class FloatToDecimal extends ToDecimal {
      * @see Float#toString(float)
      */
     public static String toString(float v) {
+        int bits = floatToRawIntBits(v);
+        int magnitude = bits & Integer.MAX_VALUE;
+        if (magnitude == 0) {
+            return special(bits == 0 ? PLUS_ZERO : MINUS_ZERO);
+        }
+        if (magnitude >= 0x7f800000) {
+            return special((bits & T_MASK) != 0 ? NAN : bits > 0 ? PLUS_INF : MINUS_INF);
+        }
         byte[] str = new byte[MAX_CHARS];
-        int pair = NATIVE_FORMATTING && useNativeFormatting(v)
+        int pair = NATIVE_FORMATTING
                 ? toShortestDecimal(str, v)
                 : LATIN1.toDecimal(str, 0, v);
         int type = pair & 0xFF00;

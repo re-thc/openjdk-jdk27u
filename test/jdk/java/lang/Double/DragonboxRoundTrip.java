@@ -94,7 +94,8 @@ public class DragonboxRoundTrip {
         text("-Infinity", Float.toString(Float.NEGATIVE_INFINITY));
         text("4.9E-324", new StringBuilder().append(Double.MIN_VALUE).toString());
         text("1.4E-45", new StringBuilder().append(Float.MIN_VALUE).toString());
-        text("1.0", Double.toString(1.0)); text("1.0", Float.toString(1.0f));
+        text(nativeEnabled ? "1E0" : "1.0", Double.toString(1.0));
+        text(nativeEnabled ? "1E0" : "1.0", Float.toString(1.0f));
         for (long b = 1; b <= 65536; b++) {
             check(Double.longBitsToDouble(b)); check(-Double.longBitsToDouble(b));
             check(Float.intBitsToFloat((int)b)); check(-Float.intBitsToFloat((int)b));

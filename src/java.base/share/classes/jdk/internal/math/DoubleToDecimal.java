@@ -153,19 +153,6 @@ public final class DoubleToDecimal extends ToDecimal {
     @IntrinsicCandidate
     private static native int toShortestDecimal(byte[] destination, double value);
 
-    /* Preserve upstream special values and the existing exact-integer fast path. */
-    private static boolean useNativeFormatting(double v) {
-        long bits = doubleToRawLongBits(v);
-        long magnitude = bits & Long.MAX_VALUE;
-        int bq = (int) (magnitude >>> 52);
-        if (magnitude == 0 || bq == 0x7ff) {
-            return false;
-        }
-        int mq = 1075 - bq;
-        long c = C_MIN | (bits & T_MASK);
-        return !(bq != 0 && 0 < mq && mq < P && (c >> mq << mq) == c);
-    }
-
     /**
      * Returns a string representation of the {@code double}
      * argument. All characters mentioned below are ASCII characters.
@@ -175,8 +162,16 @@ public final class DoubleToDecimal extends ToDecimal {
      * @see Double#toString(double)
      */
     public static String toString(double v) {
+        long bits = doubleToRawLongBits(v);
+        long magnitude = bits & Long.MAX_VALUE;
+        if (magnitude == 0) {
+            return special(bits == 0 ? PLUS_ZERO : MINUS_ZERO);
+        }
+        if (magnitude >= 0x7ff0000000000000L) {
+            return special((bits & T_MASK) != 0 ? NAN : bits > 0 ? PLUS_INF : MINUS_INF);
+        }
         byte[] str = new byte[MAX_CHARS];
-        int pair = NATIVE_FORMATTING && useNativeFormatting(v)
+        int pair = NATIVE_FORMATTING
                 ? toShortestDecimal(str, v)
                 : LATIN1.toDecimal(str, 0, v, null);
         int type = pair & 0xFF00;

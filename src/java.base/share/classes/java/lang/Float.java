@@ -325,8 +325,8 @@ public final class Float extends Number
      * @implNote This fork can use Dragonbox shortest-significand scientific
      * text for qualified finite nonzero values. This intentionally differs from
      * the canonical decimal selection and notation above; parsing the result
-     * preserves the original value. Exact integer fast cases and special values
-     * retain their upstream text. See the fork's dragonbox-formatting document.
+     * preserves the original value. Special values retain their upstream text.
+     * See the fork's dragonbox-formatting document.
      */
     public static String toString(float f) {
         return FloatToDecimal.toString(f);
