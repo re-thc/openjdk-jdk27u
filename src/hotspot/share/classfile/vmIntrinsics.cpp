@@ -29,6 +29,7 @@
 #include "jvm_io.h"
 #include "runtime/vm_version.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/numericFormatting.hpp"
 #include "utilities/tribool.hpp"
 #ifdef COMPILER2
 #include "opto/c2_globals.hpp"
@@ -533,6 +534,10 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_vectorizedMismatch:
     if (!UseVectorizedMismatchIntrinsic) return true;
+    break;
+  case vmIntrinsics::_doubleToShortestDecimal:
+  case vmIntrinsics::_floatToShortestDecimal:
+    if (!UseDragonboxFormatting || !dragonbox_formatting_available()) return true;
     break;
   case vmIntrinsics::_updateBytesAdler32:
   case vmIntrinsics::_updateByteBufferAdler32:

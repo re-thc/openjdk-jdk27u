@@ -28,6 +28,7 @@ m4_include([lib-alsa.m4])
 m4_include([lib-bundled.m4])
 m4_include([lib-cups.m4])
 m4_include([lib-ffi.m4])
+m4_include([lib-dragonbox.m4])
 m4_include([lib-fontconfig.m4])
 m4_include([lib-freetype.m4])
 m4_include([lib-hsdis.m4])
@@ -116,6 +117,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   LIB_SETUP_CUPS
   LIB_SETUP_FONTCONFIG
   LIB_SETUP_FREETYPE
+  LIB_SETUP_DRAGONBOX
   LIB_SETUP_HSDIS
   LIB_SETUP_LIBFFI
   LIB_SETUP_MISC_LIBS

@@ -151,6 +151,15 @@ JNIEXPORT jint JNICALL
 JVM_ActiveProcessorCount(void);
 
 JNIEXPORT jboolean JNICALL
+JVM_IsDragonboxFormattingEnabled(JNIEnv *env);
+
+JNIEXPORT jint JNICALL
+JVM_DoubleToShortestDecimal(JNIEnv *env, jbyteArray destination, jdouble value);
+
+JNIEXPORT jint JNICALL
+JVM_FloatToShortestDecimal(JNIEnv *env, jbyteArray destination, jfloat value);
+
+JNIEXPORT jboolean JNICALL
 JVM_IsUseContainerSupport(void);
 
 JNIEXPORT jboolean JNICALL

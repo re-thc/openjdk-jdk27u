@@ -608,6 +608,11 @@ public final class Double extends Number
      *
      * @param   d   the {@code double} to be converted.
      * @return a string representation of the argument.
+     * @implNote This fork can use Dragonbox shortest-significand scientific
+     * text for qualified finite nonzero values. This intentionally differs from
+     * the canonical decimal selection and notation above; parsing the result
+     * preserves the original value. Exact integer fast cases and special values
+     * retain their upstream text. See the fork's dragonbox-formatting document.
      */
     public static String toString(double d) {
         return DoubleToDecimal.toString(d);

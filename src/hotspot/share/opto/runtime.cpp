@@ -1054,6 +1054,18 @@ static const TypeFunc* make_updateBytesCRC32C_Type() {
   return TypeFunc::make(domain, range);
 }
 
+const TypeFunc* OptoRuntime::floatingToDecimal_Type(bool is_double) {
+  int count = is_double ? 3 : 2;
+  const Type** fields = TypeTuple::fields(count);
+  fields[TypeFunc::Parms] = TypePtr::NOTNULL;
+  fields[TypeFunc::Parms + 1] = is_double ? Type::DOUBLE : Type::FLOAT;
+  if (is_double) fields[TypeFunc::Parms + 2] = Type::HALF;
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + count, fields);
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms] = TypeInt::INT;
+  return TypeFunc::make(domain, TypeTuple::make(TypeFunc::Parms + 1, fields));
+}
+
 static const TypeFunc* make_updateBytesAdler32_Type() {
   // create input type (domain)
   int num_args      = 3;

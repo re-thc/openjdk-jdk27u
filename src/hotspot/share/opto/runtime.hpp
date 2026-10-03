@@ -706,6 +706,8 @@ private:
   /**
    *  int updateBytesAdler32(int adler, bytes* b, int off, int len)
    */
+  static const TypeFunc* floatingToDecimal_Type(bool is_double);
+
   static inline const TypeFunc* updateBytesAdler32_Type() {
     assert(_updateBytesAdler32_Type != nullptr, "should be initialized");
     return _updateBytesAdler32_Type;

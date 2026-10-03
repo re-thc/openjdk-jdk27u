@@ -101,6 +101,7 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/numericFormatting.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
@@ -483,6 +484,40 @@ JVM_END
 
 JVM_ENTRY_NO_ENV(jint, JVM_ActiveProcessorCount(void))
   return os::active_processor_count();
+JVM_END
+
+JVM_LEAF(jboolean, JVM_IsDragonboxFormattingEnabled(JNIEnv* env))
+  return UseDragonboxFormatting && dragonbox_formatting_available();
+JVM_END
+
+JVM_ENTRY(jint, JVM_DoubleToShortestDecimal(JNIEnv* env, jbyteArray destination, jdouble value))
+  if (!dragonbox_formatting_available()) {
+    THROW_0(vmSymbols::java_lang_UnsupportedOperationException());
+  }
+  if (destination == nullptr) {
+    THROW_0(vmSymbols::java_lang_NullPointerException());
+  }
+  typeArrayOop array = typeArrayOop(JNIHandles::resolve_non_null(destination));
+  if (array->length() < 24) {
+    THROW_0(vmSymbols::java_lang_ArrayIndexOutOfBoundsException());
+  }
+  NoSafepointVerifier nsv;
+  return dragonbox_double_to_decimal(array->byte_at_addr(0), value);
+JVM_END
+
+JVM_ENTRY(jint, JVM_FloatToShortestDecimal(JNIEnv* env, jbyteArray destination, jfloat value))
+  if (!dragonbox_formatting_available()) {
+    THROW_0(vmSymbols::java_lang_UnsupportedOperationException());
+  }
+  if (destination == nullptr) {
+    THROW_0(vmSymbols::java_lang_NullPointerException());
+  }
+  typeArrayOop array = typeArrayOop(JNIHandles::resolve_non_null(destination));
+  if (array->length() < 15) {
+    THROW_0(vmSymbols::java_lang_ArrayIndexOutOfBoundsException());
+  }
+  NoSafepointVerifier nsv;
+  return dragonbox_float_to_decimal(array->byte_at_addr(0), value);
 JVM_END
 
 JVM_LEAF(jboolean, JVM_IsUseContainerSupport(void))

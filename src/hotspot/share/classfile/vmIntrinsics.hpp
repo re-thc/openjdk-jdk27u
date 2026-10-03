@@ -637,6 +637,15 @@ class methodHandle;
   do_intrinsic(_updateDirectByteBufferCRC32C, java_util_zip_CRC32C, updateDirectByteBuffer_C_name, updateByteBuffer_signature, F_S) \
    do_name(    updateDirectByteBuffer_C_name,                     "updateDirectByteBuffer")                             \
                                                                                                                         \
+   /* Library-backed public floating-point string formatting. */                                                       \
+  do_class(jdk_internal_math_DoubleToDecimal, "jdk/internal/math/DoubleToDecimal")                                      \
+  do_class(jdk_internal_math_FloatToDecimal, "jdk/internal/math/FloatToDecimal")                                        \
+  do_name(toShortestDecimal_name, "toShortestDecimal")                                                               \
+  do_signature(doubleToShortestDecimal_signature, "([BD)I")                                                          \
+  do_signature(floatToShortestDecimal_signature, "([BF)I")                                                           \
+  do_intrinsic(_doubleToShortestDecimal, jdk_internal_math_DoubleToDecimal, toShortestDecimal_name, doubleToShortestDecimal_signature, F_SN) \
+  do_intrinsic(_floatToShortestDecimal, jdk_internal_math_FloatToDecimal, toShortestDecimal_name, floatToShortestDecimal_signature, F_SN) \
+                                                                                                                       \
    /* support for java.util.zip.Adler32 */                                                                              \
   do_class(java_util_zip_Adler32,        "java/util/zip/Adler32")                                                       \
   do_intrinsic(_updateBytesAdler32,       java_util_zip_Adler32,  updateBytes_C_name,  updateBytes_signature,  F_SN)    \

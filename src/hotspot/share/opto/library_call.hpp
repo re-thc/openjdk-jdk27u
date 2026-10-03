@@ -340,6 +340,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_dilithiumDecomposePoly();
   bool inline_base64_encodeBlock();
   bool inline_base64_decodeBlock();
+  bool inline_floatingToDecimal(bool is_double);
   bool inline_poly1305_processBlocks();
   bool inline_intpoly_montgomeryMult_P256();
   bool inline_intpoly_assign();

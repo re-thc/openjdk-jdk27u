@@ -32,6 +32,7 @@ import static java.lang.Math.multiplyHigh;
 import static jdk.internal.math.MathUtils.*;
 
 import sun.nio.cs.ISO_8859_1;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * This class exposes a method to render a {@code float} as a string.
@@ -145,6 +146,26 @@ public final class FloatToDecimal extends ToDecimal {
         super(latin1);
     }
 
+    private static final boolean NATIVE_FORMATTING = isNativeFormattingEnabled();
+
+    private static native boolean isNativeFormattingEnabled();
+
+    @IntrinsicCandidate
+    private static native int toShortestDecimal(byte[] destination, float value);
+
+    /* Preserve upstream special values and the existing exact-integer fast path. */
+    private static boolean useNativeFormatting(float v) {
+        int bits = floatToRawIntBits(v);
+        int magnitude = bits & Integer.MAX_VALUE;
+        int bq = magnitude >>> 23;
+        if (magnitude == 0 || bq == 0xff) {
+            return false;
+        }
+        int mq = 150 - bq;
+        int c = C_MIN | (bits & T_MASK);
+        return !(bq != 0 && 0 < mq && mq < P && (c >> mq << mq) == c);
+    }
+
     /**
      * Returns a string representation of the {@code float}
      * argument. All characters mentioned below are ASCII characters.
@@ -155,7 +176,9 @@ public final class FloatToDecimal extends ToDecimal {
      */
     public static String toString(float v) {
         byte[] str = new byte[MAX_CHARS];
-        int pair = LATIN1.toDecimal(str, 0, v);
+        int pair = NATIVE_FORMATTING && useNativeFormatting(v)
+                ? toShortestDecimal(str, v)
+                : LATIN1.toDecimal(str, 0, v);
         int type = pair & 0xFF00;
         if (type == NON_SPECIAL) {
             int size = pair & 0xFF;

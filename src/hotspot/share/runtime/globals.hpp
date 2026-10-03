@@ -224,6 +224,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseGHASHIntrinsics, false, DIAGNOSTIC,                      \
           "Use intrinsics for GHASH versions of crypto")                    \
                                                                             \
+  product(bool, UseDragonboxFormatting, true,                              \
+          "Use qualified Dragonbox shortest formatting for Double/Float.toString") \
+                                                                            \
   product(bool, UseBASE64Intrinsics, false,                                 \
           "Use intrinsics for java.util.Base64")                            \
                                                                             \

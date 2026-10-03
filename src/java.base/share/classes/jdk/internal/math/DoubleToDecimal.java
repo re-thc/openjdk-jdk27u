@@ -32,6 +32,7 @@ import static java.lang.Math.multiplyHigh;
 import static jdk.internal.math.MathUtils.*;
 
 import sun.nio.cs.ISO_8859_1;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * This class exposes a method to render a {@code double} as a string.
@@ -145,6 +146,26 @@ public final class DoubleToDecimal extends ToDecimal {
         super(latin1);
     }
 
+    private static final boolean NATIVE_FORMATTING = isNativeFormattingEnabled();
+
+    private static native boolean isNativeFormattingEnabled();
+
+    @IntrinsicCandidate
+    private static native int toShortestDecimal(byte[] destination, double value);
+
+    /* Preserve upstream special values and the existing exact-integer fast path. */
+    private static boolean useNativeFormatting(double v) {
+        long bits = doubleToRawLongBits(v);
+        long magnitude = bits & Long.MAX_VALUE;
+        int bq = (int) (magnitude >>> 52);
+        if (magnitude == 0 || bq == 0x7ff) {
+            return false;
+        }
+        int mq = 1075 - bq;
+        long c = C_MIN | (bits & T_MASK);
+        return !(bq != 0 && 0 < mq && mq < P && (c >> mq << mq) == c);
+    }
+
     /**
      * Returns a string representation of the {@code double}
      * argument. All characters mentioned below are ASCII characters.
@@ -155,7 +176,9 @@ public final class DoubleToDecimal extends ToDecimal {
      */
     public static String toString(double v) {
         byte[] str = new byte[MAX_CHARS];
-        int pair = LATIN1.toDecimal(str, 0, v, null);
+        int pair = NATIVE_FORMATTING && useNativeFormatting(v)
+                ? toShortestDecimal(str, v)
+                : LATIN1.toDecimal(str, 0, v, null);
         int type = pair & 0xFF00;
         if (type == NON_SPECIAL) {
             int size = pair & 0xFF;

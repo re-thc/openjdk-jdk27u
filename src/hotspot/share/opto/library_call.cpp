@@ -60,6 +60,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/numericFormatting.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 //---------------------------make_vm_intrinsic----------------------------
@@ -660,6 +661,10 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_base64_encodeBlock();
   case vmIntrinsics::_base64_decodeBlock:
     return inline_base64_decodeBlock();
+  case vmIntrinsics::_doubleToShortestDecimal:
+    return inline_floatingToDecimal(true);
+  case vmIntrinsics::_floatToShortestDecimal:
+    return inline_floatingToDecimal(false);
   case vmIntrinsics::_poly1305_processBlocks:
     return inline_poly1305_processBlocks();
   case vmIntrinsics::_intpoly_montgomeryMult_P256:
@@ -8237,6 +8242,25 @@ bool LibraryCallKit::inline_base64_encodeBlock() {
                                    OptoRuntime::base64_encodeBlock_Type(),
                                    stubAddr, stubName, TypePtr::BOTTOM,
                                    src_start, offset, len, dest_start, dp, isURL);
+  return true;
+}
+
+bool LibraryCallKit::inline_floatingToDecimal(bool is_double) {
+  Node* destination = argument(0);
+  const TypeAryPtr* array_type = _gvn.type(destination)->isa_aryptr();
+  // The public origin allocates these exact capacities. Decline if a caller's
+  // bounds cannot be proven; the ordinary native entry performs checked access.
+  int capacity = is_double ? 24 : 15;
+  if (array_type == nullptr || array_type->size()->_lo < capacity) return false;
+  destination = must_be_not_null(destination, true);
+  if (stopped()) return true;
+  Node* begin = array_element_address(destination, intcon(0), T_BYTE);
+  address entry = is_double ? CAST_FROM_FN_PTR(address, dragonbox_double_to_decimal)
+                            : CAST_FROM_FN_PTR(address, dragonbox_float_to_decimal);
+  Node* call = make_runtime_call(RC_LEAF, OptoRuntime::floatingToDecimal_Type(is_double),
+                                entry, "dragonbox_to_decimal", TypePtr::BOTTOM,
+                                begin, argument(1), is_double ? top() : nullptr);
+  set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
   return true;
 }
 
