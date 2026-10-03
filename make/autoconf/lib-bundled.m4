@@ -68,18 +68,21 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBDEFLATE],
       AC_MSG_ERROR([libdeflate prefix must contain include/libdeflate.h and lib/libdeflate.a])
     fi
     LIBDEFLATE_SAVED_CFLAGS="$CFLAGS"
+    LIBDEFLATE_SAVED_LDFLAGS="$LDFLAGS"
     LIBDEFLATE_SAVED_LIBS="$LIBS"
-    CFLAGS="$CFLAGS $LIBDEFLATE_CFLAGS"
+    CFLAGS="$CFLAGS $LIBDEFLATE_CFLAGS -fPIC"
+    LDFLAGS="$LDFLAGS -shared -Wl,-z,defs"
     LIBS="$LIBDEFLATE_LIBS $LIBS"
-    AC_MSG_CHECKING([for libdeflate 1.26 incremental Adler32])
+    AC_MSG_CHECKING([for libdeflate 1.26 incremental Adler32 in a shared library])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <libdeflate.h>
         #if LIBDEFLATE_VERSION_MAJOR != 1 || LIBDEFLATE_VERSION_MINOR != 26
         #error libdeflate 1.26 is required
         #endif]], [[unsigned char data = 0;
         return libdeflate_adler32(1, &data, 0) != 1;]])],
         [AC_MSG_RESULT([yes])],
-        [AC_MSG_ERROR([Cannot link libdeflate 1.26; see config.log])])
+        [AC_MSG_ERROR([Cannot link libdeflate 1.26 into a shared library; ensure the archive is PIC and see config.log])])
     CFLAGS="$LIBDEFLATE_SAVED_CFLAGS"
+    LDFLAGS="$LIBDEFLATE_SAVED_LDFLAGS"
     LIBS="$LIBDEFLATE_SAVED_LIBS"
     USE_LIBDEFLATE=true
   fi

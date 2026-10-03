@@ -68,9 +68,27 @@ public class TestAdler32Bulk {
         adler.update(bytes);
     }
 
+    private static void arrayRanged(Adler32 adler, byte[] bytes, int off, int length) {
+        length = Math.max(length, 512);
+        adler.update(bytes, off, length);
+    }
+
+    private static void directRanged(Adler32 adler, ByteBuffer bytes, int off, int length) {
+        length = Math.max(length, 512);
+        bytes.limit(off + length).position(off);
+        adler.update(bytes);
+    }
+
+    private static void arrayUnknown(Adler32 adler, byte[] bytes, int off, int length) {
+        adler.update(bytes, off, length);
+    }
+
     public static void main(String[] args) {
         int iterations = args.length == 0 ? 3000 : Integer.parseInt(args[0]);
-        byte[] bytes = new byte[4096 + 63];
+        byte[] bytes = new byte[65536 + 63];
+        int[] lengths = {512, 513, 543, 544, 545, 575, 576, 577, 1023, 1024,
+                         1025, 4095, 4096, 4097, 5551, 5552, 5553, 5568,
+                         11103, 11104, 11105, 65536};
         Random random = new Random(0x6a173);
         for (int pattern = 0; pattern < 3; pattern++) {
             random.nextBytes(bytes);
@@ -95,13 +113,23 @@ public class TestAdler32Bulk {
                 direct4096(adler, direct, off);
                 reference.update(bytes, off, 4096);
                 check(adler, reference);
-                int small = i % 65;
-                adler.update(bytes, off, small);
-                reference.update(bytes, off, small);
-                check(adler, reference);
                 if (direct.position() != off + 4096) {
                     throw new AssertionError("Direct buffer position");
                 }
+                int length = lengths[i % lengths.length];
+                arrayRanged(adler, bytes, off, length);
+                reference.update(bytes, off, length);
+                check(adler, reference);
+                directRanged(adler, direct, off, length);
+                reference.update(bytes, off, length);
+                check(adler, reference);
+                if (direct.position() != off + length) {
+                    throw new AssertionError("Ranged direct buffer position");
+                }
+                int small = i % 65;
+                arrayUnknown(adler, bytes, off, small);
+                reference.update(bytes, off, small);
+                check(adler, reference);
             }
         }
     }
