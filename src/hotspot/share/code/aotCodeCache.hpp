@@ -387,7 +387,7 @@ protected:
   class Header : public CHeapObj<mtCode> {
   private:
     enum {
-      AOT_CODE_VERSION = 1
+      AOT_CODE_VERSION = 2
     };
     uint   _version;         // AOT code version (should match when reading code cache)
     uint   _cache_size;      // cache size in bytes
