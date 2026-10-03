@@ -1762,12 +1762,70 @@ public final class Matcher implements MatchResult {
                 localsPos[i].clear();
         }
         acceptMode = NOANCHOR;
-        boolean result = parentPattern.root.match(this, from, text);
+        int libraryResult = -2;
+        if (to - from >= 131072 && to - from <= 8388608 && text instanceof String str) {
+            libraryResult = searchLibrary(from, str);
+        }
+        boolean result = libraryResult >= 0 ? libraryResult != 0
+                : parentPattern.root.match(this, this.first, text);
         if (!result)
             this.first = -1;
         this.oldLast = this.last;
         this.modCount++;
         return result;
+    }
+
+    // Only two fixed-width positive-ASCII languages are admitted. Earlier
+    // failed starts cannot reach the region end before a later valid match,
+    // so skipping them preserves hitEnd/requireEnd as well as leftmost order.
+    private int searchLibrary(int from, String str) {
+        if (parentPattern.flags() != 0) {
+            return -2;
+        }
+        String regex = parentPattern.pattern();
+        int kind;
+        int width;
+        if (regex.equals("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")) {
+            kind = 1;
+            width = 36;
+        } else if (regex.equals("([0-9]{4})-([0-9]{2})-([0-9]{2})")) {
+            kind = 2;
+            width = 10;
+        } else {
+            return -2;
+        }
+        // Retain Java for nearby matches and avoid loading or compiling the
+        // library until a meaningful search remains. These languages contain
+        // no bounds-sensitive assertions and have exactly the stated width.
+        int limit = to;
+        boolean nearby;
+        to = from + 512 + width - 1;
+        try {
+            nearby = parentPattern.root.match(this, from, str);
+        } finally {
+            to = limit;
+        }
+        if (nearby) {
+            return 1;
+        }
+        hitEnd = false;
+        first = from + 512;
+        int index = RegexLibrary.find(kind, str, first, limit);
+        if (index == -1) {
+            hitEnd = true;
+            return 0;
+        }
+        if (index < first || index > limit - width) {
+            return -2;
+        }
+        first = index;
+        // Java determines captures and the final Matcher state. The library
+        // provides a candidate start, not replacement Java capture semantics.
+        if (parentPattern.matchRoot.match(this, index, str)) {
+            return 1;
+        }
+        first = from + 512;
+        return -2;
     }
 
     /**

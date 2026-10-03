@@ -25,6 +25,28 @@
 
 ################################################################################
 
+# The managed Rust regex bridge is currently built for Linux x86-64/AArch64.
+# Cargo dependencies must be fetched explicitly before the offline JDK build.
+ifeq ($(call isTargetOs, linux), true)
+  ifneq ($(filter x86_64 aarch64, $(OPENJDK_TARGET_CPU)), )
+    REGEX_CARGO ?= cargo
+    REGEX_CRATE := $(TOPDIR)/src/java.base/share/native/libjregex
+    REGEX_RUST_TARGET := $(OPENJDK_TARGET_CPU)-unknown-linux-gnu
+    REGEX_CARGO_OUTPUT := $(SUPPORT_OUTPUTDIR)/native/java.base/libjregex
+    REGEX_LIBRARY := $(JDK_OUTPUTDIR)/lib/libjregex.so
+
+    $(REGEX_LIBRARY): $(REGEX_CRATE)/Cargo.toml $(REGEX_CRATE)/Cargo.lock \
+        $(REGEX_CRATE)/src/lib.rs
+	$(call MakeDir, $(@D))
+	CARGO_TARGET_DIR=$(REGEX_CARGO_OUTPUT) $(REGEX_CARGO) build --release \
+	    --locked --offline --target $(REGEX_RUST_TARGET) \
+	    --manifest-path $(REGEX_CRATE)/Cargo.toml
+	$(CP) $(REGEX_CARGO_OUTPUT)/$(REGEX_RUST_TARGET)/release/libjregex.so $@
+
+    TARGETS += $(REGEX_LIBRARY)
+  endif
+endif
+
 include CopyFiles.gmk
 include LibCommon.gmk
 

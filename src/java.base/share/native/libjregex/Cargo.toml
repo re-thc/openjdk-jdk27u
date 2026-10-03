@@ -1,0 +1,18 @@
+[package]
+name = "jdk-regex"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-2.0-only WITH Classpath-exception-2.0"
+publish = false
+
+[lib]
+name = "jregex"
+crate-type = ["cdylib"]
+
+[dependencies]
+jni = { version = "=0.22.4", default-features = false }
+regex = { version = "=1.13.1", default-features = false, features = ["std", "perf"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
