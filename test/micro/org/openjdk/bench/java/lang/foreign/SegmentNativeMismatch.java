@@ -76,11 +76,11 @@ public class SegmentNativeMismatch {
         }
         source = switch (storage) {
             case "HEAP", "HEAP_NATIVE" -> heapSource;
-            default -> arena.allocateFrom(heapSource);
+            default -> arena.allocateFrom(ValueLayout.JAVA_BYTE, bytes);
         };
         destination = switch (storage) {
             case "HEAP", "NATIVE_HEAP" -> heapDestination;
-            default -> arena.allocateFrom(heapDestination);
+            default -> arena.allocateFrom(ValueLayout.JAVA_BYTE, bytes);
         };
         source = source.asSlice(alignment, size);
         destination = destination.asSlice(alignment, size);
