@@ -29,17 +29,19 @@ import java.nio.charset.StandardCharsets;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.StringSupport;
 import org.openjdk.jmh.annotations.*;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
-/** Complete public NUL-terminated API, including source scan, copy and decoding. */
+/** Complete public NUL-terminated API and its isolated scan cost. */
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @State(Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3)
+@Fork(value = 3, jvmArgs = {"--add-exports=java.base/jdk.internal.foreign=ALL-UNNAMED"})
 public class SegmentGetString {
     @Param({"64", "4096", "65536", "262144"})
     public int size;
@@ -99,5 +101,10 @@ public class SegmentGetString {
     @Benchmark
     public String getString() {
         return source.getString(0, StandardCharsets.UTF_8);
+    }
+
+    @Benchmark
+    public int scan() {
+        return StringSupport.strlenByte((AbstractMemorySegmentImpl) source, 0, source.byteSize());
     }
 }
