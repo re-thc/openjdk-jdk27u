@@ -66,9 +66,15 @@ public class SegmentLibraryMismatch extends SegmentNativeMismatch {
     }
 
     @Setup
-    public void verifyLibraryResult() throws Throwable {
-        if (equalityFilter() != mismatch()) {
-            throw new AssertionError("Library mismatch filter disagrees with public API");
+    @Override
+    public void setup() {
+        super.setup();
+        try {
+            if (equalityFilter() != mismatch()) {
+                throw new AssertionError("Library mismatch filter disagrees with public API");
+            }
+        } catch (Throwable error) {
+            throw new AssertionError("Library fixture verification failed", error);
         }
     }
 
