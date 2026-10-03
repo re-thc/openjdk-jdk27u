@@ -357,11 +357,24 @@ public final class SegmentBulkOperations {
                                                    Object a, long aOffset,
                                                    Object b, long bOffset,
                                                    long length) {
-        if (Architecture.isX64() && length <= MAX_NATIVE_MISMATCH_SIZE && (a == null || b == null)) {
+        if (Architecture.isX64() && length >= Long.BYTES && length <= MAX_NATIVE_MISMATCH_SIZE &&
+                (a == null || b == null)) {
+            // Keep early differences out of the SIMD stub, whose transition
+            // and mismatch-index calculation would cost more than one word.
+            long first = SCOPED_MEMORY_ACCESS.getLongUnaligned(aSession, a, aOffset, false);
+            long second = SCOPED_MEMORY_ACCESS.getLongUnaligned(bSession, b, bOffset, false);
+            if (first != second) {
+                return mismatch(first, second);
+            }
+            if (length == Long.BYTES) {
+                return -1;
+            }
             // Convey the guarded range to C2's native intrinsic validation.
-            int size = Math.clamp(length, 1, MAX_NATIVE_MISMATCH_SIZE);
-            return SCOPED_MEMORY_ACCESS.vectorizedMismatch(aSession, bSession,
-                    a, aOffset, b, bOffset, size, ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
+            int size = Math.clamp(length - Long.BYTES, 1, MAX_NATIVE_MISMATCH_SIZE);
+            int index = SCOPED_MEMORY_ACCESS.vectorizedMismatch(aSession, bSession,
+                    a, aOffset + Long.BYTES, b, bOffset + Long.BYTES,
+                    size, ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
+            return index >= 0 ? index + Long.BYTES : index;
         }
         return vectorizedMismatchLargeForBytes(aSession, bSession, a, aOffset, b, bOffset, length);
     }
