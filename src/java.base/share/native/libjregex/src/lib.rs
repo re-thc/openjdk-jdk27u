@@ -1,7 +1,8 @@
 // Copyright (c) 2026, the openjdk-jdk27u contributors. All rights reserved.
 // SPDX-License-Identifier: GPL-2.0-only WITH Classpath-exception-2.0
 
-use jni::{EnvUnowned, errors::ThrowRuntimeExAndDefault, objects::{JClass, JString}, sys::jint};
+use jni::{EnvUnowned, errors::ThrowRuntimeExAndDefault, jni_sig, jni_str,
+          objects::{JByteArray, JClass, JString}, sys::jint};
 use regex::bytes::{Regex, RegexBuilder};
 use std::sync::OnceLock;
 
@@ -36,6 +37,22 @@ pub extern "system" fn Java_java_util_regex_RegexLibrary_find0<'caller>(
         let length = unsafe { ((**raw).v1_2.GetStringLength)(raw, input.as_raw()) };
         if end > length { return Ok(-2); }
         let Some(re) = engine(kind) else { return Ok(-2); };
+        if env.get_field(&input, jni_str!("coder"), jni_sig!("B"))?.b()? == 0 {
+            let value = env.get_field(&input, jni_str!("value"), jni_sig!("[B"))?.l()?;
+            let value = JByteArray::cast_local(env, value)?;
+            if value.len(env)? < end as usize { return Ok(-2); }
+            let mut copied = Vec::new();
+            if copied.try_reserve_exact((end - begin) as usize).is_err() { return Ok(-2); }
+            copied.resize((end - begin) as usize, 0i8);
+            // Copy through the regular JNI region API. No GC-critical pointer
+            // or mutable view of the immutable String backing array is held.
+            value.get_region(env, begin, &mut copied)?;
+            // i8 and u8 have equal size/alignment and all bit patterns are valid.
+            // This immutable view cannot outlive its owned backing vector.
+            let bytes = unsafe { std::slice::from_raw_parts(copied.as_ptr().cast::<u8>(), copied.len()) };
+            // Non-ASCII Latin-1 bytes also cannot match these ASCII languages.
+            return Ok(re.find(&bytes).map_or(-1, |m| begin + m.start() as jint));
+        }
         let mut bytes = Vec::new();
         if bytes.try_reserve_exact((end - begin) as usize).is_err() { return Ok(-2); }
         let mut chars = [0u16; 4096];
