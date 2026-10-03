@@ -282,3 +282,80 @@ extern "C" int32_t tmfy_decode_utf8_utf16(const uint8_t* input, size_t length,
   }
   return written > 0 && written <= length ? int32_t(written) : TMFY_INTERNAL_ERROR;
 }
+
+// Find complete, strict UTF8 code points in an already captured snapshot.
+// This is used only after SIMD validation fails. It deliberately does not
+// classify the unresolved bytes: UTF_8.Decoder owns malformed lengths, partial
+// input, endOfInput, and the subtle malformed-versus-overflow precedence.
+// In particular simdutf's TOO_SHORT includes both truncation and an invalid
+// continuation, and its error count is not a CharsetDecoder malformed length.
+static size_t charset_decode_valid_prefix(const uint8_t* snapshot, size_t length) {
+  size_t consumed = 0;
+  while (consumed < length) {
+    const uint8_t first = snapshot[consumed];
+    const size_t remaining = length - consumed;
+    if (first < 0x80) {
+      ++consumed;
+    } else if (first >= 0xc2 && first <= 0xdf) {
+      if (remaining < 2 || !continuation(snapshot[consumed + 1])) break;
+      consumed += 2;
+    } else if (first >= 0xe0 && first <= 0xef) {
+      if (remaining < 3 || !continuation(snapshot[consumed + 1]) ||
+          !continuation(snapshot[consumed + 2]) ||
+          (first == 0xe0 && snapshot[consumed + 1] < 0xa0) ||
+          (first == 0xed && snapshot[consumed + 1] >= 0xa0)) break;
+      consumed += 3;
+    } else if (first >= 0xf0 && first <= 0xf4) {
+      if (remaining < 4 || !continuation(snapshot[consumed + 1]) ||
+          !continuation(snapshot[consumed + 2]) ||
+          !continuation(snapshot[consumed + 3]) ||
+          (first == 0xf0 && snapshot[consumed + 1] < 0x90) ||
+          (first == 0xf4 && snapshot[consumed + 1] >= 0x90)) break;
+      consumed += 4;
+    } else {
+      break;
+    }
+  }
+  return consumed;
+}
+
+extern "C" int32_t tmfy_decode_utf8_array_utf16(const uint8_t* input, size_t length,
+                                               uint16_t* output, size_t capacity_units) {
+  if (length > TMFY_CONVERT_MAX_BYTES) return TMFY_NEEDS_GENERAL;
+  if (length == 0) return 0;
+  if (capacity_units < length) return TMFY_BAD_ARGUMENT;
+  const size_t reserved = 2 * length;
+  uint8_t* target = reinterpret_cast<uint8_t*>(output);
+  if (!aligned_utf16(output) ||
+      !valid_spans(input, length, target, reserved, reserved)) return TMFY_BAD_ARGUMENT;
+  const simdutf::implementation* selected = implementation.load(std::memory_order_acquire);
+  if (selected == nullptr) return TMFY_NOT_INITIALIZED;
+
+  alignas(64) uint8_t snapshot[TMFY_CONVERT_MAX_BYTES];
+  std::memcpy(snapshot, input, length);
+  const char* source = reinterpret_cast<const char*>(snapshot);
+  size_t consumed = length;
+  uint32_t status = TMFY_CHARSET_DECODE_COMPLETE;
+  if (!selected->validate_utf8(source, length)) {
+    consumed = charset_decode_valid_prefix(snapshot, length);
+    if (consumed == length) return TMFY_INTERNAL_ERROR;
+    status = TMFY_CHARSET_DECODE_UNRESOLVED;
+  }
+
+  size_t written = 0;
+  if (consumed != 0) {
+    // Convert only complete, validated code points. Never use the partial
+    // stores/count of a simdutf converter that encountered an error.
+#if SIMDUTF_IS_BIG_ENDIAN
+    written = selected->convert_valid_utf8_to_utf16be(
+        source, consumed, reinterpret_cast<char16_t*>(output));
+#else
+    written = selected->convert_valid_utf8_to_utf16le(
+        source, consumed, reinterpret_cast<char16_t*>(output));
+#endif
+    if (written == 0 || written > consumed) return TMFY_INTERNAL_ERROR;
+  }
+  return int32_t(uint32_t(consumed) |
+                 (uint32_t(written) << TMFY_CHARSET_DECODE_UNITS_SHIFT) |
+                 (status << TMFY_CHARSET_DECODE_STATUS_SHIFT));
+}

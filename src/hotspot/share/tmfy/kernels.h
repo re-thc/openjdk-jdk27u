@@ -32,6 +32,16 @@ extern "C" {
 
 #define TMFY_CONVERT_MAX_BYTES 4096u
 
+#define TMFY_CHARSET_DECODE_BYTES_MASK 0x1fffu
+#define TMFY_CHARSET_DECODE_UNITS_SHIFT 13u
+#define TMFY_CHARSET_DECODE_UNITS_MASK 0x1fffu
+#define TMFY_CHARSET_DECODE_STATUS_SHIFT 26u
+
+enum tmfy_charset_decode_status {
+  TMFY_CHARSET_DECODE_COMPLETE = 0,
+  TMFY_CHARSET_DECODE_UNRESOLVED = 1
+};
+
 enum tmfy_status {
   TMFY_NEEDS_GENERAL = -1,
   TMFY_BAD_ARGUMENT = -2,
@@ -111,6 +121,39 @@ int32_t tmfy_encode_utf16_utf8(const uint8_t* input, size_t length,
  */
 int32_t tmfy_decode_utf8_utf16(const uint8_t* input, size_t length,
                              uint8_t* output, size_t capacity);
+
+/* Strict CharsetDecoder UTF8 -> UTF16 with valid-prefix progress only.
+ * Separate mutable-input contract; existing byte-span APIs are unchanged:
+ * - length is a byte count, at most TMFY_CONVERT_MAX_BYTES (4096)
+ * - capacity_units is in UTF16 CODE UNITS, and must be at least length,
+ *   even when the input is malformed or its actual output would be shorter
+ * - output is native-endian UTF16, matching Java char[], and must be aligned
+ *   for UTF16 stores; misaligned output is rejected before any store
+ * - input storage remains accessible throughout the call; selected bytes are
+ *   copied exactly once to a private aligned stack snapshot before validation
+ *   or conversion; neither validation nor conversion rereads borrowed input
+ * - concurrent Java byte[] writes need not yield an atomic snapshot, but all
+ *   validation and conversion operate on the SAME captured byte values
+ * - the input and the reserved 2 * length output bytes must not overlap;
+ *   nulls, pointer-range overflow, reservation, and initialization are checked
+ *   before the snapshot and before any output store
+ * - empty input returns zero without examining pointers or initialization
+ * - nonnegative result = consumed_bytes | (written_units << 13) | (status << 26)
+ *   COMPLETE consumes the entire requested block; UNRESOLVED stops before its
+ *   first invalid or incomplete sequence, and produces only the valid prefix
+ * - UNRESOLVED does NOT distinguish malformed input from an incomplete block
+ *   tail, supply Java's malformed length, or describe output overflow
+ * - the Java caller admits at most min(input remaining, output units remaining,
+ *   4096), commits this prefix once, and resumes its original scalar loop at
+ *   the unresolved sequence or capacity tail using the actual buffer limits;
+ *   it must never replay the committed prefix or split a surrogate pair
+ * - -1/-2/-3 are pre-store declines; -4 is an invariant failure that can occur
+ *   after output stores and MUST NOT cause Java replay on the same output
+ * No allocation, locks, syscalls, callbacks, lazy ISA dispatch, retained pointer,
+ * or unwinding occurs. Failure-path prefix scanning is bounded by the snapshot.
+ */
+int32_t tmfy_decode_utf8_array_utf16(const uint8_t* input, size_t length,
+                                   uint16_t* output, size_t capacity_units);
 
 #ifdef __cplusplus
 }
