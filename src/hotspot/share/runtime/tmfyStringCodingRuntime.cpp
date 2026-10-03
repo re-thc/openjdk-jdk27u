@@ -14,6 +14,13 @@
  */
 
 #include "runtime/tmfyStringCoding.hpp"
+#include "classfile/moduleEntry.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "interpreter/bytecodes.hpp"
+#include "oops/constantPool.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/method.inline.hpp"
+#include "utilities/bytes.hpp"
 #include "runtime/tmfyStringCodingTooling.hpp"
 #include "tmfy/kernels.h"
 #include "tmfy/tmfyKernelPolicy.hpp"
@@ -26,6 +33,181 @@
 
 Atomic<jlong> TmfyStringCoding::_counters[TmfyStringCoding::counter_count];
 Atomic<uint8_t> TmfyStringCoding::_initialized{0};
+
+// This proof runs before Rewriter changes constant-pool indexes. Keep the
+// admitted prefix identical to ciStringUtf8's existing compiler-origin proof.
+// There is no class resolution, initialization or per-call VM transition here.
+bool TmfyStringCoding::can_rewrite_cold_utf16_encode(Method* method) {
+#if defined(AMD64) && !defined(ZERO)
+  InstanceKlass* holder = method->method_holder();
+  if (!RewriteBytecodes || holder->name() != vmSymbols::java_lang_String() ||
+      !method->name()->equals("encodeUTF8_UTF16") ||
+      !method->signature()->equals("([BLjava/lang/Class;)[B") ||
+      !method->is_static() || !method->is_private() || method->is_native() ||
+      method->is_abstract() || method->is_synchronized() || method->is_old() ||
+      method->number_of_breakpoints() != 0 || method->code_size() != 514 ||
+      method->max_locals() != 10 || method->exception_table_length() != 0) return false;
+  if (holder->class_loader() != nullptr || holder->has_been_transformed() ||
+      holder->has_been_redefined() || holder->module() == nullptr ||
+      holder->module() != ModuleEntryTable::javabase_moduleEntry() ||
+      holder->module()->is_patched()) return false;
+
+  static const u1 encode_shape[] = {
+    Bytecodes::_iconst_0, // 0
+    Bytecodes::_istore_2, // 1
+    Bytecodes::_iconst_0, // 2
+    Bytecodes::_istore_3, // 3
+    Bytecodes::_aload_0, // 4
+    Bytecodes::_arraylength, // 5
+    Bytecodes::_iconst_1, // 6
+    Bytecodes::_ishr, // 7
+    Bytecodes::_istore, 4, // 8
+    Bytecodes::_iload, 4, // 10
+    Bytecodes::_iconst_3, // 12
+    Bytecodes::_imul, // 13
+    Bytecodes::_ifge, 0, 11, // 14
+    Bytecodes::_aload_0, // 17
+    Bytecodes::_aload_1, // 18
+    Bytecodes::_invokestatic, 0, 0, // 19
+    Bytecodes::_goto, 0, 7, // 22
+    Bytecodes::_iload, 4, // 25
+    Bytecodes::_iconst_3, // 27
+    Bytecodes::_imul, // 28
+    Bytecodes::_istore, 5, // 29
+    Bytecodes::_iload, 5, // 31
+    Bytecodes::_newarray, 8, // 33
+    Bytecodes::_astore, 6, // 35
+    Bytecodes::_iload, 4, // 37
+    Bytecodes::_bipush, 16, // 39
+    Bytecodes::_if_icmplt, 0, 121, // 41
+    Bytecodes::_aload_0, // 44
+    Bytecodes::_arraylength, // 45
+    Bytecodes::_sipush, 16, 0, // 46
+    Bytecodes::_if_icmpgt, 0, 113, // 49
+    Bytecodes::_aload_1, // 52
+    Bytecodes::_ifnonnull, 0, 109, // 53
+    Bytecodes::_aload_0, // 56
+    Bytecodes::_arraylength, // 57
+    Bytecodes::_sipush, 4, 0, // 58
+    Bytecodes::_if_icmpge, 0, 9, // 61
+    Bytecodes::_getstatic, 0, 0, // 64
+    Bytecodes::_ifeq, 0, 95, // 67
+    Bytecodes::_invokestatic, 0, 0, // 70
+    Bytecodes::_ifeq, 0, 89, // 73
+    Bytecodes::_aload_0, // 76
+    Bytecodes::_iconst_0, // 77
+    Bytecodes::_aload_0, // 78
+    Bytecodes::_arraylength, // 79
+    Bytecodes::_aload, 6, // 80
+    Bytecodes::_iconst_0, // 82
+    Bytecodes::_aload, 6, // 83
+    Bytecodes::_arraylength, // 85
+    Bytecodes::_invokestatic, 0, 0, // 86
+    Bytecodes::_istore, 7, // 89
+    Bytecodes::_iload, 7, // 91
+    Bytecodes::_iload, 4, // 93
+    Bytecodes::_if_icmplt, 0, 32, // 95
+    Bytecodes::_iload, 7, // 98
+    Bytecodes::_aload, 6, // 100
+    Bytecodes::_arraylength, // 102
+    Bytecodes::_if_icmpgt, 0, 24, // 103
+    Bytecodes::_iload, 7, // 106
+    Bytecodes::_aload, 6, // 108
+    Bytecodes::_arraylength, // 110
+    Bytecodes::_if_icmpne, 0, 8, // 111
+    Bytecodes::_aload, 6, // 114
+    Bytecodes::_goto, 0, 10, // 116
+    Bytecodes::_aload, 6, // 119
+    Bytecodes::_iload, 7, // 121
+    Bytecodes::_invokestatic, 0, 0, // 123
+    Bytecodes::_areturn, // 126
+    Bytecodes::_iload, 7, // 127
+    Bytecodes::_iconst_m1, // 129
+    Bytecodes::_if_icmpeq, 0, 32, // 130
+    Bytecodes::_new, 0, 0, // 133
+    Bytecodes::_dup, // 136
+    Bytecodes::_new, 0, 0, // 137
+    Bytecodes::_dup, // 140
+    Bytecodes::_invokespecial, 0, 0, // 141
+    Bytecodes::_ldc_w, 0, 0, // 144
+    Bytecodes::_invokevirtual, 0, 0, // 147
+    Bytecodes::_iload, 7, // 150
+    Bytecodes::_invokevirtual, 0, 0, // 152
+    Bytecodes::_invokevirtual, 0, 0, // 155
+    Bytecodes::_invokespecial, 0, 0, // 158
+    Bytecodes::_athrow, // 161
+  };
+  static_assert(sizeof(encode_shape) == utf16_encode_java_bci, "String encode admission shape");
+  ConstantPool* cp = method->constants();
+  const address bytes = method->code_base();
+  for (int bci = 0; bci < utf16_encode_java_bci;) {
+    Bytecodes::Code code = static_cast<Bytecodes::Code>(bytes[bci]);
+    if (code != encode_shape[bci]) return false;
+    int length = Bytecodes::length_for(code);
+    if (length <= 0 || bci + length > utf16_encode_java_bci) return false;
+    if (Bytecodes::is_invoke(code) || code == Bytecodes::_getstatic) {
+      int index = Bytes::get_Java_u2(bytes + bci + 1);
+      if (index <= 0 || index >= cp->length() ||
+          (code == Bytecodes::_getstatic ? !cp->tag_at(index).is_field() :
+                                          !cp->tag_at(index).is_method())) return false;
+      const char* owner;
+      const char* name;
+      const char* signature;
+      switch (bci) {
+        case 19: owner = "java/lang/String"; name = "encodedLengthUTF8_UTF16"; signature = "([BLjava/lang/Class;)I"; break;
+        case 64: owner = "java/lang/StringCoding"; name = "utf8Ready"; signature = "Z"; break;
+        case 70: owner = "java/lang/StringCoding"; name = "utf8Ready"; signature = "()Z"; break;
+        case 86: owner = "java/lang/StringCoding"; name = "encodeUtf16Utf80"; signature = "([BII[BII)I"; break;
+        case 123: owner = "java/util/Arrays"; name = "copyOf"; signature = "([BI)[B"; break;
+        case 141: owner = "java/lang/StringBuilder"; name = "<init>"; signature = "()V"; break;
+        case 147: owner = "java/lang/StringBuilder"; name = "append"; signature = "(Ljava/lang/String;)Ljava/lang/StringBuilder;"; break;
+        case 152: owner = "java/lang/StringBuilder"; name = "append"; signature = "(I)Ljava/lang/StringBuilder;"; break;
+        case 155: owner = "java/lang/StringBuilder"; name = "toString"; signature = "()Ljava/lang/String;"; break;
+        case 158: owner = "java/lang/InternalError"; name = "<init>"; signature = "(Ljava/lang/String;)V"; break;
+        default: return false;
+      }
+      if (!cp->klass_name_at(cp->uncached_klass_ref_index_at(index))->equals(owner) ||
+          !cp->uncached_name_ref_at(index)->equals(name) ||
+          !cp->uncached_signature_ref_at(index)->equals(signature)) return false;
+    } else if (code == Bytecodes::_new || code == Bytecodes::_ldc_w) {
+      int index = Bytes::get_Java_u2(bytes + bci + 1);
+      if (index <= 0 || index >= cp->length()) return false;
+      if (code == Bytecodes::_new) {
+        const char* name = bci == 133 ? "java/lang/InternalError" : "java/lang/StringBuilder";
+        if (!cp->tag_at(index).is_klass_or_reference() || !cp->klass_name_at(index)->equals(name)) return false;
+      } else if (!cp->tag_at(index).is_string() ||
+                 strcmp(cp->string_at_noresolve(index), "UTF-16 UTF-8 conversion failed: ") != 0) {
+        return false;
+      }
+    } else {
+      for (int i = 1; i < length; ++i) {
+        if (bytes[bci + i] != encode_shape[bci + i]) return false;
+      }
+    }
+    bci += length;
+  }
+  // The suffix may evolve independently only while it cannot re-enter the
+  // matched prefix with changed locals. Reject unfamiliar control-flow forms
+  // and every suffix branch back into the admission/allocation region.
+  for (int bci = utf16_encode_java_bci; bci < method->code_size();) {
+    Bytecodes::Code code = static_cast<Bytecodes::Code>(bytes[bci]);
+    if (!Bytecodes::is_java_code(code)) return false;
+    int length = Bytecodes::length_for(code);
+    if (length <= 0 || bci + length > method->code_size() ||
+        code == Bytecodes::_jsr || code == Bytecodes::_jsr_w || code == Bytecodes::_ret) return false;
+    if ((code >= Bytecodes::_ifeq && code <= Bytecodes::_goto) ||
+        code == Bytecodes::_ifnull || code == Bytecodes::_ifnonnull || code == Bytecodes::_goto_w) {
+      int offset = code == Bytecodes::_goto_w ? (int32_t)Bytes::get_Java_u4(bytes + bci + 1) :
+                                               (int16_t)Bytes::get_Java_u2(bytes + bci + 1);
+      if ((int64_t)bci + offset < utf16_encode_java_bci) return false;
+    }
+    bci += length;
+  }
+  return true;
+#else
+  return false;
+#endif
+}
 
 bool TmfyStringCoding::initialize() {
   if (_initialized.load_acquire() != 0) return true;

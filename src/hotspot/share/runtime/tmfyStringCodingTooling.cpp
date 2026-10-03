@@ -23,11 +23,14 @@
 #include "oops/symbol.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/handshake.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/tmfyStringCoding.hpp"
+#include "runtime/vmThread.hpp"
 
 Atomic<uint8_t> TmfyStringCodingTooling::_revoked{0};
+Atomic<uint8_t> TmfyStringCodingTooling::_cold_admission_revoked{0};
 jmethodID TmfyStringCodingTooling::_methods[TmfyStringCodingTooling::kernel_count] = {};
 const JNINativeMethod* TmfyStringCodingTooling::_initial_table = nullptr;
 JavaThread* TmfyStringCodingTooling::_initial_thread = nullptr;
@@ -140,7 +143,26 @@ void TmfyStringCodingTooling::before_unregister(Klass* klass) {
   if (is_bindings_class(klass)) revoke();
 }
 
+void TmfyStringCodingTooling::revoke_cold_admission() {
+#if defined(AMD64) && !defined(ZERO)
+  _cold_admission_revoked.release_store(1);
+  if (!Universe::is_fully_initialized() || VMThread::vm_thread() == nullptr ||
+      !VMThread::vm_thread()->is_running()) return;
+  assert(JavaThread::current()->thread_state() == _thread_in_vm, "VM state required");
+  // No origin shortcut calls into the VM before its next dispatch poll. Drain
+  // any thread that read the old byte before publishing the new observation.
+  // Every enabler must wait, even if another revoker already stored the flag.
+  class DrainColdAdmission : public HandshakeClosure {
+   public:
+    DrainColdAdmission() : HandshakeClosure("DrainStringUtf8ColdAdmission") {}
+    void do_thread(Thread* thread) override { }
+  } drain;
+  Handshake::execute(&drain);
+#endif
+}
+
 void TmfyStringCodingTooling::revoke() {
+  revoke_cold_admission();
   if (!Universe::is_fully_initialized()) {
     // Agent_OnLoad runs before Java threads, compilation and Compile_lock exist.
     // Publishing the sticky flag prevents later interpreter/compiler admission.

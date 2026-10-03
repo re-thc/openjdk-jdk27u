@@ -584,6 +584,13 @@ JvmtiEnv::SetEventNotificationMode(jvmtiEventMode mode, jvmtiEvent event_type, j
     return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
   }
 
+  // These class-observation events require no capability. In particular,
+  // a later hook can change StringCoding before the cold guard resolves it.
+  if (enabled && (event_type == JVMTI_EVENT_CLASS_FILE_LOAD_HOOK ||
+                  event_type == JVMTI_EVENT_CLASS_LOAD ||
+                  event_type == JVMTI_EVENT_CLASS_PREPARE)) {
+    TmfyStringCodingTooling::revoke_cold_admission();
+  }
   if (event_type == JVMTI_EVENT_CLASS_FILE_LOAD_HOOK && enabled) {
     record_class_file_load_hook_enabled();
   }
@@ -636,6 +643,12 @@ JvmtiEnv::GetPotentialCapabilities(jvmtiCapabilities* capabilities_ptr) {
 // capabilities_ptr - pre-checked for null
 jvmtiError
 JvmtiEnv::AddCapabilities(const jvmtiCapabilities* capabilities_ptr) {
+  // Conservative and origin-local: every tooling capability request restores
+  // ordinary interpreted guards before another agent thread can use the grant.
+  // This does not change native-leaf or compiler intrinsic availability.
+  if (!capabilities_ptr->can_generate_native_method_bind_events) {
+    TmfyStringCodingTooling::revoke_cold_admission();
+  }
   // Revoke before granting the capability: another thread using this env may
   // enable callbacks as soon as the capability becomes visible. No capabilities
   // lock is held here. A rejected multi-capability request may conservatively

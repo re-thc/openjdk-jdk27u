@@ -46,6 +46,8 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
+#include "runtime/tmfyStringCoding.hpp"
+#include "runtime/tmfyStringCodingTooling.hpp"
 #include "utilities/macros.hpp"
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
@@ -622,6 +624,46 @@ void TemplateTable::iload_internal(RewriteControl rc) {
   locals_index(rbx);
   __ movl(rax, iaddress(rbx));
 }
+
+#ifdef AMD64
+// This opcode exists only at the proven String.encodeUTF8_UTF16 BCI 37.
+// No Java bytecode, allocation, call frame, compiler policy or BCI is changed.
+void TemplateTable::string_utf8_cold() {
+  transition(vtos, itos);
+  Label ordinary;
+  // Reuse the original iload value on every fallback. Bulk and initialized
+  // work decline before the instrumentation/profile checks.
+  __ movl(rax, iaddress(4));
+  if (RewriteBytecodes) {
+    __ cmpl(rax, 512);
+    __ jcc(Assembler::aboveEqual, ordinary);
+    __ movptr(rbx, (intptr_t)TmfyStringCoding::initialized_address());
+    __ cmpb(Address(rbx, 0), 0);
+    __ jcc(Assembler::notEqual, ordinary);
+    // The false backend state is only a sufficient cold proof. In particular,
+    // true does not prove this Java owner's native registration is complete.
+    __ movptr(rbx, (intptr_t)TmfyStringCodingTooling::cold_admission_revoked_address());
+    __ cmpb(Address(rbx, 0), 0);
+    __ jcc(Assembler::notEqual, ordinary);
+    __ movptr(rbx, (intptr_t)&DTraceMethodProbes);
+    __ cmpb(Address(rbx, 0), 0);
+    __ jcc(Assembler::notEqual, ordinary);
+    if (ProfileInterpreter) {
+      __ cmpptr(Address(rbp, frame::interpreter_frame_mdp_offset * wordSize), 0);
+      __ jcc(Assembler::notEqual, ordinary);
+    }
+    // The operand stack is empty and dst was allocated at BCI 33. A null MDP
+    // means there are no branch cells or data-pointer updates to synthesize.
+    // Advance bcp before the dispatch safepoint check, with the normal vtos map.
+    __ dispatch_next(vtos, TmfyStringCoding::utf16_encode_java_bci -
+                          TmfyStringCoding::utf16_encode_admission_bci);
+  }
+  __ bind(ordinary);
+  // Do not quicken again: this bytecode may live in an archived RO ConstMethod.
+  __ dispatch_next(itos, Bytecodes::length_for(Bytecodes::_iload));
+}
+
+#endif // AMD64
 
 void TemplateTable::fast_iload2() {
   transition(vtos, itos);

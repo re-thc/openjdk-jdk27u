@@ -172,6 +172,9 @@ class TemplateTable: AllStatic {
   static void aload_0();
   static void nofast_aload_0();
   static void nofast_iload();
+#ifdef AMD64
+  static void string_utf8_cold();
+#endif
   static void iload_internal(RewriteControl rc = may_rewrite);
   static void aload_0_internal(RewriteControl rc = may_rewrite);
 

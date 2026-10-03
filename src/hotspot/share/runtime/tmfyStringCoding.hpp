@@ -22,6 +22,7 @@
 #include "runtime/atomic.hpp"
 
 class JavaThread;
+class Method;
 
 // VM-only adapters. Portable engines never see oops, JNI or HotSpot headers.
 // Machine-facing arguments MUST be raw descriptor pointers: typeArrayOop is a
@@ -29,6 +30,9 @@ class JavaThread;
 class TmfyStringCoding : AllStatic {
  public:
   enum Counter { leaf_calls, jni_calls, rejections, counter_count };
+  enum { utf16_encode_admission_bci = 37, utf16_encode_java_bci = 162 };
+  // Called once by Rewriter, before constant-pool operands are rewritten.
+  static bool can_rewrite_cold_utf16_encode(Method* method);
   static bool is_intrinsic(vmIntrinsics::ID id);
   static bool is_supported(vmIntrinsics::ID id);
   static int signature(vmIntrinsics::ID id, BasicType* arguments, BasicType* result);

@@ -303,6 +303,9 @@ class Bytecodes: AllStatic {
 
     _shouldnotreachhere   ,          // For debugging
 
+    // A verified String UTF-16 encode origin; Java and compiler view is iload.
+    _string_utf8_cold     ,
+
 
     number_of_codes
   };

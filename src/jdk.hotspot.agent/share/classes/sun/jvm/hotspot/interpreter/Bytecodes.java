@@ -284,7 +284,9 @@ public class Bytecodes {
   public static final int _nofast_iload         = 237;
   public static final int _shouldnotreachhere   = 238; // For debugging
 
-  public static final int number_of_codes       = 239;
+  public static final int _string_utf8_cold     = 239; // Verified String origin, Java view iload
+
+  public static final int number_of_codes       = 240;
 
   // Flag bits derived from format strings, can_trap, can_rewrite, etc.:
   // semantic flags:
@@ -827,6 +829,7 @@ public class Bytecodes {
     def(_nofast_iload        , "_nofast_iload"       , "bi"   , null    , BasicType.getTInt()     , 1, false, _iload    );
 
     def(_shouldnotreachhere  , "_shouldnotreachhere" , "b"    , null    , BasicType.getTVoid()   ,  0, false);
+    def(_string_utf8_cold    , "string_utf8_cold"    , "bi"   , null    , BasicType.getTInt()    ,  1, false, _iload);
 
     if (Assert.ASSERTS_ENABLED) {
       // compare can_trap information for each bytecode with the

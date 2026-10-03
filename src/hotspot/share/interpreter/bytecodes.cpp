@@ -73,7 +73,8 @@
   def(_nofast_aload_0            , "nofast_aload_0"            , "b"    , nullptr    , T_OBJECT ,  1, true , _aload_0           ) \
   def(_nofast_iload              , "nofast_iload"              , "bi"   , nullptr    , T_INT    ,  1, false, _iload             ) \
                                                                                                                                   \
-  def(_shouldnotreachhere        , "_shouldnotreachhere"       , "b"    , nullptr    , T_VOID   ,  0, false, _shouldnotreachhere)
+  def(_shouldnotreachhere        , "_shouldnotreachhere"       , "b"    , nullptr    , T_VOID   ,  0, false, _shouldnotreachhere) \
+  def(_string_utf8_cold          , "string_utf8_cold"          , "bi"   , nullptr    , T_INT    ,  1, false, _iload             )
 
 #define BYTECODES_DO(def)                                                                                  \
   def(_nop             , "nop"             , "b"    , nullptr    , T_VOID   ,  0, false, _nop            ) \

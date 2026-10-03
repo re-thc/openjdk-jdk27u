@@ -34,6 +34,9 @@ class TmfyStringCodingTooling : AllStatic {
   enum { TMFY_KERNELS_DO(TMFY_SLOT) kernel_count };
 #undef TMFY_SLOT
   static Atomic<uint8_t> _revoked;
+  // Interpreter-origin admission has stricter observability requirements than
+  // the native leaves. Its revocation does not disable compiler/native support.
+  static Atomic<uint8_t> _cold_admission_revoked;
   // Bootstrap classes cannot unload. Stable JNI method IDs also follow class
   // redefinition, unlike retaining unrooted raw Method* values indefinitely.
   static jmethodID _methods[kernel_count];
@@ -49,6 +52,14 @@ class TmfyStringCodingTooling : AllStatic {
   static address revoked_address() {
     return reinterpret_cast<address>(&_revoked) + _revoked.value_offset_in_bytes();
   }
+
+  static address cold_admission_revoked_address() {
+    return reinterpret_cast<address>(&_cold_admission_revoked) +
+           _cold_admission_revoked.value_offset_in_bytes();
+  }
+  // Publish before JVMTI capabilities/events; drain each concurrent enabler.
+  // Safe during Agent_OnLoad, before Thread::current/Universe exist.
+  static void revoke_cold_admission();
 
   // Called by the trusted registration bridge in VM state, before its
   // ThreadToNativeFromVM. Only its first exact table/thread gets an exemption;

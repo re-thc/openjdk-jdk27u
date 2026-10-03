@@ -38,6 +38,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/tmfyStringCoding.hpp"
 #include "utilities/checkedCast.hpp"
 
 // Computes a CPC map (new_index -> original_index) for constant pool entries
@@ -371,6 +372,8 @@ void Rewriter::maybe_rewrite_ldc(address bcp, int offset, bool is_wide,
 // Rewrites a method given the index_map information
 void Rewriter::scan_method(Thread* thread, Method* method, bool reverse, bool* invokespecial_error) {
 
+  const bool cold_utf16_encode = !reverse &&
+      TmfyStringCoding::can_rewrite_cold_utf16_encode(method);
   int nof_jsrs = 0;
   bool has_monitor_bytecodes = false;
   Bytecodes::Code c;
@@ -407,6 +410,10 @@ void Rewriter::scan_method(Thread* thread, Method* method, bool reverse, bool* i
     guarantee(bc_length > 0, "Verifier should have caught this invalid bytecode");
 
     switch (c) {
+      case Bytecodes::_string_utf8_cold:
+        assert(reverse, "only undo a previously proven origin rewrite");
+        *bcp = Bytecodes::_iload;
+        break;
       case Bytecodes::_lookupswitch   : {
 #ifndef ZERO
         Bytecode_lookupswitch bc(method, bcp);
@@ -496,6 +503,10 @@ void Rewriter::scan_method(Thread* thread, Method* method, bool reverse, bool* i
 
       default: break;
     }
+  }
+
+  if (cold_utf16_encode) {
+    method->code_base()[TmfyStringCoding::utf16_encode_admission_bci] = Bytecodes::_string_utf8_cold;
   }
 
   // Update flags
