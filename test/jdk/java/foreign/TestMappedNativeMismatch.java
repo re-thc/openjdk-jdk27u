@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Native mismatch must recover from faults in truncated mapped memory
- * @requires (os.family == "linux") & (vm.simpleArch == "x64") & vm.compiler2.enabled
+ * @requires (os.family == "linux") & (os.simpleArch == "x64") & vm.compiler2.enabled
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 TestMappedNativeMismatch
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000
  *                  -XX:+UnlockDiagnosticVMOptions -XX:AVX3Threshold=0 TestMappedNativeMismatch
