@@ -45,6 +45,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/timer.hpp"
+#include "runtime/tmfyStringCoding.hpp"
 
 # define __ _masm->
 
@@ -125,6 +126,9 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
 #define TMFY_METHOD_KIND(name, shape, helper, bound, audited) case vmIntrinsics::_tmfy_##name: return tmfy_##name;
       TMFY_KERNELS_DO(TMFY_METHOD_KIND)
 #undef TMFY_METHOD_KIND
+      case vmIntrinsics::_tmfy_useNativeEncoder:
+        if (TmfyStringCoding::charset_admission_target(m()) != nullptr) return tmfy_useNativeEncoder;
+        break;
 #endif
 
 #ifndef ZERO
@@ -202,6 +206,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
 
 vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   switch (kind) {
+  case tmfy_useNativeEncoder: return vmIntrinsics::_tmfy_useNativeEncoder;
 #define TMFY_INTRINSIC(name, shape, helper, bound, audited) case tmfy_##name: return vmIntrinsics::_tmfy_##name;
     TMFY_KERNELS_DO(TMFY_INTRINSIC)
 #undef TMFY_INTRINSIC
@@ -305,6 +310,7 @@ bool AbstractInterpreter::is_not_reached(const methodHandle& method, int bci) {
 #ifndef PRODUCT
 void AbstractInterpreter::print_method_kind(MethodKind kind) {
   switch (kind) {
+  case tmfy_useNativeEncoder: tty->print("tmfy_useNativeEncoder"); break;
 #define TMFY_PRINT(name, shape, helper, bound, audited) case tmfy_##name: tty->print("tmfy_" #name); break;
     TMFY_KERNELS_DO(TMFY_PRINT)
 #undef TMFY_PRINT

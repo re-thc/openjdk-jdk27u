@@ -96,6 +96,7 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_math_entry(AbstractInterpreter::MethodKind kind);
   address generate_Reference_get_entry();
   address generate_tmfy_entry(AbstractInterpreter::MethodKind kind);
+  address generate_tmfy_charset_admission_entry();
   address generate_CRC32_update_entry();
   address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind);
   address generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind);

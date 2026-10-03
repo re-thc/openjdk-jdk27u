@@ -29,7 +29,8 @@ class Method;
 // nontrivial wrapper under CHECK_UNHANDLED_OOPS and has a different C ABI.
 class TmfyStringCoding : AllStatic {
  public:
-  enum Counter { leaf_calls, jni_calls, rejections, counter_count };
+  enum Counter { leaf_calls, jni_calls, rejections, charset_leaf_calls, charset_jni_calls,
+                 charset_policy_c1, charset_policy_c2, counter_count };
   enum { utf16_encode_admission_bci = 35, utf16_encode_java_bci = 162 };
   // Called once by Rewriter, before constant-pool operands are rewritten.
   static bool can_rewrite_cold_utf16_encode(Method* method);
@@ -42,6 +43,12 @@ class TmfyStringCoding : AllStatic {
   static jlong counter(Counter counter);
   static bool initialize();
   static jint initialize_from_java(JavaThread* thread);
+  // Returns the exact typed target only for the pristine bootstrap policy body.
+  // Does not resolve classes, allocate, initialize the backend, or safepoint.
+  static Method* charset_admission_target(Method* policy);
+  // A non-null return PC restricts interpreter admission to interpreted callers.
+  // -1 requests the ordinary Java entry so tooling can observe method events.
+  static jint charset_admitted(Method* policy, address caller_pc = nullptr);
   static address initialized_address() {
     return reinterpret_cast<address>(&_initialized) + _initialized.value_offset_in_bytes();
   }
@@ -52,6 +59,8 @@ class TmfyStringCoding : AllStatic {
                                typeArrayOopDesc* output, jint output_offset, jint capacity);
   static jint decode_utf8_utf16(typeArrayOopDesc* input, jint offset, jint length,
                                typeArrayOopDesc* output, jint output_offset, jint capacity);
+  static jint encode_utf16_array_utf8(typeArrayOopDesc* input, jint offset, jint length,
+                                    typeArrayOopDesc* output, jint output_offset, jint capacity);
 
  private:
   static Atomic<jlong> _counters[counter_count];

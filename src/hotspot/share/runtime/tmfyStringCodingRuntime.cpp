@@ -22,6 +22,12 @@
 #include "oops/method.inline.hpp"
 #include "utilities/bytes.hpp"
 #include "runtime/tmfyStringCodingTooling.hpp"
+#include "classfile/moduleEntry.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "interpreter/bytecodes.hpp"
+#include "interpreter/interpreter.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/method.hpp"
 #include "tmfy/kernels.h"
 #include "tmfy/tmfyKernelPolicy.hpp"
 #include "oops/typeArrayOop.inline.hpp"
@@ -254,6 +260,37 @@ JRT_ENTRY(jint, TmfyStringCoding::initialize_from_java(JavaThread* current))
   return initialize() ? 1 : 0;
 JRT_END
 
+Method* TmfyStringCoding::charset_admission_target(Method* policy) {
+  if (policy == nullptr || policy->intrinsic_id() != vmIntrinsics::_tmfy_useNativeEncoder ||
+      !policy->is_static() || policy->is_native() || policy->is_synchronized() ||
+      policy->is_old() || policy->number_of_breakpoints() != 0 ||
+      policy->code_size() != 2 || policy->max_locals() != 0 || policy->has_exception_handler() ||
+      policy->code_base()[0] != Bytecodes::_iconst_0 || policy->code_base()[1] != Bytecodes::_ireturn) return nullptr;
+  InstanceKlass* holder = policy->method_holder();
+  if (holder->class_loader() != nullptr || holder->name() != vmSymbols::sun_nio_cs_UTF_8_Encoder() ||
+      holder->has_been_transformed() || holder->has_been_redefined() || holder->module()->is_patched()) return nullptr;
+  Method* target = holder->find_method(vmSymbols::tmfy_encodeUtf16ArrayUtf8_name(),
+                                     vmSymbols::tmfy_char_output_signature());
+  if (target == nullptr || !target->is_static() || !target->is_native() || target->is_synchronized() ||
+      target->is_old() || target->intrinsic_id() != vmIntrinsics::_tmfy_encodeUtf16ArrayUtf8) return nullptr;
+  return target;
+}
+
+jint TmfyStringCoding::charset_admitted(Method* policy, address caller_pc) {
+  NoSafepointVerifier nsv;
+  // The interpreter must enter the ordinary Java method to expose its events,
+  // not merely return the false policy value from the specialized entry.
+  if (DTraceMethodProbes || JvmtiExport::can_post_interpreter_events() ||
+      JvmtiExport::should_post_native_method_bind()) return -1;
+  // x86 c2i adapters retain the compiled caller's return PC on the entry stack.
+  // An out-of-line policy call cannot inherit another caller's admission rules.
+  if (caller_pc != nullptr && !Interpreter::contains(caller_pc)) return 0;
+  return InlineNatives && InlineIntrinsics &&
+         is_supported(vmIntrinsics::_tmfy_encodeUtf16ArrayUtf8) &&
+         vmIntrinsics::is_intrinsic_available(vmIntrinsics::_tmfy_encodeUtf16ArrayUtf8) &&
+         charset_admission_target(policy) != nullptr ? 1 : 0;
+}
+
 bool TmfyStringCoding::is_intrinsic(vmIntrinsics::ID id) {
   switch (id) {
 #define TMFY_CASE(name, shape, helper, bound, audited) case vmIntrinsics::_tmfy_##name:
@@ -366,4 +403,19 @@ jint TmfyStringCoding::decode_utf8_utf16(typeArrayOopDesc* input, jint offset, j
   const uint8_t* bytes = length == 0 ? nullptr : (const uint8_t*)input->byte_at_addr(offset);
   uint8_t* destination = capacity == 0 ? nullptr : (uint8_t*)output->byte_at_addr(output_offset);
   return tmfy_decode_utf8_utf16(bytes, length, destination, capacity);
+}
+
+jint TmfyStringCoding::encode_utf16_array_utf8(typeArrayOopDesc* input, jint offset, jint length,
+                                             typeArrayOopDesc* output, jint output_offset, jint capacity) {
+  NoSafepointVerifier nsv;
+  if (!valid_range(input, offset, length) || !valid_range(output, output_offset, capacity) ||
+      (jlong)length * 3 > capacity) return reject(TMFY_BAD_ARGUMENT);
+  if ((uint32_t)length > TMFY_CHARSET_MAX_UNITS) return reject(TMFY_NEEDS_GENERAL);
+  count(leaf_calls);
+  count(charset_leaf_calls);
+  const uint16_t* chars = length == 0 ? nullptr : (const uint16_t*)input->char_at_addr(offset);
+  uint8_t* destination = capacity == 0 ? nullptr : (uint8_t*)output->byte_at_addr(output_offset);
+  // The portable kernel snapshots mutable input before validating/converting
+  // each admitted prefix. No Java pointer is retained across this leaf call.
+  return tmfy_encode_utf16_array_utf8(chars, length, destination, capacity);
 }

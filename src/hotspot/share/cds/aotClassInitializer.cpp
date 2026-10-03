@@ -48,6 +48,12 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     ik = RegeneratedClasses::get_original_object(ik);
   }
 
+  // Registration/backend state belongs to this VM process. The Encoder's
+  // volatile readiness fields must start false in an AOT production run.
+  if (ik->class_loader() == nullptr && ik->name() == vmSymbols::sun_nio_cs_UTF_8_Encoder()) {
+    return false;
+  }
+
   check_aot_annotations(ik);
 
   if (!ik->is_initialized() && !ik->is_being_initialized()) {

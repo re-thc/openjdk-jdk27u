@@ -200,6 +200,7 @@ char* NativeLookup::long_jni_name(const methodHandle& method) {
 
 extern "C" {
   jboolean JNICALL JVM_RegisterTmfyStringCodingMethods(JNIEnv* env, jclass cls);
+  jboolean JNICALL JVM_RegisterTmfyCharsetEncoderMethods(JNIEnv* env, jclass cls);
   void JNICALL JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass unsafecls);
   void JNICALL JVM_RegisterReferencesMethods(JNIEnv *env, jclass unsafecls);
   void JNICALL JVM_RegisterUpcallHandlerMethods(JNIEnv *env, jclass unsafecls);
@@ -215,6 +216,7 @@ extern "C" {
 
 static JNINativeMethod lookup_special_native_methods[] = {
   { CC"Java_java_lang_StringCoding_registerNatives",               nullptr, FN_PTR(JVM_RegisterTmfyStringCodingMethods) },
+  { CC"Java_sun_nio_cs_UTF_18_00024Encoder_registerNatives",       nullptr, FN_PTR(JVM_RegisterTmfyCharsetEncoderMethods) },
   { CC"Java_jdk_internal_misc_Unsafe_registerNatives",             nullptr, FN_PTR(JVM_RegisterJDKInternalMiscUnsafeMethods) },
   { CC"Java_java_lang_invoke_MethodHandleNatives_registerNatives", nullptr, FN_PTR(JVM_RegisterMethodHandleMethods) },
   { CC"Java_jdk_internal_foreign_abi_UpcallStubs_registerNatives",      nullptr, FN_PTR(JVM_RegisterUpcallHandlerMethods) },

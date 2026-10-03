@@ -213,6 +213,7 @@ void TemplateInterpreterGenerator::generate_all() {
 
   method_entry(java_lang_Float_float16ToFloat);
   method_entry(java_lang_Float_floatToFloat16);
+  method_entry(tmfy_useNativeEncoder);
 
 #undef method_entry
 
@@ -456,6 +457,8 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   address entry_point = nullptr;
 
   switch (kind) {
+  case Interpreter::tmfy_useNativeEncoder:
+    entry_point = generate_tmfy_charset_admission_entry(); break;
 #define TMFY_GENERATE_CASE(name, shape, helper, bound, audited) case Interpreter::tmfy_##name:
     TMFY_KERNELS_DO(TMFY_GENERATE_CASE)
 #undef TMFY_GENERATE_CASE
@@ -505,5 +508,11 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
 #if !defined(LINUX) || (!defined(AMD64) && !defined(AARCH64))
 address TemplateInterpreterGenerator::generate_tmfy_entry(AbstractInterpreter::MethodKind kind) {
   return nullptr; // All unreviewed ports use the ordinary native entry.
+}
+#endif
+
+#if !defined(LINUX) || !defined(AMD64)
+address TemplateInterpreterGenerator::generate_tmfy_charset_admission_entry() {
+  return nullptr;
 }
 #endif

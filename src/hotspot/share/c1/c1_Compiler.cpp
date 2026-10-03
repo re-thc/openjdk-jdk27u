@@ -109,6 +109,7 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 }
 
 bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
+  if (id == vmIntrinsics::_tmfy_useNativeEncoder) return true;
   if (TmfyStringCoding::is_intrinsic(id)) return TmfyStringCoding::is_supported(id);
   switch (id) {
   case vmIntrinsics::_compareAndSetLong:
