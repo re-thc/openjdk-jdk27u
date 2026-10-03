@@ -291,11 +291,6 @@ void AOTCodeCache::init2() {
   // initialize aot runtime constants as appropriate to this runtime
   AOTRuntimeConstants::initialize_from_runtime();
 
-#ifdef USE_LIBDEFLATE
-  // Cached C2 calls can run without compiling an intrinsic in this process.
-  SharedRuntime::initialize_libdeflate();
-#endif
-
   // initialize the table of external routines so we can save
   // generated code blobs that reference them
   AOTCodeAddressTable* table = opened_cache->_table;
