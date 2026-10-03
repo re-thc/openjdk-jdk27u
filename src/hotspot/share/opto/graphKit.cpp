@@ -2866,14 +2866,17 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
   // SubTypeCheck node
   if (might_be_cache && method != nullptr && VM_Version::profile_all_receivers_at_type_check()) {
     ciCallProfile profile = method->call_profile_at_bci(bci);
+    // Wider invoke profiles must not change the stock subtype-check guard budget
+    // or the probability used for TypeProfileSubTypeCheckCommonThreshold.
+    const int receiver_limit = 2;
     float total_prob = 0;
-    for (int i = 0; profile.has_receiver(i); ++i) {
+    for (int i = 0; i < receiver_limit && profile.has_receiver(i); ++i) {
       float prob = profile.receiver_prob(i);
       total_prob += prob;
     }
     if (total_prob * 100. >= TypeProfileSubTypeCheckCommonThreshold) {
       const TypeKlassPtr* superk = gvn.type(superklass)->is_klassptr();
-      for (int i = 0; profile.has_receiver(i); ++i) {
+      for (int i = 0; i < receiver_limit && profile.has_receiver(i); ++i) {
         ciKlass* klass = profile.receiver(i);
         const TypeKlassPtr* klass_t = TypeKlassPtr::make(klass);
         Compile::SubTypeCheckResult result = C->static_subtype_check(superk, klass_t);
