@@ -1763,8 +1763,8 @@ public final class Matcher implements MatchResult {
         }
         acceptMode = NOANCHOR;
         int libraryResult = -2;
-        if (to - from >= 131072 && to - from <= 8388608 &&
-                parentPattern.hasLibraryRegex && text instanceof String str) {
+        if (parentPattern.hasLibraryRegex && to - from >= 131072 &&
+                to - from <= 8388608 && text instanceof String str) {
             libraryResult = searchLibrary(from, str);
         }
         boolean result = libraryResult >= 0 ? libraryResult != 0
