@@ -87,6 +87,16 @@ public class SegmentLibraryString {
         }
     }
 
+    private static class Libc {
+        static final MethodHandle MEMCHR;
+        static {
+            Linker linker = Linker.nativeLinker();
+            MEMCHR = linker.downcallHandle(linker.defaultLookup().find("memchr").orElseThrow(),
+                    FunctionDescriptor.of(ADDRESS, ADDRESS, JAVA_INT,
+                            linker.canonicalLayouts().get("size_t")));
+        }
+    }
+
     @Setup
     public void setup() throws Throwable {
         byte[] bytes = new byte[size + alignment];
@@ -103,7 +113,8 @@ public class SegmentLibraryString {
         bytes[alignment + zero] = 0;
         arena = storage.equals("SHARED") ? Arena.ofShared() : Arena.ofConfined();
         source = arena.allocateFrom(JAVA_BYTE, bytes).asSlice(alignment, size);
-        if (libraryScan() != jdkScan() || !libraryGetString().equals(getString())) {
+        if (libraryScan() != jdkScan() || libcScan() != jdkScan()
+                || !libraryGetString().equals(getString()) || !libcGetString().equals(getString())) {
             throw new AssertionError("Library scan disagrees with public API");
         }
     }
@@ -125,8 +136,22 @@ public class SegmentLibraryString {
         }
         MemorySegment result = (MemorySegment) Library.FIND_BYTE.invokeExact(
                 source, source.byteSize(), Library.ZERO);
+        return offsetOf(result);
+    }
+
+    @Benchmark
+    public int libcScan() throws Throwable {
+        if (source.byteSize() > MAX_LIBRARY_BYTES) {
+            return jdkScan();
+        }
+        MemorySegment result = (MemorySegment) Libc.MEMCHR.invokeExact(source, 0, source.byteSize());
+        return offsetOf(result);
+    }
+
+    private int offsetOf(MemorySegment result) {
         if (result.address() == 0) {
-            throw new IllegalArgumentException("No NUL terminator");
+            // Preserve the public API's exact exception when no terminator exists.
+            return jdkScan();
         }
         return Math.toIntExact(result.address() - source.address());
     }
@@ -139,5 +164,10 @@ public class SegmentLibraryString {
     @Benchmark
     public String libraryGetString() throws Throwable {
         return source.getString(0, StandardCharsets.UTF_8, libraryScan());
+    }
+
+    @Benchmark
+    public String libcGetString() throws Throwable {
+        return source.getString(0, StandardCharsets.UTF_8, libcScan());
     }
 }
