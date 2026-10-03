@@ -4,7 +4,12 @@
 use jni::{EnvUnowned, errors::ThrowRuntimeExAndDefault, jni_sig, jni_str,
           objects::{JByteArray, JClass, JString}, sys::jint};
 use regex::bytes::{Regex, RegexBuilder};
-use std::sync::OnceLock;
+use std::{cell::RefCell, sync::OnceLock};
+
+thread_local! {
+    // At most the admitted 8 MiB input size, released when the thread exits.
+    static INPUT_COPY: RefCell<Vec<u8>> = const { RefCell::new(Vec::new()) };
+}
 
 const UUID: &str = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}";
 const DATE: &str = "([0-9]{4})-([0-9]{2})-([0-9]{2})";
@@ -37,41 +42,44 @@ pub extern "system" fn Java_java_util_regex_RegexLibrary_find0<'caller>(
         let length = unsafe { ((**raw).v1_2.GetStringLength)(raw, input.as_raw()) };
         if end > length { return Ok(-2); }
         let Some(re) = engine(kind) else { return Ok(-2); };
-        if env.get_field(&input, jni_str!("coder"), jni_sig!("B"))?.b()? == 0 {
-            let value = env.get_field(&input, jni_str!("value"), jni_sig!("[B"))?.l()?;
-            let value = JByteArray::cast_local(env, value)?;
-            if value.len(env)? < end as usize { return Ok(-2); }
-            let mut copied = Vec::new();
-            if copied.try_reserve_exact((end - begin) as usize).is_err() { return Ok(-2); }
-            copied.resize((end - begin) as usize, 0i8);
-            // Copy through the regular JNI region API. No GC-critical pointer
-            // or mutable view of the immutable String backing array is held.
-            value.get_region(env, begin, &mut copied)?;
-            // i8 and u8 have equal size/alignment and all bit patterns are valid.
-            // This immutable view cannot outlive its owned backing vector.
-            let bytes = unsafe { std::slice::from_raw_parts(copied.as_ptr().cast::<u8>(), copied.len()) };
-            // Non-ASCII Latin-1 bytes also cannot match these ASCII languages.
-            return Ok(re.find(&bytes).map_or(-1, |m| begin + m.start() as jint));
-        }
-        let mut bytes = Vec::new();
-        if bytes.try_reserve_exact((end - begin) as usize).is_err() { return Ok(-2); }
-        let mut chars = [0u16; 4096];
-        let mut offset = begin;
-        while offset < end {
-            let count = (end - offset).min(chars.len() as jint);
-            // Bounds were checked against the immutable String's real length.
-            // The stack buffer has at least count UTF-16 entries. This regular
-            // JNI copy does not hold a GC-critical pointer or call back to Java.
-            unsafe { ((**raw).v1_2.GetStringRegion)(raw, input.as_raw(), offset,
-                                                       count, chars.as_mut_ptr()); }
-            if env.exception_check() { return Err(jni::errors::Error::JavaException); }
-            // These positive ASCII languages cannot accept a non-ASCII unit.
-            // A barrier byte keeps Java UTF-16 indices, including surrogates.
-            bytes.extend(chars[..count as usize].iter()
-                .map(|&ch| if ch < 128 { ch as u8 } else { 128 }));
-            offset += count;
-        }
-        Ok(re.find(&bytes).map_or(-1, |m| begin + m.start() as jint))
+        INPUT_COPY.with(|copy| -> Result<jint, jni::errors::Error> {
+            let Ok(mut bytes) = copy.try_borrow_mut() else { return Ok(-2); };
+            let needed = (end - begin) as usize;
+            let additional = needed.saturating_sub(bytes.len());
+            if bytes.try_reserve_exact(additional).is_err() { return Ok(-2); }
+            bytes.resize(needed, 0);
+            if env.get_field(&input, jni_str!("coder"), jni_sig!("B"))?.b()? == 0 {
+                let value = env.get_field(&input, jni_str!("value"), jni_sig!("[B"))?.l()?;
+                let value = JByteArray::cast_local(env, value)?;
+                if value.len(env)? < end as usize { return Ok(-2); }
+                {
+                    // i8/u8 have equal size/alignment and every bit pattern is
+                    // valid. The temporary mutable view has no other aliases.
+                    let signed = unsafe { std::slice::from_raw_parts_mut(
+                        bytes.as_mut_ptr().cast::<i8>(), needed) };
+                    value.get_region(env, begin, signed)?;
+                }
+            } else {
+                let mut chars = [0u16; 4096];
+                let mut offset = begin;
+                while offset < end {
+                    let count = (end - offset).min(chars.len() as jint);
+                    // Immutable String bounds and stack-buffer size are checked.
+                    // No GC-critical pointer is held across engine execution.
+                    unsafe { ((**raw).v1_2.GetStringRegion)(raw, input.as_raw(), offset,
+                                                           count, chars.as_mut_ptr()); }
+                    if env.exception_check() { return Err(jni::errors::Error::JavaException); }
+                    for (dest, &ch) in bytes[(offset - begin) as usize..][..count as usize]
+                        .iter_mut().zip(chars[..count as usize].iter()) {
+                        // Positive ASCII languages cannot accept non-ASCII units.
+                        // A barrier retains UTF-16 indices, including surrogates.
+                        *dest = if ch < 128 { ch as u8 } else { 128 };
+                    }
+                    offset += count;
+                }
+            }
+            Ok(re.find(&bytes).map_or(-1, |m| begin + m.start() as jint))
+        })
     }).resolve::<ThrowRuntimeExAndDefault>()
 }
 
