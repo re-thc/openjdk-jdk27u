@@ -28,6 +28,7 @@
  */
 
 import java.util.Objects;
+import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -56,6 +57,27 @@ public class RegexLibrarySearch {
         }
         for (String regex : new String[] { "fo(o+)\\1", "fo(?=o)", "(?i)foo", "[a-z]+", "", DATE + "$" }) {
             compare(Pattern.compile(regex), "x".repeat(131072) + "fooo2026-10-03", 0, 131085, true);
+        }
+        Pattern shared = Pattern.compile(UUID);
+        String sharedInput = "f".repeat(131072) + values[0];
+        try (var pool = Executors.newFixedThreadPool(8)) {
+            var tasks = new java.util.ArrayList<java.util.concurrent.Future<?>>();
+            for (int thread = 0; thread < 8; thread++) {
+                tasks.add(pool.submit(() -> {
+                    for (int n = 0; n < 100; n++) {
+                        Matcher m = shared.matcher(sharedInput);
+                        check(m.find() && m.start() == 131072 && !m.hitEnd()
+                                && !m.requireEnd(), "concurrent shared input", shared);
+                    }
+                }));
+            }
+            for (var task : tasks) {
+                try {
+                    task.get();
+                } catch (Exception failed) {
+                    throw new AssertionError(failed);
+                }
+            }
         }
         System.out.println("Compared " + checks + " searches");
     }

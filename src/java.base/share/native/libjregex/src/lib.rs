@@ -32,8 +32,8 @@ fn engine(kind: jint) -> Option<&'static Regex> {
         .size_limit(1 << 20).dfa_size_limit(1 << 20).build().ok()).as_ref()
 }
 
-// Only JNI table calls are unsafe. Java references cannot escape the JNI frame;
-// all buffers and their indexing are owned and checked by Rust.
+// Unsafe operations are limited to JNI calls and the signed-byte copy view.
+// Java references cannot escape their frame; Rust owns all input storage.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_java_util_regex_RegexLibrary_find0<'caller>(
     mut unowned: EnvUnowned<'caller>, _class: JClass<'caller>,
