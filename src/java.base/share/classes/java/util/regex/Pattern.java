@@ -3790,6 +3790,35 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 return false;
             }
             int guard = matcher.to - minLength;
+            // Short BMP literal prefixes do not use Boyer-Moore. On String
+            // input, skip positions that cannot match their first character
+            // with the Latin-1/UTF-16 indexOf intrinsic. Keep the node chain
+            // responsible for captures, assertions and the rest of the match.
+            if (guard - i >= 64 && next.getClass() == Slice.class &&
+                    ((Slice) next).buffer.length != 0 &&
+                    seq instanceof String str) {
+                int first = ((Slice) next).buffer[0];
+                while (i <= guard) {
+                    int start = str.indexOf(first, i, guard + 1);
+                    if (start < 0) {
+                        matcher.hitEnd = true;
+                        return false;
+                    }
+                    // Dense candidates are better served by the original loop.
+                    if (start - i < 8) {
+                        i = start;
+                        break;
+                    }
+                    i = start;
+                    if (next.match(matcher, i, seq)) {
+                        matcher.first = i;
+                        matcher.groups[0] = matcher.first;
+                        matcher.groups[1] = matcher.last;
+                        return true;
+                    }
+                    i++;
+                }
+            }
             for (; i <= guard; i++) {
                 if (next.match(matcher, i, seq)) {
                     matcher.first = i;
