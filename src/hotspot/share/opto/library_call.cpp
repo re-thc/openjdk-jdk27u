@@ -626,7 +626,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_bigIntegerShift(false);
 
   case vmIntrinsics::_vectorizedMismatch:
-    return inline_vectorizedMismatch(predicate);
+    return inline_vectorizedMismatch();
 
   case vmIntrinsics::_ghash_processBlocks:
     return inline_ghash_processBlocks();
@@ -807,8 +807,6 @@ Node* LibraryCallKit::try_to_predicate(int predicate) {
   assert(merged_memory(), "");
 
   switch (intrinsic_id()) {
-  case vmIntrinsics::_vectorizedMismatch:
-    return inline_vectorizedMismatch_predicate(predicate);
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
     return inline_cipherBlockChaining_AESCrypt_predicate(false);
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
@@ -6578,59 +6576,7 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
 }
 
 //-------------inline_vectorizedMismatch------------------------------
-static constexpr int max_native_mismatch_size = 1 << 20;
-static constexpr int min_native_mismatch_size = 1 << 12;
-
-Node* LibraryCallKit::inline_vectorizedMismatch_predicate(int predicate) {
-  Node* obja = argument(0);
-  Node* objb = argument(3);
-  if (predicate == 0) {
-    // Retain the existing intrinsic decisions for typed heap arrays.
-    const TypeAryPtr* a = _gvn.type(obja)->isa_aryptr();
-    const TypeAryPtr* b = _gvn.type(objb)->isa_aryptr();
-    if (a != nullptr && a->elem() != Type::BOTTOM &&
-        b != nullptr && b->elem() != Type::BOTTOM && argument(7) != top()) {
-      return nullptr;
-    }
-    Node* slow = control();
-    set_control(top());
-    return slow;
-  }
-
-  assert(predicate >= 1 && predicate <= 3, "unexpected predicate");
-  RegionNode* slow = new RegionNode(1);
-  // Native dispatch pays off for bulk scans. Check the shared size/scale
-  // conditions first so tiny inputs and large safepointing scans skip it.
-  Node* size = _gvn.transform(new SubINode(argument(6), intcon(min_native_mismatch_size)));
-  Node* cmp = _gvn.transform(new CmpUNode(size, intcon(max_native_mismatch_size - min_native_mismatch_size)));
-  generate_guard(_gvn.transform(new BoolNode(cmp, BoolTest::gt)), slow, PROB_MIN);
-  if (!stopped()) {
-    cmp = _gvn.transform(new CmpINode(argument(7), intcon(0)));
-    generate_guard(_gvn.transform(new BoolNode(cmp, BoolTest::ne)), slow, PROB_MIN);
-  }
-  Node* bases[] = { obja, objb };
-  for (int i = 0; i < 2 && !stopped(); i++) {
-    const bool native_base = predicate == 1 || (predicate == 2 ? i == 0 : i == 1);
-    if (native_base) {
-      Node* cmp = _gvn.transform(new CmpPNode(bases[i], null()));
-      generate_guard(_gvn.transform(new BoolNode(cmp, BoolTest::ne)), slow, PROB_MIN);
-    } else {
-      // A generic heap partner is conservatively limited to byte arrays.
-      Node* cmp = _gvn.transform(new CmpPNode(bases[i], null()));
-      generate_guard(_gvn.transform(new BoolNode(cmp, BoolTest::eq)), slow, PROB_MIN);
-      if (!stopped()) {
-        const TypePtr* not_null = _gvn.type(bases[i])->is_oopptr()->cast_to_ptr_type(TypePtr::NotNull);
-        Node* base = _gvn.transform(new CheckCastPPNode(control(), bases[i], not_null));
-        Node* klass = makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_BYTE)));
-        cmp = _gvn.transform(new CmpPNode(load_object_klass(base), klass));
-        generate_guard(_gvn.transform(new BoolNode(cmp, BoolTest::ne)), slow, PROB_MIN);
-      }
-    }
-  }
-  return slow->req() > 1 ? _gvn.transform(slow) : nullptr;
-}
-
-bool LibraryCallKit::inline_vectorizedMismatch(int predicate) {
+bool LibraryCallKit::inline_vectorizedMismatch() {
   assert(UseVectorizedMismatchIntrinsic, "not implemented on this platform");
 
   assert(callee()->signature()->size() == 8, "vectorizedMismatch has 6 parameters");
@@ -6641,23 +6587,10 @@ bool LibraryCallKit::inline_vectorizedMismatch(int predicate) {
   Node* length  = argument(6); // int
   Node* scale   = argument(7); // int
 
-  const bool native_access = predicate > 0;
-  const bool native_a = native_access && predicate != 3;
-  const bool native_b = native_access && predicate != 2;
-  if (native_access) {
-    // Predicate casts are local to the fast path: the fallback argument map
-    // must retain the original generic bases and unrestricted length.
-    const TypePtr* bytes = TypeAryPtr::BYTES->cast_to_ptr_type(TypePtr::NotNull);
-    obja = native_a ? null() : _gvn.transform(new CheckCastPPNode(control(), obja, bytes));
-    objb = native_b ? null() : _gvn.transform(new CheckCastPPNode(control(), objb, bytes));
-    length = _gvn.transform(new CastIINode(control(), length,
-                           TypeInt::make(min_native_mismatch_size, max_native_mismatch_size, Type::WidenMin)));
-    scale = intcon(0);
-  }
   const TypeAryPtr* obja_t = _gvn.type(obja)->isa_aryptr();
   const TypeAryPtr* objb_t = _gvn.type(objb)->isa_aryptr();
-  if ((!native_a && (obja_t == nullptr || obja_t->elem() == Type::BOTTOM)) ||
-      (!native_b && (objb_t == nullptr || objb_t->elem() == Type::BOTTOM)) ||
+  if (obja_t == nullptr || obja_t->elem() == Type::BOTTOM ||
+      objb_t == nullptr || objb_t->elem() == Type::BOTTOM ||
       scale == top()) {
     return false; // failed input validation
   }
@@ -6709,7 +6642,7 @@ bool LibraryCallKit::inline_vectorizedMismatch(int predicate) {
   int inline_limit = 0;
   bool do_partial_inline = false;
 
-  if (!native_access && elem_bt != T_ILLEGAL && ArrayOperationPartialInlineSize > 0) {
+  if (elem_bt != T_ILLEGAL && ArrayOperationPartialInlineSize > 0) {
     inline_limit = ArrayOperationPartialInlineSize / type2aelembytes(elem_bt);
     do_partial_inline = inline_limit >= 16;
   }
@@ -6753,46 +6686,10 @@ bool LibraryCallKit::inline_vectorizedMismatch(int predicate) {
   if (call_stub_path != nullptr) {
     set_control(call_stub_path);
 
-    if (native_access) {
-      // Replace the first word read by the Java fallback through the usual
-      // scoped unsafe-load lowering. Early differences avoid the stub and
-      // its TLS stores. Retain the full length for its existing SIMD tiers.
-      C->set_has_unsafe_access(true);
-      DecoratorSet decorators = MO_UNORDERED | C2_UNSAFE_ACCESS | C2_UNALIGNED |
-                                C2_CONTROL_DEPENDENT_LOAD;
-      Node* first = access_load_at(obja, obja_adr, _gvn.type(obja_adr)->is_ptr(), TypeLong::LONG,
-                                  T_LONG, decorators | (native_a ? IN_NATIVE : IN_HEAP | C2_MISMATCHED));
-      Node* second = access_load_at(objb, objb_adr, _gvn.type(objb_adr)->is_ptr(), TypeLong::LONG,
-                                   T_LONG, decorators | (native_b ? IN_NATIVE : IN_HEAP | C2_MISMATCHED));
-      Node* difference = _gvn.transform(new XorLNode(first, second));
-      Node* cmp = _gvn.transform(new CmpLNode(difference, longcon(0)));
-      Node* early = generate_guard(_gvn.transform(new BoolNode(cmp, BoolTest::ne)), nullptr, PROB_MIN);
-      Node* index = _gvn.transform(new CountTrailingZerosLNode(difference));
-      index = _gvn.transform(new RShiftINode(index, intcon(3)));
-      exit_block->init_req(inline_path, early);
-      Node* prefix_memory = reset_memory();
-      memory_phi->init_req(inline_path, prefix_memory);
-      // Isolate the early return from subsequent mutation of the stub arm's
-      // MergeMem by its TLS store and wide-memory call.
-      set_all_memory(prefix_memory);
-      result_phi->init_req(inline_path, index);
-    }
-
-    Node* doing_unsafe_access_addr = nullptr;
-    if (native_access) {
-      Node* thread = _gvn.transform(new ThreadLocalNode());
-      doing_unsafe_access_addr = off_heap_plus_addr(thread, in_bytes(JavaThread::doing_unsafe_access_offset()));
-      store_to_memory(control(), doing_unsafe_access_addr, intcon(1), T_BYTE, MemNode::unordered);
-    }
-
     Node* call = make_runtime_call(RC_LEAF,
                                    OptoRuntime::vectorizedMismatch_Type(),
                                    StubRoutines::vectorizedMismatch(), "vectorizedMismatch", TypePtr::BOTTOM,
                                    obja_adr, objb_adr, length, scale);
-
-    if (native_access) {
-      store_to_memory(control(), doing_unsafe_access_addr, intcon(0), T_BYTE, MemNode::unordered);
-    }
 
     exit_block->init_req(stub_path, control());
     memory_phi->init_req(stub_path, map()->memory());
@@ -9377,3 +9274,4 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
   set_result(box_fp16_value(float16_box_type, field, result));
   return true;
 }
+

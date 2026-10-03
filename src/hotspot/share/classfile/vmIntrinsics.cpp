@@ -195,9 +195,6 @@ bool vmIntrinsics::does_virtual_dispatch(vmIntrinsics::ID id) {
 int vmIntrinsics::predicates_needed(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch (id) {
-  case vmIntrinsics::_vectorizedMismatch:
-    // Native mismatch fault metadata is currently implemented on x86 only.
-    return X86_ONLY(4) NOT_X86(0);
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
   case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
