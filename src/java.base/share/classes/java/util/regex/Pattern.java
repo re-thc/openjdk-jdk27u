@@ -3794,28 +3794,6 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 return false;
             }
             int guard = matcher.to - minLength;
-            // Nearby matches need no scan preparation. Keep the general loop
-            // below at its original call depth for unsupported or dense input.
-            if (next.match(matcher, i, seq) ||
-                    (i < guard && (next.match(matcher, ++i, seq) ||
-                    (i < guard && next.match(matcher, ++i, seq))))) {
-                matcher.first = i;
-                matcher.groups[0] = matcher.first;
-                matcher.groups[1] = matcher.last;
-                return true;
-            }
-            i++;
-            if (guard - i >= 64 && matcher.parentPattern.hasBmpLiteralPrefix &&
-                    seq instanceof String str) {
-                int result = matchLiteralPrefix(matcher, i, str, guard);
-                if (result >= 0) {
-                    return true;
-                }
-                if (result == -1) {
-                    return false;
-                }
-                i = ~result;
-            }
             for (; i <= guard; i++) {
                 if (next.match(matcher, i, seq)) {
                     matcher.first = i;
@@ -3830,7 +3808,22 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
 
         // A match returns its start, failure returns -1, and a dense-candidate
         // fallback returns the complemented start for the general loop.
-        private int matchLiteralPrefix(Matcher matcher, int i, String str, int guard) {
+        int matchLiteralPrefix(Matcher matcher, int i, String str) {
+            int guard = matcher.to - minLength;
+            if (i > guard) {
+                matcher.hitEnd = true;
+                return -1;
+            }
+            // Preserve nearby matches before preparing a longer character scan.
+            if (next.match(matcher, i, str) ||
+                    (i < guard && (next.match(matcher, ++i, str) ||
+                    (i < guard && next.match(matcher, ++i, str))))) {
+                matcher.first = i;
+                matcher.groups[0] = matcher.first;
+                matcher.groups[1] = matcher.last;
+                return i;
+            }
+            i++;
             int[] prefix = ((Slice) next).buffer;
             // A very large counted repetition can overflow the studied minimum.
             // Retain the original scanner if it cannot bound this prefix safely.
