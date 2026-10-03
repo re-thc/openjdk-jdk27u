@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,20 @@
 . .github/scripts/report-utils.sh
 
 GITHUB_STEP_SUMMARY="$1"
-BUILD_DIR="$(ls -d build/*)"
+build_dirs=()
+for spec in build/*/spec.gmk; do
+  [[ -f "$spec" ]] || continue
+  build_dirs+=("${spec%/spec.gmk}")
+done
+if [[ ${#build_dirs[@]} -eq 0 ]]; then
+  echo '::error::Build failed without a configured build directory' >&2
+  exit 1
+fi
 
 # Send signal to the do-build action that we failed
-touch "$BUILD_DIR/build-failure"
+for build_dir in "${build_dirs[@]}"; do
+  touch "$build_dir/build-failure" || exit 1
+done
 
 # Collect hs_errs for build-time crashes, e.g. javac, jmod, jlink, CDS.
 # These usually land in make/
@@ -44,11 +54,14 @@ hs_err_files=$(ls make/hs_err*.log 2> /dev/null || true)
   echo '<details><summary><b>View build failure summary</b></summary>'
   echo ''
   echo '```'
-  if [[ -f "$BUILD_DIR/make-support/failure-summary.log" ]]; then
-    cat "$BUILD_DIR/make-support/failure-summary.log"
-  else
-    echo "Failure summary ($BUILD_DIR/make-support/failure-summary.log) not found"
-  fi
+  for build_dir in "${build_dirs[@]}"; do
+    echo "Configuration: ${build_dir##*/}"
+    if [[ -f "$build_dir/make-support/failure-summary.log" ]]; then
+      cat "$build_dir/make-support/failure-summary.log"
+    else
+      echo "Failure summary ($build_dir/make-support/failure-summary.log) not found"
+    fi
+  done
   echo '```'
   echo '</details>'
   echo ''

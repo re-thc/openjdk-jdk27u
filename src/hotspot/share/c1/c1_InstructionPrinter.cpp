@@ -861,6 +861,13 @@ void InstructionPrinter::do_RuntimeCall(RuntimeCall* x) {
   output()->put(')');
 }
 
+void InstructionPrinter::do_ProfileStringUtf8(ProfileStringUtf8* x) {
+  output()->print("profile_string_utf8 ");
+  print_value(x->consumed());
+  output()->print(" -> ");
+  print_value(x->written());
+}
+
 void InstructionPrinter::do_MemBar(MemBar* x) {
   LIR_Code code = x->code();
   switch (code) {

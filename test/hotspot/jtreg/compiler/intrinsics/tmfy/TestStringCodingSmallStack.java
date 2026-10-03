@@ -15,19 +15,20 @@
  * @test
  * @summary Full-sized Latin1 conversion must unwind cleanly on a small Java stack
  * @requires os.family == "linux" & os.arch == "amd64" & vm.gc.G1 & vm.compiler1.enabled & vm.compiler2.enabled
- * @modules java.base/jdk.internal.tmfy
- * @run main/othervm -Xss256k -Xint -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters compiler.intrinsics.tmfy.TestStringCodingSmallStack leaf
- * @run main/othervm -Xss256k -Xint -XX:-UseTmfyStringCoding -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters compiler.intrinsics.tmfy.TestStringCodingSmallStack jni
+ * @library /test/lib
+ * @modules java.base/java.lang:+open
+ * @run main/othervm -Xss256k -Xint -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters compiler.intrinsics.tmfy.TestStringCodingSmallStack java
+ * @run main/othervm -Xss256k -Xint -XX:-UseTmfyStringCoding -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters compiler.intrinsics.tmfy.TestStringCodingSmallStack java
  * @run main/othervm -Xss256k -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters compiler.intrinsics.tmfy.TestStringCodingSmallStack leaf
- * @run main/othervm -Xss256k -Xbatch -XX:TieredStopAtLevel=1 -XX:-UseTmfyStringCoding -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters compiler.intrinsics.tmfy.TestStringCodingSmallStack jni
- * @run main/othervm -Xss256k -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters compiler.intrinsics.tmfy.TestStringCodingSmallStack leaf
- * @run main/othervm -Xss256k -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:-UseTmfyStringCoding -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters compiler.intrinsics.tmfy.TestStringCodingSmallStack jni
+ * @run main/othervm -Xss256k -Xbatch -XX:TieredStopAtLevel=1 -XX:-UseTmfyStringCoding -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters compiler.intrinsics.tmfy.TestStringCodingSmallStack java
+ * @run main/othervm -Xss256k -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters compiler.intrinsics.tmfy.TestStringCodingSmallStack java
+ * @run main/othervm -Xss256k -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:-UseTmfyStringCoding -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters compiler.intrinsics.tmfy.TestStringCodingSmallStack java
  */
 package compiler.intrinsics.tmfy;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import jdk.internal.tmfy.Utf8Codec;
+import jdk.test.lib.util.StringCodingAccess;
 
 public class TestStringCodingSmallStack {
     private static final String INPUT = "\u00e9".repeat(4096);
@@ -54,7 +55,7 @@ public class TestStringCodingSmallStack {
             EXPECTED[i + 1] = (byte) 0xa9;
         }
         for (int i = 0; i < 10_000; i++) checkEncoding();
-        long[] before = Utf8Codec.counters0();
+        long[] before = StringCodingAccess.counters0();
         for (int attempt = 0; attempt < 8; attempt++) {
             entered = unwound = 0;
             try {
@@ -66,10 +67,13 @@ public class TestStringCodingSmallStack {
             }
             checkEncoding();
         }
-        long[] after = Utf8Codec.counters0();
-        int route = args[0].equals("leaf") ? 0 : 1;
-        if (after[route] <= before[route] || (route == 1 && after[0] != before[0])) {
-            throw new AssertionError("small-stack conversion missed expected route");
+        long[] after = StringCodingAccess.counters0();
+        if (args[0].equals("leaf")) {
+            if (after[0] <= before[0] || after[1] != before[1] || after[2] != before[2]) {
+                throw new AssertionError("small-stack conversion missed C1 leaf route");
+            }
+        } else if (!Arrays.equals(after, before)) {
+            throw new AssertionError("Java stack conversion dispatched native work");
         }
         System.out.println("STRING_CODING_SMALL_STACK_OK mode=" + args[0]);
     }

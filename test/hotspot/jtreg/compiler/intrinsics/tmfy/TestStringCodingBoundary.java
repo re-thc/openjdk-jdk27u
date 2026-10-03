@@ -18,7 +18,7 @@
  * @summary Check bounded Latin-1 conversion and prewrite rejection in each execution tier
  * @requires vm.compiler1.enabled & vm.compiler2.enabled & vm.gc.G1 & vm.gc.Serial
  * @library /test/lib
- * @modules java.base/jdk.internal.tmfy:+open
+ * @modules java.base/java.lang:+open
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+TmfyStringCodingCounters
@@ -54,7 +54,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import jdk.internal.tmfy.Utf8Codec;
+import jdk.test.lib.util.StringCodingAccess;
 import jdk.test.whitebox.WhiteBox;
 
 public class TestStringCodingBoundary {
@@ -67,8 +67,8 @@ public class TestStringCodingBoundary {
 
     static {
         try {
-            NATIVE = MethodHandles.privateLookupIn(Utf8Codec.class, MethodHandles.lookup())
-                    .findStatic(Utf8Codec.class, "encodeLatin1Utf80", SIGNATURE);
+            NATIVE = MethodHandles.privateLookupIn(StringCodingAccess.type(), MethodHandles.lookup())
+                    .findStatic(StringCodingAccess.type(), "encodeLatin1Utf80", SIGNATURE);
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
         }
@@ -85,17 +85,17 @@ public class TestStringCodingBoundary {
         boolean leaf = args[1].equals("default") && System.getProperty("os.name").equals("Linux")
                 && System.getProperty("os.arch").equals("amd64");
         Method direct = TestStringCodingBoundary.class.getDeclaredMethod("nativeEncode", SIGNATURE.parameterArray());
-        Method facade = Utf8Codec.class.getDeclaredMethod("encodeLatin1", SIGNATURE.parameterArray());
+        Method facade = StringCodingAccess.class.getDeclaredMethod("encodeLatin1", SIGNATURE.parameterArray());
         WB.testSetDontInlineMethod(direct, true);
         WB.testSetDontInlineMethod(facade, true);
         byte[] in = new byte[MAX * 2 + 1], out = new byte[in.length * 2];
         Arrays.fill(in, (byte) 0xe9);
         for (int i = 0; i < 100; i++) {
             nativeEncode(in, 0, MAX, out, 0, MAX * 2);
-            Utf8Codec.encodeLatin1(in, 0, in.length, out, 0, out.length);
+            StringCodingAccess.encodeLatin1(in, 0, in.length, out, 0, out.length);
         }
         for (int n : new int[] {0, 1, MAX, MAX + 1, in.length}) {
-            Utf8Codec.encodeLatin1(in, 0, n, out, 0, out.length);
+            StringCodingAccess.encodeLatin1(in, 0, n, out, 0, out.length);
         }
         for (Method method : new Method[] { direct, facade }) {
             if (level != 0) {
@@ -105,18 +105,18 @@ public class TestStringCodingBoundary {
             check(WB.getMethodCompilationLevel(method) == level, "incorrect compilation level");
         }
 
-        long[] before = Utf8Codec.counters0();
+        long[] before = StringCodingAccess.counters0();
         for (int n : new int[] { 0, 1, 15, 16, 17, 31, 32, 33, MAX - 1, MAX }) {
             for (int pattern = 0; pattern < 3; pattern++) conversion(n, pattern, false);
         }
         check(nativeEncode(in, in.length, 0, out, out.length, 0) == 0, "empty end ranges");
         route(before, leaf, false);
 
-        before = Utf8Codec.counters0();
+        before = StringCodingAccess.counters0();
         rejections();
         route(before, leaf, true);
 
-        before = Utf8Codec.counters0();
+        before = StringCodingAccess.counters0();
         for (int n : new int[] { 0, 1, MAX, MAX + 1, MAX * 2, MAX * 2 + 1, MAX * 3 + 7 }) {
             for (int pattern = 0; pattern < 3; pattern++) conversion(n, pattern, true);
         }
@@ -128,7 +128,7 @@ public class TestStringCodingBoundary {
     }
 
     private static void route(long[] before, boolean leaf, boolean rejected) {
-        long[] after = Utf8Codec.counters0();
+        long[] after = StringCodingAccess.counters0();
         int counter = leaf ? (rejected ? 2 : 0) : 1;
         check(after[counter] > before[counter], "expected positive " + (leaf ? "leaf" : "JNI") + " delta");
         if (!leaf) check(after[0] == before[0], "unexpected leaf on fallback path");
@@ -155,7 +155,7 @@ public class TestStringCodingBoundary {
         }
         // Alternate exact capacity and spare capacity; all unused bytes must survive.
         int capacity = n * 2 + (pattern == 2 ? 3 : 0);
-        int result = facade ? Utf8Codec.encodeLatin1(in, 3, n, out, 7, capacity)
+        int result = facade ? StringCodingAccess.encodeLatin1(in, 3, n, out, 7, capacity)
                             : nativeEncode(in, 3, n, out, 7, capacity);
         check(result == end - 7, "wrong byte count for length " + n);
         check(Arrays.equals(out, expected), "wrong output or changed sentinel for length " + n);

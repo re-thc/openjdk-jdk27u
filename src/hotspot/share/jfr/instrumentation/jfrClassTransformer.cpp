@@ -128,6 +128,7 @@ InstanceKlass* JfrClassTransformer::create_new_instance_klass(InstanceKlass* ik,
   assert(new_ik != nullptr, "invariant");
   assert(new_ik->name() != nullptr, "invariant");
   assert(ik->name() == new_ik->name(), "invariant");
+  new_ik->set_has_been_transformed();
   return new_ik;
 }
 
@@ -185,4 +186,3 @@ void JfrClassTransformer::rewrite_klass_pointer(InstanceKlass*& ik, InstanceKlas
   // Finally rewrite the original pointer to the newly created InstanceKlass.
   ik = new_ik;
 }
-

@@ -335,8 +335,8 @@ JVM_GetNextThreadIdOffset(JNIEnv *env, jclass threadClass);
 JNIEXPORT void JNICALL
 JVM_RegisterContinuationMethods(JNIEnv *env, jclass cls);
 
-/* Experimental jdk.internal.tmfy registration bridge. */
-JNIEXPORT void JNICALL
+/* java.lang.StringCoding bounded Unicode conversion registration. */
+JNIEXPORT jboolean JNICALL
 JVM_RegisterTmfyStringCodingMethods(JNIEnv *env, jclass cls);
 
 /*

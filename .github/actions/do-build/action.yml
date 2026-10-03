@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,10 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: 'Fetch managed simdutf dependency'
+      run: python3 enhancements/tmfy/vendor/materialize-simdutf.py --fetch
+      shell: bash
+
     - name: 'Build'
       id: build
       run: >
@@ -49,20 +53,24 @@ runs:
     - name: 'Check for failure'
       id: check
       run: |
-        # Check for failure marker file
-        build_dir="$(ls -d build/*)"
-        if [[ -e $build_dir/build-failure ]]; then
-          # Collect relevant log files
-          mkdir failure-logs
-          cp \
-              $build_dir/spec.gmk \
-              $build_dir/build.log \
-              $build_dir/configure.log \
-              $build_dir/make-support/failure-summary.log \
-              $build_dir/make-support/failure-logs/* \
-              failure-logs/ 2> /dev/null || true
-          echo 'failure=true' >> $GITHUB_OUTPUT
-        fi
+        # Check configured builds, excluding dependency caches in build/.
+        for spec in build/*/spec.gmk; do
+          [[ -f "$spec" ]] || continue
+          build_dir="${spec%/spec.gmk}"
+          if [[ -e "$build_dir/build-failure" ]]; then
+            # Keep logs from different configurations separate.
+            log_dir="failure-logs/${build_dir##*/}"
+            mkdir -p "$log_dir"
+            cp \
+                "$spec" \
+                "$build_dir/build.log" \
+                "$build_dir/configure.log" \
+                "$build_dir/make-support/failure-summary.log" \
+                "$build_dir"/make-support/failure-logs/* \
+                "$log_dir/" 2> /dev/null || true
+            echo 'failure=true' >> "$GITHUB_OUTPUT"
+          fi
+        done
       shell: bash
 
     - name: 'Upload build logs'

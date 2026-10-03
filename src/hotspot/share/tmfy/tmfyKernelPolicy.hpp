@@ -16,6 +16,8 @@
 #ifndef SHARE_TMFY_TMFYPOLICY_HPP
 #define SHARE_TMFY_TMFYPOLICY_HPP
 #define TMFY_AUDITED_encodeLatin1Utf8 true
+#define TMFY_AUDITED_encodeUtf16Utf8 true
+#define TMFY_AUDITED_decodeUtf8Utf16 true
 #define TMFY_X86_AUDITED 1
 #define TMFY_AARCH64_AUDITED 0
 #endif // SHARE_TMFY_TMFYPOLICY_HPP

@@ -27,13 +27,18 @@
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_GraphBuilder.hpp"
 #include "c1/c1_InstructionPrinter.hpp"
+#include "c1/c1_Runtime1.hpp"
 #include "ci/ciCallSite.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciKlass.hpp"
 #include "ci/ciMemberName.hpp"
 #include "ci/ciSymbols.hpp"
+#include "ci/ciStringUtf8.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/moduleEntry.hpp"
+#include "code/dependencies.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
@@ -42,6 +47,9 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/tmfyStringCoding.hpp"
+#include "runtime/tmfyStringCodingTooling.hpp"
+#include "oops/method.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
@@ -751,6 +759,8 @@ GraphBuilder::ScopeData::ScopeData(ScopeData* parent)
   , _cleanup_return_prev(nullptr)
   , _cleanup_state(nullptr)
   , _ignore_return(false)
+  , _native_string_encode_utf8(false)
+  , _string_encode_utf8_scalar(nullptr)
 {
   if (parent != nullptr) {
     _max_inline_size = (intx) ((float) NestedInliningSizeRatio * (float) parent->max_inline_size() / 100.0f);
@@ -1275,7 +1285,14 @@ void GraphBuilder::increment() {
 
 
 void GraphBuilder::_goto(int from_bci, int to_bci) {
-  Goto *x = new Goto(block_at(to_bci), to_bci <= from_bci);
+  BlockBegin* target = block_at(to_bci);
+  if (scope_data()->native_string_encode_utf8() && from_bci == 134 && to_bci == 60) {
+    // Once the validated origin declines native conversion, its original
+    // scalar backedge must not repeat native admission on every byte.
+    target = scope_data()->string_encode_utf8_scalar();
+    assert(target != nullptr, "scalar loop header must be available");
+  }
+  Goto *x = new Goto(target, to_bci <= from_bci);
   if (is_profiling()) {
     compilation()->set_would_profile(true);
     x->set_profiled_bci(bci());
@@ -1362,6 +1379,30 @@ void GraphBuilder::if_same(ValueType* type, If::Condition cond) {
   ValueStack* state_before = copy_state_before();
   Value y = pop(type);
   Value x = pop(type);
+  if (scope_data()->native_string_encode_utf8() && bci() == 64 &&
+      block() == scope_data()->string_encode_utf8_scalar()) {
+    assert(type == intType && cond == If::geq, "validated scalar loop exit");
+    // Native calls spill the invariant length. Put it on the register-required
+    // side of the equivalent comparison so it can stay in a register through
+    // the scalar loop. Keep the original pre-pop state and successor polarity.
+    if_node(y, Instruction::mirror(cond), x, state_before);
+    return;
+  }
+  if (!is_profiling() && (bci() == 41 || bci() == 10)) {
+    ciStringUtf8::Admission admission = ciStringUtf8::admission(method(), bci(), compilation()->env());
+    if (admission == ciStringUtf8::Java) {
+      // A nonprofiling compilation can take the validated original fallback
+      // directly, without manufacturing branch counts or a second size test.
+      append(new Goto(block_at(stream()->get_dest()), state_before, false));
+      return;
+    }
+    if (admission == ciStringUtf8::Ready && bci() == 41) {
+      // Replace only the comparison operand. The full original pre-pop state
+      // still contains the Java threshold (16), so reexecution and constant
+      // folding keep the original method's stack and caller scope intact.
+      y = append(new Constant(new IntConstant(64)));
+    }
+  }
   if_node(x, cond, y, state_before);
 }
 
@@ -2695,6 +2736,340 @@ void GraphBuilder::connect_to_end(BlockBegin* beg) {
 }
 
 
+// This is a loop substitution, never a whole-method intrinsic or an inlining
+// policy override. Every byte and symbolic reference of the pristine origin
+// must match before BCI 60 is interpreted as the Latin-1 loop header.
+bool GraphBuilder::is_string_encode_utf8_loop() {
+#if defined(AMD64)
+  ciMethod* origin = method();
+  ciEnv* env = compilation()->env();
+  if (!InlineNatives || origin->holder() != env->String_klass() ||
+      origin->intrinsic_id() != vmIntrinsics::_tmfy_stringEncodeUtf8 ||
+      origin->code_size() != 156 || origin->max_locals() != 8 || origin->has_exception_handlers() ||
+      !vmIntrinsics::is_intrinsic_available(vmIntrinsics::_tmfy_stringEncodeUtf8) ||
+      compilation()->directive()->is_intrinsic_disabled(vmIntrinsics::_tmfy_stringEncodeUtf8)) return false;
+  {
+    VM_ENTRY_MARK;
+    Method* m = origin->get_Method();
+    InstanceKlass* holder = m->method_holder();
+    if (m->is_old() || m->number_of_breakpoints() != 0 || holder->class_loader() != nullptr ||
+        holder->has_been_transformed() || holder->has_been_redefined() || holder->module()->is_patched() ||
+        !TmfyStringCoding::is_supported(vmIntrinsics::_tmfy_encodeLatin1Utf8)) return false;
+  }
+  static const u1 shape[] = {
+    Bytecodes::_iload_0, // 0
+    Bytecodes::_iconst_1, // 1
+    Bytecodes::_if_icmpne, 0, 9, // 2
+    Bytecodes::_aload_1, // 5
+    Bytecodes::_aload_2, // 6
+    Bytecodes::_invokestatic, 0, 0, // 7
+    Bytecodes::_areturn, // 10
+    Bytecodes::_aload_1, // 11
+    Bytecodes::_iconst_0, // 12
+    Bytecodes::_aload_1, // 13
+    Bytecodes::_arraylength, // 14
+    Bytecodes::_invokestatic, 0, 0, // 15
+    Bytecodes::_istore_3, // 18
+    Bytecodes::_iload_3, // 19
+    Bytecodes::_aload_1, // 20
+    Bytecodes::_arraylength, // 21
+    Bytecodes::_if_icmpne, 0, 11, // 22
+    Bytecodes::_aload_1, // 25
+    Bytecodes::_invokevirtual, 0, 0, // 26
+    Bytecodes::_checkcast, 0, 0, // 29
+    Bytecodes::_areturn, // 32
+    Bytecodes::_aload_1, // 33
+    Bytecodes::_arraylength, // 34
+    Bytecodes::_invokestatic, 0, 0, // 35
+    Bytecodes::_astore, 4, // 38
+    Bytecodes::_iload_3, // 40
+    Bytecodes::_ifle, 0, 12, // 41
+    Bytecodes::_aload_1, // 44
+    Bytecodes::_iconst_0, // 45
+    Bytecodes::_aload, 4, // 46
+    Bytecodes::_iconst_0, // 48
+    Bytecodes::_iload_3, // 49
+    Bytecodes::_invokestatic, 0, 0, // 50
+    Bytecodes::_iload_3, // 53
+    Bytecodes::_istore, 5, // 54
+    Bytecodes::_iload, 5, // 56
+    Bytecodes::_istore, 6, // 58
+    Bytecodes::_iload, 6, // 60
+    Bytecodes::_aload_1, // 62
+    Bytecodes::_arraylength, // 63
+    Bytecodes::_if_icmpge, 0, 73, // 64
+    Bytecodes::_aload_1, // 67
+    Bytecodes::_iload, 6, // 68
+    Bytecodes::_baload, // 70
+    Bytecodes::_istore, 7, // 71
+    Bytecodes::_iload, 7, // 73
+    Bytecodes::_ifge, 0, 46, // 75
+    Bytecodes::_aload, 4, // 78
+    Bytecodes::_iload, 5, // 80
+    Bytecodes::_iinc, 5, 1, // 82
+    Bytecodes::_sipush, 0, 192, // 85
+    Bytecodes::_iload, 7, // 88
+    Bytecodes::_sipush, 0, 255, // 90
+    Bytecodes::_iand, // 93
+    Bytecodes::_bipush, 6, // 94
+    Bytecodes::_ishr, // 96
+    Bytecodes::_ior, // 97
+    Bytecodes::_i2b, // 98
+    Bytecodes::_bastore, // 99
+    Bytecodes::_aload, 4, // 100
+    Bytecodes::_iload, 5, // 102
+    Bytecodes::_iinc, 5, 1, // 104
+    Bytecodes::_sipush, 0, 128, // 107
+    Bytecodes::_iload, 7, // 110
+    Bytecodes::_bipush, 63, // 112
+    Bytecodes::_iand, // 114
+    Bytecodes::_ior, // 115
+    Bytecodes::_i2b, // 116
+    Bytecodes::_bastore, // 117
+    Bytecodes::_goto, 0, 13, // 118
+    Bytecodes::_aload, 4, // 121
+    Bytecodes::_iload, 5, // 123
+    Bytecodes::_iinc, 5, 1, // 125
+    Bytecodes::_iload, 7, // 128
+    Bytecodes::_bastore, // 130
+    Bytecodes::_iinc, 6, 1, // 131
+    Bytecodes::_goto, 255, 182, // 134
+    Bytecodes::_iload, 5, // 137
+    Bytecodes::_aload, 4, // 139
+    Bytecodes::_arraylength, // 141
+    Bytecodes::_if_icmpne, 0, 6, // 142
+    Bytecodes::_aload, 4, // 145
+    Bytecodes::_areturn, // 147
+    Bytecodes::_aload, 4, // 148
+    Bytecodes::_iload, 5, // 150
+    Bytecodes::_invokestatic, 0, 0, // 152
+    Bytecodes::_areturn, // 155
+  };
+  static_assert(sizeof(shape) == 156, "original String Latin-1 UTF-8 shape");
+  ciBytecodeStream stream(origin);
+  for (Bytecodes::Code code; (code = stream.next()) != ciBytecodeStream::EOBC();) {
+    int pos = stream.cur_bci();
+    if (code != shape[pos]) return false;
+    if (Bytecodes::is_invoke(code)) {
+      const char* holder;
+      const char* name;
+      const char* signature;
+      switch (pos) {
+        case 7: holder = "java/lang/String"; name = "encodeUTF8_UTF16"; signature = "([BLjava/lang/Class;)[B"; break;
+        case 15: holder = "java/lang/StringCoding"; name = "countPositives"; signature = "([BII)I"; break;
+        case 26: holder = "[B"; name = "clone"; signature = "()Ljava/lang/Object;"; break;
+        case 35: holder = "java/lang/StringUTF16"; name = "newBytesFor"; signature = "(I)[B"; break;
+        case 50: holder = "java/lang/System"; name = "arraycopy"; signature = "(Ljava/lang/Object;ILjava/lang/Object;II)V"; break;
+        case 152: holder = "java/util/Arrays"; name = "copyOf"; signature = "([BI)[B"; break;
+        default: return false;
+      }
+      bool will_link;
+      ciSignature* declared;
+      ciMethod* target = stream.get_method(will_link, &declared);
+      // clone may resolve to Object.clone; its symbolic array holder is checked
+      // through the constant-pool signature below instead of the Method holder.
+      const char* actual_holder = pos == 26 ? stream.get_declared_method_holder()->name()->as_utf8()
+                                          : target->holder()->name()->as_utf8();
+      if (strcmp(actual_holder, holder) != 0 || strcmp(target->name()->as_utf8(), name) != 0 ||
+          strcmp(target->signature()->as_symbol()->as_utf8(), signature) != 0) return false;
+    } else if (code == Bytecodes::_checkcast) {
+      if (strcmp(stream.get_klass()->name()->as_utf8(), "[B") != 0) return false;
+    } else {
+      for (int i = 1; i < Bytecodes::length_for(code); ++i) {
+        if (stream.cur_bcp()[i] != shape[pos + i]) return false;
+      }
+    }
+  }
+  ciKlass* klass = env->find_system_klass(ciSymbol::make("java/lang/StringCoding"));
+  if (!klass->is_loaded() || !klass->is_instance_klass()) return false;
+  ciMethod* native = klass->as_instance_klass()->find_method(ciSymbol::make("encodeLatin1Utf80"),
+                                                          ciSymbol::make("([BII[BII)I"));
+  if (native == nullptr || !native->is_loaded() || !native->is_native() ||
+      native->intrinsic_id() != vmIntrinsics::_tmfy_encodeLatin1Utf8) return false;
+  {
+    VM_ENTRY_MARK;
+    Method* m = native->get_Method();
+    InstanceKlass* holder = m->method_holder();
+    if (m->is_old() || holder->class_loader() != nullptr || holder->has_been_transformed() ||
+        holder->has_been_redefined() || holder->module()->is_patched() ||
+        !compilation()->compiler()->is_intrinsic_available(methodHandle(THREAD, m), compilation()->directive())) return false;
+  }
+  env->dependencies()->assert_evol_method(origin);
+  env->dependencies()->assert_evol_method(native);
+  env->record_tmfy_dependency(native);
+  return true;
+#else
+  return false;
+#endif
+}
+
+void GraphBuilder::finish_string_encode_utf8_block(BlockEnd* end) {
+  block()->set_end(end);
+  for (int i = 0; i < end->number_of_sux(); ++i) {
+    if (!end->sux_at(i)->try_merge(end->state(), compilation()->has_irreducible_loops())) {
+      BAILOUT("String UTF-8 block join failed");
+    }
+  }
+}
+
+void GraphBuilder::enter_string_encode_utf8_block(BlockBegin* next) {
+  assert(next->state() != nullptr, "only enter a live String UTF-8 block");
+  kill_all();
+  _last = _block = next;
+  _state = next->state()->copy_for_parsing();
+  next->set(BlockBegin::was_visited_flag);
+}
+
+void GraphBuilder::inline_string_encode_utf8_loop() {
+#ifdef AMD64
+  assert(bci() == 60 && state()->stack_is_empty(), "original empty-stack loop header");
+  BlockBegin* policy = block();
+  BlockBegin* java = new BlockBegin(60);
+  // This block receives the original scalar backedge. Mark it before its
+  // first merge so the original loop's local-phi requirements are honored.
+  java->set(BlockBegin::parser_loop_header_flag);
+  java->set(BlockBegin::backward_branch_target_flag);
+  scope_data()->set_string_encode_utf8_scalar(java);
+  BlockBegin* initialize = new BlockBegin(60);
+  BlockBegin* native = new BlockBegin(60);
+  BlockBegin* success = new BlockBegin(60);
+  BlockBegin* continuations[] = {java, initialize, native, success};
+  for (BlockBegin* b : continuations) {
+    b->init_stores_to_locals(method()->max_locals());
+    b->set_depth_first_number(block()->depth_first_number());
+  }
+  Value input = state()->local_at(1);
+  Value source = state()->local_at(6);
+  Value length = append(new ArrayLength(input, copy_state_for_exception()));
+  Value remaining = append(new ArithmeticOp(Bytecodes::_isub, length, source, nullptr));
+  Value minimum = append(new Constant(new IntConstant(16)));
+  finish_string_encode_utf8_block(append(new If(remaining, If::lss, false, minimum,
+                                               java, initialize, copy_state_before(), false))->as_BlockEnd());
+  CHECK_BAILOUT();
+  if (initialize->state() != nullptr) {
+    enter_string_encode_utf8_block(initialize);
+    // Runtime1 establishes last_Java_frame and carries the full original BCI
+    // 60 state. No borrowed element address exists before it returns.
+    Value ready = append(new RuntimeCall(intType, "tmfy_stringcoding_initialize",
+                          Runtime1::entry_for(StubId::c1_tmfy_stringcoding_initialize_id),
+                          new Values(0), false, copy_state_before()));
+    kill_all();
+    Value zero = append(new Constant(intZero));
+    finish_string_encode_utf8_block(append(new If(ready, If::eql, false, zero,
+                                                 java, native, copy_state_before(), false))->as_BlockEnd());
+    CHECK_BAILOUT();
+    enter_string_encode_utf8_block(native);
+    Value limit = append(new Constant(new IntConstant(4096)));
+    // remaining is nonnegative, so subtracting 4096 cannot overflow. This
+    // computes min(remaining, 4096) using ordinary GraphBuilder operations;
+    // IfOp belongs to the later conditional-expression elimination phase.
+    Value delta = append(new ArithmeticOp(Bytecodes::_isub, remaining, limit, nullptr));
+    Value sign = append(new ShiftOp(Bytecodes::_ishr, delta, append(new Constant(new IntConstant(31)))));
+    Value short_delta = append(new LogicOp(Bytecodes::_iand, delta, sign));
+    Value count = append(new ArithmeticOp(Bytecodes::_iadd, limit, short_delta, nullptr));
+    Value capacity = append(new ShiftOp(Bytecodes::_ishl, count, append(new Constant(intOne))));
+    Values* args = new Values(6);
+    args->append(state()->local_at(1));
+    args->append(state()->local_at(6));
+    args->append(count);
+    args->append(state()->local_at(4));
+    args->append(state()->local_at(5));
+    args->append(capacity);
+    Intrinsic* conversion = new Intrinsic(intType, vmIntrinsics::_tmfy_encodeLatin1Utf8,
+                                          args, false, copy_state_before(), false, true);
+    conversion->set_string_utf8_origin();
+    Value written = append_split(conversion);
+    // LIR accepts only the three documented pre-store failure statuses here.
+    // Invariant failures and invalid positive counts throw InternalError before
+    // this fallback edge, so partially written output is never replayed.
+    finish_string_encode_utf8_block(append(new If(written, If::lss, false, count,
+                                                 java, success, copy_state_before(), false))->as_BlockEnd());
+    CHECK_BAILOUT();
+    enter_string_encode_utf8_block(success);
+    Value dp = append(new ArithmeticOp(Bytecodes::_iadd, state()->local_at(5), written, nullptr));
+    Value end = append(new ArithmeticOp(Bytecodes::_iadd, state()->local_at(6), count, nullptr));
+    Value last_source = append(new ArithmeticOp(Bytecodes::_isub, end, append(new Constant(intOne)), nullptr));
+    store_local(state(), dp, 5);
+    store_local(state(), last_source, 6);
+    // Preserve the original state before iinc for a profiling overflow. The
+    // native continuation has its own copy of iinc/goto; the original scalar
+    // continuation stays in the scalar loop after native admission declines.
+    if (is_profiling()) {
+      compilation()->set_would_profile(true);
+      append(new ProfileStringUtf8(method(), count, written, copy_state_before_with_bci(131)));
+    }
+    Value next_source = append_with_bci(new ArithmeticOp(Bytecodes::_iadd, state()->local_at(6),
+                                          append(new Constant(intOne)), nullptr), 131);
+    store_local(state(), next_source, 6);
+    Goto* backedge = new Goto(policy, copy_state_before_with_bci(134), true);
+    if (is_profiling()) {
+      backedge->set_profiled_bci(134);
+      if (profile_branches()) {
+        backedge->set_profiled_method(method());
+        backedge->set_should_profile(true);
+      }
+    }
+    // The bulk node credits n-1 logical backedges. This original-BCI goto
+    // contributes the final one and retains the poll between bounded chunks.
+    finish_string_encode_utf8_block(append_with_bci(backedge, 134)->as_BlockEnd());
+    CHECK_BAILOUT();
+  }
+  enter_string_encode_utf8_block(java);
+#endif
+}
+
+// Profiling compilations keep the original minimum-size bytecode branch and
+// its BranchData intact. The policy belongs on its empty-stack fallthrough, so it neither
+// fabricates a taken count for that branch nor profiles a synthetic 64-unit
+// threshold as though it were the Java 16-unit threshold.
+bool GraphBuilder::string_utf8_admission() {
+  assert(is_profiling(), "nonprofiling admission is decided at the original size guard");
+  bool encode = bci() == 44;
+  ciStringUtf8::Admission admission = ciStringUtf8::admission(method(), encode ? 41 : 10,
+                                                            compilation()->env());
+  if (admission == ciStringUtf8::Ordinary || (!encode && admission == ciStringUtf8::Ready)) {
+    return false;
+  }
+  assert(state()->stack_is_empty(), "validated String admission fallthrough");
+  BlockBegin* fallback = block_at(encode ? 162 : 112);
+  if (admission == ciStringUtf8::Java) {
+    // No profile belongs to this policy edge. Later readiness publication
+    // leaves this nmethod on Java; the shared CI proof records tooling and
+    // native-binding dependencies for calls skipped by the decision.
+    append(new Goto(fallback, false));
+    return true;
+  }
+
+  BlockBegin* native = new BlockBegin(bci());
+  native->init_stores_to_locals(method()->max_locals());
+  native->set_depth_first_number(block()->depth_first_number());
+  Value minimum = append(new Constant(new IntConstant(64)));
+  // This is the full original state before BCI 44, including every caller
+  // frame. It must not use an exception-only copy or contain synthetic stack
+  // operands. Deoptimization reexecutes the original optional Java region.
+  ValueStack* before = copy_state_before();
+  BlockEnd* end = append(new If(state()->local_at(4), If::lss, false, minimum,
+                               fallback, native, before, false))->as_BlockEnd();
+  if (end->as_Goto() != nullptr && end->default_sux() == fallback) {
+    return true; // Ordinary block completion propagates this folded edge.
+  }
+  block()->set_end(end);
+  for (int i = 0; i < end->number_of_sux(); ++i) {
+    BlockBegin* successor = end->sux_at(i);
+    if (!successor->try_merge(end->state(), compilation()->has_irreducible_loops())) {
+      BAILOUT_("String Unicode admission block join failed", true);
+    }
+    if (successor != native) scope_data()->add_to_work_list(successor);
+  }
+  assert(native->state() != nullptr, "live String native continuation");
+  kill_all();
+  _last = _block = native;
+  _state = native->state()->copy_for_parsing();
+  native->set(BlockBegin::was_visited_flag);
+  return false;
+}
+
+
 BlockEnd* GraphBuilder::iterate_bytecodes_for_block(int bci) {
 #ifndef PRODUCT
   if (PrintIRDuringConstruction) {
@@ -2745,6 +3120,17 @@ BlockEnd* GraphBuilder::iterate_bytecodes_for_block(int bci) {
       apush(append(new ExceptionObject()));
       push_exception = false;
     }
+
+    if (scope_data()->native_string_encode_utf8() && s.cur_bci() == 60) {
+      inline_string_encode_utf8_loop();
+      CHECK_BAILOUT_(nullptr);
+    }
+
+    // Nonprofiling admission was decided at the original BCI 41/10 guard.
+    if (is_profiling() && (s.cur_bci() == 44 || s.cur_bci() == 13) && string_utf8_admission()) {
+      break;
+    }
+    CHECK_BAILOUT_(nullptr);
 
     // handle bytecode
     switch (code) {
@@ -4265,6 +4651,7 @@ void GraphBuilder::push_root_scope(IRScope* scope, BlockList* bci2block, BlockBe
   data->set_scope(scope);
   data->set_bci2block(bci2block);
   _scope_data = data;
+  data->set_native_string_encode_utf8(is_string_encode_utf8_loop());
   _block = start;
 }
 
@@ -4289,6 +4676,7 @@ void GraphBuilder::push_scope(ciMethod* callee, BlockBegin* continuation) {
   data->set_bci2block(blb.bci2block());
   data->set_continuation(continuation);
   _scope_data = data;
+  data->set_native_string_encode_utf8(is_string_encode_utf8_loop());
 }
 
 

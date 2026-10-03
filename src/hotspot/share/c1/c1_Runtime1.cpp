@@ -325,6 +325,8 @@ const char* Runtime1::name_for_address(address entry) {
   TMFY_KERNELS_DO(TMFY_FUNCTION_CASE)
 #undef TMFY_FUNCTION_CASE
 
+  FUNCTION_CASE(entry, TmfyStringCoding::initialize_from_java);
+  AMD64_ONLY(FUNCTION_CASE(entry, Runtime1::throw_tmfy_stringcoding_error);)
   FUNCTION_CASE(entry, os::javaTimeMillis);
   FUNCTION_CASE(entry, os::javaTimeNanos);
   FUNCTION_CASE(entry, SharedRuntime::OSR_migration_end);
@@ -756,6 +758,15 @@ JRT_ENTRY(void, Runtime1::throw_class_cast_exception(JavaThread* current, oopDes
   char* message = SharedRuntime::generate_class_cast_message(current, object->klass());
   SharedRuntime::throw_and_post_jvmti_exception(current, vmSymbols::java_lang_ClassCastException(), message);
 JRT_END
+
+
+#ifdef AMD64
+JRT_ENTRY(void, Runtime1::throw_tmfy_stringcoding_error(JavaThread* current))
+  ResourceMark rm(current);
+  SharedRuntime::throw_and_post_jvmti_exception(current, vmSymbols::java_lang_InternalError(),
+                                               "Latin-1 UTF-8 conversion invariant failure");
+JRT_END
+#endif
 
 
 JRT_ENTRY(void, Runtime1::throw_incompatible_class_change_error(JavaThread* current))

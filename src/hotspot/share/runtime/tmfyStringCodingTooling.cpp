@@ -36,12 +36,14 @@ bool TmfyStringCodingTooling::_initial_registration_available = false;
 
 bool TmfyStringCodingTooling::is_bindings_class(Klass* klass) {
   return klass->is_instance_klass() && klass->class_loader() == nullptr &&
-         klass->name()->equals("jdk/internal/tmfy/Utf8Codec");
+         klass->name()->equals("java/lang/StringCoding");
 }
 
 bool TmfyStringCodingTooling::contains_catalogue_method(const JNINativeMethod* methods, int count) {
 #define TMFY_DESCRIPTOR_output "([BII[BII)I"
   for (int i = 0; i < count; ++i) {
+    if (strcmp(methods[i].name, "registerNatives") == 0 &&
+        strcmp(methods[i].signature, "()Z") == 0) return true;
 #define TMFY_MATCH(kernel_name, shape, helper, bound, audited) \
     if (strcmp(methods[i].name, #kernel_name "0") == 0 && \
         strcmp(methods[i].signature, TMFY_DESCRIPTOR_##shape) == 0) return true;
@@ -79,7 +81,7 @@ void TmfyStringCodingTooling::record_method(Method* method) {
   }
 }
 
-void TmfyStringCodingTooling::prepare_registration(Klass* klass, const JNINativeMethod* methods, int count) {
+bool TmfyStringCodingTooling::prepare_registration(Klass* klass, const JNINativeMethod* methods, int count) {
   guarantee(is_bindings_class(klass), "only the bootstrap TmfyStringCoding bindings may register");
   JavaThread* thread = JavaThread::current();
   assert(thread->thread_state() == _thread_in_vm, "VM state required");
@@ -89,15 +91,15 @@ void TmfyStringCodingTooling::prepare_registration(Klass* klass, const JNINative
     methodHandle method(thread, ik->methods()->at(i));
     if (TmfyStringCoding::is_intrinsic(method->intrinsic_id())) {
       guarantee(found < kernel_count, "unexpected TmfyStringCoding method count");
-      record_method(method());
       ++found;
     }
   }
   if (found != kernel_count) {
     // A transformer/native-prefix agent may replace an intrinsic native method
-    // with a wrapper. Fall back instead of treating legal tooling as VM damage.
+    // with a wrapper. Disable intrinsic bypasses, but let RegisterNatives bind
+    // the prefixed native through Method::register_native as usual.
     revoke();
-    return;
+    return true;
   }
   bool repeated;
   {
@@ -117,6 +119,7 @@ void TmfyStringCodingTooling::prepare_registration(Klass* klass, const JNINative
     }
   }
   if (repeated) revoke();
+  return true;
 }
 
 void TmfyStringCodingTooling::before_register(Klass* klass, const JNINativeMethod* methods, int count) {

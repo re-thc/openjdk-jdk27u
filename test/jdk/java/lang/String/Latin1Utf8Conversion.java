@@ -15,14 +15,17 @@
  * @test
  * @summary String UTF-8 encoding preserves Latin1, ASCII, UTF16 and strict error semantics
  * @requires os.family == "linux" & os.arch == "amd64" & vm.gc.G1 & vm.compiler1.enabled & vm.compiler2.enabled
- * @modules java.base/jdk.internal.tmfy java.base/jdk.internal.access
- * @run main/othervm -Xint -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters Latin1Utf8Conversion leaf
+ * @library /test/lib
+ * @modules java.base/java.lang:+open java.base/jdk.internal.access
+ * @run main/othervm -Xint -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters Latin1Utf8Conversion java
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters Latin1Utf8Conversion leaf
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters Latin1Utf8Conversion leaf
- * @run main/othervm -Xint -XX:-UseTmfyStringCoding -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters Latin1Utf8Conversion jni
- * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:-UseTmfyStringCoding -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters Latin1Utf8Conversion jni
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:-UseTmfyStringCoding -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters Latin1Utf8Conversion jni
- * @run main/othervm -XX:-CompactStrings -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters Latin1Utf8Conversion utf16
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters Latin1Utf8Conversion java
+ * @run main/othervm -Xint -XX:-UseTmfyStringCoding -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters Latin1Utf8Conversion java
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:-UseTmfyStringCoding -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters Latin1Utf8Conversion java
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:-UseTmfyStringCoding -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters Latin1Utf8Conversion java
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_tmfy_stringEncodeUtf8 -XX:+TmfyStringCodingCounters Latin1Utf8Conversion java
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_tmfy_stringEncodeUtf8 -XX:+TmfyStringCodingCounters Latin1Utf8Conversion java
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseG1GC -XX:-CompactStrings -XX:+UnlockDiagnosticVMOptions -XX:+TmfyStringCodingCounters Latin1Utf8Conversion utf16
  */
 
 import java.nio.CharBuffer;
@@ -30,27 +33,29 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.tmfy.Utf8Codec;
+import jdk.test.lib.util.StringCodingAccess;
 
 public class Latin1Utf8Conversion {
-    private static final int[] LENGTHS = {0, 1, 7, 8, 15, 16, 17, 31, 32, 63, 64,
+    private static final int[] LENGTHS = {0, 1, 7, 8, 15, 16, 17, 31, 32, 63, 64, 65,
             127, 128, 4095, 4096, 4097, 8191, 8192};
 
     public static void main(String[] args) throws Exception {
         // Measure only actual public String calls; diagnostic setup is outside the window.
         String hot = "\u00e9A\u00ff\u0000".repeat(65);
         byte[] expected = scalar(hot.toCharArray());
-        long[] before = Utf8Codec.counters0();
+        // The Latin1 optimization lowers an existing loop only in C1. Publish
+        // readiness and warm the public origin before the exact counted window.
+        StringCodingAccess.counters0();
         for (int i = 0; i < 20_000; i++) equal(expected, encode(hot));
-        long[] delta = delta(before, Utf8Codec.counters0());
-        if (args[0].equals("leaf")) {
+        long[] before = StringCodingAccess.counters0();
+        for (int i = 0; i < 20_000; i++) equal(expected, encode(hot));
+        long[] delta = delta(before, StringCodingAccess.counters0());
+        if (args[0].equals("leaf") || args[0].equals("utf16")) {
             check(delta[0] == 20_000 && delta[1] == 0 && delta[2] == 0,
                     "public String leaf path: " + Arrays.toString(delta));
-        } else if (args[0].equals("jni")) {
-            check(delta[0] == 0 && delta[1] == 20_000 && delta[2] == 0,
-                    "public String JNI path: " + Arrays.toString(delta));
         } else {
-            check(Arrays.equals(delta, new long[3]), "noncompact path used Latin1 converter");
+            check(args[0].equals("java") && Arrays.equals(delta, new long[3]),
+                    "public Latin1 Java route: " + Arrays.toString(delta));
         }
 
         thresholdDispatch(args[0]);
@@ -91,17 +96,19 @@ public class Latin1Utf8Conversion {
         // The threshold applies to the suffix after the first non-ASCII byte,
         // not the total String length or number of non-ASCII bytes.
         for (int prefix : new int[] {0, 63, 4096}) {
-            for (int suffix : new int[] {1, 8, 15, 16, 17}) {
+            for (int suffix : new int[] {1, 8, 15, 16, 17, 63, 64, 65}) {
                 for (boolean dense : new boolean[] {false, true}) {
                     String text = "A".repeat(prefix) + "\u00e9"
                             + (dense ? "\u00ff" : "B").repeat(suffix - 1);
                     byte[] expected = scalar(text.toCharArray());
-                    long[] before = Utf8Codec.counters0();
+                    long[] before = StringCodingAccess.counters0();
                     byte[] actual = encode(text);
-                    long[] calls = delta(before, Utf8Codec.counters0());
+                    long[] calls = delta(before, StringCodingAccess.counters0());
                     equal(expected, actual);
                     long[] wanted = new long[3];
-                    if (suffix >= 16 && !mode.equals("utf16")) {
+                    if (mode.equals("utf16")) {
+                        if (prefix + suffix >= 64 && prefix + suffix <= 2048) wanted[0] = 1;
+                    } else if (suffix >= 16 && mode.equals("leaf")) {
                         wanted[mode.equals("leaf") ? 0 : 1] = 1;
                     }
                     check(Arrays.equals(calls, wanted), "suffix dispatch prefix=" + prefix
@@ -157,22 +164,22 @@ public class Latin1Utf8Conversion {
 
     private static void asciiIsolation() {
         String ascii = "ASCII\u0000boundary";
-        long[] before = Utf8Codec.counters0();
+        long[] before = StringCodingAccess.counters0();
         byte[] one = encode(ascii), two = encode(ascii);
         check(one != two, "public ASCII result must be a fresh array");
         one[0] = 0;
         check(two[0] == 'A' && ascii.charAt(0) == 'A', "ASCII result aliases String");
-        check(Arrays.equals(delta(before, Utf8Codec.counters0()), new long[3]),
+        check(Arrays.equals(delta(before, StringCodingAccess.counters0()), new long[3]),
                 "ASCII should bypass Latin1 native conversion");
     }
 
     private static void utf16AndErrors() throws Exception {
         for (String s : new String[] {"\u0100\u20ac", "\ud83d\ude00", "\u00e9\u0100A"}) {
-            long[] before = Utf8Codec.counters0();
+            long[] before = StringCodingAccess.counters0();
             equal(scalar(s.toCharArray()), encode(s));
             equal(scalar(s.toCharArray()), SharedSecrets.getJavaLangAccess()
                     .uncheckedGetBytesOrThrow(s, StandardCharsets.UTF_8));
-            check(Arrays.equals(delta(before, Utf8Codec.counters0()), new long[3]),
+            check(Arrays.equals(delta(before, StringCodingAccess.counters0()), new long[3]),
                     "UTF16 should bypass Latin1 native conversion");
         }
         for (String s : new String[] {"\ud800", "\udc00", "A\ud800B", "\ud800\ud800\udc00"}) {

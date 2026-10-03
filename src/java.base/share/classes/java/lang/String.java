@@ -633,7 +633,7 @@ public final class String
             }
             byte[] utf16 = StringUTF16.newBytesFor(length);
             StringLatin1.inflate(latin1, 0, utf16, 0, dp);
-            dp = decodeUTF8_UTF16(latin1, sp, length, utf16, dp);
+            dp = decodeUTF8_UTF16Stable(latin1, sp, length, utf16, dp);
             if (dp != length) {
                 utf16 = Arrays.copyOf(utf16, dp << 1);
             }
@@ -1238,6 +1238,33 @@ public final class String
                                 ((byte) 0x80 <<  0))));
     }
 
+    // Native admission here and in encodeUTF8_UTF16 is best effort. C1 and C2 may
+    // retain the original Java path for a compiled method when the bindings
+    // were not ready before compilation, even if they become ready later.
+    // Ready compiled code may use a larger lower bound than the interpreter.
+    // This policy must not require another class/helper on small cold calls.
+    // Only the compact constructor supplies a stable private source snapshot.
+    // Latin1 and ASCII have already returned, so success cannot change coder.
+    private static int decodeUTF8_UTF16Stable(byte[] src, int sp, int sl, byte[] dst, int dp) {
+        int remaining = sl - sp;
+        // Small cold work retains Java without resolving a new helper method.
+        // Once larger work initialized the converter, keep the smaller hot leaf.
+        if (remaining >= 256 && remaining <= 4096 &&
+                (remaining >= 1024 || StringCoding.utf8Ready) && StringCoding.utf8Ready()) {
+            int decoded = StringCoding.decodeUtf8Utf160(
+                    src, sp, remaining, dst, dp << 1, remaining << 1);
+            if (decoded > 0 && decoded <= remaining) {
+                return dp + decoded;
+            }
+            if (decoded != -1) {
+                throw new InternalError("UTF-8 UTF-16 conversion failed: " + decoded);
+            }
+        }
+        // Ineligible or initialization-reentrant spans have no native stores.
+        // Eligible malformed spans complete replacement entirely in native code.
+        return decodeUTF8_UTF16(src, sp, sl, dst, dp);
+    }
+
     private static int decodeUTF8_UTF16(byte[] src, int sp, int sl, byte[] dst, int dp) {
         return decodeUTF8_UTF16(src, sp, sl, dst, dp, null);
     }
@@ -1465,6 +1492,7 @@ public final class String
      * @param <E> The exception type parameter to enable callers to avoid
      *           having to declare the exception
      */
+    @IntrinsicCandidate
     private static <E extends Exception> byte[] encodeUTF8(byte coder, byte[] val, Class<E> exClass) throws E {
         if (coder == UTF16) {
             return encodeUTF8_UTF16(val, exClass);
@@ -1480,20 +1508,14 @@ public final class String
             System.arraycopy(val, 0, dst, 0, positives);
         }
         int dp = positives;
-        // A short suffix does not amortize the native conversion boundary.
-        if (val.length - positives < 16) {
-            for (int i = dp; i < val.length; i++) {
-                byte c = val[i];
-                if (c < 0) {
-                    dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
-                    dst[dp++] = (byte) (0x80 | (c & 0x3f));
-                } else {
-                    dst[dp++] = c;
-                }
+        for (int i = dp; i < val.length; i++) {
+            byte c = val[i];
+            if (c < 0) {
+                dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
+                dst[dp++] = (byte) (0x80 | (c & 0x3f));
+            } else {
+                dst[dp++] = c;
             }
-        } else {
-            dp += jdk.internal.tmfy.Utf8Codec.encodeLatin1(
-                    val, positives, val.length - positives, dst, positives, dst.length - positives);
         }
         if (dp == dst.length) {
             return dst;
@@ -1541,6 +1563,20 @@ public final class String
         // For very large estimate, (as in overflow of 32 bit int), precompute the exact size
         int allocLen = (sl * 3 < 0) ? encodedLengthUTF8_UTF16(val, exClass) : sl * 3;
         byte[] dst = new byte[allocLen];
+        // This native entry completes malformed input using replacement.
+        // Strict callers retain the original Java exception and index path.
+        // Measure the cold-work bound in input bytes; a direct stable-field read
+        // preserves hot small conversions without a first-use helper invocation.
+        if (sl >= 16 && val.length <= 4096 && exClass == null &&
+                (val.length >= 1024 || StringCoding.utf8Ready) && StringCoding.utf8Ready()) {
+            int written = StringCoding.encodeUtf16Utf80(val, 0, val.length, dst, 0, dst.length);
+            if (written >= sl && written <= dst.length) {
+                return written == dst.length ? dst : Arrays.copyOf(dst, written);
+            }
+            if (written != -1) {
+                throw new InternalError("UTF-16 UTF-8 conversion failed: " + written);
+            }
+        }
         while (sp < sl) {
             // ascii fast loop;
             char c = StringUTF16.getChar(val, sp);

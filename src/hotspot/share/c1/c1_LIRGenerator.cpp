@@ -41,6 +41,7 @@
 #include "oops/methodCounters.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/tmfyStringCoding.hpp"
+#include "tmfy/kernels.h"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -2813,6 +2814,21 @@ void LIRGenerator::do_TmfyStringCoding(Intrinsic* x) {
   assert(TmfyStringCoding::is_intrinsic(x->id()), "typed TmfyStringCoding intrinsic required");
   // Tooling may revoke eligibility after graph construction. The ciEnv install
   // check rejects that compilation; do not assert a mutable admission decision.
+  CodeEmitInfo* error_info = nullptr;
+  LIR_Opr consumed = LIR_OprFact::illegalOpr;
+  LIR_Opr capacity = LIR_OprFact::illegalOpr;
+  if (x->is_string_utf8_origin()) {
+    assert(x->id() == vmIntrinsics::_tmfy_encodeLatin1Utf8, "validated Latin-1 origin only");
+    error_info = state_for(x, x->state_before());
+    LIRItem count(x->argument_at(2), this);
+    LIRItem limit(x->argument_at(5), this);
+    count.load_item();
+    limit.load_item();
+    consumed = new_register(T_INT);
+    capacity = new_register(T_INT);
+    __ move(count.result(), consumed);
+    __ move(limit.result(), capacity);
+  }
   BasicType types[6], result_type;
   int count = TmfyStringCoding::signature(x->id(), types, &result_type);
   BasicTypeList signature(count);
@@ -2825,7 +2841,35 @@ void LIRGenerator::do_TmfyStringCoding(Intrinsic* x) {
   // The existing common leaf-call helper handles both architecture ABIs. Oops
   // are arguments, not precomputed raw addresses, until the guarded VM adapter.
   // No safepoint/deoptimization is inserted between argument setup and return.
-  set_result(x, call_runtime(&signature, &arguments, TmfyStringCoding::entry_for(x->id()), x->type(), nullptr));
+  LIR_Opr result = call_runtime(&signature, &arguments, TmfyStringCoding::entry_for(x->id()), x->type(), nullptr);
+  if (x->is_string_utf8_origin()) {
+#ifdef AMD64
+    // Only documented pre-store failures may return to the Java loop. An
+    // invariant failure can follow stores and must throw without replaying.
+    static_assert(TMFY_NOT_INITIALIZED == -3 && TMFY_BAD_ARGUMENT == -2 && TMFY_NEEDS_GENERAL == -1,
+                  "contiguous pre-store status interval");
+    // Each branch is a distinct LIR instruction. Interval splitting can
+    // produce different oop maps at those instructions, so neither the stub
+    // nor its CodeEmitInfo may be shared between them.
+    auto error = [&]() {
+      return new SimpleExceptionStub(StubId::c1_throw_tmfy_stringcoding_error_id,
+                                     LIR_OprFact::illegalOpr, new CodeEmitInfo(error_info));
+    };
+    LabelObj* done = new LabelObj();
+    __ cmp(lir_cond_less, result, LIR_OprFact::intConst(TMFY_NOT_INITIALIZED));
+    __ branch(lir_cond_less, error());
+    __ cmp(lir_cond_less, result, LIR_OprFact::intConst(0));
+    __ branch(lir_cond_less, done->label());
+    __ cmp(lir_cond_less, result, consumed);
+    __ branch(lir_cond_less, error());
+    __ cmp(lir_cond_greater, result, capacity);
+    __ branch(lir_cond_greater, error());
+    __ branch_destination(done->label());
+#else
+    ShouldNotReachHere();
+#endif
+  }
+  set_result(x, result);
 }
 
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
@@ -3112,6 +3156,64 @@ void LIRGenerator::do_ProfileReturnType(ProfileReturnType* x) {
   }
 }
 
+void LIRGenerator::do_ProfileStringUtf8(ProfileStringUtf8* x) {
+  assert(compilation()->is_profiling(), "only profile at levels 2 and 3");
+  set_no_result(x);
+  // Compute the fully updated original locals before a possible overflow VM
+  // call. Reexecution starts at the original iinc, with no synthetic stack.
+  CodeEmitInfo* info = state_for(x, x->state_before(), true);
+  // C1 normally derives reexecution from the bytecode opcode. Unlike a goto,
+  // iinc is not reexecuted by default, but this state precedes that increment.
+  info->set_force_reexecute();
+  LIRItem consumed(x->consumed(), this);
+  LIRItem written(x->written(), this);
+  consumed.load_item();
+  written.load_item();
+  LIR_Opr negatives = new_register(T_INT);
+  LIR_Opr positives = new_register(T_INT);
+  LIR_Opr extra_backedges = new_register(T_INT);
+  __ move(written.result(), negatives);
+  __ sub(negatives, consumed.result(), negatives);
+  __ move(consumed.result(), positives);
+  __ sub(positives, negatives, positives);
+  __ move(consumed.result(), extra_backedges);
+  __ sub(extra_backedges, LIR_OprFact::intConst(1), extra_backedges);
+
+  if (compilation()->profile_branches()) {
+    ciMethodData* md = x->method()->method_data_or_null();
+    assert(md != nullptr, "profiled String origin has an MDO");
+    LIR_Opr md_reg = new_register(T_METADATA);
+    __ metadata2reg(md->constant_encoding(), md_reg);
+    auto add_count = [&](int bci, ByteSize cell, LIR_Opr amount) {
+      ciProfileData* data = md->bci_to_data(bci);
+      assert(data != nullptr && data->is_JumpData(), "validated original loop branch");
+      int offset = md->byte_offset_of_slot(data, cell);
+      LIR_Opr wide_amount = amount;
+#ifdef _LP64
+      wide_amount = new_register(T_LONG);
+      __ convert(Bytecodes::_i2l, amount, wide_amount);
+#endif
+      static_assert(DataLayout::counter_increment == 1, "one MDO count per logical bytecode branch");
+      LIR_Address* address = new LIR_Address(md_reg, offset, wide_amount->type());
+      LIR_Opr counter = new_register(wide_amount->type());
+      __ move(address, counter);
+      __ add(counter, wide_amount, counter);
+      __ move(counter, address);
+    };
+    add_count(64, BranchData::not_taken_offset(), consumed.result());
+    add_count(75, BranchData::taken_offset(), positives);
+    add_count(75, BranchData::not_taken_offset(), negatives);
+    add_count(118, JumpData::taken_offset(), negatives);
+    add_count(134, JumpData::taken_offset(), extra_backedges);
+  }
+  LIR_Opr step = new_register(T_INT);
+  __ move(extra_backedges, step);
+  __ shift_left(step, InvocationCounter::count_shift, step);
+  // A chunk can cross a notification boundary without landing exactly on it.
+  // The final original goto still adds its one backedge and performs the poll.
+  increment_event_counter(info, step, 134, true, true);
+}
+
 void LIRGenerator::do_ProfileInvoke(ProfileInvoke* x) {
   // We can safely ignore accessors here, since c2 will inline them anyway,
   // accessors are also always mature.
@@ -3149,7 +3251,7 @@ void LIRGenerator::increment_backedge_counter_conditionally(LIR_Condition cond, 
 }
 
 
-void LIRGenerator::increment_event_counter(CodeEmitInfo* info, LIR_Opr step, int bci, bool backedge) {
+void LIRGenerator::increment_event_counter(CodeEmitInfo* info, LIR_Opr step, int bci, bool backedge, bool notify_crossing) {
   int freq_log = 0;
   int level = compilation()->env()->comp_level();
   if (level == CompLevel_limited_profile) {
@@ -3164,12 +3266,12 @@ void LIRGenerator::increment_event_counter(CodeEmitInfo* info, LIR_Opr step, int
   if (_method->has_option_value(CompileCommandEnum::CompileThresholdScaling, scale)) {
     freq_log = CompilerConfig::scaled_freq_log(freq_log, scale);
   }
-  increment_event_counter_impl(info, info->scope()->method(), step, right_n_bits(freq_log), bci, backedge, true);
+  increment_event_counter_impl(info, info->scope()->method(), step, right_n_bits(freq_log), bci, backedge, true, notify_crossing);
 }
 
 void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
                                                 ciMethod *method, LIR_Opr step, int frequency,
-                                                int bci, bool backedge, bool notify) {
+                                                int bci, bool backedge, bool notify, bool notify_crossing) {
   assert(frequency == 0 || is_power_of_2(frequency + 1), "Frequency must be x^2 - 1 or 0");
   int level = _compilation->env()->comp_level();
   assert(level > CompLevel_simple, "Shouldn't be here");
@@ -3199,6 +3301,11 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   LIR_Address* counter = new LIR_Address(counter_holder, offset, T_INT);
   LIR_Opr result = new_register(T_INT);
   __ load(counter, result);
+  LIR_Opr previous = LIR_OprFact::illegalOpr;
+  if (notify_crossing) {
+    previous = new_register(T_INT);
+    __ move(result, previous);
+  }
   __ add(result, step, result);
   __ store(result, counter);
   if (notify && (!backedge || UseOnStackReplacement)) {
@@ -3213,6 +3320,14 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
       } else {
         __ branch(lir_cond_always, overflow);
       }
+    } else if (notify_crossing) {
+      LIR_Opr crossed = new_register(T_INT);
+      __ move(previous, crossed);
+      __ logical_xor(crossed, result, crossed);
+      LIR_Opr mask = load_immediate(~(freq | right_n_bits(InvocationCounter::count_shift)), T_INT);
+      __ logical_and(crossed, mask, crossed);
+      __ cmp(lir_cond_notEqual, crossed, LIR_OprFact::intConst(0));
+      __ branch(lir_cond_notEqual, overflow);
     } else {
       LIR_Opr mask = load_immediate(freq, T_INT);
       if (!step->is_constant()) {
@@ -3245,7 +3360,15 @@ void LIRGenerator::do_RuntimeCall(RuntimeCall* x) {
     signature->append(as_BasicType(a->type()));
   }
 
-  LIR_Opr result = call_runtime(signature, args, x->entry(), x->type(), nullptr);
+  // A state-bearing RuntimeCall targets a Runtime1 trampoline which establishes
+  // last_Java_frame. Ordinary leaf entries must continue to have no state.
+  CodeEmitInfo* info = x->state_before() == nullptr ? nullptr : state_for(x, x->state_before(), true);
+  if (info != nullptr) {
+    // This synthetic VM call precedes the original bytecode (BCI 60 iload),
+    // whose normal C1 continuation would otherwise skip the unexecuted load.
+    info->set_force_reexecute();
+  }
+  LIR_Opr result = call_runtime(signature, args, x->entry(), x->type(), info);
   if (x->type() == voidType) {
     set_no_result(x);
   } else {

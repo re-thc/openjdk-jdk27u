@@ -17,13 +17,18 @@
 #define SHARE_TMFY_TMFYCATALOGUE_HPP
 
 #define TMFY_INTRINSICS_DO(do_intrinsic, do_class, do_name, do_signature) \
-  do_class(jdk_internal_tmfy_Utf8Codec, "jdk/internal/tmfy/Utf8Codec") \
   do_signature(tmfy_output_signature, "([BII[BII)I") \
-  do_intrinsic(_tmfy_encodeLatin1Utf8, jdk_internal_tmfy_Utf8Codec, tmfy_encodeLatin1Utf8_name, tmfy_output_signature, F_SN) \
-  do_name(tmfy_encodeLatin1Utf8_name, "encodeLatin1Utf80")
+  do_intrinsic(_tmfy_encodeLatin1Utf8, java_lang_StringCoding, tmfy_encodeLatin1Utf8_name, tmfy_output_signature, F_SN) \
+  do_name(tmfy_encodeLatin1Utf8_name, "encodeLatin1Utf80") \
+  do_intrinsic(_tmfy_encodeUtf16Utf8, java_lang_StringCoding, tmfy_encodeUtf16Utf8_name, tmfy_output_signature, F_SN) \
+  do_name(tmfy_encodeUtf16Utf8_name, "encodeUtf16Utf80") \
+  do_intrinsic(_tmfy_decodeUtf8Utf16, java_lang_StringCoding, tmfy_decodeUtf8Utf16_name, tmfy_output_signature, F_SN) \
+  do_name(tmfy_decodeUtf8Utf16_name, "decodeUtf8Utf160")
 
 // name, shape, helper, maximum input bytes, leaf audit
 #define TMFY_KERNELS_DO(f) \
-  f(encodeLatin1Utf8, output, encode_latin1_utf8, 4096, TMFY_AUDITED_encodeLatin1Utf8)
+  f(encodeLatin1Utf8, output, encode_latin1_utf8, 4096, TMFY_AUDITED_encodeLatin1Utf8) \
+  f(encodeUtf16Utf8, output, encode_utf16_utf8, 4096, TMFY_AUDITED_encodeUtf16Utf8) \
+  f(decodeUtf8Utf16, output, decode_utf8_utf16, 4096, TMFY_AUDITED_decodeUtf8Utf16)
 
 #endif // SHARE_TMFY_TMFYCATALOGUE_HPP

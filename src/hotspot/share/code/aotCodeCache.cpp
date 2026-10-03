@@ -51,6 +51,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubInfo.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/tmfyStringCoding.hpp"
 #include "utilities/copy.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
@@ -1868,7 +1869,7 @@ void AOTCodeReader::read_dbg_strings(DbgStrings& dbg_strings) {
 // [_stubs_base, _stubs_base + _stubs_max -1], [_c_str_base,
 // _c_str_base + _c_str_max -1],
 
-#define _extrs_max 380
+#define _extrs_max 384
 #define _stubs_max static_cast<int>(EntryId::NUM_ENTRYIDS)
 
 #define _extrs_base 0
@@ -2025,6 +2026,11 @@ void AOTCodeAddressTable::init_extrs() {
 #ifdef COMPILER1
   {
     // Required by C1 blobs
+#ifdef AMD64
+    ADD_EXTERNAL_ADDRESS(TmfyStringCoding::initialized_address());
+    ADD_EXTERNAL_ADDRESS(TmfyStringCoding::initialize_from_java);
+    ADD_EXTERNAL_ADDRESS(Runtime1::throw_tmfy_stringcoding_error);
+#endif
     ADD_EXTERNAL_ADDRESS(static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc));
     ADD_EXTERNAL_ADDRESS(SharedRuntime::register_finalizer);
     ADD_EXTERNAL_ADDRESS(Runtime1::is_instance_of);

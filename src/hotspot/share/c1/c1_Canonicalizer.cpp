@@ -846,6 +846,7 @@ void Canonicalizer::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {}
 void Canonicalizer::do_ProfileCall    (ProfileCall*     x) {}
 void Canonicalizer::do_ProfileReturnType(ProfileReturnType* x) {}
 void Canonicalizer::do_ProfileInvoke  (ProfileInvoke*   x) {}
+void Canonicalizer::do_ProfileStringUtf8(ProfileStringUtf8* x) {}
 void Canonicalizer::do_RuntimeCall    (RuntimeCall*     x) {}
 void Canonicalizer::do_RangeCheckPredicate(RangeCheckPredicate* x) {}
 #ifdef ASSERT

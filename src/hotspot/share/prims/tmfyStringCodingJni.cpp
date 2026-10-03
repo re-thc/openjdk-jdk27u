@@ -21,6 +21,7 @@
 #include "runtime/tmfyStringCoding.hpp"
 #include "runtime/tmfyStringCodingTooling.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/init.hpp"
 
 static bool jni_range(JNIEnv* env, jarray array, jint offset, jint length) {
   if (array == nullptr || offset < 0 || length < 0) return false;
@@ -28,11 +29,21 @@ static bool jni_range(JNIEnv* env, jarray array, jint offset, jint length) {
   return offset <= size && length <= size - offset;
 }
 
-static jint JNICALL tmfy_encode(JNIEnv* env, jclass, jbyteArray input, jint offset, jint length,
-                                jbyteArray output, jint output_offset, jint capacity) {
+enum class Conversion { latin1_utf8, utf16_utf8, utf8_utf16 };
+
+static jint tmfy_convert(JNIEnv* env, Conversion conversion, jbyteArray input, jint offset, jint length,
+                         jbyteArray output, jint output_offset, jint capacity) {
   TmfyStringCoding::count(TmfyStringCoding::jni_calls);
   if (!jni_range(env, input, offset, length) || !jni_range(env, output, output_offset, capacity) ||
-      env->IsSameObject(input, output) || length > capacity / 2) return TMFY_BAD_ARGUMENT;
+      env->IsSameObject(input, output)) return TMFY_BAD_ARGUMENT;
+  if (conversion == Conversion::utf16_utf8) {
+    if ((offset & 1) != 0 || (length & 1) != 0 ||
+        (jlong)(length / 2) * 3 > capacity) return TMFY_BAD_ARGUMENT;
+  } else {
+    if (length > capacity / 2) return TMFY_BAD_ARGUMENT;
+    if (conversion == Conversion::utf8_utf16 &&
+        ((output_offset & 1) != 0 || (capacity & 1) != 0)) return TMFY_BAD_ARGUMENT;
+  }
   if ((uint32_t)length > TMFY_CONVERT_MAX_BYTES) return TMFY_NEEDS_GENERAL;
   if (length == 0) return 0;
   // Ordinary JNI transition, bounded copies, and no retained or pinned Java
@@ -41,9 +52,38 @@ static jint JNICALL tmfy_encode(JNIEnv* env, jclass, jbyteArray input, jint offs
   uint8_t destination[TMFY_CONVERT_MAX_BYTES * 2];
   env->GetByteArrayRegion(input, offset, length, (jbyte*)source);
   if (env->ExceptionCheck()) return TMFY_BAD_ARGUMENT;
-  jint result = tmfy_encode_latin1_utf8(source, length, destination, sizeof(destination));
-  if (result >= 0) env->SetByteArrayRegion(output, output_offset, result, (const jbyte*)destination);
+  jint result;
+  switch (conversion) {
+    case Conversion::latin1_utf8:
+      result = tmfy_encode_latin1_utf8(source, length, destination, sizeof(destination)); break;
+    case Conversion::utf16_utf8:
+      result = tmfy_encode_utf16_utf8(source, length, destination, sizeof(destination)); break;
+    case Conversion::utf8_utf16:
+      result = tmfy_decode_utf8_utf16(source, length, destination, sizeof(destination)); break;
+    default: ShouldNotReachHere(); return TMFY_INTERNAL_ERROR;
+  }
+  if (result >= 0) {
+    if (result > (jint)sizeof(destination)) return TMFY_INTERNAL_ERROR;
+    jint written = conversion == Conversion::utf8_utf16 ? result * 2 : result;
+    if (written > capacity || written > (jint)sizeof(destination)) return TMFY_INTERNAL_ERROR;
+    env->SetByteArrayRegion(output, output_offset, written, (const jbyte*)destination);
+  }
   return result;
+}
+
+static jint JNICALL tmfy_encode_latin1(JNIEnv* env, jclass, jbyteArray input, jint offset, jint length,
+                                     jbyteArray output, jint output_offset, jint capacity) {
+  return tmfy_convert(env, Conversion::latin1_utf8, input, offset, length, output, output_offset, capacity);
+}
+
+static jint JNICALL tmfy_encode_utf16(JNIEnv* env, jclass, jbyteArray input, jint offset, jint length,
+                                    jbyteArray output, jint output_offset, jint capacity) {
+  return tmfy_convert(env, Conversion::utf16_utf8, input, offset, length, output, output_offset, capacity);
+}
+
+static jint JNICALL tmfy_decode_utf8(JNIEnv* env, jclass, jbyteArray input, jint offset, jint length,
+                                   jbyteArray output, jint output_offset, jint capacity) {
+  return tmfy_convert(env, Conversion::utf8_utf16, input, offset, length, output, output_offset, capacity);
 }
 
 static jlongArray JNICALL tmfy_counters(JNIEnv* env, jclass) {
@@ -55,20 +95,20 @@ static jlongArray JNICALL tmfy_counters(JNIEnv* env, jclass) {
 }
 
 static JNINativeMethod tmfy_methods[] = {
-  { (char*)"encodeLatin1Utf80", (char*)"([BII[BII)I", (void*)&tmfy_encode },
+  { (char*)"encodeLatin1Utf80", (char*)"([BII[BII)I", (void*)&tmfy_encode_latin1 },
+  { (char*)"encodeUtf16Utf80", (char*)"([BII[BII)I", (void*)&tmfy_encode_utf16 },
+  { (char*)"decodeUtf8Utf160", (char*)"([BII[BII)I", (void*)&tmfy_decode_utf8 },
   { (char*)"counters0", (char*)"()[J", (void*)&tmfy_counters }
 };
 
-JVM_ENTRY(void, JVM_RegisterTmfyStringCodingMethods(JNIEnv* env, jclass cls))
-  TmfyStringCodingTooling::prepare_registration(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls)),
-                                         tmfy_methods, ARRAY_SIZE(tmfy_methods));
+JVM_ENTRY(jboolean, JVM_RegisterTmfyStringCodingMethods(JNIEnv* env, jclass cls))
+  if (!is_init_completed() || !TmfyStringCoding::initialize()) return JNI_FALSE;
+  if (!TmfyStringCodingTooling::prepare_registration(
+          java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls)),
+          tmfy_methods, ARRAY_SIZE(tmfy_methods))) return JNI_FALSE;
   ThreadToNativeFromVM ttnfv(thread);
-  if (tmfy_runtime_initialize() != 0) {
-    jclass error = env->FindClass("java/lang/ExceptionInInitializerError");
-    if (error != nullptr) env->ThrowNew(error, "Unable to select UTF-8 conversion implementation");
-    return;
-  }
-  if (env->RegisterNatives(cls, tmfy_methods, ARRAY_SIZE(tmfy_methods)) != 0) return;
+  if (env->RegisterNatives(cls, tmfy_methods, ARRAY_SIZE(tmfy_methods)) != 0) return JNI_FALSE;
   log_info(tmfy)("UTF-8 conversion backend=%s intrinsic_requested=%s", tmfy_implementation_name(),
                  UseTmfyStringCoding ? "true" : "false");
+  return JNI_TRUE;
 JVM_END

@@ -28,6 +28,7 @@ package java.lang;
 
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.Stable;
 
 import java.util.function.BiFunction;
 
@@ -37,6 +38,51 @@ import java.util.function.BiFunction;
 class StringCoding {
 
     private StringCoding() { }
+
+    // Registration can run user NativeMethodBind callbacks. Publish readiness
+    // only after every native is registered, and never hold this monitor while
+    // a callback may enter String conversion on this or another thread.
+    @Stable
+    static volatile boolean utf8Ready;
+    private static boolean utf8Initializing;
+
+    static boolean utf8Ready() {
+        return utf8Ready || initializeUtf8();
+    }
+
+    private static boolean initializeUtf8() {
+        synchronized (StringCoding.class) {
+            if (utf8Ready) return true;
+            if (utf8Initializing) return false;
+            utf8Initializing = true;
+        }
+        boolean initialized = false;
+        try {
+            initialized = registerNatives();
+            return initialized;
+        } finally {
+            synchronized (StringCoding.class) {
+                utf8Ready = initialized;
+                utf8Initializing = false;
+            }
+        }
+    }
+
+    private static native boolean registerNatives();
+
+    @IntrinsicCandidate
+    static native int encodeLatin1Utf80(byte[] input, int offset, int length,
+                                      byte[] output, int outputOffset, int capacity);
+
+    @IntrinsicCandidate
+    static native int encodeUtf16Utf80(byte[] input, int offset, int length,
+                                     byte[] output, int outputOffset, int capacity);
+
+    @IntrinsicCandidate
+    static native int decodeUtf8Utf160(byte[] input, int offset, int length,
+                                     byte[] output, int outputOffset, int capacity);
+
+    private static native long[] counters0();
 
     /**
      * Count the number of leading non-zero ascii chars in the range.

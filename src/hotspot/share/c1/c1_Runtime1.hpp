@@ -105,6 +105,7 @@ public:
   static void throw_null_pointer_exception(JavaThread* current);
   static void throw_class_cast_exception(JavaThread* current, oopDesc* object);
   static void throw_incompatible_class_change_error(JavaThread* current);
+  AMD64_ONLY(static void throw_tmfy_stringcoding_error(JavaThread* current);)
   static void throw_array_store_exception(JavaThread* current, oopDesc* object);
 
   static void monitorenter(JavaThread* current, oopDesc* obj, BasicObjectLock* lock);

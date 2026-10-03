@@ -400,8 +400,8 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void profile_branch(If* if_instr, If::Condition cond);
   void increment_event_counter_impl(CodeEmitInfo* info,
                                     ciMethod *method, LIR_Opr step, int frequency,
-                                    int bci, bool backedge, bool notify);
-  void increment_event_counter(CodeEmitInfo* info, LIR_Opr step, int bci, bool backedge);
+                                    int bci, bool backedge, bool notify, bool notify_crossing = false);
+  void increment_event_counter(CodeEmitInfo* info, LIR_Opr step, int bci, bool backedge, bool notify_crossing = false);
   void increment_invocation_counter(CodeEmitInfo *info) {
     if (compilation()->is_profiling()) {
       increment_event_counter(info, LIR_OprFact::intConst(InvocationCounter::count_increment), InvocationEntryBci, false);
@@ -586,6 +586,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   virtual void do_ProfileCall    (ProfileCall*     x);
   virtual void do_ProfileReturnType (ProfileReturnType* x);
   virtual void do_ProfileInvoke  (ProfileInvoke*   x);
+  virtual void do_ProfileStringUtf8(ProfileStringUtf8* x);
   virtual void do_RuntimeCall    (RuntimeCall*     x);
   virtual void do_MemBar         (MemBar*          x);
   virtual void do_RangeCheckPredicate(RangeCheckPredicate* x);

@@ -17,7 +17,7 @@
 
 static std::atomic<jclass> fixture(nullptr);
 static jmethodID reenter = nullptr;
-static std::atomic<int> counts[3]; // register bind, converter bind, failures
+static std::atomic<int> counts[5]; // registration bridge, three converters, failures
 static thread_local bool inside_callback = false;
 
 static void JNICALL on_bind(jvmtiEnv* jvmti, JNIEnv* env, jthread,
@@ -29,14 +29,16 @@ static void JNICALL on_bind(jvmtiEnv* jvmti, JNIEnv* env, jthread,
     jclass owner = nullptr;
     if (jvmti->GetMethodName(method, &name, nullptr, nullptr) != JVMTI_ERROR_NONE) return;
     int slot = std::strcmp(name, "registerNatives") == 0 ? 0
-             : std::strcmp(name, "encodeLatin1Utf80") == 0 ? 1 : -1;
+             : std::strcmp(name, "encodeLatin1Utf80") == 0 ? 1
+             : std::strcmp(name, "encodeUtf16Utf80") == 0 ? 2
+             : std::strcmp(name, "decodeUtf8Utf160") == 0 ? 3 : -1;
     jvmti->Deallocate(reinterpret_cast<unsigned char*>(name));
     if (slot < 0 || jvmti->GetMethodDeclaringClass(method, &owner) != JVMTI_ERROR_NONE) return;
     if (jvmti->GetClassSignature(owner, &signature, nullptr) != JVMTI_ERROR_NONE) {
         env->DeleteLocalRef(owner);
         return;
     }
-    bool target = std::strcmp(signature, "Ljdk/internal/tmfy/Utf8Codec;") == 0;
+    bool target = std::strcmp(signature, "Ljava/lang/StringCoding;") == 0;
     jvmti->Deallocate(reinterpret_cast<unsigned char*>(signature));
     env->DeleteLocalRef(owner);
     if (!target) return;
@@ -47,22 +49,22 @@ static void JNICALL on_bind(jvmtiEnv* jvmti, JNIEnv* env, jthread,
     if (env->ExceptionCheck()) {
         env->ExceptionDescribe();
         env->ExceptionClear();
-        counts[2].fetch_add(1);
+        counts[4].fetch_add(1);
     } else {
         const unsigned char unit[] = {0xc3, 0xa9, 0x41, 0xc3, 0xbf, 0};
         jbyte actual[sizeof(unit) * 8] = {};
         if (encoded == nullptr || env->GetArrayLength(encoded) != static_cast<jsize>(sizeof(actual))) {
-            counts[2].fetch_add(1);
+            counts[4].fetch_add(1);
         } else {
             env->GetByteArrayRegion(encoded, 0, sizeof(actual), actual);
             if (env->ExceptionCheck()) {
                 env->ExceptionDescribe();
                 env->ExceptionClear();
-                counts[2].fetch_add(1);
+                counts[4].fetch_add(1);
             } else {
                 for (unsigned int i = 0; i < 8; i++) {
                     if (std::memcmp(actual + i * sizeof(unit), unit, sizeof(unit)) != 0) {
-                        counts[2].fetch_add(1);
+                        counts[4].fetch_add(1);
                         break;
                     }
                 }
@@ -95,8 +97,8 @@ Java_compiler_intrinsics_tmfy_TestStringCodingReentry_arm(JNIEnv* env, jclass, j
 
 extern "C" JNIEXPORT jintArray JNICALL
 Java_compiler_intrinsics_tmfy_TestStringCodingReentry_result(JNIEnv* env, jclass) {
-    jint values[] = {counts[0].load(), counts[1].load(), counts[2].load()};
-    jintArray result = env->NewIntArray(3);
-    if (result != nullptr) env->SetIntArrayRegion(result, 0, 3, values);
+    jint values[] = {counts[0].load(), counts[1].load(), counts[2].load(), counts[3].load(), counts[4].load()};
+    jintArray result = env->NewIntArray(5);
+    if (result != nullptr) env->SetIntArrayRegion(result, 0, 5, values);
     return result;
 }

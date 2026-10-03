@@ -5068,6 +5068,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   ik->set_class_loader_data(_loader_data);
   ik->set_class_loader_type();
   ik->set_name(_class_name);
+  if (changed_by_loadhook) ik->set_has_been_transformed();
 
   // Add all classes to our internal class loader list here,
   // including classes in the bootstrap (null) class loader.

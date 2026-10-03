@@ -715,6 +715,8 @@ public:
 
   bool has_been_redefined() const { return _misc_flags.has_been_redefined(); }
   void set_has_been_redefined() { _misc_flags.set_has_been_redefined(true); }
+  bool has_been_transformed() const { return _misc_flags.has_been_transformed(); }
+  void set_has_been_transformed() { _misc_flags.set_has_been_transformed(true); }
 
   bool is_scratch_class() const { return _misc_flags.is_scratch_class(); }
   void set_is_scratch_class() { _misc_flags.set_is_scratch_class(true); }

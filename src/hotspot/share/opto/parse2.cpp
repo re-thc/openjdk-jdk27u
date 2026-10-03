@@ -23,6 +23,7 @@
  */
 
 #include "ci/ciMethodData.hpp"
+#include "ci/ciStringUtf8.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -1399,8 +1400,10 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
   Block* branch_block = successor_for_bci(target_bci);
   Block* next_block   = successor_for_bci(iter().next_bci());
 
-  float cnt;
-  float prob = branch_prediction(cnt, btest, target_bci, c);
+  ciStringUtf8::Admission admission = ciStringUtf8::admission(method(), bci(), C->env());
+  float cnt = COUNT_UNKNOWN;
+  float prob = admission == ciStringUtf8::Ordinary
+      ? branch_prediction(cnt, btest, target_bci, c) : PROB_FAIR;
   if (prob == PROB_UNKNOWN) {
     // (An earlier version of do_ifnull omitted this trap for OSR methods.)
     if (PrintOpto && Verbose) {
@@ -1470,11 +1473,38 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
 void Parse::do_if(BoolTest::mask btest, Node* c) {
   int target_bci = iter().get_dest();
 
+  ciStringUtf8::Admission admission = ciStringUtf8::admission(method(), bci(), C->env());
+  if (admission == ciStringUtf8::Java && (bci() == 41 || bci() == 10)) {
+    // The arguments have already been popped. Take the existing fallback edge
+    // without its size profile or any new type refinement, guard or trap.
+    merge(target_bci);
+    if (C->eliminate_boxing()) {
+      successor_for_bci(iter().next_bci())->next_path_num();
+    }
+    // merge() has consumed the current map and stopped this path.
+    return;
+  }
+
+  if (admission == ciStringUtf8::Ready && bci() == 41) {
+    // Local 4 is the validated encoder's UTF-16 code-unit count. Compare the
+    // original value rather than reusing an already-folded 16-unit comparison.
+    c = _gvn.transform(new CmpINode(local(4), intcon(64)));
+  }
+
   Block* branch_block = successor_for_bci(target_bci);
   Block* next_block   = successor_for_bci(iter().next_bci());
 
-  float cnt;
-  float prob = branch_prediction(cnt, btest, target_bci, c);
+  // Optional native admission must not turn a size/profile change into an
+  // uncommon trap. Keep the min/max/readiness guard edges in compiled code.
+  float cnt = COUNT_UNKNOWN;
+  float prob = admission == ciStringUtf8::Ordinary
+      ? branch_prediction(cnt, btest, target_bci, c) : PROB_FAIR;
+  if (admission == ciStringUtf8::Ready && bci() == 41) {
+    // Favor the Java loop in the final code layout for tiny encoding. Keep a
+    // non-extreme static weight so both sizes retain ordinary compiled edges
+    // without borrowing the original 16-unit guard's branch profile.
+    prob = PROB_STATIC_FREQUENT;
+  }
   float untaken_prob = 1.0 - prob;
 
   if (prob == PROB_UNKNOWN) {
@@ -2758,7 +2788,9 @@ void Parse::do_one_bytecode() {
     maybe_add_safepoint(iter().get_dest());
     a = null();
     b = pop();
-    if (!_gvn.type(b)->speculative_maybe_null() &&
+    if (ciStringUtf8::admission(method(), bci(), C->env()) != ciStringUtf8::Ordinary) {
+      // Preserve both exClass paths of the optional native admission guard.
+    } else if (!_gvn.type(b)->speculative_maybe_null() &&
         !too_many_traps(Deoptimization::Reason_speculate_null_check)) {
       inc_sp(1);
       Node* null_ctl = top();

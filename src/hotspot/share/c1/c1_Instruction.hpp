@@ -98,6 +98,7 @@ class     UnsafeGetAndSet;
 class   ProfileCall;
 class   ProfileReturnType;
 class   ProfileInvoke;
+class   ProfileStringUtf8;
 class   RuntimeCall;
 class   MemBar;
 class   RangeCheckPredicate;
@@ -192,6 +193,7 @@ class InstructionVisitor: public StackObj {
   virtual void do_ProfileCall    (ProfileCall*     x) = 0;
   virtual void do_ProfileReturnType (ProfileReturnType*  x) = 0;
   virtual void do_ProfileInvoke  (ProfileInvoke*   x) = 0;
+  virtual void do_ProfileStringUtf8(ProfileStringUtf8* x) = 0;
   virtual void do_RuntimeCall    (RuntimeCall*     x) = 0;
   virtual void do_MemBar         (MemBar*          x) = 0;
   virtual void do_RangeCheckPredicate(RangeCheckPredicate* x) = 0;
@@ -359,6 +361,7 @@ class Instruction: public CompilationResourceObj {
     DeoptimizeOnException,
     KillsMemoryFlag,
     OmitChecksFlag,
+    StringUtf8OriginFlag,
     InstructionLastFlag
   };
 
@@ -557,6 +560,7 @@ class Instruction: public CompilationResourceObj {
   virtual ExceptionObject*  as_ExceptionObject() { return nullptr; }
   virtual UnsafeOp*         as_UnsafeOp()        { return nullptr; }
   virtual ProfileInvoke*    as_ProfileInvoke()   { return nullptr; }
+  virtual ProfileStringUtf8* as_ProfileStringUtf8() { return nullptr; }
   virtual RangeCheckPredicate* as_RangeCheckPredicate() { return nullptr; }
 
 #ifdef ASSERT
@@ -1552,6 +1556,8 @@ LEAF(Intrinsic, StateSplit)
   bool has_receiver() const                      { return (_recv != nullptr); }
   Value receiver() const                         { assert(has_receiver(), "must have receiver"); return _recv; }
   bool preserves_state() const                   { return check_flag(PreservesStateFlag); }
+  bool is_string_utf8_origin() const              { return check_flag(StringUtf8OriginFlag); }
+  void set_string_utf8_origin()                   { set_flag(StringUtf8OriginFlag, true); }
 
   bool arg_needs_null_check(int i) const {
     return _nonnull_state.arg_needs_null_check(i);
@@ -2312,8 +2318,9 @@ LEAF(ProfileReturnType, Instruction)
   }
 };
 
-// Call some C runtime function that doesn't safepoint,
-// optionally passing the current thread as the first argument.
+// Call a C runtime leaf, optionally passing the current thread first.
+// A call with state_before instead targets a Runtime1 trampoline which
+// establishes last_Java_frame before its ordinary VM transition.
 LEAF(RuntimeCall, Instruction)
  private:
   const char* _entry_name;
@@ -2322,8 +2329,9 @@ LEAF(RuntimeCall, Instruction)
   bool        _pass_thread;  // Pass the JavaThread* as an implicit first argument
 
  public:
-  RuntimeCall(ValueType* type, const char* entry_name, address entry, Values* args, bool pass_thread = true)
-    : Instruction(type)
+  RuntimeCall(ValueType* type, const char* entry_name, address entry, Values* args,
+              bool pass_thread = true, ValueStack* state_before = nullptr)
+    : Instruction(type, state_before)
     , _entry_name(entry_name)
     , _entry(entry)
     , _args(args)
@@ -2340,6 +2348,28 @@ LEAF(RuntimeCall, Instruction)
 
   virtual void input_values_do(ValueVisitor* f)   {
     for (int i = 0; i < _args->length(); i++) f->visit(_args->adr_at(i));
+  }
+};
+
+// Credit the original String.encodeUTF8 loop after one successful native chunk.
+// The original final increment/goto is still parsed and owns its safepoint.
+LEAF(ProfileStringUtf8, Instruction)
+ private:
+  ciMethod* _method;
+  Value _consumed;
+  Value _written;
+
+ public:
+  ProfileStringUtf8(ciMethod* method, Value consumed, Value written, ValueStack* state_before)
+    : Instruction(voidType, state_before), _method(method), _consumed(consumed), _written(written) {
+    pin();
+  }
+  ciMethod* method() const { return _method; }
+  Value consumed() const { return _consumed; }
+  Value written() const { return _written; }
+  virtual void input_values_do(ValueVisitor* f) {
+    f->visit(&_consumed);
+    f->visit(&_written);
   }
 };
 

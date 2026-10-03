@@ -621,6 +621,9 @@ class methodHandle;
    do_name(dilithiumDecomposePoly_name,                    "implDilithiumDecomposePoly")                                \
                                                                                                                         \
   TMFY_INTRINSICS_DO(do_intrinsic, do_class, do_name, do_signature) \
+  do_intrinsic(_tmfy_stringEncodeUtf8, java_lang_String, tmfy_stringEncodeUtf8_name, tmfy_stringEncodeUtf8_signature, F_S) \
+  do_name(tmfy_stringEncodeUtf8_name, "encodeUTF8") \
+  do_signature(tmfy_stringEncodeUtf8_signature, "(B[BLjava/lang/Class;)[B") \
   /* support for java.util.zip */                                                                                       \
   do_class(java_util_zip_CRC32,           "java/util/zip/CRC32")                                                        \
   do_intrinsic(_updateCRC32,               java_util_zip_CRC32,   update_name, int2_int_signature,               F_SN)  \

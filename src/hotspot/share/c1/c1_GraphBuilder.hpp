@@ -103,6 +103,8 @@ class GraphBuilder {
 
     // When inlining do not push the result on the stack
     bool         _ignore_return;
+    bool         _native_string_encode_utf8;
+    BlockBegin*  _string_encode_utf8_scalar;
 
    public:
     ScopeData(ScopeData* parent);
@@ -167,6 +169,11 @@ class GraphBuilder {
     BlockBegin*  inline_cleanup_block() const      { return _cleanup_block; }
     Instruction* inline_cleanup_return_prev() const{ return _cleanup_return_prev; }
     ValueStack*  inline_cleanup_state() const      { return _cleanup_state; }
+
+    bool native_string_encode_utf8() const { return _native_string_encode_utf8; }
+    void set_native_string_encode_utf8(bool enabled) { _native_string_encode_utf8 = enabled; }
+    BlockBegin* string_encode_utf8_scalar() const { return _string_encode_utf8_scalar; }
+    void set_string_encode_utf8_scalar(BlockBegin* block) { _string_encode_utf8_scalar = block; }
 
     bool ignore_return() const                     { return _ignore_return;          }
     void set_ignore_return(bool ignore_return)     { _ignore_return = ignore_return; }
@@ -347,6 +354,11 @@ class GraphBuilder {
   void fill_sync_handler(Value lock, BlockBegin* sync_handler, bool default_handler = false);
 
   void build_graph_for_intrinsic(ciMethod* callee, bool ignore_return);
+  bool string_utf8_admission();
+  bool is_string_encode_utf8_loop();
+  void inline_string_encode_utf8_loop();
+  void finish_string_encode_utf8_block(BlockEnd* end);
+  void enter_string_encode_utf8_block(BlockBegin* block);
 
   // inliners
   bool try_inline(           ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc = Bytecodes::_illegal, Value receiver = nullptr);

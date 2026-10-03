@@ -1,12 +1,12 @@
-## simdutf 7.3.6
+## simdutf 9.2.1
 
 ### Notice
 
-The compact Latin-1 String UTF-8 encoder uses simdutf.
-Source: https://github.com/simdutf/simdutf/tree/v7.3.6
+The bounded native UTF-8, UTF-16, and Latin1 String conversions use simdutf.
+Source: https://github.com/simdutf/simdutf/tree/v9.2.1
 
-This project elects the MIT license option offered by upstream.
-Both upstream MIT and Apache license texts are retained with the source.
+This project elects the MIT license option offered by upstream. Both upstream
+MIT and Apache license texts are reproduced in the generated dependency cache.
 
 ### MIT License
 

@@ -69,10 +69,26 @@ JVM_EXCLUDES += adlc
 # Keep the pinned SIMD conversion implementation outside HotSpot's allocation
 # overrides. Only the bounded, allocation-free converter is used by leaf calls.
 JVM_EXCLUDES += tmfy
-TMFY_DEFINES :=
+# Keep an ISA-free backend even on platforms whose compiler always enables a
+# builtin SIMD backend: unaudited VM/OS policies intentionally admit mask zero.
+TMFY_DEFINES := -DSIMDUTF_IMPLEMENTATION_FALLBACK=1
 ifneq ($(filter gcc clang, $(TOOLCHAIN_TYPE)), )
   TMFY_DEFINES += -fno-lto
 endif
+TMFY_GENERATED := $(TOPDIR)/build/tmfy-deps/simdutf
+TMFY_MATERIALIZER := $(TOPDIR)/enhancements/tmfy/vendor/materialize-simdutf.py
+TMFY_LOCK := $(TOPDIR)/enhancements/tmfy/vendor/vendor-lock.json
+ifeq ($(wildcard $(TMFY_GENERATED)/simdutf.cpp), )
+  $(error Missing managed simdutf source. Run python3 $(TMFY_MATERIALIZER) --fetch, or provide the pinned archive for an offline build)
+endif
+TMFY_VERIFIED := $(JVM_OUTPUTDIR)/tmfy/dependency-verified
+$(TMFY_VERIFIED): $(TMFY_MATERIALIZER) $(TMFY_LOCK) \
+    $(TMFY_GENERATED)/simdutf.cpp $(TMFY_GENERATED)/simdutf.h \
+    $(TMFY_GENERATED)/dependency-receipt.json \
+    $(TMFY_GENERATED)/LICENSE-MIT $(TMFY_GENERATED)/LICENSE-APACHE
+	$(MKDIR) -p $(@D)
+	python3 $(TMFY_MATERIALIZER) --check
+	$(TOUCH) $@
 
 # Needed by abstract_vm_version.cpp
 ifeq ($(call isTargetCpu, x86_64), true)
@@ -193,10 +209,11 @@ $(eval $(call SetupJdkLibrary, BUILD_TMFY_KERNELS, \
     LINK_TYPE := C++, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR)/tmfy, \
     OBJECT_DIR := $(JVM_OUTPUTDIR)/tmfy/objs, \
-    SRC := $(TOPDIR)/src/hotspot/share/tmfy, \
-    INCLUDE_FILES := kernels.cpp vendor/simdutf/simdutf.cpp, \
+    SRC := $(TOPDIR)/src/hotspot/share/tmfy $(TMFY_GENERATED), \
+    INCLUDE_FILES := kernels.cpp simdutf.cpp, \
+    EXTRA_DEPS := $(TMFY_VERIFIED), \
     DEFAULT_CFLAGS := false, \
-    CFLAGS := $(JVM_CFLAGS) $(TMFY_DEFINES), \
+    CFLAGS := $(JVM_CFLAGS) $(TMFY_DEFINES) -I$(TMFY_GENERATED), \
     DISABLED_WARNINGS_gcc := undef unused-function unused-const-variable, \
     DISABLED_WARNINGS_clang := undef unused-function unused-const-variable, \
     OPTIMIZATION := $(JVM_OPTIMIZATION), \

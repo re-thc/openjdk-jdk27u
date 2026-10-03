@@ -53,7 +53,7 @@ class TmfyStringCodingTooling : AllStatic {
   // Called by the trusted registration bridge in VM state, before its
   // ThreadToNativeFromVM. Only its first exact table/thread gets an exemption;
   // repeat bridge calls permanently revoke leaf support.
-  static void prepare_registration(Klass* klass, const JNINativeMethod* methods, int count);
+  static bool prepare_registration(Klass* klass, const JNINativeMethod* methods, int count);
   // Also called from ciEnv before a leaf caller can install, without relying on
   // initialization having reached the registration bridge. Requires VM state.
   static void record_method(Method* method);

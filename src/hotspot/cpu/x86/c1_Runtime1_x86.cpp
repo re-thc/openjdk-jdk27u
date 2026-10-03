@@ -43,6 +43,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/tmfyStringCoding.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/macros.hpp"
 #include "vmreg_x86.inline.hpp"
@@ -948,6 +949,37 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
         __ verify_oop(rax);
       }
       break;
+
+#ifdef AMD64
+    case StubId::c1_throw_tmfy_stringcoding_error_id:
+      { StubFrame f(sasm, "throw_tmfy_stringcoding_error", dont_gc_arguments);
+        oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_tmfy_stringcoding_error), false);
+      }
+      break;
+
+    case StubId::c1_tmfy_stringcoding_initialize_id:
+      {
+        __ set_info("tmfy_stringcoding_initialize", dont_gc_arguments);
+        Label initialize;
+        __ lea(rscratch1, ExternalAddress(TmfyStringCoding::initialized_address()));
+        __ cmpb(Address(rscratch1, 0), 0);
+        __ jcc(Assembler::equal, initialize);
+        __ movl(rax, 1);
+        __ ret(0);
+
+        __ bind(initialize);
+        __ enter();
+        OopMap* map = save_live_registers(sasm, 1);
+        int call_offset = __ call_RT(noreg, noreg,
+                                    CAST_FROM_FN_PTR(address, TmfyStringCoding::initialize_from_java));
+        oop_maps = new OopMapSet();
+        oop_maps->add_gc_map(call_offset, map);
+        restore_live_registers_except_rax(sasm);
+        __ leave();
+        __ ret(0);
+      }
+      break;
+#endif
 
     case StubId::c1_register_finalizer_id:
       {

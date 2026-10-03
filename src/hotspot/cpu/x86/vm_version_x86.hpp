@@ -727,6 +727,8 @@ private:
 
 public:
   // Offsets for cpuid asm stub
+  // Reuse the VM's completed signal save/restore check for external SIMD code.
+  static bool supports_external_avx_vectors() { return os_supports_avx_vectors(); }
   static ByteSize std_cpuid0_offset() { return byte_offset_of(CpuidInfo, std_max_function); }
   static ByteSize std_cpuid1_offset() { return byte_offset_of(CpuidInfo, std_cpuid1_eax); }
   static ByteSize std_cpuid24_offset() { return byte_offset_of(CpuidInfo, std_cpuid24_eax); }

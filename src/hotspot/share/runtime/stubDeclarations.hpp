@@ -130,6 +130,8 @@
   do_blob(throw_div0_exception)                                        \
   do_blob(throw_null_pointer_exception)                                \
   do_blob(register_finalizer)                                          \
+  AMD64_ONLY(do_blob(tmfy_stringcoding_initialize))                    \
+  AMD64_ONLY(do_blob(throw_tmfy_stringcoding_error))                    \
   do_blob(new_instance)                                                \
   do_blob(fast_new_instance)                                           \
   do_blob(fast_new_instance_init_check)                                \
