@@ -120,7 +120,7 @@ address StubGenerator::generate_updateBytesAdler32() {
   const XMMRegister xtmp5 = xmm10;
 
   Label SLOOP1, SLOOP1A_AVX2, SLOOP1A_AVX3, AVX3_REDUCE, SKIP_LOOP_1A;
-  Label SKIP_LOOP_1A_AVX3, FINISH, LT64, DO_FINAL, FINAL_LOOP, ZERO_SIZE, END;
+  Label SKIP_LOOP_1A_AVX3, FINISH, LT64, ONE_BYTE, DO_FINAL, FINAL_LOOP, ZERO_SIZE, END;
 
   // rcx holds the reciprocal. Zero-extend the sum before the 64-bit product;
   // the upper checksum sum can exceed INT_MAX within a LIMIT-sized block.
@@ -315,8 +315,33 @@ address StubGenerator::generate_updateBytesAdler32() {
   __ orl(rax, a_d);
   __ jmp(END);
 
+  if (use_reciprocal) {
+    __ bind(ONE_BYTE);
+    // Both incoming sums are below BASE. After one byte each sum needs
+    // at most one subtraction; avoid the general-purpose reductions.
+    __ movzbl(rax, Address(data, 0));
+    __ addl(a_d, rax);
+    __ movl(rax, a_d);
+    __ subl(rax, BASE);
+    __ cmpl(a_d, BASE);
+    __ cmovl(Assembler::aboveEqual, a_d, rax);
+    __ addl(b_d, a_d);
+    __ movl(rax, b_d);
+    __ subl(rax, BASE);
+    __ cmpl(b_d, BASE);
+    __ cmovl(Assembler::aboveEqual, b_d, rax);
+    __ movl(rax, b_d);
+    __ shll(rax, 16);
+    __ orl(rax, a_d);
+    __ jmp(END);
+  }
+
   __ bind(LT64);
   __ movl(a_d, init_d);
+  if (use_reciprocal) {
+    __ cmpl(size, 1);
+    __ jcc(Assembler::equal, ONE_BYTE);
+  }
   __ lea(end, Address(data, size, Address::times_1));
   __ testl(size, size);
   __ jcc(Assembler::notZero, FINAL_LOOP);

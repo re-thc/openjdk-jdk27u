@@ -99,6 +99,27 @@ public class TestAdler32Modulus {
         }
         testUnsignedProduct(bytes, direct, arrayAdler, directAdler);
         testMixedUpdates(bytes, direct, arrayAdler);
+        testSingleByteUpdates(bytes, direct, arrayAdler, directAdler);
+    }
+
+    private static void testSingleByteUpdates(byte[] bytes, ByteBuffer direct,
+                                             Adler32 arrayAdler, Adler32 directAdler) {
+        bytes[0] = (byte) 0xff;
+        direct.clear().put(0, (byte) 0xff);
+        arrayAdler.reset();
+        directAdler.reset();
+        int s1 = 1;
+        int s2 = 0;
+        for (int i = 0; i < 20000; i++) {
+            s1 = (s1 + 255) % BASE;
+            s2 = (s2 + s1) % BASE;
+            long expected = ((long) s2 << 16) | s1;
+            arrayAdler.update(bytes, 0, 1);
+            check(arrayAdler, expected, 0, 1, 0);
+            direct.position(0).limit(1);
+            directAdler.update(direct);
+            check(directAdler, expected, 0, 1, 0);
+        }
     }
 
     private static void testMixedUpdates(byte[] bytes, ByteBuffer direct, Adler32 adler) {
