@@ -1393,7 +1393,8 @@ public:
     idx_t end_bit = bit_in_word(end);
 
     // Relocation changes the archive pointers, not the bitmap. Keep each word
-    // locally instead of searching the bitmap again after every patched pointer.
+    // locally for this slice instead of searching the bitmap again after every
+    // patched pointer. Adjacent slices may read the same boundary word.
     for (idx_t word = first_word; word < end_word; ++word) {
       bm_word_t bits = map()[word];
       if (word == first_word) {
