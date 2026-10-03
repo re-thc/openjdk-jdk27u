@@ -20,9 +20,9 @@
 /*
  * @test
  * @summary Check compiled bulk Adler32 calls with constant lengths and mixed updates
- * @run main/othervm -Xbatch -XX:-TieredCompilation compiler.intrinsics.zip.TestAdler32Bulk
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 compiler.intrinsics.zip.TestAdler32Bulk
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 compiler.intrinsics.zip.TestAdler32Bulk
- * @run main/othervm -Xint compiler.intrinsics.zip.TestAdler32Bulk
+ * @run main/othervm -Xint compiler.intrinsics.zip.TestAdler32Bulk 300
  */
 
 package compiler.intrinsics.zip;
@@ -69,6 +69,7 @@ public class TestAdler32Bulk {
     }
 
     public static void main(String[] args) {
+        int iterations = args.length == 0 ? 3000 : Integer.parseInt(args[0]);
         byte[] bytes = new byte[4096 + 63];
         Random random = new Random(0x6a173);
         for (int pattern = 0; pattern < 3; pattern++) {
@@ -80,7 +81,7 @@ public class TestAdler32Bulk {
             direct.put(bytes);
             Adler32 adler = new Adler32();
             Reference reference = new Reference();
-            for (int i = 0; i < 3000; i++) {
+            for (int i = 0; i < iterations; i++) {
                 int off = i & 63;
                 array512(adler, bytes, off);
                 reference.update(bytes, off, 512);
