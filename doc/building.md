@@ -553,6 +553,22 @@ Fedora and Red Hat), try `sudo yum install java-<VERSION>-openjdk-devel`.
 
 ## External Library Requirements
 
+### Rust regex bridge (Linux x86-64 and AArch64)
+
+The fixed-width ASCII regex bridge uses Cargo-managed `regex` and `jni` crates.
+Install Rust and Cargo (tested with 1.99.0), including the standard library for
+the JDK target, and put `cargo` on `PATH`. Fetch the checksum-locked dependencies
+before building:
+
+```
+cargo fetch --locked --manifest-path src/java.base/share/native/libjregex/Cargo.toml
+```
+
+The native library build is offline and uses `Cargo.lock`. Its outputs remain in
+the build directory. `REGEX_CARGO` can select the Cargo executable. Cross builds
+also need the appropriate Cargo target linker configuration. Other platforms
+retain the Java regex implementation.
+
 Different platforms require different external libraries. In general, libraries
 are not optional - that is, they are either required or not used.
 
