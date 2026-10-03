@@ -65,7 +65,7 @@ JVM_LIBS += \
 # Dragonbox stays in the checksum-pinned external build cache.
 ifeq ($(DRAGONBOX_ENABLED), true)
   JVM_EXTRA_FILES += $(DRAGONBOX_DIR)/source/dragonbox_to_chars.cpp
-  DRAGONBOX_CXXFLAGS := -DDRAGONBOX_ENABLED=1 -I$(DRAGONBOX_DIR)/include
+  DRAGONBOX_CXXFLAGS := -DDRAGONBOX_ENABLED=1 -isystem $(DRAGONBOX_DIR)/include
   JVM_PRECOMPILED_HEADER_EXCLUDE += dragonbox_to_chars.cpp
 endif
 
