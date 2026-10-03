@@ -16,6 +16,12 @@ const DATE: &str = "([0-9]{4})-([0-9]{2})-([0-9]{2})";
 static UUID_ENGINE: OnceLock<Option<Regex>> = OnceLock::new();
 static DATE_ENGINE: OnceLock<Option<Regex>> = OnceLock::new();
 
+#[unsafe(no_mangle)]
+pub extern "system" fn JNI_OnLoad(_vm: *mut jni::sys::JavaVM,
+                                  _reserved: *mut std::ffi::c_void) -> jint {
+    jni::sys::JNI_VERSION_1_8
+}
+
 fn engine(kind: jint) -> Option<&'static Regex> {
     let (cell, pattern) = match kind {
         1 => (&UUID_ENGINE, UUID),
