@@ -6579,6 +6579,7 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
 
 //-------------inline_vectorizedMismatch------------------------------
 static constexpr int max_native_mismatch_size = 1 << 20;
+static constexpr int min_native_mismatch_size = 1 << 12;
 
 Node* LibraryCallKit::inline_vectorizedMismatch_predicate(int predicate) {
   Node* obja = argument(0);
@@ -6598,6 +6599,15 @@ Node* LibraryCallKit::inline_vectorizedMismatch_predicate(int predicate) {
 
   assert(predicate >= 1 && predicate <= 3, "unexpected predicate");
   RegionNode* slow = new RegionNode(1);
+  // Native dispatch pays off for bulk scans. Check the shared size/scale
+  // conditions first so tiny inputs and large safepointing scans skip it.
+  Node* size = _gvn.transform(new SubINode(argument(6), intcon(min_native_mismatch_size)));
+  Node* cmp = _gvn.transform(new CmpUNode(size, intcon(max_native_mismatch_size - min_native_mismatch_size)));
+  generate_guard(_gvn.transform(new BoolNode(cmp, BoolTest::gt)), slow, PROB_MIN);
+  if (!stopped()) {
+    cmp = _gvn.transform(new CmpINode(argument(7), intcon(0)));
+    generate_guard(_gvn.transform(new BoolNode(cmp, BoolTest::ne)), slow, PROB_MIN);
+  }
   Node* bases[] = { obja, objb };
   for (int i = 0; i < 2 && !stopped(); i++) {
     const bool native_base = predicate == 1 || (predicate == 2 ? i == 0 : i == 1);
@@ -6616,17 +6626,6 @@ Node* LibraryCallKit::inline_vectorizedMismatch_predicate(int predicate) {
         generate_guard(_gvn.transform(new BoolNode(cmp, BoolTest::ne)), slow, PROB_MIN);
       }
     }
-  }
-  if (!stopped()) {
-    Node* cmp = _gvn.transform(new CmpINode(argument(7), intcon(0)));
-    generate_guard(_gvn.transform(new BoolNode(cmp, BoolTest::ne)), slow, PROB_MIN);
-  }
-  if (!stopped()) {
-    // One unsigned check accepts only [8, 1 MiB]. Larger scans keep the
-    // original safepointing Java fallback, and zero-length scans read nothing.
-    Node* size = _gvn.transform(new SubINode(argument(6), intcon(8)));
-    Node* cmp = _gvn.transform(new CmpUNode(size, intcon(max_native_mismatch_size - 8)));
-    generate_guard(_gvn.transform(new BoolNode(cmp, BoolTest::gt)), slow, PROB_MIN);
   }
   return slow->req() > 1 ? _gvn.transform(slow) : nullptr;
 }
@@ -6652,7 +6651,7 @@ bool LibraryCallKit::inline_vectorizedMismatch(int predicate) {
     obja = native_a ? null() : _gvn.transform(new CheckCastPPNode(control(), obja, bytes));
     objb = native_b ? null() : _gvn.transform(new CheckCastPPNode(control(), objb, bytes));
     length = _gvn.transform(new CastIINode(control(), length,
-                           TypeInt::make(8, max_native_mismatch_size, Type::WidenMin)));
+                           TypeInt::make(min_native_mismatch_size, max_native_mismatch_size, Type::WidenMin)));
     scale = intcon(0);
   }
   const TypeAryPtr* obja_t = _gvn.type(obja)->isa_aryptr();

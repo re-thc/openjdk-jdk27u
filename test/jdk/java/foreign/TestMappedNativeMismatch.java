@@ -88,7 +88,7 @@ public class TestMappedNativeMismatch {
         for (boolean source : new boolean[] {true, false}) {
             for (boolean heap : new boolean[] {true, false}) {
                 test(source, heap, 0, SIZE);
-                test(source, heap, 4094, 64);
+                test(source, heap, 4094, 4096);
             }
         }
     }
