@@ -62,8 +62,8 @@ public class SegmentNativeMismatch {
     public String difference;
 
     private Arena arena;
-    private MemorySegment source;
-    private MemorySegment destination;
+    protected MemorySegment source;
+    protected MemorySegment destination;
 
     @Setup
     public void setup() {
