@@ -103,6 +103,22 @@ public class LiteralPrefixSearch {
         check(actual.reset().lookingAt() == expected.reset().lookingAt(), p, input, "lookingAt");
         check(actual.reset().replaceAll("<$0>").equals(expected.reset().replaceAll("<$0>")),
                 p, input, "replaceAll");
+        for (int start : new int[] {0, input.length() / 2, input.length()}) {
+            boolean a = actual.find(start);
+            boolean e = expected.find(start);
+            check(a == e, p, input, "find(int)");
+            check(actual.hitEnd() == expected.hitEnd(), p, input, "find(int) hitEnd");
+            check(actual.requireEnd() == expected.requireEnd(), p, input, "find(int) requireEnd");
+            checks++;
+            if (a) {
+                for (int group = 0; group <= actual.groupCount(); group++) {
+                    check(actual.start(group) == expected.start(group), p, input, "find(int) start");
+                    check(actual.end(group) == expected.end(group), p, input, "find(int) end");
+                    check(Objects.equals(actual.group(group), expected.group(group)),
+                            p, input, "find(int) group");
+                }
+            }
+        }
     }
 
     private static void check(boolean ok, Pattern p, String input, String operation) {
