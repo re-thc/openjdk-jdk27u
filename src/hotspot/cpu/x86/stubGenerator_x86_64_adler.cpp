@@ -77,12 +77,13 @@ address StubGenerator::generate_updateBytesAdler32() {
   start = __ pc();
 
   // Choose an appropriate LIMIT for inner loop based on the granularity
-  // of intermediate results. For int, LIMIT of 5552 will ensure intermediate
-  // results does not overflow Integer.MAX_VALUE before modulo operations.
+  // of intermediate results. LIMIT of 5552 ensures intermediate results
+  // do not overflow UINT32_MAX before modulo operations.
   const int LIMIT = 5552;
   const int BASE = 65521;
   // For every unsigned 32-bit n, floor(n / BASE) = (n * RECIPROCAL) >> 47.
   const uint32_t RECIPROCAL = 0x80078071;
+  const bool use_reciprocal = !VM_Version::supports_avx512vl();
   const int CHUNKSIZE =  16;
   const int CHUNKSIZE_M1 = CHUNKSIZE - 1;
 
@@ -279,12 +280,27 @@ address StubGenerator::generate_updateBytesAdler32() {
   // either we're done, or we just did LIMIT
   __ subl(size, s);
 
-  __ movdl(a_d, xa);
-  __ movdl(rax, xb);
-  __ addl(b_d, rax);
-  __ movl(rcx, (int)RECIPROCAL);
-  mod_base(a_d);
-  mod_base(b_d);
+  if (use_reciprocal) {
+    __ movdl(a_d, xa);
+    __ movdl(rax, xb);
+    __ addl(b_d, rax);
+    __ movl(rcx, (int)RECIPROCAL);
+    mod_base(a_d);
+    mod_base(b_d);
+  } else {
+    __ movdl(rax, xa);
+    __ xorl(rdx, rdx);
+    __ movl(rcx, BASE);
+    __ divl(rcx);
+    __ movl(a_d, rdx);
+
+    __ movdl(rax, xb);
+    __ addl(rax, b_d);
+    __ xorl(rdx, rdx);
+    __ movl(rcx, BASE);
+    __ divl(rcx);
+    __ movl(b_d, rdx);
+  }
 
   __ testl(size, size);
   __ jcc(Assembler::zero, FINISH);
@@ -322,12 +338,28 @@ address StubGenerator::generate_updateBytesAdler32() {
 
   __ bind(ZERO_SIZE);
 
-  __ movl(rcx, (int)RECIPROCAL);
-  mod_base(a_d);
-  mod_base(b_d);
-  __ movl(rax, b_d);
-  __ shll(rax, 16);
-  __ orl(rax, a_d);
+  if (use_reciprocal) {
+    __ movl(rcx, (int)RECIPROCAL);
+    mod_base(a_d);
+    mod_base(b_d);
+    __ movl(rax, b_d);
+    __ shll(rax, 16);
+    __ orl(rax, a_d);
+  } else {
+    __ movl(rax, a_d);
+    __ xorl(rdx, rdx);
+    __ movl(rcx, BASE);
+    __ divl(rcx);
+    __ movl(a_d, rdx);
+
+    __ movl(rax, b_d);
+    __ xorl(rdx, rdx);
+    __ movl(rcx, BASE);
+    __ divl(rcx);
+    __ shll(rdx, 16);
+    __ orl(rdx, a_d);
+    __ movl(rax, rdx);
+  }
 
   __ bind(END);
 

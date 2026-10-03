@@ -97,6 +97,39 @@ public class TestAdler32Modulus {
                 }
             }
         }
+        testUnsignedProduct(bytes, direct, arrayAdler, directAdler);
+    }
+
+    private static void testUnsignedProduct(byte[] bytes, ByteBuffer direct,
+                                           Adler32 arrayAdler, Adler32 directAdler) {
+        Arrays.fill(bytes, (byte) 0xff);
+        direct.clear().put(bytes).flip();
+        arrayAdler.reset();
+        directAdler.reset();
+        for (int i = 0; i < 256; i++) {
+            arrayAdler.update(0xff);
+            directAdler.update(0xff);
+        }
+        arrayAdler.update(239);
+        directAdler.update(239);
+        int s1 = 65520;
+        int s2 = 2047;
+        long seed = ((long) s2 << 16) | s1;
+        check(arrayAdler, seed, 0, 0, 257);
+        check(directAdler, seed, 0, 0, 257);
+
+        // The unreduced upper sum is 4,294,626,727. Its product with
+        // 0x80078071 exceeds INT64_MAX, requiring a logical right shift.
+        for (int i = 0; i < 5552; i++) {
+            s1 = (s1 + 255) % BASE;
+            s2 = (s2 + s1) % BASE;
+        }
+        long expected = ((long) s2 << 16) | s1;
+        arrayAdler.update(bytes, 0, 5552);
+        check(arrayAdler, expected, 0, 5552, 257);
+        direct.limit(5552);
+        directAdler.update(direct);
+        check(directAdler, expected, 0, 5552, 257);
     }
 
     private static long reference(byte[] bytes, int offset, int length, int prefix) {
