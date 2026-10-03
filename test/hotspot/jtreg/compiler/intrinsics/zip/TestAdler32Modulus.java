@@ -98,6 +98,30 @@ public class TestAdler32Modulus {
             }
         }
         testUnsignedProduct(bytes, direct, arrayAdler, directAdler);
+        testMixedUpdates(bytes, direct, arrayAdler);
+    }
+
+    private static void testMixedUpdates(byte[] bytes, ByteBuffer direct, Adler32 adler) {
+        new Random(1).nextBytes(bytes);
+        direct.clear().put(bytes);
+        adler.reset();
+        int s1 = 1;
+        int s2 = 0;
+        for (int i = 0; i < LENGTHS.length; i++) {
+            int length = LENGTHS[i];
+            int offset = OFFSETS[i % OFFSETS.length];
+            for (int j = offset; j < offset + length; j++) {
+                s1 = (s1 + Byte.toUnsignedInt(bytes[j])) % BASE;
+                s2 = (s2 + s1) % BASE;
+            }
+            if ((i & 1) == 0) {
+                adler.update(bytes, offset, length);
+            } else {
+                direct.limit(direct.capacity()).position(offset).limit(offset + length);
+                adler.update(direct);
+            }
+            check(adler, ((long) s2 << 16) | s1, offset, length, 0);
+        }
     }
 
     private static void testUnsignedProduct(byte[] bytes, ByteBuffer direct,
