@@ -42,6 +42,9 @@ public class LiteralPrefixSearch {
     @Param({"short", "early", "sparse", "missing", "dense", "near", "utf16", "adversarial"})
     public String shape;
 
+    @Param({"4096"})
+    public int length;
+
     private String input;
     private Pattern pattern;
     private Matcher matcher;
@@ -50,12 +53,12 @@ public class LiteralPrefixSearch {
     public void setup() {
         input = switch (shape) {
             case "short" -> "xxfoofooabfoobarz";
-            case "early" -> "foofooabfoobarz" + "x".repeat(4096);
-            case "sparse" -> "x".repeat(4096) + "foofooabfoobarz";
-            case "missing" -> "x".repeat(4096);
-            case "dense" -> "f".repeat(4096);
-            case "near" -> "xfoofooabfoobarz" + "x".repeat(4096);
-            case "utf16" -> "中".repeat(4096) + "foofooabfoobarz";
+            case "early" -> "foofooabfoobarz" + "x".repeat(length);
+            case "sparse" -> "x".repeat(length) + "foofooabfoobarz";
+            case "missing" -> "x".repeat(length);
+            case "dense" -> "f".repeat(length);
+            case "near" -> "xfoofooabfoobarz" + "x".repeat(length);
+            case "utf16" -> "中".repeat(length) + "foofooabfoobarz";
             case "adversarial" -> "fo" + "a".repeat(32);
             default -> throw new IllegalArgumentException(shape);
         };
