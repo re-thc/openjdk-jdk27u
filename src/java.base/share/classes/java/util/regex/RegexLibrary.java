@@ -33,8 +33,7 @@ final class RegexLibrary {
 
     private static boolean load() {
         try {
-            BootLoader.loadLibrary("jregex");
-            return true;
+            return BootLoader.getNativeLibraries().loadLibrary("jregex") != null;
         } catch (UnsatisfiedLinkError unavailable) {
             return false;
         }
@@ -46,7 +45,7 @@ final class RegexLibrary {
         }
         try {
             return find0(kind, input, begin, end);
-        } catch (RuntimeException failed) {
+        } catch (UnsatisfiedLinkError | RuntimeException failed) {
             return -2;
         }
     }
