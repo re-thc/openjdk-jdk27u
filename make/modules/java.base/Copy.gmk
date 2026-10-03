@@ -172,6 +172,10 @@ ifeq ($(USE_EXTERNAL_LIBZ), true)
   LEGAL_EXCLUDES += zlib.md
 endif
 
+ifneq ($(USE_LIBDEFLATE), true)
+  LEGAL_EXCLUDES += libdeflate.md
+endif
+
 ifneq ($(TOOLCHAIN_TYPE), gcc)
   LEGAL_EXCLUDES += gcc.md
 endif

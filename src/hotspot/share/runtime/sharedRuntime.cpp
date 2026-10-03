@@ -72,6 +72,9 @@
 #include "runtime/osThread.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/sharedRuntime.hpp"
+#ifdef USE_LIBDEFLATE
+#include <libdeflate.h>
+#endif
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
@@ -318,6 +321,15 @@ void SharedRuntime::debug_print_value(oopDesc* x) {
 
 #endif // PRODUCT
 
+
+#ifdef USE_LIBDEFLATE
+JRT_LEAF(jint, SharedRuntime::libdeflate_adler32(jint adler, address bytes, jint length))
+  assert(length >= 0, "Adler32 caller must check the range");
+  // A jint argument need not have zeroed upper bits in a machine register.
+  return static_cast<jint>(::libdeflate_adler32(static_cast<uint32_t>(adler), bytes,
+                                             static_cast<size_t>(static_cast<uint32_t>(length))));
+JRT_END
+#endif
 
 JRT_LEAF(jlong, SharedRuntime::lmul(jlong y, jlong x))
   return x * y;

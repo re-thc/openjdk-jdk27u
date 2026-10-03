@@ -39,8 +39,53 @@ AC_DEFUN_ONCE([LIB_SETUP_BUNDLED_LIBS],
   LIB_SETUP_GIFLIB
   LIB_SETUP_LIBPNG
   LIB_SETUP_ZLIB
+  LIB_SETUP_LIBDEFLATE
   LIB_SETUP_LCMS
   LIB_SETUP_HARFBUZZ
+])
+
+################################################################################
+# Optional external libdeflate for C2 Adler32 calls.
+################################################################################
+AC_DEFUN_ONCE([LIB_SETUP_LIBDEFLATE],
+[
+  AC_ARG_WITH(libdeflate, [AS_HELP_STRING([--with-libdeflate],
+      [prefix of a libdeflate 1.26 installation with a PIC static library @<:@disabled@:>@])])
+  USE_LIBDEFLATE=false
+  LIBDEFLATE_CFLAGS=""
+  LIBDEFLATE_LIBS=""
+  if test "x${with_libdeflate}" != x -a "x${with_libdeflate}" != xno; then
+    if test "x$OPENJDK_TARGET_OS" != xlinux \
+        -o \( "x$OPENJDK_TARGET_CPU" != xx86_64 -a "x$OPENJDK_TARGET_CPU" != xaarch64 \); then
+      AC_MSG_ERROR([--with-libdeflate is supported on Linux x86-64 and AArch64])
+    fi
+    LIBDEFLATE_PREFIX="$with_libdeflate"
+    UTIL_FIXUP_PATH([LIBDEFLATE_PREFIX])
+    LIBDEFLATE_CFLAGS="-DUSE_LIBDEFLATE -I$LIBDEFLATE_PREFIX/include"
+    LIBDEFLATE_LIBS="$LIBDEFLATE_PREFIX/lib/libdeflate.a"
+    if test ! -f "$LIBDEFLATE_PREFIX/include/libdeflate.h" \
+        -o ! -f "$LIBDEFLATE_LIBS"; then
+      AC_MSG_ERROR([libdeflate prefix must contain include/libdeflate.h and lib/libdeflate.a])
+    fi
+    LIBDEFLATE_SAVED_CFLAGS="$CFLAGS"
+    LIBDEFLATE_SAVED_LIBS="$LIBS"
+    CFLAGS="$CFLAGS $LIBDEFLATE_CFLAGS"
+    LIBS="$LIBDEFLATE_LIBS $LIBS"
+    AC_MSG_CHECKING([for libdeflate 1.26 incremental Adler32])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <libdeflate.h>
+        #if LIBDEFLATE_VERSION_MAJOR != 1 || LIBDEFLATE_VERSION_MINOR != 26
+        #error libdeflate 1.26 is required
+        #endif]], [[unsigned char data = 0;
+        return libdeflate_adler32(1, &data, 0) != 1;]])],
+        [AC_MSG_RESULT([yes])],
+        [AC_MSG_ERROR([Cannot link libdeflate 1.26; see config.log])])
+    CFLAGS="$LIBDEFLATE_SAVED_CFLAGS"
+    LIBS="$LIBDEFLATE_SAVED_LIBS"
+    USE_LIBDEFLATE=true
+  fi
+  AC_SUBST(USE_LIBDEFLATE)
+  AC_SUBST(LIBDEFLATE_CFLAGS)
+  AC_SUBST(LIBDEFLATE_LIBS)
 ])
 
 ################################################################################

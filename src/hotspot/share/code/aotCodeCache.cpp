@@ -1965,6 +1965,9 @@ void AOTCodeAddressTable::init_extrs() {
   ADD_EXTERNAL_ADDRESS(SharedRuntime::dlog);
   ADD_EXTERNAL_ADDRESS(SharedRuntime::dlog10);
   ADD_EXTERNAL_ADDRESS(SharedRuntime::dpow);
+#ifdef USE_LIBDEFLATE
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::libdeflate_adler32);
+#endif
 #ifndef ZERO
   ADD_EXTERNAL_ADDRESS(SharedRuntime::drem);
 #endif

@@ -361,6 +361,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_updateDirectByteBufferCRC32C();
   bool inline_updateBytesAdler32();
   bool inline_updateByteBufferAdler32();
+  Node* updateBytesAdler32(Node* adler, Node* src_start, Node* length);
   bool inline_multiplyToLen();
   bool inline_countPositives();
   bool inline_squareToLen();

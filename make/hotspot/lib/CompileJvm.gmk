@@ -52,6 +52,8 @@ JVM_LDFLAGS += \
 
 JVM_ASFLAGS += $(EXTRA_ASFLAGS)
 
+JVM_CFLAGS += $(LIBDEFLATE_CFLAGS)
+
 JVM_ASFLAGS += \
         -I$(TOPDIR)/src/hotspot/os_cpu/$(HOTSPOT_TARGET_OS)_$(HOTSPOT_TARGET_CPU_ARCH) \
         -I$(TOPDIR)/src/hotspot/os/$(HOTSPOT_TARGET_OS) \
@@ -60,6 +62,7 @@ JVM_ASFLAGS += \
 
 JVM_LIBS += \
     $(JVM_LIBS_FEATURES) \
+    $(LIBDEFLATE_LIBS) \
     #
 
 # These files and directories are always excluded

@@ -6958,6 +6958,27 @@ bool LibraryCallKit::inline_updateDirectByteBufferCRC32C() {
   return true;
 }
 
+Node* LibraryCallKit::updateBytesAdler32(Node* adler, Node* src_start, Node* length) {
+  address stubAddr = StubRoutines::updateBytesAdler32();
+  const char* stubName = "updateBytesAdler32";
+#ifdef USE_LIBDEFLATE
+  const TypeInt* length_type = _gvn.type(length)->isa_int();
+  // Unknown and short lengths keep the existing call, without a runtime guard.
+  if (length_type != nullptr && length_type->_lo >= 512) {
+    // Resolve the library's CPU dispatch on the compiler thread, before a leaf
+    // can receive a raw Java array address. This also avoids first-call latency.
+    unsigned char empty = 0;
+    SharedRuntime::libdeflate_adler32(1, &empty, 0);
+    stubAddr = CAST_FROM_FN_PTR(address, SharedRuntime::libdeflate_adler32);
+    stubName = "libdeflateAdler32";
+  }
+#endif
+  Node* call = make_runtime_call(RC_LEAF, OptoRuntime::updateBytesAdler32_Type(),
+                                stubAddr, stubName, TypePtr::BOTTOM,
+                                adler, src_start, length);
+  return _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+}
+
 //------------------------------inline_updateBytesAdler32----------------------
 //
 // Calculate Adler32 checksum for byte[] array.
@@ -6991,15 +7012,7 @@ bool LibraryCallKit::inline_updateBytesAdler32() {
   // We assume that range check is done by caller.
   // TODO: generate range check (offset+length < src.length) in debug VM.
 
-  // Call the stub.
-  address stubAddr = StubRoutines::updateBytesAdler32();
-  const char *stubName = "updateBytesAdler32";
-
-  Node* call = make_runtime_call(RC_LEAF, OptoRuntime::updateBytesAdler32_Type(),
-                                 stubAddr, stubName, TypePtr::BOTTOM,
-                                 crc, src_start, length);
-  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-  set_result(result);
+  set_result(updateBytesAdler32(crc, src_start, length));
   return true;
 }
 
@@ -7025,16 +7038,7 @@ bool LibraryCallKit::inline_updateByteBufferAdler32() {
   // 'src_start' points to src array + scaled offset
   Node* src_start = off_heap_plus_addr(base, offset);
 
-  // Call the stub.
-  address stubAddr = StubRoutines::updateBytesAdler32();
-  const char *stubName = "updateBytesAdler32";
-
-  Node* call = make_runtime_call(RC_LEAF, OptoRuntime::updateBytesAdler32_Type(),
-                                 stubAddr, stubName, TypePtr::BOTTOM,
-                                 crc, src_start, length);
-
-  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-  set_result(result);
+  set_result(updateBytesAdler32(crc, src_start, length));
   return true;
 }
 
@@ -9274,4 +9278,3 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
   set_result(box_fp16_value(float16_box_type, field, result));
   return true;
 }
-

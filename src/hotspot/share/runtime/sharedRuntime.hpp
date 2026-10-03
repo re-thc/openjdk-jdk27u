@@ -169,6 +169,10 @@ class SharedRuntime: AllStatic {
   static jdouble dexp(jdouble x);
   static jdouble dpow(jdouble x, jdouble y);
 
+#ifdef USE_LIBDEFLATE
+  static jint libdeflate_adler32(jint adler, address bytes, jint length);
+#endif
+
 #if defined(__SOFTFP__) || defined(E500V2)
   static double dabs(double f);
 #endif

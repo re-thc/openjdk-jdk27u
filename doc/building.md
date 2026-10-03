@@ -849,6 +849,33 @@ default is `bundled`).
 * `--with-lcms=<source>` - Use the specified source for lcms
 * `--with-zlib=<source>` - Use the specified source for zlib
 
+On Linux x86-64 and AArch64, `--with-libdeflate=<prefix>` optionally links
+libdeflate 1.26's PIC static library into HotSpot for C2 Adler32 calls whose
+length is proven to be at least 512 bytes. Other lengths and compiler tiers
+retain the existing implementation. Libdeflate owns CPU feature detection and
+instruction selection; no host-specific architecture flags are needed.
+The library is external and is not downloaded by configure. To prepare a
+checksum-pinned installation in the build cache:
+
+```sh
+libdeflate_cache="$PWD/build/dependencies/libdeflate-1.26"
+mkdir -p "$libdeflate_cache"
+curl -fL https://github.com/ebiggers/libdeflate/releases/download/v1.26/libdeflate-1.26.tar.gz \
+    -o "$libdeflate_cache/source.tar.gz"
+echo "125856d4656e0feab660f94842f835923410c9281fedbcee64598c918da42b5a  $libdeflate_cache/source.tar.gz" | sha256sum -c -
+tar -xf "$libdeflate_cache/source.tar.gz" -C "$libdeflate_cache"
+cmake -S "$libdeflate_cache/libdeflate-1.26" -B "$libdeflate_cache/build" \
+    -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+    -DCMAKE_INSTALL_PREFIX="$libdeflate_cache/prefix" -DCMAKE_INSTALL_LIBDIR=lib \
+    -DLIBDEFLATE_BUILD_SHARED_LIB=OFF -DLIBDEFLATE_BUILD_GZIP=OFF \
+    -DLIBDEFLATE_COMPRESSION_SUPPORT=OFF -DLIBDEFLATE_DECOMPRESSION_SUPPORT=OFF
+cmake --build "$libdeflate_cache/build" --target install
+bash configure --with-libdeflate="$libdeflate_cache/prefix"
+```
+
+For cross compilation, build libdeflate with the target toolchain and pass its
+installation prefix to the JDK configure command.
+
 On Linux, it is possible to select either static or dynamic linking of the C++
 runtime. The default is static linking, with dynamic linking as fallback if the
 static library is not found.
