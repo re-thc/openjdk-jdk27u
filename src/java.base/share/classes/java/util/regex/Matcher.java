@@ -1762,7 +1762,12 @@ public final class Matcher implements MatchResult {
                 localsPos[i].clear();
         }
         acceptMode = NOANCHOR;
-        boolean result = parentPattern.root.match(this, from, text);
+        boolean result;
+        if (to - from >= 128 && parentPattern.hasBmpLiteralPrefix && text instanceof String str) {
+            result = ((Pattern.Start) parentPattern.root).matchLiteralPrefix(this, from, str);
+        } else {
+            result = parentPattern.root.match(this, from, text);
+        }
         if (!result)
             this.first = -1;
         this.oldLast = this.last;

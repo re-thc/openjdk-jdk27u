@@ -1007,6 +1007,9 @@ public final class Pattern
      */
     transient Node root;
 
+    /** Whether root is Start with a nonempty, case-sensitive BMP Slice prefix. */
+    transient boolean hasBmpLiteralPrefix;
+
     /**
      * The root of object tree for a match operation.  The pattern is matched
      * at the beginning.  This may include a find that uses BnM or a First
@@ -1961,6 +1964,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         if (matchRoot instanceof Slice) {
             root = BnM.optimize(matchRoot);
             if (root == matchRoot) {
+                hasBmpLiteralPrefix = !hasSupplementary && ((Slice) matchRoot).buffer.length != 0;
                 root = hasSupplementary ? new StartS(matchRoot) : new Start(matchRoot);
             }
         } else if (matchRoot instanceof Begin || matchRoot instanceof First) {
@@ -3790,25 +3794,6 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 return false;
             }
             int guard = matcher.to - minLength;
-            // Keep nearby matches on the direct node path before preparing
-            // a character scan over a longer input.
-            if (next.match(matcher, i, seq) ||
-                    (i < guard && (next.match(matcher, ++i, seq) ||
-                    (i < guard && next.match(matcher, ++i, seq))))) {
-                matcher.first = i;
-                matcher.groups[0] = matcher.first;
-                matcher.groups[1] = matcher.last;
-                return true;
-            }
-            i++;
-            if (guard - i >= 64 && next.getClass() == Slice.class &&
-                    ((Slice) next).buffer.length != 0 && seq instanceof String str) {
-                return matchLiteralPrefix(matcher, i, str, guard);
-            }
-            return matchFrom(matcher, i, seq, guard);
-        }
-
-        private boolean matchFrom(Matcher matcher, int i, CharSequence seq, int guard) {
             for (; i <= guard; i++) {
                 if (next.match(matcher, i, seq)) {
                     matcher.first = i;
@@ -3821,15 +3806,36 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             return false;
         }
 
-        private boolean matchLiteralPrefix(Matcher matcher, int i, String str, int guard) {
+        boolean matchLiteralPrefix(Matcher matcher, int i, String str) {
+            int guard = matcher.to - minLength;
+            if (i > guard) {
+                matcher.hitEnd = true;
+                return false;
+            }
+            // Preserve the direct node path for matches at the first few
+            // positions, before preparing a character scan over a longer input.
+            if (next.match(matcher, i, str) ||
+                    (i < guard && (next.match(matcher, ++i, str) ||
+                    (i < guard && next.match(matcher, ++i, str))))) {
+                matcher.first = i;
+                matcher.groups[0] = matcher.first;
+                matcher.groups[1] = matcher.last;
+                return true;
+            }
+            i++;
             int[] prefix = ((Slice) next).buffer;
+            // A very large counted repetition can overflow the studied minimum.
+            // Retain the original scanner if it cannot bound this prefix safely.
+            if (guard - i < 64 || minLength < prefix.length) {
+                return match(matcher, i, str);
+            }
             // Both characters are necessary for a match. If the leading
             // character is common here, scan for the last character instead.
             int offset = str.charAt(i) == prefix[0] ? prefix.length - 1 : 0;
             int ch = prefix[offset];
             while (i <= guard) {
-                // The bound excludes starts that cannot fit the full pattern
-                // in the region. indexOf uses the Latin-1/UTF-16 intrinsic.
+                // Exclude starts that cannot fit the full pattern in the region.
+                // indexOf uses the existing Latin-1/UTF-16 character intrinsic.
                 int found = str.indexOf(ch, i + offset, guard + offset + 1);
                 if (found < 0) {
                     matcher.hitEnd = true;
@@ -3837,12 +3843,11 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 }
                 int start = found - offset;
                 if (start - i < 8) {
-                    // Retain the general loop for dense candidate starts.
-                    return matchFrom(matcher, start, str, guard);
+                    return match(matcher, start, str);
                 }
                 i = start;
-                // The node chain remains responsible for captures, assertions
-                // and the rest of the match after the literal prefix.
+                // The original node chain decides the full match, including
+                // captures, assertions, backreferences and end-state flags.
                 if (next.match(matcher, i, str)) {
                     matcher.first = i;
                     matcher.groups[0] = matcher.first;

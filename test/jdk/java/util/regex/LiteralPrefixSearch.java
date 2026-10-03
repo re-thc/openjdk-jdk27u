@@ -38,6 +38,7 @@ public class LiteralPrefixSearch {
         "fo(?<capture>o)\\k<capture>", "fo(o+)\\1", "fo(a+)+b",
         "fo(?:o|ox)", "fo.*?z", "fo.*z", "fo(?<=fo)o", "fo(?=o$)",
         "foo|ab", "(foo)", "(?i)foo", "^foo", "foobar", "a+b",
+        "fo.{2147483647}.{2147483647}x",
         "fo\\x{1f600}", "\\ud800x", "éé", "中中", "", "(?=foo)"
     };
     private static int checks;
