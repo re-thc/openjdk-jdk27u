@@ -1007,6 +1007,9 @@ public final class Pattern
      */
     transient Node root;
 
+    /** Whether a fixed-width positive-ASCII library language was recognized. */
+    transient boolean hasLibraryRegex;
+
     /**
      * The root of object tree for a match operation.  The pattern is matched
      * at the beginning.  This may include a find that uses BnM or a First
@@ -1967,6 +1970,14 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             root = matchRoot;
         } else {
             root = hasSupplementary ? new StartS(matchRoot) : new Start(matchRoot);
+        }
+
+        // Classify only the two bounded languages before publishing compiled.
+        // The existing study excludes ordinary patterns without string checks.
+        if (flags == 0 && root instanceof Start start) {
+            hasLibraryRegex = (start.minLength == 36 && pattern.equals(
+                    "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")) ||
+                    (start.minLength == 10 && pattern.equals("([0-9]{4})-([0-9]{2})-([0-9]{2})"));
         }
 
         // Optimize the greedy Loop to prevent exponential backtracking, IF there

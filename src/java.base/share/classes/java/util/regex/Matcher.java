@@ -1763,7 +1763,8 @@ public final class Matcher implements MatchResult {
         }
         acceptMode = NOANCHOR;
         int libraryResult = -2;
-        if (to - from >= 131072 && to - from <= 8388608 && text instanceof String str) {
+        if (to - from >= 131072 && to - from <= 8388608 &&
+                parentPattern.hasLibraryRegex && text instanceof String str) {
             libraryResult = searchLibrary(from, str);
         }
         boolean result = libraryResult >= 0 ? libraryResult != 0
@@ -1779,21 +1780,8 @@ public final class Matcher implements MatchResult {
     // failed starts cannot reach the region end before a later valid match,
     // so skipping them preserves hitEnd/requireEnd as well as leftmost order.
     private int searchLibrary(int from, String str) {
-        if (parentPattern.flags() != 0) {
-            return -2;
-        }
-        String regex = parentPattern.pattern();
-        int kind;
-        int width;
-        if (regex.equals("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")) {
-            kind = 1;
-            width = 36;
-        } else if (regex.equals("([0-9]{4})-([0-9]{2})-([0-9]{2})")) {
-            kind = 2;
-            width = 10;
-        } else {
-            return -2;
-        }
+        int width = ((Pattern.Start) parentPattern.root).minLength;
+        int kind = width == 36 ? 1 : 2;
         // Retain Java for nearby matches and avoid loading or compiling the
         // library until a meaningful search remains. These languages contain
         // no bounds-sensitive assertions and have exactly the stated width.
