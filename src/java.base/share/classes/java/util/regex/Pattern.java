@@ -3827,22 +3827,26 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 matcher.hitEnd = true;
                 return false;
             }
-            // Try the initial position before preparing a search. This keeps
-            // immediate matches on the original matching path.
-            if (next.match(matcher, i, seq)) {
-                matcher.first = i;
-                matcher.groups[0] = matcher.first;
-                matcher.groups[1] = matcher.last;
-                return true;
-            }
-            i++;
-            if (guard - i >= 64 && seq instanceof String str) {
-                int firstChar = ((Slice) next).buffer[0];
-                if (str.charAt(i) == firstChar) {
-                    return super.match(matcher, i, seq);
+            // Preserve the direct node path for matches at the first few
+            // positions, before preparing a scan over a longer input.
+            for (int probe = 0; probe < 3 && i <= guard; probe++, i++) {
+                if (next.match(matcher, i, seq)) {
+                    matcher.first = i;
+                    matcher.groups[0] = matcher.first;
+                    matcher.groups[1] = matcher.last;
+                    return true;
                 }
+            }
+            if (guard - i >= 64 && seq instanceof String str) {
+                int[] prefix = ((Slice) next).buffer;
+                // If the leading character is common here, scan for the last
+                // character of the prefix instead. Either character is a
+                // necessary condition for a match at the corresponding start.
+                int offset = str.charAt(i) == prefix[0] ? prefix.length - 1 : 0;
+                int ch = prefix[offset];
                 while (i <= guard) {
-                    int start = str.indexOf(firstChar, i, guard + 1);
+                    int found = str.indexOf(ch, i + offset, guard + offset + 1);
+                    int start = found < 0 ? -1 : found - offset;
                     if (start < 0) {
                         matcher.hitEnd = true;
                         return false;
