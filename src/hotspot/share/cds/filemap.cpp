@@ -1382,15 +1382,44 @@ bool FileMapInfo::map_aot_code_region(ReservedSpace rs) {
   }
 }
 
+class SharedDataRelocationBitMap : public BitMapView {
+public:
+  SharedDataRelocationBitMap(const BitMapView& bitmap) : BitMapView(bitmap) {}
+
+  void relocate(SharedDataRelocator* reloc, idx_t start, idx_t end) const {
+    assert(start <= end && end <= size(), "invalid relocation range");
+    idx_t first_word = to_words_align_down(start);
+    idx_t end_word = to_words_align_up(end);
+    idx_t end_bit = bit_in_word(end);
+
+    // Relocation changes the archive pointers, not the bitmap. Keep each word
+    // locally instead of searching the bitmap again after every patched pointer.
+    for (idx_t word = first_word; word < end_word; ++word) {
+      bm_word_t bits = map()[word];
+      if (word == first_word) {
+        bits &= ~bm_word_t(0) << bit_in_word(start);
+      }
+      if (word + 1 == end_word && end_bit != 0) {
+        bits &= (bm_word_t(1) << end_bit) - 1;
+      }
+      while (bits != 0) {
+        // These closures are the concrete rw_patcher and ro_patcher below.
+        reloc->SharedDataRelocator::do_bit(word * BitsPerWord + count_trailing_zeros(bits));
+        bits &= bits - 1;
+      }
+    }
+  }
+};
+
 class SharedDataRelocationTask : public ArchiveWorkerTask {
 private:
-  BitMapView* const _rw_bm;
-  BitMapView* const _ro_bm;
+  SharedDataRelocationBitMap* const _rw_bm;
+  SharedDataRelocationBitMap* const _ro_bm;
   SharedDataRelocator* const _rw_reloc;
   SharedDataRelocator* const _ro_reloc;
 
 public:
-  SharedDataRelocationTask(BitMapView* rw_bm, BitMapView* ro_bm, SharedDataRelocator* rw_reloc, SharedDataRelocator* ro_reloc) :
+  SharedDataRelocationTask(SharedDataRelocationBitMap* rw_bm, SharedDataRelocationBitMap* ro_bm, SharedDataRelocator* rw_reloc, SharedDataRelocator* ro_reloc) :
                            ArchiveWorkerTask("Shared Data Relocation"),
                            _rw_bm(rw_bm), _ro_bm(ro_bm), _rw_reloc(rw_reloc), _ro_reloc(ro_reloc) {}
 
@@ -1399,12 +1428,12 @@ public:
     work_on(chunk, max_chunks, _ro_bm, _ro_reloc);
   }
 
-  void work_on(int chunk, int max_chunks, BitMapView* bm, SharedDataRelocator* reloc) {
+  void work_on(int chunk, int max_chunks, SharedDataRelocationBitMap* bm, SharedDataRelocator* reloc) {
     BitMap::idx_t size  = bm->size();
     BitMap::idx_t start = MIN2(size, size * chunk / max_chunks);
     BitMap::idx_t end   = MIN2(size, size * (chunk + 1) / max_chunks);
     assert(end > start, "Sanity: no empty slices");
-    bm->iterate(reloc, start, end);
+    bm->relocate(reloc, start, end);
   }
 };
 
@@ -1417,8 +1446,8 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
   if (bitmap_base == nullptr) {
     return false; // OOM, or CRC check failure
   } else {
-    BitMapView rw_ptrmap = ptrmap_view(AOTMetaspace::rw);
-    BitMapView ro_ptrmap = ptrmap_view(AOTMetaspace::ro);
+    SharedDataRelocationBitMap rw_ptrmap(ptrmap_view(AOTMetaspace::rw));
+    SharedDataRelocationBitMap ro_ptrmap(ptrmap_view(AOTMetaspace::ro));
 
     FileMapRegion* rw_region = first_core_region();
     FileMapRegion* ro_region = last_core_region();
@@ -1452,8 +1481,8 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
       SharedDataRelocationTask task(&rw_ptrmap, &ro_ptrmap, &rw_patcher, &ro_patcher);
       workers.run_task(&task);
     } else {
-      rw_ptrmap.iterate(&rw_patcher);
-      ro_ptrmap.iterate(&ro_patcher);
+      rw_ptrmap.relocate(&rw_patcher, 0, rw_ptrmap.size());
+      ro_ptrmap.relocate(&ro_patcher, 0, ro_ptrmap.size());
     }
 
     // The AOTMetaspace::bm region will be unmapped in AOTMetaspace::initialize_shared_spaces().
