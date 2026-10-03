@@ -6606,10 +6606,15 @@ Node* LibraryCallKit::inline_vectorizedMismatch_predicate(int predicate) {
       generate_guard(_gvn.transform(new BoolNode(cmp, BoolTest::ne)), slow, PROB_MIN);
     } else {
       // A generic heap partner is conservatively limited to byte arrays.
-      Node* klass = makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_BYTE)));
-      Node* instance = gen_instanceof(bases[i], klass);
-      Node* cmp = _gvn.transform(new CmpINode(instance, intcon(1)));
-      generate_guard(_gvn.transform(new BoolNode(cmp, BoolTest::ne)), slow, PROB_MIN);
+      Node* cmp = _gvn.transform(new CmpPNode(bases[i], null()));
+      generate_guard(_gvn.transform(new BoolNode(cmp, BoolTest::eq)), slow, PROB_MIN);
+      if (!stopped()) {
+        const TypePtr* not_null = _gvn.type(bases[i])->is_oopptr()->cast_to_ptr_type(TypePtr::NotNull);
+        Node* base = _gvn.transform(new CheckCastPPNode(control(), bases[i], not_null));
+        Node* klass = makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_BYTE)));
+        cmp = _gvn.transform(new CmpPNode(load_object_klass(base), klass));
+        generate_guard(_gvn.transform(new BoolNode(cmp, BoolTest::ne)), slow, PROB_MIN);
+      }
     }
   }
   if (!stopped()) {
@@ -6620,7 +6625,7 @@ Node* LibraryCallKit::inline_vectorizedMismatch_predicate(int predicate) {
     // One unsigned check accepts only [8, 1 MiB]. Larger scans keep the
     // original safepointing Java fallback, and zero-length scans read nothing.
     Node* size = _gvn.transform(new SubINode(argument(6), intcon(8)));
-    Node* cmp = _gvn.transform(new CmpUINode(size, intcon(max_native_mismatch_size - 8)));
+    Node* cmp = _gvn.transform(new CmpUNode(size, intcon(max_native_mismatch_size - 8)));
     generate_guard(_gvn.transform(new BoolNode(cmp, BoolTest::gt)), slow, PROB_MIN);
   }
   return slow->req() > 1 ? _gvn.transform(slow) : nullptr;
@@ -6637,7 +6642,7 @@ bool LibraryCallKit::inline_vectorizedMismatch(int predicate) {
   Node* length  = argument(6); // int
   Node* scale   = argument(7); // int
 
-  const bool native_access = predicate != 0;
+  const bool native_access = predicate > 0;
   const bool native_a = native_access && predicate != 3;
   const bool native_b = native_access && predicate != 2;
   if (native_access) {
@@ -6753,6 +6758,7 @@ bool LibraryCallKit::inline_vectorizedMismatch(int predicate) {
       // Replace the first word read by the Java fallback through the usual
       // scoped unsafe-load lowering. Early differences avoid the stub and
       // its TLS stores. Retain the full length for its existing SIMD tiers.
+      C->set_has_unsafe_access(true);
       DecoratorSet decorators = MO_UNORDERED | C2_UNSAFE_ACCESS | C2_UNALIGNED |
                                 C2_CONTROL_DEPENDENT_LOAD;
       Node* first = access_load_at(obja, obja_adr, _gvn.type(obja_adr)->is_ptr(), TypeLong::LONG,
@@ -6771,7 +6777,6 @@ bool LibraryCallKit::inline_vectorizedMismatch(int predicate) {
 
     Node* doing_unsafe_access_addr = nullptr;
     if (native_access) {
-      C->set_has_unsafe_access(true);
       Node* thread = _gvn.transform(new ThreadLocalNode());
       doing_unsafe_access_addr = off_heap_plus_addr(thread, in_bytes(JavaThread::doing_unsafe_access_offset()));
       store_to_memory(control(), doing_unsafe_access_addr, intcon(1), T_BYTE, MemNode::unordered);

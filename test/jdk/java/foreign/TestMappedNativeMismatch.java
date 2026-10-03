@@ -59,23 +59,24 @@ public class TestMappedNativeMismatch {
         }
     }
 
-    private static void test(boolean source) throws Exception {
+    private static void test(boolean source, boolean heap, int offset, int size) throws Exception {
         Path path = Files.createTempFile("native-mismatch", ".dat");
         try (Arena arena = Arena.ofConfined();
              FileChannel channel = FileChannel.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
             channel.position(SIZE - 1).write(ByteBuffer.wrap(new byte[1]));
             MemorySegment mapped = channel.map(FileChannel.MapMode.READ_ONLY, 0, SIZE, arena);
-            MemorySegment nativeSegment = arena.allocate(SIZE);
-            MemorySegment a = source ? mapped : nativeSegment;
-            MemorySegment b = source ? nativeSegment : mapped;
+            MemorySegment other = heap ? MemorySegment.ofArray(new byte[SIZE]) : arena.allocate(SIZE);
+            MemorySegment a = (source ? mapped : other).asSlice(offset, size);
+            MemorySegment b = (source ? other : mapped).asSlice(offset, size);
             for (int i = 0; i < 10000; i++) {
                 long result = source ? mappedSource(a, b) : mappedDestination(a, b);
                 if (result != -1) {
                     throw new AssertionError(result);
                 }
             }
-            // Leave the first page accessible, including the Java first-byte
-            // precheck, so that the fault occurs during the bulk comparison.
+            // Leave the Java first-byte precheck accessible. Offset 4094
+            // faults in the compiled first-word comparison; offset zero
+            // faults later in the bulk stub. Exercise both base orders.
             channel.truncate(4096);
             checkFault(a, b, source);
         } finally {
@@ -84,7 +85,11 @@ public class TestMappedNativeMismatch {
     }
 
     public static void main(String[] args) throws Exception {
-        test(true);
-        test(false);
+        for (boolean source : new boolean[] {true, false}) {
+            for (boolean heap : new boolean[] {true, false}) {
+                test(source, heap, 0, SIZE);
+                test(source, heap, 4094, 64);
+            }
+        }
     }
 }
