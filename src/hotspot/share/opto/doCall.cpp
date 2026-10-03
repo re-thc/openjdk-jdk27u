@@ -255,10 +255,22 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           speculative_receiver_type = nullptr;
         }
       }
+      bool have_polymorphic_receivers = PolymorphicInlining && morphism > 2;
+      if (have_polymorphic_receivers) {
+        // Do not let receiver-specific guards hide stock's common-target CHA
+        // optimization. Wider profiles can contain several classes that all
+        // inherit the same implementation.
+        ciMethod* common_method = callee->resolve_invoke(jvms->method()->holder(), profile.receiver(0));
+        bool same_method = common_method != nullptr;
+        for (int i = 1; same_method && i < morphism; i++) {
+          same_method = callee->resolve_invoke(jvms->method()->holder(), profile.receiver(i)) == common_method;
+        }
+        have_polymorphic_receivers = !same_method;
+      }
       if (receiver_method == nullptr &&
           (have_major_receiver || morphism == 1 ||
            (morphism == 2 && UseBimorphicInlining) ||
-           (morphism > 2 && PolymorphicInlining))) {
+           have_polymorphic_receivers)) {
         // receiver_method = profile.method();
         // Profiles do not suggest methods now.  Look it up in the major receiver.
         assert(check_access, "required");
@@ -292,7 +304,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           // leading receiver and add direct calls for the third and subsequent
           // receivers, following Dragonwell's devirtualization policy. The
           // second receiver and unprofiled receivers use the virtual fallback.
-          int devirtualize_count = PolymorphicInlining && morphism > 2 ? morphism : 0;
+          int devirtualize_count = have_polymorphic_receivers ? morphism : 0;
           CallGenerator* direct_cg[ciCallProfile::MaxMorphismLimit] = {};
           ciMethod* direct_method[ciCallProfile::MaxMorphismLimit] = {};
           for (int i = 2; i < devirtualize_count; i++) {
