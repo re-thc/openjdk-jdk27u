@@ -29,6 +29,13 @@
  * @run main/othervm -Xint compiler.intrinsics.zip.TestAdler32Modulus
  */
 
+/*
+ * @test id=avx2
+ * @summary Exercise Adler32 reciprocal reduction when AVX512 is available
+ * @requires vm.compiler2.enabled & (os.simpleArch == "x64") & (vm.cpu.features ~= ".*avx2.*")
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:UseAVX=2 compiler.intrinsics.zip.TestAdler32Modulus
+ */
+
 package compiler.intrinsics.zip;
 
 import java.nio.ByteBuffer;
