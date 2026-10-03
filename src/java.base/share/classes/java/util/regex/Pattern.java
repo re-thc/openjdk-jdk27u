@@ -1961,9 +1961,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         if (matchRoot instanceof Slice) {
             root = BnM.optimize(matchRoot);
             if (root == matchRoot) {
-                root = hasSupplementary ? new StartS(matchRoot)
-                        : ((Slice) matchRoot).buffer.length == 0 ? new Start(matchRoot)
-                        : new StartBmp(matchRoot);
+                root = hasSupplementary ? new StartS(matchRoot) : new Start(matchRoot);
             }
         } else if (matchRoot instanceof Begin || matchRoot instanceof First) {
             root = matchRoot;
@@ -3792,6 +3790,25 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 return false;
             }
             int guard = matcher.to - minLength;
+            // Keep nearby matches on the direct node path before preparing
+            // a character scan over a longer input.
+            if (next.match(matcher, i, seq) ||
+                    (i < guard && (next.match(matcher, ++i, seq) ||
+                    (i < guard && next.match(matcher, ++i, seq))))) {
+                matcher.first = i;
+                matcher.groups[0] = matcher.first;
+                matcher.groups[1] = matcher.last;
+                return true;
+            }
+            i++;
+            if (guard - i >= 64 && next.getClass() == Slice.class &&
+                    ((Slice) next).buffer.length != 0 && seq instanceof String str) {
+                return matchLiteralPrefix(matcher, i, str, guard);
+            }
+            return matchFrom(matcher, i, seq, guard);
+        }
+
+        private boolean matchFrom(Matcher matcher, int i, CharSequence seq, int guard) {
             for (; i <= guard; i++) {
                 if (next.match(matcher, i, seq)) {
                     matcher.first = i;
@@ -3803,70 +3820,45 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             matcher.hitEnd = true;
             return false;
         }
-        boolean study(TreeInfo info) {
-            next.study(info);
-            info.maxValid = false;
-            info.deterministic = false;
-            return false;
-        }
-    }
 
-    /**
-     * Searches a short, case-sensitive BMP literal prefix. String input can
-     * use the Latin-1/UTF-16 character-search intrinsic to skip impossible
-     * starts; the existing node chain still handles the full match.
-     */
-    static final class StartBmp extends Start {
-        StartBmp(Node node) {
-            super(node);
-        }
-
-        boolean match(Matcher matcher, int i, CharSequence seq) {
-            int guard = matcher.to - minLength;
-            if (i > guard) {
-                matcher.hitEnd = true;
-                return false;
-            }
-            // Preserve the direct node path for matches at the first few
-            // positions, before preparing a scan over a longer input.
-            for (int probe = 0; probe < 3 && i <= guard; probe++, i++) {
-                if (next.match(matcher, i, seq)) {
+        private boolean matchLiteralPrefix(Matcher matcher, int i, String str, int guard) {
+            int[] prefix = ((Slice) next).buffer;
+            // Both characters are necessary for a match. If the leading
+            // character is common here, scan for the last character instead.
+            int offset = str.charAt(i) == prefix[0] ? prefix.length - 1 : 0;
+            int ch = prefix[offset];
+            while (i <= guard) {
+                // The bound excludes starts that cannot fit the full pattern
+                // in the region. indexOf uses the Latin-1/UTF-16 intrinsic.
+                int found = str.indexOf(ch, i + offset, guard + offset + 1);
+                if (found < 0) {
+                    matcher.hitEnd = true;
+                    return false;
+                }
+                int start = found - offset;
+                if (start - i < 8) {
+                    // Retain the general loop for dense candidate starts.
+                    return matchFrom(matcher, start, str, guard);
+                }
+                i = start;
+                // The node chain remains responsible for captures, assertions
+                // and the rest of the match after the literal prefix.
+                if (next.match(matcher, i, str)) {
                     matcher.first = i;
                     matcher.groups[0] = matcher.first;
                     matcher.groups[1] = matcher.last;
                     return true;
                 }
+                i++;
             }
-            if (guard - i >= 64 && seq instanceof String str) {
-                int[] prefix = ((Slice) next).buffer;
-                // If the leading character is common here, scan for the last
-                // character of the prefix instead. Either character is a
-                // necessary condition for a match at the corresponding start.
-                int offset = str.charAt(i) == prefix[0] ? prefix.length - 1 : 0;
-                int ch = prefix[offset];
-                while (i <= guard) {
-                    int found = str.indexOf(ch, i + offset, guard + offset + 1);
-                    int start = found < 0 ? -1 : found - offset;
-                    if (start < 0) {
-                        matcher.hitEnd = true;
-                        return false;
-                    }
-                    // Retain the general loop when candidate starts are dense.
-                    if (start - i < 8) {
-                        i = start;
-                        break;
-                    }
-                    i = start;
-                    if (next.match(matcher, i, seq)) {
-                        matcher.first = i;
-                        matcher.groups[0] = matcher.first;
-                        matcher.groups[1] = matcher.last;
-                        return true;
-                    }
-                    i++;
-                }
-            }
-            return super.match(matcher, i, seq);
+            matcher.hitEnd = true;
+            return false;
+        }
+        boolean study(TreeInfo info) {
+            next.study(info);
+            info.maxValid = false;
+            info.deterministic = false;
+            return false;
         }
     }
 
