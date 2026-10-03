@@ -33,7 +33,7 @@ ifeq ($(call isTargetOs, linux), true)
     REGEX_CRATE := $(TOPDIR)/src/java.base/share/native/libjregex
     REGEX_RUST_TARGET := $(OPENJDK_TARGET_CPU)-unknown-linux-gnu
     REGEX_CARGO_OUTPUT := $(SUPPORT_OUTPUTDIR)/native/java.base/libjregex
-    REGEX_LIBRARY := $(JDK_OUTPUTDIR)/lib/libjregex.so
+    REGEX_LIBRARY := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/libjregex.so
 
     $(REGEX_LIBRARY): $(REGEX_CRATE)/Cargo.toml $(REGEX_CRATE)/Cargo.lock \
         $(REGEX_CRATE)/src/lib.rs
@@ -44,6 +44,7 @@ ifeq ($(call isTargetOs, linux), true)
 	$(CP) $(REGEX_CARGO_OUTPUT)/$(REGEX_RUST_TARGET)/release/libjregex.so $@
 
     TARGETS += $(REGEX_LIBRARY)
+    $(MODULE)_INCLUDED_LIBS += jregex
   endif
 endif
 
