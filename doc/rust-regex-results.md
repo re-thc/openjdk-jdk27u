@@ -1,5 +1,9 @@
 # Rust regex validation and measured results
 
+This is the initial measurement and validation round. The subsequent review
+fixes, repeated benchmarks and AArch64 emulation checks are recorded separately
+in [rust-regex-review-results.md](rust-regex-review-results.md).
+
 Measurements were collected on 2026-10-04 from the packaged Linux x86_64
 release image built from this change. CPU: Intel Xeon Platinum 8573C; container
 CPU quota: four cores. The tested JDK reports `27.0.2-internal`, built with
@@ -62,7 +66,7 @@ unsupported/literal point estimates do not measure native acceleration because
 those cases do not enter Rust search. These controls support the measured gates,
 not a universal performance non-regression claim.
 
-## Validation
+## Initial validation
 
 - Packaged Linux x86_64 JDK built successfully with Rust enabled; the legal image
   includes all five vendored MIT notices and the matching compiler's complete

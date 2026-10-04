@@ -60,6 +60,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/rustRegex.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubInfo.hpp"
@@ -322,6 +323,7 @@ const char* Runtime1::name_for_address(address entry) {
 
   FUNCTION_CASE(entry, os::javaTimeMillis);
   FUNCTION_CASE(entry, os::javaTimeNanos);
+  FUNCTION_CASE(entry, RustRegex::may_match);
   FUNCTION_CASE(entry, SharedRuntime::OSR_migration_end);
   FUNCTION_CASE(entry, SharedRuntime::d2f);
   FUNCTION_CASE(entry, SharedRuntime::d2i);

@@ -1040,7 +1040,10 @@ address TemplateInterpreterGenerator::generate_rustRegex_entry() {
   __ ldrw(c_rarg2, Address(esp)); // length
   // Tail call using the platform ABI; preserve the interpreter's return LR.
   __ andr(sp, r19_sender_sp, -16);
-  __ far_jump(RuntimeAddress(CAST_FROM_FN_PTR(address, RustRegex::may_match)));
+  // The target is libjvm text, not a code-cache blob. Materialize the full
+  // address so the jump also works with a small or distant code cache.
+  __ mov(rscratch1, CAST_FROM_FN_PTR(address, RustRegex::may_match));
+  __ br(rscratch1);
   __ bind(slow_path);
   __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
   return entry;

@@ -53,12 +53,17 @@ The shared C ABI adapter builds a dense DFA, bounded to 2 MiB of output and
 4 MiB of determinization workspace. Prefix extraction supplies the upstream
 SIMD-capable literal prefilter. Pattern length is bounded to 4,096 bytes.
 Compilation occurs in native thread state with copied pattern bytes, so GC can
-proceed. Searches allocate nothing, acquire no locks, and fail open on native
-search errors. The interpreter has frameless x86_64 and AArch64 entries; C1
+proceed. Normal searches allocate nothing and acquire no locks. Search errors
+and caught Rust panics fail open; all three C ABI exports contain unwinding
+panics, including Cleaner destruction. The interpreter has frameless x86_64
+and AArch64 entries; C1
 uses the platform C calling convention; C2 emits a leaf runtime call. All three
 call the same bounded, immutable search routine without JNI transitions or
 input copying. Normal JNI remains the fallback when intrinsification is
 unavailable, disabled, or the interpreter needs a safepoint slow path.
+The AArch64 interpreter materializes the complete libjvm function address and
+branches through a register, independently of code-cache size or placement.
+C1's runtime-call name table includes the Rust leaf for debug verification.
 
 Only `false` bypasses Java. It clears groups/locals through the existing search
 prologue and sets `hitEnd` as exhausted Start/BnM searches do. Possible matches
@@ -155,9 +160,15 @@ reuse/GC and serialization. `test/micro/.../regex/RustRegexFilter.java` is the
 JMH benchmark for long misses, positive searches, short inputs, unsupported
 syntax and literal searches. Compare `-XX:-UseRustRegex`, `-XX:+UseRustRegex`,
 and `-XX:+UseRustRegex -XX:-UseRustRegexIntrinsics` with each execution tier.
+The differential test also covers literal `]` at the start of a class, embedded
+NUL pattern bytes, `find(int)`, anchored-operation bypass and Rust's possessive
+superset. `runtime/interpreter/RustRegexStartup` tests both 64 MiB and 256 MiB
+code caches with Rust disabled, enabled and using the JNI fallback.
 
 Measured results and exact commands are recorded in
 [rust-regex-results.md](rust-regex-results.md). AArch64 runtime performance must
 be measured on real AArch64 hardware; cross compilation is not a performance
 measurement. The complete JDK test suite is not represented by focused jtreg
 coverage, so these results establish only the tested regression scope.
+Review fixes and their separate validation are recorded in
+[rust-regex-review-results.md](rust-regex-review-results.md).

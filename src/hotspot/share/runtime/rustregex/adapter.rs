@@ -22,7 +22,7 @@
  *
  */
 
-// Immutable, bounded DFA searches: no allocation or locks in the leaf entry.
+// Immutable, bounded DFA searches: no allocation or locks on the normal path.
 use regex::bytes::RegexBuilder;
 use regex_automata::{
     dfa::{dense, Automaton},
@@ -92,9 +92,14 @@ pub unsafe extern "C" fn jdk_regex_compile(pattern: *const u8, len: usize) -> *m
 /// `handle` must be null or a live compile result, with no active searches.
 #[no_mangle]
 pub unsafe extern "C" fn jdk_regex_free(handle: *mut Dfa) {
-    if !handle.is_null() {
-        drop(Box::from_raw(handle));
-    }
+    // A destructor panic must not escape through the Cleaner's C ABI call.
+    let _ = catch_unwind(AssertUnwindSafe(|| {
+        if !handle.is_null() {
+            drop(Box::from_raw(handle));
+        }
+        #[cfg(test)]
+        tests::panic_if_requested(tests::PanicPoint::Free);
+    }));
 }
 
 /// # Safety
@@ -109,16 +114,62 @@ pub unsafe extern "C" fn jdk_regex_may_match(
     if handle.is_null() || bytes.is_null() || len > 65536 {
         return 1;
     }
-    // Search errors must fail open. Only a proven absence can bypass Java.
-    match (*handle).try_search_fwd(&Input::new(slice::from_raw_parts(bytes, len)).earliest(true)) {
-        Ok(None) => 0,
-        _ => 1,
-    }
+    // Errors and panics must fail open. Only a proven absence can bypass Java.
+    catch_unwind(AssertUnwindSafe(|| {
+        #[cfg(test)]
+        tests::panic_if_requested(tests::PanicPoint::Search);
+        match (*handle)
+            .try_search_fwd(&Input::new(slice::from_raw_parts(bytes, len)).earliest(true))
+        {
+            Ok(None) => 0,
+            _ => 1,
+        }
+    }))
+    .unwrap_or(1)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::cell::Cell;
+
+    #[derive(Clone, Copy, PartialEq)]
+    pub(super) enum PanicPoint {
+        Search,
+        Free,
+    }
+
+    thread_local! {
+        static PANIC_POINT: Cell<Option<PanicPoint>> = const { Cell::new(None) };
+    }
+
+    pub(super) fn panic_if_requested(point: PanicPoint) {
+        PANIC_POINT.with(|requested| {
+            if requested.get() == Some(point) {
+                requested.set(None);
+                panic!("injected Rust regex FFI panic");
+            }
+        });
+    }
+
+    #[test]
+    fn ffi_panics_are_contained() {
+        unsafe {
+            let pattern = b"error[0-9]+";
+            let handle = jdk_regex_compile(pattern.as_ptr(), pattern.len());
+            assert!(!handle.is_null());
+            PANIC_POINT.with(|point| point.set(Some(PanicPoint::Search)));
+            assert_eq!(jdk_regex_may_match(handle, b"normal".as_ptr(), 6), 1);
+            // A failed search does not poison or free the shared DFA.
+            assert_eq!(jdk_regex_may_match(handle, b"normal".as_ptr(), 6), 0);
+            assert_eq!(jdk_regex_may_match(handle, b"error123".as_ptr(), 8), 1);
+            PANIC_POINT.with(|point| point.set(Some(PanicPoint::Free)));
+            jdk_regex_free(handle);
+            PANIC_POINT.with(|point| assert!(point.get().is_none()));
+            jdk_regex_free(std::ptr::null_mut());
+        }
+    }
+
     #[test]
     fn reject_and_fail_open() {
         unsafe {
