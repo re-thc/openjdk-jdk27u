@@ -1,0 +1,190 @@
+{
+  "bulk-before-final-floors": {
+    "interpreter-enabled.run": {
+      "jdk": "4c9d9c0d41bd2b483e89ab4431466a993cb939c886bdebb918b090ca0441fe15",
+      "classpath": "417ef0c82e536d68601bd8f7591b5a9b1d1664182c714097c5422a8f595d1865",
+      "flags": "-Xint -Xms512m -Xmx512m --finalization=disabled -Xrs -XX:+UseSerialGC -XX:-UsePerfData -XX:ActiveProcessorCount=1 -XX:CICompilerCount=1 -Djmh.blackhole.mode=FULL_DONTINLINE -XX:CompileCommandFile=/workspace/openjdk-jdk27u/work/bench-final-revisit/compiler-hints.txt -XX:+UseSIMDUTFIntrinsics",
+      "filter": "org.openjdk.bench.java.lang.SimdUTF.*",
+      "sizes": "32,128,65536",
+      "forks": "2",
+      "warmup": "2",
+      "measurements": "3",
+      "time": "100ms",
+      "external": true,
+      "batch_sizes": true
+    },
+    "c2-baseline.run": {
+      "jdk": "5c561389a0696ee248b3af0f7de03afad4793a9c1acc11ef14b9a4467b8d0a3c",
+      "classpath": "417ef0c82e536d68601bd8f7591b5a9b1d1664182c714097c5422a8f595d1865",
+      "flags": "-XX:-TieredCompilation -Xms512m -Xmx512m --finalization=disabled -Xrs -XX:+UseSerialGC -XX:-UsePerfData -XX:ActiveProcessorCount=1 -XX:CICompilerCount=1 -Djmh.blackhole.mode=FULL_DONTINLINE -XX:CompileCommandFile=/workspace/openjdk-jdk27u/work/bench-final-revisit/compiler-hints.txt",
+      "filter": "org.openjdk.bench.java.lang.SimdUTF.*",
+      "sizes": "32,128,65536",
+      "forks": "2",
+      "warmup": "2",
+      "measurements": "3",
+      "time": "100ms",
+      "external": true,
+      "batch_sizes": true
+    },
+    "interpreter-baseline.run": {
+      "jdk": "5c561389a0696ee248b3af0f7de03afad4793a9c1acc11ef14b9a4467b8d0a3c",
+      "classpath": "417ef0c82e536d68601bd8f7591b5a9b1d1664182c714097c5422a8f595d1865",
+      "flags": "-Xint -Xms512m -Xmx512m --finalization=disabled -Xrs -XX:+UseSerialGC -XX:-UsePerfData -XX:ActiveProcessorCount=1 -XX:CICompilerCount=1 -Djmh.blackhole.mode=FULL_DONTINLINE -XX:CompileCommandFile=/workspace/openjdk-jdk27u/work/bench-final-revisit/compiler-hints.txt",
+      "filter": "org.openjdk.bench.java.lang.SimdUTF.*",
+      "sizes": "32,128,65536",
+      "forks": "2",
+      "warmup": "2",
+      "measurements": "3",
+      "time": "100ms",
+      "external": true,
+      "batch_sizes": true
+    },
+    "c1-enabled.run": {
+      "jdk": "4c9d9c0d41bd2b483e89ab4431466a993cb939c886bdebb918b090ca0441fe15",
+      "classpath": "417ef0c82e536d68601bd8f7591b5a9b1d1664182c714097c5422a8f595d1865",
+      "flags": "-XX:TieredStopAtLevel=1 -Xms512m -Xmx512m --finalization=disabled -Xrs -XX:+UseSerialGC -XX:-UsePerfData -XX:ActiveProcessorCount=1 -XX:CICompilerCount=1 -Djmh.blackhole.mode=FULL_DONTINLINE -XX:CompileCommandFile=/workspace/openjdk-jdk27u/work/bench-final-revisit/compiler-hints.txt -XX:+UseSIMDUTFIntrinsics",
+      "filter": "org.openjdk.bench.java.lang.SimdUTF.*",
+      "sizes": "32,128,65536",
+      "forks": "2",
+      "warmup": "2",
+      "measurements": "3",
+      "time": "100ms",
+      "external": true,
+      "batch_sizes": true
+    },
+    "c2-enabled.run": {
+      "jdk": "4c9d9c0d41bd2b483e89ab4431466a993cb939c886bdebb918b090ca0441fe15",
+      "classpath": "417ef0c82e536d68601bd8f7591b5a9b1d1664182c714097c5422a8f595d1865",
+      "flags": "-XX:-TieredCompilation -Xms512m -Xmx512m --finalization=disabled -Xrs -XX:+UseSerialGC -XX:-UsePerfData -XX:ActiveProcessorCount=1 -XX:CICompilerCount=1 -Djmh.blackhole.mode=FULL_DONTINLINE -XX:CompileCommandFile=/workspace/openjdk-jdk27u/work/bench-final-revisit/compiler-hints.txt -XX:+UseSIMDUTFIntrinsics",
+      "filter": "org.openjdk.bench.java.lang.SimdUTF.*",
+      "sizes": "32,128,65536",
+      "forks": "2",
+      "warmup": "2",
+      "measurements": "3",
+      "time": "100ms",
+      "external": true,
+      "batch_sizes": true
+    },
+    "c1-baseline.run": {
+      "jdk": "5c561389a0696ee248b3af0f7de03afad4793a9c1acc11ef14b9a4467b8d0a3c",
+      "classpath": "417ef0c82e536d68601bd8f7591b5a9b1d1664182c714097c5422a8f595d1865",
+      "flags": "-XX:TieredStopAtLevel=1 -Xms512m -Xmx512m --finalization=disabled -Xrs -XX:+UseSerialGC -XX:-UsePerfData -XX:ActiveProcessorCount=1 -XX:CICompilerCount=1 -Djmh.blackhole.mode=FULL_DONTINLINE -XX:CompileCommandFile=/workspace/openjdk-jdk27u/work/bench-final-revisit/compiler-hints.txt",
+      "filter": "org.openjdk.bench.java.lang.SimdUTF.*",
+      "sizes": "32,128,65536",
+      "forks": "2",
+      "warmup": "2",
+      "measurements": "3",
+      "time": "100ms",
+      "external": true,
+      "batch_sizes": true
+    }
+  },
+  "threshold-study": {
+    "interpreter-enabled.run": {
+      "jdk": "b43d41100c493bc53b08da3c37d318f9b2bf7e4ef8557a71703dfeadece19d7c",
+      "classpath": "d88d2c2695d24dd960e98642f64de481beaf44ea4ee5983347e1c10b14974ae0",
+      "flags": "-Xint -Xms512m -Xmx512m --finalization=disabled -Xrs -XX:+UseSerialGC -XX:-UsePerfData -XX:ActiveProcessorCount=1 -XX:CICompilerCount=1 -Djmh.blackhole.mode=FULL_DONTINLINE -XX:CompileCommandFile=/workspace/openjdk-jdk27u/work/threshold-study-batched/compiler-hints.txt -XX:+UseSIMDUTFIntrinsics -XX:SIMDUTFMinLength=1",
+      "filter": "org.openjdk.bench.java.lang.SimdUTF.(asciiValidation|asciiCharValidation|unicodeValidation|latin1Validation|encodedLength|latin1EncodedLength|latin1Encode|latin1Decode|utf16Encode|charsetDecode|utf16CharsetEncode|utf16CharsetDecode|utf32CharsetEncode|utf32TightCharsetDecode|base64Encode|base64Decode|charsetAsciiEncode|latin1CharsetEncode|latin1ToChars|codePointCount|charArrayCodePointCount)",
+      "sizes": "16,32,64,128,256,512,1024",
+      "forks": "2",
+      "warmup": "2",
+      "measurements": "3",
+      "time": "100ms",
+      "external": true,
+      "batch_sizes": true
+    },
+    "c2-baseline.run": {
+      "jdk": "b43d41100c493bc53b08da3c37d318f9b2bf7e4ef8557a71703dfeadece19d7c",
+      "classpath": "d88d2c2695d24dd960e98642f64de481beaf44ea4ee5983347e1c10b14974ae0",
+      "flags": "-XX:-TieredCompilation -Xms512m -Xmx512m --finalization=disabled -Xrs -XX:+UseSerialGC -XX:-UsePerfData -XX:ActiveProcessorCount=1 -XX:CICompilerCount=1 -Djmh.blackhole.mode=FULL_DONTINLINE -XX:CompileCommandFile=/workspace/openjdk-jdk27u/work/threshold-study-batched/compiler-hints.txt -XX:-UseSIMDUTFIntrinsics",
+      "filter": "org.openjdk.bench.java.lang.SimdUTF.(asciiValidation|asciiCharValidation|unicodeValidation|latin1Validation|encodedLength|latin1EncodedLength|latin1Encode|latin1Decode|utf16Encode|charsetDecode|utf16CharsetEncode|utf16CharsetDecode|utf32CharsetEncode|utf32TightCharsetDecode|base64Encode|base64Decode|charsetAsciiEncode|latin1CharsetEncode|latin1ToChars|codePointCount|charArrayCodePointCount)",
+      "sizes": "16,32,64,128,256,512,1024",
+      "forks": "2",
+      "warmup": "2",
+      "measurements": "3",
+      "time": "100ms",
+      "external": true,
+      "batch_sizes": true
+    },
+    "interpreter-baseline.run": {
+      "jdk": "b43d41100c493bc53b08da3c37d318f9b2bf7e4ef8557a71703dfeadece19d7c",
+      "classpath": "d88d2c2695d24dd960e98642f64de481beaf44ea4ee5983347e1c10b14974ae0",
+      "flags": "-Xint -Xms512m -Xmx512m --finalization=disabled -Xrs -XX:+UseSerialGC -XX:-UsePerfData -XX:ActiveProcessorCount=1 -XX:CICompilerCount=1 -Djmh.blackhole.mode=FULL_DONTINLINE -XX:CompileCommandFile=/workspace/openjdk-jdk27u/work/threshold-study-batched/compiler-hints.txt -XX:-UseSIMDUTFIntrinsics",
+      "filter": "org.openjdk.bench.java.lang.SimdUTF.(asciiValidation|asciiCharValidation|unicodeValidation|latin1Validation|encodedLength|latin1EncodedLength|latin1Encode|latin1Decode|utf16Encode|charsetDecode|utf16CharsetEncode|utf16CharsetDecode|utf32CharsetEncode|utf32TightCharsetDecode|base64Encode|base64Decode|charsetAsciiEncode|latin1CharsetEncode|latin1ToChars|codePointCount|charArrayCodePointCount)",
+      "sizes": "16,32,64,128,256,512,1024",
+      "forks": "2",
+      "warmup": "2",
+      "measurements": "3",
+      "time": "100ms",
+      "external": true,
+      "batch_sizes": true
+    },
+    "c1-enabled.run": {
+      "jdk": "b43d41100c493bc53b08da3c37d318f9b2bf7e4ef8557a71703dfeadece19d7c",
+      "classpath": "d88d2c2695d24dd960e98642f64de481beaf44ea4ee5983347e1c10b14974ae0",
+      "flags": "-XX:TieredStopAtLevel=1 -Xms512m -Xmx512m --finalization=disabled -Xrs -XX:+UseSerialGC -XX:-UsePerfData -XX:ActiveProcessorCount=1 -XX:CICompilerCount=1 -Djmh.blackhole.mode=FULL_DONTINLINE -XX:CompileCommandFile=/workspace/openjdk-jdk27u/work/threshold-study-batched/compiler-hints.txt -XX:+UseSIMDUTFIntrinsics -XX:SIMDUTFMinLength=1",
+      "filter": "org.openjdk.bench.java.lang.SimdUTF.(asciiValidation|asciiCharValidation|unicodeValidation|latin1Validation|encodedLength|latin1EncodedLength|latin1Encode|latin1Decode|utf16Encode|charsetDecode|utf16CharsetEncode|utf16CharsetDecode|utf32CharsetEncode|utf32TightCharsetDecode|base64Encode|base64Decode|charsetAsciiEncode|latin1CharsetEncode|latin1ToChars|codePointCount|charArrayCodePointCount)",
+      "sizes": "16,32,64,128,256,512,1024",
+      "forks": "2",
+      "warmup": "2",
+      "measurements": "3",
+      "time": "100ms",
+      "external": true,
+      "batch_sizes": true
+    },
+    "c2-enabled.run": {
+      "jdk": "b43d41100c493bc53b08da3c37d318f9b2bf7e4ef8557a71703dfeadece19d7c",
+      "classpath": "d88d2c2695d24dd960e98642f64de481beaf44ea4ee5983347e1c10b14974ae0",
+      "flags": "-XX:-TieredCompilation -Xms512m -Xmx512m --finalization=disabled -Xrs -XX:+UseSerialGC -XX:-UsePerfData -XX:ActiveProcessorCount=1 -XX:CICompilerCount=1 -Djmh.blackhole.mode=FULL_DONTINLINE -XX:CompileCommandFile=/workspace/openjdk-jdk27u/work/threshold-study-batched/compiler-hints.txt -XX:+UseSIMDUTFIntrinsics -XX:SIMDUTFMinLength=1",
+      "filter": "org.openjdk.bench.java.lang.SimdUTF.(asciiValidation|asciiCharValidation|unicodeValidation|latin1Validation|encodedLength|latin1EncodedLength|latin1Encode|latin1Decode|utf16Encode|charsetDecode|utf16CharsetEncode|utf16CharsetDecode|utf32CharsetEncode|utf32TightCharsetDecode|base64Encode|base64Decode|charsetAsciiEncode|latin1CharsetEncode|latin1ToChars|codePointCount|charArrayCodePointCount)",
+      "sizes": "16,32,64,128,256,512,1024",
+      "forks": "2",
+      "warmup": "2",
+      "measurements": "3",
+      "time": "100ms",
+      "external": true,
+      "batch_sizes": true
+    },
+    "c1-baseline.run": {
+      "jdk": "b43d41100c493bc53b08da3c37d318f9b2bf7e4ef8557a71703dfeadece19d7c",
+      "classpath": "d88d2c2695d24dd960e98642f64de481beaf44ea4ee5983347e1c10b14974ae0",
+      "flags": "-XX:TieredStopAtLevel=1 -Xms512m -Xmx512m --finalization=disabled -Xrs -XX:+UseSerialGC -XX:-UsePerfData -XX:ActiveProcessorCount=1 -XX:CICompilerCount=1 -Djmh.blackhole.mode=FULL_DONTINLINE -XX:CompileCommandFile=/workspace/openjdk-jdk27u/work/threshold-study-batched/compiler-hints.txt -XX:-UseSIMDUTFIntrinsics",
+      "filter": "org.openjdk.bench.java.lang.SimdUTF.(asciiValidation|asciiCharValidation|unicodeValidation|latin1Validation|encodedLength|latin1EncodedLength|latin1Encode|latin1Decode|utf16Encode|charsetDecode|utf16CharsetEncode|utf16CharsetDecode|utf32CharsetEncode|utf32TightCharsetDecode|base64Encode|base64Decode|charsetAsciiEncode|latin1CharsetEncode|latin1ToChars|codePointCount|charArrayCodePointCount)",
+      "sizes": "16,32,64,128,256,512,1024",
+      "forks": "2",
+      "warmup": "2",
+      "measurements": "3",
+      "time": "100ms",
+      "external": true,
+      "batch_sizes": true
+    }
+  },
+  "final-short-check": {
+    "c2-baseline.run": {
+      "jdk": "5c561389a0696ee248b3af0f7de03afad4793a9c1acc11ef14b9a4467b8d0a3c",
+      "classpath": "417ef0c82e536d68601bd8f7591b5a9b1d1664182c714097c5422a8f595d1865",
+      "flags": "-XX:-TieredCompilation -Xms512m -Xmx512m --finalization=disabled -Xrs -XX:+UseSerialGC -XX:-UsePerfData -XX:ActiveProcessorCount=1 -XX:CICompilerCount=1 -Djmh.blackhole.mode=FULL_DONTINLINE -XX:CompileCommandFile=/workspace/openjdk-jdk27u/work/bench-final-short-confirm/compiler-hints.txt",
+      "filter": "org.openjdk.bench.java.lang.SimdUTF.(asciiDecode|charsetDecode|latin1EncodedLength|supplementaryEncode|utf8Decode)$",
+      "sizes": "32",
+      "forks": "2",
+      "warmup": "5",
+      "measurements": "3",
+      "time": "500ms",
+      "external": true,
+      "batch_sizes": false
+    },
+    "c2-enabled.run": {
+      "jdk": "845e6f8d2d565c448eddad9764e6474536bbf9625cdd07a498d6ded785ada900",
+      "classpath": "417ef0c82e536d68601bd8f7591b5a9b1d1664182c714097c5422a8f595d1865",
+      "flags": "-XX:-TieredCompilation -Xms512m -Xmx512m --finalization=disabled -Xrs -XX:+UseSerialGC -XX:-UsePerfData -XX:ActiveProcessorCount=1 -XX:CICompilerCount=1 -Djmh.blackhole.mode=FULL_DONTINLINE -XX:CompileCommandFile=/workspace/openjdk-jdk27u/work/bench-final-short-confirm/compiler-hints.txt -XX:+UseSIMDUTFIntrinsics",
+      "filter": "org.openjdk.bench.java.lang.SimdUTF.(asciiDecode|charsetDecode|latin1EncodedLength|supplementaryEncode|utf8Decode)$",
+      "sizes": "32",
+      "forks": "2",
+      "warmup": "5",
+      "measurements": "3",
+      "time": "500ms",
+      "external": true,
+      "batch_sizes": false
+    }
+  }
+}

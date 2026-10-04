@@ -1,159 +1,83 @@
-Final source direct contract runs (all 30 combinations passed):
-Passed compact-disabled c1
-Passed compact-disabled c2
-Passed compact-disabled disabled
-Passed compact-disabled interpreter
-Passed compact-disabled jni-compiled
-Passed compact-disabled jni-interpreter
-Passed isa-disabled c1
-Passed isa-disabled c2
-Passed isa-disabled disabled
-Passed isa-disabled interpreter
-Passed isa-disabled jni-compiled
-Passed isa-disabled jni-interpreter
-Passed serial c1
-Passed serial c2
-Passed serial disabled
-Passed serial interpreter
-Passed serial jni-compiled
-Passed serial jni-interpreter
-Passed shenandoah c1
-Passed shenandoah c2
-Passed shenandoah disabled
-Passed shenandoah interpreter
-Passed shenandoah jni-compiled
-Passed shenandoah jni-interpreter
-Passed zgc c1
-Passed zgc c2
-Passed zgc disabled
-Passed zgc interpreter
-Passed zgc jni-compiled
-Passed zgc jni-interpreter
+Validation of the revised simdutf PR, 2026-10-04 UTC
 
-The first two attempts stopped on pthread_create(EAGAIN); resource retries completed the remaining combinations. No test assertion failed.
+FINAL SOURCE
+- x86-64 native HotSpot rebuild passed after a shell-fork resource failure.
+- All java.base sources compiled using the build-generated incremental command,
+  with Serial GC, one active processor and one non-tiered compiler thread.
+- Updated contract source compiled successfully.
+- 12/30 direct contract combinations passed; 18 could not start due
+  to native-thread/process exhaustion. No contract assertion failed. Exact
+  outcomes follow below. Interpreter/C1/C2 modes use default policy; JNI modes
+  explicitly set SIMDUTFMinLength=64 and disable the intrinsic.
+- Final-source five-case longer C2 short check completed: 1.00-1.04x.
+- Complete exact-final-policy benchmark rerun could not start its first worker.
+- jtreg failed before contract execution in harness/worker startup.
+- Last AArch64 cleanup rebuild was blocked at a shell fork before compilation.
 
-Common VM options: --finalization=disabled -Xrs -XX:-UsePerfData -XX:ActiveProcessorCount=1 -XX:CICompilerCount=2 --add-exports java.base/jdk.internal.util=ALL-UNNAMED --add-opens java.base/jdk.internal.util=ALL-UNNAMED -cp work/final-contract-classes SimdUTFTest
-Modes: interpreter=-Xint; c1=-Xbatch -XX:TieredStopAtLevel=1; c2=-Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100; JNI modes add -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_simdutf_process; enabled modes add -XX:+UseSIMDUTFIntrinsics -XX:SIMDUTFMinLength=64; disabled mode=-XX:-UseSIMDUTFIntrinsics.
-Variants: Serial GC; Serial with -XX:-CompactStrings; Serial with -XX:UseAVX=0 -XX:UseSSE=2; ZGC and Shenandoah each with -XX:ConcGCThreads=1 -XX:ParallelGCThreads=1 -Xmx64m.
-ZGC compiled JNI retry adds -XX:-TieredCompilation. Final ZGC disabled and all Shenandoah retries use -XX:CICompilerCount=1; compiled JNI adds -XX:-TieredCompilation; disabled flag adds -Xint.
+EARLIER QUALIFICATION (PRECEDES THE FINAL SHARED-FLOOR CLEANUP)
+- Full x86-64 release JDK build passed before this revision.
+- AArch64 native crossbuild passed with all final converter operations,
+  including raw UTF-16 copies and compact/tight UTF decoding, before removal
+  of the unused native C2 cutoff helper.
+- 18 default-policy direct combinations passed across Serial GC, disabled
+  compact strings and disabled x86 ISA; C1/C2 logs confirmed process0 intrinsic.
+- Before this revision, selected jtreg runs passed 175 JDK tests (6023
+  TestNG/JUnit cases) and 20 HotSpot tests; five additional tests were ineligible.
+  These do not substitute for an exact-final-source rerun.
+- Full SortIncludes scan passed before cutoff cleanup. Cleanup did not change
+  includes. Latest source-launch rerun was blocked by VM thread startup.
 
-C1/C2 intrinsic proof:
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   intrinsic
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdUTF::process0 (0 bytes)   (intrinsic)
-@ 19   jdk.internal.util.SimdU
+HOST LIMITATION
+The container accumulated more than 32000 unreaped build logging processes.
+pthread_create(EAGAIN), shell fork failures and inability to launch jtreg's
+metadata JVMs are host resource failures. Lower test concurrency did not cure
+the exhausted process allowance. Temporary local build logging changes were
+restored and are excluded from the PR. Startup-only retries retained logs;
+successful runs alone are counted.
 
-Earlier selected jtreg runs, before final Java gates/performance fixes:
-Directory "work/jtreg-reviewed" not found: creating
-Directory "work/jtreg-reviewed-report" not found: creating
-Test results: passed: 175; did not meet platform requirements: 2
-Framework-based tests: 6,023 = 4,879 TestNG + 1,144 JUnit
-Report written to /workspace/openjdk-jdk27u/work/jtreg-reviewed-report/html/report.html
-Results written to /workspace/openjdk-jdk27u/work/jtreg-reviewed
+REQUIRED BEFORE LEAVING DRAFT
+Fresh full jtreg run with feature enabled; remaining default C1/C2 and moving
+GC contract combinations; exact-final-policy full performance matrix;
+AArch64 runtime and performance qualification; remaining platform CI builds.
+Clean jtreg commands and the feature-enabled Actions matrix are documented in
+doc/simdutf.md. Measurements and caveats are in doc/simdutf/results.md.
 
-Directory "work/jtreg-hotspot-final" not found: creating
-Directory "work/jtreg-hotspot-final-report" not found: creating
-Test results: passed: 20; did not meet platform requirements: 3
-Report written to /workspace/openjdk-jdk27u/work/jtreg-hotspot-final-report/html/report.html
-Results written to /workspace/openjdk-jdk27u/work/jtreg-hotspot-final
+FINAL CONTRACT OUTCOMES
+contract compilation: passed
+serial interpreter: passed
+serial c1: blocked by host resource limit
+serial c2: blocked by host resource limit
+serial jni-interpreter: passed
+serial jni-compiled: blocked by host resource limit
+serial disabled: passed
+compact-disabled interpreter: passed
+compact-disabled c1: blocked by host resource limit
+compact-disabled c2: blocked by host resource limit
+compact-disabled jni-interpreter: passed
+compact-disabled jni-compiled: passed
+compact-disabled disabled: passed
+isa-disabled interpreter: passed
+isa-disabled c1: blocked by host resource limit
+isa-disabled c2: passed
+isa-disabled jni-interpreter: passed
+isa-disabled jni-compiled: passed
+isa-disabled disabled: passed
+zgc interpreter: blocked by host resource limit
+zgc c1: blocked by host resource limit
+zgc c2: blocked by host resource limit
+zgc jni-interpreter: blocked by host resource limit
+zgc jni-compiled: blocked by host resource limit
+zgc disabled: blocked by host resource limit
+shenandoah interpreter: blocked by host resource limit
+shenandoah c1: blocked by host resource limit
+shenandoah c2: blocked by host resource limit
+shenandoah jni-interpreter: blocked by host resource limit
+shenandoah jni-compiled: blocked by host resource limit
+shenandoah disabled: blocked by host resource limit
+AArch64 native build: blocked by host resource limit
+jtreg contract: blocked by host resource limit
 
-Build results:
-libjdwp.so)
-Compiling stepControl.c (for libjdwp.so)
-Compiling stream.c (for libjdwp.so)
-Compiling threadControl.c (for libjdwp.so)
-Compiling transport.c (for libjdwp.so)
-Compiling util.c (for libjdwp.so)
-Linking libjdwp.so
-Copying jdk/lib/libjdwp.so
-fatal: unable to create threaded lstat: Resource temporarily unavailable
-Generating jdk/release
-Compiling up to 4 files for BUILD_JIGSAW_TOOLS
-Optimizing the exploded image
------ Build times -------
-Start 2026-10-04 01:00:23
-End   2026-10-04 01:04:15
-
-00:03:52 TOTAL
--------------------------
-Finished building target 'jdk' in configuration 'cloud'
-
-sProcessor.cpp (for libjvm.so)
-Compiling zWorkers.cpp (for libjvm.so)
-Compiling zipLibrary.cpp (for libjvm.so)
-Compiling abstract_vm_version.cpp (for libjvm.so)
-Linking libjvm.so
-Copying jdk/lib/server/libjvm.so
------ Build times -------
-Start 2026-10-04 01:04:39
-End   2026-10-04 01:24:47
-
-00:20:08 TOTAL
--------------------------
-Finished building target 'hotspot' in configuration 'cloud-aarch64'
-
-Final Java-only fixes compiled with the exact command in build/cloud/jdk/modules/java.base/_the.java.base_batch.cmdline (build-generated incremental javac/dependency plugin invocation), without the make parent JVM.
-
-Final binary SHA-256 identities:
-5925cc9ac1ebfe1634676e4db897a0f6fe4c91b2869651f52a7bc930cf5ebbdd  build/cloud/jdk/lib/server/libjvm.so
+SHA-256
+ae8290a43c9198c50cc738a25ab9bfe6ca3c6361336873a244817d9686c6e57b  build/cloud/jdk/lib/server/libjvm.so
 9905ad8fdbeeec4b5429451cb90338fe71ed26439fe50f41bd2f8da11405ce56  build/cloud/jdk/lib/libjava.so
-94c49eebdd91ab46e66fb47fe03a7ad3a1be5c2902621e89a3cc31ca304f3382  build/cloud/jdk/modules/java.base/java/lang/StringCoding.class
-31adbbdd39fc3f117ce006b30a789544ffcc1a79378d7405b44dc1c60a216776  build/cloud/jdk/modules/java.base/sun/nio/cs/UTF_32Coder$Encoder.class
-5549c8fa503e21d2d91fcc5d4b3c30fe7187567f16860a30a54059884b8c6dac  test/jdk/jdk/internal/util/SimdUTF/SimdUTFTest.java
+afd9ba13165667852a9d86bd047d25a033b4d0ec23209b2ffa95cca2e7fe3b53  test/jdk/jdk/internal/util/SimdUTF/SimdUTFTest.java

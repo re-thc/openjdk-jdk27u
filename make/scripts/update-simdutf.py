@@ -44,7 +44,7 @@ version = tag[1:]
 version_header = (upstream / "include/simdutf/simdutf_version.h").read_text()
 if f'#define SIMDUTF_VERSION "{version}"' not in version_header:
     parser.error("release tag does not match the source version")
-destination = root / "src/hotspot/share/thirdparty/simdutf"
+destination = root / "src/utils/simdutf"
 with tempfile.TemporaryDirectory(prefix="update-simdutf-") as temporary:
     subprocess.run([sys.executable, str(upstream / "singleheader/amalgamate.py"),
                     "--source-dir", str(upstream / "src"),

@@ -1,181 +1,141 @@
-# simdutf 9.2.1 measurements and validation
+# simdutf measurements
 
-These measurements compare a pristine build of `master` at
-`33e539f2d4a847f283a3793df6eebd41b9d1dfac` with the proposed build using
-`-XX:+UseSIMDUTFIntrinsics`. The feature remains disabled by default.
-Speedup is baseline mean time divided by enabled mean time; values below 1
-mean the enabled measurement took longer. These are measurements on one
-virtualized x86-64 host, not guarantees for other machines or workloads.
+The complete matrix has 279 paired comparisons: 31 public API cases,
+sizes 32/128/65536, and interpreter/C1/C2. It compares pristine master
+`33e539f2d4a847f283a3793df6eebd41b9d1dfac` with the proposed build after the
+compact-decoding inlining fix, **before the final shared Java floors and removal
+of the extra C2 cutoff graph**. The converter implementations are unchanged by
+that last policy cleanup. This matrix is not an exact-final-head certification.
+The exact final source has a separate longer five-case C2 short-input check.
+An attempted complete final-policy rerun could not start its first worker
+because the container exhausted its native-thread/process allowance.
 
-## Bulk results
+## Bulk matrix, size 65536, before final cutoff cleanup
 
-| Public operation (`size=65536`) | C2 | C1 | Interpreter |
+| Public benchmark | C2 | C1 | Interpreter |
 | --- | ---: | ---: | ---: |
-| ASCII String decode | 0.96x | 7.21x | 80.85x |
-| ASCII String encode | 0.99x | 7.43x | 77.06x |
-| ASCII validation | 37.30x | 374.46x | 4543.30x |
-| BMP UTF-8 String decode | 1.67x | 4.65x | 78.95x |
-| BMP String to UTF-8 | 2.40x | 4.14x | 115.90x |
-| Latin-1 String to UTF-8 | 2.67x | 4.83x | 96.22x |
-| Supplementary UTF-8 decode | 1.77x | 2.96x | 78.37x |
-| Supplementary UTF-8 encode | 2.13x | 3.48x | 122.39x |
-| Base64 encode | 0.99x | 51.30x | 1066.57x |
-| Base64 decode | 0.97x | 2.12x | 40.98x |
-| Base64 output stream | 38.26x | 67.09x | 508.45x |
-| UTF-8 CharsetEncoder | 4.02x | 9.69x | 159.06x |
-| UTF-8 CharsetDecoder | 2.72x | 6.64x | 120.32x |
-| Unicode validation | 114.74x | 261.71x | 5849.64x |
-| UTF-8 encoded length | 7.84x | 33.18x | 948.47x |
-| UTF-16LE encode | 43.22x | 155.96x | 3389.44x |
-| UTF-16LE decode | 36.19x | 133.51x | 3566.95x |
-| UTF-32LE encode | 31.13x | 151.09x | 3575.82x |
-| UTF-32LE decode | 25.85x | 120.04x | 2837.87x |
+| asciiCharValidation | 9.04x | 144.83x | 4509.40x |
+| asciiDecode | 0.98x | 6.60x | 71.24x |
+| asciiEncode | 1.06x | 7.12x | 72.78x |
+| asciiValidation | 41.19x | 358.21x | 4288.05x |
+| base64Decode | 1.00x | 2.31x | 44.27x |
+| base64Encode | 1.11x | 59.71x | 1053.04x |
+| base64StreamEncode | 41.14x | 64.78x | 505.97x |
+| charArrayCodePointCount | 1.84x | 7.32x | 160.02x |
+| charArrayString | 1.05x | 3.13x | 169.32x |
+| charsetAsciiEncode | 1.05x | 19.09x | 283.49x |
+| charsetDecode | 2.70x | 6.78x | 126.49x |
+| charsetEncode | 4.93x | 9.62x | 177.95x |
+| codePointCount | 1.73x | 7.00x | 362.21x |
+| encodedLength | 7.73x | 33.05x | 892.26x |
+| latin1CharsetEncode | 0.94x | 14.05x | 206.43x |
+| latin1Decode | 1.59x | 3.02x | 56.93x |
+| latin1Encode | 3.41x | 4.90x | 103.05x |
+| latin1EncodedLength | 23.54x | 83.88x | 857.31x |
+| latin1ToChars | 1.01x | 6.96x | 86.76x |
+| latin1Validation | 4.51x | 70.09x | 2552.93x |
+| supplementaryDecode | 1.79x | 3.06x | 81.56x |
+| supplementaryEncode | 2.07x | 3.43x | 118.95x |
+| unicodeValidation | 132.80x | 265.92x | 6385.20x |
+| utf16CharsetDecode | 71.82x | 131.58x | 3661.22x |
+| utf16CharsetEncode | 85.37x | 154.01x | 3399.90x |
+| utf16Encode | 2.50x | 4.17x | 114.76x |
+| utf16ToChars | 0.99x | 4.91x | 222.14x |
+| utf32CharsetDecode | 47.61x | 118.08x | 2687.66x |
+| utf32CharsetEncode | 49.43x | 159.09x | 3632.06x |
+| utf32TightCharsetDecode | 12.42x | 30.20x | 764.88x |
+| utf8Decode | 1.72x | 4.65x | 79.66x |
 
-The parameter is 65,536 input characters/code units for String and charset
-operations and 65,536 binary input bytes for Base64. It is not a uniform byte
-count: for example, BMP UTF-8 decoding consumes three bytes per character,
-UTF-16 decoding consumes two, and UTF-32 decoding consumes four. Base64
-decoding consumes the corresponding encoded input. String operations allocate
-their normal results; array Base64 and charset cases reuse output storage.
-The stream benchmark writes through the public encoder to a null output
-stream, isolating encoder work from downstream I/O.
+Speedup = pristine mean / enabled mean. Values below 1 measured slower.
+The parameter counts characters/code units for String/charset cases and binary
+input bytes for Base64; decode buffer byte counts can be larger. Existing C2
+copy/Base64 stubs explain near-1x rows. [results.csv](results.csv) retains all
+means, intervals and six samples. [runs.json](runs.json) distinguishes binary
+fingerprints for each source revision and protocol.
 
-The existing C2 ASCII copy and Base64 block intrinsics remain in use. Their
-near-1x bulk results are expected. C1 and the interpreter reach simdutf through
-the same public APIs. ASCII and Unicode validation results depend strongly on
-the original scalar implementation and compiler profile; their large ratios
-should not be generalized to unrelated validation APIs.
+## Final-source short-input check
 
-All 171 comparisons, including sizes 32 and 4,096, are in
-[results.csv](results.csv). The six paired [raw JSON files](results/) retain
-every measured sample and confidence interval. Their `forks: 0` and
-`externalForks: 2` fields describe the execution procedure below.
+| Final-source check, size 32 | C2 |
+| --- | ---: |
+| asciiDecode | 1.00x |
+| charsetDecode | 1.00x |
+| latin1EncodedLength | 1.04x |
+| supplementaryEncode | 1.03x |
+| utf8Decode | 1.03x |
 
-## Short inputs and follow-up measurements
+These use fresh VMs per operation/size, five 500 ms warmups and three 500 ms
+measurements in each of two VMs. [short-check.csv](short-check.csv) retains
+samples and intervals. The five previously slow cases now measure parity or
+slightly faster with overlapping intervals. This does not certify every size.
 
-The default threshold is 256 input elements. Each caller tests eligibility
-before marshalling array arguments. This preserves Java execution for short
-inputs and avoids paying for a native call merely to decline it.
+The compact-decoding addition initially increased `String.utf8` from 269 to 338
+bytecodes. C2 rejected it as “hot method too big,” slowing 32-byte ASCII decode
+from 10.05 to 14.13 ns/op. Moving the duplicated attempt into a helper reduced
+it to 301 bytecodes and restored ordinary hot inlining. Two checks measured
+9.92/9.89 ns/op; the final policy check measured 10.03 ns/op.
 
-An initial run exposed a real C2 ASCII-validation regression caused by routing
-around `StringCoding.countPositives`. The final code calls that existing
-intrinsic candidate, retaining its C2 intrinsic and its interpreter/C1 simdutf
-body. A longer-warmup run also confirmed a short UTF-32 encoder regression.
-The final code keeps its original scalar loop in an independently compiled
-method, preventing the native call's memory effects from inhibiting the loop.
+## Threshold investigation
 
-The final longer-warmup UTF-32 check measured 135.05 ns baseline and 137.29 ns
-enabled at size 32 (0.98x), with overlapping 99.9% intervals
-[128.28, 141.83] and [120.83, 153.74] ns. Its two paired
-`utf32-short-final-c2-*.json` files are included. After this change, UTF-32
-encoding was remeasured at all three sizes in all three tiers; those paired
-rows replace the earlier UTF-32 encoder rows in the main results.
+The exploratory sweep has 441 paired comparisons: 21 operations ×
+seven sizes (16/32/64/128/256/512/1024) × three tiers. It compares the same
+pre-tuning JDK with acceleration disabled and with `SIMDUTFMinLength=1`.
+It exposes native-call crossover, rather than pristine-master improvements.
+[thresholds.csv](thresholds.csv) retains the full sweep and samples.
 
-Two initial C2 ASCII-copy measurements at size 4,096 had lower enabled means.
-The follow-up used five one-second warmups and three one-second measurements
-per fresh VM: decode was 204.78 to 239.94 ns (0.85x), and encode was 180.38 to
-184.78 ns (0.98x). Both confidence intervals overlap. The
-`focused-c2-*.json` files retain these results, including size 32. This
-experiment cannot establish a universal absence of performance regressions;
-the remaining medium-size decode difference needs a less noisy host and
-ordinary forked JMH confirmation before enabling the feature by default.
+At size 32, forced C2 code-point counting and encoded-length calculation
+measured 0.61x and 0.41x; at 128 these reached 1.47x and 2.49x. C1 Base64
+decode crossed from 0.75x at 32 to 1.37x at 128. Unicode validation and
+UTF-16/UTF-32 codecs benefited earlier. Pure interpreted execution benefited
+already at 16 in all 21 exploratory cases.
+
+Enabled x86-64 selects a 32-element base. Pure `-Xint` uses that base. Compiled
+VMs share Java floors of 256 input bytes for UTF-8 decode; 128 input elements
+for UTF-8 encode, compact UTF-8 decode, Base64 decode and code-point counts;
+and 64 for ASCII/Latin-1 validation, encoded lengths and UTF-32 decode.
+Sharing these floors avoids training interpreted/C1 execution exclusively on
+the native path while C2 takes a cold Java fallback loop. This trades some C1
+short-input acceleration for stable C2 behavior. Existing C2 stubs remain in
+use. AArch64 keeps 256 pending runtime measurements. Explicit thresholds
+override the automatic floors. [Integration](../simdutf.md) documents units.
 
 ## Method and reproduction
 
-* Linux x86-64 cloud VM, AMD EPYC 9V74, AVX-512/VBMI2 available; GNU 14 release
-  build, JDK `27.0.2-internal`; JMH 1.37.
-* One benchmark thread, CPU affinity fixed to CPU 2, no concurrent build or
-  test workload. Both binaries use Serial GC, `ActiveProcessorCount=1`,
-  `CICompilerCount=2`, `-Xrs`, `-XX:-UsePerfData`, and a fixed 512 MiB heap.
-* C2: `-XX:-TieredCompilation`; C1: `-XX:TieredStopAtLevel=1`;
-  interpreter: `-Xint`. Only the proposed binary receives the enable flag.
-* Each case/size/binary gets two separately launched, fresh JVM processes.
-  Each process runs two 300 ms warmups and three 300 ms measurements.
-  Python launches JMH with `-f 0` inside each process because the exhausted
-  container cannot sustain a JMH driver JVM and a worker JVM simultaneously.
-* Ordinary non-forked JMH omits compiler hints. The runner explicitly installs
-  the generated benchmark directives and the full Blackhole directives,
-  including `dontinline` for `consumeFull`, and forces
-  `-Djmh.blackhole.mode=FULL_DONTINLINE`. The directives are included in
-  [compiler-hints.txt](results/compiler-hints.txt). No compiler-blackhole
-  autodetection JVM runs. Both binaries use the same procedure.
-* Means pool six measured samples. Error bars are two-sided 99.9% Student-t
-  intervals with five degrees of freedom. Iterations within a process are
-  correlated; these intervals are descriptive and do not replace independent
-  host/fork replication. Longer-warmup follow-ups use the same fresh-process
-  procedure with five one-second warmups and three one-second measurements.
+Linux x86-64 AMD EPYC 9V74 cloud host, AVX-512/VBMI2; GNU 14 release JDK 27,
+JMH 1.37, CPU affinity 2, one benchmark thread, Serial GC, one active processor,
+one compiler thread and 512 MiB fixed heap. C2 uses `-XX:-TieredCompilation`,
+C1 `-XX:TieredStopAtLevel=1`, and interpreter `-Xint`. Finalization and
+performance-data recording are disabled; generated compiler hints and
+FULL_DONTINLINE Blackhole directives are installed explicitly.
 
-The pristine baseline was copied before patching the JDK; it is not a
-flag-disabled build of the modified Java classes. Baseline SHA-256 identities:
+The complete and exploratory matrices run each operation/binary/tier in two
+fresh VMs. Within each VM, sizes are measured separately with two 100 ms
+warmups and three 100 ms measurements per size. Later sizes can share compiler
+profiles. The final short check uses the longer protocol above without size
+batching. No simultaneous JMH driver VM runs. Startup-only host resource
+failures were explicitly retried; only successful VM samples are combined.
 
-```text
-lib/server/libjvm.so
-3bad7aad69f1eaa5fed0c8206f7904c4d4e4e6f8757de37013424484422419f7
-modules/java.base/java/lang/String.class
-9ff18f9a0812c4ffd72acb379dff9dc0b9c56fb594182f6d9fe3eab074f02154
-```
-
-The benchmark source is
-`test/micro/org/openjdk/bench/java/lang/SimdUTF.java`. Build it with the
-repository's microbenchmark target and use its generated classpath, or compile
-it with the JMH 1.37 annotation processor. The normal runner defaults to JMH
-worker forks and is the preferred reproduction on a fresh machine:
+Means pool six samples. Descriptive two-sided 99.9% Student-t intervals use
+five degrees of freedom; within-fork iterations are correlated. This one-host
+study cannot establish universal absence of regressions. Superseded JSON dumps
+and duplicate validation logs were removed; CSV preserves the actual samples.
 
 ```sh
 taskset -c 2 python3 doc/simdutf/benchmark.py \
-    --baseline /path/to/pristine-jdk --enabled /path/to/proposed-jdk \
-    --classpath '/path/to/generated/benchmark/classes:/path/to/jmh/*' \
-    --output /tmp/simdutf-results \
-    --jvm-args '-Xrs -XX:+UseSerialGC -XX:-UsePerfData -XX:ActiveProcessorCount=1 -XX:CICompilerCount=2'
+  --baseline /path/to/pristine-jdk --enabled /path/to/proposed-jdk \
+  --classpath '/path/to/benchmark/classes:/path/to/jmh/*' \
+  --output /tmp/simdutf-results --sizes 32,128,65536 \
+  --jvm-args '--finalization=disabled -Xrs -XX:+UseSerialGC -XX:-UsePerfData -XX:ActiveProcessorCount=1 -XX:CICompilerCount=1'
 ```
 
-Add `--external-forks` to reproduce the procedure used for this table. Add
-`--tiers c2 --sizes 32,4096 --warmup 5 --time 1s` and a specific `--filter` for
-the longer-warmup checks. `--resume` is only for unchanged binaries,
-parameters and benchmark selection; it does not fingerprint JDK contents.
-The absolute compiler-hints path in UTF-32 rows differs because that case was
-remeasured in a separate results directory; the hint contents and VM options
-are otherwise identical.
+Add `--external-forks --batch-sizes --warmup 2 --time 100ms` for the matrices'
+container protocol. The normal runner uses ordinary forked JMH. External
+mode launches VMs without a driver and installs compiler directives explicitly.
+`--resume` requires matching binary/classpath fingerprints, selection, flags
+and measurement parameters. Use a fresh runner for final qualification.
 
-## Validation status
-
-* The x86-64 release JDK build passed. The final two Java-only performance
-  fixes were compiled using the build-generated incremental `java.base`
-  compiler command and exercised by the final contracts and benchmarks.
-* The final native HotSpot sources cross-built successfully for Linux AArch64
-  with GNU 14. No AArch64 execution or performance measurements were available.
-* Before the final eligibility gates and performance fixes, selected jtreg
-  suites passed **175 JDK tests** (6,023 TestNG/JUnit cases) and **20 HotSpot
-  tests**. Five additional tests did not meet platform requirements. These
-  results are not presented as a final-source full-suite rerun.
-* The final source passed **30 directly launched contract combinations**: six execution modes across Serial GC, compact strings disabled, x86 ISA disabled, ZGC and Shenandoah. These execute the unchanged jtreg test class without the jtreg harness. GC resource retries used one compiler thread, non-tiered compiled JNI, and interpreted disabled-flag checks as recorded in the transcript.
-* Repeating the full jtreg suites after the final changes was blocked by
-  `pthread_create(EAGAIN)` in harness/worker startup. The container accumulated
-  more than 32,000 unreaped build logging processes; simultaneous harness and
-  test VMs no longer fit its thread/process allowance. This remains a
-  validation gap, and the PR is a draft pending a clean-environment jtreg
-  rerun and AArch64 execution. The resource failures were not test assertion
-  failures.
-
-The new contract uses independent scalar byte oracles and covers malformed
-input, offsets, canaries, capacity/overflow, narrowing prefixes, BOMs, endian
-conversion, inaccessible buffer storage, native range/type/alias checks,
-Base64 alphabets/padding/in-place calls and stream chunking. Inlining logs
-confirm `SimdUTF::process0 (intrinsic)` in both C1 and C2. JNI runs explicitly
-disable `_simdutf_process`; disabled-feature runs check the Java paths.
-
-[validation.txt](validation.txt) records commands, pass summaries and final
-binary identities. On a fresh build, rerun:
-
-```sh
-make CONF=your-conf test \
-    TEST='test/jdk/jdk/internal/util/SimdUTF test/jdk/sun/nio/cs test/jdk/java/lang/String test/jdk/java/util/Base64 test/jdk/java/lang/CharSequence' \
-    JTREG='JAVA_OPTIONS=-XX:+UseSIMDUTFIntrinsics'
-make CONF=your-conf test \
-    TEST='test/hotspot/jtreg/compiler/intrinsics/base64 test/hotspot/jtreg/compiler/intrinsics/string' \
-    JTREG='JAVA_OPTIONS=-XX:+UseSIMDUTFIntrinsics'
-```
-
-Repeat the contract with `-XX:-CompactStrings`, disabled x86 ISA features,
-ZGC and Shenandoah. Keep the feature opt-in until the outstanding validation
-and broader performance measurements are complete.
+For the threshold study use the same JDK on both sides, with
+`--baseline-jvm-args=-XX:-UseSIMDUTFIntrinsics` and
+`--enabled-jvm-args='-XX:+UseSIMDUTFIntrinsics -XX:SIMDUTFMinLength=1'`.
+For crossover confirmation omit batching and use `--warmup 5 --time 500ms`.
+Final full jtreg, complete final-policy benchmarking and AArch64 execution
+remain outstanding. See [validation](validation.txt).

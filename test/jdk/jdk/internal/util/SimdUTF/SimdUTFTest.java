@@ -25,15 +25,22 @@
  */
 
 /*
- * @test
+ * @test id=portable
  * @summary Bulk simdutf conversion, range, capacity and fallback contracts in every execution tier
  * @modules java.base/jdk.internal.util:+open
- * @run main/othervm -Xint -XX:+UseSIMDUTFIntrinsics -XX:SIMDUTFMinLength=64 SimdUTFTest
- * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseSIMDUTFIntrinsics -XX:SIMDUTFMinLength=64 SimdUTFTest
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:+UseSIMDUTFIntrinsics -XX:SIMDUTFMinLength=64 SimdUTFTest
+ * @run main/othervm -Xint -XX:+UseSIMDUTFIntrinsics SimdUTFTest
  * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_simdutf_process -XX:+UseSIMDUTFIntrinsics -XX:SIMDUTFMinLength=64 SimdUTFTest
- * @run main/othervm -Xbatch -XX:+UseSIMDUTFIntrinsics -XX:SIMDUTFMinLength=64 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_simdutf_process SimdUTFTest
  * @run main/othervm -XX:-UseSIMDUTFIntrinsics SimdUTFTest
+ */
+
+/*
+ * @test id=compiled
+ * @summary Bulk simdutf contracts in C1, C2 and compiled JNI fallback
+ * @requires vm.compiler1.enabled & vm.compiler2.enabled
+ * @modules java.base/jdk.internal.util:+open
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseSIMDUTFIntrinsics SimdUTFTest
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:+UseSIMDUTFIntrinsics SimdUTFTest
+ * @run main/othervm -Xbatch -XX:+UseSIMDUTFIntrinsics -XX:SIMDUTFMinLength=64 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_simdutf_process SimdUTFTest
  */
 
 import jdk.internal.util.SimdUTF;
@@ -80,7 +87,100 @@ public class SimdUTFTest {
         base64Streams();
         malformed();
         nativeRanges();
+        compactLatin1();
+        utf16Copies();
+        codePointCounts();
         System.out.println("simdutf contracts passed");
+    }
+
+    private static void codePointCounts() {
+        for (String pattern : new String[]{"aé漢", "a\ud83d\ude03", "\ud800x\udc00", "\udc00\ud800"}) {
+            String text = pattern.repeat(600);
+            char[] chars = text.toCharArray();
+            for (int begin : new int[]{0, 1, 2, 63, 256}) {
+                for (int end : new int[]{chars.length, chars.length - 1, chars.length - 2}) {
+                    int expected = end - begin;
+                    for (int i = begin; i + 1 < end; i++) {
+                        if (chars[i] >= '\ud800' && chars[i] <= '\udbff'
+                                && chars[i + 1] >= '\udc00' && chars[i + 1] <= '\udfff') {
+                            expected--;
+                            i++;
+                        }
+                    }
+                    if (text.codePointCount(begin, end) != expected
+                            || Character.codePointCount(chars, begin, end - begin) != expected
+                            || Character.codePointCount((CharSequence)text, begin, end) != expected
+                            || new StringBuilder(text).codePointCount(begin, end) != expected
+                            || new StringBuffer(text).codePointCount(begin, end) != expected) {
+                        throw new AssertionError("code-point count or split-surrogate range");
+                    }
+                }
+            }
+        }
+    }
+
+    private static void compactLatin1() {
+        for (int length : new int[]{127, 128, 255, 256, 257, 511, 512, 4097}) {
+            String text = "éÿa".repeat(length);
+            byte[] input = utf8(text);
+            byte[] expected = new byte[text.length()];
+            for (int i = 0; i < expected.length; i++) expected[i] = (byte)text.charAt(i);
+            byte[] output = new byte[input.length + 14];
+            Arrays.fill(output, SENTINEL);
+            int n = SimdUTF.decodeLatin1(input, 0, input.length, output, 7, input.length);
+            if (accelerationAvailable) {
+                check(n == expected.length, "UTF8 to Latin1 native conversion");
+                equal(expected, Arrays.copyOfRange(output, 7, 7 + n));
+                guards(output, 7, n);
+                byte[] inPlace = input.clone();
+                n = SimdUTF.decodeLatin1(inPlace, 0, inPlace.length, inPlace, 0, inPlace.length);
+                check(n == expected.length, "UTF8 to Latin1 in-place conversion");
+                equal(expected, Arrays.copyOf(inPlace, n));
+            }
+            check(text.equals(new String(input, StandardCharsets.UTF_8)), "compact Latin1 String");
+            String mixed = text + "漢😃";
+            byte[] mixedBytes = utf8(mixed);
+            byte[] copy = mixedBytes.clone();
+            check(SimdUTF.decodeLatin1(copy, 0, copy.length, copy, 0, copy.length) < 0,
+                    "non-Latin1 UTF8 declines");
+            equal(mixedBytes, copy);
+            check(mixed.equals(new String(mixedBytes, StandardCharsets.UTF_8)), "Latin1 prefix fallback");
+        }
+    }
+
+    private static void utf16Copies() {
+        for (int length : LENGTHS) {
+            char[] original = new char[length];
+            for (int i = 0; i < length; i++) original[i] = switch (i % 4) {
+                case 0 -> '漢';
+                case 1 -> '\ud800';
+                case 2 -> '\udc00';
+                default -> '\udc01';
+            };
+            String text = new String(original);
+            check(Arrays.equals(original, text.toCharArray()), "UTF16 raw code-unit copy");
+            char[] copied = new char[length + 8];
+            Arrays.fill(copied, (char)SENTINEL);
+            int result = SimdUTF.copyUTF16(original, 0, length, copied, 3);
+            if (result >= 0) {
+                check(result == length, "UTF16 native raw copy length");
+                check(Arrays.equals(original, Arrays.copyOfRange(copied, 3, 3 + length)),
+                        "UTF16 native raw copy including isolated surrogates");
+                for (int i = 0; i < copied.length; i++) {
+                    if (i < 3 || i >= 3 + length) check(copied[i] == SENTINEL, "UTF16 native copy guard");
+                }
+            }
+            for (int off = 0; off < Math.min(4, length); off++) {
+                char[] output = new char[length + 8];
+                Arrays.fill(output, (char)SENTINEL);
+                text.getChars(off, length, output, 3);
+                check(Arrays.equals(Arrays.copyOfRange(original, off, length),
+                        Arrays.copyOfRange(output, 3, 3 + length - off)), "UTF16 range copy");
+                for (int i = 0; i < output.length; i++) {
+                    if (i < 3 || i >= 3 + length - off) check(output[i] == SENTINEL, "UTF16 copy guard");
+                }
+            }
+        }
     }
 
     // Independent scalar oracle, including Java's '?' surrogate replacement.
@@ -139,7 +239,8 @@ public class SimdUTFTest {
         byte[] output = new byte[expected.length + 16];
         Arrays.fill(output, SENTINEL);
         int written = SimdUTF.encodeUTF16(chars, 5, text.length(), output, 7, expected.length);
-        if (accelerationAvailable && text.length() >= 64) check(written >= 0, "encoding acceleration not taken");
+        if (accelerationAvailable && SimdUTF.isEligible(text.length()) && text.length() >= 128)
+            check(written >= 0, "encoding acceleration not taken");
         if (written >= 0) {
             check(written == expected.length, "native encode length");
             equal(expected, Arrays.copyOfRange(output, 7, 7 + written));
@@ -148,7 +249,8 @@ public class SimdUTFTest {
         char[] decoded = new char[expected.length + 17];
         Arrays.fill(decoded, '\u5555');
         written = SimdUTF.decodeUTF8(padded, 7, expected.length, decoded, 5, expected.length);
-        if (accelerationAvailable && expected.length >= 64) check(written >= 0, "decoding acceleration not taken");
+        if (accelerationAvailable && SimdUTF.isEligible(expected.length) && expected.length >= 256)
+            check(written >= 0, "decoding acceleration not taken");
         if (written >= 0) {
             check(text.equals(new String(decoded, 5, written)), "native decode contents");
             for (int i = 0; i < decoded.length; i++) {
@@ -241,12 +343,23 @@ public class SimdUTFTest {
                 equal(expected, text.getBytes(cs));
                 check(cs.newEncoder().canEncode(text), "UTF32 validation");
                 check(text.equals(new String(expected, cs)), "UTF32 decode");
-                // Reserve worst-case space so the bulk decoder is exercised.
+                byte[] raw = utf32Bytes(text, big, false);
+                char[] exact = new char[text.length() + 8];
+                Arrays.fill(exact, (char)SENTINEL);
+                int converted = SimdUTF.decodeUTF32Bytes(raw, 0, raw.length,
+                        exact, 3, text.length(), big);
+                if (accelerationAvailable) {
+                    check(converted == text.length(), "UTF32 exactly sized native output");
+                    check(text.equals(new String(exact, 3, converted)), "UTF32 tight output contents");
+                    for (int i = 0; i < exact.length; i++) {
+                        if (i < 3 || i >= 3 + converted) check(exact[i] == SENTINEL, "UTF32 tight guard");
+                    }
+                }
                 for (int offset : new int[]{0, 1, 4, 7}) {
                     byte[] padded = new byte[expected.length + offset];
                     System.arraycopy(expected, 0, padded, offset, expected.length);
                     ByteBuffer src = ByteBuffer.wrap(padded, offset, expected.length);
-                    CharBuffer dst = CharBuffer.allocate(expected.length / 2);
+                    CharBuffer dst = CharBuffer.allocate(text.length());
                     var result = cs.newDecoder().decode(src, dst, true);
                     check(result.isUnderflow() && src.position() == padded.length, "UTF32 positions");
                     dst.flip();
@@ -330,6 +443,23 @@ public class SimdUTFTest {
     }
 
     private static void malformed() throws Exception {
+        for (int bad : new int[]{0, 64, 255, 256, 511, 512}) {
+            char[] chars = new char[1024];
+            Arrays.fill(chars, 'a');
+            chars[bad] = 'ÿ';
+            byte[] bytes = new byte[chars.length + 14];
+            Arrays.fill(bytes, SENTINEL);
+            int n = SimdUTF.encodeAscii(chars, 0, chars.length, bytes, 7);
+            if (n >= 0) {
+                check(n == bad, "ASCII encoder exact prefix");
+                guards(bytes, 7, n);
+            }
+            CharBuffer src = CharBuffer.wrap(chars);
+            ByteBuffer dst = ByteBuffer.allocate(chars.length);
+            var result = StandardCharsets.US_ASCII.newEncoder().encode(src, dst, true);
+            check(result.isUnmappable() && src.position() == bad && dst.position() == bad,
+                    "ASCII encoder error positions");
+        }
         String prefix = "a".repeat(513);
         String suffix = "b".repeat(513);
         for (String invalid : new String[]{"\ud800", "\udc00", "\ud800x", "\udc00\ud800"}) {

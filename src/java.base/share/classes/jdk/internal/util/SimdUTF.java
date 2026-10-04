@@ -42,8 +42,13 @@ public final class SimdUTF {
     @Stable
     private static int minLength;
 
+    @Stable
+    private static boolean automatic;
+
     public static void initialize() {
-        minLength = registerNatives();
+        int policy = registerNatives();
+        automatic = policy < -1;
+        minLength = automatic ? -(policy + 1) : policy;
     }
 
     private static native int registerNatives();
@@ -57,10 +62,23 @@ public final class SimdUTF {
     @ForceInline
     private static int process(Object src, int sp, int len,
                                Object dst, int dp, int capacity, int operation) {
-        if (!isEligible(len)) {
+        if (!isEligible(len) || automatic && len < compiledMinimumLength(operation)) {
             return -1;
         }
         return process0(src, sp, len, dst, dp, capacity, operation);
+    }
+
+    // Keep interpreted/C1 profiles consistent with C2 short-input fallback.
+    // Opcode constants fold this switch during compilation; pure -Xint uses
+    // the lower base cutoff. Explicit user thresholds bypass automatic floors.
+    @ForceInline
+    private static int compiledMinimumLength(int operation) {
+        return switch (operation) {
+            case 1 -> 256;                    // UTF-8 decode, input bytes
+            case 3, 8, 9, 24, 25 -> 128;       // UTF-8 encode, Base64/compact decode, counts
+            case 11, 12, 13, 14, 22, 23 -> 64; // Validation, encoded lengths, UTF-32 decode
+            default -> 0;
+        };
     }
 
     @IntrinsicCandidate
@@ -71,6 +89,16 @@ public final class SimdUTF {
     @ForceInline
     public static int validateUTF16(Object src, int sp, int len, int kind) {
         return process(src, sp, len, src, 0, 0, 10 + kind);
+    }
+
+    @ForceInline
+    public static int countCodePoints(Object src, int sp, int len) {
+        return process(src, sp, len, src, 0, 0, 25);
+    }
+
+    @ForceInline
+    public static int copyUTF16(Object src, int sp, int len, Object dst, int dp) {
+        return process(src, sp, len, dst, dp, len, 26);
     }
 
     @ForceInline
@@ -121,6 +149,12 @@ public final class SimdUTF {
     public static int decodeUTF8(byte[] src, int sp, int len,
                                  Object dst, int dp, int capacity) {
         return process(src, sp, len, dst, dp, capacity, 1);
+    }
+
+    @ForceInline
+    public static int decodeLatin1(byte[] src, int sp, int len,
+                                  byte[] dst, int dp, int capacity) {
+        return process(src, sp, len, dst, dp, capacity, 24);
     }
 
     @ForceInline

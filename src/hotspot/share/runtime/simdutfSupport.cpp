@@ -22,15 +22,14 @@
  *
  */
 
-#include "runtime/simdutfSupport.hpp"
 #include "jvm.h"
-
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/simdutfSupport.hpp"
 #include "runtime/vm_version.hpp"
-#include "thirdparty/simdutf/simdutf.h"
+#include "simdutf.h"
 
 static const simdutf::implementation* simdutf_implementation = nullptr;
 
@@ -40,7 +39,7 @@ jint SimdUTF::initialize() {
   }
   const auto& implementations = simdutf::get_available_implementations();
   const simdutf::implementation* impl = nullptr;
-#ifdef AMD64
+#if defined(AMD64) && !defined(ZERO)
   // Respect HotSpot's user-selected ISA limits as well as OS register support.
   if (UseAVX >= 3 && VM_Version::supports_avx512_vbmi2()) {
     impl = implementations["icelake"];
@@ -51,7 +50,7 @@ jint SimdUTF::initialize() {
   if (impl == nullptr || !impl->supported_by_runtime_system()) {
     impl = UseSSE >= 4 ? implementations["westmere"] : nullptr;
   }
-#elif defined(AARCH64)
+#elif defined(AARCH64) && !defined(ZERO)
   impl = implementations["arm64"];
 #endif
   if (impl == nullptr || !impl->supported_by_runtime_system()) {
@@ -59,7 +58,10 @@ jint SimdUTF::initialize() {
   }
   simdutf_implementation = impl;
   simdutf::get_active_implementation() = impl;
-  return checked_cast<jint>(SIMDUTFMinLength);
+  jint minimum = checked_cast<jint>(SIMDUTFMinLength);
+  // Encode automatic policy in this private bootstrap return value. A pure
+  // interpreter VM can use the lower crossover measured for that tier.
+  return FLAG_IS_DEFAULT(SIMDUTFMinLength) && UseCompiler ? -minimum - 1 : minimum;
 }
 
 // Check in the shared entry, rather than relying on Java-only preconditions:
@@ -91,31 +93,57 @@ static char32_t simdutf_swap32(char32_t value) {
          ((value << 8) & 0xff0000) | (value << 24);
 }
 
-static jint simdutf_latin1_prefix(const char16_t* input, jint len) {
+static jint simdutf_representable_prefix(const char16_t* input, jint len, char16_t maximum) {
   for (jint off = 0; off < len; off += 256) {
     jint end = MIN2(off + 256, len);
     char16_t bits = 0;
     for (jint i = off; i < end; i++) bits |= input[i];
-    if (bits > 0xff) {
+    if (bits > maximum) {
       jint prefix = off;
       // Keep the scalar rescan bounded even if another thread changes input.
-      while (prefix < end && input[prefix] <= 0xff) prefix++;
+      while (prefix < end && input[prefix] <= maximum) prefix++;
       if (prefix < end) return prefix;
     }
   }
   return len;
 }
 
+static jint simdutf_decode_latin1(const char* input, jint len, char* output, jint capacity) {
+  if (capacity < len || !simdutf::validate_utf8(input, len)) return -1;
+  uint8_t maximum = 0;
+  for (jint i = 0; i < len; i++) maximum = MAX2(maximum, uint8_t(input[i]));
+  // Valid UTF-8 represents Latin-1 exactly when every byte is below 0xc4.
+  // Reject other code points before writing, including for in-place callers.
+  if (maximum >= 0xc4) return -1;
+  char utf8[256];
+  char latin1[256];
+  jint written = 0;
+  for (jint off = 0; off < len;) {
+    size_t size = MIN2(size_t(256), size_t(len - off));
+    memcpy(utf8, input + off, size);
+    if (off + size < size_t(len)) size = simdutf::trim_partial_utf8(utf8, size);
+    if (size == 0) return -1;
+    size_t count = simdutf::convert_utf8_to_latin1(utf8, size, latin1);
+    if (count == 0 || count > size_t(capacity - written)) return -1;
+    // Copy only the produced bytes. Input is staged before writing, so the
+    // shrinking conversion is safe when output starts at/before input.
+    memcpy(output + written, latin1, count);
+    written += checked_cast<jint>(count);
+    off += checked_cast<jint>(size);
+  }
+  return written;
+}
+
 JRT_LEAF(jint, SimdUTF::process(oop src, jint sp, jint len, oop dst, jint dp,
                                jint capacity, jint operation))
-  if (simdutf_implementation == nullptr || len <= 0 || len > 1024 * 1024 || operation < 0 || operation > 23) {
+  if (simdutf_implementation == nullptr || len <= 0 || len > 1024 * 1024 || operation < 0 || operation > 26) {
     return -1;
   }
   bool src16 = (operation >= 3 && operation <= 5) ||
                (operation >= 10 && operation <= 13) || operation == 15 || operation == 16 ||
-               operation == 20 || operation == 21;
+               operation == 20 || operation == 21 || operation == 25 || operation == 26;
   bool dst16 = operation == 1 || operation == 17 || operation == 18 || operation == 19 ||
-               operation == 22 || operation == 23;
+               operation == 22 || operation == 23 || operation == 26;
   if (!simdutf_range(src, src16, sp, len)) {
     return -1;
   }
@@ -127,9 +155,14 @@ JRT_LEAF(jint, SimdUTF::process(oop src, jint sp, jint len, oop dst, jint dp,
   const char16_t* input16 = reinterpret_cast<const char16_t*>(input);
   switch (operation) {
     case 10: return simdutf::validate_utf16(input16, len) ? 1 : 0;
+    case 25:
+      // Java counts isolated surrogates as code points. Use its original loop
+      // for that dialect; simdutf's count requires a valid scalar sequence.
+      return simdutf::validate_utf16(input16, len)
+          ? checked_cast<jint>(simdutf::count_utf16(input16, len)) : -1;
     case 11: return simdutf::validate_utf16_as_ascii(input16, len) ? 1 : 0;
     case 12: {
-      return simdutf_latin1_prefix(input16, len) == len ? 1 : 0;
+      return simdutf_representable_prefix(input16, len, 0xff) == len ? 1 : 0;
     }
     case 13: {
       if (!simdutf::validate_utf16(input16, len)) return -1;
@@ -141,12 +174,20 @@ JRT_LEAF(jint, SimdUTF::process(oop src, jint sp, jint len, oop dst, jint dp,
       return bytes > size_t(max_jint) ? -1 : checked_cast<jint>(bytes);
     }
   }
-  if (src == dst || !simdutf_range(dst, dst16, dp, capacity)) {
+  if ((src == dst && (operation != 24 || dp > sp)) || !simdutf_range(dst, dst16, dp, capacity)) {
     return -1;
   }
   char* output = reinterpret_cast<char*>(simdutf_base(dst, dst16, dp));
   size_t written = 0;
   switch (operation) {
+    case 26:
+      // String's raw copy operations preserve all UTF-16 code units, including
+      // isolated surrogates. Both checked ranges use native-endian char units.
+      if (capacity < len) return -1;
+      memcpy(output, input, size_t(len) * 2);
+      return len;
+    case 24:
+      return simdutf_decode_latin1(input, len, output, capacity);
     case 20:
     case 21: {
       // Reserve the worst case before exposing arrays to an unchecked writer.
@@ -168,7 +209,7 @@ JRT_LEAF(jint, SimdUTF::process(oop src, jint sp, jint len, oop dst, jint dp,
     }
     case 22:
     case 23: {
-      if ((sp & 3) != 0 || (len & 3) != 0 || capacity < len / 2) return -1;
+      if ((sp & 3) != 0 || (len & 3) != 0 || capacity < len / 4) return -1;
       const char32_t* input32 = reinterpret_cast<const char32_t*>(input);
       char16_t* output16 = reinterpret_cast<char16_t*>(output);
       size_t count = size_t(len) / 4;
@@ -177,7 +218,7 @@ JRT_LEAF(jint, SimdUTF::process(oop src, jint sp, jint len, oop dst, jint dp,
 #else
       bool swap = operation == 23;
 #endif
-      if (!swap) {
+      if (!swap && capacity >= len / 2) {
         // Java also accepts UTF-32 surrogate code points. simdutf rejects them,
         // so let the existing decoder handle that dialect without any writes.
         if (!simdutf::validate_utf32(input32, count)) return -1;
@@ -186,14 +227,23 @@ JRT_LEAF(jint, SimdUTF::process(oop src, jint sp, jint len, oop dst, jint dp,
         // Bounded stack storage avoids allocation and accommodates either byte
         // order. Validate every chunk before changing the Java output array.
         char32_t chunk[256];
+        size_t required = 0;
         for (size_t off = 0; off < count; off += 256) {
           size_t size = MIN2(size_t(256), count - off);
-          for (size_t i = 0; i < size; i++) chunk[i] = simdutf_swap32(input32[off + i]);
+          for (size_t i = 0; i < size; i++) {
+            chunk[i] = swap ? simdutf_swap32(input32[off + i]) : input32[off + i];
+          }
           if (!simdutf::validate_utf32(chunk, size)) return -1;
+          required += simdutf::utf16_length_from_utf32(chunk, size);
+          if (required > size_t(capacity)) return -1;
         }
         for (size_t off = 0; off < count; off += 256) {
           size_t size = MIN2(size_t(256), count - off);
-          for (size_t i = 0; i < size; i++) chunk[i] = simdutf_swap32(input32[off + i]);
+          for (size_t i = 0; i < size; i++) {
+            chunk[i] = swap ? simdutf_swap32(input32[off + i]) : input32[off + i];
+          }
+          if (!simdutf::validate_utf32(chunk, size) ||
+              simdutf::utf16_length_from_utf32(chunk, size) > size_t(capacity) - written) return -1;
           size_t n = simdutf::convert_utf32_to_utf16(chunk, size, output16 + written);
           if (n == 0) return -1;
           written += n;
@@ -251,13 +301,17 @@ JRT_LEAF(jint, SimdUTF::process(oop src, jint sp, jint len, oop dst, jint dp,
           simdutf::utf8_length_from_utf16(input16, len) > size_t(capacity)) return -1;
       written = simdutf::convert_utf16_to_utf8_safe(input16, len, output, capacity);
       break;
-    case 4:
-      if (capacity < len || !simdutf::validate_utf16_as_ascii(input16, len)) return -1;
-      written = simdutf::convert_utf16_to_latin1(input16, len, output);
+    case 4: {
+      if (capacity < len) return -1;
+      jint prefix = simdutf::validate_utf16_as_ascii(input16, len)
+          ? len : simdutf_representable_prefix(input16, len, 0x7f);
+      if (prefix == 0) return 0;
+      written = simdutf::convert_utf16_to_latin1(input16, prefix, output);
       break;
+    }
     case 5: {
       if (capacity < len) return -1;
-      jint prefix = simdutf_latin1_prefix(input16, len);
+      jint prefix = simdutf_representable_prefix(input16, len, 0xff);
       // Return precisely the representable prefix, as Java's narrowing helpers
       // do. Stop validation near the first error so repeated replacement cannot
       // turn a dense unmappable input into a quadratic scan.

@@ -47,8 +47,9 @@ public class SimdUTF {
     @Param({"32", "256", "4096", "65536"})
     public int size;
     private String ascii, latin1, bmp, supplementary;
-    private byte[] asciiBytes, utf8Bytes, supplementaryBytes, binary, base64, encoded, decoded;
+    private byte[] asciiBytes, latin1Bytes, utf8Bytes, supplementaryBytes, binary, base64, encoded, decoded;
     private char[] chars, targetChars;
+    private char[] supplementaryChars;
     private ByteBuffer charsetBytes, charsetInput;
     private CharBuffer charsetChars, charsetOutput;
     private CharsetEncoder charsetEncoder;
@@ -66,6 +67,10 @@ public class SimdUTF {
     private OutputStream base64Stream;
     private Base64.Encoder base64Encoder;
     private Base64.Decoder base64Decoder;
+    private char[] asciiChars, latin1Chars;
+    private CharBuffer asciiInput, latin1Input, utf32TightOutput;
+    private ByteBuffer singleByteOutput;
+    private CharsetEncoder asciiEncoder, latin1Encoder, latin1Validator;
 
     @Setup
     public void setup() {
@@ -73,7 +78,9 @@ public class SimdUTF {
         latin1 = "é".repeat(size);
         bmp = "漢".repeat(size);
         supplementary = "😃".repeat(size / 2);
+        supplementaryChars = supplementary.toCharArray();
         asciiBytes = ascii.getBytes(StandardCharsets.UTF_8);
+        latin1Bytes = latin1.getBytes(StandardCharsets.UTF_8);
         utf8Bytes = bmp.getBytes(StandardCharsets.UTF_8);
         supplementaryBytes = supplementary.getBytes(StandardCharsets.UTF_8);
         binary = new byte[size];
@@ -105,6 +112,15 @@ public class SimdUTF {
         utf32Input = ByteBuffer.wrap(bmp.getBytes(utf32));
         utf32Output = CharBuffer.allocate(size * 2);
         base64Stream = base64Encoder.wrap(OutputStream.nullOutputStream());
+        asciiChars = ascii.toCharArray();
+        latin1Chars = latin1.toCharArray();
+        asciiInput = CharBuffer.wrap(asciiChars);
+        latin1Input = CharBuffer.wrap(latin1Chars);
+        singleByteOutput = ByteBuffer.allocate(size);
+        asciiEncoder = StandardCharsets.US_ASCII.newEncoder();
+        latin1Encoder = StandardCharsets.ISO_8859_1.newEncoder();
+        latin1Validator = StandardCharsets.ISO_8859_1.newEncoder();
+        utf32TightOutput = CharBuffer.allocate(size);
     }
 
     @Benchmark public String asciiDecode() { return new String(asciiBytes, StandardCharsets.UTF_8); }
@@ -112,6 +128,11 @@ public class SimdUTF {
     @Benchmark public String utf8Decode() { return new String(utf8Bytes, StandardCharsets.UTF_8); }
     @Benchmark public byte[] utf16Encode() { return bmp.getBytes(StandardCharsets.UTF_8); }
     @Benchmark public byte[] latin1Encode() { return latin1.getBytes(StandardCharsets.UTF_8); }
+    @Benchmark public String latin1Decode() { return new String(latin1Bytes, StandardCharsets.UTF_8); }
+    @Benchmark public int latin1EncodedLength() { return latin1.encodedLength(StandardCharsets.UTF_8); }
+    @Benchmark public char[] utf16ToChars() { return bmp.toCharArray(); }
+    @Benchmark public char[] latin1ToChars() { return latin1.toCharArray(); }
+    @Benchmark public String charArrayString() { return new String(chars); }
     @Benchmark public String supplementaryDecode() { return new String(supplementaryBytes, StandardCharsets.UTF_8); }
     @Benchmark public byte[] supplementaryEncode() { return supplementary.getBytes(StandardCharsets.UTF_8); }
     @Benchmark public int base64Encode() { return base64Encoder.encode(binary, encoded); }
@@ -120,7 +141,15 @@ public class SimdUTF {
 
     @Benchmark public boolean unicodeValidation() { return unicodeValidator.canEncode(bmp); }
     @Benchmark public boolean asciiValidation() { return asciiValidator.canEncode(ascii); }
+    @Benchmark public boolean asciiCharValidation() { return asciiValidator.canEncode(asciiInput); }
+    @Benchmark public boolean latin1Validation() { return latin1Validator.canEncode(latin1Input); }
     @Benchmark public int encodedLength() { return bmp.encodedLength(StandardCharsets.UTF_8); }
+    @Benchmark public int codePointCount() {
+        return supplementary.codePointCount(0, supplementary.length());
+    }
+    @Benchmark public int charArrayCodePointCount() {
+        return Character.codePointCount(supplementaryChars, 0, supplementaryChars.length);
+    }
 
     @Benchmark public int utf16CharsetEncode() {
         utf16Encoder.reset(); charsetChars.clear(); utf16Bytes.clear();
@@ -142,6 +171,24 @@ public class SimdUTF {
         utf32Decoder.reset(); utf32Input.clear(); utf32Output.clear();
         utf32Decoder.decode(utf32Input, utf32Output, true);
         return utf32Output.position();
+    }
+
+    @Benchmark public int utf32TightCharsetDecode() {
+        utf32Decoder.reset(); utf32Input.clear(); utf32TightOutput.clear();
+        utf32Decoder.decode(utf32Input, utf32TightOutput, true);
+        return utf32TightOutput.position();
+    }
+
+    @Benchmark public int charsetAsciiEncode() {
+        asciiEncoder.reset(); asciiInput.clear(); singleByteOutput.clear();
+        asciiEncoder.encode(asciiInput, singleByteOutput, true);
+        return singleByteOutput.position();
+    }
+
+    @Benchmark public int latin1CharsetEncode() {
+        latin1Encoder.reset(); latin1Input.clear(); singleByteOutput.clear();
+        latin1Encoder.encode(latin1Input, singleByteOutput, true);
+        return singleByteOutput.position();
     }
 
     @Benchmark public int charsetEncode() {

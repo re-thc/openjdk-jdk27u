@@ -607,6 +607,10 @@ public final class String
             // Decode with a stable copy, to be the result if the decoded length is the same
             byte[] latin1 = Arrays.copyOfRange(bytes, offset, offset + length);
             int sp = dp;            // first dp bytes are already in the copy
+            byte[] compact = decodeUTF8Latin1(latin1, sp, length - sp, latin1, dp);
+            if (compact != null) {
+                return new String(compact, LATIN1);
+            }
             while (sp < length) {
                 int b1 = latin1[sp++];
                 if (b1 >= 0) {
@@ -647,6 +651,18 @@ public final class String
             }
             return new String(dst, UTF16);
         }
+    }
+
+    // Keep the compact conversion attempt out of utf8's bytecode budget so
+    // its ASCII fast path remains small enough for normal C2 inlining.
+    private static byte[] decodeUTF8Latin1(byte[] src, int sp, int len, byte[] dst, int dp) {
+        if ((src[sp] & 0xfe) == 0xc2 && SimdUTF.isEligible(len)) {
+            int converted = SimdUTF.decodeLatin1(src, sp, len, dst, dp, dst.length - dp);
+            if (converted >= 0) {
+                return Arrays.copyOf(dst, dp + converted);
+            }
+        }
+        return null;
     }
 
     private static String iso88591(byte[] bytes, int offset, int length) {
@@ -755,6 +771,10 @@ public final class String
             dst = new byte[length];
             System.arraycopy(bytes, offset, dst, 0, dp);
             offset += dp;
+            byte[] compact = decodeUTF8Latin1(bytes, offset, sl - offset, dst, dp);
+            if (compact != null) {
+                return new String(compact, LATIN1);
+            }
             while (offset < sl) {
                 int b1 = bytes[offset++];
                 if (b1 >= 0) {

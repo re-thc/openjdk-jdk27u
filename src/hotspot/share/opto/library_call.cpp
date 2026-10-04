@@ -9306,6 +9306,7 @@ bool LibraryCallKit::inline_simdutf_process() {
       CAST_FROM_FN_PTR(address, SimdUTF::process), "simdutf_process", TypePtr::BOTTOM,
       argument(0), argument(1), argument(2), argument(3),
       argument(4), argument(5), argument(6));
-  set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  set_result(result);
   return true;
 }

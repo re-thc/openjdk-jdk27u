@@ -19,6 +19,7 @@
 """Compare a pristine baseline JDK with a simdutf-enabled JDK, sequentially."""
 import argparse
 import glob
+import hashlib
 import json
 import math
 import os
@@ -43,17 +44,57 @@ parser.add_argument("--measurements", default="3")
 parser.add_argument("--time", default="300ms")
 parser.add_argument("--jvm-args", default="-XX:+UseSerialGC -XX:ActiveProcessorCount=1 -XX:CICompilerCount=2",
                     help="additional VM arguments, applied equally to both JDKs and the JMH driver")
+parser.add_argument("--baseline-jvm-args", default="",
+                    help="VM arguments for the baseline only")
+parser.add_argument("--enabled-jvm-args", default="-XX:+UseSIMDUTFIntrinsics",
+                    help="VM arguments for the enabled build only, including its enable flag")
 parser.add_argument("--external-forks", action="store_true",
                     help="launch each case in two fresh VMs from Python, without a simultaneous JMH driver VM")
+parser.add_argument("--batch-sizes", action="store_true",
+                    help="exploratory external runs: measure all sizes of a benchmark in each fresh VM")
 parser.add_argument("--resume", action="store_true", help="reuse completed results for unchanged JDKs and parameters")
 args = parser.parse_args()
 if args.external_forks and int(args.forks) != 2:
     parser.error("external forks currently require --forks=2 (six measured samples per case)")
 if args.external_forks and int(args.measurements) != 3:
     parser.error("external forks currently require --measurements=3")
+if args.batch_sizes and not args.external_forks:
+    parser.error("--batch-sizes requires --external-forks")
 args.output.mkdir(parents=True, exist_ok=True)
 tiers = {"interpreter": "-Xint", "c1": "-XX:TieredStopAtLevel=1",
          "c2": "-XX:-TieredCompilation"}
+
+def fingerprint(paths):
+    digest = hashlib.sha256()
+    for path in sorted(set(paths)):
+        if path.is_file():
+            digest.update(str(path.resolve()).encode())
+            with path.open('rb') as file:
+                while chunk := file.read(1024 * 1024):
+                    digest.update(chunk)
+    return digest.hexdigest()
+
+def jdk_fingerprint(jdk):
+    paths = list((jdk / 'lib').glob('**/libjvm.*'))
+    paths += list((jdk / 'lib').glob('**/libjava.*'))
+    paths += [jdk / 'bin/server/jvm.dll', jdk / 'bin/client/jvm.dll', jdk / 'bin/java.dll']
+    if (jdk / 'lib/modules').is_file():
+        paths.append(jdk / 'lib/modules')
+    else:
+        paths += list((jdk / 'modules/java.base').rglob('*.class'))
+    return fingerprint(paths)
+
+classpath_files = []
+for entry in args.classpath.split(os.pathsep):
+    for name in glob.glob(entry):
+        path = Path(name)
+        if path.is_dir():
+            classpath_files += list(path.rglob('*.class'))
+            classpath_files += [path / 'META-INF/CompilerHints', path / 'META-INF/BenchmarkList']
+        else:
+            classpath_files.append(path)
+classpath_id = fingerprint(classpath_files)
+jdk_ids = {str(jdk): jdk_fingerprint(jdk) for jdk in (args.baseline, args.enabled)}
 
 external_options = ""
 if args.external_forks:
@@ -83,15 +124,15 @@ if args.external_forks:
     external_options = (" -Djmh.blackhole.mode=FULL_DONTINLINE -XX:CompileCommandFile="
                         + shlex.quote(str(directives.resolve())))
 
-def reusable(results, flags, forks):
+def reusable(results, flags, forks, combined=True):
     return (results and {r["params"]["size"] for r in results} == set(args.sizes.split(","))
             and all(r["forks"] == forks and r["jvmArgs"] == shlex.split(flags)
                     and r["warmupIterations"] == int(args.warmup)
                     and r["measurementIterations"] == int(args.measurements)
-                    and (not args.external_forks or r.get("externalForks") == 2)
+                    and (not args.external_forks or not combined or r.get("externalForks") == 2)
                     for r in results))
 
-def external_forks(jdk, flags, target):
+def external_forks(jdk, flags, target, resume):
     # Each benchmark/size/repetition gets a fresh VM. Only metadata extraction
     # and the fork control process differ from ordinary JMH forks; the generated
     # JMH harness still runs the warmup and measured iterations in that VM.
@@ -104,18 +145,59 @@ def external_forks(jdk, flags, target):
     raw = args.output / "external" / target.name
     raw.mkdir(parents=True, exist_ok=True)
     results = []
-    with target.with_suffix(".log").open("w") as log:
+    with target.with_suffix(".log").open("a" if resume else "w") as log:
         for benchmark in benchmarks:
+            batches = {}
+            if args.batch_sizes:
+                for fork in range(2):
+                    result = raw / f"{benchmark.rsplit('.', 1)[-1]}-batch-{fork}.json"
+                    print(f"  {target.name} {benchmark.rsplit('.', 1)[-1]} all sizes fork {fork + 1}", flush=True)
+                    rows = None
+                    if resume and result.is_file():
+                        try:
+                            previous = json.loads(result.read_text())
+                            if (reusable(previous, flags, 0, combined=False)
+                                    and all(r["benchmark"] == benchmark for r in previous)):
+                                rows = previous
+                        except (ValueError, KeyError):
+                            pass
+                    if rows is None:
+                        command = [*launch, "^" + re.escape(benchmark) + "$", "-p", "size=" + args.sizes,
+                                   "-f", "0", "-wi", args.warmup, "-i", args.measurements,
+                                   "-w", args.time, "-r", args.time, "-foe", "true",
+                                   "-rf", "json", "-rff", str(result)]
+                        subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=True)
+                        rows = json.loads(result.read_text())
+                    if {r["params"]["size"] for r in rows} != set(args.sizes.split(",")):
+                        raise RuntimeError(f"unexpected parameter batch in {result}")
+                    batches[fork] = {r["params"]["size"]: r for r in rows}
             for size in args.sizes.split(","):
                 parts = []
                 for fork in range(2):
+                    if args.batch_sizes:
+                        parts.append(batches[fork][size])
+                        continue
                     result = raw / f"{benchmark.rsplit('.', 1)[-1]}-{size}-{fork}.json"
                     print(f"  {target.name} {benchmark.rsplit('.', 1)[-1]} {size} fork {fork + 1}", flush=True)
                     command = [*launch, "^" + re.escape(benchmark) + "$", "-p", "size=" + size,
                                "-f", "0", "-wi", args.warmup, "-i", args.measurements,
                                "-w", args.time, "-r", args.time, "-foe", "true",
                                "-rf", "json", "-rff", str(result)]
-                    subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=True)
+                    previous = None
+                    if resume and result.is_file():
+                        try:
+                            rows = json.loads(result.read_text())
+                            if (len(rows) == 1 and rows[0]["benchmark"] == benchmark
+                                    and rows[0]["params"]["size"] == size
+                                    and rows[0]["jvmArgs"] == shlex.split(flags)
+                                    and rows[0]["warmupIterations"] == int(args.warmup)
+                                    and rows[0]["measurementIterations"] == int(args.measurements)
+                                    and len(rows[0]["primaryMetric"]["rawData"][0]) == 3):
+                                previous = rows
+                        except (ValueError, KeyError, IndexError):
+                            pass
+                    if previous is None:
+                        subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=True)
                     with result.open() as file:
                         rows = json.load(file)
                     if len(rows) != 1 or rows[0]["params"]["size"] != size:
@@ -143,6 +225,8 @@ def external_forks(jdk, flags, target):
                     return ordered[lower - 1] + (position - lower) * (ordered[lower] - ordered[lower - 1])
                 metric["scorePercentiles"] = {p: percentile(float(p)) for p in metric["scorePercentiles"]}
                 combined["externalForks"] = 2
+                if args.batch_sizes:
+                    combined["parameterBatching"] = True
                 results.append(combined)
     with target.with_suffix(".json").open("w") as file:
         json.dump(results, file, indent=2)
@@ -150,10 +234,17 @@ def external_forks(jdk, flags, target):
 for tier in args.tiers.split(","):
     for label, jdk in (("baseline", args.baseline), ("enabled", args.enabled)):
         flags = tiers[tier] + " -Xms512m -Xmx512m " + args.jvm_args + external_options
-        if label == "enabled":
-            flags += " -XX:+UseSIMDUTFIntrinsics"
+        extra = args.enabled_jvm_args if label == "enabled" else args.baseline_jvm_args
+        if extra:
+            flags += " " + extra
         target = args.output / f"{tier}-{label}"
-        if args.resume and target.with_suffix(".json").is_file():
+        manifest = dict(jdk=jdk_ids[str(jdk)], classpath=classpath_id, flags=flags,
+                        filter=args.filter, sizes=args.sizes, forks=args.forks,
+                        warmup=args.warmup, measurements=args.measurements,
+                        time=args.time, external=args.external_forks, batch_sizes=args.batch_sizes)
+        metadata = target.with_suffix('.run.json')
+        if (args.resume and target.with_suffix(".json").is_file()
+                and metadata.is_file() and json.loads(metadata.read_text()) == manifest):
             with target.with_suffix(".json").open() as previous:
                 results = json.load(previous)
             if reusable(results, flags, 0 if args.external_forks else int(args.forks)):
@@ -161,7 +252,10 @@ for tier in args.tiers.split(","):
                 continue
         print(f"Running {tier} {label}: {jdk}", flush=True)
         if args.external_forks:
-            external_forks(jdk, flags, target)
+            resume = (args.resume and metadata.is_file()
+                      and json.loads(metadata.read_text()) == manifest)
+            metadata.write_text(json.dumps(manifest, indent=2) + '\n')
+            external_forks(jdk, flags, target, resume)
             print(f"Finished {tier} {label}", flush=True)
             continue
         command = [str(args.enabled.resolve() / "bin/java"), "-Xint", *shlex.split(args.jvm_args),
@@ -173,4 +267,5 @@ for tier in args.tiers.split(","):
                    "-foe", "true", "-rf", "json", "-rff", str(target.with_suffix(".json"))]
         with target.with_suffix(".log").open("w") as log:
             subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=True)
+        metadata.write_text(json.dumps(manifest, indent=2) + '\n')
         print(f"Finished {tier} {label}", flush=True)
