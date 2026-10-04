@@ -36,7 +36,9 @@ HotSpot implementation. If the intrinsic is disabled or unavailable, registered
 JNI calls the same implementation. JNI does not copy or pin arrays.
 
 The leaf checks array types, offsets, lengths, destination capacity and aliasing
-before obtaining element addresses. Raw array addresses remain live only in a
+before obtaining element addresses. Latin-1 to UTF-8 reserves two output bytes
+per input byte before conversion, so success never reports a truncated prefix.
+Raw array addresses remain live only in a
 non-safepointing region. UTF-16/UTF-32 writers reserve their worst-case output
 space or use simdutf's capacity-bounded interfaces, including for mutable array
 inputs. Java retains exception, replacement, buffer-position and BOM handling.
@@ -156,8 +158,16 @@ GitHub Actions includes a `jdk/simdutf` test matrix entry using the existing
 build bundles and jtreg setup. Unlike default-off tier-one execution, this
 entry explicitly enables the feature on every configured runtime platform,
 including x86-64 and AArch64. Test reports and `.jtr` logs use the existing
-artifact upload path. The contract's six `@run` modes separately cover tiers,
-JNI fallback and disabled behavior.
+artifact upload path. The contract's eight `@run` modes separately cover tiers,
+JNI fallback and disabled behavior, including explicit 48 MB code caches in
+interpreter and tiered VMs. These catch branches to native functions that cannot
+rely on the code cache's internal branch range.
+
+Alpine/musl is excluded by the repository's existing default platform list in
+`.github/workflows/main.yml`. Its build can be selected explicitly with the
+manual workflow's `platforms` input set to `alpine-linux-x64`; a skipped default
+job does not qualify musl. Performance qualification uses the reproducible JMH
+runner below and remains separate from correctness CI.
 
 jtreg requires a harness JVM and additional test JVMs. `pthread_create(EAGAIN)`
 during their startup is a host resource failure, before test execution. Lowering

@@ -2169,7 +2169,9 @@ address TemplateInterpreterGenerator::generate_simdutf_entry() {
   __ ldrw(c_rarg6, Address(esp, 0));
   __ andr(sp, r19_sender_sp, -16);
   // The C++ leaf preserves the interpreter's callee-saved registers and LR.
-  __ far_jump(RuntimeAddress(CAST_FROM_FN_PTR(address, SimdUTF::process)));
+  // The target is in libjvm, outside the code cache's branch-range guarantee.
+  __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, SimdUTF::process)));
+  __ br(rscratch1);
   __ bind(slow_path);
   __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
   return entry;

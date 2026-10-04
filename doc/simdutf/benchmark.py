@@ -124,24 +124,37 @@ if args.external_forks:
     external_options = (" -Djmh.blackhole.mode=FULL_DONTINLINE -XX:CompileCommandFile="
                         + shlex.quote(str(directives.resolve())))
 
-def reusable(results, flags, forks, combined=True):
-    return (results and {r["params"]["size"] for r in results} == set(args.sizes.split(","))
-            and all(r["forks"] == forks and r["jvmArgs"] == shlex.split(flags)
-                    and r["warmupIterations"] == int(args.warmup)
-                    and r["measurementIterations"] == int(args.measurements)
-                    and (not args.external_forks or not combined or r.get("externalForks") == 2)
-                    for r in results))
+def list_benchmarks(jdk, flags):
+    launch = [str(jdk.resolve() / "bin/java"), *shlex.split(flags), "-cp", args.classpath,
+              "org.openjdk.jmh.Main"]
+    listing = subprocess.check_output([*launch, args.filter, "-l"], text=True)
+    benchmarks = sorted({line for line in listing.splitlines() if line.startswith("org.openjdk.")})
+    if not benchmarks:
+        raise RuntimeError("no benchmarks matched")
+    return benchmarks
 
-def external_forks(jdk, flags, target, resume):
+def reusable(results, flags, forks, benchmarks, sizes=None, combined=True):
+    # A matching filter and the union of sizes cannot establish completeness:
+    # reject missing, extra or duplicate benchmark/size pairs as well.
+    expected = {(benchmark, size) for benchmark in benchmarks
+                for size in (args.sizes.split(",") if sizes is None else sizes)}
+    try:
+        pairs = [(r["benchmark"], r["params"]["size"]) for r in results]
+        return (bool(results) and len(pairs) == len(expected) and set(pairs) == expected
+                and all(r["forks"] == forks and r["jvmArgs"] == shlex.split(flags)
+                        and r["warmupIterations"] == int(args.warmup)
+                        and r["measurementIterations"] == int(args.measurements)
+                        and (not args.external_forks or not combined or r.get("externalForks") == 2)
+                        for r in results))
+    except (KeyError, TypeError):
+        return False
+
+def external_forks(jdk, flags, target, resume, benchmarks):
     # Each benchmark/size/repetition gets a fresh VM. Only metadata extraction
     # and the fork control process differ from ordinary JMH forks; the generated
     # JMH harness still runs the warmup and measured iterations in that VM.
     launch = [str(jdk.resolve() / "bin/java"), *shlex.split(flags), "-cp", args.classpath,
               "org.openjdk.jmh.Main"]
-    listing = subprocess.check_output([*launch, args.filter, "-l"], text=True)
-    benchmarks = [line for line in listing.splitlines() if line.startswith("org.openjdk.")]
-    if not benchmarks:
-        raise RuntimeError("no benchmarks matched")
     raw = args.output / "external" / target.name
     raw.mkdir(parents=True, exist_ok=True)
     results = []
@@ -156,8 +169,7 @@ def external_forks(jdk, flags, target, resume):
                     if resume and result.is_file():
                         try:
                             previous = json.loads(result.read_text())
-                            if (reusable(previous, flags, 0, combined=False)
-                                    and all(r["benchmark"] == benchmark for r in previous)):
+                            if reusable(previous, flags, 0, [benchmark], combined=False):
                                 rows = previous
                         except (ValueError, KeyError):
                             pass
@@ -187,11 +199,7 @@ def external_forks(jdk, flags, target, resume):
                     if resume and result.is_file():
                         try:
                             rows = json.loads(result.read_text())
-                            if (len(rows) == 1 and rows[0]["benchmark"] == benchmark
-                                    and rows[0]["params"]["size"] == size
-                                    and rows[0]["jvmArgs"] == shlex.split(flags)
-                                    and rows[0]["warmupIterations"] == int(args.warmup)
-                                    and rows[0]["measurementIterations"] == int(args.measurements)
+                            if (reusable(rows, flags, 0, [benchmark], [size], combined=False)
                                     and len(rows[0]["primaryMetric"]["rawData"][0]) == 3):
                                 previous = rows
                         except (ValueError, KeyError, IndexError):
@@ -237,9 +245,10 @@ for tier in args.tiers.split(","):
         extra = args.enabled_jvm_args if label == "enabled" else args.baseline_jvm_args
         if extra:
             flags += " " + extra
+        benchmarks = list_benchmarks(jdk, flags)
         target = args.output / f"{tier}-{label}"
         manifest = dict(jdk=jdk_ids[str(jdk)], classpath=classpath_id, flags=flags,
-                        filter=args.filter, sizes=args.sizes, forks=args.forks,
+                        filter=args.filter, benchmarks=benchmarks, sizes=args.sizes, forks=args.forks,
                         warmup=args.warmup, measurements=args.measurements,
                         time=args.time, external=args.external_forks, batch_sizes=args.batch_sizes)
         metadata = target.with_suffix('.run.json')
@@ -247,7 +256,7 @@ for tier in args.tiers.split(","):
                 and metadata.is_file() and json.loads(metadata.read_text()) == manifest):
             with target.with_suffix(".json").open() as previous:
                 results = json.load(previous)
-            if reusable(results, flags, 0 if args.external_forks else int(args.forks)):
+            if reusable(results, flags, 0 if args.external_forks else int(args.forks), benchmarks):
                 print(f"Reusing {tier} {label}", flush=True)
                 continue
         print(f"Running {tier} {label}: {jdk}", flush=True)
@@ -255,7 +264,7 @@ for tier in args.tiers.split(","):
             resume = (args.resume and metadata.is_file()
                       and json.loads(metadata.read_text()) == manifest)
             metadata.write_text(json.dumps(manifest, indent=2) + '\n')
-            external_forks(jdk, flags, target, resume)
+            external_forks(jdk, flags, target, resume, benchmarks)
             print(f"Finished {tier} {label}", flush=True)
             continue
         command = [str(args.enabled.resolve() / "bin/java"), "-Xint", *shlex.split(args.jvm_args),

@@ -1,6 +1,70 @@
-Validation of the revised simdutf PR, 2026-10-04 UTC
+Review fixes, 2026-10-04 UTC
 
-FINAL SOURCE
+CURRENT REVISION
+- Replaced the AArch64 interpreter's code-cache far_jump with address
+  materialization (lea) and an indirect branch (br) to the libjvm C++ leaf.
+  This handles native targets independently of ReservedCodeCacheSize.
+- Added per-source clang deprecated-declarations suppression for the bridge
+  and unmodified vendor unit; libc++ headers may reference allocation functions
+  deprecated by HotSpot. Other HotSpot sources retain their warning policy.
+- Included globals_extension.hpp explicitly for FLAG_IS_DEFAULT; the minimal
+  VM's precompiled header does not provide that macro.
+- Latin-1 to UTF-8 now reserves 2 * len bytes before conversion. Insufficient
+  capacity returns -1 before any write instead of reporting a truncated prefix.
+- Benchmark resume verifies the selected benchmark/size Cartesian product,
+  rejecting missing, extra and duplicate results; the manifest records the
+  resolved benchmark names as well as the filter.
+- Added explicit 48 MB code-cache interpreter/tiered runs and capacity canaries
+  to the jtreg contract.
+
+LOCAL VALIDATION OF THESE FIXES
+- x86 bridge compiled and libjvm linked successfully using the build-generated
+  compiler/linker commands (GCC 14). The normal make driver could not fork its
+  target-generation shell. This is native validation, not a full make images.
+- Bridge compiled successfully without a PCH, COMPILER1 or COMPILER2, covering
+  the missing macro failure seen in the minimal build. Full minimal build is
+  delegated to existing platform CI.
+- AArch64 interpreter source cross-compiled successfully without a PCH at -O0
+  using the generated include paths and GNU cross-compiler 14. This verifies
+  code generation compiles; it is not an AArch64 runtime pass.
+- Eleven benchmark resume checks passed: complete, missing operation, missing
+  size pair, duplicate, different operation, malformed, empty, raw batch,
+  single worker, missing external fork count, and combined external result.
+- Full isolated-index PR whitespace check and Python syntax checks passed.
+- Current contract compilation and jtreg attempts failed during JVM startup
+  with pthread_create(EAGAIN), before compilation or test execution. The
+  existing host's process exhaustion remains unresolved. No test pass for this
+  revision is inferred from those attempts.
+- macOS compilation, AArch64 small-cache runtime, and full jtreg must pass in
+  fresh CI. AArch64 threshold remains 256 pending performance measurements.
+- Alpine/musl is excluded by the repository's existing default CI selection.
+  Select alpine-linux-x64 explicitly in the manual workflow to qualify it.
+  JMH qualification remains a separate reproducible manual run.
+
+CONFIRMED PRIOR-HEAD CI EVIDENCE
+Run https://github.com/re-thc/openjdk-jdk27u/actions/runs/37204732920
+(head b8277ee71445be2e2668d6e7e04b597ef696c9c3):
+- Linux and Windows AArch64 jdk/simdutf fail in Assembler::b with "Field too big
+  for insn" in C1-only execution; Windows also shows the interpreter failure.
+- macOS x64/AArch64 release/debug fail compiling the bridge: libc++ allocator
+  references HotSpot's deprecated operator new under -Werror.
+- Linux minimal build fails because FLAG_IS_DEFAULT was undeclared.
+- Windows x64 jdk/simdutf passed; Linux x64 and AArch64 release/debug builds,
+  Windows x64/AArch64 builds, Zero, no-PCH, optimized and arm/riscv64/ppc64le/
+  s390x cross-builds passed. Other prior-run tests were still queued/running.
+The attached independent review reports a clean x86 release image, execution
+modes, ZGC/Shenandoah and spot performance checks on b8277ee7. Those are
+reviewer-reported evidence for that head, not tests run here or on these fixes.
+
+REQUIRED BEFORE LEAVING DRAFT
+Fresh platform CI, especially macOS and ARM64 small-code-cache contracts; full
+feature-enabled jtreg; exact-head performance confirmation; ARM64 performance
+qualification. Existing benchmark data predates these fixes and is retained
+with its original provenance.
+
+Historical validation of b8277ee7, before review fixes (2026-10-04 UTC)
+
+B8277EE7 SOURCE
 - x86-64 native HotSpot rebuild passed after a shell-fork resource failure.
 - All java.base sources compiled using the build-generated incremental command,
   with Serial GC, one active processor and one non-tiered compiler thread.

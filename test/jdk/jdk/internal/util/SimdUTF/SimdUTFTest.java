@@ -29,6 +29,7 @@
  * @summary Bulk simdutf conversion, range, capacity and fallback contracts in every execution tier
  * @modules java.base/jdk.internal.util:+open
  * @run main/othervm -Xint -XX:+UseSIMDUTFIntrinsics SimdUTFTest
+ * @run main/othervm -Xint -XX:ReservedCodeCacheSize=48M -XX:+UseSIMDUTFIntrinsics SimdUTFTest
  * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_simdutf_process -XX:+UseSIMDUTFIntrinsics -XX:SIMDUTFMinLength=64 SimdUTFTest
  * @run main/othervm -XX:-UseSIMDUTFIntrinsics SimdUTFTest
  */
@@ -39,6 +40,7 @@
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @modules java.base/jdk.internal.util:+open
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseSIMDUTFIntrinsics SimdUTFTest
+ * @run main/othervm -Xbatch -XX:ReservedCodeCacheSize=48M -XX:+UseSIMDUTFIntrinsics SimdUTFTest
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:+UseSIMDUTFIntrinsics SimdUTFTest
  * @run main/othervm -Xbatch -XX:+UseSIMDUTFIntrinsics -XX:SIMDUTFMinLength=64 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_simdutf_process SimdUTFTest
  */
@@ -526,6 +528,23 @@ public class SimdUTFTest {
         };
         for (Object[] arguments : invalid) {
             check((int)process.invoke(null, arguments) == -1, "unsafe raw entry accepted arguments");
+        }
+        Arrays.fill(src, (byte)0x80);
+        for (int capacity : new int[]{0, src.length, 2 * src.length - 1}) {
+            Arrays.fill(dst, SENTINEL);
+            check((int)process.invoke(null, src, 0, src.length, dst, 7, capacity, 2) == -1,
+                    "Latin1 encoder accepted insufficient capacity");
+            check(SimdUTF.encodeLatin1(src, 0, src.length, dst, 7, capacity) == -1,
+                    "Latin1 encoder returned a truncated prefix");
+            guards(dst, 0, 0);
+        }
+        Arrays.fill(dst, SENTINEL);
+        int written = (int)process.invoke(null, src, 0, src.length, dst, 7, 2 * src.length, 2);
+        if (accelerationAvailable) {
+            check(written == 2 * src.length, "Latin1 encoder full conversion length");
+            equal(utf8(new String(src, StandardCharsets.ISO_8859_1)),
+                    Arrays.copyOfRange(dst, 7, 7 + written));
+            guards(dst, 7, written);
         }
     }
 

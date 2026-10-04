@@ -25,6 +25,7 @@
 #include "jvm.h"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/simdutfSupport.hpp"
@@ -293,6 +294,9 @@ JRT_LEAF(jint, SimdUTF::process(oop src, jint sp, jint len, oop dst, jint dp,
       written = simdutf::convert_utf8_to_utf16(input, len, reinterpret_cast<char16_t*>(output));
       break;
     case 2:
+      // The safe converter can return a truncated prefix. Reserve the worst
+      // case so success always describes the entire input, even if it mutates.
+      if (size_t(capacity) < size_t(len) * 2) return -1;
       written = simdutf::convert_latin1_to_utf8_safe(input, len, output, capacity);
       break;
     case 3:

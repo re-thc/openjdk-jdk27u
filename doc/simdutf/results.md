@@ -6,7 +6,8 @@ sizes 32/128/65536, and interpreter/C1/C2. It compares pristine master
 compact-decoding inlining fix, **before the final shared Java floors and removal
 of the extra C2 cutoff graph**. The converter implementations are unchanged by
 that last policy cleanup. This matrix is not an exact-final-head certification.
-The exact final source has a separate longer five-case C2 short-input check.
+The `b8277ee7` source has a separate longer five-case C2 short-input check.
+These measurements precede the subsequent platform and capacity review fixes.
 An attempted complete final-policy rerun could not start its first worker
 because the container exhausted its native-thread/process allowance.
 
@@ -131,7 +132,9 @@ Add `--external-forks --batch-sizes --warmup 2 --time 100ms` for the matrices'
 container protocol. The normal runner uses ordinary forked JMH. External
 mode launches VMs without a driver and installs compiler directives explicitly.
 `--resume` requires matching binary/classpath fingerprints, selection, flags
-and measurement parameters. Use a fresh runner for final qualification.
+and measurement parameters, and exactly one result for every selected
+benchmark/size pair. Missing, extra or duplicate pairs invalidate reuse.
+Use a fresh runner for final qualification.
 
 For the threshold study use the same JDK on both sides, with
 `--baseline-jvm-args=-XX:-UseSIMDUTFIntrinsics` and
