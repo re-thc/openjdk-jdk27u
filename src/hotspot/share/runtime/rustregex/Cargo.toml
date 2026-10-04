@@ -1,0 +1,19 @@
+[package]
+name = "jdk-rust-regex"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["staticlib"]
+path = "adapter.rs"
+
+[dependencies]
+regex = "=1.13.1"
+regex-automata = "0.4"
+regex-syntax = "0.8"
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+panic = "unwind"

@@ -1,0 +1,108 @@
+Linux x86_64 packaged image
+===========================
+Using exact match for CONF=cloud (other matches are possible)
+Building target 'images' in configuration 'cloud'
+    Finished `release` profile [optimized] target(s) in 0.02s
+Finished building target 'images' in configuration 'cloud'
+
+Complete AArch64 HotSpot cross-build
+====================================
+Building target 'hotspot' in configuration 'cloud-arm'
+Compiling up to 1 files for BUILD_TOOLS_HOTSPOT
+Creating hotspot/variant-server/tools/adlc/adlc from 13 file(s)
+Compiling up to 2 files for BUILD_JVMTI_TOOLS
+Creating support/modules_libs/java.base/server/libjvm.so from 1033 file(s)
+   Compiling memchr v2.8.3
+   Compiling aho-corasick v1.1.5
+   Compiling regex-syntax v0.8.11
+   Compiling regex-automata v0.4.18
+   Compiling regex v1.13.1
+   Compiling jdk-rust-regex v0.1.0 (/workspace/openjdk-jdk27u/src/hotspot/share/runtime/rustregex)
+    Finished `release` profile [optimized] target(s) in 49.52s
+Finished building target 'hotspot' in configuration 'cloud-arm'
+
+Final AArch64 incremental check
+===============================
+Building target 'hotspot' in configuration 'cloud-arm'
+Updating support/modules_libs/java.base/server/libjvm.so due to 1 file(s)
+    Finished `release` profile [optimized] target(s) in 0.02s
+Finished building target 'hotspot' in configuration 'cloud-arm'
+
+JDK focused jtreg
+=================
+Test results: passed: 104; did not meet platform requirements: 2
+Framework-based tests: 5,980 = 5,849 TestNG + 131 JUnit
+Report written to /tmp/regex-jtreg-final/report/html/report.html
+Results written to /tmp/regex-jtreg-final/work
+
+HotSpot intrinsic jtreg
+=======================
+Directory "/tmp/regex-jtreg-vm-final/work" not found: creating
+Directory "/tmp/regex-jtreg-vm-final/report" not found: creating
+Test results: passed: 2
+Report written to /tmp/regex-jtreg-vm-final/report/html/report.html
+Results written to /tmp/regex-jtreg-vm-final/work
+
+Differential test actions
+=========================
+execStatus=Passed. Execution successful
+elapsed time (seconds): 0.081
+result: Passed. Build successful
+elapsed time (seconds): 0.08
+result: Passed. Compilation successful
+reason: User specified action: run main/othervm -XX:-UseRustRegex RustRegexTest
+elapsed time (seconds): 7.142
+Compared 5248 bound/state cases; Rust enabled=false
+result: Passed. Execution successful
+elapsed time (seconds): 0.001
+result: Passed. All files up to date
+reason: User specified action: run main/othervm -XX:+UseRustRegex RustRegexTest
+elapsed time (seconds): 5.897
+Compared 5248 bound/state cases; Rust enabled=true
+result: Passed. Execution successful
+elapsed time (seconds): 0.001
+result: Passed. All files up to date
+reason: User specified action: run main/othervm -XX:+UseRustRegex -XX:-UseRustRegexIntrinsics RustRegexTest
+elapsed time (seconds): 7.651
+Compared 5248 bound/state cases; Rust enabled=true
+result: Passed. Execution successful
+elapsed time (seconds): 0.001
+result: Passed. All files up to date
+reason: User specified action: run main/othervm/timeout=600 -XX:+UseRustRegex -Xint RustRegexTest
+elapsed time (seconds): 190.056
+Compared 5248 bound/state cases; Rust enabled=true
+result: Passed. Execution successful
+elapsed time (seconds): 0.003
+result: Passed. All files up to date
+reason: User specified action: run main/othervm -XX:+UseRustRegex -XX:TieredStopAtLevel=1 -Xbatch RustRegexTest
+elapsed time (seconds): 9.436
+Compared 5248 bound/state cases; Rust enabled=true
+result: Passed. Execution successful
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+reason: User specified action: run main/othervm -XX:+UseRustRegex -XX:-TieredCompilation -Xbatch RustRegexTest
+elapsed time (seconds): 5.981
+Compared 5248 bound/state cases; Rust enabled=true
+result: Passed. Execution successful
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+reason: User specified action: run main/othervm -XX:+UseRustRegex -XX:-CompactStrings RustRegexTest
+elapsed time (seconds): 5.291
+Compared 5248 bound/state cases; Rust enabled=true
+result: Passed. Execution successful
+
+C1 intrinsic selection (compilation log excerpt)
+================================================
+
+<method id='1336' holder='1322' name='mayMatch0' return='1138' arguments='1145 1310 1144 1144' flags='266' bytes='0' iicount='1'/>
+<call method='1336' instr='invokestatic'/>
+<inline_success reason='intrinsic'/>
+<dependency type='evol_method' x0='1336'/>
+<bc code='184' bci='64'/>
+<type id='1146' name='void'/>
+<klass id='1151' name='java.lang.Object' flags='1'/>
+<klass id='1176' name='java.lang.ref.Reference' flags='1025'/>
+
+C2 intrinsic selection
+======================
+@ 49   jdk.internal.util.regex.RustRegex::mayMatch0 (0 bytes)   (intrinsic)

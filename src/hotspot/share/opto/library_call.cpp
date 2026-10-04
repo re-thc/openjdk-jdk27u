@@ -58,6 +58,7 @@
 #include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/rustRegex.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -625,6 +626,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_bigIntegerLeftShiftWorker:
     return inline_bigIntegerShift(false);
 
+  case vmIntrinsics::_rustRegexMayMatch: return inline_rustRegexMayMatch();
   case vmIntrinsics::_vectorizedMismatch:
     return inline_vectorizedMismatch();
 
@@ -6572,6 +6574,28 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
                                    numIter);
   }
 
+  return true;
+}
+
+//-------------inline_rustRegexMayMatch------------------------------
+bool LibraryCallKit::inline_rustRegexMayMatch() {
+  Node* input = null_check(argument(2));
+  if (stopped()) return true;
+  Node* bytes = array_element_address(input, argument(3), T_BYTE);
+  const Type** fields = TypeTuple::fields(4);
+  fields[TypeFunc::Parms + 0] = TypeLong::LONG;
+  fields[TypeFunc::Parms + 1] = Type::HALF;
+  fields[TypeFunc::Parms + 2] = TypeRawPtr::BOTTOM;
+  fields[TypeFunc::Parms + 3] = TypeInt::INT;
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 4, fields);
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms] = TypeInt::BOOL;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  const TypeFunc* type = TypeFunc::make(domain, range);
+  Node* call = make_runtime_call(RC_LEAF, type,
+      CAST_FROM_FN_PTR(address, RustRegex::may_match), "rustRegexMayMatch",
+      TypePtr::BOTTOM, argument(0), top(), bytes, argument(4));
+  set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
   return true;
 }
 

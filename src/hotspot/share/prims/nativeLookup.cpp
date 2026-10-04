@@ -204,6 +204,7 @@ extern "C" {
   void JNICALL JVM_RegisterUpcallHandlerMethods(JNIEnv *env, jclass unsafecls);
   void JNICALL JVM_RegisterUpcallLinkerMethods(JNIEnv *env, jclass unsafecls);
   void JNICALL JVM_RegisterNativeEntryPointMethods(JNIEnv *env, jclass unsafecls);
+  void JNICALL JVM_RegisterRustRegexMethods(JNIEnv *env, jclass cls);
   void JNICALL JVM_RegisterPerfMethods(JNIEnv *env, jclass perfclass);
   void JNICALL JVM_RegisterWhiteBoxMethods(JNIEnv *env, jclass wbclass);
   void JNICALL JVM_RegisterVectorSupportMethods(JNIEnv *env, jclass vsclass);
@@ -213,6 +214,7 @@ extern "C" {
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
 
 static JNINativeMethod lookup_special_native_methods[] = {
+  { CC"Java_jdk_internal_util_regex_RustRegex_registerNatives", nullptr, FN_PTR(JVM_RegisterRustRegexMethods) },
   { CC"Java_jdk_internal_misc_Unsafe_registerNatives",             nullptr, FN_PTR(JVM_RegisterJDKInternalMiscUnsafeMethods) },
   { CC"Java_java_lang_invoke_MethodHandleNatives_registerNatives", nullptr, FN_PTR(JVM_RegisterMethodHandleMethods) },
   { CC"Java_jdk_internal_foreign_abi_UpcallStubs_registerNatives",      nullptr, FN_PTR(JVM_RegisterUpcallHandlerMethods) },

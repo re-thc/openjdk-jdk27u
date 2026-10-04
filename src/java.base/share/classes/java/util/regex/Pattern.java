@@ -25,6 +25,8 @@
 
 package java.util.regex;
 
+import jdk.internal.util.regex.RustRegex;
+
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 import java.util.Locale;
@@ -1006,6 +1008,32 @@ public final class Pattern
      * a match to start anywhere in the input.
      */
     transient Node root;
+
+    private transient volatile int rustRegexMisses;
+    private transient volatile boolean rustRegexCompiled;
+    private transient RustRegex rustRegex;
+
+    void recordRustRegexMiss() {
+        if (rustRegexMisses < 8) rustRegexMisses++;
+    }
+
+    void recordRustRegexHit() {
+        rustRegexMisses = 0;
+    }
+
+    RustRegex rustRegex() {
+        // Amortize compilation over reused patterns with failed long searches.
+        if (rustRegexMisses < 8) return null;
+        if (!rustRegexCompiled) {
+            synchronized (this) {
+                if (!rustRegexCompiled) {
+                    rustRegex = RustRegex.compile(pattern, flags);
+                    rustRegexCompiled = true;
+                }
+            }
+        }
+        return rustRegex;
+    }
 
     /**
      * The root of object tree for a match operation.  The pattern is matched

@@ -177,6 +177,25 @@ endif
 ## Build libjvm
 ################################################################################
 
+ifeq ($(RUST_REGEX_ENABLED), true)
+  include Execute.gmk
+  RUST_REGEX_SRC := $(TOPDIR)/src/hotspot/share/runtime/rustregex
+  RUST_REGEX_OUT := $(JVM_OUTPUTDIR)/rustregex
+  RUST_REGEX_LIB := $(RUST_REGEX_OUT)/$(RUST_REGEX_TARGET)/release/libjdk_rust_regex.a
+  $(eval $(call SetupExecute, BUILD_RUST_REGEX, \
+      INFO := Building bundled Rust regex, \
+      WORKING_DIR := $(RUST_REGEX_SRC), \
+      COMMAND := $(CARGO) build --frozen --release --target $(RUST_REGEX_TARGET) \
+          --target-dir $(RUST_REGEX_OUT), \
+      OUTPUT_FILE := $(RUST_REGEX_LIB), \
+      DEPS := $(call FindFiles, $(RUST_REGEX_SRC)), \
+  ))
+  JVM_CFLAGS += -DINCLUDE_RUST_REGEX=1
+  JVM_LIBS += $(RUST_REGEX_LIB)
+else
+  JVM_CFLAGS += -DINCLUDE_RUST_REGEX=0
+endif
+
 $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     NAME := jvm, \
     LINK_TYPE := C++, \
@@ -316,6 +335,8 @@ endif
 #             In hotspot this is caused by throw() in declaration of new() in nmethod.hpp.
 # 1540-1090 : (I) The destructor of "..." might not be called.
 # 1540-1639 : (I) The behavior of long type bit fields has changed ...
+
+$(BUILD_LIBJVM_TARGET): $(BUILD_RUST_REGEX)
 
 TARGETS += $(BUILD_LIBJVM)
 

@@ -799,6 +799,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_mulAdd:
   case vmIntrinsics::_montgomeryMultiply:
   case vmIntrinsics::_montgomerySquare:
+  case vmIntrinsics::_rustRegexMayMatch:
   case vmIntrinsics::_vectorizedMismatch:
   case vmIntrinsics::_ghash_processBlocks:
   case vmIntrinsics::_chacha20Block:

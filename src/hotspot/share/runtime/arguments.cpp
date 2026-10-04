@@ -1567,6 +1567,12 @@ static bool patch_mod_javabase = false;
 
 // Check the consistency of vm_init_args
 bool Arguments::check_vm_args_consistency() {
+#if !INCLUDE_RUST_REGEX
+  if (UseRustRegex) {
+    warning("UseRustRegex requires a JDK configured with --enable-rust-regex");
+    FLAG_SET_DEFAULT(UseRustRegex, false);
+  }
+#endif
   // This may modify compiler flags. Must be called before CompilerConfig::check_args_consistency()
   if (!CDSConfig::check_vm_args_consistency(patch_mod_javabase, mode_flag_cmd_line)) {
     return false;

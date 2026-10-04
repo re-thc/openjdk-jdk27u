@@ -71,6 +71,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
 #endif
+  case vmIntrinsics::_rustRegexMayMatch:
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:
   case vmIntrinsics::_floatToRawIntBits:
@@ -125,6 +126,7 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
 #endif
+  case vmIntrinsics::_rustRegexMayMatch:
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:
   case vmIntrinsics::_floatToRawIntBits:
@@ -330,6 +332,9 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_arraycopy:
     if (!InlineArrayCopy) return true;
+    break;
+  case vmIntrinsics::_rustRegexMayMatch:
+    if (!INCLUDE_RUST_REGEX || !UseRustRegex || !UseRustRegexIntrinsics) return true;
     break;
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:

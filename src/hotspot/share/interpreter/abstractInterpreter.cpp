@@ -123,6 +123,9 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
     switch (iid) {
 #ifndef ZERO
       // Use optimized stub code for CRC32 native methods.
+#if defined(AMD64) || defined(AARCH64)
+      case vmIntrinsics::_rustRegexMayMatch: return rust_regex_may_match;
+#endif
       case vmIntrinsics::_updateCRC32:       return java_util_zip_CRC32_update;
       case vmIntrinsics::_updateBytesCRC32:  return java_util_zip_CRC32_updateBytes;
       case vmIntrinsics::_updateByteBufferCRC32: return java_util_zip_CRC32_updateByteBuffer;
@@ -212,6 +215,7 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case java_lang_math_fmaD        : return vmIntrinsics::_fmaD;
   case java_lang_math_fmaF        : return vmIntrinsics::_fmaF;
   case java_lang_ref_reference_get0: return vmIntrinsics::_Reference_get0;
+  case rust_regex_may_match       : return vmIntrinsics::_rustRegexMayMatch;
   case java_util_zip_CRC32_update : return vmIntrinsics::_updateCRC32;
   case java_util_zip_CRC32_updateBytes
                                   : return vmIntrinsics::_updateBytesCRC32;

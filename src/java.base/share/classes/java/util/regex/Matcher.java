@@ -25,6 +25,8 @@
 
 package java.util.regex;
 
+import jdk.internal.util.regex.RustRegex;
+
 import java.io.IOException;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
@@ -1762,9 +1764,29 @@ public final class Matcher implements MatchResult {
                 localsPos[i].clear();
         }
         acceptMode = NOANCHOR;
-        boolean result = parentPattern.root.match(this, from, text);
-        if (!result)
+        boolean rejected = false;
+        RustRegex filter = null;
+        int length = to - from;
+        boolean eligible = RustRegex.ENABLED && length >= RustRegex.MIN_LENGTH &&
+                length <= RustRegex.MAX_LENGTH && text instanceof String &&
+                (parentPattern.root instanceof Pattern.Start || parentPattern.root instanceof Pattern.BnM);
+        if (eligible) {
+            filter = parentPattern.rustRegex();
+            if (filter != null && !filter.mayMatch((String)text, from, length)) {
+                // Start and BnM report hitEnd on every exhausted search.
+                hitEnd = true;
+                rejected = true;
+            }
+        }
+        boolean result = !rejected && parentPattern.root.match(this, from, text);
+        if (!result) {
             this.first = -1;
+            if (eligible) parentPattern.recordRustRegexMiss();
+        } else if (filter != null) {
+            // Adapt when a formerly unsuccessful workload starts matching.
+            // Keep the compiled DFA, but wait for eight more misses to probe it.
+            parentPattern.recordRustRegexHit();
+        }
         this.oldLast = this.last;
         this.modCount++;
         return result;

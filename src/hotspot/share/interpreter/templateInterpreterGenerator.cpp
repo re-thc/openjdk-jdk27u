@@ -231,6 +231,8 @@ void TemplateInterpreterGenerator::generate_all() {
   native_method_entry(java_lang_Thread_currentThread)
   native_method_entry(java_lang_ref_reference_get0)
 
+  native_method_entry(rust_regex_may_match)
+
   native_method_entry(java_util_zip_CRC32_update)
   native_method_entry(java_util_zip_CRC32_updateBytes)
   native_method_entry(java_util_zip_CRC32_updateByteBuffer)
@@ -470,6 +472,9 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
                                            : entry_point = generate_math_entry(Interpreter::java_lang_math_sqrt); break;
   case Interpreter::java_lang_ref_reference_get0
                                            : entry_point = generate_Reference_get_entry(); break;
+#if defined(AMD64) || defined(AARCH64)
+  case Interpreter::rust_regex_may_match: entry_point = generate_rustRegex_entry(); break;
+#endif
   case Interpreter::java_util_zip_CRC32_update
                                            : entry_point = generate_CRC32_update_entry();  break;
   case Interpreter::java_util_zip_CRC32_updateBytes
