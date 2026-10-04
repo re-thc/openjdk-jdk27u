@@ -83,8 +83,9 @@ class StringCoding {
             if (kind == 0 || kind == 2) {
                 return 1;
             }
-            int count = SimdUTF.countAscii(s.value(), 0, s.length());
-            return count < 0 ? -1 : count == s.length() ? 1 : 0;
+            // Preserve the existing C2 counter intrinsic; its Java body also
+            // reaches simdutf in the interpreter and C1.
+            return countPositives(s.value(), 0, s.length()) == s.length() ? 1 : 0;
         }
         return SimdUTF.validateUTF16(s.value(), 0, s.length(), kind);
     }

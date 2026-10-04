@@ -32,6 +32,7 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import jdk.internal.util.SimdUTF;
+import jdk.internal.vm.annotation.DontInline;
 
 class UTF_32Coder {
     protected static final int BOM_BIG = 0xFEFF;
@@ -155,6 +156,31 @@ class UTF_32Coder {
         }
 
         protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
+            if (SimdUTF.isEligible(src.remaining()) && src.hasArray() && dst.hasArray()) {
+                if (!doneBOM && src.hasRemaining()) {
+                    if (dst.remaining() < 4)
+                        return CoderResult.OVERFLOW;
+                    put(BOM_BIG, dst);
+                    doneBOM = true;
+                }
+                int length = src.remaining();
+                int written = SimdUTF.encodeUTF32Bytes(src.array(), src.arrayOffset() + src.position(),
+                        length, dst.array(), dst.arrayOffset() + dst.position(),
+                        dst.remaining(), byteOrder == BIG);
+                if (written >= 0) {
+                    src.position(src.position() + length);
+                    dst.position(dst.position() + written);
+                    return CoderResult.UNDERFLOW;
+                }
+            }
+            return encodeLoopScalar(src, dst);
+        }
+
+        // Keep the original loop independently compilable. Combining its
+        // buffer accesses with a native call's memory effects slows short C2
+        // inputs even when the length gate declines that call.
+        @DontInline
+        private CoderResult encodeLoopScalar(CharBuffer src, ByteBuffer dst) {
             int mark = src.position();
             if (!doneBOM && src.hasRemaining()) {
                 if (dst.remaining() < 4)
@@ -163,17 +189,6 @@ class UTF_32Coder {
                 doneBOM = true;
             }
             try {
-                if (SimdUTF.isEligible(src.remaining()) && src.hasArray() && dst.hasArray()) {
-                    int length = src.remaining();
-                    int written = SimdUTF.encodeUTF32Bytes(src.array(), src.arrayOffset() + mark,
-                            length, dst.array(), dst.arrayOffset() + dst.position(),
-                            dst.remaining(), byteOrder == BIG);
-                    if (written >= 0) {
-                        mark += length;
-                        dst.position(dst.position() + written);
-                        return CoderResult.UNDERFLOW;
-                    }
-                }
                 while (src.hasRemaining()) {
                     char c = src.get();
                     if (!Character.isSurrogate(c)) {
