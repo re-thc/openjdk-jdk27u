@@ -134,5 +134,6 @@ taskset -c <cpu> make/scripts/bench-fast-float.sh /path/to/jdk '/path/to/jmh/*' 
 ```
 
 Results, platform details, validation totals, and any limitations are recorded
-in the pull request with the final implementation. Emulation is suitable for
+in the [benchmark report](benchmarks/fast-float/README.md) and pull request.
+Set `FAST_FLOAT_TIERS='c1 c2'` to repeat only selected tiers. Emulation is suitable for
 ARM correctness checks; it is not evidence of native ARM performance.

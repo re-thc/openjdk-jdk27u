@@ -34,7 +34,7 @@ with tempfile.TemporaryDirectory() as tmp:
     staged = Path(tmp)
     for header in headers:
         shutil.copyfile(header, staged / header.name)
-    subprocess.run(["patch", "--batch", "--forward", "-p1", "-i", str(root / "make/data/fast_float/layout.patch")], cwd=staged, check=True)
+    subprocess.run(["patch", "--batch", "--forward", "--fuzz=0", "-p1", "-i", str(root / "make/data/fast_float/layout.patch")], cwd=staged, check=True)
     destination = root / "src/hotspot/share/utilities/fast_float"
     for old in destination.glob("*.h"):
         if not (staged / old.name).exists():

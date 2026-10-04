@@ -1,0 +1,1107 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.FastFloatParsing.bigDecimalDoubleCached",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java",
+        "jvmArgs" : [
+            "--add-exports=java.base/jdk.internal.math=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation",
+            "-XX:+UseFastFloatIntrinsics",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 102.0350259972259,
+            "scoreError" : 12.143947773862799,
+            "scoreConfidence" : [
+                89.89107822336311,
+                114.17897377108869
+            ],
+            "scorePercentiles" : {
+                "0.0" : 93.40515097047648,
+                "50.0" : 98.48630375480386,
+                "90.0" : 114.63759177224428,
+                "95.0" : 114.63759177224428,
+                "99.0" : 114.63759177224428,
+                "99.9" : 114.63759177224428,
+                "99.99" : 114.63759177224428,
+                "99.999" : 114.63759177224428,
+                "99.9999" : 114.63759177224428,
+                "100.0" : 114.63759177224428
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    98.48630375480386,
+                    101.0912148178808,
+                    106.53395673483155
+                ],
+                [
+                    97.56486699870182,
+                    111.4780704045993,
+                    96.67824796881183
+                ],
+                [
+                    93.40515097047648,
+                    114.63759177224428,
+                    98.43983055268338
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.FastFloatParsing.bigDecimalDoubleCold",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java",
+        "jvmArgs" : [
+            "--add-exports=java.base/jdk.internal.math=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation",
+            "-XX:+UseFastFloatIntrinsics",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 1043.8857920548046,
+            "scoreError" : 1093.0174720549523,
+            "scoreConfidence" : [
+                -49.13168000014775,
+                2136.903264109757
+            ],
+            "scorePercentiles" : {
+                "0.0" : 563.4745175422878,
+                "50.0" : 609.16322717089,
+                "90.0" : 2179.166011284722,
+                "95.0" : 2179.166011284722,
+                "99.0" : 2179.166011284722,
+                "99.9" : 2179.166011284722,
+                "99.99" : 2179.166011284722,
+                "99.999" : 2179.166011284722,
+                "99.9999" : 2179.166011284722,
+                "100.0" : 2179.166011284722
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    2179.166011284722,
+                    2049.647025116219,
+                    1037.643519514698
+                ],
+                [
+                    1206.7942171143782,
+                    609.16322717089,
+                    586.2623836929122
+                ],
+                [
+                    563.4745175422878,
+                    598.5661942644817,
+                    564.255032792653
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.FastFloatParsing.bigDecimalFloatCached",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java",
+        "jvmArgs" : [
+            "--add-exports=java.base/jdk.internal.math=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation",
+            "-XX:+UseFastFloatIntrinsics",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 104.70305155179389,
+            "scoreError" : 4.386939373963526,
+            "scoreConfidence" : [
+                100.31611217783036,
+                109.08999092575742
+            ],
+            "scorePercentiles" : {
+                "0.0" : 100.08605401826688,
+                "50.0" : 103.91155142748946,
+                "90.0" : 108.21517920051393,
+                "95.0" : 108.21517920051393,
+                "99.0" : 108.21517920051393,
+                "99.9" : 108.21517920051393,
+                "99.99" : 108.21517920051393,
+                "99.999" : 108.21517920051393,
+                "99.9999" : 108.21517920051393,
+                "100.0" : 108.21517920051393
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    100.08605401826688,
+                    103.36167682384928,
+                    105.85239988645607
+                ],
+                [
+                    103.8329228043128,
+                    108.17117958852118,
+                    103.91155142748946
+                ],
+                [
+                    102.9976651446869,
+                    105.89883507204843,
+                    108.21517920051393
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.FastFloatParsing.bigDecimalFloatCold",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java",
+        "jvmArgs" : [
+            "--add-exports=java.base/jdk.internal.math=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation",
+            "-XX:+UseFastFloatIntrinsics",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 846.3581409924295,
+            "scoreError" : 433.1806688224868,
+            "scoreConfidence" : [
+                413.17747216994275,
+                1279.5388098149162
+            ],
+            "scorePercentiles" : {
+                "0.0" : 624.136123832615,
+                "50.0" : 718.9784185398391,
+                "90.0" : 1434.3349979500729,
+                "95.0" : 1434.3349979500729,
+                "99.0" : 1434.3349979500729,
+                "99.9" : 1434.3349979500729,
+                "99.99" : 1434.3349979500729,
+                "99.999" : 1434.3349979500729,
+                "99.9999" : 1434.3349979500729,
+                "100.0" : 1434.3349979500729
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    1434.3349979500729,
+                    924.7870078420368,
+                    638.1290995411546
+                ],
+                [
+                    849.8166264387909,
+                    624.136123832615,
+                    718.9784185398391
+                ],
+                [
+                    1019.254409695264,
+                    692.3480241706058,
+                    715.4385609214861
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.FastFloatParsing.decimalFormatDigits",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java",
+        "jvmArgs" : [
+            "--add-exports=java.base/jdk.internal.math=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation",
+            "-XX:+UseFastFloatIntrinsics",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 37.22124850129017,
+            "scoreError" : 2.4261044587568956,
+            "scoreConfidence" : [
+                34.79514404253327,
+                39.647352960047066
+            ],
+            "scorePercentiles" : {
+                "0.0" : 35.18564147861297,
+                "50.0" : 37.76103609997101,
+                "90.0" : 38.84870067031722,
+                "95.0" : 38.84870067031722,
+                "99.0" : 38.84870067031722,
+                "99.9" : 38.84870067031722,
+                "99.99" : 38.84870067031722,
+                "99.999" : 38.84870067031722,
+                "99.9999" : 38.84870067031722,
+                "100.0" : 38.84870067031722
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    35.48292997918026,
+                    37.76103609997101,
+                    38.45529519844265
+                ],
+                [
+                    38.48875317258883,
+                    38.01340333724189,
+                    38.84870067031722
+                ],
+                [
+                    37.211284794968,
+                    35.54419178028867,
+                    35.18564147861297
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.FastFloatParsing.decimalFormatDigitsLong",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java",
+        "jvmArgs" : [
+            "--add-exports=java.base/jdk.internal.math=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation",
+            "-XX:+UseFastFloatIntrinsics",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 39.20645345704421,
+            "scoreError" : 4.652547113168014,
+            "scoreConfidence" : [
+                34.5539063438762,
+                43.859000570212224
+            ],
+            "scorePercentiles" : {
+                "0.0" : 36.628306894195795,
+                "50.0" : 39.07762266638006,
+                "90.0" : 45.771545049813746,
+                "95.0" : 45.771545049813746,
+                "99.0" : 45.771545049813746,
+                "99.9" : 45.771545049813746,
+                "99.99" : 45.771545049813746,
+                "99.999" : 45.771545049813746,
+                "99.9999" : 45.771545049813746,
+                "100.0" : 45.771545049813746
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    45.771545049813746,
+                    39.07762266638006,
+                    37.96326134248599
+                ],
+                [
+                    36.82491462475219,
+                    37.499534698896355,
+                    36.628306894195795
+                ],
+                [
+                    39.176289895883464,
+                    40.34398420258092,
+                    39.572621738409424
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.FastFloatParsing.decimalFormatDigitsShort",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java",
+        "jvmArgs" : [
+            "--add-exports=java.base/jdk.internal.math=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation",
+            "-XX:+UseFastFloatIntrinsics",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 28.022303797157086,
+            "scoreError" : 45.0768580355269,
+            "scoreConfidence" : [
+                -17.05455423836981,
+                73.09916183268399
+            ],
+            "scorePercentiles" : {
+                "0.0" : 9.90403896673194,
+                "50.0" : 10.131008088456433,
+                "90.0" : 68.44302020227225,
+                "95.0" : 68.44302020227225,
+                "99.0" : 68.44302020227225,
+                "99.9" : 68.44302020227225,
+                "99.99" : 68.44302020227225,
+                "99.999" : 68.44302020227225,
+                "99.9999" : 68.44302020227225,
+                "100.0" : 68.44302020227225
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    11.18035187187407,
+                    10.091844530894901,
+                    10.131008088456433
+                ],
+                [
+                    9.927619137369923,
+                    9.988598198014854,
+                    9.90403896673194
+                ],
+                [
+                    59.533450062263896,
+                    68.44302020227225,
+                    63.000803116535536
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.FastFloatParsing.parseDoubleDecimal",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java",
+        "jvmArgs" : [
+            "--add-exports=java.base/jdk.internal.math=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation",
+            "-XX:+UseFastFloatIntrinsics",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 43.243027956106296,
+            "scoreError" : 1.0116198638514136,
+            "scoreConfidence" : [
+                42.23140809225488,
+                44.25464781995771
+            ],
+            "scorePercentiles" : {
+                "0.0" : 42.48790426043547,
+                "50.0" : 43.30373803778039,
+                "90.0" : 44.0202230111076,
+                "95.0" : 44.0202230111076,
+                "99.0" : 44.0202230111076,
+                "99.9" : 44.0202230111076,
+                "99.99" : 44.0202230111076,
+                "99.999" : 44.0202230111076,
+                "99.9999" : 44.0202230111076,
+                "100.0" : 44.0202230111076
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    42.766504991604315,
+                    42.48790426043547,
+                    44.0202230111076
+                ],
+                [
+                    43.930684263001396,
+                    43.845863785282255,
+                    43.42659757906228
+                ],
+                [
+                    43.30373803778039,
+                    42.56023148578204,
+                    42.84550419090092
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.FastFloatParsing.parseDoubleDoubleRoundTrip",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java",
+        "jvmArgs" : [
+            "--add-exports=java.base/jdk.internal.math=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation",
+            "-XX:+UseFastFloatIntrinsics",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 47.381220579409536,
+            "scoreError" : 1.2908295734002553,
+            "scoreConfidence" : [
+                46.090391006009284,
+                48.67205015280979
+            ],
+            "scorePercentiles" : {
+                "0.0" : 46.40643640513658,
+                "50.0" : 47.213013143666636,
+                "90.0" : 48.700751133786845,
+                "95.0" : 48.700751133786845,
+                "99.0" : 48.700751133786845,
+                "99.9" : 48.700751133786845,
+                "99.99" : 48.700751133786845,
+                "99.999" : 48.700751133786845,
+                "99.9999" : 48.700751133786845,
+                "100.0" : 48.700751133786845
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    46.916144601413166,
+                    47.18576779764049,
+                    48.700751133786845
+                ],
+                [
+                    48.23288440704346,
+                    47.843823177619015,
+                    46.485306177531946
+                ],
+                [
+                    47.213013143666636,
+                    47.4468583708478,
+                    46.40643640513658
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.FastFloatParsing.parseDoubleHex",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java",
+        "jvmArgs" : [
+            "--add-exports=java.base/jdk.internal.math=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation",
+            "-XX:+UseFastFloatIntrinsics",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 292.4694633336895,
+            "scoreError" : 34.786623356328306,
+            "scoreConfidence" : [
+                257.68283997736114,
+                327.2560866900178
+            ],
+            "scorePercentiles" : {
+                "0.0" : 276.2976534114729,
+                "50.0" : 286.1312633527665,
+                "90.0" : 342.11324327256943,
+                "95.0" : 342.11324327256943,
+                "99.0" : 342.11324327256943,
+                "99.9" : 342.11324327256943,
+                "99.99" : 342.11324327256943,
+                "99.999" : 342.11324327256943,
+                "99.9999" : 342.11324327256943,
+                "100.0" : 342.11324327256943
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    295.61363936218333,
+                    286.1312633527665,
+                    302.27219141591894
+                ],
+                [
+                    342.11324327256943,
+                    278.49684940349005,
+                    276.2976534114729
+                ],
+                [
+                    280.1050456661891,
+                    293.13081666481975,
+                    278.06446745379515
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.FastFloatParsing.parseDoubleLongInput",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java",
+        "jvmArgs" : [
+            "--add-exports=java.base/jdk.internal.math=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation",
+            "-XX:+UseFastFloatIntrinsics",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 144.05034418965744,
+            "scoreError" : 4.116475904938555,
+            "scoreConfidence" : [
+                139.93386828471887,
+                148.166820094596
+            ],
+            "scorePercentiles" : {
+                "0.0" : 140.87106954701008,
+                "50.0" : 143.66164091012774,
+                "90.0" : 147.80477808479205,
+                "95.0" : 147.80477808479205,
+                "99.0" : 147.80477808479205,
+                "99.9" : 147.80477808479205,
+                "99.99" : 147.80477808479205,
+                "99.999" : 147.80477808479205,
+                "99.9999" : 147.80477808479205,
+                "100.0" : 147.80477808479205
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    142.74874116104016,
+                    143.66164091012774,
+                    147.80477808479205
+                ],
+                [
+                    144.8673496811981,
+                    144.93388072105495,
+                    142.46566339524827
+                ],
+                [
+                    147.5079236606469,
+                    141.59205054579866,
+                    140.87106954701008
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.FastFloatParsing.parseDoubleShortInput",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java",
+        "jvmArgs" : [
+            "--add-exports=java.base/jdk.internal.math=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation",
+            "-XX:+UseFastFloatIntrinsics",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 32.83417722321593,
+            "scoreError" : 3.425245670004603,
+            "scoreConfidence" : [
+                29.40893155321133,
+                36.25942289322053
+            ],
+            "scorePercentiles" : {
+                "0.0" : 31.136300534479187,
+                "50.0" : 32.073143518271564,
+                "90.0" : 37.64497108099954,
+                "95.0" : 37.64497108099954,
+                "99.0" : 37.64497108099954,
+                "99.9" : 37.64497108099954,
+                "99.99" : 37.64497108099954,
+                "99.999" : 37.64497108099954,
+                "99.9999" : 37.64497108099954,
+                "100.0" : 37.64497108099954
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    37.64497108099954,
+                    32.073143518271564,
+                    32.03844848450013
+                ],
+                [
+                    31.136300534479187,
+                    33.783955666705104,
+                    33.512229069425146
+                ],
+                [
+                    32.677910201868535,
+                    31.200005138173534,
+                    31.440631314520648
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.FastFloatParsing.parseFloatDecimal",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java",
+        "jvmArgs" : [
+            "--add-exports=java.base/jdk.internal.math=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation",
+            "-XX:+UseFastFloatIntrinsics",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 50.15530989870296,
+            "scoreError" : 0.7933110283478627,
+            "scoreConfidence" : [
+                49.361998870355094,
+                50.948620927050825
+            ],
+            "scorePercentiles" : {
+                "0.0" : 49.42992838476386,
+                "50.0" : 50.08840882932985,
+                "90.0" : 51.040350898282654,
+                "95.0" : 51.040350898282654,
+                "99.0" : 51.040350898282654,
+                "99.9" : 51.040350898282654,
+                "99.99" : 51.040350898282654,
+                "99.999" : 51.040350898282654,
+                "99.9999" : 51.040350898282654,
+                "100.0" : 51.040350898282654
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    50.08840882932985,
+                    51.040350898282654,
+                    49.957611304473645
+                ],
+                [
+                    50.708031529741824,
+                    50.11647626768868,
+                    50.18660953394729
+                ],
+                [
+                    49.82339988396409,
+                    49.42992838476386,
+                    50.04697245613473
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.FastFloatParsing.parseFloatFloatRoundTrip",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java",
+        "jvmArgs" : [
+            "--add-exports=java.base/jdk.internal.math=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation",
+            "-XX:+UseFastFloatIntrinsics",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 48.266053802626274,
+            "scoreError" : 0.7029659783958687,
+            "scoreConfidence" : [
+                47.56308782423041,
+                48.96901978102214
+            ],
+            "scorePercentiles" : {
+                "0.0" : 47.493139332229845,
+                "50.0" : 48.47684841299871,
+                "90.0" : 48.705092195672556,
+                "95.0" : 48.705092195672556,
+                "99.0" : 48.705092195672556,
+                "99.9" : 48.705092195672556,
+                "99.99" : 48.705092195672556,
+                "99.999" : 48.705092195672556,
+                "99.9999" : 48.705092195672556,
+                "100.0" : 48.705092195672556
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    48.705092195672556,
+                    48.19583291579304,
+                    47.493139332229845
+                ],
+                [
+                    48.47684841299871,
+                    48.50590743113884,
+                    47.925634674910775
+                ],
+                [
+                    48.648177602091636,
+                    47.87760523995103,
+                    48.566246418850056
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.FastFloatParsing.parseFloatHex",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java",
+        "jvmArgs" : [
+            "--add-exports=java.base/jdk.internal.math=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation",
+            "-XX:+UseFastFloatIntrinsics",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 224.38759715350733,
+            "scoreError" : 19.95755409508723,
+            "scoreConfidence" : [
+                204.4300430584201,
+                244.34515124859456
+            ],
+            "scorePercentiles" : {
+                "0.0" : 211.22736215818202,
+                "50.0" : 219.53400565961365,
+                "90.0" : 243.80296148255815,
+                "95.0" : 243.80296148255815,
+                "99.0" : 243.80296148255815,
+                "99.9" : 243.80296148255815,
+                "99.99" : 243.80296148255815,
+                "99.999" : 243.80296148255815,
+                "99.9999" : 243.80296148255815,
+                "100.0" : 243.80296148255815
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    211.66858312120883,
+                    216.83428955078125,
+                    219.53400565961365
+                ],
+                [
+                    217.1215119669036,
+                    243.80296148255815,
+                    228.27887218386627
+                ],
+                [
+                    238.7113592299707,
+                    211.22736215818202,
+                    232.3094290284814
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.FastFloatParsing.parseFloatLongInput",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java",
+        "jvmArgs" : [
+            "--add-exports=java.base/jdk.internal.math=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation",
+            "-XX:+UseFastFloatIntrinsics",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 137.14814202982063,
+            "scoreError" : 5.305331474778098,
+            "scoreConfidence" : [
+                131.84281055504255,
+                142.45347350459872
+            ],
+            "scorePercentiles" : {
+                "0.0" : 133.4789503596634,
+                "50.0" : 136.14917482101797,
+                "90.0" : 141.81647286601958,
+                "95.0" : 141.81647286601958,
+                "99.0" : 141.81647286601958,
+                "99.9" : 141.81647286601958,
+                "99.99" : 141.81647286601958,
+                "99.999" : 141.81647286601958,
+                "99.9999" : 141.81647286601958,
+                "100.0" : 141.81647286601958
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    134.7959213235801,
+                    134.97209054854088,
+                    141.81647286601958
+                ],
+                [
+                    134.1756610907031,
+                    138.0747371653344,
+                    141.4133757396316
+                ],
+                [
+                    136.14917482101797,
+                    133.4789503596634,
+                    139.4568943538947
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.FastFloatParsing.parseFloatShortInput",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java",
+        "jvmArgs" : [
+            "--add-exports=java.base/jdk.internal.math=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation",
+            "-XX:+UseFastFloatIntrinsics",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations" : 3,
+        "warmupTime" : "500 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "500 ms",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 31.54419570590244,
+            "scoreError" : 2.791150998894375,
+            "scoreConfidence" : [
+                28.753044707008065,
+                34.33534670479681
+            ],
+            "scorePercentiles" : {
+                "0.0" : 30.092437065972224,
+                "50.0" : 30.56425017295255,
+                "90.0" : 34.244180184902575,
+                "95.0" : 34.244180184902575,
+                "99.0" : 34.244180184902575,
+                "99.9" : 34.244180184902575,
+                "99.99" : 34.244180184902575,
+                "99.999" : 34.244180184902575,
+                "99.9999" : 34.244180184902575,
+                "100.0" : 34.244180184902575
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    30.547129614700594,
+                    30.513394713543292,
+                    30.598244787760173
+                ],
+                [
+                    30.56425017295255,
+                    30.428229424865574,
+                    30.092437065972224
+                ],
+                [
+                    34.244180184902575,
+                    33.12791947585678,
+                    33.78197591256819
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]

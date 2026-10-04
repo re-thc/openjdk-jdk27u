@@ -1,0 +1,47 @@
+Validation of the packaged x86-64 release image, 2026-10-04 UTC
+
+Framework-based tests: 40,358 = 20 TestNG + 40,338 JUnit
+Test results: passed: 74
+Report written to /workspace/fast-float-results/jtreg/report/html/report.html
+Results written to /workspace/fast-float-results/jtreg/work
+
+Test results: passed: 23
+Framework-based tests: 856 = 52 TestNG + 804 JUnit
+Report written to /workspace/fast-float-results/additional/report/html/report.html
+Results written to /workspace/fast-float-results/additional/work
+
+Additional differential GC/configuration runs:
+UseParallelGC.log: fast_float differential checks passed
+UseSerialGC.log: fast_float differential checks passed
+UseShenandoahGC.log: fast_float differential checks passed
+UseZGC.log: fast_float differential checks passed
+compact-headers.log: fast_float differential checks passed
+uncompressed-oops.log: fast_float differential checks passed
+
+AArch64 GCC 14.2 cross-build: HotSpot server JVM and libjava passed.
+AArch64 runtime checks: QEMU user-mode; patched java.base classes and the built native libraries.
+arm-c1.log: fast_float differential checks passed
+arm-c2.log: fast_float differential checks passed
+arm-jni.log: fast_float differential checks passed
+arm-shenandoah.log: fast_float differential checks passed
+arm-utf16.log: fast_float differential checks passed
+arm-whitebox.log: passed (no output)
+arm-xint.log: fast_float differential checks passed
+
+CDS image: product flag enabled/disabled checks with -Xshare:on passed.
+Distributed license: legal/java.base/fast_float.md present.
+
+C1 evidence:
+@ 1   jdk.internal.math.FloatingDecimal::parseFloat (40 bytes)   force inline by annotation
+@ 11   jdk.internal.math.FloatingDecimal::isFastFloatCandidate (100 bytes)   force inline by annotation
+@ 19   jdk.internal.math.FloatingDecimal::parseFastFloat (0 bytes)   intrinsic
+@ 1   jdk.internal.math.FloatingDecimal::parseDouble (38 bytes)   force inline by annotation
+@ 150   jdk.internal.math.FloatingDecimal::parseDouble (38 bytes)   force inline by annotation
+@ 150   jdk.internal.math.FloatingDecimal::parseFloat (40 bytes)   force inline by annotation
+@ 36   jdk.internal.math.FloatingDecimal::parseFastFloatDigits (0 bytes)   intrinsic
+
+C2 evidence:
+@ 1   jdk.internal.math.FloatingDecimal::parseFloat (40 bytes)   force inline by annotation
+@ 11   jdk.internal.math.FloatingDecimal::isFastFloatCandidate (100 bytes)   force inline by annotation
+@ 19   jdk.internal.math.FloatingDecimal::parseFastFloat (0 bytes)   (intrinsic)
+@ 1   jdk.internal.math.FloatingDecimal::parseDouble (38 bytes)   force inline by annotation

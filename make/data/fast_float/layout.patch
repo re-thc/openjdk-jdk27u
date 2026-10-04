@@ -1,8 +1,6 @@
 --- a/ascii_number.h
 +++ b/ascii_number.h
-@@ -308,13 +308,13 @@
-   int64_t exponent{0};
-   uint64_t mantissa{0};
+@@ -310,9 +310,9 @@
    UC const *lastmatch{nullptr};
 +  parse_error error{parse_error::no_error};
    bool negative{false};
@@ -13,5 +11,3 @@
    span<UC const> fraction{}; // nullable
 -  parse_error error{parse_error::no_error};
  };
- 
- using byte_span = span<char const>;
