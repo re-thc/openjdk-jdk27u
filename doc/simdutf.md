@@ -1,13 +1,13 @@
 # simdutf bulk intrinsics
 
-This integration vendors simdutf v9.2.1 and adds optional bulk operations to
-HotSpot and `java.base`. Enable it with:
+This fork vendors simdutf v9.2.1 and enables its bulk operations in HotSpot and
+`java.base` by default on supported x86-64 and AArch64 systems. Opt out with:
 
 ```sh
-java -XX:+UseSIMDUTFIntrinsics ...
+java -XX:-UseSIMDUTFIntrinsics ...
 ```
 
-`UseSIMDUTFIntrinsics` is a product flag, disabled by default. The product flag
+`UseSIMDUTFIntrinsics` is a product flag, enabled by default. The product flag
 `SIMDUTFMinLength` has a portable default of 256 input elements. Enabled x86-64
 VMs select 32 through the usual CPU flag ergonomics unless the user sets it
 explicitly. Elements mean bytes or UTF-16 code units, depending on the operation.
@@ -138,8 +138,7 @@ tests with the feature enabled:
 
 ```sh
 make test CONF=your-build \
-    TEST='test/jdk/jdk/internal/util/SimdUTF/SimdUTFTest.java test/jdk/java/lang/String test/jdk/sun/nio/cs test/jdk/java/util/Base64' \
-    JTREG='JAVA_OPTIONS=-XX:+UseSIMDUTFIntrinsics'
+    TEST='test/jdk/jdk/internal/util/SimdUTF/SimdUTFTest.java test/jdk/java/lang/String test/jdk/sun/nio/cs test/jdk/java/util/Base64'
 ```
 
 Configure with `--with-jtreg=/path/to/jtreg` if jtreg was not found. To bypass
@@ -148,16 +147,17 @@ the make driver when a built JDK is already available:
 ```sh
 "$BOOT_JDK/bin/java" -jar "$JT_HOME/lib/jtreg.jar" \
     -jdk:/path/to/proposed-jdk -othervm \
-    -vmoptions:'-XX:+UseSIMDUTFIntrinsics' \
     -w:/tmp/simdutf-jtreg-work -r:/tmp/simdutf-jtreg-report \
     test/jdk/jdk/internal/util/SimdUTF/SimdUTFTest.java \
     test/jdk/java/lang/String test/jdk/sun/nio/cs test/jdk/java/util/Base64
 ```
 
 GitHub Actions includes a `jdk/simdutf` test matrix entry using the existing
-build bundles and jtreg setup. Unlike default-off tier-one execution, this
-entry explicitly enables the feature on every configured runtime platform,
-including x86-64 and AArch64. Test reports and `.jtr` logs use the existing
+build bundles and jtreg setup. Both it and ordinary tier-one execution use the
+fork's default enabled behavior on every configured runtime platform,
+including x86-64 and AArch64. The contract asserts the default flag value and
+separately checks `-XX:-UseSIMDUTFIntrinsics` disables acceleration.
+Test reports and `.jtr` logs use the existing
 artifact upload path. The contract's eight `@run` modes separately cover tiers,
 JNI fallback and disabled behavior, including explicit 48 MB code caches in
 interpreter and tiered VMs. These catch branches to native functions that cannot

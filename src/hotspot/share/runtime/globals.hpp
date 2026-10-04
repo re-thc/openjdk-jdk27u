@@ -224,7 +224,7 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseGHASHIntrinsics, false, DIAGNOSTIC,                      \
           "Use intrinsics for GHASH versions of crypto")                    \
                                                                             \
-  product(bool, UseSIMDUTFIntrinsics, false,                                \
+  product(bool, UseSIMDUTFIntrinsics, true,                                 \
           "Use simdutf for bulk UTF and Base64 operations")                 \
                                                                             \
   product(intx, SIMDUTFMinLength, 256,                                      \

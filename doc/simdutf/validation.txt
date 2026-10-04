@@ -1,6 +1,38 @@
-Review fixes, 2026-10-04 UTC
+Default-enabled follow-up, 2026-10-05 Asia/Taipei
 
 CURRENT REVISION
+- UseSIMDUTFIntrinsics now defaults to true. Supported x86-64/AArch64 systems
+  accelerate eligible operations without command-line flags; explicit
+  -XX:-UseSIMDUTFIntrinsics disables the intrinsic and native backend. Existing
+  thresholds and unsupported-platform Java fallback remain in effect.
+- Interpreter, C1, C2 and JNI contract runs no longer force-enable the feature.
+  HotSpotDiagnosticMXBean checks the actual default flag value; the explicit
+  opt-out run checks false and verifies acceleration is unavailable.
+- Ordinary tier-one and jdk/simdutf CI now exercise the default behavior.
+  Removed redundant enable options from CI, benchmark defaults and commands.
+- Python syntax, workflow YAML parsing and isolated-index PR whitespace checks
+  passed. The changed flag definitions compiled without a stale PCH and libjvm
+  linked successfully using the build-generated commands.
+- The normal make driver could not fork its target-generation shell. Current
+  contract compilation failed during JVM thread startup, before javac executed.
+  This host's process exhaustion still prevents local runtime qualification.
+- Fresh CI must qualify this default change. Historical benchmark samples and
+  flags retain their original provenance; changing the default does not create
+  new measurements.
+
+COMPLETED PRIOR-REVISION CI
+Head f596e1ef0088b096efebbad9dc96bec789d7693d passed GitHub Actions run
+https://github.com/re-thc/openjdk-jdk27u/actions/runs/37214304865
+This includes the previously failing macOS x64/AArch64 release/debug and Linux
+minimal builds, plus feature-enabled simdutf suites on Linux x64/AArch64,
+Windows x64/AArch64, macOS AArch64 and Linux static x64. ARM64 small-code-cache
+interpreter/tiered contract runs passed. These results qualify the review fixes
+with the old off-by-default setting; new default-enabled CI remains required.
+ARM64 performance tuning and exact-head performance qualification remain open.
+
+Review fixes, 2026-10-04 UTC
+
+F596E1EF REVIEW FIXES
 - Replaced the AArch64 interpreter's code-cache far_jump with address
   materialization (lea) and an indirect branch (br) to the libjvm C++ leaf.
   This handles native targets independently of ReservedCodeCacheSize.

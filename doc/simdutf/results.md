@@ -136,9 +136,16 @@ and measurement parameters, and exactly one result for every selected
 benchmark/size pair. Missing, extra or duplicate pairs invalidate reuse.
 Use a fresh runner for final qualification.
 
+The proposed fork enables simdutf by default, so its benchmark launch needs no
+enable flag. Historical samples retain the explicit flags originally used.
+For an enabled/disabled comparison using the same fork binary on both sides,
+set `--baseline-jvm-args=-XX:-UseSIMDUTFIntrinsics`. A pristine upstream baseline
+does not require that fork-specific flag.
+
 For the threshold study use the same JDK on both sides, with
 `--baseline-jvm-args=-XX:-UseSIMDUTFIntrinsics` and
-`--enabled-jvm-args='-XX:+UseSIMDUTFIntrinsics -XX:SIMDUTFMinLength=1'`.
+`--enabled-jvm-args=-XX:SIMDUTFMinLength=1`.
 For crossover confirmation omit batching and use `--warmup 5 --time 500ms`.
-Final full jtreg, complete final-policy benchmarking and AArch64 execution
+Review-fix CI passed the platform and feature-enabled jtreg suites on
+`f596e1ef`; default-enabled CI and complete exact-head/AArch64 benchmarking
 remain outstanding. See [validation](validation.txt).

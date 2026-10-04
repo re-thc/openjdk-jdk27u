@@ -88,7 +88,6 @@ jobs:
         include:
           - test-name: 'jdk/simdutf'
             test-suite: 'test/jdk/jdk/internal/util/SimdUTF/SimdUTFTest.java test/jdk/java/lang/String test/jdk/sun/nio/cs test/jdk/java/util/Base64'
-            java-options: '-XX:+UseSIMDUTFIntrinsics'
 
           - test-name: 'jdk/tier1 part 1'
             test-suite: 'test/jdk/:tier1_part1'
@@ -210,7 +209,7 @@ jobs:
           TEST_IMAGE_DIR=${{ steps.bundles.outputs.tests-path }}
           ${{ steps.extra-options.outputs.test-jdk }}
           ${{ steps.extra-options.outputs.compile-jdk }}
-          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash ${{ matrix.java-options }};VERBOSE=fail,error,time;KEYWORDS=!headful;${{ steps.extra-options.outputs.extra-problem-lists }}'
+          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful;${{ steps.extra-options.outputs.extra-problem-lists }}'
           && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY" "$GITHUB_OUTPUT"
         env:
           PATH: ${{ steps.path.outputs.value }}

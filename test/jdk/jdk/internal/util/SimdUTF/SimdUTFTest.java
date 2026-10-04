@@ -28,10 +28,11 @@
  * @test id=portable
  * @summary Bulk simdutf conversion, range, capacity and fallback contracts in every execution tier
  * @modules java.base/jdk.internal.util:+open
- * @run main/othervm -Xint -XX:+UseSIMDUTFIntrinsics SimdUTFTest
- * @run main/othervm -Xint -XX:ReservedCodeCacheSize=48M -XX:+UseSIMDUTFIntrinsics SimdUTFTest
- * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_simdutf_process -XX:+UseSIMDUTFIntrinsics -XX:SIMDUTFMinLength=64 SimdUTFTest
- * @run main/othervm -XX:-UseSIMDUTFIntrinsics SimdUTFTest
+ *          jdk.management
+ * @run main/othervm -Xint SimdUTFTest
+ * @run main/othervm -Xint -XX:ReservedCodeCacheSize=48M SimdUTFTest
+ * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_simdutf_process -XX:SIMDUTFMinLength=64 SimdUTFTest
+ * @run main/othervm -XX:-UseSIMDUTFIntrinsics SimdUTFTest false
  */
 
 /*
@@ -39,14 +40,17 @@
  * @summary Bulk simdutf contracts in C1, C2 and compiled JNI fallback
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @modules java.base/jdk.internal.util:+open
- * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseSIMDUTFIntrinsics SimdUTFTest
- * @run main/othervm -Xbatch -XX:ReservedCodeCacheSize=48M -XX:+UseSIMDUTFIntrinsics SimdUTFTest
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:+UseSIMDUTFIntrinsics SimdUTFTest
- * @run main/othervm -Xbatch -XX:+UseSIMDUTFIntrinsics -XX:SIMDUTFMinLength=64 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_simdutf_process SimdUTFTest
+ *          jdk.management
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 SimdUTFTest
+ * @run main/othervm -Xbatch -XX:ReservedCodeCacheSize=48M SimdUTFTest
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 SimdUTFTest
+ * @run main/othervm -Xbatch -XX:SIMDUTFMinLength=64 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_simdutf_process SimdUTFTest
  */
 
+import com.sun.management.HotSpotDiagnosticMXBean;
 import jdk.internal.util.SimdUTF;
 import java.io.ByteArrayOutputStream;
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -64,9 +68,14 @@ public class SimdUTFTest {
     private static final byte SENTINEL = 0x55;
 
     public static void main(String[] args) throws Exception {
+        String expectedFlag = args.length == 0 ? "true" : args[0];
+        String flag = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
+                .getVMOption("UseSIMDUTFIntrinsics").getValue();
+        check(flag.equals(expectedFlag), "UseSIMDUTFIntrinsics=" + flag + ", expected " + expectedFlag);
         var threshold = SimdUTF.class.getDeclaredField("minLength");
         threshold.setAccessible(true);
         accelerationAvailable = threshold.getInt(null) > 0;
+        check(!flag.equals("false") || !accelerationAvailable, "opt-out left simdutf active");
         for (int iteration = 0; iteration < 20; iteration++) {
             for (int length : LENGTHS) {
                 for (String alphabet : new String[]{"aAZ09\0", "a\u00e9\u00ff", "\u6f22\u6587a", "a\ud83d\ude03"}) {
