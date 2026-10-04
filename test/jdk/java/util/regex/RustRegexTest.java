@@ -26,6 +26,7 @@
  * @test
  * @summary Differential coverage for the conservative Rust regex filter
  * @modules java.base/java.util.regex:open java.base/jdk.internal.util.regex
+ * @run main/othervm RustRegexTest
  * @run main/othervm -XX:-UseRustRegex RustRegexTest
  * @run main/othervm -XX:+UseRustRegex RustRegexTest
  * @run main/othervm -XX:+UseRustRegex -XX:-UseRustRegexIntrinsics RustRegexTest

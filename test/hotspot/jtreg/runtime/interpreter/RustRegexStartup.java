@@ -26,9 +26,12 @@
  * @test
  * @summary Regex leaf entries support small code caches and compiler verification
  * @library /test/lib
+ * @modules jdk.management
  * @run driver RustRegexStartup
  */
 
+import com.sun.management.HotSpotDiagnosticMXBean;
+import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -38,9 +41,10 @@ public class RustRegexStartup {
     public static void main(String[] args) throws Exception {
         for (String cache : new String[]{"64m", "256m"}) {
             for (String[] flags : new String[][]{
+                    {},
                     {"-XX:-UseRustRegex"},
                     {"-XX:+UseRustRegex"},
-                    {"-XX:+UseRustRegex", "-XX:-UseRustRegexIntrinsics"}}) {
+                    {"-XX:-UseRustRegexIntrinsics"}}) {
                 List<String> command = new ArrayList<>(List.of(
                         "-Xint", "-XX:ReservedCodeCacheSize=" + cache,
                         "--add-opens=java.base/java.util.regex=ALL-UNNAMED"));
@@ -55,7 +59,7 @@ public class RustRegexStartup {
         // Compile enough native searches to exercise that verification and C2.
         for (String tier : new String[]{"-XX:TieredStopAtLevel=1", "-XX:-TieredCompilation"}) {
             ProcessTools.executeTestJava(tier, "-Xbatch", "-XX:CompileThreshold=1000",
-                    "-XX:+UseRustRegex", "--add-opens=java.base/java.util.regex=ALL-UNNAMED",
+                    "--add-opens=java.base/java.util.regex=ALL-UNNAMED",
                     Search.class.getName(), "12000")
                     .shouldHaveExitValue(0)
                     .shouldContain("Rust regex startup/search OK");
@@ -75,6 +79,11 @@ public class RustRegexStartup {
             var field = Pattern.class.getDeclaredField("rustRegex");
             field.setAccessible(true);
             boolean compiled = field.get(p) != null;
+            boolean enabled = Boolean.parseBoolean(ManagementFactory
+                    .getPlatformMXBean(HotSpotDiagnosticMXBean.class)
+                    .getVMOption("UseRustRegex").getValue());
+            if (compiled != enabled)
+                throw new AssertionError("native filter does not match effective UseRustRegex flag");
             if (Boolean.getBoolean("test.rust.regex.expected") && !compiled)
                 throw new AssertionError("native filter was not compiled");
             var hit = p.matcher("error123" + input);

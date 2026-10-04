@@ -1569,7 +1569,7 @@ static bool patch_mod_javabase = false;
 bool Arguments::check_vm_args_consistency() {
 #if !INCLUDE_RUST_REGEX
   if (UseRustRegex) {
-    warning("UseRustRegex requires a JDK configured with --enable-rust-regex");
+    warning("UseRustRegex is unavailable in this JDK build");
     FLAG_SET_DEFAULT(UseRustRegex, false);
   }
 #endif

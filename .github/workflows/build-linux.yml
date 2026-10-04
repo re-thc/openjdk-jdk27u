@@ -140,6 +140,9 @@ jobs:
             ${{ inputs.apt-extra-packages }}
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
 
+      - name: 'Get Rust regex toolchain'
+        uses: ./.github/actions/get-rust-regex
+
       - name: 'Configure'
         run: >
           bash configure

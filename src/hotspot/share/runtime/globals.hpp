@@ -356,7 +356,7 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseAdler32Intrinsics, false, DIAGNOSTIC,                    \
           "use intrinsics for java.util.zip.Adler32")                       \
                                                                             \
-  product(bool, UseRustRegex, false,                                      \
+  product(bool, UseRustRegex, INCLUDE_RUST_REGEX != 0,                       \
           "Use bundled Rust regex to filter eligible long searches")         \
                                                                          \
   product(bool, UseRustRegexIntrinsics, true,                              \

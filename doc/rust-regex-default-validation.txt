@@ -1,0 +1,211 @@
+Rust regex default-on validation; 2026-10-05 Asia/Taipei
+Parent revision: f77f675 plus the default-policy changes in this commit.
+
+Build opt-out / missing toolchain
+Explicit build opt-out succeeds with Cargo/Rust absent
+Supported default build rejects missing Rust with explicit opt-out guidance
+
+Configure platform decisions (macro harness, not native builds)
+linux x86_64 gnu default enabled=true
+linux aarch64 gnu default enabled=true
+macosx x86_64 - default enabled=true
+macosx aarch64 - default enabled=true
+linux x86_64 musl default enabled=false
+windows x86_64 - default enabled=false
+linux riscv64 gnu default enabled=false
+linux x86_64 gnu ['--disable-rust-regex'] enabled=false
+windows x86_64 - explicit unsupported enable rejected
+linux riscv64 gnu explicit unsupported enable rejected
+linux x86_64 musl explicit unsupported enable rejected
+
+No-Rust flag initializer
+INCLUDE_RUST_REGEX=0 compiled successfully; UseRustRegex is zero-initialized: 000000000000029e B UseRustRegex
+
+Completed x86 package build
+Using exact match for CONF=cloud (other matches are possible)
+Building target 'images' in configuration 'cloud'
+fatal: unable to create threaded lstat: Resource temporarily unavailable
+Finished building target 'images' in configuration 'cloud'
+
+CDS generation
+Generating _server__gen_cds_archive_jdk_exec.cmdline
+Picked up JAVA_TOOL_OPTIONS: -XX:ActiveProcessorCount=1 -XX:-UsePerfData -Xint -XX:ParallelGCThreads=1 -XX:ConcGCThreads=1
+Generating _server__nocoh_gen_cds_archive_jdk_exec.cmdline
+Picked up JAVA_TOOL_OPTIONS: -XX:ActiveProcessorCount=1 -XX:-UsePerfData -Xint -XX:ParallelGCThreads=1 -XX:ConcGCThreads=1
+Generating _server__nocoops_gen_cds_archive_jdk_exec.cmdline
+Picked up JAVA_TOOL_OPTIONS: -XX:ActiveProcessorCount=1 -XX:-UsePerfData -Xint -XX:ParallelGCThreads=1 -XX:ConcGCThreads=1
+Generating _server__nocoops_nocoh_gen_cds_archive_jdk_exec.cmdline
+Picked up JAVA_TOOL_OPTIONS: -XX:ActiveProcessorCount=1 -XX:-UsePerfData -Xint -XX:ParallelGCThreads=1 -XX:ConcGCThreads=1
+All four default-enabled CDS archives generated successfully
+
+Completed ARM release HotSpot build
+Using exact match for CONF=cloud-arm (other matches are possible)
+Building target 'hotspot' in configuration 'cloud-arm'
+Finished building target 'hotspot' in configuration 'cloud-arm'
+
+Effective VM flags and exact commands
+default
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -XX:+PrintFlagsFinal -version
+     bool UseRustRegex                             = true                                      {product} {default}
+     bool UseRustRegexIntrinsics                   = true                                      {product} {default}
+
+off
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -XX:-UseRustRegex -XX:+PrintFlagsFinal -version
+     bool UseRustRegex                             = false                                     {product} {command line}
+     bool UseRustRegexIntrinsics                   = true                                      {product} {default}
+
+JNI
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -XX:-UseRustRegexIntrinsics -XX:+PrintFlagsFinal -version
+     bool UseRustRegex                             = true                                      {product} {default}
+     bool UseRustRegexIntrinsics                   = false                                     {product} {command line}
+
+Broad jtreg summary (101 passed; three thread-creation failures)
+Test results: passed: 101; failed: 3; did not meet platform requirements: 2
+
+Reduced-thread rerun (StringContentEqualsBug passes; remaining thread limits)
+Test results: passed: 1; failed: 2; did not meet platform requirements: 2
+
+Eight standalone differential actions
+Running default
+Compared 5248 bound/state cases; Rust enabled=true
+
+Running off
+Compared 5248 bound/state cases; Rust enabled=false
+
+Running explicit-on
+Compared 5248 bound/state cases; Rust enabled=true
+
+Running JNI
+Compared 5248 bound/state cases; Rust enabled=true
+
+Running interpreter
+Compared 5248 bound/state cases; Rust enabled=true
+
+Running C1
+Compared 5248 bound/state cases; Rust enabled=true
+
+Running C2
+Compared 5248 bound/state cases; Rust enabled=true
+
+Running UTF16
+Compared 5248 bound/state cases; Rust enabled=true
+
+All eight regex differential modes passed
+
+Differential action commands
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED --add-exports=java.base/jdk.internal.util.regex=ALL-UNNAMED -cp /tmp/regex-default-rerun-jtreg/work/classes/java/util/regex/RustRegexTest.d RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED --add-exports=java.base/jdk.internal.util.regex=ALL-UNNAMED -XX:-UseRustRegex -cp /tmp/regex-default-rerun-jtreg/work/classes/java/util/regex/RustRegexTest.d RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED --add-exports=java.base/jdk.internal.util.regex=ALL-UNNAMED -XX:+UseRustRegex -cp /tmp/regex-default-rerun-jtreg/work/classes/java/util/regex/RustRegexTest.d RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED --add-exports=java.base/jdk.internal.util.regex=ALL-UNNAMED -XX:+UseRustRegex -XX:-UseRustRegexIntrinsics -cp /tmp/regex-default-rerun-jtreg/work/classes/java/util/regex/RustRegexTest.d RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED --add-exports=java.base/jdk.internal.util.regex=ALL-UNNAMED -XX:+UseRustRegex -Xint -cp /tmp/regex-default-rerun-jtreg/work/classes/java/util/regex/RustRegexTest.d RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED --add-exports=java.base/jdk.internal.util.regex=ALL-UNNAMED -XX:+UseRustRegex -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -Xbatch -cp /tmp/regex-default-rerun-jtreg/work/classes/java/util/regex/RustRegexTest.d RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED --add-exports=java.base/jdk.internal.util.regex=ALL-UNNAMED -XX:+UseRustRegex -XX:-TieredCompilation -XX:CICompilerCount=1 -Xbatch -cp /tmp/regex-default-rerun-jtreg/work/classes/java/util/regex/RustRegexTest.d RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED --add-exports=java.base/jdk.internal.util.regex=ALL-UNNAMED -XX:+UseRustRegex -XX:-CompactStrings -cp /tmp/regex-default-rerun-jtreg/work/classes/java/util/regex/RustRegexTest.d RustRegexTest
+
+Standalone IndexOf
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -cp /tmp/regex-default-rerun-jtreg/work/classes/java/lang/String/IndexOf_id0.d IndexOf
+Standalone IndexOf driver passed
+
+Standalone intrinsic controls
+IntrinsicAvailableTest 0 passed
+IntrinsicAvailableTest 1 passed
+IntrinsicAvailableTest 2 passed
+IntrinsicAvailableTest 3 passed
+IntrinsicAvailableTest 4 passed
+IntrinsicDisabledTest 0 passed
+IntrinsicDisabledTest 1 passed
+IntrinsicDisabledTest 2 passed
+All eight source-defined intrinsic control modes passed
+
+Intrinsic control commands
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED -cp /tmp/regex-review-final-vm/work/classes/0/compiler/intrinsics/IntrinsicAvailableTest.d:/tmp/regex-review-final-vm/work/classes/0/compiler/intrinsics/IntrinsicAvailableTest.d/test/lib -Xbootclasspath/a:/tmp/regex-review-final-vm/work/classes/0/compiler/intrinsics/IntrinsicAvailableTest.d/test/lib -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCRC32Intrinsics compiler.intrinsics.IntrinsicAvailableTest
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED -cp /tmp/regex-review-final-vm/work/classes/0/compiler/intrinsics/IntrinsicAvailableTest.d:/tmp/regex-review-final-vm/work/classes/0/compiler/intrinsics/IntrinsicAvailableTest.d/test/lib -Xbootclasspath/a:/tmp/regex-review-final-vm/work/classes/0/compiler/intrinsics/IntrinsicAvailableTest.d/test/lib -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCRC32Intrinsics compiler.intrinsics.IntrinsicAvailableTest
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED -cp /tmp/regex-review-final-vm/work/classes/0/compiler/intrinsics/IntrinsicAvailableTest.d:/tmp/regex-review-final-vm/work/classes/0/compiler/intrinsics/IntrinsicAvailableTest.d/test/lib -Xbootclasspath/a:/tmp/regex-review-final-vm/work/classes/0/compiler/intrinsics/IntrinsicAvailableTest.d/test/lib -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:ControlIntrinsic=+_updateCRC32 -XX:-UseCRC32Intrinsics compiler.intrinsics.IntrinsicAvailableTest
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED -cp /tmp/regex-review-final-vm/work/classes/0/compiler/intrinsics/IntrinsicAvailableTest.d:/tmp/regex-review-final-vm/work/classes/0/compiler/intrinsics/IntrinsicAvailableTest.d/test/lib -Xbootclasspath/a:/tmp/regex-review-final-vm/work/classes/0/compiler/intrinsics/IntrinsicAvailableTest.d/test/lib -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:ControlIntrinsic=-_updateCRC32 -XX:+UseCRC32Intrinsics compiler.intrinsics.IntrinsicAvailableTest
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED -cp /tmp/regex-review-final-vm/work/classes/0/compiler/intrinsics/IntrinsicAvailableTest.d:/tmp/regex-review-final-vm/work/classes/0/compiler/intrinsics/IntrinsicAvailableTest.d/test/lib -Xbootclasspath/a:/tmp/regex-review-final-vm/work/classes/0/compiler/intrinsics/IntrinsicAvailableTest.d/test/lib -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:ControlIntrinsic=+_updateCRC32 -XX:+UseCRC32Intrinsics compiler.intrinsics.IntrinsicAvailableTest
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED -cp /tmp/regex-review-final-vm/work/classes/1/compiler/intrinsics/IntrinsicDisabledTest.d:/tmp/regex-review-final-vm/work/classes/1/compiler/intrinsics/IntrinsicDisabledTest.d/test/lib -Xbootclasspath/a:/tmp/regex-review-final-vm/work/classes/1/compiler/intrinsics/IntrinsicDisabledTest.d/test/lib -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:DisableIntrinsic=_putCharVolatile,_putInt -XX:DisableIntrinsic=_putIntVolatile -XX:CompileCommand=option,jdk.internal.misc.Unsafe::putChar,ccstrlist,DisableIntrinsic,_getCharVolatile,_getInt -XX:CompileCommand=option,jdk.internal.misc.Unsafe::putCharVolatile,ccstrlist,DisableIntrinsic,_getIntVolatile compiler.intrinsics.IntrinsicDisabledTest
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED -cp /tmp/regex-review-final-vm/work/classes/1/compiler/intrinsics/IntrinsicDisabledTest.d:/tmp/regex-review-final-vm/work/classes/1/compiler/intrinsics/IntrinsicDisabledTest.d/test/lib -Xbootclasspath/a:/tmp/regex-review-final-vm/work/classes/1/compiler/intrinsics/IntrinsicDisabledTest.d/test/lib -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:ControlIntrinsic=-_putCharVolatile,-_putInt -XX:ControlIntrinsic=-_putIntVolatile -XX:CompileCommand=ControlIntrinsic,jdk.internal.misc.Unsafe::putChar,-_getCharVolatile,-_getInt -XX:CompileCommand=ControlIntrinsic,jdk.internal.misc.Unsafe::putCharVolatile,-_getIntVolatile compiler.intrinsics.IntrinsicDisabledTest
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED -cp /tmp/regex-review-final-vm/work/classes/1/compiler/intrinsics/IntrinsicDisabledTest.d:/tmp/regex-review-final-vm/work/classes/1/compiler/intrinsics/IntrinsicDisabledTest.d/test/lib -Xbootclasspath/a:/tmp/regex-review-final-vm/work/classes/1/compiler/intrinsics/IntrinsicDisabledTest.d/test/lib -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:ControlIntrinsic=+_putIntVolatile,+_putCharVolatile,+_putInt -XX:DisableIntrinsic=_putCharVolatile,_putInt -XX:DisableIntrinsic=_putIntVolatile -XX:CompileCommand=ControlIntrinsic,jdk.internal.misc.Unsafe::putChar,+_getCharVolatile,+_getInt -XX:CompileCommand=ControlIntrinsic,jdk.internal.misc.Unsafe::putCharVolatile,+_getIntVolatile -XX:CompileCommand=DisableIntrinsic,jdk.internal.misc.Unsafe::putChar,_getCharVolatile,_getInt -XX:CompileCommand=DisableIntrinsic,jdk.internal.misc.Unsafe::putCharVolatile,_getIntVolatile compiler.intrinsics.IntrinsicDisabledTest
+
+Unflagged x86 C1/C2 compiler commands
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -Xbatch -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining -XX:+PrintIntrinsics -cp /tmp/regex-default-startup-classes 'RustRegexStartup$Search' 12000
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:-TieredCompilation -XX:CICompilerCount=1 -Xbatch -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining -XX:+PrintIntrinsics -cp /tmp/regex-default-startup-classes 'RustRegexStartup$Search' 12000
+
+ARM default/opt-out/JNI/compiled execution
+Running 64m-default
+Rust regex startup/search OK; native filter=true
+
+Running 64m-off
+Rust regex startup/search OK; native filter=false
+
+Running 64m-explicit-on
+Rust regex startup/search OK; native filter=true
+
+Running 64m-JNI
+Rust regex startup/search OK; native filter=true
+
+Running 256m-default
+Rust regex startup/search OK; native filter=true
+
+Running 256m-off
+Rust regex startup/search OK; native filter=false
+
+Running 256m-explicit-on
+Rust regex startup/search OK; native filter=true
+
+Running 256m-JNI
+Rust regex startup/search OK; native filter=true
+
+Running C1
+C1 passed; native filter and compiler intrinsic confirmed
+Running C2
+C2 passed; native filter and compiler intrinsic confirmed
+
+ARM exact commands
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-default-arm-hs_err_%p.log -Xint -XX:ReservedCodeCacheSize=64m -Dtest.rust.regex.expected=true -cp /tmp/regex-default-startup-classes 'RustRegexStartup$Search'
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-default-arm-hs_err_%p.log -Xint -XX:ReservedCodeCacheSize=64m -XX:-UseRustRegex -cp /tmp/regex-default-startup-classes 'RustRegexStartup$Search'
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-default-arm-hs_err_%p.log -Xint -XX:ReservedCodeCacheSize=64m -XX:+UseRustRegex -Dtest.rust.regex.expected=true -cp /tmp/regex-default-startup-classes 'RustRegexStartup$Search'
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-default-arm-hs_err_%p.log -Xint -XX:ReservedCodeCacheSize=64m -XX:-UseRustRegexIntrinsics -Dtest.rust.regex.expected=true -cp /tmp/regex-default-startup-classes 'RustRegexStartup$Search'
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-default-arm-hs_err_%p.log -Xint -XX:ReservedCodeCacheSize=256m -Dtest.rust.regex.expected=true -cp /tmp/regex-default-startup-classes 'RustRegexStartup$Search'
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-default-arm-hs_err_%p.log -Xint -XX:ReservedCodeCacheSize=256m -XX:-UseRustRegex -cp /tmp/regex-default-startup-classes 'RustRegexStartup$Search'
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-default-arm-hs_err_%p.log -Xint -XX:ReservedCodeCacheSize=256m -XX:+UseRustRegex -Dtest.rust.regex.expected=true -cp /tmp/regex-default-startup-classes 'RustRegexStartup$Search'
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-default-arm-hs_err_%p.log -Xint -XX:ReservedCodeCacheSize=256m -XX:-UseRustRegexIntrinsics -Dtest.rust.regex.expected=true -cp /tmp/regex-default-startup-classes 'RustRegexStartup$Search'
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-default-arm-hs_err_%p.log -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -Xbatch -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:+PrintIntrinsics -XX:+PrintInlining -cp /tmp/regex-default-startup-classes 'RustRegexStartup$Search' 12000
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-default-arm-hs_err_%p.log -XX:-TieredCompilation -XX:CICompilerCount=1 -Xbatch -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:+PrintIntrinsics -XX:+PrintInlining -cp /tmp/regex-default-startup-classes 'RustRegexStartup$Search' 12000
+
+Actual x86 startup-driver outcomes (ten child JVMs)
+
+
+x86 C1 default compiler evidence
+                              @ 49   jdk.internal.util.regex.RustRegex::mayMatch0 (0 bytes)   intrinsic
+Rust regex startup/search OK; native filter=true
+
+x86 C2 default compiler evidence
+                              @ 49   jdk.internal.util.regex.RustRegex::mayMatch0 (0 bytes)   (intrinsic)
+                              @ 49   jdk.internal.util.regex.RustRegex::mayMatch0 (0 bytes)   (intrinsic)
+Rust regex startup/search OK; native filter=true
+
+arm C1 default compiler evidence
+                              @ 49   jdk.internal.util.regex.RustRegex::mayMatch0 (0 bytes)   intrinsic
+Rust regex startup/search OK; native filter=true
+
+arm C2 default compiler evidence
+                              @ 49   jdk.internal.util.regex.RustRegex::mayMatch0 (0 bytes)   (intrinsic)
+                              @ 49   jdk.internal.util.regex.RustRegex::mayMatch0 (0 bytes)   (intrinsic)
+                                @ 49   jdk.internal.util.regex.RustRegex::mayMatch0 (0 bytes)   (intrinsic)
+                                  @ 49   jdk.internal.util.regex.RustRegex::mayMatch0 (0 bytes)   (intrinsic)
+                                  @ 49   jdk.internal.util.regex.RustRegex::mayMatch0 (0 bytes)   (intrinsic)
+Rust regex startup/search OK; native filter=true
+
+Updated x86 startup driver invocation (ten source-defined configurations)
+/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java -Xint -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -Dtest.jdk=/workspace/openjdk-jdk27u/build/cloud/images/jdk '-Dtest.vm.opts=-XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs' -Dtest.class.path=/tmp/regex-default-startup-classes:/tmp/regex-review-final-vm/work/classes/1/runtime/interpreter/RustRegexStartup.d -cp /tmp/regex-default-startup-classes:/tmp/regex-review-final-vm/work/classes/1/runtime/interpreter/RustRegexStartup.d RustRegexStartup
+
+Broad jtreg invocation
+JAVA_TOOL_OPTIONS='-XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xint' /workspace/toolchains/jdk27/bin/java -jar /workspace/toolchains/jtreg/lib/jtreg.jar -jdk:/workspace/openjdk-jdk27u/build/cloud/images/jdk -vmoption:-XX:ActiveProcessorCount=1 -vmoption:-XX:+UseSerialGC -vmoption:-XX:-UsePerfData -vmoption:-Xmixed -nativepath:/workspace/openjdk-jdk27u/build/cloud/images/test/jdk/jtreg/native -w:/tmp/regex-default-bounded-jtreg/work -r:/tmp/regex-default-bounded-jtreg/report -othervm -concurrency:1 test/jdk/java/util/regex test/jdk/java/util/Scanner test/jdk/java/lang/String test/jdk/java/nio/file/PathMatcher
+
+Known harness limits
+RustRegexTest: worker-thread creation EAGAIN; eight standalone source-defined actions pass.
+IndexOf#id0: helper JVM thread creation EAGAIN; standalone driver passes.
+IntrinsicAvailableTest and IntrinsicDisabledTest: helper thread creation EAGAIN; all eight source-defined standalone modes pass.
+StringContentEqualsBug: initial worker-thread creation EAGAIN; jtreg rerun passes.
+No harness failures are represented as passes in this record.

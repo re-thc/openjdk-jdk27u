@@ -23,10 +23,19 @@
 # questions.
 #
 
-# Optional Rust regex filter. Ordinary builds do not require a Rust toolchain.
+# Rust regex is enabled by default on supported targets; builders can opt out.
 AC_DEFUN_ONCE([LIB_SETUP_RUST_REGEX], [
-  AC_ARG_ENABLE([rust-regex], [AS_HELP_STRING([--enable-rust-regex],
-      [build the bundled Rust regex filter (default: disabled)])])
+  RUST_REGEX_DEFAULT=no
+  case "$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" in
+    linux-x86_64|linux-aarch64)
+      if test "x$OPENJDK_TARGET_LIBC" = xgnu; then
+        RUST_REGEX_DEFAULT=yes
+      fi ;;
+    macosx-x86_64|macosx-aarch64) RUST_REGEX_DEFAULT=yes ;;
+  esac
+  AC_ARG_ENABLE([rust-regex], [AS_HELP_STRING([--disable-rust-regex],
+      [omit the bundled Rust regex filter (default: enabled on supported targets)])],
+      [], [enable_rust_regex=$RUST_REGEX_DEFAULT])
   AC_ARG_WITH([rust-regex-license], [AS_HELP_STRING([--with-rust-regex-license],
       [Rust standard library copyright notices from the matching toolchain])])
   RUST_REGEX_ENABLED=false
@@ -35,13 +44,17 @@ AC_DEFUN_ONCE([LIB_SETUP_RUST_REGEX], [
       AC_MSG_ERROR([Rust regex requires x86_64 or aarch64])
     fi
     case "$OPENJDK_TARGET_OS" in
-      linux) RUST_REGEX_TARGET="$OPENJDK_TARGET_CPU-unknown-linux-gnu" ;;
+      linux)
+        if test "x$OPENJDK_TARGET_LIBC" != xgnu; then
+          AC_MSG_ERROR([Rust regex currently requires GNU libc on Linux])
+        fi
+        RUST_REGEX_TARGET="$OPENJDK_TARGET_CPU-unknown-linux-gnu" ;;
       macosx) RUST_REGEX_TARGET="$OPENJDK_TARGET_CPU-apple-darwin" ;;
       *) AC_MSG_ERROR([Rust regex currently supports Linux and macOS]) ;;
     esac
     UTIL_LOOKUP_PROGS(CARGO, cargo)
     if test "x$CARGO" = x; then
-      AC_MSG_ERROR([--enable-rust-regex requires Cargo and Rust 1.85 or newer])
+      AC_MSG_ERROR([Rust regex requires Cargo and Rust 1.85 or newer; use --disable-rust-regex to omit it])
     fi
     UTIL_REQUIRE_PROGS(RUSTC, rustc)
     RUSTC_VERSION=`$RUSTC --version | $CUT -d " " -f 2`

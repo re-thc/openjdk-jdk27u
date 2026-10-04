@@ -1,4 +1,4 @@
-# Optional Rust regex search filter
+# Rust regex search filter
 
 This integration uses Rust regex 1.13.1 (verified against the live crates.io
 index on 2026-10-04) to reject unsuccessful, reused, long Latin-1 searches in
@@ -8,16 +8,21 @@ that 99% of patterns are accelerated.
 
 ## Build and flags
 
-The ordinary JDK build remains independent of Rust. Opt in at configure time:
+The fork builds and enables the filter by default on supported targets:
 
 ```sh
-bash configure --enable-rust-regex # plus your usual configure options
+bash configure # plus your usual configure options
 make jdk
-build/<conf>/jdk/bin/java -XX:+UseRustRegex MyProgram
+build/<conf>/jdk/bin/java MyProgram
 ```
 
 Rust/Cargo 1.85 or newer and the Rust target standard library must be installed.
 Native and cross targets are GNU Linux x86_64/aarch64 and macOS x86_64/aarch64.
+These builds require Rust; missing tools produce a configure error rather than
+silently omitting acceleration. Builders can use `--disable-rust-regex` to omit
+the adapter and Rust toolchain requirement. Unsupported targets omit it by
+default, and explicitly enabling it there reports an error. Native Linux/macOS
+CI jobs install Rust and its matching standard-library notices before configure.
 Cross builders install the corresponding `rustup target add` target. Cargo
 builds with `--frozen` from checked-in sources; JDK builds require no crates.io
 access. Matching Rust standard library copyright/dependency notices are copied
@@ -26,8 +31,9 @@ supply `--with-rust-regex-license=<matching COPYRIGHT-library.html>` when using
 a minimal toolchain installation. The target uses baseline CPU features, with the upstream `memchr`
 runtime dispatch selecting supported SIMD. There is no `target-cpu=native`.
 
-`UseRustRegex` defaults to false. `UseRustRegexIntrinsics` defaults to true and
-controls all direct HotSpot leaf paths. Disable just the latter to exercise the
+`UseRustRegex` defaults to true when the adapter is included. Users can disable
+acceleration with `-XX:-UseRustRegex`. `UseRustRegexIntrinsics` defaults to true and
+controls all direct HotSpot leaf paths. Use `-XX:-UseRustRegexIntrinsics` to exercise the
 registered JNI fallback. A JDK built without Rust warns and disables a requested
 `UseRustRegex`; standard Java matching remains available.
 
@@ -83,7 +89,8 @@ A successful native probe followed by a Java match resets the miss gate. The
 compiled DFA is retained, but probing resumes only after eight more misses.
 This adapts to a formerly negative workload becoming positive and amortizes
 compilation without a permanent positive-search penalty. A first positive
-probe still has a cost; the flag is opt-in and no universal speedup is asserted.
+probe still has a cost. The opt-out flags remain available; no universal
+speedup is asserted.
 `matches` and `lookingAt` retain Java because rejecting them alone does not
 supply the exact Java end-state flags. Extending native positive-match handling
 requires an explicit equivalence proof for those flags and capture histories.
@@ -149,13 +156,13 @@ cargo test --frozen
 cargo clippy --frozen -- -D warnings
 cargo fmt --check
 cd ../../../../..
-make test TEST="jtreg:test/jdk/java/util/regex" JTREG="JAVA_OPTIONS=-XX:+UseRustRegex"
+make test TEST="jtreg:test/jdk/java/util/regex"
 make test TEST="jtreg:test/jdk/java/util/Scanner jtreg:test/jdk/java/lang/String"
 ```
 
 `RustRegexTest` compares bound/state and capture outcomes against the same Java
 engine with native handles disabled. Its jtreg actions exercise interpreter,
-C1, C2, JNI, the disabled flag, normal tiering and uncompressed Strings, plus concurrent Pattern
+C1, C2, JNI, the disabled flag, default settings, normal tiering and uncompressed Strings, plus concurrent Pattern
 reuse/GC and serialization. `test/micro/.../regex/RustRegexFilter.java` is the
 JMH benchmark for long misses, positive searches, short inputs, unsupported
 syntax and literal searches. Compare `-XX:-UseRustRegex`, `-XX:+UseRustRegex`,
@@ -163,7 +170,7 @@ and `-XX:+UseRustRegex -XX:-UseRustRegexIntrinsics` with each execution tier.
 The differential test also covers literal `]` at the start of a class, embedded
 NUL pattern bytes, `find(int)`, anchored-operation bypass and Rust's possessive
 superset. `runtime/interpreter/RustRegexStartup` tests both 64 MiB and 256 MiB
-code caches with Rust disabled, enabled and using the JNI fallback.
+code caches with default settings, Rust disabled, explicitly enabled and using the JNI fallback.
 
 Measured results and exact commands are recorded in
 [rust-regex-results.md](rust-regex-results.md). AArch64 runtime performance must
@@ -172,3 +179,6 @@ measurement. The complete JDK test suite is not represented by focused jtreg
 coverage, so these results establish only the tested regression scope.
 Review fixes and their separate validation are recorded in
 [rust-regex-review-results.md](rust-regex-review-results.md).
+
+Default-build/runtime policy and its validation are recorded in
+[rust-regex-defaults.md](rust-regex-defaults.md).
