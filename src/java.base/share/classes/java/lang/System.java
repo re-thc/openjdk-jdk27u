@@ -1833,6 +1833,7 @@ public final class System {
         SharedSecrets.getJavaLangRefAccess().startThreads();
 
         // system properties, java.lang and other core classes are now initialized
+        jdk.internal.util.SimdUTF.initialize();
         VM.initLevel(1);
     }
 
@@ -2138,6 +2139,10 @@ public final class System {
 
             public int countPositives(byte[] bytes, int offset, int length) {
                 return StringCoding.countPositives(bytes, offset, length);
+            }
+
+            public int validateStringEncoding(String s, int kind) {
+                return StringCoding.validateStringEncoding(s, kind);
             }
 
             public int countNonZeroAscii(String s) {

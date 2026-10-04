@@ -31,6 +31,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
+import jdk.internal.util.SimdUTF;
 
 class UTF_32Coder {
     protected static final int BOM_BIG = 0xFEFF;
@@ -84,6 +85,17 @@ class UTF_32Coder {
                         else
                             currentBO = expectedBO;
                         src.position(mark);
+                    }
+                }
+                if (SimdUTF.isEligible(src.remaining()) && src.hasArray() && dst.hasArray()) {
+                    int length = src.remaining() & ~3;
+                    int written = SimdUTF.decodeUTF32Bytes(src.array(), src.arrayOffset() + mark,
+                            length, dst.array(), dst.arrayOffset() + dst.position(),
+                            dst.remaining(), currentBO == BIG);
+                    if (written >= 0) {
+                        mark += length;
+                        dst.position(dst.position() + written);
+                        return CoderResult.UNDERFLOW;
                     }
                 }
                 while (src.remaining() >= 4) {
@@ -151,6 +163,17 @@ class UTF_32Coder {
                 doneBOM = true;
             }
             try {
+                if (SimdUTF.isEligible(src.remaining()) && src.hasArray() && dst.hasArray()) {
+                    int length = src.remaining();
+                    int written = SimdUTF.encodeUTF32Bytes(src.array(), src.arrayOffset() + mark,
+                            length, dst.array(), dst.arrayOffset() + dst.position(),
+                            dst.remaining(), byteOrder == BIG);
+                    if (written >= 0) {
+                        mark += length;
+                        dst.position(dst.position() + written);
+                        return CoderResult.UNDERFLOW;
+                    }
+                }
                 while (src.hasRemaining()) {
                     char c = src.get();
                     if (!Character.isSurrogate(c)) {

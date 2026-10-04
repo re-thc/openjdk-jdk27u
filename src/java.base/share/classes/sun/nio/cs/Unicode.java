@@ -26,6 +26,9 @@
 package sun.nio.cs;
 
 import java.nio.charset.Charset;
+import java.nio.CharBuffer;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.SimdUTF;
 
 abstract class Unicode extends Charset
     implements HistoricallyNamedCharset
@@ -96,8 +99,23 @@ abstract class Unicode extends Charset
                 || (cs.name().equals("Shift_JIS")));
     }
 
+    static int validateEncoding(CharSequence cs, int kind) {
+        if (cs instanceof String s) {
+            return SharedSecrets.getJavaLangAccess().validateStringEncoding(s, kind);
+        }
+        if (cs instanceof CharBuffer buffer && buffer.hasArray()) {
+            return SimdUTF.validateUTF16(buffer.array(), buffer.arrayOffset() + buffer.position(),
+                                         buffer.remaining(), kind);
+        }
+        return -1;
+    }
+
     static boolean isValidUnicode(CharSequence cs) {
         int length = cs.length();
+        int valid = SimdUTF.isEligible(length) ? validateEncoding(cs, 0) : -1;
+        if (valid >= 0) {
+            return valid != 0;
+        }
         for (int i = 0; i < length;) {
             char c = cs.charAt(i++);
             if (Character.isHighSurrogate(c)) {

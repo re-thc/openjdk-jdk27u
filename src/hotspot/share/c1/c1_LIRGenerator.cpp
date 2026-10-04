@@ -40,6 +40,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/methodCounters.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/simdutfSupport.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -2810,6 +2811,20 @@ void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
 
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   switch (x->id()) {
+  case vmIntrinsics::_simdutf_process: {
+    BasicTypeList signature;
+    LIR_OprList* arguments = new LIR_OprList(7);
+    for (int i = 0; i < 7; i++) {
+      LIRItem item(x->argument_at(i), this);
+      item.load_item();
+      arguments->append(item.result());
+      signature.append(i == 0 || i == 3 ? T_OBJECT : T_INT);
+    }
+    LIR_Opr result = call_runtime(&signature, arguments,
+        CAST_FROM_FN_PTR(address, SimdUTF::process), x->type(), nullptr);
+    __ move(result, rlock_result(x));
+    break;
+  }
   case vmIntrinsics::_intBitsToFloat      :
   case vmIntrinsics::_doubleToRawLongBits :
   case vmIntrinsics::_longBitsToDouble    :

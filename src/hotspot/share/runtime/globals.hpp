@@ -224,6 +224,13 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseGHASHIntrinsics, false, DIAGNOSTIC,                      \
           "Use intrinsics for GHASH versions of crypto")                    \
                                                                             \
+  product(bool, UseSIMDUTFIntrinsics, false,                                \
+          "Use simdutf for bulk UTF and Base64 operations")                 \
+                                                                            \
+  product(intx, SIMDUTFMinLength, 256,                                      \
+          "Minimum input elements for simdutf acceleration")                \
+          range(1, max_jint)                                                \
+                                                                            \
   product(bool, UseBASE64Intrinsics, false,                                 \
           "Use intrinsics for java.util.Base64")                            \
                                                                             \

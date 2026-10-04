@@ -34,6 +34,7 @@ import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.util.SimdUTF;
 import jdk.internal.lang.CaseFolding;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -1046,6 +1047,9 @@ final class StringLatin1 {
     // vmIntrinsics::_inflateStringC
     @IntrinsicCandidate
     private static void inflate0(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+        if (SimdUTF.isEligible(len) && SimdUTF.inflateLatin1(src, srcOff, len, dst, dstOff) >= 0) {
+            return;
+        }
         for (int i = 0; i < len; i++) {
             dst[dstOff++] = (char)(src[srcOff++] & 0xff);
         }
@@ -1077,6 +1081,9 @@ final class StringLatin1 {
     // vmIntrinsics::_inflateStringB
     @IntrinsicCandidate
     private static void inflate0(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
+        if (SimdUTF.isEligible(len) && SimdUTF.inflateLatin1(src, srcOff, len, dst, dstOff) >= 0) {
+            return;
+        }
         for (int i = 0; i < len; i++) {
             StringUTF16.putChar(dst, dstOff++, src[srcOff++] & 0xff);
         }

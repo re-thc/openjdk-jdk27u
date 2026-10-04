@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,6 +122,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
 bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
+  case vmIntrinsics::_simdutf_process:
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
 #endif
@@ -168,6 +169,7 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
 bool vmIntrinsics::should_be_pinned(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
+  case vmIntrinsics::_simdutf_process:
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
 #endif
@@ -210,6 +212,9 @@ int vmIntrinsics::predicates_needed(vmIntrinsics::ID id) {
 }
 
 bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
+  if (id == vmIntrinsics::_simdutf_process && !UseSIMDUTFIntrinsics) {
+    return true;
+  }
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 
   // -XX:-InlineNatives disables nearly all intrinsics except the ones listed in

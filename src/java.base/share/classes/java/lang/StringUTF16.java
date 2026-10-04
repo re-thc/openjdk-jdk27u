@@ -35,6 +35,7 @@ import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.util.SimdUTF;
 import jdk.internal.lang.CaseFolding;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
@@ -465,6 +466,11 @@ final class StringUTF16 {
     // vmIntrinsics::_compressStringC
     @IntrinsicCandidate
     private static int compress0(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
+        if (len > 0 && src[srcOff] > '\u00ff') return 0;
+        int converted = SimdUTF.isEligible(len) ? SimdUTF.encodeLatin1FromUTF16(src, srcOff, len, dst, dstOff) : -1;
+        if (converted >= 0) {
+            return converted;
+        }
         for (int i = 0; i < len; i++) {
             char c = src[srcOff];
             if (c > 0xff) {
@@ -505,6 +511,11 @@ final class StringUTF16 {
     // vmIntrinsics::_compressStringB
     @IntrinsicCandidate
     private static int compress0(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
+        if (len > 0 && getChar(src, srcOff) > '\u00ff') return 0;
+        int converted = SimdUTF.isEligible(len) ? SimdUTF.encodeLatin1FromUTF16(src, srcOff, len, dst, dstOff) : -1;
+        if (converted >= 0) {
+            return converted;
+        }
         for (int i = 0; i < len; i++) {
             char c = getChar(src, srcOff);
             if (c > 0xff) {

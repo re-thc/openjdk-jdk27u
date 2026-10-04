@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.util;
 
+import jdk.internal.util.SimdUTF;
 import java.io.FilterOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
@@ -426,6 +427,9 @@ public final class Base64 {
 
         @IntrinsicCandidate
         private void encodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL) {
+            if (SimdUTF.isEligible(sl - sp) && SimdUTF.encodeBase64(src, sp, sl - sp, dst, dp, isURL) >= 0) {
+                return;
+            }
             char[] base64 = isURL ? toBase64URL : toBase64;
             for (int sp0 = sp, dp0 = dp ; sp0 < sl; ) {
                 int bits = (src[sp0++] & 0xff) << 16 |
@@ -790,6 +794,16 @@ public final class Base64 {
          */
         @IntrinsicCandidate
         private int decodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL, boolean isMIME) {
+            if (!isMIME && SimdUTF.isEligible(sl - sp)) {
+                int length = (sl - sp) & ~0b11;
+                if (length >= 4 && src[sp + length - 1] == '=') {
+                    length -= 4;
+                }
+                int converted = SimdUTF.decodeBase64(src, sp, length, dst, dp, isURL);
+                if (converted >= 0) {
+                    return converted;
+                }
+            }
             int[] base64 = isURL ? fromBase64URL : fromBase64;
             int sl0 = sp + ((sl - sp) & ~0b11);
             int new_dp = dp;
@@ -966,16 +980,10 @@ public final class Base64 {
                 checkNewline();
                 int dl = linemax <= 0 ? buf.length : buf.length - linepos;
                 int sl = off + Math.min(nBits24, dl / 4) * 3;
-                int dp = 0;
-                for (int sp = off; sp < sl; ) {
-                    int bits = (b[sp++] & 0xff) << 16 |
-                               (b[sp++] & 0xff) <<  8 |
-                               (b[sp++] & 0xff);
-                    buf[dp++] = (byte)base64[(bits >>> 18) & 0x3f];
-                    buf[dp++] = (byte)base64[(bits >>> 12) & 0x3f];
-                    buf[dp++] = (byte)base64[(bits >>> 6)  & 0x3f];
-                    buf[dp++] = (byte)base64[bits & 0x3f];
-                }
+                boolean isURL = base64 == Encoder.toBase64URL;
+                Encoder encoder = isURL ? Encoder.RFC4648_URLSAFE : Encoder.RFC4648;
+                encoder.encodeBlock(b, off, sl, buf, 0, isURL);
+                int dp = (sl - off) / 3 * 4;
                 out.write(buf, 0, dp);
                 off = sl;
                 linepos += dp;

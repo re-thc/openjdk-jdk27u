@@ -343,6 +343,10 @@ public interface JavaLangAccess {
      */
     int countNonZeroAscii(String s);
 
+    /** Return 1/0 for valid/invalid, or -1 to request scalar validation.
+     *  Kind: 0 = Unicode, 1 = ASCII, 2 = Latin-1. */
+    int validateStringEncoding(String s, int kind);
+
     /**
      * Constructs a new {@code String} with the supplied Latin1 bytes.
      * <p>

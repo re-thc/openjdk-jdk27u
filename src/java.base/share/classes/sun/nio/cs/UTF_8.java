@@ -25,6 +25,7 @@
 
 package sun.nio.cs;
 
+import jdk.internal.util.SimdUTF;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 
@@ -227,6 +228,11 @@ public final class UTF_8 extends Unicode {
             int dp = doff + dst.position();
             int dl = doff + dst.limit();
 
+            int converted = SimdUTF.isEligible(sl - sp) ? SimdUTF.decodeUTF8(sa, sp, sl - sp, da, dp, dl - dp) : -1;
+            if (converted >= 0) {
+                updatePositions(src, sl, dst, dp + converted);
+                return CoderResult.UNDERFLOW;
+            }
             int n = JLA.decodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
             sp += n;
             dp += n;
@@ -455,6 +461,11 @@ public final class UTF_8 extends Unicode {
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
 
+            int converted = SimdUTF.isEligible(sl - sp) ? SimdUTF.encodeUTF16(sa, sp, sl - sp, da, dp, dl - dp) : -1;
+            if (converted >= 0) {
+                updatePositions(src, sl, dst, dp + converted);
+                return CoderResult.UNDERFLOW;
+            }
             // Handle ASCII-only prefix
             int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
             sp += n;
