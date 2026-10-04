@@ -37,11 +37,12 @@ Sources: [xjb charts](https://github.com/xjb714/xjb/tree/v1.11.0/bench_result),
 
 ## Integration and controls
 
-`UseZmijIntrinsics` controls formatting independently of `UseFastFloatIntrinsics`
+Native formatting is **enabled by default** on little-endian x86-64 and AArch64.
+Using this fork requires no enabling flags. `-XX:-UseZmijIntrinsics` opts out
+and selects the Java formatter, independently of `-XX:-UseFastFloatIntrinsics`
 for parsing. `_formatZmij` and `_decimalZmij` honor `DisableIntrinsic` and
-`ControlIntrinsic`. Disabling those intrinsics retains JNI; disabling the
-product flag selects the Java algorithm. The flag is effective on little-endian
-x86-64 and AArch64; other ports retain Java.
+`ControlIntrinsic`. Disabling those intrinsics retains JNI. Other ports retain
+Java.
 
 The interpreter has frameless entries with a safepoint poll and JNI slow path.
 C1 uses shared LIR and the platform C calling convention. C2's array-writing

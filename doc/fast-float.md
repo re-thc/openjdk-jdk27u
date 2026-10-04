@@ -8,8 +8,9 @@ license is `src/java.base/share/legal/fast_float.md`.
 
 ## Controls and implementation
 
-`-XX:+UseFastFloatIntrinsics` enables native decimal conversion;
-`-XX:-UseFastFloatIntrinsics` selects the existing Java implementation.
+Native decimal conversion is **enabled by default** on little-endian x86-64
+and AArch64. Using this fork requires no enabling flags.
+`-XX:-UseFastFloatIntrinsics` opts out and selects the existing Java implementation.
 The two intrinsic IDs, `_parseFastFloat` and `_parseFastFloatDigits`, also obey
 `DisableIntrinsic` and `ControlIntrinsic`. Disabling an intrinsic alone leaves
 its JNI implementation available. Disabling the product flag bypasses native
