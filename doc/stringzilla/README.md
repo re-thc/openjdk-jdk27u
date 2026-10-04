@@ -1,7 +1,8 @@
 # StringZilla string-search integration
 
-Enable with `-XX:+UseStringZillaIntrinsics`. The product flag defaults to false.
-The opt-in changes searching and interpreter/C1 equality checks, without changing
+StringZilla is enabled by default in this fork. Disable it with
+`-XX:-UseStringZillaIntrinsics`. The product flag defaults to true.
+The integration changes searching and interpreter/C1 equality checks, without changing
 string representation or Java API semantics. `-XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=...` can disable individual
 bridge intrinsics and select JNI fallback. C2 retains its existing forward substring and character intrinsics. Disable the
 existing `_indexOf*` intrinsics as well to exercise compiled JNI fallback for
@@ -124,10 +125,11 @@ fallback). It covers threshold boundaries, empty and oversized
 needles, offsets/extreme `fromIndex`, builder capacity, mixed encodings, isolated
 surrogates, supplementary characters, odd-byte UTF-16 matches, and concurrent GC.
 `TestStringZillaAvailability` verifies registration/availability in both compilers
-with the flag on and off. `TestStringZillaCompilation` asserts that 22 public-API
+with no flag, explicit on, and explicit off. `TestStringZillaCompilation` asserts that 22 public-API
 callers actually compile at levels 1 and 4, preventing silent compiler bailout
 from being hidden by interpreter fallback. Existing String, builder, and HotSpot string tests are
-also run; exact results are recorded in `BENCHMARKS.md`.
+also run; exact results are recorded in `BENCHMARKS.md` and
+[default-on validation](DEFAULT_VALIDATION.md).
 
 The JMH benchmark is
 `test/micro/org/openjdk/bench/java/lang/StringZillaSearch.java`. It parameterizes

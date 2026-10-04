@@ -24,13 +24,13 @@
 /*
  * @test
  * @summary StringZilla search: encodings, ranges, builder capacity, and Unicode boundaries
- * @run main/othervm -Xint -XX:+UseStringZillaIntrinsics StringZillaSearch
- * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseStringZillaIntrinsics StringZillaSearch
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UseStringZillaIntrinsics StringZillaSearch
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UseStringZillaIntrinsics StringZillaSearch
- * @run main/othervm -Xbatch -XX:+UseStringZillaIntrinsics -XX:-CompactStrings StringZillaSearch
- * @run main/othervm -Xint -XX:+UseStringZillaIntrinsics -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16 StringZillaSearch
- * @run main/othervm -Xbatch -XX:+UseStringZillaIntrinsics -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16,_indexOfL,_indexOfU,_indexOfUL,_indexOfIL,_indexOfIU,_indexOfIUL,_indexOfL_char,_indexOfU_char,_equalsL StringZillaSearch
+ * @run main/othervm -Xint StringZillaSearch
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 StringZillaSearch
+ * @run main/othervm -Xbatch -XX:-TieredCompilation StringZillaSearch
+ * @run main/othervm -Xcomp -XX:-TieredCompilation StringZillaSearch
+ * @run main/othervm -Xbatch -XX:-CompactStrings StringZillaSearch
+ * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16 StringZillaSearch
+ * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16,_indexOfL,_indexOfU,_indexOfUL,_indexOfIL,_indexOfIU,_indexOfIUL,_indexOfL_char,_indexOfU_char,_equalsL StringZillaSearch
  * @run main/othervm -Xbatch -XX:-UseStringZillaIntrinsics StringZillaSearch
  */
 

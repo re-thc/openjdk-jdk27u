@@ -1,11 +1,18 @@
 # StringZilla measurements and validation
 
-Enable with `-XX:+UseStringZillaIntrinsics`; the product flag defaults to false.
+StringZilla is enabled by default in this fork. Disable it with
+`-XX:-UseStringZillaIntrinsics`; the product flag defaults to true.
 The tables report measured costs by compilation tier, input length, encoding and
 match position. The complete raw JMH records, confidence intervals, VM arguments
 and hashes of the tested VM, libjava and modules are in `results.json`.
 
 ## Method
+
+These measurements used explicit `-XX:+UseStringZillaIntrinsics` and
+`-XX:-UseStringZillaIntrinsics` on images built before the default changed to true.
+The recorded artifact hashes describe those benchmark images. The default change
+keeps the search/equality implementation and dispatch thresholds unchanged;
+[default-on validation](DEFAULT_VALIDATION.md) covers the rebuilt images.
 
 AMD EPYC 9V74, x86-64 Linux, AVX2/AVX-512 enabled; CPU 0 pinned, one benchmark
 at a time. JMH 1.37 measures average time in ns/op. The main matrix contains
@@ -92,9 +99,9 @@ the x86 VM leaf adapter is one load and one tail jump into independent libjava.
 
 * Final x86 release JDK image and all four standard CDS archives built.
   Matching x86 fastdebug and AArch64 cross-release VM/libjava builds succeeded.
-* Final standard jtreg: **152 passed, five skipped, zero failures/errors**:
-  String 90 passed/2 skipped; StringBuilder 16 passed; StringBuffer 25 passed;
-  HotSpot string intrinsics 21 passed/3 skipped. This includes all three new
+* Default-on standard jtreg (no enabling flag): **155 passed, two skipped, zero failures/errors**:
+  String 92 passed; StringBuilder 16 passed; StringBuffer 25 passed;
+  HotSpot string intrinsics 22 passed/2 skipped. This includes all three new
   tests and all eight scalar-oracle configurations, including forced-C2 startup
   compilation and both interpreter/compiled JNI fallback modes.
 * Final fastdebug: all eight oracle modes passed. Coverage includes empty and
@@ -104,7 +111,8 @@ the x86 VM leaf adapter is one load and one tail jump into independent libjava.
 * WhiteBox forces all **22** public search/equality/local-allocation callers to
   compile and execute at levels 1 and 4 on x86 release, x86 fastdebug and
   AArch64/QEMU. All ten intrinsic registrations and Java/VM flag consistency
-  pass with the flag on/off under CDS and G1; equality availability is checked
+  pass with default/on/off in release under CDS and G1, and in fastdebug
+  under G1 with CDS off; equality availability is checked
   independently in C1 and C2.
 * Concurrent-GC leaf oracles also pass with ZGC and Shenandoah on x86.
 * x86 `UseAVX=0` and `UseAVX=2` oracles passed. AArch64/QEMU interpreter, C1
@@ -118,7 +126,7 @@ The standard jtreg command is:
 ```sh
 make CONF=cloud test \
   'TEST=jtreg:test/jdk/java/lang/String jtreg:test/jdk/java/lang/StringBuilder jtreg:test/jdk/java/lang/StringBuffer jtreg:test/hotspot/jtreg/compiler/intrinsics/string' \
-  'JTREG=JAVA_OPTIONS=-XX:+UseStringZillaIntrinsics;JOBS=2;TIMEOUT_FACTOR=4'
+  'JTREG=JOBS=2;TIMEOUT_FACTOR=4'
 ```
 
 ## Complete final matrix

@@ -29,7 +29,7 @@
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseStringZillaIntrinsics -XX:CompileCommand=dontinline,TestStringZillaCompilation::probe* TestStringZillaCompilation
+ * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=dontinline,TestStringZillaCompilation::probe* TestStringZillaCompilation
  */
 
 import java.lang.reflect.Method;
