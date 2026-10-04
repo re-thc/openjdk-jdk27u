@@ -356,6 +356,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseAdler32Intrinsics, false, DIAGNOSTIC,                    \
           "use intrinsics for java.util.zip.Adler32")                       \
                                                                             \
+  product(bool, UseFastFloatIntrinsics, true,                               \
+          "Use fast_float for decimal float and double parsing")            \
+                                                                            \
   product(bool, UseVectorizedMismatchIntrinsic, false, DIAGNOSTIC,          \
           "Enables intrinsification of ArraysSupport.vectorizedMismatch()") \
                                                                             \

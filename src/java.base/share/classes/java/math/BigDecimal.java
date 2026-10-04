@@ -30,6 +30,7 @@
 package java.math;
 
 import static java.math.BigInteger.LONG_MASK;
+
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -40,6 +41,7 @@ import java.util.Objects;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.math.FloatingDecimal;
 import jdk.internal.math.FormattedFPDecimal;
 import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.Stable;
@@ -3862,6 +3864,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (scale == 0) {
             return signum() * w.floatValue();
         }
+        // Reuse an existing decimal representation for native conversion.
+        // Formatting an uncached value costs more than the arithmetic below.
+        String s = stringCache;
+        if (FloatingDecimal.isFastFloatEnabled() && s != null && s.length() <= 1024) {
+            return FloatingDecimal.parseFloat(s);
+        }
         int ql = (int) qb - (P_F + 3);
         BigInteger pow10 = bigTenToThe(scale);
         BigInteger m, n;
@@ -4064,6 +4072,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         }
         if (scale == 0) {
             return signum() * w.doubleValue();
+        }
+        // Reuse an existing decimal representation for native conversion.
+        // Formatting an uncached value costs more than the arithmetic below.
+        String s = stringCache;
+        if (FloatingDecimal.isFastFloatEnabled() && s != null && s.length() <= 1024) {
+            return FloatingDecimal.parseDouble(s);
         }
 
         /*

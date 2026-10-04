@@ -231,6 +231,10 @@ void TemplateInterpreterGenerator::generate_all() {
   native_method_entry(java_lang_Thread_currentThread)
   native_method_entry(java_lang_ref_reference_get0)
 
+#if defined(AMD64) || defined(AARCH64)
+  native_method_entry(jdk_internal_math_parseFastFloatDigits)
+  native_method_entry(jdk_internal_math_parseFastFloat)
+#endif
   native_method_entry(java_util_zip_CRC32_update)
   native_method_entry(java_util_zip_CRC32_updateBytes)
   native_method_entry(java_util_zip_CRC32_updateByteBuffer)
@@ -470,6 +474,11 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
                                            : entry_point = generate_math_entry(Interpreter::java_lang_math_sqrt); break;
   case Interpreter::java_lang_ref_reference_get0
                                            : entry_point = generate_Reference_get_entry(); break;
+#if defined(AMD64) || defined(AARCH64)
+  case Interpreter::jdk_internal_math_parseFastFloatDigits:
+  case Interpreter::jdk_internal_math_parseFastFloat
+                                           : entry_point = generate_fast_float_entry(kind); break;
+#endif
   case Interpreter::java_util_zip_CRC32_update
                                            : entry_point = generate_CRC32_update_entry();  break;
   case Interpreter::java_util_zip_CRC32_updateBytes

@@ -98,6 +98,7 @@
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
 #include "services/threadService.hpp"
+#include "utilities/fastFloat.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/defaultStream.hpp"
@@ -3195,6 +3196,24 @@ JVM_END
 
 
 // JNI version ///////////////////////////////////////////////////////////////////////////////
+
+JVM_LEAF(jboolean, JVM_IsFastFloatEnabled(void))
+  return UseFastFloatIntrinsics;
+JVM_END
+
+JVM_ENTRY(jdouble, JVM_ParseFastFloatDigits(JNIEnv* env, jbyteArray digits,
+                                          jint length, jint decExp))
+  typeArrayOop value = typeArrayOop(JNIHandles::resolve_non_null(digits));
+  return FastFloat::parse_digits(value->base(T_BYTE), length, decExp);
+JVM_END
+
+JVM_ENTRY(jdouble, JVM_ParseFastFloat(JNIEnv* env, jstring s, jint ix))
+  oop str = JNIHandles::resolve_non_null(s);
+  typeArrayOop value = java_lang_String::value(str);
+  // All oop access remains in VM state; the parser cannot allocate or safepoint.
+  return FastFloat::parse(value->base(T_BYTE), value->length(),
+                          java_lang_String::is_latin1(str) ? java_lang_String::CODER_LATIN1 : java_lang_String::CODER_UTF16, ix);
+JVM_END
 
 JVM_LEAF(jboolean, JVM_IsSupportedJNIVersion(jint version))
   return Threads::is_supported_jni_version_including_1_1(version);

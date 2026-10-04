@@ -368,6 +368,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_montgomeryMultiply();
   bool inline_montgomerySquare();
   bool inline_bigIntegerShift(bool isRightShift);
+  bool inline_parseFastFloat();
   bool inline_vectorizedMismatch();
   bool inline_fma(vmIntrinsics::ID id);
   bool inline_character_compare(vmIntrinsics::ID id);
