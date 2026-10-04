@@ -198,6 +198,10 @@ class LibraryCallKit : public GraphKit {
   Node* field_address_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString, bool is_exact = true, bool is_static = false, ciInstanceKlass* fromKls = nullptr);
 
   Node* make_string_method_node(int opcode, Node* str1_start, Node* cnt1, Node* str2_start, Node* cnt2, StrIntrinsicNode::ArgEnc ae);
+  Node* make_stringzilla_indexOf(Node* src_start, Node* src_count, Node* tgt_start,
+                                Node* tgt_count, StrIntrinsicNode::ArgEnc ae);
+  bool inline_stringzilla();
+  bool inline_stringzilla_char();
   bool inline_string_compareTo(StrIntrinsicNode::ArgEnc ae);
   bool inline_string_indexOf(StrIntrinsicNode::ArgEnc ae);
   bool inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae);

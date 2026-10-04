@@ -52,6 +52,7 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/stringZilla.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vframeArray.hpp"
@@ -1022,6 +1023,60 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   __ ret(lr);
 
   // generate a vanilla native entry as the slow path
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}
+
+// Leaf entries for the validated java.lang.StringZilla search methods.
+address TemplateInterpreterGenerator::generate_stringzilla_char_entry(AbstractInterpreter::MethodKind kind) {
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false, false);
+  const Register src = c_rarg0;
+  const Register length = c_rarg1;
+  const Register ch = c_rarg2;
+  __ ldr(src, Address(esp, 3 * wordSize));
+  __ ldrw(length, Address(esp, 2 * wordSize));
+  __ add(src, src, length);
+  __ add(src, src, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  __ ldrw(length, Address(esp, wordSize));
+  __ ldrw(ch, Address(esp));
+  __ andr(sp, r19_sender_sp, -16);
+  __ stp(r29, r30, Address(__ pre(sp, -2 * wordSize)));
+  __ mov(r29, sp);
+  __ super_call_VM_leaf(StringZilla::entry(AbstractInterpreter::method_intrinsic(kind)), src, length, ch);
+  __ ldp(r29, r30, Address(__ post(sp, 2 * wordSize)));
+  __ ret(lr);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}
+
+address TemplateInterpreterGenerator::generate_stringzilla_entry(AbstractInterpreter::MethodKind kind) {
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false, false);
+  const Register src = c_rarg0;
+  const Register length = c_rarg1;
+  const Register tgt = c_rarg2;
+  const Register tgt_length = c_rarg3;
+  __ ldr(src, Address(esp, 4 * wordSize));
+  __ ldrw(length, Address(esp, 3 * wordSize));
+  __ add(src, src, length);
+  __ add(src, src, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  __ ldrw(length, Address(esp, 2 * wordSize));
+  __ ldr(tgt, Address(esp, wordSize));
+  __ add(tgt, tgt, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  __ ldrw(tgt_length, Address(esp));
+  // Preserve LR across the C++ leaf call and restore the caller's Java stack.
+  __ andr(sp, r19_sender_sp, -16);
+  __ stp(r29, r30, Address(__ pre(sp, -2 * wordSize)));
+  __ mov(r29, sp);
+  __ super_call_VM_leaf(StringZilla::entry(AbstractInterpreter::method_intrinsic(kind)),
+                        src, length, tgt, tgt_length);
+  __ ldp(r29, r30, Address(__ post(sp, 2 * wordSize)));
+  __ ret(lr);
   __ bind(slow_path);
   __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
   return entry;

@@ -90,6 +90,18 @@ JVM_InternString(JNIEnv *env, jstring str);
 JNIEXPORT jboolean JNICALL
 JVM_AOTEndRecording(JNIEnv *env);
 
+JNIEXPORT jboolean JNICALL
+JVM_StringZillaEnabled(JNIEnv* env, jclass ignored);
+
+JNIEXPORT jint JNICALL
+JVM_StringZillaChar(JNIEnv* env, jclass ignored, jbyteArray src, jint offset,
+                   jint length, jint ch, jboolean utf16, jboolean reverse);
+
+JNIEXPORT jint JNICALL
+JVM_StringZillaSearch(JNIEnv* env, jclass ignored, jbyteArray src, jint offset,
+                     jint length, jbyteArray tgt, jint tgt_length, jint encoding,
+                     jboolean reverse);
+
 JNIEXPORT jlong JNICALL
 JVM_CurrentTimeMillis(JNIEnv *env, jclass ignored);
 

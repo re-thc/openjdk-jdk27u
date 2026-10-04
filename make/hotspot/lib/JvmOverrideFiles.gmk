@@ -39,6 +39,9 @@ ifeq ($(TOOLCHAIN_TYPE), gcc)
   endif
 endif
 
+# StringZilla headers retain their upstream includes and ISA target pragmas.
+BUILD_LIBJVM_stringZilla.cpp_CXXFLAGS := -I$(TOPDIR)/src/hotspot/share/utilities/stringzilla
+
 LIBJVM_FDLIBM_COPY_OPT_FLAG := $(CXX_O_FLAG_NONE)
 # If the FDLIBM_CFLAGS variable is non-empty we know
 # that the fdlibm-fork in hotspot can get optimized

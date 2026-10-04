@@ -531,6 +531,18 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
     if (!UseCRC32CIntrinsics) return true;
     break;
+  case vmIntrinsics::_stringzillaFindUTF16Latin1:
+  case vmIntrinsics::_stringzillaRfindUTF16Latin1:
+  case vmIntrinsics::_stringzillaFindCharLatin1:
+  case vmIntrinsics::_stringzillaFindCharUTF16:
+  case vmIntrinsics::_stringzillaRfindCharLatin1:
+  case vmIntrinsics::_stringzillaRfindCharUTF16:
+  case vmIntrinsics::_stringzillaFindLatin1:
+  case vmIntrinsics::_stringzillaFindUTF16:
+  case vmIntrinsics::_stringzillaRfindLatin1:
+  case vmIntrinsics::_stringzillaRfindUTF16:
+    if (!UseStringZillaIntrinsics) return true;
+    break;
   case vmIntrinsics::_vectorizedMismatch:
     if (!UseVectorizedMismatchIntrinsic) return true;
     break;

@@ -799,6 +799,16 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_mulAdd:
   case vmIntrinsics::_montgomeryMultiply:
   case vmIntrinsics::_montgomerySquare:
+  case vmIntrinsics::_stringzillaFindUTF16Latin1:
+  case vmIntrinsics::_stringzillaRfindUTF16Latin1:
+  case vmIntrinsics::_stringzillaFindCharLatin1:
+  case vmIntrinsics::_stringzillaFindCharUTF16:
+  case vmIntrinsics::_stringzillaRfindCharLatin1:
+  case vmIntrinsics::_stringzillaRfindCharUTF16:
+  case vmIntrinsics::_stringzillaFindLatin1:
+  case vmIntrinsics::_stringzillaFindUTF16:
+  case vmIntrinsics::_stringzillaRfindLatin1:
+  case vmIntrinsics::_stringzillaRfindUTF16:
   case vmIntrinsics::_vectorizedMismatch:
   case vmIntrinsics::_ghash_processBlocks:
   case vmIntrinsics::_chacha20Block:

@@ -113,6 +113,12 @@ final class StringLatin1 {
     @IntrinsicCandidate
     private static boolean equals0(byte[] value, byte[] other) {
         if (value.length == other.length) {
+            // C2 retains _equalsL. Interpreter/C1 reuse the byte search bridge
+            // with equal source/needle lengths, which is exact byte equality.
+            if (StringZilla.ENABLED && value.length >= StringZilla.MIN_BYTES) {
+                if (value[0] != other[0]) return false;
+                return StringZilla.findLatin1(value, 0, value.length, other, other.length) == 0;
+            }
             for (int i = 0; i < value.length; i++) {
                 if (value[i] != other[i]) {
                     return false;
@@ -439,6 +445,12 @@ final class StringLatin1 {
     @IntrinsicCandidate
     private static int indexOfChar0(byte[] value, int ch, int fromIndex, int max) {
         byte c = (byte)ch;
+        if (fromIndex < max && value[fromIndex] == c) return fromIndex;
+        fromIndex++;
+        if (StringZilla.ENABLED && max - fromIndex >= StringZilla.MIN_BYTES) {
+            int result = StringZilla.findCharLatin1(value, fromIndex, max - fromIndex, ch);
+            return result < 0 ? -1 : fromIndex + result;
+        }
         for (int i = fromIndex; i < max; i++) {
             if (value[i] == c) {
                return i;
@@ -499,6 +511,15 @@ final class StringLatin1 {
     // vmIntrinsics::_indexOfIL
     @IntrinsicCandidate
     private static int indexOf0(byte[] value, int valueToIndex, byte[] str, int strToIndex, int valueFromIndex) {
+        if (StringZilla.ENABLED && valueToIndex - valueFromIndex >= StringZilla.MIN_BYTES
+                && strToIndex > 0) {
+            if (strToIndex <= 8 && StringZilla.matches(value, valueFromIndex, str, strToIndex)) {
+                return valueFromIndex;
+            }
+            int result = StringZilla.findLatin1(value, valueFromIndex,
+                    valueToIndex - valueFromIndex, str, strToIndex);
+            return result < 0 ? -1 : valueFromIndex + result;
+        }
         if (strToIndex == 0) {
             return 0;
         }
@@ -528,6 +549,15 @@ final class StringLatin1 {
 
     static int lastIndexOf(byte[] src, int srcCount,
                            byte[] tgt, int tgtCount, int fromIndex) {
+        int searchLength = fromIndex + tgtCount;
+        if (StringZilla.ENABLED && searchLength >= StringZilla.MIN_BYTES) {
+            if (tgtCount <= 8 && StringZilla.matches(src, fromIndex, tgt, tgtCount)) {
+                return fromIndex;
+            }
+            int result = StringZilla.rfindLatin1(src, 0, searchLength,
+                    tgt, tgtCount);
+            return result < 0 ? -1 : result;
+        }
         int min = tgtCount - 1;
         int i = min + fromIndex;
         int strLastIndex = tgtCount - 1;
@@ -559,6 +589,13 @@ final class StringLatin1 {
             return -1;
         }
         int off  = Math.min(fromIndex, value.length - 1);
+        if (StringZilla.ENABLED && off >= StringZilla.MIN_BYTES - 1) {
+            int stop = off - 8;
+            for (; off > stop; off--) {
+                if (value[off] == (byte)ch) return off;
+            }
+            return StringZilla.rfindCharLatin1(value, 0, off + 1, ch);
+        }
         for (; off >= 0; off--) {
             if (value[off] == (byte)ch) {
                 return off;

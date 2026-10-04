@@ -64,6 +64,7 @@
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubInfo.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/stringZilla.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vm_version.hpp"
@@ -353,6 +354,16 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, StubRoutines::updateBytesCRC32());
   FUNCTION_CASE(entry, StubRoutines::updateBytesCRC32C());
   FUNCTION_CASE(entry, StubRoutines::vectorizedMismatch());
+  FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaFindUTF16Latin1));
+  FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaRfindUTF16Latin1));
+  FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaFindCharLatin1));
+  FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaFindCharUTF16));
+  FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaRfindCharLatin1));
+  FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaRfindCharUTF16));
+  FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaFindLatin1));
+  FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaFindUTF16));
+  FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaRfindLatin1));
+  FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaRfindUTF16));
   FUNCTION_CASE(entry, StubRoutines::dexp());
   FUNCTION_CASE(entry, StubRoutines::dlog());
   FUNCTION_CASE(entry, StubRoutines::dlog10());

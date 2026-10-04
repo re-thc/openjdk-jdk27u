@@ -41,6 +41,7 @@
 #include "oops/methodCounters.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/stringZilla.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/macros.hpp"
@@ -2808,6 +2809,74 @@ void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
 
 
 
+void LIRGenerator::do_stringzilla_char(Intrinsic* x) {
+  LIR_Opr result = rlock_result(x);
+  LIRItem src(x->argument_at(0), this);
+  LIRItem offset(x->argument_at(1), this);
+  LIRItem length(x->argument_at(2), this);
+  LIRItem ch(x->argument_at(3), this);
+  src.load_item();
+  offset.load_nonconstant();
+  LIR_Opr src_ptr = new_register(T_ADDRESS);
+  LIR_Opr byte_offset = offset.result();
+  if (!byte_offset->is_constant()) {
+    LIR_Opr widened_offset = new_register(T_LONG);
+    __ convert(Bytecodes::_i2l, byte_offset, widened_offset);
+    byte_offset = widened_offset;
+  }
+  LIR_Address* src_addr = emit_array_address(src.result(), byte_offset, T_BYTE);
+  __ leal(LIR_OprFact::address(src_addr), src_ptr);
+  BasicTypeList signature(3);
+  signature.append(T_ADDRESS);
+  signature.append(T_INT);
+  signature.append(T_INT);
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  __ move(src_ptr, cc->at(0));
+  length.load_item_force(cc->at(1));
+  ch.load_item_force(cc->at(2));
+  LIR_Opr result_reg = result_register_for(x->type());
+  __ call_runtime_leaf(StringZilla::entry(x->id()), getThreadTemp(), result_reg, cc->args());
+  __ move(result_reg, result);
+}
+
+void LIRGenerator::do_stringzilla(Intrinsic* x) {
+  LIR_Opr result = rlock_result(x);
+  LIRItem src(x->argument_at(0), this);
+  LIRItem offset(x->argument_at(1), this);
+  LIRItem length(x->argument_at(2), this);
+  LIRItem tgt(x->argument_at(3), this);
+  LIRItem tgt_length(x->argument_at(4), this);
+  src.load_item();
+  offset.load_nonconstant();
+  tgt.load_item();
+  LIR_Opr src_ptr = new_register(T_ADDRESS);
+  LIR_Opr tgt_ptr = new_register(T_ADDRESS);
+  LIR_Opr byte_offset = offset.result();
+  if (!byte_offset->is_constant()) {
+    LIR_Opr widened_offset = new_register(T_LONG);
+    __ convert(Bytecodes::_i2l, byte_offset, widened_offset);
+    byte_offset = widened_offset;
+  }
+  LIR_Address* src_addr = emit_array_address(src.result(), byte_offset, T_BYTE);
+  LIR_Address* tgt_addr = generate_address(tgt.result(),
+                                          arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE);
+  __ leal(LIR_OprFact::address(src_addr), src_ptr);
+  __ leal(LIR_OprFact::address(tgt_addr), tgt_ptr);
+  BasicTypeList signature(4);
+  signature.append(T_ADDRESS);
+  signature.append(T_INT);
+  signature.append(T_ADDRESS);
+  signature.append(T_INT);
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  __ move(src_ptr, cc->at(0));
+  length.load_item_force(cc->at(1));
+  __ move(tgt_ptr, cc->at(2));
+  tgt_length.load_item_force(cc->at(3));
+  LIR_Opr result_reg = result_register_for(x->type());
+  __ call_runtime_leaf(StringZilla::entry(x->id()), getThreadTemp(), result_reg, cc->args());
+  __ move(result_reg, result);
+}
+
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   switch (x->id()) {
   case vmIntrinsics::_intBitsToFloat      :
@@ -2909,6 +2978,20 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     do_update_CRC32C(x);
     break;
 
+  case vmIntrinsics::_stringzillaFindCharLatin1:
+  case vmIntrinsics::_stringzillaFindCharUTF16:
+  case vmIntrinsics::_stringzillaRfindCharLatin1:
+  case vmIntrinsics::_stringzillaRfindCharUTF16:
+    do_stringzilla_char(x);
+    break;
+  case vmIntrinsics::_stringzillaFindUTF16Latin1:
+  case vmIntrinsics::_stringzillaRfindUTF16Latin1:
+  case vmIntrinsics::_stringzillaFindLatin1:
+  case vmIntrinsics::_stringzillaFindUTF16:
+  case vmIntrinsics::_stringzillaRfindLatin1:
+  case vmIntrinsics::_stringzillaRfindUTF16:
+    do_stringzilla(x);
+    break;
   case vmIntrinsics::_vectorizedMismatch:
     do_vectorizedMismatch(x);
     break;
