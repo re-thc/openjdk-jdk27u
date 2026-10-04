@@ -1,20 +1,22 @@
 # StringZilla string-search integration
 
 Enable with `-XX:+UseStringZillaIntrinsics`. The product flag defaults to false.
-The opt-in changes searching and long interpreter/C1 equality checks, without changing string representation or Java API
-semantics. `-XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=...` can disable individual
-bridge intrinsics and select JNI fallback. C2 retains its existing forward
-search intrinsic when the corresponding StringZilla bridge intrinsic is disabled;
-disable the existing `_indexOf*` intrinsics as well to exercise compiled JNI
-fallback for every search.
+The opt-in changes searching and interpreter/C1 equality checks, without changing
+string representation or Java API semantics. `-XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=...` can disable individual
+bridge intrinsics and select JNI fallback. C2 retains its existing forward substring and character intrinsics. Disable the
+existing `_indexOf*` intrinsics as well to exercise compiled JNI fallback for
+every search. Equality reuses `_equalsL`; disabling it restores Java equality
+in the interpreter/C1 and disables the existing C2 equality intrinsic.
 
 ## Vendoring and updates
 
 The bundled search/compare dependency closure is StringZilla **5.2.0**, commit
 `82e15261d0a723e7bb97a03abd61641953fd45c0`, under Apache-2.0. The 28 upstream
-files are unmodified. `src/hotspot/share/utilities/stringzilla/UPSTREAM.json`
-records SHA-256 hashes. The runtime compiles the headers into libjvm; users need
-no third-party shared library, native-library load, or network access.
+files are unmodified. `src/java.base/share/native/libjava/stringzilla/UPSTREAM.json`
+records SHA-256 hashes. The independent kernels compile into the existing
+Classpath-excepted `libjava`, following `ADDITIONAL_LICENSE_INFO`. HotSpot
+contains only the callback ABI and leaf adapters, without third-party headers.
+Users need no extra shared library or network access.
 `src/java.base/share/legal/stringzilla.md` contains the shipped license notice.
 
 ```sh
@@ -38,16 +40,19 @@ code points, bounds exceptions, and public `fromIndex` normalization retain the
 existing Java behavior. Builder searches use logical count, never spare capacity.
 
 * Interpreter: x86-64 and AArch64 frameless entries perform a safepoint poll,
-  derive heap addresses, call the C++ leaf kernel, and restore the caller's stack.
-  A pending poll takes the regular native entry.
+  derive heap addresses, call a native leaf adapter, and restore the caller's stack.
+  A pending poll takes the regular native entry for searches and the regular
+  Java entry for equality. Equality checks array lengths and the first byte
+  before entering the native kernel.
 * C1: shared LIR uses each platform's address generation and C calling
-  convention, then a runtime leaf call. No JNI handles or array pinning/copying.
+  convention, then a runtime leaf call. Equality checks lengths and an unrolled
+  eight-byte prefix, returning directly for short arrays or prefix mismatches.
+  No JNI handles or array pinning/copying.
 * C2: bridge expansion validates ranges and issues a runtime leaf call with
-  memory dependencies. Existing forward substring intrinsics use a hybrid: keep
-  small ranges, one-character needles, and needles longer than 64 code units
-  on the platform node; otherwise probe the first 32 starting positions with
-  that node before calling StringZilla for the remainder. Forward BMP character
-  searches retain C2's existing intrinsic. AVX state uses the existing machinery.
+  memory dependencies. Forward substring, forward BMP character, and equality
+  operations retain their existing platform intrinsics; measurements favored
+  those implementations. Reverse searches use the new bridges. AVX state uses
+  the existing machinery.
 * JNI fallback: libjava delegates to JVM entry points; resolved arrays are
   searched without allocation or safepoints after deriving heap addresses.
 
@@ -55,9 +60,13 @@ The x86 dispatcher enables the upstream Haswell functions only when HotSpot
 permits AVX2 and detects BMI1, BMI2, and LZCNT. It selects Skylake AVX-512
 functions when `UseAVX >= 3` and AVX-512F/BW/VL are available. Otherwise it uses
 Haswell AVX2 or directly calls the serial functions. AArch64 uses mandatory NEON, with serial fallback on other
-builds. The ISA target pragmas belong to individual functions; libjvm itself
-retains its normal CPU baseline. `SZ_AVOID_LIBC=1` disables upstream allocators,
-and upstream debug termination is disabled inside the VM.
+builds. ISA selection happens during native bootstrap and is repeated idempotently at
+`StringZilla` class initialization. An immutable
+callback table is published with release/acquire ordering; stable VM entry
+addresses work before the library initializes. Equality uses a small VM-owned
+scalar fallback until libjava publishes the table. Function-level ISA pragmas leave
+both libraries at their normal CPU baseline. `SZ_AVOID_LIBC=1` disables upstream
+allocators, and `SZ_DEBUG=0` disables upstream debug termination.
 
 UTF-16 searches reject odd-byte matches. After the first such match, a bounded
 AVX2/NEON code-unit-aligned filter checks first/last characters and uses
@@ -67,7 +76,14 @@ They preserve
 isolated surrogates and match supplementary code points as surrogate pairs.
 Mixed UTF-16/Latin-1 substring searches widen up to 64 needle code units into a
 fixed native stack buffer. Longer mixed needles retain the existing path.
-Small ranges retain existing Java/platform intrinsics. See `BENCHMARKS.md` for
+Length gates precede the Java flag read on short inputs. Forward substring
+searches probe the first candidate for short needles before dispatch; UTF-16
+probes only eligible long windows and preserves the original scalar-loop entry.
+C1 force-inlines the same-coder UTF-16 forward and Latin-1 reverse dispatchers.
+Mixed-coder forward searches retain C1's normal inlining choice for short scalar
+loops; separate Java forward wrappers and the reverse scalar loop isolate
+native-call register setup. Small ranges retain existing
+Java/platform intrinsics. See `BENCHMARKS.md` for
 measured thresholds, tier choices, and limitations.
 
 ## Applicability audit
@@ -84,21 +100,25 @@ measured thresholds, tier choices, and limitations.
 | Class loading, reflection, module names, file attributes, pattern quoting | Existing `String` search calls inherit the acceleration |
 | Arbitrary `CharSequence` / `CharBuffer`, `CharSequence.compare` | No contiguous byte-array contract; retain `charAt`/existing specialized comparison |
 | Regex matcher/search nodes | Arbitrary sequence plus regex semantics; retain existing pattern engines (literal `String` callers above are covered) |
-| `String.equals` (both coders) | Long interpreter/C1 comparisons reuse the equal-length search bridge after a first-byte check; C2 retains its equality intrinsic |
-| `String.contentEquals`, builder equality, array equality | Retain existing comparison paths; no change to mutable-sequence access/synchronization or array intrinsics |
-| Lexical `compareTo`, region/ignore-case comparisons | Java code-unit order and case semantics; byte-order compare is not a UTF-16 replacement |
+| `String.equals` (both coders) | Interpreter/C1 reuse `_equalsL` with short/prefix checks and a native equality leaf; C2 retains its equality intrinsic |
+| `String.contentEquals(CharSequence)` | String arguments delegate to equality; same-coder builders retain the existing `ArraysSupport.mismatch` intrinsic and synchronization; mixed-coder builders and arbitrary sequences retain code-unit access |
+| Array equality / mismatch | Retain existing array intrinsics |
+| `startsWith` / `endsWith`, exact `regionMatches` | Retain existing range-mismatch intrinsics for equal coders and code-unit comparisons for mixed coders |
+| Lexical `compareTo` and ignore-case comparisons | Java code-unit order and case semantics; byte-order compare is not a UTF-16 replacement |
 | `String` / builder hashing | Java's specified polynomial hash; StringZilla hash is not interchangeable |
 | Copy, inflate/compress, append, insert, reverse | Existing arraycopy/conversion intrinsics and allocation/write-barrier semantics |
-| `trim`, `strip`, lines, Unicode case conversion, encoding | Java whitespace/line/code-point rules differ from upstream byte/UTF-8 operations |
+| `StringLatin1` / `StringUTF16.LinesSpliterator`, `trim`, `strip`, `isBlank`, indent/stripIndent helpers | Retain their CR/LF and Unicode classification scanners; a character-set bridge and separate workload measurements would be required |
+| Unicode case conversion and encoding | Java case/code-point/charset rules differ from upstream byte/UTF-8 operations |
 
-This change introduces search intrinsics and reuses them for equality. The audit does not claim to accelerate
+This change introduces search intrinsics and adds interpreter/C1 implementations
+for the existing equality intrinsic. The audit does not claim to accelerate
 every string operation, nor to replace arbitrary `CharSequence` storage with
 byte arrays.
 
 ## Validation and reproduction
 
 `test/jdk/java/lang/String/StringZillaSearch.java` checks independent scalar
-oracles in interpreter, C1, C2, compact-strings-off, feature-off, and all-search-
+oracles in interpreter, C1, C2, compact-strings-off, feature-off, forced-C2 startup compilation, and all-search-
 intrinsics-disabled modes (both interpreter JNI fallback and compiled JNI
 fallback). It covers threshold boundaries, empty and oversized
 needles, offsets/extreme `fromIndex`, builder capacity, mixed encodings, isolated

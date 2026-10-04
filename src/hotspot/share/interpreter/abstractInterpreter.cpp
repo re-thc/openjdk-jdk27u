@@ -129,6 +129,9 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_stringzillaFindCharUTF16: return stringzilla_findCharUTF16;
       case vmIntrinsics::_stringzillaRfindCharLatin1: return stringzilla_rfindCharLatin1;
       case vmIntrinsics::_stringzillaRfindCharUTF16: return stringzilla_rfindCharUTF16;
+      case vmIntrinsics::_equalsL:
+        if (UseStringZillaIntrinsics) return stringzilla_equals;
+        break;
       case vmIntrinsics::_stringzillaFindLatin1: return stringzilla_findLatin1;
       case vmIntrinsics::_stringzillaFindUTF16: return stringzilla_findUTF16;
       case vmIntrinsics::_stringzillaRfindLatin1: return stringzilla_rfindLatin1;
@@ -230,6 +233,7 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case stringzilla_findCharUTF16: return vmIntrinsics::_stringzillaFindCharUTF16;
   case stringzilla_rfindCharLatin1: return vmIntrinsics::_stringzillaRfindCharLatin1;
   case stringzilla_rfindCharUTF16: return vmIntrinsics::_stringzillaRfindCharUTF16;
+  case stringzilla_equals: return vmIntrinsics::_equalsL;
   case stringzilla_findLatin1: return vmIntrinsics::_stringzillaFindLatin1;
   case stringzilla_findUTF16: return vmIntrinsics::_stringzillaFindUTF16;
   case stringzilla_rfindLatin1: return vmIntrinsics::_stringzillaRfindLatin1;
@@ -346,6 +350,7 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case stringzilla_findCharUTF16: tty->print("stringzilla_findCharUTF16"); break;
     case stringzilla_rfindCharLatin1: tty->print("stringzilla_rfindCharLatin1"); break;
     case stringzilla_rfindCharUTF16: tty->print("stringzilla_rfindCharUTF16"); break;
+    case stringzilla_equals: tty->print("stringzilla_equals"); break;
     case stringzilla_findLatin1: tty->print("stringzilla_findLatin1"); break;
     case stringzilla_findUTF16: tty->print("stringzilla_findUTF16"); break;
     case stringzilla_rfindLatin1: tty->print("stringzilla_rfindLatin1"); break;

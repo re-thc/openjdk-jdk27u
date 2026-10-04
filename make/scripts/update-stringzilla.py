@@ -10,7 +10,7 @@ import re
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[2]
-VENDOR = ROOT / 'src/hotspot/share/utilities/stringzilla'
+VENDOR = ROOT / 'src/java.base/share/native/libjava/stringzilla'
 LEGAL = ROOT / 'src/java.base/share/legal/stringzilla.md'
 
 

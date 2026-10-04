@@ -1291,12 +1291,6 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
   // Make the merge point
   RegionNode* result_rgn = new RegionNode(4);
   Node*       result_phi = new PhiNode(result_rgn, TypeInt::INT);
-  PhiNode* result_mem = nullptr;
-  if (UseStringZillaIntrinsics) {
-    Node* initial_memory = _gvn.transform(merged_memory()->clone());
-    result_mem = new PhiNode(result_rgn, Type::MEMORY, TypePtr::BOTTOM);
-    for (int i = 1; i < 4; i++) result_mem->init_req(i, initial_memory);
-  }
 
   src = must_be_not_null(src, true);
   tgt = must_be_not_null(tgt, true);
@@ -1310,7 +1304,7 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
   Node* tgt_count = load_array_length(tgt);
 
   Node* result = nullptr;
-  bool call_opt_stub = !UseStringZillaIntrinsics && (StubRoutines::_string_indexof_array[ae] != nullptr);
+  bool call_opt_stub = (StubRoutines::_string_indexof_array[ae] != nullptr);
 
   if (ae == StrIntrinsicNode::UU || ae == StrIntrinsicNode::UL) {
     // Divide src size by 2 if String is UTF16 encoded
@@ -1334,14 +1328,9 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
   if (result != nullptr) {
     result_phi->init_req(3, result);
     result_rgn->init_req(3, control());
-    if (result_mem != nullptr) result_mem->set_req(3, reset_memory());
   }
   set_control(_gvn.transform(result_rgn));
   record_for_igvn(result_rgn);
-  if (result_mem != nullptr) {
-    record_for_igvn(result_mem);
-    set_all_memory(_gvn.transform(result_mem));
-  }
   set_result(_gvn.transform(result_phi));
 
   return true;
@@ -1380,9 +1369,8 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   RegionNode* region = new RegionNode(5);
   Node* phi = new PhiNode(region, TypeInt::INT);
   Node* result = nullptr;
-  Node* initial_memory = UseStringZillaIntrinsics ? _gvn.transform(merged_memory()->clone()) : nullptr;
 
-  bool call_opt_stub = !UseStringZillaIntrinsics && (StubRoutines::_string_indexof_array[ae] != nullptr);
+  bool call_opt_stub = (StubRoutines::_string_indexof_array[ae] != nullptr);
 
   if (call_opt_stub) {
     Node* call = make_runtime_call(RC_LEAF, OptoRuntime::string_IndexOf_Type(),
@@ -1413,103 +1401,12 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
     }
   }
 
-  if (UseStringZillaIntrinsics) {
-    Node* final_memory = reset_memory();
-    PhiNode* result_mem = new PhiNode(region, Type::MEMORY, TypePtr::BOTTOM);
-    result_mem->init_req(1, initial_memory);
-    result_mem->init_req(2, initial_memory);
-    result_mem->init_req(3, final_memory);
-    result_mem->init_req(4, final_memory);
-    record_for_igvn(result_mem);
-    set_all_memory(_gvn.transform(result_mem));
-  }
   set_control(_gvn.transform(region));
   record_for_igvn(region);
   set_result(_gvn.transform(phi));
   clear_upper_avx();
 
   return true;
-}
-
-Node* LibraryCallKit::make_stringzilla_indexOf(Node* src_start, Node* src_count,
-                                              Node* tgt_start, Node* tgt_count,
-                                              StrIntrinsicNode::ArgEnc ae) {
-  vmIntrinsics::ID id = ae == StrIntrinsicNode::LL ? vmIntrinsics::_stringzillaFindLatin1 :
-                       ae == StrIntrinsicNode::UU ? vmIntrinsics::_stringzillaFindUTF16 :
-                                                   vmIntrinsics::_stringzillaFindUTF16Latin1;
-  if (!vmIntrinsics::is_intrinsic_available(id)) {
-    return make_string_method_node(Op_StrIndexOf, src_start, src_count, tgt_start, tgt_count, ae);
-  }
-  bool utf16 = ae != StrIntrinsicNode::LL;
-  Node* initial_memory = _gvn.transform(merged_memory()->clone());
-  Node* small = _gvn.transform(new BoolNode(
-      _gvn.transform(new CmpINode(src_count, intcon(utf16 ? 128 : 256))), BoolTest::lt));
-  Node* small_path = generate_slow_guard(small, nullptr);
-  Node* unbounded_path = nullptr;
-  if (!stopped()) {
-    // Single-character and long-needle C2 searches retain their platform node.
-    // This also bounds mixed-coder stack widening and prefix-count arithmetic.
-    Node* needle_range = _gvn.transform(new SubINode(tgt_count, intcon(2)));
-    Node* unbounded = _gvn.transform(new BoolNode(
-        _gvn.transform(new CmpUNode(needle_range, intcon(62))), BoolTest::gt));
-    unbounded_path = generate_slow_guard(unbounded, nullptr);
-  }
-  Node* accelerated = control();
-  RegionNode* stock_region = new RegionNode(3);
-  stock_region->init_req(1, small_path == nullptr ? top() : small_path);
-  stock_region->init_req(2, unbounded_path == nullptr ? top() : unbounded_path);
-  set_control(_gvn.transform(stock_region));
-  Node* stock = stopped() ? nullptr :
-      make_string_method_node(Op_StrIndexOf, src_start, src_count, tgt_start, tgt_count, ae);
-  if (accelerated == top()) return stock;
-
-  RegionNode* region = new RegionNode(4);
-  PhiNode* memory_phi = new PhiNode(region, Type::MEMORY, TypePtr::BOTTOM);
-  memory_phi->init_req(1, initial_memory);
-  memory_phi->init_req(2, initial_memory);
-  Node* phi = new PhiNode(region, TypeInt::INT);
-  if (stock != nullptr) {
-    phi->init_req(1, stock);
-    region->init_req(1, control());
-  }
-  set_control(accelerated);
-  // Probe the first 32 starting positions using the existing C2 string node.
-  // The eligible source range is at least 128 chars, and this count is <=95.
-  Node* prefix_count = _gvn.transform(new AddINode(tgt_count, intcon(31)));
-  Node* prefix = make_string_method_node(Op_StrIndexOf, src_start, prefix_count, tgt_start, tgt_count, ae);
-  Node* found = _gvn.transform(new BoolNode(
-      _gvn.transform(new CmpINode(prefix, intcon(0))), BoolTest::ge));
-  Node* early = generate_slow_guard(found, nullptr);
-  if (early != nullptr) {
-    phi->init_req(2, prefix);
-    region->init_req(2, early);
-  }
-  if (!stopped()) {
-    Node* base = src_start->is_AddP() ? src_start->in(AddPNode::Base) : top();
-    Node* rest_start = basic_plus_adr(base, src_start, utf16 ? 32 * 2 : 32);
-    Node* rest_count = _gvn.transform(new SubINode(src_count, intcon(32)));
-    Node* needle_count = tgt_count;
-    if (utf16) rest_count = _gvn.transform(new LShiftINode(rest_count, intcon(1)));
-    if (ae == StrIntrinsicNode::UU) needle_count = _gvn.transform(new LShiftINode(needle_count, intcon(1)));
-    Node* call = make_runtime_call(RC_LEAF, OptoRuntime::string_IndexOf_Type(),
-                                  StringZilla::entry(id), "stringzillaIndexOf", TypePtr::BOTTOM,
-                                  rest_start, rest_count, tgt_start, needle_count);
-    Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-    Node* failed = _gvn.transform(new BoolNode(
-        _gvn.transform(new CmpINode(result, intcon(0))), BoolTest::lt));
-    Node* index = utf16 ? _gvn.transform(new RShiftINode(result, intcon(1))) : result;
-    index = _gvn.transform(new AddINode(index, intcon(32)));
-    result = _gvn.transform(new CMoveINode(failed, index, intcon(-1), TypeInt::INT));
-    phi->init_req(3, result);
-    region->init_req(3, control());
-    memory_phi->init_req(3, reset_memory());
-  }
-  set_control(_gvn.transform(region));
-  record_for_igvn(region);
-  record_for_igvn(memory_phi);
-  set_all_memory(_gvn.transform(memory_phi));
-  clear_upper_avx();
-  return _gvn.transform(phi);
 }
 
 // Create StrIndexOfNode with fast path checks
@@ -1534,9 +1431,6 @@ Node* LibraryCallKit::make_indexOf_node(Node* src_start, Node* src_count, Node* 
     }
   }
   if (!stopped()) {
-    if (UseStringZillaIntrinsics) {
-      return make_stringzilla_indexOf(src_start, src_count, tgt_start, tgt_count, ae);
-    }
     return make_string_method_node(Op_StrIndexOf, src_start, src_count, tgt_start, tgt_count, ae);
   }
   return nullptr;
@@ -9436,4 +9330,3 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
   set_result(box_fp16_value(float16_box_type, field, result));
   return true;
 }
-

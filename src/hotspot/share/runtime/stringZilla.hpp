@@ -29,6 +29,8 @@
 
 class StringZilla : AllStatic {
  public:
+  static void register_kernels(const void* table);
+  static int capabilities();
   static address entry(vmIntrinsics::ID id);
   static int search_char(const char* src, int length, int ch, bool utf16, bool reverse);
   static int search(const char* src, int length, const char* tgt, int tgt_length,

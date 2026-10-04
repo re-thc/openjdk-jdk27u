@@ -109,6 +109,10 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 
 bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   switch (id) {
+#if defined(AMD64) || defined(AARCH64)
+  case vmIntrinsics::_equalsL:
+    return UseStringZillaIntrinsics;
+#endif
   case vmIntrinsics::_compareAndSetLong:
     break;
   case vmIntrinsics::_getAndAddInt:

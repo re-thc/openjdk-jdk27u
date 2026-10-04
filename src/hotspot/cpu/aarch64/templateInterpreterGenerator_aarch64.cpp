@@ -1029,6 +1029,47 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
 }
 
 // Leaf entries for the validated java.lang.StringZilla search methods.
+address TemplateInterpreterGenerator::generate_stringzilla_equals_entry() {
+  address entry = __ pc();
+  Label slow_path, different, equal, done;
+  __ safepoint_poll(slow_path, false, false);
+  const Register src = c_rarg0;
+  const Register tgt = c_rarg1;
+  const Register length = c_rarg2;
+  __ ldr(src, Address(esp, wordSize));
+  __ ldr(tgt, Address(esp));
+  __ cbz(src, slow_path);
+  __ cbz(tgt, slow_path);
+  __ ldrw(length, Address(src, arrayOopDesc::length_offset_in_bytes()));
+  __ ldrw(r3, Address(tgt, arrayOopDesc::length_offset_in_bytes()));
+  __ cmpw(length, r3);
+  __ br(Assembler::NE, different);
+  __ cbzw(length, equal);
+  __ ldrb(r3, Address(src, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+  __ ldrb(r4, Address(tgt, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+  __ cmpw(r3, r4);
+  __ br(Assembler::NE, different);
+  __ add(src, src, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  __ add(tgt, tgt, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  __ andr(sp, r19_sender_sp, -16);
+  __ stp(r29, r30, Address(__ pre(sp, -2 * wordSize)));
+  __ mov(r29, sp);
+  __ super_call_VM_leaf(StringZilla::entry(vmIntrinsics::_equalsL), src, tgt, length);
+  __ ldp(r29, r30, Address(__ post(sp, 2 * wordSize)));
+  __ ret(lr);
+  __ bind(different);
+  __ movw(r0, 0);
+  __ br(Assembler::AL, done);
+  __ bind(equal);
+  __ movw(r0, 1);
+  __ bind(done);
+  __ andr(sp, r19_sender_sp, -16);
+  __ ret(lr);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}
+
 address TemplateInterpreterGenerator::generate_stringzilla_char_entry(AbstractInterpreter::MethodKind kind) {
   address entry = __ pc();
   Label slow_path;

@@ -56,6 +56,11 @@ public class TestStringZillaAvailability {
         for (String name : characters) {
             check(wb, klass.getDeclaredMethod(name, byte[].class, int.class, int.class, int.class), expected);
         }
+        Class<?> latin1 = Class.forName("java.lang.StringLatin1");
+        Method equals = latin1.getDeclaredMethod("equals0", byte[].class, byte[].class);
+        if (wb.isIntrinsicAvailable(equals, 1) != expected || !wb.isIntrinsicAvailable(equals, 4)) {
+            throw new AssertionError("String equality must enable C1 independently and retain C2");
+        }
     }
 
     private static void check(WhiteBox wb, Method method, boolean expected) {

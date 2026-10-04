@@ -245,6 +245,14 @@ JVM_LEAF(jboolean, JVM_StringZillaEnabled(JNIEnv* env, jclass ignored))
   return UseStringZillaIntrinsics;
 JVM_END
 
+JVM_LEAF(jint, JVM_StringZillaCapabilities())
+  return StringZilla::capabilities();
+JVM_END
+
+JVM_LEAF(void, JVM_RegisterStringZillaKernels(const void* kernels))
+  StringZilla::register_kernels(kernels);
+JVM_END
+
 JVM_ENTRY(jint, JVM_StringZillaChar(JNIEnv* env, jclass ignored, jbyteArray src,
                                  jint offset, jint length, jint ch,
                                  jboolean utf16, jboolean reverse))

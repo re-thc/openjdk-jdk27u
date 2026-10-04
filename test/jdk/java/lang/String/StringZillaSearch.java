@@ -27,6 +27,7 @@
  * @run main/othervm -Xint -XX:+UseStringZillaIntrinsics StringZillaSearch
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseStringZillaIntrinsics StringZillaSearch
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UseStringZillaIntrinsics StringZillaSearch
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UseStringZillaIntrinsics StringZillaSearch
  * @run main/othervm -Xbatch -XX:+UseStringZillaIntrinsics -XX:-CompactStrings StringZillaSearch
  * @run main/othervm -Xint -XX:+UseStringZillaIntrinsics -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16 StringZillaSearch
  * @run main/othervm -Xbatch -XX:+UseStringZillaIntrinsics -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16,_indexOfL,_indexOfU,_indexOfUL,_indexOfIL,_indexOfIU,_indexOfIUL,_indexOfL_char,_indexOfU_char,_equalsL StringZillaSearch
@@ -101,6 +102,11 @@ public class StringZillaSearch {
     }
 
     public static void main(String[] args) throws Exception {
+        // Equality is used during native-library and timezone initialization.
+        // Exercise these consumers before warming up the string-search corpus.
+        if (System.getProperty(new String("java.vm.info".toCharArray())) == null)
+            throw new AssertionError("VM property lookup");
+        java.time.ZoneId.of("America/New_York").getRules();
         int[] sizes = {0, 1, 2, 15, 31, 127, 128, 129, 255, 256, 257, 1024, 4096};
         String[] needles = {"", "a", "aa", "ab", "abc", "b", "\0", "\u00ff", "\u0100", "\ud800", "\udc00", "\ud83d\ude00", "a".repeat(64), "a".repeat(65)};
         int[] codepoints = {-1, 0, 'a', 'b', 255, 256, 0xd800, 0xdc00, 0x1f600, 0x10ffff, 0x110000};
@@ -124,8 +130,14 @@ public class StringZillaSearch {
                     changed[0]++;
                     if (first.equals(new String(changed))) throw new AssertionError("early mismatch");
                     changed[0]--;
-                    changed[size - 1]++;
-                    if (first.equals(new String(changed))) throw new AssertionError("late mismatch");
+                    for (int index : new int[]{1, 7, 8, 15, 16, 31, 32, 63, 64, 65, 127, 128, 255, 256, size - 1}) {
+                        if (index >= size) continue;
+                        changed[index]++;
+                        if (first.equals(new String(changed))) throw new AssertionError("prefix/late mismatch " + index);
+                        changed[index]--;
+                    }
+                    changed[0] += 256; // Same low byte, different UTF-16 high byte.
+                    if (first.equals(new String(changed))) throw new AssertionError("high-byte mismatch");
                 }
             }
         }
@@ -159,7 +171,7 @@ public class StringZillaSearch {
             check(s, t, from);
             character(s, codepoints[random.nextInt(codepoints.length)], from);
         }
-        // C2 prefix/leaf merge boundaries and memory dependencies on builder writes.
+        // Search boundaries and leaf memory dependencies on builder writes.
         for (String filler : new String[]{"a", "\u0400"}) {
             StringBuilder mutable = new StringBuilder(filler.repeat(1024));
             String t = filler.equals("a") ? "ba" : "\u0420\u0400";
@@ -169,8 +181,10 @@ public class StringZillaSearch {
                 mutable.setCharAt(index, first);
                 equal(mutable.indexOf(t), index);
                 equal(mutable.indexOf(t, 1), index);
+                equal(mutable.lastIndexOf(t), index);
                 mutable.setCharAt(index, filler.charAt(0));
                 equal(mutable.indexOf(t), -1);
+                equal(mutable.lastIndexOf(t), -1);
             }
         }
         // Heap addresses passed to leaf calls remain valid under concurrent GC.
@@ -182,6 +196,8 @@ public class StringZillaSearch {
             for (int i = 0; i < 5000; i++) {
                 equal(s.indexOf("ab"), 8191);
                 equal(s.lastIndexOf('b'), 8192);
+                equal(s.lastIndexOf("zz"), -1);
+                equal(s.lastIndexOf('z'), -1);
             }
         } finally {
             done.set(true);

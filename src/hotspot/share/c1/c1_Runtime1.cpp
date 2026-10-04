@@ -360,6 +360,7 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaFindCharUTF16));
   FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaRfindCharLatin1));
   FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaRfindCharUTF16));
+  FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_equalsL));
   FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaFindLatin1));
   FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaFindUTF16));
   FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaRfindLatin1));

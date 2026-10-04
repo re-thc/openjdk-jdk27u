@@ -26,6 +26,8 @@
 package java.lang;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.DontInline;
 
 /** Shared, allocation-free substring search entry points. */
 final class StringZilla {
@@ -36,6 +38,7 @@ final class StringZilla {
     static final int MAX_MIXED_NEEDLE = 64;
 
     // Probe a bounded near-boundary match before paying for a native call.
+    @ForceInline
     static boolean matches(byte[] src, int offset, byte[] tgt, int length) {
         for (int i = 0; i < length; i++) {
             if (src[offset + i] != tgt[i]) return false;
@@ -43,6 +46,7 @@ final class StringZilla {
         return true;
     }
 
+    @ForceInline
     static boolean matchesUTF16(byte[] src, int offset, byte[] tgt, int length) {
         for (int i = 0; i < length; i++) {
             if (StringUTF16.getChar(src, offset + i) != StringUTF16.getChar(tgt, i)) return false;
@@ -50,11 +54,31 @@ final class StringZilla {
         return true;
     }
 
+    @ForceInline
     static boolean matchesLatin1UTF16(byte[] src, int offset, byte[] tgt, int length) {
         for (int i = 0; i < length; i++) {
             if (StringUTF16.getChar(src, offset + i) != (tgt[i] & 0xff)) return false;
         }
         return true;
+    }
+
+    // Isolate native argument setup from C1's short/early scalar path.
+    @DontInline
+    static int indexOfLatin1(byte[] src, int end, byte[] tgt, int count, int from) {
+        int result = findLatin1(src, from, end - from, tgt, count);
+        return result < 0 ? -1 : from + result;
+    }
+
+    @DontInline
+    static int indexOfUTF16(byte[] src, int end, byte[] tgt, int count, int from) {
+        int result = findUTF16(src, from << 1, (end - from) << 1, tgt, count << 1);
+        return result < 0 ? -1 : from + (result >> 1);
+    }
+
+    @DontInline
+    static int indexOfUTF16Latin1(byte[] src, int end, byte[] tgt, int count, int from) {
+        int result = findUTF16Latin1(src, from << 1, (end - from) << 1, tgt, count);
+        return result < 0 ? -1 : from + (result >> 1);
     }
 
     private StringZilla() {}

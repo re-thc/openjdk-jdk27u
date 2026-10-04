@@ -39,8 +39,8 @@ ifeq ($(TOOLCHAIN_TYPE), gcc)
   endif
 endif
 
-# StringZilla headers retain their upstream includes and ISA target pragmas.
-BUILD_LIBJVM_stringZilla.cpp_CXXFLAGS := -I$(TOPDIR)/src/hotspot/share/utilities/stringzilla
+# The VM sees only the independent libjava kernel ABI, not Apache-2.0 code.
+BUILD_LIBJVM_stringZilla.cpp_CXXFLAGS := -I$(TOPDIR)/src/java.base/share/native/libjava
 
 LIBJVM_FDLIBM_COPY_OPT_FLAG := $(CXX_O_FLAG_NONE)
 # If the FDLIBM_CFLAGS variable is non-empty we know

@@ -214,6 +214,10 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_Float_float16ToFloat);
   method_entry(java_lang_Float_floatToFloat16);
 
+#if defined(AMD64) || defined(AARCH64)
+  method_entry(stringzilla_equals)
+#endif
+
 #undef method_entry
 
   // all native method kinds
@@ -483,6 +487,8 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   case Interpreter::java_lang_ref_reference_get0
                                            : entry_point = generate_Reference_get_entry(); break;
 #if defined(AMD64) || defined(AARCH64)
+  case Interpreter::stringzilla_equals:
+    entry_point = generate_stringzilla_equals_entry(); break;
   case Interpreter::stringzilla_findCharLatin1:
   case Interpreter::stringzilla_findCharUTF16:
   case Interpreter::stringzilla_rfindCharLatin1:

@@ -2309,7 +2309,6 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "bigIntegerLeftShiftWorker") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "vectorizedMismatch") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "stringIndexOf") == 0 ||
-                  strcmp(call->as_CallLeaf()->_name, "stringzillaIndexOf") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "stringzillaSearch") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "stringzillaChar") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "arraysort_stub") == 0 ||

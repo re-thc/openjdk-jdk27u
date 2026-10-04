@@ -69,8 +69,11 @@ public class StringZillaSearch {
             java.util.Arrays.fill(target, (char)ch);
             needle = new String(target);
         } else if (position.equals("REPEATED")) {
-            java.util.Arrays.fill(chars, (char)base);
-            java.util.Arrays.fill(target, (char)base);
+            int repeatedBase = mixed ? 'a' : base;
+            java.util.Arrays.fill(chars, (char)repeatedBase);
+            // Keep the mixed haystack UTF-16 while its needle stays Latin-1.
+            if (mixed) chars[length / 2] = (char)base;
+            java.util.Arrays.fill(target, (char)repeatedBase);
             target[target.length - 1] = (char)ch;
             needle = new String(target);
         } else if (!position.equals("MISS") && needle.length() <= length) {
@@ -80,7 +83,15 @@ public class StringZillaSearch {
         value = new String(chars);
         char[] equalityChars = chars.clone();
         if (!position.equals("EQUAL")) {
-            equalityChars[position.equals("START") ? 0 : length - 1]++;
+            int mismatch = switch (position) {
+                case "START", "HIGH_BYTE" -> 0;
+                case "SECOND" -> 1;
+                case "PREFIX" -> Math.min(31, length - 1);
+                case "MIDDLE" -> length / 2;
+                default -> length - 1;
+            };
+            if (position.equals("HIGH_BYTE")) equalityChars[mismatch] ^= 256;
+            else equalityChars[mismatch]++;
         }
         equalityValue = new String(equalityChars);
         builder = new StringBuilder(value);

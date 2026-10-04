@@ -95,6 +95,7 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_abstract_entry(void);
   address generate_math_entry(AbstractInterpreter::MethodKind kind);
   address generate_Reference_get_entry();
+  address generate_stringzilla_equals_entry();
   address generate_stringzilla_char_entry(AbstractInterpreter::MethodKind kind);
   address generate_stringzilla_entry(AbstractInterpreter::MethodKind kind);
   address generate_CRC32_update_entry();

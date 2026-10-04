@@ -94,6 +94,12 @@ JNIEXPORT jboolean JNICALL
 JVM_StringZillaEnabled(JNIEnv* env, jclass ignored);
 
 JNIEXPORT jint JNICALL
+JVM_StringZillaCapabilities(void);
+
+JNIEXPORT void JNICALL
+JVM_RegisterStringZillaKernels(const void* kernels);
+
+JNIEXPORT jint JNICALL
 JVM_StringZillaChar(JNIEnv* env, jclass ignored, jbyteArray src, jint offset,
                    jint length, jint ch, jboolean utf16, jboolean reverse);
 

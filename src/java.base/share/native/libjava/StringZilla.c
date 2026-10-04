@@ -26,9 +26,11 @@
 #include "jni.h"
 #include "jvm.h"
 #include "java_lang_StringZilla.h"
+#include "StringZillaKernels.h"
 
 JNIEXPORT jboolean JNICALL
 Java_java_lang_StringZilla_isEnabled(JNIEnv* env, jclass ignored) {
+    StringZilla_initialize();
     return JVM_StringZillaEnabled(env, ignored);
 }
 

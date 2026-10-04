@@ -19,7 +19,7 @@ run_group() {
     if [ "$benchmark_forks" != 0 ]; then
         fork_options=(-jvm "$benchmark_jdk/bin/java" -jvmArgs "${options[*]}")
     fi
-    "${benchmark_pin[@]}" "$benchmark_jdk/bin/java" "${options[@]}" -cp "$benchmark_classpath" org.openjdk.jmh.Main "$pattern" -p length="$sizes" -p coder="$coders" -p position="$positions" -p needleLength=4 -f "$benchmark_forks" -wi 2 -w 300ms -i 3 -r 500ms "${fork_options[@]}" -rf json -rff "$benchmark_output/$tier-$feature-$group.json" > "$benchmark_output/$tier-$feature-$group.log" 2>&1
+    "${benchmark_pin[@]}" "$benchmark_jdk/bin/java" "${options[@]}" -cp "$benchmark_classpath" org.openjdk.jmh.Main "$pattern" -p length="$sizes" -p coder="$coders" -p position="$positions" -p needleLength=4 -f "$benchmark_forks" -wi 3 -w 500ms -i 5 -r 500ms "${fork_options[@]}" -rf json -rff "$benchmark_output/$tier-$feature-$group.json" > "$benchmark_output/$tier-$feature-$group.log" 2>&1
     printf '%s %s %s complete\n' "$tier" "$feature" "$group"
 }
 
@@ -32,13 +32,18 @@ for tier in c2 c1 interpreter; do
     for feature in off on; do
         feature_option=-XX:-UseStringZillaIntrinsics
         if [ "$feature" = on ]; then feature_option=-XX:+UseStringZillaIntrinsics; fi
-        run_group miss 'StringZillaSearch.(indexOf|lastIndexOf|indexOfChar|lastIndexOfChar)$' 32,4096 LATIN1,UTF16 MISS
+        run_group miss 'StringZillaSearch.(indexOf|lastIndexOf|indexOfChar|lastIndexOfChar)$' 32,256,4096 LATIN1,UTF16 MISS
         run_group boundary 'StringZillaSearch.(indexOf|lastIndexOf|indexOfChar|lastIndexOfChar)$' 4096 LATIN1,UTF16 START
-        run_group equality 'StringZillaSearch.equals$' 4096 LATIN1,UTF16 EQUAL,START,END
+        run_group equality 'StringZillaSearch.equals$' 32,4096 LATIN1,UTF16 EQUAL,START,END
+        run_group callers 'StringZillaSearch.(builderIndexOf|bufferIndexOf|contains|replace)$' 4096 LATIN1,UTF16 MISS
+        run_group mixed 'StringZillaSearch.(indexOf|lastIndexOf)$' 32,256,4096 MIXED MISS,END,REPEATED
+        run_group mixed-boundary 'StringZillaSearch.indexOf$' 4096 MIXED START
+        run_group mixed-character 'StringZillaSearch.(indexOfChar|lastIndexOfChar)$' 32,256 MIXED MISS
+        if [ "$tier" != c2 ]; then
+            run_group equality-prefix 'StringZillaSearch.equals$' 32,4096 LATIN1,UTF16 SECOND,PREFIX,MIDDLE,HIGH_BYTE
+        fi
         if [ "$tier" = c2 ]; then
-            run_group mixed 'StringZillaSearch.(indexOf|lastIndexOf)$' 4096 MIXED MISS,END,REPEATED
             run_group crossed 'StringZillaSearch.(indexOf|lastIndexOf)$' 4096 UTF16 CROSSED
-            run_group callers 'StringZillaSearch.(builderIndexOf|bufferIndexOf|contains|replace)$' 4096 LATIN1,UTF16 MISS
         fi
     done
 done
