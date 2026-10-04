@@ -1,0 +1,136 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.ZmijFormatting.doubleNaN",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java",
+        "jvmArgs" : [
+            "--add-modules=jdk.incubator.vector",
+            "--add-exports=java.base/jdk.internal.math=ALL-UNNAMED",
+            "-Xms256m",
+            "-Xmx256m",
+            "-Xbatch",
+            "-XX:-TieredCompilation",
+            "-XX:-UseZmijIntrinsics"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 1.1507657955708548,
+            "scoreError" : 0.1420233043708075,
+            "scoreConfidence" : [
+                1.0087424912000473,
+                1.2927890999416622
+            ],
+            "scorePercentiles" : {
+                "0.0" : 1.0541699547982564,
+                "50.0" : 1.1245151443653327,
+                "90.0" : 1.3298650242466963,
+                "95.0" : 1.3298650242466963,
+                "99.0" : 1.3298650242466963,
+                "99.9" : 1.3298650242466963,
+                "99.99" : 1.3298650242466963,
+                "99.999" : 1.3298650242466963,
+                "99.9999" : 1.3298650242466963,
+                "100.0" : 1.3298650242466963
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    1.0570777819130084,
+                    1.0541699547982564,
+                    1.120375857973155
+                ],
+                [
+                    1.1245151443653327,
+                    1.1775494708147212,
+                    1.2041990976287316
+                ],
+                [
+                    1.1736964533488174,
+                    1.1154433750489734,
+                    1.3298650242466963
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.ZmijFormatting.doubleZero",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/workspace/openjdk-jdk27u/build/cloud/images/jdk/bin/java",
+        "jvmArgs" : [
+            "--add-modules=jdk.incubator.vector",
+            "--add-exports=java.base/jdk.internal.math=ALL-UNNAMED",
+            "-Xms256m",
+            "-Xmx256m",
+            "-Xbatch",
+            "-XX:-TieredCompilation",
+            "-XX:-UseZmijIntrinsics"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 1.1047199532322276,
+            "scoreError" : 0.22242283537601404,
+            "scoreConfidence" : [
+                0.8822971178562136,
+                1.3271427886082416
+            ],
+            "scorePercentiles" : {
+                "0.0" : 0.9584113382041101,
+                "50.0" : 1.0671283114582673,
+                "90.0" : 1.3590005827446423,
+                "95.0" : 1.3590005827446423,
+                "99.0" : 1.3590005827446423,
+                "99.9" : 1.3590005827446423,
+                "99.99" : 1.3590005827446423,
+                "99.999" : 1.3590005827446423,
+                "99.9999" : 1.3590005827446423,
+                "100.0" : 1.3590005827446423
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    1.089246185326183,
+                    1.1530652579739264,
+                    1.2635681082367378
+                ],
+                [
+                    1.0671283114582673,
+                    0.9584113382041101,
+                    0.9976962298378758
+                ],
+                [
+                    1.3590005827446423,
+                    1.0535263691176502,
+                    1.000837196190658
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

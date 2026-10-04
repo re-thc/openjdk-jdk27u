@@ -72,7 +72,7 @@ leaf-call overhead when a single word scan cannot be used.
 | AWT/Swing/CSS, beans decoders/editors, image metadata, audio configuration, Marlin and desktop property parsing | Already call Float/Double parsing or their String `valueOf` overloads |
 | javac literals/options, compiler/IGV utilities, JConsole/JDI/JStat, JLine colors, JFR metadata, demos | Already call Float/Double parsing or their String `valueOf` overloads |
 | Incubator Vector Float16 parsing | Its Double parsing stage benefits; its distinct binary16 rounding algorithm remains intact |
-| FloatToDecimal/DoubleToDecimal and formatting | Binary-to-decimal conversion; fast_float's decimal-to-binary algorithm does not apply |
+| FloatToDecimal/DoubleToDecimal and formatting | The opposite conversion uses [Żmij](zmij.md); fast_float's decimal-to-binary algorithm does not apply |
 
 The source audit covered qualified `parseFloat/parseDouble`, the String
 `valueOf` overloads and constructors, every `FloatingDecimal` reference, and

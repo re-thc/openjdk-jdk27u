@@ -1,0 +1,53 @@
+Validation on 2026-10-04 UTC
+
+GitHub source integration commit: 0254a842d2bb238a02d30e86752112a8a8ddb1d4
+Source tree: 69dcd466f64cf4958a484b10a36dd132d49c2708
+Vendor: Zmij v1.2 d1682cb47e67474319ed146d3ca2c0e1a70f9429, MIT option
+fast_float: v8.3.0 b0ab987b3dfdde13fa1915f65ef2a5c068d9208c, MIT option
+
+Builds:
+- Complete x86-64 release JDK image, GCC 14.2.0.
+- AArch64 release server JVM and libjava cross-build, GCC 14.2.0.
+- AArch64 runtime uses GA JDK 27 with rebuilt VM/libjava and patched core classes.
+
+Packaged x86-64 jtreg:
+- Expanded suite: 241 tests passed; 46,545 framework cases
+  (5,060 TestNG + 41,485 JUnit).
+- Six large-memory String/StringBuilder/StringBuffer tests run sequentially:
+  six tests passed; 17 JUnit cases.
+- Combined: 247 tests, 46,562 framework cases.
+- StringPlatformChars uses its separately built jtreg native library,
+  libstringPlatformChars.so, supplied with -nativepath.
+- Coverage: ToDecimal, FloatingDecimal, Float, Double, String, StringBuilder,
+  StringBuffer, BigDecimal, DecimalFormat, CompactNumberFormat, ChoiceFormat,
+  Formatter, Scanner, fast_float/Żmij HotSpot intrinsic controls.
+- Formatting differential tests cover interpreter, C1, C2, JNI-only,
+  disabled product flag, compact strings off and SSE2-only (-XX:UseSSE=2).
+- Original Java conversion is the oracle, including exact/away metadata.
+- C2-only _useJavaFloatAppend availability and disabling are checked;
+  the gate retains Java float builder append in C2 and native append in C1/interpreter.
+
+Additional x86-64 checks passed:
+- Serial, Parallel, ZGC, Shenandoah, compact object headers,
+  uncompressed references, C2 StressLCM/StressGCM, checked JNI.
+- CDS honors enabled and disabled UseZmijIntrinsics.
+- Standalone adapted vendor tests: 112,139 double + 101,280 float values,
+  compared with Java strings and double decimal metadata, for SSE2 and SSE4.1.
+- AddressSanitizer and UndefinedBehaviorSanitizer checks passed;
+  leak detection disabled because ptrace is unavailable to LeakSanitizer here.
+- Vendor updater reproduces the implementation, header, license and version files.
+
+AArch64 checks passed under QEMU (not performance measurements):
+- Final patched classes: interpreter, C1, C2, JNI-only, compact strings off,
+  Shenandoah; exact string, metadata and destination-bound differential checks.
+- WhiteBox intrinsic availability at C1/C2.
+- Additional C1 + Shenandoah run.
+- Standalone NEON adapter: same 112,139 double + 101,280 float reference values.
+
+Limits:
+- No native AArch64 benchmark hardware was available.
+- Windows/MSVC and other operating systems were not built/tested here.
+- Targeted suites and sampling cannot establish absence of every possible
+  correctness or performance regression. No correctness failures remain in
+  the targeted validation. Benchmark confidence intervals and fallback results
+  are reported without claiming small, inconclusive differences as improvements.
