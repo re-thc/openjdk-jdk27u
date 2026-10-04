@@ -85,6 +85,8 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_fmaF,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_math_fmaD,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_ref_reference_get0,                               // implementation of java.lang.ref.Reference.get()
+    jdk_internal_math_decimalZmij,
+    jdk_internal_math_formatZmij,
     jdk_internal_math_parseFastFloatDigits,
     jdk_internal_math_parseFastFloat,                           // FloatingDecimal.parseFastFloat(String, int)
     java_util_zip_CRC32_update,                                 // implementation of java.util.zip.CRC32.update()

@@ -43,6 +43,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/fastFloat.hpp"
+#include "utilities/zmij.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -2807,7 +2808,48 @@ void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
   __ move(reg, result);
 }
 
-
+void LIRGenerator::do_formatZmij(Intrinsic* x) {
+  if (x->id() == vmIntrinsics::_decimalZmij) {
+    LIRItem bits(x->argument_at(0), this);
+    BasicTypeList signature(1);
+    signature.append(T_LONG);
+    CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+    bits.load_item_force(cc->at(0));
+    LIR_Opr result = result_register_for(x->type());
+    __ call_runtime_leaf(CAST_FROM_FN_PTR(address, Zmij::decimal), getThreadTemp(), result, cc->args());
+    __ move(result, rlock_result(x));
+    return;
+  }
+  LIRItem output(x->argument_at(0), this);
+  LIRItem index(x->argument_at(1), this);
+  LIRItem bits(x->argument_at(2), this);
+  LIRItem format(x->argument_at(3), this);
+  output.load_item();
+  index.load_item();
+  __ null_check(output.result(), state_for(x));
+  LIR_Opr base = output.result();
+  int offset = arrayOopDesc::base_offset_in_bytes(T_BYTE);
+#ifdef AARCH64
+  // AArch64 indexed addresses cannot also carry a displacement.
+  LIR_Opr adjusted_base = new_pointer_register();
+  __ add(base, LIR_OprFact::intptrConst(offset), adjusted_base);
+  base = adjusted_base;
+  offset = 0;
+#endif
+  LIR_Opr data = new_register(T_ADDRESS);
+  __ leal(LIR_OprFact::address(new LIR_Address(base, index.result(), offset, T_BYTE)), data);
+  BasicTypeList signature(3);
+  signature.append(T_ADDRESS);
+  signature.append(T_LONG);
+  signature.append(T_INT);
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  __ move(data, cc->at(0));
+  bits.load_item_force(cc->at(1));
+  format.load_item_force(cc->at(2));
+  LIR_Opr result = result_register_for(x->type());
+  __ call_runtime_leaf(CAST_FROM_FN_PTR(address, Zmij::formatter()), getThreadTemp(), result, cc->args());
+  __ move(result, rlock_result(x));
+}
 
 void LIRGenerator::do_parseFastFloat(Intrinsic* x) {
   CodeEmitInfo* info = state_for(x);
@@ -2957,6 +2999,10 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     do_update_CRC32C(x);
     break;
 
+  case vmIntrinsics::_decimalZmij:
+  case vmIntrinsics::_formatZmij:
+    do_formatZmij(x);
+    break;
   case vmIntrinsics::_parseFastFloatDigits:
   case vmIntrinsics::_parseFastFloat:
     do_parseFastFloat(x);

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Harry Chan. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -977,7 +978,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         int count = this.count;
         byte[] value = ensureCapacitySameCoder(this.value, coder,count + FloatToDecimal.MAX_CHARS);
         FloatToDecimal toDecimal = isLatin1(coder) ? FloatToDecimal.LATIN1 : FloatToDecimal.UTF16;
-        this.count = toDecimal.putDecimal(value, count, f);
+        this.count = toDecimal.putDecimalForAppend(value, count, f);
         this.value = value;
         return this;
     }

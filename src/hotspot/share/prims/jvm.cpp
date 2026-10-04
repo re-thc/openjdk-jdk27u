@@ -99,6 +99,7 @@
 #include "services/management.hpp"
 #include "services/threadService.hpp"
 #include "utilities/fastFloat.hpp"
+#include "utilities/zmij.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/defaultStream.hpp"
@@ -3196,6 +3197,27 @@ JVM_END
 
 
 // JNI version ///////////////////////////////////////////////////////////////////////////////
+
+JVM_LEAF(jboolean, JVM_IsZmijEnabled(void))
+#if defined(VM_LITTLE_ENDIAN) && (defined(AMD64) || defined(AARCH64))
+  return UseZmijIntrinsics;
+#else
+  return false;
+#endif
+JVM_END
+
+JVM_LEAF(jlong, JVM_DecimalZmij(jlong bits))
+  return jlong(Zmij::decimal(uint64_t(bits)));
+JVM_END
+
+JVM_ENTRY(jint, JVM_FormatZmij(JNIEnv* env, jbyteArray output, jint index, jlong bits, jint format))
+  typeArrayOop value = typeArrayOop(JNIHandles::resolve_non_null(output));
+  int capacity = ((format & 1) == 0 ? 15 : 24) << ((format & 2) >> 1);
+  if (index < 0 || index > value->length() - capacity) {
+    return 0;
+  }
+  return Zmij::formatter()(static_cast<char*>(value->base(T_BYTE)) + index, uint64_t(bits), format);
+JVM_END
 
 JVM_LEAF(jboolean, JVM_IsFastFloatEnabled(void))
   return UseFastFloatIntrinsics;

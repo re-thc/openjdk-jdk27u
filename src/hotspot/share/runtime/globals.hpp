@@ -356,6 +356,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseAdler32Intrinsics, false, DIAGNOSTIC,                    \
           "use intrinsics for java.util.zip.Adler32")                       \
                                                                             \
+  product(bool, UseZmijIntrinsics, true,                                    \
+          "Use Zmij for binary floating-point formatting")                    \
+                                                                            \
   product(bool, UseFastFloatIntrinsics, true,                               \
           "Use fast_float for decimal float and double parsing")            \
                                                                             \

@@ -46,6 +46,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "utilities/fastFloat.hpp"
+#include "utilities/zmij.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
@@ -982,9 +983,36 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 }
 
 /**
- * Method entry for static native methods:
- *   int java.util.zip.CRC32.update(int crc, int b)
+ * Method entries for the native Żmij formatting and decimal-splitting helpers.
  */
+address TemplateInterpreterGenerator::generate_zmij_entry(AbstractInterpreter::MethodKind kind) {
+  if (!UseZmijIntrinsics) {
+    return nullptr;
+  }
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false, false);
+  address target;
+  if (kind == Interpreter::jdk_internal_math_decimalZmij) {
+    __ ldr(c_rarg0, Address(esp));
+    target = CAST_FROM_FN_PTR(address, Zmij::decimal);
+  } else {
+    __ ldr(c_rarg0, Address(esp, 4 * wordSize));
+    __ ldrw(rscratch1, Address(esp, 3 * wordSize));
+    __ add(c_rarg0, c_rarg0, rscratch1);
+    __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    __ ldr(c_rarg1, Address(esp, wordSize));
+    __ ldrw(c_rarg2, Address(esp));
+    target = CAST_FROM_FN_PTR(address, Zmij::formatter());
+  }
+  __ andr(sp, r19_sender_sp, -16);
+  __ lea(rscratch1, RuntimeAddress(target));
+  __ br(rscratch1);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}
+
 address TemplateInterpreterGenerator::generate_fast_float_entry(AbstractInterpreter::MethodKind kind) {
   if (!UseFastFloatIntrinsics) {
     return nullptr;

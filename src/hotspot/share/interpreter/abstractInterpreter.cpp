@@ -122,6 +122,16 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
 
     switch (iid) {
 #if defined(AMD64) || defined(AARCH64)
+      case vmIntrinsics::_decimalZmij:
+        if (UseZmijIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
+          return jdk_internal_math_decimalZmij;
+        }
+        break;
+      case vmIntrinsics::_formatZmij:
+        if (UseZmijIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
+          return jdk_internal_math_formatZmij;
+        }
+        break;
       case vmIntrinsics::_parseFastFloatDigits:
         if (UseFastFloatIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
           return jdk_internal_math_parseFastFloatDigits;
@@ -224,6 +234,8 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case java_lang_math_fmaD        : return vmIntrinsics::_fmaD;
   case java_lang_math_fmaF        : return vmIntrinsics::_fmaF;
   case java_lang_ref_reference_get0: return vmIntrinsics::_Reference_get0;
+  case jdk_internal_math_decimalZmij: return vmIntrinsics::_decimalZmij;
+  case jdk_internal_math_formatZmij: return vmIntrinsics::_formatZmij;
   case jdk_internal_math_parseFastFloatDigits: return vmIntrinsics::_parseFastFloatDigits;
   case jdk_internal_math_parseFastFloat: return vmIntrinsics::_parseFastFloat;
   case java_util_zip_CRC32_update : return vmIntrinsics::_updateCRC32;
@@ -332,6 +344,8 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_math_fmaF    : tty->print("java_lang_math_fmaF"    ); break;
     case java_lang_math_sqrt    : tty->print("java_lang_math_sqrt"    ); break;
     case java_lang_math_sqrt_strict           : tty->print("java_lang_math_sqrt_strict"); break;
+    case jdk_internal_math_decimalZmij: tty->print("jdk_internal_math_decimalZmij"); break;
+    case jdk_internal_math_formatZmij: tty->print("jdk_internal_math_formatZmij"); break;
     case jdk_internal_math_parseFastFloatDigits: tty->print("jdk_internal_math_parseFastFloatDigits"); break;
     case jdk_internal_math_parseFastFloat    : tty->print("jdk_internal_math_parseFastFloat"); break;
     case java_util_zip_CRC32_update           : tty->print("java_util_zip_CRC32_update"); break;

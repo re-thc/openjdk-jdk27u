@@ -29,6 +29,7 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "utilities/fastFloat.hpp"
+#include "utilities/zmij.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -178,9 +179,35 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
 #endif  // __WIN64
 
 /**
- * Method entry for static native methods:
- *   int java.util.zip.CRC32.update(int crc, int b)
+ * Method entries for the native Żmij formatting and decimal-splitting helpers.
  */
+address TemplateInterpreterGenerator::generate_zmij_entry(AbstractInterpreter::MethodKind kind) {
+  if (!UseZmijIntrinsics) {
+    return nullptr;
+  }
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false, false);
+  if (kind == Interpreter::jdk_internal_math_decimalZmij) {
+    __ movptr(c_rarg0, Address(rsp, wordSize));
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, Zmij::decimal), c_rarg0);
+  } else {
+    __ movptr(c_rarg0, Address(rsp, 5 * wordSize));
+    __ movl(rax, Address(rsp, 4 * wordSize));
+    __ addptr(c_rarg0, rax);
+    __ addptr(c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    __ movptr(c_rarg1, Address(rsp, 2 * wordSize));
+    __ movl(c_rarg2, Address(rsp, wordSize));
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, Zmij::formatter()), c_rarg0, c_rarg1, c_rarg2);
+  }
+  __ pop(rdi);
+  __ mov(rsp, r13);
+  __ jmp(rdi);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}
+
 address TemplateInterpreterGenerator::generate_fast_float_entry(AbstractInterpreter::MethodKind kind) {
   if (!UseFastFloatIntrinsics) {
     return nullptr;
