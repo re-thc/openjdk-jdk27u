@@ -29,6 +29,7 @@
 #include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/objectMonitorTable.hpp"
 #include "runtime/os.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/synchronizer.hpp"
@@ -111,4 +112,22 @@ TEST_VM(markWord, printing) {
     done.wait_with_safepoint_check(THREAD);  // wait till the thread is done.
   }
 }
+TEST_VM(markWord, zero_hash_monitor) {
+  if (!UseFourByteObjectHeaders) return;
+  JavaThread* THREAD = JavaThread::current();
+  ThreadInVMfromNative invm(THREAD);
+  HandleMark hm(THREAD);
+  Handle object(THREAD, vmClasses::Long_klass()->allocate_instance(THREAD));
+  ASSERT_FALSE(HAS_PENDING_EXCEPTION);
+  markWord mark = object()->mark();
+  const size_t offset = object()->klass()->hash_offset_in_bytes(object(), mark);
+  ASSERT_LT(offset, size_t(object()->size() * HeapWordSize));
+  object()->int_field_put(offset, 0);
+  object()->set_mark(mark.set_hashed_expanded());
+  ASSERT_EQ(object()->identity_hash(), 0);
+  ObjectLocker locker(object, THREAD);
+  locker.notify_all(THREAD);
+  ASSERT_NE(ObjectMonitorTable::monitor_get(object()), nullptr);
+}
+
 #endif // PRODUCT
