@@ -619,7 +619,7 @@ intptr_t ObjectSynchronizer::get_next_hash(Thread* current, oop obj) {
     value = ++GVars.hc_sequence;
   } else if (hashCode == 4) {
     value = cast_from_oop<intptr_t>(obj);
-  } else if (hashCode == 5) {
+  } else if (!UseFourByteObjectHeaders || hashCode == 5) {
     // Marsaglia's xor-shift scheme with thread-specific state
     // This is probably the best overall implementation -- we'll
     // likely make this the default in future releases.
@@ -645,8 +645,8 @@ intptr_t ObjectSynchronizer::get_next_hash(Thread* current, oop obj) {
   }
 
   value &= markWord::hash_mask;
-  if (hashCode != 6 && value == 0) value = 0xBAD;
-  assert(value != markWord::no_hash || hashCode == 6, "invariant");
+  if ((!UseFourByteObjectHeaders || hashCode != 6) && value == 0) value = 0xBAD;
+  assert(value != markWord::no_hash || (UseFourByteObjectHeaders && hashCode == 6), "invariant");
   return value;
 }
 
@@ -1601,7 +1601,7 @@ ObjectMonitor* ObjectSynchronizer::add_monitor(ObjectMonitor* monitor, oop obj) 
   } else {
     hash = mark.hash();
   }
-  assert(hash != 0, "must be set when claiming the object monitor");
+  assert(UseFourByteObjectHeaders ? mark.is_hashed() : hash != 0, "must be set when claiming the object monitor");
   monitor->set_hash(hash);
 
   return ObjectMonitorTable::monitor_put_get(monitor, obj);
