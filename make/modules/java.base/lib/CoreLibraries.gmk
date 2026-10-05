@@ -91,7 +91,8 @@ ifneq ($(filter x86_64 aarch64, $(OPENJDK_TARGET_CPU)), )
 	$(RM) -r $(ZLIBNG_OUT)
 	$(MKDIR) -p $(ZLIBNG_OUT)
 	cd $(ZLIBNG_OUT) && CC="$(CC)" AR="$(AR)" \
-	    CFLAGS="$(CFLAGS_JDKLIB) -fPIC -Wno-undef" CHOST="$(OPENJDK_TARGET_CPU)-unknown-linux-gnu" \
+	    CFLAGS="$(CFLAGS_JDKLIB) $(SYSROOT_CFLAGS) -fPIC -Wno-undef" \
+	    LDFLAGS="$(LDFLAGS_JDKLIB) $(SYSROOT_LDFLAGS)" CHOST="$(OPENJDK_TARGET_CPU)-unknown-linux-gnu" \
 	    $(BASH) $(ZLIBNG_SRC)/configure --static --zlib-compat --sprefix=jdk_ng_ \
 	    > configure.log 2>&1
 	+$(MAKE) -C $(ZLIBNG_OUT) libz.a

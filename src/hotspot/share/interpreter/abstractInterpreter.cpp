@@ -125,11 +125,9 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       // Use optimized stub code for CRC32 native methods.
 #if defined(AMD64) || defined(AARCH64)
       case vmIntrinsics::_updateBytesAdler32:
-        if (UseZlibNG) return java_util_zip_Adler32_updateBytes;
-        break;
+        return java_util_zip_Adler32_updateBytes;
       case vmIntrinsics::_updateByteBufferAdler32:
-        if (UseZlibNG) return java_util_zip_Adler32_updateByteBuffer;
-        break;
+        return java_util_zip_Adler32_updateByteBuffer;
 #endif
       case vmIntrinsics::_updateCRC32:       return java_util_zip_CRC32_update;
       case vmIntrinsics::_updateBytesCRC32:  return java_util_zip_CRC32_updateBytes;

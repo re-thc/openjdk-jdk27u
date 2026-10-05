@@ -48,7 +48,9 @@ static double now(void) {
 /* Reuse each library's context, matching the Java benchmark. Inflate exactly
    the same stock-zlib compressed representation in all three libraries. */
 int main(int argc, char** argv) {
-    if (argc != 2) { fprintf(stderr, "usage: %s corpus-file\n", argv[0]); return 1; }
+    if (argc < 2 || argc > 3) { fprintf(stderr, "usage: %s corpus-file [level]\n", argv[0]); return 1; }
+    int level = argc == 3 ? atoi(argv[2]) : 6;
+    if (level < 1 || level > 9) return 1;
     FILE* f = fopen(argv[1], "rb");
     if (f == NULL) return 1;
     fseek(f, 0, SEEK_END);
@@ -57,8 +59,8 @@ int main(int argc, char** argv) {
     unsigned char* corpus = malloc(corpus_size);
     if (corpus_size == 0 || corpus == NULL || fread(corpus, 1, corpus_size, f) != corpus_size) return 1;
     fclose(f);
-    puts("size,library,deflate_ns,inflate_ns,compressed_bytes,common_compressed_bytes");
-    size_t sizes[] = {64, 1024, 16384, 65536, 1048576};
+    puts("size,level,library,deflate_ns,inflate_ns,compressed_bytes,common_compressed_bytes");
+    size_t sizes[] = {64, 1024, 16384, 65536, 1048576, corpus_size};
     for (size_t si = 0; si < sizeof(sizes) / sizeof(sizes[0]); si++) {
         size_t n = sizes[si];
         size_t capacity = compressBound(n);
@@ -69,19 +71,19 @@ int main(int argc, char** argv) {
         if (!input || !compressed || !common || !output) abort();
         for (size_t i = 0; i < n; i++) input[i] = corpus[i % corpus_size];
         uLong common_size = capacity;
-        if (compress2(common, &common_size, input, n, 6) != Z_OK) abort();
+        if (compress2(common, &common_size, input, n, level) != Z_OK) abort();
         for (int backend = 0; backend < 3; backend++) {
             z_stream def = {0}, inf = {0};
             struct libdeflate_compressor* lc = NULL;
             struct libdeflate_decompressor* li = NULL;
             if (backend == 0) {
-                if (deflateInit(&def, 6) != Z_OK || inflateInit(&inf) != Z_OK) abort();
+                if (deflateInit(&def, level) != Z_OK || inflateInit(&inf) != Z_OK) abort();
             } else if (backend == 1) {
-                if (jdk_ng_deflateInit2_(&def, 6, Z_DEFLATED, MAX_WBITS, 8, Z_DEFAULT_STRATEGY,
+                if (jdk_ng_deflateInit2_(&def, level, Z_DEFLATED, MAX_WBITS, 8, Z_DEFAULT_STRATEGY,
                                          ZLIB_VERSION, sizeof(def)) != Z_OK ||
                     jdk_ng_inflateInit2_(&inf, MAX_WBITS, ZLIB_VERSION, sizeof(inf)) != Z_OK) abort();
             } else {
-                lc = libdeflate_alloc_compressor(6);
+                lc = libdeflate_alloc_compressor(level);
                 li = libdeflate_alloc_decompressor();
                 if (!lc || !li) abort();
             }
@@ -120,7 +122,7 @@ int main(int argc, char** argv) {
             } while (end - start < 0.2);
             double inflate_ns = (end - start) * 1e9 / count;
             if (memcmp(input, output, n)) abort();
-            printf("%zu,%s,%.1f,%.1f,%zu,%lu\n", n,
+            printf("%zu,%d,%s,%.1f,%.1f,%zu,%lu\n", n, level,
                    backend == 0 ? "zlib" : backend == 1 ? "zlib-ng" : "libdeflate",
                    deflate_ns, inflate_ns, compressed_size, common_size);
             if (backend == 0) { deflateEnd(&def); inflateEnd(&inf); }

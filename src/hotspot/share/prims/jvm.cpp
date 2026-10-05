@@ -250,7 +250,11 @@ JVM_ENTRY(jlong, JVM_ZipProcess(JNIEnv* env, jclass cls, jboolean inflate, jobje
 JVM_END
 
 JVM_LEAF(jboolean, JVM_ZipIntrinsicsEnabled())
-  return UseZlibNG && UseZipIntrinsics;
+#if defined(LINUX) && (defined(AMD64) || defined(AARCH64))
+  return UseZipIntrinsics;
+#else
+  return false;
+#endif
 JVM_END
 
 JVM_LEAF(jboolean, JVM_UseZlibNG())

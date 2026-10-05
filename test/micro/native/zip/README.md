@@ -1,7 +1,7 @@
 # Native backend comparison
 
 `CompareBackends.c` compares reused stock-zlib and zlib-ng streams with reused
-libdeflate compressor/decompressor contexts at level 6. Each timed batch lasts
+libdeflate compressor/decompressor contexts at a selected level (6 by default). Each timed batch lasts
 at least 0.2 seconds. Compression output is checked with stock zlib;
 decompression uses the **same stock-zlib representation** in every library.
 Compressed sizes are recorded because equal numeric levels do not guarantee
@@ -36,11 +36,20 @@ cc -O3 -I src/java.base/share/native/libzip/zlib -I /path/to/libdeflate \
     test/micro/native/zip/CompareBackends.c /path/to/stock-zlib/libz.a \
     /path/to/zlib-ng-build/libz.a /path/to/libdeflate-build/libdeflate.a \
     -o compare-backends
-./compare-backends src/java.base/share/classes/java/util/zip/ZipFile.java
+./compare-backends src/java.base/share/classes/java/util/zip/ZipFile.java 6
 ./compare-backends /path/to/random-corpus.bin
 ```
 
 libdeflate wins the measured large whole-buffer cases. zlib-ng is selected for
 the JDK integration because it supports incremental streaming, dictionaries,
 flush modes, and parameter changes. The Java integration additionally retains
-stock zlib for a fresh stream finished with at most 1 KiB of input.
+stock zlib when the first input chunk is at most 1 KiB, including incremental
+ZIP/GZIP writes. Streams retain that library until reset. A zero-capacity call
+does not commit the choice.
+
+For real-corpus comparisons, concatenate the sorted source files in a documented
+corpus and run levels 1, 3, 6 and 9. The last size row measures the whole corpus
+without repetition. Record its SHA-256 and file list, build all three libraries
+with equal optimization settings, and report speed alongside compressed bytes.
+The historical CSV above uses different stock/candidate optimization levels;
+new results should identify their own compiler flags and provenance.

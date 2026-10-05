@@ -72,6 +72,7 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  */
 
 public class Inflater implements AutoCloseable {
+
     private final InflaterZStreamRef zsRef;
     private ByteBuffer input = ZipUtils.defaultBuf;
     private byte[] inputArray;

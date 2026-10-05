@@ -274,17 +274,35 @@ static jint doDeflate(JNIEnv *env, jlong addr,
     d = jlong_to_ptr(addr);
     strm = &d->stream;
 
-    if (d->select_backend) {
-        int backend = flush == Z_FINISH && inputLen <= ZIP_SMALL_DEFLATE_LIMIT
-                      ? ZIP_DEFLATE_STOCK : ZIP_DEFLATE_NG;
-        res = selectBackend(d, backend);
-        if (res != Z_OK) return res;
-    }
-
     strm->next_in  = (Bytef *) input;
     strm->next_out = (Bytef *) output;
     strm->avail_in  = inputLen;
     strm->avail_out = outputLen;
+
+    if (d->select_backend && outputLen == 0) {
+        /* No input can be consumed without output capacity. Keep selection
+         * pending, including after reset. Parameter changes on a fresh stream
+         * need no compression state; an allocated reset stream applies them
+         * below without committing the backend for its next input. */
+        if (!setParams) return Z_BUF_ERROR;
+        if (d->backend == ZIP_DEFLATE_NONE) {
+            d->strategy = (params >> 1) & 3;
+            d->level = params >> 3;
+            return Z_OK;
+        }
+    } else if (d->select_backend) {
+        /* Streaming clients call NO_FLUSH before FINISH. Choose conservatively
+         * from the first input chunk, then keep this backend until reset. */
+        int backend = inputLen <= ZIP_SMALL_DEFLATE_LIMIT
+                      ? ZIP_DEFLATE_STOCK : ZIP_DEFLATE_NG;
+        res = selectBackend(d, backend);
+        if (res != Z_OK) return res;
+        /* selectBackend may replace and clear the z_stream. */
+        strm->next_in  = (Bytef *) input;
+        strm->next_out = (Bytef *) output;
+        strm->avail_in  = inputLen;
+        strm->avail_out = outputLen;
+    }
 
     if (setParams) {
         int strategy = (params >> 1) & 3;
