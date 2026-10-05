@@ -22,11 +22,11 @@
  *
  */
 
-#include "runtime/rustRegex.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/rustRegex.hpp"
 
 #if INCLUDE_RUST_REGEX
 extern "C" {
