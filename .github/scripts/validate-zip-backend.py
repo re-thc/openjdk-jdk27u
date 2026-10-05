@@ -333,9 +333,71 @@ def calibrate(jdk, baseline):
     print("\n".join(lines), flush=True)
 
 
+
+def pool(jdk, baseline):
+    deps = OUT / "jmh"
+    deps.mkdir(exist_ok=True)
+    for name, (path, digest) in DEPS.items():
+        target = deps / name
+        urllib.request.urlretrieve("https://repo.maven.apache.org/maven2/" + path, target)
+        if hashlib.sha256(target.read_bytes()).hexdigest() != digest:
+            raise RuntimeError("Dependency digest mismatch: " + name)
+    classes = deps / "pool-classes"
+    classes.mkdir(exist_ok=True)
+    cp = os.pathsep.join(str(deps / p) for p in DEPS)
+    exports = ["--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED"]
+    run("compile-pool-benchmark", [jdk / "bin/javac"] + exports +
+        ["-cp", cp, "-processorpath", cp, "-d", classes,
+         REPO / ".github/diagnostics/ZipBackendPool.java"])
+    cp = str(classes) + os.pathsep + cp
+    common = ["-Xms128m", "-Xmx128m", "-XX:+UseSerialGC", "-XX:ActiveProcessorCount=2",
+              "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
+              "--add-opens=java.base/java.util.zip=ALL-UNNAMED"]
+    configs = [("baseline", baseline, []), ("default", jdk, ["-XX:-UseZlibNG"]),
+               ("ng-jni", jdk, ["-XX:+UseZlibNG", "-XX:+UnlockDiagnosticVMOptions",
+                                "-XX:-UseZipIntrinsics"]),
+               ("ng-intrinsic", jdk, ["-XX:+UseZlibNG"])]
+    tiers = [("int", ["-Xint"]), ("c1", ["-XX:TieredStopAtLevel=1", "-Xbatch"]),
+             ("c2", ["-XX:-TieredCompilation", "-XX:CompileThreshold=1000", "-Xbatch"])]
+    all_rows = []
+    for tier, flags in tiers:
+        for label, target, extra in configs:
+            name = "pool-" + tier + "-" + label
+            result = OUT / (name + ".json")
+            output = run(name, [target / "bin/java", "-Djmh.blackhole.mode=FULL_DONTINLINE",
+                "-cp", cp, "org.openjdk.jmh.Main", "ZipBackendPool.deflate$",
+                "-p", "size=64,1024,65536", "-p", "streams=1,16",
+                "-f", "2", "-wi", "4", "-i", "7", "-w", "1s", "-r", "500ms",
+                "-jvm", target / "bin/java", "-jvmArgsAppend",
+                " ".join(common + flags + extra), "-rf", "json", "-rff", result])
+            for line in output.splitlines():
+                if "ALIGNMENT bytes=" in line:
+                    print(name + " " + line, flush=True)
+            rows = json.loads(result.read_text())
+            if len(rows) != 6: raise RuntimeError("Incomplete pool benchmark: " + name)
+            for row in rows:
+                row.update(tier=tier, backend=label)
+                all_rows.append(row)
+            (OUT / "pool-jmh.json").write_text(json.dumps(all_rows, indent=2) + "\n")
+    lines = ["Pool comparison: two forks; four 1 s warmups and seven 0.5 s measurements.",
+             "| Tier | Bytes | Streams | Baseline ns | Default ns | ng JNI ns | ng intrinsic ns |",
+             "| --- | ---: | ---: | ---: | ---: | ---: | ---: |"]
+    for tier, _ in tiers:
+        for size in [64, 1024, 65536]:
+            for streams in [1, 16]:
+                selected = {row["backend"]: row["primaryMetric"] for row in all_rows
+                            if row["tier"] == tier and int(row["params"]["size"]) == size
+                            and int(row["params"]["streams"]) == streams}
+                values = [f'{selected[label]["score"]:.1f} ± {selected[label]["scoreError"]:.1f}'
+                          for label, _, _ in configs]
+                lines.append("| " + " | ".join([tier, str(size), str(streams)] + values) + " |")
+    (OUT / "pool-table.md").write_text("\n".join(lines) + "\n")
+    print("\n".join(lines), flush=True)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=["tests", "gc", "benchmarks", "calibrate"])
+    parser.add_argument("action", choices=["tests", "gc", "benchmarks", "calibrate", "pool"])
     parser.add_argument("--jdk", type=Path, required=True)
     parser.add_argument("--jtreg", type=Path)
     parser.add_argument("--baseline", type=Path)
@@ -346,6 +408,8 @@ if __name__ == "__main__":
         tests(jdk, options.jtreg.resolve())
     elif options.action == "gc":
         gc_matrix(jdk, options.verify_oops)
+    elif options.action == "pool":
+        pool(jdk, options.baseline.resolve())
     elif options.action == "calibrate":
         calibrate(jdk, options.baseline.resolve())
     else:
