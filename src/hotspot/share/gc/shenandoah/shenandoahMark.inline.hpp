@@ -115,7 +115,7 @@ void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop obj, Klas
   const ShenandoahHeap* const heap = ShenandoahHeap::heap();
   const size_t region_idx = heap->heap_region_index_containing(obj);
   ShenandoahHeapRegion* const region = heap->get_region(region_idx);
-  const size_t size = obj->size_given_klass(klass);
+  const size_t size = obj->size_given_mark_and_klass(obj->mark(), klass);
 
   // Age census for objects in the young generation
   if (GENERATION == YOUNG || (GENERATION == GLOBAL && region->is_young())) {
