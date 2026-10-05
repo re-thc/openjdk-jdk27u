@@ -39,47 +39,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  prepare:
-    runs-on: ubuntu-24.04-arm
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/config
-        id: version
-        with:
-          var: JTREG_VERSION
-      - uses: actions/cache@v5
-        id: jtreg-cache
-        with:
-          path: jtreg/installed
-          key: jtreg-${{ steps.version.outputs.value }}
-      - uses: ./.github/actions/get-bootjdk
-        if: steps.jtreg-cache.outputs.cache-hit != 'true'
-        id: boot
-        with:
-          platform: linux-aarch64
-      - uses: actions/checkout@v6
-        if: steps.jtreg-cache.outputs.cache-hit != 'true'
-        with:
-          repository: openjdk/jtreg
-          ref: jtreg-${{ steps.version.outputs.value }}
-          path: jtreg/src
-      - name: Build jtreg with a native boot JDK
-        if: steps.jtreg-cache.outputs.cache-hit != 'true'
-        working-directory: jtreg/src
-        env:
-          BOOT_JDK: ${{ steps.boot.outputs.path }}
-        run: |
-          bash make/build.sh --jdk "$BOOT_JDK"
-          mkdir ../installed
-          mv build/images/jtreg/* ../installed
-      - uses: actions/upload-artifact@v6
-        with:
-          name: bundles-jtreg-${{ steps.version.outputs.value }}
-          path: jtreg/installed
-          retention-days: 5
-
   validate:
-    needs: prepare
     timeout-minutes: 300
     strategy:
       fail-fast: false
@@ -111,8 +71,15 @@ jobs:
         id: boot
         with:
           platform: ${{ matrix.platform }}
-      - uses: ./.github/actions/get-jtreg
+      - uses: actions/download-artifact@v6
+        with:
+          name: bundles-jtreg-8.2.1+1
+          run-id: 37263807373
+          github-token: ${{ github.token }}
+          path: jtreg/installed
+      - name: Set jtreg path
         id: jtreg
+        run: echo "path=$PWD/jtreg/installed" >> "$GITHUB_OUTPUT"
       - name: Verify restored jtreg installation
         env:
           BOOT_JDK: ${{ steps.boot.outputs.path }}
