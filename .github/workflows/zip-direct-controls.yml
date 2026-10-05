@@ -1,10 +1,12 @@
-name: ZIP direct-to-direct call-path validation
+name: ZIP controlled direct-call performance
 on:
+  push:
+    branches: [pr/zlib-ng-validation]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: zip-direct-gate-${{ github.ref }}
+  group: zip-direct-controls-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   scalar:
@@ -33,9 +35,9 @@ jobs:
         run: |
           mkdir -p validation/results
           lscpu > validation/results/cpu.txt
-          python3 -m py_compile .github/scripts/validate-direct-gate.py
-      - name: Validate selected buffer calls under all tiers and collectors
-        run: python3 .github/scripts/validate-direct-gate.py build/zip/images/jdk
+          python3 -m py_compile .github/scripts/validate-direct-controls.py
+      - name: Compare C2 with controlled sharing, order and buffer allocation
+        run: python3 .github/scripts/validate-direct-controls.py build/zip/images/jdk
       - uses: actions/upload-artifact@v6
         if: always()
         with:
