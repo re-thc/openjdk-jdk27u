@@ -148,7 +148,54 @@ public class TestZlibNG {
         }
     }
 
+    private static void directCallPaths() throws Exception {
+        int[] lengths = {0, 64, 1024, 4096, 4097, 16384, 65536};
+        byte[] data = new byte[65536];
+        new Random(98765).nextBytes(data);
+        byte[] compressed = new byte[70000];
+        for (int length : lengths) {
+            int encoded;
+            try (Deflater d = new Deflater()) {
+                d.setInput(data, 0, length);
+                d.finish();
+                encoded = d.deflate(compressed);
+                if (!d.finished()) throw new AssertionError("boundary compression");
+            }
+            for (int capacity : new int[]{64, 4096, 4097, 70000}) {
+                for (boolean mixedOutput : new boolean[]{false, true}) {
+                    ByteBuffer input = ByteBuffer.allocateDirect(encoded + 7);
+                    input.position(7).put(compressed, 0, encoded).flip().position(7);
+                    ByteBuffer directOutput = ByteBuffer.allocateDirect(capacity);
+                    ByteBuffer heapOutput = ByteBuffer.allocate(capacity);
+                    ByteArrayOutputStream decoded = new ByteArrayOutputStream();
+                    try (Inflater i = new Inflater()) {
+                        i.setInput(input);
+                        for (int attempt = 0; !i.finished(); attempt++) {
+                            if (attempt > data.length + 1) throw new AssertionError("direct stalled");
+                            // Alternate JNI and intrinsic calls within the same stream.
+                            ByteBuffer output = mixedOutput && (attempt & 1) != 0
+                                ? heapOutput : directOutput;
+                            output.clear();
+                            int written = i.inflate(output);
+                            output.flip();
+                            while (output.hasRemaining()) decoded.write(output.get());
+                            if (written == 0 && !i.finished()) throw new AssertionError("direct progress");
+                        }
+                        if (i.getBytesRead() != encoded || i.getBytesWritten() != length ||
+                            input.position() != input.limit()) {
+                            throw new AssertionError("direct counters");
+                        }
+                    }
+                    if (!Arrays.equals(data, 0, length, decoded.toByteArray(), 0, decoded.size())) {
+                        throw new AssertionError("direct data");
+                    }
+                }
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
+        directCallPaths();
         hybridReset();
         byte[] data = new byte[4096];
         new Random(12345).nextBytes(data);

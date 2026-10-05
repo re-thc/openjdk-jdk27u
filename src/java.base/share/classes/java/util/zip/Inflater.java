@@ -552,13 +552,11 @@ public class Inflater implements AutoCloseable {
                                     NIO_ACCESS.acquireSession(output);
                                     try {
                                         long outputAddress = NIO_ACCESS.getBufferAddress(output);
-                                        result = ZipUtils.USE_ZIP_INTRINSICS
-                                            ? ZipUtils.process(true, this, zsRef.address(),
-                                                null, inputAddress + inputPos, inputRem,
-                                                null, outputAddress + outputPos, outputRem, 0, 0)
-                                            : inflateBufferBuffer(zsRef.address(),
-                                                inputAddress + inputPos, inputRem,
-                                                outputAddress + outputPos, outputRem);
+                                        // With no heap arrays to pin, the JNI entry
+                                        // has less transition overhead.
+                                        result = inflateBufferBuffer(zsRef.address(),
+                                            inputAddress + inputPos, inputRem,
+                                            outputAddress + outputPos, outputRem);
                                     } finally {
                                         NIO_ACCESS.releaseSession(output);
                                     }
