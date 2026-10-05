@@ -57,16 +57,17 @@ jobs:
           cp build/zip/images/jdk/lib/libjava.so build/zip-profile/support/modules_libs/java.base/
           cp build/zip/images/jdk/lib/server/libjvm.so build/zip-profile/support/modules_libs/java.base/server/
           build/zip/images/jdk/bin/javac --patch-module java.base=src/java.base/share/classes -h build/zip-profile/support/headers/java.base -d validation/header-classes src/java.base/share/classes/java/util/zip/Adler32.java src/java.base/share/classes/java/util/zip/CRC32.java src/java.base/share/classes/java/util/zip/Deflater.java src/java.base/share/classes/java/util/zip/Inflater.java
-          if make -j2 -f make/modules/java.base/Lib.gmk SPEC="$PWD/build/zip-profile/spec.gmk" MODULE=java.base "$PWD/build/zip-profile/support/modules_libs/java.base/libzip.so"; then
+          if make -j2 -I make/modules/java.base -f make/modules/java.base/Lib.gmk SPEC="$PWD/build/zip-profile/spec.gmk" MODULE=java.base "$PWD/build/zip-profile/support/modules_libs/java.base/libzip.so"; then
             cp build/zip-profile/support/modules_libs/java.base/libzip.so build/zip/images/jdk/lib/
+            mkdir -p build/zip-profile/images
+            ln -s "$PWD/build/zip/images/jdk" build/zip-profile/images/jdk
             echo native-library-only > validation/results/build-method.txt
           else
             make CONF=zip-profile JOBS=2 images
-            cp -a build/zip-profile/images/jdk/. build/zip/images/jdk/
             echo full-image > validation/results/build-method.txt
           fi
       - name: Compare single and pooled contexts under all compilation tiers
-        run: python3 .github/scripts/validate-zip-backend.py pool --jdk build/zip/images/jdk --baseline validation/baseline/build/zip/images/jdk
+        run: python3 .github/scripts/validate-zip-backend.py pool --jdk build/zip-profile/images/jdk --baseline validation/baseline/build/zip/images/jdk
       - uses: actions/upload-artifact@v6
         if: always()
         with:
