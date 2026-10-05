@@ -1,0 +1,104 @@
+#
+# Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+name: ZIP AOT flag validation
+
+on:
+  push:
+    branches: [pr/zlib-ng-aot-validation]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: zip-aot-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/get-bootjdk
+        id: boot
+        with:
+          platform: linux-aarch64
+      - uses: actions/download-artifact@v6
+        with:
+          name: bundles-jtreg-8.2.1+1
+          run-id: 37263807373
+          github-token: ${{ github.token }}
+          path: jtreg/installed
+      - uses: actions/download-artifact@v6
+        with:
+          name: bundles-linux-aarch64
+          run-id: 37263294105
+          github-token: ${{ github.token }}
+          path: bundles
+      - name: Prepare matching JDK libraries
+        run: |
+          mkdir -p validation/image validation/results
+          tar -xf bundles/jdk-linux-aarch64.tar.gz -C validation/image
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          images = [p.parent.parent.resolve() for p in Path("validation/image").glob("**/bin/java")]
+          assert len(images) == 1, images
+          with open(os.environ["GITHUB_ENV"], "a") as env:
+              env.write("VALIDATION_JDK=" + str(images[0]) + "\n")
+          PY
+          git fetch --depth=1 origin 5a15ad035cf2fc30de8ecaf8d8f597a3fb997f06
+          git diff 5a15ad035cf2fc30de8ecaf8d8f597a3fb997f06 -- src make test > validation/results/implementation-diff.txt
+          test ! -s validation/results/implementation-diff.txt
+          echo 5a15ad035cf2fc30de8ecaf8d8f597a3fb997f06 > validation/results/candidate-commit.txt
+          python3 -m py_compile .github/scripts/validate-zip-backend.py
+      - name: Install native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-14 g++-14 zlib1g-dev libasound2-dev libcups2-dev libfontconfig1-dev libx11-dev libxext-dev libxrandr-dev libxrender-dev libxt-dev libxtst-dev
+      - name: Build final assertion-enabled VM
+        env:
+          CC: gcc-14
+          CXX: g++-14
+          BOOT_JDK: ${{ steps.boot.outputs.path }}
+        run: |
+          bash configure --with-conf-name=zip-debug --with-boot-jdk="$BOOT_JDK" --with-zlib=system --with-debug-level=fastdebug --with-native-debug-symbols=none --disable-warnings-as-errors
+          make CONF=zip-debug JOBS=2 hotspot
+          cp build/zip-debug/support/modules_libs/java.base/server/libjvm.so "$VALIDATION_JDK/lib/server/libjvm.so"
+      - name: Verify collectors and AOT flag compatibility
+        env:
+          JTREG_PATH: ${{ github.workspace }}/jtreg/installed
+        run: python3 .github/scripts/validate-zip-backend.py gc --jdk "$VALIDATION_JDK" --verify-oops
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: zip-aot-aarch64
+          path: |
+            validation/results
+            **/hs_err_pid*.log
+          retention-days: 14
