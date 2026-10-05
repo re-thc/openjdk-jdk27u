@@ -83,11 +83,11 @@ def tests(jdk, jtreg):
               "test/hotspot/jtreg/compiler/intrinsics/zip",
               "test/jdk/jdk/nio/zipfs/Basic.java"]
     for mode, flag in [("ng", "-XX:+UseZlibNG"), ("stock", "-XX:-UseZlibNG")]:
-        run("jtreg-" + mode, ["bash", jtreg / "bin/jtreg", "-ignore:quiet",
+        run("jtreg-" + mode, [jdk / "bin/java", "-Dprogram=jtreg", "-jar", jtreg / "lib/jtreg.jar", "-ignore:quiet",
             "-jdk:" + str(jdk), "-w:" + str(OUT / (mode + "-work")),
             "-r:" + str(OUT / (mode + "-report")), "-conc:2", "-timeoutFactor:4",
             "-javaoptions:" + flag] + [REPO / s for s in suites])
-    run("jtreg-heap", ["bash", jtreg / "bin/jtreg", "-jdk:" + str(jdk),
+    run("jtreg-heap", [jdk / "bin/java", "-Dprogram=jtreg", "-jar", jtreg / "lib/jtreg.jar", "-jdk:" + str(jdk),
         "-w:" + str(OUT / "heap-work"), "-r:" + str(OUT / "heap-report"),
         "-timeoutFactor:4", "-javaoptions:-XX:+UseZlibNG",
         REPO / "test/hotspot/jtreg/serviceability/dcmd/gc/HeapDumpCompressedTest.java"])

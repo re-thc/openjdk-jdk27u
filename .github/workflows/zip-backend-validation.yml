@@ -66,6 +66,13 @@ jobs:
           platform: ${{ matrix.platform }}
       - uses: ./.github/actions/get-jtreg
         id: jtreg
+      - name: Verify restored jtreg installation
+        env:
+          BOOT_JDK: ${{ steps.boot.outputs.path }}
+          JTREG_PATH: ${{ steps.jtreg.outputs.path }}
+        run: |
+          python3 -m py_compile .github/scripts/validate-zip-backend.py
+          "$BOOT_JDK/bin/java" -Dprogram=jtreg -jar "$JTREG_PATH/lib/jtreg.jar" -help
       - name: Install build dependencies
         run: |
           sudo apt-get update
