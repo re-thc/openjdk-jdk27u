@@ -536,7 +536,8 @@ void ObjectMonitorTable::create() {
 
 ObjectMonitor* ObjectMonitorTable::monitor_get(oop obj) {
   const intptr_t hash = object_hash(obj);
-  if (hash == 0) return nullptr;
+  // Four-byte headers track hash presence separately; zero is a valid hash.
+  if (hash == 0 && (!UseFourByteObjectHeaders || !obj->mark().is_hashed())) return nullptr;
   Table* curr = _curr.load_acquire();
   ObjectMonitor* monitor = curr->get(obj, hash);
   return monitor;
