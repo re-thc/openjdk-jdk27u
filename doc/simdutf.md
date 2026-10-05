@@ -64,6 +64,9 @@ support retain Java behavior.
 Existing C2 ASCII, inflate, narrow and Base64 stubs avoid the C ABI overhead.
 They remain intrinsic candidates, and C2 declines the corresponding simdutf
 operations. Interpreter and C1 can still accelerate those same operations.
+UTF-8 charset array loops handle their ASCII prefix before attempting simdutf
+on the remaining Unicode input. This also preserves the existing ASCII codec
+intrinsics and avoids validation/conversion passes over an all-ASCII buffer.
 Consequently enabling simdutf does not require replacing every execution tier.
 
 ## Applicability audit
@@ -196,7 +199,7 @@ test concurrency cannot recover an exhausted process namespace; use a fresh
 runner and preserve the failing `.jtr` startup log rather than treating it as
 a charset assertion failure.
 
-The JMH benchmark is `org.openjdk.bench.java.lang.SimdUTF`. It measures public
+The JMH benchmark is `org.openjdk.bench.java.lang.SimdUTF`. Its 33 cases measure public
 String/charset/Base64 operations, validation and encoded lengths; it does not
 time the native bridge in isolation. See [benchmark results](simdutf/results.md)
 for baseline-versus-enabled per-tier measurements and reproduction details.

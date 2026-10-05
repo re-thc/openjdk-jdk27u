@@ -151,6 +151,14 @@ Review-fix CI passed the platform and feature-enabled jtreg suites on
 `f596e1ef`; default-enabled CI and complete exact-head/AArch64 benchmarking
 remain outstanding. See [validation](validation.txt).
 
+The final review also moved UTF-8 charset bulk attempts after the established
+ASCII-prefix helpers. All-ASCII buffers keep the existing codec intrinsics;
+only the remaining Unicode input reaches simdutf. New `asciiCharsetEncode` and
+`asciiCharsetDecode` cases explicitly measure UTF-8 array-buffer ASCII codecs.
+The source now contains 33 public cases; the historical matrix above measured
+31 and contains no results for these two additions. Rebuild the microbenchmark
+classes and include them in the exact-head rerun.
+
 ## Native converter comparison, 2026-10-05
 
 The final review replaced capacity-bounded UTF-8 encoding with direct converters

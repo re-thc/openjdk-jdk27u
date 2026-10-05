@@ -228,15 +228,16 @@ public final class UTF_8 extends Unicode {
             int dp = doff + dst.position();
             int dl = doff + dst.limit();
 
+            int n = JLA.decodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
+            sp += n;
+            dp += n;
+
+            // Preserve the existing ASCII intrinsic before bulk Unicode work.
             int converted = SimdUTF.isEligible(sl - sp) ? SimdUTF.decodeUTF8(sa, sp, sl - sp, da, dp, dl - dp) : -1;
             if (converted >= 0) {
                 updatePositions(src, sl, dst, dp + converted);
                 return CoderResult.UNDERFLOW;
             }
-            int n = JLA.decodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
-            sp += n;
-            dp += n;
-
             while (sp < sl) {
                 int b1 = sa[sp];
                 if (b1 >= 0) {
@@ -461,17 +462,17 @@ public final class UTF_8 extends Unicode {
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
 
-            int converted = SimdUTF.isEligible(sl - sp) ? SimdUTF.encodeUTF16(sa, sp, sl - sp, da, dp, dl - dp) : -1;
-            if (converted >= 0) {
-                updatePositions(src, sl, dst, dp + converted);
-                return CoderResult.UNDERFLOW;
-            }
             // Handle ASCII-only prefix
             int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
             sp += n;
             dp += n;
 
             if (sp < sl) {
+                int converted = SimdUTF.isEligible(sl - sp) ? SimdUTF.encodeUTF16(sa, sp, sl - sp, da, dp, dl - dp) : -1;
+                if (converted >= 0) {
+                    updatePositions(src, sl, dst, dp + converted);
+                    return CoderResult.UNDERFLOW;
+                }
                 return encodeArrayLoopSlow(src, sa, sp, sl, dst, da, dp, dl);
             } else {
                 updatePositions(src, sp, dst, dp);

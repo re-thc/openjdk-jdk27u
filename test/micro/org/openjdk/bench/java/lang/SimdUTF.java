@@ -52,6 +52,8 @@ public class SimdUTF {
     private char[] supplementaryChars;
     private ByteBuffer charsetBytes, charsetInput;
     private CharBuffer charsetChars, charsetOutput;
+    private ByteBuffer asciiCharsetInput;
+    private CharBuffer asciiCharsetOutput;
     private CharsetEncoder charsetEncoder;
     private CharsetDecoder charsetDecoder;
     private CharsetEncoder unicodeValidator;
@@ -115,6 +117,8 @@ public class SimdUTF {
         asciiChars = ascii.toCharArray();
         latin1Chars = latin1.toCharArray();
         asciiInput = CharBuffer.wrap(asciiChars);
+        asciiCharsetInput = ByteBuffer.wrap(asciiBytes);
+        asciiCharsetOutput = CharBuffer.allocate(size);
         latin1Input = CharBuffer.wrap(latin1Chars);
         singleByteOutput = ByteBuffer.allocate(size);
         asciiEncoder = StandardCharsets.US_ASCII.newEncoder();
@@ -183,6 +187,18 @@ public class SimdUTF {
         asciiEncoder.reset(); asciiInput.clear(); singleByteOutput.clear();
         asciiEncoder.encode(asciiInput, singleByteOutput, true);
         return singleByteOutput.position();
+    }
+
+    @Benchmark public int asciiCharsetEncode() {
+        charsetEncoder.reset(); asciiInput.clear(); singleByteOutput.clear();
+        charsetEncoder.encode(asciiInput, singleByteOutput, true);
+        return singleByteOutput.position();
+    }
+
+    @Benchmark public int asciiCharsetDecode() {
+        charsetDecoder.reset(); asciiCharsetInput.clear(); asciiCharsetOutput.clear();
+        charsetDecoder.decode(asciiCharsetInput, asciiCharsetOutput, true);
+        return asciiCharsetOutput.position();
     }
 
     @Benchmark public int latin1CharsetEncode() {

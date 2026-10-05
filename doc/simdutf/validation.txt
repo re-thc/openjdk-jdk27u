@@ -14,6 +14,12 @@ CURRENT REVISION
   Latin-1, BMP and supplementary input, with source offsets and insufficient,
   exact and worst-case output capacities. All existing tier/debug/JNI/opt-out
   runs include these checks.
+- UTF-8 array encoders/decoders now consume their existing ASCII prefix before
+  attempting bulk Unicode conversion. This preserves the current tier-specific
+  ASCII intrinsics and avoids extra full-buffer passes on all-ASCII input.
+  Capacity tests include long ASCII prefixes followed by BMP/supplementary
+  input. Two new UTF-8 ASCII charset benchmarks bring the source to 33 cases;
+  the historical 31-case matrix is unchanged and does not measure the additions.
 - Current x86 release and x86/AArch64 ASSERT+CHECK_UNHANDLED_OOPS compilations
   of the C1 runtime and shared bridge passed without a PCH (GNU 14).
 - Native converter byte equality, capacity canaries and detailed partial-

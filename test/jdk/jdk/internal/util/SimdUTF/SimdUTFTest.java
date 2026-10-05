@@ -531,7 +531,8 @@ public class SimdUTFTest {
     }
 
     private static void utf8EncodeCapacity() {
-        for (String text : new String[]{"a".repeat(513), "é".repeat(513), "漢".repeat(513), "😃".repeat(257)}) {
+        for (String text : new String[]{"a".repeat(513), "é".repeat(513), "漢".repeat(513), "😃".repeat(257),
+                "a".repeat(257) + "漢".repeat(513), "a".repeat(257) + "😃".repeat(257)}) {
             byte[] expected = utf8(text);
             char[] input = ("xxxxx" + text + "yyyyy").toCharArray();
             for (int capacity : new int[]{expected.length - 1, expected.length, text.length() * 3}) {
