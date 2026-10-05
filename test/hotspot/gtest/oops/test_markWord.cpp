@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,8 +126,13 @@ TEST_VM(markWord, zero_hash_monitor) {
   object()->set_mark(mark.set_hashed_expanded());
   ASSERT_EQ(object()->identity_hash(), 0);
   ObjectLocker locker(object, THREAD);
+  // notify_all on a lightweight lock has no waiters and does not inflate.
+  ObjectMonitor* monitor = ObjectSynchronizer::inflate_locked_or_imse(
+      object(), ObjectSynchronizer::inflate_cause_wait, THREAD);
+  ASSERT_FALSE(HAS_PENDING_EXCEPTION);
+  ASSERT_NE(monitor, nullptr);
   locker.notify_all(THREAD);
-  ASSERT_NE(ObjectMonitorTable::monitor_get(object()), nullptr);
+  ASSERT_EQ(ObjectMonitorTable::monitor_get(object()), monitor);
 }
 
 #endif // PRODUCT
