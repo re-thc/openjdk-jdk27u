@@ -1,101 +1,43 @@
-#
-# Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
-# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-#
-# This code is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.  Oracle designates this
-# particular file as subject to the "Classpath" exception as provided
-# by Oracle in the LICENSE file that accompanied this code.
-#
-# This code is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-# version 2 for more details (a copy is included in the LICENSE file that
-# accompanied this code).
-#
-# You should have received a copy of the GNU General Public License version
-# 2 along with this work; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-#
-# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-# or visit www.oracle.com if you need additional information or have any
-# questions.
-#
-
-name: ZIP AArch64 regression calibration
-
+name: Stock zlib allocation alignment diagnosis
 on:
   push:
     branches: [pr/zlib-ng-validation]
   workflow_dispatch:
-
 permissions:
   contents: read
-  actions: read
-
 concurrency:
-  group: zip-backend-validation-${{ github.ref }}
+  group: zip-alignment-diagnosis-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
-  validate:
-    runs-on: ubuntu-24.04-arm
-    timeout-minutes: 120
+  profile:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 2
-      - uses: ./.github/actions/get-bootjdk
-        id: boot
-        with:
-          platform: linux-aarch64
-      - uses: actions/checkout@v6
-        with:
-          ref: 33e539f2d4a847f283a3793df6eebd41b9d1dfac
-          path: validation/baseline
-      - uses: actions/cache/restore@v4
-        with:
-          path: validation/baseline/build/zip/images/jdk
-          key: zip-baseline-image-v1-linux-aarch64-33e539f2d4a847f283a3793df6eebd41b9d1dfac-gcc14-system-release
-          fail-on-cache-miss: true
-      - name: Verify source and record host
-        run: |
-          mkdir -p validation/results
-          git fetch --depth=1 origin 37d4b14c9121ba49a558e131c471e04fe11ca4ce
-          git diff 37d4b14c9121ba49a558e131c471e04fe11ca4ce -- src make test > validation/results/implementation-diff.txt
-          test ! -s validation/results/implementation-diff.txt
-          echo 37d4b14c9121ba49a558e131c471e04fe11ca4ce > validation/results/candidate-commit.txt
-          lscpu > validation/results/cpu.txt
-          gcc-14 --version > validation/results/compiler.txt
-          dpkg-query -W zlib1g > validation/results/zlib.txt
-          cat validation/results/cpu.txt validation/results/compiler.txt validation/results/zlib.txt
-          python3 -m py_compile .github/scripts/validate-zip-backend.py
-      - uses: actions/download-artifact@v6
-        with:
-          name: bundles-jtreg-8.2.1+1
-          run-id: 37263807373
-          github-token: ${{ github.token }}
-          path: jtreg/installed
-      - name: Install native dependencies
+      - name: Install compiler and system zlib
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-14 g++-14 zlib1g-dev libasound2-dev libcups2-dev libfontconfig1-dev libx11-dev libxext-dev libxrandr-dev libxrender-dev libxt-dev libxtst-dev
-      - name: Build restored stock allocation and zlib-ng paths
-        env:
-          CC: gcc-14
-          CXX: g++-14
-          BOOT_JDK: ${{ steps.boot.outputs.path }}
+          sudo apt-get install -y gcc-14 zlib1g-dev
+      - name: Record host and benchmark controlled alignments
         run: |
-          bash configure --with-conf-name=zip-final --with-boot-jdk="$BOOT_JDK" --with-zlib=system --with-debug-level=release --with-native-debug-symbols=none --disable-warnings-as-errors
-          make CONF=zip-final JOBS=2 images
-      - name: Check ZIP, GC, JNI, CDS, JAR, zipfs and jlink
-        run: python3 .github/scripts/validate-zip-backend.py tests --jdk build/zip-final/images/jdk --jtreg jtreg/installed
-      - name: Compare short compression and default-backend controls in alternating order
-        run: python3 .github/scripts/validate-zip-backend.py calibrate --jdk build/zip-final/images/jdk --baseline validation/baseline/build/zip/images/jdk
+          mkdir -p validation/results
+          lscpu > validation/results/cpu.txt
+          dpkg-query -W zlib1g > validation/results/zlib.txt
+          gcc-14 -O2 -Wall -Wextra .github/scripts/profile-stock-zlib.c -lz -o validation/profile-stock-zlib
+          python3 - <<'PY'
+          import os, subprocess
+          os.sched_setaffinity(0, {min(os.sched_getaffinity(0))})
+          p = subprocess.run(["validation/profile-stock-zlib"], capture_output=True, text=True, check=True)
+          print(p.stdout, flush=True)
+          open("validation/results/controlled-alignment.csv", "w").write(p.stdout)
+          PY
       - uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: zip-regression-calibration-aarch64
+          name: controlled-zlib-alignment-${{ matrix.runner }}
           path: validation/results
           retention-days: 14
