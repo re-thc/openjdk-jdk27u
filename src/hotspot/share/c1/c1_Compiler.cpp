@@ -248,7 +248,6 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
 #if defined(AMD64) || defined(AARCH64)
   case vmIntrinsics::_updateBytesAdler32:
   case vmIntrinsics::_updateByteBufferAdler32:
-    if (!UseZlibNG) return false;
     break;
 #endif
   case vmIntrinsics::_blackhole:

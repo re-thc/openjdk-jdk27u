@@ -1,24 +1,29 @@
-# Optional zlib-ng backend
+# ZIP intrinsics and optional zlib-ng backend
 
 Linux x86_64 and AArch64 builds include unmodified zlib-ng 2.3.3 sources alongside
-stock zlib. The default remains stock zlib. Enable the alternative with:
+stock zlib. Stock zlib retains the default compression format and ratio. ZIP
+call intrinsics and the interpreter/C1 Adler32 entries are available independently
+of the compression library on Linux x86_64 and AArch64. Enable the alternative with:
 
 ```
 java -XX:+UseZlibNG ...
 ```
 
-`-XX:+UnlockDiagnosticVMOptions -XX:-UseZipIntrinsics` selects zlib-ng with the
-original Deflater/Inflater JNI calls. This separates library improvements from
+`-XX:+UnlockDiagnosticVMOptions -XX:-UseZipIntrinsics` selects the original
+Deflater/Inflater JNI calls with either library. This separates library improvements from
 call overhead improvements. `UseAdler32Intrinsics`, `UseCRC32Intrinsics`, and
 `UseCRC32CIntrinsics` retain their existing meanings.
 
 The option enables a hybrid compression policy. A fresh Deflater receiving
-`FINISH` with at most 1 KiB of input selects stock zlib; larger or incremental
-streams select zlib-ng. Dictionary setup selects zlib-ng. Selection occurs before
+at most 1 KiB in its first input chunk selects stock zlib, including ordinary
+DeflaterOutputStream, ZIP and GZIP writes before `finish()`. Larger first chunks
+select zlib-ng. A large stream starting with a small chunk conservatively keeps
+stock zlib; the implementation does not predict the total stream size. Dictionary setup selects zlib-ng. Selection occurs before
 any data or dictionary is processed and stays fixed until reset. Reset may select
 a different backend for the next stream; it reuses the allocation when selection
-stays the same. Initialization is delayed until that first operation to avoid
-allocating both libraries. Inflater and native libzip consumers use zlib-ng
+stays the same. Initialization is delayed until an operation with output capacity to avoid
+allocating both libraries. Zero-capacity calls do not consume input or commit
+selection; fresh-stream parameter changes are retained for later initialization. Inflater and native libzip consumers use zlib-ng
 throughout. The same selected library initializes, processes, resets, supplies
 dictionaries for, and ends a stream. zlib-ng uses its
 zlib-compatible ABI and a private `jdk_ng_` symbol prefix. It is linked into
@@ -86,7 +91,8 @@ python3 make/scripts/update-zlib-ng.py --archive /path/to/zlib-ng-VERSION.tar.gz
 The importer keeps the build/library sources byte-for-byte, preserves file modes,
 removes obsolete imported files, and updates `src/java.base/share/legal/zlib-ng.md`.
 No source patches are carried. Configuration and compiler feature checks run
-out of tree with the OpenJDK target compiler, archiver, flags, and target triplet.
+out of tree with the OpenJDK target compiler, archiver, flags, sysroot compile/link
+flags, and target triplet. The vendor archive is built even when UseZlibNG is off.
 The build recreates its private native output directory after source or
 configuration changes, so obsolete objects and CPU-feature settings do not
 survive an update. Review upstream compatibility/version changes, update this provenance record,
@@ -100,7 +106,10 @@ SHA-256 is `bba03fffc5538576213675ce6968fcff6ce2e67d82e4d5febea2d05f9f13cf85`.
 libdeflate is designed for whole-buffer compression and decompression. It cannot
 replace Java's streaming API, dictionary handling, and flush/parameter changes.
 The native comparison source, reproduction instructions, compressed sizes, and
-measured results are in `test/micro/native/zip/`. Native results and JVM results
+measured results are in `test/micro/native/zip/`. The comparison accepts levels
+1 through 9 and records both timed compression and compressed output size;
+equal levels can produce different ratios. Actual Java source, HotSpot source,
+and documentation corpora qualify the speed/size tradeoff separately. Native results and JVM results
 are reported separately so a whole-buffer speedup is not represented as a
 streaming JVM result.
 
