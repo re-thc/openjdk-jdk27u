@@ -25,7 +25,7 @@
 
 
 
-"""Validate the small direct-to-direct JNI fallback on a cached, ABI-compatible VM."""
+"""Validate the direct-to-direct JNI call policy on a cached, ABI-compatible VM."""
 import importlib.util
 import json
 from pathlib import Path
@@ -80,7 +80,7 @@ cp = ":".join(str(deps / p) for p in common.DEPS)
 bench_classes = OUT / "gate-benchmark"
 bench_classes.mkdir(exist_ok=True)
 run("compile-gate-benchmark", [jdk / "bin/javac", "-cp", cp, "-processorpath", cp,
-    "-d", bench_classes, REPO / ".github/diagnostics/ZipBufferCalls.java"])
+    "-d", bench_classes, REPO / "test/micro/org/openjdk/bench/java/util/zip/ZipBufferCalls.java"])
 cp = str(bench_classes) + ":" + cp
 jvm_flags = ["-Xms128m", "-Xmx128m", "-XX:+UseSerialGC", "-XX:ActiveProcessorCount=2",
              "-XX:+UseZlibNG", "-XX:+UnlockDiagnosticVMOptions"]
@@ -107,7 +107,7 @@ for tier, extra in tiers:
             rows.append(row)
         (OUT / "direct-gate-jmh.json").write_text(json.dumps(rows, indent=2) + "\n")
 lines = ["All operations use direct input and output; only the JNI/runtime selection changes.",
-         "| Tier | Bytes | JNI ns | Intrinsic ns | Gated ns |",
+         "| Tier | Bytes | Original JNI ns | Original intrinsic ns | Selected JNI ns |",
          "| --- | ---: | ---: | ---: | ---: |"]
 for tier, _ in tiers:
     for size in ["64", "1024", "4096", "16384", "65536"]:
