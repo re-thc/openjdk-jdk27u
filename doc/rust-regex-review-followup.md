@@ -58,17 +58,28 @@ QEMU is used only for functional ARM coverage.
 
 The tables report medians of three process means, in microseconds per complete
 Pattern lifetime. Speedup is Java-only time divided by default-enabled time.
+All 8/9/10/16/32-call negative boundaries below use the final implementation;
+the final confirmation phase contains 25 configurations and 150 process means.
 Small differences and overlapping process ranges do not establish a speedup.
 All rows below use 4,096 characters. `error` denotes `error[0-9]+`; `ssn`
 denotes `[0-9]{3}-[0-9]{2}-[0-9]{4}`.
 
 | Tier | Calls | Scenario | Matchers | Expression | Java µs | Default µs | Speedup |
 | --- | ---: | --- | ---: | --- | ---: | ---: | ---: |
+| interpreter | 8 | miss | 1 | error | 1324.88 | 1382.73 | 0.96× |
 | interpreter | 9 | miss | 1 | error | 1460.98 | 1487.98 | 0.98× |
+| interpreter | 10 | miss | 1 | error | 1629.08 | 1309.53 | 1.24× |
+| interpreter | 16 | miss | 1 | error | 2596.28 | 1437.78 | 1.81× |
 | interpreter | 32 | miss | 1 | error | 5029.03 | 1450.32 | 3.47× |
+| C1 | 8 | miss | 1 | error | 63.24 | 64.72 | 0.98× |
 | C1 | 9 | miss | 1 | error | 71.88 | 109.12 | 0.66× |
+| C1 | 10 | miss | 1 | error | 92.25 | 106.28 | 0.87× |
+| C1 | 16 | miss | 1 | error | 158.65 | 110.53 | 1.44× |
 | C1 | 32 | miss | 1 | error | 380.83 | 143.31 | 2.66× |
+| C2 | 8 | miss | 1 | error | 45.00 | 48.65 | 0.93× |
 | C2 | 9 | miss | 1 | error | 53.23 | 104.98 | 0.51× |
+| C2 | 10 | miss | 1 | error | 53.72 | 87.40 | 0.61× |
+| C2 | 16 | miss | 1 | error | 87.52 | 85.55 | 1.02× |
 | C2 | 32 | miss | 1 | error | 200.15 | 91.01 | 2.20× |
 | C1 | 9 | lastHit | 1 | error | 62.17 | 102.04 | 0.61× |
 | C2 | 9 | lastHit | 1 | error | 46.65 | 89.81 | 0.52× |
@@ -114,7 +125,7 @@ This is a separate reused-Matcher control, not a complete Pattern lifetime.
 
 The checked-in benchmark source and raw samples preserve the broad diagnostic
 rounds, the consecutive-miss change, the synchronization diagnosis, and the
-final nonblocking confirmations. The 1,042 retained JMH records include
+final nonblocking confirmations. The 1,096 retained JMH records include
 intermediate diagnostics; only the `stable-confirm` phase supplies the lifetime
 table above. Earlier phases used intermediate implementations and are retained
 to expose the investigation, rather than being presented as final performance.

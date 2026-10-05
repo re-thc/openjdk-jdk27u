@@ -33,7 +33,7 @@ base = [str(root/'build/cloud/jdk/bin/java'), '-XX:ActiveProcessorCount=1',
 tiers = {'interpreter':['-Xint'],
          'C1':['-XX:TieredStopAtLevel=1','-XX:CICompilerCount=1','-Xbatch'],
          'C2':['-XX:-TieredCompilation','-XX:CICompilerCount=1','-Xbatch','-XX:CompileThreshold=1000']}
-cases = [(tier,calls,'miss',1,'error') for tier in tiers for calls in [9,32]]
+cases = [(tier,calls,'miss',1,'error') for tier in tiers for calls in [8,9,10,16,32]]
 cases += [(tier,9,'lastHit',1,'error') for tier in ['C1','C2']]
 cases += [(tier,32,'alternating',1,'error') for tier in ['C1','C2']]
 cases += [(tier,32,scenario,4,'error') for tier in ['C1','C2'] for scenario in ['miss','alternating']]
