@@ -32,7 +32,9 @@ use Java, bounding time without a safepoint. The threshold accepts values from
 `jdk.internal.util.SimdUTF.process0` is a private native intrinsic candidate.
 The interpreter has x86-64 and AArch64 entries, C1 emits a C ABI leaf call, and
 C2 emits a leaf call with a full memory effect. They all call the same checked
-HotSpot implementation. If the intrinsic is disabled or unavailable, registered
+HotSpot implementation through a raw `oopDesc*` ABI; checked C++ `oop` wrappers
+are constructed inside the leaf, preserving the calling convention in
+fastdebug builds. If the intrinsic is disabled or unavailable, registered
 JNI calls the same implementation. JNI does not copy or pin arrays.
 
 The leaf checks array types, offsets, lengths, destination capacity and aliasing
@@ -158,10 +160,14 @@ fork's default enabled behavior on every configured runtime platform,
 including x86-64 and AArch64. The contract asserts the default flag value and
 separately checks `-XX:-UseSIMDUTFIntrinsics` disables acceleration.
 Test reports and `.jtr` logs use the existing
-artifact upload path. The contract's eight `@run` modes separately cover tiers,
+artifact upload path. The dedicated suite selects fastdebug bundles when
+available; the static configuration uses its release image. Eight ordinary
+`@run` modes separately cover tiers,
 JNI fallback and disabled behavior, including explicit 48 MB code caches in
 interpreter and tiered VMs. These catch branches to native functions that cannot
 rely on the code cache's internal branch range.
+Four additional fastdebug runs enable `CheckUnhandledOops` across interpreter,
+C1, C2 and JNI execution to check the native object-pointer boundary.
 
 Alpine/musl is excluded by the repository's existing default platform list in
 `.github/workflows/main.yml`. Its build can be selected explicitly with the

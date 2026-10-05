@@ -49,6 +49,8 @@ runs:
         install: 'autoconf tar unzip zip make'
         path-type: minimal
         release: true
+        # The ARM64 setup can lack paccache; package caching is optional.
+        cache: false
         location: ${{ runner.tool_cache }}/msys2
       if: ${{ inputs.architecture == 'ARM64' }}
 

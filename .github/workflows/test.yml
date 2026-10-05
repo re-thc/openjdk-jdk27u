@@ -88,6 +88,7 @@ jobs:
         include:
           - test-name: 'jdk/simdutf'
             test-suite: 'test/jdk/jdk/internal/util/SimdUTF/SimdUTFTest.java test/jdk/java/lang/String test/jdk/sun/nio/cs test/jdk/java/util/Base64'
+            debug-suffix: ${{ inputs.debug-suffix }}
 
           - test-name: 'jdk/tier1 part 1'
             test-suite: 'test/jdk/:tier1_part1'

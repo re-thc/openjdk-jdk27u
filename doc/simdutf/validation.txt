@@ -1,6 +1,38 @@
-Default-enabled follow-up, 2026-10-05 Asia/Taipei
+Fastdebug ABI and CI follow-up, 2026-10-05 Asia/Taipei
 
 CURRENT REVISION
+- The generated interpreter/C1/C2 entry now takes oopDesc* arguments. Fastdebug
+  defines CHECK_UNHANDLED_OOPS, making oop a C++ class with non-trivial copy
+  construction/destruction and an indirect argument ABI. Generated code passes
+  heap pointers, so the previous by-value oop entry interpreted object headers
+  as wrapped pointer values. Checked oop locals are now constructed inside the
+  raw-pointer leaf. Product and fastdebug therefore share the same boundary.
+- Local x86 release, x86 ASSERT+CHECK_UNHANDLED_OOPS and AArch64
+  ASSERT+CHECK_UNHANDLED_OOPS bridge compilations passed without a PCH.
+  Compiler symbol output confirms oopDesc* arguments in all three objects.
+- The dedicated jdk/simdutf CI entry selects fastdebug bundles when available;
+  ordinary JDK tier-one and static jobs continue covering release images.
+- Four fastdebug contracts enable CheckUnhandledOops in interpreter, C1, C2 and
+  JNI modes. Existing default-enabled and explicit opt-out contracts remain.
+- ARM64 MSYS2 optional package caching is disabled: setup failed calling
+  paccache after dependency installation, before JDK configuration.
+- Workflow/action YAML parsing, Python syntax and isolated-index whitespace
+  checks passed. Full image builds and runtime tests require fresh CI; local
+  JVM startup remains constrained by the existing host's process exhaustion.
+
+LATEST PRE-FIX CI
+Head a030dc8b1ae9dcfe602c81f1b6ee412bcb163065, run
+https://github.com/re-thc/openjdk-jdk27u/actions/runs/37238088306
+completed with 18 successful jobs, six failed and seven skipped. Five failures
+were fastdebug self-hosted javac crashes in simdutf_range/oop klass access on
+Linux x64/AArch64, macOS x64/AArch64 and Windows x64. Windows ARM64 debug failed
+in MSYS2 package-cache setup. Dependent test jobs did not execute, so this run
+provides no default-enabled jtreg pass. Simdutf remains enabled by default;
+these fixes address the defects rather than changing the feature policy.
+
+Default-enabled follow-up, 2026-10-05 Asia/Taipei
+
+A030DC8B DEFAULT-ENABLED FOLLOW-UP
 - UseSIMDUTFIntrinsics now defaults to true. Supported x86-64/AArch64 systems
   accelerate eligible operations without command-line flags; explicit
   -XX:-UseSIMDUTFIntrinsics disables the intrinsic and native backend. Existing

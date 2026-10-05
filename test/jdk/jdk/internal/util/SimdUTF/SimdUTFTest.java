@@ -47,6 +47,18 @@
  * @run main/othervm -Xbatch -XX:SIMDUTFMinLength=64 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_simdutf_process SimdUTFTest
  */
 
+/*
+ * @test id=checked-oops
+ * @summary Raw object-pointer ABI with fastdebug oop checking in every tier
+ * @requires vm.debug & vm.compiler1.enabled & vm.compiler2.enabled
+ * @modules java.base/jdk.internal.util:+open
+ *          jdk.management
+ * @run main/othervm -Xint -XX:+CheckUnhandledOops SimdUTFTest
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:+CheckUnhandledOops SimdUTFTest
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:+CheckUnhandledOops SimdUTFTest
+ * @run main/othervm -Xint -XX:+CheckUnhandledOops -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_simdutf_process -XX:SIMDUTFMinLength=64 SimdUTFTest
+ */
+
 import com.sun.management.HotSpotDiagnosticMXBean;
 import jdk.internal.util.SimdUTF;
 import java.io.ByteArrayOutputStream;

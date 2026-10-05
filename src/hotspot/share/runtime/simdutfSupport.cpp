@@ -135,11 +135,14 @@ static jint simdutf_decode_latin1(const char* input, jint len, char* output, jin
   return written;
 }
 
-JRT_LEAF(jint, SimdUTF::process(oop src, jint sp, jint len, oop dst, jint dp,
-                               jint capacity, jint operation))
+JRT_LEAF(jint, SimdUTF::process(oopDesc* src_raw, jint sp, jint len,
+                               oopDesc* dst_raw, jint dp, jint capacity, jint operation))
   if (simdutf_implementation == nullptr || len <= 0 || len > 1024 * 1024 || operation < 0 || operation > 26) {
     return -1;
   }
+  // Construct checked C++ oops only after entering through the raw-pointer ABI.
+  oop src = src_raw;
+  oop dst = dst_raw;
   bool src16 = (operation >= 3 && operation <= 5) ||
                (operation >= 10 && operation <= 13) || operation == 15 || operation == 16 ||
                operation == 20 || operation == 21 || operation == 25 || operation == 26;
