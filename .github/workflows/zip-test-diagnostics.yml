@@ -1,0 +1,26 @@
+name: ZIP test diagnostics
+on:
+  push:
+    branches: [pr/zlib-ng-test-diagnostics]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/download-artifact@v6
+        with:
+          name: zip-aot-aarch64
+          run-id: 37269878066
+          github-token: ${{ github.token }}
+          path: evidence
+      - name: Print ZIP AOT test result
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          found = list(Path("evidence").glob("**/TestZlibNGAOT.jtr"))
+          assert found, "test result missing"
+          for p in found:
+              print(p.read_text(errors="replace"))
+          PY
