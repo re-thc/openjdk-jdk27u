@@ -56,54 +56,43 @@ jobs:
           path: validation/baseline
       - uses: actions/cache/restore@v4
         with:
-          path: build/zip/images/jdk
-          key: zip-image-v1-linux-aarch64-bfdff2333cd1a156dcbf72fb76a591923d59828b-gcc14-system-release
-          fail-on-cache-miss: true
-      - uses: actions/cache/restore@v4
-        with:
           path: validation/baseline/build/zip/images/jdk
           key: zip-baseline-image-v1-linux-aarch64-33e539f2d4a847f283a3793df6eebd41b9d1dfac-gcc14-system-release
           fail-on-cache-miss: true
       - name: Verify source and record host
         run: |
           mkdir -p validation/results
-          git fetch --depth=1 origin f61aabacb002c19b57cfc802b709c5f033f880d3
-          git diff f61aabacb002c19b57cfc802b709c5f033f880d3 -- src make test > validation/results/implementation-diff.txt
+          git fetch --depth=1 origin 37d4b14c9121ba49a558e131c471e04fe11ca4ce
+          git diff 37d4b14c9121ba49a558e131c471e04fe11ca4ce -- src make test > validation/results/implementation-diff.txt
           test ! -s validation/results/implementation-diff.txt
-          echo f61aabacb002c19b57cfc802b709c5f033f880d3 > validation/results/candidate-commit.txt
+          echo 37d4b14c9121ba49a558e131c471e04fe11ca4ce > validation/results/candidate-commit.txt
           lscpu > validation/results/cpu.txt
           gcc-14 --version > validation/results/compiler.txt
           dpkg-query -W zlib1g > validation/results/zlib.txt
           cat validation/results/cpu.txt validation/results/compiler.txt validation/results/zlib.txt
           python3 -m py_compile .github/scripts/validate-zip-backend.py
+      - uses: actions/download-artifact@v6
+        with:
+          name: bundles-jtreg-8.2.1+1
+          run-id: 37263807373
+          github-token: ${{ github.token }}
+          path: jtreg/installed
       - name: Install native dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-14 g++-14 zlib1g-dev libasound2-dev libcups2-dev libfontconfig1-dev libx11-dev libxext-dev libxrandr-dev libxrender-dev libxt-dev libxtst-dev
-      - name: Rebuild final release VM
+      - name: Build restored stock allocation and zlib-ng paths
         env:
           CC: gcc-14
           CXX: g++-14
           BOOT_JDK: ${{ steps.boot.outputs.path }}
         run: |
           bash configure --with-conf-name=zip-final --with-boot-jdk="$BOOT_JDK" --with-zlib=system --with-debug-level=release --with-native-debug-symbols=none --disable-warnings-as-errors
-          make CONF=zip-final JOBS=2 hotspot
-          cp build/zip-final/support/modules_libs/java.base/server/libjvm.so build/zip/images/jdk/lib/server/libjvm.so
-          python3 - <<'PY'
-          from pathlib import Path
-          import subprocess
-          jdk = Path("build/zip/images/jdk").resolve()
-          for archive in sorted((jdk / "lib/server").glob("classes*.jsa")):
-              flags = ["-XX:-UseCompressedOops"] if "_nocoops" in archive.stem else []
-              flags += ["-XX:+UnlockExperimentalVMOptions",
-                        "-XX:-UseCompactObjectHeaders" if "_nocoh" in archive.stem
-                        else "-XX:+UseCompactObjectHeaders"]
-              subprocess.run([str(jdk / "bin/java"), "-Xshare:dump", "-Xmx128m", "-Xms128m",
-                              "-XX:+UseG1GC", "-XX:SharedArchiveFile=" + str(archive)] + flags,
-                             check=True)
-          PY
+          make CONF=zip-final JOBS=2 images
+      - name: Check ZIP, GC, JNI, CDS, JAR, zipfs and jlink
+        run: python3 .github/scripts/validate-zip-backend.py tests --jdk build/zip-final/images/jdk --jtreg jtreg/installed
       - name: Compare short compression and default-backend controls in alternating order
-        run: python3 .github/scripts/validate-zip-backend.py calibrate --jdk build/zip/images/jdk --baseline validation/baseline/build/zip/images/jdk
+        run: python3 .github/scripts/validate-zip-backend.py calibrate --jdk build/zip-final/images/jdk --baseline validation/baseline/build/zip/images/jdk
       - uses: actions/upload-artifact@v6
         if: always()
         with:

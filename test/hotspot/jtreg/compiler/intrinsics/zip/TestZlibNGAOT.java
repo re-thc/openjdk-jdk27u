@@ -32,7 +32,7 @@
  * @requires vm.compMode != "Xcomp" & vm.compMode != "Xint"
  * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
  * @library /test/lib
- * @build TestZlibNGAOT ZlibNGAOTApp
+ * @build TestZlibNGAOT
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar ZlibNGAOTApp
  * @run driver/timeout=600 TestZlibNGAOT
  */

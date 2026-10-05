@@ -53,7 +53,7 @@ def run(name, args, cwd=None):
         if name.startswith("jtreg-"):
             for result in sorted(OUT.glob("**/*.jtr")):
                 content = result.read_text(errors="replace")
-                if "test result: Failed." in content:
+                if "test result: Failed." in content or "test result: Error." in content:
                     print(str(result) + "\n" + content[-20000:], flush=True)
         raise
     output = (OUT / (name + ".log")).read_text(errors="replace")
