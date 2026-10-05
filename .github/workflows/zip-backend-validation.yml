@@ -73,9 +73,10 @@ jobs:
       - name: Record source and host
         run: |
           mkdir -p validation/results
-          git fetch --depth=1 origin 762b689d9e6cd9d5814892fbd8b077be0e86497c
+          git fetch --depth=1 origin 04357ffc4ec5941489108371627e416128acafa4
           git rev-parse HEAD > validation/results/validation-commit.txt
-          git diff 762b689d9e6cd9d5814892fbd8b077be0e86497c -- src make test > validation/results/implementation-diff.txt
+          echo 04357ffc4ec5941489108371627e416128acafa4 > validation/results/candidate-commit.txt
+          git diff 04357ffc4ec5941489108371627e416128acafa4 -- src make test > validation/results/implementation-diff.txt
           test ! -s validation/results/implementation-diff.txt
           lscpu > validation/results/cpu.txt
           uname -a > validation/results/kernel.txt
