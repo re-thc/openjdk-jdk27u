@@ -31,6 +31,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import urllib.request
 
@@ -114,6 +115,9 @@ def tests(jdk, jtreg):
         "--output", linked])
     run("jlink-runtime", [linked / "bin/java", "-XX:+UseZlibNG", "-Xmx64m",
         "-cp", classes, "TestZlibNG"])
+    shutil.rmtree(linked)
+    for archive in OUT.glob("*.jsa"):
+        archive.unlink()
     (OUT / "tests-passed.txt").write_text("jtreg, GC, JNI, CDS, JAR, zipfs and jlink passed\n")
 
 
@@ -154,6 +158,31 @@ def benchmarks(jdk, baseline):
         ("int", ["-Xint"]),
         ("c1", ["-XX:TieredStopAtLevel=1", "-Xbatch"]),
         ("c2", ["-XX:-TieredCompilation", "-XX:CompileThreshold=1000", "-Xbatch"])]
+
+    sizes_source = deps / "ZipSizes.java"
+    sizes_source.write_text("""
+import org.openjdk.bench.java.util.zip.ZipBackend;
+public class ZipSizes {
+    public static void main(String[] args) throws Exception {
+        var field = ZipBackend.class.getDeclaredField("compressedLength");
+        field.setAccessible(true);
+        System.out.println("data,bytes,compressed_bytes");
+        for (String data : new String[]{"text", "random"}) {
+            for (int size : new int[]{64, 1024, 65536}) {
+                ZipBackend b = new ZipBackend();
+                b.data = data; b.size = size; b.setup();
+                System.out.println(data + "," + size + "," + field.getInt(b));
+                b.tearDown();
+            }
+        }
+    }
+}
+""")
+    run("compile-size-record", [jdk / "bin/javac", "-cp", cp, "-d", classes, sizes_source])
+    for label, target, extra in configs:
+        run("compressed-size-" + label, [target / "bin/java"] + extra +
+            ["-cp", cp, "ZipSizes"])
+
     all_results = []
     for tier, flags in tiers:
         for label, target, extra in configs:
@@ -166,7 +195,7 @@ def benchmarks(jdk, baseline):
                 run(name, [target / "bin/java", "-Djmh.blackhole.mode=FULL_DONTINLINE",
                     "-cp", cp, "org.openjdk.jmh.Main", pattern,
                     "-p", "size=64,1024,65536", "-p", "data=" + data,
-                    "-f", "2", "-wi", "3", "-i", "5", "-w", "500ms", "-r", "500ms",
+                    "-f", "2", "-wi", "3", "-i", "5", "-w", "1s", "-r", "500ms",
                     "-jvm", target / "bin/java", "-jvmArgsAppend", " ".join(common + flags + extra),
                     "-rf", "json", "-rff", result_file])
                 rows = json.loads(result_file.read_text())
@@ -185,7 +214,7 @@ def benchmarks(jdk, baseline):
         groups.setdefault(key, {})[row["backend"]] = row["primaryMetric"]
     lines = [
         "All values are ns/op. Errors are JMH 99.9% confidence intervals.",
-        "Two forks; three 0.5 s warmups and five 0.5 s measurements per fork.",
+        "Two forks; three 1 s warmups and five 0.5 s measurements per fork.",
         "Serial GC, 128 MiB heap, two active processors; reusable streams.",
         "Inflater setup uses the selected compressor, so encoded sizes may differ.",
         "",
