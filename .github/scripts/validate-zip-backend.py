@@ -48,7 +48,7 @@ def run(name, args, cwd=None):
         with (OUT / (name + ".log")).open("w") as log:
             subprocess.run(args, cwd=cwd or REPO, stdout=log, stderr=subprocess.STDOUT,
                            check=True, timeout=10800)
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
         print((OUT / (name + ".log")).read_text(errors="replace")[-20000:], flush=True)
         raise
     output = (OUT / (name + ".log")).read_text(errors="replace")
@@ -83,11 +83,11 @@ def tests(jdk, jtreg):
               "test/hotspot/jtreg/compiler/intrinsics/zip",
               "test/jdk/jdk/nio/zipfs/Basic.java"]
     for mode, flag in [("ng", "-XX:+UseZlibNG"), ("stock", "-XX:-UseZlibNG")]:
-        run("jtreg-" + mode, [jtreg / "bin/jtreg", "-ignore:quiet",
+        run("jtreg-" + mode, ["bash", jtreg / "bin/jtreg", "-ignore:quiet",
             "-jdk:" + str(jdk), "-w:" + str(OUT / (mode + "-work")),
             "-r:" + str(OUT / (mode + "-report")), "-conc:2", "-timeoutFactor:4",
             "-javaoptions:" + flag] + [REPO / s for s in suites])
-    run("jtreg-heap", [jtreg / "bin/jtreg", "-jdk:" + str(jdk),
+    run("jtreg-heap", ["bash", jtreg / "bin/jtreg", "-jdk:" + str(jdk),
         "-w:" + str(OUT / "heap-work"), "-r:" + str(OUT / "heap-report"),
         "-timeoutFactor:4", "-javaoptions:-XX:+UseZlibNG",
         REPO / "test/hotspot/jtreg/serviceability/dcmd/gc/HeapDumpCompressedTest.java"])
@@ -115,6 +115,7 @@ def tests(jdk, jtreg):
             output = run("cds-" + name + "-to-" + use_name,
                 [java] + options + ["-cp", classes, "TestZlibNG"])
             if use_name == "ng" and not re.search(r"ZipUtils::process.*\(intrinsic\)", output):
+                print(output[-20000:], flush=True)
                 raise RuntimeError("Compression intrinsic absent in CDS run")
     linked = OUT / "linked-jdk"
     run("jlink", [jdk / "bin/jlink", "-J-XX:+UseZlibNG", "--module-path",

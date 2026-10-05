@@ -73,17 +73,23 @@ jobs:
       - name: Record source and host
         run: |
           mkdir -p validation/results
-          git fetch --depth=1 origin 04357ffc4ec5941489108371627e416128acafa4
+          git fetch --depth=1 origin 7a80138dd85bcfe458dcb384144bfbcd0f2ae349
           git rev-parse HEAD > validation/results/validation-commit.txt
-          echo 04357ffc4ec5941489108371627e416128acafa4 > validation/results/candidate-commit.txt
-          git diff 04357ffc4ec5941489108371627e416128acafa4 -- src make test > validation/results/implementation-diff.txt
+          echo 7a80138dd85bcfe458dcb384144bfbcd0f2ae349 > validation/results/candidate-commit.txt
+          git diff 7a80138dd85bcfe458dcb384144bfbcd0f2ae349 -- src make test > validation/results/implementation-diff.txt
           test ! -s validation/results/implementation-diff.txt
           lscpu > validation/results/cpu.txt
           uname -a > validation/results/kernel.txt
           gcc-14 --version > validation/results/compiler.txt
           dpkg-query -W zlib1g > validation/results/zlib.txt
           cat validation/results/candidate-commit.txt validation/results/cpu.txt validation/results/compiler.txt validation/results/zlib.txt
+      - uses: actions/cache/restore@v4
+        id: candidate-cache
+        with:
+          path: build/zip/images/jdk
+          key: zip-image-v1-${{ matrix.platform }}-7a80138dd85bcfe458dcb384144bfbcd0f2ae349-gcc14-system-release
       - name: Build candidate release
+        if: steps.candidate-cache.outputs.cache-hit != 'true'
         env:
           CC: gcc-14
           CXX: g++-14
@@ -92,11 +98,22 @@ jobs:
         run: |
           bash configure --with-conf-name=zip --with-boot-jdk="$BOOT_JDK" --with-jtreg="$JTREG_PATH" --with-zlib=system --with-debug-level=release --with-native-debug-symbols=none --disable-warnings-as-errors
           make CONF=zip JOBS=2 images
+      - uses: actions/cache/save@v4
+        if: steps.candidate-cache.outputs.cache-hit != 'true'
+        with:
+          path: build/zip/images/jdk
+          key: zip-image-v1-${{ matrix.platform }}-7a80138dd85bcfe458dcb384144bfbcd0f2ae349-gcc14-system-release
       - name: Run targeted jtreg, GC, JNI, CDS, JAR, zipfs and jlink checks
         env:
           JTREG_PATH: ${{ steps.jtreg.outputs.path }}
         run: python3 .github/scripts/validate-zip-backend.py tests --jdk build/zip/images/jdk --jtreg "$JTREG_PATH"
+      - uses: actions/cache/restore@v4
+        id: debug-cache
+        with:
+          path: build/zip-debug/hotspot/variant-server/libjvm/libjvm.so
+          key: zip-hotspot-v1-${{ matrix.platform }}-7a80138dd85bcfe458dcb384144bfbcd0f2ae349-gcc14-system-fastdebug
       - name: Build assertion-enabled HotSpot
+        if: steps.debug-cache.outputs.cache-hit != 'true'
         env:
           CC: gcc-14
           CXX: g++-14
@@ -104,6 +121,13 @@ jobs:
         run: |
           bash configure --with-conf-name=zip-debug --with-boot-jdk="$BOOT_JDK" --with-zlib=system --with-debug-level=fastdebug --with-native-debug-symbols=none --disable-warnings-as-errors
           make CONF=zip-debug JOBS=2 hotspot
+      - uses: actions/cache/save@v4
+        if: steps.debug-cache.outputs.cache-hit != 'true'
+        with:
+          path: build/zip-debug/hotspot/variant-server/libjvm/libjvm.so
+          key: zip-hotspot-v1-${{ matrix.platform }}-7a80138dd85bcfe458dcb384144bfbcd0f2ae349-gcc14-system-fastdebug
+      - name: Check all collectors with assertions enabled
+        run: |
           cp -aL build/zip/images/jdk validation/fastdebug-jdk
           cp build/zip-debug/hotspot/variant-server/libjvm/libjvm.so validation/fastdebug-jdk/lib/server/libjvm.so
           python3 .github/scripts/validate-zip-backend.py gc --jdk validation/fastdebug-jdk --verify-oops
@@ -111,7 +135,13 @@ jobs:
         with:
           ref: 33e539f2d4a847f283a3793df6eebd41b9d1dfac
           path: validation/baseline
+      - uses: actions/cache/restore@v4
+        id: baseline-cache
+        with:
+          path: validation/baseline/build/zip/images/jdk
+          key: zip-baseline-image-v1-${{ matrix.platform }}-33e539f2d4a847f283a3793df6eebd41b9d1dfac-gcc14-system-release
       - name: Build untouched baseline
+        if: steps.baseline-cache.outputs.cache-hit != 'true'
         working-directory: validation/baseline
         env:
           CC: gcc-14
@@ -120,6 +150,11 @@ jobs:
         run: |
           bash configure --with-conf-name=zip --with-boot-jdk="$BOOT_JDK" --with-zlib=system --with-debug-level=release --with-native-debug-symbols=none --disable-warnings-as-errors
           make CONF=zip JOBS=2 images
+      - uses: actions/cache/save@v4
+        if: steps.baseline-cache.outputs.cache-hit != 'true'
+        with:
+          path: validation/baseline/build/zip/images/jdk
+          key: zip-baseline-image-v1-${{ matrix.platform }}-33e539f2d4a847f283a3793df6eebd41b9d1dfac-gcc14-system-release
       - name: Compare all compilation tiers and checksum controls
         run: python3 .github/scripts/validate-zip-backend.py benchmarks --jdk build/zip/images/jdk --baseline validation/baseline/build/zip/images/jdk
       - name: Upload validation evidence
