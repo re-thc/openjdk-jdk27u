@@ -34,7 +34,7 @@ import java.util.Random;
  *          the extra word read by copy_unmarked_to_survivor_space crosses into
  *          unmapped memory, causing a crash.
  * @requires vm.gc.Parallel
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseCompactObjectHeaders
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders
  *      -XX:+UseParallelGC -Xmx128m -Xms128m -Xmn1m
  *      gc.parallel.TestHashedObjectCopy
  */

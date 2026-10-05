@@ -146,6 +146,9 @@ define CreateCDSArchive
                         $(if $(findstring _nocoh, $2),-XX:-UseCompactObjectHeaders,-XX:+UseCompactObjectHeaders)
   endif
   $1_$2_DUMP_EXTRA_ARG := $$($1_$2_COOPS_OPTION) $$($1_$2_NOCOH_OPTION)
+  ifneq ($(findstring _fourbyte, $2), )
+    $1_$2_DUMP_EXTRA_ARG += -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders
+  endif
   $1_$2_DUMP_TYPE      := $(if $(findstring _nocoops, $2),-NOCOOPS,)$(if $(findstring _nocoh, $2),-NOCOH,)
 
   $1_$2_CDS_DUMP_FLAGS := $(CDS_DUMP_FLAGS) $(if $(filter g1gc, $(JVM_FEATURES_$1)), -XX:+UseG1GC)
@@ -200,6 +203,12 @@ ifeq ($(BUILD_CDS_ARCHIVE), true)
     $(foreach v, $(JVM_VARIANTS), \
       $(eval $(call CreateCDSArchive,$v,_nocoops)) \
     )
+    ifneq ($(filter x86_64 aarch64, $(OPENJDK_TARGET_CPU)), )
+      $(foreach v, $(JVM_VARIANTS), \
+        $(eval $(call CreateCDSArchive,$v,_fourbyte)) \
+        $(eval $(call CreateCDSArchive,$v,_nocoops_fourbyte)) \
+      )
+    endif
     ifeq ($(BUILD_CDS_ARCHIVE_NOCOH), true)
       $(foreach v, $(JVM_VARIANTS), \
         $(eval $(call CreateCDSArchive,$v,_nocoh)) \

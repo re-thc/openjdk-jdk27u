@@ -116,6 +116,7 @@ private:
   int    _narrow_oop_shift;                       // compressed oop encoding shift
   bool   _compact_strings;                        // value of CompactStrings
   bool   _compact_headers;                        // value of UseCompactObjectHeaders
+  bool   _four_byte_headers;                      // value of UseFourByteObjectHeaders
   uintx  _max_heap_size;                          // java max heap size during dumping
   CompressedOops::Mode _narrow_oop_mode;          // compressed oop encoding mode
   bool    _object_streaming_mode;                 // dump was created for object streaming

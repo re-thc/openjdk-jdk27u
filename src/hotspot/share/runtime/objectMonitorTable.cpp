@@ -125,7 +125,7 @@
 // for it in the table).
 static intptr_t object_hash(oop obj) {
   markWord mark = obj->mark();
-  if (UseCompactObjectHeaders) {
+  if (UseFourByteObjectHeaders) {
     if (!mark.is_hashed()) {
       return 0;
     }

@@ -4839,7 +4839,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
     generate_virtual_guard(obj_klass, slow_region);
   }
 
-  if (UseCompactObjectHeaders) {
+  if (UseFourByteObjectHeaders) {
     // Get the header out of the object.
     Node* header_addr = basic_plus_adr(obj, oopDesc::mark_offset_in_bytes());
     // The control of the load must be null. Otherwise, the load can move before
@@ -5034,7 +5034,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   result_io ->init_req(_fast_path, i_o());
   result_mem->init_req(_fast_path, init_mem);
 
-  if (UseCompactObjectHeaders) {
+  if (UseFourByteObjectHeaders) {
     result_io->init_req(_fast_path2, i_o());
     result_mem->init_req(_fast_path2, init_mem);
   }

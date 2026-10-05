@@ -88,12 +88,12 @@ public class TestOopMapSizeMinimal {
         }
         if (is_64_bit) {
             if (WB.getBooleanVMFlag("UseCompactObjectHeaders")) {
-                HEADER_SIZE_IN_BYTES = 4;
+                HEADER_SIZE_IN_BYTES = WB.getBooleanVMFlag("UseFourByteObjectHeaders") ? 4 : 8;
             } else {
                 HEADER_SIZE_IN_BYTES = 12;
             }
         } else {
-            HEADER_SIZE_IN_BYTES = 8;
+            HEADER_SIZE_IN_BYTES = WB.getBooleanVMFlag("UseFourByteObjectHeaders") ? 4 : 8;
         }
     }
 

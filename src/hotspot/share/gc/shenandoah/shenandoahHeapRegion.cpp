@@ -773,7 +773,7 @@ size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   // humongous path) and would itself be a region-sized LAB allocation request. Cap
   // it one (object-aligned) word below the region so neither can happen.
   size_t max_tlab_words = MIN2(RegionSizeWords, MAX2(RegionSizeWords / 32, (size_t) (256 * 1024) / HeapWordSize));
-  if (UseCompactObjectHeaders) {
+  if (UseFourByteObjectHeaders) {
     max_tlab_words = MIN2(max_tlab_words, RegionSizeWords - align_object_size(1));
   }
   MaxTLABSizeWords = align_down(max_tlab_words, MinObjAlignment);

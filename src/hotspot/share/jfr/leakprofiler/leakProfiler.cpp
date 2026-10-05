@@ -34,7 +34,7 @@
 #include "runtime/vmThread.hpp"
 
 bool LeakProfiler::is_supported() {
-  if (UseCompactObjectHeaders || UseShenandoahGC || UseZGC) {
+  if (UseFourByteObjectHeaders || UseShenandoahGC || UseZGC) {
     // 1. With a 32-bit mark word in Lilliput2, we don't have enough unused
     //    bits to store edge index information in the mark word
     // 2. Even without compressed object headers, with Shenandoah, we don't

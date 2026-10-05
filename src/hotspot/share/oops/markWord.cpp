@@ -29,10 +29,11 @@
 #include "utilities/ostream.hpp"
 
 #ifdef _LP64
-STATIC_ASSERT(markWord::klass_shift + markWord::klass_bits == 32);
+STATIC_ASSERT(markWord::klass_shift + markWord::klass_bits == 64);
+STATIC_ASSERT(markWord::four_byte_klass_shift + markWord::four_byte_klass_bits == 32);
 // The hashctrl bits (preceding klass bits) shall be a direct neighbor but not interleave
 // klass_shift=13, hashctrl_shift=11, hashctrl_bits=2, so 13 == 2 + 11
-STATIC_ASSERT(markWord::klass_shift == markWord::hashctrl_bits + markWord::hashctrl_shift);
+STATIC_ASSERT(markWord::four_byte_klass_shift == markWord::hashctrl_bits + markWord::hashctrl_shift);
 #endif
 
 markWord markWord::displaced_mark_helper() const {
@@ -74,7 +75,7 @@ void markWord::print_on(outputStream* st, bool print_monitor_info) const {
       st->print("is_unlocked");
       if (has_no_hash()) {
         st->print(" no_hash");
-      } else if (UseCompactObjectHeaders) {
+      } else if (UseFourByteObjectHeaders) {
         st->print(" hash is-hashed=%s is-copied=%s", BOOL_TO_STR(is_hashed_not_expanded()), BOOL_TO_STR(
                 is_hashed_expanded()));
       } else {

@@ -31,7 +31,7 @@ package gc.stress.ihash;
  *          region after hash expansion.
  * @requires vm.gc.Shenandoah
  * @run main/othervm
- *      -XX:+UseCompactObjectHeaders -XX:+UseShenandoahGC
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC -XX:+ShenandoahVerify
  *      -XX:-ExplicitGCInvokesConcurrent
  *      -Xms16m -Xmx16m
@@ -47,7 +47,7 @@ package gc.stress.ihash;
  *          region after hash expansion.
  * @requires vm.gc.Shenandoah
  * @run main/othervm
- *      -XX:+UseCompactObjectHeaders -XX:+UseShenandoahGC
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC -XX:+ShenandoahVerify
  *      -XX:-ExplicitGCInvokesConcurrent
  *      -XX:ShenandoahGCHeuristics=aggressive

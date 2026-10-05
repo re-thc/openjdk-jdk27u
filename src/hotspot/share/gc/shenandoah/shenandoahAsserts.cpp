@@ -353,7 +353,7 @@ void ShenandoahAsserts::assert_in_correct_region(void* interior_loc, oop obj, co
   // obj->size() already includes the hash word and is final, so no headroom is
   // added -- and requires_humongous() then yields the same answer the allocator
   // reached on the unexpanded base size.
-  const bool may_expand_for_hash = UseCompactObjectHeaders && !obj->mark().is_expanded();
+  const bool may_expand_for_hash = UseFourByteObjectHeaders && !obj->mark().is_expanded();
   if (ShenandoahHeapRegion::requires_humongous(alloc_size, may_expand_for_hash)) {
     size_t idx = r->index();
     size_t end_idx = heap->heap_region_index_containing(obj_end - 1);

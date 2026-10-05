@@ -255,11 +255,11 @@ public class InstanceKlass extends Klass {
 
   public long getObjectSize(Oop object) {
     long baseSize = getSizeHelper() * VM.getVM().getAddressSize();
-    if (VM.getVM().isCompactObjectHeadersEnabled()) {
+    if (VM.getVM().isFourByteObjectHeadersEnabled()) {
       Mark mark = object.getMark();
       if (mark.isExpanded() && (getHashOffset() + 4 /* size of hash field */) > baseSize) {
         // Needs extra word for identity hash-code.
-        return baseSize + VM.getVM().getBytesPerWord();
+        return Oop.alignObjectSize(baseSize + VM.getVM().getBytesPerWord());
       }
     }
     return baseSize;

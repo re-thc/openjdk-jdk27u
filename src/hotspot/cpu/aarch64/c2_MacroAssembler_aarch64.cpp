@@ -243,7 +243,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
         cache_offset = cache_offset + OMCache::oop_to_oop_difference();
       }
 
-      if (UseCompactObjectHeaders) {
+      if (UseFourByteObjectHeaders) {
         // TODO: The fast-path table lookup currently doesn't work with Lilliput's
         // compact identity-hashcode implementation.
         // See: https://bugs.openjdk.org/browse/JDK-8380981

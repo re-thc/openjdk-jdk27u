@@ -633,7 +633,7 @@ intptr_t ObjectSynchronizer::get_next_hash(Thread* current, oop obj) {
     current->_hashStateW = v;
     value = v;
   } else {
-    assert(UseCompactObjectHeaders, "Only with compact i-hash");
+    assert(UseFourByteObjectHeaders, "Only with compact i-hash");
 #ifdef _LP64
     uint64_t val = cast_from_oop<uint64_t>(obj);
     uint32_t hash = FastHash::get_hash32((uint32_t)val, (uint32_t)(val >> 32));
@@ -656,7 +656,7 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
     markWord temp, test;
     intptr_t hash;
     markWord mark = obj->mark_acquire();
-    if (UseCompactObjectHeaders) {
+    if (UseFourByteObjectHeaders) {
       if (mark.is_hashed()) {
         return get_hash(mark, obj);
       }
@@ -664,7 +664,7 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
       markWord new_mark;
       if (mark.is_not_hashed_expanded()) {
         new_mark = mark.set_hashed_expanded();
-        int offset = mark.klass()->hash_offset_in_bytes(obj, mark);
+        size_t offset = mark.klass()->hash_offset_in_bytes(obj, mark);
         obj->int_field_put(offset, (jint) hash);
       } else {
         new_mark = mark.set_hashed_not_expanded();
@@ -768,7 +768,7 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
 
 
 uint32_t ObjectSynchronizer::get_hash(markWord mark, oop obj, Klass* klass) {
-  assert(UseCompactObjectHeaders, "Only with compact i-hash");
+  assert(UseFourByteObjectHeaders, "Only with compact i-hash");
   //assert(mark.is_neutral() | mark.is_fast_locked(), "only from neutral or fast-locked mark: " INTPTR_FORMAT, mark.value());
   assert(mark.is_hashed(), "only from hashed or copied object");
   if (mark.is_hashed_expanded()) {
@@ -1596,7 +1596,7 @@ ObjectMonitor* ObjectSynchronizer::add_monitor(ObjectMonitor* monitor, oop obj) 
 
   markWord mark = obj->mark();
   intptr_t hash;
-  if (UseCompactObjectHeaders) {
+  if (UseFourByteObjectHeaders) {
     hash = static_cast<intptr_t>(get_hash(mark, obj));
   } else {
     hash = mark.hash();

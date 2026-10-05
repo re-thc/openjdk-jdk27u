@@ -359,7 +359,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
   // other threads. Using the captured mark (rather than re-reading the copy's
   // mark) avoids races with other threads that may have evacuated p and
   // installed a forwarding pointer in the meantime.
-  if (UseCompactObjectHeaders && mark.is_hashed_not_expanded()) {
+  if (UseFourByteObjectHeaders && mark.is_hashed_not_expanded()) {
     copy_val->set_mark(copy_val->initialize_hash_if_necessary(p, mark.klass(), mark));
   }
 

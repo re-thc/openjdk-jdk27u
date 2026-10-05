@@ -207,6 +207,7 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
+        applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false"},
         counts = {IRNode.STORE_VECTOR, ">0",
                   IRNode.LOAD_VECTOR_S, "> 0",
                   IRNode.LOAD_VECTOR_I, "> 0"})
@@ -216,12 +217,30 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
         for (int i = 0; i < SIZE; i++) {
             res1[i] = (short) (s1[i] + s2[i]);
             res2[i] = a[i] + b[i];
+            // We have a mix of int and short loads/stores.
+            // With UseCompactObjectHeaders and AlignVector,
+            // we must 8-byte align all vector loads/stores.
+            //
+            // int:
+            // adr = base + UNSAFE.ARRAY_INT_BASE_OFFSET + 4*iter
+            //              = 16 (or 12 if UseCompactObjectHeaders=true)
+            // If UseCompactObjectHeaders=false: iter % 2 = 0
+            // If UseCompactObjectHeaders=true:  iter % 2 = 1
+            //
+            // byte:
+            // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1*iter
+            //              = 16 (or 12 if UseCompactObjectHeaders=true)
+            // If UseCompactObjectHeaders=false: iter % 8 = 0
+            // If UseCompactObjectHeaders=true:  iter % 8 = 4
+            //
+            // -> we cannot align both if UseCompactObjectHeaders=true.
         }
         return res2;
     }
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
+        applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false"},
         counts = {IRNode.STORE_VECTOR, ">0",
                   IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_ANY, "> 0",
                   IRNode.LOAD_VECTOR_L,                         "> 0"})
@@ -233,6 +252,23 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
             res1[i] = (short) (s1[i] + s2[i]);
             res2[i] = a[i] + b[i];
             res3[i] = l1[i] + l2[i];
+            // We have a mix of int and short loads/stores.
+            // With UseCompactObjectHeaders and AlignVector,
+            // we must 8-byte align all vector loads/stores.
+            //
+            // int:
+            // adr = base + UNSAFE.ARRAY_INT_BASE_OFFSET + 4*iter
+            //              = 16 (or 12 if UseCompactObjectHeaders=true)
+            // If UseCompactObjectHeaders=false: iter % 2 = 0
+            // If UseCompactObjectHeaders=true:  iter % 2 = 1
+            //
+            // byte:
+            // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1*iter
+            //              = 16 (or 12 if UseCompactObjectHeaders=true)
+            // If UseCompactObjectHeaders=false: iter % 8 = 0
+            // If UseCompactObjectHeaders=true:  iter % 8 = 4
+            //
+            // -> we cannot align both if UseCompactObjectHeaders=true.
         }
         return res3;
     }
@@ -254,6 +290,7 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
+        applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false"},
         counts = {IRNode.STORE_VECTOR, ">0",
                   IRNode.LOAD_VECTOR_S, "> 0",
                   IRNode.LOAD_VECTOR_I, "> 0"})
@@ -263,12 +300,30 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
         for (int i = 0; i < SIZE; i++) {
             res1[i] = (short) (s1[i] + s2[i]);
             res2[i] = a[i] + 88888888;;
+            // We have a mix of int and short loads/stores.
+            // With UseCompactObjectHeaders and AlignVector,
+            // we must 8-byte align all vector loads/stores.
+            //
+            // int:
+            // adr = base + UNSAFE.ARRAY_INT_BASE_OFFSET + 4*iter
+            //              = 16 (or 12 if UseCompactObjectHeaders=true)
+            // If UseCompactObjectHeaders=false: iter % 2 = 0
+            // If UseCompactObjectHeaders=true:  iter % 2 = 1
+            //
+            // byte:
+            // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1*iter
+            //              = 16 (or 12 if UseCompactObjectHeaders=true)
+            // If UseCompactObjectHeaders=false: iter % 8 = 0
+            // If UseCompactObjectHeaders=true:  iter % 8 = 4
+            //
+            // -> we cannot align both if UseCompactObjectHeaders=true.
         }
         return res2;
     }
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true", "rvv", "true"},
+        applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false"},
         counts = {IRNode.STORE_VECTOR, ">0",
                   IRNode.LOAD_VECTOR_S, "> 0",
                   IRNode.LOAD_VECTOR_I, "> 0"})
@@ -278,12 +333,30 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
         for (int i = 0; i < SIZE; i++) {
             res1[i] = (short) (s1[i] + s2[i]);
             res2[i] = a[i] * intInv;
+            // We have a mix of int and short loads/stores.
+            // With UseCompactObjectHeaders and AlignVector,
+            // we must 8-byte align all vector loads/stores.
+            //
+            // int:
+            // adr = base + UNSAFE.ARRAY_INT_BASE_OFFSET + 4*iter
+            //              = 16 (or 12 if UseCompactObjectHeaders=true)
+            // If UseCompactObjectHeaders=false: iter % 2 = 0
+            // If UseCompactObjectHeaders=true:  iter % 2 = 1
+            //
+            // byte:
+            // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1*iter
+            //              = 16 (or 12 if UseCompactObjectHeaders=true)
+            // If UseCompactObjectHeaders=false: iter % 8 = 0
+            // If UseCompactObjectHeaders=true:  iter % 8 = 4
+            //
+            // -> we cannot align both if UseCompactObjectHeaders=true.
         }
         return res2;
     }
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true", "rvv", "true"},
+        applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false"},
         counts = {IRNode.STORE_VECTOR, ">0",
                   IRNode.LOAD_VECTOR_S, "> 0",
                   IRNode.LOAD_VECTOR_I, "> 0"})
@@ -293,12 +366,14 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
         for (int i = 0; i < SIZE; i++) {
             res1[i] = (short) (s1[i] + s2[i]);
             res2[i] = a[i] * (b[i] + intInv * c[i] & 0xfffffa);
+            // same argument as in multipleOpsWith2DifferentTypesAndInvariant.
         }
         return res2;
     }
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse3", "true", "rvv", "true"},
+        applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false"},
         counts = {IRNode.STORE_VECTOR, ">0",
                   IRNode.LOAD_VECTOR_S, "> 0",
                   IRNode.LOAD_VECTOR_I, "> 0"})
@@ -309,6 +384,23 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
         while (++i < SIZE) {
             sum += (res1[i]--);
             res2[i]++;
+            // We have a mix of int and short loads/stores.
+            // With UseCompactObjectHeaders and AlignVector,
+            // we must 8-byte align all vector loads/stores.
+            //
+            // int:
+            // adr = base + UNSAFE.ARRAY_INT_BASE_OFFSET + 4*iter
+            //              = 16 (or 12 if UseCompactObjectHeaders=true)
+            // If UseCompactObjectHeaders=false: iter % 2 = 0
+            // If UseCompactObjectHeaders=true:  iter % 2 = 1
+            //
+            // byte:
+            // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1*iter
+            //              = 16 (or 12 if UseCompactObjectHeaders=true)
+            // If UseCompactObjectHeaders=false: iter % 8 = 0
+            // If UseCompactObjectHeaders=true:  iter % 8 = 4
+            //
+            // -> we cannot align both if UseCompactObjectHeaders=true.
         }
         return res1;
     }
@@ -355,12 +447,22 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true", "rvv", "true"},
+        applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] manuallyUnrolledStride2() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE - 1; i += 2) {
             res[i] = a[i] * b[i];
             res[i + 1] = a[i + 1] * b[i + 1];
+            // Hand-unrolling can mess with alignment!
+            //
+            // With UseCompactObjectHeaders and AlignVector,
+            // we must 8-byte align all vector loads/stores.
+            //
+            // adr = base + UNSAFE.ARRAY_INT_BASE_OFFSET + 8*iter
+            //              = 16 (or 12 if UseCompactObjectHeaders=true)
+            // If UseCompactObjectHeaders=false: 16 divisible by 8 -> vectorize
+            // If UseCompactObjectHeaders=true:  12 not divisibly by 8 -> not vectorize
         }
         return res;
     }

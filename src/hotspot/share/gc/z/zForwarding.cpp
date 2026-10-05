@@ -408,7 +408,7 @@ void ZForwarding::verify() const {
     // will_expand_objects if they had is_hashed_not_expanded() at mark time, but they did not
     // actually expand during relocation (size = old_size). Track these so verify_live() can
     // subtract them from the expected live_bytes adjustment.
-    if (_in_place && UseCompactObjectHeaders) {
+    if (_in_place && UseFourByteObjectHeaders) {
       const zoffset from_offset = start() + (entry.from_index() << object_alignment_shift());
       if (to_zoffset(entry.to_offset()) == from_offset) {
         const oop to_obj = to_oop(to_addr);

@@ -55,7 +55,7 @@
 //    a hash value no bigger than 32 bits because they will not
 //    properly generate a mask larger than that: see library_call.cpp
 //
-//  - With +UseCompactObjectHeaders:
+//  - With +UseFourByteObjectHeaders:
 //    hashctrl bits indicate if object has been hashed:
 //    00 - never hashed
 //    01 - hashed, but not expanded by GC: will recompute hash
@@ -169,12 +169,12 @@ class markWord {
 
 #ifdef _LP64
   // Used only with compact headers:
-  // With UseCompactObjectHeaders: We store the (narrow) Klass* in bits 13-31 (19 bits total).
-  // Without UseCompactObjectHeaders: Klass* is stored separately in object header, not in markword.
+  // With UseFourByteObjectHeaders: We store the (narrow) Klass* in bits 13-31 (19 bits total).
+  // Without UseFourByteObjectHeaders: Klass* is stored separately in object header, not in markword.
 
-  // These are for bit-precise extraction of the narrow Klass* from the markword (UseCompactObjectHeaders only)
+  // These are for bit-precise extraction of the narrow Klass* from the markword (UseFourByteObjectHeaders only)
   //
-  // Bit position summary for UseCompactObjectHeaders:
+  // Bit position summary for UseFourByteObjectHeaders:
   // Bits  0- 1: lock (2 bits)
   // Bit   2   : self-fwd (1 bit)
   // Bits  3- 6: age (4 bits)
@@ -183,11 +183,17 @@ class markWord {
   // Bits 13-31: klass (19 bits) - narrow klass pointer
   // Bits 32-63: unused (32 bits)
   //
-  // Without UseCompactObjectHeaders, klass is stored separately in object header
-  static constexpr int klass_shift                = hashctrl_shift + hashctrl_bits;
-  static constexpr int klass_bits                 = 19;
+  // Without UseFourByteObjectHeaders, klass is stored separately in object header
+  static constexpr int klass_offset_in_bytes      = 4;
+  static constexpr int klass_shift                = hash_shift + hash_bits;
+  static constexpr int klass_shift_at_offset      = klass_shift - klass_offset_in_bytes * BitsPerByte;
+  static constexpr int klass_bits                 = 22;
   static constexpr uintptr_t klass_mask           = right_n_bits(klass_bits);
   static constexpr uintptr_t klass_mask_in_place  = klass_mask << klass_shift;
+  static constexpr int four_byte_klass_shift      = hashctrl_shift + hashctrl_bits;
+  static constexpr int four_byte_klass_bits       = 19;
+  static constexpr uintptr_t four_byte_klass_mask = right_n_bits(four_byte_klass_bits);
+  static constexpr uintptr_t four_byte_klass_mask_in_place = four_byte_klass_mask << four_byte_klass_shift;
 #endif
 
   static const uintptr_t locked_value             = 0;
@@ -213,7 +219,8 @@ class markWord {
     return (mask_bits(value(), lock_mask_in_place) == unlocked_value);
   }
   bool is_marked()   const {
-    return (value() & (self_fwd_bit_in_place | lock_mask_in_place)) > monitor_value;
+    return UseFourByteObjectHeaders ? (value() & (self_fwd_bit_in_place | lock_mask_in_place)) > monitor_value
+                                    : (value() & lock_mask_in_place) == marked_value;
   }
 
   bool is_neutral()  const {  // Not locked, or marked - a "clean" neutral state
@@ -235,7 +242,7 @@ class markWord {
 
   // Should this header be preserved during GC?
   bool must_be_preserved() const {
-    return UseCompactObjectHeaders ? !is_unlocked() : (!is_unlocked() || !has_no_hash());
+    return UseFourByteObjectHeaders ? !is_unlocked() : (!is_unlocked() || !has_no_hash());
   }
 
   // WARNING: The following routines are used EXCLUSIVELY by
@@ -284,7 +291,9 @@ class markWord {
   void set_displaced_mark_helper(markWord m) const;
 
   // used to encode pointers during GC
-  markWord clear_lock_bits() const { return markWord(value() & ~(lock_mask_in_place | self_fwd_bit_in_place)); }
+  markWord clear_lock_bits() const {
+    return markWord(value() & ~(lock_mask_in_place | (UseFourByteObjectHeaders ? self_fwd_bit_in_place : 0)));
+  }
 
   // age operations
   markWord set_marked()   { return markWord((value() & ~lock_mask_in_place) | marked_value); }
@@ -299,12 +308,12 @@ class markWord {
 
   // hash operations
   intptr_t hash() const {
-    assert(!UseCompactObjectHeaders, "only without compact i-hash");
+    assert(!UseFourByteObjectHeaders, "only without compact i-hash");
     return mask_bits(value() >> hash_shift, hash_mask);
   }
 
   bool has_no_hash() const {
-    if (UseCompactObjectHeaders) {
+    if (UseFourByteObjectHeaders) {
       return !is_hashed();
     } else {
       return hash() == no_hash;
@@ -312,20 +321,20 @@ class markWord {
   }
 
   inline bool is_hashed_not_expanded() const {
-    assert(UseCompactObjectHeaders, "only with compact i-hash");
+    assert(UseFourByteObjectHeaders, "only with compact i-hash");
     return (value() & hashctrl_mask_in_place) == hashctrl_hashed_mask_in_place;
   }
   inline markWord set_hashed_not_expanded() const {
-    assert(UseCompactObjectHeaders, "only with compact i-hash");
+    assert(UseFourByteObjectHeaders, "only with compact i-hash");
     return markWord((value() & ~hashctrl_mask_in_place) | hashctrl_hashed_mask_in_place);
   }
 
   inline bool is_hashed_expanded() const {
-    assert(UseCompactObjectHeaders, "only with compact i-hash");
+    assert(UseFourByteObjectHeaders, "only with compact i-hash");
     return (value() & hashctrl_mask_in_place) == (hashctrl_hashed_mask_in_place | hashctrl_expanded_mask_in_place);
   }
   inline markWord set_hashed_expanded() const {
-    assert(UseCompactObjectHeaders, "only with compact i-hash");
+    assert(UseFourByteObjectHeaders, "only with compact i-hash");
     return markWord((value() & ~hashctrl_mask_in_place) | (hashctrl_hashed_mask_in_place | hashctrl_expanded_mask_in_place));
   }
 
@@ -338,29 +347,29 @@ class markWord {
   // which indicates that the archived copy will be allocated in the
   // unhashed form.
   inline bool is_not_hashed_expanded() const {
-    assert(UseCompactObjectHeaders, "only with compact i-hash");
+    assert(UseFourByteObjectHeaders, "only with compact i-hash");
     return (value() & hashctrl_mask_in_place) == hashctrl_expanded_mask_in_place;
   }
   inline markWord set_not_hashed_expanded() const {
-    assert(UseCompactObjectHeaders, "only with compact i-hash");
+    assert(UseFourByteObjectHeaders, "only with compact i-hash");
     return markWord((value() & ~hashctrl_mask_in_place) | hashctrl_expanded_mask_in_place);
   }
   inline markWord set_not_hashed_not_expanded() const {
-    assert(UseCompactObjectHeaders, "only with compact i-hash");
+    assert(UseFourByteObjectHeaders, "only with compact i-hash");
     return markWord(value() & ~(hashctrl_mask_in_place | hashctrl_expanded_mask_in_place));
   }
   // Return true when object is either hashed_moved or not_hashed_moved.
   inline bool is_expanded() const {
-    assert(UseCompactObjectHeaders, "only with compact i-hash");
+    assert(UseFourByteObjectHeaders, "only with compact i-hash");
     return (value() & hashctrl_expanded_mask_in_place) != 0;
   }
   inline bool is_hashed() const {
-    assert(UseCompactObjectHeaders, "only with compact i-hash");
+    assert(UseFourByteObjectHeaders, "only with compact i-hash");
     return (value() & hashctrl_hashed_mask_in_place) != 0;
   }
 
   inline markWord copy_hashctrl_from(markWord m) const {
-    if (UseCompactObjectHeaders) {
+    if (UseFourByteObjectHeaders) {
       return markWord((value() & ~hashctrl_mask_in_place) | (m.value() & hashctrl_mask_in_place));
     } else {
       return markWord(value());
@@ -399,7 +408,8 @@ class markWord {
 
   inline bool is_self_forwarded() const {
     // Match 100, 101, 110 but not 111.
-    return mask_bits(value() + 1, (lock_mask_in_place | self_fwd_bit_in_place)) > 4;
+    return UseFourByteObjectHeaders ? mask_bits(value() + 1, (lock_mask_in_place | self_fwd_bit_in_place)) > 4
+                                    : mask_bits(value(), self_fwd_bit_in_place) != 0;
   }
 
   inline markWord set_self_forwarded() const {

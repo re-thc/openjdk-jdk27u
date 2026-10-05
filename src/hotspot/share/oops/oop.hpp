@@ -179,7 +179,7 @@ class oopDesc {
 
  public:
   template<typename T>
-  inline T* field_addr(int offset) const;
+  inline T* field_addr(ptrdiff_t offset) const;
 
   template <typename T> inline size_t field_offset(T* p) const;
 
@@ -226,8 +226,8 @@ class oopDesc {
   jboolean bool_field_volatile(int offset) const;
   void bool_field_put_volatile(int offset, jboolean contents);
 
-  jint int_field(int offset) const;
-  void int_field_put(int offset, jint contents);
+  jint int_field(ptrdiff_t offset) const;
+  void int_field_put(ptrdiff_t offset, jint contents);
 
   jshort short_field(int offset) const;
   void short_field_put(int offset, jshort contents);
@@ -377,12 +377,16 @@ class oopDesc {
   // for code generation
   static int mark_offset_in_bytes()      { return (int)offset_of(oopDesc, _mark); }
   static int klass_offset_in_bytes()     {
-    assert(!UseCompactObjectHeaders, "don't use this with compact headers");
+#ifdef _LP64
+    if (UseCompactObjectHeaders) {
+      return mark_offset_in_bytes() + (UseFourByteObjectHeaders ? 0 : markWord::klass_offset_in_bytes);
+    }
+#endif
     return (int)offset_of(oopDesc, _compressed_klass);
   }
   static int klass_gap_offset_in_bytes() {
     assert(has_klass_gap(), "only applicable to compressed klass pointers");
-    if (UseCompactObjectHeaders) {
+    if (UseFourByteObjectHeaders) {
       return base_offset_in_bytes();
     } else {
       return klass_offset_in_bytes() + sizeof(narrowKlass);

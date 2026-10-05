@@ -194,7 +194,7 @@ class ParallelScavengeRefProcProxyTask : public RefProcProxyTask {
 public:
   ParallelScavengeRefProcProxyTask(uint max_workers)
     : RefProcProxyTask("ParallelScavengeRefProcProxyTask", max_workers),
-      _terminator(max_workers, UseCompactObjectHeaders ? ParCompactionManagerNew::marking_stacks() : ParCompactionManager::marking_stacks()) {}
+      _terminator(max_workers, UseFourByteObjectHeaders ? ParCompactionManagerNew::marking_stacks() : ParCompactionManager::marking_stacks()) {}
 
   void work(uint worker_id) override {
     assert(worker_id < _max_workers, "sanity");

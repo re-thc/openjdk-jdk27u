@@ -31,8 +31,8 @@ package gc.stress.ihash;
  *          C2-compiled hashCode intrinsic recomputes an address-based hash.
  * @requires vm.gc.G1
  * @requires vm.compiler2.enabled
- * @requires vm.opt.UseCompactObjectHeaders == null | vm.opt.UseCompactObjectHeaders == true
- * @run main/othervm -XX:+UseCompactObjectHeaders -XX:+UseG1GC -Xms64m -Xmx64m
+ * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseG1GC -Xms64m -Xmx64m
  *      gc.stress.ihash.TestHashCodeC2Relocation
  */
 
@@ -43,8 +43,8 @@ package gc.stress.ihash;
  *          C2-compiled hashCode intrinsic recomputes an address-based hash.
  * @requires vm.gc.Parallel
  * @requires vm.compiler2.enabled
- * @requires vm.opt.UseCompactObjectHeaders == null | vm.opt.UseCompactObjectHeaders == true
- * @run main/othervm -XX:+UseCompactObjectHeaders -XX:+UseParallelGC -Xms64m -Xmx64m
+ * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseParallelGC -Xms64m -Xmx64m
  *      gc.stress.ihash.TestHashCodeC2Relocation
  */
 
@@ -55,8 +55,8 @@ package gc.stress.ihash;
  *          C2-compiled hashCode intrinsic recomputes an address-based hash.
  * @requires vm.gc.Serial
  * @requires vm.compiler2.enabled
- * @requires vm.opt.UseCompactObjectHeaders == null | vm.opt.UseCompactObjectHeaders == true
- * @run main/othervm -XX:+UseCompactObjectHeaders -XX:+UseSerialGC -Xms64m -Xmx64m
+ * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseSerialGC -Xms64m -Xmx64m
  *      gc.stress.ihash.TestHashCodeC2Relocation
  */
 
@@ -67,8 +67,8 @@ package gc.stress.ihash;
  *          C2-compiled hashCode intrinsic recomputes an address-based hash.
  * @requires vm.gc.Shenandoah
  * @requires vm.compiler2.enabled
- * @requires vm.opt.UseCompactObjectHeaders == null | vm.opt.UseCompactObjectHeaders == true
- * @run main/othervm -XX:+UseCompactObjectHeaders -XX:+UseShenandoahGC -Xms64m -Xmx64m
+ * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC -Xms64m -Xmx64m
  *      gc.stress.ihash.TestHashCodeC2Relocation
  */
 
@@ -79,14 +79,14 @@ package gc.stress.ihash;
  *          C2-compiled hashCode intrinsic recomputes an address-based hash.
  * @requires vm.gc.Z
  * @requires vm.compiler2.enabled
- * @requires vm.opt.UseCompactObjectHeaders == null | vm.opt.UseCompactObjectHeaders == true
- * @run main/othervm -XX:+UseCompactObjectHeaders -XX:+UseZGC -Xms64m -Xmx64m
+ * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseZGC -Xms64m -Xmx64m
  *      gc.stress.ihash.TestHashCodeC2Relocation
  */
 
 /**
  * Regression test for a C2 miscompilation of the {@code System.identityHashCode}
- * intrinsic under {@code -XX:+UseCompactObjectHeaders}.
+ * intrinsic under {@code -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders}.
  *
  * With compact headers there is no room in the 64-bit header to always store a
  * 31-bit identity hash. An object that has been hashed but not yet expanded by

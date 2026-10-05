@@ -57,7 +57,7 @@ public class Mark extends VMObject {
     hashShift           = db.lookupLongConstant("markWord::hash_shift").longValue();
     hashCtrlShift       = db.lookupLongConstant("markWord::hashctrl_shift").longValue();
     if (VM.getVM().isLP64()) {
-      klassShift          = db.lookupLongConstant("markWord::klass_shift").longValue();
+      klassShift          = db.lookupLongConstant(VM.getVM().isFourByteObjectHeadersEnabled() ? "markWord::four_byte_klass_shift" : "markWord::klass_shift").longValue();
     }
     lockMask            = db.lookupLongConstant("markWord::lock_mask").longValue();
     lockMaskInPlace     = db.lookupLongConstant("markWord::lock_mask_in_place").longValue();
@@ -196,20 +196,46 @@ public class Mark extends VMObject {
 
   // hash operations
   public long hash() {
-    if (VM.getVM().isCompactObjectHeadersEnabled()) {
-      System.exit(-23);
-      throw new RuntimeException("Compact I-Hash not yet implemented");
+    if (VM.getVM().isFourByteObjectHeadersEnabled()) {
+      if (hasNoHash()) return 0;
+      if (isExpanded()) {
+        Oop object = VM.getVM().getObjectHeap().newOop(addr.addOffsetToAsOopHandle(0));
+        Klass klass = object.getKlass();
+        long offset;
+        if (object instanceof Array array) {
+          ArrayKlass arrayKlass = (ArrayKlass) klass;
+          offset = arrayKlass.getArrayHeaderInBytes() + (array.getLength() << arrayKlass.getLog2ElementSize());
+        } else if (klass instanceof InstanceMirrorKlass) {
+          offset = java_lang_Class.getOopSize(object) * VM.getVM().getAddressSize();
+        } else {
+          offset = ((InstanceKlass) klass).getHashOffset();
+        }
+        return addr.getCIntegerAt(offset, 4, true);
+      }
+      if (VM.getVM().getCommandLineFlag("hashCode").getIntx() == 2) return 1;
+      long address = addr.asLongValue();
+      int x = (int) address;
+      int y = (int) (address >>> 32);
+      int multiplier = 0x337954D5;
+      int low = x ^ 0xAAAAAAAA;
+      long product = Integer.toUnsignedLong(low) * Integer.toUnsignedLong(multiplier);
+      int firstLow = (int) product;
+      int mixed = ((x ^ y) * multiplier) ^ (int) (product >>> 32);
+      product = Integer.toUnsignedLong(mixed) * Integer.toUnsignedLong(multiplier);
+      int rotated = Integer.rotateRight(firstLow ^ multiplier, mixed);
+      return ((int) product ^ rotated ^ (int) (product >>> 32)) & hashMask;
     } else {
       return Bits.maskBitsLong(value() >> hashShift, hashMask);
     }
   }
 
   public boolean hasNoHash() {
-    return hash() == noHash;
+    return VM.getVM().isFourByteObjectHeadersEnabled() ?
+        Bits.maskBitsLong(value(), hashCtrlHashedMaskInPlace) == 0 : hash() == noHash;
   }
 
   public boolean isExpanded() {
-    assert(VM.getVM().isCompactObjectHeadersEnabled());
+    assert(VM.getVM().isFourByteObjectHeadersEnabled());
     return Bits.maskBitsLong(value(), hashCtrlExpandedMaskInPlace) != 0;
   }
 

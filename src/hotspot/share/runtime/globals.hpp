@@ -131,6 +131,9 @@ const size_t minimumSymbolTableSize = 1024;
   product(bool, UseCompactObjectHeaders, true,                              \
           "Use compact 64-bit object headers in 64-bit VM")                 \
                                                                             \
+  product(bool, UseFourByteObjectHeaders, false, EXPERIMENTAL,               \
+          "Use compact 32-bit object headers (implies UseCompactObjectHeaders)") \
+                                                                            \
   product(int, ObjectAlignmentInBytes, 8,                                   \
           "Default object alignment in bytes, 8 is minimum")                \
           range(8, 256)                                                     \
@@ -148,6 +151,7 @@ const size_t minimumSymbolTableSize = 1024;
 const bool UseCompressedOops = false;
 const bool AOTCompatibleOopCompression = false;
 const bool UseCompactObjectHeaders = false;
+const bool UseFourByteObjectHeaders = false;
 const int ObjectAlignmentInBytes = 8;
 
 #endif // _LP64

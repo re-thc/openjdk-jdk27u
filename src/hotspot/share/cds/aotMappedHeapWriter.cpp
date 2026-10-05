@@ -229,7 +229,7 @@ Klass* AOTMappedHeapWriter::real_klass_of_buffered_oop(address buffered_addr) {
 size_t AOTMappedHeapWriter::size_of_buffered_oop(address buffered_addr) {
   oop p = buffered_addr_to_source_obj(buffered_addr);
   if (p != nullptr) {
-    if (UseCompactObjectHeaders) {
+    if (UseFourByteObjectHeaders) {
       // Use the buffered object's mark word to determine size, not the source
       // object's.  The source object's mark word may have changed after the
       // buffer was written (e.g., it may have been hashed by
@@ -759,7 +759,7 @@ void AOTMappedHeapWriter::update_header_for_requested_obj(oop requested_obj, oop
   // in the shared heap.
   if (!src_obj->fast_no_hash_check()) {
     intptr_t src_hash = src_obj->identity_hash();
-    if (UseCompactObjectHeaders) {
+    if (UseFourByteObjectHeaders) {
       markWord m = markWord::prototype().set_narrow_klass(nk);
       m = m.copy_hashctrl_from(src_obj->mark());
       fake_oop->set_mark(m);
@@ -769,6 +769,8 @@ void AOTMappedHeapWriter::update_header_for_requested_obj(oop requested_obj, oop
         fake_oop->set_mark(m.set_not_hashed_not_expanded());
       }
       assert(!fake_oop->mark().is_not_hashed_expanded() && !fake_oop->mark().is_hashed_not_expanded(), "must not be not-hashed-moved and not be hashed-not-moved");
+    } else if (UseCompactObjectHeaders) {
+      fake_oop->set_mark(markWord::prototype().set_narrow_klass(nk).copy_set_hash(src_hash));
     } else {
       fake_oop->set_mark(markWord::prototype().copy_set_hash(src_hash));
       DEBUG_ONLY(intptr_t archived_hash = fake_oop->identity_hash());

@@ -54,7 +54,7 @@ instanceOop InstanceMirrorKlass::allocate_instance(Klass* k, bool extend, TRAPS)
   // Query before forming handle.
   size_t base_size = instance_size(k);
   size_t size = base_size;
-  if (extend && UseCompactObjectHeaders) {
+  if (extend && UseFourByteObjectHeaders) {
     size = oopDesc::hash_expanded_size(size);
   }
   assert(base_size > 0, "base object size must be non-zero: %zu", base_size);
@@ -62,7 +62,7 @@ instanceOop InstanceMirrorKlass::allocate_instance(Klass* k, bool extend, TRAPS)
   // Since mirrors can be variable sized because of the static fields, store
   // the size in the mirror itself.
   instanceOop obj = (instanceOop)Universe::heap()->class_allocate(this, size, base_size, THREAD);
-  if (extend && UseCompactObjectHeaders) {
+  if (extend && UseFourByteObjectHeaders) {
     obj->set_mark(obj->mark().set_not_hashed_expanded());
     assert(expand_for_hash(obj, obj->mark()), "must expand for hash");
   }
@@ -81,14 +81,14 @@ int InstanceMirrorKlass::compute_static_oop_field_count(oop obj) {
   return 0;
 }
 
-int InstanceMirrorKlass::hash_offset_in_bytes(oop obj, markWord m) const {
-  assert(UseCompactObjectHeaders, "only with compact i-hash");
+size_t InstanceMirrorKlass::hash_offset_in_bytes(oop obj, markWord m) const {
+  assert(UseFourByteObjectHeaders, "only with compact i-hash");
   // TODO: There may be gaps that we could use, e.g. in the fields of Class,
   // between the fields of Class and the static fields or in or at the end of
   // the static fields block.
   // When implementing any change here, make sure that allocate_instance()
   // and corresponding code in InstanceMirrorKlass.java are in sync.
-  return checked_cast<int>(obj->base_size_given_klass(m, this) * BytesPerWord);
+  return obj->base_size_given_klass(m, this) * BytesPerWord;
 }
 
 #if INCLUDE_CDS

@@ -47,7 +47,7 @@ size_t CompressedKlassPointers::_protection_zone_size = 0;
 size_t CompressedKlassPointers::max_klass_range_size() {
  #ifdef _LP64
    const size_t encoding_allows = nth_bit(narrow_klass_pointer_bits() + max_shift());
-   assert(!UseCompactObjectHeaders || max_klass_range_size_coh == encoding_allows, "Sanity");
+   assert(!UseFourByteObjectHeaders || max_klass_range_size_coh == encoding_allows, "Sanity");
    constexpr size_t cap = 4 * G;
    return MIN2(encoding_allows, cap);
  #else
@@ -62,7 +62,7 @@ size_t CompressedKlassPointers::max_klass_range_size() {
 
 void CompressedKlassPointers::pre_initialize() {
   if (UseCompactObjectHeaders) {
-    _narrow_klass_pointer_bits = narrow_klass_pointer_bits_coh;
+    _narrow_klass_pointer_bits = UseFourByteObjectHeaders ? narrow_klass_pointer_bits_four_byte : narrow_klass_pointer_bits_coh;
     _max_shift = max_shift_coh;
   } else {
 #ifdef _LP64
@@ -88,7 +88,7 @@ void CompressedKlassPointers::sanity_check_after_initialization() {
 
   // There is no technical reason preventing us from using other klass pointer bit lengths,
   // but it should be a deliberate choice
-  ASSERT_HERE(_narrow_klass_pointer_bits == 32 || _narrow_klass_pointer_bits == 19);
+  ASSERT_HERE(_narrow_klass_pointer_bits == 32 || _narrow_klass_pointer_bits == 22 || _narrow_klass_pointer_bits == 19);
 
   // All values must be inited
   ASSERT_HERE(_max_shift != -1);
@@ -369,4 +369,3 @@ bool CompressedKlassPointers::is_in_protection_zone(address addr) {
   return _protection_zone_size > 0 ?
       (addr >= base() && addr < base() + _protection_zone_size) : false;
 }
-

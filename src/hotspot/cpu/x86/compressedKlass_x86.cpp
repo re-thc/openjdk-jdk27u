@@ -32,6 +32,7 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
   char* result = nullptr;
 
   assert(CompressedKlassPointers::narrow_klass_pointer_bits() == 32 ||
+         CompressedKlassPointers::narrow_klass_pointer_bits() == 22 ||
          CompressedKlassPointers::narrow_klass_pointer_bits() == 19, "Rethink if we ever use different nKlass bit sizes");
 
   // Unconditionally attempting to reserve in lower 4G first makes always sense:

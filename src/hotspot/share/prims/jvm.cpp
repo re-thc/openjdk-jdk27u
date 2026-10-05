@@ -681,7 +681,7 @@ JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
   // With compact object headers, the original might have been expanded by GC
   // for the identity hash. The clone must be allocated at the base size, since
   // it will get a fresh (not-hashed, not-expanded) mark word.
-  const size_t size = UseCompactObjectHeaders
+  const size_t size = UseFourByteObjectHeaders
     ? obj->base_size_given_klass(obj->mark(), klass)
     : obj->size();
   oop new_obj_oop = nullptr;
