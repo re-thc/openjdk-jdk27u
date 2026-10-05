@@ -54,6 +54,10 @@ public class FourByteHeaderClassSpace extends ClassLoader {
     static void load() throws Exception {
         loader = new FourByteHeaderClassSpace();
         byte[] bytes = template();
+        // Initialize printing before exhausting metadata; string concatenation
+        // would otherwise link a new invokedynamic call site inside the handler.
+        System.out.print("Attempting ");
+        System.out.println(600000);
         int count = 0;
         try {
             for (; count < 600000; count++) {
@@ -68,7 +72,9 @@ public class FourByteHeaderClassSpace extends ClassLoader {
         } catch (OutOfMemoryError error) {
             reserve = null;
             if (!"Compressed class space".equals(error.getMessage())) throw error;
-            System.out.println("Controlled compressed class space exhaustion after " + count + " classes");
+            System.out.print("Controlled compressed class space exhaustion after ");
+            System.out.print(count);
+            System.out.println(" classes");
             if (count < 100000) throw new AssertionError("Unexpectedly small class capacity: " + count);
         }
     }
@@ -78,6 +84,6 @@ public class FourByteHeaderClassSpace extends ClassLoader {
                 "-XX:+UnlockExperimentalVMOptions", "-XX:+UseFourByteObjectHeaders",
                 "-XX:+UseSerialGC", "-XX:-ClassUnloading", "-Xshare:off", "-Xmx1g",
                 "-XX:CompressedClassSpaceSize=1g", FourByteHeaderClassSpace.class.getName(), "load").start())
-                .shouldHaveExitValue(0).shouldContain("Controlled compressed class space exhaustion");
+                .shouldHaveExitValue(0).shouldContain("Controlled compressed class space exhaustion").outputTo(System.out);
     }
 }

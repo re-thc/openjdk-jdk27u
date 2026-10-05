@@ -45,6 +45,7 @@ public class FourByteHeaderOptions {
     }
     public static void main(String[] args) throws Exception {
         check(false, true);
+        check(false, true, "-XX:hashCode=6");
         check(false, false, "-XX:-UseCompactObjectHeaders");
         check(true, true, "-XX:+UseFourByteObjectHeaders");
         check(true, true, "-XX:+UseFourByteObjectHeaders", "-XX:-UseCompactObjectHeaders");
