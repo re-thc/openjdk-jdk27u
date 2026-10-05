@@ -121,9 +121,11 @@ static int search_utf16_neon(const jchar* src, int length, const jchar* tgt, int
 static jint search_impl(const char* src, jint length, const char* tgt, jint tgt_length,
                         jint encoding, jboolean reverse, search_fn fn, aligned_fn aligned) {
   // Mixed coder searches widen a bounded needle on the native stack.
-  // Java gates this path at 64 code units; no heap allocation or GC transition.
+  // Enforce the Java-side cap here too, before reading or widening the needle.
+  // No heap allocation or GC transition is needed.
   jchar widened[64];
   if (encoding == 2) {
+    if ((unsigned int)tgt_length > sizeof(widened) / sizeof(widened[0])) return -1;
     for (int i = 0; i < tgt_length; i++) widened[i] = (unsigned char)tgt[i];
     tgt = (const char*)widened;
     tgt_length *= 2;
@@ -156,7 +158,7 @@ static jint search_char_impl(const char* src, jint length, jint ch, jboolean utf
   return search_impl(src, length, (const char*)needle, needle_length, 1, reverse, fn, aligned);
 }
 
-/* Select ISA once at class initialization; every published table is immutable. */
+/* Every published table is immutable; repeated initialization is harmless. */
 #define DEFINE_KERNELS(tag, forward, backward, aligned, equality, caps) \
 static jint tag##_find_latin1(const char* s, jint n, const char* t, jint m) { \
     return search_impl(s, n, t, m, 0, JNI_FALSE, forward, aligned); \

@@ -2,9 +2,12 @@
 
 StringZilla is enabled by default in this fork. `-XX:-UseStringZillaIntrinsics`
 opts out; `-XX:+UseStringZillaIntrinsics` remains an explicit enable option.
-The search/equality implementation, ISA selection, thresholds and JNI fallback
-are unchanged from the recorded benchmark images. `results.json` preserves the
-hashes and explicit on/off arguments of those earlier measurements.
+The default change kept the search/equality implementation, ISA selection,
+thresholds and JNI fallback unchanged. `results.json` preserves the hashes and
+explicit on/off arguments of those earlier measurements. The subsequent native
+mixed-needle bound and its rebuilt-image validation are recorded separately in
+[review follow-up](REVIEW_RESPONSE.md); the hashes below describe the earlier
+default-on validation.
 
 Verified on 2026-10-04:
 

@@ -13,6 +13,9 @@ These measurements used explicit `-XX:+UseStringZillaIntrinsics` and
 The recorded artifact hashes describe those benchmark images. The default change
 keeps the search/equality implementation and dispatch thresholds unchanged;
 [default-on validation](DEFAULT_VALIDATION.md) covers the rebuilt images.
+The main matrix also predates the native mixed-needle bound added in the
+[review follow-up](REVIEW_RESPONSE.md). Its original hashes and measurements
+remain intact; that follow-up records separate before/after checks of the guard.
 
 AMD EPYC 9V74, x86-64 Linux, AVX2/AVX-512 enabled; CPU 0 pinned, one benchmark
 at a time. JMH 1.37 measures average time in ns/op. The main matrix contains
@@ -58,6 +61,15 @@ with the original helpers than with both modified states; its unchanged scan
 instructions and the fixed-alignment/rotating-haystack controls below show
 layout sensitivity. The rotating control measures 12.867 / 12.131 / 12.138 ns
 for original / off / on; the single-array result remains in the tables.
+
+Some 32–256-character cases have slower enabled means, including measurements
+around the 256-byte character-search crossover. The retained data does not
+establish a speedup for every short input or processor. Thresholds remain at
+256 bytes: retuning them for one borderline case on this CPU would require a
+broader workload and hardware comparison. Large interpreter gains on repeated
+prefixes compare a scalar worst-case scan with SIMD; they do not predict normal
+tiered execution. Assess interpreter, C1, and C2 separately. C2 forward search
+and equality retain their existing intrinsics; C2 reverse search is accelerated.
 
 ## Reproduction
 
@@ -118,7 +130,7 @@ the x86 VM leaf adapter is one load and one tail jump into independent libjava.
 * x86 `UseAVX=0` and `UseAVX=2` oracles passed. AArch64/QEMU interpreter, C1
   and C2 oracles passed with the cross-built VM and NEON kernels.
 * Vendor manifest verification passes for 28 unmodified upstream files;
-  staged whitespace checks pass. Full tier1/tier2, sanitizers, other architectures
+  staged whitespace checks pass. Full tier1/tier2, whole-JDK sanitizers, other architectures
   and ARM hardware timing have not been run.
 
 The standard jtreg command is:

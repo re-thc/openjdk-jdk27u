@@ -61,8 +61,15 @@ The x86 dispatcher enables the upstream Haswell functions only when HotSpot
 permits AVX2 and detects BMI1, BMI2, and LZCNT. It selects Skylake AVX-512
 functions when `UseAVX >= 3` and AVX-512F/BW/VL are available. Otherwise it uses
 Haswell AVX2 or directly calls the serial functions. AArch64 uses mandatory NEON, with serial fallback on other
-builds. ISA selection happens during native bootstrap and is repeated idempotently at
-`StringZilla` class initialization. An immutable
+builds. The x86 ISA-specific tables require GCC/Clang function-target support;
+MSVC x64 builds publish the serial table even if the VM reports AVX capabilities.
+Other architectures retain generic JNI interpreter entries and serial kernels;
+shared C2 bridge expansion can still issue a serial leaf call. These other
+ports and MSVC have not been built or tested here.
+ISA selection happens during native bootstrap and is repeated idempotently at
+`StringZilla` class initialization. The early call supports bootstrap equality;
+the class-initialization call keeps the JNI initialization entry self-contained.
+Both calls select the same immutable table, without allocation. An immutable
 callback table is published with release/acquire ordering; stable VM entry
 addresses work before the library initializes. Equality uses a small VM-owned
 scalar fallback until libjava publishes the table. Function-level ISA pragmas leave
@@ -76,7 +83,9 @@ restarting a byte search at every position on periodic crossed-byte inputs.
 They preserve
 isolated surrogates and match supplementary code points as surrogate pairs.
 Mixed UTF-16/Latin-1 substring searches widen up to 64 needle code units into a
-fixed native stack buffer. Longer mixed needles retain the existing path.
+fixed native stack buffer. The kernel independently rejects counts outside
+0..64 before reading the needle or writing the buffer. Java routes longer mixed
+needles through the existing scalar path, preserving their search semantics.
 Length gates precede the Java flag read on short inputs. Forward substring
 searches probe the first candidate for short needles before dispatch; UTF-16
 probes only eligible long windows and preserves the original scalar-loop entry.
@@ -130,6 +139,12 @@ callers actually compile at levels 1 and 4, preventing silent compiler bailout
 from being hidden by interpreter fallback. Existing String, builder, and HotSpot string tests are
 also run; exact results are recorded in `BENCHMARKS.md` and
 [default-on validation](DEFAULT_VALIDATION.md).
+`StringZillaKernelsTest` compiles the production kernels with isolated VM
+callbacks, checks all eight capability masks and repeated initialization, and
+executes supported tables directly. It checks 0/1/63/64-character needles and
+rejects negative/oversized counts with null pointers, independently of Java
+gates and VM assertions. [Review follow-up](REVIEW_RESPONSE.md) records the
+native hardening, sanitizer scope, and retained benchmark limitations.
 
 The JMH benchmark is
 `test/micro/org/openjdk/bench/java/lang/StringZillaSearch.java`. It parameterizes
