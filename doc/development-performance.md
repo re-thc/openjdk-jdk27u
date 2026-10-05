@@ -2,6 +2,8 @@
 
 Measured on 2026-10-05 against master `33e539f2d4a847f283a3793df6eebd41b9d1dfac`.
 These are local Linux x64 measurements, not projections for every CI runner.
+[Raw measurements and repeated samples](development-performance-results.json)
+are included for review.
 
 ## Build and size
 
@@ -95,6 +97,9 @@ with `-Xms128m -Xmx128m`. These short microbenchmarks do not establish a
 production throughput gain. The G1 profile was deliberately checked against
 Serial and ZGC as well. Hardware `perf` cycle counters were unavailable;
 BOLT's instrumentation supplied the profile instead.
+
+An additional `-use-old-text` size probe produced a 45,701,240-byte stripped
+library, larger still; that variant was not used for runtime measurements.
 
 BOLT is not enabled: it adds profiling and relinking steps, currently rejects
 the chosen mold output, grows the library, and did not show a consistent

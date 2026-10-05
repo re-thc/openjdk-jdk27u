@@ -38,9 +38,12 @@ Headless Java2D and font rendering remain supported and tested.
 CI builds both release and fastdebug images and keeps all twelve existing
 tier1 test shards per target, including native GTests. Collector tests use
 jtreg's existing `@requires` checks to skip collectors absent from the image.
-Mixed-collector CDS and management tests also check Parallel availability,
-and the generic non-G1 archive test uses Serial. Option-range validation uses
-the running collector instead of forcing Parallel for a shared TLAB option.
+Mixed-collector CDS, compressed-oop and management tests check Parallel
+availability. Generic non-G1 archive and compiler regression tests use Serial;
+Parallel-specific heap-monitor and JFR tests require Parallel support. The
+generic jlink add-options check uses Serial. Option-range
+validation uses the running collector instead of forcing Parallel for a shared
+TLAB option.
 Every image also runs `.github/scripts/check-dev-profile.sh` to verify the
 three supported collectors, rejection of excluded collectors, and headless
 rendering before upload.

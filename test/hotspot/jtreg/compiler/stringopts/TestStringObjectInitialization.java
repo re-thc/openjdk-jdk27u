@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,11 @@
  * @summary Verifies that no partially initialized String object escapes from
  *          C2's String concat optimization in a highly concurrent setting.
  *          This test triggers the bug in about 1 out of 10 runs.
- * @requires vm.gc == "Parallel" | vm.gc == "null"
+ * @requires vm.gc.Serial
  *
  * @compile -XDstringConcat=inline TestStringObjectInitialization.java
  * @run main/othervm/timeout=300 -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-CompactStrings
- *                               -XX:-UseG1GC -XX:+UseParallelGC
+ *                               -XX:-UseG1GC -XX:+UseSerialGC
  *                               compiler.stringopts.TestStringObjectInitialization
  */
 

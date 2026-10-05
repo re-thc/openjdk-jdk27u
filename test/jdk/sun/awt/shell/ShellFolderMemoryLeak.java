@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,15 +48,15 @@ public class ShellFolderMemoryLeak {
     private static Process process;
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            boolean testResultParallel
-                    = createChildProcessWithParallelCollector();
+            boolean testResultSerial
+                    = createChildProcessWithSerialCollector();
             String result = "";
-            if (!testResultParallel) {
-                result = "Test failed with Parallel collector";
+            if (!testResultSerial) {
+                result = "Test failed with Serial collector";
             }
             boolean testResultDefault
                     = createChildProcessWithDefaultCollector();
-            if (!testResultDefault && !testResultParallel) {
+            if (!testResultDefault && !testResultSerial) {
                 result += " and with default collector both.";
             } else if (!testResultDefault) {
                 result = "Test failed with default collector";
@@ -77,12 +77,12 @@ public class ShellFolderMemoryLeak {
         return runProcess("", testDirectory);
     }
 
-    public static boolean createChildProcessWithParallelCollector()
+    public static boolean createChildProcessWithSerialCollector()
             throws Exception {
         String testDirectory = "TestDirectory2";
         testDirectory = tempDir + testDirectory +File.separator;
         createTestData(testDirectory);
-        return runProcess(" -XX:+UseParallelGC", testDirectory);
+        return runProcess(" -XX:+UseSerialGC", testDirectory);
     }
 
     public static boolean runProcess(String arg1, String arg2) throws Exception {
