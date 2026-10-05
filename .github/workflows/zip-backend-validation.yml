@@ -1,0 +1,129 @@
+#
+# Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+name: ZIP backend validation
+
+on:
+  push:
+    branches: [pr/zlib-ng-validation]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zip-backend-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/build-jtreg
+
+  validate:
+    needs: prepare
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux-x64
+          - runner: ubuntu-24.04-arm
+            platform: linux-aarch64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+      - uses: ./.github/actions/get-bootjdk
+        id: boot
+        with:
+          platform: ${{ matrix.platform }}
+      - uses: ./.github/actions/get-jtreg
+        id: jtreg
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-14 g++-14 zlib1g-dev libasound2-dev libcups2-dev libfontconfig1-dev libx11-dev libxext-dev libxrandr-dev libxrender-dev libxt-dev libxtst-dev
+      - name: Record source and host
+        run: |
+          mkdir -p validation/results
+          git rev-parse HEAD > validation/results/validation-commit.txt
+          git diff 762b689d9e6cd9d5814892fbd8b077be0e86497c -- src make test > validation/results/implementation-diff.txt
+          lscpu > validation/results/cpu.txt
+          uname -a > validation/results/kernel.txt
+          gcc-14 --version > validation/results/compiler.txt
+          dpkg-query -W zlib1g > validation/results/zlib.txt
+      - name: Build candidate release
+        env:
+          CC: gcc-14
+          CXX: g++-14
+          BOOT_JDK: ${{ steps.boot.outputs.path }}
+          JTREG_PATH: ${{ steps.jtreg.outputs.path }}
+        run: |
+          bash configure --with-conf-name=zip --with-boot-jdk="$BOOT_JDK" --with-jtreg="$JTREG_PATH" --with-zlib=system --with-debug-level=release --with-native-debug-symbols=none --disable-warnings-as-errors
+          make CONF=zip JOBS=2 images
+      - name: Run targeted jtreg, GC, JNI, CDS, JAR, zipfs and jlink checks
+        env:
+          JTREG_PATH: ${{ steps.jtreg.outputs.path }}
+        run: python3 .github/scripts/validate-zip-backend.py tests --jdk build/zip/images/jdk --jtreg "$JTREG_PATH"
+      - name: Build assertion-enabled HotSpot
+        env:
+          CC: gcc-14
+          CXX: g++-14
+          BOOT_JDK: ${{ steps.boot.outputs.path }}
+        run: |
+          bash configure --with-conf-name=zip-debug --with-boot-jdk="$BOOT_JDK" --with-zlib=system --with-debug-level=fastdebug --with-native-debug-symbols=none --disable-warnings-as-errors
+          make CONF=zip-debug JOBS=2 hotspot
+          cp -aL build/zip/images/jdk validation/fastdebug-jdk
+          cp build/zip-debug/hotspot/variant-server/libjvm/libjvm.so validation/fastdebug-jdk/lib/server/libjvm.so
+          python3 .github/scripts/validate-zip-backend.py gc --jdk validation/fastdebug-jdk --verify-oops
+      - uses: actions/checkout@v6
+        with:
+          ref: 33e539f2d4a847f283a3793df6eebd41b9d1dfac
+          path: validation/baseline
+      - name: Build untouched baseline
+        working-directory: validation/baseline
+        env:
+          CC: gcc-14
+          CXX: g++-14
+          BOOT_JDK: ${{ steps.boot.outputs.path }}
+        run: |
+          bash configure --with-conf-name=zip --with-boot-jdk="$BOOT_JDK" --with-zlib=system --with-debug-level=release --with-native-debug-symbols=none --disable-warnings-as-errors
+          make CONF=zip JOBS=2 images
+      - name: Compare all compilation tiers and checksum controls
+        run: python3 .github/scripts/validate-zip-backend.py benchmarks --jdk build/zip/images/jdk --baseline validation/baseline/build/zip/images/jdk
+      - name: Upload validation evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: zip-backend-${{ matrix.platform }}
+          path: |
+            validation/results
+            **/hs_err_pid*.log
+          retention-days: 14
