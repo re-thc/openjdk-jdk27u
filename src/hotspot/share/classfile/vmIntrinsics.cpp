@@ -535,8 +535,12 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     if (!UseVectorizedMismatchIntrinsic) return true;
     break;
   case vmIntrinsics::_zipProcess:
+#if defined(LINUX) && (defined(AMD64) || defined(AARCH64))
     if (!UseZipIntrinsics) return true;
     break;
+#else
+    return true;
+#endif
   case vmIntrinsics::_updateBytesAdler32:
   case vmIntrinsics::_updateByteBufferAdler32:
     if (!UseAdler32Intrinsics) return true;
