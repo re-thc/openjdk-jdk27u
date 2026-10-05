@@ -75,6 +75,18 @@ def gc_matrix(jdk, verify=False):
             run(prefix + "-" + collector + "-" + tier,
                 [java] + options + flags + ["-cp", classes, "TestZlibNG"])
 
+    if verify:
+        jtreg = Path(os.environ["JTREG_PATH"])
+        for mode, flag in [("ng", "-XX:+UseZlibNG"), ("stock", "-XX:-UseZlibNG")]:
+            run("jtreg-aot-" + mode, [jdk / "bin/java", "-Dprogram=jtreg", "-jar",
+                jtreg / "lib/jtreg.jar", "-jdk:" + str(jdk),
+                "-w:" + str(OUT / ("aot-" + mode + "-work")),
+                "-r:" + str(OUT / ("aot-" + mode + "-report")),
+                "-conc:2", "-timeoutFactor:4", "-javaoptions:" + flag,
+                REPO / "test/hotspot/jtreg/runtime/cds/appcds/aotCache/HelloAOTCache.java",
+                REPO / "test/hotspot/jtreg/runtime/cds/appcds/aotCode/AOTCodeTest.java",
+                REPO / "test/hotspot/jtreg/runtime/cds/MetaspaceAllocGaps.java"])
+
 
 def tests(jdk, jtreg):
     os.environ["JAVA_HOME"] = str(jdk)
