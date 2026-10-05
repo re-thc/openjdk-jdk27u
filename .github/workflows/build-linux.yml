@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -131,18 +131,20 @@ jobs:
             libasound2-dev${{ steps.arch.outputs.suffix }} \
             libcups2-dev${{ steps.arch.outputs.suffix }} \
             libfontconfig1-dev${{ steps.arch.outputs.suffix }} \
-            libx11-dev${{ steps.arch.outputs.suffix }} \
-            libxext-dev${{ steps.arch.outputs.suffix }} \
-            libxrandr-dev${{ steps.arch.outputs.suffix }} \
-            libxrender-dev${{ steps.arch.outputs.suffix }} \
-            libxt-dev${{ steps.arch.outputs.suffix }} \
-            libxtst-dev${{ steps.arch.outputs.suffix }} \
+            mold ccache \
             ${{ inputs.apt-extra-packages }}
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
 
+      - name: 'Restore compiler cache'
+        uses: ./.github/actions/compiler-cache
+        with:
+          platform: ${{ inputs.platform }}
+          debug-level: ${{ matrix.debug-level }}
+          toolchain: gcc-${{ inputs.gcc-major-version }}
+
       - name: 'Configure'
         run: >
-          bash configure
+          bash bin/configure-dev
           --with-conf-name=${{ inputs.platform }}
           ${{ matrix.debug-level == 'debug' && '--with-debug-level=fastdebug' || '' }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
@@ -167,6 +169,10 @@ jobs:
           debug-suffix: "${{ matrix.debug-level == 'debug' && '-debug' || '' }}"
         if: ${{ inputs.dry-run == false }}
 
+      - name: 'Check development profile'
+        run: bash .github/scripts/check-dev-profile.sh "build/${{ inputs.platform }}/jdk"
+        if: ${{ inputs.dry-run == false }}
+
       - name: 'Upload bundles'
         uses: ./.github/actions/upload-bundles
         with:
@@ -175,3 +181,7 @@ jobs:
           bundle-suffix: ${{ inputs.bundle-suffix }}
           static-suffix: ${{ inputs.static-suffix }}
         if: ${{ inputs.dry-run == false }}
+
+      - name: 'Compiler cache statistics'
+        run: ccache --show-stats | tee -a "$GITHUB_STEP_SUMMARY"
+        if: always()

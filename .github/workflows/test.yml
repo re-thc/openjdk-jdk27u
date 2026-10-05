@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,7 @@ jobs:
           brew install make
           sudo xcode-select --switch /Applications/Xcode_${{ inputs.xcode-toolset-version }}.app/Contents/Developer
           # This will make GNU make available as 'make' and not only as 'gmake'
-          echo '/usr/local/opt/make/libexec/gnubin' >> $GITHUB_PATH
+          echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
         if: runner.os == 'macOS'
 
       - name: 'Set PATH'
@@ -205,7 +205,7 @@ jobs:
           TEST_IMAGE_DIR=${{ steps.bundles.outputs.tests-path }}
           ${{ steps.extra-options.outputs.test-jdk }}
           ${{ steps.extra-options.outputs.compile-jdk }}
-          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful;${{ steps.extra-options.outputs.extra-problem-lists }}'
+          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash -Djava.awt.headless=true;VERBOSE=fail,error,time;KEYWORDS=!headful;${{ steps.extra-options.outputs.extra-problem-lists }}'
           && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY" "$GITHUB_OUTPUT"
         env:
           PATH: ${{ steps.path.outputs.value }}
