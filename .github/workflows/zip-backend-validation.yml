@@ -23,15 +23,16 @@
 # questions.
 #
 
-name: ZIP backend validation
+name: ZIP backend x86 validation
 
 on:
   push:
-    branches: [pr/zlib-ng-validation]
+    branches: [pr/zlib-ng-x64-validation]
   workflow_dispatch:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: zip-backend-validation-${{ github.ref }}
@@ -86,13 +87,26 @@ jobs:
         include:
           - runner: ubuntu-24.04
             platform: linux-x64
-          - runner: ubuntu-24.04-arm
-            platform: linux-aarch64
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 2
+      - uses: actions/download-artifact@v6
+        with:
+          name: zip-backend-linux-x64
+          run-id: 37263807373
+          github-token: ${{ github.token }}
+          path: validation/previous
+      - name: Inspect previous AOT failures
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for result in sorted(Path("validation/previous").glob("**/aot-ng-work/**/*.jtr")):
+              content = result.read_text(errors="replace")
+              if "test result: Failed." in content:
+                  print(str(result) + "\n" + content[-16000:])
+          PY
       - uses: ./.github/actions/get-bootjdk
         id: boot
         with:

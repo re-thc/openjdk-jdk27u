@@ -50,6 +50,11 @@ def run(name, args, cwd=None):
                            check=True, timeout=10800)
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
         print((OUT / (name + ".log")).read_text(errors="replace")[-20000:], flush=True)
+        if name.startswith("jtreg-"):
+            for result in sorted(OUT.glob("**/*.jtr")):
+                content = result.read_text(errors="replace")
+                if "test result: Failed." in content:
+                    print(str(result) + "\n" + content[-20000:], flush=True)
         raise
     output = (OUT / (name + ".log")).read_text(errors="replace")
     if name.startswith("jtreg-") or name.startswith("compressed-size-"):
@@ -59,6 +64,17 @@ def run(name, args, cwd=None):
 
 def gc_matrix(jdk, verify=False):
     java = jdk / "bin/java"
+    if verify:
+        # The assertion-enabled VM replaces the release VM in the image.
+        # Regenerate every default archive for that VM before testing AOT.
+        for archive in sorted((jdk / "lib/server").glob("classes*.jsa")):
+            flags = ["-XX:-UseCompressedOops"] if "_nocoops" in archive.stem else []
+            flags += ["-XX:+UnlockExperimentalVMOptions",
+                      "-XX:-UseCompactObjectHeaders" if "_nocoh" in archive.stem
+                      else "-XX:+UseCompactObjectHeaders"]
+            run("fastdebug-cds-" + archive.stem,
+                [java, "-Xshare:dump", "-Xms128m", "-Xmx128m", "-XX:+UseG1GC",
+                 "-XX:SharedArchiveFile=" + str(archive)] + flags)
     classes = OUT / "classes"
     classes.mkdir(exist_ok=True)
     run("compile-fixture", [jdk / "bin/javac", "-d", classes,
