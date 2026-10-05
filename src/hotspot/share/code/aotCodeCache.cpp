@@ -51,6 +51,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubInfo.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/zipRuntime.hpp"
 #include "utilities/copy.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
@@ -2051,6 +2052,7 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(Runtime1::move_appendix_patching);
     ADD_EXTERNAL_ADDRESS(Runtime1::predicate_failed_trap);
     ADD_EXTERNAL_ADDRESS(Runtime1::unimplemented_entry);
+    ADD_EXTERNAL_ADDRESS(ZipRuntime::process_c1);
     // already added
     // ADD_EXTERNAL_ADDRESS(Thread::current);
     ADD_EXTERNAL_ADDRESS(CompressedKlassPointers::base_addr());
@@ -2080,6 +2082,7 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_start_final_transition_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_start_transition_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_end_transition_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::zip_process_C);
     // already added for
 #if defined(AARCH64) && ! defined(PRODUCT)
     ADD_EXTERNAL_ADDRESS(JavaThread::verify_cross_modify_fence_failure);
