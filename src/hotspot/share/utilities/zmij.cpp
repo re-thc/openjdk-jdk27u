@@ -36,7 +36,7 @@
 #include "utilities/zmij/zmij-impl.hpp"
 
 Zmij::Formatter Zmij::formatter() {
-#ifdef AMD64
+#if defined(AMD64) && !defined(ZERO)
   if (VM_Version::supports_sse4_1()) {
     return format_sse41;
   }

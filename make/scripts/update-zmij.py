@@ -34,8 +34,9 @@ with tempfile.TemporaryDirectory() as tmp:
     staged = Path(tmp)
     for name in ('zmij.cc', 'zmij.h'):
         (staged / name).write_text((upstream / name).read_text())
-    subprocess.run(['patch', '--batch', '--forward', '--fuzz=0', '-p1', '-i',
-                    str(root / 'make/data/zmij/java-format.patch')], cwd=staged, check=True)
+    for patch in ('java-format.patch', 'clang-compat.patch'):
+        subprocess.run(['patch', '--batch', '--forward', '--fuzz=0', '-p1', '-i',
+                        str(root / 'make/data/zmij' / patch)], cwd=staged, check=True)
     destination = root / 'src/hotspot/share/utilities/zmij'
     destination.mkdir(exist_ok=True)
     # Include the implementation once, avoiding a second VM translation unit.

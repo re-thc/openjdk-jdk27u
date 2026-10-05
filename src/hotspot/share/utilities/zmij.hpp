@@ -38,10 +38,10 @@ class Zmij : AllStatic {
   static Formatter formatter();
   static uint64_t decimal(uint64_t bits);
   static int format(void* output, uint64_t bits, int format);
- private:
-#ifdef AMD64
+#if defined(AMD64) && !defined(ZERO)
   static int format_sse41(void* output, uint64_t bits, int format);
 #endif
+ private:
   typedef char* (*DoubleWriter)(char* buffer, double value);
   typedef char* (*FloatWriter)(char* buffer, float value);
   static inline int format_impl(void* output, uint64_t bits, int format,

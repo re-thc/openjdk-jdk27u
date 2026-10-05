@@ -37,6 +37,27 @@
  */
 
 /*
+ * @test id=zero
+ * @requires vm.flavor == "zero"
+ * @summary Native decimal parsing uses JNI on the Zero interpreter
+ * @modules java.base/jdk.internal.math:+open
+ * @run main/othervm -Xint TestFastFloat
+ * @run main/othervm -Xint -XX:-CompactStrings TestFastFloat
+ * @run main/othervm -Xint -XX:-UseFastFloatIntrinsics TestFastFloat
+ */
+
+/*
+ * @test id=zgc
+ * @requires vm.gc.Z & vm.compiler1.enabled & vm.compiler2.enabled
+ * @summary Exercise native String parsing with ZGC across execution tiers
+ * @modules java.base/jdk.internal.math:+open
+ * @run main/othervm -Xmx64m -Xint -XX:+UseZGC TestFastFloat
+ * @run main/othervm -Xmx64m -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseZGC TestFastFloat
+ * @run main/othervm -Xmx64m -Xbatch -XX:-TieredCompilation -XX:+UseZGC TestFastFloat
+ * @run main/othervm -Xmx64m -Xint -XX:+UseZGC -XX:-CompactStrings TestFastFloat
+ */
+
+/*
  * @test id=shenandoah
  * @requires vm.gc.Shenandoah & vm.compiler1.enabled & vm.compiler2.enabled
  * @summary Exercise String load barriers in frameless interpreter entries and compiled calls

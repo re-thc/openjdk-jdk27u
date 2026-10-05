@@ -231,7 +231,7 @@ void TemplateInterpreterGenerator::generate_all() {
   native_method_entry(java_lang_Thread_currentThread)
   native_method_entry(java_lang_ref_reference_get0)
 
-#if defined(AMD64) || defined(AARCH64)
+#if (defined(AMD64) || defined(AARCH64)) && !defined(ZERO)
   native_method_entry(jdk_internal_math_decimalZmij)
   native_method_entry(jdk_internal_math_formatZmij)
   native_method_entry(jdk_internal_math_parseFastFloatDigits)
@@ -476,7 +476,7 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
                                            : entry_point = generate_math_entry(Interpreter::java_lang_math_sqrt); break;
   case Interpreter::java_lang_ref_reference_get0
                                            : entry_point = generate_Reference_get_entry(); break;
-#if defined(AMD64) || defined(AARCH64)
+#if (defined(AMD64) || defined(AARCH64)) && !defined(ZERO)
   case Interpreter::jdk_internal_math_decimalZmij:
   case Interpreter::jdk_internal_math_formatZmij: entry_point = generate_zmij_entry(kind); break;
   case Interpreter::jdk_internal_math_parseFastFloatDigits:

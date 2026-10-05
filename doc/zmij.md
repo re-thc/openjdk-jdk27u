@@ -115,7 +115,10 @@ python3 make/scripts/update-zmij.py /path/to/zmij
 ```
 
 The script records the version and commit, verifies the MIT license selection,
-preserves headers, and applies `make/data/zmij/java-format.patch` with zero fuzz.
+preserves headers, and applies `make/data/zmij/java-format.patch` and
+`make/data/zmij/clang-compat.patch` with zero fuzz. The latter gives the three
+compressed power-of-ten arrays explicit bounds so Clang can construct the
+expanded tables at compile time; their values and sizes are unchanged.
 The implementation is named `zmij-impl.hpp`; the portable and SSE4.1 translation
 units include it in distinct namespaces. Allocator hooks route the unused
 precision APIs through HotSpot memory tracking; shortest conversion never

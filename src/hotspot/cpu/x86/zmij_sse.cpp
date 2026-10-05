@@ -27,7 +27,7 @@
 #include "utilities/zmij.hpp"
 #include "runtime/os.hpp"
 
-#ifdef AMD64
+#if defined(AMD64) && !defined(ZERO)
 // The portable translation unit keeps SSE2. Compile this separate namespace
 // for SSE4.1 and select it only after VM_Version has checked CPU capabilities.
 #if defined(__clang__)
@@ -53,4 +53,4 @@ int Zmij::format_sse41(void* output, uint64_t bits, int format) {
 #elif defined(__GNUC__)
 #pragma GCC pop_options
 #endif
-#endif // AMD64
+#endif // AMD64 && !ZERO

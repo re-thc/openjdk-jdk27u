@@ -121,7 +121,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
     }
 
     switch (iid) {
-#if defined(AMD64) || defined(AARCH64)
+#if (defined(AMD64) || defined(AARCH64)) && !defined(ZERO)
       case vmIntrinsics::_decimalZmij:
         if (UseZmijIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
           return jdk_internal_math_decimalZmij;

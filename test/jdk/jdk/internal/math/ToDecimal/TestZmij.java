@@ -35,6 +35,17 @@
  * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_formatZmij,_decimalZmij TestZmij
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_formatZmij,_decimalZmij TestZmij
  * @run main/othervm -XX:-UseZmijIntrinsics TestZmij
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:-UseZmijIntrinsics TestZmij
+ */
+
+/*
+ * @test id=zgc
+ * @requires vm.gc.Z & vm.compiler1.enabled & vm.compiler2.enabled
+ * @summary Exercise native formatting with ZGC across execution tiers
+ * @modules java.base/jdk.internal.math:+open
+ * @run main/othervm -Xmx64m -Xint -XX:+UseZGC TestZmij
+ * @run main/othervm -Xmx64m -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseZGC TestZmij
+ * @run main/othervm -Xmx64m -Xbatch -XX:-TieredCompilation -XX:+UseZGC TestZmij
  */
 
 import java.lang.reflect.Method;

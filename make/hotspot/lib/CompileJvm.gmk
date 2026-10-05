@@ -220,6 +220,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_clang_arguments.cpp := missing-field-initializers, \
     DISABLED_WARNINGS_clang_codeBuffer.cpp := tautological-undefined-compare, \
     DISABLED_WARNINGS_clang_directivesParser.cpp := missing-field-initializers, \
+    DISABLED_WARNINGS_clang_fastFloat.cpp := deprecated-declarations, \
     DISABLED_WARNINGS_clang_g1ParScanThreadState.cpp := delete-abstract-non-virtual-dtor, \
     DISABLED_WARNINGS_clang_g1YoungGCPostEvacuateTasks.cpp := delete-abstract-non-virtual-dtor, \
     DISABLED_WARNINGS_clang_management.cpp := missing-field-initializers, \
@@ -230,10 +231,15 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_clang_serviceThread.cpp := bitwise-instead-of-logical, \
     DISABLED_WARNINGS_clang_vm_version_x86.cpp := missing-field-initializers, \
     DISABLED_WARNINGS_clang_zTracer.cpp := undefined-var-template, \
+    DISABLED_WARNINGS_clang_zmij.cpp := deprecated-declarations, \
+    DISABLED_WARNINGS_clang_zmij_sse.cpp := deprecated-declarations, \
     DISABLED_WARNINGS_clang_aix_debug.cpp := format-nonliteral, \
     DISABLED_WARNINGS_clang_aix_jvm.cpp := format-nonliteral, \
     DISABLED_WARNINGS_clang_aix_osThread_aix.cpp := tautological-undefined-compare, \
     DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft), \
+    DISABLED_WARNINGS_microsoft_fastFloat.cpp := 4996, \
+    DISABLED_WARNINGS_microsoft_zmij.cpp := 4390 4804, \
+    DISABLED_WARNINGS_microsoft_zmij_sse.cpp := 4390 4804, \
     ASFLAGS := $(JVM_ASFLAGS), \
     LD_SET_ORIGIN := false, \
     DEFAULT_LDFLAGS := false, \
