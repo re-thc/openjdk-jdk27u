@@ -130,6 +130,7 @@ public class TestHashCodeEvacRace {
     static final IntHolder[] objects = new IntHolder[NUM_OBJECTS];
     static final int[] expectedHash = new int[NUM_OBJECTS];
 
+    static volatile Object sink;
     static volatile boolean running = true;
     static volatile String failure = null;
 
@@ -174,7 +175,7 @@ public class TestHashCodeEvacRace {
         long deadline = System.currentTimeMillis() + DURATION_MS;
         while (System.currentTimeMillis() < deadline && failure == null) {
             for (int i = 0; i < 100; i++) {
-                byte[] garbage = new byte[4096];
+                sink = new byte[4096];
             }
             Thread.yield();
         }

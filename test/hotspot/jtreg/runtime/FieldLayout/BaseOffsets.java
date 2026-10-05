@@ -97,7 +97,7 @@ public class BaseOffsets {
     static final long INT_ARRAY_OFFSET;
     static final long LONG_ARRAY_OFFSET;
     static {
-        if (Platform.is64bit() && WB.getBooleanVMFlag("UseFourByteObjectHeaders")) {
+        if (Platform.is64bit() && Boolean.TRUE.equals(WB.getBooleanVMFlag("UseFourByteObjectHeaders"))) {
             INT_OFFSET = 4;
             INT_ARRAY_OFFSET = 8;
             LONG_ARRAY_OFFSET = 8;

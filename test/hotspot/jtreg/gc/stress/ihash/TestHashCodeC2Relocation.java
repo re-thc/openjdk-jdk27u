@@ -84,6 +84,16 @@ package gc.stress.ihash;
  *      gc.stress.ihash.TestHashCodeC2Relocation
  */
 
+/*
+ * @test id=zgc-in-place
+ * @summary Verify actual hash expansion during concurrent and in-place ZGC relocation
+ * @requires vm.gc.Z & vm.compiler2.enabled
+ * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "aarch64")
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders
+ *      -XX:+UseZGC -XX:+UnlockDiagnosticVMOptions -XX:+ZVerifyForwarding
+ *      -XX:+ZStressRelocateInPlace -Xms64m -Xmx64m gc.stress.ihash.TestHashCodeC2Relocation
+ */
+
 /**
  * Regression test for a C2 miscompilation of the {@code System.identityHashCode}
  * intrinsic under {@code -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders}.
