@@ -1,0 +1,45 @@
+name: ZIP final review scalar Adler32 experiment
+on:
+  push:
+    branches: [pr/zlib-ng-final-review]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: zip-scalar-review-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  scalar:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: x64
+            revision: f61aabacb002c19b57cfc802b709c5f033f880d3
+          - runner: ubuntu-24.04-arm
+            platform: aarch64
+            revision: bfdff2333cd1a156dcbf72fb76a591923d59828b
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/cache/restore@v4
+        with:
+          path: build/zip/images/jdk
+          key: zip-image-v1-linux-${{ matrix.platform }}-${{ matrix.revision }}-gcc14-system-release
+          fail-on-cache-miss: true
+      - name: Record host and compile-check experiment harness
+        run: |
+          mkdir -p validation/results
+          lscpu > validation/results/cpu.txt
+          build/zip/images/jdk/bin/java -version 2> validation/results/jdk.txt
+          python3 -m py_compile .github/scripts/review-adler-scalar.py .github/scripts/validate-zip-backend.py
+      - name: Compare scalar JNI and experimental Java paths
+        run: python3 .github/scripts/review-adler-scalar.py build/zip/images/jdk
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: zip-scalar-review-${{ matrix.platform }}
+          path: validation/results
+          retention-days: 14
