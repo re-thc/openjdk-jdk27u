@@ -35,8 +35,10 @@ C2 emits a leaf call with a full memory effect. They all call the same checked
 HotSpot implementation through a raw `oopDesc*` ABI; checked C++ `oop` wrappers
 are constructed inside the leaf, preserving the calling convention in
 fastdebug builds. C1 registers the leaf in `Runtime1::name_for_address` for
-runtime-call verification and diagnostics on both architectures. If the
-intrinsic is disabled or unavailable, registered
+runtime-call verification and diagnostics on both architectures. C2 escape
+analysis treats the leaf array arguments as `ArgEscape`: their allocations
+remain materialized, and the leaf never retains or stores object references.
+If the intrinsic is disabled or unavailable, registered
 JNI calls the same implementation. JNI does not copy or pin arrays.
 
 The leaf checks array types, offsets, lengths, destination capacity and aliasing

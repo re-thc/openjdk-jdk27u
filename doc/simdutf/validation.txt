@@ -1,6 +1,36 @@
-Final review follow-up, 2026-10-05 Asia/Taipei
+C2 escape-analysis CI follow-up, 2026-10-06 Asia/Taipei
 
 CURRENT REVISION
+- Register simdutf_process among C2's recognized non-escaping leaf calls. The
+  existing leaf argument analysis marks arrays ArgEscape, preventing their
+  scalar replacement while avoiding GlobalEscape. The leaf reads/writes only
+  primitive array contents and never retains or stores object references.
+- Add TestSimdUTFLeaf to the compiler escape-analysis tests and jdk/simdutf CI
+  suite. Small local arrays exercise initialization, destination writes,
+  aliased compact decoding, code-point counting and rejected ranges. WhiteBox
+  verifies every case reaches C2. An explicit SIMDUTFMinLength=1 lets arrays
+  within EliminateAllocationArraySizeLimit reach the leaf on both architectures.
+  Fastdebug verifies the connection graph through its existing default flag.
+- x86-64 and AArch64 escape.cpp compiled without a PCH with ASSERT and
+  CHECK_UNHANDLED_OOPS (GNU 14). Workflow YAML and independent byte/count
+  expectations passed static checks. The isolated-index whitespace check passed.
+- Local JVM startup still fails with pthread_create(EAGAIN), before test code.
+  No local runtime/jtreg pass is claimed. Fresh default-enabled CI is required.
+
+OBSERVED PRE-FIX CI
+Head 4fe38d296ab8f742105a1c68becfd0b07fabd9e4, run
+https://github.com/re-thc/openjdk-jdk27u/actions/runs/37319111466
+reached jtreg after successful x86-64/AArch64 release and fastdebug builds on
+Linux, macOS and Windows. Linux ARM64 jdk/simdutf and Windows ARM64 hs/tier1
+runtime aborted in ConnectionGraph::process_call_arguments with
+"EA unexpected CallLeaf simdutf_process". The Linux failure affected compiled
+and checked-oop contracts plus String/charset tests; portable contracts and
+Base64 passed. The Windows failure was runtime/cds/AOTMapTest.java. Both use
+the same shared C2 fix. This incomplete pre-fix run is not a jtreg pass.
+
+Final review follow-up, 2026-10-05 Asia/Taipei
+
+4FE38D29 REVIEW REVISION
 - Registered SimdUTF::process with Runtime1::name_for_address. C1's debug
   LIR_OpRTCall verifier requires every runtime entry to have a known name.
   Its omission asserted on x86 and reached the Unimplemented platform lookup

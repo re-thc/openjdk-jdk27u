@@ -2207,7 +2207,9 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
       // fall through
     case Op_CallLeafVector:
     case Op_CallLeaf: {
-      // Stub calls, objects do not escape but they are not scale replaceable.
+      // Stub calls, objects do not escape but they are not scalar replaceable.
+      // This includes simdutf_process: it accesses primitive array contents
+      // through oop arguments without retaining or storing any references.
       // Adjust escape state for outgoing arguments.
       const TypeTuple * d = call->tf()->domain();
       bool src_has_oops = false;
@@ -2308,6 +2310,7 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "bigIntegerRightShiftWorker") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "bigIntegerLeftShiftWorker") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "vectorizedMismatch") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "simdutf_process") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "stringIndexOf") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "arraysort_stub") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "array_partition_stub") == 0 ||
