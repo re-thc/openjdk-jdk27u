@@ -2825,19 +2825,10 @@ void LIRGenerator::do_formatZmij(Intrinsic* x) {
   LIRItem bits(x->argument_at(2), this);
   LIRItem format(x->argument_at(3), this);
   output.load_item();
-  index.load_item();
+  index.load_nonconstant();
   __ null_check(output.result(), state_for(x));
-  LIR_Opr base = output.result();
-  int offset = arrayOopDesc::base_offset_in_bytes(T_BYTE);
-#ifdef AARCH64
-  // AArch64 indexed addresses cannot also carry a displacement.
-  LIR_Opr adjusted_base = new_pointer_register();
-  __ add(base, LIR_OprFact::intptrConst(offset), adjusted_base);
-  base = adjusted_base;
-  offset = 0;
-#endif
   LIR_Opr data = new_register(T_ADDRESS);
-  __ leal(LIR_OprFact::address(new LIR_Address(base, index.result(), offset, T_BYTE)), data);
+  __ leal(LIR_OprFact::address(emit_array_address(output.result(), index.result(), T_BYTE)), data);
   BasicTypeList signature(3);
   signature.append(T_ADDRESS);
   signature.append(T_LONG);

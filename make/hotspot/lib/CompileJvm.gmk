@@ -135,6 +135,19 @@ endif
 
 JVM_PRECOMPILED_HEADER := $(TOPDIR)/src/hotspot/share/precompiled/precompiled.hpp
 
+# Clang's x86 allocator header redeclares glibc's posix_memalign without
+# noexcept. Import it before HotSpot's allocator declarations in the three
+# vendor translation units. These files must also avoid the precompiled header.
+ifeq ($(TOOLCHAIN_TYPE), clang)
+  ifeq ($(call isTargetOs, linux), true)
+    ifeq ($(OPENJDK_TARGET_CPU_ARCH), x86)
+      JVM_PRECOMPILED_HEADER_EXCLUDE += fastFloat.cpp zmij.cpp zmij_sse.cpp
+      $(foreach file, fastFloat.cpp zmij.cpp zmij_sse.cpp, \
+          $(eval BUILD_LIBJVM_$(file)_EXTRA_CXXFLAGS += -include mm_malloc.h))
+    endif
+  endif
+endif
+
 ifeq ($(call isTargetCpu, x86), true)
   JVM_EXCLUDE_PATTERNS += x86_64
 else ifeq ($(call isTargetCpu, x86_64), true)
@@ -231,8 +244,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_clang_serviceThread.cpp := bitwise-instead-of-logical, \
     DISABLED_WARNINGS_clang_vm_version_x86.cpp := missing-field-initializers, \
     DISABLED_WARNINGS_clang_zTracer.cpp := undefined-var-template, \
-    DISABLED_WARNINGS_clang_zmij.cpp := deprecated-declarations, \
-    DISABLED_WARNINGS_clang_zmij_sse.cpp := deprecated-declarations, \
+    DISABLED_WARNINGS_clang_zmij.cpp := deprecated-declarations unneeded-internal-declaration, \
+    DISABLED_WARNINGS_clang_zmij_sse.cpp := deprecated-declarations unneeded-internal-declaration, \
     DISABLED_WARNINGS_clang_aix_debug.cpp := format-nonliteral, \
     DISABLED_WARNINGS_clang_aix_jvm.cpp := format-nonliteral, \
     DISABLED_WARNINGS_clang_aix_osThread_aix.cpp := tautological-undefined-compare, \

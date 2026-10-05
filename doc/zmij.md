@@ -56,9 +56,9 @@ unit has its own upstream namespace and target attributes. `VM_Version` selects
 its entry only when the CPU supports SSE4.1 and `UseSSE` permits it. Intrinsic
 generation resolves the entry once; the hot leaf has no per-call CPU dispatch.
 JNI selects the same entry. AArch64 uses NEON. There is no AVX2/AVX-512 backend,
-and no optional x86 instruction is required for the SSE2 fallback. C1 separates
-the array-body offset from the index on AArch64, whose addressing modes cannot
-combine both. x86-64 retains its single indexed address calculation.
+and no optional x86 instruction is required for the SSE2 fallback. C1 uses
+the existing platform array-address helper for index widening, constant
+folding and displacement handling on x86-64 and AArch64.
 Wide upstream stores stay in a zero-initialized
 40-byte stack buffer. Constant-sized Latin1 copies stay within the caller's
 reserved MAX_CHARS span; UTF16 widens only the logical result. Only exclusively
