@@ -251,7 +251,7 @@ void G1Allocator::assert_not_humongous(size_t word_size) {
   // With CompactObjectHeaders, objects can expand during copy to accomodate hashcode.
   // It's possible this expansion crosses the humongous threshold. In this case, we allow
   // that and just treat it as not humongous.
-  size_t pre_expansion_size = UseCompactObjectHeaders ? word_size - 1 : word_size;
+  size_t pre_expansion_size = UseFourByteObjectHeaders ? word_size - 1 : word_size;
   assert(!_g1h->is_humongous(pre_expansion_size),
           "we should not be seeing humongous-size allocations in this path");
 }

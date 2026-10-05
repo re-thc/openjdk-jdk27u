@@ -29,6 +29,7 @@
 #include "memory/memRegion.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "gc/shared/legacyFullGCForwarding.hpp"
 
 class FallbackTable;
 
@@ -193,11 +194,24 @@ public:
 };
 
 #ifdef _LP64
-using FullGCForwarding = FullGCForwardingImpl<markWord::hashctrl_shift>;
+using FourByteFullGCForwarding = FullGCForwardingImpl<markWord::hashctrl_shift>;
 #else
 // On 32 bit, the BITS template argument is not used, but we still need
 // to pass a value.
-using FullGCForwarding = FullGCForwardingImpl<0>;
+using FourByteFullGCForwarding = FullGCForwardingImpl<0>;
 #endif
+
+class FullGCForwarding : public AllStatic {
+public:
+  static void initialize_flags(size_t max_heap_size) {
+    if (!UseFourByteObjectHeaders) LegacyFullGCForwarding::initialize_flags(max_heap_size);
+  }
+  static void initialize(MemRegion heap);
+  static void begin();
+  static void end();
+  static bool is_forwarded(oop obj);
+  static void forward_to(oop from, oop to);
+  static oop forwardee(oop from);
+};
 
 #endif // SHARE_GC_SHARED_FULLGCFORWARDING_HPP

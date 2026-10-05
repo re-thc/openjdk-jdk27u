@@ -25,6 +25,7 @@
 #define SHARE_GC_SHARED_FULLGCFORWARDING_INLINE_HPP
 
 #include "gc/shared/fullGCForwarding.hpp"
+#include "gc/shared/legacyFullGCForwarding.inline.hpp"
 
 #include "logging/log.hpp"
 #include "nmt/memTag.hpp"
@@ -345,6 +346,32 @@ HeapWord* FullGCForwardingImpl<BITS>::fallback_forwardee(HeapWord* from) {
   assert(found, "something must have been found");
   assert(result != nullptr, "must have found forwarding");
   return result;
+}
+
+inline void FullGCForwarding::initialize(MemRegion heap) {
+  if (UseFourByteObjectHeaders) FourByteFullGCForwarding::initialize(heap);
+  else LegacyFullGCForwarding::initialize(heap);
+}
+
+inline void FullGCForwarding::begin() {
+  if (UseFourByteObjectHeaders) FourByteFullGCForwarding::begin();
+}
+
+inline void FullGCForwarding::end() {
+  if (UseFourByteObjectHeaders) FourByteFullGCForwarding::end();
+}
+
+inline bool FullGCForwarding::is_forwarded(oop obj) {
+  return UseFourByteObjectHeaders ? FourByteFullGCForwarding::is_forwarded(obj) : LegacyFullGCForwarding::is_forwarded(obj);
+}
+
+inline void FullGCForwarding::forward_to(oop from, oop to) {
+  if (UseFourByteObjectHeaders) FourByteFullGCForwarding::forward_to(from, to);
+  else LegacyFullGCForwarding::forward_to(from, to);
+}
+
+inline oop FullGCForwarding::forwardee(oop from) {
+  return UseFourByteObjectHeaders ? FourByteFullGCForwarding::forwardee(from) : LegacyFullGCForwarding::forwardee(from);
 }
 
 #endif // SHARE_GC_SHARED_FULLGCFORWARDING_INLINE_HPP

@@ -64,6 +64,7 @@ public class TestUnorderedReductionPartialVectorization {
     @IR(counts = {IRNode.LOAD_VECTOR_I,   IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                   IRNode.VECTOR_CAST_I2L, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                   IRNode.OR_REDUCTION_V,                                                 "> 0",},
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeature = {"avx2", "true"})
     @IR(counts = {IRNode.LOAD_VECTOR_I,   IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
@@ -103,6 +104,11 @@ public class TestUnorderedReductionPartialVectorization {
             // no vectorization. We now ensure there are again 2 packs per operation with a 2x hand unroll.
             int v2 = data[i + 1];
             sum |= v2;
+
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // adr = base + 16 + 8*i  ->  always             adr = base + 12 + 8*i  ->  never
+            // -> vectorize                                  -> no vectorization
         }
         return sum;
     }

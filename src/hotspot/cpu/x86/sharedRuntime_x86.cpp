@@ -57,7 +57,7 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
     __ bind(Continue);
   }
 
-  if (UseCompactObjectHeaders) {
+  if (UseFourByteObjectHeaders) {
     // Don't generate anything else and always take the slow-path for now.
     return;
   }

@@ -102,7 +102,7 @@ public class Array extends Oop {
     // object size.
     long s = getLength() << klass.getLog2ElementSize();
     s += klass.getArrayHeaderInBytes();
-    if (VM.getVM().isCompactObjectHeadersEnabled()) {
+    if (VM.getVM().isFourByteObjectHeadersEnabled()) {
       Mark mark = getMark();
       if (mark.isExpanded()) {
         // Needs extra 4 bytes for identity hash-code.

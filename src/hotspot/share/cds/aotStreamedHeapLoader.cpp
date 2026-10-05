@@ -184,7 +184,7 @@ static size_t archive_object_size(oopDesc* archive_object) {
       return ((size_t*)(archive_object))[-1];
     } else {
       size_t size = (size_t)Klass::layout_helper_size_in_bytes(lh) >> LogHeapWordSize;
-      if (UseCompactObjectHeaders && archive_object->mark().is_expanded() && archive_expand_for_hash(klass, archive_object)) {
+      if (UseFourByteObjectHeaders && archive_object->mark().is_expanded() && archive_expand_for_hash(klass, archive_object)) {
         size = align_object_size(size + 1);
       }
       return size;
@@ -197,7 +197,7 @@ static size_t archive_object_size(oopDesc* archive_object) {
     size_in_bytes += (size_t)Klass::layout_helper_header_size(lh);
 
     size_t size = align_up(size_in_bytes, (size_t)MinObjAlignmentInBytes) / HeapWordSize;
-    if (UseCompactObjectHeaders && archive_object->mark().is_expanded() && archive_expand_for_hash(klass, archive_object)) {
+    if (UseFourByteObjectHeaders && archive_object->mark().is_expanded() && archive_expand_for_hash(klass, archive_object)) {
       size = align_object_size(size + 1);
     }
     return size;
@@ -214,7 +214,7 @@ oop AOTStreamedHeapLoader::allocate_object(oopDesc* archive_object, markWord mar
   oop heap_object;
 
   Klass* klass = archive_object->klass();
-  assert(!(UseCompactObjectHeaders && mark.is_hashed_not_expanded()), "Must not be hashed/not-expanded");
+  assert(!(UseFourByteObjectHeaders && mark.is_hashed_not_expanded()), "Must not be hashed/not-expanded");
   if (klass->is_mirror_instance_klass()) {
     // The oop_size field must hold the *un-expanded* base size: oopDesc::size()
     // re-adds the identity-hash expansion word for an expanded mark, so passing
@@ -224,7 +224,7 @@ oop AOTStreamedHeapLoader::allocate_object(oopDesc* archive_object, markWord mar
     // the heap) can observe that and desync the heap walk. The archive object's
     // own oop_size field already holds the correct base size.
     size_t base_size = (size_t)java_lang_Class::oop_size(cast_to_oop(archive_object));
-    assert(!(UseCompactObjectHeaders && mark.is_not_hashed_expanded()), "should not happen");
+    assert(!(UseFourByteObjectHeaders && mark.is_not_hashed_expanded()), "should not happen");
     heap_object = Universe::heap()->class_allocate(klass, size, base_size, CHECK_NULL);
   } else if (klass->is_instance_klass()) {
     heap_object = Universe::heap()->obj_allocate(klass, size, CHECK_NULL);
@@ -359,7 +359,7 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
 
     Copy::disjoint_words(archive_start + offset, heap_start + offset, payload_size);
 
-    if (UseCompactObjectHeaders) {
+    if (UseFourByteObjectHeaders) {
       // The copying might have missed the first 4 bytes of payload/arraylength, copy that also.
       *(reinterpret_cast<jint*>(heap_start) + 1) = *(reinterpret_cast<jint*>(archive_start) + 1);
     }
@@ -382,7 +382,7 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
   using RawElementT = std::conditional_t<use_coops, int32_t, int64_t>;
 
   // Skip the markWord; it is set at allocation time
-  size_t header_size = (UseCompactObjectHeaders && use_coops) ? 1 : word_scale;
+  size_t header_size = (UseFourByteObjectHeaders && use_coops) ? 1 : word_scale;
 
   size_t buffer_offset = buffer_offset_for_archive_object(archive_object);
   const BitMap::idx_t header_bit = obj_bit_idx_for_buffer_offset<use_coops>(buffer_offset);
@@ -391,7 +391,7 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
 
   BitMap::idx_t curr_bit = start_bit;
 
-  if (UseCompactObjectHeaders && !use_coops) {
+  if (UseFourByteObjectHeaders && !use_coops) {
     // Copy first 4 primitive bytes.
     jint* archive_start = reinterpret_cast<jint*>(archive_object);
     HeapWord* heap_start = cast_from_oop<HeapWord*>(heap_object);

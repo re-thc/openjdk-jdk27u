@@ -884,7 +884,13 @@ public class TestConditionalMove {
                   IRNode.VECTOR_MASK_CMP_F, ">0",
                   IRNode.VECTOR_BLEND_F, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIf = {"UseVectorCmov", "true"},
+        applyIfAnd = {"UseCompactObjectHeaders", "false", "UseVectorCmov", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_F, ">0",
+                    IRNode.VECTOR_MASK_CMP_F, ">0",
+                    IRNode.VECTOR_BLEND_F, ">0",
+                    IRNode.STORE_VECTOR, ">0"},
+        applyIfAnd = {"AlignVector", "false", "UseVectorCmov", "true"},
         applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @IR(failOn = {IRNode.STORE_VECTOR},
         applyIf = {"UseVectorCmov", "false"})
@@ -895,6 +901,10 @@ public class TestConditionalMove {
         for (int i = 0; i < a.length; i+=2) {
             c[i+0] = (a[i+0] < b[i+0]) ? 0.1f : -0.1f;
             c[i+1] = (a[i+1] < b[i+1]) ? 0.1f : -0.1f;
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                        UseCompactObjectHeaders=true
+            // adr = base + 16 + 8*i      ->  always                adr = base + 12 + 8*i      ->  never
+            // -> vectorize                                         -> no vectorization
         }
     }
 
@@ -903,7 +913,13 @@ public class TestConditionalMove {
                   IRNode.VECTOR_MASK_CMP_F, ">0",
                   IRNode.VECTOR_BLEND_F, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIf = {"UseVectorCmov", "true"},
+        applyIfAnd = {"UseCompactObjectHeaders", "false", "UseVectorCmov", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_F, ">0",
+                    IRNode.VECTOR_MASK_CMP_F, ">0",
+                    IRNode.VECTOR_BLEND_F, ">0",
+                    IRNode.STORE_VECTOR, ">0"},
+        applyIfAnd = {"AlignVector", "false", "UseVectorCmov", "true"},
         applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @IR(failOn = {IRNode.STORE_VECTOR},
         applyIf = {"UseVectorCmov", "false"})
@@ -914,6 +930,10 @@ public class TestConditionalMove {
         for (int i = 0; i < a.length; i+=2) {
             c[i+0] = (a[i+0] <= b[i+0]) ? 0.1f : -0.1f;
             c[i+1] = (a[i+1] <= b[i+1]) ? 0.1f : -0.1f;
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                        UseCompactObjectHeaders=true
+            // adr = base + 16 + 8*i      ->  always                adr = base + 12 + 8*i      ->  never
+            // -> vectorize                                         -> no vectorization
         }
     }
 

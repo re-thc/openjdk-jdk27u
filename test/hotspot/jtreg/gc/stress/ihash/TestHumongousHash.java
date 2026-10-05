@@ -30,7 +30,7 @@ package gc.stress.ihash;
  * @requires vm.gc.G1
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UseCompactObjectHeaders -XX:+UseG1GC
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseG1GC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
  *      -XX:-ExplicitGCInvokesConcurrent
  *      -Xmx512m -XX:G1HeapRegionSize=1M
@@ -44,7 +44,7 @@ package gc.stress.ihash;
  * @requires vm.gc.Shenandoah
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UseCompactObjectHeaders -XX:+UseShenandoahGC
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
  *      -XX:-ExplicitGCInvokesConcurrent
  *      -Xmx512m
@@ -59,7 +59,7 @@ package gc.stress.ihash;
  * @requires vm.gc.Shenandoah
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UseCompactObjectHeaders -XX:+UseShenandoahGC
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
  *      -XX:-ExplicitGCInvokesConcurrent
  *      -XX:ShenandoahGCHeuristics=aggressive
@@ -77,7 +77,7 @@ package gc.stress.ihash;
  * @requires vm.gc.Shenandoah
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UseCompactObjectHeaders -XX:+UseShenandoahGC
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
  *      -XX:-ExplicitGCInvokesConcurrent
  *      -Xmx512m
@@ -94,7 +94,7 @@ package gc.stress.ihash;
  * @requires vm.gc.Shenandoah
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UseCompactObjectHeaders -XX:+UseShenandoahGC
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
  *      -XX:-ExplicitGCInvokesConcurrent
  *      -XX:ShenandoahGCHeuristics=aggressive

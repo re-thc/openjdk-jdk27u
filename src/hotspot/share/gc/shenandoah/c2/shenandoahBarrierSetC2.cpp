@@ -231,7 +231,7 @@ bool ShenandoahBarrierSetC2::can_remove_load_barrier(Node* root) {
           // forwarding pointer during evacuation, so reading it from a from-space
           // copy would yield garbage. Keep the barrier in that case.
           // Mirrors Op_LoadNKlass below.
-          if (!UseCompactObjectHeaders) {
+          if (!UseFourByteObjectHeaders) {
             break;
           }
           return false;

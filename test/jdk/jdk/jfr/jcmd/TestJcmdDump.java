@@ -40,10 +40,9 @@ import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
+ * @summary The test verifies JFR.dump command
  * @requires vm.flagless
  * @requires vm.hasJFR
- * @requires !(vm.opt.final.UseCompactObjectHeaders == true | vm.opt.final.UseShenandoahGC == true)
- * @summary The test verifies JFR.dump command
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:FlightRecorderOptions:maxchunksize=1M jdk.jfr.jcmd.TestJcmdDump
  */

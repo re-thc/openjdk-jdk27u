@@ -107,7 +107,8 @@ class CompressedKlassPointers : public AllStatic {
 
   // Narrow klass pointer bits for an unshifted narrow Klass pointer.
   static constexpr int narrow_klass_pointer_bits_noncoh = 32;
-  static constexpr int narrow_klass_pointer_bits_coh = 19;
+  static constexpr int narrow_klass_pointer_bits_coh = 22;
+  static constexpr int narrow_klass_pointer_bits_four_byte = 19;
 
   // Bit size of a narrowKlass
   static int _narrow_klass_pointer_bits;
@@ -190,7 +191,7 @@ public:
   static size_t max_encoding_range_size() { return nth_bit(narrow_klass_pointer_bits() + max_shift()); }
 
   // For use before pre-initialization
-  static constexpr size_t max_klass_range_size_coh = nth_bit(narrow_klass_pointer_bits_coh + max_shift_coh);
+  static constexpr size_t max_klass_range_size_coh = nth_bit(narrow_klass_pointer_bits_four_byte + max_shift_coh);
 
   // Returns the maximum allowed klass range size.
   static size_t max_klass_range_size();

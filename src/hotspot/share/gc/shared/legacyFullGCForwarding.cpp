@@ -22,34 +22,35 @@
  *
  */
 
-#include "oops/markWord.hpp"
-#include "oops/objLayout.hpp"
-#include "runtime/globals.hpp"
-#include "utilities/debug.hpp"
+#include "gc/shared/legacyLegacyFullGCForwarding.hpp"
+#include "memory/memRegion.hpp"
+#include "runtime/globals_extension.hpp"
 
-ObjLayout::Mode ObjLayout::_klass_mode = ObjLayout::Undefined;
-int ObjLayout::_oop_base_offset_in_bytes = 0;
-bool ObjLayout::_oop_has_klass_gap = false;
+HeapWord* LegacyFullGCForwarding::_heap_base = nullptr;
+int LegacyFullGCForwarding::_num_low_bits = 0;
 
-void ObjLayout::initialize() {
+void LegacyFullGCForwarding::initialize_flags(size_t max_heap_size) {
 #ifdef _LP64
-  assert(_klass_mode == Undefined, "ObjLayout initialized twice");
-  if (UseCompactObjectHeaders) {
-    _klass_mode = Compact;
-    _oop_base_offset_in_bytes = UseFourByteObjectHeaders ? sizeof(uint32_t) : sizeof(markWord);
-    _oop_has_klass_gap = UseFourByteObjectHeaders;
-  } else {
-    _klass_mode = Compressed;
-    _oop_base_offset_in_bytes = sizeof(markWord) + sizeof(narrowKlass);
-    _oop_has_klass_gap = true;
+  size_t max_narrow_heap_size = right_n_bits(NumLowBitsNarrow - Shift);
+  if (UseCompactObjectHeaders && max_heap_size > max_narrow_heap_size * HeapWordSize) {
+    warning("Compact object headers require a java heap size smaller than %zu"
+            "%s (given: %zu%s). Disabling compact object headers.",
+            byte_size_in_proper_unit(max_narrow_heap_size * HeapWordSize),
+            proper_unit_for_byte_size(max_narrow_heap_size * HeapWordSize),
+            byte_size_in_proper_unit(max_heap_size),
+            proper_unit_for_byte_size(max_heap_size));
+    FLAG_SET_ERGO(UseCompactObjectHeaders, false);
   }
-#else
-  assert(_klass_mode == Undefined, "ObjLayout initialized twice");
-  assert(!UseCompactObjectHeaders, "COH unsupported on 32-bit");
-  // We support narrow Klass pointers on 32-bit, but the layout
-  // is exactly the same as it was with uncompressed klass pointers
-  _klass_mode = Compressed;
-  _oop_base_offset_in_bytes = sizeof(markWord) + sizeof(Klass*);
-  _oop_has_klass_gap = false;
+#endif
+}
+
+void LegacyFullGCForwarding::initialize(MemRegion heap) {
+#ifdef _LP64
+  _heap_base = heap.start();
+  if (UseCompactObjectHeaders) {
+    _num_low_bits = NumLowBitsNarrow;
+  } else {
+    _num_low_bits = NumLowBitsWide;
+  }
 #endif
 }

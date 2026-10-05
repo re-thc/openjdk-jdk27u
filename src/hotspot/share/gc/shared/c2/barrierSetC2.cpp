@@ -713,12 +713,12 @@ int BarrierSetC2::arraycopy_payload_base_offset(bool is_array) {
       // Exclude length to copy by 8 bytes words.
       base_off += sizeof(int);
     } else {
-      if (!UseCompactObjectHeaders) {
+      if (!UseFourByteObjectHeaders) {
         // Include klass to copy by 8 bytes words.
         base_off = instanceOopDesc::klass_offset_in_bytes();
       }
     }
-    assert(base_off % BytesPerLong == 0 || UseCompactObjectHeaders, "expect 8 bytes alignment");
+    assert(base_off % BytesPerLong == 0 || UseFourByteObjectHeaders, "expect 8 bytes alignment");
   }
   return base_off;
 }
@@ -934,7 +934,7 @@ bool BarrierSetC2::should_copy_int_prefix(PhaseMacroExpand* phase, ArrayCopyNode
     return false;
   }
 
-  assert(UseCompactObjectHeaders, "non-aligned base offset only possible with compact object headers");
+  assert(UseFourByteObjectHeaders, "non-aligned base offset only possible with compact object headers");
   assert(is_aligned(base_off, BytesPerInt), "must be 4-bytes aligned");
   return true;
 }

@@ -128,7 +128,7 @@ void G1FullGCCompactTask::compact_humongous_obj(G1HeapRegion* src_hr) {
   if (dest_num_regions > src_num_regions) {
     // If the object has grown just over the region boundary, due to hash-code expansion, we'll
     // need a new region. Track it for heuristics.
-    assert(UseCompactObjectHeaders, "only possible through hash-code expansion");
+    assert(UseFourByteObjectHeaders, "only possible through hash-code expansion");
     uint new_regions = dest_num_regions - src_num_regions;
     assert(new_regions == 1, "can only possibly grow by 1 region");
     _g1h->policy()->old_gen_alloc_tracker()->record_collection_pause_humongous_allocation(G1HeapRegion::GrainBytes);

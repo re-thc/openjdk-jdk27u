@@ -56,7 +56,7 @@ public class InstanceMirrorKlass extends InstanceKlass {
 
   public long getObjectSize(Oop o) {
     long s = java_lang_Class.getOopSize(o) * VM.getVM().getAddressSize();
-    if (VM.getVM().isCompactObjectHeadersEnabled()) {
+    if (VM.getVM().isFourByteObjectHeadersEnabled()) {
       Mark mark = o.getMark();
       if (mark.isExpanded()) {
         // Needs extra 4 bytes for identity hash-code (and align-up to whole word).

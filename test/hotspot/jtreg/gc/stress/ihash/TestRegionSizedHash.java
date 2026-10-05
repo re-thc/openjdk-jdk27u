@@ -31,7 +31,7 @@ package gc.stress.ihash;
  *          does not overflow a regular region.
  * @requires vm.gc.Shenandoah
  * @run main/othervm
- *      -XX:+UseCompactObjectHeaders -XX:+UseShenandoahGC
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC -XX:+ShenandoahVerify
  *      -XX:-ExplicitGCInvokesConcurrent
  *      -Xms32m -Xmx32m
@@ -47,7 +47,7 @@ package gc.stress.ihash;
  *          does not overflow a regular region.
  * @requires vm.gc.Shenandoah
  * @run main/othervm
- *      -XX:+UseCompactObjectHeaders -XX:+UseShenandoahGC
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC -XX:+ShenandoahVerify
  *      -XX:-ExplicitGCInvokesConcurrent
  *      -XX:ShenandoahGCHeuristics=aggressive

@@ -30,7 +30,7 @@ package gc.stress.ihash;
  * @requires vm.gc.Serial
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UseCompactObjectHeaders -XX:+UseSerialGC
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseSerialGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
  *      -Xmx256m
  *      gc.stress.ihash.TestStressIHash
@@ -43,7 +43,7 @@ package gc.stress.ihash;
  * @requires vm.gc.Parallel
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UseCompactObjectHeaders -XX:+UseParallelGC
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseParallelGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
  *      -Xmx256m
  *      gc.stress.ihash.TestStressIHash
@@ -56,7 +56,7 @@ package gc.stress.ihash;
  * @requires vm.gc.G1
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UseCompactObjectHeaders -XX:+UseG1GC
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseG1GC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
  *      -Xmx256m
  *      gc.stress.ihash.TestStressIHash
@@ -69,7 +69,7 @@ package gc.stress.ihash;
  * @requires vm.gc.Shenandoah
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UseCompactObjectHeaders -XX:+UseShenandoahGC
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
  *      -Xmx256m
  *      gc.stress.ihash.TestStressIHash
@@ -82,7 +82,7 @@ package gc.stress.ihash;
  * @requires vm.gc.Z
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UseCompactObjectHeaders -XX:+UseZGC
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseZGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
  *      -Xmx256m
  *      gc.stress.ihash.TestStressIHash
@@ -96,7 +96,7 @@ package gc.stress.ihash;
  * @requires vm.opt.TieredCompilation != true
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UseCompactObjectHeaders -XX:+UseSerialGC
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseSerialGC
  *      -XX:-TieredCompilation
  *      -Xmx256m
  *      gc.stress.ihash.TestStressIHash clone-ref
@@ -110,7 +110,7 @@ package gc.stress.ihash;
  * @requires vm.opt.TieredCompilation != true
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UseCompactObjectHeaders -XX:+UseParallelGC
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseParallelGC
  *      -XX:-TieredCompilation
  *      -Xmx256m
  *      gc.stress.ihash.TestStressIHash clone-ref
@@ -124,7 +124,7 @@ package gc.stress.ihash;
  * @requires vm.opt.TieredCompilation != true
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UseCompactObjectHeaders -XX:+UseG1GC
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseG1GC
  *      -XX:-TieredCompilation
  *      -Xmx256m
  *      gc.stress.ihash.TestStressIHash clone-ref

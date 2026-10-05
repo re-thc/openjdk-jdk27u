@@ -387,7 +387,7 @@ void AOTStreamedHeapWriter::update_header_for_buffered_addr(address buffered_add
   // identity_hash for all shared objects, so they are less likely to be written
   // into during run time, increasing the potential of memory sharing.
   if (src_obj != nullptr) {
-    if (UseCompactObjectHeaders) {
+    if (UseFourByteObjectHeaders) {
       mw = mw.copy_hashctrl_from(src_obj->mark());
       if (mw.is_hashed_not_expanded()) {
         mw = fake_oop->initialize_hash_if_necessary(src_obj, src_klass, mw);

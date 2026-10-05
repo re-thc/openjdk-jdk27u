@@ -726,7 +726,7 @@ void FieldLayoutBuilder::epilogue() {
 
   _info->oop_map_blocks = nonstatic_oop_maps;
   _info->_instance_size = align_object_size(instance_end / wordSize);
-  if (UseCompactObjectHeaders) {
+  if (UseFourByteObjectHeaders) {
     _info->_hash_offset   = _layout->find_hash_offset();
   }
   _info->_static_field_size = static_fields_size;

@@ -216,6 +216,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _obj_alignment = ObjectAlignmentInBytes;
   _compact_strings = CompactStrings;
   _compact_headers = UseCompactObjectHeaders;
+  _four_byte_headers = UseFourByteObjectHeaders;
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
     _object_streaming_mode = HeapShared::is_writing_streaming_mode();
@@ -1933,6 +1934,12 @@ bool FileMapHeader::validate() {
                      " does not equal the current UseCompactObjectHeaders setting (%s).", file_type, file_type,
                      _compact_headers          ? "enabled" : "disabled",
                      UseCompactObjectHeaders   ? "enabled" : "disabled");
+    return false;
+  }
+
+  if (_four_byte_headers != UseFourByteObjectHeaders) {
+    aot_log_warning(aot)("Unable to use %s: UseFourByteObjectHeaders differs from the archive (%d vs %d).",
+                        file_type, UseFourByteObjectHeaders, _four_byte_headers);
     return false;
   }
 

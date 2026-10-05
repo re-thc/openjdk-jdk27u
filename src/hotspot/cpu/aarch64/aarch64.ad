@@ -6814,8 +6814,13 @@ instruct loadNKlassCompactHeaders(iRegNNoSp dst, memory_noindex mem)
     assert($mem$$index$$Register == noreg, "must not have indexed address");
     // The incoming address is pointing into obj-start + klass_offset_in_bytes. We need to extract
     // obj-start, so that we can load from the object's mark-word instead.
-    __ ldrw($dst$$Register, Address($mem$$base$$Register, $mem$$disp - Type::klass_offset()));
-    __ lsrw($dst$$Register, $dst$$Register, markWord::klass_shift);
+    if (UseFourByteObjectHeaders) {
+      __ ldrw($dst$$Register, Address($mem$$base$$Register, $mem$$disp - Type::klass_offset()));
+      __ lsrw($dst$$Register, $dst$$Register, markWord::four_byte_klass_shift);
+    } else {
+      __ ldrw($dst$$Register, Address($mem$$base$$Register, $mem$$disp));
+      __ lsrw($dst$$Register, $dst$$Register, markWord::klass_shift_at_offset);
+    }
   %}
   ins_pipe(iload_reg_mem);
 %}

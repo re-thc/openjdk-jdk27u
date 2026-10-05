@@ -317,7 +317,7 @@ public:
   //   - an evacuation/promotion copy size (copy_size()), which is already expanded;
   //   - a raw LAB buffer (TLAB/GCLAB/PLAB), which never grows.
   inline static bool requires_humongous(size_t words, bool may_expand_for_hash) {
-    if (UseCompactObjectHeaders && may_expand_for_hash) {
+    if (UseFourByteObjectHeaders && may_expand_for_hash) {
       words = oopDesc::hash_expanded_size(words);
     }
     return words > ShenandoahHeapRegion::RegionSizeWords;

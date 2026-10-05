@@ -1809,6 +1809,7 @@
   declare_constant(markWord::hash_shift)                                  \
   declare_constant(markWord::hashctrl_shift)                              \
   LP64_ONLY(declare_constant(markWord::klass_shift))                      \
+  LP64_ONLY(declare_constant(markWord::four_byte_klass_shift))            \
                                                                           \
   declare_constant(markWord::lock_mask)                                   \
   declare_constant(markWord::lock_mask_in_place)                          \

@@ -3466,16 +3466,38 @@ void Arguments::set_compact_headers_flags() {
     }
     FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
   }
-  if (UseCompactObjectHeaders && FLAG_IS_DEFAULT(hashCode)) {
+  if (UseFourByteObjectHeaders && FLAG_IS_DEFAULT(hashCode)) {
     hashCode = 6;
   }
-  if (UseCompactObjectHeaders && FLAG_IS_DEFAULT(CompressedClassSpaceSize)) {
+  if (UseFourByteObjectHeaders && FLAG_IS_DEFAULT(CompressedClassSpaceSize)) {
     FLAG_SET_DEFAULT(CompressedClassSpaceSize, CompressedKlassPointers::max_klass_range_size_coh);
   }
 #endif
 }
 
 jint Arguments::apply_ergo() {
+#ifdef _LP64
+  if (UseFourByteObjectHeaders) {
+#if !defined(AMD64) && !defined(AARCH64)
+    warning("UseFourByteObjectHeaders is only supported on x64 and AArch64; disabling it");
+    FLAG_SET_ERGO(UseFourByteObjectHeaders, false);
+#else
+#if INCLUDE_JVMCI
+    if (UseJVMCICompiler || (EnableJVMCI && FLAG_IS_CMDLINE(EnableJVMCI))) {
+      warning("UseFourByteObjectHeaders is incompatible with JVMCI; disabling it");
+      FLAG_SET_ERGO(UseFourByteObjectHeaders, false);
+    }
+#endif
+    if (UseFourByteObjectHeaders && !FLAG_IS_DEFAULT(hashCode) && hashCode != 2 && hashCode != 6) {
+      warning("UseFourByteObjectHeaders requires hashCode=2 or hashCode=6; disabling it");
+      FLAG_SET_ERGO(UseFourByteObjectHeaders, false);
+    }
+    if (UseFourByteObjectHeaders) {
+      FLAG_SET_ERGO(UseCompactObjectHeaders, true);
+    }
+#endif
+  }
+#endif
   // Set flags based on ergonomics.
   jint result = set_ergonomics_flags();
   if (result != JNI_OK) return result;

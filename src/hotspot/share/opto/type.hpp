@@ -203,7 +203,7 @@ public:
   // are really extracted from the mark-word, but we still want to
   // distinguish it.
   static int klass_offset() {
-    if (UseCompactObjectHeaders) {
+    if (UseFourByteObjectHeaders) {
       return 1;
     } else {
       return oopDesc::klass_offset_in_bytes();

@@ -27,9 +27,9 @@
  * @summary Test that identity hash codes are stable across Shenandoah evacuation
  * @bug 8379910
  * @requires vm.gc.Shenandoah
- * @requires vm.opt.UseCompactObjectHeaders == null | vm.opt.UseCompactObjectHeaders == true
+ * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
  * @library /test/lib
- * @run main/othervm -XX:+UseCompactObjectHeaders -XX:+UseShenandoahGC
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -Xms64m -Xmx64m
  *      TestHashCodeEvacRace
  */
@@ -39,9 +39,9 @@
  * @summary Test that identity hash codes are stable across Shenandoah evacuation
  * @bug 8379910
  * @requires vm.gc.Shenandoah
- * @requires vm.opt.UseCompactObjectHeaders == null | vm.opt.UseCompactObjectHeaders == true
+ * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
  * @library /test/lib
- * @run main/othervm -XX:+UseCompactObjectHeaders -XX:+UseShenandoahGC
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -XX:ShenandoahGCMode=generational -Xms64m -Xmx64m
  *      TestHashCodeEvacRace
  */
@@ -51,9 +51,9 @@
  * @summary Test that identity hash codes are stable across Serial GC
  * @bug 8379910
  * @requires vm.gc.Serial
- * @requires vm.opt.UseCompactObjectHeaders == null | vm.opt.UseCompactObjectHeaders == true
+ * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
  * @library /test/lib
- * @run main/othervm -XX:+UseCompactObjectHeaders -XX:+UseSerialGC
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseSerialGC
  *      -Xms64m -Xmx64m
  *      TestHashCodeEvacRace
  */
@@ -63,9 +63,9 @@
  * @summary Test that identity hash codes are stable across Parallel GC
  * @bug 8379910
  * @requires vm.gc.Parallel
- * @requires vm.opt.UseCompactObjectHeaders == null | vm.opt.UseCompactObjectHeaders == true
+ * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
  * @library /test/lib
- * @run main/othervm -XX:+UseCompactObjectHeaders -XX:+UseParallelGC
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseParallelGC
  *      -Xms64m -Xmx64m
  *      TestHashCodeEvacRace
  */
@@ -75,9 +75,9 @@
  * @summary Test that identity hash codes are stable across G1 GC
  * @bug 8379910
  * @requires vm.gc.G1
- * @requires vm.opt.UseCompactObjectHeaders == null | vm.opt.UseCompactObjectHeaders == true
+ * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
  * @library /test/lib
- * @run main/othervm -XX:+UseCompactObjectHeaders -XX:+UseG1GC
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseG1GC
  *      -Xms64m -Xmx64m
  *      TestHashCodeEvacRace
  */
@@ -87,9 +87,9 @@
  * @summary Test that identity hash codes are stable across ZGC
  * @bug 8379910
  * @requires vm.gc.Z
- * @requires vm.opt.UseCompactObjectHeaders == null | vm.opt.UseCompactObjectHeaders == true
+ * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
  * @library /test/lib
- * @run main/othervm -XX:+UseCompactObjectHeaders -XX:+UseZGC
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseZGC
  *      -Xms64m -Xmx64m
  *      TestHashCodeEvacRace
  */
