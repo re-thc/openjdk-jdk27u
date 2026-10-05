@@ -205,3 +205,7 @@ The linked vendor object SHA-256 was
 `60674bb5458a4df0fc7d2cff3a8c150300f60250a11793caa6b923256c32224b`.
 The unmodified vendor source SHA-256 was
 `02429dedc724b9daed89659462df8869a6b729e65256718be286336d8bf6aa8f`.
+
+## Base64 backend comparison
+
+[The aklomp comparison](base64-comparison.md) retains simdutf after native standard/URL encode and decode measurements across three x86 ISA profiles. Java/JNI and native ARM performance remain unmeasured for this comparison.
