@@ -16,13 +16,14 @@ No HotSpot collector implementation or Java API is changed.
 
 | Native target | CPU baseline | CI runner | Native linker / cache |
 | --- | --- | --- | --- |
-| Linux x64 | x86-64-v3, generic tuning | ubuntu-24.04 | mold / ccache |
-| Linux ARM64 | ARMv8.2-A, generic tuning | ubuntu-24.04-arm | mold / ccache |
+| Linux x64 | x86-64-v3, generic tuning | ubuntu-26.04 | mold / ccache |
+| Linux ARM64 | ARMv8.2-A, generic tuning | ubuntu-26.04-arm | mold / ccache |
 | macOS ARM64 | Apple M1 | macos-26, Xcode 26.6 | Apple linker / ccache |
-| Windows x64 | MSVC AVX2 | windows-2022, MSVC 14.44 | MSVC linker |
+| Windows x64 | MSVC AVX2 | windows-2025, VS 2026 / MSVC 14.44 | MSVC linker |
 
 These images require CPUs supporting their baseline; they are not suitable for
-older x64 or ARMv8.0 hardware. MSVC's AVX2 option is not an exact x86-64-v3
+older x64 or ARMv8.0 hardware. Linux CI installs and verifies GCC 16 from
+Ubuntu 26.04 packages. MSVC's AVX2 option is not an exact x86-64-v3
 equivalent. CPU flags affect native code; the JVM still chooses Java JIT
 instructions at runtime. There is no use of `-march=native`.
 

@@ -34,7 +34,7 @@ on:
       runs-on:
         required: false
         type: string
-        default: 'ubuntu-24.04'
+        default: 'ubuntu-26.04'
       bootjdk-platform:
         required: false
         type: string
@@ -123,6 +123,7 @@ jobs:
           if [[ '${{ inputs.apt-architecture }}' != '' ]]; then
             sudo dpkg --add-architecture ${{ inputs.apt-architecture }}
           fi
+          # Ubuntu 26.04 packages GCC 16 in universe; it is not preinstalled.
           sudo apt update
           sudo apt install --only-upgrade apt
           sudo apt install \
@@ -134,6 +135,13 @@ jobs:
             mold ccache \
             ${{ inputs.apt-extra-packages }}
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
+
+      - name: 'Verify GCC version'
+        run: |
+          test "$(gcc -dumpversion)" = "${{ inputs.gcc-major-version }}"
+          test "$(g++ -dumpversion)" = "${{ inputs.gcc-major-version }}"
+          gcc --version
+          mold --version
 
       - name: 'Restore compiler cache'
         uses: ./.github/actions/compiler-cache
