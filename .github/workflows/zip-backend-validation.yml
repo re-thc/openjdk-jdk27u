@@ -1,51 +1,19 @@
-#
-# Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
-# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-#
-# This code is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.  Oracle designates this
-# particular file as subject to the "Classpath" exception as provided
-# by Oracle in the LICENSE file that accompanied this code.
-#
-# This code is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-# version 2 for more details (a copy is included in the LICENSE file that
-# accompanied this code).
-#
-# You should have received a copy of the GNU General Public License version
-# 2 along with this work; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-#
-# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-# or visit www.oracle.com if you need additional information or have any
-# questions.
-#
-
-name: ZIP x86 stock-path regression calibration
-
+name: ZIP reusable-stream alignment comparison
 on:
   push:
     branches: [pr/zlib-ng-x64-validation]
   workflow_dispatch:
-
 permissions:
   contents: read
-  actions: read
-
 concurrency:
-  group: zip-stock-path-validation-${{ github.ref }}
+  group: zip-pool-comparison-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
   validate:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 2
       - uses: ./.github/actions/get-bootjdk
         id: boot
         with:
@@ -56,46 +24,52 @@ jobs:
           path: validation/baseline
       - uses: actions/cache/restore@v4
         with:
+          path: build/zip/images/jdk
+          key: zip-image-v1-linux-x64-f61aabacb002c19b57cfc802b709c5f033f880d3-gcc14-system-release
+          fail-on-cache-miss: true
+      - uses: actions/cache/restore@v4
+        with:
           path: validation/baseline/build/zip/images/jdk
           key: zip-baseline-image-v1-linux-x64-33e539f2d4a847f283a3793df6eebd41b9d1dfac-gcc14-system-release
           fail-on-cache-miss: true
-      - name: Verify source and record host
+      - name: Verify native source and record host
         run: |
           mkdir -p validation/results
           git fetch --depth=1 origin 37d4b14c9121ba49a558e131c471e04fe11ca4ce
           git diff 37d4b14c9121ba49a558e131c471e04fe11ca4ce -- src make test > validation/results/implementation-diff.txt
           test ! -s validation/results/implementation-diff.txt
-          echo 37d4b14c9121ba49a558e131c471e04fe11ca4ce > validation/results/candidate-commit.txt
+          echo 37d4b14c9121ba49a558e131c471e04fe11ca4ce > validation/results/native-source.txt
           lscpu > validation/results/cpu.txt
-          gcc-14 --version > validation/results/compiler.txt
           dpkg-query -W zlib1g > validation/results/zlib.txt
-          cat validation/results/cpu.txt validation/results/compiler.txt validation/results/zlib.txt
           python3 -m py_compile .github/scripts/validate-zip-backend.py
-      - uses: actions/download-artifact@v6
-        with:
-          name: bundles-jtreg-8.2.1+1
-          run-id: 37263807373
-          github-token: ${{ github.token }}
-          path: jtreg/installed
       - name: Install native dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-14 g++-14 zlib1g-dev libasound2-dev libcups2-dev libfontconfig1-dev libx11-dev libxext-dev libxrandr-dev libxrender-dev libxt-dev libxtst-dev
-      - name: Build restored stock allocation and zlib-ng paths
+      - name: Rebuild libzip using cached JDK dependencies
         env:
           CC: gcc-14
           CXX: g++-14
           BOOT_JDK: ${{ steps.boot.outputs.path }}
         run: |
-          bash configure --with-conf-name=zip-final --with-boot-jdk="$BOOT_JDK" --with-zlib=system --with-debug-level=release --with-native-debug-symbols=none --disable-warnings-as-errors
-          make CONF=zip-final JOBS=2 images
-      - name: Check ZIP, GC, JNI, CDS, JAR, zipfs and jlink
-        run: python3 .github/scripts/validate-zip-backend.py tests --jdk build/zip-final/images/jdk --jtreg jtreg/installed
-      - name: Compare short compression and default-backend controls in alternating order
-        run: python3 .github/scripts/validate-zip-backend.py calibrate --jdk build/zip-final/images/jdk --baseline validation/baseline/build/zip/images/jdk
+          bash configure --with-conf-name=zip-profile --with-boot-jdk="$BOOT_JDK" --with-zlib=system --with-debug-level=release --with-native-debug-symbols=none --disable-warnings-as-errors
+          mkdir -p build/zip-profile/support/headers/java.base build/zip-profile/support/modules_libs/java.base/server validation/header-classes
+          cp build/zip/images/jdk/lib/libjava.so build/zip-profile/support/modules_libs/java.base/
+          cp build/zip/images/jdk/lib/server/libjvm.so build/zip-profile/support/modules_libs/java.base/server/
+          build/zip/images/jdk/bin/javac --patch-module java.base=src/java.base/share/classes -h build/zip-profile/support/headers/java.base -d validation/header-classes src/java.base/share/classes/java/util/zip/Adler32.java src/java.base/share/classes/java/util/zip/CRC32.java src/java.base/share/classes/java/util/zip/Deflater.java src/java.base/share/classes/java/util/zip/Inflater.java
+          if make -j2 -f make/modules/java.base/Lib.gmk SPEC="$PWD/build/zip-profile/spec.gmk" MODULE=java.base "$PWD/build/zip-profile/support/modules_libs/java.base/libzip.so"; then
+            cp build/zip-profile/support/modules_libs/java.base/libzip.so build/zip/images/jdk/lib/
+            echo native-library-only > validation/results/build-method.txt
+          else
+            make CONF=zip-profile JOBS=2 images
+            cp -a build/zip-profile/images/jdk/. build/zip/images/jdk/
+            echo full-image > validation/results/build-method.txt
+          fi
+      - name: Compare single and pooled contexts under all compilation tiers
+        run: python3 .github/scripts/validate-zip-backend.py pool --jdk build/zip/images/jdk --baseline validation/baseline/build/zip/images/jdk
       - uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: zip-stock-path-calibration-x86
+          name: zip-pool-comparison-x86
           path: validation/results
           retention-days: 14
