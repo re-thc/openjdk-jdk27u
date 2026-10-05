@@ -1,16 +1,23 @@
-name: ZIP reusable-stream alignment comparison
+name: ZIP x86 pool comparison on an alternate runner
 on:
+  push:
+    branches: [pr/zlib-ng-x64-validation]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: zip-pool-comparison-${{ github.ref }}
+  group: zip-pool-container-comparison-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   validate:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
+    container: ubuntu:24.04
     timeout-minutes: 120
     steps:
+      - name: Install container build and action tools
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y git curl wget unzip zip zstd make ca-certificates python3 file
       - uses: actions/checkout@v6
       - uses: ./.github/actions/get-bootjdk
         id: boot
@@ -42,8 +49,8 @@ jobs:
           python3 -m py_compile .github/scripts/validate-zip-backend.py
       - name: Install native dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-14 g++-14 zlib1g-dev libasound2-dev libcups2-dev libfontconfig1-dev libx11-dev libxext-dev libxrandr-dev libxrender-dev libxt-dev libxtst-dev
+          DEBIAN_FRONTEND=noninteractive apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y gcc-14 g++-14 zlib1g-dev libasound2-dev libcups2-dev libfontconfig1-dev libx11-dev libxext-dev libxrandr-dev libxrender-dev libxt-dev libxtst-dev
       - name: Rebuild libzip using cached JDK dependencies
         env:
           CC: gcc-14
@@ -55,7 +62,7 @@ jobs:
           cp build/zip/images/jdk/lib/libjava.so build/zip-profile/support/modules_libs/java.base/
           cp build/zip/images/jdk/lib/server/libjvm.so build/zip-profile/support/modules_libs/java.base/server/
           build/zip/images/jdk/bin/javac --patch-module java.base=src/java.base/share/classes -h build/zip-profile/support/headers/java.base -d validation/header-classes src/java.base/share/classes/java/util/zip/Adler32.java src/java.base/share/classes/java/util/zip/CRC32.java src/java.base/share/classes/java/util/zip/Deflater.java src/java.base/share/classes/java/util/zip/Inflater.java
-          if make -j2 -I make/modules/java.base -f make/modules/java.base/Lib.gmk SPEC="$PWD/build/zip-profile/spec.gmk" MODULE=java.base "$PWD/build/zip-profile/support/modules_libs/java.base/libzip.so"; then
+          if make -j2 -I make/common -I make/common/modules -I make/modules/java.base -f make/modules/java.base/Lib.gmk SPEC="$PWD/build/zip-profile/spec.gmk" MODULE=java.base "$PWD/build/zip-profile/support/modules_libs/java.base/libzip.so"; then
             cp build/zip-profile/support/modules_libs/java.base/libzip.so build/zip/images/jdk/lib/
             mkdir -p build/zip-profile/images
             ln -s "$PWD/build/zip/images/jdk" build/zip-profile/images/jdk
@@ -69,6 +76,6 @@ jobs:
       - uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: zip-pool-comparison-x86
+          name: zip-pool-container-comparison-x86
           path: validation/results
           retention-days: 14
