@@ -95,8 +95,9 @@ jobs:
         run: |
           mkdir -p validation/results
           git fetch --depth=1 origin c3198fede2ba39de217bd46eb197d68790c85c71
-          git diff f61aabacb002c19b57cfc802b709c5f033f880d3 c3198fede2ba39de217bd46eb197d68790c85c71 -- src make > validation/production-image-diff.txt
-          test ! -s validation/production-image-diff.txt
+          git fetch --depth=1 origin f61aabacb002c19b57cfc802b709c5f033f880d3
+          git diff f61aabacb002c19b57cfc802b709c5f033f880d3 c3198fede2ba39de217bd46eb197d68790c85c71 -- src make > validation/results/production-image-diff.txt
+          test ! -s validation/results/production-image-diff.txt
           git rev-parse HEAD > validation/results/validation-commit.txt
           echo c3198fede2ba39de217bd46eb197d68790c85c71 > validation/results/candidate-commit.txt
           git diff c3198fede2ba39de217bd46eb197d68790c85c71 -- src make test > validation/results/implementation-diff.txt
