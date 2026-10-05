@@ -29,8 +29,8 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "runtime/stringZilla.hpp"
+#include "runtime/stubRoutines.hpp"
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 

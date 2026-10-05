@@ -120,8 +120,10 @@ public class StringZillaSearch {
             }
         }
         // Distinct arrays with equal contents, early/late mismatch, and coders.
+        int[] equalitySizes = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 15, 16, 17, 31, 32, 33,
+                               127, 128, 129, 255, 256, 257, 1024, 4096};
         for (String unit : new String[]{"a", "\u0401"}) {
-            for (int size : sizes) {
+            for (int size : equalitySizes) {
                 String first = unit.repeat(size);
                 String same = new String(first.toCharArray());
                 if (!first.equals(same)) throw new AssertionError("equal content");

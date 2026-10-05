@@ -145,6 +145,10 @@ executes supported tables directly. It checks 0/1/63/64-character needles and
 rejects negative/oversized counts with null pointers, independently of Java
 gates and VM assertions. [Review follow-up](REVIEW_RESPONSE.md) records the
 native hardening, sanitizer scope, and retained benchmark limitations.
+`TestStringZillaEquality` adds forced C1/C2 equality checks at every short-length
+and mismatch boundary with live caller values, compact strings/object headers
+off, and explicit opt-out. The [final review](FINAL_REVIEW.md) records its
+validation and a measured C1 optimization rejected for a short-input regression.
 
 The JMH benchmark is
 `test/micro/org/openjdk/bench/java/lang/StringZillaSearch.java`. It parameterizes
