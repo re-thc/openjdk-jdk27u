@@ -39,6 +39,7 @@ jobs:
           fail-on-cache-miss: true
       - name: Verify native source and record host
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           mkdir -p validation/results
           git fetch --depth=1 origin 37d4b14c9121ba49a558e131c471e04fe11ca4ce
           git diff 37d4b14c9121ba49a558e131c471e04fe11ca4ce -- src make test > validation/results/implementation-diff.txt
@@ -71,8 +72,8 @@ jobs:
             make CONF=zip-profile JOBS=2 images
             echo full-image > validation/results/build-method.txt
           fi
-      - name: Compare single and pooled contexts under all compilation tiers
-        run: python3 .github/scripts/validate-zip-backend.py pool --jdk build/zip-profile/images/jdk --baseline validation/baseline/build/zip/images/jdk
+      - name: Compare pooled contexts with balanced backend order
+        run: python3 .github/scripts/validate-zip-backend.py pool-calibrate --jdk build/zip-profile/images/jdk --baseline validation/baseline/build/zip/images/jdk
       - uses: actions/upload-artifact@v6
         if: always()
         with:
