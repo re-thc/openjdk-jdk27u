@@ -1869,7 +1869,7 @@ void AOTCodeReader::read_dbg_strings(DbgStrings& dbg_strings) {
 // [_stubs_base, _stubs_base + _stubs_max -1], [_c_str_base,
 // _c_str_base + _c_str_max -1],
 
-#define _extrs_max 380
+#define _extrs_max 382
 #define _stubs_max static_cast<int>(EntryId::NUM_ENTRYIDS)
 
 #define _extrs_base 0
@@ -1882,9 +1882,9 @@ void AOTCodeReader::read_dbg_strings(DbgStrings& dbg_strings) {
 
 #define ADD_EXTERNAL_ADDRESS(addr)                               \
   {                                                              \
+    assert(_extrs_length < _extrs_max, "increase size");         \
     hash_address((address) addr, _extrs_base + _extrs_length);   \
     _extrs_addr[_extrs_length++] = (address) (addr);             \
-    assert(_extrs_length <= _extrs_max, "increase size");        \
   }
 
 // insert into to the address hash table the index of an external

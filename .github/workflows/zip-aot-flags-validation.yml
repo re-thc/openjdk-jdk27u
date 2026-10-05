@@ -72,10 +72,10 @@ jobs:
           with open(os.environ["GITHUB_ENV"], "a") as env:
               env.write("VALIDATION_JDK=" + str(images[0]) + "\n")
           PY
-          git fetch --depth=1 origin 5a15ad035cf2fc30de8ecaf8d8f597a3fb997f06
-          git diff 5a15ad035cf2fc30de8ecaf8d8f597a3fb997f06 -- src make test > validation/results/implementation-diff.txt
+          git fetch --depth=1 origin f61aabacb002c19b57cfc802b709c5f033f880d3
+          git diff f61aabacb002c19b57cfc802b709c5f033f880d3 -- src make test > validation/results/implementation-diff.txt
           test ! -s validation/results/implementation-diff.txt
-          echo 5a15ad035cf2fc30de8ecaf8d8f597a3fb997f06 > validation/results/candidate-commit.txt
+          echo f61aabacb002c19b57cfc802b709c5f033f880d3 > validation/results/candidate-commit.txt
           python3 -m py_compile .github/scripts/validate-zip-backend.py
       - name: Install native build dependencies
         run: |
