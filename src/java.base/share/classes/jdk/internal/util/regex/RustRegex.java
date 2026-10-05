@@ -72,6 +72,7 @@ public final class RustRegex {
     private static boolean supported(String pattern) {
         if (pattern.length() > 4096) return false;
         boolean inClass = false;
+        int classStart = -1;
         boolean complex = false;
         for (int i = 0; i < pattern.length(); i++) {
             char c = pattern.charAt(i);
@@ -84,9 +85,13 @@ public final class RustRegex {
             } else if (c == '[') {
                 if (inClass) return false;
                 inClass = true;
+                // The first ']' is literal, including after optional negation.
+                // Keep checking the rest of that class for Rust set operators.
+                classStart = i + 1;
+                if (classStart < pattern.length() && pattern.charAt(classStart) == '^') classStart++;
                 complex = true;
             } else if (c == ']') {
-                inClass = false;
+                if (i != classStart) inClass = false;
             } else if (inClass) {
                 if (c == '&' || c == '~' || c == '|' ||
                         (c == '-' && i + 1 < pattern.length() && pattern.charAt(i + 1) == '-')) return false;
@@ -98,7 +103,7 @@ public final class RustRegex {
                 complex |= c == '*' || c == '+' || c == '?' || c == '{' || c == '|';
             }
         }
-        return complex;
+        return complex && !inClass;
     }
 
     public boolean mayMatch(String input, int offset, int length) {

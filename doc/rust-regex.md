@@ -41,8 +41,10 @@ registered JNI fallback. A JDK built without Rust warns and disables a requested
 
 Java always compiles the Pattern first, so Java syntax validation, named groups,
 serialization, and precompiled Pattern reuse keep their existing behavior. A
-Pattern accumulates eight unsuccessful eligible Latin-1 searches with default
-flags before lazily compiling a Rust filter, once under a Pattern lock. The immutable filter can be shared
+Pattern accumulates eight consecutive unsuccessful eligible Latin-1 searches with default
+flags before lazily compiling a Rust filter. One Matcher claims preparation with
+an atomic flag; other Matchers continue in Java while it compiles. Volatile
+publication makes the completed immutable filter available for reuse. It can be shared
 across Matchers and threads. A Cleaner releases it when unreachable; the caller
 uses `Reference.reachabilityFence` to protect each native search. Native handles
 are transient and excluded from Pattern serialization data.
@@ -62,6 +64,18 @@ representation, and reuses it for prefix extraction and NFA construction. It
 builds a dense DFA with separate limits of 2 MiB for the NFA, 2 MiB for DFA output
 and 4 MiB for determinization workspace. Prefix extraction supplies the upstream
 SIMD-capable literal prefilter. Pattern length is bounded to 4,096 bytes.
+Retained filters share a 64 MiB native accounting budget. Each handle is charged
+for the DFA's reported storage, prefilter storage, inline handle, and a fixed
+overhead allowance. Before construction, the adapter reserves 12 MiB plus handle
+overhead for the maximum DFA/prefilter/NFA/determinization charges and a parsing
+allowance; successful construction reduces it to the actual retained charge.
+Cleanup, errors, and unwinding return the reservation. Distinct Patterns with
+identical expressions are charged separately. Budget exhaustion permanently
+selects Java for that Pattern. Concurrent preparations share the same budget
+and require enough capacity for their working state. Existing filters continue
+to work and their search path performs no budget accounting. This bounds
+accounted filter storage and compilation reservations; allocator metadata,
+fragmentation, and the Rust runtime are outside that metric.
 Compilation occurs in native thread state with copied pattern bytes, so GC can
 proceed. Normal searches allocate nothing and acquire no locks. Search errors
 and caught Rust panics fail open; all three C ABI exports contain unwinding
@@ -88,9 +102,16 @@ quantifier. Java still enforces possessive semantics on every candidate. Support
 captures, noncapturing groups, alternation, ranges, negated classes, the default
 ASCII `d/D/w/W/s/S` classes and ordinary greedy/reluctant quantifiers. Plain
 literals stay on Java's existing Boyer-Moore path.
+The syntax gate tracks the first class character after optional negation, so a
+leading literal `]` cannot hide later set operators or nested classes. Combined
+grammar tests cover those interactions. This remains a conservative lexical
+recognizer; extending the subset should use parsed structure and differential
+evidence, rather than merely adding exceptions to the character whitelist.
 
-A successful native probe followed by a Java match resets the miss gate. The
-compiled DFA is retained, but probing resumes only after eight more misses.
+A successful eligible Java search resets the miss gate, including before native
+compilation. A compiled DFA is retained, but probing resumes only after eight
+consecutive misses. Sequential alternating hits and misses no longer accumulate enough
+evidence to compile a filter.
 This adapts to a formerly negative workload becoming positive and amortizes
 compilation without a permanent positive-search penalty. A first positive
 probe still has a cost. The opt-out flags remain available; no universal
@@ -188,6 +209,9 @@ Review fixes and their separate validation are recorded in
 [rust-regex-review-results.md](rust-regex-review-results.md).
 The final performance review and new before/after measurements are recorded in
 [rust-regex-final-review.md](rust-regex-final-review.md).
+The subsequent grammar, native-budget, and complete-lifetime review is in
+[rust-regex-review-followup.md](rust-regex-review-followup.md), including the
+consecutive-miss gate and nonblocking shared-Pattern preparation.
 
 Default-build/runtime policy and its validation are recorded in
 [rust-regex-defaults.md](rust-regex-defaults.md).

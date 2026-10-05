@@ -192,6 +192,95 @@ public class RustRegexTest {
         }
     }
 
+    private static void interruptedLearning() throws Exception {
+        String miss = "x".repeat(2048), hit = "error123" + miss;
+        Pattern p = Pattern.compile("error[0-9]+");
+        for (int i = 0; i < 32; i++) {
+            String input = (i & 1) == 0 ? miss : hit;
+            if (p.matcher(input).find() != ((i & 1) != 0))
+                throw new AssertionError("alternating search result");
+        }
+        if (MISSES.getInt(p) != 0 || COMPILED.getBoolean(p) || FILTER.get(p) != null)
+            throw new AssertionError("successful searches did not interrupt filter learning");
+        warm(p, miss);
+        if ((FILTER.get(p) != null) != EXPECT_FILTER)
+            throw new AssertionError("consecutive misses did not activate a filter");
+        Object cached = FILTER.get(p);
+        for (int i = 0; i < 32; i++) p.matcher((i & 1) == 0 ? miss : hit).find();
+        if (MISSES.getInt(p) != 0 || FILTER.get(p) != cached)
+            throw new AssertionError("interrupted learning lost the cached filter");
+    }
+
+    private static void nonblockingPreparation() throws Exception {
+        String miss = "x".repeat(2048);
+        Pattern p = Pattern.compile("error[0-9]+"), ref = reference(p.pattern(), 0);
+        for (int i = 0; i < 8; i++) p.matcher(miss).find();
+        Field owner = Pattern.class.getDeclaredField("rustRegexCompiling");
+        owner.setAccessible(true);
+        // A pending owner must make other Matchers use Java, without reading
+        // an unpublished handle or marking preparation complete themselves.
+        owner.setBoolean(p, true);
+        try {
+            compare(p, ref, miss, 0, miss.length(), false, true);
+            if (COMPILED.getBoolean(p) || FILTER.get(p) != null)
+                throw new AssertionError("busy preparation did not fall back to Java");
+        } finally {
+            owner.setBoolean(p, false);
+        }
+        // Preparing a filter must also be independent of user synchronization
+        // on the immutable Pattern object.
+        try (ExecutorService worker = Executors.newSingleThreadExecutor()) {
+            synchronized (p) {
+                if (worker.submit(() -> p.matcher(miss).find()).get(30, TimeUnit.SECONDS))
+                    throw new AssertionError("preparation miss result");
+            }
+        }
+        if ((FILTER.get(p) != null) != EXPECT_FILTER)
+            throw new AssertionError("preparation did not resume after ownership was released");
+    }
+
+    private static void combinedClassGrammar() throws Exception {
+        String misses = "x".repeat(2048);
+        int cases = 0;
+        // Exercise the product of class openings, set operators, and escapes.
+        // In Java these operators are literals (apart from intersection), but
+        // Rust can subtract otherwise valid Java candidates from the class.
+        for (String prefix : new String[]{"", "^", "]", "^]", "\\]", "^\\]"}) {
+            for (String body : new String[]{"a~~a", "a||b", "a-z--c", "a&&b", "a\\-~~a"}) {
+                String regex = "[" + prefix + body + "]+";
+                if (RustRegex.compile(regex, 0) != null)
+                    throw new AssertionError("incompatible combined grammar passed the gate: " + regex);
+                Pattern p = Pattern.compile(regex), ref = reference(regex, 0);
+                for (int i = 0; i < 8; i++) p.matcher(misses).find();
+                // The ninth call used to reject 'a' for []a~~a]+.
+                for (String candidate : new String[]{"a", "b", "]", "~", "|", "-", "x"}) {
+                    String input = candidate.repeat(2048);
+                    compare(p, ref, input, 0, input.length(), false, true);
+                }
+                warm(p, misses);
+                if (FILTER.get(p) != null)
+                    throw new AssertionError("incompatible combined class accelerated: " + regex);
+                cases++;
+            }
+        }
+        // A leading literal ']' must not hide a nested Java class either.
+        for (String regex : new String[]{"[]a[b]]+", "[^]a[b]]+"}) {
+            Pattern p = Pattern.compile(regex), ref = reference(regex, 0);
+            warm(p, misses);
+            compare(p, ref, "a".repeat(2048), 0, 2048, false, true);
+            if (FILTER.get(p) != null) throw new AssertionError("nested class accelerated: " + regex);
+        }
+        // Only the first '^' can be negation. A later ']' can close the class,
+        // leaving operator-looking text outside it as ordinary literals.
+        for (String regex : new String[]{"[^^]a~~a]+", "[\\^]a~~a]+", "[]^a]+", "[^]^a]+"}) {
+            Pattern p = Pattern.compile(regex), ref = reference(regex, 0);
+            warm(p, misses);
+            String input = misses + "ba~~a] ^ ] a";
+            compare(p, ref, input, 0, input.length(), false, true);
+        }
+        System.out.println("Compared " + cases + " combined class grammars");
+    }
+
     private static void compare(Pattern p, Pattern ref, CharSequence input, int lo, int hi,
                                 boolean transparent, boolean anchoring) {
         Matcher a = p.matcher(input).region(lo, hi).useTransparentBounds(transparent).useAnchoringBounds(anchoring);
@@ -202,6 +291,9 @@ public class RustRegexTest {
     }
 
     public static void main(String[] args) throws Exception {
+        combinedClassGrammar();
+        interruptedLearning();
+        nonblockingPreparation();
         inputGates();
         edgeCases();
         String[] patterns = {

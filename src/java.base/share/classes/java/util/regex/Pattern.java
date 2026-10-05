@@ -27,6 +27,8 @@ package java.util.regex;
 
 import jdk.internal.util.regex.RustRegex;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 import java.util.Locale;
@@ -1009,13 +1011,27 @@ public final class Pattern
      */
     transient Node root;
 
+    static final int RUST_REGEX_MISS_THRESHOLD = 8;
     private transient volatile int rustRegexMisses;
     private transient volatile boolean rustRegexCompiled;
+    private transient volatile boolean rustRegexCompiling;
     private transient RustRegex rustRegex;
+
+    // Initialize ownership coordination only on the cold preparation path.
+    private static final class RustRegexCompilation {
+        static final VarHandle OWNER;
+        static {
+            try {
+                OWNER = MethodHandles.lookup().findVarHandle(Pattern.class, "rustRegexCompiling", boolean.class);
+            } catch (ReflectiveOperationException e) {
+                throw new ExceptionInInitializerError(e);
+            }
+        }
+    }
 
     // Matcher.search has already checked that input is an eligible String.
     void recordRustRegexMiss(CharSequence input) {
-        if (rustRegexMisses < 8 && flags == 0) recordLatin1RustRegexMiss(input);
+        if (rustRegexMisses < RUST_REGEX_MISS_THRESHOLD && flags == 0) recordLatin1RustRegexMiss(input);
     }
 
     private void recordLatin1RustRegexMiss(CharSequence input) {
@@ -1028,9 +1044,12 @@ public final class Pattern
         rustRegexMisses = 0;
     }
 
+    int rustRegexMisses() {
+        return rustRegexMisses;
+    }
+
     RustRegex rustRegex(CharSequence input) {
-        // Amortize compilation over reused patterns with failed long searches.
-        if (rustRegexMisses < 8) return null;
+        // Matcher has already observed enough consecutive eligible misses.
         if (!rustRegexCompiled) return compileRustRegex(input);
         return rustRegex;
     }
@@ -1040,13 +1059,18 @@ public final class Pattern
         // A different Matcher may have learned the misses on Latin-1.
         // Do not pay for compilation on an input the filter cannot scan.
         if (!RustRegex.isLatin1((String)input)) return null;
-        synchronized (this) {
+        // A single Matcher prepares the filter. Other Matchers continue with
+        // Java rather than waiting for another thread's native compilation.
+        if (!RustRegexCompilation.OWNER.compareAndSet(this, false, true)) return null;
+        try {
             if (!rustRegexCompiled) {
                 rustRegex = RustRegex.compile(pattern, flags);
                 rustRegexCompiled = true;
             }
+            return rustRegex;
+        } finally {
+            RustRegexCompilation.OWNER.setRelease(this, false);
         }
-        return rustRegex;
     }
 
     /**

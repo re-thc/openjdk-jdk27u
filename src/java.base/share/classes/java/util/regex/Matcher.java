@@ -1771,7 +1771,10 @@ public final class Matcher implements MatchResult {
                 length <= RustRegex.MAX_LENGTH && text instanceof String &&
                 (parentPattern.root instanceof Pattern.Start || parentPattern.root instanceof Pattern.BnM) &&
                 RustRegex.ENABLED;
-        if (eligible) {
+        // Reuse this observation on the hit path, avoiding an extra volatile
+        // read or a write for Patterns that have only matched successfully.
+        int misses = eligible ? parentPattern.rustRegexMisses() : 0;
+        if (misses >= Pattern.RUST_REGEX_MISS_THRESHOLD) {
             filter = parentPattern.rustRegex(text);
             if (filter != null && !filter.mayMatch((String)text, from, length)) {
                 // Start and BnM report hitEnd on every exhausted search.
@@ -1783,9 +1786,9 @@ public final class Matcher implements MatchResult {
         if (!result) {
             this.first = -1;
             if (eligible) parentPattern.recordRustRegexMiss(text);
-        } else if (filter != null) {
-            // Adapt when a formerly unsuccessful workload starts matching.
-            // Keep the compiled DFA, but wait for eight more misses to probe it.
+        } else if (misses != 0) {
+            // Successful searches also interrupt learning before compilation.
+            // Keep a cached DFA, but wait for eight consecutive misses to probe.
             parentPattern.recordRustRegexHit();
         }
         this.oldLast = this.last;

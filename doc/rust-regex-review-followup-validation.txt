@@ -1,0 +1,278 @@
+Regex review follow-up validation — 2026-10-05 UTC
+Scope: final working-tree Java/Rust sources over 668e26020e06c8ff82720f99a768bcf9ec2e0a5f.
+Default-on / opt-out behavior is retained. Standalone execution is distinct from jtreg.
+Build recovery ran generated javac commands directly because nested make/Java helpers exceeded this worker’s process/thread quota. The normal JDK target subsequently completed.
+
+## Completed x86 JDK build
+Note: Command line contains non-control variables:
+* ENABLE_JAVAC_SERVER=false
+Make sure it is not mistyped, and that you intend to override this variable.
+'make help' will list known control variables.
+
+Using exact match for CONF=cloud (other matches are possible)
+Note: Command line contains non-control variables:
+* ENABLE_JAVAC_SERVER=false
+Make sure it is not mistyped, and that you intend to override this variable.
+'make help' will list known control variables.
+
+Building target 'jdk' in configuration 'cloud'
+Finished building target 'jdk' in configuration 'cloud'
+
+## Completed AArch64 adapter/HotSpot build
+   Compiling jdk-rust-regex v0.1.0 (/workspace/openjdk-jdk27u/src/hotspot/share/runtime/rustregex)
+    Finished `release` profile [optimized] target(s) in 0.91s
+Using exact match for CONF=cloud-arm (other matches are possible)
+Building target 'hotspot' in configuration 'cloud-arm'
+Finished building target 'hotspot' in configuration 'cloud-arm'
+
+## Rust reproduction commands (from src/hotspot/share/runtime/rustregex)
+source /workspace/toolchains/activate.sh
+CARGO_BUILD_JOBS=1 cargo test --frozen --release --target-dir /tmp/regex-final-rust -- --test-threads=1
+cargo fmt --check
+CARGO_BUILD_JOBS=1 cargo clippy --frozen --all-targets --target-dir /tmp/regex-final-rust -- -D warnings
+
+## Native optimized Rust tests
+   Compiling jdk-rust-regex v0.1.0 (/workspace/openjdk-jdk27u/src/hotspot/share/runtime/rustregex)
+    Finished `release` profile [optimized] target(s) in 1.30s
+     Running unittests adapter.rs (/tmp/regex-final-rust/release/deps/jdk_rust_regex-bcdbf893f8c8ff2f)
+
+running 8 tests
+test tests::all_latin1_bytes_and_dot_superset ... ok
+test tests::compile_limits_and_empty_matches ... ok
+test tests::concurrent_budget_admission_is_bounded ... ok
+test tests::ffi_budget_exhaustion_fails_open ... ok
+test tests::ffi_panics_are_contained ... ok
+test tests::parsed_nfa_matches_reference ... ok
+test tests::reject_and_fail_open ... ok
+test tests::retained_filters_exhaust_and_restore_budget ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+## Optimized AArch64 Rust tests and QEMU command
+   Compiling jdk-rust-regex v0.1.0 (/workspace/openjdk-jdk27u/src/hotspot/share/runtime/rustregex)
+    Finished `release` profile [optimized] target(s) in 1.68s
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib /tmp/regex-final-rust/aarch64-unknown-linux-gnu/release/deps/jdk_rust_regex-86763bf978dafcf2 --test-threads=1
+
+running 8 tests
+test tests::all_latin1_bytes_and_dot_superset ... ok
+test tests::compile_limits_and_empty_matches ... ok
+test tests::concurrent_budget_admission_is_bounded ... ok
+test tests::ffi_budget_exhaustion_fails_open ... ok
+test tests::ffi_panics_are_contained ... ok
+test tests::parsed_nfa_matches_reference ... ok
+test tests::reject_and_fail_open ... ok
+test tests::retained_filters_exhaust_and_restore_budget ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+
+
+## Clippy
+    Checking jdk-rust-regex v0.1.0 (/workspace/openjdk-jdk27u/src/hotspot/share/runtime/rustregex)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.38s
+
+## Eight standalone differential commands
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED --add-exports=java.base/jdk.internal.util.regex=ALL-UNNAMED -cp /tmp/regex-followup-tests RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED --add-exports=java.base/jdk.internal.util.regex=ALL-UNNAMED -XX:-UseRustRegex -cp /tmp/regex-followup-tests RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED --add-exports=java.base/jdk.internal.util.regex=ALL-UNNAMED -XX:+UseRustRegex -cp /tmp/regex-followup-tests RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED --add-exports=java.base/jdk.internal.util.regex=ALL-UNNAMED -XX:+UseRustRegex -XX:-UseRustRegexIntrinsics -cp /tmp/regex-followup-tests RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED --add-exports=java.base/jdk.internal.util.regex=ALL-UNNAMED -XX:+UseRustRegex -Xint -cp /tmp/regex-followup-tests RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED --add-exports=java.base/jdk.internal.util.regex=ALL-UNNAMED -XX:+UseRustRegex -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -Xbatch -cp /tmp/regex-followup-tests RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED --add-exports=java.base/jdk.internal.util.regex=ALL-UNNAMED -XX:+UseRustRegex -XX:-TieredCompilation -XX:CICompilerCount=1 -Xbatch -cp /tmp/regex-followup-tests RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED --add-exports=java.base/jdk.internal.util.regex=ALL-UNNAMED -XX:+UseRustRegex -XX:-CompactStrings -cp /tmp/regex-followup-tests RustRegexTest
+
+## Final eight-mode differential output
+Running default
+Compared 30 combined class grammars
+Compared 5248 bound/state cases; Rust enabled=true
+
+Running off
+Compared 30 combined class grammars
+Compared 5248 bound/state cases; Rust enabled=false
+
+Running explicit-on
+Compared 30 combined class grammars
+Compared 5248 bound/state cases; Rust enabled=true
+
+Running JNI
+Compared 30 combined class grammars
+Compared 5248 bound/state cases; Rust enabled=true
+
+Running interpreter
+Compared 30 combined class grammars
+Compared 5248 bound/state cases; Rust enabled=true
+
+Running C1
+Compared 30 combined class grammars
+Compared 5248 bound/state cases; Rust enabled=true
+
+Running C2
+Compared 30 combined class grammars
+Compared 5248 bound/state cases; Rust enabled=true
+
+Running UTF16
+Compared 30 combined class grammars
+Compared 5248 bound/state cases; Rust enabled=true
+
+All eight regex differential modes passed
+
+## Final native-budget commands
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -Xint --add-opens=java.base/java.util.regex=ALL-UNNAMED --add-exports=java.base/jdk.internal.util.regex=ALL-UNNAMED -cp /tmp/regex-followup-tests RustRegexMemoryBudget
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -Xint --add-opens=java.base/java.util.regex=ALL-UNNAMED --add-exports=java.base/jdk.internal.util.regex=ALL-UNNAMED -XX:-UseRustRegexIntrinsics -cp /tmp/regex-followup-tests RustRegexMemoryBudget
+
+## Budget intrinsic output
+Budget exhausted with 3095 retained filters; Java fallback OK
+Native budget capacity restored after cleanup
+
+## Budget JNI output
+Budget exhausted with 3095 retained filters; Java fallback OK
+Native budget capacity restored after cleanup
+
+## Twenty x86 startup commands
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:CICompilerCount=1 --add-opens=java.base/java.util.regex=ALL-UNNAMED -Xint -XX:ReservedCodeCacheSize=64m -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:CICompilerCount=1 --add-opens=java.base/java.util.regex=ALL-UNNAMED -Xint -XX:ReservedCodeCacheSize=64m -XX:-UseRustRegex -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:CICompilerCount=1 --add-opens=java.base/java.util.regex=ALL-UNNAMED -Xint -XX:ReservedCodeCacheSize=64m -XX:+UseRustRegex -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:CICompilerCount=1 --add-opens=java.base/java.util.regex=ALL-UNNAMED -Xint -XX:ReservedCodeCacheSize=64m -XX:-UseRustRegexIntrinsics -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:CICompilerCount=1 --add-opens=java.base/java.util.regex=ALL-UNNAMED -Xint -XX:ReservedCodeCacheSize=256m -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:CICompilerCount=1 --add-opens=java.base/java.util.regex=ALL-UNNAMED -Xint -XX:ReservedCodeCacheSize=256m -XX:-UseRustRegex -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:CICompilerCount=1 --add-opens=java.base/java.util.regex=ALL-UNNAMED -Xint -XX:ReservedCodeCacheSize=256m -XX:+UseRustRegex -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:CICompilerCount=1 --add-opens=java.base/java.util.regex=ALL-UNNAMED -Xint -XX:ReservedCodeCacheSize=256m -XX:-UseRustRegexIntrinsics -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:CICompilerCount=1 --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:TieredStopAtLevel=1 -Xbatch -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining -XX:+PrintIntrinsics -cp /tmp/regex-final-tests 'RustRegexStartup$Search' 12000
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:CICompilerCount=1 --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:-TieredCompilation -Xbatch -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining -XX:+PrintIntrinsics -cp /tmp/regex-final-tests 'RustRegexStartup$Search' 12000
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:CICompilerCount=1 --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:-CompactStrings -Xint -XX:ReservedCodeCacheSize=64m -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:CICompilerCount=1 --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:-CompactStrings -Xint -XX:ReservedCodeCacheSize=64m -XX:-UseRustRegex -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:CICompilerCount=1 --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:-CompactStrings -Xint -XX:ReservedCodeCacheSize=64m -XX:+UseRustRegex -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:CICompilerCount=1 --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:-CompactStrings -Xint -XX:ReservedCodeCacheSize=64m -XX:-UseRustRegexIntrinsics -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:CICompilerCount=1 --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:-CompactStrings -Xint -XX:ReservedCodeCacheSize=256m -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:CICompilerCount=1 --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:-CompactStrings -Xint -XX:ReservedCodeCacheSize=256m -XX:-UseRustRegex -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:CICompilerCount=1 --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:-CompactStrings -Xint -XX:ReservedCodeCacheSize=256m -XX:+UseRustRegex -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:CICompilerCount=1 --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:-CompactStrings -Xint -XX:ReservedCodeCacheSize=256m -XX:-UseRustRegexIntrinsics -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:CICompilerCount=1 --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:-CompactStrings -XX:TieredStopAtLevel=1 -Xbatch -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining -XX:+PrintIntrinsics -cp /tmp/regex-final-tests 'RustRegexStartup$Search' 12000
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:CICompilerCount=1 --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:-CompactStrings -XX:-TieredCompilation -Xbatch -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining -XX:+PrintIntrinsics -cp /tmp/regex-final-tests 'RustRegexStartup$Search' 12000
+
+## Twenty x86 startup results
+64m-default-compact passed
+64m-off-compact passed
+64m-on-compact passed
+64m-JNI-compact passed
+256m-default-compact passed
+256m-off-compact passed
+256m-on-compact passed
+256m-JNI-compact passed
+C1-compact passed
+C2-compact passed
+64m-default-utf16 passed
+64m-off-utf16 passed
+64m-on-utf16 passed
+64m-JNI-utf16 passed
+256m-default-utf16 passed
+256m-off-utf16 passed
+256m-on-utf16 passed
+256m-JNI-utf16 passed
+C1-utf16 passed
+C2-utf16 passed
+
+## C1 inline evidence
+                              @ 194   java.util.regex.Pattern::rustRegexMisses (5 bytes)   inline
+                              @ 218   java.util.regex.Pattern::rustRegex (18 bytes)   inline
+                              @ 303   java.util.regex.Pattern::recordRustRegexMiss (22 bytes)   inline
+                              @ 194   java.util.regex.Pattern::rustRegexMisses (5 bytes)   inline
+                              @ 218   java.util.regex.Pattern::rustRegex (18 bytes)   inline
+                              @ 303   java.util.regex.Pattern::recordRustRegexMiss (22 bytes)   inline
+
+## Initialization gate runner
+import subprocess
+from pathlib import Path
+java='/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java'
+for mode in ['short','mutable','long']:
+    cmd=[java,'-XX:ActiveProcessorCount=1','-XX:+UseSerialGC','-XX:-UsePerfData','-Xrs',
+         '-Xint','-Xshare:off','-Xlog:class+init=info','-cp','/tmp/regex-final-tests',
+         'RustRegexInitialization$Search',mode]
+    with open(f'/tmp/regex-followup-init-{mode}.log','w') as log:
+        subprocess.run(cmd,stdout=log,stderr=subprocess.STDOUT,check=True)
+    output=Path(f'/tmp/regex-followup-init-{mode}.log').read_text()
+    assert ("Initializing 'jdk/internal/util/regex/RustRegex'" in output)==(mode=='long')
+    print(mode,'initialization gate passed',flush=True)
+
+## Initialization gate results
+short initialization gate passed
+mutable initialization gate passed
+long initialization gate passed
+
+## Ten ARM startup/search commands
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off --patch-module java.base=/workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-followup-arm-hs_err_%p.log -Xint -XX:ReservedCodeCacheSize=64m -Dtest.rust.regex.expected=true -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off --patch-module java.base=/workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-followup-arm-hs_err_%p.log -Xint -XX:ReservedCodeCacheSize=64m -XX:-UseRustRegex -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off --patch-module java.base=/workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-followup-arm-hs_err_%p.log -Xint -XX:ReservedCodeCacheSize=64m -XX:+UseRustRegex -Dtest.rust.regex.expected=true -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off --patch-module java.base=/workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-followup-arm-hs_err_%p.log -Xint -XX:ReservedCodeCacheSize=64m -XX:-UseRustRegexIntrinsics -Dtest.rust.regex.expected=true -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off --patch-module java.base=/workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-followup-arm-hs_err_%p.log -Xint -XX:ReservedCodeCacheSize=256m -Dtest.rust.regex.expected=true -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off --patch-module java.base=/workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-followup-arm-hs_err_%p.log -Xint -XX:ReservedCodeCacheSize=256m -XX:-UseRustRegex -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off --patch-module java.base=/workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-followup-arm-hs_err_%p.log -Xint -XX:ReservedCodeCacheSize=256m -XX:+UseRustRegex -Dtest.rust.regex.expected=true -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off --patch-module java.base=/workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-followup-arm-hs_err_%p.log -Xint -XX:ReservedCodeCacheSize=256m -XX:-UseRustRegexIntrinsics -Dtest.rust.regex.expected=true -cp /tmp/regex-final-tests 'RustRegexStartup$Search'
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off --patch-module java.base=/workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-followup-arm-hs_err_%p.log -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -Xbatch -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:+PrintIntrinsics -XX:+PrintInlining -cp /tmp/regex-final-tests 'RustRegexStartup$Search' 12000
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off --patch-module java.base=/workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-followup-arm-hs_err_%p.log -XX:-TieredCompilation -XX:CICompilerCount=1 -Xbatch -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:+PrintIntrinsics -XX:+PrintInlining -cp /tmp/regex-final-tests 'RustRegexStartup$Search' 12000
+
+## Ten ARM startup/search results
+Running 64m-default
+WARNING: module-info.class ignored in patch: /workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base
+Rust regex startup/search OK; native filter=true
+
+Running 64m-off
+WARNING: module-info.class ignored in patch: /workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base
+Rust regex startup/search OK; native filter=false
+
+Running 64m-explicit-on
+WARNING: module-info.class ignored in patch: /workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base
+Rust regex startup/search OK; native filter=true
+
+Running 64m-JNI
+WARNING: module-info.class ignored in patch: /workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base
+Rust regex startup/search OK; native filter=true
+
+Running 256m-default
+WARNING: module-info.class ignored in patch: /workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base
+Rust regex startup/search OK; native filter=true
+
+Running 256m-off
+WARNING: module-info.class ignored in patch: /workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base
+Rust regex startup/search OK; native filter=false
+
+Running 256m-explicit-on
+WARNING: module-info.class ignored in patch: /workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base
+Rust regex startup/search OK; native filter=true
+
+Running 256m-JNI
+WARNING: module-info.class ignored in patch: /workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base
+Rust regex startup/search OK; native filter=true
+
+Running C1
+C1 passed; native filter and compiler intrinsic confirmed
+Running C2
+C2 passed; native filter and compiler intrinsic confirmed
+
+## Fresh jtreg command
+JAVA_TOOL_OPTIONS='-XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1' /workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -Xint -jar /workspace/toolchains/jtreg/lib/jtreg.jar -jdk:/workspace/openjdk-jdk27u/build/cloud/jdk -w:/tmp/regex-followup-jtreg/work -r:/tmp/regex-followup-jtreg/report -conc:1 -timeoutFactor:4 -va -vmoption:-XX:ActiveProcessorCount=1 -vmoption:-XX:+UseSerialGC -vmoption:-XX:-UsePerfData -vmoption:-Xrs -vmoption:-XX:TieredStopAtLevel=1 -vmoption:-XX:CICompilerCount=1 test/jdk/java/util/regex
+
+## Fresh jtreg outcome: version-probe failure; ZERO tests run
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -Xint -jar /workspace/toolchains/jtreg/lib/jtreg.jar -jdk:/workspace/openjdk-jdk27u/build/cloud/jdk -w:/tmp/regex-followup-jtreg/work -r:/tmp/regex-followup-jtreg/report -conc:1 -timeoutFactor:4 -va -vmoption:-XX:ActiveProcessorCount=1 -vmoption:-XX:+UseSerialGC -vmoption:-XX:-UsePerfData -vmoption:-Xrs -vmoption:-XX:TieredStopAtLevel=1 -vmoption:-XX:CICompilerCount=1 test/jdk/java/util/regex
+Picked up JAVA_TOOL_OPTIONS: -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1
+Error getting java.specification.version for /workspace/openjdk-jdk27u/build/cloud/jdk: exit code 1
+Picked up JAVA_TOOL_OPTIONS: -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1
+[0.177s][warning][os,thread] Failed to start thread "Unknown thread" - pthread_create failed (EAGAIN) for attributes: stacksize: 1024k, guardsize: 0k, detached.
+Error occurred during initialization of VM
+java.lang.OutOfMemoryError: unable to create native thread: possibly out of memory or process/resource limits reached
+Error: cannot determine version for JDK: /workspace/openjdk-jdk27u/build/cloud/jdk
+
+## Live release check: python3 make/scripts/update-rust-regex.py --check
+Bundled regex 1.13.1; latest stable 1.13.1 (live index)
+
+## Vendor checksum check
+All 309 vendored file checksums match Cargo manifests.
+
+## Source SHA-256
+67f5a30afb2cbf3972040c99b23f049d0250e6d4f57a8918aa87f97df0e42a4d  src/java.base/share/classes/java/util/regex/Pattern.java
+0b3da6aaa195c537bdda04f709d9c7167e1c5c554724e86f0a36af2fd79e4344  src/java.base/share/classes/java/util/regex/Matcher.java
+4c667fd89827c6e6ff25b56fc79a5b0533d111734cf9b608bfe65fcf98630619  src/java.base/share/classes/jdk/internal/util/regex/RustRegex.java
+7db8fa4db64138107da23b754ac38028085d1bc53bd27114899c3218568d0fa9  src/hotspot/share/runtime/rustregex/adapter.rs
+60ef85c1242bbf9e57f5df8328384fea5905609112b9ea9dbe6dfe53af7d42d8  test/jdk/java/util/regex/RustRegexTest.java
+cfeb1405ecd5c831fe63eff0efaf8814d0d431ca2fd0c59c505d7aca86c1ffc7  test/jdk/java/util/regex/RustRegexMemoryBudget.java
+0ff8ec1fb10914eea9e0e4cac7f648671db068c6d866b4ff0f57266f45ae8770  test/micro/org/openjdk/bench/java/util/regex/RustRegexLifetime.java
