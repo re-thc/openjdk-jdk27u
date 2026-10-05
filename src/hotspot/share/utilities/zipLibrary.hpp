@@ -51,6 +51,11 @@ class ZipLibrary : AllStatic {
   static const char* init_params(size_t block_size, size_t* needed_out_size, size_t* needed_tmp_size, int level);
   static size_t compress(char* in, size_t in_size, char* out, size_t out_size, char* tmp, size_t tmp_size, int level, char* buf, const char** pmsg);
   static void* handle();
+  static jlong complete(JNIEnv* env, jboolean inflate, jobject receiver, jlong stream,
+                        jint input_len, jint output_len, jint params, jint status);
+  static jlong process(JNIEnv* env, jboolean inflate, jobject receiver, jlong stream,
+                       jlong input, jint input_len, jlong output, jint output_len,
+                       jint flush, jint params);
 };
 
 #endif // SHARE_UTILITIES_ZIPLIBRARY_HPP

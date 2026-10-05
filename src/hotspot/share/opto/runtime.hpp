@@ -193,6 +193,7 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _updateBytesCRC32_Type;
   static const TypeFunc* _updateBytesCRC32C_Type;
   static const TypeFunc* _updateBytesAdler32_Type;
+  static const TypeFunc* _zip_process_Type;
   static const TypeFunc* _osr_end_Type;
   static const TypeFunc* _register_finalizer_Type;
   static const TypeFunc* _vthread_transition_Type;
@@ -210,6 +211,10 @@ class OptoRuntime : public AllStatic {
   // =================================
 
   // Allocate storage for a Java instance.
+  static jlong zip_process_C(jint inflate, oopDesc* receiver, jlong stream,
+      oopDesc* input, jlong input_offset, jint input_len,
+      oopDesc* output, jlong output_offset, jint output_len, jint flush, jint params,
+      JavaThread* current);
   static void new_instance_C(Klass* instance_klass, JavaThread* current);
 
   // Allocate storage for a objArray or typeArray
@@ -289,6 +294,7 @@ private:
   static address multianewarray5_Java()                  { return _multianewarray5_Java; }
   static address multianewarrayN_Java()                  { return _multianewarrayN_Java; }
   static address complete_monitor_locking_Java()         { return _complete_monitor_locking_Java; }
+  static address zip_process_Java() { return _zip_process_Java; }
   static address monitor_notify_Java()                   { return _monitor_notify_Java; }
   static address monitor_notifyAll_Java()                { return _monitor_notifyAll_Java; }
 
@@ -706,6 +712,7 @@ private:
   /**
    *  int updateBytesAdler32(int adler, bytes* b, int off, int len)
    */
+  static const TypeFunc* zip_process_Type() { return _zip_process_Type; }
   static inline const TypeFunc* updateBytesAdler32_Type() {
     assert(_updateBytesAdler32_Type != nullptr, "should be initialized");
     return _updateBytesAdler32_Type;

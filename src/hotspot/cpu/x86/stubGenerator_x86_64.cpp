@@ -4766,6 +4766,10 @@ void StubGenerator::generate_initial_stubs() {
   StubRoutines::x86::_double_sign_mask      = generate_fp_mask(StubId::stubgen_double_sign_mask_id, 0x7FFFFFFFFFFFFFFF);
   StubRoutines::x86::_double_sign_flip      = generate_fp_mask(StubId::stubgen_double_sign_flip_id, 0x8000000000000000);
 
+  if (UseAdler32Intrinsics) {
+    StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
+  }
+
   if (UseCRC32Intrinsics) {
     StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
   }
@@ -4891,9 +4895,6 @@ void StubGenerator::generate_compiler_stubs() {
     generate_string_indexof(StubRoutines::_string_indexof_array);
   }
 
-  if (UseAdler32Intrinsics) {
-     StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
-  }
 
   if (UsePoly1305Intrinsics) {
     StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();

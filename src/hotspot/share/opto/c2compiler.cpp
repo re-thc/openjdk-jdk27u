@@ -824,6 +824,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateByteBufferCRC32:
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
+  case vmIntrinsics::_zipProcess:
   case vmIntrinsics::_updateBytesAdler32:
   case vmIntrinsics::_updateByteBufferAdler32:
   case vmIntrinsics::_profileBoolean:

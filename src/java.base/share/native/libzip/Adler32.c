@@ -30,7 +30,7 @@
 #include "jni.h"
 #include "jni_util.h"
 #include "jlong.h"
-#include <zlib.h>
+#include "zip_zlib_backend.h"
 
 #include "java_util_zip_Adler32.h"
 

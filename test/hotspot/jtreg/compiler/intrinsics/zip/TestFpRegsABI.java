@@ -39,6 +39,7 @@
 package compiler.intrinsics.zip;
 
 import java.util.zip.Checksum;
+import java.util.zip.Adler32;
 import java.util.zip.CRC32;
 import java.util.zip.CRC32C;
 
@@ -154,8 +155,10 @@ public class TestFpRegsABI {
     }
 
     public static void main(final String[] argv) {
+        new TestIntrinsic(new Adler32()).run(buf, 0x00000000e4c9fe10L);
         new TestIntrinsic(new CRC32()).run(buf, 0x00000000b70b4c26L);
         new TestIntrinsic(new CRC32C()).run(buf, 0x000000002cdf6e8fL);
+        new RegressionTest(new Adler32()).run(buf, 0x00000000e4c9fe10L);
         new RegressionTest(new CRC32()).run(buf, 0x00000000b70b4c26L);
         new RegressionTest(new CRC32C()).run(buf, 0x000000002cdf6e8fL);
     }

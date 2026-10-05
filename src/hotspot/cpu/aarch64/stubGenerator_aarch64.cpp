@@ -12588,6 +12588,10 @@ class StubGenerator: public StubCodeGenerator {
       UnsafeMemoryAccess::create_table(8 + 4); // 8 for copyMemory; 4 for setMemory
     }
 
+    if (UseAdler32Intrinsics) {
+      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
+    }
+
     if (UseCRC32Intrinsics) {
       StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
     }
@@ -12809,10 +12813,6 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
     }
 
-    // generate Adler32 intrinsics code
-    if (UseAdler32Intrinsics) {
-      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
-    }
 
 #endif // COMPILER2
   }

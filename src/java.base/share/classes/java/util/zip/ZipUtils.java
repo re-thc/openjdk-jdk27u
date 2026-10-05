@@ -54,6 +54,20 @@ class ZipUtils {
     // static final ByteBuffer defaultBuf = ByteBuffer.allocateDirect(0);
     static final ByteBuffer defaultBuf = ByteBuffer.allocate(0);
 
+    static final boolean USE_ZIP_INTRINSICS = initZipIntrinsics();
+
+    private static boolean initZipIntrinsics() {
+        loadLibrary();
+        return useZipIntrinsics();
+    }
+
+    private static native boolean useZipIntrinsics();
+
+    @jdk.internal.vm.annotation.IntrinsicCandidate
+    static native long process(boolean inflate, Object receiver, long stream,
+        byte[] input, long inputOffset, int inputLen,
+        byte[] output, long outputOffset, int outputLen, int flush, int params);
+
     /**
      * Converts Windows time (in microseconds, UTC/GMT) time to FileTime.
      */

@@ -229,6 +229,9 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
 #endif
+#if defined(AMD64) || defined(AARCH64)
+  case vmIntrinsics::_zipProcess:
+#endif
   case vmIntrinsics::_vectorizedMismatch:
   case vmIntrinsics::_compareAndSetInt:
   case vmIntrinsics::_compareAndSetReference:
@@ -242,6 +245,12 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_clone:
 #endif
     break;
+#if defined(AMD64) || defined(AARCH64)
+  case vmIntrinsics::_updateBytesAdler32:
+  case vmIntrinsics::_updateByteBufferAdler32:
+    if (!UseZlibNG) return false;
+    break;
+#endif
   case vmIntrinsics::_blackhole:
     break;
   default:

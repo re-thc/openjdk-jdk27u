@@ -924,7 +924,9 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
 }
 
 void LIRGenerator::do_update_CRC32(Intrinsic* x) {
-  assert(UseCRC32Intrinsics, "why are we here?");
+  bool adler = x->id() == vmIntrinsics::_updateBytesAdler32 ||
+               x->id() == vmIntrinsics::_updateByteBufferAdler32;
+  assert(adler ? UseAdler32Intrinsics : UseCRC32Intrinsics, "why are we here?");
   // Make all state_for calls early since they can emit code
   LIR_Opr result = rlock_result(x);
   switch (x->id()) {
@@ -938,9 +940,11 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
       __ update_crc32(crc.result(), val.result(), result);
       break;
     }
+    case vmIntrinsics::_updateBytesAdler32:
+    case vmIntrinsics::_updateByteBufferAdler32:
     case vmIntrinsics::_updateBytesCRC32:
     case vmIntrinsics::_updateByteBufferCRC32: {
-      bool is_updateBytes = (x->id() == vmIntrinsics::_updateBytesCRC32);
+      bool is_updateBytes = (x->id() == vmIntrinsics::_updateBytesCRC32 || x->id() == vmIntrinsics::_updateBytesAdler32);
 
       LIRItem crc(x->argument_at(0), this);
       LIRItem buf(x->argument_at(1), this);
@@ -988,7 +992,7 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
       __ move(addr, cc->at(1));
       len.load_item_force(cc->at(2));
 
-      __ call_runtime_leaf(StubRoutines::updateBytesCRC32(), getThreadTemp(), result_reg, cc->args());
+      __ call_runtime_leaf(adler ? StubRoutines::updateBytesAdler32() : StubRoutines::updateBytesCRC32(), getThreadTemp(), result_reg, cc->args());
       __ move(result_reg, result);
 
       break;

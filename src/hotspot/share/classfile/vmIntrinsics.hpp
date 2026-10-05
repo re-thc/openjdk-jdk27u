@@ -620,6 +620,11 @@ class methodHandle;
    do_name(dilithiumDecomposePoly_name,                    "implDilithiumDecomposePoly")                                \
                                                                                                                         \
   /* support for java.util.zip */                                                                                       \
+  do_class(java_util_zip_ZipUtils, "java/util/zip/ZipUtils")                                                           \
+  do_intrinsic(_zipProcess, java_util_zip_ZipUtils, zip_process_name, zip_process_signature, F_SN)                     \
+   do_name(zip_process_name, "process")                                                                               \
+   do_signature(zip_process_signature, "(ZLjava/lang/Object;J[BJI[BJIII)J")                                              \
+                                                                                                                     \
   do_class(java_util_zip_CRC32,           "java/util/zip/CRC32")                                                        \
   do_intrinsic(_updateCRC32,               java_util_zip_CRC32,   update_name, int2_int_signature,               F_SN)  \
    do_name(     update_name,                                      "update")                                             \

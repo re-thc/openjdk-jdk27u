@@ -36,7 +36,7 @@
 #include "jni.h"
 #include "jvm.h"
 #include "jni_util.h"
-#include <zlib.h>
+#include "zip_zlib_backend.h"
 #include "java_util_zip_Inflater.h"
 
 #define ThrowDataFormatException(env, msg) \
@@ -181,6 +181,17 @@ static jlong checkInflateStatus(JNIEnv *env, jobject this, jlong addr,
         break;
     }
     return ((jlong)inputUsed) | (((jlong)outputUsed) << 31) | (((jlong)finished) << 62) | (((jlong)needDict) << 63);
+}
+
+JNIEXPORT jint JNICALL
+ZIP_Inflate(jlong addr, jlong input, jint inputLen, jlong output, jint outputLen) {
+    return doInflate(addr, jlong_to_ptr(input), inputLen, jlong_to_ptr(output), outputLen);
+}
+
+JNIEXPORT jlong JNICALL
+ZIP_FinishInflate(JNIEnv* env, jobject receiver, jlong addr,
+                  jint inputLen, jint outputLen, jint status) {
+    return checkInflateStatus(env, receiver, addr, inputLen, outputLen, status);
 }
 
 JNIEXPORT jlong JNICALL

@@ -227,7 +227,9 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
  *   int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
  */
 address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
-  assert(UseCRC32Intrinsics, "this intrinsic is not supported");
+  bool adler = kind == Interpreter::java_util_zip_Adler32_updateBytes ||
+               kind == Interpreter::java_util_zip_Adler32_updateByteBuffer;
+  assert(adler ? UseAdler32Intrinsics : UseCRC32Intrinsics, "this intrinsic is not supported");
   address entry = __ pc();
 
   // rbx,: Method*
@@ -247,7 +249,8 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
 
   // Arguments are reversed on java expression stack
   // Calculate address of start element
-  if (kind == Interpreter::java_util_zip_CRC32_updateByteBuffer) {
+  if ((kind == Interpreter::java_util_zip_CRC32_updateByteBuffer ||
+      kind == Interpreter::java_util_zip_Adler32_updateByteBuffer)) {
     __ movptr(buf, Address(rsp, 3*wordSize)); // long buf
     __ movl2ptr(off, Address(rsp, 2*wordSize)); // offset
     __ addq(buf, off); // + offset
@@ -262,7 +265,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
   // Can now load 'len' since we're finished with 'off'
   __ movl(len, Address(rsp, wordSize)); // Length
 
-  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, StubRoutines::updateBytesCRC32()), crc, buf, len);
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, (adler ? StubRoutines::updateBytesAdler32() : StubRoutines::updateBytesCRC32())), crc, buf, len);
   // result in rax
 
   // _areturn

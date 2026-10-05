@@ -39,7 +39,7 @@
                                       do_arch_entry,                    \
                                       do_arch_entry_init,               \
                                       do_arch_entry_array)              \
-  do_arch_blob(initial, PRODUCT_ONLY(20000) NOT_PRODUCT(21000) WINDOWS_ONLY(+1000))                      \
+  do_arch_blob(initial, PRODUCT_ONLY(24000) NOT_PRODUCT(25000) WINDOWS_ONLY(+1000))                      \
   do_stub(initial, verify_mxcsr)                                        \
   do_arch_entry(x86, initial, verify_mxcsr, verify_mxcsr_entry,         \
                 verify_mxcsr_entry)                                     \

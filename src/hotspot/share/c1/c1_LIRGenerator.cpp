@@ -2898,9 +2898,18 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     do_Reference_get0(x);
     break;
 
+#if defined(AMD64) || defined(AARCH64)
+  case vmIntrinsics::_zipProcess:
+    do_zip_process(x);
+    break;
+#endif
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
+#if defined(AMD64) || defined(AARCH64)
+  case vmIntrinsics::_updateBytesAdler32:
+  case vmIntrinsics::_updateByteBufferAdler32:
+#endif
     do_update_CRC32(x);
     break;
 
@@ -3462,3 +3471,27 @@ LIR_Opr LIRGenerator::mask_boolean(LIR_Opr array, LIR_Opr value, CodeEmitInfo*& 
   value = value_fixed;
   return value;
 }
+
+#if defined(AMD64) || defined(AARCH64)
+void LIRGenerator::do_zip_process(Intrinsic* x) {
+  CodeEmitInfo* info = state_for(x, x->state());
+  frame_map()->update_reserved_argument_area_size(x->number_of_arguments() * BytesPerLong);
+  for (int i = 0; i < x->number_of_arguments(); i++) {
+    LIRItem item(x->argument_at(i), this);
+    item.load_item();
+    LIR_Address* slot = new LIR_Address(FrameMap::stack_pointer(),
+        i * BytesPerLong, as_BasicType(item.value()->type()));
+    // The block carries full oops, not compressed heap-field references.
+    __ move_wide(item.result(), slot);
+  }
+  LIR_Opr block = new_pointer_register();
+  __ leal(LIR_OprFact::address(new LIR_Address(FrameMap::stack_pointer(), 0, T_ADDRESS)), block);
+  BasicTypeList signature;
+  signature.append(T_ADDRESS);
+  LIR_OprList args;
+  args.append(block);
+  LIR_Opr result = call_runtime(&signature, &args,
+      Runtime1::entry_for(StubId::c1_zip_process_id), x->type(), info);
+  __ move(result, rlock_result(x));
+}
+#endif

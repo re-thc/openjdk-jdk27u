@@ -60,6 +60,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/output.hpp"
 #include "opto/runtime.hpp"
+#include "runtime/zipRuntime.hpp"
 #include "opto/subnode.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomicAccess.hpp"
@@ -170,6 +171,7 @@ bool OptoRuntime::generate(ciEnv* env) {
 
 // #undef gen
 
+const TypeFunc* OptoRuntime::_zip_process_Type = nullptr;
 const TypeFunc* OptoRuntime::_new_instance_Type                   = nullptr;
 const TypeFunc* OptoRuntime::_new_array_Type                      = nullptr;
 const TypeFunc* OptoRuntime::_multianewarray2_Type                = nullptr;
@@ -573,6 +575,28 @@ JRT_END
 JRT_ENTRY(void, OptoRuntime::vthread_end_transition_C(oopDesc* vt, jboolean is_mount, JavaThread* current))
   MountUnmountDisabler::end_transition(current, vt, is_mount, false /*is_thread_start*/);
 JRT_END
+
+
+JRT_ENTRY(jlong, OptoRuntime::zip_process_C(jint inflate, oopDesc* receiver, jlong stream,
+    oopDesc* input, jlong input_offset, jint input_len,
+    oopDesc* output, jlong output_offset, jint output_len, jint flush, jint params,
+    JavaThread* current))
+  return ZipRuntime::process(inflate, receiver, stream, input, input_offset, input_len,
+      output, output_offset, output_len, flush, params, current);
+JRT_END
+
+static const TypeFunc* make_zip_process_Type() {
+  const Type* args[] = {TypeInt::BOOL, TypeInstPtr::NOTNULL, TypeLong::LONG, Type::HALF,
+      TypeInstPtr::BOTTOM, TypeLong::LONG, Type::HALF, TypeInt::INT,
+      TypeInstPtr::BOTTOM, TypeLong::LONG, Type::HALF, TypeInt::INT, TypeInt::INT, TypeInt::INT};
+  const Type** fields = TypeTuple::fields(14);
+  for (int i = 0; i < 14; i++) fields[TypeFunc::Parms + i] = args[i];
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 14, fields);
+  fields = TypeTuple::fields(2);
+  fields[TypeFunc::Parms] = TypeLong::LONG;
+  fields[TypeFunc::Parms + 1] = Type::HALF;
+  return TypeFunc::make(domain, TypeTuple::make(TypeFunc::Parms + 2, fields));
+}
 
 static const TypeFunc* make_new_instance_Type() {
   // create input type (domain)
@@ -2285,6 +2309,7 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
 }
 
 void OptoRuntime::initialize_types() {
+  _zip_process_Type                   = make_zip_process_Type();
   _new_instance_Type                  = make_new_instance_Type();
   _new_array_Type                     = make_new_array_Type();
   _multianewarray2_Type               = multianewarray_Type(2);

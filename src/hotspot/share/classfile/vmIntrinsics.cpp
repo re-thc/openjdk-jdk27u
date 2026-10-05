@@ -534,6 +534,9 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_vectorizedMismatch:
     if (!UseVectorizedMismatchIntrinsic) return true;
     break;
+  case vmIntrinsics::_zipProcess:
+    if (!UseZlibNG || !UseZipIntrinsics) return true;
+    break;
   case vmIntrinsics::_updateBytesAdler32:
   case vmIntrinsics::_updateByteBufferAdler32:
     if (!UseAdler32Intrinsics) return true;
