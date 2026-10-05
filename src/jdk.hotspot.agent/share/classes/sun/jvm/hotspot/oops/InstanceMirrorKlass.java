@@ -60,7 +60,7 @@ public class InstanceMirrorKlass extends InstanceKlass {
       Mark mark = o.getMark();
       if (mark.isExpanded()) {
         // Needs extra 4 bytes for identity hash-code (and align-up to whole word).
-        s += VM.getVM().getAddressSize();
+        s = Oop.alignObjectSize(s + VM.getVM().getAddressSize());
       }
     }
     return s;
