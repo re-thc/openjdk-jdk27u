@@ -132,9 +132,26 @@ jobs:
             libasound2-dev${{ steps.arch.outputs.suffix }} \
             libcups2-dev${{ steps.arch.outputs.suffix }} \
             libfontconfig1-dev${{ steps.arch.outputs.suffix }} \
-            mold ccache \
+            ccache \
             ${{ inputs.apt-extra-packages }}
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
+
+      - name: 'Install mold 3.0.0'
+        run: |
+          # Ubuntu's older mold cannot read GCC 16's AS_NEEDED linker script.
+          case "$(uname -m)" in
+            x86_64) checksum=6c90d4a474c7c0409dfb575be03a5345878ac14fdba18de8b40fa58c60121189 ;;
+            aarch64) checksum=52c759d3689babaea4c42af2f31062a74ab83e17ffb5a8090232534c67b70577 ;;
+            *) exit 1 ;;
+          esac
+          archive="$RUNNER_TEMP/mold.tar.gz"
+          curl --fail --location --retry 3 \
+            "https://github.com/rui314/mold/releases/download/v3.0.0/mold-3.0.0-$(uname -m)-linux.tar.gz" \
+            --output "$archive"
+          echo "$checksum  $archive" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/mold"
+          tar --extract --file "$archive" --strip-components=1 --directory "$RUNNER_TEMP/mold"
+          echo "$RUNNER_TEMP/mold/bin" >> "$GITHUB_PATH"
 
       - name: 'Verify GCC version'
         run: |

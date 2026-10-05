@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
+import jdk.test.whitebox.gc.GC;
 
 public class RunUtil {
 
@@ -61,6 +62,10 @@ public class RunUtil {
      */
     private static void runTest(String main, boolean clearGcOpts, String... testOpts)
                 throws Throwable {
+        if (Arrays.asList(testOpts).contains("-XX:+UseParallelGC") && !GC.Parallel.isSupported()) {
+            System.out.println("Skipping Parallel GC: not included in this build");
+            return;
+        }
         List<String> opts = new ArrayList<>();
         opts.add(JDKToolFinder.getJDKTool("java"));
         opts.addAll(Arrays.asList(Utils.getTestJavaOpts()));

@@ -47,6 +47,7 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
 import jdk.test.whitebox.code.Compiler;
+import jdk.test.whitebox.gc.GC;
 import jdk.test.whitebox.WhiteBox;
 
 public class CommandLineFlagCombo {
@@ -120,6 +121,11 @@ public class CommandLineFlagCombo {
     }
 
     private static boolean skipTestCase(String testEntry) throws Exception {
+        if (testEntry.equals("-XX:+UseParallelGC") && !GC.Parallel.isSupported()) {
+            System.out.println("Parallel GC is not included in this build");
+            return true;
+        }
+
         if (Platform.is32bit())
         {
             if (testEntry.equals("-XX:+UseCompressedOops") ||
