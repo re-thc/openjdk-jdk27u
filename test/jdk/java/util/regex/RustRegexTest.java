@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary Native primary matching, captures, fallback and Java API state
- * @modules java.base/java.util.regex:open java.base/jdk.internal.util.regex
+ * @modules java.base/java.util.regex:open java.base/jdk.internal.util.regex:open
  * @run main/othervm RustRegexTest
  * @run main/othervm -XX:-UseRustRegex RustRegexTest
  * @run main/othervm -XX:+UseRustRegex RustRegexTest
@@ -45,7 +45,7 @@ import java.util.regex.*;
 import jdk.internal.util.regex.RustRegex;
 
 public class RustRegexTest {
-    private static final Field NATIVE, ROOT, MATCH_ROOT;
+    private static final Field NATIVE, ROOT, MATCH_ROOT, HANDLE;
     private static final Method JAVA;
     private static int comparisons;
     static {
@@ -53,8 +53,9 @@ public class RustRegexTest {
             NATIVE = Pattern.class.getDeclaredField("rustRegex");
             ROOT = Pattern.class.getDeclaredField("root");
             MATCH_ROOT = Pattern.class.getDeclaredField("matchRoot");
+            HANDLE = RustRegex.class.getDeclaredField("handle");
             JAVA = Pattern.class.getDeclaredMethod("ensureJava");
-            for (Field f : new Field[]{NATIVE, ROOT, MATCH_ROOT}) f.setAccessible(true);
+            for (Field f : new Field[]{NATIVE, ROOT, MATCH_ROOT, HANDLE}) f.setAccessible(true);
             JAVA.setAccessible(true);
         } catch (ReflectiveOperationException e) { throw new ExceptionInInitializerError(e); }
     }
@@ -160,7 +161,70 @@ public class RustRegexTest {
         if (a.hitEnd()!=b.hitEnd() || a.requireEnd()!=b.requireEnd()) throw new AssertionError("saved end state");
     }
 
+    private static void shortAndEarlyMatches() throws Exception {
+        if (RustRegex.ENABLED) {
+            Pattern p=Pattern.compile("(?<prefix>ready)(?<digits>[0-9]+)");
+            Object owner=NATIVE.get(p);
+            nativeOnly(p);
+            if (HANDLE.getLong(owner)!=0) throw new AssertionError("short plan allocated native storage");
+            if (!p.matcher("ready123").matches() || HANDLE.getLong(owner)!=0)
+                throw new AssertionError("short first match compiled a Rust engine");
+            if (p.matcher("x".repeat(4096)).find() || HANDLE.getLong(owner)==0)
+                throw new AssertionError("first long search did not select Rust immediately");
+            nativeOnly(p);
+        }
+        // Combined grammar, capture and region cases exercise the short-search
+        // specialization and its handoff to Rust without observing end flags.
+        String[] expressions = {"error[0-9]+", "error([0-9]+)", "(error)[0-9]+",
+                "(?<word>error)(?<code>[0-9]+)", "[0-9]+", "([0-9]+)", "\\d+",
+                "(?<number>\\d+)", "12[0-9]+", "(12)([0-9]+)", "e\\d+"};
+        List<String> inputs = new ArrayList<>(List.of("", "error", "error0", "error123x",
+                "errorx error42", "eerror3", "errorerror7", "12", "12345", "xerror12error34",
+                "\u00fferror9", "error"+"1".repeat(257), "x".repeat(257)+"error123",
+                "error"+"9".repeat(4096), "1".repeat(4096)));
+        Random random = new Random(0x4d61746368L);
+        String alphabet = "error012x \u00ff";
+        for (int i=0; i<200; i++) {
+            StringBuilder s = new StringBuilder();
+            for (int j=0, length=random.nextInt(80); j<length; j++)
+                s.append(alphabet.charAt(random.nextInt(alphabet.length())));
+            if ((i&1)==0) s.append("error123");
+            inputs.add(s.toString());
+        }
+        for (String expression : expressions) {
+            for (int flags : new int[]{0, Pattern.CASE_INSENSITIVE}) {
+                Pattern p=Pattern.compile(expression,flags),ref=reference(expression,flags);
+                for (String input : inputs) {
+                    for (int lo : new int[]{0,input.length()/2,input.length()}) {
+                        for (int hi : new int[]{lo,(lo+input.length())/2,input.length()}) {
+                            Matcher a=p.matcher(input).region(lo,hi),b=ref.matcher(input).region(lo,hi);
+                            for (;;) {
+                                boolean av=a.find(),bv=b.find();
+                                equal(a,b,av,bv,false);
+                                if (!av) break;
+                            }
+                            equal(a,b,a.reset().region(lo,hi).matches(),b.reset().region(lo,hi).matches(),false);
+                            equal(a,b,a.reset().region(lo,hi).lookingAt(),b.reset().region(lo,hi).lookingAt(),false);
+                        }
+                    }
+                }
+                nativeOnly(p);
+            }
+        }
+    }
+
     private static void fallbackGrammar() throws Exception {
+        // The leading literal ] must remain inside the class when escaped
+        // operator characters follow it. Exercise the former activation sequence.
+        for (String expression : new String[]{"[]a~~a]+", "[]a\\~\\~a]+"}) {
+            Pattern p=Pattern.compile(expression),ref=reference(expression,0);
+            for (int i=0; i<8; i++) {
+                Matcher a=p.matcher("x".repeat(2048)),b=ref.matcher("x".repeat(2048));
+                equal(a,b,a.find(),b.find(),false);
+            }
+            Matcher a=p.matcher("a".repeat(2048)),b=ref.matcher("a".repeat(2048));
+            equal(a,b,a.find(),b.find(),false);
+        }
         for (String prefix : new String[]{"", "^", "]", "^]", "\\]", "^\\]"}) {
             for (String body : new String[]{"a~~a", "a||b", "a-z--c", "a&&b", "a\\-~~a"}) {
                 String expression = "["+prefix+body+"]+";
@@ -253,6 +317,7 @@ public class RustRegexTest {
 
     public static void main(String[] args) throws Exception {
         primary();
+        shortAndEarlyMatches();
         fallbackGrammar();
         consumers();
         sharingAndLifetime();

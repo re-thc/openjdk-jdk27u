@@ -77,7 +77,7 @@ public class RustRegexMemoryBudget {
         do {
             System.gc();
             Thread.sleep(20);
-            filter = RustRegex.compile("error[0-9]+", 0);
+            filter = RustRegex.compile("error[0-9]+(?:x)?", 0);
             if (filter != null) {
                 System.out.println("Native budget capacity restored after cleanup");
                 Reference.reachabilityFence(first);

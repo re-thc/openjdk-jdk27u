@@ -50,7 +50,7 @@ public class RustRegexLifetime {
     public String expression;
     @Param({"1", "4"})
     public int threads;
-    @Param({"shared", "distinct"})
+    @Param({"shared", "cold", "distinct"})
     public String reuse;
     private String regex, miss, hit;
     private ExecutorService pool;
@@ -90,7 +90,7 @@ public class RustRegexLifetime {
     public void prepareColdPattern() {
         // Outside the timed operation. Prevent budget exhaustion from silently
         // turning the distinct-expression compiler measurement into Java.
-        if (reuse.equals("distinct")) System.gc();
+        if (!reuse.equals("shared")) System.gc();
     }
 
     private int search(Pattern pattern, int worker) {

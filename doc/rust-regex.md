@@ -2,7 +2,7 @@
 
 This fork selects Rust at Pattern compilation for a parsed common subset of
 `java.util.regex`. Supported Patterns return matches and captures directly
-from Rust, beginning with their first match, and retain no Java node graph.
+from Rust or a narrow short-match specialization, and retain no Java node graph.
 Unsupported syntax compiles with Java. Unsupported inputs/operations permanently
 promote the affected Pattern to Java. There is no miss counter or activation gate.
 
@@ -15,7 +15,8 @@ and upstream memchr runtime SIMD dispatch avoid a target-cpu=native dependency.
 
 `UseRustRegex` defaults to true when included. Applications opt out with
 `-XX:-UseRustRegex`. `UseRustRegexIntrinsics` also defaults to true;
-`-XX:-UseRustRegexIntrinsics` selects registered JNI matching.
+`-XX:-UseRustRegexIntrinsics` selects registered JNI for Rust calls. The short
+specialization continues to avoid those calls in either mode.
 
 Interpreter, C1 and C2 paths on x86_64/AArch64 call the same C ABI with a handle,
 input byte-array address and capture-array address. Four trailing ints carry
@@ -31,6 +32,17 @@ groups, ordered alternation, ranges, negated classes, default ASCII d/D/w/W/s/S,
 greedy/reluctant quantifiers, quoting, byte-valued escapes, anchors and boundaries.
 Supported flags are UNIX_LINES, ASCII CASE_INSENSITIVE, DOTALL and LITERAL.
 Plain literals keep Java's optimized literal path.
+
+Literal-prefix/digit-tail expressions, including ordinary/named captures, get
+a compact specialization containing only the prefix and capture indices. It
+handles searches of up to 256 characters and checks the first candidate of
+longer searches. Numeric runs return to Rust after 256 characters on short
+inputs or 32 characters on larger inputs.
+This avoids the native boundary for short/early matches. The Rust engine is
+compiled on the first operation that needs it, with no use-count threshold.
+Patterns used exclusively through the specialization allocate no native engine
+or Cleaner registration. A bounded cache also retains these parsed plans, so
+recompiling an expression does not have to parse it again.
 
 Dot uses Java's exact Latin-1 terminator set. Fixed-width expressions and
 fixed-width prefixes with greedy fixed-width repeated tails share one engine
@@ -54,7 +66,7 @@ regions over 65,536 characters promote to Java. Context-sensitive expressions
 with transparent bounds or disabled anchoring bounds promote too. Dollar/\Z
 expressions promote for final Java line terminators.
 
-Rust supplies capture offsets, including unmatched groups, for find, matches,
+The selected backend supplies capture offsets, including unmatched groups, for find, matches,
 lookingAt, replacement, splitting, immutable results and streams. Matcher keeps
 zero-length progression. Java-specific hitEnd()/requireEnd() queries promote
 and replay the last operation using saved input/bounds. Ordinary matching never
@@ -79,12 +91,12 @@ Construction reserves 16 MiB before allocation, then shrinks to the retained
 charge. Cache creation reserves an upper allowance before allocation and keeps
 an allowance for fixed state and lazy-DFA growth. Admission failure selects
 Java; errors, unwinding and Cleaner cleanup return reservations.
-The first search cache is admitted and initialized during compilation, while
+The first search cache is admitted and initialized during native compilation, while
 the thread is in native state, so the selected engine is ready for its first call.
 
 The budget bounds accounted engine/cache storage and construction reservations;
 allocator metadata, fragmentation and the Rust runtime are outside that metric.
-Native Patterns keep no Java graph. Promotion releases the native reference;
+Selected Patterns keep no Java graph. Promotion releases the backend reference;
 other Patterns may still own the shared engine, and Cleaner cleanup is eventual.
 Matcher arrays retain captures plus four ABI ints. Compilation/destruction use
 native thread state; match calls retain no heap addresses after return. All
@@ -149,9 +161,10 @@ nullable results, byte inputs, concurrency, accounting and contained FFI panics.
 RustRegexNative measures reusable searches, including positive/negative cases,
 captures, fallback controls and short inputs. RustRegexLifetime includes every
 search in complete 1/8/9/10/16/32-call lifetimes, mixed workloads and shared
-Pattern contention. Its shared/distinct parameter distinguishes reuse from
-compilation of new expressions. Compare each tier with -XX:-UseRustRegex and
-JNI-only mode. Distinct-expression measurements collect before each invocation
+Pattern contention. Its shared/cold/distinct parameter distinguishes a live
+shared engine, a collected previous owner of the same expression, and new
+expressions. Compare each tier with -XX:-UseRustRegex and JNI-only mode.
+Cold and distinct measurements collect before each invocation
 outside the timed operation; optional backend assertions ensure budget pressure
 cannot silently substitute Java for the native compiler being measured.
 Cross compilation/emulation is functional coverage; AArch64
