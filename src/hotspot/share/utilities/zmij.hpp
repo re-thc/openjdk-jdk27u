@@ -48,7 +48,7 @@ class Zmij : AllStatic {
                                 DoubleWriter double_writer, FloatWriter float_writer) {
     bool is_double = (format & 1) != 0;
     uint64_t magnitude = bits & (is_double ? UINT64_C(0x7fffffffffffffff) : UINT64_C(0x7fffffff));
-    if (magnitude <= 128 || magnitude >= (is_double ? UINT64_C(0x7ff0000000000000) : UINT64_C(0x7f800000))) {
+    if (magnitude == 0 || magnitude >= (is_double ? UINT64_C(0x7ff0000000000000) : UINT64_C(0x7f800000))) {
       return 0;
     }
     // Wide upstream stores stay in this initialized stack buffer.

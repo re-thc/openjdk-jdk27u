@@ -43,7 +43,9 @@ public class ZmijFormatting {
     private static final int N = 1024;
     private double[] doubles, decimals, integers;
     private double[] zeros, nans;
+    private double[] tinyDoubles;
     private float[] floats;
+    private float[] tinyFloats;
     private Float16[] halves;
     private final byte[] out = new byte[DoubleToDecimal.MAX_CHARS];
     private final byte[] wide = new byte[2 * DoubleToDecimal.MAX_CHARS];
@@ -58,9 +60,13 @@ public class ZmijFormatting {
         decimals = new double[N];
         integers = new double[N];
         floats = new float[N];
+        tinyDoubles = new double[N];
+        tinyFloats = new float[N];
         halves = new Float16[N];
         for (int i = 0; i < N; ++i) {
             zeros[i] = (i & 1) == 0 ? 0.0 : -0.0;
+            tinyDoubles[i] = Double.longBitsToDouble((i % 128 + 1L) | ((long) (i & 1) << 63));
+            tinyFloats[i] = Float.intBitsToFloat((i % 128 + 1) | ((i & 1) << 31));
             nans[i] = Double.longBitsToDouble(0x7ff8000000000000L | i | ((long) (i & 1) << 63));
             do { doubles[i] = Double.longBitsToDouble(r.nextLong()); } while (!Double.isFinite(doubles[i]));
             do { floats[i] = Float.intBitsToFloat(r.nextInt()); } while (!Float.isFinite(floats[i]));
@@ -81,6 +87,18 @@ public class ZmijFormatting {
     @OperationsPerInvocation(N)
     public void floatRandom(Blackhole bh) {
         for (float v : floats) { bh.consume(Float.toString(v)); }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(N)
+    public void doubleTinySubnormal(Blackhole bh) {
+        for (double v : tinyDoubles) { bh.consume(Double.toString(v)); }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(N)
+    public void floatTinySubnormal(Blackhole bh) {
+        for (float v : tinyFloats) { bh.consume(Float.toString(v)); }
     }
 
     @Benchmark

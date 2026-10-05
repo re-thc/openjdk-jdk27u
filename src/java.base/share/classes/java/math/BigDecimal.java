@@ -1381,6 +1381,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * of a {@code float}.
      * Consider using {@code new BigDecimal(Float.toString(v))} instead.
      *
+     * @implNote This fork retains the Java-compatible decimal precision and
+     * scale calculation, even when native {@code Double.toString} chooses a
+     * shorter significand for a tiny subnormal value.
+     *
      * @param  val {@code double} to convert to a {@code BigDecimal}.
      * @return a {@code BigDecimal} whose value is equal to or approximately
      *         equal to the value of {@code val}.

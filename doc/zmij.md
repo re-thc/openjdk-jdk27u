@@ -2,7 +2,7 @@
 
 The formatter vendors **Żmij v1.2**, release commit
 `d1682cb47e67474319ed146d3ca2c0e1a70f9429`, under its **MIT license option**.
-Upstream notices and the MIT license are preserved; three tracked patches adapt the implementation. No xjb implementation
+The original upstream headers and license are preserved. No xjb implementation
 is included: xjb v1.11.0's actual source and LICENSE are Apache 2.0, despite its
 README's MIT label. That license is not compatible with GPLv2-only HotSpot.
 
@@ -67,27 +67,33 @@ owned, exactly sized arrays are transferred into Strings.
 C2 records a float result bound of 15 characters and a double bound of 24.
 Float builder append uses the Java converter in C2, where native writes can
 add array materialization and copying costs. A Java predicate returns false
-in the interpreter/C1 and C2 folds `_useJavaFloatAppend` to true. The choice
-adds no C1/C2 runtime dispatch. The small Java first stage is forced inline so
+in the interpreter/C1 and C2 folds `_useJavaFloatAppend` to true. The tier choice
+folds at compilation. Tiny nonzero subnormals still use native formatting in
+C2 append so their rendering agrees with the other text entry points. The small Java first stage is forced inline so
 the gated route retains the original hot caller shape. C2 still accelerates canonical float strings
 and raw float output. Disabling `_useJavaFloatAppend` measures the ungated
-native append path.
+native append path. Canonical compact Strings copy the reserved formatter
+buffer into a new, exactly sized byte array and pass that exclusively owned
+array to the internal Latin1 String constructor. The caller cannot mutate the
+String backing array. Noncompact Strings and feature-disabled conversion use
+the original public copying constructor; StringBuilder.toString also retains
+its original copying constructor. The [original-build measurements](benchmarks/decimal-original-baseline/README.md)
+include timing and allocation for this implementation and an isolated control
+using the original canonical String constructor.
 
-For enabled compact strings, ToDecimal allocates an exact-sized byte array,
-copies the logical text into it and transfers that exclusively owned array to
-an internal String constructor. With the feature disabled or compact strings
-disabled, it uses the original ISO-8859-1 copying constructor. TestZmij checks
-that later mutation of the scratch buffer cannot change the returned String.
-This changes String construction; fresh head allocation/timing qualification
-is still pending, as recorded in the [review follow-up](benchmarks/decimal-review-followup/README.md).
-
-## Java compatibility and consumers
+## Rendering correctness and precision consumers
 
 The zero-fuzz vendor patch applies Java's fixed range `[1e-3, 1e7)`, uppercase
 `E`, unpadded exponents without `+`, and a digit after the decimal point. Zero,
-infinities, NaNs, and subnormal significands at most 128 use Java. The small
-subnormal range includes Java's closer two-digit selection when a one-digit
-decimal also round-trips. Decimal splitting retains the exact-integer Java
+infinities and NaNs use Java. Finite values use the vendor's shortest meaningful
+significand that round-trips to the same raw binary value. This fork permits
+a different correct significand from the stock JDK: Float.MIN_VALUE renders
+as `1.0E-45` instead of `1.4E-45`, and Double.MIN_VALUE as `5.0E-324` instead
+of `4.9E-324`. Keeping `.0` means these particular strings have the same
+character count despite having fewer meaningful digits. Opting out restores
+the stock choice. Precision metadata is separate: tiny significands at most
+128 retain the Java splitter, preserving BigDecimal scale/precision and
+DecimalFormat/Formatter rounding. Decimal splitting retains the exact-integer Java
 fast path and packs the significand, exactness and rounding direction into one
 `long`; Java derives the exponent. The original scale/precision adjustment in
 BigDecimal remains in place. Positive-zero splitting returns directly in Java,
@@ -99,7 +105,7 @@ record the result and controls.
 | Consumer | Integration |
 |---|---|
 | Float/Double `toString`, boxed `toString`, String `valueOf` | Canonical text entry |
-| StringBuilder/StringBuffer float/double append | Native double at all tiers; native float in interpreter/C1 and Java float in C2, Latin1 and UTF16 |
+| StringBuilder/StringBuffer float/double append | Native double at all tiers; native float in interpreter/C1 and usually Java float in C2, Latin1 and UTF16 |
 | String concatenation | Existing Float/Double rendering |
 | BigDecimal `valueOf(double)` | Decimal splitting |
 | Formatter `%e`, `%f`, `%g` | Splitting, including exactness and rounding direction |
@@ -127,32 +133,40 @@ python3 make/scripts/update-zmij.py /path/to/zmij
 ```
 
 The script records the version and commit, verifies the MIT license selection,
-and applies java-format.patch, clang-compat.patch and shortest-only.patch with
-zero fuzz. The Clang patch gives compressed arrays explicit bounds; the last
-patch suppresses unused precision/long-double explicit instantiations only
-when ZMIJ_SHORTEST_ONLY is defined by the VM translation units. Upstream's
-default full API is preserved. The portable and SSE4.1 units include the
-implementation in separate namespaces.
+preserves headers, and applies `make/data/zmij/java-format.patch`,
+`make/data/zmij/clang-compat.patch` and `make/data/zmij/shortest-only.patch`
+with zero fuzz. The latter gives the three
+compressed power-of-ten arrays explicit bounds so Clang can construct the
+expanded tables at compile time; their values and sizes are unchanged.
+The implementation is named `zmij-impl.hpp`; the portable and SSE4.1 translation
+units include it in distinct namespaces. The shortest-only patch suppresses
+explicit instantiations of unused precision, hexadecimal and long-double APIs;
+only the used formatter and metadata templates are instantiated. Shortest
+conversion does not allocate.
 
-Before installing files, the updater runs make/scripts/check-zmij.py against
-the staged vendor and the actual production decimal-metadata bridge. A host
-C++17 compiler with UBSan support is required. Independent Python integer and
-rational oracles check all 649 normalized power-table entries, decimal
-representation/round trips, packed significand/exactness/rounding direction,
-and total fallback behavior for 26,352 fixtures, in full, shortest-only and
-compressed-table configurations. A patch failure, build failure or changed
-internal contract stops the update before installed files change. This protects
-the bridge's reliance on internal APIs; review upstream changes and rerun
-Java compatibility tests and tier benchmarks for every upgrade.
-
-Unused precision instantiations were retained in the inspected HotSpot link.
-The shortest-only guard removes 47,184 bytes of linked text, with data/BSS
-unchanged. This is a native-unit relink experiment, not a complete PR-head JDK
-image measurement; [method and limits](benchmarks/decimal-review-followup/README.md).
+The precision bridge intentionally depends on internal vendor tables and its
+significand/exponent representation. Before installing any vendor, license or
+version files, the updater compiles the same production bridge in
+`zmijMetadata.inline.hpp` and runs `check-zmij-metadata.py`. Exact integer
+arithmetic checks all 649 downward-rounded normalized power entries and
+25,635 deterministic boundary/random inputs, including significand packing,
+round trips and exactness/rounding direction. The additional `check-zmij.py` verifier retains the remotely added fixtures
+and runs full, shortest-only and compressed-table profiles under UBSan. Both
+checkers include the shared production bridge. A changed private representation,
+failed patch, compilation failure or failed assumption stops installation.
+Use a host GCC/Clang-compatible C++17 compiler; `--cxx` selects it explicitly.
+The standalone checker accepts a directory containing patched
+`zmij.cc` and `zmij.h`. Review
+changed upstream code and repeat the JDK precision tests and tier benchmarks
+before enabling a newer version.
 
 ## Reproducing validation and measurements
 
-`TestZmij` compares against the retained Java algorithm, including signed zero,
+`TestZmij` requires bit-exact round trips and agreement between native String,
+builder, concatenation and raw-buffer output; it compares precision metadata
+against the retained Java algorithm. The independent decimal checker verifies
+shortest meaningful significands and tie rounding, with separate default and
+stock opt-out runs. Coverage includes signed zero,
 NaN payloads, subnormal and binade boundaries, decimal powers and their binary
 neighbors, random values, Latin1/UTF16 destinations with nonzero offsets, and
 decimal-splitting exactness and rounding direction. It runs with the interpreter,
@@ -182,6 +196,6 @@ The script saves JSON and logs for Java, intrinsic, and JNI conversion at each
 tier. `ZMIJ_TIERS='c1 c2'` and `ZMIJ_VARIANTS='java zmij'` select subsets;
 `ZMIJ_BENCHMARKS` selects a JMH workload regular expression. Keep
 the benchmark image fixed and avoid concurrent builds or tests. The
-[benchmark report](benchmarks/zmij/README.md) records raw measurements, controls,
+[original-JDK benchmark report](benchmarks/decimal-original-baseline/README.md) records raw measurements, controls,
 validation, and limitations. QEMU results establish ARM64 correctness only;
 native ARM64 performance must be measured on ARM64 hardware.

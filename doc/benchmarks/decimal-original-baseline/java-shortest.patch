@@ -1,0 +1,45 @@
+--- a/src/java.base/share/classes/jdk/internal/math/FloatToDecimal.java
++++ b/src/java.base/share/classes/jdk/internal/math/FloatToDecimal.java
+@@ -192,12 +192,6 @@
+         if (!Zmij.useJavaFloatAppend()) {
+             return putDecimal(str, index, v);
+         }
+-        int magnitude = floatToRawIntBits(v) & 0x7fffffff;
+-        if (magnitude != 0 && magnitude <= 128) {
+-            // Native shortest subnormal significands may differ from Java's
+-            // two-digit preference. Keep append and toString consistent.
+-            return putDecimal(str, index, v);
+-        }
+         assert 0 <= index && index <= length(str) - MAX_CHARS : "Trusted caller missed bounds check";
+         int pair = toDecimalJava(str, index, v);
+         int type = pair & 0xFF00;
+@@ -267,7 +261,7 @@
+             }
+             if (t != 0) {
+                 /* subnormal value */
+-                return (t < C_TINY
++                return (t < C_TINY && !Zmij.isEnabled()
+                         ? toDecimal(str, index, Q_MIN, 10 * t, -1)
+                         : toDecimal(str, index, Q_MIN, t, 0)) - start;
+             }
+@@ -327,7 +321,10 @@
+         int vbr = rop(g, cbr << h);
+
+         int s = vb >> 2;
+-        if (s >= 100) {
++        // C2 append uses this Java converter. With native formatting enabled,
++        // select the same shortest meaningful significand without a leaf call.
++        // Opt-out keeps the stock two-digit preference for tiny subnormals.
++        if (s >= (Zmij.isEnabled() ? 10 : 100)) {
+             /*
+              * For n = 9, m = 1 the table in section 10 of [1] shows
+              *     s' = floor(s / 10) = floor(s 1_717_986_919 / 2^34)
+@@ -349,7 +346,7 @@
+         }
+
+         /*
+-         * 10 <= s < 100    or    s >= 100  and  u', w' not in Rv
++         * No shorter candidate lies in Rv; compare adjacent candidates.
+          * uin    iff    u = s 10^k in Rv
+          * win    iff    w = t 10^k in Rv
+          * See section 9.3 of [1].

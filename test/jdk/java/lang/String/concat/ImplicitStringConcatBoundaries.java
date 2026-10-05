@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Harry Chan. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,8 +119,8 @@ public class ImplicitStringConcatBoundaries {
         test("foo1.1754944E-38",            "foo" + FLOAT_MIN_NORM_2);
         test("foo-126.0",                   "foo" + FLOAT_MIN_EXP_1);
         test("foo-126.0",                   "foo" + FLOAT_MIN_EXP_2);
-        test("foo1.4E-45",                  "foo" + FLOAT_MIN_1);
-        test("foo1.4E-45",                  "foo" + FLOAT_MIN_2);
+        testTiny("foo1.4E-45", "foo1.0E-45", "foo" + FLOAT_MIN_1);
+        testTiny("foo1.4E-45", "foo1.0E-45", "foo" + FLOAT_MIN_2);
         test("foo3.4028235E38",             "foo" + FLOAT_MAX_1);
         test("foo3.4028235E38",             "foo" + FLOAT_MAX_2);
 
@@ -132,8 +133,8 @@ public class ImplicitStringConcatBoundaries {
         test("foo2.2250738585072014E-308",  "foo" + DOUBLE_MIN_NORM_2);
         test("foo-1022.0",                  "foo" + DOUBLE_MIN_EXP_1);
         test("foo-1022.0",                  "foo" + DOUBLE_MIN_EXP_2);
-        test("foo4.9E-324",                 "foo" + DOUBLE_MIN_1);
-        test("foo4.9E-324",                 "foo" + DOUBLE_MIN_2);
+        testTiny("foo4.9E-324", "foo5.0E-324", "foo" + DOUBLE_MIN_1);
+        testTiny("foo4.9E-324", "foo5.0E-324", "foo" + DOUBLE_MIN_2);
         test("foo1.7976931348623157E308",   "foo" + DOUBLE_MAX_1);
         test("foo1.7976931348623157E308",   "foo" + DOUBLE_MAX_2);
     }
@@ -147,5 +148,13 @@ public class ImplicitStringConcatBoundaries {
            sb.append(actual);
            throw new IllegalStateException(sb.toString());
        }
+    }
+
+    private static void testTiny(String javaChoice, String shortest, String actual) {
+        // Constant folding can use the compiling JDK's two-digit choice.
+        // Both approved forms round-trip to the same tiny subnormal value.
+        if (!javaChoice.equals(actual)) {
+            test(shortest, actual);
+        }
     }
 }

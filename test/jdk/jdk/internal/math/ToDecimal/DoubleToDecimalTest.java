@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Harry Chan. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +36,7 @@ import jdk.test.lib.RandomFactory;
  * @build jdk.test.lib.RandomFactory
  * @build java.base/jdk.internal.math.*
  * @run main DoubleToDecimalTest 100_000
+ * @run main/othervm -XX:-UseZmijIntrinsics DoubleToDecimalTest 100_000
  */
 public class DoubleToDecimalTest {
 

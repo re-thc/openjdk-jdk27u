@@ -1,0 +1,58 @@
+Final measured runtime source: cfbc2f3ce028 (full SHA/source/binary hashes in source-manifest.json).
+No runtime/vendor/microbenchmark changes after timing. Later edits are test fixtures and documentation.
+
+Builds PASS:
+- Complete cloud release image; GCC 14.2.
+- review-fastdebug HotSpot; GCC, no PCH.
+- review-clang HotSpot; Clang 19.
+- review-aarch64-fastdebug HotSpot cross build.
+- review-zero HotSpot.
+
+Runtime validation:
+- Full release sweep: initially 242 passed / 1 outdated fixture failed; 46,545 framework cases.
+- ValueOfDouble fixture corrected for independent shortest text / retained precision metadata; rerun PASS.
+- GCC no-PCH fastdebug: 8 passed.
+- Clang: 8 passed.
+- Zero fastdebug: 2 passed, 4 compiler/GC IDs excluded by requirements.
+- AArch64 QEMU fastdebug: TestFastFloat and TestZmij PASS in C1/C2, -XX:-CompactStrings.
+- Independent FloatToDecimal/DoubleToDecimal checker default + opt-out, TestZmij/ZGC and SSE2: 5 selected tests passed.
+- Revised String valueOf/concat consumer fixtures: 2 passed, 36 TestNG cases.
+- TestIncludesAreSorted on the debug VM: 1 passed.
+- SortIncludes read-only: os/linux, os/posix, share, cpu/x86/zmij_sse.cpp PASS.
+- Expanded interpreter whole-file check: preexisting oops/method.hpp order issue, reproduced before the PR;
+  outside official scope; runtime source unchanged. Prior claim covering both entire x86 files corrected.
+
+Update verification PASS:
+- Real clean v1.2 import reproduced vendored implementation/header/license/version.
+- GCC and Clang metadata checker: 649 powers, 25,635 inputs, 141 exact, 9,946 away.
+- Deliberately corrupted cache entry rejected.
+- --cxx false rejected before installation; four installed file hashes unchanged.
+
+Release suite command (adjust image, native libs, work/report paths):
+java -jar jtreg.jar -jdk:FINAL_JDK -nativepath:NATIVE_TEST_LIBS -othervm -conc:2 \
+  -exclude:heavy-exclude.txt -timeoutFactor:4 \
+  test/jdk/jdk/internal/math/ToDecimal test/jdk/jdk/internal/math/FloatingDecimal \
+  test/jdk/java/lang/Float test/jdk/java/lang/Double \
+  test/jdk/java/lang/String test/jdk/java/lang/StringBuilder test/jdk/java/lang/StringBuffer \
+  test/jdk/java/math/BigDecimal test/jdk/java/text/Format/DecimalFormat \
+  test/jdk/java/text/Format/CompactNumberFormat test/jdk/java/text/Format/ChoiceFormat \
+  test/jdk/java/util/Formatter test/jdk/java/util/Scanner \
+  test/hotspot/jtreg/compiler/intrinsics/fastfloat test/hotspot/jtreg/compiler/intrinsics/zmij
+
+Excluded unchanged huge-memory tests (passed prior full validation):
+java/lang/String/CompactString/MaxSizeUTF16String.java 0000000 generic-all
+java/lang/String/CompactString/NegativeSize.java 0000000 generic-all
+java/lang/String/concat/HugeConcatTest.java 0000000 generic-all
+java/lang/String/concat/ImplicitStringConcatOOME.java 0000000 generic-all
+java/lang/StringBuilder/HugeCapacity.java 0000000 generic-all
+java/lang/StringBuffer/HugeCapacity.java 0000000 generic-all
+
+QEMU is correctness evidence only. Native ARM64 and Windows performance remains unmeasured.
+
+Concurrent remote update preserved: 9c534af36ca1d254aa91dc3d89ee8d37a17d8109.
+- Retained supplemental benchmark driver, previous review report and ownership test.
+- Supplemental checker adapted to the shared production bridge.
+- Combined updater PASS: supplemental 26,352 fixtures in full/shortest/compressed UBSan profiles.
+- Merged ownership/default/ZGC/SSE2 tests: 3 selected tests PASS.
+- Runtime/vendor/microbenchmark hashes remain identical to measured source.
+- Maintenance-only differences recorded in source-manifest.json.

@@ -2226,17 +2226,13 @@ auto write_hex(char* out, size_t n, Float value, int precision,
   return w.write(exp, int(write_hex_exp(exp, bin_exp) - exp));
 }
 
+#ifndef ZMIJ_HOTSPOT_SHORTEST_ONLY
 template auto to_decimal(float value) noexcept -> dec_fp<>;
 template auto to_decimal(double value) noexcept -> dec_fp<>;
 
 template auto write(char* buffer, float value) noexcept -> char*;
 template auto write(char* buffer, double value) noexcept -> char*;
 
-// HotSpot uses only shortest float/double output and decimal metadata.
-#ifndef ZMIJ_SHORTEST_ONLY
-#  define ZMIJ_SHORTEST_ONLY 0
-#endif
-#if !ZMIJ_SHORTEST_ONLY
 template auto write_big(char* out, size_t n, double value, int precision,
                         format fmt) noexcept -> size_t;
 
@@ -2273,7 +2269,8 @@ template auto write_hex(char* buffer, long double value, bool prefix) noexcept
 template auto write_hex(char* out, size_t n, long double value, int precision,
                         bool prefix) noexcept -> size_t;
 #endif
-#endif  // !ZMIJ_SHORTEST_ONLY
+
+#endif // ZMIJ_HOTSPOT_SHORTEST_ONLY
 
 }  // namespace detail
 }  // namespace zmij

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Harry Chan. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +36,10 @@ import static jdk.internal.math.MathUtilsChecker.*;
  * Not optimized for performance.
  */
 abstract class ToDecimalChecker extends BasicChecker {
+
+    // The fork accepts the vendor's shortest round-tripping significand.
+    // Product opt-out retains the full original JDK two-digit specification.
+    private final int minimumDigits = Zmij.isEnabled() ? 1 : 2;
 
     /* The string to check */
     private final String s;
@@ -240,21 +245,21 @@ abstract class ToDecimalChecker extends BasicChecker {
             return conversionError("unexpected exception (" +  ex.getMessage() + ")!!!");
         }
 
-        if (l < 2) {
+        if (l < minimumDigits) {
             c *= 10;
             q -= 1;
             l += 1;
         }
 
-        /* Get rid of trailing zeroes, still ensuring at least 2 digits */
-        while (l > 2 && c % 10 == 0) {
+        /* Get rid of trailing zeroes, retaining the selected minimum length. */
+        while (l > minimumDigits && c % 10 == 0) {
             c /= 10;
             q += 1;
             l -= 1;
         }
 
         /* dv = (sgn * c) 10^q */
-        if (l > 2) {
+        if (l > minimumDigits) {
             /* Try with a number shorter than dv of lesser magnitude... */
             BigDecimal dvd = BigDecimal.valueOf(sgn * (c / 10), -(q + 1));
             if (recovers(dvd)) {
@@ -279,8 +284,8 @@ abstract class ToDecimalChecker extends BasicChecker {
         if (sgn * deltav.signum() < 0) {
             /* |dv| > |v|, check dvp */
             BigDecimal dvp =
-                    c == 10L
-                            ? BigDecimal.valueOf(sgn * 99L, -(q - 1))
+                    c == (minimumDigits == 1 ? 1L : 10L)
+                            ? BigDecimal.valueOf(sgn * (minimumDigits == 1 ? 9L : 99L), -(q - 1))
                             : BigDecimal.valueOf(sgn * (c - 1), -q);
             if (recovers(dvp)) {
                 BigDecimal deltavp = dvp.subtract(v);

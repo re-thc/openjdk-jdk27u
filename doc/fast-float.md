@@ -11,7 +11,12 @@ license is `src/java.base/share/legal/fast_float.md`.
 Native decimal conversion is **enabled by default** on all platforms. The
 interpreter and C1 have intrinsic ports for little-endian x86-64 and AArch64.
 Other interpreter/C1 ports, including Zero, use the portable JNI parser.
-Using this fork requires no enabling flags.
+Using this fork requires no enabling flags. Default-on JNI on other ports is
+a policy choice, not a measured speedup on those machines. There is no
+backend-specific small-String gate; forced JNI measurements on x86-64 quantify
+transition costs separately from intrinsic measurements. They cannot establish
+performance on unmeasured ports. Native Windows and ARM64 performance remains
+unmeasured.
 `-XX:-UseFastFloatIntrinsics` opts out and selects the existing Java implementation.
 The two intrinsic IDs, `_parseFastFloat` and `_parseFastFloatDigits`, also obey
 `DisableIntrinsic` and `ControlIntrinsic`. Disabling an intrinsic alone leaves
@@ -155,6 +160,7 @@ taskset -c <cpu> make/scripts/bench-fast-float.sh /path/to/jdk '/path/to/jmh/*' 
 ```
 
 Results, platform details, validation totals, and any limitations are recorded
-in the [benchmark report](benchmarks/fast-float/README.md) and pull request.
+in the [original-JDK benchmark report](benchmarks/decimal-original-baseline/README.md)
+(the earlier [same-image controls](benchmarks/fast-float/README.md) are retained) and pull request.
 Set `FAST_FLOAT_TIERS='c1 c2'` to repeat only selected tiers. Emulation is suitable for
 ARM correctness checks; it is not evidence of native ARM performance.

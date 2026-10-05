@@ -1,5 +1,11 @@
 # Final decimal-intrinsics review
 
+The subsequent [original-JDK baseline review](../decimal-original-baseline/README.md)
+accepts correctly rounded shortest subnormal significands, adds automatic
+vendor-bridge assumption checks, removes retained unused vendor code and
+remeasures the final implementation against the pre-PR JDK. The results below
+record the earlier positive-zero improvement and rejected experiments.
+
 Baseline: `c49478493b69cbe021a7560b962fc39d82785449`, after the official
 HotSpot include-order fix. This follow-up reviews the Java gates, interpreter,
 C1, C2, JNI fallback, platform guards, vendor patches and benchmark coverage.
@@ -113,8 +119,10 @@ unrelated bootstrap classes.
 Validation results are recorded in [validation.txt](validation.txt). The
 follow-up also places the new x86/AArch64 interpreter utility includes and the
 x86 SSE translation-unit includes in their proper blocks. The official
-include sorter passes over its Linux/POSIX/shared scope and the two changed
-x86 files. No unrelated preexisting architecture include blocks were reordered.
+include sorter passes over its Linux/POSIX/shared scope and the changed
+x86 SSE translation unit. A later expanded check found a preexisting
+`oops/method.hpp` ordering issue in the interpreter's unrelated include block;
+it is also present in the pre-PR source and outside the official test scope. No unrelated preexisting architecture include blocks were reordered.
 
 The preceding include-sort commit's native macOS and Windows x64/AArch64
 release/debug builds all passed in

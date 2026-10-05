@@ -5,6 +5,7 @@
 
 """Refresh Żmij from a clean, tagged upstream release, retaining its MIT license."""
 import argparse
+import os
 from pathlib import Path
 import re
 import shutil
@@ -14,6 +15,8 @@ import tempfile
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('upstream', type=Path, help='clean vitaut/zmij release checkout')
+parser.add_argument('--cxx', default=os.environ.get('CXX', 'c++'),
+                    help='host C++ compiler used to verify the metadata bridge')
 args = parser.parse_args()
 upstream = args.upstream.resolve()
 root = Path(__file__).resolve().parents[2]
@@ -38,9 +41,11 @@ with tempfile.TemporaryDirectory() as tmp:
     for patch in ('java-format.patch', 'clang-compat.patch', 'shortest-only.patch'):
         subprocess.run(['patch', '--batch', '--forward', '--fuzz=0', '-p1', '-i',
                         str(root / 'make/data/zmij' / patch)], cwd=staged, check=True)
-    # Fail before changing installed headers if internal decimal contracts drift.
+    # Validate the production bridge before changing any installed vendor file.
+    subprocess.run([sys.executable, str(root / 'make/scripts/check-zmij-metadata.py'),
+                    str(staged), '--cxx', args.cxx], check=True)
     subprocess.run([sys.executable, str(root / 'make/scripts/check-zmij.py'),
-                    str(staged)], check=True)
+                    str(staged), '--cxx', args.cxx], check=True)
     destination = root / 'src/hotspot/share/utilities/zmij'
     destination.mkdir(exist_ok=True)
     # Include the implementation once, avoiding a second VM translation unit.

@@ -11,7 +11,10 @@ Builds:
 - GCC AArch64 fastdebug HotSpot cross-build incremental rebuild: PASS.
 
 Include checks:
-- SortIncludes over os/linux, os/posix, share, and the two changed x86 files: PASS.
+- SortIncludes over os/linux, os/posix, share, and the x86 SSE unit: PASS.
+  Correction: a later whole-file check finds a preexisting oops/method.hpp
+  ordering issue in the interpreter file, also present before this PR. The
+  previous claim that both whole x86 files passed was too broad.
 - Official TestIncludesAreSorted.main with the real test.src: PASS.
 - Only the new utility headers were moved in the AArch64 file; no unrelated
   preexisting architecture include blocks were changed.

@@ -1,5 +1,11 @@
 # Decimal review follow-up
 
+The subsequent [shortest-rendering review](../decimal-original-baseline/README.md)
+adds an all-tier original-JDK comparison, permits correct shorter subnormal
+text and preserves the precision metadata path. Its footprint measurements use
+a further reduction of unused explicit instantiations. This report records the
+preceding review source and controls.
+
 This follow-up addresses the baseline, String ownership, JNI-default and vendor
 upgrade concerns at parent `e9dbce2b547fa5ccb23b4bc8a97b95c869848f88`.
 Parsing and formatting remain opt-out. There is no new wrapper in the Java

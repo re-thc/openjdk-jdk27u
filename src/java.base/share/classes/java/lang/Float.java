@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Harry Chan. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,6 +320,11 @@ public final class Float extends Number
      * String result = bd.round(new MathContext(digits,  RoundingMode.HALF_UP));
      * // 0.100000001490116
      * }
+     *
+     * @implNote This fork's native formatter may select a shortest one-digit
+     * significand for tiny subnormal values instead of the two-digit choice
+     * described above. Both choices round-trip to the same value.
+     * {@code -XX:-UseZmijIntrinsics} selects the original Java conversion.
      *
      * @param   f   the {@code float} to be converted.
      * @return a string representation of the argument.

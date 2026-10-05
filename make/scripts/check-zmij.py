@@ -14,7 +14,6 @@ from fractions import Fraction
 import math
 from pathlib import Path
 import random
-import re
 import shlex
 import struct
 import subprocess
@@ -38,19 +37,12 @@ def fixtures():
 
 
 def method_body(adapter):
-    source = adapter.read_text()
-    match = re.search(r'uint64_t Zmij::decimal\(uint64_t bits\)\s*\{', source)
-    if match is None:
-        raise RuntimeError('Review checker extraction after changing Zmij::decimal signature')
-    begin = match.end() - 1
-    depth = 1
-    end = begin + 1
-    while depth and end < len(source):
-        depth += (source[end] == '{') - (source[end] == '}')
-        end += 1
-    if depth:
-        raise RuntimeError('Cannot extract production Zmij::decimal body')
-    return 'uint64_t bridge(uint64_t bits) ' + source[begin:end]
+    # Compile the same shared implementation as the VM, rather than extracting
+    # C++ bodies with brace counting after the bridge moved into its own header.
+    if 'return hotspot_zmij_decimal_metadata(bits);' not in adapter.read_text():
+        raise RuntimeError('Review checker binding after changing Zmij::decimal')
+    return ('#include "utilities/zmijMetadata.inline.hpp"\n'
+            'uint64_t bridge(uint64_t bits) { return hotspot_zmij_decimal_metadata(bits); }')
 
 
 def pow10(exponent):
@@ -150,12 +142,13 @@ int main() {
         source = directory / 'check.cpp'
         source.write_text(driver)
         for profile, flags in (('full-table', []),
-                               ('shortest-table', ['-DZMIJ_SHORTEST_ONLY=1']),
-                               ('shortest-compressed', ['-DZMIJ_SHORTEST_ONLY=1', '-DZMIJ_OPTIMIZE_SIZE=1'])):
+                               ('shortest-table', ['-DZMIJ_HOTSPOT_SHORTEST_ONLY=1']),
+                               ('shortest-compressed', ['-DZMIJ_HOTSPOT_SHORTEST_ONLY=1', '-DZMIJ_OPTIMIZE_SIZE=1'])):
             binary = directory / profile
             subprocess.run(shlex.split(args.cxx) + ['-std=c++17', '-O2',
                            '-fsanitize=undefined', '-fno-sanitize-recover=undefined',
-                           '-I' + str(args.staged.resolve()), *flags,
+                           '-I' + str(args.staged.resolve()),
+                           '-I' + str(root / 'src/hotspot/share'), *flags,
                            str(source), '-o', str(binary)], check=True)
             result = subprocess.run([str(binary)], input=''.join(f'{v:x}\n' for v in values),
                                     capture_output=True, text=True, check=True)

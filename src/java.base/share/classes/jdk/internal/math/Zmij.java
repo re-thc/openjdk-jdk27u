@@ -107,7 +107,7 @@ final class Zmij {
             return 0;
         }
         long magnitude = bits & (type == 0 ? 0x7fffffffL : 0x7fffffffffffffffL);
-        if (magnitude <= 128
+        if (magnitude == 0
                 || magnitude >= (type == 0 ? 0x7f800000L : 0x7ff0000000000000L)) {
             return 0;
         }

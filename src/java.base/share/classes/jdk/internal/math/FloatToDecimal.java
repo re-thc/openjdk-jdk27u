@@ -192,6 +192,12 @@ public final class FloatToDecimal extends ToDecimal {
         if (!Zmij.useJavaFloatAppend()) {
             return putDecimal(str, index, v);
         }
+        int magnitude = floatToRawIntBits(v) & 0x7fffffff;
+        if (magnitude != 0 && magnitude <= 128) {
+            // Native shortest subnormal significands may differ from Java's
+            // two-digit preference. Keep append and toString consistent.
+            return putDecimal(str, index, v);
+        }
         assert 0 <= index && index <= length(str) - MAX_CHARS : "Trusted caller missed bounds check";
         int pair = toDecimalJava(str, index, v);
         int type = pair & 0xFF00;

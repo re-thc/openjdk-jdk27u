@@ -38,7 +38,7 @@
 #endif
 #define ZMIJ_USE_SSE4_1 1
 #define zmij hotspot_zmij_sse41
-#define ZMIJ_SHORTEST_ONLY 1
+#define ZMIJ_HOTSPOT_SHORTEST_ONLY
 #define ZMIJ_MALLOC(size) os::malloc(size, mtInternal)
 #define ZMIJ_FREE(ptr) os::free(ptr)
 #include "utilities/zmij/zmij-impl.hpp"

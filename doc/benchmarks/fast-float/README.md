@@ -1,4 +1,9 @@
-# fast_float measurements and validation
+# fast_float same-image controls and historical validation
+
+These historical enabled/opt-out/JNI tables isolate conversion paths within
+the modified image. Headline conclusions use the later [original-JDK baseline
+report](../decimal-original-baseline/README.md). JNI results on x86-64 do not
+establish performance on ports without the intrinsic entries.
 
 Original-build controls lead the conclusions; opt-out/JNI matrices are diagnostic. These Java measurements are historical and do not qualify the current PR head or JNI-only ports.
 

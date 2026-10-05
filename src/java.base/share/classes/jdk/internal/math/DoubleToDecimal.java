@@ -166,14 +166,18 @@ public final class DoubleToDecimal extends ToDecimal {
     }
 
     /**
-     * Splits the decimal <i>d</i> described in
-     * {@link Double#toString(double)} in integers <i>f</i> and <i>e</i>
+     * Splits the Java-compatible decimal <i>d</i> used by precision-formatting
+     * consumers in integers <i>f</i> and <i>e</i>
      * such that <i>d</i> = <i>f</i> 10<sup><i>e</i></sup>.
      *
      * <p>Further, determines integer <i>n</i> such that <i>n</i> = 0 when
      * <i>f</i> = 0, and
      * 10<sup><i>n</i>-1</sup> &le; <i>f</i> &lt; 10<sup><i>n</i></sup>
      * otherwise.
+     *
+     * <p>The native shortest rendering may use fewer significant digits for
+     * tiny subnormal values. Precision consumers retain the Java-compatible
+     * choice, independently of that rendering preference.
      *
      * <p>The argument {@code v} is assumed to be a positive finite value or
      * positive zero.

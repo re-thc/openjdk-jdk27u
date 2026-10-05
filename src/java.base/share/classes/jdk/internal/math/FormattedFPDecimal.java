@@ -82,8 +82,9 @@ public final class FormattedFPDecimal {
     }
 
     /**
-     * Returns a FormattedFPDecimal with the appropriate precision for
-     * {@link Double#toString(double)}.
+     * Returns a FormattedFPDecimal with Java-compatible decimal precision for
+     * {@link java.math.BigDecimal#valueOf(double)}, independently of the native
+     * shortest-rendering preference for tiny subnormals.
      *
      * @see java.math.BigDecimal#valueOf(double)
      */
