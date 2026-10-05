@@ -226,13 +226,12 @@ address TemplateInterpreterGenerator::generate_rustRegex_entry() {
   address entry = __ pc();
   Label slow_path;
   __ safepoint_poll(slow_path, false, false);
-  __ movptr(c_rarg0, Address(rsp, 4 * wordSize)); // long handle (two slots)
-  __ movptr(c_rarg1, Address(rsp, 3 * wordSize)); // byte[] input
-  __ movl2ptr(c_rarg2, Address(rsp, 2 * wordSize)); // offset
-  __ lea(c_rarg1, Address(c_rarg1, c_rarg2, Address::times_1,
-                         arrayOopDesc::base_offset_in_bytes(T_BYTE)));
-  __ movl(c_rarg2, Address(rsp, wordSize)); // length
-  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, RustRegex::may_match), c_rarg0, c_rarg1, c_rarg2);
+  __ movptr(c_rarg0, Address(rsp, 3 * wordSize)); // long handle (two slots)
+  __ movptr(c_rarg1, Address(rsp, 2 * wordSize)); // byte[] input
+  __ lea(c_rarg1, Address(c_rarg1, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+  __ movptr(c_rarg2, Address(rsp, wordSize)); // int[] captures and arguments
+  __ lea(c_rarg2, Address(c_rarg2, arrayOopDesc::base_offset_in_bytes(T_INT)));
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, RustRegex::match), c_rarg0, c_rarg1, c_rarg2);
   __ pop(rdi);
   __ mov(rsp, r13);
   __ jmp(rdi);

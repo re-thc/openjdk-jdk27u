@@ -30,37 +30,37 @@
 
 #if INCLUDE_RUST_REGEX
 extern "C" {
-  void* jdk_regex_compile(const unsigned char* pattern, size_t length);
+  void* jdk_regex_compile(const unsigned char* pattern, size_t length, unsigned int flags, size_t groups);
   void jdk_regex_free(void* handle);
-  unsigned char jdk_regex_may_match(const void* handle, const unsigned char* bytes, size_t length);
+  int jdk_regex_match(const void* handle, const unsigned char* bytes, int* state);
 }
 #endif
 
-JRT_LEAF(jint, RustRegex::may_match(jlong handle, address bytes, jint length))
+JRT_LEAF(jint, RustRegex::match(jlong handle, address bytes, address state))
 #if INCLUDE_RUST_REGEX
-  if (handle != 0 && length >= 0 && length <= 65536) {
-    return jdk_regex_may_match(reinterpret_cast<void*>(static_cast<intptr_t>(handle)), bytes, length);
+  if (handle != 0) {
+    return jdk_regex_match(reinterpret_cast<void*>(static_cast<intptr_t>(handle)), bytes,
+                           reinterpret_cast<int*>(state));
   }
 #endif
-  return JNI_TRUE;
+  return -1;
 JRT_END
 
 JNI_ENTRY(jboolean, RR_enabled(JNIEnv* env, jclass cls))
   return INCLUDE_RUST_REGEX && UseRustRegex;
 JNI_END
 
-JNI_ENTRY(jlong, RR_compile(JNIEnv* env, jclass cls, jbyteArray pattern))
+JNI_ENTRY(jlong, RR_compile(JNIEnv* env, jclass cls, jbyteArray pattern, jint flags, jint groups))
 #if INCLUDE_RUST_REGEX
   typeArrayOop array = typeArrayOop(JNIHandles::resolve_non_null(pattern));
   int length = array->length();
-  if (length > 4096) return 0;
-  unsigned char copy[4096];
-  memcpy(copy, array->byte_at_addr(0), length);
+  if (length > 16384 || groups < 1 || groups > 33) return 0;
+  unsigned char copy[16384];
+  memcpy(copy, array->base(T_BYTE), length);
   void* handle;
   {
-    // DFA construction allocates and can be slow; allow GC during compilation.
     ThreadToNativeFromVM ttn(THREAD);
-    handle = jdk_regex_compile(copy, length);
+    handle = jdk_regex_compile(copy, length, flags, groups);
   }
   return static_cast<jlong>(reinterpret_cast<intptr_t>(handle));
 #else
@@ -75,19 +75,19 @@ JNI_ENTRY(void, RR_free(JNIEnv* env, jclass cls, jlong handle))
 #endif
 JNI_END
 
-JNI_ENTRY(jboolean, RR_mayMatch(JNIEnv* env, jclass cls, jlong handle,
-                               jbyteArray input, jint offset, jint length))
-  typeArrayOop array = typeArrayOop(JNIHandles::resolve_non_null(input));
-  if (offset < 0 || length < 0 || length > array->length() - offset) return JNI_TRUE;
-  return RustRegex::may_match(handle, reinterpret_cast<address>(array->byte_at_addr(offset)), length);
+JNI_ENTRY(jint, RR_match(JNIEnv* env, jclass cls, jlong handle, jbyteArray input, jintArray state))
+  typeArrayOop bytes = typeArrayOop(JNIHandles::resolve_non_null(input));
+  typeArrayOop slots = typeArrayOop(JNIHandles::resolve_non_null(state));
+  return RustRegex::match(handle, reinterpret_cast<address>(bytes->base(T_BYTE)),
+                         reinterpret_cast<address>(slots->base(T_INT)));
 JNI_END
 
 extern "C" void JNICALL JVM_RegisterRustRegexMethods(JNIEnv* env, jclass cls) {
   static const JNINativeMethod methods[] = {
     {const_cast<char*>("enabled0"), const_cast<char*>("()Z"), CAST_FROM_FN_PTR(void*, RR_enabled)},
-    {const_cast<char*>("compile0"), const_cast<char*>("([B)J"), CAST_FROM_FN_PTR(void*, RR_compile)},
+    {const_cast<char*>("compile0"), const_cast<char*>("([BII)J"), CAST_FROM_FN_PTR(void*, RR_compile)},
     {const_cast<char*>("free0"), const_cast<char*>("(J)V"), CAST_FROM_FN_PTR(void*, RR_free)},
-    {const_cast<char*>("mayMatch0"), const_cast<char*>("(J[BII)Z"), CAST_FROM_FN_PTR(void*, RR_mayMatch)}
+    {const_cast<char*>("match0"), const_cast<char*>("(J[B[I)I"), CAST_FROM_FN_PTR(void*, RR_match)}
   };
   env->RegisterNatives(cls, methods, sizeof(methods) / sizeof(methods[0]));
 }

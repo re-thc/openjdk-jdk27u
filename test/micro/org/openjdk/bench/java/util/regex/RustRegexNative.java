@@ -35,11 +35,13 @@ import org.openjdk.jmh.annotations.*;
 @Measurement(iterations = 5, time = 1)
 @Fork(3)
 @State(Scope.Thread)
-public class RustRegexFilter {
+public class RustRegexNative {
     @Param({"64", "4096", "32768"})
     public int length;
-    @Param({"miss", "hit", "hitAfterMisses", "unsupported", "literal", "utf16", "flags"})
+    @Param({"miss", "hit", "lateHit", "fullHit", "captures", "unsupported", "literal", "utf16", "flags"})
     public String scenario;
+    @Param({"find", "matches", "lookingAt"})
+    public String operation;
     private Matcher matcher;
 
     @Setup
@@ -47,19 +49,26 @@ public class RustRegexFilter {
         String expression = switch (scenario) {
             case "unsupported" -> "(?=error)error[0-9]+";
             case "literal" -> "error123";
+            case "captures" -> "(?<word>error)(?<code>[0-9]+)";
             default -> "error[0-9]+";
         };
         String input = "x ".repeat(length / 2);
         if (scenario.equals("utf16")) input = "\u0100 ".repeat(length / 2);
-        if (scenario.equals("hit")) input = "error123" + input.substring(8);
+        if (scenario.equals("hit") || scenario.equals("captures")) input = "error123" + input.substring(8);
+        if (scenario.equals("lateHit")) input = input.substring(8) + "error123";
+        if (scenario.equals("fullHit")) input = "error" + "3".repeat(length - 5);
         int flags = scenario.equals("flags") ? Pattern.CASE_INSENSITIVE : 0;
         matcher = Pattern.compile(expression, flags).matcher(input);
         for (int i = 0; i < 16; i++) matcher.reset().find();
-        if (scenario.equals("hitAfterMisses")) {
-            matcher.reset("error123" + input.substring(8));
-        }
     }
 
     @Benchmark
-    public boolean find() { return matcher.reset().find(); }
+    public boolean match() {
+        matcher.reset();
+        return switch (operation) {
+            case "matches" -> matcher.matches();
+            case "lookingAt" -> matcher.lookingAt();
+            default -> matcher.find();
+        };
+    }
 }

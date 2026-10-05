@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @summary Retained native regex filters have a process-wide fail-open budget
+ * @summary Native regex engines and caches have a process-wide fail-open budget
  * @modules java.base/java.util.regex:open java.base/jdk.internal.util.regex
  * @run main/othervm/timeout=300 RustRegexMemoryBudget
  * @run main/othervm/timeout=300 -XX:-UseRustRegexIntrinsics RustRegexMemoryBudget
@@ -44,19 +44,20 @@ public class RustRegexMemoryBudget {
         }
         List<RustRegex> retained = new ArrayList<>();
         RustRegex filter;
-        while ((filter = RustRegex.compile("a{512}", 0)) != null) {
+        while ((filter = RustRegex.compile("a{512}(?:x" + retained.size() + ")?", 0)) != null) {
             retained.add(filter);
             if (retained.size() == 16384) throw new AssertionError("native budget never exhausted");
         }
         if (retained.isEmpty()) throw new AssertionError("first native allocation failed");
         RustRegex first = retained.getFirst();
-        if (RustRegex.isLatin1("x")) {
-            if (first.mayMatch("x".repeat(8192), 0, 8192))
-                throw new AssertionError("retained filter stopped rejecting after budget exhaustion");
-            if (!first.mayMatch("a".repeat(8192), 0, 8192))
-                throw new AssertionError("retained filter lost a candidate after budget exhaustion");
-        }
-        // Exhaustion must permanently choose Java for a newly activated Pattern.
+        int[] state = new int[first.groupCount * 2 + 4];
+        int base = first.groupCount * 2;
+        state[base+1] = 8192;
+        if (first.match("x".repeat(8192), state, false, true) != 0)
+            throw new AssertionError("retained engine stopped rejecting after budget exhaustion");
+        if (first.match("a".repeat(8192), state, false, true) != 1)
+            throw new AssertionError("retained engine lost a match after budget exhaustion");
+        // Exhaustion must permanently choose Java for a newly compiled Pattern.
         Pattern pattern = Pattern.compile("error([0-9]+)");
         for (int i = 0; i < 12; i++) {
             var matcher = pattern.matcher("x".repeat(2048));
@@ -68,7 +69,7 @@ public class RustRegexMemoryBudget {
         var matcher = pattern.matcher("error123" + "x".repeat(2048));
         if (!matcher.find() || !matcher.group(1).equals("123")) throw new AssertionError("Java hit fallback");
         Reference.reachabilityFence(retained);
-        System.out.println("Budget exhausted with " + retained.size() + " retained filters; Java fallback OK");
+        System.out.println("Budget exhausted with " + retained.size() + " retained engines; Java fallback OK");
         retained.clear();
         // Cleaner timing is asynchronous. Check eventual capacity recovery,
         // without assuming a particular collection or callback order.

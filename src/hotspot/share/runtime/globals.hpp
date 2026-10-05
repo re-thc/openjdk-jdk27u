@@ -357,10 +357,10 @@ const int ObjectAlignmentInBytes = 8;
           "use intrinsics for java.util.zip.Adler32")                       \
                                                                             \
   product(bool, UseRustRegex, INCLUDE_RUST_REGEX != 0,                       \
-          "Use bundled Rust regex to filter eligible long searches")         \
+          "Use bundled Rust regex for supported patterns")         \
                                                                          \
   product(bool, UseRustRegexIntrinsics, true,                              \
-          "Use direct leaf calls for the Rust regex filter")                 \
+          "Use direct leaf calls for native regex matching")                 \
                                                                          \
   product(bool, UseVectorizedMismatchIntrinsic, false, DIAGNOSTIC,          \
           "Enables intrinsification of ArraysSupport.vectorizedMismatch()") \

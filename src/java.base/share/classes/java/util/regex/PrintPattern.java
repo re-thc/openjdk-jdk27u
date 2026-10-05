@@ -212,6 +212,7 @@ class PrintPattern {
 
     public static void main(String[] args) {
         Pattern p = Pattern.compile(args[0]);
+        p.ensureJava();
         System.out.println("   Pattern: " + p);
         walk(p.root, 0);
     }

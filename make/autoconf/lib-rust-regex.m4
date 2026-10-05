@@ -34,7 +34,7 @@ AC_DEFUN_ONCE([LIB_SETUP_RUST_REGEX], [
     macosx-x86_64|macosx-aarch64) RUST_REGEX_DEFAULT=yes ;;
   esac
   AC_ARG_ENABLE([rust-regex], [AS_HELP_STRING([--disable-rust-regex],
-      [omit the bundled Rust regex filter (default: enabled on supported targets)])],
+      [omit the bundled Rust regex engine (default: enabled on supported targets)])],
       [], [enable_rust_regex=$RUST_REGEX_DEFAULT])
   AC_ARG_WITH([rust-regex-license], [AS_HELP_STRING([--with-rust-regex-license],
       [Rust standard library copyright notices from the matching toolchain])])

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Short and mutable searches do not initialize the Rust backend
+ * @summary Pattern compilation initializes its native backend before the first search
  * @library /test/lib
  * @run driver RustRegexInitialization
  */
@@ -40,11 +40,7 @@ public class RustRegexInitialization {
             OutputAnalyzer output = ProcessTools.executeTestJava(
                     "-Xint", "-Xshare:off", "-Xlog:class+init=info", Search.class.getName(), mode);
             output.shouldHaveExitValue(0);
-            if (mode.equals("long")) {
-                output.shouldContain(INITIALIZATION);
-            } else {
-                output.shouldNotContain(INITIALIZATION);
-            }
+            output.shouldContain(INITIALIZATION);
         }
     }
 

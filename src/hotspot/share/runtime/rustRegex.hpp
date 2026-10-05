@@ -31,8 +31,8 @@
 
 class RustRegex : AllStatic {
  public:
-  // No allocation, locking, or safepoints. The caller bounds length to 64 KiB.
-  static jint may_match(jlong handle, address bytes, jint length);
+  // Bounded matching/captures; Java validates arrays and a 64 KiB region.
+  static jint match(jlong handle, address bytes, address state);
 };
 
 #endif // SHARE_RUNTIME_RUSTREGEX_HPP

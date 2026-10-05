@@ -459,9 +459,9 @@ class methodHandle;
                                                                                                                         \
   do_class(jdk_internal_util_ArraysSupport, "jdk/internal/util/ArraysSupport")                                                          \
   do_class(jdk_internal_util_regex_RustRegex, "jdk/internal/util/regex/RustRegex")                                     \
-  do_intrinsic(_rustRegexMayMatch, jdk_internal_util_regex_RustRegex, rustRegexMayMatch_name, rustRegexMayMatch_signature, F_SN) \
-   do_name(rustRegexMayMatch_name, "mayMatch0")                                                                         \
-   do_signature(rustRegexMayMatch_signature, "(J[BII)Z")                                                               \
+  do_intrinsic(_rustRegexMatch, jdk_internal_util_regex_RustRegex, rustRegexMatch_name, rustRegexMatch_signature, F_SN) \
+   do_name(rustRegexMatch_name, "match0")                                                                         \
+   do_signature(rustRegexMatch_signature, "(J[B[I)I")                                                               \
                                                                                                                      \
   do_intrinsic(_vectorizedMismatch, jdk_internal_util_ArraysSupport, vectorizedMismatch_name, vectorizedMismatch_signature, F_S)\
    do_name(vectorizedMismatch_name, "vectorizedMismatch")                                                               \

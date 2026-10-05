@@ -27,8 +27,6 @@ package java.util.regex;
 
 import jdk.internal.util.regex.RustRegex;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 import java.util.Locale;
@@ -1011,65 +1009,26 @@ public final class Pattern
      */
     transient Node root;
 
-    static final int RUST_REGEX_MISS_THRESHOLD = 8;
-    private transient volatile int rustRegexMisses;
-    private transient volatile boolean rustRegexCompiled;
-    private transient volatile boolean rustRegexCompiling;
-    private transient RustRegex rustRegex;
+    transient volatile RustRegex rustRegex;
+    private transient volatile boolean javaCompiled;
 
-    // Initialize ownership coordination only on the cold preparation path.
-    private static final class RustRegexCompilation {
-        static final VarHandle OWNER;
-        static {
-            try {
-                OWNER = MethodHandles.lookup().findVarHandle(Pattern.class, "rustRegexCompiling", boolean.class);
-            } catch (ReflectiveOperationException e) {
-                throw new ExceptionInInitializerError(e);
+    // Native Patterns retain no Java node graph. Promote permanently on an
+    // unsupported input/operation; active native calls retain their own wrapper.
+    void ensureJava() {
+        if (javaCompiled) return;
+        synchronized (this) {
+            if (!javaCompiled) {
+                Pattern fallback = new Pattern(pattern, flags, false);
+                assert fallback.capturingGroupCount == capturingGroupCount;
+                root = fallback.root;
+                matchRoot = fallback.matchRoot;
+                flags0 = fallback.flags0;
+                localCount = fallback.localCount;
+                localTCNCount = fallback.localTCNCount;
+                namedGroups = fallback.namedGroups;
+                javaCompiled = true;
+                rustRegex = null;
             }
-        }
-    }
-
-    // Matcher.search has already checked that input is an eligible String.
-    void recordRustRegexMiss(CharSequence input) {
-        if (rustRegexMisses < RUST_REGEX_MISS_THRESHOLD && flags == 0) recordLatin1RustRegexMiss(input);
-    }
-
-    private void recordLatin1RustRegexMiss(CharSequence input) {
-        if (RustRegex.isLatin1((String)input)) {
-            rustRegexMisses++;
-        }
-    }
-
-    void recordRustRegexHit() {
-        rustRegexMisses = 0;
-    }
-
-    int rustRegexMisses() {
-        return rustRegexMisses;
-    }
-
-    RustRegex rustRegex(CharSequence input) {
-        // Matcher has already observed enough consecutive eligible misses.
-        if (!rustRegexCompiled) return compileRustRegex(input);
-        return rustRegex;
-    }
-
-    // Keep cold preparation out of the small helpers C1 inlines in search.
-    private RustRegex compileRustRegex(CharSequence input) {
-        // A different Matcher may have learned the misses on Latin-1.
-        // Do not pay for compilation on an input the filter cannot scan.
-        if (!RustRegex.isLatin1((String)input)) return null;
-        // A single Matcher prepares the filter. Other Matchers continue with
-        // Java rather than waiting for another thread's native compilation.
-        if (!RustRegexCompilation.OWNER.compareAndSet(this, false, true)) return null;
-        try {
-            if (!rustRegexCompiled) {
-                rustRegex = RustRegex.compile(pattern, flags);
-                rustRegexCompiled = true;
-            }
-            return rustRegex;
-        } finally {
-            RustRegexCompilation.OWNER.setRelease(this, false);
         }
     }
 
@@ -1609,6 +1568,7 @@ public final class Pattern
         if (pattern.isEmpty()) {
             root = new Start(lastAccept);
             matchRoot = lastAccept;
+            javaCompiled = true;
             compiled = true;
         }
     }
@@ -1620,6 +1580,10 @@ public final class Pattern
      * only a Start node and a LastNode node.
      */
     private Pattern(String p, int f) {
+        this(p, f, true);
+    }
+
+    private Pattern(String p, int f, boolean preferNative) {
         if ((f & ~ALL_FLAGS) != 0) {
             throw new IllegalArgumentException("Unknown flag 0x"
                                                + Integer.toHexString(f));
@@ -1641,13 +1605,16 @@ public final class Pattern
 
         if (!pattern.isEmpty()) {
             try {
-                compile();
+                if (preferNative) compile();
+                else { compileJava(); javaCompiled = true; }
             } catch (StackOverflowError soe) {
                 throw error("Stack overflow during pattern compilation");
             }
         } else {
             root = new Start(lastAccept);
             matchRoot = lastAccept;
+            javaCompiled = true;
+            compiled = true;
         }
     }
 
@@ -1970,6 +1937,19 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      * of the expression which will create the object tree.
      */
     private void compile() {
+        RustRegex nativePattern = RustRegex.compile(pattern, flags);
+        if (nativePattern != null) {
+            rustRegex = nativePattern;
+            capturingGroupCount = nativePattern.groupCount;
+            namedGroups = nativePattern.namedGroups;
+            compiled = true;
+            return;
+        }
+        compileJava();
+        javaCompiled = true;
+    }
+
+    private void compileJava() {
         // Handle canonical equivalences
         if (has(CANON_EQ) && !has(LITERAL)) {
             normalizedPattern = normalize(pattern);

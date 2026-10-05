@@ -24,361 +24,239 @@
 
 /*
  * @test
- * @summary Differential coverage for the conservative Rust regex filter
+ * @summary Native primary matching, captures, fallback and Java API state
  * @modules java.base/java.util.regex:open java.base/jdk.internal.util.regex
  * @run main/othervm RustRegexTest
  * @run main/othervm -XX:-UseRustRegex RustRegexTest
  * @run main/othervm -XX:+UseRustRegex RustRegexTest
- * @run main/othervm -XX:+UseRustRegex -XX:-UseRustRegexIntrinsics RustRegexTest
- * @run main/othervm/timeout=600 -XX:+UseRustRegex -Xint RustRegexTest
- * @run main/othervm -XX:+UseRustRegex -XX:TieredStopAtLevel=1 -Xbatch RustRegexTest
- * @run main/othervm -XX:+UseRustRegex -XX:-TieredCompilation -Xbatch RustRegexTest
- * @run main/othervm -XX:+UseRustRegex -XX:-CompactStrings RustRegexTest
+ * @run main/othervm -XX:-UseRustRegexIntrinsics RustRegexTest
+ * @run main/othervm -Xint RustRegexTest
+ * @run main/othervm -XX:TieredStopAtLevel=1 -Xbatch RustRegexTest
+ * @run main/othervm -XX:-TieredCompilation -Xbatch RustRegexTest
+ * @run main/othervm -XX:-CompactStrings RustRegexTest
  */
 
 import java.io.*;
-import java.lang.reflect.Field;
+import java.lang.reflect.*;
+import java.nio.CharBuffer;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.regex.*;
 import jdk.internal.util.regex.RustRegex;
 
 public class RustRegexTest {
-    private static final boolean EXPECT_FILTER = RustRegex.ENABLED && RustRegex.isLatin1("x ");
-    private static final Field COMPILED;
-    private static final Field FILTER;
-    private static final Field MISSES;
+    private static final Field NATIVE, ROOT, MATCH_ROOT;
+    private static final Method JAVA;
+    private static int comparisons;
     static {
         try {
-            COMPILED = Pattern.class.getDeclaredField("rustRegexCompiled");
-            FILTER = Pattern.class.getDeclaredField("rustRegex");
-            MISSES = Pattern.class.getDeclaredField("rustRegexMisses");
-            COMPILED.setAccessible(true);
-            FILTER.setAccessible(true);
-            MISSES.setAccessible(true);
+            NATIVE = Pattern.class.getDeclaredField("rustRegex");
+            ROOT = Pattern.class.getDeclaredField("root");
+            MATCH_ROOT = Pattern.class.getDeclaredField("matchRoot");
+            JAVA = Pattern.class.getDeclaredMethod("ensureJava");
+            for (Field f : new Field[]{NATIVE, ROOT, MATCH_ROOT}) f.setAccessible(true);
+            JAVA.setAccessible(true);
         } catch (ReflectiveOperationException e) { throw new ExceptionInInitializerError(e); }
     }
 
-    private static Pattern reference(String regex, int flags) throws Exception {
-        Pattern p = Pattern.compile(regex, flags);
-        COMPILED.setBoolean(p, true); // Identical Java engine, with no Rust handle.
+    private static Pattern reference(String expression, int flags) throws Exception {
+        Pattern p = Pattern.compile(expression, flags);
+        JAVA.invoke(p);
         return p;
     }
 
-    private static void warm(Pattern p) {
-        warm(p, "x ".repeat(2048));
+    private static void nativeOnly(Pattern p) throws Exception {
+        if (RustRegex.ENABLED && (NATIVE.get(p) == null || ROOT.get(p) != null || MATCH_ROOT.get(p) != null))
+            throw new AssertionError("not a native-only Pattern: " + p);
     }
 
-    private static void warm(Pattern p, String input) {
-        for (int i = 0; i < 12; i++) p.matcher(input).find();
-    }
-
-    private static String matchState(Matcher m, boolean found) {
-        StringBuilder s = new StringBuilder();
-        s.append(found).append('/').append(m.hitEnd()).append('/').append(m.requireEnd());
+    private static String state(Matcher m, boolean found, boolean endFlags) {
+        StringBuilder s = new StringBuilder().append(found).append('/').append(m.groupCount());
+        if (endFlags) s.append('/').append(m.hitEnd()).append('/').append(m.requireEnd());
         if (found) {
-            for (int g = 0; g <= m.groupCount(); g++)
-                s.append('|').append(m.start(g)).append(':').append(m.end(g)).append(':').append(m.group(g));
+            for (int i = 0; i <= m.groupCount(); i++)
+                s.append('|').append(m.start(i)).append(':').append(m.end(i)).append(':').append(m.group(i));
+            MatchResult copy = m.toMatchResult();
+            if (!copy.group().equals(m.group()) || !copy.namedGroups().equals(m.namedGroups()))
+                throw new AssertionError("immutable result state");
         }
         return s.toString();
     }
 
-    private static String snapshot(Matcher m) {
-        StringBuilder s = new StringBuilder();
-        for (int i = 0; i < 20; i++) {
-            boolean found = m.find();
-            s.append(matchState(m, found)).append(';');
-            if (!found) break;
-        }
-        return s.toString();
+    private static void equal(Matcher a, Matcher b, boolean av, boolean bv, boolean endFlags) {
+        String actual = state(a, av, endFlags), expected = state(b, bv, endFlags);
+        if (!actual.equals(expected)) throw new AssertionError(a.pattern()+" actual="+actual+" expected="+expected);
+        comparisons++;
     }
 
-    private static void edgeCases() throws Exception {
-        String padding = "z ".repeat(2048);
-        // ']' is a literal at the start of a class in both dialects. A NUL
-        // goes through the length-delimited ASCII byte array, not JNI UTF-8.
-        for (String regex : new String[]{"[]a]x", "[^]a]x", "a\0+b"}) {
-            Pattern p = Pattern.compile(regex), ref = reference(regex, 0);
-            warm(p, padding);
-            if (EXPECT_FILTER && FILTER.get(p) == null)
-                throw new AssertionError("edge-case filter was not compiled: " + regex);
-            String input = padding + "]x ax bx a\0\0b";
-            compare(p, ref, input, 0, input.length(), false, true);
-            for (int start : new int[]{0, 3, 2048, padding.length(), input.length() - 2, input.length()}) {
-                warm(p, padding);
-                Matcher a = p.matcher(input), b = ref.matcher(input);
-                String actual = matchState(a, a.find(start)), expected = matchState(b, b.find(start));
-                if (!expected.equals(actual) || !snapshot(a).equals(snapshot(b)))
-                    throw new AssertionError("find(int) " + regex + " start=" + start);
+    private static void primary() throws Exception {
+        String[] expressions = {"error([0-9]+)", "(?<word>error|warn):\\s*(?<code>[0-9]+)",
+                "[0-9]{3}-[0-9]{2}-[0-9]{4}", "a.*b", "a.*?b", "(a|ab)",
+                "[a-z]+[0-9]+", "(?:a|bc)+d", "[]a]x", "[^]a]x", "[a-z]{2,4}?",
+                "[^x]+z", "\\D+q", "(ab)+", "(a|ab)+", "(a)?b", "a{1}?b", "^foo[0-9]+$", "\\Afoo.*\\z",
+                "\\bfoo\\b", "\\Q[a].\\E[0-9]+", "(a|)", "(?:)", "a*", "a+?b", "a\\x00+b"};
+        String[] inputs = {"", "abc", "ab", "aba", "abab", "error123", "x error123 y", "warn: 0003",
+                "foo42", "foo", "123-45-6789", "]x ax bx", "[a].123", "a\0\0b", "abc123 z q",
+                "x ".repeat(2048), "x ".repeat(2048)+"error123"};
+        for (String expression : expressions) {
+            for (int flags : new int[]{0, Pattern.CASE_INSENSITIVE, Pattern.DOTALL, Pattern.UNIX_LINES}) {
+                Pattern p = Pattern.compile(expression, flags), ref = reference(expression, flags);
+                nativeOnly(p);
+                Object owner = NATIVE.get(p); // Keep the weak-cache engine alive across observer controls.
+                for (String input : inputs) {
+                    Matcher a = p.matcher(input), b = ref.matcher(input);
+                    for (int i = 0; i <= input.length()+1; i++) {
+                        boolean av = a.find(), bv = b.find();
+                        equal(a,b,av,bv,false);
+                        if (!av) break;
+                    }
+                    equal(a,b,a.reset().matches(),b.reset().matches(),false);
+                    equal(a,b,a.reset().lookingAt(),b.reset().lookingAt(),false);
+                    for (int start : new int[]{0, input.length()/2, input.length()})
+                        equal(a,b,a.find(start),b.find(start),false);
+                }
+                nativeOnly(p); // No eighth-call gate and no Java verification scan.
+                java.lang.ref.Reference.reachabilityFence(owner);
             }
-            // Exclude all candidates while leaving an eligible long search.
-            warm(p, padding);
-            String beforeStart = "]x ax bx a\0\0b" + padding;
-            Matcher a = p.matcher(beforeStart), b = ref.matcher(beforeStart);
-            String actualState = matchState(a, a.find(32)), expectedState = matchState(b, b.find(32));
-            if (!expectedState.equals(actualState) || !actualState.startsWith("false/"))
-                throw new AssertionError("find(int) did not exclude earlier candidates: " + regex);
-            for (int start : new int[]{-1, input.length() + 1}) {
-                try {
-                    p.matcher(input).find(start);
-                    throw new AssertionError("invalid find(int) accepted");
-                } catch (IndexOutOfBoundsException expected) { }
-            }
-        }
-
-        Pattern p = Pattern.compile("error[0-9]+"), ref = reference(p.pattern(), 0);
-        // Anchored operations must neither learn misses nor compile a filter.
-        for (int i = 0; i < 12; i++) {
-            for (boolean entire : new boolean[]{false, true}) {
-                Matcher a = p.matcher(padding), b = ref.matcher(padding);
-                boolean actual = entire ? a.matches() : a.lookingAt();
-                boolean expected = entire ? b.matches() : b.lookingAt();
-                if (!matchState(a, actual).equals(matchState(b, expected)))
-                    throw new AssertionError("anchored match state");
-            }
-        }
-        if (MISSES.getInt(p) != 0 || COMPILED.getBoolean(p) || FILTER.get(p) != null)
-            throw new AssertionError("anchored operation entered filter learning");
-        warm(p);
-        int misses = MISSES.getInt(p);
-        Object cached = FILTER.get(p);
-        for (boolean entire : new boolean[]{false, true}) {
-            Matcher a = p.matcher(padding), b = ref.matcher(padding);
-            boolean actual = entire ? a.matches() : a.lookingAt();
-            boolean expected = entire ? b.matches() : b.lookingAt();
-            if (!matchState(a, actual).equals(matchState(b, expected)))
-                throw new AssertionError("anchored operation used cached filter");
-        }
-        if (MISSES.getInt(p) != misses || FILTER.get(p) != cached)
-            throw new AssertionError("anchored operation changed filter state");
-
-        // Rust accepts nested repetition as a superset of Java possessive
-        // repetition. A Rust candidate must still run the Java matcher.
-        Pattern possessive = Pattern.compile("x*+x");
-        warm(possessive);
-        String input = "x ".repeat(2048);
-        RustRegex filter = (RustRegex) FILTER.get(possessive);
-        if (EXPECT_FILTER && filter == null)
-            throw new AssertionError("possessive superset case not compiled");
-        if (filter != null && !filter.mayMatch(input, 0, input.length()))
-            throw new AssertionError("Rust nested repetition did not broaden the language");
-        if (possessive.matcher(input).find())
-            throw new AssertionError("Rust candidate changed Java possessive semantics");
-        compare(possessive, reference(possessive.pattern(), 0), padding, 0, padding.length(), false, true);
-    }
-
-    private static void inputGates() throws Exception {
-        String latin1 = "x ".repeat(2048), utf16 = "\u0100 ".repeat(2048);
-        Pattern p = Pattern.compile("error[0-9]+");
-        warm(p, utf16);
-        if (MISSES.getInt(p) != 0 || COMPILED.getBoolean(p) || FILTER.get(p) != null)
-            throw new AssertionError("UTF-16 input learned or compiled a filter");
-
-        for (int i = 0; i < 8; i++) p.matcher(latin1).find();
-        p.matcher(utf16).find();
-        if (COMPILED.getBoolean(p) || FILTER.get(p) != null)
-            throw new AssertionError("UTF-16 input triggered compilation after Latin-1 misses");
-        warm(p, latin1);
-        if ((FILTER.get(p) != null) != EXPECT_FILTER)
-            throw new AssertionError("Latin-1 reuse did not respect compact String availability");
-
-        for (int flags : new int[]{Pattern.CASE_INSENSITIVE, Pattern.MULTILINE,
-                Pattern.DOTALL, Pattern.UNICODE_CHARACTER_CLASS, Pattern.COMMENTS,
-                Pattern.LITERAL, Pattern.CANON_EQ}) {
-            Pattern flagged = Pattern.compile("error[0-9]+", flags);
-            warm(flagged, latin1);
-            if (MISSES.getInt(flagged) != 0 || COMPILED.getBoolean(flagged))
-                throw new AssertionError("unsupported flags learned or attempted a filter");
+            System.gc();
         }
     }
 
-    private static void interruptedLearning() throws Exception {
-        String miss = "x".repeat(2048), hit = "error123" + miss;
-        Pattern p = Pattern.compile("error[0-9]+");
-        for (int i = 0; i < 32; i++) {
-            String input = (i & 1) == 0 ? miss : hit;
-            if (p.matcher(input).find() != ((i & 1) != 0))
-                throw new AssertionError("alternating search result");
-        }
-        if (MISSES.getInt(p) != 0 || COMPILED.getBoolean(p) || FILTER.get(p) != null)
-            throw new AssertionError("successful searches did not interrupt filter learning");
-        warm(p, miss);
-        if ((FILTER.get(p) != null) != EXPECT_FILTER)
-            throw new AssertionError("consecutive misses did not activate a filter");
-        Object cached = FILTER.get(p);
-        for (int i = 0; i < 32; i++) p.matcher((i & 1) == 0 ? miss : hit).find();
-        if (MISSES.getInt(p) != 0 || FILTER.get(p) != cached)
-            throw new AssertionError("interrupted learning lost the cached filter");
-    }
-
-    private static void nonblockingPreparation() throws Exception {
-        String miss = "x".repeat(2048);
-        Pattern p = Pattern.compile("error[0-9]+"), ref = reference(p.pattern(), 0);
-        for (int i = 0; i < 8; i++) p.matcher(miss).find();
-        Field owner = Pattern.class.getDeclaredField("rustRegexCompiling");
-        owner.setAccessible(true);
-        // A pending owner must make other Matchers use Java, without reading
-        // an unpublished handle or marking preparation complete themselves.
-        owner.setBoolean(p, true);
-        try {
-            compare(p, ref, miss, 0, miss.length(), false, true);
-            if (COMPILED.getBoolean(p) || FILTER.get(p) != null)
-                throw new AssertionError("busy preparation did not fall back to Java");
-        } finally {
-            owner.setBoolean(p, false);
-        }
-        // Preparing a filter must also be independent of user synchronization
-        // on the immutable Pattern object.
-        try (ExecutorService worker = Executors.newSingleThreadExecutor()) {
-            synchronized (p) {
-                if (worker.submit(() -> p.matcher(miss).find()).get(30, TimeUnit.SECONDS))
-                    throw new AssertionError("preparation miss result");
+    private static void apiState() throws Exception {
+        String[] expressions = {"error([0-9]+)", "a.*b|a", "a.*?b", "a*", "(a|ab)",
+                "^foo[0-9]+$", "\\bfoo\\b", "[]a]x", "[^]a]x", "\\d+", "\\D+", "a.b"};
+        String[] inputs = {"", "a", "ab", "abc", "foo42", "foo42\n", "a\rb", "a\u0085b",
+                "x foo x", "error123 error456", "]x ax", "\u00e9\u00ff\u0100\ud83d\ude00", "x ".repeat(1024)+"error789"};
+        for (String expression : expressions) {
+            Pattern ref = reference(expression,0);
+            for (String input : inputs) {
+                for (boolean transparent : new boolean[]{false,true}) {
+                    for (boolean anchoring : new boolean[]{false,true}) {
+                        for (int lo : new int[]{0,input.length()/2,input.length()}) {
+                            Pattern p = Pattern.compile(expression);
+                            Matcher a = p.matcher(input).region(lo,input.length())
+                                    .useTransparentBounds(transparent).useAnchoringBounds(anchoring);
+                            Matcher b = ref.matcher(input).region(lo,input.length())
+                                    .useTransparentBounds(transparent).useAnchoringBounds(anchoring);
+                            equal(a,b,a.find(),b.find(),true);
+                            equal(a,b,a.reset().region(lo,input.length()).matches(),
+                                    b.reset().region(lo,input.length()).matches(),true);
+                            equal(a,b,a.reset().region(lo,input.length()).lookingAt(),
+                                    b.reset().region(lo,input.length()).lookingAt(),true);
+                        }
+                    }
+                }
+                System.gc();
             }
         }
-        if ((FILTER.get(p) != null) != EXPECT_FILTER)
-            throw new AssertionError("preparation did not resume after ownership was released");
+        // End flags describe the old operation even after reset, mutation or usePattern.
+        Pattern p = Pattern.compile("a.*b|a"), ref = reference(p.pattern(),0);
+        StringBuilder input = new StringBuilder("abc");
+        Matcher a = p.matcher(input), b = ref.matcher(input);
+        equal(a,b,a.find(),b.find(),false);
+        input.setLength(0);
+        a.reset("other").usePattern(Pattern.compile("x+"));
+        b.reset("other").usePattern(Pattern.compile("x+"));
+        if (a.hitEnd()!=b.hitEnd() || a.requireEnd()!=b.requireEnd()) throw new AssertionError("saved end state");
     }
 
-    private static void combinedClassGrammar() throws Exception {
-        String misses = "x".repeat(2048);
-        int cases = 0;
-        // Exercise the product of class openings, set operators, and escapes.
-        // In Java these operators are literals (apart from intersection), but
-        // Rust can subtract otherwise valid Java candidates from the class.
+    private static void fallbackGrammar() throws Exception {
         for (String prefix : new String[]{"", "^", "]", "^]", "\\]", "^\\]"}) {
             for (String body : new String[]{"a~~a", "a||b", "a-z--c", "a&&b", "a\\-~~a"}) {
-                String regex = "[" + prefix + body + "]+";
-                if (RustRegex.compile(regex, 0) != null)
-                    throw new AssertionError("incompatible combined grammar passed the gate: " + regex);
-                Pattern p = Pattern.compile(regex), ref = reference(regex, 0);
-                for (int i = 0; i < 8; i++) p.matcher(misses).find();
-                // The ninth call used to reject 'a' for []a~~a]+.
-                for (String candidate : new String[]{"a", "b", "]", "~", "|", "-", "x"}) {
-                    String input = candidate.repeat(2048);
-                    compare(p, ref, input, 0, input.length(), false, true);
+                String expression = "["+prefix+body+"]+";
+                Pattern p = Pattern.compile(expression), ref = reference(expression,0);
+                if (NATIVE.get(p)!=null) throw new AssertionError("incompatible class accepted: "+expression);
+                for (String input : new String[]{"x".repeat(2048),"a".repeat(2048),"]~~||b-c"}) {
+                    Matcher a=p.matcher(input),b=ref.matcher(input);
+                    equal(a,b,a.find(),b.find(),true);
                 }
-                warm(p, misses);
-                if (FILTER.get(p) != null)
-                    throw new AssertionError("incompatible combined class accelerated: " + regex);
-                cases++;
             }
         }
-        // A leading literal ']' must not hide a nested Java class either.
-        for (String regex : new String[]{"[]a[b]]+", "[^]a[b]]+"}) {
-            Pattern p = Pattern.compile(regex), ref = reference(regex, 0);
-            warm(p, misses);
-            compare(p, ref, "a".repeat(2048), 0, 2048, false, true);
-            if (FILTER.get(p) != null) throw new AssertionError("nested class accelerated: " + regex);
+        for (String expression : new String[]{"(a(b)?)+", "(?:a|(b))*", "(?=a)a+", "(a)\\1", "x*+x", "[]a[b]]+"}) {
+            Pattern p=Pattern.compile(expression),ref=reference(expression,0);
+            if (NATIVE.get(p)!=null) throw new AssertionError("unsupported syntax accepted: "+expression);
+            Matcher a=p.matcher("aba aa xx a"),b=ref.matcher("aba aa xx a");
+            equal(a,b,a.find(),b.find(),true);
         }
-        // Only the first '^' can be negation. A later ']' can close the class,
-        // leaving operator-looking text outside it as ordinary literals.
-        for (String regex : new String[]{"[^^]a~~a]+", "[\\^]a~~a]+", "[]^a]+", "[^]^a]+"}) {
-            Pattern p = Pattern.compile(regex), ref = reference(regex, 0);
-            warm(p, misses);
-            String input = misses + "ba~~a] ^ ] a";
-            compare(p, ref, input, 0, input.length(), false, true);
+        for (String invalid : new String[]{"(","[", "a{2,1}","a**", "(?<1x>a)","(?<x>a)(?<x>b)","\\q", "a\\"}) {
+            try { Pattern.compile(invalid); throw new AssertionError("invalid expression accepted: "+invalid); }
+            catch (PatternSyntaxException expected) { }
         }
-        System.out.println("Compared " + cases + " combined class grammars");
     }
 
-    private static void compare(Pattern p, Pattern ref, CharSequence input, int lo, int hi,
-                                boolean transparent, boolean anchoring) {
-        Matcher a = p.matcher(input).region(lo, hi).useTransparentBounds(transparent).useAnchoringBounds(anchoring);
-        Matcher b = ref.matcher(input).region(lo, hi).useTransparentBounds(transparent).useAnchoringBounds(anchoring);
-        String expected = snapshot(b), actual = snapshot(a);
-        if (!expected.equals(actual))
-            throw new AssertionError(p + " bounds=" + lo + "," + hi + " expected=" + expected + " actual=" + actual);
+    private static void consumers() throws Exception {
+        Pattern p=Pattern.compile("(?<word>error|warn): (?<code>[0-9]+)"),ref=reference(p.pattern(),0);
+        String input="warn: 12 x error: 345";
+        if (!p.matcher(input).replaceAll("${code}/${word}").equals(ref.matcher(input).replaceAll("${code}/${word}")))
+            throw new AssertionError("named replacement");
+        if (!p.matcher(input).replaceAll(m -> m.group(2)+":"+m.group(1))
+                .equals(ref.matcher(input).replaceAll(m -> m.group(2)+":"+m.group(1)))) throw new AssertionError("functional replacement");
+        Pattern delimiters=Pattern.compile("[,;]\\s*");
+        String values="a, b; c,,d;";
+        for (int limit : new int[]{-1,0,1,2,9}) {
+            if (!Arrays.equals(delimiters.split(values,limit),reference(delimiters.pattern(),0).split(values,limit)))
+                throw new AssertionError("split");
+            if (!Arrays.equals(delimiters.splitWithDelimiters(values,limit),
+                    reference(delimiters.pattern(),0).splitWithDelimiters(values,limit))) throw new AssertionError("delimiter split");
+        }
+        if (!delimiters.splitAsStream(values).toList().equals(reference(delimiters.pattern(),0).splitAsStream(values).toList()))
+            throw new AssertionError("stream split");
+        if (!p.matcher(input).results().map(MatchResult::group).toList().equals(List.of("warn: 12","error: 345")))
+            throw new AssertionError("results stream");
+        if (!"error123".matches("error[0-9]+") || !"a123b".replaceAll("[0-9]+","X").equals("aXb"))
+            throw new AssertionError("String callers");
+        try (Scanner scanner=new Scanner("12,34;56").useDelimiter("[,;]")) {
+            if (scanner.nextInt()!=12 || scanner.nextInt()!=34 || scanner.nextInt()!=56 || scanner.hasNext())
+                throw new AssertionError("Scanner");
+        }
+        Pattern mutable=Pattern.compile("error([0-9]+)");
+        CharBuffer buffer=CharBuffer.wrap("x error123 y");
+        if (!mutable.matcher(buffer).find()) throw new AssertionError("CharBuffer");
+        nativeOnly(mutable);
+    }
+
+    private static void sharingAndLifetime() throws Exception {
+        Pattern p=Pattern.compile("error([0-9]+)"),same=Pattern.compile(p.pattern());
+        nativeOnly(p);
+        if (RustRegex.ENABLED && NATIVE.get(p)!=NATIVE.get(same)) throw new AssertionError("identical Patterns did not share their engine");
+        try (ExecutorService workers=Executors.newFixedThreadPool(2)) {
+            List<Future<?>> futures=new ArrayList<>();
+            for (int worker=0;worker<2;worker++) futures.add(workers.submit(() -> {
+                Matcher m=p.matcher("");
+                for (int i=0;i<12000;i++) {
+                    boolean hit=(i&1)!=0;
+                    if (m.reset(hit?"error123":"x ".repeat(1024)).find()!=hit) throw new AssertionError("shared result");
+                    if (hit && !m.group(1).equals("123")) throw new AssertionError("shared captures");
+                }
+            }));
+            for (Future<?> f:futures) f.get();
+        }
+        nativeOnly(p);
+        ByteArrayOutputStream bytes=new ByteArrayOutputStream();
+        try (ObjectOutputStream out=new ObjectOutputStream(bytes)) { out.writeObject(p); }
+        Pattern restored;
+        try (ObjectInputStream in=new ObjectInputStream(new ByteArrayInputStream(bytes.toByteArray()))) {
+            restored=(Pattern)in.readObject();
+        }
+        if (!restored.matcher("error123").matches()) throw new AssertionError("serialization");
+        nativeOnly(restored);
+        // Promotion removes the native reference; existing Matchers allocate
+        // Java locals lazily and continue correctly after another Matcher promotes.
+        Matcher existing=p.matcher("error123");
+        Matcher wide=p.matcher("\u0100 error456");
+        if (!wide.find() || !wide.group(1).equals("456")) throw new AssertionError("wide input fallback");
+        if (NATIVE.get(p)!=null || ROOT.get(p)==null) throw new AssertionError("permanent Java promotion");
+        if (!existing.find() || !existing.group(1).equals("123")) throw new AssertionError("old Matcher promotion");
+        for (int i=0;i<10;i++) { System.gc(); same.matcher("error789").find(); }
+        nativeOnly(same);
     }
 
     public static void main(String[] args) throws Exception {
-        combinedClassGrammar();
-        interruptedLearning();
-        nonblockingPreparation();
-        inputGates();
-        edgeCases();
-        String[] patterns = {
-            "error[0-9]+", "(error|warn): (\\w+)", "[0-9]{3}-[0-9]{2}-[0-9]{4}",
-            "a+b", "a.*b", "a.b", "[a-z]+[0-9]+", "[^x]+z", "\\d+", "\\D+",
-            "\\s+q", "\\S+q", "\\w+q", "\\W+q", "(?:error|warn)[0-9]+",
-            "ab.*z|b", "a+?b", "a{2,4}b", "[a-z&&[^b]]+", "[aa~~a]+", "[a||b]+", "[a-z--c]+",
-            "(?<name>a+)b", "(?=error)error", "(?<=x)error", "(a)\\1", "^error", "error$",
-            "\\bword\\b", "\\Gx", "a*", "", "literal", "a++b", "\\Qerror\\E", "(?i)error",
-            "é+", "\\p{L}+", "[\\x{10000}-\\x{10002}]", "\\R", "\\X"
-        };
-        String[] inputs = {
-            "x ".repeat(2048), "~|c " + "x ".repeat(2048), "error123 " + "x ".repeat(2048), "x ".repeat(2048) + "error123",
-            "a" + "x ".repeat(2047) + "b", "a" + "x ".repeat(2047) + "x",
-            "x".repeat(2048) + "abbb", "x".repeat(2048) + "a\nb",
-            "é x ".repeat(1024), "😀 x ".repeat(820), "\uD800 x ".repeat(1024),
-            "\r\n\u0085\u000b\u000c\tx ".repeat(700), "x ".repeat(1024).substring(0, 2047), "x ".repeat(1024),
-            "x ".repeat(32768), "x ".repeat(32769).substring(0, 65537)
-        };
-        int cases = 0;
-        for (String regex : patterns) {
-            Pattern p = Pattern.compile(regex), ref = reference(regex, 0);
-            warm(p);
-            for (String input : inputs) {
-                for (boolean transparent : new boolean[]{false, true}) {
-                    for (boolean anchoring : new boolean[]{false, true}) {
-                        compare(p, ref, input, 0, input.length(), transparent, anchoring);
-                        compare(p, ref, input, 7, input.length() - 3, transparent, anchoring);
-                        cases += 2;
-                    }
-                }
-                compare(p, ref, new StringBuilder(input), 0, input.length(), false, true);
-                if (!p.matcher(input).replaceAll("!").equals(ref.matcher(input).replaceAll("!")))
-                    throw new AssertionError("replacement " + regex);
-                if (!Arrays.equals(p.split(input), ref.split(input))) throw new AssertionError("split " + regex);
-            }
-        }
-        for (int flags : new int[]{Pattern.CASE_INSENSITIVE, Pattern.MULTILINE, Pattern.DOTALL,
-                Pattern.UNICODE_CHARACTER_CLASS, Pattern.COMMENTS, Pattern.LITERAL, Pattern.CANON_EQ}) {
-            Pattern p = Pattern.compile("error[0-9]+", flags), ref = reference(p.pattern(), flags);
-            warm(p);
-            compare(p, ref, inputs[0], 0, inputs[0].length(), false, true);
-            if (FILTER.get(p) != null) throw new AssertionError("unsupported flags accelerated");
-        }
-        Pattern shared = Pattern.compile("error[0-9]+");
-        warm(shared);
-        // Exercise compiled C1/C2 callers and concurrent reuse of immutable DFAs.
-        try (ExecutorService pool = Executors.newFixedThreadPool(4)) {
-            List<Callable<Void>> work = new ArrayList<>();
-            for (int t = 0; t < 4; t++) work.add(() -> {
-                for (int i = 0; i < 4000; i++) {
-                    if (shared.matcher(inputs[0]).find()) throw new AssertionError("concurrent search");
-                    if ((i & 1023) == 0) System.gc();
-                }
-                return null;
-            });
-            for (Future<Void> f : pool.invokeAll(work)) f.get();
-        }
-        if (EXPECT_FILTER && FILTER.get(shared) == null)
-            throw new AssertionError("eligible pattern never compiled");
-        if (RustRegex.ENABLED && FILTER.get(shared) != null) {
-            Object cached = FILTER.get(shared);
-            if (!shared.matcher(inputs[2]).find() || MISSES.getInt(shared) != 0)
-                throw new AssertionError("successful probe did not pause filtering");
-            warm(shared);
-            if (FILTER.get(shared) != cached || MISSES.getInt(shared) != 8)
-                throw new AssertionError("filter was not reused after further misses");
-        }
-        if (!EXPECT_FILTER && (COMPILED.getBoolean(shared) || MISSES.getInt(shared) != 0))
-            throw new AssertionError("non-Latin-1 configuration attempted native compilation");
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        try (ObjectOutputStream out = new ObjectOutputStream(bytes)) { out.writeObject(shared); }
-        Pattern restored;
-        try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes.toByteArray()))) {
-            restored = (Pattern)in.readObject();
-        }
-        if (FILTER.get(restored) != null) throw new AssertionError("native handle serialized");
-        warm(restored);
-        compare(restored, reference(shared.pattern(), 0), inputs[2], 0, inputs[2].length(), false, true);
-        Matcher reset = shared.matcher(inputs[2]);
-        reset.find();
-        reset.reset(inputs[0]);
-        if (reset.find()) throw new AssertionError("reset");
-        reset.usePattern(Pattern.compile("x+"));
-        if (!reset.find()) throw new AssertionError("usePattern");
-        System.out.println("Compared " + cases + " bound/state cases; Rust enabled=" + RustRegex.ENABLED);
+        primary();
+        fallbackGrammar();
+        consumers();
+        sharingAndLifetime();
+        apiState();
+        System.out.println("Compared "+comparisons+" native/Java results and API states; enabled="+RustRegex.ENABLED);
     }
 }

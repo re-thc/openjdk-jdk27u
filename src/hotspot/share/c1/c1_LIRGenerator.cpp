@@ -2795,28 +2795,28 @@ void LIRGenerator::do_IfOp(IfOp* x) {
   __ cmove(lir_cond(x->cond()), t_val.result(), f_val.result(), reg, as_BasicType(x->x()->type()));
 }
 
-void LIRGenerator::do_rustRegexMayMatch(Intrinsic* x) {
+void LIRGenerator::do_rustRegexMatch(Intrinsic* x) {
   LIR_Opr result = rlock_result(x);
   LIRItem handle(x->argument_at(0), this);
   LIRItem input(x->argument_at(1), this);
-  LIRItem offset(x->argument_at(2), this);
-  LIRItem length(x->argument_at(3), this);
+  LIRItem state(x->argument_at(2), this);
   handle.load_item();
   input.load_item();
-  offset.load_item();
-  length.load_item();
+  state.load_item();
   LIR_Opr bytes = new_register(T_ADDRESS);
-  __ leal(LIR_OprFact::address(emit_array_address(input.result(), offset.result(), T_BYTE)), bytes);
+  LIR_Opr slots = new_register(T_ADDRESS);
+  __ leal(LIR_OprFact::address(emit_array_address(input.result(), LIR_OprFact::intConst(0), T_BYTE)), bytes);
+  __ leal(LIR_OprFact::address(emit_array_address(state.result(), LIR_OprFact::intConst(0), T_INT)), slots);
   BasicTypeList signature(3);
   signature.append(T_LONG);
   signature.append(T_ADDRESS);
-  signature.append(T_INT);
+  signature.append(T_ADDRESS);
   CallingConvention* cc = frame_map()->c_calling_convention(&signature);
   __ move(handle.result(), cc->at(0));
   __ move(bytes, cc->at(1));
-  __ move(length.result(), cc->at(2));
+  __ move(slots, cc->at(2));
   LIR_Opr result_reg = result_register_for(x->type());
-  __ call_runtime_leaf(CAST_FROM_FN_PTR(address, RustRegex::may_match),
+  __ call_runtime_leaf(CAST_FROM_FN_PTR(address, RustRegex::match),
                        getThreadTemp(), result_reg, cc->args());
   __ move(result_reg, result);
 }
@@ -2936,8 +2936,8 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     do_update_CRC32C(x);
     break;
 
-  case vmIntrinsics::_rustRegexMayMatch:
-    do_rustRegexMayMatch(x);
+  case vmIntrinsics::_rustRegexMatch:
+    do_rustRegexMatch(x);
     break;
   case vmIntrinsics::_vectorizedMismatch:
     do_vectorizedMismatch(x);

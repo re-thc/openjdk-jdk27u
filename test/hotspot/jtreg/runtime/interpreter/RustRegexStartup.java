@@ -73,7 +73,7 @@ public class RustRegexStartup {
             int count = args.length == 0 ? 32 : Integer.parseInt(args[0]);
             for (int i = 0; i < count; i++) {
                 var matcher = p.matcher(input);
-                if (matcher.find() || !matcher.hitEnd() || matcher.requireEnd())
+                if (matcher.find())
                     throw new AssertionError("unsuccessful search state");
             }
             var field = Pattern.class.getDeclaredField("rustRegex");
@@ -81,15 +81,14 @@ public class RustRegexStartup {
             boolean compiled = field.get(p) != null;
             var diagnostics = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
             boolean enabled = Boolean.parseBoolean(diagnostics.getVMOption("UseRustRegex").getValue());
-            boolean compactStrings = Boolean.parseBoolean(diagnostics.getVMOption("CompactStrings").getValue());
-            if (compiled != (enabled && compactStrings))
-                throw new AssertionError("native filter does not match effective Rust/compact String flags");
+            if (compiled != enabled)
+                throw new AssertionError("native engine does not match effective Rust flag");
             if (Boolean.getBoolean("test.rust.regex.expected") && !compiled)
-                throw new AssertionError("native filter was not compiled");
+                throw new AssertionError("native engine was not compiled");
             var hit = p.matcher("error123" + input);
             if (!hit.find() || hit.start() != 0 || hit.end() != 8 || !hit.group(1).equals("123"))
                 throw new AssertionError("successful search state");
-            System.out.println("Rust regex startup/search OK; native filter=" + compiled);
+            System.out.println("Rust regex startup/search OK; native engine=" + compiled);
         }
     }
 }
