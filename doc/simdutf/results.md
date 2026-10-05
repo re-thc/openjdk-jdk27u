@@ -7,7 +7,8 @@ compact-decoding inlining fix, **before the final shared Java floors and removal
 of the extra C2 cutoff graph**. The converter implementations are unchanged by
 that last policy cleanup. This matrix is not an exact-final-head certification.
 The `b8277ee7` source has a separate longer five-case C2 short-input check.
-These measurements precede the subsequent platform and capacity review fixes.
+These measurements precede the subsequent platform, capacity and converter API
+review fixes.
 An attempted complete final-policy rerun could not start its first worker
 because the container exhausted its native-thread/process allowance.
 
@@ -54,9 +55,9 @@ copy/Base64 stubs explain near-1x rows. [results.csv](results.csv) retains all
 means, intervals and six samples. [runs.json](runs.json) distinguishes binary
 fingerprints for each source revision and protocol.
 
-## Final-source short-input check
+## b8277ee7 short-input check
 
-| Final-source check, size 32 | C2 |
+| b8277ee7 check, size 32 | C2 |
 | --- | ---: |
 | asciiDecode | 1.00x |
 | charsetDecode | 1.00x |
@@ -149,3 +150,50 @@ For crossover confirmation omit batching and use `--warmup 5 --time 500ms`.
 Review-fix CI passed the platform and feature-enabled jtreg suites on
 `f596e1ef`; default-enabled CI and complete exact-head/AArch64 benchmarking
 remain outstanding. See [validation](validation.txt).
+
+## Native converter comparison, 2026-10-05
+
+The final review replaced capacity-bounded UTF-8 encoding with direct converters
+when the destination has worst-case capacity. Tight UTF-16 destinations still
+use the bounded API, checking successful completion and the consumed-input
+count. This closes a truncated-prefix risk if mutable input grows after its
+length preflight. Automatic Java thresholds are unchanged.
+
+The following compares the old and new **native converter calls**, not public
+Java API latency. UTF-16 cases include the same validation pass in both paths.
+On the same Linux x86-64 host, GNU 14 `-O3`, simdutf 9.2.1 icelake, CPU affinity
+2, each case uses five paired 100 ms samples at each of four output alignments
+(0/16/32/48 modulo 64), after 50 ms warmups. Measurement order alternates and
+both methods write to the same buffer. Numbers pool all 20 samples per method.
+Byte equality, canaries and detailed partial-consumption checks passed.
+
+| Native conversion | Size 32 | Size 128 | Size 65536 |
+| --- | ---: | ---: | ---: |
+| Latin-1 ASCII | 1.22x | 1.24x | 1.01x |
+| Latin-1 accented | 1.21x | 1.21x | 1.01x |
+| UTF-16 BMP | 1.08x | 1.07x | 1.00x |
+| UTF-16 supplementary | 1.15x | 1.05x | 1.04x |
+
+Short-input results depend on alignment: Latin-1 at size 32 ranged from about
+0.99x to 1.50x across alignments. An initial distinct-buffer check reported
+about 2.8x; it is superseded by the shared-buffer alignment sweep above.
+Compiled UTF-16 encoding retains its automatic 128-element floor, so its size
+32 result applies to pure interpretation or an explicit threshold override.
+These converter measurements do not qualify JNI/JIT overhead, allocation costs,
+ARM64 performance or exact-head public API regressions.
+
+All samples are in [encode-comparison.csv](encode-comparison.csv). Reproduce
+after building HotSpot, substituting the configuration name:
+
+```sh
+g++ -O3 -std=c++17 -Isrc/utils/simdutf \
+  doc/simdutf/encode-benchmark.cpp \
+  build/your-build/hotspot/variant-server/libjvm/objs/simdutf.o \
+  -o /tmp/simdutf-encode-benchmark
+taskset -c 2 /tmp/simdutf-encode-benchmark > /tmp/simdutf-encode-comparison.csv
+```
+
+The linked vendor object SHA-256 was
+`60674bb5458a4df0fc7d2cff3a8c150300f60250a11793caa6b923256c32224b`.
+The unmodified vendor source SHA-256 was
+`02429dedc724b9daed89659462df8869a6b729e65256718be286336d8bf6aa8f`.

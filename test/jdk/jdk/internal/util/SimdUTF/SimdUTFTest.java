@@ -112,6 +112,7 @@ public class SimdUTFTest {
         nativeRanges();
         compactLatin1();
         utf16Copies();
+        utf8EncodeCapacity();
         codePointCounts();
         System.out.println("simdutf contracts passed");
     }
@@ -526,6 +527,38 @@ public class SimdUTFTest {
                 Base64.getDecoder().decode(encoded);
                 throw new AssertionError("strict Base64 accepted invalid input");
             } catch (IllegalArgumentException expected) { }
+        }
+    }
+
+    private static void utf8EncodeCapacity() {
+        for (String text : new String[]{"a".repeat(513), "é".repeat(513), "漢".repeat(513), "😃".repeat(257)}) {
+            byte[] expected = utf8(text);
+            char[] input = ("xxxxx" + text + "yyyyy").toCharArray();
+            for (int capacity : new int[]{expected.length - 1, expected.length, text.length() * 3}) {
+                byte[] output = new byte[capacity + 14];
+                Arrays.fill(output, SENTINEL);
+                int written = SimdUTF.encodeUTF16(input, 5, text.length(), output, 7, capacity);
+                if (capacity < expected.length || !accelerationAvailable) {
+                    check(written == -1, "UTF16 encoder accepted insufficient capacity");
+                    guards(output, 0, 0);
+                } else {
+                    check(written == expected.length, "UTF16 encoder full conversion length");
+                    equal(expected, Arrays.copyOfRange(output, 7, 7 + written));
+                    guards(output, 7, written);
+                }
+                var encoder = StandardCharsets.UTF_8.newEncoder();
+                CharBuffer source = CharBuffer.wrap(input, 5, text.length());
+                ByteBuffer target = ByteBuffer.allocate(capacity);
+                var result = encoder.encode(source, target, true);
+                if (capacity < expected.length) {
+                    check(result.isOverflow() && source.hasRemaining(), "UTF8 encode overflow positions");
+                    equal(utf8(text.substring(0, source.position() - 5)),
+                            Arrays.copyOf(target.array(), target.position()));
+                } else {
+                    check(result.isUnderflow() && !source.hasRemaining(), "UTF8 encode complete positions");
+                    equal(expected, Arrays.copyOf(target.array(), target.position()));
+                }
+            }
         }
     }
 

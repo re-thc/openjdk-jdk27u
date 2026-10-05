@@ -297,17 +297,27 @@ JRT_LEAF(jint, SimdUTF::process(oopDesc* src_raw, jint sp, jint len,
       written = simdutf::convert_utf8_to_utf16(input, len, reinterpret_cast<char16_t*>(output));
       break;
     case 2:
-      // The safe converter can return a truncated prefix. Reserve the worst
-      // case so success always describes the entire input, even if it mutates.
+      // Reserve the worst case so success always describes the entire input,
+      // including when callers mutate it during conversion.
       if (size_t(capacity) < size_t(len) * 2) return -1;
-      written = simdutf::convert_latin1_to_utf8_safe(input, len, output, capacity);
+      written = simdutf::convert_latin1_to_utf8(input, len, output);
       break;
-    case 3:
+    case 3: {
       if (!simdutf::validate_utf16(input16, len)) return -1;
-      if (size_t(capacity) < size_t(len) * 3 &&
-          simdutf::utf8_length_from_utf16(input16, len) > size_t(capacity)) return -1;
-      written = simdutf::convert_utf16_to_utf8_safe(input16, len, output, capacity);
+      if (size_t(capacity) >= size_t(len) * 3) {
+        // A worst-case-sized output needs no capacity-bounded scalar tail.
+        written = simdutf::convert_utf16_to_utf8(input16, len, output);
+      } else {
+        if (simdutf::utf8_length_from_utf16(input16, len) > size_t(capacity)) return -1;
+        simdutf::full_result r = simdutf::convert_utf16_to_utf8_safe_with_details(
+            input16, len, output, capacity);
+        // A mutable input can grow after the length check. Never report a
+        // truncated prefix as if the entire charset input had been consumed.
+        if (r.error != simdutf::SUCCESS || r.input_count != size_t(len)) return -1;
+        written = r.output_count;
+      }
       break;
+    }
     case 4: {
       if (capacity < len) return -1;
       jint prefix = simdutf::validate_utf16_as_ascii(input16, len)

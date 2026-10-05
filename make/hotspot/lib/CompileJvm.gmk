@@ -135,9 +135,6 @@ endif
 
 JVM_PRECOMPILED_HEADER_EXCLUDE += simdutf.cpp
 
-# simdutf's standard-library headers may reference allocation functions that
-# HotSpot deprecates. Suppress that diagnostic only in the two simdutf units.
-
 JVM_PRECOMPILED_HEADER := $(TOPDIR)/src/hotspot/share/precompiled/precompiled.hpp
 
 ifeq ($(call isTargetCpu, x86), true)

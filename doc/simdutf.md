@@ -34,12 +34,17 @@ The interpreter has x86-64 and AArch64 entries, C1 emits a C ABI leaf call, and
 C2 emits a leaf call with a full memory effect. They all call the same checked
 HotSpot implementation through a raw `oopDesc*` ABI; checked C++ `oop` wrappers
 are constructed inside the leaf, preserving the calling convention in
-fastdebug builds. If the intrinsic is disabled or unavailable, registered
+fastdebug builds. C1 registers the leaf in `Runtime1::name_for_address` for
+runtime-call verification and diagnostics on both architectures. If the
+intrinsic is disabled or unavailable, registered
 JNI calls the same implementation. JNI does not copy or pin arrays.
 
 The leaf checks array types, offsets, lengths, destination capacity and aliasing
 before obtaining element addresses. Latin-1 to UTF-8 reserves two output bytes
 per input byte before conversion, so success never reports a truncated prefix.
+Latin-1 and UTF-16 UTF-8 encoding use direct converters when the output has
+worst-case capacity. Tight UTF-16 output uses a bounded converter and checks
+both its error and consumed-input count, including when the input changes.
 Raw array addresses remain live only in a
 non-safepointing region. UTF-16/UTF-32 writers reserve their worst-case output
 space or use simdutf's capacity-bounded interfaces, including for mutable array
@@ -82,10 +87,20 @@ Consequently enabling simdutf does not require replacing every execution tier.
 | Base64 output streams | Batch writes reuse the encoder block helper; leftovers, padding, MIME line lengths and newlines remain Java |
 | MIME Base64 decoding | Existing permissive helper retained, avoiding repeated bulk attempts across separators |
 | Base64 input streams | Existing incremental decoder retained; reading ahead would alter stream consumption behavior |
+| `InputStreamReader` / `OutputStreamWriter`, channel readers/writers and stream codecs | Their array-backed `StreamDecoder` / `StreamEncoder` buffers reach the charset paths above; partial atoms and buffer overflow remain Java |
+| `URLEncoder` / `URLDecoder` and foreign-memory string helpers | Heap-buffer charset calls and materialized `String` byte conversions inherit the existing integration; percent escaping and memory access stay in their original helpers |
 | Direct/read-only buffers and insufficient output capacity | Existing buffer loops; no raw native addresses or temporary bulk copies |
 | Modified UTF-8 in JNI, class files, serialization and `DataInput`/`DataOutput`; CESU-8 | Existing dialect-specific code retained: NUL/surrogate encodings differ from strict UTF-8 |
 | Legacy charset mapping tables, string comparisons, hashing and iteration | Existing implementations; these are not compatible bulk Unicode transcoding operations |
 | Identity ASCII/Latin-1 byte copies | Existing clone/arraycopy paths retained |
+
+Remaining performance gaps include inputs above the 1,048,576-element leaf
+limit, exactly sized UTF-8 decoder outputs smaller than the input byte count,
+array-inaccessible buffers and short C1 inputs held back by shared Java floors.
+The UTF-8 decoder currently reserves its worst-case output size to remain safe
+with mutable input. Tighter output needs bounded staging, not just a length
+preflight followed by an unchecked writer. ARM64 crossover measurements and
+exact-head public API benchmarks also remain outstanding.
 
 Additional candidates need separate evidence: MIME Base64 can use simdutf's
 garbage-accepting mode, but Java must still track consumed input separately
@@ -132,7 +147,7 @@ The new jtreg contract runs the interpreter, C1, C2, intrinsic-disabled JNI
 and flag-disabled paths. It exercises independent UTF byte oracles, offsets,
 canaries, narrowing prefixes, malformed input, overflow, BOMs, byte orders,
 Base64 dialects/in-place calls/streams, inaccessible buffer storage, and native
-type/range/alias checks. Additional runs cover disabled ISA support, compact
+type/range/alias checks. Prior manual runs also covered disabled ISA support, compact
 strings disabled, ZGC and Shenandoah.
 
 On a fresh configured build, run the contracts and the existing public API

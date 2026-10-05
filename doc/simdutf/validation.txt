@@ -1,6 +1,47 @@
-Fastdebug ABI and CI follow-up, 2026-10-05 Asia/Taipei
+Final review follow-up, 2026-10-05 Asia/Taipei
 
 CURRENT REVISION
+- Registered SimdUTF::process with Runtime1::name_for_address. C1's debug
+  LIR_OpRTCall verifier requires every runtime entry to have a known name.
+  Its omission asserted on x86 and reached the Unimplemented platform lookup
+  on AArch64. The shared registration fixes both architectures.
+- Latin-1 and UTF-16 UTF-8 encoding now use direct simdutf converters with
+  worst-case capacity, avoiding unnecessary capacity-bounded scalar tails.
+  Tight UTF-16 output uses the detailed bounded converter and accepts only
+  SUCCESS with input_count == len, preventing truncated-prefix success if
+  mutable input grows after the length preflight. Thresholds stay unchanged.
+- Added independent UTF-8 oracle/canary and charset-position checks for ASCII,
+  Latin-1, BMP and supplementary input, with source offsets and insufficient,
+  exact and worst-case output capacities. All existing tier/debug/JNI/opt-out
+  runs include these checks.
+- Current x86 release and x86/AArch64 ASSERT+CHECK_UNHANDLED_OOPS compilations
+  of the C1 runtime and shared bridge passed without a PCH (GNU 14).
+- Native converter byte equality, capacity canaries and detailed partial-
+  consumption checks passed. A 240-sample alignment sweep is recorded in
+  encode-comparison.csv with source and reproduction in encode-benchmark.cpp.
+  Results are native-only, not end-to-end Java performance qualification.
+- Audited native types/ranges/capacity/aliasing, interpreter/C1/C2/JNI ABIs,
+  charset BOM/error/position semantics, vendor update and benchmark resume.
+  Stream codecs and URL helpers inherit the existing integration. Remaining
+  performance gaps are documented explicitly, including the leaf-size limit,
+  tight UTF-8 decoding, inaccessible storage and ARM64 threshold qualification.
+- Local JVM startup still fails with pthread_create(EAGAIN), before Java runs.
+  Runtime/jtreg verification therefore requires fresh CI; no current-head
+  local jtreg or public Java benchmark pass is claimed.
+
+LATEST PRE-FIX CI
+Head 99903f1541a792f3396e7cb3250c01636e4aac50, run
+https://github.com/re-thc/openjdk-jdk27u/actions/runs/37281742673
+completed with 18 successful jobs, six failed and seven skipped. All six debug
+builds reached self-hosted javac but failed the missing C1 runtime-name lookup:
+Linux/macOS/Windows x64 asserted unknown function; Linux/macOS/Windows AArch64
+hit Runtime1::pd_name_for_address Unimplemented. The earlier raw-oop crashes
+were no longer the reported failure. Windows ARM64 MSYS2 setup passed. Dependent
+test jobs did not execute, so no default-enabled jtreg pass is claimed.
+
+Fastdebug ABI and CI follow-up, 2026-10-05 Asia/Taipei
+
+99903F15 RAW-POINTER ABI FOLLOW-UP
 - The generated interpreter/C1/C2 entry now takes oopDesc* arguments. Fastdebug
   defines CHECK_UNHANDLED_OOPS, making oop a C++ class with non-trivial copy
   construction/destruction and an indirect argument ABI. Generated code passes
@@ -20,7 +61,7 @@ CURRENT REVISION
   checks passed. Full image builds and runtime tests require fresh CI; local
   JVM startup remains constrained by the existing host's process exhaustion.
 
-LATEST PRE-FIX CI
+A030DC8B PRE-ABI-FIX CI
 Head a030dc8b1ae9dcfe602c81f1b6ee412bcb163065, run
 https://github.com/re-thc/openjdk-jdk27u/actions/runs/37238088306
 completed with 18 successful jobs, six failed and seven skipped. Five failures
