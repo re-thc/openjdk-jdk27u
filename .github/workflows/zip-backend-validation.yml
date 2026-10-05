@@ -82,6 +82,7 @@ jobs:
           uname -a > validation/results/kernel.txt
           gcc-14 --version > validation/results/compiler.txt
           dpkg-query -W zlib1g > validation/results/zlib.txt
+          cat validation/results/candidate-commit.txt validation/results/cpu.txt validation/results/compiler.txt validation/results/zlib.txt
       - name: Build candidate release
         env:
           CC: gcc-14

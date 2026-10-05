@@ -44,10 +44,17 @@ def run(name, args, cwd=None):
     args = [str(x) for x in args]
     print(name, flush=True)
     (OUT / (name + ".command.json")).write_text(json.dumps(args, indent=2) + "\n")
-    with (OUT / (name + ".log")).open("w") as log:
-        subprocess.run(args, cwd=cwd or REPO, stdout=log, stderr=subprocess.STDOUT,
-                       check=True, timeout=10800)
-    return (OUT / (name + ".log")).read_text(errors="replace")
+    try:
+        with (OUT / (name + ".log")).open("w") as log:
+            subprocess.run(args, cwd=cwd or REPO, stdout=log, stderr=subprocess.STDOUT,
+                           check=True, timeout=10800)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        print((OUT / (name + ".log")).read_text(errors="replace")[-20000:], flush=True)
+        raise
+    output = (OUT / (name + ".log")).read_text(errors="replace")
+    if name.startswith("jtreg-") or name.startswith("compressed-size-"):
+        print(output[-3000:], flush=True)
+    return output
 
 
 def gc_matrix(jdk, verify=False):
@@ -228,6 +235,7 @@ public class ZipSizes {
         lines.append("| " + " | ".join(map(str, key)) + " | " + " | ".join(values)
                      + f" | {speedup:.2f}× |")
     (OUT / "jmh-table.md").write_text("\n".join(lines) + "\n")
+    print("\n".join(lines), flush=True)
     (OUT / "benchmarks-passed.txt").write_text("All 252 JMH cases completed\n")
 
 
