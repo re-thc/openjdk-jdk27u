@@ -1,5 +1,7 @@
 # fast_float measurements and validation
 
+Original-build controls lead the conclusions; opt-out/JNI matrices are diagnostic. These Java measurements are historical and do not qualify the current PR head or JNI-only ports.
+
 Measured on 2026-10-04 UTC with JMH 1.37, GCC 14.2.0, an Intel Xeon Platinum 8370C,
 Linux x86-64, and a release server JVM. The container exposes five CPU cores with
 a four-core CPU quota. Each benchmark uses one worker pinned to CPU 4, three fresh
@@ -21,7 +23,24 @@ not evidence of an improvement or regression. Cold BigDecimal includes construct
 Raw JMH JSON is included beside this file. The benchmark source and reproduction
 script are described in [the implementation notes](../../fast-float.md).
 
-## Interpreter
+## Original-build C2 controls
+
+An unmodified build of the same base commit was measured with the three-fork/
+500 ms protocol for the cold, short-buffer, hexadecimal and short String cases.
+The original and flag-disabled confidence intervals overlap for every gated
+control. Short decimal Strings improve with the native path.
+
+| Workload | Original build ns | New build, Java ns | New build, native ns |
+| --- | ---: | ---: | ---: |
+| bigDecimalDoubleCold | 991.45 ± 1015.99 | 648.80 ± 181.61 | 639.69 ± 77.86 |
+| bigDecimalFloatCold | 698.01 ± 145.36 | 644.27 ± 154.32 | 809.98 ± 414.20 |
+| decimalFormatDigitsShort | 11.23 ± 1.25 | 10.65 ± 1.09 | 11.90 ± 3.58 |
+| parseDoubleHex | 290.13 ± 80.82 | 325.93 ± 92.87 | 279.60 ± 16.76 |
+| parseDoubleShortInput | 48.22 ± 30.23 | 39.24 ± 19.35 | 15.34 ± 0.22 |
+| parseFloatHex | 208.32 ± 21.12 | 197.32 ± 24.62 | 225.21 ± 73.50 |
+| parseFloatShortInput | 34.68 ± 2.96 | 49.10 ± 26.56 | 18.42 ± 8.68 |
+
+## Interpreter: modified-image diagnostic
 
 | Workload | Java ns | Native ns | JNI ns | Native speedup |
 | --- | ---: | ---: | ---: | ---: |
@@ -43,7 +62,7 @@ script are described in [the implementation notes](../../fast-float.md).
 | Double: hexadecimal fallback | 7609.99 ± 261.46 | 7290.57 ± 381.58 | 7318.51 ± 234.39 | 1.04× |
 | Float: hexadecimal fallback | 6288.71 ± 533.24 | 6424.19 ± 440.66 | 6502.15 ± 169.62 | 0.98× |
 
-## C1
+## C1: modified-image diagnostic
 
 | Workload | Java ns | Native ns | JNI ns | Native speedup |
 | --- | ---: | ---: | ---: | ---: |
@@ -65,7 +84,7 @@ script are described in [the implementation notes](../../fast-float.md).
 | Double: hexadecimal fallback | 384.33 ± 77.07 | 404.58 ± 49.24 | 368.15 ± 36.07 | 0.95× |
 | Float: hexadecimal fallback | 458.88 ± 323.71 | 340.92 ± 43.81 | 332.81 ± 12.07 | 1.35× |
 
-## C2
+## C2: modified-image diagnostic
 
 | Workload | Java ns | Native ns | JNI ns | Native speedup |
 | --- | ---: | ---: | ---: | ---: |
@@ -177,20 +196,3 @@ inlining hints, which the warmed-up C2 wrapper already satisfied.
 | 20 | 22.59 ± 0.41 | 17.93 ± 0.31 |
 | 60 | 23.01 ± 0.32 | 19.11 ± 3.14 |
 | 256 | 27.58 ± 3.38 | 20.83 ± 0.57 |
-
-## Original-build C2 controls
-
-An unmodified build of the same base commit was measured with the three-fork/
-500 ms protocol for the cold, short-buffer, hexadecimal and short String cases.
-The original and flag-disabled confidence intervals overlap for every gated
-control. Short decimal Strings improve with the native path.
-
-| Workload | Original build ns | New build, Java ns | New build, native ns |
-| --- | ---: | ---: | ---: |
-| bigDecimalDoubleCold | 991.45 ± 1015.99 | 648.80 ± 181.61 | 639.69 ± 77.86 |
-| bigDecimalFloatCold | 698.01 ± 145.36 | 644.27 ± 154.32 | 809.98 ± 414.20 |
-| decimalFormatDigitsShort | 11.23 ± 1.25 | 10.65 ± 1.09 | 11.90 ± 3.58 |
-| parseDoubleHex | 290.13 ± 80.82 | 325.93 ± 92.87 | 279.60 ± 16.76 |
-| parseDoubleShortInput | 48.22 ± 30.23 | 39.24 ± 19.35 | 15.34 ± 0.22 |
-| parseFloatHex | 208.32 ± 21.12 | 197.32 ± 24.62 | 225.21 ± 73.50 |
-| parseFloatShortInput | 34.68 ± 2.96 | 49.10 ± 26.56 | 18.42 ± 8.68 |

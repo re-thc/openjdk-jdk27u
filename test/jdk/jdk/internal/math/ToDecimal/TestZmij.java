@@ -60,12 +60,15 @@ import jdk.internal.math.FloatToDecimal;
 import jdk.internal.math.FormattedFPDecimal;
 
 public class TestZmij {
-    private static final Method FLOAT, DOUBLE;
+    private static final Method FLOAT, DOUBLE, DECIMAL_STRING;
     private static final Constructor<FormattedFPDecimal> DECIMAL;
     static {
         try {
             FLOAT = FloatToDecimal.class.getDeclaredMethod("toDecimalJava", byte[].class, int.class, float.class);
             DOUBLE = DoubleToDecimal.class.getDeclaredMethod("toDecimalJava", byte[].class, int.class, double.class, FormattedFPDecimal.class);
+            DECIMAL_STRING = Class.forName("jdk.internal.math.ToDecimal")
+                    .getDeclaredMethod("decimalString", byte[].class, int.class);
+            DECIMAL_STRING.setAccessible(true);
             FLOAT.setAccessible(true);
             DOUBLE.setAccessible(true);
             DECIMAL = FormattedFPDecimal.class.getDeclaredConstructor();
@@ -164,7 +167,19 @@ public class TestZmij {
         }
     }
 
+    private static void checkStringOwnership() throws Exception {
+        for (int size = 0; size <= DoubleToDecimal.MAX_CHARS; ++size) {
+            byte[] scratch = new byte[DoubleToDecimal.MAX_CHARS];
+            for (int i = 0; i < scratch.length; ++i) scratch[i] = (byte) ('0' + i % 10);
+            String expected = new String(scratch, 0, size, StandardCharsets.ISO_8859_1);
+            String actual = (String) DECIMAL_STRING.invoke(null, scratch, size);
+            Arrays.fill(scratch, (byte) '?');
+            equal("decimal String owns its bytes", expected, actual);
+        }
+    }
+
     public static void main(String[] args) throws Exception {
+        checkStringOwnership();
         // Special values, payload NaNs, tiny subnormals, binade boundaries.
         for (long sign : new long[] {0, Long.MIN_VALUE}) {
             for (long bits = 0; bits < 256; ++bits) check(sign | bits, false, true);

@@ -2,7 +2,7 @@
 
 The formatter vendors **Żmij v1.2**, release commit
 `d1682cb47e67474319ed146d3ca2c0e1a70f9429`, under its **MIT license option**.
-The original upstream headers and license are preserved. No xjb implementation
+Upstream notices and the MIT license are preserved; three tracked patches adapt the implementation. No xjb implementation
 is included: xjb v1.11.0's actual source and LICENSE are Apache 2.0, despite its
 README's MIT label. That license is not compatible with GPLv2-only HotSpot.
 
@@ -71,7 +71,15 @@ in the interpreter/C1 and C2 folds `_useJavaFloatAppend` to true. The choice
 adds no C1/C2 runtime dispatch. The small Java first stage is forced inline so
 the gated route retains the original hot caller shape. C2 still accelerates canonical float strings
 and raw float output. Disabling `_useJavaFloatAppend` measures the ungated
-native append path. The existing String copying constructor is retained.
+native append path.
+
+For enabled compact strings, ToDecimal allocates an exact-sized byte array,
+copies the logical text into it and transfers that exclusively owned array to
+an internal String constructor. With the feature disabled or compact strings
+disabled, it uses the original ISO-8859-1 copying constructor. TestZmij checks
+that later mutation of the scratch buffer cannot change the returned String.
+This changes String construction; fresh head allocation/timing qualification
+is still pending, as recorded in the [review follow-up](benchmarks/decimal-review-followup/README.md).
 
 ## Java compatibility and consumers
 
@@ -119,15 +127,28 @@ python3 make/scripts/update-zmij.py /path/to/zmij
 ```
 
 The script records the version and commit, verifies the MIT license selection,
-preserves headers, and applies `make/data/zmij/java-format.patch` and
-`make/data/zmij/clang-compat.patch` with zero fuzz. The latter gives the three
-compressed power-of-ten arrays explicit bounds so Clang can construct the
-expanded tables at compile time; their values and sizes are unchanged.
-The implementation is named `zmij-impl.hpp`; the portable and SSE4.1 translation
-units include it in distinct namespaces. Allocator hooks route the unused
-precision APIs through HotSpot memory tracking; shortest conversion never
-uses those APIs or allocates. A failed patch stops the update. Review changed upstream code and repeat
-compatibility tests and tier benchmarks before enabling a newer version.
+and applies java-format.patch, clang-compat.patch and shortest-only.patch with
+zero fuzz. The Clang patch gives compressed arrays explicit bounds; the last
+patch suppresses unused precision/long-double explicit instantiations only
+when ZMIJ_SHORTEST_ONLY is defined by the VM translation units. Upstream's
+default full API is preserved. The portable and SSE4.1 units include the
+implementation in separate namespaces.
+
+Before installing files, the updater runs make/scripts/check-zmij.py against
+the staged vendor and the actual production decimal-metadata bridge. A host
+C++17 compiler with UBSan support is required. Independent Python integer and
+rational oracles check all 649 normalized power-table entries, decimal
+representation/round trips, packed significand/exactness/rounding direction,
+and total fallback behavior for 26,352 fixtures, in full, shortest-only and
+compressed-table configurations. A patch failure, build failure or changed
+internal contract stops the update before installed files change. This protects
+the bridge's reliance on internal APIs; review upstream changes and rerun
+Java compatibility tests and tier benchmarks for every upgrade.
+
+Unused precision instantiations were retained in the inspected HotSpot link.
+The shortest-only guard removes 47,184 bytes of linked text, with data/BSS
+unchanged. This is a native-unit relink experiment, not a complete PR-head JDK
+image measurement; [method and limits](benchmarks/decimal-review-followup/README.md).
 
 ## Reproducing validation and measurements
 

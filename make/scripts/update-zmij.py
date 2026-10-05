@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -34,9 +35,12 @@ with tempfile.TemporaryDirectory() as tmp:
     staged = Path(tmp)
     for name in ('zmij.cc', 'zmij.h'):
         (staged / name).write_text((upstream / name).read_text())
-    for patch in ('java-format.patch', 'clang-compat.patch'):
+    for patch in ('java-format.patch', 'clang-compat.patch', 'shortest-only.patch'):
         subprocess.run(['patch', '--batch', '--forward', '--fuzz=0', '-p1', '-i',
                         str(root / 'make/data/zmij' / patch)], cwd=staged, check=True)
+    # Fail before changing installed headers if internal decimal contracts drift.
+    subprocess.run([sys.executable, str(root / 'make/scripts/check-zmij.py'),
+                    str(staged)], check=True)
     destination = root / 'src/hotspot/share/utilities/zmij'
     destination.mkdir(exist_ok=True)
     # Include the implementation once, avoiding a second VM translation unit.

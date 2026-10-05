@@ -1,5 +1,11 @@
 # Żmij measurements and validation
 
+**Baseline policy:** original-formatter controls come first; modified-image
+opt-out and JNI comparisons diagnose tier behavior. They are not substitutes
+for an original JDK baseline. All timing/Java validation below is historical.
+See [the review follow-up](../decimal-review-followup/README.md) for current
+source changes, native validation and the exact-head allocation/timing runner.
+
 Measured on 2026-10-04 UTC with JMH 1.37, GCC 14.2.0, Intel Xeon Platinum
 8370C, Linux x86-64 and a release server JVM. Five logical CPUs are exposed,
 with a four-core quota. One worker is pinned to CPU 4; no builds or tests run
@@ -9,7 +15,7 @@ per invocation. Times are **mean ns/conversion ± JMH 99.9% confidence interval*
 Speedups are ratios of means, not guarantees for other machines. String and
 builder workloads include allocation; raw output reuses a destination array.
 
-The same final packaged image runs all three variants: Java selects
+These historical samples use the same packaged image for all three diagnostic variants: Java selects
 `-XX:-UseZmijIntrinsics`; native enables the product flag; JNI enables it but
 disables `_formatZmij` and `_decimalZmij`. C2 float builder append is deliberately
 gated to Java when the native flag is enabled, while float canonical strings and raw output
@@ -25,88 +31,21 @@ control paths, do not establish a regression or improvement. Every measured
 workload is shown, including near-neutral results. JNI is a functional fallback;
 its transition cost can erase the native algorithm's benefit for short values.
 
-## Interpreter
-
-| Workload | Java ns | Native ns | JNI ns | Native speedup |
-| --- | ---: | ---: | ---: | ---: |
-| BigDecimal.valueOf: 1–3 digit integers | 1088.34 ± 126.46 | 938.11 ± 104.92 | 788.76 ± 33.64 | 1.16× |
-| BigDecimal.valueOf: finite random doubles | 2019.35 ± 177.40 | 976.14 ± 30.56 | 952.91 ± 113.49 | 2.07× |
-| DecimalFormat: ordinary decimals | 21573.72 ± 2316.08 | 17974.42 ± 680.11 | 18095.49 ± 2951.06 | 1.20× |
-| Double: StringBuilder append | 5489.40 ± 333.07 | 1211.36 ± 168.24 | 1411.30 ± 479.17 | 4.53× |
-| Double: UTF16 StringBuilder append | 12710.72 ± 2918.42 | 1791.51 ± 217.49 | 1823.38 ± 153.94 | 7.09× |
-| Double: string concatenation | 10479.69 ± 631.11 | 1976.57 ± 231.91 | 1938.16 ± 90.34 | 5.30× |
-| Double.toString: ordinary decimals | 5485.37 ± 1349.98 | 755.42 ± 98.69 | 746.67 ± 105.79 | 7.26× |
-| Double.toString: NaNs (Java path) | 280.86 ± 113.74 | 229.29 ± 24.47 | 236.75 ± 13.81 | 1.22× |
-| Double: raw Latin1 output | 3778.76 ± 2200.23 | 296.73 ± 59.82 | 422.80 ± 210.12 | 12.73× |
-| Double: raw UTF16 output | 5931.07 ± 1507.21 | 306.68 ± 105.40 | 413.09 ± 270.14 | 19.34× |
-| Double.toString: finite random | 4212.43 ± 1112.04 | 789.98 ± 193.85 | 685.05 ± 58.61 | 5.33× |
-| Double.toString: 1–3 digit integers | 2417.03 ± 191.62 | 711.63 ± 75.22 | 653.26 ± 30.37 | 3.40× |
-| Double.toString: signed zeros (Java path) | 259.59 ± 53.90 | 258.35 ± 21.22 | 237.74 ± 50.43 | 1.00× |
-| Float16.toString: finite random (Java control) | 1839.65 ± 114.51 | 2259.04 ± 744.25 | 2181.40 ± 621.80 | 0.81× |
-| Float: StringBuilder append | 2975.87 ± 560.20 | 1106.95 ± 187.77 | 1262.24 ± 249.57 | 2.69× |
-| Float: string concatenation | 5517.85 ± 1002.07 | 2022.64 ± 388.03 | 1962.33 ± 167.56 | 2.73× |
-| Float: raw Latin1 output | 1694.90 ± 31.91 | 270.09 ± 12.67 | 291.68 ± 14.61 | 6.28× |
-| Float.toString: finite random | 3077.58 ± 1204.34 | 724.86 ± 130.49 | 744.88 ± 102.89 | 4.25× |
-| Float.toString: 1–3 digit integers | 2337.16 ± 566.49 | 673.81 ± 64.45 | 805.43 ± 341.25 | 3.47× |
-| Formatter: ordinary decimals, %.9g | 40459.12 ± 6149.18 | 31335.40 ± 3406.67 | 32658.20 ± 4084.84 | 1.29× |
-
-## C1
-
-| Workload | Java ns | Native ns | JNI ns | Native speedup |
-| --- | ---: | ---: | ---: | ---: |
-| BigDecimal.valueOf: 1–3 digit integers | 46.37 ± 2.61 | 37.23 ± 4.92 | 37.93 ± 8.62 | 1.25× |
-| BigDecimal.valueOf: finite random doubles | 119.13 ± 8.14 | 69.91 ± 5.75 | 114.05 ± 111.13 | 1.70× |
-| DecimalFormat: ordinary decimals | 667.60 ± 318.15 | 535.55 ± 46.86 | 564.49 ± 19.52 | 1.25× |
-| Double: StringBuilder append | 242.82 ± 113.83 | 82.85 ± 2.27 | 108.99 ± 3.29 | 2.93× |
-| Double: UTF16 StringBuilder append | 238.90 ± 13.79 | 146.91 ± 26.45 | 166.89 ± 32.85 | 1.63× |
-| Double: string concatenation | 251.24 ± 47.28 | 100.28 ± 10.96 | 142.40 ± 64.50 | 2.51× |
-| Double.toString: ordinary decimals | 186.37 ± 18.65 | 52.23 ± 3.22 | 71.07 ± 7.32 | 3.57× |
-| Double.toString: NaNs (Java path) | 14.71 ± 2.95 | 14.24 ± 1.85 | 12.92 ± 1.21 | 1.03× |
-| Double: raw Latin1 output | 150.59 ± 18.22 | 31.11 ± 1.43 | 50.14 ± 2.55 | 4.84× |
-| Double: raw UTF16 output | 135.89 ± 10.20 | 36.72 ± 0.85 | 68.53 ± 5.77 | 3.70× |
-| Double.toString: finite random | 190.56 ± 40.86 | 55.93 ± 17.88 | 75.03 ± 6.66 | 3.41× |
-| Double.toString: 1–3 digit integers | 110.89 ± 39.49 | 54.66 ± 5.01 | 75.58 ± 23.65 | 2.03× |
-| Double.toString: signed zeros (Java path) | 13.28 ± 1.99 | 13.40 ± 4.10 | 13.10 ± 2.70 | 0.99× |
-| Float16.toString: finite random (Java control) | 117.01 ± 36.92 | 131.27 ± 126.98 | 104.44 ± 34.08 | 0.89× |
-| Float: StringBuilder append | 153.60 ± 88.07 | 70.55 ± 1.87 | 90.22 ± 6.87 | 2.18× |
-| Float: string concatenation | 175.56 ± 10.93 | 100.25 ± 22.97 | 105.37 ± 9.62 | 1.75× |
-| Float: raw Latin1 output | 89.75 ± 12.99 | 29.75 ± 8.12 | 52.53 ± 13.28 | 3.02× |
-| Float.toString: finite random | 125.69 ± 4.70 | 52.64 ± 9.34 | 71.04 ± 6.15 | 2.39× |
-| Float.toString: 1–3 digit integers | 83.95 ± 8.55 | 57.48 ± 9.97 | 85.62 ± 50.73 | 1.46× |
-| Formatter: ordinary decimals, %.9g | 844.68 ± 170.88 | 735.49 ± 49.53 | 759.88 ± 129.87 | 1.15× |
-
-## C2
-
-| Workload | Java ns | Native ns | JNI ns | Native speedup |
-| --- | ---: | ---: | ---: | ---: |
-| BigDecimal.valueOf: 1–3 digit integers | 24.41 ± 1.71 | 20.25 ± 2.03 | 30.13 ± 24.42 | 1.21× |
-| BigDecimal.valueOf: finite random doubles | 36.92 ± 2.36 | 40.33 ± 15.57 | 35.01 ± 2.74 | 0.92× |
-| DecimalFormat: ordinary decimals | 283.70 ± 21.62 | 293.10 ± 62.20 | 299.41 ± 44.36 | 0.97× |
-| Double: StringBuilder append | 98.17 ± 22.63 | 69.01 ± 6.99 | 85.78 ± 8.50 | 1.42× |
-| Double: UTF16 StringBuilder append | 99.03 ± 6.67 | 99.80 ± 26.29 | 137.42 ± 38.23 | 0.99× |
-| Double: string concatenation | 70.53 ± 12.91 | 51.85 ± 2.45 | 84.01 ± 18.06 | 1.36× |
-| Double.toString: ordinary decimals | 75.80 ± 5.57 | 51.93 ± 13.68 | 84.58 ± 40.57 | 1.46× |
-| Double.toString: NaNs (Java path) | 1.15 ± 0.12 | 1.08 ± 0.06 | 1.16 ± 0.15 | 1.07× |
-| Double: raw Latin1 output | 54.09 ± 5.58 | 24.21 ± 0.86 | 47.60 ± 4.31 | 2.23× |
-| Double: raw UTF16 output | 49.03 ± 4.32 | 30.47 ± 0.87 | 59.04 ± 9.44 | 1.61× |
-| Double.toString: finite random | 72.73 ± 19.80 | 50.16 ± 21.47 | 62.84 ± 4.07 | 1.45× |
-| Double.toString: 1–3 digit integers | 48.93 ± 10.47 | 42.80 ± 4.24 | 63.26 ± 3.03 | 1.14× |
-| Double.toString: signed zeros (Java path) | 1.08 ± 0.18 | 1.04 ± 0.08 | 1.05 ± 0.03 | 1.04× |
-| Float16.toString: finite random (Java control) | 66.13 ± 27.88 | 55.56 ± 18.86 | 53.26 ± 12.28 | 1.19× |
-| Float: StringBuilder append | 65.39 ± 35.45 | 55.25 ± 7.44 | 53.98 ± 4.08 | 1.18× |
-| Float: string concatenation | 106.64 ± 72.39 | 52.36 ± 15.02 | 72.50 ± 9.45 | 2.04× |
-| Float: raw Latin1 output | 49.56 ± 12.98 | 34.60 ± 13.30 | 53.24 ± 18.09 | 1.43× |
-| Float.toString: finite random | 69.39 ± 18.35 | 39.56 ± 3.25 | 54.10 ± 2.94 | 1.75× |
-| Float.toString: 1–3 digit integers | 46.89 ± 5.78 | 39.26 ± 3.45 | 58.35 ± 5.73 | 1.19× |
-| Formatter: ordinary decimals, %.9g | 269.62 ± 20.30 | 322.29 ± 156.18 | 309.92 ± 97.90 | 0.84× |
-
 ## Original formatter C2 control
 
-The preceding fast_float-only PR image has the unmodified Java formatter.
-It is independently measured with the same three-fork protocol. The final
-image retains the same String copying constructor, and gates C2 float builder
-append to Java. The flag-disabled variant uses Java conversion. No parsing
-implementation changed in this formatting addition.
+The preceding fast_float-only PR image has the unmodified Java formatter; it
+is not a pristine whole-JDK build. It is independently measured with the same
+three-fork protocol. These original-formatter controls drive the formatting
+conclusions. Float concatenation is essentially parity (52.66 to 52.36 ns,
+1.01×), float builder append is parity, and random Float.toString is 1.30×
+(51.48 to 39.56 ns), rather than the larger opt-out ratios below. Random
+Double.toString is 1.18× with a wide enabled confidence interval.
+
+The enabled compact-string path allocates an exact-sized byte array, copies
+into it and transfers its exclusive ownership to an internal String
+constructor. Flag-disabled and noncompact paths use the original ISO-8859-1
+copying constructor. This is an implementation change. Historical samples
+below do not qualify allocation/timing at the current PR head.
 
 | Workload | Original formatter ns | Final image, Java ns | Final image, native ns |
 | --- | ---: | ---: | ---: |
@@ -131,6 +70,81 @@ implementation changed in this formatting addition.
 | Float.toString: 1–3 digit integers | 43.38 ± 3.47 | 46.89 ± 5.78 | 39.26 ± 3.45 |
 | Formatter: ordinary decimals, %.9g | 296.98 ± 60.94 | 269.62 ± 20.30 | 322.29 ± 156.18 |
 
+## Interpreter: modified-image diagnostic
+
+| Workload | Java ns | Native ns | JNI ns | Native speedup |
+| --- | ---: | ---: | ---: | ---: |
+| BigDecimal.valueOf: 1–3 digit integers | 1088.34 ± 126.46 | 938.11 ± 104.92 | 788.76 ± 33.64 | 1.16× |
+| BigDecimal.valueOf: finite random doubles | 2019.35 ± 177.40 | 976.14 ± 30.56 | 952.91 ± 113.49 | 2.07× |
+| DecimalFormat: ordinary decimals | 21573.72 ± 2316.08 | 17974.42 ± 680.11 | 18095.49 ± 2951.06 | 1.20× |
+| Double: StringBuilder append | 5489.40 ± 333.07 | 1211.36 ± 168.24 | 1411.30 ± 479.17 | 4.53× |
+| Double: UTF16 StringBuilder append | 12710.72 ± 2918.42 | 1791.51 ± 217.49 | 1823.38 ± 153.94 | 7.09× |
+| Double: string concatenation | 10479.69 ± 631.11 | 1976.57 ± 231.91 | 1938.16 ± 90.34 | 5.30× |
+| Double.toString: ordinary decimals | 5485.37 ± 1349.98 | 755.42 ± 98.69 | 746.67 ± 105.79 | 7.26× |
+| Double.toString: NaNs (Java path) | 280.86 ± 113.74 | 229.29 ± 24.47 | 236.75 ± 13.81 | 1.22× |
+| Double: raw Latin1 output | 3778.76 ± 2200.23 | 296.73 ± 59.82 | 422.80 ± 210.12 | 12.73× |
+| Double: raw UTF16 output | 5931.07 ± 1507.21 | 306.68 ± 105.40 | 413.09 ± 270.14 | 19.34× |
+| Double.toString: finite random | 4212.43 ± 1112.04 | 789.98 ± 193.85 | 685.05 ± 58.61 | 5.33× |
+| Double.toString: 1–3 digit integers | 2417.03 ± 191.62 | 711.63 ± 75.22 | 653.26 ± 30.37 | 3.40× |
+| Double.toString: signed zeros (Java path) | 259.59 ± 53.90 | 258.35 ± 21.22 | 237.74 ± 50.43 | 1.00× |
+| Float16.toString: finite random (Java control) | 1839.65 ± 114.51 | 2259.04 ± 744.25 | 2181.40 ± 621.80 | 0.81× |
+| Float: StringBuilder append | 2975.87 ± 560.20 | 1106.95 ± 187.77 | 1262.24 ± 249.57 | 2.69× |
+| Float: string concatenation | 5517.85 ± 1002.07 | 2022.64 ± 388.03 | 1962.33 ± 167.56 | 2.73× |
+| Float: raw Latin1 output | 1694.90 ± 31.91 | 270.09 ± 12.67 | 291.68 ± 14.61 | 6.28× |
+| Float.toString: finite random | 3077.58 ± 1204.34 | 724.86 ± 130.49 | 744.88 ± 102.89 | 4.25× |
+| Float.toString: 1–3 digit integers | 2337.16 ± 566.49 | 673.81 ± 64.45 | 805.43 ± 341.25 | 3.47× |
+| Formatter: ordinary decimals, %.9g | 40459.12 ± 6149.18 | 31335.40 ± 3406.67 | 32658.20 ± 4084.84 | 1.29× |
+
+## C1: modified-image diagnostic
+
+| Workload | Java ns | Native ns | JNI ns | Native speedup |
+| --- | ---: | ---: | ---: | ---: |
+| BigDecimal.valueOf: 1–3 digit integers | 46.37 ± 2.61 | 37.23 ± 4.92 | 37.93 ± 8.62 | 1.25× |
+| BigDecimal.valueOf: finite random doubles | 119.13 ± 8.14 | 69.91 ± 5.75 | 114.05 ± 111.13 | 1.70× |
+| DecimalFormat: ordinary decimals | 667.60 ± 318.15 | 535.55 ± 46.86 | 564.49 ± 19.52 | 1.25× |
+| Double: StringBuilder append | 242.82 ± 113.83 | 82.85 ± 2.27 | 108.99 ± 3.29 | 2.93× |
+| Double: UTF16 StringBuilder append | 238.90 ± 13.79 | 146.91 ± 26.45 | 166.89 ± 32.85 | 1.63× |
+| Double: string concatenation | 251.24 ± 47.28 | 100.28 ± 10.96 | 142.40 ± 64.50 | 2.51× |
+| Double.toString: ordinary decimals | 186.37 ± 18.65 | 52.23 ± 3.22 | 71.07 ± 7.32 | 3.57× |
+| Double.toString: NaNs (Java path) | 14.71 ± 2.95 | 14.24 ± 1.85 | 12.92 ± 1.21 | 1.03× |
+| Double: raw Latin1 output | 150.59 ± 18.22 | 31.11 ± 1.43 | 50.14 ± 2.55 | 4.84× |
+| Double: raw UTF16 output | 135.89 ± 10.20 | 36.72 ± 0.85 | 68.53 ± 5.77 | 3.70× |
+| Double.toString: finite random | 190.56 ± 40.86 | 55.93 ± 17.88 | 75.03 ± 6.66 | 3.41× |
+| Double.toString: 1–3 digit integers | 110.89 ± 39.49 | 54.66 ± 5.01 | 75.58 ± 23.65 | 2.03× |
+| Double.toString: signed zeros (Java path) | 13.28 ± 1.99 | 13.40 ± 4.10 | 13.10 ± 2.70 | 0.99× |
+| Float16.toString: finite random (Java control) | 117.01 ± 36.92 | 131.27 ± 126.98 | 104.44 ± 34.08 | 0.89× |
+| Float: StringBuilder append | 153.60 ± 88.07 | 70.55 ± 1.87 | 90.22 ± 6.87 | 2.18× |
+| Float: string concatenation | 175.56 ± 10.93 | 100.25 ± 22.97 | 105.37 ± 9.62 | 1.75× |
+| Float: raw Latin1 output | 89.75 ± 12.99 | 29.75 ± 8.12 | 52.53 ± 13.28 | 3.02× |
+| Float.toString: finite random | 125.69 ± 4.70 | 52.64 ± 9.34 | 71.04 ± 6.15 | 2.39× |
+| Float.toString: 1–3 digit integers | 83.95 ± 8.55 | 57.48 ± 9.97 | 85.62 ± 50.73 | 1.46× |
+| Formatter: ordinary decimals, %.9g | 844.68 ± 170.88 | 735.49 ± 49.53 | 759.88 ± 129.87 | 1.15× |
+
+## C2: modified-image diagnostic
+
+| Workload | Java ns | Native ns | JNI ns | Native speedup |
+| --- | ---: | ---: | ---: | ---: |
+| BigDecimal.valueOf: 1–3 digit integers | 24.41 ± 1.71 | 20.25 ± 2.03 | 30.13 ± 24.42 | 1.21× |
+| BigDecimal.valueOf: finite random doubles | 36.92 ± 2.36 | 40.33 ± 15.57 | 35.01 ± 2.74 | 0.92× |
+| DecimalFormat: ordinary decimals | 283.70 ± 21.62 | 293.10 ± 62.20 | 299.41 ± 44.36 | 0.97× |
+| Double: StringBuilder append | 98.17 ± 22.63 | 69.01 ± 6.99 | 85.78 ± 8.50 | 1.42× |
+| Double: UTF16 StringBuilder append | 99.03 ± 6.67 | 99.80 ± 26.29 | 137.42 ± 38.23 | 0.99× |
+| Double: string concatenation | 70.53 ± 12.91 | 51.85 ± 2.45 | 84.01 ± 18.06 | 1.36× |
+| Double.toString: ordinary decimals | 75.80 ± 5.57 | 51.93 ± 13.68 | 84.58 ± 40.57 | 1.46× |
+| Double.toString: NaNs (Java path) | 1.15 ± 0.12 | 1.08 ± 0.06 | 1.16 ± 0.15 | 1.07× |
+| Double: raw Latin1 output | 54.09 ± 5.58 | 24.21 ± 0.86 | 47.60 ± 4.31 | 2.23× |
+| Double: raw UTF16 output | 49.03 ± 4.32 | 30.47 ± 0.87 | 59.04 ± 9.44 | 1.61× |
+| Double.toString: finite random | 72.73 ± 19.80 | 50.16 ± 21.47 | 62.84 ± 4.07 | 1.45× |
+| Double.toString: 1–3 digit integers | 48.93 ± 10.47 | 42.80 ± 4.24 | 63.26 ± 3.03 | 1.14× |
+| Double.toString: signed zeros (Java path) | 1.08 ± 0.18 | 1.04 ± 0.08 | 1.05 ± 0.03 | 1.04× |
+| Float16.toString: finite random (Java control) | 66.13 ± 27.88 | 55.56 ± 18.86 | 53.26 ± 12.28 | 1.19× |
+| Float: StringBuilder append | 65.39 ± 35.45 | 55.25 ± 7.44 | 53.98 ± 4.08 | 1.18× |
+| Float: string concatenation | 106.64 ± 72.39 | 52.36 ± 15.02 | 72.50 ± 9.45 | 2.04× |
+| Float: raw Latin1 output | 49.56 ± 12.98 | 34.60 ± 13.30 | 53.24 ± 18.09 | 1.43× |
+| Float.toString: finite random | 69.39 ± 18.35 | 39.56 ± 3.25 | 54.10 ± 2.94 | 1.75× |
+| Float.toString: 1–3 digit integers | 46.89 ± 5.78 | 39.26 ± 3.45 | 58.35 ± 5.73 | 1.19× |
+| Formatter: ordinary decimals, %.9g | 269.62 ± 20.30 | 322.29 ± 156.18 | 309.92 ± 97.90 | 0.84× |
+
 ## Regression investigation and gates
 
 An earlier C2 pilot exposed a float StringBuilder regression: 59.38 ± 5.23 ns
@@ -138,7 +152,7 @@ with Java versus 90.21 ± 6.70 ns with native formatting. Inlining output showed
 that the builder String constructor's 82-byte `Arrays.copyOfRange` call no longer
 inlined. A temporary `Arrays.copyOf` experiment reduced the cost, but repeated
 original-build controls still favored Java append in C2. The final integration
-therefore retains the original String constructor and folds `_useJavaFloatAppend`
+therefore gates float builder append separately and folds `_useJavaFloatAppend`
 to true in C2, selecting the original Java converter for this caller. Its Java
 body returns false in interpreter/C1, which continue to use the faster native
 append. The Java first stage is forced inline to avoid a cold-profile call in
