@@ -38,7 +38,7 @@ import org.openjdk.jmh.annotations.*;
 public class RustRegexFilter {
     @Param({"64", "4096", "32768"})
     public int length;
-    @Param({"miss", "hit", "hitAfterMisses", "unsupported", "literal"})
+    @Param({"miss", "hit", "hitAfterMisses", "unsupported", "literal", "utf16", "flags"})
     public String scenario;
     private Matcher matcher;
 
@@ -50,8 +50,10 @@ public class RustRegexFilter {
             default -> "error[0-9]+";
         };
         String input = "x ".repeat(length / 2);
+        if (scenario.equals("utf16")) input = "\u0100 ".repeat(length / 2);
         if (scenario.equals("hit")) input = "error123" + input.substring(8);
-        matcher = Pattern.compile(expression).matcher(input);
+        int flags = scenario.equals("flags") ? Pattern.CASE_INSENSITIVE : 0;
+        matcher = Pattern.compile(expression, flags).matcher(input);
         for (int i = 0; i < 16; i++) matcher.reset().find();
         if (scenario.equals("hitAfterMisses")) {
             matcher.reset("error123" + input.substring(8));

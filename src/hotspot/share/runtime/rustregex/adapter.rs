@@ -23,10 +23,10 @@
  */
 
 // Immutable, bounded DFA searches: no allocation or locks on the normal path.
-use regex::bytes::RegexBuilder;
 use regex_automata::{
     dfa::{dense, Automaton},
-    util::{prefilter::Prefilter, syntax},
+    nfa::thompson,
+    util::prefilter::Prefilter,
     Input, MatchKind,
 };
 use std::{
@@ -37,16 +37,6 @@ use std::{
 type Dfa = dense::DFA<Vec<u32>>;
 
 fn compile(pattern: &str) -> Option<Dfa> {
-    // Reject empty languages with empty matches: filtering them is pointless.
-    let re = RegexBuilder::new(pattern)
-        .unicode(false)
-        .dot_matches_new_line(true)
-        .size_limit(2 * 1024 * 1024)
-        .build()
-        .ok()?;
-    if re.is_match(b"") {
-        return None;
-    }
     let hir = regex_syntax::ParserBuilder::new()
         .unicode(false)
         .utf8(false)
@@ -54,7 +44,21 @@ fn compile(pattern: &str) -> Option<Dfa> {
         .build()
         .parse(pattern)
         .ok()?;
+    // Filtering expressions that can match without consuming input is pointless.
+    // Use the parsed properties instead of constructing a separate regex engine.
+    if hir.properties().minimum_len() == Some(0) {
+        return None;
+    }
     let pre = Prefilter::from_hir_prefix(MatchKind::LeftmostFirst, &hir);
+    let nfa = thompson::Compiler::new()
+        .configure(
+            thompson::Config::new()
+                .utf8(false)
+                .which_captures(thompson::WhichCaptures::None)
+                .nfa_size_limit(Some(2 * 1024 * 1024)),
+        )
+        .build_from_hir(&hir)
+        .ok()?;
     dense::Builder::new()
         .configure(
             dense::Config::new()
@@ -62,13 +66,7 @@ fn compile(pattern: &str) -> Option<Dfa> {
                 .dfa_size_limit(Some(2 * 1024 * 1024))
                 .determinize_size_limit(Some(4 * 1024 * 1024)),
         )
-        .syntax(
-            syntax::Config::new()
-                .unicode(false)
-                .utf8(false)
-                .dot_matches_new_line(true),
-        )
-        .build(pattern)
+        .build_from_nfa(&nfa)
         .ok()
 }
 
@@ -131,6 +129,7 @@ pub unsafe extern "C" fn jdk_regex_may_match(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use regex::bytes::RegexBuilder;
     use std::cell::Cell;
 
     #[derive(Clone, Copy, PartialEq)]
@@ -193,6 +192,64 @@ mod tests {
                 .try_search_fwd(&Input::new(&[b'a', byte, b'b']))
                 .unwrap()
                 .is_some());
+        }
+    }
+
+    #[test]
+    fn compile_limits_and_empty_matches() {
+        for pattern in ["", "a*", "(?:a|)", "a{0}", "(?:ab)?"] {
+            assert!(compile(pattern).is_none(), "{pattern}");
+        }
+        // The NFA must be bounded before determinization starts.
+        assert!(compile("a{1000000000}").is_none());
+    }
+
+    #[test]
+    fn parsed_nfa_matches_reference() {
+        let mut seed = 0x12345678_u32;
+        for pattern in [
+            "error[0-9]+",
+            "(error|warn): (\\w+)",
+            "[0-9]{3}-[0-9]{2}-[0-9]{4}",
+            "a.*b",
+            "(?:a|bc)+d",
+            "[a-z]+[0-9]+",
+            "[^x]+z",
+            "\\D+q",
+            "[]a]x",
+            "a{2,4}?b",
+            "x*+x",
+        ] {
+            let reference = RegexBuilder::new(pattern)
+                .unicode(false)
+                .dot_matches_new_line(true)
+                .build()
+                .unwrap();
+            let dfa = compile(pattern).unwrap();
+            for length in 0..128 {
+                let mut input = Vec::new();
+                for _ in 0..length {
+                    seed ^= seed << 13;
+                    seed ^= seed >> 17;
+                    seed ^= seed << 5;
+                    input.push(seed as u8);
+                }
+                for suffix in [
+                    b"".as_slice(),
+                    b" error123 warn: foo 123-45-6789 a\nb aaab bcd abc123 z q ]x xx".as_slice(),
+                ] {
+                    input.extend_from_slice(suffix);
+                    let actual = dfa
+                        .try_search_fwd(&Input::new(&input).earliest(true))
+                        .unwrap()
+                        .is_some();
+                    assert_eq!(
+                        actual,
+                        reference.is_match(&input),
+                        "{pattern} length={length}"
+                    );
+                }
+            }
         }
     }
 }

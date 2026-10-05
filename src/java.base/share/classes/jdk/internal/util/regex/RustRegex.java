@@ -56,6 +56,10 @@ public final class RustRegex {
         public void run() { free0(handle); }
     }
 
+    public static boolean isLatin1(String input) {
+        return SharedSecrets.getJavaLangAccess().getLatin1Bytes(input) != null;
+    }
+
     public static RustRegex compile(String pattern, int flags) {
         if (!ENABLED || flags != 0 || !supported(pattern)) return null;
         long handle = compile0(pattern.getBytes(StandardCharsets.US_ASCII));

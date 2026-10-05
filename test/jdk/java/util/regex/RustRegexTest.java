@@ -44,6 +44,7 @@ import java.util.regex.*;
 import jdk.internal.util.regex.RustRegex;
 
 public class RustRegexTest {
+    private static final boolean EXPECT_FILTER = RustRegex.ENABLED && RustRegex.isLatin1("x ");
     private static final Field COMPILED;
     private static final Field FILTER;
     private static final Field MISSES;
@@ -99,7 +100,7 @@ public class RustRegexTest {
         for (String regex : new String[]{"[]a]x", "[^]a]x", "a\0+b"}) {
             Pattern p = Pattern.compile(regex), ref = reference(regex, 0);
             warm(p, padding);
-            if (RustRegex.ENABLED && FILTER.get(p) == null)
+            if (EXPECT_FILTER && FILTER.get(p) == null)
                 throw new AssertionError("edge-case filter was not compiled: " + regex);
             String input = padding + "]x ax bx a\0\0b";
             compare(p, ref, input, 0, input.length(), false, true);
@@ -157,13 +158,38 @@ public class RustRegexTest {
         warm(possessive);
         String input = "x ".repeat(2048);
         RustRegex filter = (RustRegex) FILTER.get(possessive);
-        if (RustRegex.ENABLED && filter == null)
+        if (EXPECT_FILTER && filter == null)
             throw new AssertionError("possessive superset case not compiled");
         if (filter != null && !filter.mayMatch(input, 0, input.length()))
             throw new AssertionError("Rust nested repetition did not broaden the language");
         if (possessive.matcher(input).find())
             throw new AssertionError("Rust candidate changed Java possessive semantics");
         compare(possessive, reference(possessive.pattern(), 0), padding, 0, padding.length(), false, true);
+    }
+
+    private static void inputGates() throws Exception {
+        String latin1 = "x ".repeat(2048), utf16 = "\u0100 ".repeat(2048);
+        Pattern p = Pattern.compile("error[0-9]+");
+        warm(p, utf16);
+        if (MISSES.getInt(p) != 0 || COMPILED.getBoolean(p) || FILTER.get(p) != null)
+            throw new AssertionError("UTF-16 input learned or compiled a filter");
+
+        for (int i = 0; i < 8; i++) p.matcher(latin1).find();
+        p.matcher(utf16).find();
+        if (COMPILED.getBoolean(p) || FILTER.get(p) != null)
+            throw new AssertionError("UTF-16 input triggered compilation after Latin-1 misses");
+        warm(p, latin1);
+        if ((FILTER.get(p) != null) != EXPECT_FILTER)
+            throw new AssertionError("Latin-1 reuse did not respect compact String availability");
+
+        for (int flags : new int[]{Pattern.CASE_INSENSITIVE, Pattern.MULTILINE,
+                Pattern.DOTALL, Pattern.UNICODE_CHARACTER_CLASS, Pattern.COMMENTS,
+                Pattern.LITERAL, Pattern.CANON_EQ}) {
+            Pattern flagged = Pattern.compile("error[0-9]+", flags);
+            warm(flagged, latin1);
+            if (MISSES.getInt(flagged) != 0 || COMPILED.getBoolean(flagged))
+                throw new AssertionError("unsupported flags learned or attempted a filter");
+        }
     }
 
     private static void compare(Pattern p, Pattern ref, CharSequence input, int lo, int hi,
@@ -176,6 +202,7 @@ public class RustRegexTest {
     }
 
     public static void main(String[] args) throws Exception {
+        inputGates();
         edgeCases();
         String[] patterns = {
             "error[0-9]+", "(error|warn): (\\w+)", "[0-9]{3}-[0-9]{2}-[0-9]{4}",
@@ -233,7 +260,7 @@ public class RustRegexTest {
             });
             for (Future<Void> f : pool.invokeAll(work)) f.get();
         }
-        if (RustRegex.ENABLED && FILTER.get(shared) == null)
+        if (EXPECT_FILTER && FILTER.get(shared) == null)
             throw new AssertionError("eligible pattern never compiled");
         if (RustRegex.ENABLED && FILTER.get(shared) != null) {
             Object cached = FILTER.get(shared);
@@ -243,6 +270,8 @@ public class RustRegexTest {
             if (FILTER.get(shared) != cached || MISSES.getInt(shared) != 8)
                 throw new AssertionError("filter was not reused after further misses");
         }
+        if (!EXPECT_FILTER && (COMPILED.getBoolean(shared) || MISSES.getInt(shared) != 0))
+            throw new AssertionError("non-Latin-1 configuration attempted native compilation");
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         try (ObjectOutputStream out = new ObjectOutputStream(bytes)) { out.writeObject(shared); }
         Pattern restored;

@@ -1,7 +1,7 @@
 # Rust regex search filter
 
 This integration uses Rust regex 1.13.1 (verified against the live crates.io
-index on 2026-10-04) to reject unsuccessful, reused, long Latin-1 searches in
+index on 2026-10-05) to reject unsuccessful, reused, long Latin-1 searches in
 `java.util.regex.Matcher`. It preserves Java matching behavior. It does not
 replace Java's matcher with an incompatible regex engine, and it makes no claim
 that 99% of patterns are accelerated.
@@ -41,22 +41,26 @@ registered JNI fallback. A JDK built without Rust warns and disables a requested
 
 Java always compiles the Pattern first, so Java syntax validation, named groups,
 serialization, and precompiled Pattern reuse keep their existing behavior. A
-Pattern accumulates eight unsuccessful eligible searches before lazily compiling
-a Rust filter, once under a Pattern lock. The immutable filter can be shared
+Pattern accumulates eight unsuccessful eligible Latin-1 searches with default
+flags before lazily compiling a Rust filter, once under a Pattern lock. The immutable filter can be shared
 across Matchers and threads. A Cleaner releases it when unreachable; the caller
 uses `Reference.reachabilityFence` to protect each native search. Native handles
 are transient and excluded from Pattern serialization data.
 
 The eligibility gate accepts `String` inputs with 2,048–65,536 remaining
-characters and a Java `Start` or `BnM` root. UTF-16 strings and mutable
+characters and a Java `Start` or `BnM` root. Size, input type and root checks run
+before querying the native enable flag, so short inputs and mutable sequences
+do not initialize the Rust backend. UTF-16 strings and mutable
 CharSequences use Java. Rust operates directly on the compact String backing
 array through an internal shared secret; it never changes it. Oversized input
 uses Java rather than retaining heap pointers across an unbounded native call.
 The eight-miss counter is an approximate volatile heuristic; races can defer
 compilation but cannot change matches.
 
-The shared C ABI adapter builds a dense DFA, bounded to 2 MiB of output and
-4 MiB of determinization workspace. Prefix extraction supplies the upstream
+The shared C ABI adapter parses once, checks minimum match length in that parsed
+representation, and reuses it for prefix extraction and NFA construction. It
+builds a dense DFA with separate limits of 2 MiB for the NFA, 2 MiB for DFA output
+and 4 MiB for determinization workspace. Prefix extraction supplies the upstream
 SIMD-capable literal prefilter. Pattern length is bounded to 4,096 bytes.
 Compilation occurs in native thread state with copied pattern bytes, so GC can
 proceed. Normal searches allocate nothing and acquire no locks. Search errors
@@ -164,10 +168,13 @@ make test TEST="jtreg:test/jdk/java/util/Scanner jtreg:test/jdk/java/lang/String
 engine with native handles disabled. Its jtreg actions exercise interpreter,
 C1, C2, JNI, the disabled flag, default settings, normal tiering and uncompressed Strings, plus concurrent Pattern
 reuse/GC and serialization. `test/micro/.../regex/RustRegexFilter.java` is the
-JMH benchmark for long misses, positive searches, short inputs, unsupported
-syntax and literal searches. Compare `-XX:-UseRustRegex`, `-XX:+UseRustRegex`,
+JMH benchmark for long misses, positive searches, short inputs, UTF-16 inputs,
+unsupported flags/syntax and literal searches. Compare `-XX:-UseRustRegex`, `-XX:+UseRustRegex`,
 and `-XX:+UseRustRegex -XX:-UseRustRegexIntrinsics` with each execution tier.
-The differential test also covers literal `]` at the start of a class, embedded
+The differential test also checks that UTF-16 inputs, uncompressed Strings and
+unsupported flags do not learn or compile filters. `RustRegexInitialization`
+checks deferred backend initialization for short/mutable searches and initialization
+on a long String search. The differential test also covers literal `]` at the start of a class, embedded
 NUL pattern bytes, `find(int)`, anchored-operation bypass and Rust's possessive
 superset. `runtime/interpreter/RustRegexStartup` tests both 64 MiB and 256 MiB
 code caches with default settings, Rust disabled, explicitly enabled and using the JNI fallback.
@@ -179,6 +186,8 @@ measurement. The complete JDK test suite is not represented by focused jtreg
 coverage, so these results establish only the tested regression scope.
 Review fixes and their separate validation are recorded in
 [rust-regex-review-results.md](rust-regex-review-results.md).
+The final performance review and new before/after measurements are recorded in
+[rust-regex-final-review.md](rust-regex-final-review.md).
 
 Default-build/runtime policy and its validation are recorded in
 [rust-regex-defaults.md](rust-regex-defaults.md).

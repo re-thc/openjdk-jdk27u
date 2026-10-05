@@ -79,11 +79,11 @@ public class RustRegexStartup {
             var field = Pattern.class.getDeclaredField("rustRegex");
             field.setAccessible(true);
             boolean compiled = field.get(p) != null;
-            boolean enabled = Boolean.parseBoolean(ManagementFactory
-                    .getPlatformMXBean(HotSpotDiagnosticMXBean.class)
-                    .getVMOption("UseRustRegex").getValue());
-            if (compiled != enabled)
-                throw new AssertionError("native filter does not match effective UseRustRegex flag");
+            var diagnostics = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
+            boolean enabled = Boolean.parseBoolean(diagnostics.getVMOption("UseRustRegex").getValue());
+            boolean compactStrings = Boolean.parseBoolean(diagnostics.getVMOption("CompactStrings").getValue());
+            if (compiled != (enabled && compactStrings))
+                throw new AssertionError("native filter does not match effective Rust/compact String flags");
             if (Boolean.getBoolean("test.rust.regex.expected") && !compiled)
                 throw new AssertionError("native filter was not compiled");
             var hit = p.matcher("error123" + input);

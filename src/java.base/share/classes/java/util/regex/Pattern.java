@@ -1013,23 +1013,37 @@ public final class Pattern
     private transient volatile boolean rustRegexCompiled;
     private transient RustRegex rustRegex;
 
-    void recordRustRegexMiss() {
-        if (rustRegexMisses < 8) rustRegexMisses++;
+    // Matcher.search has already checked that input is an eligible String.
+    void recordRustRegexMiss(CharSequence input) {
+        if (rustRegexMisses < 8 && flags == 0) recordLatin1RustRegexMiss(input);
+    }
+
+    private void recordLatin1RustRegexMiss(CharSequence input) {
+        if (RustRegex.isLatin1((String)input)) {
+            rustRegexMisses++;
+        }
     }
 
     void recordRustRegexHit() {
         rustRegexMisses = 0;
     }
 
-    RustRegex rustRegex() {
+    RustRegex rustRegex(CharSequence input) {
         // Amortize compilation over reused patterns with failed long searches.
         if (rustRegexMisses < 8) return null;
-        if (!rustRegexCompiled) {
-            synchronized (this) {
-                if (!rustRegexCompiled) {
-                    rustRegex = RustRegex.compile(pattern, flags);
-                    rustRegexCompiled = true;
-                }
+        if (!rustRegexCompiled) return compileRustRegex(input);
+        return rustRegex;
+    }
+
+    // Keep cold preparation out of the small helpers C1 inlines in search.
+    private RustRegex compileRustRegex(CharSequence input) {
+        // A different Matcher may have learned the misses on Latin-1.
+        // Do not pay for compilation on an input the filter cannot scan.
+        if (!RustRegex.isLatin1((String)input)) return null;
+        synchronized (this) {
+            if (!rustRegexCompiled) {
+                rustRegex = RustRegex.compile(pattern, flags);
+                rustRegexCompiled = true;
             }
         }
         return rustRegex;
