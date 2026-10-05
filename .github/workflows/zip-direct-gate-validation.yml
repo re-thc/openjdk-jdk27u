@@ -1,4 +1,4 @@
-name: ZIP small direct-buffer gate validation
+name: ZIP direct-to-direct call-path validation
 on:
   push:
     branches: [pr/zlib-ng-x64-validation]
@@ -36,7 +36,7 @@ jobs:
           mkdir -p validation/results
           lscpu > validation/results/cpu.txt
           python3 -m py_compile .github/scripts/validate-direct-gate.py
-      - name: Validate gated buffer calls under all tiers and collectors
+      - name: Validate selected buffer calls under all tiers and collectors
         run: python3 .github/scripts/validate-direct-gate.py build/zip/images/jdk
       - uses: actions/upload-artifact@v6
         if: always()

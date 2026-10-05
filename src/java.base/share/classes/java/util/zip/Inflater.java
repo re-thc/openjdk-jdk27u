@@ -72,10 +72,6 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  */
 
 public class Inflater implements AutoCloseable {
-    // With no heap arrays to pin, JNI is cheaper for small direct-buffer calls.
-    private static final int DIRECT_INTRINSIC_LIMIT = 4096;
-
-
     private final InflaterZStreamRef zsRef;
     private ByteBuffer input = ZipUtils.defaultBuf;
     private byte[] inputArray;
@@ -555,15 +551,11 @@ public class Inflater implements AutoCloseable {
                                     NIO_ACCESS.acquireSession(output);
                                     try {
                                         long outputAddress = NIO_ACCESS.getBufferAddress(output);
-                                        result = ZipUtils.USE_ZIP_INTRINSICS
-                                            && (inputRem > DIRECT_INTRINSIC_LIMIT ||
-                                                outputRem > DIRECT_INTRINSIC_LIMIT)
-                                            ? ZipUtils.process(true, this, zsRef.address(),
-                                                null, inputAddress + inputPos, inputRem,
-                                                null, outputAddress + outputPos, outputRem, 0, 0)
-                                            : inflateBufferBuffer(zsRef.address(),
-                                                inputAddress + inputPos, inputRem,
-                                                outputAddress + outputPos, outputRem);
+                                        // With no heap arrays to pin, the JNI entry
+                                        // has less transition overhead.
+                                        result = inflateBufferBuffer(zsRef.address(),
+                                            inputAddress + inputPos, inputRem,
+                                            outputAddress + outputPos, outputRem);
                                     } finally {
                                         NIO_ACCESS.releaseSession(output);
                                     }

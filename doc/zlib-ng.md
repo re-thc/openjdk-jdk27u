@@ -30,7 +30,8 @@ Unsupported platforms reject an explicitly enabled `UseZlibNG` flag.
 
 | Operation | Interpreter | C1 | C2 |
 | --- | --- | --- | --- |
-| Deflater / Inflater, heap and direct buffers | JNI fallback enters a shared VM routine that pins both arrays in one VM entry | Runtime1 intrinsic calls the shared routine | GC-safe runtime intrinsic calls the shared routine |
+| Deflater / Inflater, except direct-to-direct inflation | JNI fallback enters a shared VM routine that pins both arrays in one VM entry | Runtime1 intrinsic calls the shared routine | GC-safe runtime intrinsic calls the shared routine |
+| Inflater, direct-to-direct buffers | Existing JNI entry | Existing JNI entry | Existing JNI entry |
 | Adler32 arrays and direct buffers | Existing SIMD stub gains an interpreter entry | Existing SIMD stub gains a C1 intrinsic | Existing SIMD intrinsic |
 | CRC32 arrays, direct buffers, and single bytes | Existing machine-code intrinsic | Existing machine-code intrinsic | Existing machine-code intrinsic |
 | CRC32C arrays and direct buffers | Existing machine-code intrinsic | Existing machine-code intrinsic | Existing machine-code intrinsic |
@@ -40,11 +41,12 @@ JVMTI deferred suspension, a walkable Java frame, and a transition to native
 state. This permits safepoints during a long call and avoids the individual JNI
 critical-array transitions. Exceptions are reported after both arrays are
 unpinned, including Inflater's input/output accounting on malformed data.
-Direct-to-direct Inflater calls retain JNI when both remaining input and output
-are at most 4 KiB: there are no heap-array JNI transitions to remove, and the
-shared VM transition costs more for these small calls. Larger calls retain the
-runtime intrinsic. Call-path selection may change within a stream; the native
-backend and stream state stay the same.
+Direct-to-direct Inflater calls retain JNI: there are no heap-array transitions
+to remove, and measurements on x86_64 and AArch64 found less call overhead with
+the existing JNI entry. Heap and mixed buffer calls retain the runtime intrinsic.
+Call-path selection may change within a stream when buffer shapes change; the
+native backend and stream state stay the same.
+
 All existing Java range checks, synchronization, buffer positions, memory-session
 acquisition/release, streaming semantics, and packed return values are retained.
 C1 has its own Runtime1 stub; it does not require the C2 compiler to initialize.
@@ -67,7 +69,7 @@ call overhead to remove.
 ## Upstream verification and updates
 
 The latest stable release was verified using the live GitHub latest-release redirect on
-2026-10-04: <https://github.com/zlib-ng/zlib-ng/releases/tag/2.3.3>.
+2026-10-05: <https://github.com/zlib-ng/zlib-ng/releases/tag/2.3.3>.
 The source archive is:
 
 - URL: `https://codeload.github.com/zlib-ng/zlib-ng/tar.gz/refs/tags/2.3.3`
@@ -115,3 +117,11 @@ CPU, JDK revision, flags, forks, warmup, measurement duration, allocation behavi
 and compressed sizes when reporting results. Decompression inputs are generated
 by the selected backend in setup; the uncompressed input is identical across
 runs, but compressed representations can differ.
+
+The `ZipBufferCalls` JMH benchmark isolates Inflater call overhead across heap and
+direct input/output combinations. Compare `UseZipIntrinsics` on and off with
+`UseZlibNG` enabled under `-Xint`, `-XX:TieredStopAtLevel=1`, and
+`-XX:-TieredCompilation`. It uses the same encoded input for these comparisons,
+checks the decoded bytes during setup, and verifies completion on every call.
+Direct-to-direct calls use JNI with either flag setting; heap and mixed buffer
+combinations measure the intrinsic call path against JNI.
