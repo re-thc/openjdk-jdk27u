@@ -25,7 +25,7 @@
 #ifndef GC_SHARED_LEGACYFULLGCFORWARDING_INLINE_HPP
 #define GC_SHARED_LEGACYFULLGCFORWARDING_INLINE_HPP
 
-#include "gc/shared/legacyLegacyFullGCForwarding.hpp"
+#include "gc/shared/legacyFullGCForwarding.hpp"
 
 #include "oops/oop.inline.hpp"
 #include "utilities/globalDefinitions.hpp"

@@ -22,7 +22,7 @@
  *
  */
 
-#include "gc/shared/legacyLegacyFullGCForwarding.hpp"
+#include "gc/shared/legacyFullGCForwarding.hpp"
 #include "memory/memRegion.hpp"
 #include "runtime/globals_extension.hpp"
 
