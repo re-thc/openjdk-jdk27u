@@ -50,6 +50,11 @@ def run(name, args, cwd=None):
                            check=True, timeout=10800)
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
         print((OUT / (name + ".log")).read_text(errors="replace")[-20000:], flush=True)
+        if name.startswith("jtreg-"):
+            for result in sorted(OUT.glob("**/*.jtr")):
+                content = result.read_text(errors="replace")
+                if "test result: Failed." in content:
+                    print(str(result) + "\n" + content[-20000:], flush=True)
         raise
     output = (OUT / (name + ".log")).read_text(errors="replace")
     if name.startswith("jtreg-") or name.startswith("compressed-size-"):
@@ -59,6 +64,17 @@ def run(name, args, cwd=None):
 
 def gc_matrix(jdk, verify=False):
     java = jdk / "bin/java"
+    if verify:
+        # The assertion-enabled VM replaces the release VM in the image.
+        # Regenerate every default archive for that VM before testing AOT.
+        for archive in sorted((jdk / "lib/server").glob("classes*.jsa")):
+            flags = ["-XX:-UseCompressedOops"] if "_nocoops" in archive.stem else []
+            flags += ["-XX:+UnlockExperimentalVMOptions",
+                      "-XX:-UseCompactObjectHeaders" if "_nocoh" in archive.stem
+                      else "-XX:+UseCompactObjectHeaders"]
+            run("fastdebug-cds-" + archive.stem,
+                [java, "-Xshare:dump", "-Xms128m", "-Xmx128m", "-XX:+UseG1GC",
+                 "-XX:SharedArchiveFile=" + str(archive)] + flags)
     classes = OUT / "classes"
     classes.mkdir(exist_ok=True)
     run("compile-fixture", [jdk / "bin/javac", "-d", classes,
@@ -85,7 +101,8 @@ def gc_matrix(jdk, verify=False):
                 "-conc:2", "-timeoutFactor:4", "-javaoptions:" + flag,
                 REPO / "test/hotspot/jtreg/runtime/cds/appcds/aotCache/HelloAOTCache.java",
                 REPO / "test/hotspot/jtreg/runtime/cds/appcds/aotCode/AOTCodeTest.java",
-                REPO / "test/hotspot/jtreg/runtime/cds/MetaspaceAllocGaps.java"])
+                REPO / "test/hotspot/jtreg/runtime/cds/MetaspaceAllocGaps.java",
+                REPO / "test/hotspot/jtreg/compiler/intrinsics/zip/TestZlibNGAOT.java"])
 
 
 def tests(jdk, jtreg):
@@ -251,10 +268,74 @@ public class ZipSizes {
     print("\n".join(lines), flush=True)
     (OUT / "benchmarks-passed.txt").write_text("All 252 JMH cases completed\n")
 
+def calibrate(jdk, baseline):
+    """Repeat the suspect ARM points in alternating backend order."""
+    deps = OUT / "jmh"
+    deps.mkdir(exist_ok=True)
+    for name, (path, digest) in DEPS.items():
+        target = deps / name
+        urllib.request.urlretrieve("https://repo.maven.apache.org/maven2/" + path, target)
+        if hashlib.sha256(target.read_bytes()).hexdigest() != digest:
+            raise RuntimeError("Dependency digest mismatch: " + name)
+    classes = deps / "classes"
+    classes.mkdir(exist_ok=True)
+    cp = os.pathsep.join(str(deps / p) for p in DEPS)
+    run("compile-calibration", [jdk / "bin/javac", "-cp", cp, "-processorpath", cp,
+        "-d", classes, REPO / "test/micro/org/openjdk/bench/java/util/zip/ZipBackend.java"])
+    cp = str(classes) + os.pathsep + cp
+    common = ["-Xms128m", "-Xmx128m", "-XX:+UseSerialGC", "-XX:ActiveProcessorCount=2"]
+    configs = [
+        ("baseline", baseline, []),
+        ("default", jdk, ["-XX:-UseZlibNG"]),
+        ("ng-jni", jdk, ["-XX:+UseZlibNG", "-XX:+UnlockDiagnosticVMOptions", "-XX:-UseZipIntrinsics"]),
+        ("ng-intrinsic", jdk, ["-XX:+UseZlibNG"])]
+    tiers = [
+        ("int", ["-Xint"]),
+        ("c1", ["-XX:TieredStopAtLevel=1", "-Xbatch"]),
+        ("c2", ["-XX:-TieredCompilation", "-XX:CompileThreshold=1000", "-Xbatch"])]
+    all_rows = []
+    for tier, flags in tiers:
+        for size in [64, 1024, 65536]:
+            for pass_no, ordered in enumerate([configs, list(reversed(configs))]):
+                for label, target, extra in ordered:
+                    name = f"calibrate-{tier}-{size}-{pass_no}-{label}"
+                    result = OUT / (name + ".json")
+                    run(name, [target / "bin/java", "-Djmh.blackhole.mode=FULL_DONTINLINE",
+                        "-cp", cp, "org.openjdk.jmh.Main", "ZipBackend.deflate$",
+                        "-p", "size=" + str(size), "-p", "data=text",
+                        "-f", "2", "-wi", "4", "-i", "7", "-w", "1s", "-r", "500ms",
+                        "-jvm", target / "bin/java", "-jvmArgsAppend",
+                        " ".join(common + flags + extra), "-rf", "json", "-rff", result])
+                    rows = json.loads(result.read_text())
+                    if len(rows) != 1:
+                        raise RuntimeError("Incomplete calibration: " + name)
+                    row = rows[0]
+                    row.update(tier=tier, backend=label, pass_no=pass_no)
+                    all_rows.append(row)
+                    (OUT / "calibration-jmh.json").write_text(json.dumps(all_rows, indent=2) + "\n")
+                    metric = row["primaryMetric"]
+                    print(f'{name}: {metric["score"]:.1f} +/- {metric["scoreError"]:.1f} ns/op', flush=True)
+    lines = [
+        "Alternating backend order, four forks per point in two independent passes.",
+        "Four 1 s warmups; seven 0.5 s measurements per fork.",
+        "| Tier | Bytes | Pass | Baseline ns | Default ns | ng JNI ns | ng intrinsic ns |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |"]
+    for tier, _ in tiers:
+        for size in [64, 1024, 65536]:
+            for pass_no in [0, 1]:
+                selected = {row["backend"]: row["primaryMetric"] for row in all_rows
+                            if row["tier"] == tier and int(row["params"]["size"]) == size
+                            and row["pass_no"] == pass_no}
+                values = [f'{selected[label]["score"]:.1f} ± {selected[label]["scoreError"]:.1f}'
+                          for label, _, _ in configs]
+                lines.append("| " + " | ".join([tier, str(size), str(pass_no)] + values) + " |")
+    (OUT / "calibration-table.md").write_text("\n".join(lines) + "\n")
+    print("\n".join(lines), flush=True)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=["tests", "gc", "benchmarks"])
+    parser.add_argument("action", choices=["tests", "gc", "benchmarks", "calibrate"])
     parser.add_argument("--jdk", type=Path, required=True)
     parser.add_argument("--jtreg", type=Path)
     parser.add_argument("--baseline", type=Path)
@@ -265,5 +346,7 @@ if __name__ == "__main__":
         tests(jdk, options.jtreg.resolve())
     elif options.action == "gc":
         gc_matrix(jdk, options.verify_oops)
+    elif options.action == "calibrate":
+        calibrate(jdk, options.baseline.resolve())
     else:
         benchmarks(jdk, options.baseline.resolve())
