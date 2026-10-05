@@ -60,7 +60,6 @@
 #include "opto/mulnode.hpp"
 #include "opto/output.hpp"
 #include "opto/runtime.hpp"
-#include "runtime/zipRuntime.hpp"
 #include "opto/subnode.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomicAccess.hpp"
@@ -77,6 +76,7 @@
 #include "runtime/vframe.hpp"
 #include "runtime/vframe_hp.hpp"
 #include "runtime/vframeArray.hpp"
+#include "runtime/zipRuntime.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/preserveException.hpp"
 

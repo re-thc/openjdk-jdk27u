@@ -41,10 +41,10 @@
 #include "prims/jvmtiExport.hpp"
 #include "register_x86.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/zipRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vframeArray.hpp"
+#include "runtime/zipRuntime.hpp"
 #include "utilities/macros.hpp"
 #include "vmreg_x86.inline.hpp"
 
