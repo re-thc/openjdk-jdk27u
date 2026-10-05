@@ -23,7 +23,7 @@
 # questions.
 #
 
-name: ZIP backend x86 validation
+name: ZIP x86 stock-path regression calibration
 
 on:
   push:
@@ -35,160 +35,67 @@ permissions:
   actions: read
 
 concurrency:
-  group: zip-backend-validation-${{ github.ref }}
+  group: zip-stock-path-validation-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   validate:
-    timeout-minutes: 300
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: ubuntu-24.04
-            platform: linux-x64
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 2
-      - uses: actions/download-artifact@v6
-        with:
-          name: zip-backend-linux-x64
-          run-id: 37263807373
-          github-token: ${{ github.token }}
-          path: validation/previous
-      - name: Inspect previous AOT failures
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          for result in sorted(Path("validation/previous").glob("**/aot-ng-work/**/*.jtr")):
-              content = result.read_text(errors="replace")
-              if "test result: Failed." in content:
-                  print(str(result) + "\n" + content[-16000:])
-          PY
       - uses: ./.github/actions/get-bootjdk
         id: boot
         with:
-          platform: ${{ matrix.platform }}
+          platform: linux-x64
+      - uses: actions/checkout@v6
+        with:
+          ref: 33e539f2d4a847f283a3793df6eebd41b9d1dfac
+          path: validation/baseline
+      - uses: actions/cache/restore@v4
+        with:
+          path: validation/baseline/build/zip/images/jdk
+          key: zip-baseline-image-v1-linux-x64-33e539f2d4a847f283a3793df6eebd41b9d1dfac-gcc14-system-release
+          fail-on-cache-miss: true
+      - name: Verify source and record host
+        run: |
+          mkdir -p validation/results
+          git fetch --depth=1 origin 37d4b14c9121ba49a558e131c471e04fe11ca4ce
+          git diff 37d4b14c9121ba49a558e131c471e04fe11ca4ce -- src make test > validation/results/implementation-diff.txt
+          test ! -s validation/results/implementation-diff.txt
+          echo 37d4b14c9121ba49a558e131c471e04fe11ca4ce > validation/results/candidate-commit.txt
+          lscpu > validation/results/cpu.txt
+          gcc-14 --version > validation/results/compiler.txt
+          dpkg-query -W zlib1g > validation/results/zlib.txt
+          cat validation/results/cpu.txt validation/results/compiler.txt validation/results/zlib.txt
+          python3 -m py_compile .github/scripts/validate-zip-backend.py
       - uses: actions/download-artifact@v6
         with:
           name: bundles-jtreg-8.2.1+1
           run-id: 37263807373
           github-token: ${{ github.token }}
           path: jtreg/installed
-      - name: Set jtreg path
-        id: jtreg
-        run: echo "path=$PWD/jtreg/installed" >> "$GITHUB_OUTPUT"
-      - name: Verify restored jtreg installation
-        env:
-          BOOT_JDK: ${{ steps.boot.outputs.path }}
-          JTREG_PATH: ${{ steps.jtreg.outputs.path }}
-        run: |
-          python3 -m py_compile .github/scripts/validate-zip-backend.py
-          "$BOOT_JDK/bin/java" -Dprogram=jtreg -jar "$JTREG_PATH/lib/jtreg.jar" -help
-      - name: Install build dependencies
+      - name: Install native dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-14 g++-14 zlib1g-dev libasound2-dev libcups2-dev libfontconfig1-dev libx11-dev libxext-dev libxrandr-dev libxrender-dev libxt-dev libxtst-dev
-      - name: Record source and host
-        run: |
-          mkdir -p validation/results
-          git fetch --depth=1 origin c3198fede2ba39de217bd46eb197d68790c85c71
-          git fetch --depth=1 origin f61aabacb002c19b57cfc802b709c5f033f880d3
-          git diff f61aabacb002c19b57cfc802b709c5f033f880d3 c3198fede2ba39de217bd46eb197d68790c85c71 -- src make > validation/results/production-image-diff.txt
-          test ! -s validation/results/production-image-diff.txt
-          git rev-parse HEAD > validation/results/validation-commit.txt
-          echo c3198fede2ba39de217bd46eb197d68790c85c71 > validation/results/candidate-commit.txt
-          git diff c3198fede2ba39de217bd46eb197d68790c85c71 -- src make test > validation/results/implementation-diff.txt
-          test ! -s validation/results/implementation-diff.txt
-          lscpu > validation/results/cpu.txt
-          uname -a > validation/results/kernel.txt
-          gcc-14 --version > validation/results/compiler.txt
-          dpkg-query -W zlib1g > validation/results/zlib.txt
-          cat validation/results/candidate-commit.txt validation/results/cpu.txt validation/results/compiler.txt validation/results/zlib.txt
-      - uses: actions/cache/restore@v4
-        id: candidate-cache
-        with:
-          path: build/zip/images/jdk
-          key: zip-image-v1-${{ matrix.platform }}-f61aabacb002c19b57cfc802b709c5f033f880d3-gcc14-system-release
-      - name: Build candidate release
-        if: steps.candidate-cache.outputs.cache-hit != 'true'
-        env:
-          CC: gcc-14
-          CXX: g++-14
-          BOOT_JDK: ${{ steps.boot.outputs.path }}
-          JTREG_PATH: ${{ steps.jtreg.outputs.path }}
-        run: |
-          bash configure --with-conf-name=zip --with-boot-jdk="$BOOT_JDK" --with-jtreg="$JTREG_PATH" --with-zlib=system --with-debug-level=release --with-native-debug-symbols=none --disable-warnings-as-errors
-          make CONF=zip JOBS=2 images
-      - uses: actions/cache/save@v4
-        if: steps.candidate-cache.outputs.cache-hit != 'true'
-        with:
-          path: build/zip/images/jdk
-          key: zip-image-v1-${{ matrix.platform }}-f61aabacb002c19b57cfc802b709c5f033f880d3-gcc14-system-release
-      - name: Run targeted jtreg, GC, JNI, CDS, JAR, zipfs and jlink checks
-        env:
-          JTREG_PATH: ${{ steps.jtreg.outputs.path }}
-        run: python3 .github/scripts/validate-zip-backend.py tests --jdk build/zip/images/jdk --jtreg "$JTREG_PATH"
-      - uses: actions/cache/restore@v4
-        id: debug-cache
-        with:
-          path: build/zip-debug/support/modules_libs/java.base/server/libjvm.so
-          key: zip-hotspot-v1-${{ matrix.platform }}-f61aabacb002c19b57cfc802b709c5f033f880d3-gcc14-system-fastdebug
-      - name: Build assertion-enabled HotSpot
-        if: steps.debug-cache.outputs.cache-hit != 'true'
+      - name: Build restored stock allocation and zlib-ng paths
         env:
           CC: gcc-14
           CXX: g++-14
           BOOT_JDK: ${{ steps.boot.outputs.path }}
         run: |
-          bash configure --with-conf-name=zip-debug --with-boot-jdk="$BOOT_JDK" --with-zlib=system --with-debug-level=fastdebug --with-native-debug-symbols=none --disable-warnings-as-errors
-          make CONF=zip-debug JOBS=2 hotspot
-      - uses: actions/cache/save@v4
-        if: steps.debug-cache.outputs.cache-hit != 'true'
-        with:
-          path: build/zip-debug/support/modules_libs/java.base/server/libjvm.so
-          key: zip-hotspot-v1-${{ matrix.platform }}-f61aabacb002c19b57cfc802b709c5f033f880d3-gcc14-system-fastdebug
-      - name: Check all collectors and AOT archives with assertions enabled
-        env:
-          JTREG_PATH: ${{ steps.jtreg.outputs.path }}
-        run: |
-          cp -aL build/zip/images/jdk validation/fastdebug-jdk
-          cp build/zip-debug/support/modules_libs/java.base/server/libjvm.so validation/fastdebug-jdk/lib/server/libjvm.so
-          python3 .github/scripts/validate-zip-backend.py gc --jdk validation/fastdebug-jdk --verify-oops
-      - uses: actions/checkout@v6
-        with:
-          ref: 33e539f2d4a847f283a3793df6eebd41b9d1dfac
-          path: validation/baseline
-      - uses: actions/cache/restore@v4
-        id: baseline-cache
-        with:
-          path: validation/baseline/build/zip/images/jdk
-          key: zip-baseline-image-v1-${{ matrix.platform }}-33e539f2d4a847f283a3793df6eebd41b9d1dfac-gcc14-system-release
-      - name: Build untouched baseline
-        if: steps.baseline-cache.outputs.cache-hit != 'true'
-        working-directory: validation/baseline
-        env:
-          CC: gcc-14
-          CXX: g++-14
-          BOOT_JDK: ${{ steps.boot.outputs.path }}
-        run: |
-          bash configure --with-conf-name=zip --with-boot-jdk="$BOOT_JDK" --with-zlib=system --with-debug-level=release --with-native-debug-symbols=none --disable-warnings-as-errors
-          make CONF=zip JOBS=2 images
-      - uses: actions/cache/save@v4
-        if: steps.baseline-cache.outputs.cache-hit != 'true'
-        with:
-          path: validation/baseline/build/zip/images/jdk
-          key: zip-baseline-image-v1-${{ matrix.platform }}-33e539f2d4a847f283a3793df6eebd41b9d1dfac-gcc14-system-release
-      - name: Compare all compilation tiers and checksum controls
-        run: python3 .github/scripts/validate-zip-backend.py benchmarks --jdk build/zip/images/jdk --baseline validation/baseline/build/zip/images/jdk
-      - name: Upload validation evidence
+          bash configure --with-conf-name=zip-final --with-boot-jdk="$BOOT_JDK" --with-zlib=system --with-debug-level=release --with-native-debug-symbols=none --disable-warnings-as-errors
+          make CONF=zip-final JOBS=2 images
+      - name: Check ZIP, GC, JNI, CDS, JAR, zipfs and jlink
+        run: python3 .github/scripts/validate-zip-backend.py tests --jdk build/zip-final/images/jdk --jtreg jtreg/installed
+      - name: Compare short compression and default-backend controls in alternating order
+        run: python3 .github/scripts/validate-zip-backend.py calibrate --jdk build/zip-final/images/jdk --baseline validation/baseline/build/zip/images/jdk
+      - uses: actions/upload-artifact@v6
         if: always()
-        uses: actions/upload-artifact@v6
         with:
-          name: zip-backend-${{ matrix.platform }}
-          path: |
-            validation/results
-            **/hs_err_pid*.log
+          name: zip-stock-path-calibration-x86
+          path: validation/results
           retention-days: 14

@@ -104,6 +104,9 @@ static int selectBackend(ZipDeflater *d, int backend) {
 }
 
 static int setDictionary(ZipDeflater *d, const Bytef *dictionary, uInt length) {
+    if (!JVM_UseZlibNG()) {
+        return deflateSetDictionary((z_stream *)d, dictionary, length);
+    }
     if (d->select_backend) {
         int ret = selectBackend(d, ZIP_DEFLATE_NG);
         if (ret != Z_OK) return ret;
@@ -116,12 +119,54 @@ static int setDictionary(ZipDeflater *d, const Bytef *dictionary, uInt length) {
     return deflateSetDictionary(&d->stream, dictionary, length);
 }
 
+/* Preserve the original stream allocation and zlib initialization when the
+ * optional backend is disabled. Only enabled streams need backend metadata. */
+static jlong initStock(JNIEnv *env, jint level,
+                                 jint strategy, jboolean nowrap)
+{
+    z_stream *strm = calloc(1, sizeof(z_stream));
+
+    if (strm == 0) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return jlong_zero;
+    } else {
+        const char *msg;
+        int ret = deflateInit2_(strm, level, Z_DEFLATED,
+                                nowrap ? -MAX_WBITS : MAX_WBITS,
+                                DEF_MEM_LEVEL, strategy, ZLIB_VERSION,
+                                sizeof(z_stream));
+        switch (ret) {
+          case Z_OK:
+            return ptr_to_jlong(strm);
+          case Z_MEM_ERROR:
+            free(strm);
+            JNU_ThrowOutOfMemoryError(env, 0);
+            return jlong_zero;
+          case Z_STREAM_ERROR:
+            free(strm);
+            JNU_ThrowIllegalArgumentException(env, 0);
+            return jlong_zero;
+          default:
+            msg = ((strm->msg != NULL) ? strm->msg :
+                   (ret == Z_VERSION_ERROR) ?
+                   "zlib returned Z_VERSION_ERROR: "
+                   "compile time and runtime zlib implementations differ" :
+                   "unknown error initializing zlib library");
+            free(strm);
+            JNU_ThrowInternalError(env, msg);
+            return jlong_zero;
+        }
+    }
+}
+
 JNIEXPORT jlong JNICALL
 Java_java_util_zip_Deflater_init(JNIEnv *env, jclass cls, jint level,
                                  jint strategy, jboolean nowrap)
 {
     ZipDeflater *d;
-    int ret;
+    if (!JVM_UseZlibNG()) {
+        return initStock(env, level, strategy, nowrap);
+    }
     if (level < Z_DEFAULT_COMPRESSION || level > Z_BEST_COMPRESSION ||
         strategy < Z_DEFAULT_STRATEGY || strategy > Z_FIXED) {
         JNU_ThrowIllegalArgumentException(env, 0);
@@ -136,30 +181,10 @@ Java_java_util_zip_Deflater_init(JNIEnv *env, jclass cls, jint level,
     d->strategy = strategy;
     d->window_bits = nowrap ? -MAX_WBITS : MAX_WBITS;
     d->stream.adler = 1;
-    if (JVM_UseZlibNG()) {
-        /* Delay allocation until the input/flush shape is known. This avoids
-         * allocating both libraries for a short, single-call stream. */
-        d->select_backend = 1;
-        return ptr_to_jlong(d);
-    }
-    ret = selectBackend(d, ZIP_DEFLATE_STOCK);
-    if (ret == Z_OK) return ptr_to_jlong(d);
-    if (ret == Z_MEM_ERROR) {
-        free(d);
-        JNU_ThrowOutOfMemoryError(env, 0);
-    } else if (ret == Z_STREAM_ERROR) {
-        free(d);
-        JNU_ThrowIllegalArgumentException(env, 0);
-    } else {
-        const char *msg = d->stream.msg != NULL ? d->stream.msg :
-                         ret == Z_VERSION_ERROR ?
-                         "zlib returned Z_VERSION_ERROR: "
-                         "compile time and runtime zlib implementations differ" :
-                         "unknown error initializing zlib library";
-        free(d);
-        JNU_ThrowInternalError(env, msg);
-    }
-    return jlong_zero;
+    /* Delay allocation until the input/flush shape is known. This avoids
+     * allocating both libraries for a short, single-call stream. */
+    d->select_backend = 1;
+    return ptr_to_jlong(d);
 }
 
 static void throwInternalErrorHelper(JNIEnv *env, z_stream *strm, const char *fixmsg) {
@@ -209,15 +234,45 @@ Java_java_util_zip_Deflater_setDictionaryBuffer(JNIEnv *env, jclass cls, jlong a
     checkSetDictionaryResult(env, addr, res);
 }
 
+static jint doDeflateStock(JNIEnv *env, jlong addr,
+                       jbyte *input, jint inputLen,
+                       jbyte *output, jint outputLen,
+                       jint flush, jint params)
+{
+    z_stream *strm = jlong_to_ptr(addr);
+    int setParams = params & 1;
+    int res;
+
+    strm->next_in  = (Bytef *) input;
+    strm->next_out = (Bytef *) output;
+    strm->avail_in  = inputLen;
+    strm->avail_out = outputLen;
+
+    if (setParams) {
+        int strategy = (params >> 1) & 3;
+        int level = params >> 3;
+        res = deflateParams(strm, level, strategy);
+    } else {
+        res = deflate(strm, flush);
+    }
+    return res;
+}
+
 static jint doDeflate(JNIEnv *env, jlong addr,
                        jbyte *input, jint inputLen,
                        jbyte *output, jint outputLen,
                        jint flush, jint params)
 {
-    ZipDeflater *d = jlong_to_ptr(addr);
-    z_stream *strm = &d->stream;
+    ZipDeflater *d;
+    z_stream *strm;
     int setParams = params & 1;
     int res;
+
+    if (!JVM_UseZlibNG()) {
+        return doDeflateStock(env, addr, input, inputLen, output, outputLen, flush, params);
+    }
+    d = jlong_to_ptr(addr);
+    strm = &d->stream;
 
     if (d->select_backend) {
         int backend = flush == Z_FINISH && inputLen <= ZIP_SMALL_DEFLATE_LIMIT
@@ -423,8 +478,15 @@ Java_java_util_zip_Deflater_getAdler(JNIEnv *env, jclass cls, jlong addr)
 JNIEXPORT void JNICALL
 Java_java_util_zip_Deflater_reset(JNIEnv *env, jclass cls, jlong addr)
 {
-    ZipDeflater *d = jlong_to_ptr(addr);
+    ZipDeflater *d;
     int ret = Z_OK;
+    if (!JVM_UseZlibNG()) {
+        if (deflateReset((z_stream *)jlong_to_ptr(addr)) != Z_OK) {
+            JNU_ThrowInternalError(env, "deflateReset failed");
+        }
+        return;
+    }
+    d = jlong_to_ptr(addr);
 #ifdef INCLUDE_ZLIBNG
     if (d->backend == ZIP_DEFLATE_NG) ret = jdk_ng_deflateReset(&d->stream);
 #endif
@@ -432,7 +494,7 @@ Java_java_util_zip_Deflater_reset(JNIEnv *env, jclass cls, jlong addr)
     if (ret != Z_OK) {
         JNU_ThrowInternalError(env, "deflateReset failed");
     } else {
-        d->select_backend = JVM_UseZlibNG();
+        d->select_backend = 1;
         d->stream.adler = 1;
     }
 }
@@ -440,7 +502,16 @@ Java_java_util_zip_Deflater_reset(JNIEnv *env, jclass cls, jlong addr)
 JNIEXPORT void JNICALL
 Java_java_util_zip_Deflater_end(JNIEnv *env, jclass cls, jlong addr)
 {
-    ZipDeflater *d = jlong_to_ptr(addr);
+    ZipDeflater *d;
+    if (!JVM_UseZlibNG()) {
+        if (deflateEnd((z_stream *)jlong_to_ptr(addr)) == Z_STREAM_ERROR) {
+            JNU_ThrowInternalError(env, "deflateEnd failed");
+        } else {
+            free(jlong_to_ptr(addr));
+        }
+        return;
+    }
+    d = jlong_to_ptr(addr);
     if (endStream(d) == Z_STREAM_ERROR) {
         JNU_ThrowInternalError(env, "deflateEnd failed");
     } else {
