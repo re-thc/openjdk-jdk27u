@@ -98,16 +98,16 @@
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
 #include "services/threadService.hpp"
-#include "utilities/fastFloat.hpp"
-#include "utilities/zmij.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
+#include "utilities/fastFloat.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
 #include "utilities/zipLibrary.hpp"
+#include "utilities/zmij.hpp"
 #if INCLUDE_CDS
 #include "classfile/systemDictionaryShared.hpp"
 #endif

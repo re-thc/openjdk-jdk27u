@@ -24,9 +24,9 @@
  *
  */
 
-#include "utilities/zmij.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/zmij.hpp"
 
 // Compile the portable upstream implementation here; SSE4.1 has its own
 // translation unit. Wide stores remain in our stack buffer, including bytes

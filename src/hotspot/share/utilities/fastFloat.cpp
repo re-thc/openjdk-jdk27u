@@ -23,8 +23,8 @@
  */
 
 #include "classfile/javaClasses.hpp"
-#include "utilities/fastFloat.hpp"
 #include "utilities/fast_float/fast_float.h"
+#include "utilities/fastFloat.hpp"
 
 #include <limits>
 
