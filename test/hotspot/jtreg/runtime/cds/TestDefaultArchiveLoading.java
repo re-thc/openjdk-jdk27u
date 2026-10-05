@@ -76,6 +76,27 @@
  * @run driver TestDefaultArchiveLoading coops_coh
  */
 
+/**
+ * @test id=nocoops_fourbyte
+ * @summary Load the default four-byte-header archive
+ * @requires vm.cds & vm.cds.default.archive.available & vm.cds.write.archived.java.heap
+ * @requires vm.bits == 64 & (os.arch == "amd64" | os.arch == "aarch64")
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc java.management
+ * @run driver TestDefaultArchiveLoading nocoops_fourbyte
+ */
+
+/**
+ * @test id=coops_fourbyte
+ * @summary Load the default four-byte-header archive
+ * @requires vm.cds & vm.cds.default.archive.available & vm.cds.write.archived.java.heap
+ * @requires vm.bits == 64 & (os.arch == "amd64" | os.arch == "aarch64")
+ * @requires vm.gc != "Z"
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc java.management
+ * @run driver TestDefaultArchiveLoading coops_fourbyte
+ */
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -110,6 +131,7 @@ public class TestDefaultArchiveLoading {
 
         String archiveSuffix;
         char coh, coops;
+        boolean four = args[0].endsWith("fourbyte");
 
         switch (args[0]) {
             case "nocoops_nocoh":
@@ -146,10 +168,22 @@ public class TestDefaultArchiveLoading {
                                                archivePath(archiveSuffix).toString() + " not available");
                 }
                 break;
+            case "nocoops_fourbyte":
+            case "coops_fourbyte":
+                coh = '+';
+                coops = args[0].startsWith("nocoops") ? '-' : '+';
+                archiveSuffix = coops == '-' ? "_nocoops_fourbyte" : "_fourbyte";
+                if (!isArchiveAvailable(coops, coh, archiveSuffix)) {
+                    throw new SkippedException("Skipping test due to " +
+                                               archivePath(archiveSuffix) + " not available");
+                }
+                break;
             default: throw new RuntimeException("Invalid argument " + args[0]);
         }
 
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:" + (four ? "+" : "-") + "UseFourByteObjectHeaders",
                 "-XX:" + coh + "UseCompactObjectHeaders",
                 "-XX:" + coops + "UseCompressedOops",
                 "-Xlog:cds",
