@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,9 +211,9 @@ class OptoRuntime : public AllStatic {
   // =================================
 
   // Allocate storage for a Java instance.
-  static jlong zip_process_C(jint inflate, oopDesc* receiver, jlong stream,
-      oopDesc* input, jlong input_offset, jint input_len,
-      oopDesc* output, jlong output_offset, jint output_len, jint flush, jint params,
+  static jlong zip_process_C(jint inflate, jint input_len, jint output_len,
+      jint flush, jint params, oopDesc* receiver, jlong stream,
+      oopDesc* input, oopDesc* output, jlong input_offset, jlong output_offset,
       JavaThread* current);
   static void new_instance_C(Klass* instance_klass, JavaThread* current);
 

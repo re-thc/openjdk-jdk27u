@@ -9281,9 +9281,9 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
 bool LibraryCallKit::inline_zip_process() {
   Node* call = make_runtime_call(RC_NO_LEAF, OptoRuntime::zip_process_Type(),
       OptoRuntime::zip_process_Java(), nullptr, TypePtr::BOTTOM,
-      argument(0), argument(1), argument(2), top(), argument(4),
-      argument(5), top(), argument(7), argument(8), argument(9), top(),
-      argument(11), argument(12), argument(13));
+      argument(0), argument(7), argument(11), argument(12), argument(13),
+      argument(1), argument(2), top(), argument(4), argument(8),
+      argument(5), top(), argument(9), top());
   make_slow_call_ex(call, env()->Throwable_klass(), false);
   set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
   return true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -577,18 +577,21 @@ JRT_ENTRY(void, OptoRuntime::vthread_end_transition_C(oopDesc* vt, jboolean is_m
 JRT_END
 
 
-JRT_ENTRY(jlong, OptoRuntime::zip_process_C(jint inflate, oopDesc* receiver, jlong stream,
-    oopDesc* input, jlong input_offset, jint input_len,
-    oopDesc* output, jlong output_offset, jint output_len, jint flush, jint params,
+JRT_ENTRY(jlong, OptoRuntime::zip_process_C(jint inflate, jint input_len, jint output_len,
+    jint flush, jint params, oopDesc* receiver, jlong stream,
+    oopDesc* input, oopDesc* output, jlong input_offset, jlong output_offset,
     JavaThread* current))
   return ZipRuntime::process(inflate, receiver, stream, input, input_offset, input_len,
       output, output_offset, output_len, flush, params, current);
 JRT_END
 
 static const TypeFunc* make_zip_process_Type() {
-  const Type* args[] = {TypeInt::BOOL, TypeInstPtr::NOTNULL, TypeLong::LONG, Type::HALF,
-      TypeInstPtr::BOTTOM, TypeLong::LONG, Type::HALF, TypeInt::INT,
-      TypeInstPtr::BOTTOM, TypeLong::LONG, Type::HALF, TypeInt::INT, TypeInt::INT, TypeInt::INT};
+  // Keep all subword scalar arguments in registers. Apple AArch64 runtime
+  // stubs cannot pass packed subword arguments on the native stack.
+  const Type* args[] = {TypeInt::BOOL, TypeInt::INT, TypeInt::INT, TypeInt::INT, TypeInt::INT,
+      TypeInstPtr::NOTNULL, TypeLong::LONG, Type::HALF,
+      TypeInstPtr::BOTTOM, TypeInstPtr::BOTTOM,
+      TypeLong::LONG, Type::HALF, TypeLong::LONG, Type::HALF};
   const Type** fields = TypeTuple::fields(14);
   for (int i = 0; i < 14; i++) fields[TypeFunc::Parms + i] = args[i];
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 14, fields);
