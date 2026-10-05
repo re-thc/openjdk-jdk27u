@@ -377,6 +377,8 @@ static zaddress relocate_object_inner(ZForwarding* forwarding, zaddress from_add
   if (to_addr_final != to_addr) {
     // Already relocated, try undo allocation
     ZHeap::heap()->undo_alloc_object_for_relocation(to_addr, size);
+  } else {
+    forwarding->record_hash_expansion(old_size, size);
   }
 
   return to_addr_final;
@@ -657,6 +659,8 @@ private:
       // Already relocated, undo allocation
       _allocator->undo_alloc_object(to_page, to_addr, size);
       increase_other_forwarded(size);
+    } else {
+      _forwarding->record_hash_expansion(old_size, size);
     }
 
     return to_addr;
