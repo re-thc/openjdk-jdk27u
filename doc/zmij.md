@@ -41,8 +41,8 @@ Native formatting is **enabled by default** on little-endian x86-64 and AArch64.
 Using this fork requires no enabling flags. `-XX:-UseZmijIntrinsics` opts out
 and selects the Java formatter, independently of `-XX:-UseFastFloatIntrinsics`
 for parsing. `_formatZmij` and `_decimalZmij` honor `DisableIntrinsic` and
-`ControlIntrinsic`. Disabling those intrinsics retains JNI. Other ports retain
-Java.
+`ControlIntrinsic`. Disabling those intrinsics retains JNI. Zero on a supported
+architecture also uses JNI; other architectures retain Java.
 
 The interpreter has frameless entries with a safepoint poll and JNI slow path.
 C1 uses shared LIR and the platform C calling convention. C2's array-writing
@@ -82,7 +82,11 @@ subnormal range includes Java's closer two-digit selection when a one-digit
 decimal also round-trips. Decimal splitting retains the exact-integer Java
 fast path and packs the significand, exactness and rounding direction into one
 `long`; Java derives the exponent. The original scale/precision adjustment in
-BigDecimal remains in place.
+BigDecimal remains in place. Positive-zero splitting returns directly in Java,
+leaving the metadata unchanged and avoiding the fallback scratch array. This
+also lets C2 eliminate intermediate metadata allocation for short integers;
+the [final review measurements](benchmarks/decimal-final-review/README.md)
+record the result and controls.
 
 | Consumer | Integration |
 |---|---|

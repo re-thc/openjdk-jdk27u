@@ -62,7 +62,9 @@ final class Zmij {
         }
         long bits = Double.doubleToRawLongBits(v);
         if (bits <= 128 || bits >= 0x7ff0000000000000L) {
-            return false;
+            // The Java splitter leaves fd unchanged for positive zero. Avoid its
+            // unused scratch array and keep fd eligible for scalar replacement.
+            return bits == 0;
         }
         int bq = (int) (bits >>> 52);
         int q = bq == 0 ? -1074 : bq - 1075;

@@ -213,7 +213,11 @@ AArch64 VM/libjava cross-builds and QEMU runtime checks passed for interpreter,
 C1, C2, JNI, UTF16 and Shenandoah, with WhiteBox C1/C2 availability checks.
 Additional x86 GC, header/reference modes, stress scheduling, checked JNI,
 CDS, sanitizer and vendor-update reproduction checks passed; details are in
-[validation.txt](validation.txt). Native ARM64 performance and Windows/MSVC
-builds/performance remain unmeasured. No correctness failures remain in the
+[validation.txt](validation.txt). Native macOS and Windows x64/AArch64
+release/debug builds subsequently passed GitHub Actions after the compiler
+compatibility fixes. Native ARM64 and Windows performance remain unmeasured.
+The [final review](../decimal-final-review/README.md) adds C1 UTF16 coverage and
+an allocation improvement for short-integer BigDecimal conversion. No
+correctness failures remain in the
 selected suites; these tests and samples cannot prove absence of every possible
 regression on every workload or platform.

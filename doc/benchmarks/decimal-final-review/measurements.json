@@ -1,0 +1,2593 @@
+{
+  "protocol": {
+    "baseline_source": "c49478493b69cbe021a7560b962fc39d82785449",
+    "JMH": "1.37",
+    "CPU": "Intel Xeon Platinum 8370C",
+    "compiler": "GCC 14.2",
+    "affinity_cpu": 4,
+    "forks": 3,
+    "warmup_iterations": 3,
+    "measurement_iterations": 3,
+    "heap": "256m",
+    "class_data_sharing": "off",
+    "ordering": "alternate before/after or rotate original/java/enabled between rounds",
+    "confidence": 0.999,
+    "confidence_t_df8": 5.041305,
+    "concurrent_local_builds_or_tests": false
+  },
+  "experiments": {
+    "fixed_span": {
+      "retained": false,
+      "iteration_ms": {
+        "c2": 750,
+        "c1": 500,
+        "interpreter": 500
+      },
+      "samples": [
+        {
+          "tier": "c1",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            32.38144431547915,
+            34.49591457361344,
+            31.569126741720517
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            33.97691184495443,
+            29.82663779493276,
+            29.595313202773614
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            38.31792391714717,
+            39.256167563006635,
+            36.62397578066435
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            35.357673065411895,
+            34.708391499149116,
+            34.45432260990513
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            31.92482038909314,
+            32.98810027562977,
+            31.201241990378474
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            30.980455747329128,
+            29.298347047947406,
+            30.249235042168536
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            37.21651709177842,
+            38.72304287962235,
+            36.517850373920645
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            37.00588547680681,
+            36.840957022411,
+            34.14835853468475
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            40.53760767537083,
+            47.04059481686908,
+            49.933507993796006
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            30.83458352978426,
+            30.037721586866546,
+            29.564026584536347
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            38.13565309758772,
+            37.90987259550356,
+            37.50729392392792
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            37.531723409929995,
+            40.57962160616744,
+            36.18638868502158
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "doubleAppendUtf16",
+          "ns_per_op": [
+            122.10569340980551,
+            162.02052821571917,
+            172.86370291914577
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "doublePutLatin1",
+          "ns_per_op": [
+            25.283916689046645,
+            28.076257137798894,
+            32.702646738201096
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            39.41252716669915,
+            33.93730606638579,
+            33.46427029330151
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "doublePutUtf16ShortInteger",
+          "ns_per_op": [
+            29.330087225220023,
+            29.27514326893992,
+            28.292339329504543
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "floatAppendUtf16",
+          "ns_per_op": [
+            100.62209084084084,
+            79.04469908229078,
+            59.38950348889936
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "floatPutLatin1",
+          "ns_per_op": [
+            24.30707273746226,
+            24.827463608170568,
+            24.888815469567508
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            25.716981054708004,
+            26.454423097316234,
+            26.32684970320978
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "floatPutUtf16ShortInteger",
+          "ns_per_op": [
+            27.31560941779466,
+            30.82452658567515,
+            31.163901152029446
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "doubleAppendUtf16",
+          "ns_per_op": [
+            91.0214991603841,
+            87.59656158126641,
+            89.66142138832592
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "doublePutLatin1",
+          "ns_per_op": [
+            24.69495981021424,
+            24.477662705925336,
+            24.040371985903967
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            30.105425264848883,
+            30.214863751834237,
+            29.677076222568715
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "doublePutUtf16ShortInteger",
+          "ns_per_op": [
+            31.267629055791474,
+            31.690254508401868,
+            31.333530887443864
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "floatAppendUtf16",
+          "ns_per_op": [
+            56.72134731147414,
+            76.38984340564069,
+            57.75045472345917
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "floatPutLatin1",
+          "ns_per_op": [
+            22.98593601436343,
+            23.082823303222657,
+            23.275683065778825
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            27.83148828811774,
+            27.515807768485917,
+            27.402602674321475
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "floatPutUtf16ShortInteger",
+          "ns_per_op": [
+            28.977218452733748,
+            29.119327296796744,
+            28.523633271191866
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "doubleAppendUtf16",
+          "ns_per_op": [
+            135.21952806107825,
+            133.1464338264507,
+            108.19257154532359
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "doublePutLatin1",
+          "ns_per_op": [
+            32.345210254721124,
+            24.858587851985103,
+            24.16484077927293
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            27.015154100232376,
+            25.210100670504836,
+            28.426642513689995
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "doublePutUtf16ShortInteger",
+          "ns_per_op": [
+            26.738897562949393,
+            28.139189381135175,
+            28.31447629423258
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "floatAppendUtf16",
+          "ns_per_op": [
+            77.11484823002156,
+            85.01013700018011,
+            87.78913941582258
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "floatPutLatin1",
+          "ns_per_op": [
+            25.008712841692304,
+            28.274434777234273,
+            25.812828290931147
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            26.30746944239954,
+            25.039395704730328,
+            25.91684587241518
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "floatPutUtf16ShortInteger",
+          "ns_per_op": [
+            25.828324664560782,
+            25.799858758223685,
+            26.928796592689686
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "doubleAppendUtf16",
+          "ns_per_op": [
+            91.35259806819944,
+            91.88557969180064,
+            89.38436985329999
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "doublePutLatin1",
+          "ns_per_op": [
+            22.666773760200726,
+            22.944074549129354,
+            23.22020571265848
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            29.3662307931634,
+            29.452991203986045,
+            30.20902769107485
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "doublePutUtf16ShortInteger",
+          "ns_per_op": [
+            43.99320594601203,
+            34.94959770422473,
+            35.424094336360355
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "floatAppendUtf16",
+          "ns_per_op": [
+            65.68134968747198,
+            88.69612630208333,
+            79.29259186812001
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "floatPutLatin1",
+          "ns_per_op": [
+            25.324051394047846,
+            25.86845485042641,
+            27.45918497887548
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            29.617044370587823,
+            29.902931895228512,
+            34.3545055607215
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "floatPutUtf16ShortInteger",
+          "ns_per_op": [
+            27.99440393690904,
+            27.856116251793537,
+            27.56873912093031
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "doubleAppendUtf16",
+          "ns_per_op": [
+            78.52702971364714,
+            80.54233424749808,
+            80.80486174455449
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "doublePutLatin1",
+          "ns_per_op": [
+            33.55529903281621,
+            25.891734163881033,
+            25.390694413608994
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            27.2186591468512,
+            27.425559711095723,
+            28.745264269131756
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "doublePutUtf16ShortInteger",
+          "ns_per_op": [
+            34.571346298620284,
+            29.560695534351527,
+            29.427217841243515
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "floatAppendUtf16",
+          "ns_per_op": [
+            120.9498588281121,
+            70.48078702390478,
+            63.02925327995979
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "floatPutLatin1",
+          "ns_per_op": [
+            23.657786418987882,
+            24.071391699030514,
+            24.97562695498943
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            37.135005210440156,
+            43.63224328398307,
+            29.65060561022925
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "floatPutUtf16ShortInteger",
+          "ns_per_op": [
+            26.957955814930912,
+            32.67812372599674,
+            30.20726977137975
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "doubleAppendUtf16",
+          "ns_per_op": [
+            183.51762178785435,
+            121.44903435399934,
+            134.63077217871577
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "doublePutLatin1",
+          "ns_per_op": [
+            24.564761523424497,
+            24.92871619281163,
+            26.202195308069104
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            36.45047248611145,
+            68.80519476744186,
+            44.03188948849281
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "doublePutUtf16ShortInteger",
+          "ns_per_op": [
+            56.74117062243436,
+            42.793242526521,
+            33.74883729278467
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "floatAppendUtf16",
+          "ns_per_op": [
+            59.735382219065144,
+            58.514054400198,
+            63.02089133003377
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "floatPutLatin1",
+          "ns_per_op": [
+            26.56408906492589,
+            23.241570652087884,
+            23.497564372875036
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            28.437247871790163,
+            28.480387394901264,
+            29.82243303003511
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "floatPutUtf16ShortInteger",
+          "ns_per_op": [
+            30.843124805023383,
+            28.133058469253957,
+            28.04688827257609
+          ]
+        },
+        {
+          "tier": "interpreter",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            276.5948612607759,
+            317.34793499818784,
+            277.3462954843396
+          ]
+        },
+        {
+          "tier": "interpreter",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            251.4838819439977,
+            252.0678262515944,
+            258.88748963859416
+          ]
+        },
+        {
+          "tier": "interpreter",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            273.76897485556725,
+            278.68753972457625,
+            276.50015922214675
+          ]
+        },
+        {
+          "tier": "interpreter",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            305.2770497443004,
+            267.94219874558667,
+            298.2739465718142
+          ]
+        },
+        {
+          "tier": "interpreter",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            269.10175040372457,
+            269.92746852410664,
+            256.7926711599714
+          ]
+        },
+        {
+          "tier": "interpreter",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            262.4067521128407,
+            271.5510554678829,
+            268.10556051823056
+          ]
+        },
+        {
+          "tier": "interpreter",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            273.31149749671414,
+            286.5861945199275,
+            282.1285007569204
+          ]
+        },
+        {
+          "tier": "interpreter",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            288.9530689819264,
+            282.8235128283776,
+            293.13302764530135
+          ]
+        },
+        {
+          "tier": "interpreter",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            254.5618903481631,
+            256.211753587331,
+            262.20529880820584
+          ]
+        },
+        {
+          "tier": "interpreter",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            258.14119243421055,
+            256.8817023294713,
+            253.39484083038016
+          ]
+        },
+        {
+          "tier": "interpreter",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            299.1239320527523,
+            281.859845299221,
+            464.4026777507878
+          ]
+        },
+        {
+          "tier": "interpreter",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            455.53561162340617,
+            471.2977483258929,
+            652.0001359934516
+          ]
+        }
+      ]
+    },
+    "float_span": {
+      "retained": false,
+      "iteration_ms": 750,
+      "samples": [
+        {
+          "tier": "c1",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "doublePutLatin1",
+          "ns_per_op": [
+            37.05570447062996,
+            43.99899078611909,
+            38.312140125507625
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            46.53149130302899,
+            42.35927570942945,
+            39.322240470720416
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "floatAppendUtf16",
+          "ns_per_op": [
+            85.97844594421136,
+            88.61918527522351,
+            94.0897931198921
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "floatPutLatin1",
+          "ns_per_op": [
+            28.439347721743285,
+            27.261960839174996,
+            28.92305138805655
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            30.43086996447485,
+            30.518078247419474,
+            29.76281703366082
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "floatPutUtf16ShortInteger",
+          "ns_per_op": [
+            31.19253818982713,
+            29.494525714701503,
+            31.894445919296118
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "doublePutLatin1",
+          "ns_per_op": [
+            29.681702033573398,
+            30.503336675780282,
+            34.360022881270226
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            49.351000674505784,
+            37.456664808258594,
+            37.41014658646161
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "floatAppendUtf16",
+          "ns_per_op": [
+            167.3618562136047,
+            146.17736248975714,
+            273.5184932707337
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "floatPutLatin1",
+          "ns_per_op": [
+            36.876258662159046,
+            39.39230526959154,
+            35.348673582752824
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            33.9451837787105,
+            34.07270093447459,
+            36.361968986590135
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "floatPutUtf16ShortInteger",
+          "ns_per_op": [
+            33.36487224935488,
+            33.21568777870366,
+            33.78546364886955
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "doublePutLatin1",
+          "ns_per_op": [
+            35.46181505312183,
+            44.801996931856216,
+            40.755952450164685
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            50.59335801819208,
+            50.88381471177772,
+            48.90806778370342
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "floatAppendUtf16",
+          "ns_per_op": [
+            195.00994861674874,
+            161.0470245481845,
+            128.77126779657783
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "floatPutLatin1",
+          "ns_per_op": [
+            35.499764708821964,
+            35.76516025923071,
+            39.12672664715686
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            48.065043068844616,
+            49.4240303871895,
+            37.06237793583497
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "floatPutUtf16ShortInteger",
+          "ns_per_op": [
+            34.050285002832325,
+            30.234552692380113,
+            30.590878979127798
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "doublePutLatin1",
+          "ns_per_op": [
+            30.095988515692397,
+            30.008291678882827,
+            34.45965873359661
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            39.37709992679847,
+            38.03244141129814,
+            50.50893202305788
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "floatAppendUtf16",
+          "ns_per_op": [
+            118.17107356046404,
+            105.2464300857887,
+            109.24758818436065
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "floatPutLatin1",
+          "ns_per_op": [
+            28.95965480009872,
+            29.7803045804535,
+            27.946075632205503
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            35.08388869226487,
+            36.05913081405112,
+            38.2638704201039
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "floatPutUtf16ShortInteger",
+          "ns_per_op": [
+            33.70055424043482,
+            33.54894045752565,
+            36.05556418024784
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "doublePutLatin1",
+          "ns_per_op": [
+            35.141435967189075,
+            33.44955315756097,
+            38.05841621163791
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            37.07226316860977,
+            39.537379064152816,
+            38.330316747604414
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "floatAppendUtf16",
+          "ns_per_op": [
+            93.37138541335136,
+            93.25795710708508,
+            91.26496151549014
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "floatPutLatin1",
+          "ns_per_op": [
+            27.950839631292315,
+            27.696334669772426,
+            27.466695112344798
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            29.949101576862386,
+            29.892383272282654,
+            29.919265183084033
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "floatPutUtf16ShortInteger",
+          "ns_per_op": [
+            30.24245054781673,
+            29.20631034893359,
+            30.150466103820275
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "doublePutLatin1",
+          "ns_per_op": [
+            30.71305747384713,
+            31.20997769843624,
+            30.488421376556747
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            38.50653022919295,
+            38.40489708209203,
+            38.72847923040453
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "floatAppendUtf16",
+          "ns_per_op": [
+            97.48079867326307,
+            99.701793842049,
+            99.28229351172402
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "floatPutLatin1",
+          "ns_per_op": [
+            29.063533631061674,
+            32.303652554533194,
+            49.637027242371246
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            45.03488531949269,
+            37.656062276739824,
+            52.792634684945135
+          ]
+        },
+        {
+          "tier": "c1",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "floatPutUtf16ShortInteger",
+          "ns_per_op": [
+            40.20076356738683,
+            33.75768778969583,
+            38.47587648502066
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "doublePutLatin1",
+          "ns_per_op": [
+            32.8007728853452,
+            33.03462954112231,
+            33.19291590673692
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            29.915264392566304,
+            29.186547626237477,
+            30.11878282891845
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "floatAppendUtf16",
+          "ns_per_op": [
+            61.296590436590435,
+            85.14842819291898,
+            68.011254118468
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "floatPutLatin1",
+          "ns_per_op": [
+            23.521519599963487,
+            22.51635144136671,
+            22.954736353991382
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            24.69900500657429,
+            27.699187896212234,
+            27.668351575620452
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "floatPutUtf16ShortInteger",
+          "ns_per_op": [
+            25.414307880938487,
+            31.44158194935446,
+            25.995818252576978
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "doublePutLatin1",
+          "ns_per_op": [
+            22.38934502263524,
+            23.12801828777127,
+            26.921285176925533
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            29.10422936351802,
+            30.4873097592771,
+            28.957679082360364
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "floatAppendUtf16",
+          "ns_per_op": [
+            58.459028714615584,
+            58.2972780380775,
+            75.18349838530459
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "floatPutLatin1",
+          "ns_per_op": [
+            22.502078059967825,
+            22.175427243519746,
+            22.21256100813726
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            26.871815586656794,
+            27.238265939746952,
+            27.049942506784948
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "floatPutUtf16ShortInteger",
+          "ns_per_op": [
+            29.854456326714345,
+            27.76174118449422,
+            30.050101970091976
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "doublePutLatin1",
+          "ns_per_op": [
+            31.551678910253994,
+            32.22080483872946,
+            32.81882721857735
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            29.97197619176979,
+            30.932080828634774,
+            30.777949193470523
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "floatAppendUtf16",
+          "ns_per_op": [
+            57.0340758796752,
+            57.29908837875352,
+            57.42275762706902
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "floatPutLatin1",
+          "ns_per_op": [
+            28.914806022680178,
+            23.06165543095742,
+            22.301554857617898
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            31.25151211286718,
+            41.57394899539053,
+            37.381680867467345
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "floatPutUtf16ShortInteger",
+          "ns_per_op": [
+            47.52378012468455,
+            42.807012486889235,
+            46.90408526405918
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "doublePutLatin1",
+          "ns_per_op": [
+            36.25903431483246,
+            30.454079390802374,
+            25.424498401988636
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            29.014732483217156,
+            29.672124703821336,
+            29.585936832841885
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "floatAppendUtf16",
+          "ns_per_op": [
+            59.132742582255425,
+            61.47939416488641,
+            57.83341302387602
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "floatPutLatin1",
+          "ns_per_op": [
+            22.822317330894446,
+            23.162659600318097,
+            23.41494948791011
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            27.495694060635834,
+            27.81398034824116,
+            27.857519825063463
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "floatPutUtf16ShortInteger",
+          "ns_per_op": [
+            28.146490842301326,
+            28.24761001043936,
+            27.85380842027996
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "doublePutLatin1",
+          "ns_per_op": [
+            70.70144375148668,
+            33.334700004601835,
+            31.660901829027832
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            29.758923335894533,
+            31.54559398223642,
+            29.199622157618876
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "floatAppendUtf16",
+          "ns_per_op": [
+            63.43134032632456,
+            67.27926587018749,
+            59.06953777237956
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "floatPutLatin1",
+          "ns_per_op": [
+            22.6841382266058,
+            22.51717917422651,
+            24.57510532198717
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            25.391663067627587,
+            24.63305859179067,
+            25.023365548732322
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "floatPutUtf16ShortInteger",
+          "ns_per_op": [
+            25.291598384119332,
+            28.155502883520544,
+            31.664903907195495
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "doublePutLatin1",
+          "ns_per_op": [
+            32.306770159347465,
+            43.317469625660735,
+            30.80870054358097
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "doublePutUtf16",
+          "ns_per_op": [
+            36.69815694848769,
+            33.06167320949962,
+            31.669958037737377
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "floatAppendUtf16",
+          "ns_per_op": [
+            58.912868103439614,
+            61.742532376866066,
+            58.80978618502969
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "floatPutLatin1",
+          "ns_per_op": [
+            47.501688343855356,
+            33.926549331346045,
+            42.13494886214446
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "floatPutUtf16",
+          "ns_per_op": [
+            35.30573605886799,
+            34.09361865001677,
+            35.17000248416416
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "floatPutUtf16ShortInteger",
+          "ns_per_op": [
+            38.21661538182866,
+            41.12408775316389,
+            29.412867085248717
+          ]
+        }
+      ]
+    },
+    "precision": {
+      "retained": "existing implementation retained",
+      "iteration_ms": 750,
+      "samples": [
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "java",
+          "benchmark": "bigDecimalShortInteger",
+          "ns_per_op": [
+            23.593906946984006,
+            22.293722356281187,
+            21.860141290927466
+          ],
+          "allocated_bytes_per_op": [
+            111.90644842067192,
+            111.90643920378484,
+            111.90643418285748
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "java",
+          "benchmark": "bigDecimalValueOf",
+          "ns_per_op": [
+            34.48661363195,
+            37.50249258080664,
+            36.66029941941126
+          ],
+          "allocated_bytes_per_op": [
+            112.00030123052116,
+            112.00031623442665,
+            112.00031020851
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "java",
+          "benchmark": "decimalFormatDecimal",
+          "ns_per_op": [
+            268.44347133985804,
+            265.68094626710933,
+            281.93236205631973
+          ],
+          "allocated_bytes_per_op": [
+            253.56484375,
+            253.56475480420593,
+            253.56489274721048
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "java",
+          "benchmark": "formatterGeneral",
+          "ns_per_op": [
+            516.3325452302631,
+            573.846802611451,
+            559.8645359803409
+          ],
+          "allocated_bytes_per_op": [
+            544.1293985889889,
+            544.1297955516706,
+            544.1297362909368
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "native",
+          "benchmark": "bigDecimalShortInteger",
+          "ns_per_op": [
+            18.837844275099517,
+            18.243968377284695,
+            18.09408867488438
+          ],
+          "allocated_bytes_per_op": [
+            72.02360017319911,
+            72.02359045848823,
+            72.02359007740812
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "native",
+          "benchmark": "bigDecimalValueOf",
+          "ns_per_op": [
+            33.07257522417233,
+            31.303905984008598,
+            33.38555006886721
+          ],
+          "allocated_bytes_per_op": [
+            32.00027803236912,
+            32.000262666510615,
+            32.00028169731836
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "native",
+          "benchmark": "decimalFormatDecimal",
+          "ns_per_op": [
+            261.4853165242007,
+            332.52495591139956,
+            345.6127429474565
+          ],
+          "allocated_bytes_per_op": [
+            213.5647091474245,
+            213.56528639954854,
+            213.5654223449248
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "native",
+          "benchmark": "formatterGeneral",
+          "ns_per_op": [
+            255.9704389505824,
+            272.3728194463821,
+            261.4424317795386
+          ],
+          "allocated_bytes_per_op": [
+            504.1271622913769,
+            504.1273135230655,
+            504.12721150426745
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "original",
+          "benchmark": "bigDecimalShortInteger",
+          "ns_per_op": [
+            31.038179276905474,
+            41.21835563999245,
+            39.62432329660715
+          ],
+          "allocated_bytes_per_op": [
+            111.906518896575,
+            111.90659772701856,
+            111.90658166075555
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "original",
+          "benchmark": "bigDecimalValueOf",
+          "ns_per_op": [
+            48.03519719254065,
+            35.13223949074461,
+            36.44696775645802
+          ],
+          "allocated_bytes_per_op": [
+            112.000417843499,
+            112.0002967810442,
+            112.00030892945853
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "original",
+          "benchmark": "decimalFormatDecimal",
+          "ns_per_op": [
+            275.30436931898254,
+            279.6211594980268,
+            258.99875554911654
+          ],
+          "allocated_bytes_per_op": [
+            253.5648369973694,
+            253.5648476131609,
+            253.56467590972707
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "original",
+          "benchmark": "formatterGeneral",
+          "ns_per_op": [
+            267.0844984676905,
+            282.1215227213044,
+            281.2299337441622
+          ],
+          "allocated_bytes_per_op": [
+            544.1273326421801,
+            544.1273574770818,
+            544.127370853984
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "java",
+          "benchmark": "bigDecimalShortInteger",
+          "ns_per_op": [
+            24.140930431192132,
+            23.120369009348682,
+            23.896078798486986
+          ],
+          "allocated_bytes_per_op": [
+            111.90646082861049,
+            111.90644468271609,
+            111.9064528360351
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "java",
+          "benchmark": "bigDecimalValueOf",
+          "ns_per_op": [
+            34.35746550244241,
+            34.94040933473854,
+            35.43622386057368
+          ],
+          "allocated_bytes_per_op": [
+            112.00028999953366,
+            112.0002945599659,
+            112.00029929492733
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "java",
+          "benchmark": "decimalFormatDecimal",
+          "ns_per_op": [
+            269.1901857257326,
+            271.90563748150885,
+            265.2373261465463
+          ],
+          "allocated_bytes_per_op": [
+            253.56477793040293,
+            253.5647824981509,
+            253.5647401837176
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "java",
+          "benchmark": "formatterGeneral",
+          "ns_per_op": [
+            267.2452503229242,
+            269.6609386463683,
+            267.2997537395111
+          ],
+          "allocated_bytes_per_op": [
+            544.1272548042059,
+            544.1272812729273,
+            544.1272687887632
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "native",
+          "benchmark": "bigDecimalShortInteger",
+          "ns_per_op": [
+            17.74539378913536,
+            17.577257822759968,
+            17.890000999087203
+          ],
+          "allocated_bytes_per_op": [
+            72.02359248964464,
+            72.02358598973257,
+            72.02358912505485
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "native",
+          "benchmark": "bigDecimalValueOf",
+          "ns_per_op": [
+            31.189458397704264,
+            31.044573427832866,
+            31.902355487632278
+          ],
+          "allocated_bytes_per_op": [
+            32.00026989654954,
+            32.00026352868887,
+            32.00027081609546
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "native",
+          "benchmark": "decimalFormatDecimal",
+          "ns_per_op": [
+            258.5640684496455,
+            270.4241308233395,
+            252.61736984987533
+          ],
+          "allocated_bytes_per_op": [
+            213.56467743347338,
+            213.56479474169743,
+            213.56463849724898
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "native",
+          "benchmark": "formatterGeneral",
+          "ns_per_op": [
+            263.35802775094356,
+            267.90399565561273,
+            262.82389875818296
+          ],
+          "allocated_bytes_per_op": [
+            504.1272999415888,
+            504.12724758739984,
+            504.1272005484784
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "original",
+          "benchmark": "bigDecimalShortInteger",
+          "ns_per_op": [
+            24.06049559307988,
+            23.754096655531573,
+            24.019251455392528
+          ],
+          "allocated_bytes_per_op": [
+            111.90645205843838,
+            111.90645107834578,
+            111.90645367307503
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "original",
+          "benchmark": "bigDecimalValueOf",
+          "ns_per_op": [
+            35.435024321755336,
+            34.67769815324194,
+            37.822256878918246
+          ],
+          "allocated_bytes_per_op": [
+            112.00030144207464,
+            112.00029050953165,
+            112.00031825742067
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "original",
+          "benchmark": "decimalFormatDecimal",
+          "ns_per_op": [
+            332.80662384860983,
+            264.15535546311736,
+            267.2112476483643
+          ],
+          "allocated_bytes_per_op": [
+            253.5653113698011,
+            253.56474179884643,
+            253.56474179884643
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "original",
+          "benchmark": "formatterGeneral",
+          "ns_per_op": [
+            638.0377914455156,
+            384.37533112447835,
+            453.4158147802494
+          ],
+          "allocated_bytes_per_op": [
+            544.1305445732236,
+            544.1282440010433,
+            544.1288292795566
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "java",
+          "benchmark": "bigDecimalShortInteger",
+          "ns_per_op": [
+            22.797123668500667,
+            22.460328368842966,
+            22.98004359657294
+          ],
+          "allocated_bytes_per_op": [
+            111.90644910497574,
+            111.90643954980493,
+            111.9064447192911
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "java",
+          "benchmark": "bigDecimalValueOf",
+          "ns_per_op": [
+            34.411736667483794,
+            33.996743397669455,
+            34.281030376257604
+          ],
+          "allocated_bytes_per_op": [
+            112.00030055134107,
+            112.00028419556108,
+            112.00029100374357
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "java",
+          "benchmark": "decimalFormatDecimal",
+          "ns_per_op": [
+            279.41761157096204,
+            260.2424857791534,
+            280.7902046130952
+          ],
+          "allocated_bytes_per_op": [
+            253.56487175819984,
+            253.56467933439265,
+            253.56486904761906
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "java",
+          "benchmark": "formatterGeneral",
+          "ns_per_op": [
+            262.3035259376115,
+            266.3876935484781,
+            280.4494182667343
+          ],
+          "allocated_bytes_per_op": [
+            544.127218605066,
+            544.1272297236271,
+            544.1273484705438
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "native",
+          "benchmark": "bigDecimalShortInteger",
+          "ns_per_op": [
+            17.964243490058372,
+            17.82206432554586,
+            17.839574169761352
+          ],
+          "allocated_bytes_per_op": [
+            72.02359312294783,
+            72.02358878938085,
+            72.02358893674662
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "native",
+          "benchmark": "bigDecimalValueOf",
+          "ns_per_op": [
+            31.350320302507463,
+            32.54939196715187,
+            35.07072225852543
+          ],
+          "allocated_bytes_per_op": [
+            32.0002717970582,
+            32.000275348682756,
+            32.00029587734323
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "native",
+          "benchmark": "decimalFormatDecimal",
+          "ns_per_op": [
+            387.1278007751113,
+            563.9210180776225,
+            439.08684946271603
+          ],
+          "allocated_bytes_per_op": [
+            213.56577396542693,
+            213.56726167687594,
+            213.5662060488677
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "native",
+          "benchmark": "formatterGeneral",
+          "ns_per_op": [
+            1425.9261635477228,
+            858.844883631993,
+            355.6774093266207
+          ],
+          "allocated_bytes_per_op": [
+            504.1370518410853,
+            504.13219332750583,
+            504.12800858732464
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "original",
+          "benchmark": "bigDecimalShortInteger",
+          "ns_per_op": [
+            31.851290808875092,
+            42.58376375698021,
+            30.465088856721454
+          ],
+          "allocated_bytes_per_op": [
+            111.90651633905838,
+            111.90660986054048,
+            111.90650440539983
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "original",
+          "benchmark": "bigDecimalValueOf",
+          "ns_per_op": [
+            44.5670975312538,
+            49.928176187897655,
+            55.04743368864219
+          ],
+          "allocated_bytes_per_op": [
+            112.00038924671493,
+            112.00041775247055,
+            112.00046198276503
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "original",
+          "benchmark": "decimalFormatDecimal",
+          "ns_per_op": [
+            301.1845978269192,
+            278.6980423432151,
+            266.49905316973997
+          ],
+          "allocated_bytes_per_op": [
+            253.56511267354023,
+            253.56486544313427,
+            253.5647369971004
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "original",
+          "benchmark": "formatterGeneral",
+          "ns_per_op": [
+            310.41448250026406,
+            347.1549167758895,
+            364.81309657332923
+          ],
+          "allocated_bytes_per_op": [
+            544.1276272708069,
+            544.127930607917,
+            544.1280785891089
+          ]
+        }
+      ]
+    },
+    "zero_split": {
+      "retained": true,
+      "iteration_ms": 1000,
+      "comparison": "Same c4947849 VM and module image. After adds only Zmij.class with the positive-zero Java return via --patch-module; both have UseZmijIntrinsics enabled.",
+      "samples": [
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "bigDecimalShortInteger",
+          "ns_per_op": [
+            10.797770308679327,
+            11.280878897723813,
+            11.989604319209855
+          ],
+          "allocated_bytes_per_op": [
+            31.906317980427144,
+            31.906321440469625,
+            31.906326335526476
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "bigDecimalValueOf",
+          "ns_per_op": [
+            31.780955370160378,
+            32.74950914025944,
+            41.22622190457413
+          ],
+          "allocated_bytes_per_op": [
+            32.00020148226146,
+            32.00020627924465,
+            32.00025959516299
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "decimalFormatDecimal",
+          "ns_per_op": [
+            273.7284856188897,
+            288.75846842591574,
+            310.08624162946427
+          ],
+          "allocated_bytes_per_op": [
+            213.56422398743015,
+            213.56431579140923,
+            213.56447420634922
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "after",
+          "benchmark": "formatterGeneral",
+          "ns_per_op": [
+            270.310411600614,
+            281.17497364875754,
+            272.1176982839395
+          ],
+          "allocated_bytes_per_op": [
+            504.12670305601546,
+            504.12676793898595,
+            504.12672647140477
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "bigDecimalShortInteger",
+          "ns_per_op": [
+            21.191652258793084,
+            18.66299340514297,
+            21.388310558378507
+          ],
+          "allocated_bytes_per_op": [
+            72.02357154500679,
+            72.02355632356313,
+            72.02357213363291
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "bigDecimalValueOf",
+          "ns_per_op": [
+            32.69042503099992,
+            33.33802030061666,
+            35.89687916089993
+          ],
+          "allocated_bytes_per_op": [
+            32.00021257085695,
+            32.00020954996096,
+            32.000227243660014
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "decimalFormatDecimal",
+          "ns_per_op": [
+            261.69495157377406,
+            288.3648136754334,
+            286.4567803533717
+          ],
+          "allocated_bytes_per_op": [
+            213.5641618786745,
+            213.5643136570673,
+            213.56431146227789
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 1,
+          "variant": "before",
+          "benchmark": "formatterGeneral",
+          "ns_per_op": [
+            263.0887814456807,
+            282.2260357956993,
+            287.0337076201146
+          ],
+          "allocated_bytes_per_op": [
+            504.1267232527606,
+            504.1267725086157,
+            504.12682743167795
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "bigDecimalShortInteger",
+          "ns_per_op": [
+            10.604326653407618,
+            10.76762636674933,
+            10.493773269124622
+          ],
+          "allocated_bytes_per_op": [
+            31.90631914314505,
+            31.90631838901597,
+            31.90631681296131
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "bigDecimalValueOf",
+          "ns_per_op": [
+            34.225429616630905,
+            39.729473568276376,
+            31.039019146186206
+          ],
+          "allocated_bytes_per_op": [
+            32.00021533301933,
+            32.000249308248506,
+            32.00019762139316
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "decimalFormatDecimal",
+          "ns_per_op": [
+            257.1550274332061,
+            259.81495486893556,
+            267.4309459018003
+          ],
+          "allocated_bytes_per_op": [
+            213.56413694393262,
+            213.56413623409333,
+            213.56422519814157
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "after",
+          "benchmark": "formatterGeneral",
+          "ns_per_op": [
+            268.4802620871025,
+            256.1517665624181,
+            276.1039917572337
+          ],
+          "allocated_bytes_per_op": [
+            504.12670470120617,
+            504.126616943935,
+            504.1267647469947
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "bigDecimalShortInteger",
+          "ns_per_op": [
+            18.004638963839394,
+            18.239027652375455,
+            18.401521713713265
+          ],
+          "allocated_bytes_per_op": [
+            72.02355191410777,
+            72.02355327090625,
+            72.02355397998652
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "bigDecimalValueOf",
+          "ns_per_op": [
+            38.300908328790534,
+            34.288719304136094,
+            55.983373153788975
+          ],
+          "allocated_bytes_per_op": [
+            32.000243233465014,
+            32.00021564902166,
+            32.000353860817114
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "decimalFormatDecimal",
+          "ns_per_op": [
+            313.70802848380373,
+            493.18859539308966,
+            408.12438634649396
+          ],
+          "allocated_bytes_per_op": [
+            213.5645520966966,
+            213.56559057336003,
+            213.56506840407823
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 2,
+          "variant": "before",
+          "benchmark": "formatterGeneral",
+          "ns_per_op": [
+            265.2156754117399,
+            277.2201517419406,
+            266.58073490699604
+          ],
+          "allocated_bytes_per_op": [
+            504.12668074324324,
+            504.126754726298,
+            504.1266871269669
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "bigDecimalShortInteger",
+          "ns_per_op": [
+            10.835058322693461,
+            11.12923507923485,
+            10.631618323832846
+          ],
+          "allocated_bytes_per_op": [
+            31.906319043521705,
+            31.906320618662065,
+            31.906317400964614
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "bigDecimalValueOf",
+          "ns_per_op": [
+            31.822891306765552,
+            39.59371575818017,
+            51.36375308034317
+          ],
+          "allocated_bytes_per_op": [
+            32.00020871928627,
+            32.00025121187639,
+            32.00032433242933
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "decimalFormatDecimal",
+          "ns_per_op": [
+            444.6255701421229,
+            411.9907517401164,
+            450.81584402772967
+          ],
+          "allocated_bytes_per_op": [
+            213.56532542026352,
+            213.56508887374162,
+            213.5653710757156
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "after",
+          "benchmark": "formatterGeneral",
+          "ns_per_op": [
+            263.8924490014445,
+            280.0392693113211,
+            271.61807181656854
+          ],
+          "allocated_bytes_per_op": [
+            504.12665866030636,
+            504.1267772935124,
+            504.12672264542937
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "bigDecimalShortInteger",
+          "ns_per_op": [
+            18.903084922031226,
+            18.55761724284918,
+            18.636304147636064
+          ],
+          "allocated_bytes_per_op": [
+            72.02355707295031,
+            72.02355410227466,
+            72.02355634172909
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "bigDecimalValueOf",
+          "ns_per_op": [
+            33.32527038163529,
+            34.23579538314524,
+            35.349666441817554
+          ],
+          "allocated_bytes_per_op": [
+            32.000211335213756,
+            32.000217454017765,
+            32.00022363168872
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "decimalFormatDecimal",
+          "ns_per_op": [
+            276.42934822088966,
+            272.29279359392245,
+            261.38557529168895
+          ],
+          "allocated_bytes_per_op": [
+            213.56430948858832,
+            213.5642159906181,
+            213.56417156993848
+          ]
+        },
+        {
+          "tier": "c2",
+          "round": 3,
+          "variant": "before",
+          "benchmark": "formatterGeneral",
+          "ns_per_op": [
+            261.09406372785696,
+            262.70290233955876,
+            284.0337059796979
+          ],
+          "allocated_bytes_per_op": [
+            504.1267106752797,
+            504.1266555458691,
+            504.126802013909
+          ]
+        }
+      ]
+    }
+  }
+}

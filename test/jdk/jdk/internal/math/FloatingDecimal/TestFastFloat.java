@@ -29,6 +29,7 @@
  * @run main/othervm -XX:+UseFastFloatIntrinsics TestFastFloat
  * @run main/othervm -Xint -XX:+UseFastFloatIntrinsics TestFastFloat
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseFastFloatIntrinsics TestFastFloat
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:-CompactStrings TestFastFloat
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UseFastFloatIntrinsics TestFastFloat
  * @run main/othervm -XX:-CompactStrings -XX:+UseFastFloatIntrinsics TestFastFloat
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits TestFastFloat

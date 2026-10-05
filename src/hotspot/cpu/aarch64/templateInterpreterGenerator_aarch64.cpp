@@ -45,8 +45,6 @@
 #include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
-#include "utilities/fastFloat.hpp"
-#include "utilities/zmij.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
@@ -59,7 +57,9 @@
 #include "runtime/vframeArray.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/fastFloat.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/zmij.hpp"
 #include <sys/types.h>
 
 // Size of interpreter code.  Increase if too small.  Interpreter will

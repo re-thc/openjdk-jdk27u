@@ -1,0 +1,79 @@
+Final self-review validation
+
+Baseline: c49478493b69cbe021a7560b962fc39d82785449
+Retained functional change: Java positive-zero metadata fast return.
+Production native conversion loops and entry signatures are unchanged.
+
+Builds:
+- GCC 14.2 complete x86-64 release JDK image: PASS.
+- GCC 14.2 x86-64 no-PCH fastdebug HotSpot incremental rebuild: PASS.
+- Clang 19 x86-64 HotSpot incremental rebuild: PASS.
+- GCC AArch64 fastdebug HotSpot cross-build incremental rebuild: PASS.
+
+Include checks:
+- SortIncludes over os/linux, os/posix, share, and the two changed x86 files: PASS.
+- Official TestIncludesAreSorted.main with the real test.src: PASS.
+- Only the new utility headers were moved in the AArch64 file; no unrelated
+  preexisting architecture include blocks were changed.
+
+Runtime checks:
+- x86-64 no-PCH fastdebug VM with final release module image: 8 jtreg tests PASS.
+  Includes interpreter/C1/C2, C1 with compact strings disabled, SSE2, JNI-only,
+  feature opt-out, ZGC and Shenandoah configurations.
+- AArch64 fastdebug VM under QEMU, using compatibility patched classes:
+  TestFastFloat and TestZmij with -Xbatch -XX:TieredStopAtLevel=1
+  -XX:-CompactStrings: both PASS. The patch includes the final Zmij.class.
+
+Performance:
+- All final-review JMH forks finished successfully with -foe true.
+- No builds/tests overlapped the timed measurements.
+- Same baseline VM for the accepted change, with only Zmij.class patched after.
+- 204 round/workload records, three raw measurement observations per record.
+- Both rejected UTF16 patch files pass git apply --check on the baseline.
+- Rendering/metadata/destination differential smoke tests passed for both
+  prototypes and the accepted positive-zero return.
+
+Native ARM64 and Windows performance was not measured. QEMU results are
+correctness checks. The six unchanged huge-memory String tests are excluded
+from this repeat; they passed the earlier complete 247-test validation.
+
+Final complete-image release regression run:
+Directory "/workspace/pr3-final-review/release-jtreg/work" not found: creating
+Directory "/workspace/pr3-final-review/release-jtreg/report" not found: creating
+Framework-based tests: 46,545 = 5,060 TestNG + 41,485 JUnit
+Test results: passed: 243
+Report written to /workspace/pr3-final-review/release-jtreg/report/html/report.html
+Results written to /workspace/pr3-final-review/release-jtreg/work
+
+Final x86 no-PCH fastdebug VM run:
+Directory "/workspace/pr3-final-review/debug-jtreg/work" not found: creating
+Directory "/workspace/pr3-final-review/debug-jtreg/report" not found: creating
+[0.027s][warning][cds] The shared archive file was created by a different version or build of HotSpot
+[0.020s][warning][cds] The shared archive file was created by a different version or build of HotSpot
+[0.080s][warning][cds] The shared archive file was created by a different version or build of HotSpot
+[0.052s][warning][cds] The shared archive file was created by a different version or build of HotSpot
+[0.061s][warning][cds] The shared archive file was created by a different version or build of HotSpot
+[0.070s][warning][cds] The shared archive file was created by a different version or build of HotSpot
+Test results: passed: 8
+Report written to /workspace/pr3-final-review/debug-jtreg/report/html/report.html
+Results written to /workspace/pr3-final-review/debug-jtreg/work
+
+Final Zero fastdebug VM run with the final module image:
+Directory "/workspace/pr3-final-review/zero-jtreg/work" not found: creating
+Directory "/workspace/pr3-final-review/zero-jtreg/report" not found: creating
+[0.016s][warning][cds] The shared archive file was created by a different version or build of HotSpot
+[0.047s][warning][cds] The shared archive file was created by a different version or build of HotSpot
+[0.040s][warning][cds] The shared archive file was created by a different version or build of HotSpot
+Test results: passed: 2; did not meet platform requirements: 4
+Report written to /workspace/pr3-final-review/zero-jtreg/report/html/report.html
+Results written to /workspace/pr3-final-review/zero-jtreg/work
+
+Zero configurations use JNI on the x86-64 host; compiler/GC-only test
+blocks are correctly skipped by their requires clauses. Both converters'
+applicable Unicode, default-on and opt-out configurations passed.
+
+Native CI evidence before publishing this follow-up:
+All eight macOS/Windows x64/AArch64 release/debug builds passed on c4947849
+in https://github.com/re-thc/openjdk-jdk27u/actions/runs/37315601666 .
+Remaining CI tests were still queued/running; this report does not claim a
+complete green tier1 run. A new follow-up commit starts fresh CI.

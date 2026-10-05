@@ -24,8 +24,8 @@
  *
  */
 
-#include "utilities/zmij.hpp"
 #include "runtime/os.hpp"
+#include "utilities/zmij.hpp"
 
 #if defined(AMD64) && !defined(ZERO)
 // The portable translation unit keeps SSE2. Compile this separate namespace

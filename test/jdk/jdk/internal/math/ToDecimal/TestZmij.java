@@ -28,6 +28,7 @@
  * @run main/othervm TestZmij
  * @run main/othervm -Xint TestZmij
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 TestZmij
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:-CompactStrings TestZmij
  * @run main/othervm -Xbatch -XX:-TieredCompilation TestZmij
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_useJavaFloatAppend TestZmij
  * @run main/othervm -Xint -XX:-CompactStrings TestZmij

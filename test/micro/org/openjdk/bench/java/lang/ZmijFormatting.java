@@ -127,6 +127,12 @@ public class ZmijFormatting {
 
     @Benchmark
     @OperationsPerInvocation(N)
+    public void floatAppendUtf16(Blackhole bh) {
+        for (float v : floats) { bh.consume(new StringBuilder("\u0100").append(v).toString()); }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(N)
     public void doubleConcat(Blackhole bh) {
         for (double v : doubles) { bh.consume("value=" + v); }
     }
@@ -151,8 +157,26 @@ public class ZmijFormatting {
 
     @Benchmark
     @OperationsPerInvocation(N)
+    public void doublePutUtf16ShortInteger(Blackhole bh) {
+        for (double v : integers) { bh.consume(DoubleToDecimal.UTF16.putDecimal(wide, 0, v)); }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(N)
     public void floatPutLatin1(Blackhole bh) {
         for (float v : floats) { bh.consume(FloatToDecimal.LATIN1.putDecimal(out, 0, v)); }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(N)
+    public void floatPutUtf16(Blackhole bh) {
+        for (float v : floats) { bh.consume(FloatToDecimal.UTF16.putDecimal(wide, 0, v)); }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(N)
+    public void floatPutUtf16ShortInteger(Blackhole bh) {
+        for (double v : integers) { bh.consume(FloatToDecimal.UTF16.putDecimal(wide, 0, (float) v)); }
     }
 
     @Benchmark
