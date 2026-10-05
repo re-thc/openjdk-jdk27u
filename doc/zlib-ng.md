@@ -40,6 +40,11 @@ JVMTI deferred suspension, a walkable Java frame, and a transition to native
 state. This permits safepoints during a long call and avoids the individual JNI
 critical-array transitions. Exceptions are reported after both arrays are
 unpinned, including Inflater's input/output accounting on malformed data.
+Direct-to-direct Inflater calls retain JNI when both remaining input and output
+are at most 4 KiB: there are no heap-array JNI transitions to remove, and the
+shared VM transition costs more for these small calls. Larger calls retain the
+runtime intrinsic. Call-path selection may change within a stream; the native
+backend and stream state stay the same.
 All existing Java range checks, synchronization, buffer positions, memory-session
 acquisition/release, streaming semantics, and packed return values are retained.
 C1 has its own Runtime1 stub; it does not require the C2 compiler to initialize.
