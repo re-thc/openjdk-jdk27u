@@ -59,6 +59,7 @@ BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libstringPlatformChars := java.base:libjava
 BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libGetXSpace := java.base:libjava
 
 BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libStringZillaKernelsTest := \
+    $(if $(filter gcc clang, $(TOOLCHAIN_TYPE)), -Wno-unknown-pragmas) \
     -I$(TOPDIR)/src/java.base/share/native/libjava/stringzilla
 
 # Platform specific setup

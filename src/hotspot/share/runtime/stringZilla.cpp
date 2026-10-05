@@ -21,8 +21,8 @@
  * questions.
  */
 
-#include "runtime/stringZilla.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/stringZilla.hpp"
 #include "runtime/vm_version.hpp"
 #include "StringZillaKernels.h"
 
@@ -74,13 +74,13 @@ void StringZilla::register_kernels(const void* table) {
 
 
 int StringZilla::capabilities() {
-#if defined(AMD64)
+#if defined(AMD64) && !defined(ZERO)
   if (UseAVX >= 2 && VM_Version::supports_avx2() && VM_Version::supports_bmi1() &&
       VM_Version::supports_bmi2() && VM_Version::supports_lzcnt()) {
     if (UseAVX >= 3 && VM_Version::supports_avx512vlbw()) return JVM_STRINGZILLA_SKYLAKE;
     return JVM_STRINGZILLA_HASWELL;
   }
-#elif defined(AARCH64)
+#elif defined(AARCH64) && !defined(ZERO)
   return JVM_STRINGZILLA_NEON;
 #endif
   return JVM_STRINGZILLA_SERIAL;

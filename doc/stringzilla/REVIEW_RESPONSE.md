@@ -152,3 +152,41 @@ taskset -c 0 "$TEST_JDK/bin/java" -XX:ActiveProcessorCount=1 -XX:+UseSerialGC \
   -jvmArgs "-XX:ActiveProcessorCount=1 -XX:+UseSerialGC -Xshare:off $TIER_OPTION -XX:+UseStringZillaIntrinsics" \
   -rf json -rff "$OUTPUT_JSON"
 ```
+
+## CI compatibility follow-up
+
+Recorded 2026-10-05 (Asia/Taipei). The subsequent CI failures exposed three
+build/source-check gaps:
+
+* GCC 11 diagnoses the vendored `#pragma region` directives when the native
+  test includes the production kernels. Its flags now suppress only
+  `unknown-pragmas`, matching production libjava's vendor-warning handling.
+  The option is limited to GCC/Clang; MSVC receives no GNU warning flag.
+* Zero defines the host architecture macros but does not provide x86 CPU flags
+  or the x86 `VM_Version::supports_*` methods. Both architecture branches in
+  `StringZilla::capabilities()` now exclude `ZERO`, leaving the serial result.
+* The repository's `SortIncludes.java --update` corrected exactly the four
+  reported files: `c1_LIRGenerator.cpp`, `c1_Runtime1.cpp`, `library_call.cpp`
+  and `stringZilla.cpp`. No unrelated include lists changed.
+
+Validation:
+
+* The original native test flags reproduce `-Werror=unknown-pragmas` with
+  GCC 11.3.0; the fixed flags compile cleanly with `-Werror` retained.
+  GCC 11 release/debug native libraries both compile, link and pass the JNI
+  regression test. The debug check omits GCC 14's optional
+  `-ftrivial-auto-var-init=pattern` flag, which configure does not enable for
+  GCC 11.
+* Release and fastdebug HotSpot/native-test builds pass; the release JDK
+  image and all four CDS archives rebuild successfully. The AArch64
+  cross-release HotSpot build also passes after the include-order fixes.
+* Actual Zero-configured flags reproduce the old `UseAVX`/`supports_*` errors;
+  the fixed production source compiles. Its capabilities function emits
+  `xor eax,eax; ret`, returning the serial value. This is a Zero source-object
+  compilation check, not a full Zero JDK build or runtime test.
+* `TestIncludesAreSorted` and `StringZillaKernelsTest` both pass jtreg against
+  fastdebug, with no tests skipped. A separate full source-order scan passes.
+* All eight default-on/opt-out public oracle modes and the default/on/off
+  availability checks pass again in release and fastdebug; all 22 callers
+  compile and execute at C1/C2 levels. The default remains true.
+* Vendor verification still reports 28 unmodified upstream files.
