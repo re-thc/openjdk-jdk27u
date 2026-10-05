@@ -100,7 +100,7 @@ def defaults(jdk):
     classes = deps / "classes"
     classes.mkdir(exist_ok=True)
     cp = os.pathsep.join(str(deps / p) for p in common.DEPS)
-    sources = [ROOT / "test/micro/org/openjdk/bench/java/util/zip" / f for f in ["ZipBackend.java", "ZipBufferCalls.java"]]
+    sources = [ROOT / "test/micro/org/openjdk/bench/java/util/zip" / f for f in ["ZipBackend.java", "ZipBufferCalls.java", "ZipStreamCalls.java"]]
     run("compile-default-bench", [jdk / "bin/javac", "-cp", cp, "-processorpath", cp, "-d", classes] + sources)
     cp = str(classes) + os.pathsep + cp
     rows = []
@@ -112,7 +112,8 @@ def defaults(jdk):
             for group, pattern, params in [
                 ("heap", "ZipBackend.(deflate|inflate|adler32)$", ["-p", "data=text", "-p", "size=64,1024,65536"]),
                 ("buffers", "ZipBufferCalls.inflate$", ["-p", "input=heap,direct", "-p", "output=heap,direct",
-                                                        "-p", "size=64,65536"])]:
+                                                        "-p", "size=64,65536"]),
+                ("streams", "ZipStreamCalls.(zip|gzip)$", ["-p", "size=64,1024,65536", "-p", "chunk=64,4096"])]:
                 name = tier + "-" + label + "-" + group
                 result = OUT / (name + ".json")
                 run(name, [jdk / "bin/java", "-Djmh.blackhole.mode=FULL_DONTINLINE", "-cp", cp, "org.openjdk.jmh.Main",

@@ -8,7 +8,7 @@ permissions:
   actions: read
 concurrency:
   group: zip-review-fixes-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   native:
     strategy:
@@ -85,6 +85,10 @@ jobs:
           cp build/zip-review/spec.gmk validation/results/spec.gmk
           cp build/zip-review/support/native/zlib-ng/Makefile validation/results/ng-Makefile
           build/zip-review/images/jdk/bin/java -XX:+PrintFlagsFinal -version > validation/results/default-flags.txt 2>&1
+      - uses: actions/cache/save@v4
+        with:
+          path: build/zip-review/images/jdk
+          key: zip-review-image-v1-${{ matrix.platform }}-${{ github.sha }}
       - name: Run ZIP jtreg, GC and JNI checks
         run: python3 .github/scripts/validate-zip-backend.py tests --jdk build/zip-review/images/jdk --jtreg jtreg/installed
       - name: Qualify independent defaults in interpreter, C1 and C2
