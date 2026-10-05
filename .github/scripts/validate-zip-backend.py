@@ -101,7 +101,8 @@ def gc_matrix(jdk, verify=False):
                 "-conc:2", "-timeoutFactor:4", "-javaoptions:" + flag,
                 REPO / "test/hotspot/jtreg/runtime/cds/appcds/aotCache/HelloAOTCache.java",
                 REPO / "test/hotspot/jtreg/runtime/cds/appcds/aotCode/AOTCodeTest.java",
-                REPO / "test/hotspot/jtreg/runtime/cds/MetaspaceAllocGaps.java"])
+                REPO / "test/hotspot/jtreg/runtime/cds/MetaspaceAllocGaps.java",
+                REPO / "test/hotspot/jtreg/compiler/intrinsics/zip/TestZlibNGAOT.java"])
 
 
 def tests(jdk, jtreg):

@@ -94,10 +94,10 @@ jobs:
       - name: Record source and host
         run: |
           mkdir -p validation/results
-          git fetch --depth=1 origin bfdff2333cd1a156dcbf72fb76a591923d59828b
+          git fetch --depth=1 origin 5a15ad035cf2fc30de8ecaf8d8f597a3fb997f06
           git rev-parse HEAD > validation/results/validation-commit.txt
-          echo bfdff2333cd1a156dcbf72fb76a591923d59828b > validation/results/candidate-commit.txt
-          git diff bfdff2333cd1a156dcbf72fb76a591923d59828b -- src make test > validation/results/implementation-diff.txt
+          echo 5a15ad035cf2fc30de8ecaf8d8f597a3fb997f06 > validation/results/candidate-commit.txt
+          git diff 5a15ad035cf2fc30de8ecaf8d8f597a3fb997f06 -- src make test > validation/results/implementation-diff.txt
           test ! -s validation/results/implementation-diff.txt
           lscpu > validation/results/cpu.txt
           uname -a > validation/results/kernel.txt
@@ -108,7 +108,7 @@ jobs:
         id: candidate-cache
         with:
           path: build/zip/images/jdk
-          key: zip-image-v1-${{ matrix.platform }}-bfdff2333cd1a156dcbf72fb76a591923d59828b-gcc14-system-release
+          key: zip-image-v1-${{ matrix.platform }}-5a15ad035cf2fc30de8ecaf8d8f597a3fb997f06-gcc14-system-release
       - name: Build candidate release
         if: steps.candidate-cache.outputs.cache-hit != 'true'
         env:
@@ -123,7 +123,7 @@ jobs:
         if: steps.candidate-cache.outputs.cache-hit != 'true'
         with:
           path: build/zip/images/jdk
-          key: zip-image-v1-${{ matrix.platform }}-bfdff2333cd1a156dcbf72fb76a591923d59828b-gcc14-system-release
+          key: zip-image-v1-${{ matrix.platform }}-5a15ad035cf2fc30de8ecaf8d8f597a3fb997f06-gcc14-system-release
       - name: Run targeted jtreg, GC, JNI, CDS, JAR, zipfs and jlink checks
         env:
           JTREG_PATH: ${{ steps.jtreg.outputs.path }}
@@ -132,7 +132,7 @@ jobs:
         id: debug-cache
         with:
           path: build/zip-debug/support/modules_libs/java.base/server/libjvm.so
-          key: zip-hotspot-v1-${{ matrix.platform }}-bfdff2333cd1a156dcbf72fb76a591923d59828b-gcc14-system-fastdebug
+          key: zip-hotspot-v1-${{ matrix.platform }}-5a15ad035cf2fc30de8ecaf8d8f597a3fb997f06-gcc14-system-fastdebug
       - name: Build assertion-enabled HotSpot
         if: steps.debug-cache.outputs.cache-hit != 'true'
         env:
@@ -146,7 +146,7 @@ jobs:
         if: steps.debug-cache.outputs.cache-hit != 'true'
         with:
           path: build/zip-debug/support/modules_libs/java.base/server/libjvm.so
-          key: zip-hotspot-v1-${{ matrix.platform }}-bfdff2333cd1a156dcbf72fb76a591923d59828b-gcc14-system-fastdebug
+          key: zip-hotspot-v1-${{ matrix.platform }}-5a15ad035cf2fc30de8ecaf8d8f597a3fb997f06-gcc14-system-fastdebug
       - name: Check all collectors and AOT archives with assertions enabled
         env:
           JTREG_PATH: ${{ steps.jtreg.outputs.path }}
