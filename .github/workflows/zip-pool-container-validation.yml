@@ -17,7 +17,7 @@ jobs:
       - name: Install container build and action tools
         run: |
           apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y git curl wget unzip zip zstd make ca-certificates python3 file
+          DEBIAN_FRONTEND=noninteractive apt-get install -y git curl wget unzip zip zstd make ca-certificates python3 file autoconf gawk binutils pkg-config
       - uses: actions/checkout@v6
       - uses: ./.github/actions/get-bootjdk
         id: boot
