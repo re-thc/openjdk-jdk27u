@@ -1,10 +1,12 @@
-name: ZIP scalar and buffer review on alternate runners
+name: ZIP small direct-buffer gate validation
 on:
+  push:
+    branches: [pr/zlib-ng-validation]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: zip-scalar-review-alternate-${{ github.ref }}
+  group: zip-direct-gate-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   scalar:
@@ -17,7 +19,7 @@ jobs:
             revision: bfdff2333cd1a156dcbf72fb76a591923d59828b
     runs-on: ${{ matrix.runner }}
     container: ubuntu:24.04
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - name: Install runtime and action tools
         run: |
@@ -29,19 +31,16 @@ jobs:
           path: build/zip/images/jdk
           key: zip-image-v1-linux-${{ matrix.platform }}-${{ matrix.revision }}-gcc14-system-release
           fail-on-cache-miss: true
-      - name: Record host and compile-check experiment harness
+      - name: Record host and verify staged source
         run: |
           mkdir -p validation/results
           lscpu > validation/results/cpu.txt
-          build/zip/images/jdk/bin/java -version 2> validation/results/jdk.txt
-          python3 -m py_compile .github/scripts/review-adler-scalar.py .github/scripts/validate-zip-backend.py
-      - name: Compare scalar JNI and experimental Java paths
-        run: python3 .github/scripts/review-adler-scalar.py build/zip/images/jdk
-      - name: Compare JNI and intrinsic overhead for all buffer shapes
-        run: python3 .github/scripts/review-zip-buffers.py build/zip/images/jdk
+          python3 -m py_compile .github/scripts/validate-direct-gate.py
+      - name: Validate gated buffer calls under all tiers and collectors
+        run: python3 .github/scripts/validate-direct-gate.py build/zip/images/jdk
       - uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: zip-scalar-review-alternate-${{ matrix.platform }}
+          name: zip-direct-gate-${{ matrix.platform }}
           path: validation/results
           retention-days: 14
