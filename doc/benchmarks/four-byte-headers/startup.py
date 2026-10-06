@@ -12,7 +12,7 @@ configurations = [(layout, gc) for layout in ("baseline8", "default8", "legacy12
                   for gc in ("Serial", "G1", "Z")]
 rng = random.Random(8347710)
 with open(destination, "w", newline="") as output:
-    writer = csv.writer(output)
+    writer = csv.writer(output, lineterminator="\n")
     writer.writerow(["layout", "gc", "round", "elapsed_ns"])
     for iteration in range(-5, 50):
         rng.shuffle(configurations)

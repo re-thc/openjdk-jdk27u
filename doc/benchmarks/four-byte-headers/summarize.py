@@ -46,7 +46,7 @@ def comparison(baseline, candidate):
 
 def write(name, header, rows):
     with (root / name).open("w", newline="") as stream:
-        writer = csv.writer(stream)
+        writer = csv.writer(stream, lineterminator="\n")
         writer.writerow(header)
         writer.writerows(rows)
 
