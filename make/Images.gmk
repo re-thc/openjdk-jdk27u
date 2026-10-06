@@ -148,6 +148,8 @@ define CreateCDSArchive
   $1_$2_DUMP_EXTRA_ARG := $$($1_$2_COOPS_OPTION) $$($1_$2_NOCOH_OPTION)
   ifneq ($(findstring _fourbyte, $2), )
     $1_$2_DUMP_EXTRA_ARG += -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders
+  else ifeq ($(call isTargetCpuBits, 64), true)
+    $1_$2_DUMP_EXTRA_ARG += -XX:-UseFourByteObjectHeaders
   endif
   $1_$2_DUMP_TYPE      := $(if $(findstring _nocoops, $2),-NOCOOPS,)$(if $(findstring _nocoh, $2),-NOCOH,)
 

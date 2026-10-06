@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @summary Four-byte headers are opt-in and imply compact headers without changing defaults
+ * @summary Four-byte headers are the fork default with eight-byte and legacy opt-outs
  * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "aarch64")
+ * @requires vm.flavor != "zero" & vm.gc.Serial & vm.gc.G1 & vm.gc.Z
  * @library /test/lib
  * @run driver FourByteHeaderOptions
  */
@@ -34,7 +35,9 @@ import jdk.test.lib.process.ProcessTools;
 public class FourByteHeaderOptions {
     static void check(boolean four, boolean compact, String... options) throws Exception {
         var args = new java.util.ArrayList<String>();
-        args.add("-XX:+UnlockExperimentalVMOptions");
+        if (java.util.Arrays.stream(options).anyMatch(option -> option.startsWith("-XX:hashCode="))) {
+            args.add("-XX:+UnlockExperimentalVMOptions");
+        }
         args.addAll(java.util.List.of(options));
         args.add("-XX:+PrintFlagsFinal");
         args.add("-version");
@@ -44,14 +47,18 @@ public class FourByteHeaderOptions {
         output.shouldMatch("UseCompactObjectHeaders\\s+= " + compact);
     }
     public static void main(String[] args) throws Exception {
-        check(false, true);
-        check(false, true, "-XX:hashCode=6");
+        check(true, true);
+        check(true, true, "-XX:hashCode=6");
+        check(false, true, "-XX:-UseFourByteObjectHeaders");
         check(false, false, "-XX:-UseCompactObjectHeaders");
+        check(false, false, "-XX:-UseFourByteObjectHeaders", "-XX:-UseCompactObjectHeaders");
         check(true, true, "-XX:+UseFourByteObjectHeaders");
         check(true, true, "-XX:+UseFourByteObjectHeaders", "-XX:-UseCompactObjectHeaders");
         check(false, true, "-XX:+UseFourByteObjectHeaders", "-XX:hashCode=3");
-        var output = new OutputAnalyzer(ProcessTools.createLimitedTestJavaProcessBuilder(
-            "-XX:+UseFourByteObjectHeaders", "-version").start());
-        output.shouldNotHaveExitValue(0).shouldContain("UnlockExperimentalVMOptions");
+        check(false, true, "-XX:hashCode=3");
+        for (String gc : java.util.List.of("Serial", "G1", "Z")) {
+            check(true, true, "-XX:+Use" + gc + "GC");
+            check(false, true, "-XX:-UseFourByteObjectHeaders", "-XX:+Use" + gc + "GC");
+        }
     }
 }
