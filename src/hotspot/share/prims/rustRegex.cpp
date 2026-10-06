@@ -52,11 +52,14 @@ JNI_END
 
 JNI_ENTRY(jlong, RR_compile(JNIEnv* env, jclass cls, jbyteArray pattern, jint flags, jint groups))
 #if INCLUDE_RUST_REGEX
-  typeArrayOop array = typeArrayOop(JNIHandles::resolve_non_null(pattern));
-  int length = array->length();
-  if (length > 16384 || groups < 1 || groups > 33) return 0;
+  int length;
   unsigned char copy[16384];
-  memcpy(copy, array->base(T_BYTE), length);
+  {
+    typeArrayOop array = typeArrayOop(JNIHandles::resolve_non_null(pattern));
+    length = array->length();
+    if (length > 16384 || groups < 1 || groups > 33) return 0;
+    memcpy(copy, array->base(T_BYTE), length);
+  } // No raw oop survives the transition to native state.
   void* handle;
   {
     ThreadToNativeFromVM ttn(THREAD);

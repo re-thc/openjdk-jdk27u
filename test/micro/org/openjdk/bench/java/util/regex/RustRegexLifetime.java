@@ -112,7 +112,11 @@ public class RustRegexLifetime {
         Pattern pattern = Pattern.compile(source);
         if (checkBackend && (nativeBackend.get(pattern) != null) != expectedNative)
             throw new IllegalStateException("unexpected Pattern backend in lifetime measurement");
-        if (threads == 1) return search(pattern, 0);
+        if (threads == 1) {
+            int hits = search(pattern, 0);
+            verifyBackend(pattern);
+            return hits;
+        }
         List<Callable<Integer>> tasks = new ArrayList<>();
         for (int i = 0; i < threads; i++) {
             int worker = i;
@@ -120,6 +124,12 @@ public class RustRegexLifetime {
         }
         int hits = 0;
         for (Future<Integer> result : pool.invokeAll(tasks)) hits += result.get();
+        verifyBackend(pattern);
         return hits;
+    }
+
+    private void verifyBackend(Pattern pattern) throws IllegalAccessException {
+        if (checkBackend && (nativeBackend.get(pattern) != null) != expectedNative)
+            throw new IllegalStateException("unexpected backend after complete Pattern lifetime");
     }
 }
