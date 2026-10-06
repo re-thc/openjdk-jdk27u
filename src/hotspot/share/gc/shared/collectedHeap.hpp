@@ -261,6 +261,8 @@ protected:
 
   void initialize_reserved_region(const ReservedHeapSpace& rs);
 
+  HeapWord* reserved_start() const { return _reserved.start(); }
+
   virtual size_t capacity() const = 0;
   virtual size_t used() const = 0;
 

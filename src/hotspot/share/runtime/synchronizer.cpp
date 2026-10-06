@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/cdsConfig.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -648,6 +649,11 @@ static intptr_t get_four_byte_hash(oop obj) {
   }
 #ifdef _LP64
   uint64_t val = cast_from_oop<uint64_t>(obj);
+  if (CDSConfig::is_dumping_classic_static_archive() && !UseCompiler) {
+    // Interpreter-only static dumping must not depend on heap address randomization.
+    // Hashed archived objects retain this value in their expanded hash slot.
+    val -= reinterpret_cast<uintptr_t>(Universe::heap()->reserved_start());
+  }
   uint32_t hash = FastHash::get_hash32((uint32_t)val, (uint32_t)(val >> 32));
 #else
   uint32_t val = cast_from_oop<uint32_t>(obj);
