@@ -6028,6 +6028,11 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     ldrw(tmp5, Address(a2, length_offset));
     cmp(cnt1, tmp5);
     br(NE, DONE); // If lengths differ, return false
+    if (UseFourByteObjectHeaders) {
+      // Empty arrays have no body word. The short comparison would otherwise
+      // read past the array and shift by zero instead of masking every byte.
+      cbzw(cnt1, SAME);
+    }
     // Increase loop counter by diff between base- and actual start-offset.
     addw(cnt1, cnt1, extra_length);
 
