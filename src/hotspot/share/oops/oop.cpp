@@ -131,7 +131,7 @@ markWord oopDesc::initialize_hash_if_necessary(oop obj, Klass* k, markWord m) {
   assert(!m.has_displaced_mark_helper(), "must not be displaced header");
   assert(m.is_hashed_not_expanded(), "must be hashed but not moved");
   assert(!m.is_hashed_expanded(), "must not be moved: " INTPTR_FORMAT, m.value());
-  uint32_t hash = static_cast<uint32_t>(ObjectSynchronizer::get_next_hash(nullptr, obj));
+  uint32_t hash = static_cast<uint32_t>(ObjectSynchronizer::get_hash_for_copy(obj, cast_to_oop(this), k));
   size_t offset = k->hash_offset_in_bytes(cast_to_oop(this), m);
   assert(offset >= 4, "hash offset must not be in header");
   log_develop_trace(gc)("Initializing hash for " PTR_FORMAT ", old: " PTR_FORMAT ", hash: %d, offset: %zu, is_mirror: %s", p2i(this), p2i(obj), hash, offset, BOOL_TO_STR(k->is_mirror_instance_klass()));
