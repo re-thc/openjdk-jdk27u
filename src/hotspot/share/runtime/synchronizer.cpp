@@ -600,7 +600,7 @@ static SharedGlobals GVars;
 //   There are simple ways to "diffuse" the middle address bits over the
 //   generated hashCode values:
 
-intptr_t ObjectSynchronizer::get_next_hash(Thread* current, oop obj) {
+static intptr_t get_next_hash_legacy(Thread* current, oop obj) {
   intptr_t value = 0;
   if (hashCode == 0) {
     // This form uses global Park-Miller RNG.
@@ -619,7 +619,7 @@ intptr_t ObjectSynchronizer::get_next_hash(Thread* current, oop obj) {
     value = ++GVars.hc_sequence;
   } else if (hashCode == 4) {
     value = cast_from_oop<intptr_t>(obj);
-  } else if (!UseFourByteObjectHeaders || hashCode == 5) {
+  } else {
     // Marsaglia's xor-shift scheme with thread-specific state
     // This is probably the best overall implementation -- we'll
     // likely make this the default in future releases.
@@ -632,57 +632,77 @@ intptr_t ObjectSynchronizer::get_next_hash(Thread* current, oop obj) {
     v = (v ^ (v >> 19)) ^ (t ^ (t >> 8));
     current->_hashStateW = v;
     value = v;
-  } else {
-    assert(UseFourByteObjectHeaders, "Only with compact i-hash");
-#ifdef _LP64
-    uint64_t val = cast_from_oop<uint64_t>(obj);
-    uint32_t hash = FastHash::get_hash32((uint32_t)val, (uint32_t)(val >> 32));
-#else
-    uint32_t val = cast_from_oop<uint32_t>(obj);
-    uint32_t hash = FastHash::get_hash32(val, UCONST64(0xAAAAAAAA));
-#endif
-    value= static_cast<intptr_t>(hash);
   }
 
   value &= markWord::hash_mask;
-  if ((!UseFourByteObjectHeaders || hashCode != 6) && value == 0) value = 0xBAD;
-  assert(value != markWord::no_hash || (UseFourByteObjectHeaders && hashCode == 6), "invariant");
+  if (value == 0) value = 0xBAD;
+  assert(value != markWord::no_hash, "invariant");
   return value;
 }
 
+static intptr_t get_four_byte_hash(oop obj) {
+  assert(UseFourByteObjectHeaders, "Only with compact i-hash");
+  assert(hashCode == 6 || hashCode == 2, "must have idempotent hashCode");
+  if (hashCode == 2) {
+    return 1;
+  }
+#ifdef _LP64
+  uint64_t val = cast_from_oop<uint64_t>(obj);
+  uint32_t hash = FastHash::get_hash32((uint32_t)val, (uint32_t)(val >> 32));
+#else
+  uint32_t val = cast_from_oop<uint32_t>(obj);
+  uint32_t hash = FastHash::get_hash32(val, UCONST64(0xAAAAAAAA));
+#endif
+  // Zero is a valid hash in the address-derived scheme.
+  return static_cast<intptr_t>(hash & markWord::hash_mask);
+}
+
+intptr_t ObjectSynchronizer::get_next_hash(Thread* current, oop obj) {
+  return UseFourByteObjectHeaders ? get_four_byte_hash(obj) : get_next_hash_legacy(current, obj);
+}
+
+// Keep this path out of the legacy hash loop. Combining both layouts makes
+// native compilers stop inlining the legacy RNG and spill additional registers.
+NOINLINE static intptr_t four_byte_hash_code(oop obj) {
+  while (true) {
+    markWord mark = obj->mark_acquire();
+    if (mark.is_hashed()) {
+      return ObjectSynchronizer::get_hash(mark, obj);
+    }
+    intptr_t hash = get_four_byte_hash(obj);
+    markWord new_mark;
+    if (mark.is_not_hashed_expanded()) {
+      new_mark = mark.set_hashed_expanded();
+      size_t offset = mark.klass()->hash_offset_in_bytes(obj, mark);
+      obj->int_field_put(offset, (jint) hash);
+    } else {
+      new_mark = mark.set_hashed_not_expanded();
+    }
+    markWord old_mark = obj->cas_set_mark(new_mark, mark);
+    if (old_mark == mark) {
+      return hash;
+    }
+    // CAS failed, retry.
+  }
+}
+
 intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
+  if (UseFourByteObjectHeaders) {
+    return four_byte_hash_code(obj);
+  }
   while (true) {
     ObjectMonitor* monitor = nullptr;
     markWord temp, test;
     intptr_t hash;
     markWord mark = obj->mark_acquire();
-    if (UseFourByteObjectHeaders) {
-      if (mark.is_hashed()) {
-        return get_hash(mark, obj);
-      }
-      intptr_t hash = get_next_hash(current, obj);  // get a new hash
-      markWord new_mark;
-      if (mark.is_not_hashed_expanded()) {
-        new_mark = mark.set_hashed_expanded();
-        size_t offset = mark.klass()->hash_offset_in_bytes(obj, mark);
-        obj->int_field_put(offset, (jint) hash);
-      } else {
-        new_mark = mark.set_hashed_not_expanded();
-      }
-      markWord old_mark = obj->cas_set_mark(new_mark, mark);
-      if (old_mark == mark) {
-        return hash;
-      }
-      // CAS failed, retry.
-      continue;
-    } else if (UseObjectMonitorTable || !mark.has_monitor()) {
+    if (UseObjectMonitorTable || !mark.has_monitor()) {
       // If UseObjectMonitorTable is set the hash can simply be installed in the
       // object header, since the monitor isn't in the object header.
       hash = mark.hash();
       if (hash != 0) {                     // if it has a hash, just return it
         return hash;
       }
-      hash = get_next_hash(current, obj);  // get a new hash
+      hash = get_next_hash_legacy(current, obj);  // get a new hash
       temp = mark.copy_set_hash(hash);     // merge the hash into header
                                            // try to install the hash
       test = obj->cas_set_mark(temp, mark);
@@ -737,7 +757,7 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
     assert(mark.is_neutral(), "invariant: header=" INTPTR_FORMAT, mark.value());
     hash = mark.hash();
     if (hash == 0) {                       // if it does not have a hash
-      hash = get_next_hash(current, obj);  // get a new hash
+      hash = get_next_hash_legacy(current, obj);  // get a new hash
       temp = mark.copy_set_hash(hash)   ;  // merge the hash into header
       assert(temp.is_neutral(), "invariant: header=" INTPTR_FORMAT, temp.value());
       uintptr_t v = AtomicAccess::cmpxchg(monitor->metadata_addr(), mark.value(), temp.value());
@@ -777,7 +797,7 @@ uint32_t ObjectSynchronizer::get_hash(markWord mark, oop obj, Klass* klass) {
     assert(mark.is_hashed_not_expanded(), "must be hashed");
     assert(hashCode == 6 || hashCode == 2, "must have idempotent hashCode");
     // Already marked as hashed, but not yet copied. Recompute hash and return it.
-    return ObjectSynchronizer::get_next_hash(nullptr, obj); // recompute hash
+    return get_four_byte_hash(obj); // recompute hash
   }
 }
 
