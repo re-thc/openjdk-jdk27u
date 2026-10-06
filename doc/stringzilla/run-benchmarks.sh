@@ -4,6 +4,20 @@
 # Usage: run-benchmarks.sh TEST_JDK JMH_CLASSPATH OUTPUT_DIR [CPU]
 # JMH_FORKS=0 permits sequential in-process measurements on constrained hosts.
 set -euo pipefail
+
+usage() {
+    printf 'Usage: %s TEST_JDK JMH_CLASSPATH OUTPUT_DIR [CPU]\n' "${0##*/}"
+}
+
+if [ "$#" -eq 1 ] && { [ "$1" = --help ] || [ "$1" = -h ]; }; then
+    usage
+    exit 0
+fi
+if [ "$#" -lt 3 ] || [ "$#" -gt 4 ]; then
+    usage >&2
+    exit 2
+fi
+
 benchmark_jdk=$(cd "$1" && pwd)
 benchmark_classpath=$2
 benchmark_output=$3
@@ -19,7 +33,12 @@ run_group() {
     if [ "$benchmark_forks" != 0 ]; then
         fork_options=(-jvm "$benchmark_jdk/bin/java" -jvmArgs "${options[*]}")
     fi
-    "${benchmark_pin[@]}" "$benchmark_jdk/bin/java" "${options[@]}" -cp "$benchmark_classpath" org.openjdk.jmh.Main "$pattern" -p length="$sizes" -p coder="$coders" -p position="$positions" -p needleLength=4 -f "$benchmark_forks" -wi 3 -w 500ms -i 5 -r 500ms "${fork_options[@]}" -rf json -rff "$benchmark_output/$tier-$feature-$group.json" > "$benchmark_output/$tier-$feature-$group.log" 2>&1
+    "${benchmark_pin[@]}" "$benchmark_jdk/bin/java" "${options[@]}" \
+        -cp "$benchmark_classpath" org.openjdk.jmh.Main "$pattern" \
+        -p length="$sizes" -p coder="$coders" -p position="$positions" -p needleLength=4 \
+        -f "$benchmark_forks" -wi 3 -w 500ms -i 5 -r 500ms "${fork_options[@]}" \
+        -rf json -rff "$benchmark_output/$tier-$feature-$group.json" \
+        > "$benchmark_output/$tier-$feature-$group.log" 2>&1
     printf '%s %s %s complete\n' "$tier" "$feature" "$group"
 }
 
