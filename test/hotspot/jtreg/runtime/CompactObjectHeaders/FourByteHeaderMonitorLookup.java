@@ -104,7 +104,6 @@ public class FourByteHeaderMonitorLookup {
         int[] hashes = new int[locks.length];
         for (int i = 0; i < locks.length; i++) {
             hashes[i] = System.identityHashCode(locks[i]);
-            inflate(locks[i]);
         }
         System.gc();
         boolean four = Boolean.TRUE.equals(WB.getBooleanVMFlag("UseFourByteObjectHeaders"));
@@ -113,7 +112,13 @@ public class FourByteHeaderMonitorLookup {
                 Asserts.assertEQ(UNSAFE.getInt(locks[i], 0) & (3 << 11), 3 << 11,
                                  "Instance hash must be expanded after movement");
             }
+            // Zero is valid for the address-derived scheme. Install it in an
+            // expanded slot before the first monitor is created for the object.
+            Asserts.assertEQ(UNSAFE.objectFieldOffset(Lock.class.getDeclaredField("value")), 4L);
+            UNSAFE.putInt(locks[0], 8, 0);
+            hashes[0] = 0;
         }
+        for (Object lock : locks) inflate(lock);
         // Keep one newly inflated instance in the address-derived hash state.
         locks[11] = new Lock();
         hashes[11] = System.identityHashCode(locks[11]);

@@ -245,18 +245,49 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
       }
 
       if (UseFourByteObjectHeaders) {
+        Label expanded, hash_ready;
         // Acquire the state published after installing an expanded hash slot.
         // Only ordinary instances have a fixed slot offset in InstanceKlass.
         ldarw(t1_hash, obj);
         ubfx(t1_hash, t1_hash, markWord::hashctrl_shift, markWord::hashctrl_bits);
         cmpw(t1_hash, 3);
+        br(Assembler::EQ, expanded);
+        cmpw(t1_hash, 1);
         br(Assembler::NE, slow_path);
+
+        if (hashCode == 2) {
+          movw(t1_hash, 1);
+        } else {
+          assert(hashCode == 6, "Only address-derived or constant identity hashes");
+          // FastHash::get_hash32(low address, high address).
+          mov(rscratch1, 0x337954D5);
+          movw(t1_hash, obj);
+          lsr(t2, obj, 32);
+          movw(t3, 0xAAAAAAAA);
+          eorw(t3, t1_hash, t3);
+          mul(t3, t3, rscratch1);       // U0:V0
+          eorw(t1_hash, t1_hash, t2);
+          mulw(t1_hash, t1_hash, rscratch1); // Q0
+          lsr(t2, t3, 32);
+          eorw(t1_hash, t1_hash, t2);  // L1
+          eorw(t3, t3, rscratch1);     // P1
+          mul(t2, t1_hash, rscratch1); // U1:V1
+          rorvw(t3, t3, t1_hash);     // Q1
+          eorw(t3, t3, t2);
+          lsr(t2, t2, 32);
+          eorw(t1_hash, t3, t2);      // V1 ^ Q1 ^ U1
+          andw(t1_hash, t1_hash, markWord::hash_mask);
+        }
+        b(hash_ready);
+
+        bind(expanded);
         load_klass(t3, obj);
         ldrw(t2, Address(t3, Klass::kind_offset_in_bytes()));
         cmpw(t2, Klass::InstanceKlassKind);
         br(Assembler::NE, slow_path);
         ldrw(t1_hash, Address(t3, InstanceKlass::hash_offset_offset_in_bytes()));
         ldrw(t1_hash, Address(obj, t1_hash, Address::uxtw(0)));
+        bind(hash_ready);
       } else {
         // Get the hash code.
         ubfx(t1_hash, t3, markWord::hash_shift, markWord::hash_bits);
