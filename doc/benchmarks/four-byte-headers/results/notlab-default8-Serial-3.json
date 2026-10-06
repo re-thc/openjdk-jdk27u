@@ -1,0 +1,279 @@
+{
+  "benchmarks": ["scrabble", "scala-doku"],
+  "format_version": 6,
+  "data": {
+    "scrabble": {
+      "results": [{
+        "retained_heap_after_bytes": 99846096,
+        "non_heap_before_bytes": 16135848,
+        "uptime_ns": 2186320192,
+        "retained_heap_before_bytes": 69555768,
+        "duration_ns": 3935224091,
+        "rss_before_bytes": 331038720,
+        "non_heap_after_bytes": 17453336,
+        "rss_after_bytes": 366542848
+      }, {
+        "retained_heap_after_bytes": 99252152,
+        "non_heap_before_bytes": 17240912,
+        "uptime_ns": 6620291905,
+        "retained_heap_before_bytes": 69025680,
+        "duration_ns": 4145191061,
+        "rss_before_bytes": 366620672,
+        "non_heap_after_bytes": 17240912,
+        "rss_after_bytes": 366620672
+      }, {
+        "retained_heap_after_bytes": 98851432,
+        "non_heap_before_bytes": 17241936,
+        "uptime_ns": 11272940135,
+        "retained_heap_before_bytes": 69025696,
+        "duration_ns": 2938672823,
+        "rss_before_bytes": 366620672,
+        "non_heap_after_bytes": 17243472,
+        "rss_after_bytes": 366620672
+      }],
+      "termination": "normal"
+    },
+    "scala-doku": {
+      "results": [{
+        "retained_heap_after_bytes": 4594128,
+        "non_heap_before_bytes": 18679784,
+        "uptime_ns": 14677661137,
+        "retained_heap_before_bytes": 8347912,
+        "duration_ns": 2290824118,
+        "rss_before_bytes": 368103424,
+        "non_heap_after_bytes": 24393936,
+        "rss_after_bytes": 381911040
+      }, {
+        "retained_heap_after_bytes": 9600832,
+        "non_heap_before_bytes": 23490752,
+        "uptime_ns": 17034335886,
+        "retained_heap_before_bytes": 4598056,
+        "duration_ns": 1619194331,
+        "rss_before_bytes": 381923328,
+        "non_heap_after_bytes": 23692376,
+        "rss_after_bytes": 380059648
+      }, {
+        "retained_heap_after_bytes": 4601760,
+        "non_heap_before_bytes": 23560848,
+        "uptime_ns": 18702680658,
+        "retained_heap_before_bytes": 4599344,
+        "duration_ns": 1620898718,
+        "rss_before_bytes": 380059648,
+        "non_heap_after_bytes": 23646224,
+        "rss_after_bytes": 376999936
+      }],
+      "termination": "normal"
+    }
+  },
+  "environment": {
+    "os": {
+      "virt_mem_committed": 3219795968,
+      "name": "Linux",
+      "open_fd_count": 18,
+      "available_processors": 4,
+      "phys_mem_total": 17179869184,
+      "version": "6.18.44",
+      "arch": "amd64",
+      "max_fd_count": 16384,
+      "swap_space_free": 0,
+      "phys_mem_free": 740884480,
+      "swap_space_total": 0
+    },
+    "vm": {
+      "termination": "normal",
+      "name": "OpenJDK 64-Bit Server VM",
+      "classloading": {
+        "class_count": 3206,
+        "classes_total": 3399
+      },
+      "start_ns": 48009457052387,
+      "mode": "mixed mode, sharing",
+      "args": ["-XX:+UseSerialGC", "-Xms512m", "-Xmx512m", "-XX:ActiveProcessorCount=4", "-XX:-UseTLAB"],
+      "vendor": "Oracle Corporation",
+      "spec_vendor": "Oracle Corporation",
+      "spec_name": "Java Virtual Machine Specification",
+      "compiler": {
+        "name": "HotSpot 64-Bit Tiered Compilers",
+        "compilation_time_ms": 5140
+      },
+      "start_iso": "2026-10-06T11:40:10.122Z",
+      "collectors": [{
+        "name": "Copy",
+        "collection_count": 39,
+        "collection_time_ms": 1025
+      }, {
+        "name": "MarkSweepCompact",
+        "collection_count": 18,
+        "collection_time_ms": 1702
+      }],
+      "start_unix_ms": 1791286810122,
+      "version": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+      "pools": [{
+        "name": "CodeHeap 'non-nmethods'",
+        "type": "NON_HEAP",
+        "usage": {
+          "init": 2555904,
+          "used": 1409792,
+          "committed": 2555904,
+          "max": 5836800
+        },
+        "peak_usage": {
+          "init": 2555904,
+          "used": 1437696,
+          "committed": 2555904,
+          "max": 5836800
+        }
+      }, {
+        "name": "Metaspace",
+        "type": "NON_HEAP",
+        "usage": {
+          "init": 0,
+          "used": 16783680,
+          "committed": 17039360,
+          "max": -1
+        },
+        "peak_usage": {
+          "init": 0,
+          "used": 16783680,
+          "committed": 17039360,
+          "max": -1
+        }
+      }, {
+        "name": "Tenured Gen",
+        "type": "HEAP",
+        "usage": {
+          "init": 357957632,
+          "used": 4601032,
+          "committed": 357957632,
+          "max": 357957632
+        },
+        "peak_usage": {
+          "init": 357957632,
+          "used": 99845368,
+          "committed": 357957632,
+          "max": 357957632
+        }
+      }, {
+        "name": "CodeHeap 'profiled nmethods'",
+        "type": "NON_HEAP",
+        "usage": {
+          "init": 2555904,
+          "used": 2801792,
+          "committed": 3407872,
+          "max": 122912768
+        },
+        "peak_usage": {
+          "init": 2555904,
+          "used": 3406592,
+          "committed": 3407872,
+          "max": 122912768
+        }
+      }, {
+        "name": "Eden Space",
+        "type": "HEAP",
+        "usage": {
+          "init": 143130624,
+          "used": 23217304,
+          "committed": 143130624,
+          "max": 178913280
+        },
+        "peak_usage": {
+          "init": 143130624,
+          "used": 143130624,
+          "committed": 143130624,
+          "max": 178913280
+        }
+      }, {
+        "name": "Survivor Space",
+        "type": "HEAP",
+        "usage": {
+          "init": 17891328,
+          "used": 0,
+          "committed": 17891328,
+          "max": 17891328
+        },
+        "peak_usage": {
+          "init": 17891328,
+          "used": 17891328,
+          "committed": 17891328,
+          "max": 17891328
+        }
+      }, {
+        "name": "Compressed Class Space",
+        "type": "NON_HEAP",
+        "usage": {
+          "init": 0,
+          "used": 3197112,
+          "committed": 3342336,
+          "max": 1073741824
+        },
+        "peak_usage": {
+          "init": 0,
+          "used": 3197112,
+          "committed": 3342336,
+          "max": 1073741824
+        }
+      }, {
+        "name": "CodeHeap 'non-profiled nmethods'",
+        "type": "NON_HEAP",
+        "usage": {
+          "init": 2555904,
+          "used": 1308672,
+          "committed": 2555904,
+          "max": 122912768
+        },
+        "peak_usage": {
+          "init": 2555904,
+          "used": 1308672,
+          "committed": 2555904,
+          "max": 122912768
+        }
+      }],
+      "uptime_ms": 20458,
+      "compressed_oops_mode": "32-bit",
+      "threads": {
+        "thread_count": 9,
+        "thread_count_max": 10,
+        "daemon_thread_count": 8,
+        "threads_total": 15
+      },
+      "spec_version": "27",
+      "memory": {
+        "heap_usage": {
+          "init": 536870912,
+          "used": 27111144,
+          "committed": 518979584,
+          "max": 536805376
+        },
+        "nonheap_usage": {
+          "init": 7667712,
+          "used": 25449808,
+          "committed": 28901376,
+          "max": -1
+        },
+        "pending_finalization_count": 0
+      }
+    },
+    "jre": {
+      "java_version": "27.0.2-internal",
+      "name": "OpenJDK Runtime Environment",
+      "class_path": ["/workspace/work/renaissance-gpl-0.16.1.jar"],
+      "spec_version": "27",
+      "spec_vendor": "Oracle Corporation",
+      "spec_name": "Java Platform API Specification",
+      "home": "/workspace/work/performance-release/image",
+      "version": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+      "java_vendor": "N/A",
+      "library_path": ["/usr/java/packages/lib", "/usr/lib64", "/lib64", "/lib", "/usr/lib"]
+    }
+  },
+  "suite": {
+    "git": {
+      "commit_hash": "e294171fdd7c44d73d8463b79d12a2199e276fec",
+      "commit_date": "2025-11-05T16:36:48+0100",
+      "dirty": "false"
+    },
+    "name": "Renaissance Benchmark Suite",
+    "version": "0.16.1"
+  }
+}
