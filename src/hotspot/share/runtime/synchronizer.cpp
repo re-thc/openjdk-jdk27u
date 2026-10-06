@@ -33,6 +33,7 @@
 #include "memory/padded.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/arrayKlass.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomicAccess.hpp"
@@ -650,7 +651,11 @@ NOINLINE static uint64_t static_archive_hash_input(oop obj) {
   if (java_lang_Class::is_instance(obj)) {
     Klass* klass = java_lang_Class::as_Klass(obj);
     if (klass == nullptr) {
-      return static_cast<uint32_t>(java_lang_Class::as_BasicType(obj));
+      // Hash expansion also runs during GC, before global mirror handles are fixed.
+      // Read the stable array metadata instead of resolving those handles.
+      Klass* array_klass = java_lang_Class::array_klass_acquire(obj);
+      BasicType type = array_klass == nullptr ? T_VOID : ArrayKlass::cast(array_klass)->element_type();
+      return static_cast<uint32_t>(type);
     }
     Symbol* name = klass->name();
     return java_lang_String::hash_code(reinterpret_cast<const jbyte*>(name->bytes()), name->utf8_length());
