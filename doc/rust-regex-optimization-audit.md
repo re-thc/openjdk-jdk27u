@@ -34,9 +34,9 @@ Linux x86_64, Xeon Platinum 8573C, one pinned CPU. Three reordered processes per
 
 ThinLTO improves some capture cases but slows prefix misses and late captures. Full DFA construction improves some searches while making SSN-miss construction about 3x more expensive (282 to 855 microseconds) and slowing that search. The backtracker slows the email cases and would also require accounting for its visited bitmap/stack before enabling it. A larger lazy cache has mixed search results and increases growth allowances. None provides a broad gain that justifies applying it to every Pattern in this sample.
 
-An end-to-end run of the checked-in script completed another 165 records; [reproduction data](rust-regex-optimization-audit-reproduction.jsonl) are recorded separately. Several small differences and some backtracker results changed direction, illustrating shared-host variation. ThinLTO still slowed prefix misses, nullable captures and greedy alternation; the full DFA showed a larger long-digit gain in this repetition. These are candidates for pattern-specific follow-up with complete Java lifetimes, rather than evidence for enabling every engine globally. The reproduction uses a single linker thread to accommodate this host's process quota; this changes no runtime engine setting.
-
-The current 32 KiB lazy cache, bounded NFA/one-pass construction, disabled full DFA/backtracker, and 64 MiB aggregate accounting ceiling are retained. Pattern-specific selection may be useful later, with longer lifetime/concurrency measurements and memory accounting for each enabled engine. A larger cache or aborting panics is not a free optimization.
+The 32 KiB lazy cache, bounded NFA/one-pass construction, disabled full
+DFA/backtracker, and 64 MiB aggregate accounting ceiling are retained.
+The sample does not support a global change to these options.
 
 ## Reproduction
 
@@ -44,4 +44,6 @@ The current 32 KiB lazy cache, bounded NFA/one-pass construction, disabled full 
 python3 make/scripts/benchmark-rust-regex-options.py --output build/rust-regex-option-audit
 ```
 
-The script builds serially with `cargo build --frozen --release`, changes only temporary copies, pins benchmark children where supported, and writes raw JSONL records. [Recorded measurements](rust-regex-optimization-audit.jsonl) contain all 165 process/case records. The production source baseline is `a56d1e6fa9a92c00031902e311b2c351ad2ea60d`; the adapter and its release configuration are unchanged by the end-state review fixes. Java end-state and large-input improvements are measured separately in [the review results](rust-regex-end-flags-results.md).
+The script builds serially with `cargo build --frozen --release`, changes only temporary copies, pins benchmark children where supported, and writes raw JSONL records. [Recorded measurements](rust-regex-optimization-audit.jsonl) contain all 165 process/case records. The native adapter and release configuration used for these measurements are
+unchanged by the Java short-plan and end-state changes. End-to-end costs are
+measured in [the performance report](rust-regex-performance.md).

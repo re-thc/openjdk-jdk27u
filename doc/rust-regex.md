@@ -38,6 +38,8 @@ a compact specialization containing only the prefix and capture indices. It
 handles searches of up to 256 characters and checks the first candidate of
 longer searches. Numeric runs return to Rust after 256 characters on short
 inputs or 32 characters on larger inputs.
+Digit-only searches skip nondigits directly and read each digit once. Inputs
+shorter than the required prefix plus one digit reject immediately.
 Literal searches respect the region end, including small regions within large
 Strings. The tiny candidate helper is forced inline; full-input searches retain
 the existing String search path.
@@ -162,7 +164,7 @@ literal/SIMD prefilters, lazy DFAs, one-pass captures, reusable engines and
 separate mutable search caches are enabled. Release builds use optimization
 level 3 and one codegen unit. Options with mixed performance or greater memory
 cost remain deliberately disabled; the audit includes a portable offline script
-and raw measurements.
+and native measurements.
 
 ## Tests and measurements
 
@@ -197,12 +199,6 @@ cannot silently substitute Java for the native compiler being measured.
 Cross compilation/emulation is functional coverage; AArch64
 performance requires real hardware.
 
-The [native-primary results](rust-regex-native-results.md) include paired tables,
-raw JMH data, commands, compilation costs and remaining losses. The
-[validation transcript](rust-regex-native-validation.txt) distinguishes direct
-test coverage from the local jtreg launcher failure.
-The [end-state review results](rust-regex-end-flags-results.md) record the newer
-module declaration fix, end-state/large-input changes and their validation.
-
-Earlier rejection-filter benchmark documents describe a superseded design;
-their measurements must not be attributed to this primary engine.
+The [performance report](rust-regex-performance.md) compares short inputs by
+regex shape and tier, end-state queries, and complete Pattern lifetimes.
+It includes the benchmark protocol, limitations and routing decisions.
