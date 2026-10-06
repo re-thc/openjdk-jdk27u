@@ -36,7 +36,8 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class FourByteHeaderClassSpace extends ClassLoader {
-    static FourByteHeaderClassSpace loader;
+    static final int CLASSES_PER_LOADER = 4096;
+    static FourByteHeaderClassSpace[] loaders;
     static byte[] reserve = new byte[65536];
     static byte[] template() throws Exception {
         var bytes = new ByteArrayOutputStream();
@@ -52,7 +53,10 @@ public class FourByteHeaderClassSpace extends ClassLoader {
         return bytes.toByteArray();
     }
     static void load() throws Exception {
-        loader = new FourByteHeaderClassSpace();
+        // Keep each loader's metadata lists bounded so debug verification
+        // remains affordable while exhausting the global compressed class space.
+        loaders = new FourByteHeaderClassSpace[600000 / CLASSES_PER_LOADER + 1];
+        FourByteHeaderClassSpace loader = null;
         byte[] bytes = template();
         // Initialize printing before exhausting metadata; string concatenation
         // would otherwise link a new invokedynamic call site inside the handler.
@@ -61,6 +65,10 @@ public class FourByteHeaderClassSpace extends ClassLoader {
         int count = 0;
         try {
             for (; count < 600000; count++) {
+                if (count % CLASSES_PER_LOADER == 0) {
+                    loader = new FourByteHeaderClassSpace();
+                    loaders[count / CLASSES_PER_LOADER] = loader;
+                }
                 int value = count;
                 for (int digit = 21; digit >= 14; digit--) {
                     bytes[digit] = (byte) ('0' + value % 10);
@@ -82,6 +90,9 @@ public class FourByteHeaderClassSpace extends ClassLoader {
         if (args.length != 0) { load(); return; }
         new OutputAnalyzer(ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+UnlockExperimentalVMOptions", "-XX:+UseFourByteObjectHeaders",
+                // Avoid repeated C2 dependency scans of half a million new
+                // subclasses. This test exercises class-space encoding and exhaustion.
+                "-Xint",
                 "-XX:+UseSerialGC", "-XX:-ClassUnloading", "-Xshare:off", "-Xmx1g",
                 "-XX:CompressedClassSpaceSize=1g", FourByteHeaderClassSpace.class.getName(), "load").start())
                 .shouldHaveExitValue(0).shouldContain("Controlled compressed class space exhaustion").outputTo(System.out);
