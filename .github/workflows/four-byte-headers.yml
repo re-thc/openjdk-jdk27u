@@ -17,7 +17,7 @@ permissions:
 
 concurrency:
   group: four-byte-headers-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   prepare:
@@ -80,6 +80,7 @@ jobs:
           SYMBOLS_IMAGE_DIR: ${{ steps.bundles.outputs.symbols-path }}
           TEST_IMAGE_DIR: ${{ steps.bundles.outputs.tests-path }}
         run: |
+          ulimit -c unlimited
           flags='-XX:-CreateCoredumpOnCrash -Xmx512m'
           case "$LAYOUT" in
             four4) flags="$flags -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders" ;;
@@ -89,6 +90,8 @@ jobs:
           [[ $SUITE != hotspot ]] || root=test/hotspot/jtreg
           make test-prebuilt TEST="$root/:tier1 $root/:tier2" \
             JTREG="JAVA_OPTIONS=$flags;VERBOSE=fail,error,time;KEYWORDS=!headful;TIMEOUT_FACTOR=4;JOBS=2"
+          # test-prebuilt records test failures in this marker, not its exit code.
+          test ! -f build/run-test-prebuilt/make-support/exit-with-error
       - uses: actions/upload-artifact@v6
         if: always()
         with:
@@ -140,9 +143,11 @@ jobs:
             legacy12) flags="$flags -XX:-UseCompactObjectHeaders" ;;
           esac
           make test-prebuilt TEST='gtest:all' GTEST="JAVA_OPTIONS=$flags"
+          test ! -f build/run-test-prebuilt/make-support/exit-with-error
           make test-prebuilt \
-            TEST='test/hotspot/jtreg/runtime/CompactObjectHeaders test/hotspot/jtreg/gc/stress/ihash test/jdk/java/lang/instrument/FourByteHeaderObjectSize.java' \
+            TEST='test/hotspot/jtreg/runtime/CompactObjectHeaders test/hotspot/jtreg/gc/stress/ihash test/jdk/java/lang/instrument/FourByteHeaderObjectSize.java test/hotspot/jtreg/compiler/intrinsics/base64/TestBase64.java test/hotspot/jtreg/compiler/intrinsics/string/TestStringIntrinsics.java' \
             JTREG="JAVA_OPTIONS=$flags;VERBOSE=fail,error,time;TIMEOUT_FACTOR=4;JOBS=2"
+          test ! -f build/run-test-prebuilt/make-support/exit-with-error
       - uses: actions/upload-artifact@v6
         if: always()
         with:
