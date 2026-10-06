@@ -83,20 +83,20 @@ jobs:
         run: |
           bash configure --with-conf-name=zip-review --with-boot-jdk="$BOOT_JDK" --with-zlib=system --with-debug-level=release --with-native-debug-symbols=none --with-jmod-compress=zip-1 --with-sysroot="$PWD/validation/sysroot"
           make CONF=zip-review JOBS=4 images
-          cp build/zip-review/spec.gmk validation/probe-spec.gmk
-          echo "CFLAGS_JDKLIB += -include zip_sysroot_probe.h" >> validation/probe-spec.gmk
-          make -j4 -I make/modules/java.base -f make/modules/java.base/Lib.gmk SPEC="$PWD/validation/probe-spec.gmk" MODULE=java.base "$PWD/build/zip-review/support/modules_libs/java.base/libzip.so"
+          cp build/zip-review/spec.gmk validation/results/spec-before-probe.gmk
+          echo "CFLAGS_JDKLIB += -include zip_sysroot_probe.h" >> build/zip-review/spec.gmk
+          make CONF=zip-review JOBS=4 java.base-libs-only
           cp build/zip-review/support/modules_libs/java.base/libzip.so build/zip-review/images/jdk/lib/
           grep -- "-include zip_sysroot_probe.h" build/zip-review/support/native/zlib-ng/Makefile
           grep -- "$PWD/validation/sysroot" build/zip-review/support/native/zlib-ng/Makefile
-          cp validation/probe-spec.gmk validation/results/probe-spec.gmk
+          cp build/zip-review/spec.gmk validation/results/probe-spec.gmk
           cp build/zip-review/spec.gmk validation/results/spec.gmk
           cp build/zip-review/support/native/zlib-ng/Makefile validation/results/ng-Makefile
           build/zip-review/images/jdk/bin/java -XX:+PrintFlagsFinal -version > validation/results/default-flags.txt 2>&1
       - uses: actions/cache/save@v4
         with:
           path: build/zip-review/images/jdk
-          key: zip-review-image-v2-${{ matrix.platform }}-${{ github.sha }}
+          key: zip-review-image-v3-${{ matrix.platform }}-${{ github.sha }}
       - name: Run ZIP jtreg, GC and JNI checks
         run: python3 .github/scripts/validate-zip-backend.py tests --jdk build/zip-review/images/jdk --jtreg jtreg/installed
       - name: Qualify independent defaults in interpreter, C1 and C2
