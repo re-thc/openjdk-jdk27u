@@ -37,7 +37,7 @@ for name in ['scrabble','scala-doku']:
         change=[0,0,0] if layout=='baseline8' else comparison(values['baseline8'],values[layout])
         rows.append(['Serial',name,layout,12,stats.mean(values[layout]),*change])
 with (root/'app-summary.csv').open('w',newline='') as stream:
-    writer=csv.writer(stream)
+    writer=csv.writer(stream, lineterminator="\n")
     writer.writerow(['gc','workload','layout','forks','mean_ms','change_percent','change_95ci_low','change_95ci_high'])
     writer.writerows(rows)
 for row in rows: print(row)

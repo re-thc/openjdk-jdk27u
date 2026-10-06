@@ -37,7 +37,7 @@ for gc, benchmark in [('Serial','identityMapLookup'),('Z','storedHash')]:
         change=[0,0,0] if layout=='baseline8' else comparison(values['baseline8'],values[layout])
         rows.append([gc,benchmark,layout,6,stats.mean(values[layout]),*change])
 with (root/'read-summary.csv').open('w',newline='') as stream:
-    writer=csv.writer(stream)
+    writer=csv.writer(stream, lineterminator="\n")
     writer.writerow(['gc','benchmark','layout','forks','mean_ns','change_percent','change_95ci_low','change_95ci_high'])
     writer.writerows(rows)
 for row in rows: print(row)
