@@ -26,7 +26,11 @@ bash doc/benchmarks/four-byte-headers/run.sh memory
 bash doc/benchmarks/four-byte-headers/run.sh jmh
 bash doc/benchmarks/four-byte-headers/run.sh renaissance
 bash doc/benchmarks/four-byte-headers/run.sh startup
+python3 doc/benchmarks/four-byte-headers/summarize.py "$RESULTS_DIR"
 ```
+
+The analyzer requires Python 3 and SciPy (the recorded run used SciPy 1.17.0).
+It rejects incomplete workload, layout, collector, fork and iteration matrices.
 
 Each mode compares the original eight-byte default with candidate eight-byte,
 twelve-byte and four-byte layouts under Serial, G1 and ZGC. Timed JVMs use
@@ -89,3 +93,15 @@ done
 The actors race the first identity hash with synchronized updates while
 allocating garbage. The arbiter rejects hash changes and lost field updates.
 This supplements the jtreg relocation and concurrent-hash tests.
+
+To investigate first-hash timing separately, run the balanced-order recheck
+after the main suite has finished:
+
+```sh
+bash doc/benchmarks/four-byte-headers/repeat-first-hash.sh
+python3 doc/benchmarks/four-byte-headers/summarize.py "$RESULTS_DIR"
+```
+
+It runs six independent forks for baseline, default and four-byte layouts
+under each required collector. The six possible configuration orders each
+run once. This preserves all results while reducing fixed-order effects.

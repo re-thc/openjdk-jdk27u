@@ -19,7 +19,8 @@ layouts = ("baseline8", "default8", "legacy12", "four4")
 collectors = ("Serial", "G1", "Z")
 
 for pattern, expected in (("memory-*.json", 12), ("footprint-*.json", 12),
-                          ("jmh-*.json", 12), ("perf-*.json", 36)):
+                          ("jmh-*.json", 12), ("perf-*.json", 36),
+                          ("hash-*.json", 54)):
     files = list(root.glob(pattern))
     if files and len(files) != expected:
         raise ValueError(f"Incomplete {pattern} matrix: {len(files)} of {expected} files")
@@ -112,6 +113,25 @@ for gc in collectors:
                 micro.append([gc, name, layout, len(b), metric["score"], metric["scoreError"],
                               allocation, *change])
 
+hash_check = []
+if list(root.glob("hash-*.json")):
+    for gc in collectors:
+        forks = {}
+        for layout in ("baseline8", "default8", "four4"):
+            values = []
+            for fork in range(1, 7):
+                data = read(f"hash-{layout}-{gc}-{fork}.json")
+                if not data or len(data) != 1 or not data[0]["benchmark"].endswith(".firstHash"):
+                    raise ValueError(f"Invalid first-hash result for {layout}/{gc}/{fork}")
+                samples = data[0]["primaryMetric"]["rawData"]
+                if len(samples) != 1 or len(samples[0]) != 5:
+                    raise ValueError("Expected one fork with five first-hash measurements")
+                values.append(stats.mean(samples[0]))
+            forks[layout] = values
+        for layout, values in forks.items():
+            change = [0, 0, 0] if layout == "baseline8" else comparison(forks["baseline8"], values)
+            hash_check.append([gc, layout, len(values), stats.mean(values), *change])
+
 path = root / "startup.csv"
 if path.exists():
     samples = {}
@@ -130,5 +150,6 @@ write("footprint-summary.csv", ["gc", "layout", "objects", "unhashed_graph_bytes
 write("renaissance-summary.csv", ["gc", "workload", "layout", "forks", "mean_ms", "change_percent", "change_95ci_low", "change_95ci_high"], timing)
 write("jmh-summary.csv", ["gc", "benchmark", "layout", "forks", "mean_ns", "jmh_99_9ci_error_ns", "bytes_per_op", "change_percent", "change_95ci_low", "change_95ci_high"], micro)
 write("startup-summary.csv", ["gc", "layout", "forks", "median_ms", "p95_ms"], startup)
+write("hash-summary.csv", ["gc", "layout", "forks", "mean_ns", "change_percent", "change_95ci_low", "change_95ci_high"], hash_check)
 print("Rows:", "memory", len(memory), "footprint", len(footprint), "renaissance", len(timing),
       "JMH", len(micro), "startup", len(startup))
