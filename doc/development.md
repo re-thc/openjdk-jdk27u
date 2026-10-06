@@ -36,8 +36,13 @@ sets `java.awt.headless=true` and excludes `headful` tests on every target.
 Headless Java2D and font rendering remain supported and tested.
 
 CI builds both release and fastdebug images and keeps all twelve existing
-tier1 test shards per target, including native GTests. Collector tests use
-jtreg's existing `@requires` checks to skip collectors absent from the image.
+tier1 test shards per target, including native GTests.
+The macOS ARM64 serviceability shard runs one jtreg worker to leave memory
+for its debugger/debuggee processes and the runner on the 7 GiB host.
+All tests in that shard still run.
+
+Collector tests use jtreg's existing `@requires` checks to skip collectors absent
+from the image.
 Mixed-collector CDS, compressed-oop and management tests check Parallel
 availability. Generic non-G1 archive and compiler regression tests use Serial;
 Parallel-specific heap-monitor and JFR tests require Parallel support. The
