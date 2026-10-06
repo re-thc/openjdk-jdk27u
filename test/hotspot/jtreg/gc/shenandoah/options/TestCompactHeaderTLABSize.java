@@ -23,10 +23,10 @@
 
 /*
  * @test id=compact-headers
- * @summary With compact object headers the max TLAB size must be strictly below a
+ * @summary With four-byte object headers the max TLAB size must be strictly below a
  *          region, so a region-sized object can never be served from a TLAB (which
  *          would bypass the humongous path). The cap is only observable indirectly:
- *          a region-sized -XX:TLABSize is rejected at startup under compact headers,
+ *          a region-sized -XX:TLABSize is rejected at startup under four-byte headers,
  *          but accepted without them (where the max TLAB equals the region size).
  * @bug 8387285
  * @requires vm.gc.Shenandoah
@@ -46,13 +46,13 @@ public class TestCompactHeaderTLABSize {
     static final String REGION_SIZE = "256K";
 
     public static void main(String[] args) throws Exception {
-        // With compact object headers, the max TLAB is capped one word below the
+        // With four-byte object headers, the max TLAB is capped one word below the
         // region, so requesting a region-sized TLAB must be rejected at startup.
         OutputAnalyzer coh = ProcessTools.executeLimitedTestJava(
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+UseShenandoahGC",
-                "-XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders",
+                "-XX:+UseFourByteObjectHeaders",
                 "-XX:ShenandoahRegionSize=" + REGION_SIZE,
                 "-XX:TLABSize=" + REGION_SIZE,
                 "-Xmx512m",
@@ -60,7 +60,7 @@ public class TestCompactHeaderTLABSize {
         coh.shouldContain("must be less than or equal to ergonomic TLAB maximum size");
         coh.shouldHaveExitValue(1);
 
-        // Without compact object headers there is no hash-code expansion, so the max
+        // Without four-byte object headers there is no hash-code expansion, so the max
         // TLAB equals the region size and the same region-sized TLAB is accepted.
         OutputAnalyzer noCoh = ProcessTools.executeLimitedTestJava(
                 "-XX:+UnlockExperimentalVMOptions",
@@ -73,13 +73,13 @@ public class TestCompactHeaderTLABSize {
                 "-version");
         noCoh.shouldHaveExitValue(0);
 
-        // Under compact headers, a TLAB one word below the region is still accepted:
+        // Under four-byte headers, a TLAB one word below the region is still accepted:
         // the cap is exactly one (object-aligned) word, not an arbitrary reduction.
         OutputAnalyzer atCap = ProcessTools.executeLimitedTestJava(
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+UseShenandoahGC",
-                "-XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders",
+                "-XX:+UseFourByteObjectHeaders",
                 "-XX:ShenandoahRegionSize=" + REGION_SIZE,
                 "-XX:TLABSize=" + (256 * 1024 - 8), // one HeapWord below the region
                 "-Xmx512m",
