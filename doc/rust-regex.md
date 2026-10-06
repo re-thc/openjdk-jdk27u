@@ -78,7 +78,7 @@ In-flight native calls retain their wrapper until completion.
 ## Memory and lifetime
 
 A cache retains at most 256 expression/flag keys and weak native-engine values.
-Identical live Patterns share an immutable engine; weak values do not keep it
+Identical live Patterns can share an immutable engine; weak values do not keep it
 alive after the owners disappear. Unsupported syntax decisions are cached;
 allocation failures remain retryable for newly compiled Patterns. Concurrent
 cold misses can build duplicates, both charged to the budget.
@@ -165,10 +165,16 @@ Pattern contention. Its shared/cold/distinct parameter distinguishes a live
 shared engine, a collected previous owner of the same expression, and new
 expressions. Compare each tier with -XX:-UseRustRegex and JNI-only mode.
 Cold and distinct measurements collect before each invocation
-outside the timed operation; optional backend assertions ensure budget pressure
+outside the timed operation; Cleaner completion is not synchronized and its
+asynchronous work can overlap measurement. Optional backend assertions ensure budget pressure
 cannot silently substitute Java for the native compiler being measured.
 Cross compilation/emulation is functional coverage; AArch64
 performance requires real hardware.
+
+The [native-primary results](rust-regex-native-results.md) include paired tables,
+raw JMH data, commands, compilation costs and remaining losses. The
+[validation transcript](rust-regex-native-validation.txt) distinguishes direct
+test coverage from the local jtreg launcher failure.
 
 Earlier rejection-filter benchmark documents describe a superseded design;
 their measurements must not be attributed to this primary engine.

@@ -1,0 +1,3880 @@
+[
+  {
+    "tier": "C1",
+    "experiment": "anchored",
+    "params": {
+      "length": "4096",
+      "operation": "lookingAt",
+      "scenario": "fullHit"
+    },
+    "java": 27056.905638371543,
+    "default": 11961.419961007494,
+    "speedup": 2.262014520564712,
+    "java_range": [
+      27021.48669940085,
+      27091.90129691888
+    ],
+    "default_range": [
+      11908.176692151346,
+      12014.959119478395
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "anchored",
+    "params": {
+      "length": "4096",
+      "operation": "lookingAt",
+      "scenario": "miss"
+    },
+    "java": 56.379364659867264,
+    "default": 71.71685869662346,
+    "speedup": 0.7861382342241614,
+    "java_range": [
+      55.71746267395749,
+      57.00268493529638
+    ],
+    "default_range": [
+      70.64954212753358,
+      72.36949019325677
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "anchored",
+    "params": {
+      "length": "4096",
+      "operation": "matches",
+      "scenario": "fullHit"
+    },
+    "java": 27252.503008794327,
+    "default": 11889.289658720527,
+    "speedup": 2.2921893394030675,
+    "java_range": [
+      26574.067106990526,
+      27641.515590338076
+    ],
+    "default_range": [
+      11843.618072882678,
+      11949.302274221265
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "anchored",
+    "params": {
+      "length": "4096",
+      "operation": "matches",
+      "scenario": "miss"
+    },
+    "java": 50.59185220001488,
+    "default": 66.11622020128767,
+    "speedup": 0.7651957726256946,
+    "java_range": [
+      46.27132682898131,
+      53.33608583463754
+    ],
+    "default_range": [
+      65.40518627424963,
+      66.72912798122856
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "anchored",
+    "params": {
+      "length": "64",
+      "operation": "lookingAt",
+      "scenario": "fullHit"
+    },
+    "java": 467.64341423511627,
+    "default": 133.00341625926328,
+    "speedup": 3.5160255833093785,
+    "java_range": [
+      465.56084625719586,
+      470.7669286337917
+    ],
+    "default_range": [
+      131.48968187536158,
+      134.99244939919012
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "anchored",
+    "params": {
+      "length": "64",
+      "operation": "lookingAt",
+      "scenario": "miss"
+    },
+    "java": 56.22734195669502,
+    "default": 71.2644095343114,
+    "speedup": 0.7889961107391686,
+    "java_range": [
+      55.09740994143621,
+      57.17056583429147
+    ],
+    "default_range": [
+      70.69455161073154,
+      72.3444409240645
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "anchored",
+    "params": {
+      "length": "64",
+      "operation": "matches",
+      "scenario": "fullHit"
+    },
+    "java": 472.73647502688954,
+    "default": 129.11222835024753,
+    "speedup": 3.661438432806533,
+    "java_range": [
+      463.55281726400494,
+      477.6205347497576
+    ],
+    "default_range": [
+      128.1439676187118,
+      130.02832138609796
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "anchored",
+    "params": {
+      "length": "64",
+      "operation": "matches",
+      "scenario": "miss"
+    },
+    "java": 53.033287077922566,
+    "default": 72.80500962683982,
+    "speedup": 0.7284290923075665,
+    "java_range": [
+      52.64628472211502,
+      53.75807271250988
+    ],
+    "default_range": [
+      70.20705669557572,
+      76.41330244790164
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "contention",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "alternating",
+      "threads": "4"
+    },
+    "java": 312.0246050178718,
+    "default": 362.84908268528943,
+    "speedup": 0.8599294304637961,
+    "java_range": [
+      269.0864895475113,
+      376.63182210693896
+    ],
+    "default_range": [
+      295.52100693877554,
+      491.11582278375937
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "contention",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "miss",
+      "threads": "4"
+    },
+    "java": 376.379873141452,
+    "default": 410.37585075082217,
+    "speedup": 0.9171589226140591,
+    "java_range": [
+      356.3321705319149,
+      392.0058533006536
+    ],
+    "default_range": [
+      311.24325365646257,
+      474.98070370370374
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "contention",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "alternating",
+      "threads": "4"
+    },
+    "java": 211.00916272988422,
+    "default": 100.06617692138259,
+    "speedup": 2.10869615710076,
+    "java_range": [
+      141.85520402670576,
+      348.79080316189874
+    ],
+    "default_range": [
+      51.094339055262175,
+      196.47611946399533
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "contention",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "miss",
+      "threads": "4"
+    },
+    "java": 157.2858504983343,
+    "default": 125.48279752123378,
+    "speedup": 1.253445520862881,
+    "java_range": [
+      155.26581773218035,
+      160.8756022874688
+    ],
+    "default_range": [
+      77.72589290816569,
+      218.19105963794436
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "contention",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "alternating",
+      "threads": "4"
+    },
+    "java": 267.6410212075376,
+    "default": 392.8592802031233,
+    "speedup": 0.6812643475525306,
+    "java_range": [
+      226.38337398373983,
+      337.48510975609753
+    ],
+    "default_range": [
+      310.66794166666665,
+      497.85298288058857
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "contention",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "miss",
+      "threads": "4"
+    },
+    "java": 279.5209822684156,
+    "default": 496.4436129389833,
+    "speedup": 0.5630467891683216,
+    "java_range": [
+      218.76686511627906,
+      313.1425533698328
+    ],
+    "default_range": [
+      375.6108903846154,
+      689.5677270723104
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "contention",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "alternating",
+      "threads": "4"
+    },
+    "java": 128.1410119049375,
+    "default": 48.627039718556176,
+    "speedup": 2.6351801928843024,
+    "java_range": [
+      76.29285307636876,
+      226.68887737571967
+    ],
+    "default_range": [
+      43.73781530971579,
+      53.28225379852091
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "contention",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "miss",
+      "threads": "4"
+    },
+    "java": 198.3681197256161,
+    "default": 49.94398201689262,
+    "speedup": 3.9718122527459223,
+    "java_range": [
+      99.73888377948686,
+      382.5816481769623
+    ],
+    "default_range": [
+      46.505127677350885,
+      54.53594313662893
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "controls",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "flags"
+    },
+    "java": 55463.3344946246,
+    "default": 661.1296238902031,
+    "speedup": 83.891770222409,
+    "java_range": [
+      48574.704922902514,
+      61098.30697622999
+    ],
+    "default_range": [
+      645.7763955473644,
+      690.3228858295861
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "controls",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "literal"
+    },
+    "java": 5025.162687609522,
+    "default": 4548.720931155691,
+    "speedup": 1.1047419183688594,
+    "java_range": [
+      4558.9553175569645,
+      5715.1467226695995
+    ],
+    "default_range": [
+      4461.288832453237,
+      4610.157694226676
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "controls",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "unsupported"
+    },
+    "java": 51783.22794886408,
+    "default": 54012.21920680901,
+    "speedup": 0.9587317223643361,
+    "java_range": [
+      48517.4101261933,
+      54954.8830153801
+    ],
+    "default_range": [
+      51187.34601766969,
+      58450.13650831298
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "controls",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "utf16"
+    },
+    "java": 7565.28235589777,
+    "default": 6856.769233660296,
+    "speedup": 1.1033304604680787,
+    "java_range": [
+      6705.184932799446,
+      8219.283762891375
+    ],
+    "default_range": [
+      6661.96626291978,
+      7002.3717269054905
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "controls",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "flags"
+    },
+    "java": 755.6788430058464,
+    "default": 118.3063695286695,
+    "speedup": 6.387473861436688,
+    "java_range": [
+      728.210927057749,
+      775.2714654218826
+    ],
+    "default_range": [
+      112.38247577032047,
+      128.42658456891772
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "controls",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "literal"
+    },
+    "java": 82.53602057455045,
+    "default": 86.19338009190432,
+    "speedup": 0.9575679766421251,
+    "java_range": [
+      80.16081768163185,
+      84.64023839504056
+    ],
+    "default_range": [
+      81.7304148926964,
+      93.81148399917447
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "controls",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "unsupported"
+    },
+    "java": 853.0185004931642,
+    "default": 768.5442357601338,
+    "speedup": 1.1099146422580095,
+    "java_range": [
+      742.7713265131874,
+      1018.6711574082483
+    ],
+    "default_range": [
+      759.1975625610712,
+      782.8813187097688
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "controls",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "utf16"
+    },
+    "java": 176.5169126671522,
+    "default": 133.91254839966825,
+    "speedup": 1.3181506496338882,
+    "java_range": [
+      123.18147708119541,
+      281.08018513150904
+    ],
+    "default_range": [
+      131.82870523256065,
+      137.49641030196105
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "1",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 55.91036174517347,
+    "default": 117.72185226163444,
+    "speedup": 0.47493613692820447,
+    "java_range": [
+      53.93536262077294,
+      58.06374750652236
+    ],
+    "default_range": [
+      116.83164875107666,
+      119.34366666666666
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "1",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 47.937961480312104,
+    "default": 47.9917135469195,
+    "speedup": 0.9988799719235938,
+    "java_range": [
+      45.77021926713948,
+      50.67640471070149
+    ],
+    "default_range": [
+      42.344277338603426,
+      51.177082142734776
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "1",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 82.22236943573154,
+    "default": 135.06435890505682,
+    "speedup": 0.6087643705733617,
+    "java_range": [
+      62.63870803782506,
+      107.64655205205206
+    ],
+    "default_range": [
+      125.69649043927649,
+      147.29343000387146
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "1",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 8.808137080166276,
+    "default": 0.5761840612986483,
+    "speedup": 15.287019672695934,
+    "java_range": [
+      7.6894476970139705,
+      9.78797858273348
+    ],
+    "default_range": [
+      0.5675229331035997,
+      0.5832164940090085
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "1",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 0.7619577923921212,
+    "default": 0.3720067949802743,
+    "speedup": 2.048236222224178,
+    "java_range": [
+      0.7017280958718765,
+      0.8760810142637189
+    ],
+    "default_range": [
+      0.3586404856535701,
+      0.3856940536450974
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "1",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 8.449882576545155,
+    "default": 0.5531431111136557,
+    "speedup": 15.276123677167043,
+    "java_range": [
+      7.620774056688975,
+      9.522008465769312
+    ],
+    "default_range": [
+      0.5367621088514881,
+      0.572878453890779
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "10",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 108.35520260119996,
+    "default": 133.07156424016824,
+    "speedup": 0.8142626354465927,
+    "java_range": [
+      83.80921244019139,
+      156.84682226399332
+    ],
+    "default_range": [
+      119.99532646168181,
+      142.41815139652468
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "10",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 117.71947433925723,
+    "default": 133.6294928227072,
+    "speedup": 0.8809393185038982,
+    "java_range": [
+      110.97584064327486,
+      127.82867333105492
+    ],
+    "default_range": [
+      124.5172996107666,
+      138.44278076370946
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "10",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 115.42996844343509,
+    "default": 134.75551619402046,
+    "speedup": 0.8565880767154606,
+    "java_range": [
+      112.71221123210326,
+      117.2425804004962
+    ],
+    "default_range": [
+      132.21254691358024,
+      139.67656314699792
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "10",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 36.220707484478886,
+    "default": 2.6555108265914873,
+    "speedup": 13.639826703689403,
+    "java_range": [
+      36.014631433216444,
+      36.41577151654679
+    ],
+    "default_range": [
+      2.156084179479448,
+      3.654295197378689
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "10",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 65.6435927355467,
+    "default": 3.2686326567088955,
+    "speedup": 20.082890807816135,
+    "java_range": [
+      63.557921322106004,
+      69.58265038177188
+    ],
+    "default_range": [
+      2.796790491820151,
+      3.7709161395960114
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "10",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 70.66241407724682,
+    "default": 2.970921378006589,
+    "speedup": 23.784679931402113,
+    "java_range": [
+      70.3533515730751,
+      71.20048309325425
+    ],
+    "default_range": [
+      2.896590901096776,
+      3.0295782292437656
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "16",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 106.78872562086953,
+    "default": 122.10418114731273,
+    "speedup": 0.8745705889631589,
+    "java_range": [
+      101.04687481021394,
+      115.06701587301586
+    ],
+    "default_range": [
+      116.41704708097927,
+      130.56626574487066
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "16",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 154.47607649538892,
+    "default": 125.46963739459326,
+    "speedup": 1.231182935593991,
+    "java_range": [
+      146.75118237075492,
+      163.53070033670033
+    ],
+    "default_range": [
+      119.02100521522385,
+      134.93453072100314
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "16",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 161.57884315954544,
+    "default": 119.94357692929105,
+    "speedup": 1.3471237668257896,
+    "java_range": [
+      154.6384870446133,
+      172.95393323862072
+    ],
+    "default_range": [
+      114.19132222222221,
+      125.62364010990707
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "16",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 57.76487552684641,
+    "default": 3.3107433974844227,
+    "speedup": 17.447705421911422,
+    "java_range": [
+      56.5766423772908,
+      59.50172254180376
+    ],
+    "default_range": [
+      3.2723761907720035,
+      3.3722293058501314
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "16",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 110.2769997803877,
+    "default": 4.527287155029402,
+    "speedup": 24.358295819137524,
+    "java_range": [
+      106.83367097901265,
+      115.86913946093169
+    ],
+    "default_range": [
+      4.244730761341912,
+      5.063209048170979
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "16",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 113.7823002488093,
+    "default": 4.573807396645642,
+    "speedup": 24.876933019141873,
+    "java_range": [
+      112.59517445348497,
+      116.08281765034525
+    ],
+    "default_range": [
+      4.474497915604894,
+      4.66828821580526
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 166.00476593248547,
+    "default": 129.44916348528474,
+    "speedup": 1.282393500761063,
+    "java_range": [
+      153.24501066468255,
+      180.74626084224792
+    ],
+    "default_range": [
+      126.49292936507936,
+      133.06830609984925
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 327.090362987556,
+    "default": 139.50872740226,
+    "speedup": 2.344587102743919,
+    "java_range": [
+      268.5339268136011,
+      441.65660574590896
+    ],
+    "default_range": [
+      128.4349131881428,
+      158.79580292668325
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 302.9798008911022,
+    "default": 136.30423836610484,
+    "speedup": 2.2228201009958104,
+    "java_range": [
+      263.7512994727047,
+      374.92387782084415
+    ],
+    "default_range": [
+      122.56550752239794,
+      157.53045736706113
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 124.3101636221708,
+    "default": 6.304175166087299,
+    "speedup": 19.718703929878934,
+    "java_range": [
+      112.88564353013174,
+      145.48474395364963
+    ],
+    "default_range": [
+      6.289742604339092,
+      6.332145187232893
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 294.43206202102044,
+    "default": 8.564854810299588,
+    "speedup": 34.37677211608466,
+    "java_range": [
+      217.00443724413458,
+      445.50128788015326
+    ],
+    "default_range": [
+      8.358494309402715,
+      8.787608556809166
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 310.6260407959269,
+    "default": 9.031088882475954,
+    "speedup": 34.3951925219859,
+    "java_range": [
+      224.05656926944843,
+      473.6624185498847
+    ],
+    "default_range": [
+      8.607768887304918,
+      9.785172422614727
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "8",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 78.66627955055803,
+    "default": 118.18928415057977,
+    "speedup": 0.6655957019786395,
+    "java_range": [
+      76.58631495994426,
+      80.42967482167332
+    ],
+    "default_range": [
+      115.3149657477026,
+      120.81457027817862
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "8",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 104.37965111324836,
+    "default": 123.37065382198895,
+    "speedup": 0.8460654773205414,
+    "java_range": [
+      96.96198000472562,
+      115.96420955165691
+    ],
+    "default_range": [
+      120.97549924242423,
+      125.87607782399157
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "8",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 109.55969233226094,
+    "default": 119.26818632888795,
+    "speedup": 0.9185994665010219,
+    "java_range": [
+      105.56859549218306,
+      114.43188890804596
+    ],
+    "default_range": [
+      116.00088793596342,
+      122.54501258741259
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "8",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 30.65140795072489,
+    "default": 1.8088637406995618,
+    "speedup": 16.945117125776836,
+    "java_range": [
+      29.72612035607138,
+      31.423375209262975
+    ],
+    "default_range": [
+      1.7522749896968504,
+      1.8683576300761127
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "8",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 54.210576615134535,
+    "default": 2.234157332919907,
+    "speedup": 24.26444002682865,
+    "java_range": [
+      49.07841847894391,
+      57.38210174503508
+    ],
+    "default_range": [
+      2.1995962067463806,
+      2.2630601938275654
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "8",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 57.380975558044895,
+    "default": 2.495703247359262,
+    "speedup": 22.991906437097636,
+    "java_range": [
+      57.035245772463355,
+      57.68405108506542
+    ],
+    "default_range": [
+      2.4223289917050064,
+      2.639889844661787
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 84.4083675484491,
+    "default": 125.00802004770995,
+    "speedup": 0.6752236177825569,
+    "java_range": [
+      80.90964320283467,
+      87.44183927203066
+    ],
+    "default_range": [
+      122.6016237012987,
+      129.10633073232324
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 108.9349001925017,
+    "default": 126.89289506567663,
+    "speedup": 0.8584791145014045,
+    "java_range": [
+      101.50056202299534,
+      113.19161524140812
+    ],
+    "default_range": [
+      123.78346370049705,
+      131.74270601515886
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 122.0525879551681,
+    "default": 123.55197050885518,
+    "speedup": 0.9878643574237481,
+    "java_range": [
+      111.11058592458157,
+      140.75059825664792
+    ],
+    "default_range": [
+      120.4191545404863,
+      128.2134318523894
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 37.16931573148362,
+    "default": 2.0956527132671146,
+    "speedup": 17.736390908747854,
+    "java_range": [
+      36.52455992506325,
+      38.09559431361978
+    ],
+    "default_range": [
+      2.0596000945071964,
+      2.1217959312347356
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 58.03798388383288,
+    "default": 2.484505124797281,
+    "speedup": 23.35997752814794,
+    "java_range": [
+      56.485914180093154,
+      60.03349165265275
+    ],
+    "default_range": [
+      2.448795395235924,
+      2.513376893104545
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 66.84766936464119,
+    "default": 2.805193966737237,
+    "speedup": 23.8299633313388,
+    "java_range": [
+      64.17263488376251,
+      69.71703699386674
+    ],
+    "default_range": [
+      2.6465871444772953,
+      3.0440924084429035
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "search",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "captures"
+    },
+    "java": 136.52574339455833,
+    "default": 72.43145297639609,
+    "speedup": 1.8848958261136808,
+    "java_range": [
+      134.00658160006796,
+      140.23017731239497
+    ],
+    "default_range": [
+      68.75391901343527,
+      79.33182797682865
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "search",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "hit"
+    },
+    "java": 103.4255746814225,
+    "default": 72.23994050686584,
+    "speedup": 1.4316951807510516,
+    "java_range": [
+      103.00969113782618,
+      103.72345969188085
+    ],
+    "default_range": [
+      70.06603687040257,
+      75.96045426274425
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "search",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "lateHit"
+    },
+    "java": 9644.186389333236,
+    "default": 354.78242828887755,
+    "speedup": 27.183382322082103,
+    "java_range": [
+      7028.99802350939,
+      14274.995795339346
+    ],
+    "default_range": [
+      294.358760556147,
+      468.78314892360453
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "search",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "miss"
+    },
+    "java": 7099.793034387542,
+    "default": 235.71963517467555,
+    "speedup": 30.1196505294367,
+    "java_range": [
+      6919.54874445822,
+      7329.843664407785
+    ],
+    "default_range": [
+      228.5623858688898,
+      249.26098067446392
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "search",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "captures"
+    },
+    "java": 133.09652871932164,
+    "default": 80.53837942935178,
+    "speedup": 1.6525851359608477,
+    "java_range": [
+      132.51618340473945,
+      133.7989227655187
+    ],
+    "default_range": [
+      72.74715409249654,
+      86.94613439776397
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "search",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "hit"
+    },
+    "java": 100.56156171895788,
+    "default": 73.34894149995829,
+    "speedup": 1.3710022211979032,
+    "java_range": [
+      99.89420390235934,
+      101.51490950953313
+    ],
+    "default_range": [
+      70.21753061901582,
+      78.34217318917975
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "search",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "lateHit"
+    },
+    "java": 188.6259302017795,
+    "default": 124.09976302433677,
+    "speedup": 1.519953991892706,
+    "java_range": [
+      171.6907623295472,
+      219.37452822793634
+    ],
+    "default_range": [
+      123.55862630921543,
+      124.85774189608918
+    ]
+  },
+  {
+    "tier": "C1",
+    "experiment": "search",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "miss"
+    },
+    "java": 108.29890290918436,
+    "default": 115.78960479172278,
+    "speedup": 0.9353076479014472,
+    "java_range": [
+      107.4122029306443,
+      109.55739357400114
+    ],
+    "default_range": [
+      108.60617238396253,
+      124.618970952204
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "anchored",
+    "params": {
+      "length": "4096",
+      "operation": "lookingAt",
+      "scenario": "fullHit"
+    },
+    "java": 9782.335030088941,
+    "default": 13893.511518378065,
+    "speedup": 0.7040937791104186,
+    "java_range": [
+      8860.540303149033,
+      11007.580895217558
+    ],
+    "default_range": [
+      12937.735440351715,
+      14879.283686629788
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "anchored",
+    "params": {
+      "length": "4096",
+      "operation": "lookingAt",
+      "scenario": "miss"
+    },
+    "java": 44.313286316688945,
+    "default": 51.12366654369357,
+    "speedup": 0.8667861542914956,
+    "java_range": [
+      27.242958518548324,
+      73.1988352632348
+    ],
+    "default_range": [
+      37.07673757136823,
+      65.2842124768374
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "anchored",
+    "params": {
+      "length": "4096",
+      "operation": "matches",
+      "scenario": "fullHit"
+    },
+    "java": 10237.78466280443,
+    "default": 14228.590901267195,
+    "speedup": 0.7195220337589898,
+    "java_range": [
+      8693.81420732881,
+      11757.018230380616
+    ],
+    "default_range": [
+      12168.03194614689,
+      18003.109049755276
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "anchored",
+    "params": {
+      "length": "4096",
+      "operation": "matches",
+      "scenario": "miss"
+    },
+    "java": 53.06970347130612,
+    "default": 39.87564853710077,
+    "speedup": 1.3308800086832304,
+    "java_range": [
+      25.68814624351188,
+      75.82336853250933
+    ],
+    "default_range": [
+      34.531191937424644,
+      48.79261973433041
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "anchored",
+    "params": {
+      "length": "64",
+      "operation": "lookingAt",
+      "scenario": "fullHit"
+    },
+    "java": 238.48180336494923,
+    "default": 81.54942467158416,
+    "speedup": 2.924383640048512,
+    "java_range": [
+      153.3832617301035,
+      388.1784388000944
+    ],
+    "default_range": [
+      60.70469293775773,
+      119.01719120704827
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "anchored",
+    "params": {
+      "length": "64",
+      "operation": "lookingAt",
+      "scenario": "miss"
+    },
+    "java": 45.31723146814668,
+    "default": 37.5797603948704,
+    "speedup": 1.2058946356223292,
+    "java_range": [
+      26.673126205054857,
+      64.24798989071347
+    ],
+    "default_range": [
+      33.96848080014323,
+      43.070507769355196
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "anchored",
+    "params": {
+      "length": "64",
+      "operation": "matches",
+      "scenario": "fullHit"
+    },
+    "java": 207.50577695912213,
+    "default": 67.32663006218888,
+    "speedup": 3.0820757962703804,
+    "java_range": [
+      165.7875116971425,
+      243.42440568366416
+    ],
+    "default_range": [
+      63.08247785100619,
+      72.39374323519127
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "anchored",
+    "params": {
+      "length": "64",
+      "operation": "matches",
+      "scenario": "miss"
+    },
+    "java": 28.882629940823193,
+    "default": 40.32862151769805,
+    "speedup": 0.7161819287115521,
+    "java_range": [
+      27.909508175167037,
+      30.04945513884483
+    ],
+    "default_range": [
+      33.594613524124014,
+      50.31374785953023
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "contention",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "alternating",
+      "threads": "4"
+    },
+    "java": 201.5790265245043,
+    "default": 363.02095339708046,
+    "speedup": 0.5552820701895205,
+    "java_range": [
+      187.18435802469136,
+      223.06821279461278
+    ],
+    "default_range": [
+      293.76112374949975,
+      465.40641742919394
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "contention",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "miss",
+      "threads": "4"
+    },
+    "java": 263.22109001308985,
+    "default": 453.3578632241046,
+    "speedup": 0.5806033409041677,
+    "java_range": [
+      254.5027126717913,
+      268.6397930318139
+    ],
+    "default_range": [
+      324.2605203439867,
+      537.1476362174941
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "contention",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "alternating",
+      "threads": "4"
+    },
+    "java": 147.41052325326868,
+    "default": 54.69943206276955,
+    "speedup": 2.6949187165985533,
+    "java_range": [
+      108.5519565942728,
+      198.794966654762
+    ],
+    "default_range": [
+      50.973201984746275,
+      58.45569021163078
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "contention",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "miss",
+      "threads": "4"
+    },
+    "java": 142.37498307867435,
+    "default": 65.59799648065167,
+    "speedup": 2.1704166394878888,
+    "java_range": [
+      131.76268512804668,
+      159.27444693728177
+    ],
+    "default_range": [
+      64.15631152427726,
+      68.18780796765732
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "contention",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "alternating",
+      "threads": "4"
+    },
+    "java": 176.58113879831828,
+    "default": 311.23227051446474,
+    "speedup": 0.567361278142626,
+    "java_range": [
+      154.8743082051282,
+      215.64507420289854
+    ],
+    "default_range": [
+      290.7657706855792,
+      342.2403279441034
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "contention",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "miss",
+      "threads": "4"
+    },
+    "java": 205.26954050020007,
+    "default": 536.7709912069337,
+    "speedup": 0.38241548791347674,
+    "java_range": [
+      157.54934640522876,
+      230.9752251020408
+    ],
+    "default_range": [
+      484.1534078858494,
+      631.3788342033232
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "contention",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "alternating",
+      "threads": "4"
+    },
+    "java": 101.01654312714574,
+    "default": 41.97011556816137,
+    "speedup": 2.4068683576315224,
+    "java_range": [
+      80.08748394550277,
+      133.64992743455716
+    ],
+    "default_range": [
+      39.66812058983214,
+      45.2537180477183
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "contention",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "miss",
+      "threads": "4"
+    },
+    "java": 111.36065116165625,
+    "default": 56.102700669093146,
+    "speedup": 1.9849427894476492,
+    "java_range": [
+      91.12543245160384,
+      132.35546261762926
+    ],
+    "default_range": [
+      46.83998700937537,
+      65.3411955356529
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "controls",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "flags"
+    },
+    "java": 11257.56780651489,
+    "default": 633.3405584633961,
+    "speedup": 17.77490428503091,
+    "java_range": [
+      10978.463935462132,
+      11739.71859257124
+    ],
+    "default_range": [
+      616.0063249368957,
+      663.2158980055957
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "controls",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "literal"
+    },
+    "java": 3191.5130884436485,
+    "default": 3217.939226164894,
+    "speedup": 0.9917878692343298,
+    "java_range": [
+      3138.432925456924,
+      3268.8923968854738
+    ],
+    "default_range": [
+      3148.243347364845,
+      3284.2054488694466
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "controls",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "unsupported"
+    },
+    "java": 26147.05368487452,
+    "default": 27817.896591180328,
+    "speedup": 0.9399364038604001,
+    "java_range": [
+      25577.673812803947,
+      26873.164421477213
+    ],
+    "default_range": [
+      25338.610837301516,
+      29100.36911507296
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "controls",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "utf16"
+    },
+    "java": 5080.6924628703455,
+    "default": 5128.255883557315,
+    "speedup": 0.9907252247612152,
+    "java_range": [
+      5065.168794879771,
+      5110.715388945401
+    ],
+    "default_range": [
+      5120.628412571612,
+      5136.807905665678
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "controls",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "flags"
+    },
+    "java": 197.3354809749602,
+    "default": 101.85522356073452,
+    "speedup": 1.937411495221867,
+    "java_range": [
+      180.66587690519793,
+      228.84031107087466
+    ],
+    "default_range": [
+      83.10360635841984,
+      135.0325020316944
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "controls",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "literal"
+    },
+    "java": 51.59692641534812,
+    "default": 53.53936450002329,
+    "speedup": 0.9637194407738193,
+    "java_range": [
+      50.984814688931294,
+      52.58037334635725
+    ],
+    "default_range": [
+      52.578000372538675,
+      54.973316900290875
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "controls",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "unsupported"
+    },
+    "java": 429.1783816673911,
+    "default": 418.59720520539696,
+    "speedup": 1.0252777045102395,
+    "java_range": [
+      412.9950124576976,
+      439.35836936302076
+    ],
+    "default_range": [
+      405.439643338962,
+      430.4870591065798
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "controls",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "utf16"
+    },
+    "java": 77.88927195079023,
+    "default": 95.0780798506008,
+    "speedup": 0.8192137669711054,
+    "java_range": [
+      75.89131804558008,
+      80.47626171846932
+    ],
+    "default_range": [
+      90.5516873493115,
+      101.2434522894509
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "distinct",
+    "params": {
+      "calls": "1",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "distinct",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 154.22973875849334,
+    "default": 549.5108539231788,
+    "speedup": 0.28066732014005774,
+    "java_range": [
+      132.91600529814565,
+      187.25380261437908
+    ],
+    "default_range": [
+      528.380590909091,
+      563.1779846199349
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "distinct",
+    "params": {
+      "calls": "1",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "distinct",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 1237.3667796315058,
+    "default": 729.3823316511749,
+    "speedup": 1.696458394913894,
+    "java_range": [
+      1203.5877818754925,
+      1259.6939232804232
+    ],
+    "default_range": [
+      687.6692393269365,
+      803.506640884073
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "distinct",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "distinct",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 688.8132676787106,
+    "default": 416.226748617286,
+    "speedup": 1.6548990903803342,
+    "java_range": [
+      231.37561809862189,
+      973.2297416386085
+    ],
+    "default_range": [
+      265.8949954694229,
+      700.4325153824351
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "distinct",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "distinct",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 274.6998178180471,
+    "default": 286.0032921345861,
+    "speedup": 0.9604778174678498,
+    "java_range": [
+      260.01690420899854,
+      289.71582338935576
+    ],
+    "default_range": [
+      260.1914186594203,
+      318.73339275783616
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "distinct",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "distinct",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 190.7411768068645,
+    "default": 337.06017943258627,
+    "speedup": 0.5658965028973816,
+    "java_range": [
+      118.21482375212975,
+      244.8601935339792
+    ],
+    "default_range": [
+      332.91150092592596,
+      341.97086823425025
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "distinct",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "distinct",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 681.2241846336749,
+    "default": 550.5069538690045,
+    "speedup": 1.237448827568807,
+    "java_range": [
+      612.5821480622552,
+      730.9132557413037
+    ],
+    "default_range": [
+      502.3664295634921,
+      578.3631870255349
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "1",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 26.22634253395256,
+    "default": 158.39821430391999,
+    "speedup": 0.1655722108308106,
+    "java_range": [
+      25.093828111946536,
+      28.236466085693536
+    ],
+    "default_range": [
+      125.99821388888888,
+      177.51568671208204
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "1",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 25.165938491383315,
+    "default": 30.393061135752795,
+    "speedup": 0.8280159204424273,
+    "java_range": [
+      22.307179763345147,
+      27.59854358117516
+    ],
+    "default_range": [
+      28.52778776223776,
+      32.06851833471188
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "1",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 29.649577535679587,
+    "default": 672.1214587752509,
+    "speedup": 0.04411342198433519,
+    "java_range": [
+      23.336096428571427,
+      38.41243150010476
+    ],
+    "default_range": [
+      285.75287353163486,
+      1389.5101605392158
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "1",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 6.132276770649787,
+    "default": 0.4034662109133242,
+    "speedup": 15.198984709941847,
+    "java_range": [
+      5.558707309420252,
+      7.135369630322599
+    ],
+    "default_range": [
+      0.34874546911317644,
+      0.5122494440279679
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "1",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 0.3368652105653379,
+    "default": 0.17820481476860472,
+    "speedup": 1.8903260891281217,
+    "java_range": [
+      0.2799803011168788,
+      0.4378922883430045
+    ],
+    "default_range": [
+      0.155289104500077,
+      0.22291275718077466
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "1",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 5.470894482444876,
+    "default": 0.3717986448178926,
+    "speedup": 14.714670316037669,
+    "java_range": [
+      5.342198541687402,
+      5.705204996383936
+    ],
+    "default_range": [
+      0.3208622056373713,
+      0.46843190173567467
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "10",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 52.349908305733166,
+    "default": 95.80790829672385,
+    "speedup": 0.5464048765536328,
+    "java_range": [
+      49.98448403348133,
+      56.40185397223041
+    ],
+    "default_range": [
+      94.22594874138207,
+      98.01038342151675
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "10",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 76.26596045844312,
+    "default": 98.48542547536864,
+    "speedup": 0.7743882923825856,
+    "java_range": [
+      69.7365239522926,
+      87.27732523912869
+    ],
+    "default_range": [
+      91.37236000881835,
+      109.38045622574957
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "10",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 77.30033271487211,
+    "default": 97.15092536085956,
+    "speedup": 0.7956726343855813,
+    "java_range": [
+      74.45263402493667,
+      80.10331931841097
+    ],
+    "default_range": [
+      91.00744603729602,
+      108.34929122574955
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "10",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 28.63697726337798,
+    "default": 1.6382263638949033,
+    "speedup": 17.48047638257586,
+    "java_range": [
+      27.42479335113063,
+      29.62583666369501
+    ],
+    "default_range": [
+      1.5792232770198176,
+      1.753026237788611
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "10",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 48.8619493835135,
+    "default": 2.3550763822839196,
+    "speedup": 20.747500909557708,
+    "java_range": [
+      48.14452447401603,
+      49.30526242295838
+    ],
+    "default_range": [
+      2.324136574256326,
+      2.390846718316233
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "10",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 60.00935406121986,
+    "default": 2.6427806211766374,
+    "speedup": 22.706899536179463,
+    "java_range": [
+      53.95599666743741,
+      64.08613073434167
+    ],
+    "default_range": [
+      2.5205561455183347,
+      2.7842097770185483
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "16",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 76.71334623353476,
+    "default": 100.07487204994261,
+    "speedup": 0.7665595235060684,
+    "java_range": [
+      62.26258351940458,
+      97.79293267973856
+    ],
+    "default_range": [
+      96.55575651249336,
+      105.06302851690587
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "16",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 140.0687462969736,
+    "default": 96.17669272422432,
+    "speedup": 1.4563689219237836,
+    "java_range": [
+      106.88409008097166,
+      199.5703668655868
+    ],
+    "default_range": [
+      93.31298971671602,
+      99.62198779962176
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "16",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 128.78103726946338,
+    "default": 98.61853733195476,
+    "speedup": 1.3058502057881898,
+    "java_range": [
+      103.0908405760163,
+      174.3584993025493
+    ],
+    "default_range": [
+      96.88782450202302,
+      99.59813855748257
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "16",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 44.30804333909932,
+    "default": 2.3636675909567786,
+    "speedup": 18.74546298668167,
+    "java_range": [
+      43.81813249549091,
+      44.84132180332923
+    ],
+    "default_range": [
+      2.333591907468564,
+      2.417000646279861
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "16",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 84.24644907792776,
+    "default": 3.8006924404835623,
+    "speedup": 22.166079049324257,
+    "java_range": [
+      81.40679362400665,
+      86.49503956771292
+    ],
+    "default_range": [
+      3.7171747432342706,
+      3.960211407638168
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "16",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 88.3724744032086,
+    "default": 4.04590322023683,
+    "speedup": 21.842458801581433,
+    "java_range": [
+      87.86505569828013,
+      88.64727569976112
+    ],
+    "default_range": [
+      3.884773116511815,
+      4.249864379600253
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 115.64881446596671,
+    "default": 108.08453906561721,
+    "speedup": 1.0699848050955492,
+    "java_range": [
+      110.58064731975601,
+      124.42265362455254
+    ],
+    "default_range": [
+      96.80186817380151,
+      127.37888845528455
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 210.0495238626834,
+    "default": 110.31390410311086,
+    "speedup": 1.9041074248115564,
+    "java_range": [
+      189.68188302474923,
+      240.71642697182233
+    ],
+    "default_range": [
+      100.93947707261293,
+      122.3739059291512
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 301.0644168863521,
+    "default": 100.81111796458202,
+    "speedup": 2.986420773471881,
+    "java_range": [
+      199.3479017452545,
+      498.2779334935897
+    ],
+    "default_range": [
+      97.27767833092834,
+      103.18719859225742
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 100.56218831338235,
+    "default": 6.6500786727853045,
+    "speedup": 15.121954680765167,
+    "java_range": [
+      87.09936433171741,
+      127.00002475962746
+    ],
+    "default_range": [
+      4.746554978812168,
+      10.357358195088826
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 195.31022849818345,
+    "default": 8.071162761351825,
+    "speedup": 24.198524335726724,
+    "java_range": [
+      170.64121393018712,
+      244.05676503948357
+    ],
+    "default_range": [
+      7.439324627564118,
+      8.98305918816253
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "32",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 181.5607474307018,
+    "default": 7.786412068819791,
+    "speedup": 23.31763921893508,
+    "java_range": [
+      170.89617484511515,
+      190.0671639621055
+    ],
+    "default_range": [
+      7.520503770647384,
+      8.071932034876463
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "8",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 46.36691263002842,
+    "default": 181.53313446018979,
+    "speedup": 0.2554184544210395,
+    "java_range": [
+      42.25546031746032,
+      53.158919667053816
+    ],
+    "default_range": [
+      164.30742755050505,
+      206.3279793751303
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "8",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 113.982269348724,
+    "default": 138.1581262169559,
+    "speedup": 0.8250131387113092,
+    "java_range": [
+      93.02049262041129,
+      143.40535788424384
+    ],
+    "default_range": [
+      116.53522578231292,
+      173.77894299201162
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "8",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 66.65967374820525,
+    "default": 139.09245714877133,
+    "speedup": 0.47924722242060186,
+    "java_range": [
+      61.10716896521814,
+      72.27403428693881
+    ],
+    "default_range": [
+      115.75783724202627,
+      162.93817337662335
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "8",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 22.401464017815,
+    "default": 1.4372126405023604,
+    "speedup": 15.586742967961122,
+    "java_range": [
+      21.734075842681182,
+      23.440594814342834
+    ],
+    "default_range": [
+      1.3910938339466454,
+      1.4991406827263678
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "8",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 39.05949908305541,
+    "default": 2.1561232389776577,
+    "speedup": 18.115615275115612,
+    "java_range": [
+      37.335550135213666,
+      42.055050991113525
+    ],
+    "default_range": [
+      1.9871171291357566,
+      2.3275460466083646
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "8",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 45.78738376685197,
+    "default": 2.4054154961572443,
+    "speedup": 19.035124634392396,
+    "java_range": [
+      42.425554660866155,
+      50.260789592324926
+    ],
+    "default_range": [
+      2.0220000929096678,
+      3.1440295444385256
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 47.186135699234605,
+    "default": 98.77748296714677,
+    "speedup": 0.4777013372058553,
+    "java_range": [
+      45.97466695889344,
+      48.567293006193886
+    ],
+    "default_range": [
+      96.29644696969696,
+      102.12183101546869
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 91.06492675914332,
+    "default": 99.82307406575522,
+    "speedup": 0.9122632979541108,
+    "java_range": [
+      67.59321001730318,
+      104.63915094395641
+    ],
+    "default_range": [
+      91.54468216902144,
+      110.3223709765412
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 83.97552082611111,
+    "default": 156.36768115531737,
+    "speedup": 0.5370388574266804,
+    "java_range": [
+      69.20417467007236,
+      111.29149134857037
+    ],
+    "default_range": [
+      111.23724987555998,
+      196.59019098268234
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 29.80522101953723,
+    "default": 1.5301107539151784,
+    "speedup": 19.479126555560097,
+    "java_range": [
+      27.502209868829638,
+      33.88200619436288
+    ],
+    "default_range": [
+      1.4667209971806645,
+      1.6230938998641349
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "lastHit",
+      "threads": "1"
+    },
+    "java": 56.11880260452212,
+    "default": 2.5455118923027142,
+    "speedup": 22.0461757708608,
+    "java_range": [
+      43.76341303950494,
+      80.1946899790655
+    ],
+    "default_range": [
+      2.125107742781419,
+      3.30995859373761
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "lifetime",
+    "params": {
+      "calls": "9",
+      "expression": "error",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 55.03349448012223,
+    "default": 3.5494746835190285,
+    "speedup": 15.504687140227972,
+    "java_range": [
+      49.189343471498596,
+      65.56510772099537
+    ],
+    "default_range": [
+      2.277791360945072,
+      5.585331090957747
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "search",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "captures"
+    },
+    "java": 54.733801589324344,
+    "default": 36.049756089757174,
+    "speedup": 1.5182849352169645,
+    "java_range": [
+      53.06219066043217,
+      57.760997357860994
+    ],
+    "default_range": [
+      35.65243971319441,
+      36.55416616350346
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "search",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "hit"
+    },
+    "java": 40.98418667400648,
+    "default": 39.901805577107226,
+    "speedup": 1.0271261182606797,
+    "java_range": [
+      40.35124349386418,
+      41.48129156352706
+    ],
+    "default_range": [
+      38.809613584510544,
+      41.5491469781331
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "search",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "lateHit"
+    },
+    "java": 5435.104816097362,
+    "default": 281.0602224243805,
+    "speedup": 19.33786563326186,
+    "java_range": [
+      5256.973515375269,
+      5643.939066833449
+    ],
+    "default_range": [
+      275.3241572914356,
+      289.5816483270133
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "search",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "miss"
+    },
+    "java": 5326.752980724579,
+    "default": 207.8815408881934,
+    "speedup": 25.623982571831665,
+    "java_range": [
+      5234.557326797406,
+      5510.9236714421395
+    ],
+    "default_range": [
+      204.16475330103972,
+      211.67022852400973
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "search",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "captures"
+    },
+    "java": 55.20169936797049,
+    "default": 35.35150478708865,
+    "speedup": 1.5615091832846584,
+    "java_range": [
+      53.57437227232859,
+      57.22264409699835
+    ],
+    "default_range": [
+      34.68718428211166,
+      35.74362423188894
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "search",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "hit"
+    },
+    "java": 51.3435625939601,
+    "default": 38.27571235494195,
+    "speedup": 1.3414136389634275,
+    "java_range": [
+      51.06137968827758,
+      51.55508776614446
+    ],
+    "default_range": [
+      36.8451864221502,
+      40.474276703571206
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "search",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "lateHit"
+    },
+    "java": 108.66143850969033,
+    "default": 45.83921563484211,
+    "speedup": 2.3704907905775205,
+    "java_range": [
+      107.59599161695256,
+      109.894883660034
+    ],
+    "default_range": [
+      45.150167127235314,
+      46.77517933645219
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "search",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "miss"
+    },
+    "java": 67.31123379056439,
+    "default": 37.949778120607476,
+    "speedup": 1.7736924199304622,
+    "java_range": [
+      66.46356947073205,
+      68.1829087163458
+    ],
+    "default_range": [
+      37.36763356997961,
+      38.79690950163498
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "ssn-lifetime",
+    "params": {
+      "calls": "1",
+      "expression": "ssn",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 38.61307828432104,
+    "default": 423.3172347134587,
+    "speedup": 0.09121546471042702,
+    "java_range": [
+      37.56230553440812,
+      39.83125595238096
+    ],
+    "default_range": [
+      402.17718935185184,
+      460.0654785566401
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "ssn-lifetime",
+    "params": {
+      "calls": "1",
+      "expression": "ssn",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 34.760203151672336,
+    "default": 934.0588794089929,
+    "speedup": 0.03721414561538793,
+    "java_range": [
+      34.18697552910053,
+      35.17541457811195
+    ],
+    "default_range": [
+      927.1835687217193,
+      940.709132387707
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "ssn-lifetime",
+    "params": {
+      "calls": "1",
+      "expression": "ssn",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 12.562567542508116,
+    "default": 0.24006165852370137,
+    "speedup": 52.330587149000344,
+    "java_range": [
+      12.166732532774697,
+      13.038982697201023
+    ],
+    "default_range": [
+      0.23094681430518868,
+      0.2469859972452899
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "ssn-lifetime",
+    "params": {
+      "calls": "1",
+      "expression": "ssn",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 12.141298253803116,
+    "default": 0.21700953046807497,
+    "speedup": 55.94822599549039,
+    "java_range": [
+      11.908984852393834,
+      12.515229562242483
+    ],
+    "default_range": [
+      0.21329238432051087,
+      0.22071936037156256
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "ssn-lifetime",
+    "params": {
+      "calls": "32",
+      "expression": "ssn",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 340.1385485168937,
+    "default": 522.1181357613883,
+    "speedup": 0.6514589806785402,
+    "java_range": [
+      333.49089376612716,
+      344.45449995274384
+    ],
+    "default_range": [
+      488.91947142466506,
+      547.8266431788473
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "ssn-lifetime",
+    "params": {
+      "calls": "32",
+      "expression": "ssn",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 642.9158478313007,
+    "default": 390.25890179734137,
+    "speedup": 1.647408540510787,
+    "java_range": [
+      628.9203822792023,
+      657.5421775616836
+    ],
+    "default_range": [
+      377.6193328674586,
+      407.96308427200665
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "ssn-lifetime",
+    "params": {
+      "calls": "32",
+      "expression": "ssn",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 299.85167535139516,
+    "default": 4.1409812186667425,
+    "speedup": 72.41077887523899,
+    "java_range": [
+      293.3735944326673,
+      307.69446370697074
+    ],
+    "default_range": [
+      4.0454753422684355,
+      4.27325230134494
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "ssn-lifetime",
+    "params": {
+      "calls": "32",
+      "expression": "ssn",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 588.2401137339798,
+    "default": 4.314164463645557,
+    "speedup": 136.35087829658326,
+    "java_range": [
+      584.7371548770045,
+      593.6747405190907
+    ],
+    "default_range": [
+      4.242204761799369,
+      4.414296120402814
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "ssn-lifetime",
+    "params": {
+      "calls": "9",
+      "expression": "ssn",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 116.43895724456578,
+    "default": 389.8268182764178,
+    "speedup": 0.2986940656350673,
+    "java_range": [
+      113.44528894526844,
+      118.51254098360657
+    ],
+    "default_range": [
+      380.5061346019459,
+      395.5991200351935
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "ssn-lifetime",
+    "params": {
+      "calls": "9",
+      "expression": "ssn",
+      "length": "4096",
+      "reuse": "cold",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 197.48939714139362,
+    "default": 474.0887748392519,
+    "speedup": 0.41656627961367754,
+    "java_range": [
+      186.4264449639587,
+      205.994403523648
+    ],
+    "default_range": [
+      376.70308385661957,
+      661.9717073529412
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "ssn-lifetime",
+    "params": {
+      "calls": "9",
+      "expression": "ssn",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "alternating",
+      "threads": "1"
+    },
+    "java": 94.0546872748094,
+    "default": 1.5743724534592278,
+    "speedup": 59.741065126077025,
+    "java_range": [
+      93.32257233997886,
+      95.24286646121226
+    ],
+    "default_range": [
+      1.2856271222757312,
+      2.143206182556842
+    ]
+  },
+  {
+    "tier": "C2",
+    "experiment": "ssn-lifetime",
+    "params": {
+      "calls": "9",
+      "expression": "ssn",
+      "length": "4096",
+      "reuse": "shared",
+      "scenario": "miss",
+      "threads": "1"
+    },
+    "java": 102.87931117537892,
+    "default": 1.281441416651652,
+    "speedup": 80.28405344053719,
+    "java_range": [
+      101.6174556697964,
+      105.07223094972336
+    ],
+    "default_range": [
+      1.2648885325998078,
+      1.3009324614387419
+    ]
+  },
+  {
+    "tier": "C2-JNI",
+    "experiment": "jni-control",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "captures"
+    },
+    "java": 61.98120035998101,
+    "default": 37.33844941337303,
+    "speedup": 1.659983243379732,
+    "java_range": [
+      55.465217683839434,
+      74.39962841485698
+    ],
+    "default_range": [
+      37.194420214302546,
+      37.58627893888629
+    ]
+  },
+  {
+    "tier": "C2-JNI",
+    "experiment": "jni-control",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "hit"
+    },
+    "java": 55.90421088011214,
+    "default": 47.35226773200142,
+    "speedup": 1.1806026101328866,
+    "java_range": [
+      41.84065278021887,
+      81.97764656888883
+    ],
+    "default_range": [
+      41.77818490678559,
+      57.25379959866776
+    ]
+  },
+  {
+    "tier": "C2-JNI",
+    "experiment": "jni-control",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "lateHit"
+    },
+    "java": 6532.6289813062,
+    "default": 328.556751470134,
+    "speedup": 19.882802444557345,
+    "java_range": [
+      5406.571676062697,
+      8730.346787711698
+    ],
+    "default_range": [
+      321.8307470700847,
+      338.4521304290643
+    ]
+  },
+  {
+    "tier": "C2-JNI",
+    "experiment": "jni-control",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "miss"
+    },
+    "java": 6654.6515340802825,
+    "default": 232.22100991125225,
+    "speedup": 28.656543766748264,
+    "java_range": [
+      5455.0299655699555,
+      8866.665179532692
+    ],
+    "default_range": [
+      227.89682660586018,
+      239.87220447921524
+    ]
+  },
+  {
+    "tier": "C2-JNI",
+    "experiment": "jni-control",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "captures"
+    },
+    "java": 57.096697235674306,
+    "default": 36.72109093831483,
+    "speedup": 1.5548747539006131,
+    "java_range": [
+      56.3978600833525,
+      57.71994068037039
+    ],
+    "default_range": [
+      36.618552066805506,
+      36.7771777122682
+    ]
+  },
+  {
+    "tier": "C2-JNI",
+    "experiment": "jni-control",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "hit"
+    },
+    "java": 57.92111460874551,
+    "default": 40.728561100915215,
+    "speedup": 1.4221252370107413,
+    "java_range": [
+      54.817986835860715,
+      63.908156083002346
+    ],
+    "default_range": [
+      39.21667955446531,
+      43.274659752071024
+    ]
+  },
+  {
+    "tier": "C2-JNI",
+    "experiment": "jni-control",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "lateHit"
+    },
+    "java": 113.2143701433146,
+    "default": 47.97982114528139,
+    "speedup": 2.3596246805611267,
+    "java_range": [
+      112.10692173138189,
+      114.53659623751007
+    ],
+    "default_range": [
+      46.16259510107719,
+      49.290609451637444
+    ]
+  },
+  {
+    "tier": "C2-JNI",
+    "experiment": "jni-control",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "miss"
+    },
+    "java": 70.02084644196687,
+    "default": 39.29427908435526,
+    "speedup": 1.781960327905473,
+    "java_range": [
+      69.00643695865361,
+      70.7130922496582
+    ],
+    "default_range": [
+      38.82391200576463,
+      40.12079026086846
+    ]
+  },
+  {
+    "tier": "interpreter",
+    "experiment": "controls",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "flags"
+    },
+    "java": 1561636.5188563485,
+    "default": 1814.2731920377144,
+    "speedup": 860.7504788748959,
+    "java_range": [
+      1538356.6089792515,
+      1580722.2432167314
+    ],
+    "default_range": [
+      1570.7646706795024,
+      2263.1733968595204
+    ]
+  },
+  {
+    "tier": "interpreter",
+    "experiment": "controls",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "literal"
+    },
+    "java": 83200.14255439134,
+    "default": 92084.46548718699,
+    "speedup": 0.9035198511954022,
+    "java_range": [
+      82560.07963749462,
+      84355.70450265984
+    ],
+    "default_range": [
+      82258.9107104731,
+      110399.39047538773
+    ]
+  },
+  {
+    "tier": "interpreter",
+    "experiment": "controls",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "unsupported"
+    },
+    "java": 1061389.4445293397,
+    "default": 1124250.6013986277,
+    "speedup": 0.9440861701198243,
+    "java_range": [
+      1022604.9849071595,
+      1105107.0368239274
+    ],
+    "default_range": [
+      1039844.9942696245,
+      1274805.4870275308
+    ]
+  },
+  {
+    "tier": "interpreter",
+    "experiment": "controls",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "utf16"
+    },
+    "java": 199810.68362391085,
+    "default": 220306.32314246712,
+    "speedup": 0.906967538533598,
+    "java_range": [
+      198046.77256772108,
+      202994.0414874202
+    ],
+    "default_range": [
+      196946.96153192874,
+      263625.716169408
+    ]
+  },
+  {
+    "tier": "interpreter",
+    "experiment": "controls",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "flags"
+    },
+    "java": 22692.73122904411,
+    "default": 1205.8091738797484,
+    "speedup": 18.819504545672984,
+    "java_range": [
+      22578.6004458892,
+      22830.298886073488
+    ],
+    "default_range": [
+      994.5909265078675,
+      1624.9950272246897
+    ]
+  },
+  {
+    "tier": "interpreter",
+    "experiment": "controls",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "literal"
+    },
+    "java": 2035.4937866041605,
+    "default": 2348.1519014875557,
+    "speedup": 0.8668492806256162,
+    "java_range": [
+      2009.5005675671885,
+      2051.3002982497123
+    ],
+    "default_range": [
+      2018.6590939982455,
+      2974.689858076216
+    ]
+  },
+  {
+    "tier": "interpreter",
+    "experiment": "controls",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "unsupported"
+    },
+    "java": 19355.567980481635,
+    "default": 27984.571638185822,
+    "speedup": 0.6916513938726995,
+    "java_range": [
+      15992.496882004169,
+      25937.21253073946
+    ],
+    "default_range": [
+      16465.488572333386,
+      49786.48846996593
+    ]
+  },
+  {
+    "tier": "interpreter",
+    "experiment": "controls",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "utf16"
+    },
+    "java": 3570.701468609812,
+    "default": 3870.0651148692405,
+    "speedup": 0.9226463541635931,
+    "java_range": [
+      3541.9876737021714,
+      3621.2502401974803
+    ],
+    "default_range": [
+      3584.5232755314537,
+      4407.194724081005
+    ]
+  },
+  {
+    "tier": "interpreter",
+    "experiment": "search",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "captures"
+    },
+    "java": 2754.0406116932577,
+    "default": 1555.173694269105,
+    "speedup": 1.7708894008701657,
+    "java_range": [
+      2727.913544060309,
+      2793.249154705672
+    ],
+    "default_range": [
+      1526.5622278073927,
+      1581.2973925217902
+    ]
+  },
+  {
+    "tier": "interpreter",
+    "experiment": "search",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "hit"
+    },
+    "java": 2314.488327677211,
+    "default": 1471.6849123182474,
+    "speedup": 1.5726792524028472,
+    "java_range": [
+      2284.167183831054,
+      2330.389569933182
+    ],
+    "default_range": [
+      1389.637152420771,
+      1613.9675774473646
+    ]
+  },
+  {
+    "tier": "interpreter",
+    "experiment": "search",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "lateHit"
+    },
+    "java": 134531.89714435505,
+    "default": 1724.0145742778745,
+    "speedup": 78.03408344196015,
+    "java_range": [
+      132368.03080649636,
+      138122.72542112737
+    ],
+    "default_range": [
+      1555.7940711312986,
+      1923.5542833028983
+    ]
+  },
+  {
+    "tier": "interpreter",
+    "experiment": "search",
+    "params": {
+      "length": "4096",
+      "operation": "find",
+      "scenario": "miss"
+    },
+    "java": 141846.87681695368,
+    "default": 1577.3504288610443,
+    "speedup": 89.92730735133911,
+    "java_range": [
+      127309.37362812302,
+      168508.92174393334
+    ],
+    "default_range": [
+      1492.8799234693258,
+      1695.738102114524
+    ]
+  },
+  {
+    "tier": "interpreter",
+    "experiment": "search",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "captures"
+    },
+    "java": 2798.579299193954,
+    "default": 1706.8281041937582,
+    "speedup": 1.6396374610411621,
+    "java_range": [
+      2743.452256931266,
+      2893.472133366349
+    ],
+    "default_range": [
+      1677.506658494832,
+      1731.7889204476276
+    ]
+  },
+  {
+    "tier": "interpreter",
+    "experiment": "search",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "hit"
+    },
+    "java": 2352.6795118331443,
+    "default": 1644.7843450902244,
+    "speedup": 1.430387830998044,
+    "java_range": [
+      2311.9170246739254,
+      2416.6383587633304
+    ],
+    "default_range": [
+      1578.4586445938567,
+      1745.7667802020371
+    ]
+  },
+  {
+    "tier": "interpreter",
+    "experiment": "search",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "lateHit"
+    },
+    "java": 4281.961110307437,
+    "default": 3617.5862139848196,
+    "speedup": 1.1836514341397821,
+    "java_range": [
+      4174.748628898294,
+      4485.587538192645
+    ],
+    "default_range": [
+      2824.190282814599,
+      4840.968363147165
+    ]
+  },
+  {
+    "tier": "interpreter",
+    "experiment": "search",
+    "params": {
+      "length": "64",
+      "operation": "find",
+      "scenario": "miss"
+    },
+    "java": 2662.9650785540102,
+    "default": 2622.4622345839457,
+    "speedup": 1.0154445861739894,
+    "java_range": [
+      2594.2884292080357,
+      2723.8459897018297
+    ],
+    "default_range": [
+      2485.7203643478297,
+      2747.731811217324
+    ]
+  }
+]
