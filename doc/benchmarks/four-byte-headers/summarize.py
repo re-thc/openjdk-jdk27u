@@ -18,6 +18,12 @@ root = Path(sys.argv[1])
 layouts = ("baseline8", "default8", "legacy12", "four4")
 collectors = ("Serial", "G1", "Z")
 
+for pattern, expected in (("memory-*.json", 12), ("footprint-*.json", 12),
+                          ("jmh-*.json", 12), ("perf-*.json", 36)):
+    files = list(root.glob(pattern))
+    if files and len(files) != expected:
+        raise ValueError(f"Incomplete {pattern} matrix: {len(files)} of {expected} files")
+
 
 def read(name):
     path = root / name
@@ -53,7 +59,8 @@ for gc in collectors:
                 samples = item["results"]
                 memory.append([gc, layout, name, len(samples),
                                stats.median(x["retained_heap_after_bytes"] for x in samples),
-                               stats.median(x["rss_after_bytes"] for x in samples)])
+                               stats.median(x["rss_after_bytes"] for x in samples),
+                               stats.median(x["non_heap_after_bytes"] for x in samples)])
         data = read(f"footprint-{layout}-{gc}.json")
         if data:
             footprint.append([gc, layout, data["objects"], data["unhashed_graph_bytes"],
@@ -79,7 +86,15 @@ for gc in collectors:
     benchmarks = {}
     for layout in layouts:
         data = read(f"jmh-{layout}-{gc}.json")
-        if data:
+        if data is not None:
+            expected = {"allocate", "firstHash", "storedHash", "identityMapLookup", "identityMapChurn"}
+            actual = {item["benchmark"].rsplit(".", 1)[1] for item in data}
+            if actual != expected:
+                raise ValueError(f"Incomplete JMH benchmarks for {layout}/{gc}: {actual}")
+            for item in data:
+                forks = item["primaryMetric"]["rawData"]
+                if len(forks) != 3 or any(len(fork) != 5 for fork in forks):
+                    raise ValueError(f"Incomplete JMH forks for {item['benchmark']}/{layout}/{gc}")
             benchmarks[layout] = {item["benchmark"].rsplit(".", 1)[1]: item for item in data}
     if "baseline8" in benchmarks:
         for name, base in benchmarks["baseline8"].items():
@@ -103,7 +118,7 @@ if path.exists():
         p95 = sorted(values)[math.ceil(len(values) * 0.95) - 1]
         startup.append([gc, layout, len(values), stats.median(values), p95])
 
-write("memory-summary.csv", ["gc", "layout", "workload", "operations", "post_gc_heap_bytes", "rss_bytes"], memory)
+write("memory-summary.csv", ["gc", "layout", "workload", "operations", "post_gc_heap_bytes", "rss_bytes", "non_heap_bytes"], memory)
 write("footprint-summary.csv", ["gc", "layout", "objects", "unhashed_graph_bytes", "hashed_graph_bytes", "unhashed_cell_bytes", "hashed_cell_bytes"], footprint)
 write("renaissance-summary.csv", ["gc", "workload", "layout", "forks", "mean_ms", "change_percent", "change_95ci_low", "change_95ci_high"], timing)
 write("jmh-summary.csv", ["gc", "benchmark", "layout", "forks", "mean_ns", "jmh_99_9ci_error_ns", "bytes_per_op", "change_percent", "change_95ci_low", "change_95ci_high"], micro)
