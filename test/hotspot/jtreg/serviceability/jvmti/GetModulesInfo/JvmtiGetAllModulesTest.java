@@ -44,6 +44,7 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.stream.Collectors;
+import java.lang.reflect.Proxy;
 import jdk.test.lib.Asserts;
 
 public class JvmtiGetAllModulesTest {
@@ -65,10 +66,9 @@ public class JvmtiGetAllModulesTest {
 
         Set<Module> modules = Arrays.stream(getModulesNative()).collect(Collectors.toSet());
 
-        // JVMTI reports unnamed modules, Java API does not
-        // remove the unnamed modules here, so the resulting report can be expected
-        // to be equal to what Java reports
-        modules.removeIf(mod -> !mod.isNamed());
+        // JVMTI also reports unnamed modules and dynamic named modules without
+        // a layer (for example proxy modules). The layer API reports neither.
+        modules.removeIf(mod -> !mod.isNamed() || mod.getLayer() == null);
 
         return modules;
     }
@@ -76,6 +76,14 @@ public class JvmtiGetAllModulesTest {
     public static void main(String[] args) throws Exception {
 
         final String MY_MODULE_NAME = "myModule";
+
+        Object proxy = Proxy.newProxyInstance(ClassLoader.getSystemClassLoader(),
+                new Class<?>[] { Runnable.class }, (instance, method, arguments) -> null);
+        Module proxyModule = proxy.getClass().getModule();
+        Asserts.assertTrue(proxyModule.isNamed());
+        Asserts.assertEquals(null, proxyModule.getLayer());
+        Asserts.assertTrue(Arrays.asList(getModulesNative()).contains(proxyModule),
+                "JVMTI must enumerate dynamic proxy modules");
 
         // Verify that JVMTI reports exactly the same info as Java regarding the named modules
         Asserts.assertEquals(ModuleLayer.boot().modules(), getModulesJVMTI());
