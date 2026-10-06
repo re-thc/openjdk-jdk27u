@@ -279,17 +279,21 @@ static jint doDeflate(JNIEnv *env, jlong addr,
     strm->avail_in  = inputLen;
     strm->avail_out = outputLen;
 
+    if (d->select_backend && setParams && d->backend == ZIP_DEFLATE_NONE) {
+        /* A parameter-only call has no data to flush on an unallocated stream.
+         * Retain the settings without choosing a backend from its empty input.
+         * The first compression call and subsequent resets can then make the
+         * same choice from the actual input chunk. */
+        d->strategy = (params >> 1) & 3;
+        d->level = params >> 3;
+        return Z_OK;
+    }
+
     if (d->select_backend && outputLen == 0) {
         /* No input can be consumed without output capacity. Keep selection
-         * pending, including after reset. Parameter changes on a fresh stream
-         * need no compression state; an allocated reset stream applies them
-         * below without committing the backend for its next input. */
+         * pending, including after reset. An allocated reset stream applies
+         * parameter changes below without committing the backend. */
         if (!setParams) return Z_BUF_ERROR;
-        if (d->backend == ZIP_DEFLATE_NONE) {
-            d->strategy = (params >> 1) & 3;
-            d->level = params >> 3;
-            return Z_OK;
-        }
     } else if (d->select_backend) {
         /* Streaming clients call NO_FLUSH before FINISH. Choose conservatively
          * from the first input chunk, then keep this backend until reset. */

@@ -21,9 +21,9 @@ select zlib-ng. A large stream starting with a small chunk conservatively keeps
 stock zlib; the implementation does not predict the total stream size. Dictionary setup selects zlib-ng. Selection occurs before
 any data or dictionary is processed and stays fixed until reset. Reset may select
 a different backend for the next stream; it reuses the allocation when selection
-stays the same. Initialization is delayed until an operation with output capacity to avoid
-allocating both libraries. Zero-capacity calls do not consume input or commit
-selection; fresh-stream parameter changes are retained for later initialization. Inflater and native libzip consumers use zlib-ng
+stays the same. Initialization is delayed until a compression or dictionary operation. Parameter-only
+calls on a fresh stream retain the requested settings without selecting a backend.
+Zero-capacity compression calls do not consume input or commit selection. Inflater and native libzip consumers use zlib-ng
 throughout. The same selected library initializes, processes, resets, supplies
 dictionaries for, and ends a stream. zlib-ng uses its
 zlib-compatible ABI and a private `jdk_ng_` symbol prefix. It is linked into
@@ -74,7 +74,7 @@ call overhead to remove.
 ## Upstream verification and updates
 
 The latest stable release was verified using the live GitHub latest-release redirect on
-2026-10-05: <https://github.com/zlib-ng/zlib-ng/releases/tag/2.3.3>.
+2026-10-06: <https://github.com/zlib-ng/zlib-ng/releases/tag/2.3.3>.
 The source archive is:
 
 - URL: `https://codeload.github.com/zlib-ng/zlib-ng/tar.gz/refs/tags/2.3.3`

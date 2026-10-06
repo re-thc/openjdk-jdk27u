@@ -81,7 +81,7 @@ public class TestZlibNGAOT {
 
             @Override
             public String[] appCommandLine(RunMode mode) {
-                boolean enabled = !flag.equals("UseAdler32Intrinsics") ? value(mode) : true;
+                boolean enabled = flag.equals("UseZipIntrinsics") ? value(mode) : true;
                 return new String[] {"ZlibNGAOTApp", Boolean.toString(enabled)};
             }
 
