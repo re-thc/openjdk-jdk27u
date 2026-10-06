@@ -1,0 +1,153 @@
+# Copyright (c) 2026, Harry Chan. All rights reserved.
+# This file is available under the GNU General Public License version 2.
+name: Four-byte header validation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'src/hotspot/**'
+      - 'src/jdk.hotspot.agent/**'
+      - 'test/**'
+      - 'make/**'
+      - '.github/workflows/four-byte-headers.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: four-byte-headers-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/build-jtreg
+
+  build:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x64
+            runner: ubuntu-24.04
+          - platform: linux-aarch64
+            runner: ubuntu-24.04-arm
+    uses: ./.github/workflows/build-linux.yml
+    with:
+      platform: ${{ matrix.platform }}
+      runs-on: ${{ matrix.runner }}
+      bootjdk-platform: ${{ matrix.platform }}
+      gcc-major-version: '14'
+
+  tier12:
+    needs: build
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux-x64, linux-aarch64]
+        layout: [default8, legacy12, four4]
+        suite: [hotspot, jdk, langtools]
+        include:
+          - platform: linux-x64
+            runner: ubuntu-24.04
+          - platform: linux-aarch64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/get-bootjdk
+        id: bootjdk
+        with:
+          platform: ${{ matrix.platform }}
+      - uses: ./.github/actions/get-jtreg
+        id: jtreg
+      - uses: ./.github/actions/get-bundles
+        id: bundles
+        with:
+          platform: ${{ matrix.platform }}
+      - name: Run both tiers with the selected layout
+        env:
+          LAYOUT: ${{ matrix.layout }}
+          SUITE: ${{ matrix.suite }}
+          BOOT_JDK: ${{ steps.bootjdk.outputs.path }}
+          JT_HOME: ${{ steps.jtreg.outputs.path }}
+          JDK_IMAGE_DIR: ${{ steps.bundles.outputs.jdk-path }}
+          SYMBOLS_IMAGE_DIR: ${{ steps.bundles.outputs.symbols-path }}
+          TEST_IMAGE_DIR: ${{ steps.bundles.outputs.tests-path }}
+        run: |
+          flags='-XX:-CreateCoredumpOnCrash -Xmx512m'
+          case "$LAYOUT" in
+            four4) flags="$flags -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders" ;;
+            legacy12) flags="$flags -XX:-UseCompactObjectHeaders" ;;
+          esac
+          root="test/$SUITE"
+          [[ $SUITE != hotspot ]] || root=test/hotspot/jtreg
+          make test-prebuilt TEST="$root/:tier1 $root/:tier2" \
+            JTREG="JAVA_OPTIONS=$flags;VERBOSE=fail,error,time;KEYWORDS=!headful;TIMEOUT_FACTOR=4;JOBS=2"
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: header-results-${{ matrix.platform }}-${{ matrix.layout }}-${{ matrix.suite }}
+          path: |
+            build/run-test-prebuilt/test-results
+            build/run-test-prebuilt/test-support/**/*.jtr
+            build/run-test-prebuilt/test-support/**/hs_err*.log
+
+  fastdebug:
+    needs: build
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux-x64, linux-aarch64]
+        layout: [default8, legacy12, four4]
+        include:
+          - platform: linux-x64
+            runner: ubuntu-24.04
+          - platform: linux-aarch64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/get-bootjdk
+        id: bootjdk
+        with:
+          platform: ${{ matrix.platform }}
+      - uses: ./.github/actions/get-jtreg
+        id: jtreg
+      - uses: ./.github/actions/get-bundles
+        id: bundles
+        with:
+          platform: ${{ matrix.platform }}
+          debug-suffix: -debug
+      - name: Run native tests and collector/hash regressions
+        env:
+          LAYOUT: ${{ matrix.layout }}
+          BOOT_JDK: ${{ steps.bootjdk.outputs.path }}
+          JT_HOME: ${{ steps.jtreg.outputs.path }}
+          JDK_IMAGE_DIR: ${{ steps.bundles.outputs.jdk-path }}
+          SYMBOLS_IMAGE_DIR: ${{ steps.bundles.outputs.symbols-path }}
+          TEST_IMAGE_DIR: ${{ steps.bundles.outputs.tests-path }}
+        run: |
+          flags='-XX:-CreateCoredumpOnCrash -Xmx512m'
+          case "$LAYOUT" in
+            four4) flags="$flags -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders" ;;
+            legacy12) flags="$flags -XX:-UseCompactObjectHeaders" ;;
+          esac
+          make test-prebuilt TEST='gtest:all' GTEST="JAVA_OPTIONS=$flags"
+          make test-prebuilt \
+            TEST='test/hotspot/jtreg/runtime/CompactObjectHeaders test/hotspot/jtreg/gc/stress/ihash test/jdk/java/lang/instrument/FourByteHeaderObjectSize.java' \
+            JTREG="JAVA_OPTIONS=$flags;VERBOSE=fail,error,time;TIMEOUT_FACTOR=4;JOBS=2"
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: header-results-${{ matrix.platform }}-${{ matrix.layout }}-fastdebug
+          path: |
+            build/run-test-prebuilt/test-results
+            build/run-test-prebuilt/test-support/**/*.jtr
+            build/run-test-prebuilt/test-support/**/hs_err*.log
