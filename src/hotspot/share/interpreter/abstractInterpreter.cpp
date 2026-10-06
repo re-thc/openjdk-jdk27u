@@ -124,6 +124,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
 #ifndef ZERO
 #if defined(AMD64) || defined(AARCH64)
       case vmIntrinsics::_stringzillaFindUTF16Latin1: return stringzilla_findUTF16Latin1;
+      case vmIntrinsics::_stringzillaEqualsRange: return stringzilla_equalsRange;
       case vmIntrinsics::_stringzillaRfindUTF16Latin1: return stringzilla_rfindUTF16Latin1;
       case vmIntrinsics::_stringzillaFindCharLatin1: return stringzilla_findCharLatin1;
       case vmIntrinsics::_stringzillaFindCharUTF16: return stringzilla_findCharUTF16;
@@ -228,6 +229,7 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case java_lang_math_fmaF        : return vmIntrinsics::_fmaF;
   case java_lang_ref_reference_get0: return vmIntrinsics::_Reference_get0;
   case stringzilla_findUTF16Latin1: return vmIntrinsics::_stringzillaFindUTF16Latin1;
+  case stringzilla_equalsRange: return vmIntrinsics::_stringzillaEqualsRange;
   case stringzilla_rfindUTF16Latin1: return vmIntrinsics::_stringzillaRfindUTF16Latin1;
   case stringzilla_findCharLatin1: return vmIntrinsics::_stringzillaFindCharLatin1;
   case stringzilla_findCharUTF16: return vmIntrinsics::_stringzillaFindCharUTF16;
@@ -345,6 +347,7 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_math_sqrt    : tty->print("java_lang_math_sqrt"    ); break;
     case java_lang_math_sqrt_strict           : tty->print("java_lang_math_sqrt_strict"); break;
     case stringzilla_findUTF16Latin1: tty->print("stringzilla_findUTF16Latin1"); break;
+    case stringzilla_equalsRange: tty->print("stringzilla_equalsRange"); break;
     case stringzilla_rfindUTF16Latin1: tty->print("stringzilla_rfindUTF16Latin1"); break;
     case stringzilla_findCharLatin1: tty->print("stringzilla_findCharLatin1"); break;
     case stringzilla_findCharUTF16: tty->print("stringzilla_findCharUTF16"); break;

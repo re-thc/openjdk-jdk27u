@@ -1050,6 +1050,8 @@ address TemplateInterpreterGenerator::generate_stringzilla_equals_entry() {
   __ ldrb(r4, Address(tgt, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
   __ cmpw(r3, r4);
   __ br(Assembler::NE, different);
+  __ cmpw(length, StringZilla::max_bytes);
+  __ br(Assembler::HI, slow_path);
   __ add(src, src, arrayOopDesc::base_offset_in_bytes(T_BYTE));
   __ add(tgt, tgt, arrayOopDesc::base_offset_in_bytes(T_BYTE));
   __ andr(sp, r19_sender_sp, -16);

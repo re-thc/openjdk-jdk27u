@@ -55,6 +55,7 @@ CHAR_ENTRY(find_char_utf16, findCharUTF16)
 CHAR_ENTRY(rfind_char_latin1, rfindCharLatin1)
 CHAR_ENTRY(rfind_char_utf16, rfindCharUTF16)
 int equal_bytes(const char* src, const char* tgt, int length) {
+  if ((unsigned int)length > StringZilla::max_bytes) return JVM_STRINGZILLA_FALLBACK;
   const StringZillaKernels* table = published_kernels.load_acquire();
   if (table != nullptr) return table->equal(src, tgt, length);
   // String equality can run before native bootstrap publishes libjava.
@@ -70,6 +71,10 @@ int equal_bytes(const char* src, const char* tgt, int length) {
 void StringZilla::register_kernels(const void* table) {
   assert(table != nullptr, "kernel table");
   published_kernels.release_store((const StringZillaKernels*)table);
+}
+
+int StringZilla::equal_range(const char* src, int length, const char* tgt, int tgt_offset) {
+  return equal_bytes(src, tgt + tgt_offset, length);
 }
 
 
@@ -107,6 +112,7 @@ int StringZilla::search_char(const char* src, int length, int ch, bool utf16, bo
 
 address StringZilla::entry(vmIntrinsics::ID id) {
   switch (id) {
+    case vmIntrinsics::_stringzillaEqualsRange: return CAST_FROM_FN_PTR(address, StringZilla::equal_range);
     case vmIntrinsics::_equalsL: return CAST_FROM_FN_PTR(address, equal_bytes);
     case vmIntrinsics::_stringzillaFindCharLatin1: return CAST_FROM_FN_PTR(address, find_char_latin1);
     case vmIntrinsics::_stringzillaFindCharUTF16: return CAST_FROM_FN_PTR(address, find_char_utf16);

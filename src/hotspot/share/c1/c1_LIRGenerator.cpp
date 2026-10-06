@@ -2813,18 +2813,17 @@ void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
 // Keep the prefix within one LIR block; embedded loops have no allocator backedge.
 void LIRGenerator::do_stringzilla_equals(Intrinsic* x) {
   CodeEmitInfo* src_info = state_for(x, x->state_before());
-  CodeEmitInfo* tgt_info = new CodeEmitInfo(src_info);
   LIR_Opr result = rlock_result(x);
   LIRItem src(x->argument_at(0), this);
   LIRItem tgt(x->argument_at(1), this);
   src.load_item();
   tgt.load_item();
-  LIR_Opr length = new_register(T_INT);
-  LIR_Opr other_length = new_register(T_INT);
-  __ load(new LIR_Address(src.result(), arrayOopDesc::length_offset_in_bytes(), T_INT),
-          length, src_info, lir_patch_none);
-  __ load(new LIR_Address(tgt.result(), arrayOopDesc::length_offset_in_bytes(), T_INT),
-          other_length, tgt_info, lir_patch_none);
+  LIRItem src_length(x->argument_at(2), this);
+  LIRItem tgt_length(x->argument_at(3), this);
+  src_length.load_item();
+  tgt_length.load_item();
+  LIR_Opr length = src_length.result();
+  LIR_Opr other_length = tgt_length.result();
   LabelObj* different = new LabelObj();
   LabelObj* equal = new LabelObj();
   LabelObj* done = new LabelObj();
@@ -2848,6 +2847,12 @@ void LIRGenerator::do_stringzilla_equals(Intrinsic* x) {
   }
   __ cmp(lir_cond_equal, length, 8);
   __ branch(lir_cond_equal, equal->label());
+  // Normal callers gate this in Java. Protect direct calls to the private
+  // intrinsic as well; deoptimization resumes Java before a potentially
+  // unbounded equality leaf call.
+  __ cmp(lir_cond_greater, length, StringZilla::max_bytes);
+  __ branch(lir_cond_greater, new DeoptimizeStub(src_info, Deoptimization::Reason_intrinsic,
+                                              Deoptimization::Action_make_not_entrant));
   BasicTypeList signature(3);
   signature.append(T_ADDRESS);
   signature.append(T_ADDRESS);
@@ -2857,7 +2862,7 @@ void LIRGenerator::do_stringzilla_equals(Intrinsic* x) {
   __ move(tgt_ptr, cc->at(1));
   __ move(length, cc->at(2));
   LIR_Opr result_reg = result_register_for(x->type());
-  __ call_runtime_leaf(StringZilla::entry(x->id()), getThreadTemp(), result_reg, cc->args());
+  __ call_runtime_leaf(StringZilla::entry(vmIntrinsics::_equalsL), getThreadTemp(), result_reg, cc->args());
   __ move(result_reg, result);
   __ branch(lir_cond_always, done->label());
   __ branch_destination(different->label());
@@ -3046,6 +3051,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_stringzillaRfindCharUTF16:
     do_stringzilla_char(x);
     break;
+  case vmIntrinsics::_stringzillaEqualsRange:
   case vmIntrinsics::_stringzillaFindUTF16Latin1:
   case vmIntrinsics::_stringzillaRfindUTF16Latin1:
   case vmIntrinsics::_stringzillaFindLatin1:

@@ -385,6 +385,8 @@ class methodHandle;
    do_name(     compareTo_name,                                  "compareTo0")                                          \
    do_name(     compareToLU_name,                                "compareToUTF16_0")                                    \
    do_name(     compareToUL_name,                                "compareToLatin1_0")                                   \
+  do_intrinsic(_stringzillaEqualsRange, java_lang_StringZilla, stringzilla_equalsRange_name, stringzilla_search_signature, F_SN) \
+   do_name(stringzilla_equalsRange_name, "equalsRange") \
   do_intrinsic(_stringzillaFindUTF16Latin1, java_lang_StringZilla, stringzilla_findUTF16Latin1_name, stringzilla_search_signature, F_SN) \
    do_name(stringzilla_findUTF16Latin1_name, "findUTF16Latin1") \
   do_intrinsic(_stringzillaRfindUTF16Latin1, java_lang_StringZilla, stringzilla_rfindUTF16Latin1_name, stringzilla_search_signature, F_SN) \
@@ -421,6 +423,7 @@ class methodHandle;
    do_signature(indexOfI_signature,                              "([BI[BII)I")                                          \
    do_signature(indexOfChar_signature,                           "([BIII)I")                                            \
   do_intrinsic(_equalsL,                  java_lang_StringLatin1,equalsString_name, equalsB_signature,           F_S)   \
+  do_intrinsic(_equalsLChecked,           java_lang_StringLatin1,equals_name, equalsB_signature,                 F_S)   \
    do_name(     equalsString_name,                               "equals0")                                             \
                                                                                                                         \
   do_intrinsic(_isDigit,                  java_lang_CharacterDataLatin1, isDigit_name,      int_bool_signature,  F_R)   \

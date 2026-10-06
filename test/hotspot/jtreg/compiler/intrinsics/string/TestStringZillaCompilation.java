@@ -42,6 +42,10 @@ public class TestStringZillaCompilation {
     private static String utf16Needle = "\u0410\u0411\u0412\u0413";
     private static StringBuilder builder = new StringBuilder(latin);
     private static StringBuffer buffer = new StringBuffer(utf16);
+    private static String largeLatin = "a".repeat(131072);
+    private static String largeUTF16 = "\u0400".repeat(65537);
+    private static String largeLatinCopy = new String(largeLatin.toCharArray());
+    private static String largeUTF16Copy = new String(largeUTF16.toCharArray());
 
     public static int probeLatin() { return latin.indexOf(latinNeedle); }
     public static int probeUTF16() { return utf16.indexOf(utf16Needle); }
@@ -63,6 +67,10 @@ public class TestStringZillaCompilation {
 
     public static int probeEquality() { return latin.equals(new String(latin.toCharArray())) ? -1 : 0; }
     public static int probeUTF16Equality() { return utf16.equals(new String(utf16.toCharArray())) ? -1 : 0; }
+    public static int probeLargeEquality() { return largeLatin.equals(largeLatinCopy) ? -1 : 0; }
+    public static int probeLargeUTF16Equality() { return largeUTF16.equals(largeUTF16Copy) ? -1 : 0; }
+    public static int probeLargeReverse() { return largeLatin.lastIndexOf(latinNeedle); }
+    public static int probeLargeUTF16Reverse() { return largeUTF16.lastIndexOf(utf16Needle); }
     public static int probeLocalBuilder() { return new StringBuilder(latin).indexOf(latinNeedle); }
     public static int probeLocalString() { return new StringBuilder(utf16).toString().lastIndexOf(utf16Needle); }
     public static int probeLocalChar() { return new StringBuilder(utf16).toString().lastIndexOf(0x0413); }

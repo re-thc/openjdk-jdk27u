@@ -30,6 +30,10 @@
 #define StringZilla_initialize test_initialize
 #include "StringZillaKernels.c"
 #include <limits.h>
+#include <string.h>
+#if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
+#include <cpuid.h>
+#endif
 
 static jint requested_capabilities;
 static const StringZillaKernels* published;
@@ -45,8 +49,12 @@ JNIEXPORT void JNICALL test_register_kernels(const void* kernels) {
 static int can_execute(jint capabilities) {
 #if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
     if (capabilities & (JVM_STRINGZILLA_HASWELL | JVM_STRINGZILLA_SKYLAKE)) {
+        // GCC 10 does not recognize "lzcnt" in __builtin_cpu_supports.
+        // CPUID extended leaf 1, ECX bit 5 reports LZCNT on both AMD and Intel.
+        unsigned int eax, ebx, ecx, edx;
+        if (!__get_cpuid(0x80000001, &eax, &ebx, &ecx, &edx) || !(ecx & (1u << 5))) return 0;
         if (!(__builtin_cpu_supports("avx2") && __builtin_cpu_supports("bmi") &&
-              __builtin_cpu_supports("bmi2") && __builtin_cpu_supports("lzcnt"))) return 0;
+              __builtin_cpu_supports("bmi2"))) return 0;
     }
     if (capabilities & JVM_STRINGZILLA_SKYLAKE) {
         if (!(__builtin_cpu_supports("avx512f") && __builtin_cpu_supports("avx512bw") &&
@@ -80,6 +88,59 @@ static jint check_kernels(void) {
         test_initialize();
         CHECK(published == kernels);
         if (!can_execute(kernels->capabilities)) continue;
+        // Limits are enforced by every table, before touching either array.
+        StringZillaSearchFn bounded[] = {kernels->findLatin1, kernels->rfindLatin1,
+                                        kernels->findUTF16, kernels->rfindUTF16};
+        for (unsigned int i = 0; i < sizeof(bounded) / sizeof(bounded[0]); i++) {
+            CHECK(bounded[i](NULL, JVM_STRINGZILLA_MAX_BYTES + 2, NULL, 2) == JVM_STRINGZILLA_FALLBACK);
+            CHECK(bounded[i](NULL, 4096, NULL, 2048) == JVM_STRINGZILLA_FALLBACK);
+        }
+        CHECK(kernels->findUTF16Latin1(NULL, JVM_STRINGZILLA_MAX_BYTES + 2, NULL, 1) == JVM_STRINGZILLA_FALLBACK);
+        CHECK(kernels->rfindUTF16Latin1(NULL, JVM_STRINGZILLA_MAX_BYTES + 2, NULL, 1) == JVM_STRINGZILLA_FALLBACK);
+        StringZillaCharFn chars[] = {kernels->findCharLatin1, kernels->rfindCharLatin1,
+                                    kernels->findCharUTF16, kernels->rfindCharUTF16};
+        for (unsigned int i = 0; i < sizeof(chars) / sizeof(chars[0]); i++) {
+            CHECK(chars[i](NULL, JVM_STRINGZILLA_MAX_BYTES + 2, 'a') == JVM_STRINGZILLA_FALLBACK);
+        }
+        CHECK(kernels->equal(NULL, NULL, JVM_STRINGZILLA_MAX_BYTES + 1) == JVM_STRINGZILLA_FALLBACK);
+
+        // An actual byte-perfect odd occurrence forces the aligned adapter.
+        // Most earlier candidates agree until the penultimate code unit.
+        jchar repeated[1024] = {0};
+        jchar long_needle[64];
+        for (int i = 0; i < 512; i++) repeated[i] = 0x0401;
+        for (int i = 0; i < 64; i++) long_needle[i] = 0x0401;
+        long_needle[62] = 0x0402;
+        memcpy((char*)(repeated + 512) + 1, long_needle, sizeof(long_needle));
+        CHECK(kernels->findUTF16((const char*)repeated, 577 * 2, (const char*)long_needle, 128) == -1);
+        CHECK(kernels->rfindUTF16((const char*)repeated, 577 * 2, (const char*)long_needle, 128) == -1);
+        // Forward search must continue beyond the odd match to a real match.
+        memcpy(repeated + 608, long_needle, sizeof(long_needle));
+        CHECK(kernels->findUTF16((const char*)repeated, 672 * 2, (const char*)long_needle, 128) == 1216);
+        CHECK(kernels->rfindUTF16((const char*)repeated, 672 * 2, (const char*)long_needle, 128) == 1216);
+        // Reverse search must continue before the odd match to a real match.
+        memcpy(repeated + 23, long_needle, sizeof(long_needle));
+        CHECK(kernels->rfindUTF16((const char*)repeated, 577 * 2, (const char*)long_needle, 128) == 46);
+
+        // Periodic crossed bytes force aligned searching in both directions.
+        // Real matches straddle batch lanes/edges and leave a scalar tail.
+        const int aligned_counts[] = {1, 2, 3, 16, 64};
+        const int positions[] = {0, 1, 15, 16, 31, 32, 33, 63, 64, 65};
+        jchar crossed[512], aligned_needle[64];
+        for (int i = 0; i < 64; i++) aligned_needle[i] = 0x0104;
+        for (unsigned int c = 0; c < sizeof(aligned_counts) / sizeof(aligned_counts[0]); c++) {
+            int count = aligned_counts[c];
+            for (unsigned int p = 0; p < sizeof(positions) / sizeof(positions[0]); p++) {
+                for (int i = 0; i < 512; i++) crossed[i] = 0x0401;
+                memcpy(crossed + positions[p], aligned_needle, count * 2);
+                memcpy(crossed + 155, aligned_needle, count * 2);
+                CHECK(kernels->findUTF16((const char*)crossed, sizeof(crossed),
+                                         (const char*)aligned_needle, count * 2) == positions[p] * 2);
+                CHECK(kernels->rfindUTF16((const char*)crossed, sizeof(crossed),
+                                          (const char*)aligned_needle, count * 2) == 310);
+            }
+        }
+
         StringZillaSearchFn searches[] = {kernels->findUTF16Latin1, kernels->rfindUTF16Latin1};
         for (int reverse = 0; reverse < 2; reverse++) {
             for (unsigned int i = 0; i < sizeof(invalid_counts) / sizeof(invalid_counts[0]); i++) {
@@ -110,4 +171,8 @@ static jint check_kernels(void) {
 
 JNIEXPORT jint JNICALL Java_StringZillaKernelsTest_check(JNIEnv* env, jclass ignored) {
     return check_kernels();
+}
+
+JNIEXPORT jlong JNICALL Java_StringZillaKernelsTest_limits(JNIEnv* env, jclass ignored) {
+    return ((jlong)JVM_STRINGZILLA_MAX_BYTES << 32) | JVM_STRINGZILLA_MAX_WORK;
 }

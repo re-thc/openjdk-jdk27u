@@ -237,6 +237,7 @@ void TemplateInterpreterGenerator::generate_all() {
 
 #if defined(AMD64) || defined(AARCH64)
   native_method_entry(stringzilla_findUTF16Latin1)
+  native_method_entry(stringzilla_equalsRange)
   native_method_entry(stringzilla_rfindUTF16Latin1)
   native_method_entry(stringzilla_findCharLatin1)
   native_method_entry(stringzilla_findCharUTF16)
@@ -495,6 +496,7 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   case Interpreter::stringzilla_rfindCharUTF16:
     entry_point = generate_stringzilla_char_entry(kind); break;
   case Interpreter::stringzilla_findUTF16Latin1:
+  case Interpreter::stringzilla_equalsRange:
   case Interpreter::stringzilla_rfindUTF16Latin1:
   case Interpreter::stringzilla_findLatin1:
   case Interpreter::stringzilla_findUTF16:

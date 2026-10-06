@@ -111,6 +111,7 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   switch (id) {
 #if defined(AMD64) || defined(AARCH64)
   case vmIntrinsics::_equalsL:
+  case vmIntrinsics::_equalsLChecked:
     return UseStringZillaIntrinsics;
 #endif
   case vmIntrinsics::_compareAndSetLong:
@@ -234,6 +235,7 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
 #endif
 #if defined(AMD64) || defined(AARCH64)
+  case vmIntrinsics::_stringzillaEqualsRange:
   case vmIntrinsics::_stringzillaFindUTF16Latin1:
   case vmIntrinsics::_stringzillaRfindUTF16Latin1:
   case vmIntrinsics::_stringzillaFindCharLatin1:

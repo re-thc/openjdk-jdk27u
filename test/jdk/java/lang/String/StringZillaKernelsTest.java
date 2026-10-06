@@ -23,18 +23,27 @@
 
 /*
  * @test
- * @summary Enforce mixed-coder kernel bounds independently of Java and VM guards
+ * @summary Enforce native work/stack bounds and verify odd-byte UTF-16 searches
+ * @modules java.base/java.lang:open
  * @run main/native StringZillaKernelsTest
  */
 
 public class StringZillaKernelsTest {
     private static native int check();
+    private static native long limits();
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         System.loadLibrary("StringZillaKernelsTest");
         int failure = check();
         if (failure != 0) {
             throw new AssertionError("Native kernel check failed at line " + failure);
         }
+        Class<?> bridge = Class.forName("java.lang.StringZilla");
+        var bytes = bridge.getDeclaredField("MAX_BYTES");
+        var work = bridge.getDeclaredField("MAX_WORK");
+        bytes.setAccessible(true);
+        work.setAccessible(true);
+        long expected = ((long)bytes.getInt(null) << 32) | work.getInt(null);
+        if (limits() != expected) throw new AssertionError("Java/native work limits differ");
     }
 }

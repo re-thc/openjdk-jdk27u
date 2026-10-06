@@ -86,6 +86,7 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_fmaD,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_ref_reference_get0,                               // implementation of java.lang.ref.Reference.get()
     stringzilla_findUTF16Latin1,
+    stringzilla_equalsRange,
     stringzilla_rfindUTF16Latin1,
     stringzilla_findCharLatin1,
     stringzilla_findCharUTF16,

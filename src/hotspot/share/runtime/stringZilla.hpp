@@ -25,12 +25,15 @@
 #define SHARE_RUNTIME_STRINGZILLA_HPP
 
 #include "classfile/vmIntrinsics.hpp"
+#include "jvm.h"
 #include "utilities/globalDefinitions.hpp"
 
 class StringZilla : AllStatic {
  public:
+  static constexpr int max_bytes = JVM_STRINGZILLA_MAX_BYTES;
   static void register_kernels(const void* table);
   static int capabilities();
+  static int equal_range(const char* src, int length, const char* tgt, int tgt_offset);
   static address entry(vmIntrinsics::ID id);
   static int search_char(const char* src, int length, int ch, bool utf16, bool reverse);
   static int search(const char* src, int length, const char* tgt, int tgt_length,

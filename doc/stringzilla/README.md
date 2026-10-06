@@ -6,8 +6,14 @@ The integration changes searching and interpreter/C1 equality checks, without ch
 string representation or Java API semantics. `-XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=...` can disable individual
 bridge intrinsics and select JNI fallback. C2 retains its existing forward substring and character intrinsics. Disable the
 existing `_indexOf*` intrinsics as well to exercise compiled JNI fallback for
-every search. Equality reuses `_equalsL`; disabling it restores Java equality
-in the interpreter/C1 and disables the existing C2 equality intrinsic.
+every search. Equality reuses `_equalsL`; disabling it also disables the checked
+wrapper's alias `_equalsLChecked` in both compilers. The bounded equality bridge is
+`_stringzillaEqualsRange`; disable it as well to exercise JNI for large equality.
+
+The [bounded-work review](BOUNDED_REVIEW.md) records the latest portable filter,
+C1 equality changes, validation, benchmark table and reproduction commands.
+The [GCC 10 CI follow-up](CI_FOLLOWUP.md) records the native-test CPU-check fix
+and distinguishes local verification from GitHub Actions results.
 
 ## Vendoring and updates
 
@@ -56,6 +62,7 @@ existing Java behavior. Builder searches use logical count, never spare capacity
   the existing machinery.
 * JNI fallback: libjava delegates to JVM entry points; resolved arrays are
   searched without allocation or safepoints after deriving heap addresses.
+  It uses the same independent work bounds as intrinsic calls.
 
 The x86 dispatcher enables the upstream Haswell functions only when HotSpot
 permits AVX2 and detects BMI1, BMI2, and LZCNT. It selects Skylake AVX-512
@@ -76,11 +83,15 @@ scalar fallback until libjava publishes the table. Function-level ISA pragmas le
 both libraries at their normal CPU baseline. `SZ_AVOID_LIBC=1` disables upstream
 allocators, and `SZ_DEBUG=0` disables upstream debug termination.
 
-UTF-16 searches reject odd-byte matches. After the first such match, a bounded
-AVX2/NEON code-unit-aligned filter checks first/last characters and uses
-StringZilla equality to verify candidates, with a scalar tail. This avoids
-restarting a byte search at every position on periodic crossed-byte inputs.
-They preserve
+UTF-16 searches reject odd-byte matches. After the first such match, one portable
+C batch filter selects aligned candidates and verifies them from both ends,
+beginning at the search-direction end. Only the remaining prefix/suffix is
+checked. There are no handwritten AVX2 or NEON operations in the adapter.
+GCC/Clang compile an AVX2 copy of the same C loop under the existing VM capability
+gate; the baseline and ARM copies use their normal CPU target. StringZilla's
+search/equality kernels still come from unmodified upstream headers. The native
+request is bounded before either search or verification.
+Searches preserve
 isolated surrogates and match supplementary code points as surrogate pairs.
 Mixed UTF-16/Latin-1 substring searches widen up to 64 needle code units into a
 fixed native stack buffer. The kernel independently rejects counts outside
@@ -96,6 +107,22 @@ native-call register setup. Small ranges retain existing
 Java/platform intrinsics. See `BENCHMARKS.md` for
 measured thresholds, tier choices, and limitations.
 
+Native calls accept at most 64 KiB and, for substring search, a source-byte-length
+times needle-byte-length product of at most 4 MiB. Exceeding either returns the
+internal `-2` fallback sentinel, distinct from a miss (`-1`). Java splits large
+requests into windows with needle-minus-one-code-unit overlap. Needles occupying
+more than half the allowable window retain the original Java search; this
+avoids rescanning almost the entire window for every candidate. Large
+interpreter/C1 equality uses a range bridge with the existing five-argument
+search calling shape. Java helper backedges allow safepoints between bounded
+calls. C2's existing forward-search and equality implementations remain in use.
+The limits bound native work, not elapsed time or all existing JDK intrinsics.
+
+C1 parses a Java implementation of the checked equality intrinsic. Tiny arrays
+use existing word-load intrinsics; first-byte misses return before dispatch.
+Ordinary comparisons retain the existing equality leaf, while large arrays use
+the chunk helper. Java control flow preserves caller state across the slow call.
+
 ## Applicability audit
 
 | Location/API family | Handling |
@@ -110,7 +137,7 @@ measured thresholds, tier choices, and limitations.
 | Class loading, reflection, module names, file attributes, pattern quoting | Existing `String` search calls inherit the acceleration |
 | Arbitrary `CharSequence` / `CharBuffer`, `CharSequence.compare` | No contiguous byte-array contract; retain `charAt`/existing specialized comparison |
 | Regex matcher/search nodes | Arbitrary sequence plus regex semantics; retain existing pattern engines (literal `String` callers above are covered) |
-| `String.equals` (both coders) | Interpreter/C1 reuse `_equalsL` with short/prefix checks and a native equality leaf; C2 retains its equality intrinsic |
+| `String.equals` (both coders) | Interpreter uses `_equalsL`; C1 parses the checked Java helper and uses short/prefix checks plus bounded equality leaves; C2 retains its equality intrinsic |
 | `String.contentEquals(CharSequence)` | String arguments delegate to equality; same-coder builders retain the existing `ArraysSupport.mismatch` intrinsic and synchronization; mixed-coder builders and arbitrary sequences retain code-unit access |
 | Array equality / mismatch | Retain existing array intrinsics |
 | `startsWith` / `endsWith`, exact `regionMatches` | Retain existing range-mismatch intrinsics for equal coders and code-unit comparisons for mixed coders |
@@ -134,7 +161,7 @@ fallback). It covers threshold boundaries, empty and oversized
 needles, offsets/extreme `fromIndex`, builder capacity, mixed encodings, isolated
 surrogates, supplementary characters, odd-byte UTF-16 matches, and concurrent GC.
 `TestStringZillaAvailability` verifies registration/availability in both compilers
-with no flag, explicit on, and explicit off. `TestStringZillaCompilation` asserts that 22 public-API
+with no flag, explicit on, and explicit off. `TestStringZillaCompilation` asserts that 26 public-API
 callers actually compile at levels 1 and 4, preventing silent compiler bailout
 from being hidden by interpreter fallback. Existing String, builder, and HotSpot string tests are
 also run; exact results are recorded in `BENCHMARKS.md` and
@@ -149,6 +176,13 @@ native hardening, sanitizer scope, and retained benchmark limitations.
 and mismatch boundary with live caller values, compact strings/object headers
 off, and explicit opt-out. The [final review](FINAL_REVIEW.md) records its
 validation and a measured C1 optimization rejected for a short-input regression.
+`StringZillaBounded` checks window edges, long needles, equality, surrogate pairs
+and JNI/opt-out paths in eight execution modes. `TestStringZillaWork` forces the
+three Java chunk helpers through C1/C2 and checks a private equality call through
+a method handle. Native tests reject excessive work using null pointers before
+any array read, and check that Java/native work-limit constants agree.
+`StringZillaLongNeedle` adds long repeated-prefix, near-end/near-start mismatch
+and crossed-byte controls with two JMH forks per case.
 
 The JMH benchmark is
 `test/micro/org/openjdk/bench/java/lang/StringZillaSearch.java`. It parameterizes

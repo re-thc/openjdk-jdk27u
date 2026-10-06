@@ -87,6 +87,20 @@ public class TestStringZillaEquality {
                 }
             }
         }
+        for (int base : new int[]{'a', 0x400}) {
+            for (int size : new int[]{32767, 32768, 32769, 65535, 65536, 65537, 131072}) {
+                char[] content = new char[size];
+                java.util.Arrays.fill(content, (char)base);
+                String left = new String(content);
+                cases.add(new Case(left, new String(content.clone()), true));
+                for (int pos : new int[]{0, 32767, 32768, 65535, 65536, size - 1}) {
+                    if (pos >= size) continue;
+                    content[pos]++;
+                    cases.add(new Case(left, new String(content), false));
+                    content[pos]--;
+                }
+            }
+        }
         for (int i = 0; i < 5000; i++) check(cases.get(i % cases.size()), i);
         WhiteBox wb = WhiteBox.getWhiteBox();
         Method method = TestStringZillaEquality.class.getMethod("probe", String.class, String.class, long[].class);
@@ -97,6 +111,9 @@ public class TestStringZillaEquality {
                 throw new AssertionError("Equality caller did not compile at level " + level);
             }
             for (int i = 0; i < cases.size(); i++) check(cases.get(i), i * 37);
+            if (level == 1 && (!wb.isMethodCompiled(method) || wb.getMethodCompilationLevel(method) != 1)) {
+                throw new AssertionError("Large equality must use a Java slow call without deoptimizing its C1 caller");
+            }
         }
     }
 }

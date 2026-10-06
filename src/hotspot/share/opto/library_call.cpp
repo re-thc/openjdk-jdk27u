@@ -302,6 +302,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_stringzillaRfindCharLatin1:
   case vmIntrinsics::_stringzillaRfindCharUTF16:
     return inline_stringzilla_char();
+  case vmIntrinsics::_stringzillaEqualsRange:
   case vmIntrinsics::_stringzillaFindUTF16Latin1:
   case vmIntrinsics::_stringzillaRfindUTF16Latin1:
   case vmIntrinsics::_stringzillaFindLatin1:
@@ -319,6 +320,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_indexOfL_char:            return inline_string_indexOfChar(StrIntrinsicNode::L);
 
   case vmIntrinsics::_equalsL:                  return inline_string_equals(StrIntrinsicNode::LL);
+  case vmIntrinsics::_equalsLChecked:           return inline_string_equals(StrIntrinsicNode::LL);
 
   case vmIntrinsics::_vectorizedHashCode:       return inline_vectorizedHashCode();
 
@@ -1268,7 +1270,9 @@ bool LibraryCallKit::inline_stringzilla() {
   Node* tgt_length = argument(4);
   RegionNode* bailout = create_bailout();
   generate_string_range_check(src, offset, length, false, bailout);
-  generate_string_range_check(tgt, intcon(0), tgt_length, false, bailout);
+  bool equality = intrinsic_id() == vmIntrinsics::_stringzillaEqualsRange;
+  generate_string_range_check(tgt, equality ? tgt_length : intcon(0),
+                              equality ? length : tgt_length, false, bailout);
   if (check_bailout(bailout)) return true;
   Node* src_start = array_element_address(src, offset, T_BYTE);
   Node* tgt_start = array_element_address(tgt, intcon(0), T_BYTE);

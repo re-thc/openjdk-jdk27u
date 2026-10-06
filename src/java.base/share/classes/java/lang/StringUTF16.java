@@ -973,8 +973,9 @@ final class StringUTF16 {
                 }
             }
             if (StringZilla.ENABLED) {
-                return StringZilla.indexOfUTF16(value, valueToIndex, str, strToIndex,
+                int result = StringZilla.indexOfUTF16(value, valueToIndex, str, strToIndex,
                         valueFromIndex + (strToIndex <= 8 ? 1 : 0));
+                if (result != StringZilla.FALLBACK) return result;
             }
         }
         int max = (valueToIndex - strToIndex);
@@ -1090,8 +1091,9 @@ final class StringUTF16 {
                 }
             }
             if (StringZilla.ENABLED && tgtCount <= StringZilla.MAX_MIXED_NEEDLE) {
-                return StringZilla.indexOfUTF16Latin1(src, srcCount, tgt, tgtCount,
+                int result = StringZilla.indexOfUTF16Latin1(src, srcCount, tgt, tgtCount,
                         fromIndex + (tgtCount <= 8 ? 1 : 0));
+                if (result != StringZilla.FALLBACK) return result;
             }
         }
         int max = (srcCount - tgtCount);
@@ -1124,7 +1126,9 @@ final class StringUTF16 {
         if (max - fromIndex >= (StringZilla.MIN_BYTES >> 1) && StringZilla.ENABLED
                 && Character.isValidCodePoint(ch)) {
             int result = StringZilla.findCharUTF16(value, fromIndex << 1, (max - fromIndex) << 1, ch);
-            return result < 0 ? -1 : fromIndex + (result >> 1);
+            if (result == StringZilla.FALLBACK)
+                result = StringZilla.searchCharLarge(value, fromIndex << 1, (max - fromIndex) << 1, ch, true, false);
+            if (result != StringZilla.FALLBACK) return result < 0 ? -1 : fromIndex + (result >> 1);
         }
         for (int i = fromIndex; i < max; i++) {
             if (getChar(value, i) == ch) {
@@ -1141,7 +1145,9 @@ final class StringUTF16 {
         if (max - fromIndex >= (StringZilla.MIN_BYTES >> 1) && StringZilla.ENABLED
                 && Character.isValidCodePoint(ch)) {
             int result = StringZilla.findCharUTF16(value, fromIndex << 1, (max - fromIndex) << 1, ch);
-            return result < 0 ? -1 : fromIndex + (result >> 1);
+            if (result == StringZilla.FALLBACK)
+                result = StringZilla.searchCharLarge(value, fromIndex << 1, (max - fromIndex) << 1, ch, true, false);
+            if (result != StringZilla.FALLBACK) return result < 0 ? -1 : fromIndex + (result >> 1);
         }
         if (Character.isValidCodePoint(ch)) {
             final char hi = Character.highSurrogate(ch);
@@ -1166,7 +1172,9 @@ final class StringUTF16 {
             }
             int result = StringZilla.rfindUTF16(src, 0, searchLength << 1,
                     tgt, tgtCount << 1);
-            return result < 0 ? -1 : result >> 1;
+            if (result == StringZilla.FALLBACK)
+                result = StringZilla.searchLarge(src, 0, searchLength << 1, tgt, tgtCount << 1, 1, true);
+            if (result != StringZilla.FALLBACK) return result < 0 ? -1 : result >> 1;
         }
         assert fromIndex >= 0;
         assert tgtCount > 0;
@@ -1224,7 +1232,9 @@ final class StringUTF16 {
                     searchLength = limit + 2;
                 }
                 int result = StringZilla.rfindCharUTF16(value, 0, searchLength << 1, ch);
-                return result < 0 ? -1 : result >> 1;
+                if (result == StringZilla.FALLBACK)
+                    result = StringZilla.searchCharLarge(value, 0, searchLength << 1, ch, true, true);
+                if (result != StringZilla.FALLBACK) return result < 0 ? -1 : result >> 1;
             }
         }
         if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
@@ -2066,7 +2076,9 @@ final class StringUTF16 {
                 return fromIndex;
             }
             int result = StringZilla.rfindUTF16Latin1(src, 0, searchLength << 1, tgt, tgtCount);
-            return result < 0 ? -1 : result >> 1;
+            if (result == StringZilla.FALLBACK)
+                result = StringZilla.searchLarge(src, 0, searchLength << 1, tgt, tgtCount, 2, true);
+            if (result != StringZilla.FALLBACK) return result < 0 ? -1 : result >> 1;
         }
         assert fromIndex >= 0;
         assert tgtCount > 0;

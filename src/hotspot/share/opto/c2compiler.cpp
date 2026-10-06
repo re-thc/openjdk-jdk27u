@@ -250,6 +250,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
     if (!Matcher::match_rule_supported(Op_StrComp)) return false;
     break;
   case vmIntrinsics::_equalsL:
+  case vmIntrinsics::_equalsLChecked:
     if (!Matcher::match_rule_supported(Op_StrEquals)) return false;
     break;
   case vmIntrinsics::_vectorizedHashCode:
@@ -799,6 +800,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_mulAdd:
   case vmIntrinsics::_montgomeryMultiply:
   case vmIntrinsics::_montgomerySquare:
+  case vmIntrinsics::_stringzillaEqualsRange:
   case vmIntrinsics::_stringzillaFindUTF16Latin1:
   case vmIntrinsics::_stringzillaRfindUTF16Latin1:
   case vmIntrinsics::_stringzillaFindCharLatin1:

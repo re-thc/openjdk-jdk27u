@@ -26,7 +26,7 @@
 #ifndef JAVA_BASE_STRINGZILLA_KERNELS_H
 #define JAVA_BASE_STRINGZILLA_KERNELS_H
 
-#include "jni.h"
+#include "jvm.h"
 
 enum {
     JVM_STRINGZILLA_SERIAL = 0,

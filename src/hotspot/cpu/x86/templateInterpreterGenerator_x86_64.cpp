@@ -244,6 +244,8 @@ address TemplateInterpreterGenerator::generate_stringzilla_equals_entry() {
   __ movzbl(rax, Address(src, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
   __ cmpb(rax, Address(tgt, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
   __ jcc(Assembler::notEqual, different);
+  __ cmpl(length, StringZilla::max_bytes);
+  __ jcc(Assembler::above, slow_path);
   __ addptr(src, arrayOopDesc::base_offset_in_bytes(T_BYTE));
   __ addptr(tgt, arrayOopDesc::base_offset_in_bytes(T_BYTE));
   __ super_call_VM_leaf(StringZilla::entry(vmIntrinsics::_equalsL), src, tgt, length);
