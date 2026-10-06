@@ -9,7 +9,7 @@ mode=${1:?Usage: run.sh footprint|memory|jmh|renaissance|startup}
 here=$(cd -- "$(dirname -- "$0")" && pwd)
 repo=$(cd -- "$here/../../.." && pwd)
 results=${RESULTS_DIR:-"$PWD/four-byte-results"}
-mkdir -p "$results" "$results/classes"
+mkdir -p "$results" "$results/classes" "$results/scratch"
 
 select_vm() {
   jdk=$CANDIDATE_JDK

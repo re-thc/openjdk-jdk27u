@@ -65,3 +65,27 @@ seed. It measures `java -version` process startup, not application readiness.
 Raw JSON and CSV results and the validation report accompany the PR. The
 report identifies any earlier memory-only runs whose timings were affected
 by concurrent compilation or tests; those timings must not be used.
+
+The additional locking/hash race uses JCStress 0.16, JNA and JNA platform
+5.8.0, and jopt-simple 4.6. Set `JCSTRESS_CP` to those four jars, then run:
+
+```sh
+mkdir -p "$RESULTS_DIR/jcstress-classes"
+"$CANDIDATE_JDK/bin/javac" -cp "$JCSTRESS_CP" \
+  -processor org.openjdk.jcstress.infra.processors.JCStressTestProcessor \
+  -d "$RESULTS_DIR/jcstress-classes" \
+  doc/benchmarks/four-byte-headers/HashAndLock.java
+for gc in Serial G1 Z; do
+  "$CANDIDATE_JDK/bin/java" --enable-native-access=ALL-UNNAMED \
+    -XX:ActiveProcessorCount=2 \
+    -cp "$RESULTS_DIR/jcstress-classes:$JCSTRESS_CP" \
+    org.openjdk.jcstress.Main -t 'fourbyte.HashAndLock' \
+    -m quick -f 3 -iters 5 -time 200 -c 2 -af NONE \
+    -r "$RESULTS_DIR/jcstress-$gc" \
+    -jvmArgsPrepend "--enable-native-access=ALL-UNNAMED -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+Use${gc}GC"
+done
+```
+
+The actors race the first identity hash with synchronized updates while
+allocating garbage. The arbiter rejects hash changes and lost field updates.
+This supplements the jtreg relocation and concurrent-hash tests.

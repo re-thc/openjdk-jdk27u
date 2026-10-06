@@ -3,8 +3,8 @@
 This port adds an optional four-byte object header to JDK 27u. The default
 eight-byte compact header and `-XX:-UseCompactObjectHeaders` twelve-byte
 layout remain available. The experimental layout supports Serial, G1, ZGC,
-Parallel and Shenandoah on x64 and AArch64. Other architectures disable the
-four-byte option with a warning.
+Parallel and Shenandoah on x64 and AArch64. Other 64-bit architectures disable
+the four-byte option with a warning. The flag is unavailable in 32-bit builds.
 
 Enable it with a supported collector, for example:
 

@@ -55,8 +55,12 @@ for gc in collectors:
     for layout in layouts:
         data = read(f"memory-{layout}-{gc}.json")
         if data:
+            if set(data["data"]) != {"scrabble", "scala-doku"}:
+                raise ValueError(f"Incomplete memory workloads for {layout}/{gc}")
             for name, item in data["data"].items():
                 samples = item["results"]
+                if len(samples) != 3:
+                    raise ValueError(f"Expected three memory operations for {name}/{layout}/{gc}")
                 memory.append([gc, layout, name, len(samples),
                                stats.median(x["retained_heap_after_bytes"] for x in samples),
                                stats.median(x["rss_after_bytes"] for x in samples),
@@ -114,6 +118,9 @@ if path.exists():
     with path.open() as stream:
         for row in csv.DictReader(stream):
             samples.setdefault((row["gc"], row["layout"]), []).append(int(row["elapsed_ns"]) / 1e6)
+    expected = {(gc, layout) for gc in collectors for layout in layouts}
+    if set(samples) != expected or any(len(values) != 50 for values in samples.values()):
+        raise ValueError("Expected 50 startup samples for every layout and collector")
     for (gc, layout), values in samples.items():
         p95 = sorted(values)[math.ceil(len(values) * 0.95) - 1]
         startup.append([gc, layout, len(values), stats.median(values), p95])
