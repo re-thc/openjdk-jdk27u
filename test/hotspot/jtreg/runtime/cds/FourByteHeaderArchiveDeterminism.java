@@ -57,10 +57,19 @@
  *      -XX:+WhiteBoxAPI FourByteHeaderArchiveDeterminism Z
  */
 
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+
 public class FourByteHeaderArchiveDeterminism {
     public static void main(String[] args) throws Exception {
         String gc = "-XX:+Use" + args[0] + "GC";
         DeterministicDump.doTest(false, gc, "-XX:+UseFourByteObjectHeaders");
         DeterministicDump.doTest(true, gc, "-XX:+UseFourByteObjectHeaders");
+        // The determinism runs use a fixed large young generation. Also dump
+        // with ergonomic heap sizing, exercising hash expansion during GC.
+        new OutputAnalyzer(ProcessTools.createLimitedTestJavaProcessBuilder(
+                "-Xint", gc, "-XX:+UseFourByteObjectHeaders", "-Xlog:gc",
+                "-XX:SharedArchiveFile=four-byte-young-gc.jsa", "-Xshare:dump").start())
+                .shouldHaveExitValue(0);
     }
 }

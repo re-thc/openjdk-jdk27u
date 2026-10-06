@@ -199,6 +199,7 @@ public:
   static void log_in_use_monitor_details(outputStream* out, bool log_all);
 
   static intptr_t get_next_hash(Thread* current, oop obj);
+  static intptr_t get_hash_for_copy(oop from, oop to, Klass* klass);
 
  private:
   friend class SynchronizerTest;

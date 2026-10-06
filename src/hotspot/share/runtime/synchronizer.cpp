@@ -645,15 +645,19 @@ static intptr_t get_next_hash_legacy(Thread* current, oop obj) {
 
 #ifdef _LP64
 // Keep dump-only class metadata and hashing work out of the normal address hash path.
-NOINLINE static uint64_t static_archive_hash_input(oop obj) {
+NOINLINE static uint64_t static_archive_hash_input(oop obj, oop metadata_obj, Klass* obj_klass) {
+  if (metadata_obj == nullptr) {
+    metadata_obj = obj;
+    obj_klass = obj->klass();
+  }
   // Regenerated mirrors can be allocated at different offsets by concurrent GCs.
   // Class names give these mirrors a stable hash while dumping.
-  if (java_lang_Class::is_instance(obj)) {
-    Klass* klass = java_lang_Class::as_Klass(obj);
+  if (obj_klass == vmClasses::Class_klass()) {
+    Klass* klass = java_lang_Class::as_Klass(metadata_obj);
     if (klass == nullptr) {
       // Hash expansion also runs during GC, before global mirror handles are fixed.
       // Read the stable array metadata instead of resolving those handles.
-      Klass* array_klass = java_lang_Class::array_klass_acquire(obj);
+      Klass* array_klass = java_lang_Class::array_klass_acquire(metadata_obj);
       BasicType type = array_klass == nullptr ? T_VOID : ArrayKlass::cast(array_klass)->element_type();
       return static_cast<uint32_t>(type);
     }
@@ -666,7 +670,7 @@ NOINLINE static uint64_t static_archive_hash_input(oop obj) {
 }
 #endif
 
-static intptr_t get_four_byte_hash(oop obj) {
+static intptr_t get_four_byte_hash(oop obj, oop metadata_obj = nullptr, Klass* obj_klass = nullptr) {
   assert(UseFourByteObjectHeaders, "Only with compact i-hash");
   assert(hashCode == 6 || hashCode == 2, "must have idempotent hashCode");
   if (hashCode == 2) {
@@ -675,7 +679,7 @@ static intptr_t get_four_byte_hash(oop obj) {
 #ifdef _LP64
   uint64_t val = cast_from_oop<uint64_t>(obj);
   if (!UseCompiler && CDSConfig::is_dumping_classic_static_archive()) {
-    val = static_archive_hash_input(obj);
+    val = static_archive_hash_input(obj, metadata_obj, obj_klass);
   }
   uint32_t hash = FastHash::get_hash32((uint32_t)val, (uint32_t)(val >> 32));
 #else
@@ -688,6 +692,14 @@ static intptr_t get_four_byte_hash(oop obj) {
 
 intptr_t ObjectSynchronizer::get_next_hash(Thread* current, oop obj) {
   return UseFourByteObjectHeaders ? get_four_byte_hash(obj) : get_next_hash_legacy(current, obj);
+}
+
+intptr_t ObjectSynchronizer::get_hash_for_copy(oop from, oop to, Klass* klass) {
+  assert(UseFourByteObjectHeaders, "only with four-byte headers");
+  // The source header may already contain a forwarding pointer. Use the
+  // captured class and copied fields for dump-only metadata hashing, while
+  // preserving the source address for ordinary address-derived hashes.
+  return get_four_byte_hash(from, to, klass);
 }
 
 // Keep this path out of the legacy hash loop. Combining both layouts makes
