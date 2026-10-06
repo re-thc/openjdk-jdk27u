@@ -49,7 +49,7 @@ def native():
     run("ld-build", ["cmake", "--build", area / "ld", "-j4"])
     exe = area / "compare"
     run("native-compile", ["gcc-14", "-O2", "-I", stock, "-I", ld,
-        ROOT / "test/micro/native/zip/CompareBackends.c", area / "stock.a", ng / "libz.a",
+        ROOT / ".github/scripts/zip-compare-backends.c", area / "stock.a", ng / "libz.a",
         area / "ld/libdeflate.a", "-o", exe])
     patterns = {
         "java": "src/java.base/share/classes/java/util/*.java",
