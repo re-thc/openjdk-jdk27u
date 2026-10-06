@@ -1,4 +1,21 @@
-# GCC 10 native-test compatibility
+# CI compiler update and native-test compatibility
+
+## GCC 14 for Linux CI
+
+All Linux GCC workflow inputs now select GCC 14. This updates the x64
+release/debug, Zero, minimal, optimized, no-PCH, static JDK, static-library,
+documentation and cross-compilation jobs. Linux AArch64 already selected GCC 14.
+The runners already use Ubuntu 24.04; a runner OS upgrade is unnecessary.
+Ubuntu 24.04 package indexes supply both native GCC/G++ 14 and the required
+ARM32, s390x, PowerPC64LE and RISC-V cross toolchains.
+
+The release, fastdebug and AArch64 local builds documented in
+[the bounded-work review](BOUNDED_REVIEW.md) already use GCC 14. The newer
+workflow keeps the existing platform/build/test matrix. The CPUID compatibility
+fix below remains useful for users building the fork with older supported
+compilers.
+
+## Earlier GCC 10 failure
 
 The GitHub Actions run for PR #4 at
 `6e8756207e3afb50145510d8c60ca2c16b16ab0b`

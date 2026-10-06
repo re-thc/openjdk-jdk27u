@@ -12,7 +12,7 @@ wrapper's alias `_equalsLChecked` in both compilers. The bounded equality bridge
 
 The [bounded-work review](BOUNDED_REVIEW.md) records the latest portable filter,
 C1 equality changes, validation, benchmark table and reproduction commands.
-The [GCC 10 CI follow-up](CI_FOLLOWUP.md) records the native-test CPU-check fix
+The [CI follow-up](CI_FOLLOWUP.md) records the GCC 14 workflow update, native-test CPU-check fix
 and distinguishes local verification from GitHub Actions results.
 
 ## Vendoring and updates
