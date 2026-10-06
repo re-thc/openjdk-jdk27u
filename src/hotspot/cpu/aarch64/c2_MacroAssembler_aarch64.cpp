@@ -25,6 +25,7 @@
 
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "oops/instanceKlass.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/compile.hpp"
 #include "opto/intrinsicnode.hpp"
@@ -244,16 +245,24 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
       }
 
       if (UseFourByteObjectHeaders) {
-        // TODO: The fast-path table lookup currently doesn't work with Lilliput's
-        // compact identity-hashcode implementation.
-        // See: https://bugs.openjdk.org/browse/JDK-8380981
-        b(slow_path);
+        // Acquire the state published after installing an expanded hash slot.
+        // Only ordinary instances have a fixed slot offset in InstanceKlass.
+        ldarw(t1_hash, obj);
+        ubfx(t1_hash, t1_hash, markWord::hashctrl_shift, markWord::hashctrl_bits);
+        cmpw(t1_hash, 3);
+        br(Assembler::NE, slow_path);
+        load_klass(t3, obj);
+        ldrw(t2, Address(t3, Klass::kind_offset_in_bytes()));
+        cmpw(t2, Klass::InstanceKlassKind);
+        br(Assembler::NE, slow_path);
+        ldrw(t1_hash, Address(t3, InstanceKlass::hash_offset_offset_in_bytes()));
+        ldrw(t1_hash, Address(obj, t1_hash, Address::uxtw(0)));
       } else {
-        // Look for the monitor in the table.
-
         // Get the hash code.
         ubfx(t1_hash, t3, markWord::hash_shift, markWord::hash_bits);
+      }
 
+      { // Look for the monitor in the table.
         // Get the table and calculate the bucket's address
         lea(t3, ExternalAddress(ObjectMonitorTable::current_table_address()));
         ldr(t3, Address(t3));
