@@ -43,7 +43,39 @@ public class TestZlibNGSmallStreams {
         }
     }
 
+    private static void checkParameterOnlyCall(boolean direct) {
+        byte[] input = new byte[65536];
+        new Random(12345).nextBytes(input);
+        try (Deflater d = new Deflater(6)) {
+            d.setLevel(1);
+            d.setStrategy(Deflater.FILTERED);
+            ByteBuffer output = direct ? ByteBuffer.allocateDirect(4096) : ByteBuffer.allocate(4096);
+            if (d.deflate(output) != 0 || d.getBytesRead() != 0 || d.getBytesWritten() != 0)
+                throw new AssertionError("parameter-only progress");
+
+            d.setInput(input);
+            d.finish();
+            byte[] first = new byte[input.length + 1024];
+            int length = d.deflate(first);
+            if (!d.finished()) throw new AssertionError("initial compression incomplete");
+
+            // A fresh stream and a reset stream with the same input/settings
+            // must fit in the same output buffer. No-data parameter calls must
+            // not select a different backend before the first input arrives.
+            d.reset();
+            d.setInput(input);
+            d.finish();
+            byte[] second = new byte[length];
+            int repeated = d.deflate(second);
+            if (!d.finished() || repeated != length ||
+                !Arrays.equals(first, 0, length, second, 0, repeated))
+                throw new AssertionError("parameter-only call changed backend selection");
+        }
+    }
+
     private static void emit() throws Exception {
+        checkParameterOnlyCall(false);
+        checkParameterOnlyCall(true);
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] data = new byte[1024];
         for (int i = 0; i < data.length; i++) data[i] = (byte) ("tiny zip entry 0123456789".charAt(i % 23));
