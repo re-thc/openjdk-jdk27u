@@ -25,11 +25,11 @@
 #ifndef SHARE_GC_SHARED_FULLGCFORWARDING_HPP
 #define SHARE_GC_SHARED_FULLGCFORWARDING_HPP
 
+#include "gc/shared/legacyFullGCForwarding.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "gc/shared/legacyFullGCForwarding.hpp"
 
 class FallbackTable;
 

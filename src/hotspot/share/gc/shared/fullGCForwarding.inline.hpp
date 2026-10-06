@@ -25,8 +25,8 @@
 #define SHARE_GC_SHARED_FULLGCFORWARDING_INLINE_HPP
 
 #include "gc/shared/fullGCForwarding.hpp"
-#include "gc/shared/legacyFullGCForwarding.inline.hpp"
 
+#include "gc/shared/legacyFullGCForwarding.inline.hpp"
 #include "logging/log.hpp"
 #include "nmt/memTag.hpp"
 #include "oops/markWord.hpp"
