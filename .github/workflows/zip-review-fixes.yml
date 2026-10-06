@@ -1,4 +1,4 @@
-name: ZIP review fixes and corpus qualification
+name: ZIP backend qualification
 on:
   push:
     branches: [pr/zlib-ng-validation]
@@ -76,6 +76,7 @@ jobs:
           git rev-parse HEAD > validation/results/source.txt
           python3 -m py_compile .github/scripts/validate-review-fixes.py
       - name: Build full sysroot image and probe libzip target flags
+        id: build
         env:
           CC: gcc-14
           CXX: g++-14
@@ -100,6 +101,7 @@ jobs:
       - name: Run ZIP jtreg, GC and JNI checks
         run: python3 .github/scripts/validate-zip-backend.py tests --jdk build/zip-review/images/jdk --jtreg jtreg/installed
       - name: Qualify independent defaults in interpreter, C1 and C2
+        if: always() && steps.build.outcome == 'success'
         run: python3 .github/scripts/validate-review-fixes.py defaults build/zip-review/images/jdk
       - uses: actions/upload-artifact@v6
         if: always()
