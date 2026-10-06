@@ -3477,10 +3477,12 @@ void Arguments::set_compact_headers_flags() {
 
 jint Arguments::apply_ergo() {
 #ifdef _LP64
-  // An explicit request for the legacy layout also disables the fork default.
+  // A legacy-layout request from arguments, environment variables or a flag
+  // file also disables the fork default. AOT child VMs inherit their options
+  // through JAVA_TOOL_OPTIONS.
   // An explicit +UseFourByteObjectHeaders still implies compact headers.
   if (FLAG_IS_DEFAULT(UseFourByteObjectHeaders) &&
-      FLAG_IS_CMDLINE(UseCompactObjectHeaders) && !UseCompactObjectHeaders) {
+      !FLAG_IS_DEFAULT(UseCompactObjectHeaders) && !UseCompactObjectHeaders) {
     FLAG_SET_ERGO(UseFourByteObjectHeaders, false);
   }
   if (UseFourByteObjectHeaders) {

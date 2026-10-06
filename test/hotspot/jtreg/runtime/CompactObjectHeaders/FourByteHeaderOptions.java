@@ -34,14 +34,25 @@ import jdk.test.lib.process.ProcessTools;
 
 public class FourByteHeaderOptions {
     static void check(boolean four, boolean compact, String... options) throws Exception {
+        check(null, four, compact, options);
+    }
+
+    static void check(String environment, boolean four, boolean compact, String... options) throws Exception {
         var args = new java.util.ArrayList<String>();
         if (java.util.Arrays.stream(options).anyMatch(option -> option.startsWith("-XX:hashCode="))) {
             args.add("-XX:+UnlockExperimentalVMOptions");
         }
-        args.addAll(java.util.List.of(options));
+        if (environment == null) {
+            args.addAll(java.util.List.of(options));
+        }
         args.add("-XX:+PrintFlagsFinal");
         args.add("-version");
-        var output = new OutputAnalyzer(ProcessTools.createLimitedTestJavaProcessBuilder(args).start());
+        var builder = ProcessTools.createLimitedTestJavaProcessBuilder(args);
+        if (environment != null) {
+            String inherited = builder.environment().getOrDefault(environment, "");
+            builder.environment().put(environment, inherited + " " + String.join(" ", options));
+        }
+        var output = new OutputAnalyzer(builder.start());
         output.shouldHaveExitValue(0);
         output.shouldMatch("UseFourByteObjectHeaders\\s+= " + four);
         output.shouldMatch("UseCompactObjectHeaders\\s+= " + compact);
@@ -56,6 +67,11 @@ public class FourByteHeaderOptions {
         check(true, true, "-XX:+UseFourByteObjectHeaders", "-XX:-UseCompactObjectHeaders");
         check(false, true, "-XX:+UseFourByteObjectHeaders", "-XX:hashCode=3");
         check(false, true, "-XX:hashCode=3");
+        for (String environment : java.util.List.of("JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "JDK_JAVA_OPTIONS")) {
+            check(environment, false, false, "-XX:-UseCompactObjectHeaders");
+            check(environment, false, true, "-XX:-UseFourByteObjectHeaders");
+            check(environment, true, true, "-XX:+UseFourByteObjectHeaders", "-XX:-UseCompactObjectHeaders");
+        }
         for (String gc : java.util.List.of("Serial", "G1", "Z")) {
             check(true, true, "-XX:+Use" + gc + "GC");
             check(false, true, "-XX:-UseFourByteObjectHeaders", "-XX:+Use" + gc + "GC");
