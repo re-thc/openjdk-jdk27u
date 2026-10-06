@@ -64,7 +64,7 @@ exponent is adjusted in 64-bit arithmetic, including extreme int exponents.
 Inputs shorter than eight digits keep the existing Java fast path, avoiding
 leaf-call overhead when a single word scan cannot be used.
 
-## Backend and performance qualification
+## Backend coverage
 
 | Execution tier | x86-64/AArch64 little-endian | Other ports |
 | --- | --- | --- |
@@ -77,9 +77,9 @@ Parsing remains enabled by default on all ports. The eight-digit trusted-buffer
 gate and 1,024-code-unit String ceiling are shared; there is no JNI-specific
 small-String gate. Linux x86 intrinsic measurements do not establish a win for
 JNI-only ports. Existing forced-JNI samples use Linux x86 and must be assessed
-separately. Native ARM64 and Windows timing are unmeasured. Default policy is
-unchanged; a new backend gate would require representative measurements.
-Use the [original/head review runner](benchmarks/decimal-review-followup/README.md)
+separately. Native ARM64 and Windows timing are unmeasured. A backend-specific
+cutoff would require representative measurements.
+Use the [original/default benchmark runner](benchmarks/decimal-review-followup/README.md)
 to compare original/default/opt-out/JNI with allocation profiling by tier.
 
 ## Consumers audited

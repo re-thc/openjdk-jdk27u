@@ -1,38 +1,23 @@
-# Decimal review follow-up
+# Historical decimal conversion controls
 
-The subsequent [shortest-rendering review](../decimal-original-baseline/README.md)
-adds an all-tier original-JDK comparison, permits correct shorter subnormal
-text and preserves the precision metadata path. Its footprint measurements use
-a further reduction of unused explicit instantiations. This report records the
-preceding review source and controls.
+For current original-JDK comparisons, String ownership validation and the
+complete linked footprint, use the [decimal conversion benchmark report](../decimal-original-baseline/README.md).
+This archive records formatter and native-code controls based on
+`e9dbce2b547fa5ccb23b4bc8a97b95c869848f88`.
 
-This follow-up addresses the baseline, String ownership, JNI-default and vendor
-upgrade concerns at parent `e9dbce2b547fa5ccb23b4bc8a97b95c869848f88`.
-Parsing and formatting remain opt-out. There is no new wrapper in the Java
-production path, no speculative JNI cutoff, and no formatter algorithm change.
+## Formatter and constructor controls
 
-## Baseline and String construction
+The [formatting controls](../zmij/README.md) use a fast_float-only image with
+an unmodified formatter. Float concatenation measured 52.66 → 52.36 ns
+(1.01×), float builder append was near parity, and random Float.toString
+measured 51.48 → 39.56 ns (1.30×). Same-image opt-out ratios are separate
+diagnostic data; they are not comparisons against a pristine JDK.
 
-The [formatting report](../zmij/README.md) now leads with independently measured
-original-formatter controls. Its original image is the preceding fast_float-only
-PR image, with an unmodified formatter; it is not a pristine entire JDK.
-Float concatenation is parity (52.66 → 52.36 ns, 1.01×), float builder append is
-parity, and random Float.toString is about 1.30× (51.48 → 39.56 ns).
-The larger modified-image opt-out ratios are retained as diagnostic data.
-Precision-formatting outliers and near-neutral controls remain visible.
-
-The enabled compact-string ToDecimal path allocates an exact-sized byte array,
-copies the logical text into it, and passes exclusive ownership to an internal
-String constructor. Disabled/noncompact paths use the original ISO-8859-1
-copying constructor. Descriptions claiming the original constructor was always
-retained have been corrected. TestZmij now checks every length 0–24 and mutates
-the scratch buffer after construction to catch accidental ownership transfer.
-That new Java check is **pending execution**.
-
-No fresh PR-head Java timing/allocation results are claimed. Even a minimal
-Serial-GC JVM failed before Java execution with pthread_create EAGAIN on this
-host, which has over 32,000 unreaped processes. Historical results are labeled
-accordingly. Native compilation and standalone checks below were possible.
+The compact String path copies into an exact-sized, exclusively owned byte
+array and uses the internal Latin1 constructor. Public-constructor controls
+and executed scratch-buffer mutation tests are in the current report.
+This archive contains historical timing and standalone native checks;
+Java execution was unavailable during its collection.
 
 ## JNI defaults
 
@@ -45,17 +30,17 @@ not qualify JNI-only ports. Forced-JNI x86 timing is a separate diagnostic.
 Native ARM64 and Windows performance remain unmeasured. A backend-specific
 gate needs representative measurements, not an arbitrary new constant.
 
-## Upgrade checks and retained code
+## Historical footprint control
 
-The updater applies a third zero-fuzz patch, shortest-only.patch. The VM's two
-Żmij translation units define ZMIJ_SHORTEST_ONLY; this suppresses explicit
-instantiations of unused precision/scientific/fixed/hex/long-double APIs.
-The upstream default full API and shortest conversion code are preserved.
+The measured revision used `ZMIJ_SHORTEST_ONLY` to suppress explicit
+instantiations of unused precision/scientific/fixed/hex/long-double APIs. The
+current `ZMIJ_HOTSPOT_SHORTEST_ONLY` patch suppresses the entire footer; its
+complete-image measurements are in the current report.
 
-The inspected HotSpot linker command has no section garbage collection, so the
-unused code was actually retained. Using the same GCC 14.2 product O3 flags,
-we compiled original and updated portable/SSE4.1 units and relinked them into
-the existing local HotSpot library, changing only those appended units:
+The inspected HotSpot linker command has no section garbage collection and
+retains unused instantiations. This control compiles portable/SSE4.1 units
+with GCC 14.2 product O3 flags and relinks only those units into the control
+HotSpot library:
 
 | Artifact | Original text, bytes | Updated text, bytes |
 | --- | ---: | ---: |
@@ -78,10 +63,11 @@ patches applied to the pinned upstream source reproduce both installed
 vendor files byte for byte.
 There is no fresh ARM runtime/performance measurement.
 
-Before installing vendor files, make/scripts/check-zmij.py extracts the actual
-production decimal metadata method, compiles it against the staged vendor, and
-uses independent Python exact integer/rational oracles. All three configurations
-(full table, shortest-only, shortest-only compressed table) passed under UBSan:
+The supplemental `make/scripts/check-zmij.py` verifier uses independent
+Python exact integer/rational oracles. Its three configurations (full table,
+shortest-only, shortest-only compressed table) pass under UBSan. The current
+checker compiles the shared production metadata bridge against staged vendor
+files:
 
 - All 649 downward-rounded, normalized 128-bit powers 10^-307 through 10^341.
 - 26,352 fixtures covering exponent bins, mantissa edges, decimal neighbors,
@@ -100,7 +86,7 @@ copies into the checked 24/15-character caller spans. Direct stores or partial
 initialization were not adopted without safety and timing evidence. The removal
 of unused retained code is the measured improvement in this follow-up.
 
-## Reproduce and qualify the current head
+## Reproduction
 
 For vendor upgrades, use a clean v1.2-or-newer release checkout:
 
@@ -138,6 +124,5 @@ The runner is intended for Linux/macOS Python 3.11+ benchmark hosts.
 Raw JMH JSON/logs retain intervals and allocation metrics. summary.csv leads
 with original/default ratios and bytes/op; opt-out/JNI columns are diagnostics.
 Hash records and declared commits must match the images being claimed.
-The runner's syntax was checked here; JVM execution remains blocked.
-Run TestZmij and the existing math/precision suites on the resulting current
-head before treating this follow-up as fully runtime-qualified.
+Run TestZmij and the math/precision suites against the measured image.
+The current report records completed Java validation and end-to-end timing.

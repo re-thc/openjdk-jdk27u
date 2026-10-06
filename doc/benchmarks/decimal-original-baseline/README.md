@@ -1,58 +1,49 @@
-# Decimal conversion against the original JDK
+# Decimal conversion benchmarks
 
-These comparisons use the **pre-PR JDK at
-`33e539f2d4a847f283a3793df6eebd41b9d1dfac` as the headline baseline**.
-It contains neither native feature. The final image uses both features' default
-settings; there are no enabling flags. The same benchmark class files and
-input seeds run in both images. Earlier same-image opt-out tables remain in
-[the parsing archive](../fast-float/README.md) and
-[the formatting archive](../zmij/README.md), but their ratios are diagnostic
-controls rather than speedups against the original JDK.
+The baseline is the original JDK at
+`33e539f2d4a847f283a3793df6eebd41b9d1dfac`, before either native conversion
+feature. The comparison image uses the default-on fast_float and Żmij paths.
+Both images run the same benchmark class files and deterministic inputs.
+Ratios compare original/default means; values above 1 indicate lower conversion
+time in the default-on image.
 
-The frozen measured source is local commit
-`cfbc2f3ce028`: [source-manifest.json](source-manifest.json) records its full
-hash, every changed runtime/vendor/microbenchmark source hash, VM/module
-hashes and release metadata. The published review adds consumer-test fixtures and documentation and merges
-remote maintenance tools without changing the measured runtime/vendor/microbenchmark
-sources. Maintenance-only differences are recorded separately in the manifest. The
-original JDK has an exploded module layout; the final image is packaged.
-CDS is disabled in both, and warmups precede measured conversions.
+[source-manifest.json](source-manifest.json) identifies the measured sources,
+VMs and modules by commit and SHA-256. Published runtime, vendor and benchmark
+files match those measurements; maintenance-tool differences are recorded
+separately. The original image has exploded modules and the comparison image
+has packaged modules. Both run with CDS disabled and warmed conversion code.
 
-## Protocol and interpretation
+## Measurement protocol
 
-Intel Xeon Platinum 8370C, Linux x86-64, GCC 14.2 release server VMs,
-JMH 1.37, one thread pinned to CPU 4, four-core cgroup quota, fixed 256 MiB
-heap. No local builds/tests run alongside timed benchmarks. Interpreter uses
-`-Xint`; C1 uses `-Xbatch -XX:TieredStopAtLevel=1`; C2 uses
-`-Xbatch -XX:-TieredCompilation`. Every invocation converts 1,024 deterministic
-values and consumes every result. Allocation figures are from `-prof gc`.
+Intel Xeon Platinum 8370C, Linux x86-64, GCC 14.2 release server VMs and
+JMH 1.37. One thread is pinned to CPU 4 under a four-core cgroup quota, with a
+fixed 256 MiB heap and GC profiling. Each invocation converts and consumes
+1,024 deterministic values. No builds or tests run alongside measurements.
+The tiers use `-Xint`, `-Xbatch -XX:TieredStopAtLevel=1`, and
+`-Xbatch -XX:-TieredCompilation`.
 
-The full matrix has three independent forks per variant, each with three
-500 ms warmups and three 500 ms measurements. Original/final order reverses
-in round two. Constructor controls use three one-second warmups/measurements
-and rotate previous/final/original-constructor order. Longer C2 confirmation
-uses five one-second warmups/measurements, rotating original/final/opt-out
-order over three forks. The opt-out there is a diagnostic control; conclusions
-still compare final against original.
+The main matrix has three independent forks per variant, with three 500 ms
+warmups and three 500 ms measurements. Image order alternates between rounds.
+Constructor controls use one-second iterations; the longer C2 confirmation
+uses five one-second warmups and measurements across three forks, rotating
+original/default/opt-out order. Opt-out measurements are diagnostic controls.
 
-Ratios are original/default means. A ratio below 1 means a higher measured
-mean; a ratio alone does not establish a repeatable regression. **Cloud outliers
-are substantial in the short C2 formatting samples.** All samples are retained,
-including unfavorable ones. Detailed tables show 99.9% Student-t intervals:
-nine observations (df=8, critical value 5.041305) for the main matrix and
-constructor controls; fifteen (df=14, 4.140454) for the longer confirmation.
-Overlapping intervals do not establish either a gain or a loss. Allocation is
-usually much steadier. These workloads and intervals cannot prove universal
-performance or regression freedom.
+Detailed tables give 99.9% Student-t intervals: nine observations, df=8 and
+critical value 5.041305 for the main matrix and constructor controls; fifteen
+observations, df=14 and critical value 4.140454 for the longer confirmation.
+Cloud timing variance is substantial. Overlapping intervals do not establish
+a gain or loss; a mean ratio below 1 is not by itself evidence of a repeatable
+regression. All timing and allocation samples, including unfavorable outliers,
+are retained in [measurements.json](measurements.json).
 
-[measurements.json](measurements.json) records raw timing/allocation iteration
-values, fork identifiers, VM arguments and iteration durations.
-[measure.sh](measure.sh) and [precision-control.sh](precision-control.sh) record
-the exact benchmark selections/order. Adjust their image/classpath/root/CPU
-paths to reproduce. Compile the shared JMH classes as described in
-[the parser notes](../../fast-float.md) and [formatter notes](../../zmij.md).
+[measure.sh](measure.sh) and [precision-control.sh](precision-control.sh)
+record the selections and execution order. Adjust their image, classpath,
+root and CPU paths to reproduce. Benchmark compilation is documented in the
+[parser notes](../../fast-float.md) and [formatter notes](../../zmij.md).
+The [same-image parsing](../fast-float/README.md) and
+[formatting](../zmij/README.md) controls are supplementary data.
 
-## Parse against the original JDK
+## Parsing
 
 | Workload | Interpreter | C1 | C2 | C2 original → default, ns | C2 original → default, B/op |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -69,7 +60,7 @@ paths to reproduce. Compile the shared JMH classes as described in
 | BigDecimal → double, cached | 9.38× | 3.31× | ~1.91× | 220.22 → 115.43 | 321.85 → 14.17 |
 | BigDecimal → float, cached | 12.36× | 2.90× | ~1.31× | 149.33 → 114.06 | 307.94 → 0.38 |
 
-## Format against the original JDK
+## Formatting
 
 | Workload | Interpreter | C1 | C2 | C2 original → default, ns | C2 original → default, B/op |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -86,117 +77,107 @@ paths to reproduce. Compile the shared JMH classes as described in
 | Double.toString, tiny subnormals | 4.15× | 2.81× | ~1.19× | 81.90 → 68.83 | 88.00 → 88.00 |
 | Float.toString, tiny subnormals | 3.36× | 2.87× | ~1.19× | 79.16 → 66.47 | 80.00 → 80.00 |
 
-¹ C2 uses the longer paired confirmation for these five formatting workloads; the complete initial 500 ms matrix is retained in the detailed tables. A tilde (~) marks overlapping 99.9% intervals: the ratio is inconclusive.
+¹ Marked C2 rows use the longer paired confirmation. `~` denotes overlapping 99.9% intervals; these ratios are inconclusive. The complete initial matrix is included below.
 
-## What the comparisons establish
+## Interpretation
 
-Direct String parsing shows clear gains across the three tiers for most selected
-workloads. Canonical double Strings improve in interpreter/C1 and in the longer
-C2 comparison (68.06 ± 6.44 → 49.31 ± 7.62 ns, 1.38×). Float's longer C2
-mean ratio is 1.30×, with overlapping intervals. Float concatenation and append
-are near-neutral in C2 (inconclusive ratios 1.17× and 0.92×); no 2× concatenation
-gain is claimed. Precision-consumer C2 timings remain too variable for a strong
-speed claim. The original short C2 outliers are retained below, including the
-unfavorable double-string and BigDecimal samples.
+Direct String parsing improves across all three tiers for most selected
+workloads and effectively eliminates conversion allocation. The longer C2
+Double.toString comparison is 68.06 ± 6.44 → 49.31 ± 7.62 ns, or 1.38×.
+Float.toString's mean ratio is 1.30× with overlapping intervals. C2 float
+concatenation and append are inconclusive at 1.17× and 0.92×. The original
+short-iteration double-string and BigDecimal outliers remain in the tables.
 
-Allocation reductions are clearer: C2 BigDecimal.valueOf uses 31.91 rather than
-111.91 B/op for short integers, and 32 rather than 112 B/op for random values.
-DecimalFormat and Formatter save about 40 B/op. C1/interpreter canonical String
-construction saves about 24 B/op. Direct String parsing effectively eliminates
-its conversion allocation. Tiny-subnormal text conversion shows clear gains
-in interpreter/C1; its C2 intervals overlap.
+Allocation reductions are steadier than precision-consumer timings:
+BigDecimal.valueOf falls from approximately 112 to 32 B/op in C2, while
+DecimalFormat and Formatter save approximately 40 B/op. Canonical String
+construction saves approximately 24 B/op in interpreter/C1. Tiny-subnormal
+formatting improves in interpreter/C1; its C2 intervals overlap.
 
-## Defaults and JNI-only ports
+## Platform coverage and JNI controls
 
-Both product flags remain opt-out. Parsing defaults to the portable parser on
-all platforms; interpreter/C1 leaf entries exist on little-endian x86-64 and
-AArch64, and C2 has a portable leaf-call integration. Zero and unsupported
-entries use JNI. There is no backend-specific small-String gate. The existing
-short digit-buffer and cold BigDecimal Java gates remain.
+Both product flags default on. Parsing has x86-64/AArch64 interpreter and C1
+leaf entries, a shared C2 runtime leaf, and portable JNI fallback. Zero uses
+JNI. The trusted digit-buffer eight-digit gate and String 1,024-code-unit
+ceiling apply across backends; there is no JNI-specific small-String gate.
 
-Forced JNI below disables `_parseFastFloat` and `_parseFastFloatDigits` in the
-final x86 VM. It measures transition overhead separately from the default
-leaf path. It does **not** establish a win on another architecture or operating
-system. Small JNI conversions can lose enough of the algorithm's gain to be
-neutral or slower than the original Java parser. Default-on JNI on unmeasured
-ports is a fork policy, not a universal performance claim. Native Windows and
-ARM64 timings remain unmeasured; QEMU results are correctness evidence only.
+Forced-JNI controls disable `_parseFastFloat` and `_parseFastFloatDigits` in
+the measured x86 VM. C2 short-double parsing is 37.01 ± 4.11 ns original,
+16.47 ± 6.59 ns through the leaf, and 35.08 ± 7.84 ns through JNI. This JNI
+case has no clear advantage over the original parser. These controls quantify
+transition costs on Linux x86-64; performance on JNI-only ports remains
+unqualified. Native ARM64 and Windows timings are unmeasured. QEMU results
+establish correctness only.
 
 ## String ownership and copying
 
-Canonical compact Strings allocate an exact-sized owned byte array, copy the
-reserved formatter buffer into it and use the internal Latin1 constructor.
-The original mutable buffer is never transferred. Noncompact/opt-out Strings
-and StringBuilder.toString retain the original copying constructor. Thus the
-old PR description claiming the original constructor everywhere was incorrect.
+Canonical compact Strings receive an exclusively owned, exact-sized Latin1
+byte array copied from the formatter's reserved buffer. Scratch storage is
+never transferred to a String. Noncompact and opt-out conversion use the
+public ISO-8859-1 copying constructor; StringBuilder.toString uses its public
+copying constructor.
 
-The constructor control patches **only ToDecimal.class** in the final VM,
-replacing the owned-array path with the original public ISO-8859-1 String
-constructor. Compile with `-implicit:none` and a patch source directory
-containing only ToDecimal.java, rather than the full java.base tree. The
-previous image is the published `e9dbce2b547` source. Previous/final/control
-allocation and timing are recorded below, including float append/concatenation
-controls for the additional rare subnormal branch.
+The constructor control replaces only ToDecimal.class in the comparison VM
+with the public-constructor path. It is compiled with `-implicit:none` and a
+source directory containing only ToDecimal.java. The additional control image
+is the formatter at `e9dbce2b547`; its measurements are diagnostic, separate
+from the original-JDK baseline.
 
-A direct native destination write was investigated for capacity. Upstream
-requires 17 bytes for float and 34 for double, including padding for wide
-stores, while Java callers reserve 15 and 24 characters. The current 40-byte
-stack buffer safely contains those stores; bounded copying/widening stays
-within the caller's reservation. Removing that copy without widening the
-caller contract would be unsafe. No unverified direct-write change is retained.
+Upstream wide stores require 17 bytes for float and 34 for double, while Java
+callers reserve 15 and 24 characters. A zero-initialized 40-byte stack buffer
+contains those stores, followed by a bounded copy or UTF16 widening into the
+caller's reservation. Direct writes would require a wider caller contract.
 
-## Linked footprint and vendor upgrades
+## Linked footprint and upgrade checks
 
-The portable and SSE4.1 units previously retained explicit precision,
-hexadecimal and long-double template instantiations. The tracked shortest-only
-patch suppresses the instantiation footer; used templates instantiate normally.
-Actual linked `libjvm.so` symbols, rather than source size, show vendor function
-text falling **41,314 → 6,391 bytes** (40 → 7 functions, 34,923 bytes / 84.5%
-less). This percentage applies only to those named vendor functions, not the
-whole VM. The complete VM `.text` falls **16,983,534 → 16,936,686 bytes**
-(46,848 bytes); `.rodata` falls 256 bytes. Other retained sections are recorded
-in [footprint.json](footprint.json).
+The shortest-only vendor patch suppresses the explicit-instantiation footer;
+used formatter and metadata templates instantiate normally. Linked
+libjvm.so symbols show named vendor function text shrinking from 41,314 to
+6,391 bytes: 40 to 7 functions, a reduction of 34,923 bytes or 84.5% for those
+functions. Whole-VM `.text` falls from 16,983,534 to 16,936,686 bytes
+(46,848 bytes), and `.rodata` falls by 256 bytes. All inspected sections are
+recorded in [footprint.json](footprint.json).
 
-The decimal-metadata bridge intentionally uses vendor internals. The updater
-now compiles the **same production bridge** against the staged import before
-installing any files. Exact integer arithmetic checks all 649 normalized
-128-bit power entries and 25,635 deterministic inputs for round trips,
-significand/exponent bounds, packed width, exactness and rounding direction.
-GCC and Clang checks pass (141 exact and 9,946 away cases). A deliberately
-corrupted power entry is rejected, and a compiler failure leaves installed
-vendor/license/version files unchanged. [Update instructions](../../zmij.md)
-explain the host C++17 compiler requirement and all three tracked patches.
-The remotely added checker is also retained: 26,352 fixtures pass in full,
-shortest-only and compressed-table UBSan profiles against the shared bridge.
+The metadata bridge depends on private vendor tables and representation.
+Before installation, the updater compiles the same production bridge against
+the staged import. Exact arithmetic checks 649 normalized 128-bit power
+entries and 25,635 deterministic inputs for round trips, bounds, packing,
+exactness and rounding direction. A supplemental verifier runs 26,352 fixtures
+in full, shortest-only and compressed-table profiles under UBSan. GCC and
+Clang checks pass, including corrupted-table rejection and a compiler-failure
+control that leaves installed files unchanged. [Update instructions](../../zmij.md)
+cover the required host C++17 compiler and three tracked patches.
 
-## Permitted rendering difference
+## Rendering and precision
 
-This fork accepts the vendor's shortest meaningful significand when it
-round-trips to the same raw float/double. In particular Float.MIN_VALUE renders
-as `1.0E-45` and Double.MIN_VALUE as `5.0E-324`; their stock choices are
-`1.4E-45` and `4.9E-324`. Mandatory `.0` keeps these examples' character count
-the same. The opt-out retains stock selection. Notation, signed-zero/special
-spelling and destination bounds remain checked. Precision consumers keep
-stock metadata for tiny values, preserving BigDecimal scale and Formatter/
-DecimalFormat rounding. The independent mathematical checker tests minimum
-meaningful length, closest equal-length decimal and tie rounding under both
-selection policies; consumer fixtures accept the two approved renderings.
+Finite text uses the shortest meaningful significand that round-trips to the
+same raw binary value. Float.MIN_VALUE renders as `1.0E-45` and Double.MIN_VALUE
+as `5.0E-324`; the original choices are `1.4E-45` and `4.9E-324`. Mandatory `.0`
+keeps these examples' character count unchanged. Opt-out restores the original
+selection. Notation, signed zero, special values and destination bounds are
+validated separately.
 
-## Rejected float-append experiment
+Precision consumers retain the original tiny-value metadata, preserving
+BigDecimal scale/precision and DecimalFormat/Formatter rounding. Independent
+mathematical checks verify minimum meaningful length, nearest equal-length
+candidates and ties under both selection policies. Consumer fixtures cover
+canonical text and precision-sensitive output separately.
 
-A prototype removed the tiny-subnormal native append branch and let the Java
-float kernel use one meaningful digit when the feature was enabled. C2 compact
-and UTF16 round-trip/metadata/destination checks passed. In three paired forks,
-float append measured 52.93 ± 2.57 ns for production and 61.07 ± 28.17 ns for
-the prototype, with 83.60 B/op in both. Float concatenation was 51.27 ± 15.24
-versus 47.79 ± 3.93 ns; canonical float Strings 42.78 ± 9.43 versus
-39.68 ± 2.81 ns. There was no reliable overall gain, so it is not retained.
-The [patch](java-shortest.patch) and [raw values](java-shortest-results.json)
-record the rejected change rather than silently replacing production samples.
+## Float append control
+
+C2 normally uses the Java float-append kernel, with native handling for tiny
+nonzero subnormals. An alternative Java kernel with one meaningful digit for
+those values passed compact/UTF16 correctness checks but had no reliable
+aggregate timing benefit. In three paired forks, append measured
+52.93 ± 2.57 ns for production and 61.07 ± 28.17 ns for the alternative,
+with 83.60 B/op in both. Concatenation measured 51.27 ± 15.24 versus
+47.79 ± 3.93 ns; canonical float Strings 42.78 ± 9.43 versus 39.68 ± 2.81 ns.
+The [control patch](java-shortest.patch) and
+[raw measurements](java-shortest-results.json) document the tradeoff.
 
 ## Detailed samples and controls
 
-## Parse interpreter details
+### Parsing: interpreter
 
 | Workload | Original ns | Default ns | Original B/op | Default B/op |
 | --- | ---: | ---: | ---: | ---: |
@@ -213,7 +194,7 @@ record the rejected change rather than silently replacing production samples.
 | BigDecimal → double, cached | 13378.24 ± 1066.56 | 1426.38 ± 207.43 | 341.23 | 14.19 |
 | BigDecimal → float, cached | 12000.67 ± 2859.91 | 971.03 ± 156.94 | 327.30 | 0.39 |
 
-## Parse c1 details
+### Parsing: C1
 
 | Workload | Original ns | Default ns | Original B/op | Default B/op |
 | --- | ---: | ---: | ---: | ---: |
@@ -230,7 +211,7 @@ record the rejected change rather than silently replacing production samples.
 | BigDecimal → double, cached | 407.86 ± 73.62 | 123.38 ± 11.26 | 341.07 | 14.17 |
 | BigDecimal → float, cached | 335.75 ± 141.80 | 115.87 ± 7.31 | 327.16 | 0.38 |
 
-## Parse c2 details
+### Parsing: C2
 
 | Workload | Original ns | Default ns | Original B/op | Default B/op |
 | --- | ---: | ---: | ---: | ---: |
@@ -247,7 +228,7 @@ record the rejected change rather than silently replacing production samples.
 | BigDecimal → double, cached | 220.22 ± 237.56 | 115.43 ± 34.17 | 321.85 | 14.17 |
 | BigDecimal → float, cached | 149.33 ± 27.28 | 114.06 ± 36.81 | 307.94 | 0.38 |
 
-## Format interpreter details
+### Formatting: interpreter
 
 | Workload | Original ns | Default ns | Original B/op | Default B/op |
 | --- | ---: | ---: | ---: | ---: |
@@ -264,7 +245,7 @@ record the rejected change rather than silently replacing production samples.
 | Double.toString, tiny subnormals | 3037.41 ± 268.05 | 731.15 ± 92.28 | 112.04 | 88.01 |
 | Float.toString, tiny subnormals | 2606.26 ± 803.59 | 775.70 ± 276.79 | 104.03 | 80.01 |
 
-## Format c1 details
+### Formatting: C1
 
 | Workload | Original ns | Default ns | Original B/op | Default B/op |
 | --- | ---: | ---: | ---: | ---: |
@@ -281,7 +262,7 @@ record the rejected change rather than silently replacing production samples.
 | Double.toString, tiny subnormals | 177.69 ± 73.81 | 63.32 ± 24.00 | 112.00 | 88.00 |
 | Float.toString, tiny subnormals | 145.91 ± 36.83 | 50.88 ± 2.86 | 104.00 | 80.00 |
 
-## Format c2 details
+### Formatting: C2
 
 | Workload | Original ns | Default ns | Original B/op | Default B/op |
 | --- | ---: | ---: | ---: | ---: |
@@ -298,7 +279,7 @@ record the rejected change rather than silently replacing production samples.
 | Double.toString, tiny subnormals | 81.90 ± 40.14 | 68.83 ± 30.79 | 88.00 | 88.00 |
 | Float.toString, tiny subnormals | 79.16 ± 39.28 | 66.47 ± 35.18 | 80.00 | 80.00 |
 
-## Forced JNI parsing interpreter
+### Forced JNI: interpreter
 
 | Workload | Original ns | Default leaf ns | Forced JNI ns | Original / JNI |
 | --- | ---: | ---: | ---: | ---: |
@@ -307,7 +288,7 @@ record the rejected change rather than silently replacing production samples.
 | Double, ordinary decimals | 6790.93 ± 578.53 | 466.24 ± 103.22 | 526.49 ± 114.06 | 12.90× |
 | Float, ordinary decimals | 8254.05 ± 1702.67 | 455.04 ± 59.04 | 616.87 ± 317.09 | 13.38× |
 
-## Forced JNI parsing c1
+### Forced JNI: C1
 
 | Workload | Original ns | Default leaf ns | Forced JNI ns | Original / JNI |
 | --- | ---: | ---: | ---: | ---: |
@@ -316,7 +297,7 @@ record the rejected change rather than silently replacing production samples.
 | Double, ordinary decimals | 239.81 ± 19.34 | 38.19 ± 4.10 | 60.61 ± 23.92 | 3.96× |
 | Float, ordinary decimals | 334.90 ± 122.75 | 41.38 ± 3.22 | 70.42 ± 24.58 | 4.76× |
 
-## Forced JNI parsing c2
+### Forced JNI: C2
 
 | Workload | Original ns | Default leaf ns | Forced JNI ns | Original / JNI |
 | --- | ---: | ---: | ---: | ---: |
@@ -325,7 +306,7 @@ record the rejected change rather than silently replacing production samples.
 | Double, ordinary decimals | 157.81 ± 180.48 | 31.86 ± 4.80 | 46.20 ± 1.89 | 3.42× |
 | Float, ordinary decimals | 131.39 ± 22.71 | 35.22 ± 5.82 | 53.58 ± 8.40 | 2.45× |
 
-## Canonical String constructor control (C2)
+### Canonical String constructor control (C2)
 
 | Workload | Previous PR ns | Final ns | Original constructor control ns | Previous → final → control, B/op |
 | --- | ---: | ---: | ---: | ---: |
@@ -334,7 +315,7 @@ record the rejected change rather than silently replacing production samples.
 | Float concatenation | 49.62 ± 5.89 | 46.02 ± 3.12 | 48.48 ± 3.54 | 115.64 → 115.64 → 115.64 |
 | Float builder append | 53.63 ± 3.61 | 58.99 ± 20.45 | 55.90 ± 11.90 | 83.60 → 83.60 → 83.60 |
 
-## Longer C2 confirmation against the original JDK
+### Longer C2 confirmation
 
 | Workload | Original ns | Final default ns | Final opt-out control ns | Original / default | Original → default, B/op |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -346,30 +327,22 @@ record the rejected change rather than silently replacing production samples.
 
 ## Validation
 
-The release sweep initially passed 242 of 243 selected jtreg tests, with 46,545
-framework cases. Its remaining ValueOfDouble fixture assumed textual identity
-between Double.toString and BigDecimal.valueOf for Double.MIN_VALUE. The fixture
-now explicitly requires the retained BigDecimal precision/scale, including the
-negative value; its targeted rerun passes. All 243 selected results are now
-passing. The two other revised String fixtures also pass. The six unchanged
-huge-memory String tests were excluded from this repeat after passing the prior
-full validation; they are listed in [validation.txt](validation.txt).
+- All 243 selected release jtreg results pass, covering 46,545 framework cases.
+  The total combines the broad sweep with targeted fixture reruns. Six unchanged
+  huge-memory String tests were excluded from this sweep after passing the
+  separate full validation; the exclusions are listed in [validation.txt](validation.txt).
+- Eight targeted tests pass on GCC no-PCH fastdebug, eight on Clang, and two on
+  Zero fastdebug. Four compiler/collector-specific test IDs are inapplicable to
+  Zero. AArch64 fastdebug under QEMU passes parser and formatter checks in C1
+  and C2 with noncompact Strings.
+- String ownership, ZGC and SSE2 checks pass. Both default and opt-out
+  mathematical checks, vendor verifiers and negative updater controls pass.
+  The updater reproduces installed vendor files byte for byte.
+- Release image, no-PCH fastdebug, Clang 19, AArch64 cross and Zero builds pass.
+  The official debug-only TestIncludesAreSorted passes in its defined scope.
 
-The remotely added String ownership test is retained; the merged TestZmij/ZGC
-and SSE2 suite passes all three selected tests. Both update checkers pass
-before the combined updater installs byte-for-byte matching vendor files.
-
-Eight targeted tests pass on GCC no-PCH fastdebug and eight on the rebuilt
-Clang VM. Two tests pass on Zero fastdebug (four compiler/collector-specific
-IDs correctly do not meet its platform requirements). AArch64 fastdebug under
-QEMU passes both parser/formatter checks in C1 and C2 with noncompact Strings.
-The official debug-only TestIncludesAreSorted passes; read-only sorting also
-passes over Linux/POSIX/shared sources and the x86 SSE unit. An expanded check
-found the unrelated oops/method.hpp order issue in the interpreter file, also
-present in the pre-PR source; it is outside the official test scope.
-
-Release image, GCC no-PCH fastdebug, Clang 19, AArch64 cross and Zero builds
-pass. The vendor updater reproduces the installed files; GCC/Clang assumption
-checks and negative update controls pass. [Validation details](validation.txt)
-record the commands, results and limits. Native Windows/macOS CI is triggered
-by the published follow-up; its result is reported separately in the PR.
+[validation.txt](validation.txt) records commands, individual outcomes and
+limits. [Native CI](https://github.com/re-thc/openjdk-jdk27u/actions/runs/37369428416)
+tracks the tested runtime revision independently of these local results.
+These samples qualify the selected workloads and platforms, rather than
+establishing universal performance or regression freedom.

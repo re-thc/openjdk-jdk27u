@@ -2,17 +2,17 @@
 
 The formatter vendors **Żmij v1.2**, release commit
 `d1682cb47e67474319ed146d3ca2c0e1a70f9429`, under its **MIT license option**.
-The original upstream headers and license are preserved. No xjb implementation
-is included: xjb v1.11.0's actual source and LICENSE are Apache 2.0, despite its
-README's MIT label. That license is not compatible with GPLv2-only HotSpot.
+The release is pinned in `make/data/zmij/version.txt`, with its license in
+`src/java.base/share/legal/zmij.md`. Vendor patches and upgrade checks are
+tracked alongside the import.
 
-## Selection evidence
+## Algorithm selection
 
-We compared the faster candidates in xjb's published charts rather than
-selecting on API or license alone. For random doubles on Apple M5, those charts
+For random doubles on Apple M5, xjb's published charts
 report 17.09 CPU cycles for xjb, 20.74 for Żmij, 42.83 for yy_double, 47.65 for
-yyjson, and 74.41 for full-table Dragonbox. Tejú Jaguá is also Apache 2.0 and
-therefore does not resolve the licensing issue.
+yyjson, and 74.41 for full-table Dragonbox. Żmij offers an MIT license option.
+The source licenses of xjb v1.11.0 and
+Tejú Jaguá are Apache 2.0, incompatible with GPLv2-only HotSpot.
 
 A local native-core comparison used GCC 14.2, `-O3 -std=c++17 -march=x86-64
 -fPIC`, 16,384 random finite values, nine timing samples, and CPU 4 of an Intel
@@ -99,8 +99,8 @@ fast path and packs the significand, exactness and rounding direction into one
 BigDecimal remains in place. Positive-zero splitting returns directly in Java,
 leaving the metadata unchanged and avoiding the fallback scratch array. This
 also lets C2 eliminate intermediate metadata allocation for short integers;
-the [final review measurements](benchmarks/decimal-final-review/README.md)
-record the result and controls.
+the [original-JDK benchmark report](benchmarks/decimal-original-baseline/README.md)
+records timing and allocation controls.
 
 | Consumer | Integration |
 |---|---|
@@ -135,9 +135,9 @@ python3 make/scripts/update-zmij.py /path/to/zmij
 The script records the version and commit, verifies the MIT license selection,
 preserves headers, and applies `make/data/zmij/java-format.patch`,
 `make/data/zmij/clang-compat.patch` and `make/data/zmij/shortest-only.patch`
-with zero fuzz. The latter gives the three
-compressed power-of-ten arrays explicit bounds so Clang can construct the
-expanded tables at compile time; their values and sizes are unchanged.
+with zero fuzz. The Clang compatibility patch gives three compressed
+power-of-ten arrays explicit bounds so Clang can construct the expanded
+tables at compile time; their values and sizes are unchanged.
 The implementation is named `zmij-impl.hpp`; the portable and SSE4.1 translation
 units include it in distinct namespaces. The shortest-only patch suppresses
 explicit instantiations of unused precision, hexadecimal and long-double APIs;
@@ -150,9 +150,10 @@ version files, the updater compiles the same production bridge in
 `zmijMetadata.inline.hpp` and runs `check-zmij-metadata.py`. Exact integer
 arithmetic checks all 649 downward-rounded normalized power entries and
 25,635 deterministic boundary/random inputs, including significand packing,
-round trips and exactness/rounding direction. The additional `check-zmij.py` verifier retains the remotely added fixtures
-and runs full, shortest-only and compressed-table profiles under UBSan. Both
-checkers include the shared production bridge. A changed private representation,
+round trips and exactness/rounding direction. The supplemental `check-zmij.py`
+verifier checks 26,352 fixtures in full, shortest-only and compressed-table
+profiles under UBSan. Both checkers include the shared production bridge.
+A changed private representation,
 failed patch, compilation failure or failed assumption stops installation.
 Use a host GCC/Clang-compatible C++17 compiler; `--cxx` selects it explicitly.
 The standalone checker accepts a directory containing patched
