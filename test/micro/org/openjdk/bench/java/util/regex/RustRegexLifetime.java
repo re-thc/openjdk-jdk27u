@@ -46,7 +46,7 @@ public class RustRegexLifetime {
     public int calls;
     @Param({"miss", "lastHit", "alternating"})
     public String scenario;
-    @Param({"error", "ssn"})
+    @Param({"error", "ssn", "alternation", "email"})
     public String expression;
     @Param({"1", "4"})
     public int threads;
@@ -67,10 +67,19 @@ public class RustRegexLifetime {
             nativeBackend = Pattern.class.getDeclaredField("rustRegex");
             nativeBackend.setAccessible(true);
         }
-        regex = expression.equals("ssn") ? "[0-9]{3}-[0-9]{2}-[0-9]{4}" : "error[0-9]+";
+        regex = switch (expression) {
+            case "ssn" -> "[0-9]{3}-[0-9]{2}-[0-9]{4}";
+            case "alternation" -> "(?:error|warning|fatal)[0-9]+";
+            case "email" -> "([a-z0-9_]+)@([a-z0-9_]+)\\.[a-z]{2,4}";
+            default -> "error[0-9]+";
+        };
         if (reuse.equals("shared")) retained = Pattern.compile(regex);
         miss = "x ".repeat(length / 2);
-        String candidate = expression.equals("ssn") ? "123-45-6789" : "error123";
+        String candidate = switch (expression) {
+            case "ssn" -> "123-45-6789";
+            case "email" -> "a@b.co";
+            default -> "error123";
+        };
         hit = candidate + miss.substring(candidate.length());
         if (threads > 1) {
             pool = Executors.newFixedThreadPool(threads);

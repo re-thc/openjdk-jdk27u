@@ -167,7 +167,9 @@ public class RustRegexTest {
         String[] inputs = {"", "e", "err", "erro", "error", "errorx", "error123",
                 "error123x", "xerror123", "errorerror123", "11", "1234", "xxxx",
                 "\u00fferror123", "\u0100error123", "error" + "3".repeat(4096),
-                "error" + "3".repeat(4096) + "x", "x".repeat(4096)};
+                "error" + "3".repeat(4096) + "x", "x".repeat(4096),
+                "!".repeat(255) + "1", "!".repeat(256) + "1",
+                "!".repeat(257), "\u00ff\u0100123!", "!123!456!"};
         for (String expression : expressions) {
             Pattern p = Pattern.compile(expression), ref = reference(expression, 0);
             for (String input : inputs) {

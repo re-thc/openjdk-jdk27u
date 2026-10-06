@@ -260,17 +260,30 @@ public final class RustRegex {
 
         int match(String input, byte[] bytes, int[] state, int base) {
             int to = state[base+1], start = state[base+2], mode = state[base+3];
+            if (to - start <= prefix.length()) return 0;
             boolean scan = mode == 0 && to-state[base] <= 256;
             int at = start;
             if (scan && !prefix.isEmpty() && (at == to || character(input, bytes, at) != prefix.charAt(0)))
                 at = candidate(input, at, to);
+            if (scan && prefix.isEmpty()) {
+                // A digit-only expression has no literal candidate to search
+                // for. Skip nondigits directly instead of repeatedly calling
+                // startsWith/indexOf with the empty string.
+                while (at < to) {
+                    int c = character(input, bytes, at);
+                    if (c >= '0' && c <= '9') break;
+                    at++;
+                }
+                if (at == to) return 0;
+            }
             int limit = to-start <= 256 ? 256 : 32;
             while (at >= 0 && at <= to) {
                 int digits = at + prefix.length();
-                if (digits <= to && input.startsWith(prefix, at)) {
+                if (digits <= to && (prefix.isEmpty() || input.startsWith(prefix, at))) {
                     int end = digits;
-                    while (end < to && character(input, bytes, end) >= '0'
-                            && character(input, bytes, end) <= '9') {
+                    while (end < to) {
+                        int c = character(input, bytes, end);
+                        if (c < '0' || c > '9') break;
                         if (end-digits == limit) return -2;
                         end++;
                     }
