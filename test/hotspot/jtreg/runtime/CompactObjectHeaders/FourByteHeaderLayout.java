@@ -49,7 +49,7 @@ public class FourByteHeaderLayout {
     }
     public static void main(String[] args) throws Exception {
         boolean four = Boolean.TRUE.equals(WB.getBooleanVMFlag("UseFourByteObjectHeaders"));
-        long alignment = WB.getIntxVMFlag("ObjectAlignmentInBytes");
+        long alignment = WB.getIntVMFlag("ObjectAlignmentInBytes");
         long expectedSize = ((four ? 8L : 16L) + alignment - 1) & -alignment;
         Asserts.assertEQ(WB.getObjectSize(new IntObject(7)), expectedSize);
         Asserts.assertEQ(WB.getObjectSize(new int[0]), expectedSize);
