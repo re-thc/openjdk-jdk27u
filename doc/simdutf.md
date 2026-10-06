@@ -99,22 +99,9 @@ Consequently enabling simdutf does not require replacing every execution tier.
 | Legacy charset mapping tables, string comparisons, hashing and iteration | Existing implementations; these are not compatible bulk Unicode transcoding operations |
 | Identity ASCII/Latin-1 byte copies | Existing clone/arraycopy paths retained |
 
-Remaining performance gaps include inputs above the 1,048,576-element leaf
-limit, exactly sized UTF-8 decoder outputs smaller than the input byte count,
-array-inaccessible buffers and short C1 inputs held back by shared Java floors.
-The UTF-8 decoder currently reserves its worst-case output size to remain safe
-with mutable input. Tighter output needs bounded staging, not just a length
-preflight followed by an unchecked writer. ARM64 crossover measurements and
-exact-head public API benchmarks also remain outstanding.
-
-Additional candidates need separate evidence: MIME Base64 can use simdutf's
-garbage-accepting mode, but Java must still track consumed input separately
-from produced output and preserve its padding/error rules. Large inputs could
-be chunked at complete code-point/atom boundaries with Java safepoints between
-leaves. Code-point iteration and offset queries also need their own range and
-unpaired-surrogate semantics; validating a whole sequence for a short query
-can cost more than the existing loop. These are follow-up candidates, rather
-than silently omitted paths or assumptions of compatible semantics.
+The leaf-size limit, tight UTF-8 decoder destinations and inaccessible buffer
+storage retain Java fallback. Shared compiler-enabled thresholds also defer
+some short C1 operations. Native ARM64 crossover measurements remain pending.
 
 ## Updating the vendor
 
@@ -146,25 +133,25 @@ keeps upstream include ordering out of HotSpot's source-style tests without
 editing the vendor or weakening those tests. Zero and other unsupported VMs
 retain their portable fallback without referencing architecture-only features.
 
-## Validation and measurements
+## Testing
 
-The new jtreg contract runs the interpreter, C1, C2, intrinsic-disabled JNI
-and flag-disabled paths. It exercises independent UTF byte oracles, offsets,
-canaries, narrowing prefixes, malformed input, overflow, BOMs, byte orders,
-Base64 dialects/in-place calls/streams, inaccessible buffer storage, and native
-type/range/alias checks. Prior manual runs also covered disabled ISA support, compact
-strings disabled, ZGC and Shenandoah.
-
-On a fresh configured build, run the contracts and the existing public API
-tests with the feature enabled:
+Configure the build with `--with-jtreg=/path/to/jtreg` and run the simdutf contracts,
+the C2 escape-analysis regression and existing public API suites:
 
 ```sh
 make test CONF=your-build \
-    TEST='test/jdk/jdk/internal/util/SimdUTF/SimdUTFTest.java test/jdk/java/lang/String test/jdk/sun/nio/cs test/jdk/java/util/Base64'
+    TEST='test/jdk/jdk/internal/util/SimdUTF/SimdUTFTest.java test/hotspot/jtreg/compiler/escapeAnalysis/TestSimdUTFLeaf.java test/jdk/java/lang/String test/jdk/sun/nio/cs test/jdk/java/util/Base64'
 ```
 
-Configure with `--with-jtreg=/path/to/jtreg` if jtreg was not found. To bypass
-the make driver when a built JDK is already available:
+The contract exercises interpreter, C1, C2, intrinsic-disabled JNI and flag-disabled
+paths. It checks independent UTF byte oracles, offsets, canaries, malformed
+input, overflow, BOMs, byte orders, Base64 dialects, aliases, streams and buffer
+storage. Fastdebug modes also use `CheckUnhandledOops`; 48 MB code-cache
+runs check native-call reachability. The escape-analysis test checks that
+C2 materializes arrays passed to the leaf.
+
+When a built JDK and harness are already available, the JDK contract suite can
+also run directly:
 
 ```sh
 "$BOOT_JDK/bin/java" -jar "$JT_HOME/lib/jtreg.jar" \
@@ -174,34 +161,20 @@ the make driver when a built JDK is already available:
     test/jdk/java/lang/String test/jdk/sun/nio/cs test/jdk/java/util/Base64
 ```
 
-GitHub Actions includes a `jdk/simdutf` test matrix entry using the existing
-build bundles and jtreg setup. Both it and ordinary tier-one execution use the
-fork's default enabled behavior on every configured runtime platform,
-including x86-64 and AArch64. The contract asserts the default flag value and
-separately checks `-XX:-UseSIMDUTFIntrinsics` disables acceleration.
-Test reports and `.jtr` logs use the existing
-artifact upload path. The dedicated suite selects fastdebug bundles when
-available; the static configuration uses its release image. Eight ordinary
-`@run` modes separately cover tiers,
-JNI fallback and disabled behavior, including explicit 48 MB code caches in
-interpreter and tiered VMs. These catch branches to native functions that cannot
-rely on the code cache's internal branch range.
-Four additional fastdebug runs enable `CheckUnhandledOops` across interpreter,
-C1, C2 and JNI execution to check the native object-pointer boundary.
+Use the make driver for the HotSpot regression so its WhiteBox dependency is
+built. GitHub Actions adds a `jdk/simdutf` matrix entry using the existing
+build bundles and jtreg harness. Runtime platforms include x86-64 and AArch64;
+fastdebug bundles are selected when available. Both ordinary tier-one tests and
+the dedicated suite exercise the fork's default enabled behavior. The contract
+also verifies opt-out. Test reports use the existing artifact upload path.
 
-Alpine/musl is excluded by the repository's existing default platform list in
-`.github/workflows/main.yml`. Its build can be selected explicitly with the
-manual workflow's `platforms` input set to `alpine-linux-x64`; a skipped default
-job does not qualify musl. Performance qualification uses the reproducible JMH
-runner below and remains separate from correctness CI.
+The repository's default platform list excludes Alpine/musl. Select
+`alpine-linux-x64` through the manual workflow's `platforms` input to test it.
 
-jtreg requires a harness JVM and additional test JVMs. `pthread_create(EAGAIN)`
-during their startup is a host resource failure, before test execution. Lowering
-test concurrency cannot recover an exhausted process namespace; use a fresh
-runner and preserve the failing `.jtr` startup log rather than treating it as
-a charset assertion failure.
+## Benchmarks
 
-The JMH benchmark is `org.openjdk.bench.java.lang.SimdUTF`. Its 33 cases measure public
-String/charset/Base64 operations, validation and encoded lengths; it does not
-time the native bridge in isolation. See [benchmark results](simdutf/results.md)
-for baseline-versus-enabled per-tier measurements and reproduction details.
+`org.openjdk.bench.java.lang.SimdUTF` contains 33 public API cases covering
+String, charset, validation, encoded lengths and Base64. The reusable runner is
+[make/scripts/bench-simdutf.py](../make/scripts/bench-simdutf.py).
+See [benchmark evidence and reproduction](simdutf-benchmarks.md) for
+original-JDK controls, threshold measurements and the Base64 backend decision.
