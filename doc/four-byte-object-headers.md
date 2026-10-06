@@ -1,21 +1,26 @@
-# Experimental four-byte object headers
+# Four-byte object headers in this fork
 
-This port adds an optional four-byte object header to JDK 27u. The default
-eight-byte compact header and `-XX:-UseCompactObjectHeaders` twelve-byte
-layout remain available. The experimental layout supports Serial, G1, ZGC,
-Parallel and Shenandoah on x64 and AArch64. Other 64-bit architectures disable
-the four-byte option with a warning. The flag is unavailable in 32-bit builds.
+This fork uses four-byte object headers by default on x64 and AArch64.
+Serial, G1, ZGC, Parallel and Shenandoah are supported. The ordinary upstream
+JDK 27u default remains eight-byte compact headers. This fork retains that
+layout with `-XX:-UseFourByteObjectHeaders` and the twelve-byte layout with
+`-XX:-UseCompactObjectHeaders`. Other 64-bit architectures and Zero keep their
+existing defaults; explicit four-byte requests there are disabled with a
+warning. The flag is unavailable in 32-bit builds.
 
-Enable it with a supported collector, for example:
+Run normally, or select a supported collector:
 
 ```sh
-java -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseG1GC Main
-java -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseSerialGC Main
-java -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseZGC Main
+java Main
+java -XX:+UseSerialGC Main
+java -XX:+UseZGC Main
+java -XX:-UseFourByteObjectHeaders Main
 ```
 
-`UseFourByteObjectHeaders` implies `UseCompactObjectHeaders`. The new flag
-defaults to false. Object alignment remains configurable; its default is
+`UseFourByteObjectHeaders` is an ordinary product option and requires no
+experimental unlock. An explicit request for four-byte headers implies
+`UseCompactObjectHeaders`; an explicit legacy-layout request disables the
+four-byte default. Object alignment remains configurable; its default is
 eight bytes. Smaller headers reduce allocation and retained object size when
 alignment permits it. For example, an object containing one `int` occupies
 eight bytes instead of sixteen with the default alignment.
