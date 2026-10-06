@@ -25,12 +25,12 @@
 /*
  * @test
  * @summary Native primary matching, captures, fallback and Java API state
- * @modules java.base/java.util.regex:open java.base/jdk.internal.util.regex:open
+ * @modules java.base/java.util.regex:open java.base/jdk.internal.util.regex:+open
  * @run main/othervm RustRegexTest
  * @run main/othervm -XX:-UseRustRegex RustRegexTest
  * @run main/othervm -XX:+UseRustRegex RustRegexTest
  * @run main/othervm -XX:-UseRustRegexIntrinsics RustRegexTest
- * @run main/othervm -Xint RustRegexTest
+ * @run main/othervm/timeout=600 -Xint RustRegexTest
  * @run main/othervm -XX:TieredStopAtLevel=1 -Xbatch RustRegexTest
  * @run main/othervm -XX:-TieredCompilation -Xbatch RustRegexTest
  * @run main/othervm -XX:-CompactStrings RustRegexTest
@@ -159,6 +159,80 @@ public class RustRegexTest {
         a.reset("other").usePattern(Pattern.compile("x+"));
         b.reset("other").usePattern(Pattern.compile("x+"));
         if (a.hitEnd()!=b.hitEnd() || a.requireEnd()!=b.requireEnd()) throw new AssertionError("saved end state");
+    }
+
+    private static void digitEndFlags() throws Exception {
+        String[] expressions = {"error[0-9]+", "(?<word>error)(?<digits>\\d+)",
+                "[0-9]+", "(1)([0-9]+)"};
+        String[] inputs = {"", "e", "err", "erro", "error", "errorx", "error123",
+                "error123x", "xerror123", "errorerror123", "11", "1234", "xxxx",
+                "\u00fferror123", "\u0100error123", "error" + "3".repeat(4096),
+                "error" + "3".repeat(4096) + "x", "x".repeat(4096)};
+        for (String expression : expressions) {
+            Pattern p = Pattern.compile(expression), ref = reference(expression, 0);
+            for (String input : inputs) {
+                for (int lo : new int[]{0, input.length()/2, input.length()}) {
+                    for (int hi : new int[]{lo, (lo+input.length())/2, input.length()}) {
+                        for (boolean transparent : new boolean[]{false, true}) {
+                            for (boolean anchoring : new boolean[]{false, true}) {
+                                Matcher a = p.matcher(input).region(lo, hi)
+                                        .useTransparentBounds(transparent).useAnchoringBounds(anchoring);
+                                Matcher b = ref.matcher(input).region(lo, hi)
+                                        .useTransparentBounds(transparent).useAnchoringBounds(anchoring);
+                                while (true) {
+                                    boolean av = a.find(), bv = b.find();
+                                    equal(a, b, av, bv, true);
+                                    if (RustRegex.ENABLED) nativeOnly(p);
+                                    if (!av) break;
+                                }
+                                equal(a, b, a.reset().region(lo, hi).matches(),
+                                        b.reset().region(lo, hi).matches(), true);
+                                equal(a, b, a.reset().region(lo, hi).lookingAt(),
+                                        b.reset().region(lo, hi).lookingAt(), true);
+                                if (RustRegex.ENABLED) nativeOnly(p);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Pattern p = Pattern.compile("ready[0-9]+"), ref = reference(p.pattern(), 0);
+        StringBuilder input = new StringBuilder("ready123");
+        Matcher a = p.matcher(input), b = ref.matcher(input);
+        equal(a, b, a.find(), b.find(), false);
+        input.setLength(0);
+        a.reset("other").usePattern(Pattern.compile("x+"));
+        b.reset("other").usePattern(Pattern.compile("x+"));
+        if (a.hitEnd() != b.hitEnd() || a.requireEnd() != b.requireEnd())
+            throw new AssertionError("saved digit end state");
+        if (RustRegex.ENABLED) nativeOnly(p);
+        for (String suffix : new String[]{"x".repeat(131072), "\u0100".repeat(131072)}) {
+            Pattern large = Pattern.compile("(?<prefix>ready)(?<digits>[0-9]+)");
+            Pattern java = reference(large.pattern(), 0);
+            String text = "ready123" + suffix;
+            Matcher actual = large.matcher(text), expected = java.matcher(text);
+            equal(actual, expected, actual.find(), expected.find(), true);
+            equal(actual, expected, actual.reset().lookingAt(), expected.reset().lookingAt(), true);
+            equal(actual, expected, actual.reset().matches(), expected.reset().matches(), true);
+            if (RustRegex.ENABLED) {
+                nativeOnly(large);
+                if (HANDLE.getLong(NATIVE.get(large)) != 0)
+                    throw new AssertionError("large early candidate allocated native storage");
+            }
+        }
+        for (String padding : new String[]{"x".repeat(131072), "\u0100".repeat(131072)}) {
+            Pattern region = Pattern.compile("edge[0-9]+"), java = reference(region.pattern(), 0);
+            String text = padding + "edge123";
+            Matcher actual = region.matcher(text), expected = java.matcher(text);
+            equal(actual, expected, actual.region(0, 64).find(), expected.region(0, 64).find(), true);
+            equal(actual, expected, actual.reset().region(64, 128).find(),
+                    expected.reset().region(64, 128).find(), true);
+            if (RustRegex.ENABLED) {
+                nativeOnly(region);
+                if (HANDLE.getLong(NATIVE.get(region)) != 0)
+                    throw new AssertionError("short region allocated native storage");
+            }
+        }
     }
 
     private static void shortAndEarlyMatches() throws Exception {
@@ -307,7 +381,7 @@ public class RustRegexTest {
         // Promotion removes the native reference; existing Matchers allocate
         // Java locals lazily and continue correctly after another Matcher promotes.
         Matcher existing=p.matcher("error123");
-        Matcher wide=p.matcher("\u0100 error456");
+        Matcher wide=p.matcher("\u0100 " + "x ".repeat(1024) + "error456");
         if (!wide.find() || !wide.group(1).equals("456")) throw new AssertionError("wide input fallback");
         if (NATIVE.get(p)!=null || ROOT.get(p)==null) throw new AssertionError("permanent Java promotion");
         if (!existing.find() || !existing.group(1).equals("123")) throw new AssertionError("old Matcher promotion");
@@ -318,6 +392,7 @@ public class RustRegexTest {
     public static void main(String[] args) throws Exception {
         primary();
         shortAndEarlyMatches();
+        digitEndFlags();
         fallbackGrammar();
         consumers();
         sharingAndLifetime();

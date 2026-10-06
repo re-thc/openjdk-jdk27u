@@ -1,0 +1,157 @@
+End-state and bounded-region review validation
+=============================================
+Date: 2026-10-06 (Asia/Taipei)
+Base: a56d1e6fa9a92c00031902e311b2c351ad2ea60d
+Java source: review changes in the commit containing this transcript.
+Native Rust adapter/release profile and HotSpot VM: unchanged from the base.
+Host: Linux x86_64, Intel Xeon Platinum 8573C.
+
+Final full JDK build passed. Nested make initially hit the host's known
+pthread_create EAGAIN quota. Its exact failed Java compiler command was run
+directly, then normal make completed. Only successful compiler actions were
+marked complete. No test result was substituted or skipped.
+
+The test module declaration follows GraphemeTest:
+  java.base/jdk.internal.util.regex:+open
+The export is needed by the RustRegex import/ENABLED access; the open is
+needed by reflection on handle. Direct javac compilation with the export
+passed. The exhaustive interpreter action now explicitly allows 600 seconds;
+a preceding full interpreter run took 176 seconds on this host.
+
+Final test compiler command:
+  build/cloud/jdk/bin/javac -J-XX:ActiveProcessorCount=1 -J-XX:+UseSerialGC
+  -J-XX:-UsePerfData -J-XX:TieredStopAtLevel=1 -J-XX:CICompilerCount=1
+  -J-XX:-UseRustRegex --add-exports java.base/jdk.internal.util.regex=ALL-UNNAMED
+  -d /tmp/regex-review-tests test/jdk/java/util/regex/RustRegexTest.java
+  test/jdk/java/util/regex/RustRegexMemoryBudget.java /tmp/RustRegexEndFlagsArm.java
+
+All eight final modes passed 303,226 differential results/API states.
+One explicit-on attempt reached the sharing test but could not start
+pool-1-thread-1 (EAGAIN). It passed when retried with one fewer launcher
+process; only that mode and the remaining modes were resumed. No assertion
+or semantic failure was retried. Direct tests are not jtreg passes.
+
+C1 Compared 303226 native/Java results and API states; enabled=true
+C2 Compared 303226 native/Java results and API states; enabled=true
+JNI Compared 303226 native/Java results and API states; enabled=true
+off Compared 303226 native/Java results and API states; enabled=false
+default Compared 303226 native/Java results and API states; enabled=true
+on Compared 303226 native/Java results and API states; enabled=true
+noncompact Compared 303226 native/Java results and API states; enabled=true
+interpreter Compared 303226 native/Java results and API states; enabled=true
+budget Budget exhausted with 155 retained engines; Java fallback OK
+Native budget capacity restored after cleanup
+budget-JNI Budget exhausted with 155 retained engines; Java fallback OK
+Native budget capacity restored after cleanup
+
+Exact Java invocations
+----------------------
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -Xms32m -Xmx256m --add-opens java.base/jdk.internal.util.regex=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED -cp /tmp/regex-review-tests:/tmp/regex-native-tests -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -Xbatch RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -Xms32m -Xmx256m --add-opens java.base/jdk.internal.util.regex=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED -cp /tmp/regex-review-tests:/tmp/regex-native-tests -XX:-TieredCompilation -XX:CICompilerCount=1 -Xbatch RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -Xms32m -Xmx256m --add-opens java.base/jdk.internal.util.regex=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED -cp /tmp/regex-review-tests:/tmp/regex-native-tests -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -XX:-UseRustRegexIntrinsics RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -Xms32m -Xmx256m --add-opens java.base/jdk.internal.util.regex=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED -cp /tmp/regex-review-tests:/tmp/regex-native-tests -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -XX:-UseRustRegex RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -Xms32m -Xmx256m --add-opens java.base/jdk.internal.util.regex=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED -cp /tmp/regex-review-tests:/tmp/regex-native-tests -XX:CICompilerCount=2 RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -Xms32m -Xmx256m --add-opens java.base/jdk.internal.util.regex=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED -cp /tmp/regex-review-tests:/tmp/regex-native-tests -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -XX:+UseRustRegex RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -Xms32m -Xmx256m --add-opens java.base/jdk.internal.util.regex=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED -cp /tmp/regex-review-tests:/tmp/regex-native-tests -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -XX:+UseRustRegex RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -Xms32m -Xmx256m --add-opens java.base/jdk.internal.util.regex=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED -cp /tmp/regex-review-tests:/tmp/regex-native-tests -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -XX:-CompactStrings RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -Xms32m -Xmx256m --add-opens java.base/jdk.internal.util.regex=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED -cp /tmp/regex-review-tests:/tmp/regex-native-tests -Xint RustRegexTest
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -Xms32m -Xmx256m --add-opens java.base/jdk.internal.util.regex=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED -cp /tmp/regex-review-tests:/tmp/regex-native-tests -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 RustRegexMemoryBudget
+/workspace/openjdk-jdk27u/build/cloud/jdk/bin/java -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs -Xms32m -Xmx256m --add-opens java.base/jdk.internal.util.regex=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED -cp /tmp/regex-review-tests:/tmp/regex-native-tests -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -XX:-UseRustRegexIntrinsics RustRegexMemoryBudget
+
+AArch64 fastdebug/QEMU final source
+----------------------------------
+New private digitEndFlags coverage was invoked directly, including saved
+state, regions/bounds, captures, Unicode/Latin-1 large early candidates, and
+64-character regions in large Strings. Startup searches separately confirm
+the compiler intrinsics. All four runs enable CheckUnhandledOops. These are
+functional checks, not ARM performance measurements.
+
+Running C1-RustRegexEndFlagsArm
+C1-RustRegexEndFlagsArm PASS
+Running C1-RustRegexStartup-Search
+C1-RustRegexStartup-Search PASS
+Running C2-RustRegexEndFlagsArm
+C2-RustRegexEndFlagsArm PASS
+Running C2-RustRegexStartup-Search
+C2-RustRegexStartup-Search PASS
+
+C1 RustRegexEndFlagsArm compiler evidence:
+@ 325   jdk.internal.util.regex.RustRegex::match0 (0 bytes)   intrinsic
+@ 99   jdk.internal.util.regex.RustRegex$FastDigits::candidate (31 bytes)   force inline by annotation
+@ 349   jdk.internal.util.regex.RustRegex$FastDigits::candidate (31 bytes)   force inline by annotation
+
+C1 RustRegexStartup-Search compiler evidence:
+@ 325   jdk.internal.util.regex.RustRegex::match0 (0 bytes)   intrinsic
+@ 99   jdk.internal.util.regex.RustRegex$FastDigits::candidate (31 bytes)   force inline by annotation
+@ 349   jdk.internal.util.regex.RustRegex$FastDigits::candidate (31 bytes)   force inline by annotation
+
+C2 RustRegexEndFlagsArm compiler evidence:
+@ 99   jdk.internal.util.regex.RustRegex$FastDigits::candidate (31 bytes)   force inline by annotation
+@ 349   jdk.internal.util.regex.RustRegex$FastDigits::candidate (31 bytes)   force inline by annotation
+@ 325   jdk.internal.util.regex.RustRegex::match0 (0 bytes)   (intrinsic)
+
+C2 RustRegexStartup-Search compiler evidence:
+@ 325   jdk.internal.util.regex.RustRegex::match0 (0 bytes)   (intrinsic)
+
+ARM focused driver source (RustRegexEndFlagsArm.java)
+---------------------------------------------------
+public class RustRegexEndFlagsArm {
+    public static void main(String[] args) throws Exception {
+        var test = RustRegexTest.class.getDeclaredMethod("digitEndFlags");
+        test.setAccessible(true);
+        test.invoke(null);
+        System.out.println("Digit end-state, saved state, large Latin-1/Unicode candidates: PASS");
+    }
+}
+
+ARM invocations
+---------------
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off --patch-module java.base=/workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base -Xms32m -Xmx256m -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-native-arm-hs_err_%p.log -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -Xbatch -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:+CheckUnhandledOops -XX:+PrintIntrinsics -XX:+PrintInlining --add-opens=java.base/jdk.internal.util.regex=ALL-UNNAMED -cp /tmp/regex-review-tests:/tmp/regex-native-tests RustRegexEndFlagsArm
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off --patch-module java.base=/workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base -Xms32m -Xmx256m -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-native-arm-hs_err_%p.log -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -Xbatch -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:+CheckUnhandledOops -XX:+PrintIntrinsics -XX:+PrintInlining --add-opens=java.base/jdk.internal.util.regex=ALL-UNNAMED -cp /tmp/regex-review-tests:/tmp/regex-native-tests 'RustRegexStartup$Search' 12000
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off --patch-module java.base=/workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base -Xms32m -Xmx256m -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-native-arm-hs_err_%p.log -XX:-TieredCompilation -XX:CICompilerCount=1 -Xbatch -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:+CheckUnhandledOops -XX:+PrintIntrinsics -XX:+PrintInlining --add-opens=java.base/jdk.internal.util.regex=ALL-UNNAMED -cp /tmp/regex-review-tests:/tmp/regex-native-tests RustRegexEndFlagsArm
+/workspace/toolchains/qemu/sysroot/usr/bin/qemu-aarch64 -L /workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu -E LD_LIBRARY_PATH=/workspace/toolchains/qemu/arm-libs/usr/lib/aarch64-linux-gnu:/workspace/toolchains/aarch64/sysroot/usr/aarch64-linux-gnu/lib -cpu max /workspace/toolchains/jdk27-arm/bin/java -XX:UseSVE=0 -Xshare:off --patch-module java.base=/workspace/openjdk-jdk27u/build/cloud/jdk/modules/java.base -Xms32m -Xmx256m -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xrs --add-opens=java.base/java.util.regex=ALL-UNNAMED -XX:ErrorFile=/tmp/regex-native-arm-hs_err_%p.log -XX:-TieredCompilation -XX:CICompilerCount=1 -Xbatch -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:+CheckUnhandledOops -XX:+PrintIntrinsics -XX:+PrintInlining --add-opens=java.base/jdk.internal.util.regex=ALL-UNNAMED -cp /tmp/regex-review-tests:/tmp/regex-native-tests 'RustRegexStartup$Search' 12000
+
+Rust optimization audit
+-----------------------
+Live check: python3 make/scripts/update-rust-regex.py --check
+  Bundled regex 1.13.1; latest stable 1.13.1 (live index)
+Upstream guide: https://github.com/rust-lang/regex/blob/1.13.1/src/lib.rs
+The unchanged native adapter previously passed 10 Rust tests, frozen builds,
+strict Clippy and formatting. This review changes no Rust production code.
+
+End-to-end reproduction command (linker threads limited for this host):
+  RUSTFLAGS='-C link-arg=-Wl,--threads=1' python3
+  make/scripts/benchmark-rust-regex-options.py
+  --output /tmp/regex-review-option-reproduction
+Five frozen release variants built; all 15 measurement processes passed,
+yielding 165 reproduction records in addition to the original 165 records.
+Trial configurations modify temporary copies, not the production adapter.
+
+JMH final source
+----------------
+354 measurements / 59 paired cases; three alternating process pairs.
+End-state and large-early cases verify retained backend selection; large
+fallback cases verify Java selection. The report includes losses, raw
+iteration data, process ranges and exact commands.
+
+Local jtreg attempt: BLOCKED before tests
+----------------------------------------
+The JDK-version probe could not create a VM thread, including with Rust
+explicitly disabled in the harness. This host has an exhausted process/thread
+quota. The module declaration fix is therefore supported by canonical syntax
+and direct compilation here; the replacement GitHub CI provides jtreg.
+Picked up JAVA_TOOL_OPTIONS: -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xint -Xrs
+Error getting java.specification.version for /workspace/openjdk-jdk27u/build/cloud/jdk: exit code 1
+Picked up JAVA_TOOL_OPTIONS: -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -Xint -Xrs
+[0.863s][warning][os,thread] Failed to start thread "Unknown thread" - pthread_create failed (EAGAIN) for attributes: stacksize: 1024k, guardsize: 0k, detached.
+Error occurred during initialization of VM
+java.lang.OutOfMemoryError: unable to create native thread: possibly out of memory or process/resource limits reached
+Error: cannot determine version for JDK: /workspace/openjdk-jdk27u/build/cloud/jdk
+
+Starting-head CI
+----------------
+https://github.com/re-thc/openjdk-jdk27u/actions/runs/37397900315
+97 jobs: 90 success, one skipped, six failure. All failures were tier1 part 2
+at RustRegexTest.java:45: java.base did not export jdk.internal.util.regex.
+No other failure was present in that run. The PR records replacement CI;
+no complete green matrix is claimed before that replacement finishes.

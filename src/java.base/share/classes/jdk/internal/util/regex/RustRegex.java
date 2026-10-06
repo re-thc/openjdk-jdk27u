@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /** Native primary engine for a parsed common subset of Java regex syntax. */
@@ -143,19 +144,30 @@ public final class RustRegex {
         }
     }
 
+    public boolean hasShortPlan() { return fastDigits != null; }
+
     // Four trailing ints in Matcher's capture array carry region/search/mode
     // arguments. The intrinsic therefore needs only three platform ABI args.
     public int match(String input, int[] state, boolean transparent, boolean anchoring) {
         int base = groupCount * 2;
         if (state.length != base + 4 || (contextSensitive && (transparent || !anchoring))) return -1;
         int from = state[base], to = state[base+1], start = state[base+2];
-        if (from < 0 || to < from || to > input.length() || start < from || start > to || to-from > MAX_LENGTH)
+        if (from < 0 || to < from || to > input.length() || start < from || start > to)
             return -1;
+        boolean large = to-from > MAX_LENGTH;
+        if (large && fastDigits == null) return -1;
         if (finalTerminatorSensitive && to > from) {
             char last = input.charAt(to-1);
             if (last == '\n' || last == '\r' || last == 0x85) return -1;
         }
         byte[] bytes = SharedSecrets.getJavaLangAccess().getLatin1Bytes(input);
+        // The ASCII short plan can also handle Unicode Strings and early
+        // candidates in large regions, without encoding or entering a leaf.
+        if (fastDigits != null) {
+            int result = fastDigits.match(input, bytes, state, base);
+            if (result != -2) return result;
+        }
+        if (large) return -1;
         if (bytes == null) {
             if (input.length() > MAX_LENGTH) return -1;
             // Handles Latin-1 contents with compact strings disabled, and
@@ -167,10 +179,6 @@ public final class RustRegex {
                 bytes[i] = (byte)c;
             }
         }
-        if (fastDigits != null) {
-            int result = fastDigits.match(input, bytes, state, base);
-            if (result != -2) return result;
-        }
         try {
             long nativeHandle = handle;
             if (nativeHandle == 0) nativeHandle = nativeHandle();
@@ -178,6 +186,22 @@ public final class RustRegex {
         } finally {
             Reference.reachabilityFence(this);
         }
+    }
+
+    // Matcher resolves successful digit-tail matches and failed searches
+    // immediately. Only anchored misses need to inspect the literal prefix.
+    // Bit zero is hitEnd; requireEnd is always false for this grammar.
+    // General expressions return -1 and still require Java replay.
+    public int anchoredMissEndFlags(String input, int to, int start) {
+        if (fastDigits == null) return -1;
+        String prefix = fastDigits.prefix;
+        int available = to - start;
+        for (int i = 0; i < Math.min(available, prefix.length()); i++) {
+            if (input.charAt(start + i) != prefix.charAt(i)) return 0;
+        }
+        // A partial prefix, or a complete prefix with no room for a digit,
+        // attempts to read the region end. A mismatch before it does not.
+        return available <= prefix.length() ? 1 : 0;
     }
 
     // A narrow specialization of already parsed/validated expressions. This
@@ -238,14 +262,15 @@ public final class RustRegex {
             int to = state[base+1], start = state[base+2], mode = state[base+3];
             boolean scan = mode == 0 && to-state[base] <= 256;
             int at = start;
-            if (scan && !prefix.isEmpty() && (at == to || bytes[at] != prefix.charAt(0)))
-                at = input.indexOf(prefix, at);
+            if (scan && !prefix.isEmpty() && (at == to || character(input, bytes, at) != prefix.charAt(0)))
+                at = candidate(input, at, to);
             int limit = to-start <= 256 ? 256 : 32;
             while (at >= 0 && at <= to) {
                 int digits = at + prefix.length();
                 if (digits <= to && input.startsWith(prefix, at)) {
                     int end = digits;
-                    while (end < to && bytes[end] >= '0' && bytes[end] <= '9') {
+                    while (end < to && character(input, bytes, end) >= '0'
+                            && character(input, bytes, end) <= '9') {
                         if (end-digits == limit) return -2;
                         end++;
                     }
@@ -265,10 +290,20 @@ public final class RustRegex {
                 }
                 if (!scan) return mode == 0 ? -2 : 0;
                 if (at == to) return 0;
-                at = input.indexOf(prefix, at+1);
+                at = candidate(input, at+1, to);
                 if (at < 0) return 0;
             }
             return 0;
+        }
+
+        private static int character(String input, byte[] bytes, int at) {
+            return bytes == null ? input.charAt(at) : bytes[at];
+        }
+
+        @ForceInline
+        private int candidate(String input, int at, int to) {
+            return to == input.length() ? input.indexOf(prefix, at)
+                    : input.indexOf(prefix, at, to);
         }
     }
 

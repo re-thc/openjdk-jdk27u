@@ -1825,7 +1825,7 @@ public final class Matcher implements MatchResult {
         nativeEndInput = null;
         RustRegex engine = parentPattern.rustRegex;
         if (engine == null) return -1;
-        if (to - from > RustRegex.MAX_LENGTH) {
+        if (to - from > RustRegex.MAX_LENGTH && !engine.hasShortPlan()) {
             parentPattern.ensureJava();
             return -1;
         }
@@ -1844,6 +1844,12 @@ public final class Matcher implements MatchResult {
         if (result == 1) {
             first = groups[0];
             last = groups[1];
+        }
+        // These digit-tail results have exact end flags already. Avoid saving
+        // replay state on the common path, whether or not callers query them.
+        if (engine.hasShortPlan() && (result == 1 || mode == 0)) {
+            hitEnd = result == 0 || last == to;
+            return result;
         }
         nativeEndPattern = parentPattern;
         nativeEndInput = input;
@@ -1868,6 +1874,16 @@ public final class Matcher implements MatchResult {
     private void ensureEndFlags() {
         Pattern pattern = nativeEndPattern;
         if (pattern == null) return;
+        RustRegex engine = pattern.rustRegex;
+        int flags = engine == null ? -1 : engine.anchoredMissEndFlags(nativeEndInput,
+                nativeEndTo, nativeEndStart);
+        if (flags >= 0) {
+            hitEnd = (flags & 1) != 0;
+            requireEnd = false;
+            nativeEndPattern = null;
+            nativeEndInput = null;
+            return;
+        }
         pattern.ensureJava();
         Matcher replay = pattern.matcher(nativeEndInput)
                 .region(nativeEndFrom, nativeEndTo)

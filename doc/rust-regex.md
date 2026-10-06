@@ -38,6 +38,9 @@ a compact specialization containing only the prefix and capture indices. It
 handles searches of up to 256 characters and checks the first candidate of
 longer searches. Numeric runs return to Rust after 256 characters on short
 inputs or 32 characters on larger inputs.
+Literal searches respect the region end, including small regions within large
+Strings. The tiny candidate helper is forced inline; full-input searches retain
+the existing String search path.
 This avoids the native boundary for short/early matches. The Rust engine is
 compiled on the first operation that needs it, with no use-count threshold.
 Patterns used exclusively through the specialization allocate no native engine
@@ -61,17 +64,27 @@ for its usual syntax diagnostics. Extending the subset requires grammar and
 differential evidence, not additional lexical exceptions.
 
 Compact Latin-1 Strings use backing bytes directly. Other CharSequences are
-snapshotted; noncompact Latin-1 Strings are encoded. Non-Latin-1 contents and
-regions over 65,536 characters promote to Java. Context-sensitive expressions
+snapshotted. The ASCII short plan can answer short searches and early candidates
+directly on Unicode or noncompact Strings, without encoding. Operations that
+need Rust encode noncompact Latin-1 Strings; non-Latin-1 contents promote to
+Java. Regions over 65,536 characters can use the short plan for an early match
+or immediate anchored rejection; other operations on these regions promote.
+The native leaf-call limit remains 65,536 characters. Context-sensitive expressions
 with transparent bounds or disabled anchoring bounds promote too. Dollar/\Z
 expressions promote for final Java line terminators.
 
 The selected backend supplies capture offsets, including unmatched groups, for find, matches,
 lookingAt, replacement, splitting, immutable results and streams. Matcher keeps
-zero-length progression. Java-specific hitEnd()/requireEnd() queries promote
-and replay the last operation using saved input/bounds. Ordinary matching never
-performs that replay. Scanner streaming end-state queries therefore preserve
-Java behavior and usually select Java after the first query. Promotion publishes
+zero-length progression. Literal-prefix/greedy-digit-tail plans compute exact
+Java hitEnd()/requireEnd() flags without promotion, including results returned
+by Rust for longer digit runs. Successful matches and failed searches set the
+flags immediately without retaining replay input or metadata; anchored misses
+inspect the saved prefix only if queried. General expressions still promote
+and replay the last operation using saved input/bounds when these flags are queried: Rust's
+match offsets do not describe Java's attempted reads and backtracking. Ordinary
+matching never performs that replay. Scanner streaming end-state queries
+preserve Java behavior; general delimiter patterns select Java after the first
+query. Promotion publishes
 a separately compiled graph; existing Matchers allocate Java locals lazily.
 In-flight native calls retain their wrapper until completion.
 
@@ -112,7 +125,7 @@ selection in Pattern and shared Matcher operations cover hidden callers too.
 | Matcher search, anchored matching, captures, replacement, streams | Native primary matching, subject to the fallback rules above. |
 | Pattern split, delimiter split, streams, predicates, match predicates | Shared Matcher path; existing literal shortcuts remain. |
 | String regex helpers | Shared Pattern selection; repeated live expressions can share engines. |
-| Scanner | Mutable snapshots; streaming end-state queries select Java. |
+| Scanner | Mutable snapshots; general streaming end-state queries select Java. |
 | Filesystem/ZIP glob matchers | Anchored native matching if translated syntax is eligible. |
 | Swing, joptsimple, compiler and JDK tool helpers | Shared Pattern/Matcher selection. |
 | PrintPattern | Requests Java compilation before inspecting the graph. |
@@ -140,6 +153,17 @@ records the live version/date/checksum in UPSTREAM.json. Review licenses and
 toolchain requirements on updates. The adapter is GPLv2; bundled crates and the
 Rust standard library use their MIT option.
 
+## Upstream optimization guidance
+
+The [option audit](rust-regex-optimization-audit.md) maps the upstream performance
+guide to the adapter and records isolated trials of ThinLTO, full DFAs, bounded
+backtracking and larger lazy-DFA caches. Default `std`/`perf` Cargo features,
+literal/SIMD prefilters, lazy DFAs, one-pass captures, reusable engines and
+separate mutable search caches are enabled. Release builds use optimization
+level 3 and one codegen unit. Options with mixed performance or greater memory
+cost remain deliberately disabled; the audit includes a portable offline script
+and raw measurements.
+
 ## Tests and measurements
 
 ```sh
@@ -159,7 +183,9 @@ memory admission/recovery and startup. Rust tests cover captures, full matches,
 nullable results, byte inputs, concurrency, accounting and contained FFI panics.
 
 RustRegexNative measures reusable searches, including positive/negative cases,
-captures, fallback controls and short inputs. RustRegexLifetime includes every
+captures, fallback controls and short inputs. RustRegexEndFlags measures matching
+plus both end-state queries, including early candidates in large regions.
+RustRegexLifetime includes every
 search in complete 1/8/9/10/16/32-call lifetimes, mixed workloads and shared
 Pattern contention. Its shared/cold/distinct parameter distinguishes a live
 shared engine, a collected previous owner of the same expression, and new
@@ -175,6 +201,8 @@ The [native-primary results](rust-regex-native-results.md) include paired tables
 raw JMH data, commands, compilation costs and remaining losses. The
 [validation transcript](rust-regex-native-validation.txt) distinguishes direct
 test coverage from the local jtreg launcher failure.
+The [end-state review results](rust-regex-end-flags-results.md) record the newer
+module declaration fix, end-state/large-input changes and their validation.
 
 Earlier rejection-filter benchmark documents describe a superseded design;
 their measurements must not be attributed to this primary engine.
