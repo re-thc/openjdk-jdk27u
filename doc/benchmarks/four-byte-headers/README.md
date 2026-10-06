@@ -66,9 +66,16 @@ last five within each fork before comparing configurations. Startup interleaves
 50 fresh JVMs per configuration after five untimed rounds with a fixed shuffle
 seed. It measures `java -version` process startup, not application readiness.
 
-Raw JSON and CSV results and the validation report accompany the PR. The
+[Raw JSON and CSV results](results/) and the
+[validation report](results/validation.md) accompany the PR. The
 report identifies any earlier memory-only runs whose timings were affected
 by concurrent compilation or tests; those timings must not be used.
+
+The [evidence archive](results/evidence.zip) contains the standalone HTML
+report, raw final measurements, separate before-fix results, selected-test
+CSVs, audited CI summaries and local validation logs. Its publication snapshot
+records pending CI jobs explicitly. Completed runs and measured timing costs
+determine acceptance; a green build badge alone does not establish it.
 
 The additional locking/hash race uses JCStress 0.16, JNA and JNA platform
 5.8.0, and jopt-simple 4.6. Set `JCSTRESS_CP` to those four jars, then run:
@@ -105,3 +112,50 @@ python3 doc/benchmarks/four-byte-headers/summarize.py "$RESULTS_DIR"
 It runs six independent forks for baseline, default and four-byte layouts
 under each required collector. The six possible configuration orders each
 run once. This preserves all results while reducing fixed-order effects.
+
+The main matrix also identified possible costs in Serial identity-map lookup
+and ZGC stored-hash reads. Confirm those two cases separately, after all other
+timed runs finish:
+
+```sh
+bash doc/benchmarks/four-byte-headers/repeat-hash-reads.sh
+python3 doc/benchmarks/four-byte-headers/summarize-hash-reads.py "$RESULTS_DIR"
+```
+
+This uses the already compiled JMH classes and the same six balanced orders.
+All reported improvement percentages compare the original JDK 27u eight-byte
+default with four-byte mode. Candidate eight-byte and twelve-byte measurements
+serve as default-behavior and compatibility controls.
+
+The initial application matrix showed a default-mode Serial Scala Doku
+slowdown signal. Recheck the original two-workload sequence in twelve forks
+with balanced baseline/default/four-byte order:
+
+```sh
+bash doc/benchmarks/four-byte-headers/repeat-serial-app.sh
+python3 doc/benchmarks/four-byte-headers/summarize-serial-app.py "$RESULTS_DIR"
+```
+
+Each of the six layout orders occurs twice. The first six-fork round still
+left uncertainty about a smaller default-mode slowdown, so the recorded run
+includes a second balanced round. Keep every supplementary run sequential
+with the main timed runs.
+
+One initial Serial post-GC occupancy control was unusually high. Confirm
+memory results independently after `run.sh memory` has built the plugin:
+
+```sh
+bash doc/benchmarks/four-byte-headers/repeat-memory-check.sh
+```
+
+This records three fresh JVMs per layout and three plugin operations per
+workload. The report uses the median of per-fork medians and retains the range.
+
+For the occupancy diagnostic without TLAB slack, use:
+
+```sh
+MEMORY_NO_TLAB=true MEMORY_RESULT_PREFIX=notlab \
+  bash doc/benchmarks/four-byte-headers/repeat-memory-check.sh
+```
+
+These diagnostic runs are excluded from performance comparisons.

@@ -76,5 +76,7 @@ sizes under C1 and C2.
 The [benchmark harness](benchmarks/four-byte-headers/run.sh) measures allocated
 bytes, exact retained graph sizes, post-GC heap use on Renaissance workloads,
 identity-hash and `IdentityHashMap` costs, and startup with matching CDS archives.
-Run timing measurements while the machine is idle. See the accompanying
-benchmark report for the tested platform, raw results and limitations.
+Run timing measurements while the machine is idle. The
+[validation and benchmark report](benchmarks/four-byte-headers/results/validation.md)
+compares the original eight-byte default with four-byte mode and records the
+tested platform, raw results and limitations, including measured hashing costs.
