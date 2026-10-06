@@ -4,6 +4,10 @@ on:
   push:
     branches: [pr/diagnose-macos-sa-resume]
 
+concurrency:
+  group: macos-sa-resume-experiment
+  cancel-in-progress: true
+
 permissions:
   contents: read
   actions: read
@@ -122,7 +126,9 @@ jobs:
             -mno-omit-leaf-frame-pointer -mstack-alignment=16 \
             -Iexperimental/headers -I"$native_src" -I"$shared_src" \
             -I"$TEST_JDK_PATH/include" -I"$TEST_JDK_PATH/include/darwin" \
-            -Isrc/java.base/share/native/libjava -Isrc/hotspot/share/include \
+            -Isrc/java.base/share/native/libjava -Isrc/java.base/unix/native/libjava \
+            -Isrc/java.base/share/native/include -Isrc/java.base/unix/native/include \
+            -Isrc/hotspot/share/include \
             "$native_src/MacosxDebuggerLocal.m" "$native_src/libproc_impl.c" \
             "$native_src/ps_core.c" "$native_src/symtab.c" \
             "$shared_src/ps_core_common.c" "$shared_src/sadis.c" experimental/mach_excServer.c \
