@@ -27,6 +27,7 @@
 #include "asm/assembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/methodData.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/intrinsicnode.hpp"
@@ -310,23 +311,34 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
       for (int i = 0; i < num_unrolled; i++) {
         movptr(monitor, Address(thread,  cache_offset + monitor_offset));
         cmpptr(obj, Address(thread, cache_offset));
-        jccb(Assembler::equal, monitor_found);
+        if (UseFourByteObjectHeaders) {
+          jcc(Assembler::equal, monitor_found);
+        } else {
+          jccb(Assembler::equal, monitor_found);
+        }
         cache_offset = cache_offset + OMCache::oop_to_oop_difference();
       }
 
       if (UseFourByteObjectHeaders) {
-        // TODO: The fast-path table lookup currently doesn't work with Lilliput's
-        // compact identity-hashcode implementation.
-        // See: https://bugs.openjdk.org/browse/JDK-8380981
-        jmp(slow_path);
+        // Moved, hashed instances keep their identity hash in a hidden slot.
+        // Other hash states and special instance/array layouts use the runtime.
+        movl(hash, Address(obj, oopDesc::mark_offset_in_bytes()));
+        andl(hash, markWord::hashctrl_mask_in_place);
+        cmpl(hash, markWord::hashctrl_hashed_mask_in_place | markWord::hashctrl_expanded_mask_in_place);
+        jcc(Assembler::notEqual, slow_path);
+        load_klass(rax_reg, obj, hash);
+        cmpl(Address(rax_reg, Klass::kind_offset_in_bytes()), Klass::InstanceKlassKind);
+        jcc(Assembler::notEqual, slow_path);
+        movl(hash, Address(rax_reg, InstanceKlass::hash_offset_offset_in_bytes()));
+        movl(hash, Address(obj, hash, Address::times_1));
       } else {
-        // Look for the monitor in the table.
-
         // Get the hash code.
         movptr(hash, Address(obj, oopDesc::mark_offset_in_bytes()));
         shrq(hash, markWord::hash_shift);
         andq(hash, markWord::hash_mask);
+      }
 
+      { // Look for the monitor in the table.
         // Get the table and calculate the bucket's address.
         lea(rax_reg, ExternalAddress(ObjectMonitorTable::current_table_address()));
         movptr(rax_reg, Address(rax_reg));
