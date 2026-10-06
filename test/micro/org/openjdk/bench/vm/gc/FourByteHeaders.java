@@ -38,12 +38,14 @@ public class FourByteHeaders {
     static final class Cell { int value; Cell(int value) { this.value = value; } }
     Cell[] cells;
     IdentityHashMap<Cell, Integer> identities;
+    Object[] retainedMaps;
     int index;
 
     @Setup(Level.Trial)
     public void setup() {
         cells = new Cell[1024];
         identities = new IdentityHashMap<>(2048);
+        retainedMaps = new Object[2048];
         for (int i = 0; i < cells.length; i++) {
             cells[i] = new Cell(i);
             identities.put(cells[i], i);
@@ -56,4 +58,15 @@ public class FourByteHeaders {
     @Benchmark public int firstHash() { return System.identityHashCode(new Cell(42)); }
     @Benchmark public int storedHash() { return System.identityHashCode(cells[(index++ & 1023)]); }
     @Benchmark public int identityMapLookup() { return identities.get(cells[(index++ & 1023)]); }
+    @Benchmark public IdentityHashMap<Cell, Cell> identityMapChurn() {
+        var map = new IdentityHashMap<Cell, Cell>(512);
+        for (int i = 0; i < 512; i++) {
+            var cell = new Cell(i);
+            map.put(cell, cell);
+        }
+        // Keep hashed objects alive across young collections so this includes
+        // copying and hash preservation, rather than only hash computation.
+        retainedMaps[index++ & (retainedMaps.length - 1)] = map;
+        return map;
+    }
 }
