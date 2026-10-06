@@ -27,17 +27,22 @@
  * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "aarch64")
  * @key stress
  * @library /test/lib
+ * @modules java.base/jdk.internal.misc
  * @run driver/timeout=600 FourByteHeaderClassSpace
  */
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import jdk.internal.misc.Unsafe;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class FourByteHeaderClassSpace extends ClassLoader {
     static final int CLASSES_PER_LOADER = 4096;
     static FourByteHeaderClassSpace[] loaders;
+    static Object boundaryObject;
+    static Class<?> boundaryClass;
+    static int boundaryHash;
     static byte[] reserve = new byte[65536];
     static byte[] template() throws Exception {
         var bytes = new ByteArrayOutputStream();
@@ -74,7 +79,16 @@ public class FourByteHeaderClassSpace extends ClassLoader {
                     bytes[digit] = (byte) ('0' + value % 10);
                     value /= 10;
                 }
-                loader.defineClass(null, bytes, 0, bytes.length);
+                Class<?> defined = loader.defineClass(null, bytes, 0, bytes.length);
+                if (count == 500000) {
+                    // Exercise an actual oop with a high class identifier,
+                    // including hash preservation and decoding after movement.
+                    boundaryClass = defined;
+                    boundaryObject = Unsafe.getUnsafe().allocateInstance(defined);
+                    boundaryHash = System.identityHashCode(boundaryObject);
+                    System.gc();
+                    checkBoundaryObject();
+                }
             }
             throw new AssertionError("19-bit class space unexpectedly accommodated 600000 classes");
         } catch (OutOfMemoryError error) {
@@ -85,11 +99,20 @@ public class FourByteHeaderClassSpace extends ClassLoader {
             System.out.println(" classes");
             if (count < 100000) throw new AssertionError("Unexpectedly small class capacity: " + count);
         }
+        System.gc();
+        checkBoundaryObject();
+    }
+    static void checkBoundaryObject() {
+        if (boundaryObject == null || boundaryObject.getClass() != boundaryClass ||
+                System.identityHashCode(boundaryObject) != boundaryHash) {
+            throw new AssertionError("Class or hash changed near the class-space boundary");
+        }
     }
     public static void main(String[] args) throws Exception {
         if (args.length != 0) { load(); return; }
         new OutputAnalyzer(ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+UnlockExperimentalVMOptions", "-XX:+UseFourByteObjectHeaders",
+                "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 // Avoid repeated C2 dependency scans of half a million new
                 // subclasses. This test exercises class-space encoding and exhaustion.
                 "-Xint",
