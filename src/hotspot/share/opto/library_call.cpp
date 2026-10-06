@@ -4853,7 +4853,11 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
 
     // Take slow-path when the object has not been hashed.
     Node* not_hashed_val = _gvn.MakeConX(0);
-    Node* chk_hashed     = _gvn.transform(new CmpXNode(masked_header, not_hashed_val));
+    // An expanded object can still be unhashed (for example a CDS mirror).
+    // Test hash presence independently of the expansion bit.
+    Node* hashed_mask = _gvn.MakeConX(markWord::hashctrl_hashed_mask_in_place);
+    Node* hashed_header = _gvn.transform(new AndXNode(header, hashed_mask));
+    Node* chk_hashed     = _gvn.transform(new CmpXNode(hashed_header, not_hashed_val));
     Node* test_hashed    = _gvn.transform(new BoolNode(chk_hashed, BoolTest::eq));
 
     generate_slow_guard(test_hashed, slow_region);
@@ -4869,10 +4873,6 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
 
     // Hashed&Copied path: read hash-code out of the object.
     set_control(if_true);
-    // result_val->del_req(_fast_path2);
-    // result_reg->del_req(_fast_path2);
-    // result_io->del_req(_fast_path2);
-    // result_mem->del_req(_fast_path2);
 
     Node* obj_klass = load_object_klass(obj);
     Node* hash_addr;
@@ -4894,8 +4894,6 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
       }
     }
 
-    //tty->print_cr("Load hash-offset at runtime: %s", BOOL_TO_STR(load_offset_runtime));
-
     if (load_offset_runtime) {
       // We don't know if it is an array or an exact type, figure it out at run-time.
       // If not an ordinary instance, then we need to take slow-path.
@@ -4909,7 +4907,6 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
       // Otherwise it's an instance and we can read the hash_offset from the InstanceKlass.
       Node* hash_offset_addr = basic_plus_adr(top(), obj_klass, InstanceKlass::hash_offset_offset_in_bytes());
       Node* hash_offset = make_load(control(), hash_offset_addr, TypeInt::INT, T_INT, MemNode::unordered);
-      // hash_offset->dump();
       Node* hash_addr = basic_plus_adr(obj, ConvI2X(hash_offset));
       Compile::current()->set_has_unsafe_access(true);
       Node* loaded_hash = make_load(control(), hash_addr, TypeInt::INT, T_INT, MemNode::unordered);
@@ -9427,4 +9424,3 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
   set_result(box_fp16_value(float16_box_type, field, result));
   return true;
 }
-
