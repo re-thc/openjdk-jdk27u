@@ -38,7 +38,7 @@ inline oop ShenandoahForwarding::get_forwardee_raw(oop obj) {
 }
 
 static HeapWord* to_forwardee(markWord mark) {
-  return reinterpret_cast<HeapWord*>(mark.value() & ~(markWord::lock_mask_in_place | markWord::self_fwd_bit_in_place));
+  return reinterpret_cast<HeapWord*>(mark.clear_lock_bits().to_pointer());
 }
 
 inline bool ShenandoahForwarding::has_forwardee(markWord m) {
@@ -161,22 +161,24 @@ inline Klass* ShenandoahForwarding::klass(oop obj) {
 }
 
 inline size_t ShenandoahForwarding::size(oop obj) {
+  if (!UseFourByteObjectHeaders) {
+    Klass* k = klass(obj);
+    return obj->size_given_mark_and_klass(obj->mark(), k);
+  }
   markWord mark = obj->mark();
   if (has_forwardee(mark)) {
     oop fwd = cast_to_oop(to_forwardee(mark));
     markWord fwd_mark = fwd->mark();
-    Klass* klass = UseFourByteObjectHeaders ? fwd_mark.klass() : fwd->klass();
+    Klass* klass = fwd_mark.klass();
     size_t size = fwd->base_size_given_klass(fwd_mark, klass);
-    if (UseFourByteObjectHeaders) {
-      if ((mark.value() & FWDED_HASH_TRANSITION) != FWDED_HASH_TRANSITION) {
-        if (fwd_mark.is_expanded() && klass->expand_for_hash(fwd, fwd_mark)) {
-          size = oopDesc::hash_expanded_size(size);
-        }
+    if ((mark.value() & FWDED_HASH_TRANSITION) != FWDED_HASH_TRANSITION) {
+      if (fwd_mark.is_expanded() && klass->expand_for_hash(fwd, fwd_mark)) {
+        size = oopDesc::hash_expanded_size(size);
       }
     }
     return size;
   } else {
-    Klass* klass = UseFourByteObjectHeaders ? mark.klass() : obj->klass();
+    Klass* klass = mark.klass();
     return obj->size_given_mark_and_klass(mark, klass);
   }
 }
