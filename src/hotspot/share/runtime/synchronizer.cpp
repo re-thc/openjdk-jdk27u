@@ -23,6 +23,7 @@
  */
 
 #include "cds/cdsConfig.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -641,6 +642,25 @@ static intptr_t get_next_hash_legacy(Thread* current, oop obj) {
   return value;
 }
 
+#ifdef _LP64
+// Keep dump-only class metadata and hashing work out of the normal address hash path.
+NOINLINE static uint64_t static_archive_hash_input(oop obj) {
+  // Regenerated mirrors can be allocated at different offsets by concurrent GCs.
+  // Class names give these mirrors a stable hash while dumping.
+  if (java_lang_Class::is_instance(obj)) {
+    Klass* klass = java_lang_Class::as_Klass(obj);
+    if (klass == nullptr) {
+      return static_cast<uint32_t>(java_lang_Class::as_BasicType(obj));
+    }
+    Symbol* name = klass->name();
+    return java_lang_String::hash_code(reinterpret_cast<const jbyte*>(name->bytes()), name->utf8_length());
+  }
+  // Other objects must not depend on heap address randomization.
+  // Hashed archived objects retain this value in their expanded hash slot.
+  return cast_from_oop<uint64_t>(obj) - reinterpret_cast<uintptr_t>(Universe::heap()->reserved_start());
+}
+#endif
+
 static intptr_t get_four_byte_hash(oop obj) {
   assert(UseFourByteObjectHeaders, "Only with compact i-hash");
   assert(hashCode == 6 || hashCode == 2, "must have idempotent hashCode");
@@ -649,10 +669,8 @@ static intptr_t get_four_byte_hash(oop obj) {
   }
 #ifdef _LP64
   uint64_t val = cast_from_oop<uint64_t>(obj);
-  if (CDSConfig::is_dumping_classic_static_archive() && !UseCompiler) {
-    // Interpreter-only static dumping must not depend on heap address randomization.
-    // Hashed archived objects retain this value in their expanded hash slot.
-    val -= reinterpret_cast<uintptr_t>(Universe::heap()->reserved_start());
+  if (!UseCompiler && CDSConfig::is_dumping_classic_static_archive()) {
+    val = static_archive_hash_input(obj);
   }
   uint32_t hash = FastHash::get_hash32((uint32_t)val, (uint32_t)(val >> 32));
 #else
