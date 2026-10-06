@@ -17205,12 +17205,27 @@ instruct jmpConUCFE_short(cmpOpUCFE cop, rFlagsRegUCFE cmp, label labl) %{
 // inlined locking and unlocking
 
 instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI rax_reg, rRegP tmp) %{
+  predicate(!UseFourByteObjectHeaders);
   match(Set cr (FastLock object box));
   effect(TEMP rax_reg, TEMP tmp, USE_KILL box);
   ins_cost(300);
   format %{ "fastlock $object,$box\t! kills $box,$rax_reg,$tmp" %}
   ins_encode %{
     __ fast_lock($object$$Register, $box$$Register, $rax_reg$$Register, $tmp$$Register, r15_thread);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmpFastLockFourByte(rFlagsReg cr, rRegP object, rbx_RegP box,
+                            rax_RegI rax_reg, rRegP tmp, rcx_RegL hash_temp) %{
+  predicate(UseFourByteObjectHeaders);
+  match(Set cr (FastLock object box));
+  effect(TEMP rax_reg, TEMP tmp, TEMP hash_temp, USE_KILL box);
+  ins_cost(300);
+  format %{ "fastlock $object,$box\t! kills $box,$rax_reg,$tmp,$hash_temp" %}
+  ins_encode %{
+    __ fast_lock($object$$Register, $box$$Register, $rax_reg$$Register,
+                 $tmp$$Register, r15_thread, $hash_temp$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
