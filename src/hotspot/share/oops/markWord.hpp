@@ -46,14 +46,13 @@
 //
 //  64 bits (with compact headers):
 //  -------------------------------
-//  unused:32 klass:19 hashctrl:2 -->| unused_gap:4  age:4  self-fwd:1  lock:2 (normal object)
+//  klass:22  hash:31  valhalla:4  age:4  self-fwd:1  lock:2
 //
-//  Note: klass occupies bits 13-31 (19 bits), hashctrl occupies bits 11-12 (2 bits)
+//  32 bits (with four-byte object headers):
+//  ---------------------------------------
+//  klass:19  hashctrl:2  valhalla:4  age:4  self-fwd:1  lock:2
 //
-//  - hash contains the identity hash value: largest value is
-//    31 bits, see os::random().  Also, 64-bit vm's require
-//    a hash value no bigger than 32 bits because they will not
-//    properly generate a mask larger than that: see library_call.cpp
+//  With four-byte headers, klass occupies bits 13-31 and hashctrl bits 11-12.
 //
 //  - With +UseFourByteObjectHeaders:
 //    hashctrl bits indicate if object has been hashed:
@@ -64,8 +63,9 @@
 //
 //    When identityHashCode() is called, the transitions work as follows:
 //    00 - set the hashctrl bits to 01, and compute the identity hash
-//    01 - recompute idendity hash. When GC encounters 01 when moving an object, it will allocate an extra word, if
-//         necessary, for the object copy, and install 11.
+//    01 - recompute identity hash. When moving the object, GC uses a gap or
+//         extends the object to preserve the hash in a hidden field and installs 11.
+//    10 - compute and install the hash in the reserved hidden field, and install 11.
 //    11 - read hashcode from field
 //
 //  - lock bits are used to describe lock states: locked/unlocked/monitor-locked
@@ -148,7 +148,7 @@ class markWord {
   static const int age_shift                      = self_fwd_shift + self_fwd_bits;
   static const int valhalla_reserved_shift        = age_shift + age_bits;
   static const int hash_shift                     = valhalla_reserved_shift + valhalla_reserved_bits;
-  static const int hashctrl_shift                 = valhalla_reserved_shift + valhalla_reserved_bits;;
+  static const int hashctrl_shift                 = valhalla_reserved_shift + valhalla_reserved_bits;
 
   // Masks (in-place)
   static const uintptr_t lock_mask_in_place       = right_n_bits(lock_bits) << lock_shift;
@@ -168,22 +168,20 @@ class markWord {
   static const uintptr_t hash_mask                = hash_mask_in_place >> hash_shift;
 
 #ifdef _LP64
-  // Used only with compact headers:
-  // With UseFourByteObjectHeaders: We store the (narrow) Klass* in bits 13-31 (19 bits total).
-  // Without UseFourByteObjectHeaders: Klass* is stored separately in object header, not in markword.
-
-  // These are for bit-precise extraction of the narrow Klass* from the markword (UseFourByteObjectHeaders only)
+  // Compact headers store the narrow Klass* in the mark: bits 42-63 for
+  // eight-byte headers, or bits 13-31 for four-byte headers. Without compact
+  // headers, the Klass* is stored separately from the mark.
   //
   // Bit position summary for UseFourByteObjectHeaders:
   // Bits  0- 1: lock (2 bits)
   // Bit   2   : self-fwd (1 bit)
   // Bits  3- 6: age (4 bits)
-  // Bits  7-10: unused_gap (4 bits)
+  // Bits  7-10: valhalla reserved (4 bits)
   // Bits 11-12: hashctrl (2 bits) - hash control state
   // Bits 13-31: klass (19 bits) - narrow klass pointer
-  // Bits 32-63: unused (32 bits)
-  //
-  // Without UseFourByteObjectHeaders, klass is stored separately in object header
+  // Bits 32-63 of a 64-bit read are outside the four-byte header and may
+  // contain instance fields, array length, or padding.
+//
   static constexpr int klass_offset_in_bytes      = 4;
   static constexpr int klass_shift                = hash_shift + hash_bits;
   static constexpr int klass_shift_at_offset      = klass_shift - klass_offset_in_bytes * BitsPerByte;
