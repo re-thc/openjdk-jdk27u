@@ -1,4 +1,4 @@
-# Copyright (c) 2026, Harry Chan. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # This file is available under the GNU General Public License version 2.
 name: Four-byte header validation
 
@@ -22,37 +22,7 @@ concurrency:
 jobs:
   prepare:
     runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      actions: write
     steps:
-      # Retire matrices started before the per-PR concurrency group existed.
-      - name: Cancel superseded matrices for this pull request
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        uses: actions/github-script@v8
-        with:
-          script: |
-            const { owner, repo } = context.repo;
-            const current = (await github.rest.actions.getWorkflowRun({
-              owner, repo, run_id: context.runId
-            })).data;
-            const runs = await github.paginate(github.rest.actions.listWorkflowRuns, {
-              owner, repo, workflow_id: current.workflow_id,
-              event: 'pull_request', per_page: 100
-            });
-            for (const run of runs) {
-              if (run.run_number >= current.run_number || run.status === 'completed' ||
-                  !(run.pull_requests || []).some(pr => pr.number === context.payload.pull_request.number)) {
-                continue;
-              }
-              try {
-                await github.rest.actions.cancelWorkflowRun({ owner, repo, run_id: run.id });
-                core.info(`Cancelled superseded run ${run.id}`);
-              } catch (error) {
-                if (error.status !== 409) throw error;
-                core.info(`Run ${run.id} completed before cancellation`);
-              }
-            }
       - uses: actions/checkout@v6
       - uses: ./.github/actions/build-jtreg
 
@@ -175,7 +145,7 @@ jobs:
           make test-prebuilt TEST='gtest:all' GTEST="JAVA_OPTIONS=$flags"
           test ! -f build/run-test-prebuilt/make-support/exit-with-error
           make test-prebuilt \
-            TEST='test/hotspot/jtreg/runtime/CompactObjectHeaders test/hotspot/jtreg/gc/stress/ihash test/jdk/java/lang/instrument/FourByteHeaderObjectSize.java test/hotspot/jtreg/compiler/intrinsics/base64/TestBase64.java test/hotspot/jtreg/compiler/intrinsics/string/TestStringIntrinsics.java' \
+            TEST='test/hotspot/jtreg/runtime/CompactObjectHeaders test/hotspot/jtreg/gc/stress/ihash test/jdk/java/lang/instrument/FourByteHeaderObjectSize.java test/hotspot/jtreg/compiler/intrinsics/base64/TestBase64.java test/hotspot/jtreg/compiler/intrinsics/string/TestStringIntrinsics.java test/hotspot/jtreg/compiler/c2/irTests/stringopts/TestArrayCopySelect.java test/hotspot/jtreg/compiler/loopopts/superword/TestAlignVector.java' \
             JTREG="JAVA_OPTIONS=$flags;VERBOSE=fail,error,time;TIMEOUT_FACTOR=4;JOBS=2"
           test ! -f build/run-test-prebuilt/make-support/exit-with-error
       - uses: actions/upload-artifact@v6

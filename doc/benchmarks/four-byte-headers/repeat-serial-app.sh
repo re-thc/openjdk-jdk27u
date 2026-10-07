@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2026, Harry Chan. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # This file is available under the GNU General Public License version 2.
 set -euo pipefail
 : "${BASELINE_JDK:?Set BASELINE_JDK}"
@@ -19,8 +19,8 @@ for ((fork=${APP_FIRST_FORK:-1}; fork<=${APP_LAST_FORK:-12}; fork++)); do
     jdk=$CANDIDATE_JDK
     flags=(-XX:+UseSerialGC -Xms512m -Xmx512m -XX:ActiveProcessorCount=4)
     [[ $layout != baseline8 ]] || jdk=$BASELINE_JDK
-    [[ $layout != default8 ]] || flags+=(-XX:+UnlockExperimentalVMOptions -XX:-UseFourByteObjectHeaders)
-    [[ $layout != four4 ]] || flags+=(-XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders)
+    [[ $layout != default8 ]] || flags+=(-XX:-UseFourByteObjectHeaders)
+    [[ $layout != four4 ]] || flags+=(-XX:+UseFourByteObjectHeaders)
     "$jdk/bin/java" "${flags[@]}" -jar "$RENAISSANCE_JAR" scrabble,scala-doku \
       -r 10 --no-jvm-check --scratch-base "$RESULTS_DIR/scratch" \
       --json "$RESULTS_DIR/app-$layout-Serial-$fork.json" \

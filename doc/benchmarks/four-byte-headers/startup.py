@@ -1,4 +1,4 @@
-# Copyright (c) 2026, Harry Chan. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # This file is available under the GNU General Public License version 2.
 """Interleave fresh JVM startup measurements; require each matching CDS archive."""
 import csv
@@ -21,11 +21,11 @@ with open(destination, "w", newline="") as output:
             args = [jdk + "/bin/java", "-Xshare:on", "-Xms32m", "-Xmx32m",
                     "-XX:ActiveProcessorCount=4", "-XX:+Use" + gc + "GC"]
             if layout == "default8":
-                args += ["-XX:+UnlockExperimentalVMOptions", "-XX:-UseFourByteObjectHeaders"]
+                args += ["-XX:-UseFourByteObjectHeaders"]
             if layout == "legacy12":
                 args += ["-XX:-UseCompactObjectHeaders"]
             if layout == "four4":
-                args += ["-XX:+UnlockExperimentalVMOptions", "-XX:+UseFourByteObjectHeaders"]
+                args += ["-XX:+UseFourByteObjectHeaders"]
             start = time.perf_counter_ns()
             result = subprocess.run(args + ["-version"], stdout=subprocess.DEVNULL,
                                     stderr=subprocess.PIPE, check=True)

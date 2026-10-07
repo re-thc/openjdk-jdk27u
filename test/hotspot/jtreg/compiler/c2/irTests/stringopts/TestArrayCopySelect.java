@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2025, Institute of Software, Chinese Academy of Sciences.
  * All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +53,15 @@ public class TestArrayCopySelect {
                                    "-XX:CompileCommand=inline,java.lang.StringUTF16::getChars",
                                    "-XX:CompileCommand=inline,java.lang.StringUTF16::toBytes");
 
+        // Eight-byte headers have a twelve-byte array base; the four-byte
+        // default has an eight-byte base and selects the aligned copy stub.
+        TestFramework.runWithFlags("-XX:+UseCompactObjectHeaders",
+                                   "-XX:-UseFourByteObjectHeaders",
+                                   "-XX:-CompactStrings",
+                                   "-XX:CompileCommand=inline,java.lang.StringBuilder::toString",
+                                   "-XX:CompileCommand=inline,java.lang.StringUTF16::getChars",
+                                   "-XX:CompileCommand=inline,java.lang.StringUTF16::toBytes");
+
         TestFramework.runWithFlags("-XX:+UseCompactObjectHeaders",
                                    "-XX:-CompactStrings",
                                    "-XX:CompileCommand=inline,java.lang.StringBuilder::toString",
@@ -61,7 +71,7 @@ public class TestArrayCopySelect {
 
     @Test
     @Warmup(10000)
-    @IR(applyIf = {"UseCompactObjectHeaders", "false"},
+    @IR(applyIfOr = {"UseCompactObjectHeaders", "false", "UseFourByteObjectHeaders", "true"},
         counts = {IRNode.CALL_OF, "arrayof_jshort_disjoint_arraycopy", ">0"})
     static void testSBToStringAligned() {
         // Exercise the StringBuilder.toString API
@@ -71,7 +81,7 @@ public class TestArrayCopySelect {
 
     @Test
     @Warmup(10000)
-    @IR(applyIf = {"UseCompactObjectHeaders", "true"},
+    @IR(applyIfAnd = {"UseCompactObjectHeaders", "true", "UseFourByteObjectHeaders", "false"},
         counts = {IRNode.CALL_OF, "arrayof_jshort_disjoint_arraycopy", "0"})
     static void testSBToStringUnAligned() {
         // Exercise the StringBuilder.toString API
@@ -81,7 +91,7 @@ public class TestArrayCopySelect {
 
     @Test
     @Warmup(10000)
-    @IR(applyIf = {"UseCompactObjectHeaders", "false"},
+    @IR(applyIfOr = {"UseCompactObjectHeaders", "false", "UseFourByteObjectHeaders", "true"},
         counts = {IRNode.CALL_OF, "arrayof_jshort_disjoint_arraycopy", ">0"})
     static void testStrUGetCharsAligned() {
         // Exercise the StringUTF16.getChars API
@@ -90,7 +100,7 @@ public class TestArrayCopySelect {
 
     @Test
     @Warmup(10000)
-    @IR(applyIf = {"UseCompactObjectHeaders", "true"},
+    @IR(applyIfAnd = {"UseCompactObjectHeaders", "true", "UseFourByteObjectHeaders", "false"},
         counts = {IRNode.CALL_OF, "arrayof_jshort_disjoint_arraycopy", "0"})
     static void testStrUGetCharsUnAligned() {
         // Exercise the StringUTF16.getChars API
@@ -99,7 +109,7 @@ public class TestArrayCopySelect {
 
     @Test
     @Warmup(10000)
-    @IR(applyIf = {"UseCompactObjectHeaders", "false"},
+    @IR(applyIfOr = {"UseCompactObjectHeaders", "false", "UseFourByteObjectHeaders", "true"},
         counts = {IRNode.CALL_OF, "arrayof_jshort_disjoint_arraycopy", ">0"})
     static void testStrUtoBytesAligned() {
         // Exercise the StringUTF16.toBytes API
@@ -108,7 +118,7 @@ public class TestArrayCopySelect {
 
     @Test
     @Warmup(10000)
-    @IR(applyIf = {"UseCompactObjectHeaders", "true"},
+    @IR(applyIfAnd = {"UseCompactObjectHeaders", "true", "UseFourByteObjectHeaders", "false"},
         counts = {IRNode.CALL_OF, "arrayof_jshort_disjoint_arraycopy", "0"})
     static void testStrUtoBytesUnAligned() {
         // Exercise the StringUTF16.toBytes API

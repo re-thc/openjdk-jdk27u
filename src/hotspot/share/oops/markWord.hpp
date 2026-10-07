@@ -181,7 +181,7 @@ class markWord {
   // Bits 13-31: klass (19 bits) - narrow klass pointer
   // Bits 32-63 of a 64-bit read are outside the four-byte header and may
   // contain instance fields, array length, or padding.
-//
+  //
   static constexpr int klass_offset_in_bytes      = 4;
   static constexpr int klass_shift                = hash_shift + hash_bits;
   static constexpr int klass_shift_at_offset      = klass_shift - klass_offset_in_bytes * BitsPerByte;
@@ -336,7 +336,7 @@ class markWord {
     return markWord((value() & ~hashctrl_mask_in_place) | (hashctrl_hashed_mask_in_place | hashctrl_expanded_mask_in_place));
   }
 
-  // This is a special hashctrl state (11) that is only used
+  // This is a special hashctrl state (10) that is only used
   // during CDS archive dumping. There we allocate 'scratch mirrors' for
   // each real mirror klass. We allocate those scratch mirrors
   // in a pre-extended form, but without being hashed. When the

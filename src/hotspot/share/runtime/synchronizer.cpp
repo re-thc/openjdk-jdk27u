@@ -830,7 +830,6 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
 
 uint32_t ObjectSynchronizer::get_hash(markWord mark, oop obj, Klass* klass) {
   assert(UseFourByteObjectHeaders, "Only with compact i-hash");
-  //assert(mark.is_neutral() | mark.is_fast_locked(), "only from neutral or fast-locked mark: " INTPTR_FORMAT, mark.value());
   assert(mark.is_hashed(), "only from hashed or copied object");
   if (mark.is_hashed_expanded()) {
     return obj->int_field(klass->hash_offset_in_bytes(obj, mark));
