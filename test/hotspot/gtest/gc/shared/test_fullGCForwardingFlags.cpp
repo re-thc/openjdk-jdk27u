@@ -21,10 +21,10 @@
  * questions.
  */
 
-
 #include "gc/shared/fullGCForwarding.hpp"
-#include "runtime/globals.hpp"
+#include "runtime/flags/flagSetting.hpp"
 #include "runtime/flags/jvmFlag.hpp"
+#include "runtime/globals.hpp"
 #include "unittest.hpp"
 
 TEST_VM(FullGCForwarding, oversized_eight_byte_heap_disables_compact_headers) {

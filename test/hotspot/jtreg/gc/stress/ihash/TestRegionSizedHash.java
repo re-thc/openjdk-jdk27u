@@ -33,7 +33,7 @@ package gc.stress.ihash;
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC -XX:+ShenandoahVerify
  *      -XX:-ExplicitGCInvokesConcurrent -Xms32m -Xmx32m
  *      -XX:+UnlockExperimentalVMOptions -XX:ShenandoahRegionSize=256K
- *      gc.stress.ihash.TestRegionSizedHash
+ *      gc.stress.ihash.TestRegionSizedHash regular
  */
 
 /*
@@ -97,14 +97,21 @@ public class TestRegionSizedHash {
     // byte[] allocation size (with compact headers) = align_up(8 + length, 8).
     // length = REGION_SIZE - 8 yields an allocation of exactly one region.
     static byte[] oneRegion() {
-        return new byte[REGION_SIZE - 8];
+        return new byte[arrayLength];
     }
+
+    static int arrayLength = REGION_SIZE - 8;
 
     static final int COUNT = 8;
 
     static Object[] keep;
 
     public static void main(String[] args) {
+        if (args.length > 0 && args[0].equals("regular")) {
+            // One word short of a region: the expanded copy still fits. This
+            // exercises ordinary young-region compaction, not humongous routing.
+            arrayLength -= 8;
+        }
         keep = new Object[COUNT];
         int[] hashes = new int[COUNT];
         for (int i = 0; i < COUNT; i++) {
