@@ -133,8 +133,8 @@ public class MaxSizeUTF16String {
         // With the default eight-byte object alignment, the VM reserves the
         // byte-array header rounded up to a machine word from its length limit.
         // Four-byte object headers permit one more byte than other layouts.
-        int headerWords = (Unsafe.ARRAY_BYTE_BASE_OFFSET + Unsafe.ADDRESS_SIZE - 1)
-                          / Unsafe.ADDRESS_SIZE;
+        int headerWords = (int) ((Unsafe.ARRAY_BYTE_BASE_OFFSET + Unsafe.ADDRESS_SIZE - 1)
+                                / Unsafe.ADDRESS_SIZE);
         int maxByteArrayLength = Integer.MAX_VALUE - headerWords;
         int min = maxByteArrayLength / bytes1.length;
         int max = min + 3;
