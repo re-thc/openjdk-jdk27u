@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+#
+# Copyright (c) 2026, re-thc. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# Use the repository's native development profile with the upstream configure.
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "$0")/.." && pwd)"
+options=(
+  --disable-desktop
+  --enable-headless-only
+  --enable-jvm-feature-serialgc
+  --enable-jvm-feature-g1gc
+  --enable-jvm-feature-zgc
+  --disable-jvm-feature-epsilongc
+  --disable-jvm-feature-parallelgc
+  --disable-jvm-feature-shenandoahgc
+)
+
+case "$(uname -s):$(uname -m)" in
+  Linux:x86_64)
+    cpu_flags='-march=x86-64-v3 -mtune=generic'
+    ;;
+  Linux:aarch64)
+    cpu_flags='-march=armv8.2-a -mtune=generic'
+    ;;
+  Darwin:arm64)
+    cpu_flags='-mcpu=apple-m1'
+    ;;
+  MINGW*:x86_64 | MSYS*:x86_64 | CYGWIN*:x86_64)
+    cpu_flags='-arch:AVX2'
+    ;;
+  *)
+    echo 'Supported native targets: Linux x64/ARM64, macOS ARM64, Windows x64.' >&2
+    exit 1
+    ;;
+esac
+options+=("--with-extra-cflags=$cpu_flags" "--with-extra-cxxflags=$cpu_flags")
+
+if [[ $(uname -s) == Linux ]]; then
+  command -v mold >/dev/null || { echo 'Install mold before configuring this profile.' >&2; exit 1; }
+  options+=(--with-extra-ldflags=-fuse-ld=mold)
+fi
+
+# OpenJDK already handles ccache's precompiled-header requirements.
+if command -v ccache >/dev/null && [[ $(uname -s) != MINGW* && $(uname -s) != MSYS* && $(uname -s) != CYGWIN* ]]; then
+  options+=(--enable-ccache)
+fi
+
+# Explicit caller options override these defaults using configure's normal rules.
+exec bash "$repo_root/configure" "${options[@]}" "$@"

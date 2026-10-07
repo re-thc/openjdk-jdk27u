@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
  * @bug 8322874
  * @summary Redirection loop in index.html
  * @library /tools/lib ../../lib
- * @modules jdk.javadoc/jdk.javadoc.internal.tool
+ * @modules java.logging
+ *          jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.* toolbox.ToolBox builder.ClassBuilder
  * @run main TestIndexRedirect
  */
@@ -53,7 +54,7 @@ public class TestIndexRedirect extends JavadocTester {
         Path api = base.resolve("api");
 
         tb.writeJavaFiles(src,
-                "/**  Module m. */ module m { requires java.se; }");
+                "/**  Module m. */ module m { requires java.logging; }");
 
         javadoc("-d", api.toString(),
                 "--source-path", src.toString(),

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,6 @@ jobs:
         shell: bash
 
     strategy:
-      fail-fast: false
       matrix:
         debug-level: ${{ fromJSON(inputs.debug-levels) }}
         include:
@@ -86,7 +85,7 @@ jobs:
 
     steps:
       - name: 'Checkout the JDK source'
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: 'Get MSYS2'
         uses: ./.github/actions/get-msys2
@@ -111,7 +110,7 @@ jobs:
         id: toolchain-check-x64
         run: |
           set +e
-          '/c/Program Files/Microsoft Visual Studio/2022/Enterprise/vc/auxiliary/build/vcvars64.bat' -vcvars_ver=${{ inputs.msvc-toolset-version }}
+          '/c/Program Files/Microsoft Visual Studio/18/Enterprise/vc/auxiliary/build/vcvars64.bat' -vcvars_ver=${{ inputs.msvc-toolset-version }}
           if [ $? -eq 0 ]; then
             echo "Toolchain is already installed for x64"
             echo "toolchain-installed=true" >> $GITHUB_OUTPUT
@@ -125,7 +124,7 @@ jobs:
         id: toolchain-check-arm64
         run: |
           set +e
-          "/c/Program Files/Microsoft Visual Studio/2022/Enterprise/vc/auxiliary/build/vcvarsarm64.bat" -vcvars_ver=${{ inputs.msvc-toolset-version }}
+          "/c/Program Files/Microsoft Visual Studio/18/Enterprise/vc/auxiliary/build/vcvarsarm64.bat" -vcvars_ver=${{ inputs.msvc-toolset-version }}
           if [ $? -eq 0 ]; then
             echo "Toolchain is already installed for ARM64"
             echo "toolchain-installed=true" >> $GITHUB_OUTPUT
@@ -139,7 +138,7 @@ jobs:
         run: |
           # Run Visual Studio Installer
           '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe' \
-            modify --quiet --installPath 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise' \
+            modify --quiet --installPath 'C:\Program Files\Microsoft Visual Studio\18\Enterprise' \
             --add Microsoft.VisualStudio.Component.VC.${{ inputs.msvc-toolset-version }}.x86.x64
         if: ${{ (inputs.architecture == 'x86.x64') && (steps.toolchain-check-x64.outputs.toolchain-installed != 'true') }}
 
@@ -153,13 +152,14 @@ jobs:
 
       - name: 'Configure'
         run: >
-          bash configure
+          bash bin/configure-dev
           --with-conf-name=${{ inputs.platform }}
           ${{ matrix.flags }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
           --with-jtreg=${{ steps.jtreg.outputs.path }}
           --with-gtest=${{ steps.gtest.outputs.path }}
+          --with-toolchain-version=2026
           --with-msvc-toolset-version=${{ inputs.msvc-toolset-version }}
           --with-jmod-compress=zip-1
           --with-external-symbols-in-bundles=none
@@ -172,7 +172,6 @@ jobs:
           # Set PATH to "", so just GITHUB_PATH is included
           PATH: ''
         shell: env /usr/bin/bash --login -eo pipefail {0}
-        if: ${{ inputs.dry-run == false }}
 
       - name: 'Build'
         id: build
@@ -181,6 +180,10 @@ jobs:
           make-target: '${{ inputs.make-target }} ${{ inputs.make-arguments }}'
           platform: ${{ inputs.platform }}
           debug-suffix: '${{ matrix.suffix }}'
+        if: ${{ inputs.dry-run == false }}
+
+      - name: 'Check development profile'
+        run: bash .github/scripts/check-dev-profile.sh "build/${{ inputs.platform }}/jdk"
         if: ${{ inputs.dry-run == false }}
 
       - name: 'Upload bundles'

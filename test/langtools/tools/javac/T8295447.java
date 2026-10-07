@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,6 @@ public class T8295447 {
 
     class Base { int i; Base(int j) { i = j; } }
     class Sub extends Base {
-        Sub(Object o) { super(o instanceof java.awt.Point(int x, int y)? x + y: 0); }
+        Sub(Object o) { super(o instanceof java.lang.Integer(int x, int y)? x + y: 0); }
     }
 }

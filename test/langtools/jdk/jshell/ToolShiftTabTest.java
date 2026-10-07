@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,17 +112,17 @@ public class ToolShiftTabTest extends UITesting {
     @Test
     public void testFixImport() throws Exception {
         doRunTest((inputSink, out) -> {
-            inputSink.write("Frame");
+            inputSink.write("Month");
             inputSink.write(FIX + "i");
-            while (!waitOutput(out, "java.awt.Frame", "Results may be incomplete")) {
+            while (!waitOutput(out, "java.time.Month", "Results may be incomplete")) {
                 Thread.sleep(1000);
                 inputSink.write(FIX + "i");
             }
             inputSink.write("1");
-            inputSink.write(".WIDTH\n");
+            inputSink.write(".JANUARY.getValue()\n");
             waitOutput(out, "==> 1");
             inputSink.write("/import\n");
-            waitOutput(out, "|    import java.awt.Frame");
+            waitOutput(out, "|    import java.time.Month");
 
             inputSink.write("Object");
             inputSink.write(FIX + "i");

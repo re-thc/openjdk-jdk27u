@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,12 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
       [specify directory for the freetype include files])])
   AC_ARG_WITH(freetype-lib, [AS_HELP_STRING([--with-freetype-lib],
       [specify directory for the freetype library])])
+
+  if test "x$NEEDS_LIB_FREETYPE" = xfalse; then
+    FREETYPE_TO_USE=disabled
+    FREETYPE_CFLAGS=
+    FREETYPE_LIBS=
+  else
 
   # This setup is to verify access to system installed freetype header and
   # libraries. On Windows and MacOS this does not apply and using these options
@@ -238,6 +244,7 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
   fi
 
   AC_MSG_RESULT([Using freetype: $FREETYPE_TO_USE])
+  fi
 
   AC_SUBST(FREETYPE_TO_USE)
   AC_SUBST(FREETYPE_CFLAGS)
