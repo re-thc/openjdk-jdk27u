@@ -91,7 +91,6 @@ uintptr_t FullGCForwardingImpl<BITS>::encode_forwarding(HeapWord* from, HeapWord
     } else {
       to_region_base = prev;
     }
-    // _biased_bases[from_block_idx] = to_region_base = to;
   }
   // Avoid pointer_delta() on purpose: using an unsigned subtraction,
   // we get an underflow when to < to_region_base, which means

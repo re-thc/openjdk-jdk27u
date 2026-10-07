@@ -1,6 +1,9 @@
 {
-  "source_revision": "9b75f196c2a03528cd458957dcc4228c9be69ba3",
   "baseline_revision": "33e539f2d4a847f283a3793df6eebd41b9d1dfac",
+  "source_revision": "9b75f196c2a03528cd458957dcc4228c9be69ba3",
+  "native_revision": "9b75f196c2a03528cd458957dcc4228c9be69ba3",
+  "tests_revision": "9bf17e9327f79d5d13fe2e3ff9952b826f4aedf7",
+  "validation_revision": "9bf17e9327f79d5d13fe2e3ff9952b826f4aedf7",
   "images": {
     "baseline8": {
       "path": "/workspace/work/baseline/image",
@@ -20,8 +23,15 @@
       "modules_sha256": "6b803435190d82096e4bc4730fd756f5bea66be5829943d384bd0967d1f8b9fe"
     }
   },
-  "petclinic_revision": "67643c4137eb75bfeb177b427f8459c471bdcbd8",
-  "spring_boot": "3.5.0",
+  "measurement_host": {
+    "cpu": "AMD EPYC 9V74",
+    "cpu_max": "400000 100000",
+    "memory_max_bytes": 17179869184
+  },
+  "heap_mib": 512,
+  "cpu_quota": 4,
+  "memory_limit_gib": 16,
+  "primary_collector": "ergonomic default G1",
   "renaissance": "0.16.1",
   "database_configuration": "default; 500000 entries per reader/writer",
   "database_engines": [
@@ -30,124 +40,10 @@
     "H2 MVStore"
   ],
   "database_validation": "upstream dummy validator; results not validated",
-  "primary_collector": "ergonomic default G1",
-  "cpu_quota": 4,
-  "heap_mib": 512,
-  "memory_limit_gib": 16,
-  "pilots": "All pilot timings overlap compilation/testing and are excluded.",
-  "local_resource_adjustments": [
-    "Bound build Java helpers to two active processors after a native-thread resource failure.",
-    "Removed superseded generated images and completed debug compilation caches after ENOSPC.",
-    "JDK_JAVA_OPTIONS active processor bound for local flagless tests; not inherited by timed runs.",
-    "Temporary IR compilation helper bound; restored after local tests.",
-    "Removed stale jmod build markers after cleaning generated images; native libraries had linked successfully and packaging retry passed.",
-    "Corrected jtreg gtest nativepath to the expected test-image/server layout using symlinks to the final native library; initial wrapper setup failures retained and same assertions rerun.",
-    "Initial fresh tier1/tier2 concurrency four exceeded native-thread/process resources; first-pass reports preserved, unchanged failed/unrun CTW cases retried serially before lower-concurrency remaining tiers.",
-    "Final full default-on tier1/tier2 starts at concurrency two, with unchanged resource-failed cases retried serially; prior genuine CDS failure fixed rather than excluded.",
-    "Final tier1/tier2 explicitly sets ulimit -c unlimited; prior CreateCoredumpOnCrash failure was the test precondition because its tier shell inherited core limit zero.",
-    "Native linking completed before a debug image packaging ENOSPC; duplicate symbols/images and completed caches were cleaned. Final builds target jdk-image directly and preserve completed object caches compressed for incremental repair."
-  ],
-  "prepared_at_utc": "2026-10-07T01:27:08.069130+00:00",
-  "petclinic_jar_sha256": "e8dfeab09381141a777972bc0837870700d6f7b589c7031a74f084e5beafece9",
-  "validation_revision": "9bf17e9327f79d5d13fe2e3ff9952b826f4aedf7",
-  "excluded_attempt": "storage-limited-attempt: H2 MVStore ENOSPC; all first-attempt timing excluded; fresh matrix restarted after freeing generated artifacts, with 7.2 GiB free",
-  "before_monitor_fix_revision": "078bcb6937faf0989f383ce78576747dea480738",
-  "before_monitor_fix_results": "../typical-use/results",
-  "cache_experiment": "eight-entry cache tested diagnostically and removed; final cache retains two entries",
-  "diagnostic_profile": {
-    "original8_rps": 161.39,
-    "before_lookup_fix4_rps": 116.23,
-    "moved_only_lookup4_rps": 132.12,
-    "removed_cache8_experiment_rps": 136.32,
-    "complete_lookup4_rps": 152.4,
-    "monitor_enter_cpu_percent_before": 30.46,
-    "monitor_enter_cpu_percent_after": 1.76,
-    "timings_excluded": true
-  },
-  "final_gtest_native_library": "/workspace/openjdk-jdk27u/build/fourbyte-fastdebug/hotspot/variant-server/libjvm/gtest/libjvm.so",
-  "pre_archive_fix_revision": "1b79d376bafb453c708b4b5de8dc0d8b3c155f5f",
-  "pre_archive_fix_results": "../monitor-fix/results",
-  "archive_fix": "Heap-relative static dump hashes plus class-name-derived mirror hashes during interpreter-only classic static dumping; original/default-eight ZGC controls pass; new collector regression reproduces before the mirror fix.",
   "database_timing_forks_per_layout": 12,
   "database_repeats_per_fork": 16,
   "database_warmup_repeats_discarded": 8,
-  "database_repeat_reason": "Earlier six-fork, eight-operation measurement was inconclusive; final study prespecified twelve forks and upstream default sixteen operations before any final-image timing.",
-  "archive_primitive_fix": "Primitive mirror hash input uses immutable array metadata during GC; root-dependent primitive_type lookup crashed fastdebug before global mirror handles were fixed. Four debug archive cases pass after fix with all assertions intact.",
-  "archive_forwarding_fix": "Dump-time copy hashing reads the captured class and destination metadata, never the source forwarding header. New ergonomic-heap archive check reproduces the previous fastdebug assertion.",
-  "final_storage_headroom_restart": {
-    "reason": "Sixteen database operations briefly filled the filesystem before normal scratch cleanup. Entire timing attempt excluded; current fork stopped deliberately for a fresh balanced study. Completed forks terminated normally; no JVM crash or database IOException observed.",
-    "excluded_results": "storage-headroom-attempt",
-    "free_bytes_before_restart": 9818320896,
-    "cleanup": "Superseded object cache, completed source JDK images, unused native test objects and detached debug symbols; runtime images and current native libraries/caches preserved.",
-    "restart_prepared_at_utc": "2026-10-06T22:26:40.161526+00:00"
-  },
-  "timing_complete": true,
-  "prior_final_default_revision": "4d9f101b0e274aec19336e5ddb4c0ded875c2ecb",
-  "inherited_header_opt_out_fix": "Honor legacy header opt-outs from environment variables, including AOT child JAVA_TOOL_OPTIONS; explicit +Four still wins.",
-  "final_option_build_resources": "Native and all6 FD archives built successfully; image-copy ENOSPC fixed by verifying/compressing completed objects and deleting uncompressed objects before copying. Incomplete image discarded; fresh identical source copy verified.",
-  "pre_jdk_followup_revision": "de7be9cb9954b58b07e5405b6410a8451c8acee0",
-  "pre_jdk_followup_controls": "/workspace/work/final-options",
-  "jdk_followup_fixes": [
-    "Restore old-object JFR sampling: JDK27 already uses an edge-index side table.",
-    "Generate and force-load all6 jlink CDS variants.",
-    "Derive UTF8 byte-array limit from the current header.",
-    "Remove all default archive variants in the missing-archive test."
-  ],
-  "native_revision": "9b75f196c2a03528cd458957dcc4228c9be69ba3",
-  "validation_process_access": "Unsandboxed owned-JVM attach controls pass for stock/fork; default sandbox denies both. Validation/benchmarks use the verified process-access mode.",
-  "jdk_before_controls": {
-    "revision": "de7be9cb9954b58b07e5405b6410a8451c8acee0",
-    "baseline_passed": 5,
-    "default4_failed": 5,
-    "source_tests_unchanged": true
-  },
-  "jfr_immediate_after": {
-    "cases_passed": 2,
-    "dfs_chains": 191,
-    "bfs_dfs_chains": 256,
-    "assertions_unchanged": true
-  },
-  "jlink_eight_optout_after": {
-    "cases_passed": 1,
-    "forced_archive_variants": 6
-  },
-  "runtime_refresh_before_timings": {
-    "at_utc": "2026-10-07T01:58:23.961872+00:00",
-    "timings_started": false,
-    "completed_native_cases": 4194,
-    "completed_focused_cases": 117,
-    "completed_option_aot_cases": 27,
-    "resume": "Only3 unfinished option/AOT cases, then JCStress/JDK validation; images unchanged."
-  },
-  "measurement_host": {
-    "cpu": "AMD EPYC 9V74",
-    "cpu_max": "400000 100000",
-    "memory_max_bytes": 17179869184
-  },
-  "tests_revision": "9bf17e9327f79d5d13fe2e3ff9952b826f4aedf7",
-  "ci_target_revision": "9bf17e9327f79d5d13fe2e3ff9952b826f4aedf7",
-  "test_only_boundary_cast_fix": "Unsafe array offset is long; explicitly narrow its small, rounded header-word count after division. Release/debug/stock all9 JUnit executions pass; native images unchanged.",
-  "jdk_followup_cases_passed": 30,
-  "stock_array_boundary_cases_passed": 1,
-  "immediate_followup_cases_passed": 3,
-  "focused_cases_passed": 117,
-  "native_passes_by_layout": {
-    "default4": 1398,
-    "eight8": 1398,
-    "legacy12": 1398
-  },
-  "jcstress_passes_by_collector": {
-    "Serial": 42,
-    "G1": 42,
-    "Z": 42
-  },
-  "excluded_final_timing_attempt": {
-    "reason": "Runtime/tool interruption stopped the driver and fifteenth database JVM; no JVM crash or benchmark exception recorded. Entire incomplete matrix excluded.",
-    "completed_database_jvms": 14,
-    "excluded_at_utc": "2026-10-07T02:52:10.364324+00:00"
-  },
-  "timing_started_utc": "2026-10-07T02:52:19.443599+00:00",
-  "timing_completed_utc": "2026-10-07T03:46:31.299763+00:00",
+  "database_memory_forks_per_layout": 12,
   "database_memory_confirmation": {
     "reason": "Three-fork baseline heap samples vary widely, including one near candidate occupancy; expand to twelve forks per layout without discarding or replacing any original fork.",
     "prespecified_memory_forks_per_layout": 3,
@@ -160,16 +56,31 @@
     "completed_utc": "2026-10-07T03:54:56.639694+00:00",
     "completed": true
   },
-  "database_memory_forks_per_layout": 12,
   "spring_forks_per_layout": 6,
-  "ci_publication_status": "pending",
-  "final_ci_run_id": 37560701755,
-  "final_ci_jobs_successful": 5,
-  "final_ci_jtreg_passes": 0,
-  "final_ci_native_passes": 0,
-  "additional_ci_regression_cases_passed": 30,
-  "immediate_jfr_reproducer_cases_passed": 2,
-  "jlink_eight_optout_cases_passed": 1,
-  "corrected_stock_array_boundary_cases_passed": 1,
-  "broad_validation": "Final x64/AArch64 three-layout CI test jobs remain pending; all four builds passed. Superseded local 4d9 run retained as incomplete diagnostic evidence."
+  "petclinic_revision": "67643c4137eb75bfeb177b427f8459c471bdcbd8",
+  "spring_boot": "3.5.0",
+  "petclinic_jar_sha256": "e8dfeab09381141a777972bc0837870700d6f7b589c7031a74f084e5beafece9",
+  "timing_started_utc": "2026-10-07T02:52:19.443599+00:00",
+  "timing_completed_utc": "2026-10-07T03:46:31.299763+00:00",
+  "timing_complete": true,
+  "native_passes_by_layout": {
+    "default4": 1398,
+    "eight8": 1398,
+    "legacy12": 1398
+  },
+  "jcstress_passes_by_collector": {
+    "Serial": 42,
+    "G1": 42,
+    "Z": 42
+  },
+  "ci_target_revision": "bf5ee5ef5062fb2148b9e9b20b792d6733aa8a47",
+  "final_ci_run_id": 37577272055,
+  "ci_publication_status": "passed",
+  "final_ci_jobs_successful": 29,
+  "final_ci_jtreg_passes": 92839,
+  "final_ci_native_passes": 8421,
+  "local_jtreg_passes": 181,
+  "review_validation_status": "pending",
+  "review_changes": "Runtime tokens unchanged; compiler layout assertions updated; broader standard sanity and expanded fastdebug CI must rerun.",
+  "excluded_measurements": "Pilots, profiles, pre-fix images, storage-limited and runtime-interrupted attempts are excluded from the final table."
 }

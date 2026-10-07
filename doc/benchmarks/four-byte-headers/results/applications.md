@@ -64,143 +64,54 @@ all twelve-fork raw samples are retained; the follow-up is exploratory and
 changes no timing results. Neither the initial nor expanded final-code study
 establishes a database heap improvement.
 
-[Raw final JSON/CSV and image manifest](applications/) accompany this report.
-The [evidence archive](evidence.zip) retains the pre-fix results, diagnostic
-profiles, excluded attempts and final validation logs separately.
+[All sixty final fork JSON files, CSVs, fixture SQL and image manifest](applications/)
+accompany this report. [Reproduction commands](../README.md) use the same
+workload pins. Pilots, profiles, pre-fix images, storage-limited attempts
+and an interrupted earlier matrix are excluded. The continuous timing study
+ran 2026-10-07T02:52:19Z–03:46:31Z.
 
-## Regression found by the application benchmark
+## Validation and final review
 
-The first complete matrix found lower Spring retained heap but a substantial
-throughput regression. These are valid measurements before the monitor fix:
+[Run 37577272055](https://github.com/re-thc/openjdk-jdk27u/actions/runs/37577272055)
+at `bf5ee5ef5062fb2148b9e9b20b792d6733aa8a47` passed all 29 jobs:
+four x64/AArch64 release/fastdebug builds, six native/focused lanes and eighteen
+HotSpot/JDK/langtools tier1/tier2 lanes across the three layouts. Actual logs
+record **92,839 jtreg executions and 8,421 native tests**, with zero reported
+failures or errors. These are repeated executions, not unique test names.
+The [snapshot](applications/final-ci-snapshot.json) retains all jobs and
+24 audited test summaries; full logs and JTRs are in that run's artifacts.
 
-| Workload | Metric | Original 8 bytes | Initial default 4 bytes | Change (95% interval) |
-| --- | --- | ---: | ---: | ---: |
-| db-shootout | Duration (ms) | 4,618.31 | 4,677.27 | +1.2% [-6.5, +9.4] |
-| Spring Petclinic | Throughput (requests/s) | 165.02 | 119.83 | -27.3% [-32.1, -22.2] |
-| Spring Petclinic | p95 latency (ms) | 169.17 | 232.85 | +37.9% [+28.2, +48.3] |
-| Spring Petclinic | Post-GC heap (MiB) | 40.20 | 35.78 | -11.0% [-11.3, -10.7] |
+The separate [standard sanity run](https://github.com/re-thc/openjdk-jdk27u/actions/runs/37577266729)
+failed two compiler IR tests on Linux, macOS and Windows: arraycopy selection
+and vector alignment assumed compact headers always imply a twelve-byte
+array base. Four-byte headers use an eight-byte array base. Review changes
+retain eight-byte assertions, check aligned copying for four-byte headers,
+and add positive and negative vector IR expectations. The header flag is
+whitelisted for IR matching, and both cases join fastdebug CI in every layout.
+The arraycopy test passes locally with IR verification enabled. The full vector
+test exhausted the local process limit and is not claimed passed.
+**Fresh CI for these test changes is pending.** The successful three-layout
+run does not establish that the separate standard workflow is green.
+[Failure audit](applications/sanity-ci-review.json).
 
-All 102,674 measured HTTP responses passed validation, with no errors. The
-load driver used at most 0.08 CPU cores. Lower heap occupancy alone did not
-establish improved application performance.
+Runtime executable code is unchanged by this review. Copyright uses Teamoffy
+Pte. Ltd. for new fork contributions, preserving existing notices. Stale
+commented statements and the completed CI migration step are removed.
+The minimal JVMTI module-filter correction passes on stock-eight and
+fork-default-four after unrelated proxy-test expansion is removed; the original
+test failed on both images because dynamic named modules outside layers are
+also returned by JVMTI.
 
-CPU profiles located the cost in C2 monitor entry. Four-byte mode explicitly
-fell back to the runtime after missing its two-entry monitor cache, while
-eight-byte mode could search the monitor table directly. The fix adds the
-table lookup for both address-derived hashes before movement and stored
-hashes in moved ordinary instances. Expanded special layouts retain their
-runtime fallback. The x64 matcher reserves an extra RCX temporary only for
-four-byte locking, preserving the old layouts' register requirements.
-
-Separate async-profiler 4.1 diagnostics use the `itimer` event at five
-milliseconds and include startup, warmup and load. Monitor entry fell from
-30.46% to 1.76% of sampled CPU; the original eight-byte profile measured
-1.33%. These single-fork profiles identify the mechanism and are excluded
-from the primary timing tables. A larger monitor-cache experiment helped
-less and was removed; the final cache retains its original two entries and
-storage size. The regression test checks concurrent and recursive locking,
-expanded and address-derived hashes, a valid zero hash, collisions, and
-special layouts, and verifies compiled C2 execution under all three collectors.
-
-## CDS determinism regression found by the default-on suite
-
-The fresh default-on tier1/tier2 run exposed a real failure in
-`runtime/cds/DeterministicDump.java`: two interpreter-only static dumps
-produced different archives. The original eight-byte image passed; an
-explicit eight-byte run of the candidate also passed. The default four-byte
-failure reproduced in isolation. This was an archive reproducibility failure,
-with no JVM crash, and was not excluded from validation.
-
-Four-byte identity hashes normally mix an object's address. Heap address
-randomization changed hash-based module/package iteration during static
-dumping. Commit `9ac5200959d2eb8d9dad5e4d6f3b3cfb3d43c3d3` uses an offset
-from the reserved heap base during interpreter-only classic static dumping.
-Normal execution and compiled hash paths retain their address calculation.
-Already-hashed archived objects preserve their hash in the expanded slot.
-
-An additional explicit-ZGC check then exposed four differing hashes in
-regenerated method-handle holder mirrors. Both the original and candidate
-explicit-eight-byte ZGC controls passed. Commit `370ceb1b527` derives class
-mirror hash inputs from class names during interpreter-only classic static
-dumping; its cold helper also keeps metadata work out of normal hashing.
-The new `FourByteHeaderArchiveDeterminism` test reproduces the ZGC failure
-before the fix and passes afterward for Serial, G1 and ZGC. Together with
-the unchanged original test, all four cases pass: 24 determinism dumps, repeated dumps,
-both compressed-oop settings and forced archive relocation. Three additional
-ergonomic-heap dumps exercise hash expansion during GC.
-
-The unchanged test passes after this fix: all six dumps, both compressed-oop
-modes and forced archive relocation. Its before/after JTR files and original
-and explicit-eight-byte controls are retained in the evidence archive. The
-release image's six shipped archive variants are rebuilt for the fix.
-
-Fastdebug then found an assertion crash in primitive-mirror hashing during
-GC. The first class-name helper called `java_lang_Class::primitive_type`,
-which checks global mirror handles while those handles can still refer to
-the objects being moved. Commit `89f0e19d2e5` reads the primitive mirror's
-immutable array metadata instead. The assertions remain intact. All four
-archive cases pass with fastdebug after this correction, including the
-compressed-oop GC paths that reproduced the crashes. The earlier failed
-JTR files and the passing debug rerun are retained separately.
-
-
-The broader debug suite then exposed another assertion crash during an ergonomic
-heap-size archive dump. G1 had replaced the source header with a forwarding
-pointer before the dump-only helper tried to read its class. Copy-time hashing
-now uses the collector's captured class and destination metadata, while ordinary
-hashing retains the source address. The ergonomic-heap regression check
-reproduces the failure on the previous image; unchanged class-space coverage
-and collector-specific archive tests pass with the correction.
-
-## Inherited header-option regression found by CI
-
-The broader legacy-layout AArch64 CI run found an AOT child-layout mismatch.
-One-step training created a legacy-layout configuration, then launched its
-assembly JVM with inherited options in `JAVA_TOOL_OPTIONS`. The fork checked
-only command-line flag origins when disabling the four-byte default. The child
-therefore re-enabled compact headers and refused the legacy configuration.
-The same failure reproduced locally, with the child log identifying the
-`UseCompactObjectHeaders` mismatch.
-
-Commit `de7be9cb995` honors a nondefault compact-header opt-out from environment
-variables or flag files as well as launcher arguments. An explicit four-byte
-request still takes precedence. `FourByteHeaderOptions` covers opt-outs and
-the explicit override through `JAVA_TOOL_OPTIONS`, `_JAVA_OPTIONS` and
-`JDK_JAVA_OPTIONS`. The original `SpecialCacheNames` test remains unchanged.
-
-The same CI run also exposed four compressed-oops test parsing failures:
-a legitimate class-space adjustment warning preceded the numeric WhiteBox
-result on stdout. The helper now prints and parses one explicitly marked
-result while retaining exit-value and all compressed-oops ergonomics checks.
-Before-fix CI JTR sections and the local AOT child log accompany the evidence.
-
-## JFR and generated-image regressions found by CI
-
-The unchanged JDK tests passed all five affected cases on stock eight-byte
-JDK 27 and reproduced five failures on the preceding default-four image:
-both small-stack old-object JFR searches, maximum UTF-8 encoding, jlink CDS,
-and the missing-default-archive setup.
-
-The imported Lilliput restriction disabled `OldObjectSample` because older
-implementations stored edge indices in mark words. JDK 27 already stores
-leak-context edges in a separate table. Commit `9b75f196c2a` restores the
-original sampler eligibility; the two failing JFR tests retain their event
-and reference-chain assertions. The immediate final-image controls pass with
-191 DFS chains and 256 combined BFS/DFS chains. Additional old-object checks cover Serial/G1,
-object sizes, fields, arrays, circular references and deep/shallow paths.
-
-The jlink CDS plugin generated only the new default and legacy variants,
-leaving an eight-byte opt-out runtime without its matching default archive.
-It now explicitly generates all six header/oop combinations. The plugin test
-checks every file and force-loads each archive with `-Xshare:on`. The
-eight-byte parent opt-out control passes all six forced-load combinations.
-
-Four-byte headers permit a byte array one byte longer than the other layouts.
-The UTF-8 test now derives its last encodable string from the actual array
-header and retains both successful allocation and above-limit OOME checks.
-The missing-archive test removes all six current default archive filenames
-before testing its failure path. Before-fix CI sections and matched stock/fork
-controls accompany the evidence.
+The application study exposed a 27.3% Spring throughput regression before
+direct C2 monitor-table lookup was added. The two-entry cache remains intact;
+ordinary address-derived and stored hashes can search the table after a miss.
+Coverage includes recursive/concurrent locking, zero hashes, collisions and
+special layouts under Serial, G1 and ZGC. The final table no longer shows that
+large cost. Default-on tests also found static archive nondeterminism, debug
+GC assertion crashes, inherited AOT child opt-out mismatches and missing jlink
+archive variants. Deterministic dump-only hashes, captured copy metadata,
+inherited option handling and all six CDS variants address those failures.
+Assertions remain enabled and the original JDK 27 JFR sampler behavior is preserved.
 
 ## Final native validation
 
@@ -226,17 +137,6 @@ All 126 JCStress locking/hash configurations pass again with the final native
 code: 42 per collector under Serial, G1 and ZGC, with no failed configurations,
 soft errors or hard errors.
 
-## Cross-platform CI remains pending
-
-The publication snapshot is a draft, not a completed cross-platform test result.
-[Run 37560701755](https://github.com/re-thc/openjdk-jdk27u/actions/runs/37560701755)
-targets test revision `9bf17e9327f`, with production sources identical to the
-benchmarked `9b75f196c2a` images. All four x64/AArch64 release/debug builds and
-the setup job passed. Its six fastdebug/native jobs and eighteen three-layout
-HotSpot/JDK/langtools tier1/tier2 jobs remain queued at publication.
-The [snapshot](applications/final-ci-snapshot.json) records actual statuses;
-zero completed test jobs is not a zero-failure pass result. Historical green
-runs do not replace final-source proof. The PR remains draft pending these jobs.
 
 ## Workloads and interpretation
 
@@ -268,76 +168,3 @@ live object sizes. A fixed committed heap can hide object-size savings in
 RSS. The Spring run is a local read-heavy test; it does not model a remote
 production database or establish a universal performance guarantee.
 
-## Runtime refresh before the final study
-
-A managed-runtime refresh stopped the final validation driver before any
-final-image timing began. The completed 117 focused/common cases and 4,194
-native passes were preserved, along with 27 of 30 option/AOT passes. Only the
-three unfinished cases were resumed; all thirty follow-up JTRs then passed.
-JCStress and the expanded JDK checks completed afterward. Image fingerprints,
-CPU model, four-CPU quota and 16 GiB limit remained unchanged.
-
-The final study started with 11.1 GiB free after removing superseded caches,
-images and completed generated test scratch files. Reports, sources, failure
-logs and per-case statuses were retained. This refresh does not invalidate
-or mix the fresh timing dataset because it occurred before the first fork.
-
-The first final-image timing attempt was later interrupted by the managed
-runtime after fourteen completed database JVMs and part of the fifteenth.
-No benchmark exception or JVM crash was recorded. The entire incomplete
-matrix is retained as excluded evidence; its timing values are not combined
-with the continuous restart, which began at 02:52 UTC with 11.1 GiB free.
-
-## Excluded attempts and local resources
-
-Functional pilot runs overlapped compilation/testing and are excluded.
-The first timed database attempt was aborted when H2 MVStore exhausted
-the workspace filesystem. Both its successful baseline fork and failed
-candidate fork are retained as excluded evidence. This was an IOException
-for insufficient disk space, with no JVM crash. Generated completed-build
-artifacts were removed, leaving 7.2 GiB free before restarting the entire
-comparison in a fresh result directory.
-
-The longer final database study briefly filled the filesystem before its
-normal scratch cleanup. All timing data from that attempt are excluded;
-completed forks terminated normally, and the active fork was stopped deliberately.
-No JVM crash or database IOException occurred in that attempt. Removing completed
-source images, unused native-test objects, detached debug symbols and an obsolete
-cache left 9.14 GiB free before the entire balanced comparison restarted.
-Final runtime images and current native libraries remain unchanged.
-
-The updated native fastdebug build and its six archives completed before
-image copying exhausted workspace capacity. The incomplete image was discarded.
-After verifying the compressed object cache, completed uncompressed objects
-were removed before copying. The fresh copy was checked against the unchanged
-built source image. This packaging failure occurred before validation or timing.
-
-Build Java helpers and jtreg helper JVMs use smaller active-processor
-counts to stay within this container's thread limits. Timed application
-JVMs use four processors and inherit no Java option environment variables.
-The temporary local IR-framework worker bound is restored before timings
-and after testing; test assertions and the repository helper remain intact.
-
-The final local gtest wrapper initially received the native library directory
-rather than the expected test-image parent containing `server`. Eight wrapper
-cases failed setup before running native tests. A corrected local test-image
-path points to the same final native library; unchanged wrappers are rerun.
-The setup failures are retained separately from final statuses.
-
-The earlier pre-archive-fix tier1/tier2 pass at concurrency four encountered native-thread
-creation and process-spawn exhaustion. Its completed reports are preserved.
-All 57 selected compile-the-world retries pass serially with unchanged assertions;
-eight earlier passing cases retain their results, and one module is ineligible.
-The fresh `4d9f101` local broad run was superseded when CI exposed the inherited
-option bug. It completed 988 passing cases and 13 resource-failed cases before
-being stopped. Eleven unchanged cases passed serially. The remaining GC case
-timed out because sandboxed `jcmd` could not attach, and a native wrapper still
-hit a thread limit. A small attach control reproduced the failure on both stock
-and fork JVMs; both passed outside the sandbox. The final two unchanged cases
-then passed with the required process access, yielding 1,001 passing completed
-cases. The 3,959-case local selection remains incomplete; its partial snapshot
-is explicitly separated from the final cross-platform CI matrix.
-
-Final local validation and measurements run with the process access required
-by `jcmd`. The Spring harness requires its post-load `GC.run` command to succeed
-before recording post-GC heap occupancy.

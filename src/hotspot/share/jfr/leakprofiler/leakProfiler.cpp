@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,6 @@
 #include "runtime/vmThread.hpp"
 
 bool LeakProfiler::is_supported() {
-  // Leak-context edge indices are stored in EdgeStore's side table, so they
-  // do not require spare bits in four-byte object headers.
   if (UseShenandoahGC || UseZGC) {
     // Leak Profiler uses mark words in the ways that might interfere
     // with concurrent GC uses of them. This affects Shenandoah.

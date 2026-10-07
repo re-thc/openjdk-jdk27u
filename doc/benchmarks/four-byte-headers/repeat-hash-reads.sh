@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2026, Harry Chan. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # This file is available under the GNU General Public License version 2.
 # Confirm two hash-read costs identified in the main JMH matrix.
 set -euo pipefail
@@ -23,8 +23,8 @@ for pair in Serial:identityMapLookup Z:storedHash; do
       jdk=$CANDIDATE_JDK
       flags=("-XX:+Use${gc}GC" -Xms512m -Xmx512m -XX:ActiveProcessorCount=4)
       [[ $layout != baseline8 ]] || jdk=$BASELINE_JDK
-      [[ $layout != default8 ]] || flags+=(-XX:+UnlockExperimentalVMOptions -XX:-UseFourByteObjectHeaders)
-      [[ $layout != four4 ]] || flags+=(-XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders)
+      [[ $layout != default8 ]] || flags+=(-XX:-UseFourByteObjectHeaders)
+      [[ $layout != four4 ]] || flags+=(-XX:+UseFourByteObjectHeaders)
       "$BASELINE_JDK/bin/java" -cp "$RESULTS_DIR/classes:$JMH_CP" org.openjdk.jmh.Main \
         "org.openjdk.bench.vm.gc.FourByteHeaders.$benchmark" -jvm "$jdk/bin/java" \
         -jvmArgs "${flags[*]}" -f 1 -wi 5 -i 5 -w 1s -r 1s -t 1 -prof gc \

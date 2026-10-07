@@ -68,18 +68,13 @@ last five within each fork before comparing configurations. Startup interleaves
 50 fresh JVMs per configuration after five untimed rounds with a fixed shuffle
 seed. It measures `java -version` process startup, not application readiness.
 
-[Raw JSON and CSV results](results/) and the
-[validation report](results/validation.md) accompany the PR. The
-report identifies any earlier memory-only runs whose timings were affected
-by concurrent compilation or tests; those timings must not be used.
-
-The [evidence archive](results/evidence.zip) contains the standalone HTML
-report, raw final measurements, separate before-fix results, selected-test
-CSVs, audited CI summaries and local validation logs. Its publication snapshot
-distinguishes final-source CI from historical and superseded runs. The report
-records measured timing costs as well as successful correctness checks.
-The [default-on CI snapshot](results/applications/final-ci-snapshot.json)
-identifies the final tested production/test revisions and audited job summaries.
+The [final application report](results/applications.md) retains all final fork
+JSON files, summary CSVs and image fingerprints. The
+[supplementary layout report](results/validation.md) retains concise historical
+layout/hash summaries, including measured costs. The
+[CI snapshot](results/applications/final-ci-snapshot.json) links the completed
+three-layout run and records audited test summaries; full JTRs and logs
+are available as workflow artifacts.
 
 The additional locking/hash race uses JCStress 0.16, JNA and JNA platform
 5.8.0, and jopt-simple 4.6. Set `JCSTRESS_CP` to those four jars, then run:

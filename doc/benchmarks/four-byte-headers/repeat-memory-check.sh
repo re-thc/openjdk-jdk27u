@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2026, Harry Chan. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # This file is available under the GNU General Public License version 2.
 set -euo pipefail
 : "${BASELINE_JDK:?Set BASELINE_JDK}"
@@ -17,8 +17,8 @@ for fork in 1 2 3; do
     flags=(-XX:+UseSerialGC -Xms512m -Xmx512m -XX:ActiveProcessorCount=4)
     [[ ${MEMORY_NO_TLAB:-false} != true ]] || flags+=(-XX:-UseTLAB)
     [[ $layout != baseline8 ]] || jdk=$BASELINE_JDK
-    [[ $layout != default8 ]] || flags+=(-XX:+UnlockExperimentalVMOptions -XX:-UseFourByteObjectHeaders)
-    [[ $layout != four4 ]] || flags+=(-XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders)
+    [[ $layout != default8 ]] || flags+=(-XX:-UseFourByteObjectHeaders)
+    [[ $layout != four4 ]] || flags+=(-XX:+UseFourByteObjectHeaders)
     "$jdk/bin/java" "${flags[@]}" -jar "$RENAISSANCE_JAR" scrabble,scala-doku \
       -r 3 --no-jvm-check --scratch-base "$RESULTS_DIR/scratch" \
       --plugin "$RESULTS_DIR/retained-heap.jar!RetainedHeap" \

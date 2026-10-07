@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2026, Harry Chan. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # This file is available under the GNU General Public License version 2.
 """Summarize complete independent-fork database and Spring measurements."""
 import argparse

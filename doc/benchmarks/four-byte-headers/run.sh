@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2026, Harry Chan. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # This file is available under the GNU General Public License version 2.
 set -euo pipefail
 
@@ -16,9 +16,9 @@ select_vm() {
   flags=("-XX:+Use${gc}GC" -Xms512m -Xmx512m "-XX:ActiveProcessorCount=${BENCH_PROCESSORS:-4}")
   case $layout in
     baseline8) jdk=$BASELINE_JDK ;;
-    default8) flags+=(-XX:+UnlockExperimentalVMOptions -XX:-UseFourByteObjectHeaders) ;;
+    default8) flags+=(-XX:-UseFourByteObjectHeaders) ;;
     legacy12) flags+=(-XX:-UseCompactObjectHeaders) ;;
-    four4) flags+=(-XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders) ;;
+    four4) flags+=(-XX:+UseFourByteObjectHeaders) ;;
   esac
 }
 
