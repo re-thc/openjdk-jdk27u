@@ -3706,6 +3706,20 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
     if (helper == nullptr) return false;
     return try_inline_full(helper, true, ignore_return, Bytecodes::_invokestatic);
   }
+  if (CommonIntrinsics::enabled() &&
+      (callee->intrinsic_id() == vmIntrinsics::_bigIntegerLeftShiftWorker ||
+       callee->intrinsic_id() == vmIntrinsics::_bigIntegerRightShiftWorker)) {
+    const char* name = callee->intrinsic_id() == vmIntrinsics::_bigIntegerLeftShiftWorker
+        ? "shiftLeftImplWorkerC1" : "shiftRightImplWorkerC1";
+    ciMethod* helper = callee->holder()->find_method(ciSymbol::make(name),
+                                                  callee->signature()->as_symbol());
+    if (helper == nullptr) return false;
+    // The helper's large-input branch calls the original worker. Emit its
+    // intrinsic there instead of recursively substituting the helper again.
+    if (method() != helper) {
+      return try_inline_full(helper, true, ignore_return, Bytecodes::_invokestatic);
+    }
+  }
   build_graph_for_intrinsic(callee, ignore_return);
   if (_inline_bailout_msg != nullptr) {
     return false;

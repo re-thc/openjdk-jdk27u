@@ -24,32 +24,4 @@
 
 # Usage: bench-common-intrinsics.sh JAVA JMH_CLASSPATH OUTPUT_DIR [CPU]
 set -euo pipefail
-java_bin=${1:?Provide the built JDK java executable}
-benchmark_classpath=${2:?Provide JMH and generated benchmark jars}
-result_dir=${3:?Provide an output directory}
-runner=()
-if [[ $# -ge 4 ]]; then runner=(taskset -c "$4"); fi
-mkdir -p "$result_dir"
-for tier in int c1 c2; do
-    case "$tier" in
-        int) tier_flag=-Xint ;;
-        c1) tier_flag=-XX:TieredStopAtLevel=1 ;;
-        c2) tier_flag=-XX:-TieredCompilation ;;
-    esac
-    for state in off on; do
-        if [[ $state == on ]]; then
-            intrinsic_flag=-XX:+UseCommonIntrinsics
-        else
-            intrinsic_flag=-XX:-UseCommonIntrinsics
-        fi
-        # Keep driver overhead small; explicit worker arguments select each tier.
-        "${runner[@]}" "$java_bin" -Xint -XX:+UseSerialGC -XX:ActiveProcessorCount=1 \
-            -XX:-UsePerfData -XX:+DisableAttachMechanism -Xrs \
-            -cp "$benchmark_classpath" org.openjdk.jmh.Main \
-            'org.openjdk.bench.vm.compiler.Common(Scalar|BigIntegerShift)?Intrinsics.*' \
-            -wi 3 -i 5 -w 300ms -r 300ms -f 3 -t 1 \
-            -jvmArgs "$tier_flag $intrinsic_flag -Xms128m -Xmx128m -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -XX:+DisableAttachMechanism -Xrs --add-opens=java.base/java.math=ALL-UNNAMED" \
-            -rf json -rff "$result_dir/$tier-$state.json" \
-            > "$result_dir/$tier-$state.log" 2>&1
-    done
-done
+exec python3 "$(dirname "$0")/bench-common-intrinsics.py" "$@"

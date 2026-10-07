@@ -60,6 +60,7 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
+
 #include <sys/types.h>
 
 // Size of interpreter code.  Increase if too small.  Interpreter will

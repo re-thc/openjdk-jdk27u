@@ -60,6 +60,12 @@ return types and the interpreter/C1 operation set together.
   native call, and arrays larger than 65,536 retain Java loop safepoints.
   The leaf alias inherits `DisableIntrinsic`/`ControlIntrinsic` settings for
   the original hash intrinsic. C2 continues to use the original entry.
+* BigInteger shifts use force-inlined C1 helpers: loops with fewer than 32
+  iterations stay in Java and reuse adjacent source words in the safe
+  primitive-worker shapes to avoid the leaf call's fixed cost. The helpers call
+  the original intrinsic for larger inputs; C1 recognizes that call without
+  substituting the helper recursively. Interpreter and C2 entries retain
+  their original workers.
 
 Bulk arguments use the interpreter expression-stack order, including two-slot
 longs. C1 constructs the same small stack argument vector and makes one C ABI

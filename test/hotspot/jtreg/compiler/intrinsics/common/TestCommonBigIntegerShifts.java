@@ -110,7 +110,7 @@ public class TestCommonBigIntegerShifts {
     public static void main(String[] args) throws Throwable {
         Random random = new Random(42);
         for (int repetition = 0; repetition < 50; repetition++) {
-            for (int length : new int[] {2, 3, 4, 8, 17, 64, 257}) {
+            for (int length : new int[] {2, 3, 4, 8, 17, 31, 32, 33, 34, 64, 257}) {
                 int[] input = random.ints(length).toArray();
                 for (int shift = 1; shift < 32; shift++) {
                     for (boolean left : new boolean[] {false, true}) {
@@ -121,6 +121,17 @@ public class TestCommonBigIntegerShifts {
                     }
                 }
             }
+        }
+        // The large-input helper invokes a guarded leaf. Null input must
+        // reexecute that invoke with the complete inlined helper state.
+        for (boolean left : new boolean[] {false, true}) {
+            try {
+                if (left) PRIMITIVE_LEFT.invokeExact((int[]) null, 64, 7);
+                else PRIMITIVE_RIGHT.invokeExact((int[]) null, 64, 7);
+                throw new AssertionError("expected NullPointerException");
+            } catch (NullPointerException expected) {
+            }
+            check(left, random.ints(64).toArray(), left ? 0 : 1, 7, true);
         }
     }
 }
