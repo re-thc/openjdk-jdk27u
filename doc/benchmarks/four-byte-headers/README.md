@@ -33,7 +33,9 @@ The analyzer requires Python 3 and SciPy (the recorded run used SciPy 1.17.0).
 It rejects incomplete workload, layout, collector, fork and iteration matrices.
 
 Each mode compares the original eight-byte default with candidate eight-byte,
-twelve-byte and four-byte layouts under Serial, G1 and ZGC. Timed JVMs use
+twelve-byte and four-byte layouts under Serial, G1 and ZGC. This fork now
+defaults to four-byte headers; the historical `default8` control label selects
+eight-byte headers explicitly with `-XX:-UseFourByteObjectHeaders`. Timed JVMs use
 four active processors and a fixed 512 MiB heap. `BENCH_PROCESSORS` overrides
 the processor count for the first four modes. Startup uses a 32 MiB heap and
 requires successful loading of each layout's matching default CDS archive.
@@ -74,8 +76,10 @@ by concurrent compilation or tests; those timings must not be used.
 The [evidence archive](results/evidence.zip) contains the standalone HTML
 report, raw final measurements, separate before-fix results, selected-test
 CSVs, audited CI summaries and local validation logs. Its publication snapshot
-records pending CI jobs explicitly. Completed runs and measured timing costs
-determine acceptance; a green build badge alone does not establish it.
+distinguishes final-source CI from historical and superseded runs. The report
+records measured timing costs as well as successful correctness checks.
+The [default-on CI snapshot](results/applications/final-ci-snapshot.json)
+identifies the final tested production/test revisions and audited job summaries.
 
 The additional locking/hash race uses JCStress 0.16, JNA and JNA platform
 5.8.0, and jopt-simple 4.6. Set `JCSTRESS_CP` to those four jars, then run:
@@ -93,7 +97,7 @@ for gc in Serial G1 Z; do
     org.openjdk.jcstress.Main -t 'fourbyte.HashAndLock' \
     -m quick -f 3 -iters 5 -time 200 -c 2 -af NONE \
     -r "$RESULTS_DIR/jcstress-$gc" \
-    -jvmArgsPrepend "--enable-native-access=ALL-UNNAMED -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+Use${gc}GC"
+    -jvmArgsPrepend "--enable-native-access=ALL-UNNAMED -XX:+Use${gc}GC"
 done
 ```
 
@@ -159,3 +163,74 @@ MEMORY_NO_TLAB=true MEMORY_RESULT_PREFIX=notlab \
 ```
 
 These diagnostic runs are excluded from performance comparisons.
+
+## Database and Spring application runs
+
+The fork-default application comparison uses the original JDK 27u eight-byte
+default and the candidate's four-byte default without an enabling flag. Both
+use a 512 MiB heap, four active processors and their normal ergonomic collector
+(G1 on the recorded host). Finish compilation and correctness testing before
+starting timing runs. Keep every timed JVM sequential.
+
+Renaissance's `db-shootout` uses its ordinary 500,000-entry configuration with
+MapDB, Chronicle Map and H2 MVStore reads/writes. Its upstream validator is a
+dummy: normal completion does not establish that all database results are
+correct. The final timing study uses twelve independent JVMs per layout and the
+upstream default sixteen operations, discarding the first eight. The earlier
+six-fork, eight-operation study was inconclusive, so the longer study was
+specified before final-image timings. Workload size remains unchanged. Memory runs use
+twelve separate JVMs per layout and three operations with the heap plugin.
+The initial three-fork study had a very wide database-heap interval; the
+exploratory memory-only follow-up adds nine forks without replacing or
+discarding the first three. Both summaries are retained, and timing data
+are unchanged:
+
+```sh
+DATABASE_FORKS=12 DATABASE_REPEATS=16 \
+  bash doc/benchmarks/four-byte-headers/database.sh timing
+DATABASE_FORKS=12 bash doc/benchmarks/four-byte-headers/database.sh memory
+```
+
+Spring Petclinic is pinned to commit
+`67643c4137eb75bfeb177b427f8459c471bdcbd8`, using Spring Boot 3.5.0, Hibernate,
+Thymeleaf, Tomcat and embedded H2. Build the same application jar once:
+
+```sh
+git clone https://github.com/spring-projects/spring-petclinic.git
+git -C spring-petclinic checkout 67643c4137eb75bfeb177b427f8459c471bdcbd8
+cd spring-petclinic
+mvn -DskipTests -Dcheckstyle.skip -Dspring-javaformat.skip package
+```
+
+From the JDK repository root, with Python 3, aiohttp and SciPy installed:
+
+```sh
+python3 doc/benchmarks/four-byte-headers/petclinic-load.py \
+  "$BASELINE_JDK" "$CANDIDATE_JDK" \
+  /absolute/path/to/spring-petclinic/target/spring-petclinic-3.5.0-SNAPSHOT.jar \
+  "$RESULTS_DIR"
+python3 doc/benchmarks/four-byte-headers/summarize-typical.py "$RESULTS_DIR" \
+  --database-forks 12 --database-repeats 16 --memory-forks 12
+```
+
+The fixture expands the standard database to 10,000 owners, with one pet and
+visit for each added owner. Eight persistent HTTP workers cycle through owner
+search, owner details and veterinarians. Each response must have status 200
+and the expected owner or page text. Six independent JVMs per layout use
+30 seconds of warmup and 60 seconds of measured load, alternating layout order.
+The harness reports throughput, p50/p95/p99 latency, server/load-driver CPU,
+RSS, busy heap samples and startup until health is UP. A full GC and heap
+measurement occur after the timed load. This is a local read-heavy application
+test with an embedded database; production network and database latency differ.
+
+The analyzer requires every expected fork and normal database termination,
+and rejects HTTP failures or incorrect header layouts. Its 95% intervals use
+independent fork means. Raw values and per-fork measurements accompany the
+application results; they are not combined with the earlier opt-in image.
+
+For a diagnostic comparison that also includes the fork's eight-byte opt-out,
+pass `--control`. To collect CPU stacks with async-profiler 4.1, pass
+`--profile-library /absolute/path/to/libasyncProfiler.so` and use a separate
+results directory. These profiles use the `itimer` event and five-millisecond
+sampling. Profiled runs include startup and load, are excluded from timing
+tables, and are rejected by the primary analyzer.

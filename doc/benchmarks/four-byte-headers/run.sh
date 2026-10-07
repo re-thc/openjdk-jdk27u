@@ -16,7 +16,7 @@ select_vm() {
   flags=("-XX:+Use${gc}GC" -Xms512m -Xmx512m "-XX:ActiveProcessorCount=${BENCH_PROCESSORS:-4}")
   case $layout in
     baseline8) jdk=$BASELINE_JDK ;;
-    default8) ;;
+    default8) flags+=(-XX:+UnlockExperimentalVMOptions -XX:-UseFourByteObjectHeaders) ;;
     legacy12) flags+=(-XX:-UseCompactObjectHeaders) ;;
     four4) flags+=(-XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders) ;;
   esac

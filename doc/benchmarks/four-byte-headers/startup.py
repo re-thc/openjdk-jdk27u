@@ -20,6 +20,8 @@ with open(destination, "w", newline="") as output:
             jdk = baseline if layout == "baseline8" else candidate
             args = [jdk + "/bin/java", "-Xshare:on", "-Xms32m", "-Xmx32m",
                     "-XX:ActiveProcessorCount=4", "-XX:+Use" + gc + "GC"]
+            if layout == "default8":
+                args += ["-XX:+UnlockExperimentalVMOptions", "-XX:-UseFourByteObjectHeaders"]
             if layout == "legacy12":
                 args += ["-XX:-UseCompactObjectHeaders"]
             if layout == "four4":
