@@ -16,9 +16,9 @@ assertions to cover both layouts.
 The immutable image fingerprints and pinned application jar accompany the
 raw results. Compilation and local tests are paused during timings.
 
-## Final application comparison
+## Prior validated application comparison
 
-The final-code study contains twenty-four database timing JVMs and twelve
+The prior-image study contains twenty-four database timing JVMs and twelve
 Spring timing JVMs. Six initial database memory JVMs are followed by eighteen
 additional memory-only JVMs, for twelve forks per layout. No profiler, build
 or local test runs during timings. All measured Spring responses are validated.
@@ -70,7 +70,7 @@ workload pins. Pilots, profiles, pre-fix images, storage-limited attempts
 and an interrupted earlier matrix are excluded. The continuous timing study
 ran 2026-10-07T02:52:19Z–03:46:31Z.
 
-## Validation and final review
+## Prior validation and review
 
 [Run 37577272055](https://github.com/re-thc/openjdk-jdk27u/actions/runs/37577272055)
 at `bf5ee5ef5062fb2148b9e9b20b792d6733aa8a47` passed all 29 jobs:
@@ -88,15 +88,21 @@ array base. Four-byte headers use an eight-byte array base. Review changes
 retain eight-byte assertions, check aligned copying for four-byte headers,
 and add positive and negative vector IR expectations. The header flag is
 whitelisted for IR matching, and both cases join fastdebug CI in every layout.
-The arraycopy test passes locally with IR verification enabled. The full vector
-test exhausted the local process limit and is not claimed passed.
-**Fresh CI for these test changes is pending.** The successful three-layout
-run does not establish that the separate standard workflow is green.
-[Failure audit](applications/sanity-ci-review.json).
+The test-only review at `bd500907d778` passed all six x64/AArch64 fastdebug
+layout lanes before its run was superseded. On the subsequent runtime fix
+`d222c871c122`, all six local arraycopy/vector cases pass with IR verification
+enabled. A temporary local worker-pool bound accommodated the container's
+process limit and was restored before committing; IR assertions were retained.
+The separate standard workflow still requires a current completed result.
+[Original failure audit](applications/sanity-ci-review.json).
 
-Runtime executable code is unchanged by this review. Copyright uses Teamoffy
-Pte. Ltd. for new fork contributions, preserving existing notices. Stale
-commented statements and the completed CI migration step are removed.
+The attached review then identified runtime forwarding, compaction, accounting
+and header-access fixes, implemented at `d222c871c122`. The table above remains
+pinned to the earlier `9b75f196c2a` image and does not validate these new changes.
+[Review resolutions and current validation](applications/review-resolution.md).
+Copyright uses Teamoffy Pte. Ltd. for new fork contributions, preserving existing
+notices. Stale commented statements and the completed CI migration step were
+removed in the preceding test-only review.
 The minimal JVMTI module-filter correction passes on stock-eight and
 fork-default-four after unrelated proxy-test expansion is removed; the original
 test failed on both images because dynamic named modules outside layers are
@@ -133,7 +139,7 @@ preserved; test-only commit `9bf17e9327f` adds the explicit conversion from
 Unsafe's long offset to the small header-word count. Production sources and
 image fingerprints remain unchanged from `9b75f196c2a`.
 
-All 126 JCStress locking/hash configurations pass again with the final native
+All 126 JCStress locking/hash configurations pass again with the prior `9b75f196c2a` native
 code: 42 per collector under Serial, G1 and ZGC, with no failed configurations,
 soft errors or hard errors.
 
