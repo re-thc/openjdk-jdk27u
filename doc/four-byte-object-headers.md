@@ -20,7 +20,9 @@ java -XX:-UseFourByteObjectHeaders Main
 `UseFourByteObjectHeaders` is an ordinary product option and requires no
 experimental unlock. An explicit request for four-byte headers implies
 `UseCompactObjectHeaders`; an explicit legacy-layout request disables the
-four-byte default. Object alignment remains configurable; its default is
+four-byte default. Header opt-outs also work through `JAVA_TOOL_OPTIONS`,
+`_JAVA_OPTIONS`, `JDK_JAVA_OPTIONS` and VM flag files, including inherited AOT
+assembly options. Object alignment remains configurable; its default is
 eight bytes. Smaller headers reduce allocation and retained object size when
 alignment permits it. For example, an object containing one `int` occupies
 eight bytes instead of sixteen with the default alignment.
@@ -47,7 +49,7 @@ or extends the object and installs a hidden hash slot. The extension follows
 object and collector alignment. A hashed object may therefore lose its
 initial size saving after movement. Unhashed objects retain their smaller
 size. Explicit `-XX:hashCode=2` is also supported for tests. Other explicit
-hash algorithms disable the experimental layout with a warning.
+hash algorithms disable the four-byte layout with a warning.
 
 ZGC handles this growth during relocation, including in-place relocation.
 The old layouts retain their original forwarding encoding. C1 and C2 use the
@@ -67,15 +69,22 @@ CDS archives encode the selected header layout. This port changes the archive
 format, so recreate custom CDS and AOT caches when switching from an unmodified
 JDK. Archives created with one header layout are rejected by another layout.
 JDK images include matching default archives for all three layouts, with and
-without compressed oops. The four-byte variants are `classes_fourbyte.jsa` and
+without compressed oops. Interpreter-only classic static dumps derive identity
+hash inputs from class names for mirrors and heap-relative addresses for
+other objects, so address randomization and regenerated mirror allocation
+do not change the archive. Already-hashed archived objects retain those hash values.
+The four-byte variants are `classes_fourbyte.jsa` and
 `classes_nocoops_fourbyte.jsa`.
+The jlink `--generate-cds-archive` plugin also generates all six variants.
+JFR old-object sampling remains available with Serial and G1; leak-context
+edge indices use the JDK 27 side table and do not consume header bits.
 
 ## Validation and measurement
 
 The regression tests in `runtime/CompactObjectHeaders` exercise flags, field
 and array layout, archive compatibility, the class-space boundary, identity
-hashes, and ZGC relocation. `gc/stress/ihash` covers movement and hash retention
-across the collectors. The JDK instrumentation test checks expanded object
+hashes, C2 monitor-table lookup and ZGC relocation. `gc/stress/ihash` covers
+movement and hash retention across the collectors. The JDK instrumentation test checks expanded object
 sizes under C1 and C2.
 
 The [benchmark harness](benchmarks/four-byte-headers/run.sh) measures allocated
@@ -85,3 +94,6 @@ Run timing measurements while the machine is idle. The
 [validation and benchmark report](benchmarks/four-byte-headers/results/validation.md)
 compares the original eight-byte default with four-byte mode and records the
 tested platform, raw results and limitations, including measured hashing costs.
+The [fork-default application report](benchmarks/four-byte-headers/results/applications.md)
+compares database and Spring Petclinic workloads against the upstream eight-byte
+default, including the monitor-lookup regression found and fixed during testing.

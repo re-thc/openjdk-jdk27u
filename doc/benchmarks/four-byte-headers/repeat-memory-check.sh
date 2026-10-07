@@ -17,6 +17,7 @@ for fork in 1 2 3; do
     flags=(-XX:+UseSerialGC -Xms512m -Xmx512m -XX:ActiveProcessorCount=4)
     [[ ${MEMORY_NO_TLAB:-false} != true ]] || flags+=(-XX:-UseTLAB)
     [[ $layout != baseline8 ]] || jdk=$BASELINE_JDK
+    [[ $layout != default8 ]] || flags+=(-XX:+UnlockExperimentalVMOptions -XX:-UseFourByteObjectHeaders)
     [[ $layout != four4 ]] || flags+=(-XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders)
     "$jdk/bin/java" "${flags[@]}" -jar "$RENAISSANCE_JAR" scrabble,scala-doku \
       -r 3 --no-jvm-check --scratch-base "$RESULTS_DIR/scratch" \

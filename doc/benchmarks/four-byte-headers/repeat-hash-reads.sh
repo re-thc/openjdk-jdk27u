@@ -23,6 +23,7 @@ for pair in Serial:identityMapLookup Z:storedHash; do
       jdk=$CANDIDATE_JDK
       flags=("-XX:+Use${gc}GC" -Xms512m -Xmx512m -XX:ActiveProcessorCount=4)
       [[ $layout != baseline8 ]] || jdk=$BASELINE_JDK
+      [[ $layout != default8 ]] || flags+=(-XX:+UnlockExperimentalVMOptions -XX:-UseFourByteObjectHeaders)
       [[ $layout != four4 ]] || flags+=(-XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders)
       "$BASELINE_JDK/bin/java" -cp "$RESULTS_DIR/classes:$JMH_CP" org.openjdk.jmh.Main \
         "org.openjdk.bench.vm.gc.FourByteHeaders.$benchmark" -jvm "$jdk/bin/java" \

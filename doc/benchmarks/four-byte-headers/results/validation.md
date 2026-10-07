@@ -1,9 +1,21 @@
 # Four-byte object headers: validation and benchmarks
 
-This change ports optional Lilliput 2 object headers to OpenJDK JDK 27u.
+The measured revision ports optional Lilliput 2 object headers to OpenJDK JDK 27u.
 `-XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders` enables the
-layout. The default remains eight-byte compact headers; the twelve-byte
+layout. Its default remains eight-byte compact headers; the twelve-byte
 layout remains available with `-XX:-UseCompactObjectHeaders`.
+
+These measurements and the validation snapshot record the opt-in revision
+`eac09d4f179`. The fork subsequently makes four-byte headers its default on
+supported platforms, with `-XX:-UseFourByteObjectHeaders` selecting eight bytes.
+The historical `default8` label below refers to the candidate's eight-byte
+control in that measured revision. The subsequent default-on application
+measurements are recorded separately; the raw images and results below remain
+unchanged.
+
+The [fork-default application report](applications.md) records the subsequent
+comparison against the original eight-byte default using the database workload
+and Spring Petclinic, including default-on validation and raw evidence.
 
 Serial, G1 and ZGC are supported on x64 and AArch64. Parallel and Shenandoah
 are also adapted and covered by the focused hash tests. ZGC relocation

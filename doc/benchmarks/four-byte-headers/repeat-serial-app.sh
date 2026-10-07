@@ -19,6 +19,7 @@ for ((fork=${APP_FIRST_FORK:-1}; fork<=${APP_LAST_FORK:-12}; fork++)); do
     jdk=$CANDIDATE_JDK
     flags=(-XX:+UseSerialGC -Xms512m -Xmx512m -XX:ActiveProcessorCount=4)
     [[ $layout != baseline8 ]] || jdk=$BASELINE_JDK
+    [[ $layout != default8 ]] || flags+=(-XX:+UnlockExperimentalVMOptions -XX:-UseFourByteObjectHeaders)
     [[ $layout != four4 ]] || flags+=(-XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders)
     "$jdk/bin/java" "${flags[@]}" -jar "$RENAISSANCE_JAR" scrabble,scala-doku \
       -r 10 --no-jvm-check --scratch-base "$RESULTS_DIR/scratch" \
