@@ -53,6 +53,9 @@ catalogue = (root / "src/hotspot/share/runtime/commonIntrinsics.hpp").read_text(
 leaf_section, scalar_section = catalogue.split("#define COMMON_SCALAR_INTRINSICS_DO", 1)
 leaf = set(re.findall(r"  f\((\w+),", leaf_section))
 scalar = set(re.findall(r"  f\((\w+),", scalar_section))
+declarations = (root / "src/hotspot/share/classfile/vmIntrinsics.hpp").read_text()
+native = set(re.findall(r"do_intrinsic\(\s*(\w+),[^\n]*,\s*F_[RS]N\)", declarations))
+assert not native & (leaf | scalar), "common interpreter catalogue contains a native method"
 for ids, status in ((leaf, "Shared leaf adapter"), (scalar, "Shared scalar lowering")):
     audited = {row["id"] for row in rows if row["status"] == status}
     assert ids == audited, "implementation/audit mismatch for " + status

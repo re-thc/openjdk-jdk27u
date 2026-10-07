@@ -94,6 +94,9 @@ const Register SHIFT_count = rcx;   // where count for shift operations must be
 void LIR_Assembler::common_scalar_op(LIR_Op2* op) {
   LIR_OpCommonScalar* scalar = static_cast<LIR_OpCommonScalar*>(op);
   vmIntrinsics::ID id = vmIntrinsics::ID_from(scalar->intrinsic_id());
+  // lir_common_scalar requires registers for every operand in LinearScan.
+  assert(op->in_opr1()->is_cpu_register() && op->result_opr()->is_cpu_register(), "register operands");
+  assert(!op->in_opr2()->is_valid() || op->in_opr2()->is_cpu_register(), "register right operand");
   Register src = op->in_opr1()->as_pointer_register();
   Register rhs = op->in_opr2()->is_valid() ? op->in_opr2()->as_pointer_register() : noreg;
   Register dst = op->result_opr()->as_pointer_register();

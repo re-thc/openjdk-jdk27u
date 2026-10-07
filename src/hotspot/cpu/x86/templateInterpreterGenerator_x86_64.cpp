@@ -29,6 +29,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/commonIntrinsics.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -505,8 +506,10 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 address TemplateInterpreterGenerator::generate_common_intrinsic_entry(vmIntrinsics::ID id) {
   address entry = __ pc();
   Label slow_path;
-  __ cmpl(Address(r15_thread, JavaThread::interp_only_mode_offset()), 0);
-  __ jcc(Assembler::notEqual, slow_path);
+  if (JvmtiExport::can_post_interpreter_events()) {
+    __ cmpl(Address(r15_thread, JavaThread::interp_only_mode_offset()), 0);
+    __ jcc(Assembler::notEqual, slow_path);
+  }
   __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
   if (CommonIntrinsics::is_scalar(id)) {
     bool binary = CommonIntrinsics::is_binary_scalar(id);

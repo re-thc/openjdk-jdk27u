@@ -31,6 +31,7 @@
 #include "ci/ciField.hpp"
 #include "ci/ciKlass.hpp"
 #include "ci/ciMemberName.hpp"
+#include "ci/ciMethodData.hpp"
 #include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
@@ -3690,6 +3691,14 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
     } else {
       return false;
     }
+  }
+  if (CommonIntrinsics::is_supported(callee->intrinsic_id()) &&
+      CommonIntrinsics::can_fallback(callee->intrinsic_id()) &&
+      compilation()->method()->method_data()->trap_count(Deoptimization::Reason_none) != 0) {
+    // PredicateFailedStub records a trap in the root caller's MDO, including
+    // level-1 compilations. Recompile its guarded operations as Java after the
+    // first failure instead of repeating input-dependent deoptimization.
+    return false;
   }
   if (callee->intrinsic_id() == vmIntrinsics::_vectorizedHashCode && CommonIntrinsics::enabled()) {
     ciMethod* helper = callee->holder()->find_method(ciSymbol::make("vectorizedHashCodeC1"),

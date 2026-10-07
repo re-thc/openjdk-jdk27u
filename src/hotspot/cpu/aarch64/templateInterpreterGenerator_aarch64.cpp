@@ -985,8 +985,10 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 address TemplateInterpreterGenerator::generate_common_intrinsic_entry(vmIntrinsics::ID id) {
   address entry = __ pc();
   Label slow_path;
-  __ ldrw(rscratch1, Address(rthread, JavaThread::interp_only_mode_offset()));
-  __ cbnzw(rscratch1, slow_path);
+  if (JvmtiExport::can_post_interpreter_events()) {
+    __ ldrw(rscratch1, Address(rthread, JavaThread::interp_only_mode_offset()));
+    __ cbnzw(rscratch1, slow_path);
+  }
   __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
   if (CommonIntrinsics::is_scalar(id)) {
     bool binary = CommonIntrinsics::is_binary_scalar(id);

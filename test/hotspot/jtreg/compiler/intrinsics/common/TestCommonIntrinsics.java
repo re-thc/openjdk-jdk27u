@@ -25,8 +25,14 @@
  * @test
  * @summary Compare shared leaf intrinsics and their Java fallbacks in all tiers
  * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
- * @library /test/lib
- * @run driver compiler.intrinsics.common.TestCommonIntrinsics
+ * @run main/othervm --add-opens=java.base/java.math=ALL-UNNAMED -Xint -XX:+UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsics
+ * @run main/othervm --add-opens=java.base/java.math=ALL-UNNAMED -Xint -XX:-UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsics
+ * @run main/othervm --add-opens=java.base/java.math=ALL-UNNAMED -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsics
+ * @run main/othervm --add-opens=java.base/java.math=ALL-UNNAMED -Xbatch -XX:TieredStopAtLevel=1 -XX:-UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsics
+ * @run main/othervm --add-opens=java.base/java.math=ALL-UNNAMED -Xbatch -XX:TieredStopAtLevel=3 -XX:+UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsics
+ * @run main/othervm --add-opens=java.base/java.math=ALL-UNNAMED -Xbatch -XX:TieredStopAtLevel=3 -XX:-UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsics
+ * @run main/othervm --add-opens=java.base/java.math=ALL-UNNAMED -Xbatch -XX:-TieredCompilation -XX:+UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsics
+ * @run main/othervm --add-opens=java.base/java.math=ALL-UNNAMED -Xbatch -XX:-TieredCompilation -XX:-UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsics
  */
 
 package compiler.intrinsics.common;
@@ -51,38 +57,15 @@ import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 public class TestCommonIntrinsics {
-    public static void main(String[] args) throws Exception {
-        if (args.length != 0) {
-            workload();
-            return;
-        }
-        String reference = run("-Xint", "-XX:-UseCommonIntrinsics");
-        for (String tier : new String[] {"-Xint", "-XX:TieredStopAtLevel=1",
-                                       "-XX:TieredStopAtLevel=3", "-XX:-TieredCompilation"}) {
-            for (String flag : new String[] {"-XX:+UseCommonIntrinsics", "-XX:-UseCommonIntrinsics"}) {
-                String actual = run(tier, flag);
-                if (!actual.equals(reference)) {
-                    throw new AssertionError(tier + " " + flag + ": " + actual + " != " + reference);
-                }
-            }
-        }
-    }
+    // Fixed transcript from the pristine Java implementations, checked in
+    // separate jtreg VMs for every compilation mode and flag state.
+    private static final String EXPECTED =
+            "f459f5ec15a357973e2e84ab16ca7cff567fe4cad8f169d6cf63bb1e3b57d6c4";
 
-    private static String run(String tier, String flag) throws Exception {
-        OutputAnalyzer output = ProcessTools.executeTestJava(
-                "-Xbatch", "-Xms32m", "-Xmx128m", tier, flag,
-                "--add-opens=java.base/java.math=ALL-UNNAMED",
-                TestCommonIntrinsics.class.getName(), "workload");
-        output.shouldHaveExitValue(0);
-        String result = output.firstMatch("RESULT ([0-9a-f]+)", 1);
-        if (result == null) {
-            throw new AssertionError(output.getOutput());
-        }
-        return result;
+    public static void main(String[] args) throws Exception {
+        workload();
     }
 
     private static final MessageDigest transcript = digest("SHA-256");
@@ -237,7 +220,9 @@ public class TestCommonIntrinsics {
             }
         }
         guards();
-        System.out.println("RESULT " + HexFormat.of().formatHex(transcript.digest()));
+        String result = HexFormat.of().formatHex(transcript.digest());
+        if (!result.equals(EXPECTED)) throw new AssertionError("unexpected transcript: " + result);
+        System.out.println("RESULT " + result);
     }
 
     private static void guards() throws Exception {

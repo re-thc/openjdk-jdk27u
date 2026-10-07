@@ -2836,6 +2836,9 @@ void LIRGenerator::do_CommonScalarIntrinsic(Intrinsic* x) {
   }
 #ifdef AMD64
   if (fixed) {
+    // Values use virtual registers until allocation; pinning the right
+    // operand first cannot overwrite a physical left operand.
+    assert(left.result()->is_virtual(), "unallocated left operand");
     left.load_item_force(wide ? FrameMap::long0_opr : FrameMap::rax_opr);
     tmp1 = wide ? FrameMap::as_long_opr(rdx) : FrameMap::rdx_opr;
   } else if (id == vmIntrinsics::_reverse_i || id == vmIntrinsics::_reverse_l ||
@@ -2870,6 +2873,7 @@ void LIRGenerator::do_CommonScalarIntrinsic(Intrinsic* x) {
 }
 
 void LIRGenerator::do_CommonIntrinsic(Intrinsic* x) {
+  assert(CommonIntrinsics::is_available_for_c1(x->id()), "available common backend");
   int slots = CommonIntrinsics::parameter_slots(x->id());
   // Keep the raw argument vector clear of the C ABI register-save area.
   const int base = 4 * wordSize;
@@ -2915,7 +2919,7 @@ void LIRGenerator::do_CommonIntrinsic(Intrinsic* x) {
 }
 
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
-  if (CommonIntrinsics::is_supported(x->id())) {
+  if (CommonIntrinsics::is_available_for_c1(x->id())) {
     if (CommonIntrinsics::is_scalar(x->id())) {
       do_CommonScalarIntrinsic(x);
     } else {

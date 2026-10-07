@@ -13,8 +13,7 @@ performance and full tier1/tier2 qualification remain outstanding.
 
 ## Open PR and existing-intrinsic exclusions
 
-Reviewed all seven open PRs (#2–#8) on 2026-10-07, including their integration
-code and applicability documentation:
+The feature boundaries of open PRs #2–#8 determine the exclusions:
 
 | PR | Functionality retained in that PR |
 | --- | --- |
@@ -76,16 +75,26 @@ redirect access by shadowing fields. Array bases and field offsets use VM
 layout helpers, so the integration does not assume PR #8's header layout.
 
 Leaves allocate no handles or objects, raise no exceptions and never safepoint.
-Variable bulk inputs are capped at 1,048,576 elements; hashing and quadratic
-BigInteger operations have tighter limits. Larger or rejected inputs use Java.
+Variable bulk inputs are capped at 1,048,576 elements, including GCM's 1 MiB
+chunks. Hashing is capped at 65,536 elements, multiply/square at 2,048 limbs
+and Montgomery operations at 512 limbs to bound time without a safepoint.
+Larger or rejected inputs use Java. In-place BigInteger shifts use the stub
+for the Java primitive workers' safe shapes: left shift at destination index 0
+and right shift at index 1. Other aliases retain Java traversal semantics;
+multiply-add still requires distinct input and output arrays.
 Successful bulk results are int/object/void, allowing a distinct `min_jlong`
 fallback sentinel. Scalar long results can use every bit pattern and do not
 use this sentinel.
 
 The interpreter branches to the original Java entry on guard failure. C1
 preserves full invocation state and deoptimizes with forced reexecution;
-exceptions and locks are then handled by Java. Exact arithmetic and unsigned
-division use this same mechanism for overflow/zero divisors. Guarded method-handle
+exceptions and locks are then handled by Java. After the first predicate
+failure, the root method's trap history makes subsequent C1 compilations
+retain Java implementations for its guarded common operations, including
+inlined callees. This conservative policy prevents repeated input-dependent
+deoptimization at C1 levels 1 and 3. Direct operations without a fallback
+remain eligible. Exact arithmetic and unsigned division use this mechanism
+for overflow and zero divisors. Guarded method-handle
 targets are parsed as Java methods so a fallback cannot resume a `linkTo*`
 adapter after its MemberName argument was removed.
 
@@ -93,9 +102,14 @@ Existing per-operation flags and CPU availability remain in force. Compiler
 stubs are generated during VM initialization when the bulk interpreter path
 needs them, including `-Xint`. This overrides delayed compiler-stub generation
 for the enabled feature; disabling it restores the existing startup path.
-C1 declines bulk intrinsics when their backend stub is absent. AArch64 has no
-bulk AES-ECB stub, so its Java ECB loop uses the accelerated AES block entry.
-Parallel Keccak availability also depends on the existing platform backend.
+C1 declines bulk intrinsics when their backend stub is absent and asserts
+that contract during lowering. AArch64 omits interpreter entries for AES-ECB,
+P-256 integer polynomial multiplication/assignment and four-way Keccak, whose
+stub generators are absent. Its Java ECB loop still uses the accelerated AES
+block entry. The abstract multi-block digest entry requires all five digest
+algorithms to be enabled; C1 also requires all five backend stubs. A partially
+covered digest family uses Java dispatch and eligible per-algorithm entries.
+Optional parallel Keccak availability depends on the platform backend.
 Pure C1 builds can use the direct scalar operations without requiring C2 stubs;
 that build configuration has not been qualified here.
 
@@ -103,8 +117,11 @@ that build configuration has not been qualified here.
 
 [Measured results and reproduction](BENCHMARKS.md) contain the full table,
 raw JMH samples and validation commands. The new jtreg directory covers public
-API differential results, independent scalar/arithmetic oracles, C1 caller-state
-restoration and intrinsic availability/opt-out controls.
+API differential results, independent scalar/arithmetic and in-place shift
+oracles, C1 caller-state restoration, guarded method handles, recompilation
+feedback, CPU instruction opt-outs, JVMTI method-entry events and intrinsic
+availability controls. The catalogue checker also verifies that every shared
+entry is non-native.
 
 This is a bounded qualification, not a universal no-regression guarantee.
 Allocating, native VM-service, floating-point and compiler-IR entries listed

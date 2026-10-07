@@ -32,6 +32,8 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsicAvailability enabled
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsicAvailability disabled
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCommonIntrinsics -XX:DisableIntrinsic=_multiplyToLen,_vectorizedHashCode,_addExactI compiler.intrinsics.common.TestCommonIntrinsicAvailability selective
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCommonIntrinsics -XX:-UseSHA3Intrinsics compiler.intrinsics.common.TestCommonIntrinsicAvailability enabled
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCommonIntrinsics -XX:DisableIntrinsic=_sha3_implCompress compiler.intrinsics.common.TestCommonIntrinsicAvailability no_sha3
  */
 
 package compiler.intrinsics.common;
@@ -83,7 +85,7 @@ public class TestCommonIntrinsicAvailability {
         new Entry("_sha2_implCompress", "sun.security.provider.SHA2", "implCompress0", "([BI)V", "UseSHA256Intrinsics"),
         new Entry("_sha5_implCompress", "sun.security.provider.SHA5", "implCompress0", "([BI)V", "UseSHA512Intrinsics"),
         new Entry("_sha3_implCompress", "sun.security.provider.SHA3", "implCompress0", "([BI)V", "UseSHA3Intrinsics"),
-        new Entry("_digestBase_implCompressMB", "sun.security.provider.DigestBase", "implCompressMultiBlock0", "([BII)I", "UseMD5Intrinsics|UseSHA1Intrinsics|UseSHA256Intrinsics|UseSHA512Intrinsics|UseSHA3Intrinsics"),
+        new Entry("_digestBase_implCompressMB", "sun.security.provider.DigestBase", "implCompressMultiBlock0", "([BII)I", "UseMD5Intrinsics,UseSHA1Intrinsics,UseSHA256Intrinsics,UseSHA512Intrinsics,UseSHA3Intrinsics"),
         new Entry("_galoisCounterMode_AESCrypt", "com.sun.crypto.provider.GaloisCounterMode", "implGCMCrypt0", "([BII[BI[BILcom/sun/crypto/provider/GCTR;Lcom/sun/crypto/provider/GHASH;)I", "UseAESIntrinsics"),
         new Entry("_vectorizedHashCode", "jdk.internal.util.ArraysSupport", "vectorizedHashCode", "(Ljava/lang/Object;IIII)I", "UseVectorizedHashCodeIntrinsic"),
         new Entry("_numberOfLeadingZeros_i", "java.lang.Integer", "numberOfLeadingZeros", "(I)I", ""),
@@ -132,28 +134,26 @@ public class TestCommonIntrinsicAvailability {
     public static void main(String[] args) throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
         boolean enabled = !args[0].equals("disabled");
-        Set<String> disabled = args[0].equals("selective")
-                ? Set.of("_multiplyToLen", "_vectorizedHashCode", "_vectorizedHashCodeLeaf", "_addExactI")
-                : Set.of();
+        Set<String> disabled = switch (args[0]) {
+            case "selective" -> Set.of("_multiplyToLen", "_vectorizedHashCode", "_vectorizedHashCodeLeaf", "_addExactI");
+            case "no_sha3" -> Set.of("_sha3_implCompress", "_digestBase_implCompressMB");
+            default -> Set.of();
+        };
         for (Entry entry : ENTRIES) {
             Class<?> holder = Class.forName(entry.holder());
             MethodType type = MethodType.fromMethodDescriptorString(entry.descriptor(), null);
             Method method = holder.getDeclaredMethod(entry.name(), type.parameterArray());
             boolean expected = enabled && !disabled.contains(entry.id());
-            // ARM has AES block/CBC/CTR/GCM stubs, but no bulk ECB stub.
-            // ECB's Java loop still reaches the shared AES block intrinsic.
+            // These kernels have no ARM backend. ECB still uses accelerated AES blocks.
             if (System.getProperty("os.arch").equals("aarch64") &&
-                    Set.of("_electronicCodeBook_encryptAESCrypt", "_electronicCodeBook_decryptAESCrypt")
+                    Set.of("_electronicCodeBook_encryptAESCrypt", "_electronicCodeBook_decryptAESCrypt",
+                           "_intpoly_montgomeryMult_P256", "_intpoly_assign", "_quad_keccak")
                             .contains(entry.id())) {
                 expected = false;
             }
             for (String flag : entry.flags().split(",")) {
                 if (flag.isEmpty()) continue;
-                boolean any = false;
-                for (String alternative : flag.split("\\|")) {
-                    any |= Boolean.TRUE.equals(wb.getBooleanVMFlag(alternative));
-                }
-                expected &= any;
+                expected &= Boolean.TRUE.equals(wb.getBooleanVMFlag(flag));
             }
             boolean actual = wb.isIntrinsicAvailable(method, 1);
             // Parallel Keccak entry points can be absent while the scalar

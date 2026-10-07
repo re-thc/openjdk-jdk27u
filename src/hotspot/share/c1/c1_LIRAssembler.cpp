@@ -657,12 +657,14 @@ void LIR_Assembler::common_scalar_op(LIR_Op2* op) {
 
 void LIR_Assembler::emit_op2(LIR_Op2* op) {
   switch (op->code()) {
-    case lir_common_scalar:
+    case lir_common_scalar: {
       common_scalar_op(op);
-      if (static_cast<LIR_OpCommonScalar*>(op)->fallback() != nullptr) {
-        append_code_stub(static_cast<LIR_OpCommonScalar*>(op)->fallback());
+      CodeStub* fallback = static_cast<LIR_OpCommonScalar*>(op)->fallback();
+      if (fallback != nullptr) {
+        append_code_stub(fallback);
       }
       break;
+    }
     case lir_cmp:
       if (op->info() != nullptr) {
         assert(op->in_opr1()->is_address() || op->in_opr2()->is_address(),

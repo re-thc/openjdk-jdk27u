@@ -42,10 +42,13 @@ for tier in int c1 c2; do
         else
             intrinsic_flag=-XX:-UseCommonIntrinsics
         fi
-        "${runner[@]}" "$java_bin" -cp "$benchmark_classpath" org.openjdk.jmh.Main \
-            'org.openjdk.bench.vm.compiler.Common(Scalar)?Intrinsics.*' \
+        # Keep driver overhead small; explicit worker arguments select each tier.
+        "${runner[@]}" "$java_bin" -Xint -XX:+UseSerialGC -XX:ActiveProcessorCount=1 \
+            -XX:-UsePerfData -XX:+DisableAttachMechanism -Xrs \
+            -cp "$benchmark_classpath" org.openjdk.jmh.Main \
+            'org.openjdk.bench.vm.compiler.Common(Scalar|BigIntegerShift)?Intrinsics.*' \
             -wi 3 -i 5 -w 300ms -r 300ms -f 3 -t 1 \
-            -jvmArgsAppend "$tier_flag $intrinsic_flag -Xms128m -Xmx128m -XX:ActiveProcessorCount=1" \
+            -jvmArgs "$tier_flag $intrinsic_flag -Xms128m -Xmx128m -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -XX:-UsePerfData -XX:+DisableAttachMechanism -Xrs --add-opens=java.base/java.math=ALL-UNNAMED" \
             -rf json -rff "$result_dir/$tier-$state.json" \
             > "$result_dir/$tier-$state.log" 2>&1
     done

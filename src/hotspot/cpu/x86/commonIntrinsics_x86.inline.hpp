@@ -136,7 +136,6 @@ static void common_scalar_intrinsic(MacroAssembler* masm, vmIntrinsics::ID id,
       if (wide) masm->cmpq(src, rhs); else masm->cmpl(src, rhs);
       masm->setcc(Assembler::below, tmp1);
       masm->setcc(Assembler::above, dst);
-      masm->movzbl(tmp1, tmp1); masm->movzbl(dst, dst);
       masm->subl(dst, tmp1);
       break;
     case vmIntrinsics::_multiplyHigh:

@@ -32,6 +32,21 @@
 
 namespace {
 
+// Bound time spent without a safepoint. The general limit also admits GCM's
+// 1 MiB SPLIT_LEN chunks; quadratic arithmetic uses smaller limb budgets.
+constexpr jint max_leaf_elements = 1 << 20;
+constexpr jint max_quadratic_limbs = 2048;
+constexpr jint max_montgomery_limbs = 512;
+constexpr jint max_hash_elements = 65536;
+
+bool all_digest_intrinsics_enabled() {
+  return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_md5_implCompress) &&
+         vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha_implCompress) &&
+         vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha2_implCompress) &&
+         vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha5_implCompress) &&
+         vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha3_implCompress);
+}
+
 class Arguments {
   const intptr_t* _args;
   int _remaining;
@@ -44,7 +59,7 @@ class Arguments {
 
 bool array_range(oop array, BasicType type, jint offset, jlong length) {
   // Bound all variable-length leaves; larger Java loops can safepoint.
-  return length <= (1 << 20) && array != nullptr && array->is_typeArray() &&
+  return length <= max_leaf_elements && array != nullptr && array->is_typeArray() &&
          TypeArrayKlass::cast(array->klass())->element_type() == type &&
          offset >= 0 && length >= 0 &&
          static_cast<jlong>(offset) + length <= typeArrayOop(array)->length();
@@ -151,7 +166,7 @@ JRT_LEAF(jlong, common_multiplyToLen(const intptr_t* args))
   oop x = a.object(); jint xlen = a.integer();
   oop y = a.object(); jint ylen = a.integer(); oop z = a.object();
   address stub = StubRoutines::multiplyToLen();
-  if (stub == nullptr || xlen <= 0 || ylen <= 0 || xlen > 2048 || ylen > 2048 || z == x || z == y ||
+  if (stub == nullptr || xlen <= 0 || ylen <= 0 || xlen > max_quadratic_limbs || ylen > max_quadratic_limbs || z == x || z == y ||
       !array_range(x, T_INT, 0, xlen) || !array_range(y, T_INT, 0, ylen) ||
       !array_range(z, T_INT, 0, static_cast<jlong>(xlen) + ylen)) return CommonIntrinsics::fallback;
   invoke_stub<void>(stub, elements<jint>(x), xlen, elements<jint>(y), ylen, elements<jint>(z));
@@ -162,7 +177,7 @@ JRT_LEAF(jlong, common_squareToLen(const intptr_t* args))
   Arguments a(args, 4);
   oop x = a.object(); jint len = a.integer(); oop z = a.object(); jint zlen = a.integer();
   address stub = StubRoutines::squareToLen();
-  if (stub == nullptr || len <= 0 || len > 2048 || z == x || static_cast<jlong>(len) * 2 > zlen ||
+  if (stub == nullptr || len <= 0 || len > max_quadratic_limbs || z == x || static_cast<jlong>(len) * 2 > zlen ||
       !array_range(x, T_INT, 0, len) || !array_range(z, T_INT, 0, zlen)) return CommonIntrinsics::fallback;
   invoke_stub<void>(stub, elements<jint>(x), len, elements<jint>(z), zlen);
   return cast_from_oop<jlong>(z);
@@ -186,7 +201,7 @@ JRT_LEAF(jlong, common_montgomeryMultiply(const intptr_t* args))
   oop x = a.object(); oop y = a.object(); oop n = a.object();
   jint len = a.integer(); jlong inv = a.long_value(); oop out = a.object();
   address stub = StubRoutines::montgomeryMultiply();
-  if (stub == nullptr || len <= 0 || (len & 1) != 0 || len > 512 || out == x || out == n ||
+  if (stub == nullptr || len <= 0 || (len & 1) != 0 || len > max_montgomery_limbs || out == x || out == n ||
       !array_range(x, T_INT, 0, len) || !array_range(n, T_INT, 0, len) ||
       !array_range(out, T_INT, 0, len) || !array_range(y, T_INT, 0, len) || out == y) return CommonIntrinsics::fallback;
   invoke_stub<void>(stub, elements<jint>(x), elements<jint>(y), elements<jint>(n), len, inv, elements<jint>(out));
@@ -198,7 +213,7 @@ JRT_LEAF(jlong, common_montgomerySquare(const intptr_t* args))
   oop x = a.object(); oop n = a.object();
   jint len = a.integer(); jlong inv = a.long_value(); oop out = a.object();
   address stub = StubRoutines::montgomerySquare();
-  if (stub == nullptr || len <= 0 || (len & 1) != 0 || len > 512 || out == x || out == n ||
+  if (stub == nullptr || len <= 0 || (len & 1) != 0 || len > max_montgomery_limbs || out == x || out == n ||
       !array_range(x, T_INT, 0, len) || !array_range(n, T_INT, 0, len) ||
       !array_range(out, T_INT, 0, len)) return CommonIntrinsics::fallback;
   invoke_stub<void>(stub, elements<jint>(x), elements<jint>(n), len, inv, elements<jint>(out));
@@ -210,7 +225,10 @@ JRT_LEAF(jlong, common_bigIntegerRightShiftWorker(const intptr_t* args))
   oop out = a.object(); oop in = a.object();
   jint index = a.integer(); jint shift = a.integer(); jint count = a.integer();
   address stub = StubRoutines::bigIntegerRightShift();
-  if (stub == nullptr || out == in || shift <= 0 || shift >= 32 || count <= 0 ||
+  // High-to-low iteration preserves unread words for primitiveRightShift's
+  // in-place destination at index 1. Other aliased shapes stay in Java.
+  // The stub supports destination indices 0 and 1; Java handles larger ones.
+  if (stub == nullptr || index > 1 || (out == in && index != 1) || shift <= 0 || shift >= 32 || count <= 0 ||
       !array_range(in, T_INT, 0, static_cast<jlong>(count) + 1) ||
       !array_range(out, T_INT, index, count)) return CommonIntrinsics::fallback;
   invoke_stub<void>(stub, elements<jint>(out), elements<jint>(in), index, shift, count);
@@ -222,7 +240,9 @@ JRT_LEAF(jlong, common_bigIntegerLeftShiftWorker(const intptr_t* args))
   oop out = a.object(); oop in = a.object();
   jint index = a.integer(); jint shift = a.integer(); jint count = a.integer();
   address stub = StubRoutines::bigIntegerLeftShift();
-  if (stub == nullptr || out == in || shift <= 0 || shift >= 32 || count <= 0 ||
+  // Low-to-high iteration preserves unread words for primitiveLeftShift's
+  // in-place destination at index 0. Other aliased shapes stay in Java.
+  if (stub == nullptr || (out == in && index != 0) || shift <= 0 || shift >= 32 || count <= 0 ||
       !array_range(in, T_INT, 0, static_cast<jlong>(count) + 1) ||
       !array_range(out, T_INT, index, count)) return CommonIntrinsics::fallback;
   invoke_stub<void>(stub, elements<jint>(out), elements<jint>(in), index, shift, count);
@@ -515,8 +535,8 @@ JRT_LEAF(jlong, common_md5_implCompress(const intptr_t* args))
   Arguments a(args, 3);
   oop receiver = a.object(); oop src = a.object(); jint offset = a.integer();
   address stub = StubRoutines::md5_implCompress();
-  oop state = md5_state.object(receiver); jint block = 64;
-  if (stub == nullptr || block <= 0 || block > 200 || (block & 7) != 0 ||
+  oop state = md5_state.object(receiver); constexpr jint block = 64;
+  if (stub == nullptr ||
       !array_range(src, T_BYTE, offset, block) || !array_range(state, T_INT, 0, 4)) return CommonIntrinsics::fallback;
   invoke_stub<void>(stub, elements<jbyte>(src) + offset, elements<jint>(state));
   return 0;
@@ -526,8 +546,8 @@ JRT_LEAF(jlong, common_sha_implCompress(const intptr_t* args))
   Arguments a(args, 3);
   oop receiver = a.object(); oop src = a.object(); jint offset = a.integer();
   address stub = StubRoutines::sha1_implCompress();
-  oop state = sha1_state.object(receiver); jint block = 64;
-  if (stub == nullptr || block <= 0 || block > 200 || (block & 7) != 0 ||
+  oop state = sha1_state.object(receiver); constexpr jint block = 64;
+  if (stub == nullptr ||
       !array_range(src, T_BYTE, offset, block) || !array_range(state, T_INT, 0, 5)) return CommonIntrinsics::fallback;
   invoke_stub<void>(stub, elements<jbyte>(src) + offset, elements<jint>(state));
   return 0;
@@ -537,8 +557,8 @@ JRT_LEAF(jlong, common_sha2_implCompress(const intptr_t* args))
   Arguments a(args, 3);
   oop receiver = a.object(); oop src = a.object(); jint offset = a.integer();
   address stub = StubRoutines::sha256_implCompress();
-  oop state = sha256_state.object(receiver); jint block = 64;
-  if (stub == nullptr || block <= 0 || block > 200 || (block & 7) != 0 ||
+  oop state = sha256_state.object(receiver); constexpr jint block = 64;
+  if (stub == nullptr ||
       !array_range(src, T_BYTE, offset, block) || !array_range(state, T_INT, 0, 8)) return CommonIntrinsics::fallback;
   invoke_stub<void>(stub, elements<jbyte>(src) + offset, elements<jint>(state));
   return 0;
@@ -548,8 +568,8 @@ JRT_LEAF(jlong, common_sha5_implCompress(const intptr_t* args))
   Arguments a(args, 3);
   oop receiver = a.object(); oop src = a.object(); jint offset = a.integer();
   address stub = StubRoutines::sha512_implCompress();
-  oop state = sha512_state.object(receiver); jint block = 128;
-  if (stub == nullptr || block <= 0 || block > 200 || (block & 7) != 0 ||
+  oop state = sha512_state.object(receiver); constexpr jint block = 128;
+  if (stub == nullptr ||
       !array_range(src, T_BYTE, offset, block) || !array_range(state, T_LONG, 0, 8)) return CommonIntrinsics::fallback;
   invoke_stub<void>(stub, elements<jbyte>(src) + offset, elements<jlong>(state));
   return 0;
@@ -614,7 +634,7 @@ JRT_LEAF(jlong, common_vectorizedHashCode(const intptr_t* args))
   Arguments a(args, 5);
   oop array = a.object(); jint offset = a.integer(); jint len = a.integer();
   jint initial = a.integer(); jint type = a.integer();
-  if (len > 65536) return CommonIntrinsics::fallback;
+  if (len > max_hash_elements) return CommonIntrinsics::fallback;
   switch (type) {
     case T_BOOLEAN:
       if (array_range(array, T_BYTE, offset, len)) return polynomial_hash(elements<uint8_t>(array) + offset, len, initial);
@@ -705,6 +725,22 @@ bool CommonIntrinsics::can_fallback(vmIntrinsics::ID id) {
 
 bool CommonIntrinsics::is_supported(vmIntrinsics::ID id) {
   if (!enabled()) return false;
+  if (id == vmIntrinsics::_digestBase_implCompressMB && !all_digest_intrinsics_enabled()) {
+    return false;
+  }
+#ifdef AARCH64
+  // These kernels have no AArch64 generator. Interpreter entries are built
+  // before compiler stubs, so exclude them without inspecting stub pointers.
+  switch (id) {
+    case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
+    case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
+    case vmIntrinsics::_intpoly_montgomeryMult_P256:
+    case vmIntrinsics::_intpoly_assign:
+    case vmIntrinsics::_quad_keccak:
+      return false;
+    default: break;
+  }
+#endif
 #ifdef AMD64
   if ((id == vmIntrinsics::_bitCount_i || id == vmIntrinsics::_bitCount_l) && !UsePopCountInstruction) {
     return false;
@@ -764,11 +800,14 @@ bool CommonIntrinsics::is_available_for_c1(vmIntrinsics::ID id) {
     case vmIntrinsics::_sha3_implCompress: return StubRoutines::sha3_implCompress() != nullptr;
     case vmIntrinsics::_galoisCounterMode_AESCrypt: return StubRoutines::galoisCounterMode_AESCrypt() != nullptr;
     case vmIntrinsics::_digestBase_implCompressMB:
-      return StubRoutines::md5_implCompressMB() != nullptr ||
-             StubRoutines::sha1_implCompressMB() != nullptr ||
-             StubRoutines::sha256_implCompressMB() != nullptr ||
-             StubRoutines::sha512_implCompressMB() != nullptr ||
-             StubRoutines::sha3_implCompressMB() != nullptr;
+      // The receiver has the abstract DigestBase type. Do not speculate that
+      // it is a supported subclass when only some digest kernels are enabled.
+      return StubRoutines::md5_implCompressMB() != nullptr &&
+             StubRoutines::sha1_implCompressMB() != nullptr &&
+             StubRoutines::sha256_implCompressMB() != nullptr &&
+             StubRoutines::sha512_implCompressMB() != nullptr &&
+             StubRoutines::sha3_implCompressMB() != nullptr &&
+             all_digest_intrinsics_enabled();
     case vmIntrinsics::_vectorizedHashCode:
     case vmIntrinsics::_vectorizedHashCodeLeaf:
       return true;
