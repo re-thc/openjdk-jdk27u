@@ -32,15 +32,15 @@
  * @run shell MakeJAR.sh basicAgent
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseSerialGC
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseSerialGC
  *      -XX:+TieredCompilation -Xbatch -Xmx256m -javaagent:basicAgent.jar
  *      FourByteHeaderObjectSize FourByteHeaderObjectSize
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseG1GC
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseG1GC
  *      -XX:+TieredCompilation -Xbatch -Xmx256m -javaagent:basicAgent.jar
  *      FourByteHeaderObjectSize FourByteHeaderObjectSize
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseZGC
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseZGC
  *      -XX:+TieredCompilation -Xbatch -Xmx256m -javaagent:basicAgent.jar
  *      FourByteHeaderObjectSize FourByteHeaderObjectSize
  */

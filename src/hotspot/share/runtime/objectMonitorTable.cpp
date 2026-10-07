@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,8 +124,7 @@
 // Get the identity hash from an oop, handling both compact and legacy headers.
 // Returns 0 if the object has not been hashed yet (meaning no monitor exists
 // for it in the table).
-static intptr_t object_hash(oop obj) {
-  markWord mark = obj->mark();
+static intptr_t object_hash(oop obj, markWord mark) {
   if (UseFourByteObjectHeaders) {
     if (!mark.is_hashed()) {
       return 0;
@@ -535,9 +535,15 @@ void ObjectMonitorTable::create() {
 }
 
 ObjectMonitor* ObjectMonitorTable::monitor_get(oop obj) {
-  const intptr_t hash = object_hash(obj);
+  const markWord mark = obj->mark();
+  if (UseFourByteObjectHeaders && ((mark.value() & markWord::lock_mask_in_place) == markWord::marked_value || !mark.is_hashed())) {
+    return nullptr;
+  }
+  const intptr_t hash = object_hash(obj, mark);
   // Four-byte headers track hash presence separately; zero is a valid hash.
-  if (hash == 0 && (!UseFourByteObjectHeaders || !obj->mark().is_hashed())) return nullptr;
+  if (hash == 0 && !UseFourByteObjectHeaders) {
+    return nullptr;
+  }
   Table* curr = _curr.load_acquire();
   ObjectMonitor* monitor = curr->get(obj, hash);
   return monitor;

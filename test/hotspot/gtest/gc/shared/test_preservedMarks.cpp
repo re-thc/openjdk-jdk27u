@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +70,11 @@ TEST_VM(PreservedMarks, iterate_and_restore) {
   // Adjust will update the PreservedMarks stack to
   // make sure the mark is updated at the new location.
   pm.adjust_during_full_gc();
+
+  // Model compaction copying the source headers to the destinations.
+  // Restore reads hash control from the relocated object, never a forwardee.
+  o3->set_mark(changedMark());
+  o4->set_mark(changedMark());
 
   // Restore all preserved and verify that the changed
   // mark is now present at o3 and o4.

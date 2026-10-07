@@ -28,14 +28,14 @@
  * @requires vm.compiler2.enabled & vm.gc.Serial & vm.gc.G1 & vm.gc.Z
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders
- *      -XX:+UseSerialGC -XX:hashCode=6 -XX:-TieredCompilation -Xbatch -XX:CompileThreshold=1000
+ * @run main/othervm -XX:+UseFourByteObjectHeaders
+ *      -XX:+UseSerialGC -XX:+UnlockExperimentalVMOptions -XX:hashCode=6 -XX:-TieredCompilation -Xbatch -XX:CompileThreshold=1000
  *      -XX:CompileCommand=dontinline,FourByteHeaderHashState::hash FourByteHeaderHashState
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders
- *      -XX:+UseG1GC -XX:hashCode=6 -XX:-TieredCompilation -Xbatch -XX:CompileThreshold=1000
+ * @run main/othervm -XX:+UseFourByteObjectHeaders
+ *      -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:hashCode=6 -XX:-TieredCompilation -Xbatch -XX:CompileThreshold=1000
  *      -XX:CompileCommand=dontinline,FourByteHeaderHashState::hash FourByteHeaderHashState
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders
- *      -XX:+UseZGC -XX:hashCode=6 -XX:-TieredCompilation -Xbatch -XX:CompileThreshold=1000
+ * @run main/othervm -XX:+UseFourByteObjectHeaders
+ *      -XX:+UseZGC -XX:+UnlockExperimentalVMOptions -XX:hashCode=6 -XX:-TieredCompilation -Xbatch -XX:CompileThreshold=1000
  *      -XX:CompileCommand=dontinline,FourByteHeaderHashState::hash FourByteHeaderHashState
  */
 

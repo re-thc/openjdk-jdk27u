@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -249,6 +250,9 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
         // Acquire the state published after installing an expanded hash slot.
         // Only ordinary instances have a fixed slot offset in InstanceKlass.
         ldarw(t1_hash, obj);
+        andw(t2, t1_hash, markWord::lock_mask_in_place);
+        cmpw(t2, markWord::monitor_value);
+        br(Assembler::NE, slow_path);
         ubfx(t1_hash, t1_hash, markWord::hashctrl_shift, markWord::hashctrl_bits);
         cmpw(t1_hash, 3);
         br(Assembler::EQ, expanded);

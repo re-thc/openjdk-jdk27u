@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,6 +134,25 @@ TEST_VM(markWord, zero_hash_monitor) {
   ASSERT_NE(monitor, nullptr);
   locker.notify_all(THREAD);
   ASSERT_EQ(ObjectMonitorTable::monitor_get(object()), monitor);
+  // A failed evacuation retains header metadata in a self-forwarded object.
+  markWord live_mark = object()->mark();
+  object()->set_mark(live_mark.set_self_forwarded());
+  ASSERT_EQ(ObjectMonitorTable::monitor_get(object()), monitor);
+  ASSERT_EQ(ObjectSynchronizer::get_hash(object()->mark(), object()), 0u);
+  object()->set_mark(live_mark);
 }
 
 #endif // PRODUCT
+
+TEST_VM(markWord, forwarded_monitor_lookup_does_not_decode_klass) {
+  if (!UseFourByteObjectHeaders) {
+    return;
+  }
+  alignas(16) HeapWord storage[4] = {};
+  oop source = cast_to_oop(&storage[0]);
+  markWord forwarded = markWord::encode_pointer_as_mark(cast_to_oop(&storage[2]));
+  // These bits belong to the pointer, not to the hash-control state.
+  forwarded = markWord(forwarded.value() | markWord::hashctrl_mask_in_place);
+  source->set_mark_full(forwarded);
+  ASSERT_EQ(ObjectMonitorTable::monitor_get(source), nullptr);
+}

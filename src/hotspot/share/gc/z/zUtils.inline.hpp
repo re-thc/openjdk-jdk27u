@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +64,9 @@ inline size_t ZUtils::object_size(zaddress addr) {
 }
 
 inline size_t ZUtils::copy_size(zaddress addr, size_t old_size) {
+  // Load barriers and stack watermarks relocate before a mutator can use a
+  // from-space object. Its hash state is stable while competing relocators copy
+  // it; unlike Shenandoah, ZGC never replaces its header with a forwardee.
   oop obj = to_oop(addr);
   return words_to_bytes(obj->copy_size(bytes_to_words(old_size), obj->mark()));
 }

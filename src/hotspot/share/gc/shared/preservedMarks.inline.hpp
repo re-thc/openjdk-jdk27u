@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +58,10 @@ inline PreservedMarks::PreservedMarks()
              0 /* max_cache_size */) { }
 
 void PreservedMark::set_mark() const {
-  _o->set_mark(_m.copy_hashctrl_from(_o->mark()));
+  markWord live_mark = _o->mark();
+  assert(!UseFourByteObjectHeaders || !live_mark.is_forwarded(),
+         "restore hash metadata from the relocated object, not a forwarding pointer");
+  _o->set_mark(_m.copy_hashctrl_from(live_mark));
 }
 
 #endif // SHARE_GC_SHARED_PRESERVEDMARKS_INLINE_HPP

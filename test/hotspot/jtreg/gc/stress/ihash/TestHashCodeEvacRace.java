@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026, Datadog, Inc. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +30,7 @@
  * @requires vm.gc.Shenandoah
  * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
  * @library /test/lib
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
+ * @run main/othervm -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -Xms64m -Xmx64m
  *      TestHashCodeEvacRace
  */
@@ -41,7 +42,7 @@
  * @requires vm.gc.Shenandoah
  * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
  * @library /test/lib
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
+ * @run main/othervm -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -XX:ShenandoahGCMode=generational -Xms64m -Xmx64m
  *      TestHashCodeEvacRace
  */
@@ -53,7 +54,7 @@
  * @requires vm.gc.Serial
  * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
  * @library /test/lib
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseSerialGC
+ * @run main/othervm -XX:+UseFourByteObjectHeaders -XX:+UseSerialGC
  *      -Xms64m -Xmx64m
  *      TestHashCodeEvacRace
  */
@@ -65,7 +66,7 @@
  * @requires vm.gc.Parallel
  * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
  * @library /test/lib
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseParallelGC
+ * @run main/othervm -XX:+UseFourByteObjectHeaders -XX:+UseParallelGC
  *      -Xms64m -Xmx64m
  *      TestHashCodeEvacRace
  */
@@ -77,7 +78,7 @@
  * @requires vm.gc.G1
  * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
  * @library /test/lib
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseG1GC
+ * @run main/othervm -XX:+UseFourByteObjectHeaders -XX:+UseG1GC
  *      -Xms64m -Xmx64m
  *      TestHashCodeEvacRace
  */
@@ -89,7 +90,7 @@
  * @requires vm.gc.Z
  * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
  * @library /test/lib
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseZGC
+ * @run main/othervm -XX:+UseFourByteObjectHeaders -XX:+UseZGC
  *      -Xms64m -Xmx64m
  *      TestHashCodeEvacRace
  */

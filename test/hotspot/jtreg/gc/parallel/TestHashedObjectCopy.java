@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +35,7 @@ import java.util.Random;
  *          the extra word read by copy_unmarked_to_survivor_space crosses into
  *          unmapped memory, causing a crash.
  * @requires vm.gc.Parallel
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders
+ * @run main/othervm -XX:+UseFourByteObjectHeaders
  *      -XX:+UseParallelGC -Xmx128m -Xms128m -Xmn1m
  *      gc.parallel.TestHashedObjectCopy
  */

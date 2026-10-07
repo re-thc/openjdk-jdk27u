@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,9 +87,11 @@ public:
    *
    * Returns the new object 'update' upon success, or
    * the new forwardee that a competing thread installed. If another
-   * thread self-forwarded the object, returns the object itself.
+   * thread self-forwarded the object, returns the object itself. Returns
+   * nullptr for a non-forwarding header change; discard the copy and retry.
+   * old_mark must be the snapshot used to size and initialize the copy.
    */
-  static inline oop try_update_forwardee(oop obj, oop update);
+  static inline oop try_update_forwardee(oop obj, oop update, markWord old_mark);
 
   /* Tries to atomically self-forward obj. Used by the evacuation path
    * when the copy allocation fails: the failing thread installs the

@@ -1,5 +1,6 @@
 //
 // Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -7290,8 +7291,9 @@ instruct loadNKlassCompactHeaders(rRegN dst, memory mem, rFlagsReg cr)
   effect(KILL cr);
   ins_cost(125);
   format %{
-    "movl    $dst, $mem\t# compressed klass ptr, shifted\n\t"
-    "shrl    $dst, markWord::klass_shift"
+    $$template
+    $$emit$$"movl    $dst, $mem\t# compressed klass ptr, shifted\n\tshrl    $dst, "
+    st->print("%d", UseFourByteObjectHeaders ? markWord::four_byte_klass_shift : markWord::klass_shift_at_offset);
   %}
   ins_encode %{
     // The incoming address is pointing into obj-start + Type::klass_offset(). We need to extract

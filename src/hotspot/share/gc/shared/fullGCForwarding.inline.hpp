@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,7 +277,7 @@ void FullGCForwardingImpl<BITS>::end() {
   size_t fallback_table_size = _fallback_table != nullptr ? _fallback_table->get_mem_size(Thread::current()) : 0;
   log_info(gc)("Total forwardings: " UINT64_FORMAT ", fallback forwardings: " UINT64_FORMAT
                 ", ratio: %f, memory used by fallback table: %zu%s, memory used by bases table: %zu%s",
-               _num_forwardings, _num_fallback_forwardings, static_cast<float>(_num_forwardings) / static_cast<float>(_num_fallback_forwardings),
+               _num_forwardings, _num_fallback_forwardings, _num_fallback_forwardings == 0 ? 0.0f : static_cast<float>(_num_forwardings) / static_cast<float>(_num_fallback_forwardings),
                byte_size_in_proper_unit(fallback_table_size),
                proper_unit_for_byte_size(fallback_table_size),
                byte_size_in_proper_unit(sizeof(HeapWord*) * _num_regions),

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,6 +217,8 @@ public class Mark extends VMObject {
       long address = addr.asLongValue();
       int x = (int) address;
       int y = (int) (address >>> 32);
+      // Keep this bit-identical to FastHash::get_hash32 in
+      // src/hotspot/share/utilities/fastHash.hpp.
       int multiplier = 0x337954D5;
       int low = x ^ 0xAAAAAAAA;
       long product = Integer.toUnsignedLong(low) * Integer.toUnsignedLong(multiplier);

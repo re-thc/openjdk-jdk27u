@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +31,7 @@ package gc.stress.ihash;
  * @requires vm.gc.G1
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseG1GC
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseG1GC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
  *      -XX:-ExplicitGCInvokesConcurrent
  *      -Xmx512m -XX:G1HeapRegionSize=1M
@@ -44,7 +45,7 @@ package gc.stress.ihash;
  * @requires vm.gc.Shenandoah
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
  *      -XX:-ExplicitGCInvokesConcurrent
  *      -Xmx512m
@@ -59,7 +60,7 @@ package gc.stress.ihash;
  * @requires vm.gc.Shenandoah
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
  *      -XX:-ExplicitGCInvokesConcurrent
  *      -XX:ShenandoahGCHeuristics=aggressive
@@ -77,7 +78,7 @@ package gc.stress.ihash;
  * @requires vm.gc.Shenandoah
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
  *      -XX:-ExplicitGCInvokesConcurrent
  *      -Xmx512m
@@ -94,7 +95,7 @@ package gc.stress.ihash;
  * @requires vm.gc.Shenandoah
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
  *      -XX:-ExplicitGCInvokesConcurrent
  *      -XX:ShenandoahGCHeuristics=aggressive

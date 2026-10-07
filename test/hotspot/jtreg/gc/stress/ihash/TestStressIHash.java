@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026, Datadog, Inc. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +31,7 @@ package gc.stress.ihash;
  * @requires vm.gc.Serial
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseSerialGC
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseSerialGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
  *      -Xmx256m
  *      gc.stress.ihash.TestStressIHash
@@ -43,7 +44,7 @@ package gc.stress.ihash;
  * @requires vm.gc.Parallel
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseParallelGC
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseParallelGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
  *      -Xmx256m
  *      gc.stress.ihash.TestStressIHash
@@ -56,7 +57,7 @@ package gc.stress.ihash;
  * @requires vm.gc.G1
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseG1GC
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseG1GC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
  *      -Xmx256m
  *      gc.stress.ihash.TestStressIHash
@@ -69,7 +70,7 @@ package gc.stress.ihash;
  * @requires vm.gc.Shenandoah
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
  *      -Xmx256m
  *      gc.stress.ihash.TestStressIHash
@@ -82,7 +83,7 @@ package gc.stress.ihash;
  * @requires vm.gc.Z
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseZGC
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseZGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
  *      -Xmx256m
  *      gc.stress.ihash.TestStressIHash
@@ -96,7 +97,7 @@ package gc.stress.ihash;
  * @requires vm.opt.TieredCompilation != true
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseSerialGC
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseSerialGC
  *      -XX:-TieredCompilation
  *      -Xmx256m
  *      gc.stress.ihash.TestStressIHash clone-ref
@@ -110,7 +111,7 @@ package gc.stress.ihash;
  * @requires vm.opt.TieredCompilation != true
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseParallelGC
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseParallelGC
  *      -XX:-TieredCompilation
  *      -Xmx256m
  *      gc.stress.ihash.TestStressIHash clone-ref
@@ -124,7 +125,7 @@ package gc.stress.ihash;
  * @requires vm.opt.TieredCompilation != true
  * @key stress
  * @run main/othervm/timeout=300
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseG1GC
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseG1GC
  *      -XX:-TieredCompilation
  *      -Xmx256m
  *      gc.stress.ihash.TestStressIHash clone-ref

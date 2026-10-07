@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4846,6 +4847,11 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
     // the null check after castPP removal.
     Node* no_ctrl = nullptr;
     Node* header = make_load(no_ctrl, header_addr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
+
+    // A forwarding pointer carries neither hash control nor a narrow klass.
+    Node* lock_bits = _gvn.transform(new AndXNode(header, _gvn.MakeConX(markWord::lock_mask_in_place)));
+    Node* forwarded = _gvn.transform(new CmpXNode(lock_bits, _gvn.MakeConX(markWord::marked_value)));
+    generate_slow_guard(_gvn.transform(new BoolNode(forwarded, BoolTest::eq)), slow_region);
 
     // Test the header to see if the object is in hashed or copied state.
     Node* hashctrl_mask  = _gvn.MakeConX(markWord::hashctrl_mask_in_place);

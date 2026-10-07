@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1345,13 +1346,10 @@ void Klass::on_secondary_supers_verification_failure(Klass* super, Klass* sub, b
         msg, sub->external_name(), super->external_name(), linear_result, table_result);
 }
 
-static int expanded = 0;
-static int not_expanded = 0;
 bool Klass::expand_for_hash(oop obj, markWord m) const {
   assert(UseFourByteObjectHeaders, "only with compact i-hash");
-  {
-    ResourceMark rm;
-    assert((size_t)hash_offset_in_bytes(obj,m ) <= (obj->base_size_given_klass(m, this) * HeapWordSize), "hash offset must be eq or lt base size: hash offset: %zu, base size: %zu, class-name: %s", hash_offset_in_bytes(obj, m), obj->base_size_given_klass(m, this) * HeapWordSize, external_name());
-  }
-  return obj->base_size_given_klass(m, this) * HeapWordSize - hash_offset_in_bytes(obj, m) < (int)sizeof(uint32_t);
+  size_t base_size = obj->base_size_given_klass(m, this) * HeapWordSize;
+  size_t hash_offset = hash_offset_in_bytes(obj, m);
+  assert(hash_offset <= base_size, "hash offset %zu exceeds base size %zu", hash_offset, base_size);
+  return base_size - hash_offset < sizeof(uint32_t);
 }

@@ -145,7 +145,7 @@ jobs:
           make test-prebuilt TEST='gtest:all' GTEST="JAVA_OPTIONS=$flags"
           test ! -f build/run-test-prebuilt/make-support/exit-with-error
           make test-prebuilt \
-            TEST='test/hotspot/jtreg/runtime/CompactObjectHeaders test/hotspot/jtreg/gc/stress/ihash test/jdk/java/lang/instrument/FourByteHeaderObjectSize.java test/hotspot/jtreg/compiler/intrinsics/base64/TestBase64.java test/hotspot/jtreg/compiler/intrinsics/string/TestStringIntrinsics.java test/hotspot/jtreg/compiler/c2/irTests/stringopts/TestArrayCopySelect.java test/hotspot/jtreg/compiler/loopopts/superword/TestAlignVector.java' \
+            TEST='test/hotspot/jtreg/runtime/CompactObjectHeaders test/hotspot/jtreg/gc/stress/ihash test/hotspot/jtreg/gc/g1/TestFourByteHeaderHashExpansion.java test/jdk/java/lang/instrument/FourByteHeaderObjectSize.java test/hotspot/jtreg/compiler/intrinsics/base64/TestBase64.java test/hotspot/jtreg/compiler/intrinsics/string/TestStringIntrinsics.java test/hotspot/jtreg/compiler/c2/irTests/stringopts/TestArrayCopySelect.java test/hotspot/jtreg/compiler/loopopts/superword/TestAlignVector.java' \
             JTREG="JAVA_OPTIONS=$flags;VERBOSE=fail,error,time;TIMEOUT_FACTOR=4;JOBS=2"
           test ! -f build/run-test-prebuilt/make-support/exit-with-error
       - uses: actions/upload-artifact@v6

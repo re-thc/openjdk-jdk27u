@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -376,10 +377,14 @@ void oopDesc::forward_to(oop p) {
   assert(cast_from_oop<oopDesc*>(p) != this,
          "must not be used for self-forwarding, use forward_to_self() instead");
   markWord m = markWord::encode_pointer_as_mark(p);
-  if (UseFourByteObjectHeaders && p->mark().is_expanded() && !mark().is_expanded()) {
+  // copy_size expands exactly hashed-not-expanded sources; as in the
+  // atomic path, this tag lets size_forwarded recover the original size.
+  if (UseFourByteObjectHeaders && mark().is_hashed_not_expanded()) {
     m = m.set_forward_expanded();
   }
   assert(m.decode_pointer() == p, "encoding must be reversible");
+  // A full forwarding pointer overwrites an array's length. Its copy
+  // retains that length; size_forwarded reads the copy until restoration.
   set_mark_full(m);
 }
 

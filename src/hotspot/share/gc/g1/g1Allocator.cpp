@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,10 +249,10 @@ HeapWord* G1Allocator::par_allocate_during_gc(G1HeapRegionAttr dest,
 
 #ifdef ASSERT
 void G1Allocator::assert_not_humongous(size_t word_size) {
-  // With CompactObjectHeaders, objects can expand during copy to accomodate hashcode.
+  // With CompactObjectHeaders, objects can expand during copy to accommodate an identity hash.
   // It's possible this expansion crosses the humongous threshold. In this case, we allow
   // that and just treat it as not humongous.
-  size_t pre_expansion_size = UseFourByteObjectHeaders ? word_size - 1 : word_size;
+  size_t pre_expansion_size = UseFourByteObjectHeaders ? word_size - MinObjAlignment : word_size;
   assert(!_g1h->is_humongous(pre_expansion_size),
           "we should not be seeing humongous-size allocations in this path");
 }

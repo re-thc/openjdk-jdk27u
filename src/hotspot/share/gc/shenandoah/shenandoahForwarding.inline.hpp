@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,58 +94,47 @@ inline bool ShenandoahForwarding::is_self_forwarded(oop obj) {
   return obj->mark().is_self_forwarded();
 }
 
-inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
-  markWord old_mark = obj->mark();
-  if (has_forwardee(old_mark)) {
-    return cast_to_oop(to_forwardee(old_mark));
-  }
-  if (old_mark.is_self_forwarded()) {
-    // Another thread lost the evacuation race; the object stays put.
-    return obj;
-  }
-
+inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update, markWord old_mark) {
+  assert(!old_mark.is_forwarded(), "copy must be sized from an unforwarded mark");
   markWord new_mark = markWord::encode_pointer_as_mark(update);
   if (UseFourByteObjectHeaders && old_mark.is_hashed_not_expanded()) {
     new_mark = markWord(new_mark.value() | FWDED_HASH_TRANSITION);
   }
+  // Publish only if the header used to size and initialize the copy is unchanged.
+  // In particular, a newly installed hash may require a larger allocation.
   markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_conservative);
   if (prev_mark == old_mark) {
     return update;
   }
-  // Concurrent writers on a cset object's mark can only be other evacuation
-  // threads installing forwarding (real or self). Mutators cannot reach the
-  // mark of a not-yet-forwarded cset object: LRB + stack watermark barriers
-  // redirect all reference uses before a Java-level operation can touch it.
-  // So the only possible failure modes are a regular forwardee (marked) or
-  // a self-forward (possibly with mutator lock/hash mods layered on top
-  // after the self-forward became visible).
   if (has_forwardee(prev_mark)) {
     return cast_to_oop(to_forwardee(prev_mark));
   }
-  assert(prev_mark.is_self_forwarded(),
-         "concurrent writers on cset objects must install forwarding: prev=" INTPTR_FORMAT,
-         prev_mark.value());
-  return obj;
+  if (prev_mark.is_self_forwarded()) {
+    return obj;
+  }
+  // A non-forwarding header change does not evacuate the object. The caller
+  // must discard this copy and retry allocation and initialization.
+  return nullptr;
 }
 
 inline oop ShenandoahForwarding::try_forward_to_self(oop obj, markWord old_mark) {
   assert(!old_mark.is_forwarded(),
          "caller must pass a non-forwarded mark: old=" INTPTR_FORMAT, old_mark.value());
-  markWord new_mark = old_mark.set_self_forwarded();
-  markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_conservative);
-  if (prev_mark == old_mark) {
-    // We installed the self-forward.
-    return nullptr;
+  while (true) {
+    markWord new_mark = old_mark.set_self_forwarded();
+    markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_conservative);
+    if (prev_mark == old_mark) {
+      return nullptr;
+    }
+    if (has_forwardee(prev_mark)) {
+      return cast_to_oop(to_forwardee(prev_mark));
+    }
+    if (prev_mark.is_self_forwarded()) {
+      return obj;
+    }
+    // Preserve any intervening lock, hash or field update when retrying.
+    old_mark = prev_mark;
   }
-  // Same invariant as in try_update_forwardee: the only races on a
-  // cset object's mark come from other evac threads installing forwarding.
-  if (has_forwardee(prev_mark)) {
-    return cast_to_oop(to_forwardee(prev_mark));
-  }
-  assert(prev_mark.is_self_forwarded(),
-         "concurrent writers on cset objects must install forwarding: prev=" INTPTR_FORMAT,
-         prev_mark.value());
-  return obj;
 }
 
 inline Klass* ShenandoahForwarding::klass(oop obj) {

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,6 +205,8 @@ public:
   // distinguish it.
   static int klass_offset() {
     if (UseFourByteObjectHeaders) {
+      // Synthetic AddP offset for LoadNKlass only; offset 1 is inside the
+      // header and cannot address a Java field or array element.
       return 1;
     } else {
       return oopDesc::klass_offset_in_bytes();

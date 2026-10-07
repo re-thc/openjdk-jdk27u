@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2022, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,6 +28,7 @@
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/workerPolicy.hpp"
+#include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shenandoah/shenandoahArguments.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -206,6 +208,8 @@ void ShenandoahArguments::initialize() {
         ShenandoahMomentaryAllocRateSampleWindow, ShenandoahRecentAllocRateSampleWindow,
         ShenandoahAllocRateSampleWindow));
   }
+  FullGCForwarding::initialize_flags(MaxHeapSize);
+
 }
 
 size_t ShenandoahArguments::conservative_max_heap_alignment() {

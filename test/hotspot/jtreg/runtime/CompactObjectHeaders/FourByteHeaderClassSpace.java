@@ -111,7 +111,7 @@ public class FourByteHeaderClassSpace extends ClassLoader {
     public static void main(String[] args) throws Exception {
         if (args.length != 0) { load(); return; }
         new OutputAnalyzer(ProcessTools.createLimitedTestJavaProcessBuilder(
-                "-XX:+UnlockExperimentalVMOptions", "-XX:+UseFourByteObjectHeaders",
+                "-XX:+UseFourByteObjectHeaders",
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 // Avoid repeated C2 dependency scans of half a million new
                 // subclasses. This test exercises class-space encoding and exhaustion.
