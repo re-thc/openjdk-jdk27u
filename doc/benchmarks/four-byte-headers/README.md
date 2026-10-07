@@ -72,9 +72,9 @@ The [final application report](results/applications.md) retains all final fork
 JSON files, summary CSVs and image fingerprints. The
 [supplementary layout report](results/validation.md) retains concise historical
 layout/hash summaries, including measured costs. The
-[CI snapshot](results/applications/final-ci-snapshot.json) links the completed
-three-layout run and records audited test summaries; full JTRs and logs
-are available as workflow artifacts.
+[current CI snapshot](results/applications/review-ci-snapshot.json) records the
+review-fix runs. The [earlier completed CI audit](results/applications/final-ci-snapshot.json)
+belongs to the prior runtime revision; full JTRs and logs are workflow artifacts.
 
 The additional locking/hash race uses JCStress 0.16, JNA and JNA platform
 5.8.0, and jopt-simple 4.6. Set `JCSTRESS_CP` to those four jars, then run:
@@ -175,10 +175,8 @@ upstream default sixteen operations, discarding the first eight. The earlier
 six-fork, eight-operation study was inconclusive, so the longer study was
 specified before final-image timings. Workload size remains unchanged. Memory runs use
 twelve separate JVMs per layout and three operations with the heap plugin.
-The initial three-fork study had a very wide database-heap interval; the
-exploratory memory-only follow-up adds nine forks without replacing or
-discarding the first three. Both summaries are retained, and timing data
-are unchanged:
+The review-fix study specifies all twelve memory forks before measurements.
+The prior image's exploratory memory follow-up remains in Git history:
 
 ```sh
 DATABASE_FORKS=12 DATABASE_REPEATS=16 \

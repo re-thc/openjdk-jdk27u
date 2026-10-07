@@ -4,39 +4,39 @@
   "data": {
     "db-shootout": {
       "results": [{
-        "retained_heap_after_bytes": 41780976,
-        "non_heap_before_bytes": 56110336,
-        "uptime_ns": 6438189536,
-        "retained_heap_before_bytes": 34493344,
-        "duration_ns": 5635295249,
-        "rss_before_bytes": 949383168,
-        "non_heap_after_bytes": 57671808,
-        "rss_after_bytes": 1145004032
+        "retained_heap_after_bytes": 75350680,
+        "non_heap_before_bytes": 55841768,
+        "uptime_ns": 6811015063,
+        "retained_heap_before_bytes": 34447312,
+        "duration_ns": 5078009136,
+        "rss_before_bytes": 948088832,
+        "non_heap_after_bytes": 57582360,
+        "rss_after_bytes": 1153372160
       }, {
-        "retained_heap_after_bytes": 45086016,
-        "non_heap_before_bytes": 56513896,
-        "uptime_ns": 12155792122,
-        "retained_heap_before_bytes": 41786712,
-        "duration_ns": 4580602689,
-        "rss_before_bytes": 1145147392,
-        "non_heap_after_bytes": 57068400,
-        "rss_after_bytes": 1150025728
+        "retained_heap_after_bytes": 84691680,
+        "non_heap_before_bytes": 56277920,
+        "uptime_ns": 11993188525,
+        "retained_heap_before_bytes": 75356416,
+        "duration_ns": 4644964411,
+        "rss_before_bytes": 1153380352,
+        "non_heap_after_bytes": 56860544,
+        "rss_after_bytes": 1154404352
       }, {
-        "retained_heap_after_bytes": 41879032,
-        "non_heap_before_bytes": 56677288,
-        "uptime_ns": 16799100774,
-        "retained_heap_before_bytes": 45086216,
-        "duration_ns": 4645730481,
-        "rss_before_bytes": 1150025728,
-        "non_heap_after_bytes": 56799680,
-        "rss_after_bytes": 1152122880
+        "retained_heap_after_bytes": 103268424,
+        "non_heap_before_bytes": 56530360,
+        "uptime_ns": 16745083471,
+        "retained_heap_before_bytes": 84691896,
+        "duration_ns": 4987998246,
+        "rss_before_bytes": 1154428928,
+        "non_heap_after_bytes": 56649496,
+        "rss_after_bytes": 1154924544
       }],
       "termination": "normal"
     }
   },
   "environment": {
     "os": {
-      "virt_mem_committed": 4055629824,
+      "virt_mem_committed": 4064026624,
       "name": "Linux",
       "open_fd_count": 69,
       "available_processors": 4,
@@ -45,17 +45,17 @@
       "arch": "amd64",
       "max_fd_count": 16384,
       "swap_space_free": 0,
-      "phys_mem_free": 9756348416,
+      "phys_mem_free": 7402790912,
       "swap_space_total": 0
     },
     "vm": {
       "termination": "normal",
       "name": "OpenJDK 64-Bit Server VM",
       "classloading": {
-        "class_count": 6966,
-        "classes_total": 6966
+        "class_count": 6965,
+        "classes_total": 6965
       },
-      "start_ns": 106114694052353,
+      "start_ns": 159358781052392,
       "mode": "mixed mode, sharing",
       "args": ["-Xms512m", "-Xmx512m", "-XX:ActiveProcessorCount=4", "-XX:+PrintFlagsFinal", "--enable-native-access=ALL-UNNAMED", "--add-opens=java.base/java.nio=ALL-UNNAMED", "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"],
       "vendor": "Oracle Corporation",
@@ -63,36 +63,36 @@
       "spec_name": "Java Virtual Machine Specification",
       "compiler": {
         "name": "HotSpot 64-Bit Tiered Compilers",
-        "compilation_time_ms": 10310
+        "compilation_time_ms": 12200
       },
-      "start_iso": "2026-10-07T03:48:35.359Z",
+      "start_iso": "2026-10-07T18:35:59.446Z",
       "collectors": [{
         "name": "G1 Young Generation",
-        "collection_count": 170,
-        "collection_time_ms": 574
+        "collection_count": 182,
+        "collection_time_ms": 776
       }, {
         "name": "G1 Concurrent GC",
         "collection_count": 4,
-        "collection_time_ms": 5
+        "collection_time_ms": 6
       }, {
         "name": "G1 Old Generation",
         "collection_count": 9,
-        "collection_time_ms": 191
+        "collection_time_ms": 282
       }],
-      "start_unix_ms": 1791344915359,
+      "start_unix_ms": 1791398159446,
       "version": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
       "pools": [{
         "name": "CodeHeap 'non-nmethods'",
         "type": "NON_HEAP",
         "usage": {
           "init": 2555904,
-          "used": 2105088,
+          "used": 2101760,
           "committed": 2555904,
           "max": 5836800
         },
         "peak_usage": {
           "init": 2555904,
-          "used": 2206208,
+          "used": 2167424,
           "committed": 2555904,
           "max": 5836800
         }
@@ -101,13 +101,13 @@
         "type": "NON_HEAP",
         "usage": {
           "init": 0,
-          "used": 40322992,
+          "used": 40298432,
           "committed": 40763392,
           "max": -1
         },
         "peak_usage": {
           "init": 0,
-          "used": 40322992,
+          "used": 40298432,
           "committed": 40763392,
           "max": -1
         }
@@ -116,14 +116,14 @@
         "type": "NON_HEAP",
         "usage": {
           "init": 2555904,
-          "used": 5447424,
-          "committed": 6881280,
+          "used": 5302912,
+          "committed": 6750208,
           "max": 122912768
         },
         "peak_usage": {
           "init": 2555904,
-          "used": 6873600,
-          "committed": 6881280,
+          "used": 6702592,
+          "committed": 6750208,
           "max": 122912768
         }
       }, {
@@ -131,13 +131,13 @@
         "type": "NON_HEAP",
         "usage": {
           "init": 0,
-          "used": 7608592,
+          "used": 7603472,
           "committed": 7798784,
           "max": 520093696
         },
         "peak_usage": {
           "init": 0,
-          "used": 7608592,
+          "used": 7603472,
           "committed": 7798784,
           "max": 520093696
         }
@@ -161,13 +161,13 @@
         "type": "HEAP",
         "usage": {
           "init": 507510784,
-          "used": 41879032,
+          "used": 103268424,
           "committed": 214958080,
           "max": 536870912
         },
         "peak_usage": {
           "init": 507510784,
-          "used": 289822280,
+          "used": 289427456,
           "committed": 507510784,
           "max": 536870912
         }
@@ -182,8 +182,8 @@
         },
         "peak_usage": {
           "init": 0,
-          "used": 22544384,
-          "committed": 23068672,
+          "used": 40894464,
+          "committed": 40894464,
           "max": -1
         }
       }, {
@@ -191,18 +191,18 @@
         "type": "NON_HEAP",
         "usage": {
           "init": 2555904,
-          "used": 2850048,
+          "used": 2888448,
           "committed": 3342336,
           "max": 122912768
         },
         "peak_usage": {
           "init": 2555904,
-          "used": 3286784,
+          "used": 3333120,
           "committed": 3342336,
           "max": 122912768
         }
       }],
-      "uptime_ms": 22002,
+      "uptime_ms": 22246,
       "compressed_oops_mode": "32-bit",
       "threads": {
         "thread_count": 12,
@@ -214,14 +214,14 @@
       "memory": {
         "heap_usage": {
           "init": 536870912,
-          "used": 60753400,
+          "used": 122142792,
           "committed": 536870912,
           "max": 536870912
         },
         "nonheap_usage": {
           "init": 7667712,
-          "used": 58285720,
-          "committed": 61276160,
+          "used": 58146160,
+          "committed": 61145088,
           "max": -1
         },
         "pending_finalization_count": 0
@@ -234,7 +234,7 @@
       "spec_version": "27",
       "spec_vendor": "Oracle Corporation",
       "spec_name": "Java Platform API Specification",
-      "home": "/workspace/work/final-jdk/release-image",
+      "home": "/workspace/work/pr8-review/release-image",
       "version": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
       "java_vendor": "N/A",
       "library_path": ["/usr/java/packages/lib", "/usr/lib64", "/lib64", "/lib", "/usr/lib"]
