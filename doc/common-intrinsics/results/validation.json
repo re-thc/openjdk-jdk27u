@@ -1,0 +1,730 @@
+{
+  "base_revision": "33e539f2d4a847f283a3793df6eebd41b9d1dfac",
+  "images": {
+    "work/jdk-baseline/lib/server/libjvm.so": "39c3d528b07a3672063fc9280f3a0a3b8a590651423f9d6e2e664c73b052ce13",
+    "work/jdk-bench/lib/server/libjvm.so": "5083e50e4c6930c533d39f1f6644d8947f397ae967d3c5946f9decc02286f981",
+    "work/jdk-arm/lib/server/libjvm.so": "a0a9aa82fa8ba8634becf1ea1b4441c164e73b8cbebbb85f72f7467b4847db7d",
+    "work/jdk-bench/modules/java.base/jdk/internal/util/ArraysSupport.class": "c3e574b72a425759ca032eda2f08557c04d3dea33d35f6221255b44acc40a3c6"
+  },
+  "builds": {
+    "x86_64": "Building target 'jdk' in configuration 'cloud-gcc16'\nUpdating support/modules_libs/java.base/server/libjvm.so due to 2 file(s)\nmold: warning: /workspace/openjdk-jdk27u/make/data/hotspot-symbols/version-script-gcc.txt: cannot assign version `SUNWprivate_1.1` to symbol `__bss_start`: symbol not found\nmold: warning: /workspace/openjdk-jdk27u/make/data/hotspot-symbols/version-script-gcc.txt: cannot assign version `SUNWprivate_1.1` to symbol `_edata`: symbol not found\nmold: warning: /workspace/openjdk-jdk27u/make/data/hotspot-symbols/version-script-gcc.txt: cannot assign version `SUNWprivate_1.1` to symbol `_end`: symbol not found\nFinished building target 'jdk' in configuration 'cloud-gcc16'",
+    "aarch64": "Building targets 'hotspot java.base-libs java.base-launchers' in configuration 'common-aarch64'\nUpdating support/modules_libs/java.base/server/libjvm.so due to 2 file(s)\nFinished building targets 'hotspot java.base-libs java.base-launchers' in configuration 'common-aarch64'"
+  },
+  "suites": [
+    {
+      "name": "hotspot-new",
+      "suite": "hotspot",
+      "summary": "Test results: passed: 5\nReport written to /workspace/openjdk-jdk27u/work/jtreg-final-common-report/html/report.html\nResults written to /workspace/openjdk-jdk27u/work/jtreg-final-common",
+      "results": [
+        {
+          "test": "compiler/intrinsics/common/TestCommonArithmeticIntrinsics.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:27\\:03 UTC 2026",
+          "end": "Wed Oct 07 16\\:27\\:09 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "compiler/intrinsics/common/TestCommonIntrinsicAvailability.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:27\\:03 UTC 2026",
+          "end": "Wed Oct 07 16\\:27\\:10 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "compiler/intrinsics/common/TestCommonIntrinsicFallback.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:27\\:09 UTC 2026",
+          "end": "Wed Oct 07 16\\:27\\:13 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "compiler/intrinsics/common/TestCommonIntrinsics.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:27\\:10 UTC 2026",
+          "end": "Wed Oct 07 16\\:27\\:25 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "compiler/intrinsics/common/TestCommonScalarIntrinsics.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:27\\:13 UTC 2026",
+          "end": "Wed Oct 07 16\\:27\\:16 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        }
+      ]
+    },
+    {
+      "name": "hotspot-existing",
+      "suite": "hotspot",
+      "summary": "Directory \"work/jtreg-final-hotspot\" not found: creating\nDirectory \"work/jtreg-final-hotspot-report\" not found: creating\nTest results: passed: 11; skipped: 4; did not meet platform requirements: 2\nReport written to /workspace/openjdk-jdk27u/work/jtreg-final-hotspot-report/html/report.html\nResults written to /workspace/openjdk-jdk27u/work/jtreg-final-hotspot",
+      "results": [
+        {
+          "test": "compiler/codegen/aes/Test8292158.java",
+          "execStatus": "Passed. Skipped\\: jtreg.SkippedException\\: AES-CTR intrinsic is not available",
+          "start": "Wed Oct 07 15\\:59\\:48 UTC 2026",
+          "end": "Wed Oct 07 15\\:59\\:59 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "compiler/codegen/aes/Test8299817.java",
+          "execStatus": "Passed. Skipped\\: jtreg.SkippedException\\: AES-CTR intrinsic is not available",
+          "start": "Wed Oct 07 15\\:59\\:59 UTC 2026",
+          "end": "Wed Oct 07 16\\:00\\:09 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "compiler/codegen/aes/TestAESMain.java",
+          "execStatus": "Passed. Skipped\\: jtreg.SkippedException\\: AES-CTR intrinsic is not available",
+          "start": "Wed Oct 07 16\\:00\\:09 UTC 2026",
+          "end": "Wed Oct 07 16\\:00\\:36 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "compiler/codegen/aes/TestCipherBlockChainingEncrypt.java",
+          "execStatus": "Passed. Skipped\\: jtreg.SkippedException\\: Base64 intrinsic is not available",
+          "start": "Wed Oct 07 16\\:00\\:29 UTC 2026",
+          "end": "Wed Oct 07 16\\:00\\:37 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "compiler/intrinsics/bigInteger/MontgomeryMultiplyTest.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:00\\:36 UTC 2026",
+          "end": "Wed Oct 07 16\\:00\\:46 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "compiler/intrinsics/bigInteger/TestMulAdd.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:00\\:37 UTC 2026",
+          "end": "Wed Oct 07 16\\:00\\:43 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "compiler/intrinsics/bigInteger/TestMultiplyToLen.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:00\\:43 UTC 2026",
+          "end": "Wed Oct 07 16\\:00\\:57 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "compiler/intrinsics/bigInteger/TestMultiplyToLenReturnProfile.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:00\\:46 UTC 2026",
+          "end": "Wed Oct 07 16\\:00\\:49 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "compiler/intrinsics/bigInteger/TestSquareToLen.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:00\\:49 UTC 2026",
+          "end": "Wed Oct 07 16\\:00\\:53 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "compiler/intrinsics/chacha/TestChaCha20.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:00\\:53 UTC 2026",
+          "end": "Wed Oct 07 16\\:01\\:07 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "compiler/intrinsics/sha/TestDigest.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 15\\:59\\:48 UTC 2026",
+          "end": "Wed Oct 07 16\\:00\\:29 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        }
+      ]
+    },
+    {
+      "name": "jdk-crypto",
+      "suite": "jdk",
+      "summary": "Directory \"work/jtreg-final-crypto\" not found: creating\nDirectory \"work/jtreg-final-crypto-report\" not found: creating\nTest results: passed: 65\nFramework-based tests: 11 = 11 TestNG + 0 JUnit\nReport written to /workspace/openjdk-jdk27u/work/jtreg-final-crypto-report/html/report.html\nResults written to /workspace/openjdk-jdk27u/work/jtreg-final-crypto",
+      "results": [
+        {
+          "test": "com/sun/crypto/provider/Cipher/AEAD/AEADBufferTest.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 15\\:57\\:18 UTC 2026",
+          "end": "Wed Oct 07 15\\:57\\:24 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AEAD/Encrypt.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 15\\:57\\:18 UTC 2026",
+          "end": "Wed Oct 07 15\\:57\\:21 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AEAD/GCMIncrementByte4.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 15\\:57\\:21 UTC 2026",
+          "end": "Wed Oct 07 16\\:01\\:44 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AEAD/GCMIncrementDirect4.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 15\\:57\\:24 UTC 2026",
+          "end": "Wed Oct 07 16\\:01\\:54 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AEAD/GCMLargeDataKAT.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:01\\:44 UTC 2026",
+          "end": "Wed Oct 07 16\\:01\\:47 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AEAD/GCMParameterSpecTest.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:01\\:47 UTC 2026",
+          "end": "Wed Oct 07 16\\:01\\:50 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AEAD/GCMShortBuffer.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:01\\:50 UTC 2026",
+          "end": "Wed Oct 07 16\\:01\\:52 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AEAD/GCMShortInput.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:01\\:52 UTC 2026",
+          "end": "Wed Oct 07 16\\:01\\:55 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AEAD/KeyWrapper.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:01\\:54 UTC 2026",
+          "end": "Wed Oct 07 16\\:01\\:56 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AEAD/OverlapByteBuffer.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:01\\:55 UTC 2026",
+          "end": "Wed Oct 07 16\\:01\\:58 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AEAD/ReadWriteSkip.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:01\\:56 UTC 2026",
+          "end": "Wed Oct 07 16\\:01\\:58 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AEAD/SameBuffer.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:01\\:58 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:00 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AEAD/SealedObjectTest.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:01\\:58 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:00 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AEAD/WrongAAD.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:00 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:02 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/CICO.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:05 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:11 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/CTR.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:06 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:08 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/Padding.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:08 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:10 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/Test4511676.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:10 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:13 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/Test4512524.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:11 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:13 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/Test4512704.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:13 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:15 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/Test4513830.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:13 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:15 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/Test4517355.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:15 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:16 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/Test4626070.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:15 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:17 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/TestAESCipher.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:16 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:18 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithDefaultProvider.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:00 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:03 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithProviderChange.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:02 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:05 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithRemoveAddProvider.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:03 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:06 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/TestCICOWithGCM.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:17 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:21 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/TestCICOWithGCMAndAAD.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:18 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:23 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/TestCopySafe.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:21 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:23 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/TestGCMKeyAndIvCheck.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:23 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:26 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/TestGCMSplitBound.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:23 UTC 2026",
+          "end": "Wed Oct 07 16\\:03\\:03 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/TestGHASH.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:26 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:29 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/TestISO10126Padding.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:29 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:30 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/TestKATForECB_IV.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:30 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:33 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/TestKATForECB_VK.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:33 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:37 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/TestKATForECB_VT.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:37 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:41 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/TestKATForGCM.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:41 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:44 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/TestNoPaddingModes.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:46 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:48 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/TestNonexpanding.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:44 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:46 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/TestSameBuffer.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:48 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:50 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/AES/TestShortBuffer.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:50 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:52 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20KAT.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:03\\:09 UTC 2026",
+          "end": "Wed Oct 07 16\\:03\\:12 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20KeyGeneratorTest.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:03\\:11 UTC 2026",
+          "end": "Wed Oct 07 16\\:03\\:13 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20NoReuse.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:03\\:12 UTC 2026",
+          "end": "Wed Oct 07 16\\:03\\:14 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20Poly1305ParamTest.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:03\\:13 UTC 2026",
+          "end": "Wed Oct 07 16\\:03\\:16 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/ChaCha20/OutputSizeTest.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:03\\:14 UTC 2026",
+          "end": "Wed Oct 07 16\\:03\\:18 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/ChaCha20/UpdateAADTest.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:03\\:16 UTC 2026",
+          "end": "Wed Oct 07 16\\:03\\:18 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/ChaCha20CipherUnitTest.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:52 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:54 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/ChaCha20Poly1305ParametersUnitTest.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:54 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:56 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java\\#id0",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:56 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:58 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java\\#id1",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:58 UTC 2026",
+          "end": "Wed Oct 07 16\\:02\\:59 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java\\#id2",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:02\\:59 UTC 2026",
+          "end": "Wed Oct 07 16\\:03\\:01 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java\\#id3",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:03\\:01 UTC 2026",
+          "end": "Wed Oct 07 16\\:03\\:09 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java\\#id4",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:03\\:03 UTC 2026",
+          "end": "Wed Oct 07 16\\:03\\:11 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "java/security/MessageDigest/ArgumentSanity.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:03\\:18 UTC 2026",
+          "end": "Wed Oct 07 16\\:03\\:20 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "java/security/MessageDigest/ByteBuffers.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:03\\:18 UTC 2026",
+          "end": "Wed Oct 07 16\\:03\\:21 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "java/security/MessageDigest/TestCloneable.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:03\\:20 UTC 2026",
+          "end": "Wed Oct 07 16\\:03\\:23 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "java/security/MessageDigest/TestDigestIOStream.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:03\\:21 UTC 2026",
+          "end": "Wed Oct 07 16\\:04\\:27 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "java/security/MessageDigest/TestDisabledAlgorithms.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:03\\:23 UTC 2026",
+          "end": "Wed Oct 07 16\\:03\\:27 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "java/security/MessageDigest/TestSameLength.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:03\\:27 UTC 2026",
+          "end": "Wed Oct 07 16\\:03\\:33 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "java/security/MessageDigest/TestSameValue.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:03\\:33 UTC 2026",
+          "end": "Wed Oct 07 16\\:03\\:36 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "java/security/MessageDigest/ThreadSafetyTest.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 16\\:03\\:36 UTC 2026",
+          "end": "Wed Oct 07 16\\:04\\:31 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "sun/security/provider/pqc/ML_DSA_Intrinsic_Test.java\\#id0",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 15\\:57\\:15 UTC 2026",
+          "end": "Wed Oct 07 15\\:57\\:18 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "sun/security/provider/pqc/ML_DSA_Intrinsic_Test.java\\#id1",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 15\\:57\\:15 UTC 2026",
+          "end": "Wed Oct 07 15\\:57\\:18 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        }
+      ]
+    },
+    {
+      "name": "jdk-math",
+      "suite": "jdk",
+      "summary": "Directory \"work/jtreg-final-jdk-math\" not found: creating\nDirectory \"work/jtreg-final-jdk-math-report\" not found: creating\nTest results: passed: 4\nReport written to /workspace/openjdk-jdk27u/work/jtreg-final-jdk-math-report/html/report.html\nResults written to /workspace/openjdk-jdk27u/work/jtreg-final-jdk-math",
+      "results": [
+        {
+          "test": "java/lang/Integer/Unsigned.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 15\\:45\\:57 UTC 2026",
+          "end": "Wed Oct 07 15\\:45\\:59 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "java/lang/Long/Unsigned.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 15\\:45\\:57 UTC 2026",
+          "end": "Wed Oct 07 15\\:45\\:59 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "java/lang/Math/ExactArithTests.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 15\\:45\\:59 UTC 2026",
+          "end": "Wed Oct 07 15\\:46\\:01 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        },
+        {
+          "test": "java/util/Arrays/HashCode.java",
+          "execStatus": "Passed. Execution successful",
+          "start": "Wed Oct 07 15\\:45\\:59 UTC 2026",
+          "end": "Wed Oct 07 15\\:46\\:02 UTC 2026",
+          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
+          "jtregVersion": "jtreg 8.3 dev 1"
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Selected suites only; full tier1/tier2 not run",
+    "AArch64 fastdebug HotSpot/java.base cross-build with QEMU correctness checks, no native ARM performance",
+    "Pure C1 build configuration not tested",
+    "Tests with their own VM options retain their prescribed compilation mode"
+  ],
+  "successful_jtreg_results": 85
+}

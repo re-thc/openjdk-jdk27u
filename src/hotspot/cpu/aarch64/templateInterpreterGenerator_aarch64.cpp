@@ -25,16 +25,17 @@
 
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.hpp"
-#include "compiler/disassembler.hpp"
+#include "commonIntrinsics_aarch64.inline.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
+#include "interpreter/bytecodeTracer.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
-#include "interpreter/interp_masm.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
-#include "interpreter/bytecodeTracer.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/method.hpp"
@@ -46,6 +47,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/commonIntrinsics.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
@@ -978,6 +980,40 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
   return entry;
 
+}
+
+address TemplateInterpreterGenerator::generate_common_intrinsic_entry(vmIntrinsics::ID id) {
+  address entry = __ pc();
+  Label slow_path;
+  __ ldrw(rscratch1, Address(rthread, JavaThread::interp_only_mode_offset()));
+  __ cbnzw(rscratch1, slow_path);
+  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
+  if (CommonIntrinsics::is_scalar(id)) {
+    bool binary = CommonIntrinsics::is_binary_scalar(id);
+    bool wide = CommonIntrinsics::scalar_is_wide(id);
+    int offset = binary ? (wide ? 2 : 1) * wordSize : 0;
+    __ ldr(r0, Address(esp, offset));
+    if (binary) __ ldr(r1, Address(esp, 0));
+    common_scalar_intrinsic(_masm, id, r0, r0, binary ? r1 : noreg, r2, r3, v0, &slow_path);
+    __ andr(sp, r19_sender_sp, -16);
+    __ ret(lr);
+    __ bind(slow_path);
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+    return entry;
+  }
+  // Arguments stay on the expression stack so the Java fallback can reuse them.
+  __ mov(c_rarg0, esp);
+  __ stp(rscratch2, lr, Address(__ pre(sp, -2 * wordSize)));
+  __ super_call_VM_leaf(CommonIntrinsics::entry_for(id), c_rarg0);
+  __ ldp(rscratch2, lr, Address(__ post(sp, 2 * wordSize)));
+  __ mov(rscratch1, CommonIntrinsics::fallback);
+  __ cmp(r0, rscratch1);
+  __ br(Assembler::EQ, slow_path);
+  __ andr(sp, r19_sender_sp, -16);
+  __ ret(lr);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
 }
 
 /**

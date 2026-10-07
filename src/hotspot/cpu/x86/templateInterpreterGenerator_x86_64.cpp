@@ -23,11 +23,13 @@
  */
 
 #include "asm/macroAssembler.hpp"
+#include "commonIntrinsics_x86.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
+#include "runtime/commonIntrinsics.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -498,6 +500,39 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   __ jmp(rax);
 
   return entry_point;
+}
+
+address TemplateInterpreterGenerator::generate_common_intrinsic_entry(vmIntrinsics::ID id) {
+  address entry = __ pc();
+  Label slow_path;
+  __ cmpl(Address(r15_thread, JavaThread::interp_only_mode_offset()), 0);
+  __ jcc(Assembler::notEqual, slow_path);
+  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
+  if (CommonIntrinsics::is_scalar(id)) {
+    bool binary = CommonIntrinsics::is_binary_scalar(id);
+    bool wide = CommonIntrinsics::scalar_is_wide(id);
+    int offset = binary ? (wide ? 3 : 2) * wordSize : wordSize;
+    __ movq(rax, Address(rsp, offset));
+    if (binary) __ movq(rcx, Address(rsp, wordSize));
+    common_scalar_intrinsic(_masm, id, rax, rax, binary ? rcx : noreg, rdx, rsi, &slow_path);
+    __ pop(rcx);
+    __ mov(rsp, r13);
+    __ jmp(rcx);
+    __ bind(slow_path);
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+    return entry;
+  }
+  __ lea(c_rarg0, Address(rsp, wordSize));
+  __ super_call_VM_leaf(CommonIntrinsics::entry_for(id), c_rarg0);
+  __ mov64(rscratch1, CommonIntrinsics::fallback);
+  __ cmpq(rax, rscratch1);
+  __ jcc(Assembler::equal, slow_path);
+  __ pop(rcx);
+  __ mov(rsp, r13);
+  __ jmp(rcx);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
 }
 
 address TemplateInterpreterGenerator::generate_currentThread() {

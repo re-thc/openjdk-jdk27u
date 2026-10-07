@@ -37,6 +37,7 @@
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/commonIntrinsics.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_version.hpp"
@@ -108,6 +109,9 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 }
 
 bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
+  if (CommonIntrinsics::is_available_for_c1(id)) {
+    return true;
+  }
   switch (id) {
   case vmIntrinsics::_compareAndSetLong:
     break;

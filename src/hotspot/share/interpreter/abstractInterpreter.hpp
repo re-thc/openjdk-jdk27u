@@ -118,6 +118,7 @@ class AbstractInterpreter: AllStatic {
   static bool       _notice_safepoints;                         // true if safepoints are activated
 
   // method entry points
+  static address    _common_entry_table[static_cast<int>(vmIntrinsics::ID_LIMIT)];
   static address    _entry_table[number_of_method_entries];     // entry points for a given method
   static address    _native_abi_to_tosca[number_of_result_handlers];  // for native method result handlers
   static address    _slow_signature_handler;                              // the native method generic (slow) signature handler
@@ -139,7 +140,7 @@ class AbstractInterpreter: AllStatic {
   // Method activation
   static MethodKind method_kind(const methodHandle& m);
   static address    entry_for_kind(MethodKind k)                { assert(0 <= k && k < number_of_method_entries, "illegal kind"); return _entry_table[k]; }
-  static address    entry_for_method(const methodHandle& m)     { return entry_for_kind(method_kind(m)); }
+  static address    entry_for_method(const methodHandle& m);
 
   // used for bootstrapping method handles:
   static void       set_entry_for_kind(MethodKind k, address e);

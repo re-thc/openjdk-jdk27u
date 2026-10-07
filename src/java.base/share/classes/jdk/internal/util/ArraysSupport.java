@@ -31,6 +31,7 @@ import java.util.Objects;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -371,6 +372,33 @@ public class ArraysSupport {
             case T_INT -> hashCode(initialValue, (int[]) array, fromIndex, length);
                 default -> throw new IllegalArgumentException("unrecognized basic type: " + basicType);
         };
+    }
+
+    // C1 parses this control flow so short arrays use ordinary Java code and
+    // large arrays retain counted-loop safepoints. C2 keeps its original
+    // vectorizedHashCode intrinsic.
+    @ForceInline
+    private static int vectorizedHashCodeC1(Object array, int fromIndex, int length,
+                                           int initialValue, int basicType) {
+        if (length >= 32 && length <= 65536) {
+            return vectorizedHashCodeLeaf(array, fromIndex, length, initialValue, basicType);
+        }
+        return switch (basicType) {
+            case T_BOOLEAN -> unsignedHashCode(initialValue, (byte[]) array, fromIndex, length);
+            case T_CHAR -> array instanceof byte[]
+                    ? utf16hashCode(initialValue, (byte[]) array, fromIndex, length)
+                    : hashCode(initialValue, (char[]) array, fromIndex, length);
+            case T_BYTE -> hashCode(initialValue, (byte[]) array, fromIndex, length);
+            case T_SHORT -> hashCode(initialValue, (short[]) array, fromIndex, length);
+            case T_INT -> hashCode(initialValue, (int[]) array, fromIndex, length);
+                default -> throw new IllegalArgumentException("unrecognized basic type: " + basicType);
+        };
+    }
+
+    @IntrinsicCandidate
+    private static int vectorizedHashCodeLeaf(Object array, int fromIndex, int length,
+                                             int initialValue, int basicType) {
+        return vectorizedHashCode(array, fromIndex, length, initialValue, basicType);
     }
 
     private static int unsignedHashCode(int result, byte[] a, int fromIndex, int length) {

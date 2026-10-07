@@ -40,6 +40,7 @@
 #include "interpreter/bytecode.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/commonIntrinsics.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
@@ -3634,7 +3635,7 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   // create intrinsic node
   const bool has_receiver = !callee->is_static();
   ValueType* result_type = as_ValueType(callee->return_type());
-  ValueStack* state_before = copy_state_for_exception();
+  ValueStack* state_before = CommonIntrinsics::is_supported(id) && CommonIntrinsics::can_fallback(id) ? copy_state_before() : copy_state_for_exception();
 
   Values* args = state()->pop_arguments(callee->arg_size());
 
@@ -3657,8 +3658,8 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
 
   Intrinsic* result = new Intrinsic(result_type, callee->intrinsic_id(),
                                     args, has_receiver, state_before,
-                                    vmIntrinsics::preserves_state(id),
-                                    vmIntrinsics::can_trap(id));
+                                    CommonIntrinsics::is_scalar(id) || vmIntrinsics::preserves_state(id),
+                                    CommonIntrinsics::is_scalar(id) ? CommonIntrinsics::can_fallback(id) : vmIntrinsics::can_trap(id));
   // append instruction & push result
   Value value = append_split(result);
   if (result_type != voidType && !ignore_return) {
@@ -3689,6 +3690,12 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
     } else {
       return false;
     }
+  }
+  if (callee->intrinsic_id() == vmIntrinsics::_vectorizedHashCode && CommonIntrinsics::enabled()) {
+    ciMethod* helper = callee->holder()->find_method(ciSymbol::make("vectorizedHashCodeC1"),
+                                                  callee->signature()->as_symbol());
+    if (helper == nullptr) return false;
+    return try_inline_full(helper, true, ignore_return, Bytecodes::_invokestatic);
   }
   build_graph_for_intrinsic(callee, ignore_return);
   if (_inline_bailout_msg != nullptr) {
@@ -4219,7 +4226,15 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee, bool ignore_return
           // We don't do CHA here so only inline static and statically bindable methods.
           if (target->is_static() || target->can_be_statically_bound()) {
             Bytecodes::Code bc = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual;
-            if (try_inline(target, /*holder_known*/ !callee->is_static(), ignore_return, bc)) {
+            // linkTo* has popped MemberName. A guarded leaf cannot resume
+            // at this adapter bytecode with the shortened expression stack.
+            // Parsing the target gives any fallback a normal Java frame.
+            bool guarded = CommonIntrinsics::is_supported(target->intrinsic_id()) &&
+                           CommonIntrinsics::can_fallback(target->intrinsic_id());
+            bool inlined = guarded
+              ? try_inline_full(target, /*holder_known*/ !callee->is_static(), ignore_return, bc)
+              : try_inline(target, /*holder_known*/ !callee->is_static(), ignore_return, bc);
+            if (inlined) {
               return true;
             }
           } else {

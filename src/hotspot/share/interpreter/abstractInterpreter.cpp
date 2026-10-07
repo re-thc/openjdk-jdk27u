@@ -88,6 +88,7 @@ bool       AbstractInterpreter::_notice_safepoints                          = fa
 address    AbstractInterpreter::_rethrow_exception_entry                    = nullptr;
 
 address    AbstractInterpreter::_slow_signature_handler;
+address    AbstractInterpreter::_common_entry_table[static_cast<int>(vmIntrinsics::ID_LIMIT)];
 address    AbstractInterpreter::_entry_table            [AbstractInterpreter::number_of_method_entries];
 address    AbstractInterpreter::_native_abi_to_tosca    [AbstractInterpreter::number_of_result_handlers];
 
@@ -103,6 +104,14 @@ AbstractInterpreterGenerator::AbstractInterpreterGenerator() {
 
 //------------------------------------------------------------------------------------------------------------------------
 // Entry points
+
+address AbstractInterpreter::entry_for_method(const methodHandle& m) {
+  address common_entry = _common_entry_table[vmIntrinsics::as_int(m->intrinsic_id())];
+  if (common_entry != nullptr && !m->is_synchronized() && !m->is_native()) {
+    return common_entry;
+  }
+  return entry_for_kind(method_kind(m));
+}
 
 AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHandle& m) {
   // Abstract method?

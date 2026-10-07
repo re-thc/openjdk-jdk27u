@@ -649,8 +649,20 @@ void LIR_Assembler::emit_op0(LIR_Op0* op) {
 }
 
 
+#if !defined(AMD64) && !defined(AARCH64)
+void LIR_Assembler::common_scalar_op(LIR_Op2* op) {
+  ShouldNotReachHere();
+}
+#endif
+
 void LIR_Assembler::emit_op2(LIR_Op2* op) {
   switch (op->code()) {
+    case lir_common_scalar:
+      common_scalar_op(op);
+      if (static_cast<LIR_OpCommonScalar*>(op)->fallback() != nullptr) {
+        append_code_stub(static_cast<LIR_OpCommonScalar*>(op)->fallback());
+      }
+      break;
     case lir_cmp:
       if (op->info() != nullptr) {
         assert(op->in_opr1()->is_address() || op->in_opr2()->is_address(),

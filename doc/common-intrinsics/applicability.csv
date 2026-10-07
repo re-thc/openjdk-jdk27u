@@ -1,0 +1,392 @@
+id,status,reason
+_hashCode,Deferred dedicated lowering,"Native entry; identity hashing can inflate headers and requires VM transitions, safepoints and JVMTI handling."
+_identityHashCode,Deferred dedicated lowering,"Native identity-hash entry; shares the VM header/locking protocol, not a bounded array leaf."
+_getClass,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_ceil,Deferred dedicated lowering,"Floating-point C2 lowering remains separate: it needs FP operands/results and precise NaN, signed-zero or rounding semantics; the integer scalar ABI does not implement it."
+_floor,Deferred dedicated lowering,"Floating-point C2 lowering remains separate: it needs FP operands/results and precise NaN, signed-zero or rounding semantics; the integer scalar ABI does not implement it."
+_rint,Deferred dedicated lowering,"Floating-point C2 lowering remains separate: it needs FP operands/results and precise NaN, signed-zero or rounding semantics; the integer scalar ABI does not implement it."
+_dsin,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_dcos,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_dtan,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_dsinh,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_dtanh,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_dcbrt,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_dabs,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_fabs,Existing intrinsic in Java body,Java bit-conversion/mask or Class.isInstance wrapper already reaches existing C1 intrinsics; retained.
+_iabs,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_labs,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_datan2,Deferred dedicated lowering,"Floating-point C2 lowering remains separate: it needs FP operands/results and precise NaN, signed-zero or rounding semantics; the integer scalar ABI does not implement it."
+_dsqrt,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_dsqrt_strict,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_dexp,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_dlog,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_dlog10,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_dpow,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_dcopySign,Existing intrinsic in Java body,Java bit-conversion/mask or Class.isInstance wrapper already reaches existing C1 intrinsics; retained.
+_fcopySign,Existing intrinsic in Java body,Java bit-conversion/mask or Class.isInstance wrapper already reaches existing C1 intrinsics; retained.
+_dsignum,Deferred dedicated lowering,"Floating-point C2 lowering remains separate: it needs FP operands/results and precise NaN, signed-zero or rounding semantics; the integer scalar ABI does not implement it."
+_roundF,Deferred dedicated lowering,"Floating-point C2 lowering remains separate: it needs FP operands/results and precise NaN, signed-zero or rounding semantics; the integer scalar ABI does not implement it."
+_roundD,Deferred dedicated lowering,"Floating-point C2 lowering remains separate: it needs FP operands/results and precise NaN, signed-zero or rounding semantics; the integer scalar ABI does not implement it."
+_fsignum,Deferred dedicated lowering,"Floating-point C2 lowering remains separate: it needs FP operands/results and precise NaN, signed-zero or rounding semantics; the integer scalar ABI does not implement it."
+_notify,Deferred dedicated lowering,"Native monitor operation; requires the locking, exception and JVMTI protocols."
+_notifyAll,Deferred dedicated lowering,"Native monitor operation; requires the locking, exception and JVMTI protocols."
+_addExactI,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_addExactL,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_decrementExactI,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_decrementExactL,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_incrementExactI,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_incrementExactL,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_multiplyExactI,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_multiplyExactL,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_multiplyHigh,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_unsignedMultiplyHigh,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_negateExactI,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_negateExactL,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_subtractExactI,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_subtractExactL,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_arraycopy,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_arraySort,Deferred dedicated lowering,C2 SIMD sort integration depends on array layout/type specialization and a platform-specific backend; no portable shared C ABI stub on both target architectures.
+_arrayPartition,Deferred dedicated lowering,C2 partition integration allocates an int[2] result; allocation and platform-specific SIMD sort are outside the non-safepointing leaf ABI.
+_compareToL,Existing intrinsic in Java body,"Current Java implementation delegates to ArraysSupport.mismatch, covered by C1 vectorizedMismatch."
+_compareToU,Existing intrinsic in Java body,"Current Java implementation delegates to ArraysSupport.mismatch, covered by C1 vectorizedMismatch."
+_compareToLU,Deferred dedicated lowering,Mixed Latin-1/UTF-16 comparison uses C2 StringCompare nodes; no reusable StubRoutines entry. Same-coder comparisons already delegate to mismatch.
+_compareToUL,Deferred dedicated lowering,Mixed UTF-16/Latin-1 comparison uses C2 StringCompare nodes; no reusable StubRoutines entry. Same-coder comparisons already delegate to mismatch.
+_indexOfL,Excluded: open PR #4,StringZilla search/equality work.
+_indexOfU,Excluded: open PR #4,StringZilla search/equality work.
+_indexOfUL,Excluded: open PR #4,StringZilla search/equality work.
+_indexOfIL,Excluded: open PR #4,StringZilla search/equality work.
+_indexOfIU,Excluded: open PR #4,StringZilla search/equality work.
+_indexOfIUL,Excluded: open PR #4,StringZilla search/equality work.
+_indexOfU_char,Excluded: open PR #4,StringZilla search/equality work.
+_indexOfL_char,Excluded: open PR #4,StringZilla search/equality work.
+_equalsL,Excluded: open PR #4,StringZilla search/equality work.
+_vectorizedHashCode,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_toBytesStringU,Excluded: open PR #2,SIMDUTF Unicode/Base64 work.
+_getCharsStringU,Excluded: open PR #2,SIMDUTF Unicode/Base64 work.
+_getCharStringU,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putCharStringU,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_compressStringC,Excluded: open PR #2,SIMDUTF Unicode/Base64 work.
+_compressStringB,Excluded: open PR #2,SIMDUTF Unicode/Base64 work.
+_inflateStringC,Excluded: open PR #2,SIMDUTF Unicode/Base64 work.
+_inflateStringB,Excluded: open PR #2,SIMDUTF Unicode/Base64 work.
+_getReference,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getBoolean,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getByte,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getShort,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getChar,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getInt,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getLong,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getFloat,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getDouble,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putReference,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putBoolean,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putByte,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putShort,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putChar,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putInt,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putLong,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putFloat,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putDouble,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getReferenceVolatile,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getBooleanVolatile,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getByteVolatile,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getShortVolatile,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getCharVolatile,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getIntVolatile,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getLongVolatile,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getFloatVolatile,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getDoubleVolatile,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putReferenceVolatile,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putBooleanVolatile,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putByteVolatile,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putShortVolatile,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putCharVolatile,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putIntVolatile,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putLongVolatile,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putFloatVolatile,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putDoubleVolatile,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getShortUnaligned,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getCharUnaligned,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getIntUnaligned,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getLongUnaligned,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putShortUnaligned,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putCharUnaligned,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putIntUnaligned,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_putLongUnaligned,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getReferenceAcquire,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_getBooleanAcquire,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_getByteAcquire,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_getShortAcquire,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_getCharAcquire,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_getIntAcquire,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_getLongAcquire,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_getFloatAcquire,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_getDoubleAcquire,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_putReferenceRelease,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_putBooleanRelease,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_putByteRelease,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_putShortRelease,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_putCharRelease,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_putIntRelease,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_putLongRelease,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_putFloatRelease,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_putDoubleRelease,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_getReferenceOpaque,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_getBooleanOpaque,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_getByteOpaque,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_getShortOpaque,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_getCharOpaque,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_getIntOpaque,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_getLongOpaque,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_getFloatOpaque,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_getDoubleOpaque,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_putReferenceOpaque,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_putBooleanOpaque,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_putByteOpaque,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_putShortOpaque,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_putCharOpaque,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_putIntOpaque,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_putLongOpaque,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_putFloatOpaque,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_putDoubleOpaque,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_compareAndSetReference,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_compareAndSetByte,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_compareAndSetShort,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_compareAndSetInt,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_compareAndSetLong,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_weakCompareAndSetReferencePlain,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_weakCompareAndSetReferenceAcquire,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_weakCompareAndSetReferenceRelease,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_weakCompareAndSetReference,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_weakCompareAndSetBytePlain,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_weakCompareAndSetByteAcquire,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_weakCompareAndSetByteRelease,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_weakCompareAndSetByte,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_weakCompareAndSetShortPlain,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_weakCompareAndSetShortAcquire,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_weakCompareAndSetShortRelease,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_weakCompareAndSetShort,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_weakCompareAndSetIntPlain,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_weakCompareAndSetIntAcquire,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_weakCompareAndSetIntRelease,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_weakCompareAndSetInt,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_weakCompareAndSetLongPlain,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_weakCompareAndSetLongAcquire,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_weakCompareAndSetLongRelease,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_weakCompareAndSetLong,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_compareAndExchangeReference,Deferred dedicated lowering,Native atomic compare-and-exchange (or ordering wrapper); C1 needs witness-result lowering plus collector barriers for references. Existing compare-and-set returns only a boolean.
+_compareAndExchangeReferenceAcquire,Deferred dedicated lowering,Native atomic compare-and-exchange (or ordering wrapper); C1 needs witness-result lowering plus collector barriers for references. Existing compare-and-set returns only a boolean.
+_compareAndExchangeReferenceRelease,Deferred dedicated lowering,Native atomic compare-and-exchange (or ordering wrapper); C1 needs witness-result lowering plus collector barriers for references. Existing compare-and-set returns only a boolean.
+_compareAndExchangeByte,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_compareAndExchangeByteAcquire,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_compareAndExchangeByteRelease,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_compareAndExchangeShort,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_compareAndExchangeShortAcquire,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_compareAndExchangeShortRelease,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_compareAndExchangeInt,Deferred dedicated lowering,Native atomic compare-and-exchange (or ordering wrapper); C1 needs witness-result lowering plus collector barriers for references. Existing compare-and-set returns only a boolean.
+_compareAndExchangeIntAcquire,Deferred dedicated lowering,Native atomic compare-and-exchange (or ordering wrapper); C1 needs witness-result lowering plus collector barriers for references. Existing compare-and-set returns only a boolean.
+_compareAndExchangeIntRelease,Deferred dedicated lowering,Native atomic compare-and-exchange (or ordering wrapper); C1 needs witness-result lowering plus collector barriers for references. Existing compare-and-set returns only a boolean.
+_compareAndExchangeLong,Deferred dedicated lowering,Native atomic compare-and-exchange (or ordering wrapper); C1 needs witness-result lowering plus collector barriers for references. Existing compare-and-set returns only a boolean.
+_compareAndExchangeLongAcquire,Deferred dedicated lowering,Native atomic compare-and-exchange (or ordering wrapper); C1 needs witness-result lowering plus collector barriers for references. Existing compare-and-set returns only a boolean.
+_compareAndExchangeLongRelease,Deferred dedicated lowering,Native atomic compare-and-exchange (or ordering wrapper); C1 needs witness-result lowering plus collector barriers for references. Existing compare-and-set returns only a boolean.
+_getAndAddByte,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_getAndAddShort,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_getAndAddInt,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getAndAddLong,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getAndSetByte,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_getAndSetShort,Existing intrinsic in Java body,Unsafe.java ordering wrapper or masked byte/short CAS loop reaches existing C1 volatile access and compareAndSetInt/Long/Reference intrinsics; retained.
+_getAndSetInt,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getAndSetLong,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getAndSetReference,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_loadFence,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_storeFence,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_storeStoreFence,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_fullFence,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_onSpinWait,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_currentCarrierThread,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_currentThread,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_setCurrentThread,Deferred dedicated lowering,Native virtual-thread carrier identity update; needs VM/JVMTI thread protocol.
+_scopedValueCache,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_setScopedValueCache,Requires VM protocol,"VM thread/continuation/JFR/cache-flush protocol; requires tier-specific state/barrier handling, not the shared numeric/array leaf ABI."
+_Continuation_pin,Requires VM protocol,"VM thread/continuation/JFR/cache-flush protocol; requires tier-specific state/barrier handling, not the shared numeric/array leaf ABI."
+_Continuation_unpin,Requires VM protocol,"VM thread/continuation/JFR/cache-flush protocol; requires tier-specific state/barrier handling, not the shared numeric/array leaf ABI."
+_vthreadEndFirstTransition,Requires VM protocol,"VM thread/continuation/JFR/cache-flush protocol; requires tier-specific state/barrier handling, not the shared numeric/array leaf ABI."
+_vthreadStartFinalTransition,Requires VM protocol,"VM thread/continuation/JFR/cache-flush protocol; requires tier-specific state/barrier handling, not the shared numeric/array leaf ABI."
+_vthreadStartTransition,Requires VM protocol,"VM thread/continuation/JFR/cache-flush protocol; requires tier-specific state/barrier handling, not the shared numeric/array leaf ABI."
+_vthreadEndTransition,Requires VM protocol,"VM thread/continuation/JFR/cache-flush protocol; requires tier-specific state/barrier handling, not the shared numeric/array leaf ABI."
+_notifyJvmtiVThreadDisableSuspend,Requires VM protocol,"VM thread/continuation/JFR/cache-flush protocol; requires tier-specific state/barrier handling, not the shared numeric/array leaf ABI."
+_counterTime,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_getEventWriter,Requires VM protocol,"VM thread/continuation/JFR/cache-flush protocol; requires tier-specific state/barrier handling, not the shared numeric/array leaf ABI."
+_jvm_commit,Requires VM protocol,"VM thread/continuation/JFR/cache-flush protocol; requires tier-specific state/barrier handling, not the shared numeric/array leaf ABI."
+_tryUpdateEpochField,Requires VM protocol,"VM thread/continuation/JFR/cache-flush protocol; requires tier-specific state/barrier handling, not the shared numeric/array leaf ABI."
+_currentTimeMillis,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_nanoTime,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_writeback0,Requires VM protocol,"VM thread/continuation/JFR/cache-flush protocol; requires tier-specific state/barrier handling, not the shared numeric/array leaf ABI."
+_writebackPreSync0,Requires VM protocol,"VM thread/continuation/JFR/cache-flush protocol; requires tier-specific state/barrier handling, not the shared numeric/array leaf ABI."
+_writebackPostSync0,Requires VM protocol,"VM thread/continuation/JFR/cache-flush protocol; requires tier-specific state/barrier handling, not the shared numeric/array leaf ABI."
+_allocateInstance,Deferred dedicated lowering,"Native allocation; must safepoint, initialize heap objects and preserve allocation exceptions."
+_copyMemory,Deferred dedicated lowering,"Native Unsafe entry with heap/off-heap addresses, fault recovery and doing_unsafe_access state; requires dedicated unsafe-memory integration."
+_setMemory,Deferred dedicated lowering,Native Unsafe entry with arbitrary addresses and fault recovery; requires dedicated unsafe-memory integration.
+_getLength,Deferred dedicated lowering,Native reflection entry; must preserve JNI/JVMTI entry semantics and null/non-array exceptions.
+_copyOf,Deferred dedicated lowering,"Allocating array operation; C2 integrates allocation, type checks and GC barriers. Not a raw leaf."
+_copyOfRange,Deferred dedicated lowering,"Allocating array operation; C2 integrates allocation, range/type checks and GC barriers. Not a raw leaf."
+_equalsB,Existing intrinsic in Java body,"Current Java implementation delegates to ArraysSupport.mismatch, covered by C1 vectorizedMismatch."
+_equalsC,Existing intrinsic in Java body,"Current Java implementation delegates to ArraysSupport.mismatch, covered by C1 vectorizedMismatch."
+_Preconditions_checkIndex,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_Preconditions_checkLongIndex,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_clone,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_allocateUninitializedArray,Deferred dedicated lowering,Allocation and heap initialization policy require a safepoint-capable runtime entry.
+_newArray,Deferred dedicated lowering,"Native reflection allocation; result creation, class resolution and exceptions require VM transition."
+_isAssignableFrom,Deferred dedicated lowering,Native class-metadata query; native-entry and exception handling need dedicated integration.
+_isInstance,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_isHidden,Deferred dedicated lowering,Native class-metadata query; no reusable array/scalar leaf ABI.
+_getSuperclass,Deferred dedicated lowering,Native class-metadata query; primitive/interface semantics and native-entry handling need dedicated integration.
+_floatToRawIntBits,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_floatToIntBits,Existing intrinsic in Java body,Java bit-conversion/mask or Class.isInstance wrapper already reaches existing C1 intrinsics; retained.
+_intBitsToFloat,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_doubleToRawLongBits,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_doubleToLongBits,Existing intrinsic in Java body,Java bit-conversion/mask or Class.isInstance wrapper already reaches existing C1 intrinsics; retained.
+_longBitsToDouble,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_floatToFloat16,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_float16ToFloat,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_sqrt_float16,Deferred dedicated lowering,"Floating-point C2 lowering remains separate: it needs FP operands/results and precise NaN, signed-zero or rounding semantics; the integer scalar ABI does not implement it."
+_fma_float16,Deferred dedicated lowering,"Floating-point C2 lowering remains separate: it needs FP operands/results and precise NaN, signed-zero or rounding semantics; the integer scalar ABI does not implement it."
+_floatIsFinite,Existing intrinsic in Java body,Java bit-conversion/mask or Class.isInstance wrapper already reaches existing C1 intrinsics; retained.
+_floatIsInfinite,Existing intrinsic in Java body,Java bit-conversion/mask or Class.isInstance wrapper already reaches existing C1 intrinsics; retained.
+_doubleIsFinite,Existing intrinsic in Java body,Java bit-conversion/mask or Class.isInstance wrapper already reaches existing C1 intrinsics; retained.
+_doubleIsInfinite,Existing intrinsic in Java body,Java bit-conversion/mask or Class.isInstance wrapper already reaches existing C1 intrinsics; retained.
+_numberOfLeadingZeros_i,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_numberOfLeadingZeros_l,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_numberOfTrailingZeros_i,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_numberOfTrailingZeros_l,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_bitCount_i,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_bitCount_l,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_reverse_i,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_reverse_l,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_reverseBytes_i,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_reverseBytes_l,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_reverseBytes_s,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_reverseBytes_c,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_compress_i,Deferred dedicated lowering,Bit-permutation C2 nodes use BMI2 on x86 and target-specific patterns; no equivalent shared direct lowering has been added for both architectures.
+_compress_l,Deferred dedicated lowering,Bit-permutation C2 nodes use BMI2 on x86 and target-specific patterns; no equivalent shared direct lowering has been added for both architectures.
+_expand_i,Deferred dedicated lowering,Bit-permutation C2 nodes use BMI2 on x86 and target-specific patterns; no equivalent shared direct lowering has been added for both architectures.
+_expand_l,Deferred dedicated lowering,Bit-permutation C2 nodes use BMI2 on x86 and target-specific patterns; no equivalent shared direct lowering has been added for both architectures.
+_compareUnsigned_i,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_compareUnsigned_l,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_divideUnsigned_i,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_divideUnsigned_l,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_remainderUnsigned_i,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_remainderUnsigned_l,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_getCallerClass,Deferred dedicated lowering,Native caller-sensitive stack walk; frame/security semantics must be integrated per execution tier.
+_Reference_get0,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_Reference_refersTo0,Deferred dedicated lowering,Native reference operation; collector-specific weak-reference barriers are required.
+_Reference_reachabilityFence,Deferred dedicated lowering,"Compiler liveness constraint; must keep the argument live in IR, not issue a C ABI leaf."
+_PhantomReference_refersTo0,Deferred dedicated lowering,Native reference operation; collector-specific phantom-reference barriers are required.
+_Reference_clear0,Deferred dedicated lowering,Native reference write; collector-specific reference and pre/post barriers are required.
+_PhantomReference_clear0,Deferred dedicated lowering,Native phantom-reference write; collector-specific reference barriers are required.
+_Class_cast,Existing intrinsic in Java body,Java bit-conversion/mask or Class.isInstance wrapper already reaches existing C1 intrinsics; retained.
+_aescrypt_encryptBlock,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_aescrypt_decryptBlock,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_cipherBlockChaining_encryptAESCrypt,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_cipherBlockChaining_decryptAESCrypt,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_electronicCodeBook_encryptAESCrypt,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_electronicCodeBook_decryptAESCrypt,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_counterMode_AESCrypt,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_galoisCounterMode_AESCrypt,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_md5_implCompress,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_sha_implCompress,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_sha2_implCompress,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_sha5_implCompress,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_sha3_implCompress,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_double_keccak,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_quad_keccak,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_digestBase_implCompressMB,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_multiplyToLen,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_squareToLen,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_mulAdd,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_montgomeryMultiply,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_montgomerySquare,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_bigIntegerRightShiftWorker,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_bigIntegerLeftShiftWorker,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_vectorizedMismatch,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_ghash_processBlocks,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_chacha20Block,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_kyberNtt,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_kyberInverseNtt,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_kyberNttMult,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_kyberAddPoly_2,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_kyberAddPoly_3,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_kyber12To16,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_kyberBarrettReduce,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_dilithiumAlmostNtt,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_dilithiumAlmostInverseNtt,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_dilithiumNttMult,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_dilithiumMontMulByConstant,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_dilithiumDecomposePoly,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_base64_encodeBlock,Excluded: open PR #2,SIMDUTF Unicode/Base64 work.
+_base64_decodeBlock,Excluded: open PR #2,SIMDUTF Unicode/Base64 work.
+_poly1305_processBlocks,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_intpoly_montgomeryMult_P256,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_intpoly_assign,Shared leaf adapter,Guarded interpreter and C1 leaf calls; original Java is the fallback. Existing per-operation flags and CPU availability are retained.
+_encodeISOArray,Excluded: open PR #2,SIMDUTF Unicode/Base64 work.
+_encodeByteISOArray,Excluded: open PR #2,SIMDUTF Unicode/Base64 work.
+_encodeAsciiArray,Excluded: open PR #2,SIMDUTF Unicode/Base64 work.
+_updateCRC32,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_updateBytesCRC32,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_updateByteBufferCRC32,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_updateBytesCRC32C,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_updateDirectByteBufferCRC32C,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_updateBytesAdler32,Excluded: open PR #6,zlib-ng Adler32 work.
+_updateByteBufferAdler32,Excluded: open PR #6,zlib-ng Adler32 work.
+_profileBoolean,Deferred dedicated lowering,Compiler profile interpretation; C2 consumes the count array to annotate its IR.
+_isCompileConstant,Deferred dedicated lowering,Compiler constant-query semantics; not a runtime numeric operation.
+_countPositives,Excluded: open PR #2,SIMDUTF Unicode/Base64 work.
+_fmaD,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_fmaF,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_isDigit,Deferred dedicated lowering,CharacterDataLatin1 predicate uses C2 CharacterCompare nodes; receiver-aware predicate/table lowering remains separate from static integer operations.
+_isLowerCase,Deferred dedicated lowering,CharacterDataLatin1 predicate uses C2 CharacterCompare nodes; receiver-aware predicate/table lowering remains separate from static integer operations.
+_isUpperCase,Deferred dedicated lowering,CharacterDataLatin1 predicate uses C2 CharacterCompare nodes; receiver-aware predicate/table lowering remains separate from static integer operations.
+_isWhitespace,Deferred dedicated lowering,CharacterDataLatin1 predicate uses C2 CharacterCompare nodes; receiver-aware predicate/table lowering remains separate from static integer operations.
+_min,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_max,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_min_strict,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_max_strict,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_minL,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_maxL,Shared scalar lowering,Direct x86-64/AArch64 assembler shared by interpreter and C1; no C ABI call. Checked operations fall back to Java on overflow or zero divisor.
+_minF,Deferred dedicated lowering,"Floating-point C2 lowering remains separate: it needs FP operands/results and precise NaN, signed-zero or rounding semantics; the integer scalar ABI does not implement it."
+_maxF,Deferred dedicated lowering,"Floating-point C2 lowering remains separate: it needs FP operands/results and precise NaN, signed-zero or rounding semantics; the integer scalar ABI does not implement it."
+_minD,Deferred dedicated lowering,"Floating-point C2 lowering remains separate: it needs FP operands/results and precise NaN, signed-zero or rounding semantics; the integer scalar ABI does not implement it."
+_maxD,Deferred dedicated lowering,"Floating-point C2 lowering remains separate: it needs FP operands/results and precise NaN, signed-zero or rounding semantics; the integer scalar ABI does not implement it."
+_minF_strict,Deferred dedicated lowering,"Floating-point C2 lowering remains separate: it needs FP operands/results and precise NaN, signed-zero or rounding semantics; the integer scalar ABI does not implement it."
+_maxF_strict,Deferred dedicated lowering,"Floating-point C2 lowering remains separate: it needs FP operands/results and precise NaN, signed-zero or rounding semantics; the integer scalar ABI does not implement it."
+_minD_strict,Deferred dedicated lowering,"Floating-point C2 lowering remains separate: it needs FP operands/results and precise NaN, signed-zero or rounding semantics; the integer scalar ABI does not implement it."
+_maxD_strict,Deferred dedicated lowering,"Floating-point C2 lowering remains separate: it needs FP operands/results and precise NaN, signed-zero or rounding semantics; the integer scalar ABI does not implement it."
+_VectorUnaryOp,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorBinaryOp,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorUnaryLibOp,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorBinaryLibOp,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorTernaryOp,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorFromBitsCoerced,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorMaskOp,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorLoadOp,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorLoadMaskedOp,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorStoreOp,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorStoreMaskedOp,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorGatherOp,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorScatterOp,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorReductionCoerced,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorTest,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorBlend,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorRearrange,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorSelectFrom,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorCompare,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorBroadcastInt,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorConvert,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorInsert,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorExtract,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorCompressExpand,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_VectorSelectFromTwoVectorOp,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_IndexVector,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_IndexPartiallyInUpperRange,Requires compiler IR,"Vector API IR specialization, value materialization, memory barriers or lane/mask semantics; not a reusable scalar C ABI leaf."
+_getObjectSize,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.
+_blackhole,Existing C1 intrinsic,Already listed in Compiler::is_intrinsic_supported; retained.

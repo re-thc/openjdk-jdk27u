@@ -547,6 +547,29 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     }
 
 
+    case lir_common_scalar: {
+      LIR_OpCommonScalar* scalar = static_cast<LIR_OpCommonScalar*>(op);
+      LIR_Op2* op2 = scalar;
+      do_input(op2->_opr1);
+#ifdef AMD64
+      // One-operand multiply and unsigned divide overwrite their fixed RAX
+      // input even when the result is allocated in a different register.
+      if (op2->_opr1->is_fixed_cpu()) do_temp(op2->_opr1);
+#endif
+      if (op2->_opr2->is_valid()) do_input(op2->_opr2);
+      if (op2->_tmp1->is_valid()) do_temp(op2->_tmp1);
+      if (op2->_tmp2->is_valid()) do_temp(op2->_tmp2);
+      if (op2->_tmp3->is_valid()) do_temp(op2->_tmp3);
+      if (scalar->fallback() != nullptr) {
+        do_stub(scalar->fallback());
+      } else if (op2->_info != nullptr) {
+        do_info(op2->_info);
+      }
+      do_output(op2->_result);
+      break;
+    }
+
+
 // LIR_Op2
     case lir_cmp:
     case lir_cmp_l2i:
@@ -1703,6 +1726,7 @@ const char * LIR_Op::name() const {
      case lir_monaddr:               s = "mon_addr";      break;
      // LIR_Op2
      case lir_cmp:                   s = "cmp";           break;
+     case lir_common_scalar:         s = "common_scalar"; break;
      case lir_cmp_l2i:               s = "cmp_l2i";       break;
      case lir_ucmp_fd2i:             s = "ucomp_fd2i";    break;
      case lir_cmp_fd2i:              s = "comp_fd2i";     break;

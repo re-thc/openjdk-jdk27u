@@ -30,6 +30,7 @@
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "oops/methodData.hpp"
+#include "runtime/commonIntrinsics.hpp"
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
@@ -236,6 +237,18 @@ void TemplateInterpreterGenerator::generate_all() {
   native_method_entry(java_util_zip_CRC32_updateByteBuffer)
 
 #undef native_method_entry
+
+#if defined(AMD64) || defined(AARCH64)
+  if (CommonIntrinsics::enabled() && InlineIntrinsics) {
+    for (int i = 1; i < static_cast<int>(vmIntrinsics::ID_LIMIT); i++) {
+      vmIntrinsics::ID id = vmIntrinsics::ID_from(i);
+      if (CommonIntrinsics::is_supported(id) && vmIntrinsics::is_intrinsic_available(id)) {
+        CodeletMark cm(_masm, vmIntrinsics::name_at(id));
+        Interpreter::_common_entry_table[i] = generate_common_intrinsic_entry(id);
+      }
+    }
+  }
+#endif
 
   // Bytecodes
   set_entry_points_for_all_bytes();
