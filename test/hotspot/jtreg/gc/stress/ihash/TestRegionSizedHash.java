@@ -94,7 +94,7 @@ public class TestRegionSizedHash {
 
     static final int REGION_SIZE = 256 * 1024;
 
-    // byte[] allocation size (with compact headers) = align_up(8 + length, 8).
+    // byte[] allocation size (with four-byte headers) = align_up(8 + length, 8).
     // length = REGION_SIZE - 8 yields an allocation of exactly one region.
     static byte[] oneRegion() {
         return new byte[arrayLength];
@@ -107,7 +107,8 @@ public class TestRegionSizedHash {
     static Object[] keep;
 
     public static void main(String[] args) {
-        if (args.length > 0 && args[0].equals("regular")) {
+        boolean regular = args.length > 0 && args[0].equals("regular");
+        if (regular) {
             // One word short of a region: the expanded copy still fits. This
             // exercises ordinary young-region compaction, not humongous routing.
             arrayLength -= 8;
@@ -116,12 +117,18 @@ public class TestRegionSizedHash {
         int[] hashes = new int[COUNT];
         for (int i = 0; i < COUNT; i++) {
             byte[] o = oneRegion();
+            o[0] = (byte) i;
+            o[o.length - 1] = (byte) ~i;
             hashes[i] = System.identityHashCode(o); // hash -> must expand on copy
             keep[i] = o;
         }
 
         // Fragment so Full GC slides the surviving region-sized objects.
-        keep[1] = null;
+        // Keep the first adjacent regular regions live so advancing the
+        // destination can meet a source object that stays at its region bottom.
+        if (!regular) {
+            keep[1] = null;
+        }
         keep[3] = null;
         keep[5] = null;
 
@@ -134,6 +141,9 @@ public class TestRegionSizedHash {
             byte[] o = (byte[]) keep[i];
             if (o == null) {
                 continue;
+            }
+            if (o[0] != (byte) i || o[o.length - 1] != (byte) ~i) {
+                throw new RuntimeException("payload mismatch at " + i);
             }
             if (System.identityHashCode(o) != hashes[i]) {
                 throw new RuntimeException("hash mismatch at " + i);

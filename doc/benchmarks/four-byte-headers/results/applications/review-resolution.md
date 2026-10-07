@@ -39,40 +39,47 @@ and hash metadata in locked/inflated marks. Comments record both invariants.
 
 ## Validation
 
-The runtime fixes are committed at `d222c871c122`; follow-up `d07555c47f45`
-adds the explicit native-test include required without precompiled headers,
-sorts production includes, and exercises regular young regions in the
-generational Shenandoah case. Runtime statements are unchanged in that
-follow-up. New contributions use Teamoffy Pte. Ltd.; existing notices remain.
+Runtime fixes are at `d222c871c122`. Follow-up `d07555c47f45` adds the explicit
+native-test include required without precompiled headers, sorts production
+includes, and selects regular young regions for generational Shenandoah
+coverage. The final follow-up strengthens payload checks and keeps the first
+adjacent regular regions live; runtime statements remain unchanged.
+New contributions use Teamoffy Pte. Ltd.; existing notices remain.
 
-The rebuilt fastdebug image passes 42 focused jtreg cases across Serial, G1,
-ZGC, Parallel and both Shenandoah modes; all 1,402 enabled native tests pass in
-each of four-byte, eight-byte and legacy modes (4,206 executions, with 15
-upstream disabled cases per layout). All six C2 arraycopy/vector cases pass
-with IR verification enabled. A temporary local compilation-worker bound was
-restored before committing. The native flags test also compiles without
-precompiled headers, and both source checks pass.
+The rebuilt release and fastdebug images pass **102 jtreg executions**: 42
+focused cases per flavor, ten instrumentation/jlink cases, six C2
+arraycopy/vector cases with IR verification enabled, and two source checks.
+Coverage includes Serial, G1, ZGC, Parallel and both Shenandoah modes. All
+**4,206 enabled native executions** pass: 1,402 in each of four-byte,
+eight-byte and legacy modes, with 15 upstream disabled cases per layout.
+The new flags test compiles without precompiled headers. All **126 JCStress
+configurations** pass, 42 each under Serial/G1/ZGC, without failed
+configurations, soft errors or hard errors. The temporary local compiler
+worker bound is restored; IR assertions remain enabled.
 
-The new G1 boundary test fails with the prior debug image's allocator assertion
-at sixteen-byte alignment and passes with the new image at both alignments.
-This is an observed regression reproduction, not only an added assertion.
+The new G1 boundary test reproduces the previous debug image's allocator
+assertion at sixteen-byte alignment and passes on both rebuilt images at
+eight- and sixteen-byte alignment. The strengthened generational Shenandoah
+case also passes the prior image: additional coverage, not a defect reproduction.
 
-Initial local attempts exhausted this container's native-thread limit during
-compiler or native-test child JVM startup, before their test bodies ran. One
-compiler JVM crashed after a GC worker failed to start. Those attempts remain
-in local logs; bounded reruns pass. They are not counted as successful runs or
-attributed to an executing collector regression.
+Initial local attempts exhausted the container's native-thread limit during
+compiler or native-test child JVM startup. One compiler JVM crashed after a
+GC worker failed to start. These attempts remain in local logs; bounded reruns
+pass. They are not counted as successful runs or attributed to an executing
+collector regression. Serial JCStress was interrupted by an environment
+restart; all three collector runs restarted and completed before timings.
 
-The first fix CI run caught the explicit-include and source-order issues above.
-[Replacement three-layout CI](https://github.com/re-thc/openjdk-jdk27u/actions/runs/37655448439)
-and [standard sanity CI](https://github.com/re-thc/openjdk-jdk27u/actions/runs/37655438686)
-failed before creating any jobs. GitHub's annotation reports "Internal server
-error" (recorded with its correlation IDs in [the manifest](review-manifest.json)). This establishes
-no current build/test result. The PR stays draft until current CI validation
-is established.
-Release tests and application measurements are still running.
-[Local per-case results](review-test-results.csv) record the completed runs. Earlier tables
-remain pinned to their `9b75f196c2a` image and do not validate this runtime revision.
+The first review-fix CI run found the missing explicit include and source
+ordering, both corrected in `d07555c4`. Two replacement workflows failed
+before creating jobs with GitHub's annotation "Internal server error"; the
+correlation IDs are recorded in [the manifest](manifest.json). The subsequent
+[three-layout run](https://github.com/re-thc/openjdk-jdk27u/actions/runs/37656205271)
+and [standard sanity run](https://github.com/re-thc/openjdk-jdk27u/actions/runs/37656180956)
+validate the unchanged runtime at `6f028e4f146`. Their exact recorded status is
+in [the CI snapshot](review-ci-snapshot.json); pending jobs are not counted as
+passes. Any later test/evidence commit has its own PR checks.
 
-GitHub rejects retries of the runs with no jobs: "This workflow run cannot be retried".
-The documentation follow-up will trigger a new attempt on unchanged runtime code.
+[Per-case local results](review-test-results.csv), [image fingerprints and
+measurement provenance](manifest.json), and [fresh application measurements](../applications.md)
+accompany this review. Earlier image measurements are retained in Git history
+and are not used to validate the runtime fixes.

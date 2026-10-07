@@ -1,176 +1,140 @@
 # Fork-default database and Spring measurements
 
-This comparison measures the unmodified JDK 27u eight-byte default against
-the fork's four-byte default. The candidate runs without an enabling flag.
-Both use their ergonomic G1 collector, a fixed 512 MiB heap and four active
-processors on the same Linux host with a four-CPU quota and 16 GiB memory.
+The rebuilt review-fix image reduces Spring Petclinic retained heap by **11.0%**
+versus stock JDK 27's eight-byte default. Database duration and Spring throughput
+are essentially unchanged within the observed uncertainty. Database retained
+heap and both workloads' process RSS remain inconclusive.
 
-The baseline is `33e539f2d4a847f283a3793df6eebd41b9d1dfac`.
-The measured candidate native code is
-`9b75f196c2a03528cd458957dcc4228c9be69ba3`; final test source is
-`9bf17e9327f79d5d13fe2e3ff9952b826f4aedf7`. Production sources are identical
-between those revisions. The first matrix measured
-`078bcb6937faf0989f383ce78576747dea480738` and exposed the locking regression
-described below. Test-only changes also adapt existing compact-class encoding
-assertions to cover both layouts.
-The immutable image fingerprints and pinned application jar accompany the
-raw results. Compilation and local tests are paused during timings.
+This compares unmodified JDK 27u at `33e539f2d4a847f283a3793df6eebd41b9d1dfac`
+with the fork's **normal four-byte default, without an enabling flag**.
+The release image is built at `6f028e4f146790a16cc9e679710db526b094ec3f`:
+runtime fixes are at `d222c871c122`, followed by include/whitespace changes at
+`d07555c47f45`; later changes strengthen test coverage and refresh evidence.
+Release, fastdebug and baseline image hashes are in [the manifest](applications/manifest.json).
 
-## Prior validated application comparison
+Both application images use ergonomic G1, a fixed 512 MiB heap and four active
+processors on the same AMD EPYC 9V74 Linux host with a four-CPU quota and
+16 GiB memory. Compilation, local tests and profiling are paused during timings.
+Image fingerprints match before and after the study, which ran
+2026-10-07T17:39:43Z–18:41:41Z. All twelve database timing forks, twelve database
+memory forks and six Spring forks per layout are complete.
 
-The prior-image study contains twenty-four database timing JVMs and twelve
-Spring timing JVMs. Six initial database memory JVMs are followed by eighteen
-additional memory-only JVMs, for twelve forks per layout. No profiler, build
-or local test runs during timings. All measured Spring responses are validated.
+## Application results
 
 | Workload | Metric | Original 8 bytes | Fork default 4 bytes | Change (95% interval) |
 | --- | --- | ---: | ---: | ---: |
-| db-shootout | duration (ms) | 4434.45 | 4535.91 | +2.6% [-4.0, +9.6] |
-| db-shootout | post-GC heap (MiB) | 71.74 | 65.48 | -7.7% [-33.6, +28.3] |
-| db-shootout | post-GC RSS (MiB) | 1096.67 | 1099.18 | +0.2% [-0.6, +1.1] |
-| Spring Petclinic | throughput (requests/s) | 161.84 | 159.29 | -1.6% [-5.6, +2.5] |
-| Spring Petclinic | p50 latency (ms) | 8.58 | 8.67 | +1.1% [-2.9, +5.3] |
-| Spring Petclinic | p95 latency (ms) | 178.41 | 179.84 | +0.8% [-2.8, +4.5] |
-| Spring Petclinic | p99 latency (ms) | 216.89 | 219.16 | +1.0% [-2.6, +4.8] |
-| Spring Petclinic | post-GC heap (MiB) | 40.19 | 35.70 | -11.2% [-11.3, -11.0] |
-| Spring Petclinic | RSS after load (MiB) | 719.61 | 705.27 | -1.9% [-5.5, +1.8] |
-| Spring Petclinic | post-GC RSS (MiB) | 723.37 | 708.49 | -2.0% [-5.6, +1.7] |
-| Spring Petclinic | ready startup (seconds) | 6.14 | 6.17 | +0.5% [-7.9, +9.6] |
-| Spring Petclinic | busy heap (MiB) | 204.59 | 195.83 | -4.4% [-16.9, +10.0] |
+| db-shootout | duration (ms) | 4572.26 | 4541.24 | -0.5% [-5.8, +5.0] |
+| db-shootout | post-GC heap (MiB) | 89.98 | 82.88 | -7.9% [-28.7, +18.8] |
+| db-shootout | post-GC RSS (MiB) | 1094.81 | 1102.48 | +0.7% [-0.0, +1.4] |
+| Spring Petclinic | throughput (requests/s) | 164.57 | 164.63 | +0.1% [-5.0, +5.5] |
+| Spring Petclinic | p50 latency (ms) | 8.91 | 8.75 | -1.8% [-8.4, +5.4] |
+| Spring Petclinic | p95 latency (ms) | 173.08 | 173.69 | +0.4% [-4.6, +5.7] |
+| Spring Petclinic | p99 latency (ms) | 216.00 | 215.59 | -0.1% [-5.6, +5.8] |
+| Spring Petclinic | post-GC heap (MiB) | 40.18 | 35.76 | -11.0% [-11.2, -10.8] |
+| Spring Petclinic | RSS after load (MiB) | 706.03 | 714.48 | +1.1% [-2.6, +5.0] |
+| Spring Petclinic | post-GC RSS (MiB) | 709.81 | 717.75 | +1.1% [-2.7, +5.0] |
+| Spring Petclinic | ready startup (seconds) | 6.64 | 6.82 | +2.6% [-4.4, +10.2] |
+| Spring Petclinic | busy heap (MiB) | 181.45 | 197.38 | +8.5% [-8.5, +28.7] |
 
-Validated measured HTTP responses: 115,741; errors: zero.
+Validated measured HTTP responses: 118,654; errors: zero.
 Maximum load-driver CPU use: 0.07 CPU cores.
 Database benchmark uses its upstream dummy validator; normal termination does not establish result correctness.
 
-Spring retained heap falls 11.2%, with a tight interval excluding zero.
-Database heap changes -7.7% with a wide interval crossing zero, even after
-expanding memory measurement to twelve forks per layout. This workload does
-not establish a heap improvement. Its occupancy includes collection and cache
-effects and is not an exact sum of header bytes. Neither workload establishes
-a process-RSS reduction; Spring busy-heap measurements are also inconclusive.
+Spring post-GC heap falls from 40.18 to 35.76 MiB. Its 95% interval excludes
+zero. Database heap changes −7.9%, but its interval spans −28.7% to +18.8%;
+this does not establish a database memory improvement. Busy heap and RSS do
+not establish improvements either. Occupancy includes collector slack and
+cache behavior; a fixed committed heap can hide object-size savings in RSS.
+The required class hash-offset field also has a metadata/padding cost.
 
-Timing intervals include zero: database duration changes +2.6% and Spring
-throughput -1.6%. The earlier 27.3% Spring throughput regression does not
-persist after the monitor lookup fix. These runs do not establish a speedup
-or prove absence of smaller costs: the intervals allow a 9.6% database slowdown
-and a 5.6% Spring throughput reduction. The earlier layout report additionally
-records first-hash and identity-map costs. A universal regression-free claim
-is not supported.
+Database duration changes −0.5% and Spring throughput +0.1%; neither establishes
+a speedup. The timing intervals allow a 5.0% database slowdown or a 5.0%
+Spring throughput reduction. The earlier large Spring locking regression does
+not persist after direct C2 monitor-table lookup. These measurements support
+similar typical-use performance, rather than a universal regression-free claim.
+Historical first-hash and identity-map costs are retained in the
+[layout/hash report](validation.md); they were measured on earlier images.
 
-The memory expansion was chosen after the initial three-fork database heap
-interval proved very wide, including one stock-eight fork close to candidate
-occupancy. Every original result remains included. The initial summary and
-all twelve-fork raw samples are retained; the follow-up is exploratory and
-changes no timing results. Neither the initial nor expanded final-code study
-establishes a database heap improvement.
+## Exact object footprint
 
-[All sixty final fork JSON files, CSVs, fixture SQL and image manifest](applications/)
-accompany this report. [Reproduction commands](../README.md) use the same
-workload pins. Pilots, profiles, pre-fix images, storage-limited attempts
-and an interrupted earlier matrix are excluded. The continuous timing study
-ran 2026-10-07T02:52:19Z–03:46:31Z.
+The same rebuilt release image also runs the one-million-object probe under
+Serial, G1 and ZGC with no four-byte enabling option. It sums
+`Instrumentation.getObjectSize` for one-int objects and their retaining
+reference array, checking hash and payload preservation after movement.
 
-## Prior validation and review
+| Collector | State | Stock default 8 bytes | Fork default 4 bytes | Reduction |
+| --- | --- | ---: | ---: | ---: |
+| Serial | Unhashed graph (bytes) | 20,000,016 | 12,000,008 | 40.0% |
+| G1 | Unhashed graph (bytes) | 20,000,016 | 12,000,008 | 40.0% |
+| ZGC | Unhashed graph (bytes) | 24,000,016 | 16,000,008 | 33.3% |
+| Serial/G1 | Hashed after GC (bytes) | 20,000,016 | 20,000,008 | ≈0% |
+| ZGC | Hashed after GC (bytes) | 24,000,016 | 24,000,008 | ≈0% |
 
-[Run 37577272055](https://github.com/re-thc/openjdk-jdk27u/actions/runs/37577272055)
-at `bf5ee5ef5062fb2148b9e9b20b792d6733aa8a47` passed all 29 jobs:
-four x64/AArch64 release/fastdebug builds, six native/focused lanes and eighteen
-HotSpot/JDK/langtools tier1/tier2 lanes across the three layouts. Actual logs
-record **92,839 jtreg executions and 8,421 native tests**, with zero reported
-failures or errors. These are repeated executions, not unique test names.
-The [snapshot](applications/final-ci-snapshot.json) retains all jobs and
-24 audited test summaries; full logs and JTRs are in that run's artifacts.
-
-The separate [standard sanity run](https://github.com/re-thc/openjdk-jdk27u/actions/runs/37577266729)
-failed two compiler IR tests on Linux, macOS and Windows: arraycopy selection
-and vector alignment assumed compact headers always imply a twelve-byte
-array base. Four-byte headers use an eight-byte array base. Review changes
-retain eight-byte assertions, check aligned copying for four-byte headers,
-and add positive and negative vector IR expectations. The header flag is
-whitelisted for IR matching, and both cases join fastdebug CI in every layout.
-The test-only review at `bd500907d778` passed all six x64/AArch64 fastdebug
-layout lanes before its run was superseded. On the subsequent runtime fix
-`d222c871c122`, all six local arraycopy/vector cases pass with IR verification
-enabled. A temporary local worker-pool bound accommodated the container's
-process limit and was restored before committing; IR assertions were retained.
-The separate standard workflow still requires a current completed result.
-[Original failure audit](applications/sanity-ci-review.json).
-
-The attached review then identified runtime forwarding, compaction, accounting
-and header-access fixes, implemented at `d222c871c122`. The table above remains
-pinned to the earlier `9b75f196c2a` image and does not validate these new changes.
-[Review resolutions and current validation](applications/review-resolution.md).
-Copyright uses Teamoffy Pte. Ltd. for new fork contributions, preserving existing
-notices. Stale commented statements and the completed CI migration step were
-removed in the preceding test-only review.
-The minimal JVMTI module-filter correction passes on stock-eight and
-fork-default-four after unrelated proxy-test expansion is removed; the original
-test failed on both images because dynamic named modules outside layers are
-also returned by JVMTI.
-
-The application study exposed a 27.3% Spring throughput regression before
-direct C2 monitor-table lookup was added. The two-entry cache remains intact;
-ordinary address-derived and stored hashes can search the table after a miss.
-Coverage includes recursive/concurrent locking, zero hashes, collisions and
-special layouts under Serial, G1 and ZGC. The final table no longer shows that
-large cost. Default-on tests also found static archive nondeterminism, debug
-GC assertion crashes, inherited AOT child opt-out mismatches and missing jlink
-archive variants. Deterministic dump-only hashes, captured copy metadata,
-inherited option handling and all six CDS variants address those failures.
-Assertions remain enabled and the original JDK 27 JFR sampler behavior is preserved.
-
-## Final native validation
-
-The final x64 release and fastdebug images use source `9b75f196c2a`.
-Release passes 48 focused header/hash/compressed-oop/archive cases, with two cases
-ineligible for that build flavor. Fastdebug passes all 50 cases. Instrumentation
-passes four cases in each flavor. All 1,398 enabled fastdebug native tests pass
-in each of default four-byte, explicit eight-byte and legacy twelve-byte modes:
-4,194 passes, with 15 upstream disabled tests per layout. The eleven eligible
-`tier1_common` cases pass, including native wrappers, large-page, metaspace,
-memory tracking and source checks; one platform-ineligible case is unselected.
-Final per-case statuses accompany the raw evidence.
-All thirty option/AOT follow-up cases pass across both build flavors and all
-three layouts. All thirty additional release/debug JDK/JFR cases pass, as do
-the stock-eight boundary control and the three immediate JFR/jlink controls.
-The maximum-string test passes all nine JUnit executions in each of release,
-fastdebug and stock-eight modes. Its initial offset-type compile failure is
-preserved; test-only commit `9bf17e9327f` adds the explicit conversion from
-Unsafe's long offset to the small header-word count. Production sources and
-image fingerprints remain unchanged from `9b75f196c2a`.
-
-All 126 JCStress locking/hash configurations pass again with the prior `9b75f196c2a` native
-code: 42 per collector under Serial, G1 and ZGC, with no failed configurations,
-soft errors or hard errors.
-
+Hashing and movement erase nearly all the initial saving for this graph.
+These are exact shallow graph sizes, excluding the auxiliary hash verification
+array and dead pressure allocations. They are not application heap or RSS.
+All six probe JSON files accompany the application samples.
 
 ## Workloads and interpretation
 
 Renaissance 0.16.1 `db-shootout` uses its default 500,000 entries per reader
 and writer with MapDB, Chronicle Map and H2 MVStore. Twelve independent JVMs
-per layout run the upstream default sixteen operations, discarding the first
-eight for warmup. The dataset size is unchanged.
-Its upstream validator is a dummy, so successful completion does not prove
-database result correctness. Twelve separate JVMs per layout collect post-GC
-heap and RSS measurements with the retained-heap plugin; those runs are
-excluded from timing comparisons.
+per layout run sixteen operations; the first eight are discarded as warmup.
+Twelve separate JVMs per layout use three operations with the retained-heap
+plugin. Memory runs are excluded from timing comparisons. The complete fork
+counts were specified before this review-fix study. The upstream dummy
+validator means successful completion does not prove database result correctness.
 
-Spring Petclinic is pinned to
-`67643c4137eb75bfeb177b427f8459c471bdcbd8`, with Spring Boot 3.5.0,
-Hibernate, Thymeleaf, Tomcat and embedded H2. The same jar runs on both JDKs.
-The fixture expands its database to 10,000 owners, adding one pet and visit
-per added owner. Eight persistent closed-loop HTTP workers cycle through
-owner search, owner details and veterinarians. Every response must have
-status 200 and the expected owner or page text. Six independent JVMs per
-layout use 30 seconds of warmup and 60 seconds of measured requests.
+Spring Petclinic is pinned to `67643c4137eb75bfeb177b427f8459c471bdcbd8`,
+with Spring Boot 3.5.0, Hibernate, Thymeleaf, Tomcat and embedded H2. Both JDKs
+run the same jar (SHA-256 in the manifest). The fixture contains 10,000 owners,
+adding one pet and visit per added owner. Eight persistent closed-loop workers
+cycle through owner search, owner details and veterinarians. Every measured
+response requires status 200 and expected owner/page text. Six JVMs per layout
+use 30 seconds of warmup and 60 seconds of measured requests. This local
+read-heavy workload does not model a remote production database.
 
-Each pair alternates layout order. Reported values are arithmetic means
-across independent forks; percentage changes and exploratory 95% Welch
-intervals use log ratios of fork means. Intervals are not adjusted for
-multiple comparisons. Lower duration, latency and memory are better;
-higher throughput is better. Post-GC occupancy and RSS include collector
-slack, buffers and native/application overhead and are not exact sums of
-live object sizes. A fixed committed heap can hide object-size savings in
-RSS. The Spring run is a local read-heavy test; it does not model a remote
-production database or establish a universal performance guarantee.
+Layout order alternates within pairs. Values are arithmetic means across
+independent forks. Changes and exploratory 95% Welch intervals use log ratios
+of fork means, without adjustment for multiple comparisons. Lower duration,
+latency and memory are better; higher throughput is better. The percentage
+change is therefore not always the ratio of displayed arithmetic means.
 
+The first attempted pair encountered H2 temporary-file ENOSPC. Both initial
+pair results were excluded, disposable build caches were removed, and the
+entire matrix restarted without image changes. The excluded attempt is retained
+locally and recorded in the manifest. No successful fork in the completed
+matrix is omitted. Pilots, profiles and prior-image measurements are excluded.
+
+[All sixty application fork JSON files, six footprint files, fixture SQL,
+summary CSV and manifest](applications/) accompany this report.
+[Reproduction commands](../README.md) use the same workload pins.
+[Prior-image evidence](https://github.com/re-thc/openjdk-jdk27u/tree/6f028e4f146790a16cc9e679710db526b094ec3f/doc/benchmarks/four-byte-headers/results/applications)
+remains accessible in Git history.
+
+## Review validation
+
+Both rebuilt images pass **102 local jtreg executions** in total, including
+Serial/G1/ZGC, Parallel and both Shenandoah modes, C2 IR verification,
+instrumentation and all six jlink archive variants. All **4,206 enabled native
+executions** pass across four-byte, eight-byte and legacy layouts. All **126
+JCStress configurations** pass, 42 each under Serial/G1/ZGC, with no failed
+configurations, soft errors or hard errors. The native flags test compiles
+without precompiled headers. [Per-case local statuses](applications/review-test-results.csv)
+and [finding resolutions](applications/review-resolution.md) record the scope
+and the resource-limited attempts that required bounded reruns.
+
+The new G1 boundary test reproduces the prior image's allocator assertion at
+sixteen-byte alignment and passes on both rebuilt images at both alignments.
+The strengthened generational Shenandoah case is additional coverage and also
+passes the prior image. Assertions and IR checks remain enabled.
+
+The [review-fix three-layout CI](https://github.com/re-thc/openjdk-jdk27u/actions/runs/37656205271)
+and [standard sanity CI](https://github.com/re-thc/openjdk-jdk27u/actions/runs/37656180956)
+run on `6f028e4f146`; [the snapshot](applications/review-ci-snapshot.json) records
+completed and pending jobs separately. Later test/evidence commits have their
+own PR checks. The [prior full CI audit](applications/final-ci-snapshot.json)
+records 92,839 jtreg and 8,421 native passes on its earlier revision and is not
+current runtime validation.
+
+New fork contributions use **Teamoffy Pte. Ltd.**, preserving existing notices.

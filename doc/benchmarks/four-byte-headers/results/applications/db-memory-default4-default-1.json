@@ -4,39 +4,39 @@
   "data": {
     "db-shootout": {
       "results": [{
-        "retained_heap_after_bytes": 51485480,
-        "non_heap_before_bytes": 55523112,
-        "uptime_ns": 6394248657,
-        "retained_heap_before_bytes": 34318152,
-        "duration_ns": 5341901740,
-        "rss_before_bytes": 939122688,
-        "non_heap_after_bytes": 57159472,
-        "rss_after_bytes": 1120161792
+        "retained_heap_after_bytes": 89762488,
+        "non_heap_before_bytes": 55800184,
+        "uptime_ns": 7039663159,
+        "retained_heap_before_bytes": 35570992,
+        "duration_ns": 5369577401,
+        "rss_before_bytes": 955342848,
+        "non_heap_after_bytes": 57292640,
+        "rss_after_bytes": 1147351040
       }, {
-        "retained_heap_after_bytes": 46768560,
-        "non_heap_before_bytes": 56075320,
-        "uptime_ns": 11815164824,
-        "retained_heap_before_bytes": 51491216,
-        "duration_ns": 4901721972,
-        "rss_before_bytes": 1120198656,
-        "non_heap_after_bytes": 56598112,
-        "rss_after_bytes": 1126400000
+        "retained_heap_after_bytes": 76393088,
+        "non_heap_before_bytes": 56187752,
+        "uptime_ns": 12541074827,
+        "retained_heap_before_bytes": 89768224,
+        "duration_ns": 4596348952,
+        "rss_before_bytes": 1147375616,
+        "non_heap_after_bytes": 56408688,
+        "rss_after_bytes": 1159045120
       }, {
-        "retained_heap_after_bytes": 47595816,
-        "non_heap_before_bytes": 56248600,
-        "uptime_ns": 16860320949,
-        "retained_heap_before_bytes": 46768760,
-        "duration_ns": 4701268690,
-        "rss_before_bytes": 1126416384,
-        "non_heap_after_bytes": 56358304,
-        "rss_after_bytes": 1130418176
+        "retained_heap_after_bytes": 92993808,
+        "non_heap_before_bytes": 56378536,
+        "uptime_ns": 17228503660,
+        "retained_heap_before_bytes": 76393304,
+        "duration_ns": 4911896982,
+        "rss_before_bytes": 1159045120,
+        "non_heap_after_bytes": 56489704,
+        "rss_after_bytes": 1159860224
       }],
       "termination": "normal"
     }
   },
   "environment": {
     "os": {
-      "virt_mem_committed": 4046192640,
+      "virt_mem_committed": 4057735168,
       "name": "Linux",
       "open_fd_count": 69,
       "available_processors": 4,
@@ -45,17 +45,17 @@
       "arch": "amd64",
       "max_fd_count": 16384,
       "swap_space_free": 0,
-      "phys_mem_free": 9421221888,
+      "phys_mem_free": 7405887488,
       "swap_space_total": 0
     },
     "vm": {
       "termination": "normal",
       "name": "OpenJDK 64-Bit Server VM",
       "classloading": {
-        "class_count": 6966,
-        "classes_total": 6966
+        "class_count": 6965,
+        "classes_total": 6965
       },
-      "start_ns": 105877562052370,
+      "start_ns": 159174062052345,
       "mode": "mixed mode, sharing",
       "args": ["-Xms512m", "-Xmx512m", "-XX:ActiveProcessorCount=4", "-XX:+PrintFlagsFinal", "--enable-native-access=ALL-UNNAMED", "--add-opens=java.base/java.nio=ALL-UNNAMED", "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"],
       "vendor": "Oracle Corporation",
@@ -63,36 +63,36 @@
       "spec_name": "Java Virtual Machine Specification",
       "compiler": {
         "name": "HotSpot 64-Bit Tiered Compilers",
-        "compilation_time_ms": 10545
+        "compilation_time_ms": 11498
       },
-      "start_iso": "2026-10-07T03:44:38.227Z",
+      "start_iso": "2026-10-07T18:32:54.727Z",
       "collectors": [{
         "name": "G1 Young Generation",
-        "collection_count": 182,
-        "collection_time_ms": 694
+        "collection_count": 177,
+        "collection_time_ms": 824
       }, {
         "name": "G1 Concurrent GC",
-        "collection_count": 4,
-        "collection_time_ms": 7
+        "collection_count": 48,
+        "collection_time_ms": 90
       }, {
         "name": "G1 Old Generation",
         "collection_count": 9,
-        "collection_time_ms": 269
+        "collection_time_ms": 296
       }],
-      "start_unix_ms": 1791344678227,
+      "start_unix_ms": 1791397974727,
       "version": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
       "pools": [{
         "name": "CodeHeap 'non-nmethods'",
         "type": "NON_HEAP",
         "usage": {
           "init": 2555904,
-          "used": 2102656,
+          "used": 2101504,
           "committed": 2555904,
           "max": 5836800
         },
         "peak_usage": {
           "init": 2555904,
-          "used": 2192128,
+          "used": 2185856,
           "committed": 2555904,
           "max": 5836800
         }
@@ -101,14 +101,14 @@
         "type": "NON_HEAP",
         "usage": {
           "init": 0,
-          "used": 40273616,
-          "committed": 40697856,
+          "used": 40294208,
+          "committed": 40763392,
           "max": -1
         },
         "peak_usage": {
           "init": 0,
-          "used": 40273616,
-          "committed": 40697856,
+          "used": 40294208,
+          "committed": 40763392,
           "max": -1
         }
       }, {
@@ -116,14 +116,14 @@
         "type": "NON_HEAP",
         "usage": {
           "init": 2555904,
-          "used": 5114112,
-          "committed": 6553600,
+          "used": 5193728,
+          "committed": 6750208,
           "max": 122912768
         },
         "peak_usage": {
           "init": 2555904,
-          "used": 6498048,
-          "committed": 6553600,
+          "used": 6734464,
+          "committed": 6750208,
           "max": 122912768
         }
       }, {
@@ -131,13 +131,13 @@
         "type": "NON_HEAP",
         "usage": {
           "init": 0,
-          "used": 7604496,
+          "used": 7603472,
           "committed": 7798784,
           "max": 520093696
         },
         "peak_usage": {
           "init": 0,
-          "used": 7604496,
+          "used": 7603472,
           "committed": 7798784,
           "max": 520093696
         }
@@ -147,7 +147,7 @@
         "usage": {
           "init": 29360128,
           "used": 19922944,
-          "committed": 321912832,
+          "committed": 260046848,
           "max": -1
         },
         "peak_usage": {
@@ -161,13 +161,13 @@
         "type": "HEAP",
         "usage": {
           "init": 507510784,
-          "used": 47595816,
-          "committed": 214958080,
+          "used": 92993808,
+          "committed": 276824064,
           "max": 536870912
         },
         "peak_usage": {
           "init": 507510784,
-          "used": 289674296,
+          "used": 472349856,
           "committed": 507510784,
           "max": 536870912
         }
@@ -191,18 +191,18 @@
         "type": "NON_HEAP",
         "usage": {
           "init": 2555904,
-          "used": 2827904,
+          "used": 2828160,
           "committed": 3211264,
           "max": 122912768
         },
         "peak_usage": {
           "init": 2555904,
-          "used": 3159168,
+          "used": 3175680,
           "committed": 3211264,
           "max": 122912768
         }
       }],
-      "uptime_ms": 21734,
+      "uptime_ms": 22368,
       "compressed_oops_mode": "32-bit",
       "threads": {
         "thread_count": 12,
@@ -214,14 +214,14 @@
       "memory": {
         "heap_usage": {
           "init": 536870912,
-          "used": 66470184,
+          "used": 111868176,
           "committed": 536870912,
           "max": 536870912
         },
         "nonheap_usage": {
           "init": 7667712,
-          "used": 57874360,
-          "committed": 60751872,
+          "used": 57972336,
+          "committed": 61014016,
           "max": -1
         },
         "pending_finalization_count": 0
@@ -234,7 +234,7 @@
       "spec_version": "27",
       "spec_vendor": "Oracle Corporation",
       "spec_name": "Java Platform API Specification",
-      "home": "/workspace/work/final-jdk/release-image",
+      "home": "/workspace/work/pr8-review/release-image",
       "version": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
       "java_vendor": "N/A",
       "library_path": ["/usr/java/packages/lib", "/usr/lib64", "/lib64", "/lib", "/usr/lib"]
