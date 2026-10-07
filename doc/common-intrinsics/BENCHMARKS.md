@@ -85,6 +85,25 @@ executed operation implementations are unchanged. The final VM/class image
 hashes are recorded separately. An early short-array hash slowdown was fixed
 by force-inlining the C1 Java helper; final C1 samples include this fix.
 
+## Startup check
+
+The enabled interpreter eagerly generates compiler stubs. A separate Linux
+process check timed `java -version` with a 32 MiB fixed heap and one active
+processor, pinned to CPU 0: 25 paired fresh processes per tier, alternating
+off/on order. No local build or test ran concurrently. Wall time includes the
+launcher, VM initialization and exit; RSS is each process's `wait4` maximum.
+
+| Mode | Off ms | On ms | Paired on-minus-off ms (95% interval) | Off/on mean RSS KiB |
+| --- | ---: | ---: | ---: | ---: |
+| Interpreter | 152.81 | 146.04 | -6.77 [-11.63, -1.90] | 37,233 / 37,467 |
+| C1 | 174.15 | 173.31 | -0.83 [-12.31, +10.65] | 42,704 / 42,893 |
+| C2 | 218.01 | 217.92 | -0.09 [-5.40, +5.22] | 41,841 / 41,829 |
+
+These local samples did not establish a startup slowdown. Their intervals
+still allow increases in C1/C2, and this does not qualify application startup
+or retained VM memory. [startup.json](results/startup.json) preserves all 150
+process observations; intervals use Student-t on paired time differences.
+
 ## Correctness and builds
 
 * x86-64 release: full `jdk` build passes.
