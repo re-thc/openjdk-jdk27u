@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -105,7 +106,7 @@ ParMarkBitMap       PSParallelCompactNew::_mark_bitmap;
 
 PSParallelCompactNew::IsAliveClosure PSParallelCompactNew::_is_alive_closure;
 
-class PCAdjustPointerClosure: public BasicOopIterateClosure {
+class PCAdjustPointerClosureNew: public BasicOopIterateClosure {
   template <typename T>
   void do_oop_work(T* p) { PSParallelCompactNew::adjust_pointer(p); }
 
@@ -116,7 +117,7 @@ public:
   ReferenceIterationMode reference_iteration_mode() final { return DO_FIELDS; }
 };
 
-static PCAdjustPointerClosure pc_adjust_pointer_closure;
+static PCAdjustPointerClosureNew pc_adjust_pointer_closure;
 
 class IsAliveClosure: public BoolObjectClosure {
 public:

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -324,6 +325,10 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
       if (UseFourByteObjectHeaders) {
         Label expanded, hash_ready;
         movl(hash, Address(obj, oopDesc::mark_offset_in_bytes()));
+        movl(rax_reg, hash);
+        andl(rax_reg, markWord::lock_mask_in_place);
+        cmpl(rax_reg, markWord::monitor_value);
+        jcc(Assembler::notEqual, slow_path);
         andl(hash, markWord::hashctrl_mask_in_place);
         cmpl(hash, markWord::hashctrl_hashed_mask_in_place | markWord::hashctrl_expanded_mask_in_place);
         jcc(Assembler::equal, expanded);

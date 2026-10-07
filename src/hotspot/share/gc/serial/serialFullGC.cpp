@@ -611,6 +611,8 @@ void SerialFullGC::mark_object(oop obj) {
   // some marks may contain information we need to preserve so we store them away
   // and overwrite the mark.  We'll restore it at the end of serial full GC.
   markWord mark = obj->mark();
+  // Compact headers force the monitor table on, so locked/inflated marks still
+  // carry klass and hash control. Preserve those bits while marking the object.
   obj->set_mark(mark.set_marked());
 
   ContinuationGCSupport::transform_stack_chunk(obj);

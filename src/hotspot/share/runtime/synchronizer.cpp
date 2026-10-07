@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -830,6 +831,8 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
 
 uint32_t ObjectSynchronizer::get_hash(markWord mark, oop obj, Klass* klass) {
   assert(UseFourByteObjectHeaders, "Only with compact i-hash");
+  assert((mark.value() & markWord::lock_mask_in_place) != markWord::marked_value,
+         "forwarding pointers do not contain hash metadata");
   assert(mark.is_hashed(), "only from hashed or copied object");
   if (mark.is_hashed_expanded()) {
     return obj->int_field(klass->hash_offset_in_bytes(obj, mark));
@@ -842,6 +845,8 @@ uint32_t ObjectSynchronizer::get_hash(markWord mark, oop obj, Klass* klass) {
 }
 
 uint32_t ObjectSynchronizer::get_hash(markWord mark, oop obj) {
+  assert((mark.value() & markWord::lock_mask_in_place) != markWord::marked_value,
+         "must resolve forwarding before decoding the klass");
   return get_hash(mark, obj, mark.klass());
 }
 

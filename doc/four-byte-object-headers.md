@@ -64,6 +64,8 @@ class encoding. Applications that exhaust that space fail with
 `OutOfMemoryError: Compressed class space`; disable the option for applications
 that need more space. The number of loadable classes depends on their metadata
 size and is not a fixed 512K-class allowance.
+The per-class hash-offset field also has a metadata and alignment cost;
+object-heap savings do not imply equivalent savings in class metadata or RSS.
 
 CDS archives encode the selected header layout. This port changes the archive
 format, so recreate custom CDS and AOT caches when switching from an unmodified
@@ -76,6 +78,8 @@ do not change the archive. Already-hashed archived objects retain those hash val
 The four-byte variants are `classes_fourbyte.jsa` and
 `classes_nocoops_fourbyte.jsa`.
 The jlink `--generate-cds-archive` plugin also generates all six variants.
+Image and jlink four-byte archive dumps use `-Xint` to select those deterministic
+static-dump hash inputs.
 JFR old-object sampling remains available with Serial and G1; leak-context
 edge indices use the JDK 27 side table and do not consume header bits.
 

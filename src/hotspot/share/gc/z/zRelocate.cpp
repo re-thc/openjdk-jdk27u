@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -626,7 +627,7 @@ private:
       const zaddress to_addr = _forwarding->find(from_addr, &cursor);
       if (!is_null(to_addr)) {
         // Already relocated
-        increase_other_forwarded(size);
+        increase_other_forwarded(ZUtils::object_size(to_addr));
         return to_addr;
       }
     }
@@ -658,7 +659,7 @@ private:
     if (to_addr != allocated_addr) {
       // Already relocated, undo allocation
       _allocator->undo_alloc_object(to_page, to_addr, size);
-      increase_other_forwarded(size);
+      increase_other_forwarded(ZUtils::object_size(to_addr));
     } else {
       _forwarding->record_hash_expansion(old_size, size);
     }

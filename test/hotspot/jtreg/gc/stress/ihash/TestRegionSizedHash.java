@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +25,18 @@
 package gc.stress.ihash;
 
 /*
+ * @test id=Shenandoah-generational
+ * @summary Hash expansion and in-place compaction preserve region boundaries
+ * @requires vm.gc.Shenandoah
+ * @run main/othervm -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
+ *      -XX:ShenandoahGCMode=generational
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC -XX:+ShenandoahVerify
+ *      -XX:-ExplicitGCInvokesConcurrent -Xms32m -Xmx32m
+ *      -XX:+UnlockExperimentalVMOptions -XX:ShenandoahRegionSize=256K
+ *      gc.stress.ihash.TestRegionSizedHash
+ */
+
+/*
  * @test id=Shenandoah
  * @bug 8387285
  * @summary An identity-hashed object whose size equals exactly one region must be
@@ -31,7 +44,7 @@ package gc.stress.ihash;
  *          does not overflow a regular region.
  * @requires vm.gc.Shenandoah
  * @run main/othervm
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC -XX:+ShenandoahVerify
  *      -XX:-ExplicitGCInvokesConcurrent
  *      -Xms32m -Xmx32m
@@ -47,7 +60,7 @@ package gc.stress.ihash;
  *          does not overflow a regular region.
  * @requires vm.gc.Shenandoah
  * @run main/othervm
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC -XX:+ShenandoahVerify
  *      -XX:-ExplicitGCInvokesConcurrent
  *      -XX:ShenandoahGCHeuristics=aggressive

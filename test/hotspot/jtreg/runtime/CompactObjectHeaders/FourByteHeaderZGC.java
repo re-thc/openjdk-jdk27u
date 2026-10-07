@@ -25,10 +25,10 @@
  * @test
  * @summary Verify hash growth for small and medium objects during ZGC relocation
  * @requires vm.gc.Z & vm.bits == "64" & (os.arch == "amd64" | os.arch == "aarch64")
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders
+ * @run main/othervm -XX:+UseFourByteObjectHeaders
  *      -XX:+UseZGC -XX:+UnlockDiagnosticVMOptions -XX:+ZVerifyForwarding
  *      -Xms64m -Xmx64m FourByteHeaderZGC
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders
+ * @run main/othervm -XX:+UseFourByteObjectHeaders
  *      -XX:+UseZGC -XX:+UnlockDiagnosticVMOptions -XX:+ZVerifyForwarding
  *      -XX:+ZStressRelocateInPlace -Xms64m -Xmx64m FourByteHeaderZGC
  */

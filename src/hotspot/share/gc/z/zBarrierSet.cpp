@@ -167,7 +167,8 @@ public:
     // Copy any potential tail
     copy_to(_size);
 
-    // Copy will have copied the header, clear it.
+    // Clone destinations are base-sized, without the source's hidden hash slot.
+    // Clear the copied hash state so size() describes the new allocation.
     to_oop(_dst)->init_mark();
 
     postcond(_copied_bytes == _size);

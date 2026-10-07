@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -887,7 +888,6 @@ void HeapShared::copy_java_mirror(oop orig_mirror, oop scratch_m) {
   assert(!UseFourByteObjectHeaders || scratch_m->mark().is_not_hashed_expanded(), "scratch mirror must have not-hashed-expanded state");
   assert(!UseFourByteObjectHeaders || !orig_mirror->mark().is_not_hashed_expanded(), "must not be not-hashed-expanded");
   if (!orig_mirror->fast_no_hash_check()) {
-    intptr_t orig_mark = orig_mirror->mark().value();
     intptr_t src_hash = orig_mirror->identity_hash();
     if (UseFourByteObjectHeaders) {
       // We leave the cases not_hashed/not_hashed_expanded as they are.
@@ -906,7 +906,6 @@ void HeapShared::copy_java_mirror(oop orig_mirror, oop scratch_m) {
         scratch_m->set_mark(mark);
       }
       assert(scratch_m->mark().is_hashed_expanded(), "must be hashed & moved");
-      assert(scratch_m->mark().is_not_hashed_expanded() || scratch_m->mark().is_hashed_expanded(), "must be not hashed and expanded");
     } else if (UseCompactObjectHeaders) {
       narrowKlass nk = CompressedKlassPointers::encode(orig_mirror->klass());
       scratch_m->set_mark(markWord::prototype().set_narrow_klass(nk).copy_set_hash(src_hash));

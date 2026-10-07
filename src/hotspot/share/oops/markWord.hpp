@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -354,7 +355,7 @@ class markWord {
   }
   inline markWord set_not_hashed_not_expanded() const {
     assert(UseFourByteObjectHeaders, "only with compact i-hash");
-    return markWord(value() & ~(hashctrl_mask_in_place | hashctrl_expanded_mask_in_place));
+    return markWord(value() & ~hashctrl_mask_in_place);
   }
   // Return true when object is either hashed_moved or not_hashed_moved.
   inline bool is_expanded() const {

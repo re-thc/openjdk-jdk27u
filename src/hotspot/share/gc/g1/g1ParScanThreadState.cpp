@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -551,7 +552,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       const uint young_index = from_region->young_index_in_cset();
       assert((from_region->is_young() && young_index >  0) ||
              (!from_region->is_young() && young_index == 0), "invariant" );
-      _surviving_young_words[young_index] += old_size;
+      _surviving_young_words[young_index] += word_sz;
     }
 
     obj->initialize_hash_if_necessary(old);

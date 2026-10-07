@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -345,8 +346,8 @@ void ShenandoahPrepareForGenerationalCompactionObjectClosure::do_object(oop p) {
       assert(new_to_region != _young_to_region, "must not reuse same OLD to-region");
       assert(new_to_region != nullptr, "must not be nullptr");
       _young_to_region = new_to_region;
-      obj_size = _young_compact_point == cast_from_oop<HeapWord*>(p) ? old_size : new_size;
       _young_compact_point = _young_to_region->bottom();
+      obj_size = _young_compact_point == cast_from_oop<HeapWord*>(p) ? old_size : new_size;
     }
 
     // Object fits into current region, record new location, if object does not move:

@@ -34,7 +34,7 @@ import jdk.test.lib.process.ProcessTools;
 public class FourByteHeaderArchives {
     static OutputAnalyzer run(boolean four, String mode, String path) throws Exception {
         return new OutputAnalyzer(ProcessTools.createLimitedTestJavaProcessBuilder(
-            "-XX:+UnlockExperimentalVMOptions", "-XX:" + (four ? "+" : "-") + "UseFourByteObjectHeaders",
+            "-XX:" + (four ? "+" : "-") + "UseFourByteObjectHeaders",
             "-XX:+UseCompactObjectHeaders", "-XX:+UseG1GC", "-Xmx256m", "-Xshare:" + mode,
             "-XX:SharedArchiveFile=" + path, "-Xlog:aot", "-version").start());
     }

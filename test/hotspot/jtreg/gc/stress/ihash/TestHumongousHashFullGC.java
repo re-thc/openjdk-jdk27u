@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +32,7 @@ package gc.stress.ihash;
  *          region after hash expansion.
  * @requires vm.gc.Shenandoah
  * @run main/othervm
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC -XX:+ShenandoahVerify
  *      -XX:-ExplicitGCInvokesConcurrent
  *      -Xms16m -Xmx16m
@@ -47,7 +48,7 @@ package gc.stress.ihash;
  *          region after hash expansion.
  * @requires vm.gc.Shenandoah
  * @run main/othervm
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC -XX:+ShenandoahVerify
  *      -XX:-ExplicitGCInvokesConcurrent
  *      -XX:ShenandoahGCHeuristics=aggressive

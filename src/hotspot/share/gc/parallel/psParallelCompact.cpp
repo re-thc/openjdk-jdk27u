@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -511,7 +512,7 @@ ParallelCompactData PSParallelCompact::_summary_data;
 
 PSParallelCompact::IsAliveClosure PSParallelCompact::_is_alive_closure;
 
-class PCAdjustPointerClosureNew: public BasicOopIterateClosure {
+class PCAdjustPointerClosure: public BasicOopIterateClosure {
   template <typename T>
   void do_oop_work(T* p) { PSParallelCompact::adjust_pointer(p); }
 
@@ -522,7 +523,7 @@ public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
 };
 
-static PCAdjustPointerClosureNew pc_adjust_pointer_closure;
+static PCAdjustPointerClosure pc_adjust_pointer_closure;
 
 bool PSParallelCompact::IsAliveClosure::do_object_b(oop p) { return mark_bitmap()->is_marked(p); }
 

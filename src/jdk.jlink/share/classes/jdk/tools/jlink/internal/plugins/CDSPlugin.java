@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +84,8 @@ public final class CDSPlugin extends AbstractPlugin implements PostProcessor {
         if (headers == HeaderLayout.LEGACY) {
             archiveMsg += "-NOCOH";
         } else if (headers == HeaderLayout.FOUR_BYTE) {
+            // Use the deterministic dump-only hash inputs.
+            javaCmd.add("-Xint");
             archiveMsg += "-FOURBYTE";
         }
         ProcessBuilder builder = new ProcessBuilder(javaCmd);
