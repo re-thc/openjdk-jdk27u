@@ -133,6 +133,7 @@ public class TestCommonIntrinsicAvailability {
 
     public static void main(String[] args) throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
+        String cpuFeatures = wb.getCPUFeatures();
         boolean enabled = !args[0].equals("disabled");
         Set<String> disabled = switch (args[0]) {
             case "selective" -> Set.of("_multiplyToLen", "_vectorizedHashCode", "_vectorizedHashCodeLeaf", "_addExactI");
@@ -150,6 +151,12 @@ public class TestCommonIntrinsicAvailability {
                            "_intpoly_montgomeryMult_P256", "_intpoly_assign", "_quad_keccak")
                             .contains(entry.id())) {
                 expected = false;
+            }
+            // x86 shift stubs are generated only with AVX-512 VBMI2.
+            if (System.getProperty("os.arch").equals("amd64") &&
+                    Set.of("_bigIntegerRightShiftWorker", "_bigIntegerLeftShiftWorker")
+                            .contains(entry.id())) {
+                expected &= cpuFeatures.contains("avx512_vbmi2");
             }
             for (String flag : entry.flags().split(",")) {
                 if (flag.isEmpty()) continue;

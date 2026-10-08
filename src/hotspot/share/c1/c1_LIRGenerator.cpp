@@ -2813,6 +2813,15 @@ void LIRGenerator::do_CommonScalarIntrinsic(Intrinsic* x) {
   vmIntrinsics::ID id = x->id();
   bool wide = CommonIntrinsics::scalar_is_wide(id);
   bool binary = CommonIntrinsics::is_binary_scalar(id);
+  // state_for may emit code for pending expression-stack values. Materialize
+  // those before loading fixed registers needed by multiply and divide.
+  CodeEmitInfo* info = nullptr;
+  CodeStub* fallback = nullptr;
+  if (CommonIntrinsics::can_fallback(id)) {
+    info = state_for(x, x->state_before());
+    info->set_force_reexecute();
+    fallback = new PredicateFailedStub(info);
+  }
   LIRItem left(x->argument_at(0), this);
   left.load_item();
   LIR_Opr right = LIR_OprFact::illegalOpr;
@@ -2861,19 +2870,17 @@ void LIRGenerator::do_CommonScalarIntrinsic(Intrinsic* x) {
     vtmp = new_register(T_DOUBLE);
   }
 #endif
-  CodeEmitInfo* info = nullptr;
-  CodeStub* fallback = nullptr;
-  if (CommonIntrinsics::can_fallback(id)) {
-    info = state_for(x, x->state_before());
-    info->set_force_reexecute();
-    fallback = new PredicateFailedStub(info);
-  }
   __ append(new LIR_OpCommonScalar(vmIntrinsics::as_int(id), left.result(), right,
                                   rlock_result(x), tmp1, tmp2, vtmp, info, fallback));
 }
 
 void LIRGenerator::do_CommonIntrinsic(Intrinsic* x) {
   assert(CommonIntrinsics::is_available_for_c1(x->id()), "available common backend");
+  // Preserve Java evaluation order and finish any pending code before writing
+  // the outgoing argument vector or calling the shared leaf.
+  CodeEmitInfo* info = state_for(x, x->state_before());
+  info->set_force_reexecute();
+  CodeStub* fallback = new PredicateFailedStub(info);
   int slots = CommonIntrinsics::parameter_slots(x->id());
   // Keep the raw argument vector clear of the C ABI register-save area.
   const int base = 4 * wordSize;
@@ -2902,9 +2909,6 @@ void LIRGenerator::do_CommonIntrinsic(Intrinsic* x) {
   args.append(argv);
   LIR_Opr result = call_runtime(&signature, &args, CommonIntrinsics::entry_for(x->id()), longType, nullptr);
 
-  CodeEmitInfo* info = state_for(x, x->state_before());
-  info->set_force_reexecute();
-  CodeStub* fallback = new PredicateFailedStub(info);
   LIR_Opr sentinel = new_register(T_LONG);
   __ move(LIR_OprFact::longConst(CommonIntrinsics::fallback), sentinel);
   __ cmp(lir_cond_equal, result, sentinel);

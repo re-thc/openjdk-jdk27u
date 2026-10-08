@@ -208,6 +208,25 @@ public class TestCommonArithmeticIntrinsics {
         return Math.subtractExact(x, y);
     }
 
+    // The left side remains on the expression stack while the intrinsic is
+    // lowered. Materializing its long multiply must not overwrite RAX after
+    // the dividend has been loaded there.
+    private static long validPendingDivide(long x, long y, long s) {
+        return 4 * s + Long.divideUnsigned(x, y);
+    }
+
+    private static int validPendingDivideInt(int x, int y, long s) {
+        return (int) (4 * s) + Integer.divideUnsigned(x, y);
+    }
+
+    private static long validPendingRemainder(long x, long y, long s) {
+        return 4 * s + Long.remainderUnsigned(x, y);
+    }
+
+    private static int validPendingRemainderInt(int x, int y, long s) {
+        return (int) (4 * s) + Integer.remainderUnsigned(x, y);
+    }
+
     private static void checkValidCompiledInputs() {
         // Compile these small roots while all operands are valid. An earlier
         // guard failure would suppress their common intrinsic on recompilation
@@ -215,6 +234,11 @@ public class TestCommonArithmeticIntrinsics {
         for (int i = 0; i < 50_000; i++) {
             int x = (i & 255) + 1;
             int y = (i & 127) + 1;
+            long factor = (i & 7) + 1;
+            equal(validPendingDivide(x, y, factor), 4 * factor + x / y);
+            equal(validPendingDivideInt(x, y, factor), 4 * factor + x / y);
+            equal(validPendingRemainder(x, y, factor), 4 * factor + x % y);
+            equal(validPendingRemainderInt(x, y, factor), 4 * factor + x % y);
             equal(constantRemainder(), -68719476738L);
             equal(validConstantMultiply(), -16049371L);
             equal(validConstantMultiplyInt(), -16049371L);
