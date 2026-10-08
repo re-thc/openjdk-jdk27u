@@ -1,0 +1,57 @@
+name: Common intrinsics Windows ARM NMT control
+on:
+  push:
+    branches: [pr/common-intrinsics-nmt-control-263a1ee20fb]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  control:
+    runs-on: windows-11-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: bundles-windows-aarch64-debug
+          run-id: 37725033578
+          github-token: ${{ github.token }}
+          path: bundles
+      - name: Run paired NMT controls
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          New-Item -ItemType Directory -Force images/jdk,images/tests,evidence | Out-Null
+          Expand-Archive -LiteralPath bundles/jdk-windows-aarch64-debug.zip -DestinationPath images/jdk
+          & tar -xf bundles/tests-windows-aarch64-debug.tar.gz -C images/tests
+          if ($LASTEXITCODE -ne 0) { throw 'Test bundle extraction failed' }
+          $java = Get-ChildItem images/jdk -Filter java.exe -Recurse | Where-Object {$_.Directory.Name -eq 'bin'} | Select-Object -First 1
+          $jdk = $java.Directory.Parent.FullName
+          $launcher = Get-ChildItem images/tests -Filter gtestLauncher.exe -Recurse | Where-Object {$_.Directory.Name -eq 'server'} | Select-Object -First 1
+          if (!$java -or !$launcher) { throw 'Missing native build images' }
+          $env:PATH = $launcher.Directory.FullName + ';' + $jdk + '\bin;' + $jdk + '\bin\server;' + $env:PATH
+          $records = @()
+          for ($pair = 0; $pair -lt 3; $pair++) {
+            $states = if ($pair % 2 -eq 0) { @('off','on') } else { @('on','off') }
+            foreach ($state in $states) {
+              $flag = if ($state -eq 'off') {'-XX:-UseCommonIntrinsics'} else {'-XX:+UseCommonIntrinsics'}
+              $arguments = @('-jdk',$jdk,'-Xmx200m','--gtest_filter=NMT*:os*','--gtest_catch_exceptions=0',('-'+'-gtest_output=xml:evidence/' + $pair + '-' + $state + '.xml'),'-XX:NativeMemoryTracking=detail',$flag)
+              & $launcher.FullName @arguments 2>&1 | Tee-Object -FilePath ('evidence/' + $pair + '-' + $state + '.log')
+              $code = $LASTEXITCODE
+              $records += [pscustomobject]@{pair=$pair;state=$state;exit_code=$code;arguments=$arguments}
+              $records | ConvertTo-Json -Depth 6 | Set-Content evidence/controls.json
+            }
+          }
+          [pscustomobject]@{
+            implementation_revision='263a1ee20fb3520fa5c6c25179ea9517465e78e8'
+            build_run=37725033578
+            control_run='${{ github.run_id }}'
+            launcher_sha256=(Get-FileHash $launcher.FullName -Algorithm SHA256).Hash.ToLower()
+            gtest_vm_sha256=(Get-FileHash ($launcher.Directory.FullName + '\jvm.dll') -Algorithm SHA256).Hash.ToLower()
+            modules_sha256=(Get-FileHash ($jdk + '\lib\modules') -Algorithm SHA256).Hash.ToLower()
+          } | ConvertTo-Json | Set-Content evidence/environment.json
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: common-intrinsics-windows-arm-nmt-control
+          path: evidence
