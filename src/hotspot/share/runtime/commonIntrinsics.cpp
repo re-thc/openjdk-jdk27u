@@ -71,8 +71,10 @@ template <typename T> T* elements(oop array) {
 
 // Generated stubs use machine-word argument slots and can read the full
 // register for a Java int. Darwin's C ABI leaves the upper half unspecified
-// for a jint argument, so extend it before crossing into generated code.
+// for a jint argument, so extend it according to its signedness before
+// crossing into generated code.
 intptr_t stub_argument(jint arg) { return arg; }
+uintptr_t stub_argument(juint arg) { return arg; }
 
 template <typename T>
 T stub_argument(T arg) { return arg; }
@@ -200,8 +202,9 @@ JRT_LEAF(jlong, common_mulAdd(const intptr_t* args))
       !array_range(in, T_INT, 0, len) || !array_range(out, T_INT, 0, static_cast<jlong>(offset) + len)) {
     return CommonIntrinsics::fallback;
   }
+  // k is an unsigned 32-bit limb, including negative Java int bit patterns.
   return invoke_stub<jint>(stub, elements<jint>(out), elements<jint>(in),
-                           typeArrayOop(out)->length() - offset, len, k);
+                           typeArrayOop(out)->length() - offset, len, static_cast<juint>(k));
 JRT_END
 
 JRT_LEAF(jlong, common_montgomeryMultiply(const intptr_t* args))
