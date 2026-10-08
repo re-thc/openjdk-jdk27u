@@ -8,8 +8,8 @@ This change shares **41 guarded bulk kernels and 40 direct integer operations**
 between the template interpreter and C1. It does not port every C2 operation:
 the complete [applicability audit](applicability.csv) records the remaining
 63 cases needing dedicated lowering, 27 Vector API/compiler IR cases and 14 VM
-protocol cases. They retain their original implementations. Native ARM64
-performance and full tier1/tier2 qualification remain outstanding.
+protocol cases. They retain their original implementations. The
+[validation report](BENCHMARKS.md) records measured and tested coverage.
 
 ## Open PR and existing-intrinsic exclusions
 
@@ -46,6 +46,19 @@ python3 make/scripts/check-common-intrinsics.py
 The three catalogues in `runtime/commonIntrinsics.hpp` define parameter slots,
 return types and the interpreter/C1 operation set together.
 
+```mermaid
+flowchart LR
+    invoke[Java invocation] --> interpreter[Interpreter entry]
+    invoke --> c1[C1 lowering]
+    interpreter --> scalar[Shared scalar assembler]
+    c1 --> scalar
+    interpreter --> leaf[Guarded C++ leaf]
+    c1 --> leaf
+    leaf --> kernel[Existing platform stubs or polynomial hash]
+    interpreter -. Guard failure .-> java[Original Java implementation]
+    c1 -. Guard failure and reexecution .-> java
+```
+
 * Integer leading/trailing zero count, population count, bit/byte reversal,
   abs/min/max, unsigned comparison/division/remainder, high multiplication and
   checked arithmetic use shared platform assembler. C1 allocates only the
@@ -69,8 +82,10 @@ return types and the interpreter/C1 operation set together.
 
 Bulk arguments use the interpreter expression-stack order, including two-slot
 longs. C1 constructs the same small stack argument vector and makes one C ABI
-leaf call. The interpreter avoids a Java frame on successful calls; ARM saves
-its link register without constructing a fake interpreter frame. Both entries
+leaf call. C1 materializes deoptimization state before loading fixed registers
+or writing outgoing arguments, so pending expression-stack values cannot
+clobber an intrinsic input. The interpreter avoids a Java frame on successful
+calls; ARM saves its link register without constructing a fake interpreter frame. Both entries
 check the JVMTI interpreter-only mode and poll for safepoints before execution.
 The C++ stub adapter extends Java integer arguments to machine width, preserving
 unsigned BigInteger limbs and matching generated stubs' register and stack slots.
@@ -119,9 +134,13 @@ stub generators are absent. Its Java ECB loop still uses the accelerated AES
 block entry. The abstract multi-block digest entry requires all five digest
 algorithms to be enabled; C1 also requires all five backend stubs. A partially
 covered digest family uses Java dispatch and eligible per-algorithm entries.
-Optional parallel Keccak availability depends on the platform backend.
+Before compiler stubs exist, interpreter entry generation checks the CPU and
+flag predicates for x86 shifts and parallel Keccak. Entries whose backend
+cannot be generated retain Java directly; C1 selects its short shift helpers
+only when the shift backend is available.
 Pure C1 builds can use the direct scalar operations without requiring C2 stubs;
-that build configuration has not been qualified here.
+runtime and performance tests for that configuration remain outside this
+report.
 
 ## Validation and performance
 
@@ -133,7 +152,6 @@ feedback, CPU instruction opt-outs, JVMTI method-entry events and intrinsic
 availability controls. The catalogue checker also verifies that every shared
 entry is non-native.
 
-This is a bounded qualification, not a universal no-regression guarantee.
-Allocating, native VM-service, floating-point and compiler-IR entries listed
-in the audit still need separate work; the shared leaf ABI does not substitute
-for their GC, exception or compiler semantics.
+Qualification covers the tests and workloads listed in the report. Allocating,
+native VM-service, floating-point and compiler-IR entries listed in the audit
+need their own GC, exception and compiler integration.

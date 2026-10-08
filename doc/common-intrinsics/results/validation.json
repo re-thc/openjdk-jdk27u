@@ -1,734 +1,2153 @@
 {
+  "implementation_revision": "263a1ee20fb3520fa5c6c25179ea9517465e78e8",
   "base_revision": "33e539f2d4a847f283a3793df6eebd41b9d1dfac",
-  "images": {
-    "work/jdk-baseline/lib/server/libjvm.so": "39c3d528b07a3672063fc9280f3a0a3b8a590651423f9d6e2e664c73b052ce13",
-    "work/jdk-bench/lib/server/libjvm.so": "5083e50e4c6930c533d39f1f6644d8947f397ae967d3c5946f9decc02286f981",
-    "work/jdk-arm/lib/server/libjvm.so": "a0a9aa82fa8ba8634becf1ea1b4441c164e73b8cbebbb85f72f7467b4847db7d",
-    "work/jdk-bench/modules/java.base/jdk/internal/util/ArraysSupport.class": "c3e574b72a425759ca032eda2f08557c04d3dea33d35f6221255b44acc40a3c6"
-  },
-  "builds": {
-    "x86_64": "Building target 'jdk' in configuration 'cloud-gcc16'\nUpdating support/modules_libs/java.base/server/libjvm.so due to 2 file(s)\nmold: warning: /workspace/openjdk-jdk27u/make/data/hotspot-symbols/version-script-gcc.txt: cannot assign version `SUNWprivate_1.1` to symbol `__bss_start`: symbol not found\nmold: warning: /workspace/openjdk-jdk27u/make/data/hotspot-symbols/version-script-gcc.txt: cannot assign version `SUNWprivate_1.1` to symbol `_edata`: symbol not found\nmold: warning: /workspace/openjdk-jdk27u/make/data/hotspot-symbols/version-script-gcc.txt: cannot assign version `SUNWprivate_1.1` to symbol `_end`: symbol not found\nFinished building target 'jdk' in configuration 'cloud-gcc16'",
-    "aarch64": "Building targets 'hotspot java.base-libs java.base-launchers' in configuration 'common-aarch64'\nUpdating support/modules_libs/java.base/server/libjvm.so due to 2 file(s)\nFinished building targets 'hotspot java.base-libs java.base-launchers' in configuration 'common-aarch64'"
-  },
-  "suites": [
+  "native_qualification": [
     {
-      "name": "hotspot-new",
-      "suite": "hotspot",
-      "summary": "Test results: passed: 5\nReport written to /workspace/openjdk-jdk27u/work/jtreg-final-common-report/html/report.html\nResults written to /workspace/openjdk-jdk27u/work/jtreg-final-common",
-      "results": [
+      "architecture": "x64",
+      "build_run": 37725033578,
+      "qualification_run": 37725140740,
+      "selections": [
         {
-          "test": "compiler/intrinsics/common/TestCommonArithmeticIntrinsics.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:27\\:03 UTC 2026",
-          "end": "Wed Oct 07 16\\:27\\:09 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
+          "selection": "release-common",
+          "excluded_by_platform_requirements": [],
+          "passed": 13,
+          "skipped": 0,
+          "failed": 0,
+          "tests": [
+            {
+              "test": "compiler/intrinsics/common/TestCommonArithmeticIntrinsics.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonBigIntegerShifts.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonDigestStreaming.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonEvaluationOrder.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonIntrinsicAvailability.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonIntrinsicEvents.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonIntrinsicFallback.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonIntrinsicRecompilation.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonIntrinsics.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonMethodHandles.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonMulAdd.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonScalarFlags.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonScalarIntrinsics.java",
+              "result": "passed"
+            }
+          ],
+          "command": [
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2/bin/java",
+            "-Xint",
+            "-XX:ActiveProcessorCount=1",
+            "-XX:CICompilerCount=2",
+            "-XX:+UseSerialGC",
+            "-XX:-UsePerfData",
+            "-XX:+DisableAttachMechanism",
+            "-Xrs",
+            "-Xms32m",
+            "-Xmx256m",
+            "-Dseed=42",
+            "-ea",
+            "-esa",
+            "-jar",
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/jtreg/lib/jtreg.jar",
+            "-jdk:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2",
+            "-othervm",
+            "-conc:1",
+            "-timeoutFactor:4",
+            "-nativepath:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/tests/hotspot/jtreg/native",
+            "-vmoptions:-XX:ActiveProcessorCount=1 -XX:CICompilerCount=2 -XX:+UseSerialGC -XX:-UsePerfData -XX:+DisableAttachMechanism -Xrs -Xms32m -Xmx256m -Dseed=42 -ea -esa",
+            "-w:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/release-common-work",
+            "-r:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/release-common-report",
+            "test/hotspot/jtreg/compiler/intrinsics/common"
+          ]
         },
         {
-          "test": "compiler/intrinsics/common/TestCommonIntrinsicAvailability.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:27\\:03 UTC 2026",
-          "end": "Wed Oct 07 16\\:27\\:10 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
+          "selection": "debug-common",
+          "excluded_by_platform_requirements": [],
+          "passed": 13,
+          "skipped": 0,
+          "failed": 0,
+          "tests": [
+            {
+              "test": "compiler/intrinsics/common/TestCommonArithmeticIntrinsics.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonBigIntegerShifts.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonDigestStreaming.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonEvaluationOrder.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonIntrinsicAvailability.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonIntrinsicEvents.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonIntrinsicFallback.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonIntrinsicRecompilation.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonIntrinsics.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonMethodHandles.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonMulAdd.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonScalarFlags.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonScalarIntrinsics.java",
+              "result": "passed"
+            }
+          ],
+          "command": [
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2/bin/java",
+            "-Xint",
+            "-XX:ActiveProcessorCount=1",
+            "-XX:CICompilerCount=2",
+            "-XX:+UseSerialGC",
+            "-XX:-UsePerfData",
+            "-XX:+DisableAttachMechanism",
+            "-Xrs",
+            "-Xms32m",
+            "-Xmx256m",
+            "-Dseed=42",
+            "-ea",
+            "-esa",
+            "-jar",
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/jtreg/lib/jtreg.jar",
+            "-jdk:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/debug/jdk-27.0.2/fastdebug",
+            "-othervm",
+            "-conc:1",
+            "-timeoutFactor:4",
+            "-nativepath:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/tests/hotspot/jtreg/native",
+            "-vmoptions:-XX:ActiveProcessorCount=1 -XX:CICompilerCount=2 -XX:+UseSerialGC -XX:-UsePerfData -XX:+DisableAttachMechanism -Xrs -Xms32m -Xmx256m -Dseed=42 -ea -esa -XX:+UnlockDiagnosticVMOptions -XX:+CheckUnhandledOops -XX:+VerifyOops",
+            "-w:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/debug-common-work",
+            "-r:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/debug-common-report",
+            "test/hotspot/jtreg/compiler/intrinsics/common"
+          ]
         },
         {
-          "test": "compiler/intrinsics/common/TestCommonIntrinsicFallback.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:27\\:09 UTC 2026",
-          "end": "Wed Oct 07 16\\:27\\:13 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
+          "selection": "release-hotspot",
+          "excluded_by_platform_requirements": [],
+          "passed": 11,
+          "skipped": 0,
+          "failed": 0,
+          "tests": [
+            {
+              "test": "compiler/codegen/aes/Test8292158.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/codegen/aes/Test8299817.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/codegen/aes/TestAESMain.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/codegen/aes/TestCipherBlockChainingEncrypt.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/bigInteger/MontgomeryMultiplyTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/bigInteger/TestMulAdd.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/bigInteger/TestMultiplyToLen.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/bigInteger/TestMultiplyToLenReturnProfile.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/bigInteger/TestSquareToLen.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/chacha/TestChaCha20.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/sha/TestDigest.java",
+              "result": "passed"
+            }
+          ],
+          "command": [
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2/bin/java",
+            "-Xint",
+            "-XX:ActiveProcessorCount=1",
+            "-XX:CICompilerCount=2",
+            "-XX:+UseSerialGC",
+            "-XX:-UsePerfData",
+            "-XX:+DisableAttachMechanism",
+            "-Xrs",
+            "-Xms32m",
+            "-Xmx256m",
+            "-Dseed=42",
+            "-ea",
+            "-esa",
+            "-jar",
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/jtreg/lib/jtreg.jar",
+            "-jdk:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2",
+            "-othervm",
+            "-conc:1",
+            "-timeoutFactor:4",
+            "-nativepath:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/tests/hotspot/jtreg/native",
+            "-vmoptions:-XX:ActiveProcessorCount=1 -XX:CICompilerCount=2 -XX:+UseSerialGC -XX:-UsePerfData -XX:+DisableAttachMechanism -Xrs -Xms32m -Xmx256m -Dseed=42 -ea -esa",
+            "-w:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/release-hotspot-work",
+            "-r:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/release-hotspot-report",
+            "test/hotspot/jtreg/compiler/codegen/aes/Test8292158.java",
+            "test/hotspot/jtreg/compiler/codegen/aes/Test8299817.java",
+            "test/hotspot/jtreg/compiler/codegen/aes/TestAESMain.java",
+            "test/hotspot/jtreg/compiler/codegen/aes/TestCipherBlockChainingEncrypt.java",
+            "test/hotspot/jtreg/compiler/intrinsics/bigInteger/MontgomeryMultiplyTest.java",
+            "test/hotspot/jtreg/compiler/intrinsics/bigInteger/TestMulAdd.java",
+            "test/hotspot/jtreg/compiler/intrinsics/bigInteger/TestMultiplyToLen.java",
+            "test/hotspot/jtreg/compiler/intrinsics/bigInteger/TestMultiplyToLenReturnProfile.java",
+            "test/hotspot/jtreg/compiler/intrinsics/bigInteger/TestSquareToLen.java",
+            "test/hotspot/jtreg/compiler/intrinsics/chacha/TestChaCha20.java",
+            "test/hotspot/jtreg/compiler/intrinsics/sha/TestDigest.java"
+          ]
         },
         {
-          "test": "compiler/intrinsics/common/TestCommonIntrinsics.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:27\\:10 UTC 2026",
-          "end": "Wed Oct 07 16\\:27\\:25 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
+          "selection": "release-jdk",
+          "excluded_by_platform_requirements": [],
+          "passed": 74,
+          "skipped": 0,
+          "failed": 0,
+          "tests": [
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/AEADBufferTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/Encrypt.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/GCMIncrementByte4.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/GCMIncrementDirect4.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/GCMLargeDataKAT.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/GCMParameterSpecTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/GCMShortBuffer.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/GCMShortInput.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/KeyWrapper.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/OverlapByteBuffer.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/ReadWriteSkip.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/SameBuffer.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/SealedObjectTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/WrongAAD.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/CICO.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/CTR.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/Padding.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/Test4511676.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/Test4512524.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/Test4512704.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/Test4513830.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/Test4517355.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/Test4626070.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestAESCipher.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithDefaultProvider.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithProviderChange.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithRemoveAddProvider.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestCICOWithGCM.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestCICOWithGCMAndAAD.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestCopySafe.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestGCMKeyAndIvCheck.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestGCMSplitBound.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestGHASH.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestISO10126Padding.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestKATForECB_IV.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestKATForECB_VK.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestKATForECB_VT.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestKATForGCM.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestNoPaddingModes.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestNonexpanding.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestSameBuffer.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestShortBuffer.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20KAT.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20KeyGeneratorTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20NoReuse.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20Poly1305ParamTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/OutputSizeTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/UpdateAADTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/ChaCha20CipherUnitTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/ChaCha20Poly1305ParametersUnitTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id0",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id1",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id2",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id3",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id4",
+              "result": "passed"
+            },
+            {
+              "test": "java/lang/Integer/Unsigned.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/lang/Long/Unsigned.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/lang/Math/ExactArithTests.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/math/BigDecimal/SquareRootTests.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/math/BigInteger/BigIntegerTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/math/BigInteger/ModPow.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/security/MessageDigest/ArgumentSanity.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/security/MessageDigest/ByteBuffers.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/security/MessageDigest/TestCloneable.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/security/MessageDigest/TestDigestIOStream.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/security/MessageDigest/TestDisabledAlgorithms.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/security/MessageDigest/TestSameLength.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/security/MessageDigest/TestSameValue.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/security/MessageDigest/ThreadSafetyTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/util/Arrays/HashCode.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/util/Calendar/JavatimeTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/util/logging/HigherResolutionTimeStamps/LogRecordWithNanos.java",
+              "result": "passed"
+            },
+            {
+              "test": "sun/security/provider/pqc/ML_DSA_Intrinsic_Test.java#id0",
+              "result": "passed"
+            },
+            {
+              "test": "sun/security/provider/pqc/ML_DSA_Intrinsic_Test.java#id1",
+              "result": "passed"
+            }
+          ],
+          "command": [
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2/bin/java",
+            "-Xint",
+            "-XX:ActiveProcessorCount=1",
+            "-XX:CICompilerCount=2",
+            "-XX:+UseSerialGC",
+            "-XX:-UsePerfData",
+            "-XX:+DisableAttachMechanism",
+            "-Xrs",
+            "-Xms32m",
+            "-Xmx256m",
+            "-Dseed=42",
+            "-ea",
+            "-esa",
+            "-jar",
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/jtreg/lib/jtreg.jar",
+            "-jdk:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2",
+            "-othervm",
+            "-conc:1",
+            "-timeoutFactor:4",
+            "-nativepath:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/tests/hotspot/jtreg/native",
+            "-vmoptions:-XX:ActiveProcessorCount=1 -XX:CICompilerCount=2 -XX:+UseSerialGC -XX:-UsePerfData -XX:+DisableAttachMechanism -Xrs -Xms32m -Xmx256m -Dseed=42 -ea -esa",
+            "-w:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/release-jdk-work",
+            "-r:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/release-jdk-report",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/AEADBufferTest.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/Encrypt.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/GCMIncrementByte4.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/GCMIncrementDirect4.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/GCMLargeDataKAT.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/GCMParameterSpecTest.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/GCMShortBuffer.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/GCMShortInput.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/KeyWrapper.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/OverlapByteBuffer.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/ReadWriteSkip.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/SameBuffer.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/SealedObjectTest.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/WrongAAD.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/CICO.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/CTR.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/Padding.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/Test4511676.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/Test4512524.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/Test4512704.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/Test4513830.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/Test4517355.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/Test4626070.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestAESCipher.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithDefaultProvider.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithProviderChange.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithRemoveAddProvider.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestCICOWithGCM.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestCICOWithGCMAndAAD.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestCopySafe.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestGCMKeyAndIvCheck.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestGCMSplitBound.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestGHASH.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestISO10126Padding.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestKATForECB_IV.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestKATForECB_VK.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestKATForECB_VT.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestKATForGCM.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestNoPaddingModes.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestNonexpanding.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestSameBuffer.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestShortBuffer.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20KAT.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20KeyGeneratorTest.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20NoReuse.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20Poly1305ParamTest.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/OutputSizeTest.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/UpdateAADTest.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/unittest/ChaCha20CipherUnitTest.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/unittest/ChaCha20Poly1305ParametersUnitTest.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id0",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id1",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id2",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id3",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id4",
+            "test/jdk/java/security/MessageDigest/ArgumentSanity.java",
+            "test/jdk/java/security/MessageDigest/ByteBuffers.java",
+            "test/jdk/java/security/MessageDigest/TestCloneable.java",
+            "test/jdk/java/security/MessageDigest/TestDigestIOStream.java",
+            "test/jdk/java/security/MessageDigest/TestDisabledAlgorithms.java",
+            "test/jdk/java/security/MessageDigest/TestSameLength.java",
+            "test/jdk/java/security/MessageDigest/TestSameValue.java",
+            "test/jdk/java/security/MessageDigest/ThreadSafetyTest.java",
+            "test/jdk/sun/security/provider/pqc/ML_DSA_Intrinsic_Test.java#id0",
+            "test/jdk/sun/security/provider/pqc/ML_DSA_Intrinsic_Test.java#id1",
+            "test/jdk/java/lang/Integer/Unsigned.java",
+            "test/jdk/java/lang/Long/Unsigned.java",
+            "test/jdk/java/lang/Math/ExactArithTests.java",
+            "test/jdk/java/util/Arrays/HashCode.java",
+            "test/jdk/java/math/BigInteger/BigIntegerTest.java",
+            "test/jdk/java/math/BigInteger/ModPow.java",
+            "test/jdk/java/math/BigDecimal/SquareRootTests.java",
+            "test/jdk/java/util/Calendar/JavatimeTest.java",
+            "test/jdk/java/util/logging/HigherResolutionTimeStamps/LogRecordWithNanos.java"
+          ]
         },
         {
-          "test": "compiler/intrinsics/common/TestCommonScalarIntrinsics.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:27\\:13 UTC 2026",
-          "end": "Wed Oct 07 16\\:27\\:16 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
+          "selection": "release-c1-math-1",
+          "excluded_by_platform_requirements": [],
+          "passed": 3,
+          "skipped": 0,
+          "failed": 0,
+          "tests": [
+            {
+              "test": "java/math/BigDecimal/SquareRootTests.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/math/BigInteger/BigIntegerTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/math/BigInteger/ModPow.java",
+              "result": "passed"
+            }
+          ],
+          "command": [
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2/bin/java",
+            "-Xint",
+            "-XX:ActiveProcessorCount=1",
+            "-XX:CICompilerCount=2",
+            "-XX:+UseSerialGC",
+            "-XX:-UsePerfData",
+            "-XX:+DisableAttachMechanism",
+            "-Xrs",
+            "-Xms32m",
+            "-Xmx256m",
+            "-Dseed=42",
+            "-ea",
+            "-esa",
+            "-jar",
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/jtreg/lib/jtreg.jar",
+            "-jdk:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2",
+            "-othervm",
+            "-conc:1",
+            "-timeoutFactor:4",
+            "-nativepath:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/tests/hotspot/jtreg/native",
+            "-vmoptions:-XX:ActiveProcessorCount=1 -XX:CICompilerCount=2 -XX:+UseSerialGC -XX:-UsePerfData -XX:+DisableAttachMechanism -Xrs -Xms32m -Xmx256m -Dseed=42 -ea -esa -Xbatch -XX:TieredStopAtLevel=1",
+            "-w:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/release-c1-math-1-work",
+            "-r:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/release-c1-math-1-report",
+            "test/jdk/java/math/BigInteger/BigIntegerTest.java",
+            "test/jdk/java/math/BigInteger/ModPow.java",
+            "test/jdk/java/math/BigDecimal/SquareRootTests.java"
+          ]
+        },
+        {
+          "selection": "release-c1-math-3",
+          "excluded_by_platform_requirements": [],
+          "passed": 3,
+          "skipped": 0,
+          "failed": 0,
+          "tests": [
+            {
+              "test": "java/math/BigDecimal/SquareRootTests.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/math/BigInteger/BigIntegerTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/math/BigInteger/ModPow.java",
+              "result": "passed"
+            }
+          ],
+          "command": [
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2/bin/java",
+            "-Xint",
+            "-XX:ActiveProcessorCount=1",
+            "-XX:CICompilerCount=2",
+            "-XX:+UseSerialGC",
+            "-XX:-UsePerfData",
+            "-XX:+DisableAttachMechanism",
+            "-Xrs",
+            "-Xms32m",
+            "-Xmx256m",
+            "-Dseed=42",
+            "-ea",
+            "-esa",
+            "-jar",
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/jtreg/lib/jtreg.jar",
+            "-jdk:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2",
+            "-othervm",
+            "-conc:1",
+            "-timeoutFactor:4",
+            "-nativepath:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/tests/hotspot/jtreg/native",
+            "-vmoptions:-XX:ActiveProcessorCount=1 -XX:CICompilerCount=2 -XX:+UseSerialGC -XX:-UsePerfData -XX:+DisableAttachMechanism -Xrs -Xms32m -Xmx256m -Dseed=42 -ea -esa -Xbatch -XX:TieredStopAtLevel=3",
+            "-w:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/release-c1-math-3-work",
+            "-r:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/release-c1-math-3-report",
+            "test/jdk/java/math/BigInteger/BigIntegerTest.java",
+            "test/jdk/java/math/BigInteger/ModPow.java",
+            "test/jdk/java/math/BigDecimal/SquareRootTests.java"
+          ]
         }
-      ]
+      ],
+      "fastdebug_oop_checks": [
+        "CheckUnhandledOops",
+        "VerifyOops"
+      ],
+      "environment": {
+        "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+        "cpu": {
+          "lscpu": [
+            {
+              "field": "Architecture:",
+              "data": "x86_64"
+            },
+            {
+              "field": "CPU op-mode(s):",
+              "data": "32-bit, 64-bit"
+            },
+            {
+              "field": "Address sizes:",
+              "data": "48 bits physical, 48 bits virtual"
+            },
+            {
+              "field": "Byte Order:",
+              "data": "Little Endian"
+            },
+            {
+              "field": "CPU(s):",
+              "data": "4"
+            },
+            {
+              "field": "On-line CPU(s) list:",
+              "data": "0-3"
+            },
+            {
+              "field": "Vendor ID:",
+              "data": "AuthenticAMD"
+            },
+            {
+              "field": "Model name:",
+              "data": "AMD EPYC 7763 64-Core Processor"
+            },
+            {
+              "field": "CPU family:",
+              "data": "25"
+            },
+            {
+              "field": "Model:",
+              "data": "1"
+            },
+            {
+              "field": "Thread(s) per core:",
+              "data": "2"
+            },
+            {
+              "field": "Core(s) per socket:",
+              "data": "2"
+            },
+            {
+              "field": "Socket(s):",
+              "data": "1"
+            },
+            {
+              "field": "Stepping:",
+              "data": "1"
+            },
+            {
+              "field": "BogoMIPS:",
+              "data": "4890.85"
+            },
+            {
+              "field": "Flags:",
+              "data": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl tsc_reliable nonstop_tsc cpuid extd_apicid aperfmperf tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy svm cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext vmmcall fsgsbase bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves user_shstk clzero xsaveerptr rdpru arat npt nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold v_vmsave_vmload umip vaes vpclmulqdq rdpid fsrm"
+            },
+            {
+              "field": "Virtualization:",
+              "data": "AMD-V"
+            },
+            {
+              "field": "Hypervisor vendor:",
+              "data": "Microsoft"
+            },
+            {
+              "field": "Virtualization type:",
+              "data": "full"
+            },
+            {
+              "field": "L1d cache:",
+              "data": "64 KiB (2 instances)"
+            },
+            {
+              "field": "L1i cache:",
+              "data": "64 KiB (2 instances)"
+            },
+            {
+              "field": "L2 cache:",
+              "data": "1 MiB (2 instances)"
+            },
+            {
+              "field": "L3 cache:",
+              "data": "32 MiB (1 instance)"
+            },
+            {
+              "field": "NUMA node(s):",
+              "data": "1"
+            },
+            {
+              "field": "NUMA node0 CPU(s):",
+              "data": "0-3"
+            },
+            {
+              "field": "Vulnerability Gather data sampling:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Ghostwrite:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Indirect target selection:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Itlb multihit:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability L1tf:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Mds:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Meltdown:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Mmio stale data:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Old microcode:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Reg file data sampling:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Retbleed:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Spec rstack overflow:",
+              "data": "Vulnerable: Safe RET, no microcode"
+            },
+            {
+              "field": "Vulnerability Spec store bypass:",
+              "data": "Vulnerable"
+            },
+            {
+              "field": "Vulnerability Spectre v1:",
+              "data": "Mitigation; usercopy/swapgs barriers and __user pointer sanitization"
+            },
+            {
+              "field": "Vulnerability Spectre v2:",
+              "data": "Mitigation; Retpolines; STIBP disabled; RSB filling; PBRSB-eIBRS Not affected; BHI Not affected"
+            },
+            {
+              "field": "Vulnerability Srbds:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Tsa:",
+              "data": "Vulnerable: No microcode"
+            },
+            {
+              "field": "Vulnerability Tsx async abort:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Vmscape:",
+              "data": "Not affected"
+            }
+          ]
+        },
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ]
+      }
     },
     {
-      "name": "hotspot-existing",
-      "suite": "hotspot",
-      "summary": "Directory \"work/jtreg-final-hotspot\" not found: creating\nDirectory \"work/jtreg-final-hotspot-report\" not found: creating\nTest results: passed: 11; skipped: 4; did not meet platform requirements: 2\nReport written to /workspace/openjdk-jdk27u/work/jtreg-final-hotspot-report/html/report.html\nResults written to /workspace/openjdk-jdk27u/work/jtreg-final-hotspot",
-      "results": [
+      "architecture": "aarch64",
+      "build_run": 37725033578,
+      "qualification_run": 37725140740,
+      "selections": [
         {
-          "test": "compiler/codegen/aes/Test8292158.java",
-          "execStatus": "Passed. Skipped\\: jtreg.SkippedException\\: AES-CTR intrinsic is not available",
-          "start": "Wed Oct 07 15\\:59\\:48 UTC 2026",
-          "end": "Wed Oct 07 15\\:59\\:59 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
+          "selection": "release-common",
+          "excluded_by_platform_requirements": [
+            "compiler/intrinsics/common/TestCommonScalarFlags.java"
+          ],
+          "passed": 12,
+          "skipped": 0,
+          "failed": 0,
+          "tests": [
+            {
+              "test": "compiler/intrinsics/common/TestCommonArithmeticIntrinsics.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonBigIntegerShifts.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonDigestStreaming.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonEvaluationOrder.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonIntrinsicAvailability.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonIntrinsicEvents.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonIntrinsicFallback.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonIntrinsicRecompilation.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonIntrinsics.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonMethodHandles.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonMulAdd.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonScalarIntrinsics.java",
+              "result": "passed"
+            }
+          ],
+          "command": [
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2/bin/java",
+            "-Xint",
+            "-XX:ActiveProcessorCount=1",
+            "-XX:CICompilerCount=2",
+            "-XX:+UseSerialGC",
+            "-XX:-UsePerfData",
+            "-XX:+DisableAttachMechanism",
+            "-Xrs",
+            "-Xms32m",
+            "-Xmx256m",
+            "-Dseed=42",
+            "-ea",
+            "-esa",
+            "-jar",
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/jtreg/lib/jtreg.jar",
+            "-jdk:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2",
+            "-othervm",
+            "-conc:1",
+            "-timeoutFactor:4",
+            "-nativepath:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/tests/hotspot/jtreg/native",
+            "-vmoptions:-XX:ActiveProcessorCount=1 -XX:CICompilerCount=2 -XX:+UseSerialGC -XX:-UsePerfData -XX:+DisableAttachMechanism -Xrs -Xms32m -Xmx256m -Dseed=42 -ea -esa",
+            "-w:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/release-common-work",
+            "-r:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/release-common-report",
+            "test/hotspot/jtreg/compiler/intrinsics/common"
+          ]
         },
         {
-          "test": "compiler/codegen/aes/Test8299817.java",
-          "execStatus": "Passed. Skipped\\: jtreg.SkippedException\\: AES-CTR intrinsic is not available",
-          "start": "Wed Oct 07 15\\:59\\:59 UTC 2026",
-          "end": "Wed Oct 07 16\\:00\\:09 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
+          "selection": "debug-common",
+          "excluded_by_platform_requirements": [
+            "compiler/intrinsics/common/TestCommonScalarFlags.java"
+          ],
+          "passed": 12,
+          "skipped": 0,
+          "failed": 0,
+          "tests": [
+            {
+              "test": "compiler/intrinsics/common/TestCommonArithmeticIntrinsics.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonBigIntegerShifts.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonDigestStreaming.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonEvaluationOrder.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonIntrinsicAvailability.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonIntrinsicEvents.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonIntrinsicFallback.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonIntrinsicRecompilation.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonIntrinsics.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonMethodHandles.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonMulAdd.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/common/TestCommonScalarIntrinsics.java",
+              "result": "passed"
+            }
+          ],
+          "command": [
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2/bin/java",
+            "-Xint",
+            "-XX:ActiveProcessorCount=1",
+            "-XX:CICompilerCount=2",
+            "-XX:+UseSerialGC",
+            "-XX:-UsePerfData",
+            "-XX:+DisableAttachMechanism",
+            "-Xrs",
+            "-Xms32m",
+            "-Xmx256m",
+            "-Dseed=42",
+            "-ea",
+            "-esa",
+            "-jar",
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/jtreg/lib/jtreg.jar",
+            "-jdk:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/debug/jdk-27.0.2/fastdebug",
+            "-othervm",
+            "-conc:1",
+            "-timeoutFactor:4",
+            "-nativepath:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/tests/hotspot/jtreg/native",
+            "-vmoptions:-XX:ActiveProcessorCount=1 -XX:CICompilerCount=2 -XX:+UseSerialGC -XX:-UsePerfData -XX:+DisableAttachMechanism -Xrs -Xms32m -Xmx256m -Dseed=42 -ea -esa -XX:+UnlockDiagnosticVMOptions -XX:+CheckUnhandledOops -XX:+VerifyOops",
+            "-w:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/debug-common-work",
+            "-r:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/debug-common-report",
+            "test/hotspot/jtreg/compiler/intrinsics/common"
+          ]
         },
         {
-          "test": "compiler/codegen/aes/TestAESMain.java",
-          "execStatus": "Passed. Skipped\\: jtreg.SkippedException\\: AES-CTR intrinsic is not available",
-          "start": "Wed Oct 07 16\\:00\\:09 UTC 2026",
-          "end": "Wed Oct 07 16\\:00\\:36 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
+          "selection": "release-hotspot",
+          "excluded_by_platform_requirements": [],
+          "passed": 11,
+          "skipped": 0,
+          "failed": 0,
+          "tests": [
+            {
+              "test": "compiler/codegen/aes/Test8292158.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/codegen/aes/Test8299817.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/codegen/aes/TestAESMain.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/codegen/aes/TestCipherBlockChainingEncrypt.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/bigInteger/MontgomeryMultiplyTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/bigInteger/TestMulAdd.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/bigInteger/TestMultiplyToLen.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/bigInteger/TestMultiplyToLenReturnProfile.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/bigInteger/TestSquareToLen.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/chacha/TestChaCha20.java",
+              "result": "passed"
+            },
+            {
+              "test": "compiler/intrinsics/sha/TestDigest.java",
+              "result": "passed"
+            }
+          ],
+          "command": [
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2/bin/java",
+            "-Xint",
+            "-XX:ActiveProcessorCount=1",
+            "-XX:CICompilerCount=2",
+            "-XX:+UseSerialGC",
+            "-XX:-UsePerfData",
+            "-XX:+DisableAttachMechanism",
+            "-Xrs",
+            "-Xms32m",
+            "-Xmx256m",
+            "-Dseed=42",
+            "-ea",
+            "-esa",
+            "-jar",
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/jtreg/lib/jtreg.jar",
+            "-jdk:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2",
+            "-othervm",
+            "-conc:1",
+            "-timeoutFactor:4",
+            "-nativepath:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/tests/hotspot/jtreg/native",
+            "-vmoptions:-XX:ActiveProcessorCount=1 -XX:CICompilerCount=2 -XX:+UseSerialGC -XX:-UsePerfData -XX:+DisableAttachMechanism -Xrs -Xms32m -Xmx256m -Dseed=42 -ea -esa",
+            "-w:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/release-hotspot-work",
+            "-r:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/release-hotspot-report",
+            "test/hotspot/jtreg/compiler/codegen/aes/Test8292158.java",
+            "test/hotspot/jtreg/compiler/codegen/aes/Test8299817.java",
+            "test/hotspot/jtreg/compiler/codegen/aes/TestAESMain.java",
+            "test/hotspot/jtreg/compiler/codegen/aes/TestCipherBlockChainingEncrypt.java",
+            "test/hotspot/jtreg/compiler/intrinsics/bigInteger/MontgomeryMultiplyTest.java",
+            "test/hotspot/jtreg/compiler/intrinsics/bigInteger/TestMulAdd.java",
+            "test/hotspot/jtreg/compiler/intrinsics/bigInteger/TestMultiplyToLen.java",
+            "test/hotspot/jtreg/compiler/intrinsics/bigInteger/TestMultiplyToLenReturnProfile.java",
+            "test/hotspot/jtreg/compiler/intrinsics/bigInteger/TestSquareToLen.java",
+            "test/hotspot/jtreg/compiler/intrinsics/chacha/TestChaCha20.java",
+            "test/hotspot/jtreg/compiler/intrinsics/sha/TestDigest.java"
+          ]
         },
         {
-          "test": "compiler/codegen/aes/TestCipherBlockChainingEncrypt.java",
-          "execStatus": "Passed. Skipped\\: jtreg.SkippedException\\: Base64 intrinsic is not available",
-          "start": "Wed Oct 07 16\\:00\\:29 UTC 2026",
-          "end": "Wed Oct 07 16\\:00\\:37 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
+          "selection": "release-jdk",
+          "excluded_by_platform_requirements": [
+            "com/sun/crypto/provider/Cipher/AES/TestGCMSplitBound.java",
+            "sun/security/provider/pqc/ML_DSA_Intrinsic_Test.java#id0"
+          ],
+          "passed": 72,
+          "skipped": 0,
+          "failed": 0,
+          "tests": [
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/AEADBufferTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/Encrypt.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/GCMIncrementByte4.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/GCMIncrementDirect4.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/GCMLargeDataKAT.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/GCMParameterSpecTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/GCMShortBuffer.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/GCMShortInput.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/KeyWrapper.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/OverlapByteBuffer.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/ReadWriteSkip.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/SameBuffer.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/SealedObjectTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AEAD/WrongAAD.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/CICO.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/CTR.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/Padding.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/Test4511676.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/Test4512524.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/Test4512704.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/Test4513830.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/Test4517355.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/Test4626070.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestAESCipher.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithDefaultProvider.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithProviderChange.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithRemoveAddProvider.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestCICOWithGCM.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestCICOWithGCMAndAAD.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestCopySafe.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestGCMKeyAndIvCheck.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestGHASH.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestISO10126Padding.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestKATForECB_IV.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestKATForECB_VK.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestKATForECB_VT.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestKATForGCM.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestNoPaddingModes.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestNonexpanding.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestSameBuffer.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/AES/TestShortBuffer.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20KAT.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20KeyGeneratorTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20NoReuse.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20Poly1305ParamTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/OutputSizeTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/UpdateAADTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/ChaCha20CipherUnitTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/ChaCha20Poly1305ParametersUnitTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id0",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id1",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id2",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id3",
+              "result": "passed"
+            },
+            {
+              "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id4",
+              "result": "passed"
+            },
+            {
+              "test": "java/lang/Integer/Unsigned.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/lang/Long/Unsigned.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/lang/Math/ExactArithTests.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/math/BigDecimal/SquareRootTests.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/math/BigInteger/BigIntegerTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/math/BigInteger/ModPow.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/security/MessageDigest/ArgumentSanity.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/security/MessageDigest/ByteBuffers.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/security/MessageDigest/TestCloneable.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/security/MessageDigest/TestDigestIOStream.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/security/MessageDigest/TestDisabledAlgorithms.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/security/MessageDigest/TestSameLength.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/security/MessageDigest/TestSameValue.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/security/MessageDigest/ThreadSafetyTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/util/Arrays/HashCode.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/util/Calendar/JavatimeTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/util/logging/HigherResolutionTimeStamps/LogRecordWithNanos.java",
+              "result": "passed"
+            },
+            {
+              "test": "sun/security/provider/pqc/ML_DSA_Intrinsic_Test.java#id1",
+              "result": "passed"
+            }
+          ],
+          "command": [
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2/bin/java",
+            "-Xint",
+            "-XX:ActiveProcessorCount=1",
+            "-XX:CICompilerCount=2",
+            "-XX:+UseSerialGC",
+            "-XX:-UsePerfData",
+            "-XX:+DisableAttachMechanism",
+            "-Xrs",
+            "-Xms32m",
+            "-Xmx256m",
+            "-Dseed=42",
+            "-ea",
+            "-esa",
+            "-jar",
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/jtreg/lib/jtreg.jar",
+            "-jdk:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2",
+            "-othervm",
+            "-conc:1",
+            "-timeoutFactor:4",
+            "-nativepath:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/tests/hotspot/jtreg/native",
+            "-vmoptions:-XX:ActiveProcessorCount=1 -XX:CICompilerCount=2 -XX:+UseSerialGC -XX:-UsePerfData -XX:+DisableAttachMechanism -Xrs -Xms32m -Xmx256m -Dseed=42 -ea -esa",
+            "-w:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/release-jdk-work",
+            "-r:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/release-jdk-report",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/AEADBufferTest.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/Encrypt.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/GCMIncrementByte4.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/GCMIncrementDirect4.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/GCMLargeDataKAT.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/GCMParameterSpecTest.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/GCMShortBuffer.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/GCMShortInput.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/KeyWrapper.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/OverlapByteBuffer.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/ReadWriteSkip.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/SameBuffer.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/SealedObjectTest.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AEAD/WrongAAD.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/CICO.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/CTR.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/Padding.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/Test4511676.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/Test4512524.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/Test4512704.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/Test4513830.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/Test4517355.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/Test4626070.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestAESCipher.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithDefaultProvider.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithProviderChange.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithRemoveAddProvider.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestCICOWithGCM.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestCICOWithGCMAndAAD.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestCopySafe.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestGCMKeyAndIvCheck.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestGCMSplitBound.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestGHASH.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestISO10126Padding.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestKATForECB_IV.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestKATForECB_VK.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestKATForECB_VT.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestKATForGCM.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestNoPaddingModes.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestNonexpanding.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestSameBuffer.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/AES/TestShortBuffer.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20KAT.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20KeyGeneratorTest.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20NoReuse.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20Poly1305ParamTest.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/OutputSizeTest.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/UpdateAADTest.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/unittest/ChaCha20CipherUnitTest.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/unittest/ChaCha20Poly1305ParametersUnitTest.java",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id0",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id1",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id2",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id3",
+            "test/jdk/com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id4",
+            "test/jdk/java/security/MessageDigest/ArgumentSanity.java",
+            "test/jdk/java/security/MessageDigest/ByteBuffers.java",
+            "test/jdk/java/security/MessageDigest/TestCloneable.java",
+            "test/jdk/java/security/MessageDigest/TestDigestIOStream.java",
+            "test/jdk/java/security/MessageDigest/TestDisabledAlgorithms.java",
+            "test/jdk/java/security/MessageDigest/TestSameLength.java",
+            "test/jdk/java/security/MessageDigest/TestSameValue.java",
+            "test/jdk/java/security/MessageDigest/ThreadSafetyTest.java",
+            "test/jdk/sun/security/provider/pqc/ML_DSA_Intrinsic_Test.java#id0",
+            "test/jdk/sun/security/provider/pqc/ML_DSA_Intrinsic_Test.java#id1",
+            "test/jdk/java/lang/Integer/Unsigned.java",
+            "test/jdk/java/lang/Long/Unsigned.java",
+            "test/jdk/java/lang/Math/ExactArithTests.java",
+            "test/jdk/java/util/Arrays/HashCode.java",
+            "test/jdk/java/math/BigInteger/BigIntegerTest.java",
+            "test/jdk/java/math/BigInteger/ModPow.java",
+            "test/jdk/java/math/BigDecimal/SquareRootTests.java",
+            "test/jdk/java/util/Calendar/JavatimeTest.java",
+            "test/jdk/java/util/logging/HigherResolutionTimeStamps/LogRecordWithNanos.java"
+          ]
         },
         {
-          "test": "compiler/intrinsics/bigInteger/MontgomeryMultiplyTest.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:00\\:36 UTC 2026",
-          "end": "Wed Oct 07 16\\:00\\:46 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
+          "selection": "release-c1-math-1",
+          "excluded_by_platform_requirements": [],
+          "passed": 3,
+          "skipped": 0,
+          "failed": 0,
+          "tests": [
+            {
+              "test": "java/math/BigDecimal/SquareRootTests.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/math/BigInteger/BigIntegerTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/math/BigInteger/ModPow.java",
+              "result": "passed"
+            }
+          ],
+          "command": [
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2/bin/java",
+            "-Xint",
+            "-XX:ActiveProcessorCount=1",
+            "-XX:CICompilerCount=2",
+            "-XX:+UseSerialGC",
+            "-XX:-UsePerfData",
+            "-XX:+DisableAttachMechanism",
+            "-Xrs",
+            "-Xms32m",
+            "-Xmx256m",
+            "-Dseed=42",
+            "-ea",
+            "-esa",
+            "-jar",
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/jtreg/lib/jtreg.jar",
+            "-jdk:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2",
+            "-othervm",
+            "-conc:1",
+            "-timeoutFactor:4",
+            "-nativepath:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/tests/hotspot/jtreg/native",
+            "-vmoptions:-XX:ActiveProcessorCount=1 -XX:CICompilerCount=2 -XX:+UseSerialGC -XX:-UsePerfData -XX:+DisableAttachMechanism -Xrs -Xms32m -Xmx256m -Dseed=42 -ea -esa -Xbatch -XX:TieredStopAtLevel=1",
+            "-w:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/release-c1-math-1-work",
+            "-r:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/release-c1-math-1-report",
+            "test/jdk/java/math/BigInteger/BigIntegerTest.java",
+            "test/jdk/java/math/BigInteger/ModPow.java",
+            "test/jdk/java/math/BigDecimal/SquareRootTests.java"
+          ]
         },
         {
-          "test": "compiler/intrinsics/bigInteger/TestMulAdd.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:00\\:37 UTC 2026",
-          "end": "Wed Oct 07 16\\:00\\:43 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "compiler/intrinsics/bigInteger/TestMultiplyToLen.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:00\\:43 UTC 2026",
-          "end": "Wed Oct 07 16\\:00\\:57 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "compiler/intrinsics/bigInteger/TestMultiplyToLenReturnProfile.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:00\\:46 UTC 2026",
-          "end": "Wed Oct 07 16\\:00\\:49 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "compiler/intrinsics/bigInteger/TestSquareToLen.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:00\\:49 UTC 2026",
-          "end": "Wed Oct 07 16\\:00\\:53 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "compiler/intrinsics/chacha/TestChaCha20.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:00\\:53 UTC 2026",
-          "end": "Wed Oct 07 16\\:01\\:07 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "compiler/intrinsics/sha/TestDigest.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 15\\:59\\:48 UTC 2026",
-          "end": "Wed Oct 07 16\\:00\\:29 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
+          "selection": "release-c1-math-3",
+          "excluded_by_platform_requirements": [],
+          "passed": 3,
+          "skipped": 0,
+          "failed": 0,
+          "tests": [
+            {
+              "test": "java/math/BigDecimal/SquareRootTests.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/math/BigInteger/BigIntegerTest.java",
+              "result": "passed"
+            },
+            {
+              "test": "java/math/BigInteger/ModPow.java",
+              "result": "passed"
+            }
+          ],
+          "command": [
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2/bin/java",
+            "-Xint",
+            "-XX:ActiveProcessorCount=1",
+            "-XX:CICompilerCount=2",
+            "-XX:+UseSerialGC",
+            "-XX:-UsePerfData",
+            "-XX:+DisableAttachMechanism",
+            "-Xrs",
+            "-Xms32m",
+            "-Xmx256m",
+            "-Dseed=42",
+            "-ea",
+            "-esa",
+            "-jar",
+            "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/jtreg/lib/jtreg.jar",
+            "-jdk:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2",
+            "-othervm",
+            "-conc:1",
+            "-timeoutFactor:4",
+            "-nativepath:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/tests/hotspot/jtreg/native",
+            "-vmoptions:-XX:ActiveProcessorCount=1 -XX:CICompilerCount=2 -XX:+UseSerialGC -XX:-UsePerfData -XX:+DisableAttachMechanism -Xrs -Xms32m -Xmx256m -Dseed=42 -ea -esa -Xbatch -XX:TieredStopAtLevel=3",
+            "-w:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/release-c1-math-3-work",
+            "-r:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/qualification/release-c1-math-3-report",
+            "test/jdk/java/math/BigInteger/BigIntegerTest.java",
+            "test/jdk/java/math/BigInteger/ModPow.java",
+            "test/jdk/java/math/BigDecimal/SquareRootTests.java"
+          ]
         }
-      ]
-    },
-    {
-      "name": "jdk-crypto",
-      "suite": "jdk",
-      "summary": "Directory \"work/jtreg-final-crypto\" not found: creating\nDirectory \"work/jtreg-final-crypto-report\" not found: creating\nTest results: passed: 65\nFramework-based tests: 11 = 11 TestNG + 0 JUnit\nReport written to /workspace/openjdk-jdk27u/work/jtreg-final-crypto-report/html/report.html\nResults written to /workspace/openjdk-jdk27u/work/jtreg-final-crypto",
-      "results": [
-        {
-          "test": "com/sun/crypto/provider/Cipher/AEAD/AEADBufferTest.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 15\\:57\\:18 UTC 2026",
-          "end": "Wed Oct 07 15\\:57\\:24 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AEAD/Encrypt.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 15\\:57\\:18 UTC 2026",
-          "end": "Wed Oct 07 15\\:57\\:21 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AEAD/GCMIncrementByte4.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 15\\:57\\:21 UTC 2026",
-          "end": "Wed Oct 07 16\\:01\\:44 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AEAD/GCMIncrementDirect4.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 15\\:57\\:24 UTC 2026",
-          "end": "Wed Oct 07 16\\:01\\:54 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AEAD/GCMLargeDataKAT.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:01\\:44 UTC 2026",
-          "end": "Wed Oct 07 16\\:01\\:47 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AEAD/GCMParameterSpecTest.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:01\\:47 UTC 2026",
-          "end": "Wed Oct 07 16\\:01\\:50 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AEAD/GCMShortBuffer.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:01\\:50 UTC 2026",
-          "end": "Wed Oct 07 16\\:01\\:52 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AEAD/GCMShortInput.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:01\\:52 UTC 2026",
-          "end": "Wed Oct 07 16\\:01\\:55 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AEAD/KeyWrapper.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:01\\:54 UTC 2026",
-          "end": "Wed Oct 07 16\\:01\\:56 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AEAD/OverlapByteBuffer.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:01\\:55 UTC 2026",
-          "end": "Wed Oct 07 16\\:01\\:58 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AEAD/ReadWriteSkip.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:01\\:56 UTC 2026",
-          "end": "Wed Oct 07 16\\:01\\:58 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AEAD/SameBuffer.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:01\\:58 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:00 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AEAD/SealedObjectTest.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:01\\:58 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:00 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AEAD/WrongAAD.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:00 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:02 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/CICO.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:05 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:11 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/CTR.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:06 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:08 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/Padding.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:08 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:10 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/Test4511676.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:10 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:13 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/Test4512524.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:11 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:13 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/Test4512704.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:13 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:15 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/Test4513830.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:13 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:15 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/Test4517355.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:15 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:16 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/Test4626070.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:15 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:17 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/TestAESCipher.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:16 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:18 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithDefaultProvider.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:00 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:03 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithProviderChange.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:02 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:05 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithRemoveAddProvider.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:03 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:06 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/TestCICOWithGCM.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:17 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:21 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/TestCICOWithGCMAndAAD.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:18 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:23 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/TestCopySafe.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:21 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:23 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/TestGCMKeyAndIvCheck.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:23 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:26 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/TestGCMSplitBound.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:23 UTC 2026",
-          "end": "Wed Oct 07 16\\:03\\:03 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/TestGHASH.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:26 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:29 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/TestISO10126Padding.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:29 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:30 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/TestKATForECB_IV.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:30 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:33 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/TestKATForECB_VK.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:33 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:37 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/TestKATForECB_VT.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:37 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:41 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/TestKATForGCM.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:41 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:44 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/TestNoPaddingModes.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:46 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:48 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/TestNonexpanding.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:44 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:46 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/TestSameBuffer.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:48 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:50 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/AES/TestShortBuffer.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:50 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:52 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20KAT.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:03\\:09 UTC 2026",
-          "end": "Wed Oct 07 16\\:03\\:12 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20KeyGeneratorTest.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:03\\:11 UTC 2026",
-          "end": "Wed Oct 07 16\\:03\\:13 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20NoReuse.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:03\\:12 UTC 2026",
-          "end": "Wed Oct 07 16\\:03\\:14 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/ChaCha20/ChaCha20Poly1305ParamTest.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:03\\:13 UTC 2026",
-          "end": "Wed Oct 07 16\\:03\\:16 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/ChaCha20/OutputSizeTest.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:03\\:14 UTC 2026",
-          "end": "Wed Oct 07 16\\:03\\:18 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/ChaCha20/UpdateAADTest.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:03\\:16 UTC 2026",
-          "end": "Wed Oct 07 16\\:03\\:18 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/ChaCha20CipherUnitTest.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:52 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:54 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/ChaCha20Poly1305ParametersUnitTest.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:54 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:56 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java\\#id0",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:56 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:58 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java\\#id1",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:58 UTC 2026",
-          "end": "Wed Oct 07 16\\:02\\:59 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java\\#id2",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:02\\:59 UTC 2026",
-          "end": "Wed Oct 07 16\\:03\\:01 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java\\#id3",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:03\\:01 UTC 2026",
-          "end": "Wed Oct 07 16\\:03\\:09 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "com/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java\\#id4",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:03\\:03 UTC 2026",
-          "end": "Wed Oct 07 16\\:03\\:11 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "java/security/MessageDigest/ArgumentSanity.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:03\\:18 UTC 2026",
-          "end": "Wed Oct 07 16\\:03\\:20 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "java/security/MessageDigest/ByteBuffers.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:03\\:18 UTC 2026",
-          "end": "Wed Oct 07 16\\:03\\:21 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "java/security/MessageDigest/TestCloneable.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:03\\:20 UTC 2026",
-          "end": "Wed Oct 07 16\\:03\\:23 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "java/security/MessageDigest/TestDigestIOStream.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:03\\:21 UTC 2026",
-          "end": "Wed Oct 07 16\\:04\\:27 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "java/security/MessageDigest/TestDisabledAlgorithms.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:03\\:23 UTC 2026",
-          "end": "Wed Oct 07 16\\:03\\:27 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "java/security/MessageDigest/TestSameLength.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:03\\:27 UTC 2026",
-          "end": "Wed Oct 07 16\\:03\\:33 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "java/security/MessageDigest/TestSameValue.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:03\\:33 UTC 2026",
-          "end": "Wed Oct 07 16\\:03\\:36 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "java/security/MessageDigest/ThreadSafetyTest.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 16\\:03\\:36 UTC 2026",
-          "end": "Wed Oct 07 16\\:04\\:31 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "sun/security/provider/pqc/ML_DSA_Intrinsic_Test.java\\#id0",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 15\\:57\\:15 UTC 2026",
-          "end": "Wed Oct 07 15\\:57\\:18 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "sun/security/provider/pqc/ML_DSA_Intrinsic_Test.java\\#id1",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 15\\:57\\:15 UTC 2026",
-          "end": "Wed Oct 07 15\\:57\\:18 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        }
-      ]
-    },
-    {
-      "name": "jdk-math",
-      "suite": "jdk",
-      "summary": "Directory \"work/jtreg-final-jdk-math\" not found: creating\nDirectory \"work/jtreg-final-jdk-math-report\" not found: creating\nTest results: passed: 4\nReport written to /workspace/openjdk-jdk27u/work/jtreg-final-jdk-math-report/html/report.html\nResults written to /workspace/openjdk-jdk27u/work/jtreg-final-jdk-math",
-      "results": [
-        {
-          "test": "java/lang/Integer/Unsigned.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 15\\:45\\:57 UTC 2026",
-          "end": "Wed Oct 07 15\\:45\\:59 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "java/lang/Long/Unsigned.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 15\\:45\\:57 UTC 2026",
-          "end": "Wed Oct 07 15\\:45\\:59 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "java/lang/Math/ExactArithTests.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 15\\:45\\:59 UTC 2026",
-          "end": "Wed Oct 07 15\\:46\\:01 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        },
-        {
-          "test": "java/util/Arrays/HashCode.java",
-          "execStatus": "Passed. Execution successful",
-          "start": "Wed Oct 07 15\\:45\\:59 UTC 2026",
-          "end": "Wed Oct 07 15\\:46\\:02 UTC 2026",
-          "testJDK": "/workspace/openjdk-jdk27u/build/cloud-gcc16/jdk",
-          "jtregVersion": "jtreg 8.3 dev 1"
-        }
-      ]
+      ],
+      "fastdebug_oop_checks": [
+        "CheckUnhandledOops",
+        "VerifyOops"
+      ],
+      "environment": {
+        "platform": "Linux-6.17.0-1022-azure-aarch64-with-glibc2.39",
+        "cpu": {
+          "lscpu": [
+            {
+              "field": "Architecture:",
+              "data": "aarch64"
+            },
+            {
+              "field": "CPU op-mode(s):",
+              "data": "32-bit, 64-bit"
+            },
+            {
+              "field": "Byte Order:",
+              "data": "Little Endian"
+            },
+            {
+              "field": "CPU(s):",
+              "data": "4"
+            },
+            {
+              "field": "On-line CPU(s) list:",
+              "data": "0-3"
+            },
+            {
+              "field": "Vendor ID:",
+              "data": "ARM"
+            },
+            {
+              "field": "Model name:",
+              "data": "Neoverse-N2"
+            },
+            {
+              "field": "Model:",
+              "data": "0"
+            },
+            {
+              "field": "Thread(s) per core:",
+              "data": "1"
+            },
+            {
+              "field": "Core(s) per socket:",
+              "data": "4"
+            },
+            {
+              "field": "Socket(s):",
+              "data": "1"
+            },
+            {
+              "field": "Stepping:",
+              "data": "r0p0"
+            },
+            {
+              "field": "BogoMIPS:",
+              "data": "2000.00"
+            },
+            {
+              "field": "Flags:",
+              "data": "fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svebitperm svesha3 svesm4 flagm2 frint svei8mm svebf16 i8mm bf16"
+            },
+            {
+              "field": "L1d cache:",
+              "data": "256 KiB (4 instances)"
+            },
+            {
+              "field": "L1i cache:",
+              "data": "256 KiB (4 instances)"
+            },
+            {
+              "field": "L2 cache:",
+              "data": "4 MiB (4 instances)"
+            },
+            {
+              "field": "L3 cache:",
+              "data": "128 MiB (1 instance)"
+            },
+            {
+              "field": "NUMA node(s):",
+              "data": "1"
+            },
+            {
+              "field": "NUMA node0 CPU(s):",
+              "data": "0-3"
+            },
+            {
+              "field": "Vulnerability Gather data sampling:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Ghostwrite:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Indirect target selection:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Itlb multihit:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability L1tf:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Mds:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Meltdown:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Mmio stale data:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Old microcode:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Reg file data sampling:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Retbleed:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Spec rstack overflow:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Spec store bypass:",
+              "data": "Mitigation; Speculative Store Bypass disabled via prctl"
+            },
+            {
+              "field": "Vulnerability Spectre v1:",
+              "data": "Mitigation; __user pointer sanitization"
+            },
+            {
+              "field": "Vulnerability Spectre v2:",
+              "data": "Mitigation; CSV2, BHB"
+            },
+            {
+              "field": "Vulnerability Srbds:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Tsa:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Tsx async abort:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Vmscape:",
+              "data": "Not affected"
+            }
+          ]
+        },
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ]
+      }
     }
   ],
-  "limitations": [
-    "Selected suites only; full tier1/tier2 not run",
-    "AArch64 fastdebug HotSpot/java.base cross-build with QEMU correctness checks, no native ARM performance",
-    "Pure C1 build configuration not tested",
-    "Tests with their own VM options retain their prescribed compilation mode"
-  ],
-  "successful_jtreg_results": 85,
-  "arm_reviewed_transcripts": {
-    "int": "RESULT f459f5ec15a357973e2e84ab16ca7cff567fe4cad8f169d6cf63bb1e3b57d6c4",
-    "c1": "RESULT f459f5ec15a357973e2e84ab16ca7cff567fe4cad8f169d6cf63bb1e3b57d6c4"
+  "native_sanity": {
+    "head_sha": "263a1ee20fb3520fa5c6c25179ea9517465e78e8",
+    "run_id": 37725033578,
+    "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578",
+    "scope": "Native Linux x86-64/AArch64 release and fastdebug builds and tier1, plus minimal C1 and Zero build compatibility",
+    "jobs": [
+      {
+        "id": 113141634411,
+        "name": "linux-x64-hs-zero / build (debug)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113141634411"
+      },
+      {
+        "id": 113141634419,
+        "name": "linux-aarch64 / build (release)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113141634419"
+      },
+      {
+        "id": 113141634430,
+        "name": "linux-x64 / build (debug)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113141634430"
+      },
+      {
+        "id": 113141634445,
+        "name": "linux-x64-hs-minimal / build (debug)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113141634445"
+      },
+      {
+        "id": 113141634448,
+        "name": "linux-aarch64 / build (debug)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113141634448"
+      },
+      {
+        "id": 113141634490,
+        "name": "linux-x64 / build (release)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113141634490"
+      },
+      {
+        "id": 113146081410,
+        "name": "linux-aarch64 / test (hs/tier1 compiler part 3)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113146081410"
+      },
+      {
+        "id": 113146081428,
+        "name": "linux-aarch64 / test (lib-test/tier1)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113146081428"
+      },
+      {
+        "id": 113146081443,
+        "name": "linux-aarch64 / test (jdk/tier1 part 3)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113146081443"
+      },
+      {
+        "id": 113146081461,
+        "name": "linux-aarch64 / test (hs/tier1 common)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113146081461"
+      },
+      {
+        "id": 113146081472,
+        "name": "linux-aarch64 / test (hs/tier1 serviceability)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113146081472"
+      },
+      {
+        "id": 113146081474,
+        "name": "linux-aarch64 / test (langtools/tier1)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113146081474"
+      },
+      {
+        "id": 113146081480,
+        "name": "linux-aarch64 / test (hs/tier1 compiler part 2)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113146081480"
+      },
+      {
+        "id": 113146081487,
+        "name": "linux-aarch64 / test (hs/tier1 gc)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113146081487"
+      },
+      {
+        "id": 113146081488,
+        "name": "linux-aarch64 / test (jdk/tier1 part 2)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113146081488"
+      },
+      {
+        "id": 113146081498,
+        "name": "linux-aarch64 / test (hs/tier1 compiler part 1)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113146081498"
+      },
+      {
+        "id": 113146081518,
+        "name": "linux-aarch64 / test (hs/tier1 runtime)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113146081518"
+      },
+      {
+        "id": 113146081530,
+        "name": "linux-aarch64 / test (jdk/tier1 part 1)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113146081530"
+      },
+      {
+        "id": 113147763674,
+        "name": "linux-x64 / test (hs/tier1 serviceability)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113147763674"
+      },
+      {
+        "id": 113147763691,
+        "name": "linux-x64 / test (hs/tier1 compiler part 3)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113147763691"
+      },
+      {
+        "id": 113147763707,
+        "name": "linux-x64 / test (jdk/tier1 part 3)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113147763707"
+      },
+      {
+        "id": 113147763711,
+        "name": "linux-x64 / test (lib-test/tier1)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113147763711"
+      },
+      {
+        "id": 113147763718,
+        "name": "linux-x64 / test (hs/tier1 common)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113147763718"
+      },
+      {
+        "id": 113147763719,
+        "name": "linux-x64 / test (langtools/tier1)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113147763719"
+      },
+      {
+        "id": 113147763748,
+        "name": "linux-x64 / test (jdk/tier1 part 2)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113147763748"
+      },
+      {
+        "id": 113147763772,
+        "name": "linux-x64 / test (jdk/tier1 part 1)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113147763772"
+      },
+      {
+        "id": 113147763781,
+        "name": "linux-x64 / test (hs/tier1 compiler part 1)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113147763781"
+      },
+      {
+        "id": 113147763786,
+        "name": "linux-x64 / test (hs/tier1 runtime)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113147763786"
+      },
+      {
+        "id": 113147763795,
+        "name": "linux-x64 / test (hs/tier1 gc)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113147763795"
+      },
+      {
+        "id": 113147763796,
+        "name": "linux-x64 / test (hs/tier1 compiler part 2)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578/job/113147763796"
+      }
+    ]
+  },
+  "source_checks": {
+    "c2_dispatch_ids": 391,
+    "shared_leaf_entries": 41,
+    "shared_scalar_entries": 40,
+    "non_native_catalogue": true,
+    "official_include_order": "passed",
+    "python_shell_syntax": "passed",
+    "whitespace": "passed"
+  },
+  "differential_transcript": "f459f5ec15a357973e2e84ab16ca7cff567fe4cad8f169d6cf63bb1e3b57d6c4",
+  "benchmark_protocol": {
+    "longer_control_checks": "Three alternating off/on fresh-JVM pairs, three 1-second warmups and five 1-second measurements, paired 95% Student-t interval over three process differences",
+    "jmh": "1.37",
+    "blackholes": "FULL Java",
+    "external_fresh_processes_per_case": 3,
+    "jmh_forks_per_process": 0,
+    "explicit_compiler_hints": true,
+    "warmup_iterations": 3,
+    "warmup_time": {
+      "int": "300ms",
+      "c1": "300ms",
+      "c2": "1s"
+    },
+    "measurement_iterations": 5,
+    "measurement_time": "300ms",
+    "matched_comparisons": 78,
+    "interval": "Two-sided 99.9% Student-t, df=14, over 15 iteration samples"
   }
 }
