@@ -69,9 +69,17 @@ template <typename T> T* elements(oop array) {
   return static_cast<T*>(typeArrayOop(array)->base(TypeArrayKlass::cast(array->klass())->element_type()));
 }
 
+// Generated stubs use machine-word argument slots and can read the full
+// register for a Java int. Darwin's C ABI leaves the upper half unspecified
+// for a jint argument, so extend it before crossing into generated code.
+intptr_t stub_argument(jint arg) { return arg; }
+
+template <typename T>
+T stub_argument(T arg) { return arg; }
+
 template <typename R, typename... Args>
 R invoke_stub(address entry, Args... args) {
-  return CAST_TO_FN_PTR(R (*)(Args...), entry)(args...);
+  return CAST_TO_FN_PTR(R (*)(decltype(stub_argument(args))...), entry)(stub_argument(args)...);
 }
 
 // Resolve only fields declared by the known bootstrap class. A subclass

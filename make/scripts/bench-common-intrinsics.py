@@ -134,7 +134,7 @@ def main():
     process_dir = args.output / "processes"
     process_dir.mkdir(exist_ok=True)
     prefix = [] if args.cpu is None else ["taskset", "-c", args.cpu]
-    vm = ["-Xms128m", "-Xmx128m", "-XX:ActiveProcessorCount=1",
+    vm = ["-Xms128m", "-Xmx128m", "-XX:ActiveProcessorCount=1", "-XX:CICompilerCount=1",
           "-XX:+UseSerialGC", "-XX:-UsePerfData", "-XX:+DisableAttachMechanism",
           "-Xrs", "--add-opens=java.base/java.math=ALL-UNNAMED"]
     jmh = ["-cp", args.classpath, "org.openjdk.jmh.Main"]

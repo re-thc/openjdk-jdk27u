@@ -26,8 +26,8 @@
  * @summary Arithmetic lowering preserves overflow, unsigned values and caller state
  * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
  * @run main/othervm -Xint -XX:+UseCommonIntrinsics compiler.intrinsics.common.TestCommonArithmeticIntrinsics
- * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseCommonIntrinsics compiler.intrinsics.common.TestCommonArithmeticIntrinsics
- * @run main/othervm -Xbatch -XX:TieredStopAtLevel=3 -XX:+UseCommonIntrinsics compiler.intrinsics.common.TestCommonArithmeticIntrinsics
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:CompileCommand=dontinline,compiler.intrinsics.common.TestCommonArithmeticIntrinsics::valid* -XX:CompileCommand=dontinline,compiler.intrinsics.common.TestCommonArithmeticIntrinsics::constantRemainder -XX:+UseCommonIntrinsics compiler.intrinsics.common.TestCommonArithmeticIntrinsics
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=3 -XX:CompileCommand=dontinline,compiler.intrinsics.common.TestCommonArithmeticIntrinsics::valid* -XX:CompileCommand=dontinline,compiler.intrinsics.common.TestCommonArithmeticIntrinsics::constantRemainder -XX:+UseCommonIntrinsics compiler.intrinsics.common.TestCommonArithmeticIntrinsics
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:-UseCommonIntrinsics compiler.intrinsics.common.TestCommonArithmeticIntrinsics
  */
 
@@ -164,7 +164,73 @@ public class TestCommonArithmeticIntrinsics {
         equal(pressure(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9], v[10], v[11]), expected);
     }
 
+    private static long constantRemainder() {
+        return Long.remainderUnsigned(-68719476738L, -134217730L);
+    }
+
+    private static long validConstantMultiply() {
+        return Math.multiplyExact(1234567L, -13L);
+    }
+
+    private static int validConstantMultiplyInt() {
+        return Math.multiplyExact(1234567, -13);
+    }
+
+    private static long validRemainder(long x, long y) {
+        return Long.remainderUnsigned(x, y);
+    }
+
+    private static int validRemainderInt(int x, int y) {
+        return Integer.remainderUnsigned(x, y);
+    }
+
+    private static long validMultiply(long x, long y) {
+        return Math.multiplyExact(x, y);
+    }
+
+    private static int validMultiplyInt(int x, int y) {
+        return Math.multiplyExact(x, y);
+    }
+
+    private static long validAdd(long x, long y) {
+        return Math.addExact(x, y);
+    }
+
+    private static int validAddInt(int x, int y) {
+        return Math.addExact(x, y);
+    }
+
+    private static long validSubtract(long x, long y) {
+        return Math.subtractExact(x, y);
+    }
+
+    private static int validSubtractInt(int x, int y) {
+        return Math.subtractExact(x, y);
+    }
+
+    private static void checkValidCompiledInputs() {
+        // Compile these small roots while all operands are valid. An earlier
+        // guard failure would suppress their common intrinsic on recompilation
+        // and hide scratch/input register overlap in the accelerated path.
+        for (int i = 0; i < 50_000; i++) {
+            int x = (i & 255) + 1;
+            int y = (i & 127) + 1;
+            equal(constantRemainder(), -68719476738L);
+            equal(validConstantMultiply(), -16049371L);
+            equal(validConstantMultiplyInt(), -16049371L);
+            equal(validRemainder(-68719476738L - i, -134217730L), -68719476738L - i);
+            equal(validRemainderInt(-1000 - x, -5), -1000 - x);
+            equal(validMultiply(-x, y), (long) -x * y);
+            equal(validMultiplyInt(-x, y), -x * y);
+            equal(validAdd(-x, y), -x + y);
+            equal(validAddInt(-x, y), -x + y);
+            equal(validSubtract(-x, y), -x - y);
+            equal(validSubtractInt(-x, y), -x - y);
+        }
+    }
+
     public static void main(String[] args) {
+        checkValidCompiledInputs();
         Random random = new Random(42);
         for (int i = 0; i < 5_000; i++) {
             check((short) random.nextInt(), (short) random.nextInt());

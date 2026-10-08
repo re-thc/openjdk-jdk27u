@@ -87,6 +87,7 @@ static void common_scalar_intrinsic(MacroAssembler* masm, vmIntrinsics::ID id,
       if (wide) masm->cbz(rhs, *slow); else masm->cbzw(rhs, *slow);
       bool remainder = id == vmIntrinsics::_remainderUnsigned_i || id == vmIntrinsics::_remainderUnsigned_l;
       Register quotient = remainder ? tmp1 : dst;
+      assert(!remainder || (tmp1 != src && tmp1 != rhs), "remainder inputs survive quotient calculation");
       if (wide) masm->udiv(quotient, src, rhs); else masm->udivw(quotient, src, rhs);
       if (remainder) {
         if (wide) masm->msub(dst, quotient, rhs, src); else masm->msubw(dst, quotient, rhs, src);
@@ -105,6 +106,7 @@ static void common_scalar_intrinsic(MacroAssembler* masm, vmIntrinsics::ID id,
       masm->smull(tmp1, src, rhs); masm->sxtw(dst, tmp1);
       masm->cmp(dst, tmp1); masm->br(Assembler::NE, *slow); break;
     case vmIntrinsics::_multiplyExactL:
+      assert(tmp1 != src && tmp1 != rhs, "multiply inputs survive high-product calculation");
       masm->smulh(tmp1, src, rhs); masm->mul(dst, src, rhs);
       masm->cmp(tmp1, dst, Assembler::ASR, 63); masm->br(Assembler::NE, *slow); break;
     case vmIntrinsics::_incrementExactI:

@@ -28,6 +28,7 @@
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciInstance.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_version.hpp"
@@ -557,6 +558,26 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       if (op2->_opr1->is_fixed_cpu()) do_temp(op2->_opr1);
 #endif
       if (op2->_opr2->is_valid()) do_input(op2->_opr2);
+#if defined(AMD64) || defined(AARCH64)
+      vmIntrinsics::ID id = vmIntrinsics::ID_from(scalar->intrinsic_id());
+      bool keep_inputs = false;
+#ifdef AMD64
+      keep_inputs = id == vmIntrinsics::_addExactI || id == vmIntrinsics::_addExactL ||
+                    id == vmIntrinsics::_subtractExactI || id == vmIntrinsics::_subtractExactL ||
+                    id == vmIntrinsics::_multiplyExactI || id == vmIntrinsics::_multiplyExactL;
+#endif
+#ifdef AARCH64
+      keep_inputs = id == vmIntrinsics::_remainderUnsigned_i || id == vmIntrinsics::_remainderUnsigned_l ||
+                    id == vmIntrinsics::_multiplyExactL;
+#endif
+      // These instruction sequences read their inputs after writing a scratch
+      // register. Keep dead inputs from being reused for that scratch register
+      // or for an early output, as for the platform's other division lowering.
+      if (keep_inputs) {
+        do_temp(op2->_opr1);
+        do_temp(op2->_opr2);
+      }
+#endif
       if (op2->_tmp1->is_valid()) do_temp(op2->_tmp1);
       if (op2->_tmp2->is_valid()) do_temp(op2->_tmp2);
       if (op2->_tmp3->is_valid()) do_temp(op2->_tmp3);

@@ -72,6 +72,9 @@ longs. C1 constructs the same small stack argument vector and makes one C ABI
 leaf call. The interpreter avoids a Java frame on successful calls; ARM saves
 its link register without constructing a fake interpreter frame. Both entries
 check the JVMTI interpreter-only mode and poll for safepoints before execution.
+The C++ stub adapter extends Java integer arguments to machine width, matching
+generated stubs' register and stack slots even on platforms whose C ABI leaves
+the upper register bits unspecified for 32-bit arguments.
 
 Every bulk leaf checks primitive array types, bounds, layout, receiver state,
 output capacity and relevant overlap constraints before obtaining raw element
