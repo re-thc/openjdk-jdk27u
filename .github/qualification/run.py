@@ -5,7 +5,7 @@ output = root / "qualification"
 output.mkdir(exist_ok=True)
 script_dir = Path(__file__).resolve().parent
 release, debug, jtreg, native = map(Path, sys.argv[1:5])
-vm = ["-XX:ActiveProcessorCount=1", "-XX:CICompilerCount=1", "-XX:+UseSerialGC", "-XX:-UsePerfData", "-XX:+DisableAttachMechanism", "-Xrs", "-Xms32m", "-Xmx256m", "-Dseed=42"]
+vm = ["-XX:ActiveProcessorCount=1", "-XX:CICompilerCount=2", "-XX:+UseSerialGC", "-XX:-UsePerfData", "-XX:+DisableAttachMechanism", "-Xrs", "-Xms32m", "-Xmx256m", "-Dseed=42"]
 results = []
 def run(name, image, tests, extra=[]):
     command = [str(release / "bin/java"), "-Xint"] + vm + ["-jar", str(jtreg / "lib/jtreg.jar"), "-jdk:" + str(image), "-othervm", "-conc:1", "-timeoutFactor:4", "-nativepath:" + str(native), "-vmoptions:" + " ".join(vm + extra), "-w:" + str(output / (name + "-work")), "-r:" + str(output / (name + "-report"))] + tests

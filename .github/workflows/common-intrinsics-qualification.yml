@@ -101,6 +101,7 @@ jobs:
         working-directory: jdk
         run: |
           python3 make/scripts/bench-common-intrinsics.py "$RELEASE_JDK/bin/java" "$PWD/jmh/benchmarks.jar:$PWD/jmh/jmh-core.jar:$PWD/jmh/jopt-simple.jar:$PWD/jmh/commons-math3.jar" qualification/bench "$BENCH_CPU"
+          python3 ../orchestration/.github/qualification/confirm.py "$RELEASE_JDK/bin/java" "$PWD/jmh/benchmarks.jar:$PWD/jmh/jmh-core.jar:$PWD/jmh/jopt-simple.jar:$PWD/jmh/commons-math3.jar" "$BENCH_CPU"
           python3 ../orchestration/.github/qualification/startup.py "$RELEASE_JDK/bin/java" "$BENCH_CPU"
       - name: Record environment and binary identity
         if: always()
