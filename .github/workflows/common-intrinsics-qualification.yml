@@ -1,0 +1,136 @@
+name: Common intrinsic final qualification
+on:
+  push:
+    branches:
+      - pr/common-intrinsics-qualification-fd22a6b6aab
+concurrency:
+  group: common-intrinsics-final-qualification
+  cancel-in-progress: true
+permissions:
+  contents: read
+  actions: read
+jobs:
+  qualify:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x64
+            runner: ubuntu-24.04
+          - platform: linux-aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 180
+    env:
+      SOURCE_REVISION: fd22a6b6aab10c0e354eb28abcc212be0d0f47f0
+      BUILD_RUN: '37723397021'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: orchestration
+          sparse-checkout: .github/qualification
+      - uses: actions/checkout@v6
+        with:
+          ref: fd22a6b6aab10c0e354eb28abcc212be0d0f47f0
+          path: jdk
+      - name: Wait for matching native build artifacts
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const names = ['bundles-${{ matrix.platform }}', 'bundles-${{ matrix.platform }}-debug'];
+            for (let attempt = 0; attempt < 120; attempt++) {
+              const run = await github.rest.actions.getWorkflowRun({ ...context.repo, run_id: Number(process.env.BUILD_RUN) });
+              if (run.data.head_sha !== process.env.SOURCE_REVISION) throw new Error('Build revision mismatch');
+              const response = await github.rest.actions.listWorkflowRunArtifacts({ ...context.repo, run_id: Number(process.env.BUILD_RUN), per_page: 100 });
+              if (names.every(n => response.data.artifacts.some(a => a.name === n)) && response.data.artifacts.some(a => a.name.startsWith('bundles-jtreg-'))) return;
+              await new Promise(resolve => setTimeout(resolve, 30000));
+            }
+            throw new Error('Native build artifacts unavailable');
+      - uses: actions/download-artifact@v4
+        with:
+          name: bundles-${{ matrix.platform }}
+          run-id: '37723397021'
+          github-token: ${{ github.token }}
+          path: jdk/bundles
+      - uses: actions/download-artifact@v4
+        with:
+          name: bundles-${{ matrix.platform }}-debug
+          run-id: '37723397021'
+          github-token: ${{ github.token }}
+          path: jdk/bundles
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: bundles-jtreg-*
+          merge-multiple: true
+          run-id: '37723397021'
+          github-token: ${{ github.token }}
+          path: jdk/jtreg
+      - name: Extract native images
+        working-directory: jdk
+        run: |
+          mkdir -p images/release images/debug images/tests qualification
+          tar -xf bundles/jdk-${{ matrix.platform }}.tar.gz -C images/release
+          tar -xf bundles/jdk-${{ matrix.platform }}-debug.tar.gz -C images/debug
+          tar -xf bundles/tests-${{ matrix.platform }}.tar.gz -C images/tests
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          with open(os.environ['GITHUB_ENV'], 'a') as out:
+              for name, location in [('RELEASE_JDK', 'images/release'), ('DEBUG_JDK', 'images/debug')]:
+                  paths = list(Path(location).rglob('bin/java'))
+                  assert len(paths) == 1
+                  out.write(name + '=' + str(paths[0].parent.parent.resolve()) + '\n')
+              out.write('BENCH_CPU=' + str(min(os.sched_getaffinity(0))) + '\n')
+          PY
+      - name: Source checks and jtreg
+        working-directory: jdk
+        run: |
+          python3 make/scripts/check-common-intrinsics.py > qualification/source-audit.log
+          "$RELEASE_JDK/bin/java" -Xint test/hotspot/jtreg/sources/SortIncludes.java src/hotspot/share src/hotspot/os/linux src/hotspot/os/posix src/hotspot/cpu/aarch64/commonIntrinsics_aarch64.inline.hpp src/hotspot/cpu/aarch64/templateInterpreterGenerator_aarch64.cpp src/hotspot/cpu/x86/commonIntrinsics_x86.inline.hpp src/hotspot/cpu/x86/templateInterpreterGenerator_x86_64.cpp > qualification/includes.log
+          python3 ../orchestration/.github/qualification/run.py "$RELEASE_JDK" "$DEBUG_JDK" "$PWD/jtreg" "$PWD/images/tests/hotspot/jtreg/native"
+      - name: Compile JMH benchmarks
+        if: matrix.platform == 'linux-x64'
+        working-directory: jdk
+        run: |
+          mkdir -p jmh/classes
+          curl -fsSL https://repo.maven.apache.org/maven2/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar -o jmh/jmh-core.jar
+          curl -fsSL https://repo.maven.apache.org/maven2/org/openjdk/jmh/jmh-generator-annprocess/1.37/jmh-generator-annprocess-1.37.jar -o jmh/jmh-generator.jar
+          curl -fsSL https://repo.maven.apache.org/maven2/net/sf/jopt-simple/jopt-simple/5.0.4/jopt-simple-5.0.4.jar -o jmh/jopt-simple.jar
+          curl -fsSL https://repo.maven.apache.org/maven2/org/apache/commons/commons-math3/3.6.1/commons-math3-3.6.1.jar -o jmh/commons-math3.jar
+          "$RELEASE_JDK/bin/javac" -cp jmh/jmh-core.jar -processorpath jmh/jmh-core.jar:jmh/jmh-generator.jar -d jmh/classes test/micro/org/openjdk/bench/vm/compiler/CommonIntrinsics.java test/micro/org/openjdk/bench/vm/compiler/CommonScalarIntrinsics.java test/micro/org/openjdk/bench/vm/compiler/CommonBigIntegerShiftIntrinsics.java
+          "$RELEASE_JDK/bin/jar" --create --file jmh/benchmarks.jar -C jmh/classes .
+      - name: Measure paired workloads and startup
+        if: matrix.platform == 'linux-x64'
+        working-directory: jdk
+        run: |
+          python3 make/scripts/bench-common-intrinsics.py "$RELEASE_JDK/bin/java" "$PWD/jmh/benchmarks.jar:$PWD/jmh/jmh-core.jar:$PWD/jmh/jopt-simple.jar:$PWD/jmh/commons-math3.jar" qualification/bench "$BENCH_CPU"
+          python3 ../orchestration/.github/qualification/confirm.py "$RELEASE_JDK/bin/java" "$PWD/jmh/benchmarks.jar:$PWD/jmh/jmh-core.jar:$PWD/jmh/jopt-simple.jar:$PWD/jmh/commons-math3.jar" "$BENCH_CPU"
+          python3 ../orchestration/.github/qualification/startup.py "$RELEASE_JDK/bin/java" "$BENCH_CPU"
+      - name: Record environment and binary identity
+        if: always()
+        working-directory: jdk
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, platform, subprocess
+          from pathlib import Path
+          root = Path('qualification')
+          root.mkdir(exist_ok=True)
+          images = {}
+          for name, env in [('release_vm', 'RELEASE_JDK'), ('debug_vm', 'DEBUG_JDK')]:
+              if env in os.environ:
+                  image = Path(os.environ[env])
+                  for label, path in [('vm', image / 'lib/server/libjvm.so'), ('modules', image / 'lib/modules')]:
+                      data = path.read_bytes()
+                      images[name + '_' + label] = dict(sha256=hashlib.sha256(data).hexdigest(), bytes=len(data))
+          for name, path in [('jvmti_agent', Path('images/tests/hotspot/jtreg/native/libTestCommonIntrinsicEvents.so')), ('benchmarks', Path('jmh/benchmarks.jar')), ('jmh_core', Path('jmh/jmh-core.jar')), ('compiler_hints', root / 'bench/compiler-hints')]:
+              if path.exists():
+                  data = path.read_bytes()
+                  images[name] = dict(sha256=hashlib.sha256(data).hexdigest(), bytes=len(data))
+          result = dict(revision=os.environ['SOURCE_REVISION'], build_run=int(os.environ['BUILD_RUN']), qualification_run=int(os.environ['GITHUB_RUN_ID']), platform=platform.platform(), cpu=json.loads(subprocess.check_output(['lscpu', '-J'], text=True)), affinity=sorted(os.sched_getaffinity(0)), images=images)
+          root.joinpath('environment.json').write_text(json.dumps(result, indent=2) + '\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: common-intrinsics-qualification-${{ matrix.platform }}
+          path: jdk/qualification
