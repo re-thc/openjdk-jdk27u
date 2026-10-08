@@ -38,7 +38,7 @@ jobs:
         with:
           script: |
             const names = ['bundles-${{ matrix.platform }}', 'bundles-${{ matrix.platform }}-debug'];
-            for (let attempt = 0; attempt < 40; attempt++) {
+            for (let attempt = 0; attempt < 120; attempt++) {
               const run = await github.rest.actions.getWorkflowRun({ ...context.repo, run_id: Number(process.env.BUILD_RUN) });
               if (run.data.head_sha !== process.env.SOURCE_REVISION) throw new Error('Build revision mismatch');
               const response = await github.rest.actions.listWorkflowRunArtifacts({ ...context.repo, run_id: Number(process.env.BUILD_RUN), per_page: 100 });
