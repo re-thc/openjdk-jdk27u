@@ -29,6 +29,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/vm_version.hpp"
 
 namespace {
 
@@ -765,8 +766,28 @@ bool CommonIntrinsics::is_supported(vmIntrinsics::ID id) {
 #endif
 }
 
-// Interpreter entries are generated before compiler stubs. C1 runs later
-// and can decline unavailable kernels without repeatedly deoptimizing.
+// Interpreter entries precede compiler stubs, so consult the CPU predicates
+// used by their generators rather than the still-empty stub slots. Keep this
+// separate from is_supported: C1's short Java shift helpers need no stub.
+bool CommonIntrinsics::is_available_for_interpreter(vmIntrinsics::ID id) {
+  if (!is_supported(id)) return false;
+#ifdef AMD64
+  switch (id) {
+    case vmIntrinsics::_bigIntegerRightShiftWorker:
+    case vmIntrinsics::_bigIntegerLeftShiftWorker:
+      return VM_Version::supports_avx512_vbmi2();
+    case vmIntrinsics::_quad_keccak:
+      return VM_Version::supports_evex() && VM_Version::supports_avx512vlbw();
+    default: break;
+  }
+#endif
+#ifdef AARCH64
+  if (id == vmIntrinsics::_double_keccak) return UseSIMDForSHA3Intrinsic;
+#endif
+  return true;
+}
+
+// C1 runs after compiler-stub generation and can check actual backend slots.
 bool CommonIntrinsics::is_available_for_c1(vmIntrinsics::ID id) {
   if (!is_supported(id)) return false;
   if (is_scalar(id)) return true;

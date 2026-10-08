@@ -137,6 +137,7 @@ class CommonIntrinsics : AllStatic {
   static bool scalar_is_wide(vmIntrinsics::ID id);
   static bool can_fallback(vmIntrinsics::ID id);
   static bool is_supported(vmIntrinsics::ID id);
+  static bool is_available_for_interpreter(vmIntrinsics::ID id);
   static bool is_available_for_c1(vmIntrinsics::ID id);
   static address entry_for(vmIntrinsics::ID id);
   static int parameter_slots(vmIntrinsics::ID id);

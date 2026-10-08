@@ -34,6 +34,8 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCommonIntrinsics -XX:DisableIntrinsic=_multiplyToLen,_vectorizedHashCode,_addExactI compiler.intrinsics.common.TestCommonIntrinsicAvailability selective
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCommonIntrinsics -XX:-UseSHA3Intrinsics compiler.intrinsics.common.TestCommonIntrinsicAvailability enabled
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCommonIntrinsics -XX:DisableIntrinsic=_sha3_implCompress compiler.intrinsics.common.TestCommonIntrinsicAvailability no_sha3
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCommonIntrinsics -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=2 compiler.intrinsics.common.TestCommonIntrinsicAvailability enabled
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCommonIntrinsics -XX:+IgnoreUnrecognizedVMOptions -XX:-UseSIMDForSHA3Intrinsic compiler.intrinsics.common.TestCommonIntrinsicAvailability enabled
  */
 
 package compiler.intrinsics.common;
@@ -158,16 +160,18 @@ public class TestCommonIntrinsicAvailability {
                             .contains(entry.id())) {
                 expected &= cpuFeatures.contains("avx512_vbmi2");
             }
+            if (System.getProperty("os.arch").equals("amd64") && entry.id().equals("_quad_keccak")) {
+                expected &= cpuFeatures.contains("avx512f") && cpuFeatures.contains("avx512bw") &&
+                            cpuFeatures.contains("avx512vl");
+            }
+            if (System.getProperty("os.arch").equals("aarch64") && entry.id().equals("_double_keccak")) {
+                expected &= Boolean.TRUE.equals(wb.getBooleanVMFlag("UseSIMDForSHA3Intrinsic"));
+            }
             for (String flag : entry.flags().split(",")) {
                 if (flag.isEmpty()) continue;
                 expected &= Boolean.TRUE.equals(wb.getBooleanVMFlag(flag));
             }
             boolean actual = wb.isIntrinsicAvailable(method, 1);
-            // Parallel Keccak entry points can be absent while the scalar
-            // SHA3 backend is enabled. Their Java implementation returns zero.
-            if (expected && !actual && Set.of("_double_keccak", "_quad_keccak").contains(entry.id())) {
-                continue;
-            }
             if (actual != expected) {
                 throw new AssertionError(entry.id() + ": C1 available=" + actual + ", expected=" + expected);
             }
