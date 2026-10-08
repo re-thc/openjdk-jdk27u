@@ -115,6 +115,8 @@ process RSS, not application startup or retained heap memory.
 
 ## Validation
 
+The full [repository sanity matrix](https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578) passes with **96 successful jobs**. Alpine Linux is skipped by the existing repository configuration. Windows ARM’s NMT stack-top assertion passes on retry; the [paired NMT control](https://github.com/re-thc/openjdk-jdk27u/actions/runs/37733379705) also passes all **140 native tests in each of six fresh off/on processes**, using the same final-source debug image.
+
 Native release and fastdebug builds pass on x86-64 and AArch64. The [native tier1 run](https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578) also builds the pure-C1 minimal and Zero configurations. Both native Linux architectures pass all 12 tier1 groups: HotSpot compiler (three partitions), common, GC, runtime and serviceability; JDK (three partitions); language tools; and test libraries.
 
 The [dedicated qualification run](https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725140740) passes all six selections on each architecture:
