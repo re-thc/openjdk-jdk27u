@@ -771,7 +771,7 @@ bool CommonIntrinsics::is_supported(vmIntrinsics::ID id) {
 // separate from is_supported: C1's short Java shift helpers need no stub.
 bool CommonIntrinsics::is_available_for_interpreter(vmIntrinsics::ID id) {
   if (!is_supported(id)) return false;
-#ifdef AMD64
+#if defined(AMD64) && !defined(ZERO)
   switch (id) {
     case vmIntrinsics::_bigIntegerRightShiftWorker:
     case vmIntrinsics::_bigIntegerLeftShiftWorker:
@@ -781,7 +781,7 @@ bool CommonIntrinsics::is_available_for_interpreter(vmIntrinsics::ID id) {
     default: break;
   }
 #endif
-#ifdef AARCH64
+#if defined(AARCH64) && !defined(ZERO)
   if (id == vmIntrinsics::_double_keccak) return UseSIMDForSHA3Intrinsic;
 #endif
   return true;
