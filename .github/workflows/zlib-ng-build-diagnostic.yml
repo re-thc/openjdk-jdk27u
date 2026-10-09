@@ -1,0 +1,57 @@
+name: zlib-ng GCC 16 build diagnosis
+
+on:
+  push:
+    branches: [pr/zlib-ng-build-diagnostic]
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-26.04
+            platform: linux-x64
+          - runner: ubuntu-26.04-arm
+            platform: linux-aarch64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: ./.github/actions/get-bootjdk
+        id: boot
+        with:
+          platform: ${{ matrix.platform }}
+      - name: Install target compiler
+        run: |
+          sudo apt update
+          sudo apt install -y gcc-16 g++-16 ccache
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-16 100 --slave /usr/bin/g++ g++ /usr/bin/g++-16
+      - name: Install upstream linker
+        run: |
+          curl --fail --location --retry 3 "https://github.com/rui314/mold/releases/download/v3.0.0/mold-3.0.0-$(uname -m)-linux.tar.gz" -o "$RUNNER_TEMP/mold.tar.gz"
+          mkdir -p "$RUNNER_TEMP/mold"
+          tar xf "$RUNNER_TEMP/mold.tar.gz" --strip-components=1 -C "$RUNNER_TEMP/mold"
+          echo "$RUNNER_TEMP/mold/bin" >> "$GITHUB_PATH"
+      - name: Configure target and build native archive
+        run: |
+          bash bin/configure-dev --with-conf-name=probe --with-boot-jdk=${{ steps.boot.outputs.path }} --with-zlib=system --with-native-debug-symbols=none
+          python3 - <<'PY'
+          from pathlib import Path
+          Path('probe.gmk').write_text('''include $(SPEC)
+          probe:
+          \tmkdir -p $(OUTPUTDIR)/native-probe
+          \tcd $(OUTPUTDIR)/native-probe && CC="$(CC)" AR="$(AR)" CFLAGS="$(CFLAGS_JDKLIB) $(SYSROOT_CFLAGS) -fPIC -Wno-undef" LDFLAGS="$(LDFLAGS_JDKLIB) $(SYSROOT_LDFLAGS)" CHOST="$(OPENJDK_TARGET_CPU)-unknown-linux-gnu" $(BASH) $(TOPDIR)/src/java.base/share/native/libzip/zlib-ng/configure --static --zlib-compat --sprefix=jdk_ng_ > configure-output.log 2>&1 || (cat $(OUTPUTDIR)/native-probe/configure-output.log $(OUTPUTDIR)/native-probe/configure.log; exit 1)
+          \t$(MAKE) -C $(OUTPUTDIR)/native-probe libz.a
+          ''')
+          PY
+          make -f probe.gmk SPEC="$PWD/build/probe/spec.gmk" probe
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: native-probe-${{ matrix.platform }}
+          path: |
+            build/probe/spec.gmk
+            build/probe/native-probe/*.log
