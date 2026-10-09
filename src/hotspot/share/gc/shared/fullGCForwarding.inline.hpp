@@ -348,11 +348,6 @@ HeapWord* FullGCForwardingImpl<BITS>::fallback_forwardee(HeapWord* from) {
   return result;
 }
 
-inline void FullGCForwarding::initialize(MemRegion heap) {
-  if (UseFourByteObjectHeaders) FourByteFullGCForwarding::initialize(heap);
-  else LegacyFullGCForwarding::initialize(heap);
-}
-
 inline void FullGCForwarding::begin() {
   if (UseFourByteObjectHeaders) FourByteFullGCForwarding::begin();
 }
