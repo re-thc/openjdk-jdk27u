@@ -129,6 +129,24 @@ def defaults(jdk):
     for row in rows:
         print(row["tier"], row["config"], row["benchmark"].split(".")[-1], row["params"],
               round(row["primaryMetric"]["score"], 2), round(row["primaryMetric"]["scoreError"], 2), flush=True)
+    # Require confidence intervals to exclude equality before rejecting a
+    # slowdown. Preserve raw measurements and the full report on failure.
+    def key(row):
+        return (row["tier"], row["benchmark"], tuple(sorted(row["params"].items())))
+    baseline = {key(row): row for row in rows if row["config"] == "stock-jni"}
+    regressions = []
+    for row in rows:
+        if row["config"] != "stock-intrinsic":
+            continue
+        before = baseline[key(row)]["primaryMetric"]
+        after = row["primaryMetric"]
+        ratio = after["score"] / before["score"]
+        if ratio > 1.02 and after["score"] - after["scoreError"] > before["score"] + before["scoreError"]:
+            regressions.append((row["tier"], row["benchmark"], row["params"], round(ratio, 3)))
+    if regressions:
+        raise RuntimeError("Significant default-path slowdowns above 2%: " + repr(regressions))
+    print("Default-path performance check passed: no significant slowdowns above 2%", flush=True)
+
 
 if __name__ == "__main__":
     if sys.argv[1] == "native": native()
