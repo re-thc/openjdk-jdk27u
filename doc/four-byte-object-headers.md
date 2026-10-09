@@ -83,16 +83,3 @@ Image and jlink four-byte archive dumps use `-Xint` to select those deterministi
 static-dump hash inputs.
 JFR old-object sampling remains available with Serial and G1; leak-context
 edge indices use the JDK 27 side table and do not consume header bits.
-
-## Validation and measurement
-
-The regression tests in `runtime/CompactObjectHeaders` exercise flags, field
-and array layout, archive compatibility, the class-space boundary, identity
-hashes, C2 monitor-table lookup and ZGC relocation. `gc/stress/ihash` covers
-movement and hash retention across the collectors. The JDK instrumentation test checks expanded object
-sizes under C1 and C2.
-
-The [benchmark instructions](benchmarks/four-byte-headers/README.md) cover exact
-retained graph size, allocated bytes, identity hashing, database and Spring
-workloads, and startup with matching CDS archives. Keep generated results
-outside the source tree and run timing measurements on an idle machine.
