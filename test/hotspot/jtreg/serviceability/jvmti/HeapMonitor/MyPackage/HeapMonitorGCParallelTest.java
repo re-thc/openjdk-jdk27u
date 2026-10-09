@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,7 +29,7 @@ package MyPackage;
  * @summary Verifies the JVMTI Heap Monitor Statistics using ParallelGc
  * @build Frame HeapMonitor
  * @compile HeapMonitorGCTest.java
- * @requires vm.gc == "Parallel" | vm.gc == "null"
+ * @requires vm.gc.Parallel
  * @requires vm.jvmti
  * @run main/othervm/native -agentlib:HeapMonitorTest -XX:+UseParallelGC MyPackage.HeapMonitorGCTest
  */

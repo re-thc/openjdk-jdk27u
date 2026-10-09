@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,6 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
 
     strategy:
-      fail-fast: false
       matrix:
         debug-level: ${{ fromJSON(inputs.debug-levels) }}
         include:
@@ -75,7 +74,7 @@ jobs:
 
     steps:
       - name: 'Checkout the JDK source'
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: 'Get the BootJDK'
         id: bootjdk
@@ -94,14 +93,21 @@ jobs:
       - name: 'Install toolchain and dependencies'
         run: |
           # Run Homebrew installation and xcode-select
-          brew install autoconf make
+          brew install autoconf make ccache
           sudo xcode-select --switch /Applications/Xcode_${{ inputs.xcode-toolset-version }}.app/Contents/Developer
           # This will make GNU make available as 'make' and not only as 'gmake'
-          echo '/usr/local/opt/make/libexec/gnubin' >> $GITHUB_PATH
+          echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
+
+      - name: 'Restore compiler cache'
+        uses: ./.github/actions/compiler-cache
+        with:
+          platform: ${{ inputs.platform }}
+          debug-level: ${{ matrix.debug-level }}
+          toolchain: xcode-${{ inputs.xcode-toolset-version }}
 
       - name: 'Configure'
         run: >
-          bash configure
+          bash bin/configure-dev
           --with-conf-name=${{ inputs.platform }}
           ${{ matrix.flags }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
@@ -126,9 +132,17 @@ jobs:
           debug-suffix: '${{ matrix.suffix }}'
         if: ${{ inputs.dry-run == false }}
 
+      - name: 'Check development profile'
+        run: bash .github/scripts/check-dev-profile.sh "build/${{ inputs.platform }}/images/jdk" "build/${{ inputs.platform }}/spec.gmk"
+        if: ${{ inputs.dry-run == false }}
+
       - name: 'Upload bundles'
         uses: ./.github/actions/upload-bundles
         with:
           platform: ${{ inputs.platform }}
           debug-suffix: '${{ matrix.suffix }}'
         if: ${{ inputs.dry-run == false }}
+
+      - name: 'Compiler cache statistics'
+        run: ccache --show-stats | tee -a "$GITHUB_STEP_SUMMARY"
+        if: ${{ !cancelled() }}

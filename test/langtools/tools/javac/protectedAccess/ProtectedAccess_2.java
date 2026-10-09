@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,6 @@
 
 public class ProtectedAccess_2 {
     public static void main(String[] args){
-        java.awt.Toolkit.getNativeContainer(null);
+        java.util.concurrent.ForkJoinTask.peekNextLocalTask();
     }
 }

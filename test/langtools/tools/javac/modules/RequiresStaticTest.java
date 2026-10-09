@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
+ *      java.logging
  * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main RequiresStaticTest
  */
@@ -58,9 +59,9 @@ public class RequiresStaticTest extends ModuleTestBase {
         tb.writeJavaFiles(src,
                 // use class in java.se
                 """
-                    import java.awt.Frame;
+                    import java.util.logging.Logger;
                     class Test {
-                        Frame f;
+                        Logger f;
                     }""");
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
@@ -74,6 +75,10 @@ public class RequiresStaticTest extends ModuleTestBase {
 
     @Test
     public void testJavaSE_Fail(Path base) throws Exception {
+        if (java.lang.module.ModuleFinder.ofSystem().find("java.se").isEmpty()) {
+            System.err.println("Skipping java.se readability check: module omitted from this JDK");
+            return;
+        }
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { requires static java.se; }",

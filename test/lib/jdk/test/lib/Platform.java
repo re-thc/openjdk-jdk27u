@@ -244,6 +244,9 @@ public class Platform {
      * on this platform.
      */
     public static boolean hasSA() {
+        if (java.lang.module.ModuleFinder.ofSystem().find("jdk.hotspot.agent").isEmpty()) {
+            return false; // SA module is not present in this image.
+        }
         if (isZero()) {
             return false; // SA is not enabled.
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
+ *      java.logging
  * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main RequiresTransitiveTest
  */
@@ -51,6 +52,10 @@ public class RequiresTransitiveTest extends ModuleTestBase {
 
     @Test
     public void testJavaSE_OK(Path base) throws Exception {
+        if (java.lang.module.ModuleFinder.ofSystem().find("java.se").isEmpty()) {
+            System.err.println("Skipping java.se transitive check: module omitted from this JDK");
+            return;
+        }
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { requires java.se; }",
@@ -72,6 +77,10 @@ public class RequiresTransitiveTest extends ModuleTestBase {
 
     @Test
     public void testJavaSE_Fail(Path base) throws Exception {
+        if (java.lang.module.ModuleFinder.ofSystem().find("java.se").isEmpty()) {
+            System.err.println("Skipping java.se readability check: module omitted from this JDK");
+            return;
+        }
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { requires java.se; }",
@@ -233,7 +242,7 @@ public class RequiresTransitiveTest extends ModuleTestBase {
                 """
                 module m1 {
                     requires static static java.sql;
-                    requires transitive transitive java.desktop;
+                    requires transitive transitive java.logging;
                 }
                 """
         );

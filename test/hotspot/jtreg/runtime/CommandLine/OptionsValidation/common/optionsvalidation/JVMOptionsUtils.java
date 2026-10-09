@@ -220,9 +220,6 @@ public class JVMOptionsUtils {
                 option.addPrepend("-XX:SharedArchiveFile=TestOptionsWithRanges.jsa");
                 option.addPrepend("-Xshare:dump");
                 break;
-            case "TLABWasteIncrement":
-                option.addPrepend("-XX:+UseParallelGC");
-                break;
             default:
                 /* Do nothing */
                 break;

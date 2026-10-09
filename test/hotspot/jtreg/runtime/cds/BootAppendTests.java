@@ -25,6 +25,7 @@
  * @test
  * @requires vm.cds
  * @summary Testing -Xbootclasspath/a support for CDS
+ * @modules java.desktop
  * @requires vm.cds
  * @library /test/lib
  * @compile javax/sound/sampled/MyClass.jasm

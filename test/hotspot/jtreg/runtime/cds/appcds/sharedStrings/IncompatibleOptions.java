@@ -183,6 +183,10 @@ public class IncompatibleOptions {
     static void testDump(int testCaseNr, String collectorOption, String extraOption,
         String expectedWarning, boolean expectedToFail) throws Exception {
 
+        if (collectorOption.equals("-XX:+UseParallelGC") && !GC.Parallel.isSupported()) {
+            System.out.println("Skipping Parallel GC: not included in this build");
+            return;
+        }
         System.out.println("Testcase: " + testCaseNr);
         OutputAnalyzer output = TestCommon.dump(appJar, TestCommon.list("Hello"),
             TestCommon.concat(vmOptionsPrefix,
@@ -206,6 +210,10 @@ public class IncompatibleOptions {
     static void testExec(int testCaseNr, String collectorOption, String extraOption,
         String expectedWarning, boolean expectedToFail) throws Exception {
 
+        if (collectorOption.equals("-XX:+UseParallelGC") && !GC.Parallel.isSupported()) {
+            System.out.println("Skipping Parallel GC: not included in this build");
+            return;
+        }
         OutputAnalyzer output;
         System.out.println("Testcase: " + testCaseNr);
 

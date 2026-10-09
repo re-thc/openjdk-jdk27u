@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1195,6 +1195,11 @@ public class EdgeCases extends ModuleTestBase {
 
         if (!seenJavaSEDependency.get()) {
             throw new AssertionError("Didn't find the java.se dependency!");
+        }
+
+        if (java.lang.module.ModuleFinder.ofSystem().find("java.se").isEmpty()) {
+            System.err.println("Skipping current-system java.se check: module omitted from this JDK");
+            return;
         }
 
         seenJavaSEDependency.set(false);

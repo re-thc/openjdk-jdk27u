@@ -53,7 +53,7 @@ public class AddOptionsTest extends AbstractLinkableRuntimeTest {
     void runTest(Helper helper, boolean isLinkableRuntime) throws Exception {
         BaseJlinkSpecBuilder builder = new BaseJlinkSpecBuilder()
                 .addExtraOption("--add-options")
-                .addExtraOption("-Xlog:gc=info:stderr -XX:+UseParallelGC")
+                .addExtraOption("-Xlog:gc=info:stderr -XX:+UseSerialGC")
                 .name("java-base-with-opts")
                 .addModule("java.base")
                 .validatingModule("java.base")
@@ -63,23 +63,23 @@ public class AddOptionsTest extends AbstractLinkableRuntimeTest {
         }
         Path finalImage = createJavaImageRuntimeLink(builder.build());
         verifyListModules(finalImage, List.of("java.base"));
-        verifyParallelGCInUse(finalImage);
+        verifySerialGCInUse(finalImage);
     }
 
-    private void verifyParallelGCInUse(Path finalImage) throws Exception {
+    private void verifySerialGCInUse(Path finalImage) throws Exception {
         OutputAnalyzer analyzer = runJavaCmd(finalImage, List.of("--version"));
         boolean foundMatch = false;
         try (Scanner lineScan = new Scanner(analyzer.getStderr())) {
             while (lineScan.hasNextLine()) {
                 String line = lineScan.nextLine();
-                if (line.endsWith("Using Parallel")) {
+                if (line.endsWith("Using Serial")) {
                     foundMatch = true;
                     break;
                 }
             }
         }
         if (!foundMatch) {
-            throw new AssertionError("Expected Parallel GC in place for jlinked image");
+            throw new AssertionError("Expected Serial GC in place for jlinked image");
         }
     }
 

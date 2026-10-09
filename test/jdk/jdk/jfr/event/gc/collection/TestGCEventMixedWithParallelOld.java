@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package jdk.jfr.event.gc.collection;
  * @requires vm.flagless
  * @requires vm.hasJFR
  *
- * @requires vm.gc == "Parallel" | vm.gc == null
+ * @requires vm.gc.Parallel
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -Xmx32m -Xmn8m -XX:+UseParallelGC jdk.jfr.event.gc.collection.TestGCEventMixedWithParallelOld
  * good debug flags: -Xlog:gc*=debug

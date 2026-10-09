@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,7 @@ public class TestClassCrossReferences extends JavadocTester {
                 "<a href=\"" + uri + """
                     java/math/package-summary.html" class="external-link"><code>Link to math package</code></a>""",
                 "<a href=\"" + uri + """
-                    javax/swing/text/AbstractDocument.AttributeContext.html" title="interface in jav\
-                    ax.swing.text" class="external-link"><code>Link to AttributeContext innerclass</\
+                    java/util/Map.Entry.html" title="interface in java.util" class="external-link"><code>Link to Entry innerclass</\
                     code></a>""",
                 "<a href=\"" + uri + """
                     java/math/BigDecimal.html" title="class in java.math" class="external-link"><cod\
@@ -96,8 +95,7 @@ public class TestClassCrossReferences extends JavadocTester {
                 "<a href=\"" + uri + """
                     java/math/package-summary.html" class="external-link"><code>Link to math package</code></a>""",
                 "<a href=\"" + uri + """
-                    javax/swing/text/AbstractDocument.AttributeContext.html" title="interface in jav\
-                    ax.swing.text" class="external-link"><code>Link to AttributeContext innerclass</\
+                    java/util/Map.Entry.html" title="interface in java.util" class="external-link"><code>Link to Entry innerclass</\
                     code></a>""",
                 "<a href=\"" + uri + """
                     java/math/BigDecimal.html" title="class in java.math" class="external-link"><cod\

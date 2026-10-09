@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
 
 import jdk.test.whitebox.code.Compiler;
+import jdk.test.whitebox.gc.GC;
 
 public class LowMemoryTest {
     private static final MemoryMXBean mm = ManagementFactory.getMemoryMXBean();
@@ -82,7 +83,11 @@ public class LowMemoryTest {
 
         // Runs the test collecting subprocess I/O while it's running.
         traceTest(classMain + ", -XX:+UseSerialGC", nmFlag, lpFlag, "-XX:+UseSerialGC");
-        traceTest(classMain + ", -XX:+UseParallelGC", nmFlag, lpFlag, "-XX:+UseParallelGC");
+        if (GC.Parallel.isSupported()) {
+            traceTest(classMain + ", -XX:+UseParallelGC", nmFlag, lpFlag, "-XX:+UseParallelGC");
+        } else {
+            System.out.println("Skipping Parallel GC: not included in this build");
+        }
         traceTest(classMain + ", -XX:+UseG1GC", nmFlag, lpFlag, "-XX:+UseG1GC", g1Flag);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,9 @@ public class UseCompressedOops {
         // Test GCs.
         testCompressedOopsModes(args, "-XX:+UseG1GC");
         testCompressedOopsModes(args, "-XX:+UseSerialGC");
-        testCompressedOopsModes(args, "-XX:+UseParallelGC");
+        if (GC.Parallel.isSupported()) {
+            testCompressedOopsModes(args, "-XX:+UseParallelGC");
+        }
         if (GC.Shenandoah.isSupported()) {
             testCompressedOopsModes(args, "-XX:+UnlockExperimentalVMOptions", "-XX:+UseShenandoahGC");
         }

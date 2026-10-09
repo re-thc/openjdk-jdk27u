@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 module mod {/*getElement:MODULE:mod*/
     requires java.base/*getElement:MODULE:java.base*/;
-    exports api/*getElement:PACKAGE:api*/.pkg/*getElement:PACKAGE:api.pkg*/ to java.desktop/*getElement:MODULE:java.desktop*/;
+    exports api/*getElement:PACKAGE:api*/.pkg/*getElement:PACKAGE:api.pkg*/ to java.logging/*getElement:MODULE:java.logging*/;
     uses java/*getElement:PACKAGE:java*/.lang/*getElement:PACKAGE:java.lang*/.Runnable/*getElement:INTERFACE:java.lang.Runnable*/;
     provides java/*getElement:PACKAGE:java*/.lang/*getElement:PACKAGE:java.lang*/.Runnable/*getElement:INTERFACE:java.lang.Runnable*/
     with     api/*getElement:PACKAGE:api*/.pkg/*getElement:PACKAGE:api.pkg*/.Api/*getElement:CLASS:api.pkg.Api*/;

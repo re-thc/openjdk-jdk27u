@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,12 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
  *          jdk.jshell/jdk.internal.jshell.tool
- *          java.desktop
+ *          java.sql
  * @build KullaTesting TestingInputStream
  * @run junit/timeout=480 ToolSimpleTest
  */
 
+import java.lang.module.ModuleFinder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -49,6 +50,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import org.junit.jupiter.api.Test;
 
 public class ToolSimpleTest extends ReplToolTesting {
@@ -759,6 +761,7 @@ public class ToolSimpleTest extends ReplToolTesting {
 
     @Test
     public void testJavaSeStart() {
+        assumeTrue(ModuleFinder.ofSystem().find("java.se").isPresent(), "java.se not available");
         test(new String[]{"--startup", "JAVASE"},
                 (a) -> assertCommand(a, "ZoneOffsetTransitionRule.TimeDefinition.WALL",
                         "$1 ==> WALL")
@@ -767,6 +770,7 @@ public class ToolSimpleTest extends ReplToolTesting {
 
     @Test
     public void testJavaSeSetStart() {
+        assumeTrue(ModuleFinder.ofSystem().find("java.se").isPresent(), "java.se not available");
         test(
                 (a) -> assertCommand(a, "/set sta JAVASE", ""),
                 (a) -> assertCommand(a, "/reset", "|  Resetting state."),
@@ -938,8 +942,8 @@ public class ToolSimpleTest extends ReplToolTesting {
             test(
                     (a) -> assertCommandOutputContains(a, "/set feedback " + feedback, "|  Feedback mode: " + feedback),
                     (a) -> assertCommand(a, "import java.util.*", ""),
-                    (a) -> assertCommandOutputContains(a, "var v1 = List.of(1);", "v1 ==> [1]"),
-                    (a) -> assertCommandOutputContains(a, "import java.awt.List;",
+                    (a) -> assertCommandOutputStartsWith(a, "var v1 = new Date();", "v1 ==> "),
+                    (a) -> assertCommandOutputContains(a, "import java.sql.Date;",
                             "|    update replaced variable v1 which cannot be referenced until this error is corrected:"),
                     (a) -> assertCommandOutputContains(a, "var b = java.util.List.of(\"bb\")",
                             "b ==> [bb]"),
@@ -981,9 +985,9 @@ public class ToolSimpleTest extends ReplToolTesting {
     @Test
     public void testModuleImportShortenedTypes() {
         test(
-                (a) -> assertCommandOutputContains(a, "import module java.desktop;", ""),
-                (a) -> assertCommandOutputContains(a, "var r1 = new JButton()", ""),
-                (a) -> assertCommandOutputContains(a, "/vars r1", "|    JButton r1 =")
+                (a) -> assertCommandOutputContains(a, "import module java.logging;", ""),
+                (a) -> assertCommandOutputContains(a, "var r1 = new SimpleFormatter()", ""),
+                (a) -> assertCommandOutputContains(a, "/vars r1", "|    SimpleFormatter r1 =")
         );
     }
 

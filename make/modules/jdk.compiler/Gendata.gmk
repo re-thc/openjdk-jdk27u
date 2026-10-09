@@ -35,7 +35,10 @@ $(eval $(call ReadImportMetaData))
 
 # Modules that should be visible - the documented modules:
 CT_MODULES := $(filter-out $(MODULES_FILTER), $(DOCS_MODULES))
-CT_TRANSITIVE_MODULES := $(call FindTransitiveIndirectDepsForModules, $(CT_MODULES))
+# Expand documented aggregators before filtering, retaining the APIs of their
+# remaining modules when an aggregator such as java.se is omitted.
+CT_TRANSITIVE_MODULES := $(filter-out $(MODULES_FILTER), \
+    $(call FindTransitiveIndirectDepsForModules, $(DOCS_MODULES)))
 CT_MODULES_API_TARGETS := \
     $(foreach m, $(CT_MODULES) $(CT_TRANSITIVE_MODULES), \
       $(call SetupJavaCompilationApiTarget, $m, $(JDK_OUTPUTDIR)/modules/$m))

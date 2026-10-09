@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
  * @test
  * @bug 8159016 8202949 8203915
  * @summary Tests correct dominator information after over-unrolling a loop.
- * @requires vm.gc == "Parallel" | vm.gc == "null"
+ * @requires vm.gc.Serial | vm.gc == null
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                   -Xcomp -XX:-TieredCompilation -XX:-UseSwitchProfiling
  *                   -XX:-UseCountedLoopSafepoints -XX:LoopUnrollLimit=250
- *                   -XX:-UseG1GC -XX:+UseParallelGC compiler.loopopts.TestOverunrolling
+ *                   -XX:-UseG1GC -XX:+UseSerialGC compiler.loopopts.TestOverunrolling
  */
 
 package compiler.loopopts;

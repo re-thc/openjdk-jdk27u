@@ -28,7 +28,7 @@ import jdk.test.lib.jfr.GCHelper;
  * @test
  * @requires vm.flagless
  * @requires vm.hasJFR
- * @requires vm.gc == "Parallel" | vm.gc == null
+ * @requires vm.gc.Parallel
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+UseParallelGC -XX:MarkSweepDeadRatio=0 -XX:-UseCompressedOops -XX:+IgnoreUnrecognizedVMOptions jdk.jfr.event.gc.objectcount.TestObjectCountAfterGCEventWithParallelOld
  */
