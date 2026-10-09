@@ -28,7 +28,10 @@ The interpreter, C1 and C2 share a GC-safe ZIP runtime call with JNI fallback.
 Heap arrays are pinned during native processing; exception handling follows
 unpinning. Java synchronization, buffer positions, memory-session handling,
 counters and streaming semantics are preserved. Direct-to-direct Inflater calls
-retain JNI.
+retain JNI. Deflater uses JNI for input chunks at most 1 KiB and, on AArch64,
+chunks of at least 64 KiB. On x86-64, mixed-buffer Inflater calls with output
+capacity at most 1 KiB use JNI. These call-path gates leave backend selection
+and stream state unchanged.
 
 Bulk Adler32 gains interpreter and C1 entries using the existing SIMD stubs.
 Existing C2 Adler32, CRC32 and CRC32C intrinsics are retained. Scalar Adler32

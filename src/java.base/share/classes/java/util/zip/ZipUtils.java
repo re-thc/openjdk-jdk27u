@@ -39,6 +39,7 @@ import static java.util.zip.ZipConstants.ENDHDR;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.util.Architecture;
 import jdk.internal.util.Preconditions;
 
 class ZipUtils {
@@ -55,6 +56,14 @@ class ZipUtils {
     static final ByteBuffer defaultBuf = ByteBuffer.allocate(0);
 
     static final boolean USE_ZIP_INTRINSICS = initZipIntrinsics();
+
+    // Keep JNI where its transition cost is lower in the tiered benchmarks.
+    static final int DEFLATE_INTRINSIC_MIN_INPUT = 1024;
+    static final int DEFLATE_INTRINSIC_MAX_INPUT =
+        Architecture.isAARCH64() ? 65536 : Integer.MAX_VALUE;
+    static final int INFLATE_MIXED_INTRINSIC_MIN_OUTPUT =
+        Architecture.isX64() ? 1024 : -1;
+
 
     private static boolean initZipIntrinsics() {
         loadLibrary();
