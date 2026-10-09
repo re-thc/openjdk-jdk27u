@@ -371,6 +371,7 @@ public class Inflater implements AutoCloseable {
                             try {
                                 long inputAddress = NIO_ACCESS.getBufferAddress(input);
                                 result = ZipUtils.USE_ZIP_INTRINSICS
+                                    && len > ZipUtils.INFLATE_MIXED_INTRINSIC_MIN_OUTPUT
                                     ? ZipUtils.process(true, this, zsRef.address(),
                                         null, inputAddress + inputPos, inputRem,
                                         output, off, len, 0, 0)
@@ -516,6 +517,7 @@ public class Inflater implements AutoCloseable {
                             try {
                                 long outputAddress = NIO_ACCESS.getBufferAddress(output);
                                 result = ZipUtils.USE_ZIP_INTRINSICS
+                                    && outputRem > ZipUtils.INFLATE_MIXED_INTRINSIC_MIN_OUTPUT
                                     ? ZipUtils.process(true, this, zsRef.address(),
                                         inputArray, inputPos, inputLim - inputPos,
                                         null, outputAddress + outputPos, outputRem, 0, 0)
@@ -564,6 +566,7 @@ public class Inflater implements AutoCloseable {
                                     byte[] outputArray = ZipUtils.getBufferArray(output);
                                     int outputOffset = ZipUtils.getBufferOffset(output);
                                     result = ZipUtils.USE_ZIP_INTRINSICS
+                                        && outputRem > ZipUtils.INFLATE_MIXED_INTRINSIC_MIN_OUTPUT
                                         ? ZipUtils.process(true, this, zsRef.address(),
                                             null, inputAddress + inputPos, inputRem,
                                             outputArray, outputOffset + outputPos, outputRem, 0, 0)
@@ -582,6 +585,7 @@ public class Inflater implements AutoCloseable {
                                 try {
                                     long outputAddress = NIO_ACCESS.getBufferAddress(output);
                                     result = ZipUtils.USE_ZIP_INTRINSICS
+                                        && outputRem > ZipUtils.INFLATE_MIXED_INTRINSIC_MIN_OUTPUT
                                         ? ZipUtils.process(true, this, zsRef.address(),
                                             inputArray, inputOffset + inputPos, inputRem,
                                             null, outputAddress + outputPos, outputRem, 0, 0)
