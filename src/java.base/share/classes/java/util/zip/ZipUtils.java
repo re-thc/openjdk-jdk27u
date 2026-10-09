@@ -59,10 +59,11 @@ class ZipUtils {
 
     // Keep JNI where its transition cost is lower in the tiered benchmarks.
     static final int DEFLATE_INTRINSIC_MIN_INPUT = 1024;
-    static final int DEFLATE_INTRINSIC_MAX_INPUT =
-        Architecture.isAARCH64() ? 65536 : Integer.MAX_VALUE;
-    static final int INFLATE_MIXED_INTRINSIC_MIN_OUTPUT =
-        Architecture.isX64() ? 1024 : -1;
+    // Disabled intrinsics use bounds that exclude every valid length.
+    static final int DEFLATE_INTRINSIC_MAX_INPUT = USE_ZIP_INTRINSICS
+        ? (Architecture.isAARCH64() ? 65536 : Integer.MAX_VALUE) : 0;
+    static final int INFLATE_MIXED_INTRINSIC_MIN_OUTPUT = USE_ZIP_INTRINSICS
+        ? (Architecture.isX64() ? 1024 : -1) : Integer.MAX_VALUE;
 
     private static boolean initZipIntrinsics() {
         loadLibrary();

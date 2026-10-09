@@ -55,7 +55,7 @@ public class ZipBufferCalls {
         byte[] original = new byte[size];
         new Random(12345).nextBytes(original);
         compressed = new byte[size + 1024];
-        restored = new byte[size + 1024];
+        restored = new byte[size];
         try (Deflater d = new Deflater(6)) {
             d.setInput(original);
             d.finish();
@@ -66,7 +66,7 @@ public class ZipBufferCalls {
         }
         inBuffer = ByteBuffer.allocateDirect(compressedLength);
         inBuffer.put(compressed, 0, compressedLength).flip();
-        outBuffer = ByteBuffer.allocateDirect(size + 1024);
+        outBuffer = ByteBuffer.allocateDirect(size);
         inflater = new Inflater();
         directInput = input.equals("direct");
         directOutput = output.equals("direct");
