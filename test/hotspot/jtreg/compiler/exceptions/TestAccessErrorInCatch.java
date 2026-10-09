@@ -25,6 +25,7 @@
  * @test
  * @bug 8367002 8370766
  * @summary Compilers might not generate handlers for recursive exceptions
+ * @modules jdk.management.agent
  *
  * @compile IllegalAccessInCatch.jasm
  * @run main/othervm -Xbatch
