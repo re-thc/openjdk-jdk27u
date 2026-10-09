@@ -3490,7 +3490,7 @@ jint Arguments::apply_ergo() {
     warning("UseFourByteObjectHeaders is only supported on x64 and AArch64; disabling it");
     FLAG_SET_ERGO(UseFourByteObjectHeaders, false);
 #else
-    if (UseFourByteObjectHeaders && !FLAG_IS_DEFAULT(hashCode) && hashCode != 2 && hashCode != 6) {
+    if (!FLAG_IS_DEFAULT(hashCode) && hashCode != 2 && hashCode != 6) {
       warning("UseFourByteObjectHeaders requires hashCode=2 or hashCode=6; disabling it");
       FLAG_SET_ERGO(UseFourByteObjectHeaders, false);
     }
