@@ -29,17 +29,31 @@
  * @run driver TestZlibNGSmallStreams
  */
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
-import java.util.*;
-import java.util.zip.*;
+import java.util.Arrays;
+import java.util.HexFormat;
+import java.util.Random;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+import java.util.zip.InflaterInputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
+
 import jdk.test.lib.process.ProcessTools;
 
 public class TestZlibNGSmallStreams {
     private static void verify(byte[] data, InputStream stream) throws Exception {
         try (stream) {
-            if (!Arrays.equals(data, stream.readAllBytes())) throw new AssertionError("round trip");
+            if (!Arrays.equals(data, stream.readAllBytes())) {
+                throw new AssertionError("round trip");
+            }
         }
     }
 
@@ -50,8 +64,9 @@ public class TestZlibNGSmallStreams {
             d.setLevel(1);
             d.setStrategy(Deflater.FILTERED);
             ByteBuffer output = direct ? ByteBuffer.allocateDirect(4096) : ByteBuffer.allocate(4096);
-            if (d.deflate(output) != 0 || d.getBytesRead() != 0 || d.getBytesWritten() != 0)
+            if (d.deflate(output) != 0 || d.getBytesRead() != 0 || d.getBytesWritten() != 0) {
                 throw new AssertionError("parameter-only progress");
+            }
 
             d.setInput(input);
             d.finish();
@@ -59,7 +74,9 @@ public class TestZlibNGSmallStreams {
             // than stock zlib's stored blocks. Allow for that expansion.
             byte[] first = new byte[input.length * 2];
             int length = d.deflate(first);
-            if (!d.finished()) throw new AssertionError("initial compression incomplete");
+            if (!d.finished()) {
+                throw new AssertionError("initial compression incomplete");
+            }
 
             // A fresh stream and a reset stream with the same input/settings
             // must fit in the same output buffer. No-data parameter calls must
@@ -70,8 +87,9 @@ public class TestZlibNGSmallStreams {
             byte[] second = new byte[length];
             int repeated = d.deflate(second);
             if (!d.finished() || repeated != length ||
-                !Arrays.equals(first, 0, length, second, 0, repeated))
+                !Arrays.equals(first, 0, length, second, 0, repeated)) {
                 throw new AssertionError("parameter-only call changed backend selection");
+            }
         }
     }
 
@@ -80,7 +98,9 @@ public class TestZlibNGSmallStreams {
         checkParameterOnlyCall(true);
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] data = new byte[1024];
-        for (int i = 0; i < data.length; i++) data[i] = (byte) ("tiny zip entry 0123456789".charAt(i % 23));
+        for (int i = 0; i < data.length; i++) {
+            data[i] = (byte) ("tiny zip entry 0123456789".charAt(i % 23));
+        }
         for (int level : new int[]{1, 6, 9}) {
             for (int length : new int[]{0, 1, 64, 1024}) {
                 byte[] input = Arrays.copyOf(data, length);
@@ -88,8 +108,9 @@ public class TestZlibNGSmallStreams {
                     ByteArrayOutputStream bytes = new ByteArrayOutputStream();
                     try (Deflater d = new Deflater(level);
                          DeflaterOutputStream stream = new DeflaterOutputStream(bytes, d)) {
-                        for (int offset = 0; offset < length; offset += chunk)
+                        for (int offset = 0; offset < length; offset += chunk) {
                             stream.write(input, offset, Math.min(chunk, length - offset));
+                        }
                     }
                     digest.update(bytes.toByteArray());
                     verify(input, new InflaterInputStream(new ByteArrayInputStream(bytes.toByteArray())));
@@ -100,20 +121,23 @@ public class TestZlibNGSmallStreams {
                         ZipEntry entry = new ZipEntry("tiny");
                         entry.setTime(0);
                         zip.putNextEntry(entry);
-                        for (int offset = 0; offset < length; offset += chunk)
+                        for (int offset = 0; offset < length; offset += chunk) {
                             zip.write(input, offset, Math.min(chunk, length - offset));
+                        }
                         zip.closeEntry();
                     }
                     digest.update(bytes.toByteArray());
                     try (ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(bytes.toByteArray()))) {
-                        if (zip.getNextEntry() == null || !Arrays.equals(input, zip.readAllBytes()))
+                        if (zip.getNextEntry() == null || !Arrays.equals(input, zip.readAllBytes())) {
                             throw new AssertionError("ZIP round trip");
+                        }
                     }
 
                     bytes.reset();
                     try (GZIPOutputStream gzip = new GZIPOutputStream(bytes)) {
-                        for (int offset = 0; offset < length; offset += chunk)
+                        for (int offset = 0; offset < length; offset += chunk) {
                             gzip.write(input, offset, Math.min(chunk, length - offset));
+                        }
                     }
                     digest.update(bytes.toByteArray());
                     verify(input, new GZIPInputStream(new ByteArrayInputStream(bytes.toByteArray())));
@@ -128,23 +152,28 @@ public class TestZlibNGSmallStreams {
                             d.setInput(new byte[8192]);
                             ByteBuffer empty = direct ? ByteBuffer.allocateDirect(0) : ByteBuffer.allocate(0);
                             if (d.deflate(empty) != 0 || d.getBytesRead() != 0 ||
-                                d.getBytesWritten() != 0 || d.finished())
+                                d.getBytesWritten() != 0 || d.finished()) {
                                 throw new AssertionError("zero-capacity progress");
+                            }
                             d.setLevel(level == 6 ? 1 : 6);
                             d.setStrategy(Deflater.FILTERED);
-                            if (d.deflate(empty) != 0 || d.getBytesRead() != 0)
+                            if (d.deflate(empty) != 0 || d.getBytesRead() != 0) {
                                 throw new AssertionError("zero-capacity parameters");
+                            }
                             d.setInput(input);
                             byte[] output = new byte[4096];
                             int written = d.deflate(output);
                             d.finish();
                             while (!d.finished()) {
                                 int count = d.deflate(output, written, output.length - written);
-                                if (count == 0 && !d.finished()) throw new AssertionError("finish stalled");
+                                if (count == 0 && !d.finished()) {
+                                    throw new AssertionError("finish stalled");
+                                }
                                 written += count;
                             }
-                            if (d.getBytesRead() != length || d.getBytesWritten() != written)
+                            if (d.getBytesRead() != length || d.getBytesWritten() != written) {
                                 throw new AssertionError("counters");
+                            }
                             byte[] encoded = Arrays.copyOf(output, written);
                             digest.update(encoded);
                             verify(input, new InflaterInputStream(new ByteArrayInputStream(encoded)));
@@ -157,7 +186,10 @@ public class TestZlibNGSmallStreams {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 0) { emit(); return; }
+        if (args.length != 0) {
+            emit();
+            return;
+        }
         String[] tiers = {"-Xint", "-XX:TieredStopAtLevel=1", "-XX:-TieredCompilation"};
         for (String tier : tiers) {
             String expected = null;
@@ -166,8 +198,11 @@ public class TestZlibNGSmallStreams {
                     "-cp", System.getProperty("test.class.path"),
                     TestZlibNGSmallStreams.class.getName(), "emit")
                     .shouldHaveExitValue(0).getStdout().strip();
-                if (expected == null) expected = output;
-                else if (!expected.equals(output)) throw new AssertionError("tiny output changed: " + tier);
+                if (expected == null) {
+                    expected = output;
+                } else if (!expected.equals(output)) {
+                    throw new AssertionError("tiny output changed: " + tier);
+                }
             }
         }
     }

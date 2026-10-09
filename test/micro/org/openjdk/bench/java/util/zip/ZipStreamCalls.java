@@ -60,8 +60,9 @@ public class ZipStreamCalls {
         try (ZipOutputStream stream = new ZipOutputStream(output)) {
             stream.setLevel(6);
             stream.putNextEntry(entry);
-            for (int offset = 0; offset < size; offset += chunk)
+            for (int offset = 0; offset < size; offset += chunk) {
                 stream.write(input, offset, Math.min(chunk, size - offset));
+            }
             stream.closeEntry();
         }
         return output.size();
@@ -71,8 +72,9 @@ public class ZipStreamCalls {
     public int gzip() throws IOException {
         ByteArrayOutputStream output = new ByteArrayOutputStream(size + 1024);
         try (GZIPOutputStream stream = new GZIPOutputStream(output)) {
-            for (int offset = 0; offset < size; offset += chunk)
+            for (int offset = 0; offset < size; offset += chunk) {
                 stream.write(input, offset, Math.min(chunk, size - offset));
+            }
         }
         return output.size();
     }

@@ -44,8 +44,7 @@ splashscreen retain stock zlib.
 
 ## Vendoring and updates
 
-The bundled release is [zlib-ng 2.3.3](https://github.com/zlib-ng/zlib-ng/releases/tag/2.3.3),
-verified as the latest stable release on October 6, 2026.
+The bundled release is [zlib-ng 2.3.3](https://github.com/zlib-ng/zlib-ng/releases/tag/2.3.3).
 
 - Archive: `https://codeload.github.com/zlib-ng/zlib-ng/tar.gz/refs/tags/2.3.3`
 - SHA-256: `f9c65aa9c852eb8255b636fd9f07ce1c406f061ec19a2e7d508b318ca0c907d1`

@@ -23,9 +23,16 @@
 
 package org.openjdk.bench.java.util.zip;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import java.util.zip.*;
+import java.util.zip.Adler32;
+import java.util.zip.CRC32;
+import java.util.zip.CRC32C;
+import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
+
 import org.openjdk.jmh.annotations.*;
 
 @State(Scope.Thread)
@@ -41,13 +48,15 @@ public class ZipBackend {
     @Param({"text", "random"})
     public String data;
 
-    private byte[] input, compressed, output;
+    private byte[] input;
+    private byte[] compressed;
+    private byte[] output;
     private int compressedLength;
     private Deflater deflater;
     private Inflater inflater;
     private Adler32 adler;
     private CRC32 crc;
-    private CRC32C crcC;
+    private CRC32C crc32c;
 
     @Setup
     public void setup() {
@@ -55,44 +64,74 @@ public class ZipBackend {
         if (data.equals("random")) {
             new Random(12345).nextBytes(input);
         } else {
-            byte[] pattern = "openjdk java.util.zip compression streaming checksum 0123456789\n".getBytes(java.nio.charset.StandardCharsets.UTF_8);
-            for (int i = 0; i < size; i++) input[i] = pattern[i % pattern.length];
+            byte[] pattern = "openjdk java.util.zip compression streaming checksum 0123456789\n"
+                .getBytes(StandardCharsets.UTF_8);
+            for (int i = 0; i < size; i++) {
+                input[i] = pattern[i % pattern.length];
+            }
         }
         compressed = new byte[size + 1024];
         output = new byte[size + 1024];
         deflater = new Deflater(6);
         inflater = new Inflater();
-        adler = new Adler32(); crc = new CRC32(); crcC = new CRC32C();
-        deflater.setInput(input); deflater.finish();
+        adler = new Adler32();
+        crc = new CRC32();
+        crc32c = new CRC32C();
+        deflater.setInput(input);
+        deflater.finish();
         compressedLength = deflater.deflate(compressed);
-        if (!deflater.finished()) throw new AssertionError("compression buffer");
+        if (!deflater.finished()) {
+            throw new AssertionError("compression buffer");
+        }
     }
 
     @TearDown
-    public void tearDown() { deflater.end(); inflater.end(); }
+    public void tearDown() {
+        deflater.end();
+        inflater.end();
+    }
 
     @Benchmark
     public int deflate() {
-        deflater.reset(); deflater.setInput(input); deflater.finish();
+        deflater.reset();
+        deflater.setInput(input);
+        deflater.finish();
         int written = deflater.deflate(output);
-        if (!deflater.finished()) throw new AssertionError("deflate incomplete");
+        if (!deflater.finished()) {
+            throw new AssertionError("deflate incomplete");
+        }
         return written;
     }
 
     @Benchmark
     public int inflate() throws DataFormatException {
-        inflater.reset(); inflater.setInput(compressed, 0, compressedLength);
+        inflater.reset();
+        inflater.setInput(compressed, 0, compressedLength);
         int written = inflater.inflate(output);
-        if (written != size || !inflater.finished()) throw new AssertionError("inflate incomplete");
+        if (written != size || !inflater.finished()) {
+            throw new AssertionError("inflate incomplete");
+        }
         return written;
     }
 
     @Benchmark
-    public long adler32() { adler.reset(); adler.update(input); return adler.getValue(); }
+    public long adler32() {
+        adler.reset();
+        adler.update(input);
+        return adler.getValue();
+    }
 
     @Benchmark
-    public long crc32() { crc.reset(); crc.update(input); return crc.getValue(); }
+    public long crc32() {
+        crc.reset();
+        crc.update(input);
+        return crc.getValue();
+    }
 
     @Benchmark
-    public long crc32c() { crcC.reset(); crcC.update(input); return crcC.getValue(); }
+    public long crc32c() {
+        crc32c.reset();
+        crc32c.update(input);
+        return crc32c.getValue();
+    }
 }

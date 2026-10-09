@@ -566,8 +566,8 @@ public class Deflater implements AutoCloseable {
             long result;
             if (input == null) {
                 inputPos = this.inputPos;
-                result = ZipUtils.USE_ZIP_INTRINSICS
-                    && (inputLim - inputPos) > ZipUtils.DEFLATE_INTRINSIC_MIN_INPUT
+                result = (inputLim - inputPos) > ZipUtils.DEFLATE_INTRINSIC_MIN_INPUT
+                    && ZipUtils.USE_ZIP_INTRINSICS
                     && (inputLim - inputPos) < ZipUtils.DEFLATE_INTRINSIC_MAX_INPUT
                     ? ZipUtils.process(false, this, zsRef.address(),
                         inputArray, inputPos, inputLim - inputPos,
@@ -583,8 +583,8 @@ public class Deflater implements AutoCloseable {
                     NIO_ACCESS.acquireSession(input);
                     try {
                         long inputAddress = NIO_ACCESS.getBufferAddress(input);
-                        result = ZipUtils.USE_ZIP_INTRINSICS
-                            && inputRem > ZipUtils.DEFLATE_INTRINSIC_MIN_INPUT
+                        result = inputRem > ZipUtils.DEFLATE_INTRINSIC_MIN_INPUT
+                            && ZipUtils.USE_ZIP_INTRINSICS
                             && inputRem < ZipUtils.DEFLATE_INTRINSIC_MAX_INPUT
                             ? ZipUtils.process(false, this, zsRef.address(),
                                 null, inputAddress + inputPos, inputRem,
@@ -599,8 +599,8 @@ public class Deflater implements AutoCloseable {
                 } else {
                     byte[] inputArray = ZipUtils.getBufferArray(input);
                     int inputOffset = ZipUtils.getBufferOffset(input);
-                    result = ZipUtils.USE_ZIP_INTRINSICS
-                        && inputRem > ZipUtils.DEFLATE_INTRINSIC_MIN_INPUT
+                    result = inputRem > ZipUtils.DEFLATE_INTRINSIC_MIN_INPUT
+                        && ZipUtils.USE_ZIP_INTRINSICS
                         && inputRem < ZipUtils.DEFLATE_INTRINSIC_MAX_INPUT
                         ? ZipUtils.process(false, this, zsRef.address(),
                             inputArray, inputOffset + inputPos, inputRem,
@@ -719,8 +719,8 @@ public class Deflater implements AutoCloseable {
                     NIO_ACCESS.acquireSession(output);
                     try {
                         long outputAddress = NIO_ACCESS.getBufferAddress(output);
-                        result = ZipUtils.USE_ZIP_INTRINSICS
-                            && (inputLim - inputPos) > ZipUtils.DEFLATE_INTRINSIC_MIN_INPUT
+                        result = (inputLim - inputPos) > ZipUtils.DEFLATE_INTRINSIC_MIN_INPUT
+                            && ZipUtils.USE_ZIP_INTRINSICS
                             && (inputLim - inputPos) < ZipUtils.DEFLATE_INTRINSIC_MAX_INPUT
                             ? ZipUtils.process(false, this, zsRef.address(),
                                 inputArray, inputPos, inputLim - inputPos,
@@ -735,8 +735,8 @@ public class Deflater implements AutoCloseable {
                 } else {
                     byte[] outputArray = ZipUtils.getBufferArray(output);
                     int outputOffset = ZipUtils.getBufferOffset(output);
-                    result = ZipUtils.USE_ZIP_INTRINSICS
-                        && (inputLim - inputPos) > ZipUtils.DEFLATE_INTRINSIC_MIN_INPUT
+                    result = (inputLim - inputPos) > ZipUtils.DEFLATE_INTRINSIC_MIN_INPUT
+                        && ZipUtils.USE_ZIP_INTRINSICS
                         && (inputLim - inputPos) < ZipUtils.DEFLATE_INTRINSIC_MAX_INPUT
                         ? ZipUtils.process(false, this, zsRef.address(),
                             inputArray, inputPos, inputLim - inputPos,
@@ -757,8 +757,8 @@ public class Deflater implements AutoCloseable {
                             NIO_ACCESS.acquireSession(output);
                             try {
                                 long outputAddress = outputPos + NIO_ACCESS.getBufferAddress(output);
-                                result = ZipUtils.USE_ZIP_INTRINSICS
-                                    && inputRem > ZipUtils.DEFLATE_INTRINSIC_MIN_INPUT
+                                result = inputRem > ZipUtils.DEFLATE_INTRINSIC_MIN_INPUT
+                                    && ZipUtils.USE_ZIP_INTRINSICS
                                     && inputRem < ZipUtils.DEFLATE_INTRINSIC_MAX_INPUT
                                     ? ZipUtils.process(false, this, zsRef.address(),
                                         null, inputAddress + inputPos, inputRem,
@@ -773,8 +773,8 @@ public class Deflater implements AutoCloseable {
                         } else {
                             byte[] outputArray = ZipUtils.getBufferArray(output);
                             int outputOffset = ZipUtils.getBufferOffset(output);
-                            result = ZipUtils.USE_ZIP_INTRINSICS
-                                && inputRem > ZipUtils.DEFLATE_INTRINSIC_MIN_INPUT
+                            result = inputRem > ZipUtils.DEFLATE_INTRINSIC_MIN_INPUT
+                                && ZipUtils.USE_ZIP_INTRINSICS
                                 && inputRem < ZipUtils.DEFLATE_INTRINSIC_MAX_INPUT
                                 ? ZipUtils.process(false, this, zsRef.address(),
                                     null, inputAddress + inputPos, inputRem,
@@ -794,8 +794,8 @@ public class Deflater implements AutoCloseable {
                         NIO_ACCESS.acquireSession(output);
                         try {
                             long outputAddress = NIO_ACCESS.getBufferAddress(output);
-                            result = ZipUtils.USE_ZIP_INTRINSICS
-                                && inputRem > ZipUtils.DEFLATE_INTRINSIC_MIN_INPUT
+                            result = inputRem > ZipUtils.DEFLATE_INTRINSIC_MIN_INPUT
+                                && ZipUtils.USE_ZIP_INTRINSICS
                                 && inputRem < ZipUtils.DEFLATE_INTRINSIC_MAX_INPUT
                                 ? ZipUtils.process(false, this, zsRef.address(),
                                     inputArray, inputOffset + inputPos, inputRem,
@@ -810,8 +810,8 @@ public class Deflater implements AutoCloseable {
                     } else {
                         byte[] outputArray = ZipUtils.getBufferArray(output);
                         int outputOffset = ZipUtils.getBufferOffset(output);
-                        result = ZipUtils.USE_ZIP_INTRINSICS
-                            && inputRem > ZipUtils.DEFLATE_INTRINSIC_MIN_INPUT
+                        result = inputRem > ZipUtils.DEFLATE_INTRINSIC_MIN_INPUT
+                            && ZipUtils.USE_ZIP_INTRINSICS
                             && inputRem < ZipUtils.DEFLATE_INTRINSIC_MAX_INPUT
                             ? ZipUtils.process(false, this, zsRef.address(),
                                 inputArray, inputOffset + inputPos, inputRem,

@@ -42,11 +42,14 @@ public class ZipBufferCalls {
     public String input;
     @Param({"heap", "direct"})
     public String output;
-    private byte[] compressed, restored;
+    private byte[] compressed;
+    private byte[] restored;
     private int compressedLength;
-    private ByteBuffer inBuffer, outBuffer;
+    private ByteBuffer inBuffer;
+    private ByteBuffer outBuffer;
     private Inflater inflater;
-    private boolean directInput, directOutput;
+    private boolean directInput;
+    private boolean directOutput;
     @Setup
     public void setup() {
         byte[] original = new byte[size];
@@ -54,9 +57,12 @@ public class ZipBufferCalls {
         compressed = new byte[size + 1024];
         restored = new byte[size + 1024];
         try (Deflater d = new Deflater(6)) {
-            d.setInput(original); d.finish();
+            d.setInput(original);
+            d.finish();
             compressedLength = d.deflate(compressed);
-            if (!d.finished()) throw new AssertionError("setup compression");
+            if (!d.finished()) {
+                throw new AssertionError("setup compression");
+            }
         }
         inBuffer = ByteBuffer.allocateDirect(compressedLength);
         inBuffer.put(compressed, 0, compressedLength).flip();
@@ -64,14 +70,23 @@ public class ZipBufferCalls {
         inflater = new Inflater();
         directInput = input.equals("direct");
         directOutput = output.equals("direct");
-        if (inflate() != size) throw new AssertionError("setup decompression");
+        if (inflate() != size) {
+            throw new AssertionError("setup decompression");
+        }
         byte[] checked = new byte[size];
-        if (directOutput) outBuffer.flip().get(checked);
-        else System.arraycopy(restored, 0, checked, 0, size);
-        if (!java.util.Arrays.equals(original, checked)) throw new AssertionError("data mismatch");
+        if (directOutput) {
+            outBuffer.flip().get(checked);
+        } else {
+            System.arraycopy(restored, 0, checked, 0, size);
+        }
+        if (!java.util.Arrays.equals(original, checked)) {
+            throw new AssertionError("data mismatch");
+        }
     }
     @TearDown
-    public void tearDown() { inflater.end(); }
+    public void tearDown() {
+        inflater.end();
+    }
     @Benchmark
     public int inflate() {
         inflater.reset();
@@ -86,9 +101,15 @@ public class ZipBufferCalls {
             if (directOutput) {
                 outBuffer.clear();
                 written = inflater.inflate(outBuffer);
-            } else written = inflater.inflate(restored);
-            if (written != size || !inflater.finished()) throw new AssertionError("incomplete");
+            } else {
+                written = inflater.inflate(restored);
+            }
+            if (written != size || !inflater.finished()) {
+                throw new AssertionError("incomplete");
+            }
             return written;
-        } catch (DataFormatException e) { throw new AssertionError(e); }
+        } catch (DataFormatException e) {
+            throw new AssertionError(e);
+        }
     }
 }
