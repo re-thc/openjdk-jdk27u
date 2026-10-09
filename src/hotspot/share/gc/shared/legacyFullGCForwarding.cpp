@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +23,7 @@
  *
  */
 
+#include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/legacyFullGCForwarding.hpp"
 #include "memory/memRegion.hpp"
 #include "runtime/globals_extension.hpp"
@@ -53,4 +55,12 @@ void LegacyFullGCForwarding::initialize(MemRegion heap) {
     _num_low_bits = NumLowBitsWide;
   }
 #endif
+}
+
+void FullGCForwarding::initialize(MemRegion heap) {
+  if (UseFourByteObjectHeaders) {
+    FourByteFullGCForwarding::initialize(heap);
+  } else {
+    LegacyFullGCForwarding::initialize(heap);
+  }
 }
