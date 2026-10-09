@@ -37,21 +37,29 @@ jobs:
           echo "$RUNNER_TEMP/mold/bin" >> "$GITHUB_PATH"
       - name: Configure target and build native archive
         run: |
-          bash bin/configure-dev --with-conf-name=probe --with-boot-jdk=${{ steps.boot.outputs.path }} --with-zlib=system --with-native-debug-symbols=none
-          python3 - <<'PY'
+          mkdir -p validation/sysroot/usr
+          cp -a /usr/include validation/sysroot/usr/
+          ln -s /usr/lib validation/sysroot/usr/lib
+          ln -s /lib validation/sysroot/lib
+          ln -s /lib64 validation/sysroot/lib64
+          echo '#define ZIP_SYSROOT_PROBE 1' > validation/sysroot/usr/include/zip_sysroot_probe.h
+          bash bin/configure-dev --with-conf-name=probe --with-boot-jdk=${{ steps.boot.outputs.path }} --with-zlib=system --with-native-debug-symbols=none --with-sysroot="$PWD/validation/sysroot"
+          echo 'CFLAGS_JDKLIB += -include zip_sysroot_probe.h' >> build/probe/spec.gmk
+          python3 - <<'PYCODE'
           from pathlib import Path
-          Path('probe.gmk').write_text('''include $(SPEC)
-          probe:
-          \tmkdir -p $(OUTPUTDIR)/native-probe
-          \tcd $(OUTPUTDIR)/native-probe && CC="env $(CC)" AR="$(AR)" CFLAGS="$(CFLAGS_JDKLIB) $(SYSROOT_CFLAGS) -fPIC -Wno-undef" LDFLAGS="$(LDFLAGS_JDKLIB) $(SYSROOT_LDFLAGS)" CHOST="$(OPENJDK_TARGET_CPU)-unknown-linux-gnu" $(BASH) $(TOPDIR)/src/java.base/share/native/libzip/zlib-ng/configure --static --zlib-compat --sprefix=jdk_ng_ > configure-output.log 2>&1 || (cat $(OUTPUTDIR)/native-probe/configure-output.log $(OUTPUTDIR)/native-probe/configure.log; exit 1)
-          \t$(MAKE) -C $(OUTPUTDIR)/native-probe libz.a
-          ''')
-          PY
+          lines = Path('make/modules/java.base/lib/CoreLibraries.gmk').read_text().splitlines()
+          start = next(i for i, line in enumerate(lines) if '$(ZLIBNG_LIB):' in line)
+          end = next(i for i in range(start, len(lines)) if 'LIBZIP_ZLIBNG_CFLAGS :=' in lines[i])
+          recipes = [line for line in lines[start:end] if line.startswith('\t')]
+          Path('probe.gmk').write_text("include $(SPEC)\nZLIBNG_SRC := $(TOPDIR)/src/java.base/share/native/libzip/zlib-ng\nZLIBNG_OUT := $(SUPPORT_OUTPUTDIR)/native/zlib-ng\nprobe:\n" + "\n".join(recipes) + "\n")
+          PYCODE
           make -f probe.gmk SPEC="$PWD/build/probe/spec.gmk" probe
+          grep -- '-include zip_sysroot_probe.h' build/probe/support/native/zlib-ng/Makefile
+          grep -- "$PWD/validation/sysroot" build/probe/support/native/zlib-ng/Makefile
       - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: native-probe-${{ matrix.platform }}
           path: |
             build/probe/spec.gmk
-            build/probe/native-probe/*.log
+            build/probe/support/native/zlib-ng/*.log
