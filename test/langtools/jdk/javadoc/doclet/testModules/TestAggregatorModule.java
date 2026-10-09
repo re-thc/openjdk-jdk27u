@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
  * @test
  * @bug 8322865
  * @summary JavaDoc fails on aggregator modules
- * @modules jdk.javadoc/jdk.javadoc.internal.api
+ * @modules java.logging
+ *          jdk.javadoc/jdk.javadoc.internal.api
  *          jdk.javadoc/jdk.javadoc.internal.tool
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -53,7 +54,7 @@ public class TestAggregatorModule extends JavadocTester {
         Path api = base.resolve("api");
 
         tb.writeJavaFiles(src,
-                "/** Module m. */ module m { requires java.se; }");
+                "/** Module m. */ module m { requires java.logging; }");
 
         javadoc("-d", api.toString(),
                 "-sourcepath", src.toString(), // override default sourcepath set by JavadocTester
@@ -78,7 +79,7 @@ public class TestAggregatorModule extends JavadocTester {
         Files.createDirectories(api);
 
         tb.writeJavaFiles(src,
-                "/** Module m. */ module m { requires java.se; }");
+                "/** Module m. */ module m { requires java.logging; }");
 
         var outputLines = new JavadocTask(tb)
                 .outdir(api)

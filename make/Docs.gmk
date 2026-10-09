@@ -24,6 +24,10 @@
 
 include MakeFileStart.gmk
 
+ifeq ($(ENABLE_DESKTOP), false)
+  $(error Documentation targets require desktop support; use a separate desktop-enabled configuration)
+endif
+
 ################################################################################
 # This file generates all documentation for OpenJDK.
 #

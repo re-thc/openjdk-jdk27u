@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,10 @@
  * @run compile/fail QualifiedConstant.java
  */
 
-import java.awt.event.MouseEvent;
-
 public class QualifiedConstant {
-    public void processMouseEvent (MouseEvent event) {
-        switch (event.getID ()) {
-          case event.MOUSE_RELEASED: // Not constant by JLS 15.27
+    public void processInteger (Integer value) {
+        switch (value.intValue ()) {
+          case value.MAX_VALUE: // Not constant by JLS 15.27
               break;
         }
     }

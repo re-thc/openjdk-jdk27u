@@ -29,6 +29,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
+ *      java.desktop
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run junit ${test.main.class}
  */

@@ -1,5 +1,6 @@
+#!/usr/bin/env bash
 #
-# Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,32 +24,28 @@
 # questions.
 #
 
-name: 'Get GTest'
-description: 'Download GTest source'
-outputs:
-  path:
-    description: 'Path to the installed GTest'
-    value: ${{ steps.path-name.outputs.path }}
+set -euo pipefail
 
-runs:
-  using: composite
-  steps:
-    - name: 'Get GTest version configuration'
-      id: version
-      uses: ./.github/actions/config
-      with:
-        var: GTEST_VERSION
+platforms=(linux-x64 linux-aarch64 macos-aarch64 windows-x64)
+requested="${REQUESTED_PLATFORMS//[[:space:]]/}"
 
-    - name: 'Checkout GTest source'
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        repository: google/googletest
-        ref: 'v${{ steps.version.outputs.value }}'
-        path: gtest
+if [[ -n $requested ]]; then
+  IFS=',' read -r -a tokens <<< "$requested"
+  for token in "${tokens[@]}"; do
+    case "$token" in
+      linux-x64 | linux-aarch64 | macos-aarch64 | windows-x64 | linux | macos | windows | x64 | aarch64) ;;
+      *) echo "Unsupported platform: $token" >&2; exit 1 ;;
+    esac
+  done
+fi
 
-    - name: 'Export path to where GTest is installed'
-      id: path-name
-      run: |
-        # Export the absolute path
-        echo "path=`pwd`/gtest" >> $GITHUB_OUTPUT
-      shell: bash
+for platform in "${platforms[@]}"; do
+  os=${platform%-*}
+  arch=${platform##*-}
+  included=false
+  if [[ -z $requested || ,$requested, == *,$platform,* || ,$requested, == *,$os,* || ,$requested, == *,$arch,* ]]; then
+    included=true
+  fi
+  echo "$platform=$included" >> "$GITHUB_OUTPUT"
+done
+echo "dry-run=${DRY_RUN:-false}" >> "$GITHUB_OUTPUT"
