@@ -38,82 +38,14 @@ package gc.stress.ihash;
  *      gc.stress.ihash.TestHumongousHash
  */
 
-/*
- * @test id=Shenandoah
- * @bug 8387285
- * @summary Stress test: does humongous object compaction corrupt hash-code or other objects?
- * @requires vm.gc.Shenandoah
- * @key stress
- * @run main/othervm/timeout=300
- *      -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
- *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
- *      -XX:-ExplicitGCInvokesConcurrent
- *      -Xmx512m
- *      -XX:+UnlockExperimentalVMOptions -XX:ShenandoahRegionSize=512K
- *      gc.stress.ihash.TestHumongousHash
- */
-
-/*
- * @test id=Shenandoah-aggressive
- * @bug 8387285
- * @summary Stress test: does humongous object compaction corrupt hash-code or other objects?
- * @requires vm.gc.Shenandoah
- * @key stress
- * @run main/othervm/timeout=300
- *      -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
- *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
- *      -XX:-ExplicitGCInvokesConcurrent
- *      -XX:ShenandoahGCHeuristics=aggressive
- *      -Xmx512m
- *      -XX:+UnlockExperimentalVMOptions -XX:ShenandoahRegionSize=512K
- *      gc.stress.ihash.TestHumongousHash
- */
-
-/*
- * @test id=Shenandoah-min-region
- * @bug 8387285
- * @summary Stress test at the minimum (256K) region size, where the hash-expansion
- *          humongous routing actually binds (an exact-region-multiple object needs
- *          N+1 regions after expansion).
- * @requires vm.gc.Shenandoah
- * @key stress
- * @run main/othervm/timeout=300
- *      -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
- *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
- *      -XX:-ExplicitGCInvokesConcurrent
- *      -Xmx512m
- *      -XX:+UnlockExperimentalVMOptions -XX:ShenandoahRegionSize=256K
- *      gc.stress.ihash.TestHumongousHash
- */
-
-/*
- * @test id=Shenandoah-min-region-aggressive
- * @bug 8387285
- * @summary Stress test at the minimum (256K) region size, where the hash-expansion
- *          humongous routing actually binds (an exact-region-multiple object needs
- *          N+1 regions after expansion).
- * @requires vm.gc.Shenandoah
- * @key stress
- * @run main/othervm/timeout=300
- *      -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
- *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
- *      -XX:-ExplicitGCInvokesConcurrent
- *      -XX:ShenandoahGCHeuristics=aggressive
- *      -Xmx512m
- *      -XX:+UnlockExperimentalVMOptions -XX:ShenandoahRegionSize=256K
- *      gc.stress.ihash.TestHumongousHash
- */
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class TestHumongousHash {
     public static void main(String[] args) {
-        // For G1, 50% of region size. For Shenandoah, 100%. We want to stress objects over the
-        // threshold, but also particularly objects near a region boundary (hash-code expansion)
-        // could see an object expand from below threshold to above threshold, or from fitting in
-        // N regions to requiring N+1 regions.
+        // Exercise G1's humongous threshold and region boundaries, where
+        // preserving a hash can require an additional region.
         int humongousThreshold = 512 * 1024;
 
         for (int i = 1; i < 10; i++) {

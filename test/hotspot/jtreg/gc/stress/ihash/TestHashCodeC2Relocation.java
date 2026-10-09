@@ -38,18 +38,6 @@ package gc.stress.ihash;
  */
 
 /*
- * @test id=parallel
- * @bug 8387150
- * @summary Identity hash code stays stable across GC relocation when the
- *          C2-compiled hashCode intrinsic recomputes an address-based hash.
- * @requires vm.gc.Parallel
- * @requires vm.compiler2.enabled
- * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
- * @run main/othervm -XX:+UseFourByteObjectHeaders -XX:+UseParallelGC -Xms64m -Xmx64m
- *      gc.stress.ihash.TestHashCodeC2Relocation
- */
-
-/*
  * @test id=serial
  * @bug 8387150
  * @summary Identity hash code stays stable across GC relocation when the
@@ -58,18 +46,6 @@ package gc.stress.ihash;
  * @requires vm.compiler2.enabled
  * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
  * @run main/othervm -XX:+UseFourByteObjectHeaders -XX:+UseSerialGC -Xms64m -Xmx64m
- *      gc.stress.ihash.TestHashCodeC2Relocation
- */
-
-/*
- * @test id=shenandoah
- * @bug 8387150
- * @summary Identity hash code stays stable across GC relocation when the
- *          C2-compiled hashCode intrinsic recomputes an address-based hash.
- * @requires vm.gc.Shenandoah
- * @requires vm.compiler2.enabled
- * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
- * @run main/othervm -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC -Xms64m -Xmx64m
  *      gc.stress.ihash.TestHashCodeC2Relocation
  */
 

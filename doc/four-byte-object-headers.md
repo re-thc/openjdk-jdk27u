@@ -1,8 +1,9 @@
 # Four-byte object headers in this fork
 
 This fork uses four-byte object headers by default on x64 and AArch64.
-The development profile includes Serial, G1 and ZGC. Parallel and Shenandoah
-are supported when enabled in a custom build. The ordinary upstream
+Four-byte headers support Serial, G1 and ZGC, the collectors included in the
+development profile. Other collectors in custom builds retain their existing
+header layouts. The ordinary upstream
 JDK 27u default remains eight-byte compact headers. This fork retains that
 layout with `-XX:-UseFourByteObjectHeaders` and the twelve-byte layout with
 `-XX:-UseCompactObjectHeaders`. Other 64-bit architectures and Zero keep their

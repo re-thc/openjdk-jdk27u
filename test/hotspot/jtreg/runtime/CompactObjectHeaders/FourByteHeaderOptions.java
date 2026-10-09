@@ -22,12 +22,39 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @summary Four-byte headers are the fork default with eight-byte and legacy opt-outs
  * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "aarch64")
  * @requires vm.flavor != "zero" & vm.gc.Serial & vm.gc.G1 & vm.gc.Z
  * @library /test/lib
  * @run driver FourByteHeaderOptions
+ */
+
+/*
+ * @test id=parallel
+ * @summary Unsupported collectors retain their existing header layout
+ * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "aarch64")
+ * @requires vm.flavor != "zero" & vm.gc.Parallel
+ * @library /test/lib
+ * @run driver FourByteHeaderOptions Parallel
+ */
+
+/*
+ * @test id=shenandoah
+ * @summary Unsupported collectors retain their existing header layout
+ * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "aarch64")
+ * @requires vm.flavor != "zero" & vm.gc.Shenandoah
+ * @library /test/lib
+ * @run driver FourByteHeaderOptions Shenandoah
+ */
+
+/*
+ * @test id=epsilon
+ * @summary Unsupported collectors retain their existing header layout
+ * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "aarch64")
+ * @requires vm.flavor != "zero" & vm.gc.Epsilon
+ * @library /test/lib
+ * @run driver FourByteHeaderOptions Epsilon
  */
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -58,6 +85,13 @@ public class FourByteHeaderOptions {
         output.shouldMatch("UseCompactObjectHeaders\\s+= " + compact);
     }
     public static void main(String[] args) throws Exception {
+        if (args.length != 0) {
+            String gc = "-XX:+Use" + args[0] + "GC";
+            check(false, true, "-XX:+UnlockExperimentalVMOptions", gc);
+            check(false, true, "-XX:+UnlockExperimentalVMOptions", gc, "-XX:+UseFourByteObjectHeaders");
+            check(false, false, "-XX:+UnlockExperimentalVMOptions", gc, "-XX:-UseCompactObjectHeaders");
+            return;
+        }
         check(true, true);
         check(true, true, "-XX:hashCode=6");
         check(false, true, "-XX:-UseFourByteObjectHeaders");

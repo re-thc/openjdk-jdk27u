@@ -24,30 +24,6 @@
  */
 
 /*
- * @test id=default
- * @summary Test that identity hash codes are stable across Shenandoah evacuation
- * @bug 8379910
- * @requires vm.gc.Shenandoah
- * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
- * @library /test/lib
- * @run main/othervm -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
- *      -Xms64m -Xmx64m
- *      TestHashCodeEvacRace
- */
-
-/*
- * @test id=generational
- * @summary Test that identity hash codes are stable across Shenandoah evacuation
- * @bug 8379910
- * @requires vm.gc.Shenandoah
- * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
- * @library /test/lib
- * @run main/othervm -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
- *      -XX:ShenandoahGCMode=generational -Xms64m -Xmx64m
- *      TestHashCodeEvacRace
- */
-
-/*
  * @test id=serial
  * @summary Test that identity hash codes are stable across Serial GC
  * @bug 8379910
@@ -55,18 +31,6 @@
  * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
  * @library /test/lib
  * @run main/othervm -XX:+UseFourByteObjectHeaders -XX:+UseSerialGC
- *      -Xms64m -Xmx64m
- *      TestHashCodeEvacRace
- */
-
-/*
- * @test id=parallel
- * @summary Test that identity hash codes are stable across Parallel GC
- * @bug 8379910
- * @requires vm.gc.Parallel
- * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
- * @library /test/lib
- * @run main/othervm -XX:+UseFourByteObjectHeaders -XX:+UseParallelGC
  *      -Xms64m -Xmx64m
  *      TestHashCodeEvacRace
  */
@@ -96,24 +60,9 @@
  */
 
 /**
- * Regression test for a race between reading the identity hash code and
- * Shenandoah concurrent evacuation with compact object headers.
- *
- * With compact headers, objects whose layout has no internal gap for the
- * identity hash (e.g. a class with a single int field: 4-byte header +
- * 4-byte int = 8 bytes) require an extra word ("hash expansion") when
- * evacuated. The bug was that initialize_hash_if_necessary() was called
- * AFTER the forwarding CAS, leaving a window where the copy is already
- * visible to other threads (via the forwarding pointer) but the hash
- * value in the expansion word has not been written yet. A thread reading
- * the hash during that window would see an uninitialized value.
- *
- * The fix moves initialize_hash_if_necessary() before the forwarding CAS
- * so the copy is fully initialized when it becomes visible.
- *
- * This test hashes objects, records the expected values, then continuously
- * verifies them while GC evacuates the objects. Without the fix, a reader
- * thread can observe a wrong (uninitialized) hash during evacuation.
+ * Checks hash and payload stability while readers race with allocation and GC.
+ * The payload has no hash gap, so relocation must grow hashed objects before
+ * publishing their copies.
  */
 public class TestHashCodeEvacRace {
 

@@ -196,7 +196,7 @@ void MutableSpace::object_iterate(ObjectClosure* cl) {
       // It is safe to use the forwardee here. Parallel GC only uses
       // header-based forwarding during promotion. Full GC doesn't
       // use the object header for forwarding at all.
-      p += obj->size_forwarded();
+      p += obj->forwardee()->size();
     } else {
       cl->do_object(obj);
       p += obj->size();

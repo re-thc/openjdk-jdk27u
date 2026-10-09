@@ -29,7 +29,6 @@
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psMemoryPool.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
-#include "gc/parallel/psParallelCompactNew.inline.hpp"
 #include "gc/parallel/psPromotionManager.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psVMOperations.hpp"
@@ -118,14 +117,8 @@ jint ParallelScavengeHeap::initialize() {
   // initialize the policy counters - 2 collectors, 2 generations
   _gc_policy_counters = new GCPolicyCounters("ParScav:MSC", 2, 2);
 
-  if (UseFourByteObjectHeaders) {
-    if (!PSParallelCompactNew::initialize_aux_data()) {
-      return JNI_ENOMEM;
-    }
-  } else {
-    if (!PSParallelCompact::initialize_aux_data()) {
-      return JNI_ENOMEM;
-    }
+  if (!PSParallelCompact::initialize_aux_data()) {
+    return JNI_ENOMEM;
   }
 
   // Create CPU time counter
@@ -177,11 +170,7 @@ void ParallelScavengeHeap::post_initialize() {
   CollectedHeap::post_initialize();
   // Need to init the tenuring threshold
   PSScavenge::initialize();
-  if (UseFourByteObjectHeaders) {
-    PSParallelCompactNew::post_initialize();
-  } else {
-    PSParallelCompact::post_initialize();
-  }
+  PSParallelCompact::post_initialize();
   PSPromotionManager::initialize();
 
   ScavengableNMethods::initialize(&_is_scavengable);
@@ -381,11 +370,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
 void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {
   // No need for max-compaction in this context.
   const bool should_do_max_compaction = false;
-  if (UseFourByteObjectHeaders) {
-    PSParallelCompactNew::invoke(clear_all_soft_refs, should_do_max_compaction);
-  } else {
-    PSParallelCompact::invoke(clear_all_soft_refs, should_do_max_compaction);
-  }
+  PSParallelCompact::invoke(clear_all_soft_refs, should_do_max_compaction);
 }
 
 bool ParallelScavengeHeap::should_attempt_young_gc() const {
@@ -514,11 +499,7 @@ HeapWord* ParallelScavengeHeap::satisfy_failed_allocation(size_t size, bool is_t
   {
     const bool clear_all_soft_refs = true;
     const bool should_do_max_compaction = true;
-    if (UseFourByteObjectHeaders) {
-      PSParallelCompactNew::invoke(clear_all_soft_refs, should_do_max_compaction);
-    } else {
-      PSParallelCompact::invoke(clear_all_soft_refs, should_do_max_compaction);
-    }
+    PSParallelCompact::invoke(clear_all_soft_refs, should_do_max_compaction);
   }
 
   if (check_gc_overhead_limit()) {
@@ -527,6 +508,7 @@ HeapWord* ParallelScavengeHeap::satisfy_failed_allocation(size_t size, bool is_t
   }
 
   result = expand_heap_and_allocate(size, is_tlab);
+
   return result;
 }
 
@@ -599,11 +581,7 @@ void ParallelScavengeHeap::collect_at_safepoint(bool is_full) {
   }
 
   const bool should_do_max_compaction = false;
-  if (UseFourByteObjectHeaders) {
-    PSParallelCompactNew::invoke(clear_soft_refs, should_do_max_compaction);
-  } else {
-    PSParallelCompact::invoke(clear_soft_refs, should_do_max_compaction);
-  }
+  PSParallelCompact::invoke(clear_soft_refs, should_do_max_compaction);
 }
 
 void ParallelScavengeHeap::object_iterate(ObjectClosure* cl) {
@@ -746,11 +724,7 @@ void ParallelScavengeHeap::print_gc_on(outputStream* st) const {
   }
   st->cr();
 
-  if (UseFourByteObjectHeaders) {
-    PSParallelCompactNew::print_on(st);
-  } else {
-    PSParallelCompact::print_on(st);
-  }
+  PSParallelCompact::print_on(st);
 }
 
 void ParallelScavengeHeap::gc_threads_do(ThreadClosure* tc) const {
@@ -759,11 +733,7 @@ void ParallelScavengeHeap::gc_threads_do(ThreadClosure* tc) const {
 
 void ParallelScavengeHeap::print_tracing_info() const {
   log_debug(gc, heap, exit)("Accumulated young generation GC time %3.7f secs", PSScavenge::accumulated_time()->seconds());
-  if (UseFourByteObjectHeaders) {
-    log_debug(gc, heap, exit)("Accumulated old generation GC time %3.7f secs", PSParallelCompactNew::accumulated_time()->seconds());
-  } else {
-    log_debug(gc, heap, exit)("Accumulated old generation GC time %3.7f secs", PSParallelCompact::accumulated_time()->seconds());
-  }
+  log_debug(gc, heap, exit)("Accumulated old generation GC time %3.7f secs", PSParallelCompact::accumulated_time()->seconds());
 }
 
 PreGenGCValues ParallelScavengeHeap::get_pre_gc_values() const {

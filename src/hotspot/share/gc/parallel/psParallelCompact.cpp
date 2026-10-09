@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -990,15 +989,11 @@ bool PSParallelCompact::invoke(bool clear_all_soft_refs, bool should_do_max_comp
     DerivedPointerTable::set_active(false);
 #endif // COMPILER2
 
-    FullGCForwarding::begin();
-
     forward_to_new_addr();
 
     adjust_pointers();
 
     compact();
-
-    FullGCForwarding::end();
 
     ParCompactionManager::_preserved_marks_set->restore(&ParallelScavengeHeap::heap()->workers());
 
@@ -2360,7 +2355,7 @@ void MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
     assert(FullGCForwarding::is_forwarded(cast_to_oop(source())), "inv");
     assert(FullGCForwarding::forwardee(cast_to_oop(source())) == cast_to_oop(destination()), "inv");
     Copy::aligned_conjoint_words(source(), copy_destination(), words);
-    cast_to_oop(copy_destination())->reinit_mark();
+    cast_to_oop(copy_destination())->init_mark();
   }
 
   update_state(words);
