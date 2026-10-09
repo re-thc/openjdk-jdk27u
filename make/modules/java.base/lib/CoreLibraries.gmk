@@ -90,11 +90,15 @@ ifneq ($(filter x86_64 aarch64, $(OPENJDK_TARGET_CPU)), )
 	# Upstream makefiles do not track all configuration/header dependencies.
 	$(RM) -r $(ZLIBNG_OUT)
 	$(MKDIR) -p $(ZLIBNG_OUT)
-	cd $(ZLIBNG_OUT) && CC="$(CC)" AR="$(AR)" \
+	# Handle compiler environment assignments added by ccache.
+	cd $(ZLIBNG_OUT) && CC="env $(CC)" AR="$(AR)" \
 	    CFLAGS="$(CFLAGS_JDKLIB) $(SYSROOT_CFLAGS) -fPIC -Wno-undef" \
 	    LDFLAGS="$(LDFLAGS_JDKLIB) $(SYSROOT_LDFLAGS)" CHOST="$(OPENJDK_TARGET_CPU)-unknown-linux-gnu" \
 	    $(BASH) $(ZLIBNG_SRC)/configure --static --zlib-compat --sprefix=jdk_ng_ \
-	    > configure.log 2>&1
+	    > configure-output.log 2>&1 || { \
+	      $(CAT) $(ZLIBNG_OUT)/configure-output.log $(ZLIBNG_OUT)/configure.log; \
+	      exit 1; \
+	    }
 	+$(MAKE) -C $(ZLIBNG_OUT) libz.a
 
     LIBZIP_ZLIBNG_CFLAGS := -DINCLUDE_ZLIBNG=1
