@@ -6747,10 +6747,6 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
   return true;
 }
 
-/**
- * Calculate CRC32 for byte.
- * int java.util.zip.CRC32.update(int crc, int b)
- */
 bool LibraryCallKit::inline_zip_process() {
   Node* call = make_runtime_call(RC_NO_LEAF, OptoRuntime::zip_process_Type(),
       OptoRuntime::zip_process_Java(), nullptr, TypePtr::BOTTOM,
@@ -6762,6 +6758,10 @@ bool LibraryCallKit::inline_zip_process() {
   return true;
 }
 
+/**
+ * Calculate CRC32 for byte.
+ * int java.util.zip.CRC32.update(int crc, int b)
+ */
 bool LibraryCallKit::inline_updateCRC32() {
   assert(UseCRC32Intrinsics, "need AVX and CLMUL instructions support");
   assert(callee()->signature()->size() == 2, "update has 2 parameters");
