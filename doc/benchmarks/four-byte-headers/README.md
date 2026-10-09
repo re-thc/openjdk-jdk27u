@@ -64,6 +64,12 @@ the main suite; exclude diagnostics and profiles from primary timing results.
 
 ## Database and Spring applications
 
+Spring requires `java.beans` from `java.desktop`, which `bin/configure-dev`
+omits. Use the ordinary `bash configure` build for both Spring benchmark images
+and check that `java --list-modules` includes `java.desktop`. Headless mode
+does not remove that module. The database workload also runs on the reduced
+development profile.
+
 ```sh
 DATABASE_FORKS=12 DATABASE_REPEATS=16 \
   bash doc/benchmarks/four-byte-headers/database.sh timing
