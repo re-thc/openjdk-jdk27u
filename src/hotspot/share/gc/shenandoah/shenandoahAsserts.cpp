@@ -24,7 +24,7 @@
 
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
-#include "gc/shenandoah/shenandoahForwarding.inline.hpp"
+#include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
@@ -346,15 +346,7 @@ void ShenandoahAsserts::assert_in_correct_region(void* interior_loc, oop obj, co
   size_t alloc_size = obj->size();
   HeapWord* obj_end = cast_from_oop<HeapWord*>(obj) + alloc_size;
 
-  // Mirror the allocator's humongous classification. A fresh object whose base
-  // size could grow by one word for an injected identity hash-code is allocated
-  // as humongous up front (see ShenandoahFreeSet::allocate), so verification must
-  // reserve the same headroom while the object is still unexpanded. Once expanded,
-  // obj->size() already includes the hash word and is final, so no headroom is
-  // added -- and requires_humongous() then yields the same answer the allocator
-  // reached on the unexpanded base size.
-  const bool may_expand_for_hash = UseFourByteObjectHeaders && !obj->mark().is_expanded();
-  if (ShenandoahHeapRegion::requires_humongous(alloc_size, may_expand_for_hash)) {
+  if (ShenandoahHeapRegion::requires_humongous(alloc_size)) {
     size_t idx = r->index();
     size_t end_idx = heap->heap_region_index_containing(obj_end - 1);
     for (size_t i = idx; i < end_idx; i++) {
@@ -591,7 +583,7 @@ bool ShenandoahAsserts::extract_klass_safely(oop obj, narrowKlass& nk, const Kla
 
   if (UseCompactObjectHeaders) { // look in forwardee
     markWord mark = obj->mark();
-    if (ShenandoahForwarding::has_forwardee(mark)) {
+    if (mark.is_marked()) {
       oop fwd = cast_to_oop(mark.clear_lock_bits().to_pointer());
       if (!os::is_readable_pointer(fwd)) {
         return false;

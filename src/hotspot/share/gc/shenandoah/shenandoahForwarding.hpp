@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +30,6 @@
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahForwarding {
-private:
-  static const uintptr_t FWDED_HASH_TRANSITION = 0b111;
-
 public:
   /* Gets forwardee from the given object. For a self-forwarded object
    * (evacuation failure), returns the object itself.
@@ -63,18 +59,6 @@ public:
   static inline bool is_forwarded(oop obj);
 
   /**
-   * Returns true iff the mark word's lock bits are marked_value (0b11),
-   * i.e. the upper bits encode a real forwardee pointer. This covers both
-   * normal-forwarded (0b011) and forward-expanded (0b111) states, and
-   * excludes self-forwarded states (0b100, 0b101, 0b110) whose upper bits
-   * still hold the original klass/hash/age metadata.
-   *
-   * Do NOT use markWord::is_marked() for this purpose -- it also returns
-   * true for self-forwarded objects.
-   */
-  static inline bool has_forwardee(markWord m);
-
-  /**
    * Returns true iff obj has been self-forwarded (i.e. evacuation has
    * failed for this object in the current cycle).
    */
@@ -87,11 +71,9 @@ public:
    *
    * Returns the new object 'update' upon success, or
    * the new forwardee that a competing thread installed. If another
-   * thread self-forwarded the object, returns the object itself. Returns
-   * nullptr for a non-forwarding header change; discard the copy and retry.
-   * old_mark must be the snapshot used to size and initialize the copy.
+   * thread self-forwarded the object, returns the object itself.
    */
-  static inline oop try_update_forwardee(oop obj, oop update, markWord old_mark);
+  static inline oop try_update_forwardee(oop obj, oop update);
 
   /* Tries to atomically self-forward obj. Used by the evacuation path
    * when the copy allocation fails: the failing thread installs the

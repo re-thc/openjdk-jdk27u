@@ -38,19 +38,6 @@ package gc.stress.ihash;
  */
 
 /*
- * @test id=Parallel
- * @bug 8372151
- * @summary Stress test: cloning identity-hashed objects must not copy mark-word hash-control bits
- * @requires vm.gc.Parallel
- * @key stress
- * @run main/othervm/timeout=300
- *      -XX:+UseFourByteObjectHeaders -XX:+UseParallelGC
- *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
- *      -Xmx256m
- *      gc.stress.ihash.TestStressIHash
- */
-
-/*
  * @test id=G1
  * @bug 8372151
  * @summary Stress test: cloning identity-hashed objects must not copy mark-word hash-control bits
@@ -58,19 +45,6 @@ package gc.stress.ihash;
  * @key stress
  * @run main/othervm/timeout=300
  *      -XX:+UseFourByteObjectHeaders -XX:+UseG1GC
- *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
- *      -Xmx256m
- *      gc.stress.ihash.TestStressIHash
- */
-
-/*
- * @test id=Shenandoah
- * @bug 8372151
- * @summary Stress test: cloning identity-hashed objects must not copy mark-word hash-control bits
- * @requires vm.gc.Shenandoah
- * @key stress
- * @run main/othervm/timeout=300
- *      -XX:+UseFourByteObjectHeaders -XX:+UseShenandoahGC
  *      -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC
  *      -Xmx256m
  *      gc.stress.ihash.TestStressIHash
@@ -104,20 +78,6 @@ package gc.stress.ihash;
  */
 
 /*
- * @test id=C2-Parallel
- * @bug 8372151
- * @summary C2 clone of objects with narrowOop at offset 4 must use mismatched access
- * @requires vm.gc.Parallel
- * @requires vm.opt.TieredCompilation != true
- * @key stress
- * @run main/othervm/timeout=300
- *      -XX:+UseFourByteObjectHeaders -XX:+UseParallelGC
- *      -XX:-TieredCompilation
- *      -Xmx256m
- *      gc.stress.ihash.TestStressIHash clone-ref
- */
-
-/*
  * @test id=C2-G1
  * @bug 8372151
  * @summary C2 clone of objects with narrowOop at offset 4 must use mismatched access
@@ -134,27 +94,8 @@ package gc.stress.ihash;
 import java.util.Random;
 
 /**
- * Regression test for JDK-8372151.
- *
- * With compact object headers (4-byte mark-word), the identity hash state is
- * tracked via two "hashctrl" bits in the mark-word. When an object is hashed
- * and later relocated by GC, the GC may "expand" it by one HeapWord to store
- * the hash value, setting the hashctrl bits to "hashed-expanded" (11).
- *
- * The bug: Object.clone() copied the mark-word from source to destination,
- * including the hashctrl bits. A clone of an expanded object would therefore
- * appear expanded (hashctrl=11) without actually having the extra HeapWord
- * allocated. This causes two problems:
- *  1. The clone's identity hash is the same as the source's (semantic bug).
- *  2. JVM_Clone allocates the clone at expanded size but then resets the
- *     mark-word to prototype (not-hashed, not-expanded), creating a size
- *     mismatch that crashes GCs using linear heap iteration (e.g., Serial).
- *
- * This test creates objects whose layout guarantees hash-expansion (a single
- * int field: header(4) + int(4) = 8 bytes, no room for the 4-byte hash),
- * hashes them, forces a GC to expand them, then clones them. It verifies
- * both that clones get unique identity hashes (semantic correctness) and that
- * the heap remains intact (-XX:+VerifyDuringGC detects size mismatches).
+ * Cloning a hashed, relocated object must reset its hash state and preserve its
+ * payload. GC verification checks that cloning does not corrupt object sizes.
  */
 public class TestStressIHash {
 
@@ -176,19 +117,8 @@ public class TestStressIHash {
         }
     }
 
-    // With compact headers: header(4) + narrowOop(4) + narrowOop(4) + ...
-    // All fields are object references so HotSpot's field layout places a
-    // narrowOop at offset 4 (the first slot after the 4-byte compact header).
-    // The C2 clone intrinsic (BarrierSetC2::clone) pre-copies the 4 bytes at
-    // offset 4 as a raw T_INT. When C2 later expands the ArrayCopyNode via
-    // try_clone_instance, it creates typed stores for ALL fields, including a
-    // StoreN (narrowOop store) at offset 4. Without the mismatched-access flag
-    // on the pre-copy StoreI, IGVN's StoreNode::Ideal walks the memory chain
-    // and asserts that chained stores have matching opcodes (StoreN vs StoreI).
-    //
-    // Important: NO int/long/float/double fields — HotSpot's field sorter
-    // would place those at offset 4 to fill the gap, pushing the narrowOop
-    // to a higher (8-byte-aligned) offset where no mismatch occurs.
+    // Only reference fields: C2 must handle a narrow oop at offset four.
+    // Primitive fields could occupy that slot and hide the StoreI/StoreN mismatch.
     static class RefPayload implements Cloneable {
         Object ref;
         Object ref2;
@@ -222,12 +152,8 @@ public class TestStressIHash {
         return p.clone();
     }
 
-    // Allocate, clone, and return the clone's ref field. When C2 compiles
-    // this, it sees the source allocation inline and can constant-fold the
-    // LoadN from the clone expansion (try_clone_instance), leaving the
-    // pre-copy StoreI at offset 4 with outcnt==1. IGVN then walks the
-    // memory chain from the typed StoreN and hits the StoreI, triggering
-    // the assertion for mismatched store opcodes.
+    // Inlining the source allocation lets C2 fold the clone's reference load,
+    // exercising the interaction between the int pre-copy and typed oop stores.
     static Object cloneRefPayload(Object r) {
         RefPayload p = new RefPayload(r);
         RefPayload c = p.clone();
@@ -258,7 +184,7 @@ public class TestStressIHash {
     }
 
     // GC stress test: clones identity-hashed Payload objects across GC
-    // cycles and verifies hash uniqueness and heap integrity.
+    // cycles and verifies independent hashes and heap integrity.
     static void testClonePayload() {
         Random rng = new Random(12345);
         Object[] survivors = new Object[MAX_SURVIVORS];
@@ -282,7 +208,7 @@ public class TestStressIHash {
             System.gc();
 
             // Phase 3: Clone the (now expanded) batch objects and verify that
-            // each clone gets a unique identity hash. With the bug, clones
+            // clones do not systematically inherit identity hashes. With the bug, clones
             // inherit the source's hash because the hashctrl bits and stored
             // hash value are copied from the source mark-word.
             for (int i = 0; i < BATCH_SIZE; i++) {

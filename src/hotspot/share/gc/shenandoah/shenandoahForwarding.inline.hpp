@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2015, 2019, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +28,6 @@
 #include "gc/shenandoah/shenandoahForwarding.hpp"
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
-#include "oops/klass.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/javaThread.hpp"
 
@@ -38,25 +36,14 @@ inline oop ShenandoahForwarding::get_forwardee_raw(oop obj) {
   return get_forwardee_raw_unchecked(obj);
 }
 
-static HeapWord* to_forwardee(markWord mark) {
-  return reinterpret_cast<HeapWord*>(mark.clear_lock_bits().to_pointer());
-}
-
-inline bool ShenandoahForwarding::has_forwardee(markWord m) {
-  // Lock bits == marked_value (0b11): the upper bits encode a forwardee
-  // pointer. Matches normal-forwarded (0b011) and forward-expanded (0b111);
-  // excludes self-forwarded (0b100, 0b101, 0b110).
-  return (m.value() & markWord::lock_mask_in_place) == markWord::marked_value;
-}
-
 inline oop ShenandoahForwarding::get_forwardee_raw_unchecked(oop obj) {
   // JVMTI and JFR code use mark words for marking objects for their needs.
   // On this path, we can encounter the "marked" object, but with null
   // fwdptr. That object is still not forwarded, and we need to return
   // the object itself.
   markWord mark = obj->mark();
-  if (has_forwardee(mark)) {
-    HeapWord* fwdptr = to_forwardee(mark);
+  if (mark.is_marked()) {
+    HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
     if (fwdptr != nullptr) {
       return cast_to_oop(fwdptr);
     }
@@ -72,8 +59,8 @@ inline oop ShenandoahForwarding::get_forwardee_mutator(oop obj) {
   assert(Thread::current()->is_Java_thread(), "Must be a mutator thread");
 
   markWord mark = obj->mark();
-  if (has_forwardee(mark)) {
-    HeapWord* fwdptr = to_forwardee(mark);
+  if (mark.is_marked()) {
+    HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
     assert(fwdptr != nullptr, "Forwarding pointer is never null here");
     return cast_to_oop(fwdptr);
   }
@@ -94,54 +81,62 @@ inline bool ShenandoahForwarding::is_self_forwarded(oop obj) {
   return obj->mark().is_self_forwarded();
 }
 
-inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update, markWord old_mark) {
-  assert(!old_mark.is_forwarded(), "copy must be sized from an unforwarded mark");
-  markWord new_mark = markWord::encode_pointer_as_mark(update);
-  if (UseFourByteObjectHeaders && old_mark.is_hashed_not_expanded()) {
-    new_mark = markWord(new_mark.value() | FWDED_HASH_TRANSITION);
+inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
+  markWord old_mark = obj->mark();
+  if (old_mark.is_marked()) {
+    return cast_to_oop(old_mark.clear_lock_bits().to_pointer());
   }
-  // Publish only if the header used to size and initialize the copy is unchanged.
-  // In particular, a newly installed hash may require a larger allocation.
+  if (old_mark.is_self_forwarded()) {
+    // Another thread lost the evacuation race; the object stays put.
+    return obj;
+  }
+
+  markWord new_mark = markWord::encode_pointer_as_mark(update);
   markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_conservative);
   if (prev_mark == old_mark) {
     return update;
   }
-  if (has_forwardee(prev_mark)) {
-    return cast_to_oop(to_forwardee(prev_mark));
+  // Concurrent writers on a cset object's mark can only be other evacuation
+  // threads installing forwarding (real or self). Mutators cannot reach the
+  // mark of a not-yet-forwarded cset object: LRB + stack watermark barriers
+  // redirect all reference uses before a Java-level operation can touch it.
+  // So the only possible failure modes are a regular forwardee (marked) or
+  // a self-forward (possibly with mutator lock/hash mods layered on top
+  // after the self-forward became visible).
+  if (prev_mark.is_marked()) {
+    return cast_to_oop(prev_mark.clear_lock_bits().to_pointer());
   }
-  if (prev_mark.is_self_forwarded()) {
-    return obj;
-  }
-  // A non-forwarding header change does not evacuate the object. The caller
-  // must discard this copy and retry allocation and initialization.
-  return nullptr;
+  assert(prev_mark.is_self_forwarded(),
+         "concurrent writers on cset objects must install forwarding: prev=" INTPTR_FORMAT,
+         prev_mark.value());
+  return obj;
 }
 
 inline oop ShenandoahForwarding::try_forward_to_self(oop obj, markWord old_mark) {
   assert(!old_mark.is_forwarded(),
          "caller must pass a non-forwarded mark: old=" INTPTR_FORMAT, old_mark.value());
-  while (true) {
-    markWord new_mark = old_mark.set_self_forwarded();
-    markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_conservative);
-    if (prev_mark == old_mark) {
-      return nullptr;
-    }
-    if (has_forwardee(prev_mark)) {
-      return cast_to_oop(to_forwardee(prev_mark));
-    }
-    if (prev_mark.is_self_forwarded()) {
-      return obj;
-    }
-    // Preserve any intervening lock, hash or field update when retrying.
-    old_mark = prev_mark;
+  markWord new_mark = old_mark.set_self_forwarded();
+  markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_conservative);
+  if (prev_mark == old_mark) {
+    // We installed the self-forward.
+    return nullptr;
   }
+  // Same invariant as in try_update_forwardee: the only races on a
+  // cset object's mark come from other evac threads installing forwarding.
+  if (prev_mark.is_marked()) {
+    return cast_to_oop(prev_mark.clear_lock_bits().to_pointer());
+  }
+  assert(prev_mark.is_self_forwarded(),
+         "concurrent writers on cset objects must install forwarding: prev=" INTPTR_FORMAT,
+         prev_mark.value());
+  return obj;
 }
 
 inline Klass* ShenandoahForwarding::klass(oop obj) {
   if (UseCompactObjectHeaders) {
     markWord mark = obj->mark();
-    if (has_forwardee(mark)) {
-      oop fwd = cast_to_oop(to_forwardee(mark));
+    if (mark.is_marked()) {
+      oop fwd = cast_to_oop(mark.clear_lock_bits().to_pointer());
       mark = fwd->mark();
     }
     return mark.klass();
@@ -151,26 +146,7 @@ inline Klass* ShenandoahForwarding::klass(oop obj) {
 }
 
 inline size_t ShenandoahForwarding::size(oop obj) {
-  if (!UseFourByteObjectHeaders) {
-    Klass* k = klass(obj);
-    return obj->size_given_mark_and_klass(obj->mark(), k);
-  }
-  markWord mark = obj->mark();
-  if (has_forwardee(mark)) {
-    oop fwd = cast_to_oop(to_forwardee(mark));
-    markWord fwd_mark = fwd->mark();
-    Klass* klass = fwd_mark.klass();
-    size_t size = fwd->base_size_given_klass(fwd_mark, klass);
-    if ((mark.value() & FWDED_HASH_TRANSITION) != FWDED_HASH_TRANSITION) {
-      if (fwd_mark.is_expanded() && klass->expand_for_hash(fwd, fwd_mark)) {
-        size = oopDesc::hash_expanded_size(size);
-      }
-    }
-    return size;
-  } else {
-    Klass* klass = mark.klass();
-    return obj->size_given_mark_and_klass(mark, klass);
-  }
+  return obj->size_given_klass(klass(obj));
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_INLINE_HPP

@@ -3504,6 +3504,13 @@ jint Arguments::apply_ergo() {
   jint result = set_ergonomics_flags();
   if (result != JNI_OK) return result;
 
+#ifdef _LP64
+  if (UseFourByteObjectHeaders && !(UseSerialGC || UseG1GC || UseZGC)) {
+    warning("UseFourByteObjectHeaders is only supported with Serial, G1 and ZGC; disabling it");
+    FLAG_SET_ERGO(UseFourByteObjectHeaders, false);
+  }
+#endif
+
   // Set heap size based on available physical memory
   GCConfig::arguments()->set_heap_size();
 

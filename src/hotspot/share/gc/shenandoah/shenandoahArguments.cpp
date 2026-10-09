@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2018, 2022, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -208,6 +207,7 @@ void ShenandoahArguments::initialize() {
         ShenandoahMomentaryAllocRateSampleWindow, ShenandoahRecentAllocRateSampleWindow,
         ShenandoahAllocRateSampleWindow));
   }
+
   FullGCForwarding::initialize_flags(MaxHeapSize);
 }
 
