@@ -248,6 +248,10 @@ size_t oopDesc::size()  {
   return size_given_mark_and_klass(mark(), klass());
 }
 
+size_t oopDesc::size_given_klass(const Klass* klass) {
+  return size_given_mark_and_klass(mark(), klass);
+}
+
 size_t oopDesc::base_size_given_klass(markWord mrk, const Klass* klass)  {
   int lh = klass->layout_helper();
   size_t s;

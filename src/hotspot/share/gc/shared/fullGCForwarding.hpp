@@ -105,7 +105,7 @@ class FallbackTable;
  *   more than two regions. G1 serial compaction is not very common - it is the last-last-ditch GC
  *   that is used when the JVM is scrambling to squeeze more space out of the heap, and at that point,
  *   ultimate performance is no longer the main concern.
- * - When forwarding hits a space (or G1/Shenandoah region) boundary, then latter objects of a block
+ * - When forwarding hits a space (or G1 region) boundary, then latter objects of a block
  *   need to be forwarded to a different address range than earlier objects in the same block.
  *   This is rare.
  * - With compact identity hash-code, objects can grow, and in the worst case use up more memory in
