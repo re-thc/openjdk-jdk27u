@@ -55,7 +55,9 @@ public class TestZlibNGSmallStreams {
 
             d.setInput(input);
             d.finish();
-            byte[] first = new byte[input.length + 1024];
+            // Level-1 fixed blocks can expand incompressible input by more
+            // than stock zlib's stored blocks. Allow for that expansion.
+            byte[] first = new byte[input.length * 2];
             int length = d.deflate(first);
             if (!d.finished()) throw new AssertionError("initial compression incomplete");
 

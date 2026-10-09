@@ -10,6 +10,11 @@ concurrency:
   group: zip-review-fixes-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  jtreg:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/build-jtreg
   native:
     if: github.event_name == 'workflow_dispatch'
     strategy:
@@ -40,6 +45,7 @@ jobs:
           path: validation/results
           retention-days: 14
   full:
+    needs: jtreg
     strategy:
       fail-fast: false
       matrix:
@@ -60,8 +66,6 @@ jobs:
         with:
           name: bundles-jtreg-8.2.1+1
           path: jtreg/installed
-          run-id: 37342065111
-          github-token: ${{ github.token }}
       - name: Install toolchain and create nondefault target sysroot
         run: |
           sudo apt-get update
