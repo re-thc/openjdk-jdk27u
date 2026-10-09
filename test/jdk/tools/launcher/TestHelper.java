@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ public class TestHelper {
                     "> must exist and should be executable");
         }
 
-        if (isWindows) {
+        if (isWindows && java.lang.module.ModuleFinder.ofSystem().find("java.desktop").isPresent()) {
             File javawCmdFile = new File(binDir, "javaw.exe");
             javawCmd = javawCmdFile.getAbsolutePath();
             if (!javawCmdFile.canExecute()) {
