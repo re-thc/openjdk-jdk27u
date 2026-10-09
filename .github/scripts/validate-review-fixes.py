@@ -110,7 +110,8 @@ def defaults(jdk):
                              ("stock-intrinsic", ["-XX:-UseZlibNG"]),
                              ("ng-intrinsic", ["-XX:+UseZlibNG"])]:
             for group, pattern, params in [
-                ("heap", "ZipBackend.(deflate|inflate|adler32)$", ["-p", "data=text", "-p", "size=64,1024,65536"]),
+                ("heap", "ZipBackend.(deflate|inflate)$", ["-p", "data=text", "-p", "size=64,1024,65536"]),
+                ("adler", "ZipBackend.adler32$", ["-p", "data=text", "-p", "size=64,1024,65536"]),
                 ("buffers", "ZipBufferCalls.inflate$", ["-p", "input=heap,direct", "-p", "output=heap,direct",
                                                         "-p", "size=64,65536"]),
                 ("streams", "ZipStreamCalls.(zip|gzip)$", ["-p", "size=64,1024,65536", "-p", "chunk=64,4096"])]:
@@ -119,7 +120,7 @@ def defaults(jdk):
                 run(name, [jdk / "bin/java", "-Djmh.blackhole.mode=FULL_DONTINLINE", "-cp", cp, "org.openjdk.jmh.Main",
                            pattern] + params + ["-f", "2", "-wi", "2", "-i", "4", "-w", "500ms", "-r", "500ms",
                            "-jvm", jdk / "bin/java", "-jvmArgsAppend",
-                           " ".join((["-XX:+UnlockDiagnosticVMOptions", "-XX:-UseAdler32Intrinsics"] if label == "stock-jni" and tier != "c2" else []) + ["-Xshare:off", "-Xms128m", "-Xmx128m", "-XX:+UseSerialGC", "-XX:ActiveProcessorCount=2"] + flags + extra),
+                           " ".join((["-XX:+UnlockDiagnosticVMOptions", "-XX:-UseAdler32Intrinsics"] if label == "stock-jni" and tier != "c2" and group == "adler" else []) + ["-Xshare:off", "-Xms128m", "-Xmx128m", "-XX:+UseSerialGC", "-XX:ActiveProcessorCount=2"] + flags + extra),
                            "-rf", "json", "-rff", result])
                 for row in json.loads(result.read_text()):
                     row.update(tier=tier, config=label)
