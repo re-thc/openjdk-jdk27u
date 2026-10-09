@@ -2,6 +2,12 @@ name: ZIP backend qualification
 on:
   push:
     branches: [pr/zlib-ng-validation]
+    paths:
+      - 'src/**'
+      - 'make/**'
+      - 'test/**'
+      - '.github/scripts/validate-review-fixes.py'
+      - '.github/scripts/validate-zip-backend.py'
   workflow_dispatch:
 permissions:
   contents: read
