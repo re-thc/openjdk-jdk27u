@@ -43,7 +43,7 @@ jobs:
           Path('probe.gmk').write_text('''include $(SPEC)
           probe:
           \tmkdir -p $(OUTPUTDIR)/native-probe
-          \tcd $(OUTPUTDIR)/native-probe && CC="$(CC)" AR="$(AR)" CFLAGS="$(CFLAGS_JDKLIB) $(SYSROOT_CFLAGS) -fPIC -Wno-undef" LDFLAGS="$(LDFLAGS_JDKLIB) $(SYSROOT_LDFLAGS)" CHOST="$(OPENJDK_TARGET_CPU)-unknown-linux-gnu" $(BASH) $(TOPDIR)/src/java.base/share/native/libzip/zlib-ng/configure --static --zlib-compat --sprefix=jdk_ng_ > configure-output.log 2>&1 || (cat $(OUTPUTDIR)/native-probe/configure-output.log $(OUTPUTDIR)/native-probe/configure.log; exit 1)
+          \tcd $(OUTPUTDIR)/native-probe && CC="env $(CC)" AR="$(AR)" CFLAGS="$(CFLAGS_JDKLIB) $(SYSROOT_CFLAGS) -fPIC -Wno-undef" LDFLAGS="$(LDFLAGS_JDKLIB) $(SYSROOT_LDFLAGS)" CHOST="$(OPENJDK_TARGET_CPU)-unknown-linux-gnu" $(BASH) $(TOPDIR)/src/java.base/share/native/libzip/zlib-ng/configure --static --zlib-compat --sprefix=jdk_ng_ > configure-output.log 2>&1 || (cat $(OUTPUTDIR)/native-probe/configure-output.log $(OUTPUTDIR)/native-probe/configure.log; exit 1)
           \t$(MAKE) -C $(OUTPUTDIR)/native-probe libz.a
           ''')
           PY
