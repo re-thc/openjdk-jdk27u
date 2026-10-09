@@ -7,9 +7,9 @@
  * @compile/fail/ref=ImportIsFullyQualified.out -XDrawDiagnostics  ImportIsFullyQualified.java
  */
 
-import java.awt.*;
-import JobAttributes.*;  // class JobAttributes is contained in package java.awt
+import java.lang.*;
+import Thread.*;  // class Thread is contained in package java.lang
 
 public class ImportIsFullyQualified {
-    JobAttributes.DefaultSelectionType x;
+    Thread.State x;
 }

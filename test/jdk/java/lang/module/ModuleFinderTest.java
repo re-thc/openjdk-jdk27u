@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @modules java.base/jdk.internal.module
+ * @modules java.base/jdk.internal.module java.logging
  * @library /test/lib
  * @build ModuleFinderTest jdk.test.lib.util.ModuleInfoWriter
  * @run testng ModuleFinderTest
@@ -64,7 +64,7 @@ public class ModuleFinderTest {
     public void testOfSystem() {
         ModuleFinder finder = ModuleFinder.ofSystem();
 
-        assertTrue(finder.find("java.se").isPresent());
+        assertTrue(finder.find("java.logging").isPresent());
         assertTrue(finder.find("java.base").isPresent());
         assertFalse(finder.find("java.rhubarb").isPresent());
 
@@ -72,7 +72,7 @@ public class ModuleFinderTest {
             .map(ModuleReference::descriptor)
             .map(ModuleDescriptor::name)
             .collect(Collectors.toSet());
-        assertTrue(names.contains("java.se"));
+        assertTrue(names.contains("java.logging"));
         assertTrue(names.contains("java.base"));
         assertFalse(names.contains("java.rhubarb"));
     }

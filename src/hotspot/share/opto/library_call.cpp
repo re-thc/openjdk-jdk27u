@@ -9278,16 +9278,15 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
   return true;
 }
 
-
 // Keep oop arguments live throughout a leaf call. The shared entry derives raw
 // array addresses only after validating their types and ranges. TypePtr::BOTTOM
 // models both the source reads and all destination writes (including failure).
 bool LibraryCallKit::inline_simdutf_process() {
   const TypeInt* operation = _gvn.type(argument(6))->isa_int();
   if (operation != nullptr &&
-      ((operation->_lo == 0 && operation->_hi == 0) ||
-       (operation->_lo >= 4 && operation->_hi <= 9) ||
-       (operation->_lo == 19 && operation->_hi == 19))) {
+      ((operation->_lo == SimdUTF::COUNT_ASCII && operation->_hi == SimdUTF::COUNT_ASCII) ||
+       (operation->_lo >= SimdUTF::ENCODE_ASCII && operation->_hi <= SimdUTF::DECODE_BASE64_URL) ||
+       (operation->_lo == SimdUTF::INFLATE_LATIN1 && operation->_hi == SimdUTF::INFLATE_LATIN1))) {
     // Existing C2 ASCII, narrowing and Base64 stubs avoid a C ABI call and
     // outperform this bridge. Interpreter/C1 still benefit from simdutf.
     set_result(intcon(-1));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
+ *          java.logging
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @run main MultiReleaseModuleInfoTest
  */
@@ -62,7 +63,7 @@ public class MultiReleaseModuleInfoTest {
 
     private final String service_mi9 =
             "module service {\n" +
-            "    requires java.desktop;\n" +
+            "    requires java.logging;\n" +
             "}\n";
 
     private final String service9 =
@@ -130,12 +131,12 @@ public class MultiReleaseModuleInfoTest {
             if (sm == null) {
                 throw new AssertionError("Cannot find the service module!");
             }
-            boolean foundjd = false;
+            boolean foundDependency = false;
             for (RequiresDirective rd : ElementFilter.requiresIn(sm.getDirectives())) {
-                foundjd |= rd.getDependency().getQualifiedName().contentEquals("java.desktop");
+                foundDependency |= rd.getDependency().getQualifiedName().contentEquals("java.logging");
             }
-            if (!foundjd) {
-                throw new AssertionError("Missing dependency on java desktop module!");
+            if (!foundDependency) {
+                throw new AssertionError("Missing dependency on java.logging module!");
             }
             return false;
         }

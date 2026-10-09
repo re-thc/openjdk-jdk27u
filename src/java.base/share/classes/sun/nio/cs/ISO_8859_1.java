@@ -33,9 +33,9 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.util.Objects;
 
-import jdk.internal.util.SimdUTF;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.SimdUTF;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 public class ISO_8859_1
@@ -138,7 +138,9 @@ public class ISO_8859_1
 
         public boolean canEncode(CharSequence cs) {
             int length = cs.length();
-            if (length > 0 && !canEncode(cs.charAt(0))) return false;
+            if (length > 0 && !canEncode(cs.charAt(0))) {
+                return false;
+            }
             int valid = SimdUTF.isEligible(length) ? Unicode.validateEncoding(cs, 2) : -1;
             if (valid >= 0) {
                 return valid != 0;
@@ -185,9 +187,13 @@ public class ISO_8859_1
 
         @IntrinsicCandidate
         private static int encodeISOArray0(char[] sa, int sp, byte[] da, int dp, int len) {
-            if (len > 0 && sa[sp] > '\u00ff') return 0;
+            if (len > 0 && sa[sp] > '\u00ff') {
+                return 0;
+            }
             int converted = SimdUTF.isEligible(len) ? SimdUTF.encodeLatin1FromUTF16(sa, sp, len, da, dp) : -1;
-            if (converted >= 0) return converted;
+            if (converted >= 0) {
+                return converted;
+            }
             int i = 0;
             for (; i < len; i++) {
                 char c = sa[sp++];

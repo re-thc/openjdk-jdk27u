@@ -119,9 +119,13 @@ class StringCoding {
 
     @IntrinsicCandidate
     private static int countPositives0(byte[] ba, int off, int len) {
-        if (len > 0 && ba[off] < 0) return 0;
+        if (len > 0 && ba[off] < 0) {
+            return 0;
+        }
         int count = SimdUTF.isEligible(len) ? SimdUTF.countAscii(ba, off, len) : -1;
-        if (count >= 0) return count;
+        if (count >= 0) {
+            return count;
+        }
         int limit = off + len;
         for (int i = off; i < limit; i++) {
             if (ba[i] < 0) {
@@ -162,9 +166,13 @@ class StringCoding {
     @IntrinsicCandidate
     private static int encodeISOArray0(byte[] sa, int sp,
                                        byte[] da, int dp, int len) {
-        if (len > 0 && StringUTF16.getChar(sa, sp) > '\u00ff') return 0;
+        if (len > 0 && StringUTF16.getChar(sa, sp) > '\u00ff') {
+            return 0;
+        }
         int count = SimdUTF.isEligible(len) ? SimdUTF.encodeLatin1FromUTF16(sa, sp, len, da, dp) : -1;
-        if (count >= 0) return count;
+        if (count >= 0) {
+            return count;
+        }
         int i = 0;
         for (; i < len; i++) {
             char c = StringUTF16.getChar(sa, sp++);
@@ -204,9 +212,13 @@ class StringCoding {
     @IntrinsicCandidate
     static int encodeAsciiArray0(char[] sa, int sp,
                                  byte[] da, int dp, int len) {
-        if (len > 0 && sa[sp] >= '\u0080') return 0;
+        if (len > 0 && sa[sp] >= '\u0080') {
+            return 0;
+        }
         int count = SimdUTF.isEligible(len) ? SimdUTF.encodeAscii(sa, sp, len, da, dp) : -1;
-        if (count >= 0) return count;
+        if (count >= 0) {
+            return count;
+        }
         int i = 0;
         for (; i < len; i++) {
             char c = sa[sp++];

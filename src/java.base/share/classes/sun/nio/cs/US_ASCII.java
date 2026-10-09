@@ -142,7 +142,9 @@ public class US_ASCII
 
         public boolean canEncode(CharSequence cs) {
             int length = cs.length();
-            if (length > 0 && !canEncode(cs.charAt(0))) return false;
+            if (length > 0 && !canEncode(cs.charAt(0))) {
+                return false;
+            }
             int valid = SimdUTF.isEligible(length) ? Unicode.validateEncoding(cs, 1) : -1;
             if (valid >= 0) {
                 return valid != 0;

@@ -176,9 +176,8 @@ class UTF_32Coder {
             return encodeLoopScalar(src, dst);
         }
 
-        // Keep the original loop independently compilable. Combining its
-        // buffer accesses with a native call's memory effects slows short C2
-        // inputs even when the length gate declines that call.
+        // Keep scalar buffer accesses separate from the native call's memory
+        // effects so C2 can optimize short inputs independently.
         @DontInline
         private CoderResult encodeLoopScalar(CharBuffer src, ByteBuffer dst) {
             int mark = src.position();

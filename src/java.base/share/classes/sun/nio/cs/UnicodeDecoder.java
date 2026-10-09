@@ -67,6 +67,7 @@ abstract class UnicodeDecoder extends CharsetDecoder {
 
     protected CoderResult decodeLoop(ByteBuffer src, CharBuffer dst) {
         int mark = src.position();
+
         try {
             // Resolve the initial BOM once, before attempting an array conversion.
             boolean bulk = SimdUTF.isEligible(src.remaining()) && src.hasArray() && dst.hasArray();
@@ -94,14 +95,21 @@ abstract class UnicodeDecoder extends CharsetDecoder {
                 int b1 = src.get() & 0xff;
                 int b2 = src.get() & 0xff;
 
+                // Byte Order Mark interpretation
                 if (currentByteOrder == NONE) {
-                    char first = (char)((b1 << 8) | b2);
-                    if (first == BYTE_ORDER_MARK || first == REVERSED_MARK) {
-                        currentByteOrder = first == BYTE_ORDER_MARK ? BIG : LITTLE;
+                    char c = (char)((b1 << 8) | b2);
+                    if (c == BYTE_ORDER_MARK) {
+                        currentByteOrder = BIG;
                         mark += 2;
                         continue;
+                    } else if (c == REVERSED_MARK) {
+                        currentByteOrder = LITTLE;
+                        mark += 2;
+                        continue;
+                    } else {
+                        currentByteOrder = defaultByteOrder;
+                        // FALL THROUGH to process b1, b2 normally
                     }
-                    currentByteOrder = defaultByteOrder;
                 }
 
                 char c = decode(b1, b2);

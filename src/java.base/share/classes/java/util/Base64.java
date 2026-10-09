@@ -25,7 +25,6 @@
 
 package java.util;
 
-import jdk.internal.util.SimdUTF;
 import java.io.FilterOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
@@ -36,6 +35,7 @@ import sun.nio.cs.ISO_8859_1;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.Preconditions;
+import jdk.internal.util.SimdUTF;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**

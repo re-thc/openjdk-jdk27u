@@ -34,9 +34,9 @@ import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import jdk.internal.util.SimdUTF;
 import jdk.internal.lang.CaseFolding;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.SimdUTF;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.String.LATIN1;

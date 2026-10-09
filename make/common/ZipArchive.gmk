@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -146,6 +146,8 @@ define SetupZipArchiveBody
   $$($1_ZIP) : $$($1_ALL_SRCS) $$($1_EXTRA_DEPS)
 	$$(call LogWarn, Updating $$($1_NAME))
 	$$(call MakeTargetDir)
+        # Isolate temp files for zip implementations with time-based names.
+	$$(call MakeDir, $$(SUPPORT_OUTPUTDIR)/ziptmp/$1)
         # Find duplicate file names in the SRC and generate excludes for all
         # instances that should not be included. Run this rather expensive
         # calculation as part of the recipe to avoid running it when nothing
@@ -167,7 +169,7 @@ define SetupZipArchiveBody
 	)
 	$$(foreach s, $$($1_SRC_SLASH), $$(call ExecuteWithLog, \
 	    $$(SUPPORT_OUTPUTDIR)/zip/$$(patsubst $$(OUTPUTDIR)/%,%, $$@), \
-	    (cd $$s && $(ZIPEXE) -qru $$($1_ZIP_OPTIONS) $$@ . \
+	    (cd $$s && $(ZIPEXE) -b $$(SUPPORT_OUTPUTDIR)/ziptmp/$1 -qru $$($1_ZIP_OPTIONS) $$@ . \
 	        $$($1_ZIP_INCLUDES) $$($1_ZIP_EXCLUDES) -x \*_the.\* \
 	        $$($1_ZIP_EXCLUDES_$$s) \
 	        || test "$$$$?" = "12" \

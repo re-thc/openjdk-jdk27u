@@ -25,9 +25,9 @@
 
 package sun.nio.cs;
 
-import jdk.internal.util.SimdUTF;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.SimdUTF;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
