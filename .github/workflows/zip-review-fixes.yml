@@ -12,8 +12,14 @@ concurrency:
 jobs:
   jtreg:
     runs-on: ubuntu-24.04
+    outputs:
+      jtreg-version: ${{ steps.version.outputs.value }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/config
+        id: version
+        with:
+          var: JTREG_VERSION
       - uses: ./.github/actions/build-jtreg
   native:
     if: github.event_name == 'workflow_dispatch'
@@ -28,7 +34,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: |
           sudo apt-get update
           sudo apt-get install -y gcc-14 g++-14 cmake python3 zlib1g-dev
@@ -57,14 +63,14 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 180
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/get-bootjdk
         id: boot
         with:
           platform: ${{ matrix.platform }}
       - uses: actions/download-artifact@v8
         with:
-          name: bundles-jtreg-8.2.1+1
+          name: bundles-jtreg-${{ needs.jtreg.outputs.jtreg-version }}
           path: jtreg/installed
       - name: Install toolchain and create nondefault target sysroot
         run: |
@@ -98,7 +104,7 @@ jobs:
           cp build/zip-review/spec.gmk validation/results/spec.gmk
           cp build/zip-review/support/native/zlib-ng/Makefile validation/results/ng-Makefile
           build/zip-review/images/jdk/bin/java -XX:+PrintFlagsFinal -version > validation/results/default-flags.txt 2>&1
-      - uses: actions/cache/save@v4
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: build/zip-review/images/jdk
           key: zip-review-image-v3-${{ matrix.platform }}-${{ github.sha }}

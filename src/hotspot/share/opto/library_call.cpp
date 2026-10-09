@@ -6751,6 +6751,17 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
  * Calculate CRC32 for byte.
  * int java.util.zip.CRC32.update(int crc, int b)
  */
+bool LibraryCallKit::inline_zip_process() {
+  Node* call = make_runtime_call(RC_NO_LEAF, OptoRuntime::zip_process_Type(),
+      OptoRuntime::zip_process_Java(), nullptr, TypePtr::BOTTOM,
+      argument(0), argument(7), argument(11), argument(12), argument(13),
+      argument(1), argument(2), top(), argument(4), argument(8),
+      argument(5), top(), argument(9), top());
+  make_slow_call_ex(call, env()->Throwable_klass(), false);
+  set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  return true;
+}
+
 bool LibraryCallKit::inline_updateCRC32() {
   assert(UseCRC32Intrinsics, "need AVX and CLMUL instructions support");
   assert(callee()->signature()->size() == 2, "update has 2 parameters");
@@ -9274,17 +9285,5 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
   }
   result = _gvn.transform(new ReinterpretHF2SNode(result));
   set_result(box_fp16_value(float16_box_type, field, result));
-  return true;
-}
-
-
-bool LibraryCallKit::inline_zip_process() {
-  Node* call = make_runtime_call(RC_NO_LEAF, OptoRuntime::zip_process_Type(),
-      OptoRuntime::zip_process_Java(), nullptr, TypePtr::BOTTOM,
-      argument(0), argument(7), argument(11), argument(12), argument(13),
-      argument(1), argument(2), top(), argument(4), argument(8),
-      argument(5), top(), argument(9), top());
-  make_slow_call_ex(call, env()->Throwable_klass(), false);
-  set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
   return true;
 }

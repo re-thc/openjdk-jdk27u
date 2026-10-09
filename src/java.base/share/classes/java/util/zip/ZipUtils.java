@@ -64,7 +64,6 @@ class ZipUtils {
     static final int INFLATE_MIXED_INTRINSIC_MIN_OUTPUT =
         Architecture.isX64() ? 1024 : -1;
 
-
     private static boolean initZipIntrinsics() {
         loadLibrary();
         return useZipIntrinsics();

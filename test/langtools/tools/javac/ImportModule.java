@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -878,6 +878,10 @@ public class ImportModule extends TestRunner {
 
     @Test //JDK-8344647
     public void testJavaBaseOverride(Path base) throws Exception {
+        if (java.lang.module.ModuleFinder.ofSystem().find("java.se").isEmpty()) {
+            System.err.println("Skipping java.se override check: module omitted from this JDK");
+            return;
+        }
         Path current = base.resolve(".");
         Path src = current.resolve("src");
         Path javaBaseClasses = current.resolve("javaBaseClasses");
