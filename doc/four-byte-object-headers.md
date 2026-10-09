@@ -1,7 +1,8 @@
 # Four-byte object headers in this fork
 
 This fork uses four-byte object headers by default on x64 and AArch64.
-Serial, G1, ZGC, Parallel and Shenandoah are supported. The ordinary upstream
+The development profile includes Serial, G1 and ZGC. Parallel and Shenandoah
+are supported when enabled in a custom build. The ordinary upstream
 JDK 27u default remains eight-byte compact headers. This fork retains that
 layout with `-XX:-UseFourByteObjectHeaders` and the twelve-byte layout with
 `-XX:-UseCompactObjectHeaders`. Other 64-bit architectures and Zero keep their
@@ -91,13 +92,7 @@ hashes, C2 monitor-table lookup and ZGC relocation. `gc/stress/ihash` covers
 movement and hash retention across the collectors. The JDK instrumentation test checks expanded object
 sizes under C1 and C2.
 
-The [benchmark harness](benchmarks/four-byte-headers/run.sh) measures allocated
-bytes, exact retained graph sizes, post-GC heap use on Renaissance workloads,
-identity-hash and `IdentityHashMap` costs, and startup with matching CDS archives.
-Run timing measurements while the machine is idle. The
-[validation and benchmark report](benchmarks/four-byte-headers/results/validation.md)
-compares the original eight-byte default with four-byte mode and records the
-tested platform, raw results and limitations, including measured hashing costs.
-The [fork-default application report](benchmarks/four-byte-headers/results/applications.md)
-compares database and Spring Petclinic workloads against the upstream eight-byte
-default, including the monitor-lookup regression found and fixed during testing.
+The [benchmark instructions](benchmarks/four-byte-headers/README.md) cover exact
+retained graph size, allocated bytes, identity hashing, database and Spring
+workloads, and startup with matching CDS archives. Keep generated results
+outside the source tree and run timing measurements on an idle machine.

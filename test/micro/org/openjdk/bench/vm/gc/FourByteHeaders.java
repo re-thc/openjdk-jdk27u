@@ -25,7 +25,17 @@ package org.openjdk.bench.vm.gc;
 
 import java.util.IdentityHashMap;
 import java.util.concurrent.TimeUnit;
-import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Level;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 @BenchmarkMode(Mode.AverageTime)
@@ -35,7 +45,14 @@ import org.openjdk.jmh.infra.Blackhole;
 @Fork(3)
 @State(Scope.Thread)
 public class FourByteHeaders {
-    static final class Cell { int value; Cell(int value) { this.value = value; } }
+    static final class Cell {
+        int value;
+
+        Cell(int value) {
+            this.value = value;
+        }
+    }
+
     Cell[] cells;
     IdentityHashMap<Cell, Integer> identities;
     Object[] retainedMaps;
@@ -54,11 +71,28 @@ public class FourByteHeaders {
         System.gc();
     }
 
-    @Benchmark public void allocate(Blackhole blackhole) { blackhole.consume(new Cell(42)); }
-    @Benchmark public int firstHash() { return System.identityHashCode(new Cell(42)); }
-    @Benchmark public int storedHash() { return System.identityHashCode(cells[(index++ & 1023)]); }
-    @Benchmark public int identityMapLookup() { return identities.get(cells[(index++ & 1023)]); }
-    @Benchmark public IdentityHashMap<Cell, Cell> identityMapChurn() {
+    @Benchmark
+    public void allocate(Blackhole blackhole) {
+        blackhole.consume(new Cell(42));
+    }
+
+    @Benchmark
+    public int firstHash() {
+        return System.identityHashCode(new Cell(42));
+    }
+
+    @Benchmark
+    public int storedHash() {
+        return System.identityHashCode(cells[index++ & 1023]);
+    }
+
+    @Benchmark
+    public int identityMapLookup() {
+        return identities.get(cells[index++ & 1023]);
+    }
+
+    @Benchmark
+    public IdentityHashMap<Cell, Cell> identityMapChurn() {
         var map = new IdentityHashMap<Cell, Cell>(512);
         for (int i = 0; i < 512; i++) {
             var cell = new Cell(i);

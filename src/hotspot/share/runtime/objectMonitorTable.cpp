@@ -121,20 +121,6 @@
 // requirements. Don't change it for fun, it might backfire.
 // -----------------------------------------------------------------------------
 
-// Get the identity hash from an oop, handling both compact and legacy headers.
-// Returns 0 if the object has not been hashed yet (meaning no monitor exists
-// for it in the table).
-static intptr_t object_hash(oop obj, markWord mark) {
-  if (UseFourByteObjectHeaders) {
-    if (!mark.is_hashed()) {
-      return 0;
-    }
-    return static_cast<intptr_t>(ObjectSynchronizer::get_hash(mark, obj));
-  } else {
-    return mark.hash();
-  }
-}
-
 Atomic<ObjectMonitorTable::Table*> ObjectMonitorTable::_curr;
 
 class ObjectMonitorTable::Table : public CHeapObj<mtObjectMonitor> {
@@ -536,10 +522,13 @@ void ObjectMonitorTable::create() {
 
 ObjectMonitor* ObjectMonitorTable::monitor_get(oop obj) {
   const markWord mark = obj->mark();
-  if (UseFourByteObjectHeaders && ((mark.value() & markWord::lock_mask_in_place) == markWord::marked_value || !mark.is_hashed())) {
+  if (UseFourByteObjectHeaders &&
+      ((mark.value() & markWord::lock_mask_in_place) == markWord::marked_value || !mark.is_hashed())) {
     return nullptr;
   }
-  const intptr_t hash = object_hash(obj, mark);
+  const intptr_t hash = UseFourByteObjectHeaders
+      ? static_cast<intptr_t>(ObjectSynchronizer::get_hash(mark, obj))
+      : mark.hash();
   // Four-byte headers track hash presence separately; zero is a valid hash.
   if (hash == 0 && !UseFourByteObjectHeaders) {
     return nullptr;
