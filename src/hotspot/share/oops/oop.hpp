@@ -123,6 +123,7 @@ class oopDesc {
 
   // Returns the actual oop size of the object in machine words
   inline size_t size();
+  inline size_t size_given_klass(const Klass* klass);
 
   // Returns hash expanded size for given words, assuming it uses 1 word to accommodate the identity hash-code.
   static size_t hash_expanded_size(size_t words) { return align_object_size(words + 1); }

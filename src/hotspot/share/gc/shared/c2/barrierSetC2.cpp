@@ -704,8 +704,8 @@ int BarrierSetC2::arraycopy_payload_base_offset(bool is_array) {
   int base_off = is_array ? arrayOopDesc::length_offset_in_bytes() :
                             instanceOopDesc::base_offset_in_bytes();
   // base_off:
-  // 4  - compact headers
-  // 8  - 32-bit VM
+  // 4  - 64-bit VM, four-byte headers
+  // 8  - 32-bit VM or 64-bit VM, eight-byte compact headers
   // 12 - 64-bit VM, compressed klass
   // 16 - 64-bit VM, normal klass
   if (base_off % BytesPerLong != 0) {
@@ -914,7 +914,7 @@ void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac
 
 bool BarrierSetC2::should_copy_int_prefix(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
   // We do our bulk copy in longs. If base offset is not aligned, then we must copy the prefix separately.
-  // With CompactObjectHeaders, the base offset for an instance is 4 bytes.
+  // With four-byte headers, the base offset for an instance is 4 bytes.
   // We cannot simply expand the copy to the previous long-alignment, as that will copy the object header,
   // which is stateful with COH - it contains hash and lock bits that are specific to the instance.
 
