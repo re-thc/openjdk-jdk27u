@@ -385,6 +385,30 @@ class methodHandle;
    do_name(     compareTo_name,                                  "compareTo0")                                          \
    do_name(     compareToLU_name,                                "compareToUTF16_0")                                    \
    do_name(     compareToUL_name,                                "compareToLatin1_0")                                   \
+  do_intrinsic(_stringzillaEqualsRange, java_lang_StringZilla, stringzilla_equalsRange_name, stringzilla_search_signature, F_SN) \
+   do_name(stringzilla_equalsRange_name, "equalsRange") \
+  do_intrinsic(_stringzillaFindUTF16Latin1, java_lang_StringZilla, stringzilla_findUTF16Latin1_name, stringzilla_search_signature, F_SN) \
+   do_name(stringzilla_findUTF16Latin1_name, "findUTF16Latin1") \
+  do_intrinsic(_stringzillaRfindUTF16Latin1, java_lang_StringZilla, stringzilla_rfindUTF16Latin1_name, stringzilla_search_signature, F_SN) \
+   do_name(stringzilla_rfindUTF16Latin1_name, "rfindUTF16Latin1") \
+  do_intrinsic(_stringzillaFindCharLatin1, java_lang_StringZilla, stringzilla_findCharLatin1_name, stringzilla_char_signature, F_SN) \
+   do_name(stringzilla_findCharLatin1_name, "findCharLatin1") \
+  do_intrinsic(_stringzillaFindCharUTF16, java_lang_StringZilla, stringzilla_findCharUTF16_name, stringzilla_char_signature, F_SN) \
+   do_name(stringzilla_findCharUTF16_name, "findCharUTF16") \
+  do_intrinsic(_stringzillaRfindCharLatin1, java_lang_StringZilla, stringzilla_rfindCharLatin1_name, stringzilla_char_signature, F_SN) \
+   do_name(stringzilla_rfindCharLatin1_name, "rfindCharLatin1") \
+  do_intrinsic(_stringzillaRfindCharUTF16, java_lang_StringZilla, stringzilla_rfindCharUTF16_name, stringzilla_char_signature, F_SN) \
+   do_name(stringzilla_rfindCharUTF16_name, "rfindCharUTF16") \
+   do_alias(stringzilla_char_signature, indexOfChar_signature) \
+  do_intrinsic(_stringzillaFindLatin1, java_lang_StringZilla, stringzilla_findLatin1_name, stringzilla_search_signature, F_SN) \
+   do_name(stringzilla_findLatin1_name, "findLatin1") \
+  do_intrinsic(_stringzillaFindUTF16, java_lang_StringZilla, stringzilla_findUTF16_name, stringzilla_search_signature, F_SN) \
+   do_name(stringzilla_findUTF16_name, "findUTF16") \
+  do_intrinsic(_stringzillaRfindLatin1, java_lang_StringZilla, stringzilla_rfindLatin1_name, stringzilla_search_signature, F_SN) \
+   do_name(stringzilla_rfindLatin1_name, "rfindLatin1") \
+  do_intrinsic(_stringzillaRfindUTF16, java_lang_StringZilla, stringzilla_rfindUTF16_name, stringzilla_search_signature, F_SN) \
+   do_name(stringzilla_rfindUTF16_name, "rfindUTF16") \
+   do_alias(stringzilla_search_signature, byteArray_int_int_byteArray_int_signature) \
   do_intrinsic(_indexOfL,                 java_lang_StringLatin1,indexOf_name, compareTo_indexOf_signature,      F_S)   \
   do_intrinsic(_indexOfU,                 java_lang_StringUTF16, indexOf_name, compareTo_indexOf_signature,      F_S)   \
   do_intrinsic(_indexOfUL,                java_lang_StringUTF16, indexOfUL_name, compareTo_indexOf_signature,    F_S)   \
@@ -399,6 +423,7 @@ class methodHandle;
    do_signature(indexOfI_signature,                              "([BI[BII)I")                                          \
    do_signature(indexOfChar_signature,                           "([BIII)I")                                            \
   do_intrinsic(_equalsL,                  java_lang_StringLatin1,equalsString_name, equalsB_signature,           F_S)   \
+  do_intrinsic(_equalsLChecked,           java_lang_StringLatin1,equals_name, equalsB_signature,                 F_S)   \
    do_name(     equalsString_name,                               "equals0")                                             \
                                                                                                                         \
   do_intrinsic(_isDigit,                  java_lang_CharacterDataLatin1, isDigit_name,      int_bool_signature,  F_R)   \

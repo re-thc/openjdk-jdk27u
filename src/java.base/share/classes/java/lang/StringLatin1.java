@@ -35,7 +35,9 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import jdk.internal.lang.CaseFolding;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.String.LATIN1;
@@ -103,15 +105,57 @@ final class StringLatin1 {
      *
      * @throws NullPointerException if {@code value} or {@code other} is null
      */
+    @ForceInline
+    @IntrinsicCandidate
     static boolean equals(byte[] value, byte[] other) {
         Objects.requireNonNull(value);
         Objects.requireNonNull(other);
+        if (value.length > StringZilla.MAX_BYTES) {
+            return StringZilla.ENABLED ? StringZilla.equalsLarge(value, other) : equalsJava(value, other);
+        }
         return equals0(value, other);
     }
 
     // vmIntrinsics::_equalsL
     @IntrinsicCandidate
     private static boolean equals0(byte[] value, byte[] other) {
+        return equalsJava(value, other);
+    }
+
+    // C1 parses this Java implementation for the checked equality intrinsic.
+    // Keep tiny comparisons and first-byte misses ahead of the leaf work limit.
+    // Ordinary Java control flow preserves caller state on the large-array path.
+    @ForceInline
+    private static boolean equalsC1(byte[] value, byte[] other) {
+        int length = value.length;
+        if (length != other.length) {
+            return false;
+        }
+        if (length == 0) {
+            return true;
+        }
+        if (value[0] != other[0]) {
+            return false;
+        }
+        if (length <= 8) {
+            if (length >= 4) {
+                Unsafe unsafe = Unsafe.getUnsafe();
+                long start = Unsafe.ARRAY_BYTE_BASE_OFFSET;
+                long end = start + length - Integer.BYTES;
+                return unsafe.getIntUnaligned(value, start) == unsafe.getIntUnaligned(other, start)
+                    && unsafe.getIntUnaligned(value, end) == unsafe.getIntUnaligned(other, end);
+            }
+            return length == 1 || (value[1] == other[1]
+                && (length == 2 || value[2] == other[2]));
+        }
+        if (length > StringZilla.MAX_BYTES) {
+            return StringZilla.equalsLarge(value, other);
+        }
+        return equals0(value, other);
+    }
+
+    // Large interpreter/C1 comparisons remain in Java, with loop safepoints.
+    static boolean equalsJava(byte[] value, byte[] other) {
         if (value.length == other.length) {
             for (int i = 0; i < value.length; i++) {
                 if (value[i] != other[i]) {
@@ -439,6 +483,19 @@ final class StringLatin1 {
     @IntrinsicCandidate
     private static int indexOfChar0(byte[] value, int ch, int fromIndex, int max) {
         byte c = (byte)ch;
+        if (fromIndex < max && value[fromIndex] == c) {
+            return fromIndex;
+        }
+        fromIndex++;
+        if (max - fromIndex >= StringZilla.MIN_BYTES && StringZilla.ENABLED) {
+            int result = StringZilla.findCharLatin1(value, fromIndex, max - fromIndex, ch);
+            if (result == StringZilla.FALLBACK) {
+                result = StringZilla.searchCharLarge(value, fromIndex, max - fromIndex, ch, false, false);
+            }
+            if (result != StringZilla.FALLBACK) {
+                return result < 0 ? -1 : fromIndex + result;
+            }
+        }
         for (int i = fromIndex; i < max; i++) {
             if (value[i] == c) {
                return i;
@@ -506,8 +563,28 @@ final class StringLatin1 {
             return -1;
         }
         byte first = str[0];
+        int i = valueFromIndex;
+        // Complete the first scalar candidate before testing native dispatch.
+        // Reuse the original first-character load and skip the failed candidate.
+        if (strToIndex <= 8) {
+            if (value[i] == first) {
+                int j = i + 1;
+                int end = j + strToIndex - 1;
+                for (int k = 1; j < end && value[j] == str[k]; j++, k++);
+                if (j == end) {
+                    return i;
+                }
+            }
+            i++;
+        }
+        if (valueToIndex - valueFromIndex >= StringZilla.MIN_BYTES && StringZilla.ENABLED) {
+            int result = StringZilla.indexOfLatin1(value, valueToIndex, str, strToIndex, i);
+            if (result != StringZilla.FALLBACK) {
+                return result;
+            }
+        }
         int max = (valueToIndex - strToIndex);
-        for (int i = valueFromIndex; i <= max; i++) {
+        for (; i <= max; i++) {
             // Look for first character.
             if (value[i] != first) {
                 while (++i <= max && value[i] != first);
@@ -526,8 +603,28 @@ final class StringLatin1 {
         return -1;
     }
 
+    @ForceInline
     static int lastIndexOf(byte[] src, int srcCount,
                            byte[] tgt, int tgtCount, int fromIndex) {
+        int searchLength = fromIndex + tgtCount;
+        if (searchLength >= StringZilla.MIN_BYTES && StringZilla.ENABLED) {
+            if (tgtCount <= 8 && StringZilla.matches(src, fromIndex, tgt, tgtCount)) {
+                return fromIndex;
+            }
+            int result = StringZilla.rfindLatin1(src, 0, searchLength,
+                    tgt, tgtCount);
+            if (result == StringZilla.FALLBACK) {
+                result = StringZilla.searchLarge(src, 0, searchLength, tgt, tgtCount, 0, true);
+            }
+            if (result != StringZilla.FALLBACK) {
+                return result;
+            }
+        }
+        return lastIndexOfJava(src, tgt, tgtCount, fromIndex);
+    }
+
+    // Keep native-call setup out of C1's scalar fallback register allocation.
+    private static int lastIndexOfJava(byte[] src, byte[] tgt, int tgtCount, int fromIndex) {
         int min = tgtCount - 1;
         int i = min + fromIndex;
         int strLastIndex = tgtCount - 1;
@@ -559,6 +656,21 @@ final class StringLatin1 {
             return -1;
         }
         int off  = Math.min(fromIndex, value.length - 1);
+        if (off >= StringZilla.MIN_BYTES - 1 && StringZilla.ENABLED) {
+            int stop = off - 8;
+            for (; off > stop; off--) {
+                if (value[off] == (byte)ch) {
+                    return off;
+                }
+            }
+            int result = StringZilla.rfindCharLatin1(value, 0, off + 1, ch);
+            if (result == StringZilla.FALLBACK) {
+                result = StringZilla.searchCharLarge(value, 0, off + 1, ch, false, true);
+            }
+            if (result != StringZilla.FALLBACK) {
+                return result;
+            }
+        }
         for (; off >= 0; off--) {
             if (value[off] == (byte)ch) {
                 return off;

@@ -89,6 +89,7 @@
 #include "runtime/osThread.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/reflection.hpp"
+#include "runtime/stringZilla.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/threadIdentifier.hpp"
 #include "runtime/threadSMR.hpp"
@@ -238,6 +239,43 @@ JVM_ENTRY(jboolean, JVM_AOTEndRecording(JNIEnv *env))
 #else
   return JNI_FALSE;
 #endif // INCLUDE_CDS
+JVM_END
+
+JVM_LEAF(jboolean, JVM_StringZillaEnabled(JNIEnv* env, jclass ignored))
+  return UseStringZillaIntrinsics;
+JVM_END
+
+JVM_LEAF(jint, JVM_StringZillaCapabilities())
+  return StringZilla::capabilities();
+JVM_END
+
+JVM_LEAF(void, JVM_RegisterStringZillaKernels(const void* kernels))
+  StringZilla::register_kernels(kernels);
+JVM_END
+
+JVM_ENTRY(jint, JVM_StringZillaChar(JNIEnv* env, jclass ignored, jbyteArray src,
+                                 jint offset, jint length, jint ch,
+                                 jboolean utf16, jboolean reverse))
+  typeArrayOop s = typeArrayOop(JNIHandles::resolve_non_null(src));
+  return StringZilla::search_char((const char*)s->byte_at_addr(offset), length, ch, utf16, reverse);
+JVM_END
+
+JVM_ENTRY(jint, JVM_StringZillaSearch(JNIEnv* env, jclass ignored, jbyteArray src,
+                                   jint offset, jint length, jbyteArray tgt,
+                                   jint tgt_length, jint encoding, jboolean reverse))
+  typeArrayOop s = typeArrayOop(JNIHandles::resolve_non_null(src));
+  typeArrayOop t = typeArrayOop(JNIHandles::resolve_non_null(tgt));
+  // Callers have validated ranges. No safepoint may occur after deriving addresses.
+  return StringZilla::search((const char*)s->byte_at_addr(offset), length,
+                            (const char*)t->byte_at_addr(0), tgt_length, encoding, reverse);
+JVM_END
+
+JVM_ENTRY(jint, JVM_StringZillaEqualsRange(JNIEnv* env, jclass ignored, jbyteArray src,
+                                        jint offset, jint length, jbyteArray tgt, jint tgt_offset))
+  typeArrayOop s = typeArrayOop(JNIHandles::resolve_non_null(src));
+  typeArrayOop t = typeArrayOop(JNIHandles::resolve_non_null(tgt));
+  return StringZilla::equal_range((const char*)s->byte_at_addr(offset), length,
+                                (const char*)t->byte_at_addr(0), tgt_offset);
 JVM_END
 
 JVM_LEAF(jlong, JVM_CurrentTimeMillis(JNIEnv *env, jclass ignored))

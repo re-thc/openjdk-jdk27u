@@ -40,6 +40,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/methodCounters.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stringZilla.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -2808,6 +2809,137 @@ void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
 
 
 
+// Keep the prefix within one LIR block; embedded loops have no allocator backedge.
+void LIRGenerator::do_stringzilla_equals(Intrinsic* x) {
+  CodeEmitInfo* src_info = state_for(x, x->state_before());
+  LIR_Opr result = rlock_result(x);
+  LIRItem src(x->argument_at(0), this);
+  LIRItem tgt(x->argument_at(1), this);
+  src.load_item();
+  tgt.load_item();
+  LIRItem src_length(x->argument_at(2), this);
+  LIRItem tgt_length(x->argument_at(3), this);
+  src_length.load_item();
+  tgt_length.load_item();
+  LIR_Opr length = src_length.result();
+  LIR_Opr other_length = tgt_length.result();
+  LabelObj* different = new LabelObj();
+  LabelObj* equal = new LabelObj();
+  LabelObj* done = new LabelObj();
+  __ cmp(lir_cond_notEqual, length, other_length);
+  __ branch(lir_cond_notEqual, different->label());
+  LIR_Opr src_ptr = new_register(T_ADDRESS);
+  LIR_Opr tgt_ptr = new_register(T_ADDRESS);
+  __ leal(LIR_OprFact::address(generate_address(src.result(),
+          arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), src_ptr);
+  __ leal(LIR_OprFact::address(generate_address(tgt.result(),
+          arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), tgt_ptr);
+  LIR_Opr left = new_register(T_INT);
+  LIR_Opr right = new_register(T_INT);
+  for (int i = 0; i < 8; i++) {
+    __ cmp(lir_cond_equal, length, i);
+    __ branch(lir_cond_equal, equal->label());
+    __ move(new LIR_Address(src_ptr, i, T_BYTE), left);
+    __ move(new LIR_Address(tgt_ptr, i, T_BYTE), right);
+    __ cmp(lir_cond_notEqual, left, right);
+    __ branch(lir_cond_notEqual, different->label());
+  }
+  __ cmp(lir_cond_equal, length, 8);
+  __ branch(lir_cond_equal, equal->label());
+  // Normal callers gate this in Java. Protect direct calls to the private
+  // intrinsic as well; deoptimization resumes Java before a potentially
+  // unbounded equality leaf call.
+  __ cmp(lir_cond_greater, length, StringZilla::max_bytes);
+  __ branch(lir_cond_greater, new DeoptimizeStub(src_info, Deoptimization::Reason_intrinsic,
+                                              Deoptimization::Action_make_not_entrant));
+  BasicTypeList signature(3);
+  signature.append(T_ADDRESS);
+  signature.append(T_ADDRESS);
+  signature.append(T_INT);
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  __ move(src_ptr, cc->at(0));
+  __ move(tgt_ptr, cc->at(1));
+  __ move(length, cc->at(2));
+  LIR_Opr result_reg = result_register_for(x->type());
+  __ call_runtime_leaf(StringZilla::entry(vmIntrinsics::_equalsL), getThreadTemp(), result_reg, cc->args());
+  __ move(result_reg, result);
+  __ branch(lir_cond_always, done->label());
+  __ branch_destination(different->label());
+  __ move(LIR_OprFact::intConst(0), result);
+  __ branch(lir_cond_always, done->label());
+  __ branch_destination(equal->label());
+  __ move(LIR_OprFact::intConst(1), result);
+  __ branch_destination(done->label());
+}
+
+void LIRGenerator::do_stringzilla_char(Intrinsic* x) {
+  LIR_Opr result = rlock_result(x);
+  LIRItem src(x->argument_at(0), this);
+  LIRItem offset(x->argument_at(1), this);
+  LIRItem length(x->argument_at(2), this);
+  LIRItem ch(x->argument_at(3), this);
+  src.load_item();
+  offset.load_nonconstant();
+  LIR_Opr src_ptr = new_register(T_ADDRESS);
+  LIR_Opr byte_offset = offset.result();
+  if (!byte_offset->is_constant()) {
+    LIR_Opr widened_offset = new_register(T_LONG);
+    __ convert(Bytecodes::_i2l, byte_offset, widened_offset);
+    byte_offset = widened_offset;
+  }
+  LIR_Address* src_addr = emit_array_address(src.result(), byte_offset, T_BYTE);
+  __ leal(LIR_OprFact::address(src_addr), src_ptr);
+  BasicTypeList signature(3);
+  signature.append(T_ADDRESS);
+  signature.append(T_INT);
+  signature.append(T_INT);
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  __ move(src_ptr, cc->at(0));
+  length.load_item_force(cc->at(1));
+  ch.load_item_force(cc->at(2));
+  LIR_Opr result_reg = result_register_for(x->type());
+  __ call_runtime_leaf(StringZilla::entry(x->id()), getThreadTemp(), result_reg, cc->args());
+  __ move(result_reg, result);
+}
+
+void LIRGenerator::do_stringzilla(Intrinsic* x) {
+  LIR_Opr result = rlock_result(x);
+  LIRItem src(x->argument_at(0), this);
+  LIRItem offset(x->argument_at(1), this);
+  LIRItem length(x->argument_at(2), this);
+  LIRItem tgt(x->argument_at(3), this);
+  LIRItem tgt_length(x->argument_at(4), this);
+  src.load_item();
+  offset.load_nonconstant();
+  tgt.load_item();
+  LIR_Opr src_ptr = new_register(T_ADDRESS);
+  LIR_Opr tgt_ptr = new_register(T_ADDRESS);
+  LIR_Opr byte_offset = offset.result();
+  if (!byte_offset->is_constant()) {
+    LIR_Opr widened_offset = new_register(T_LONG);
+    __ convert(Bytecodes::_i2l, byte_offset, widened_offset);
+    byte_offset = widened_offset;
+  }
+  LIR_Address* src_addr = emit_array_address(src.result(), byte_offset, T_BYTE);
+  LIR_Address* tgt_addr = generate_address(tgt.result(),
+                                          arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE);
+  __ leal(LIR_OprFact::address(src_addr), src_ptr);
+  __ leal(LIR_OprFact::address(tgt_addr), tgt_ptr);
+  BasicTypeList signature(4);
+  signature.append(T_ADDRESS);
+  signature.append(T_INT);
+  signature.append(T_ADDRESS);
+  signature.append(T_INT);
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  __ move(src_ptr, cc->at(0));
+  length.load_item_force(cc->at(1));
+  __ move(tgt_ptr, cc->at(2));
+  tgt_length.load_item_force(cc->at(3));
+  LIR_Opr result_reg = result_register_for(x->type());
+  __ call_runtime_leaf(StringZilla::entry(x->id()), getThreadTemp(), result_reg, cc->args());
+  __ move(result_reg, result);
+}
+
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   switch (x->id()) {
   case vmIntrinsics::_intBitsToFloat      :
@@ -2909,6 +3041,24 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     do_update_CRC32C(x);
     break;
 
+  case vmIntrinsics::_equalsL:
+    do_stringzilla_equals(x);
+    break;
+  case vmIntrinsics::_stringzillaFindCharLatin1:
+  case vmIntrinsics::_stringzillaFindCharUTF16:
+  case vmIntrinsics::_stringzillaRfindCharLatin1:
+  case vmIntrinsics::_stringzillaRfindCharUTF16:
+    do_stringzilla_char(x);
+    break;
+  case vmIntrinsics::_stringzillaEqualsRange:
+  case vmIntrinsics::_stringzillaFindUTF16Latin1:
+  case vmIntrinsics::_stringzillaRfindUTF16Latin1:
+  case vmIntrinsics::_stringzillaFindLatin1:
+  case vmIntrinsics::_stringzillaFindUTF16:
+  case vmIntrinsics::_stringzillaRfindLatin1:
+  case vmIntrinsics::_stringzillaRfindUTF16:
+    do_stringzilla(x);
+    break;
   case vmIntrinsics::_vectorizedMismatch:
     do_vectorizedMismatch(x);
     break;

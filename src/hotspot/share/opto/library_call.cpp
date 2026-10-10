@@ -58,6 +58,7 @@
 #include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stringZilla.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -296,6 +297,19 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_compareToLU:              return inline_string_compareTo(StrIntrinsicNode::LU);
   case vmIntrinsics::_compareToUL:              return inline_string_compareTo(StrIntrinsicNode::UL);
 
+  case vmIntrinsics::_stringzillaFindCharLatin1:
+  case vmIntrinsics::_stringzillaFindCharUTF16:
+  case vmIntrinsics::_stringzillaRfindCharLatin1:
+  case vmIntrinsics::_stringzillaRfindCharUTF16:
+    return inline_stringzilla_char();
+  case vmIntrinsics::_stringzillaEqualsRange:
+  case vmIntrinsics::_stringzillaFindUTF16Latin1:
+  case vmIntrinsics::_stringzillaRfindUTF16Latin1:
+  case vmIntrinsics::_stringzillaFindLatin1:
+  case vmIntrinsics::_stringzillaFindUTF16:
+  case vmIntrinsics::_stringzillaRfindLatin1:
+  case vmIntrinsics::_stringzillaRfindUTF16:
+    return inline_stringzilla();
   case vmIntrinsics::_indexOfL:                 return inline_string_indexOf(StrIntrinsicNode::LL);
   case vmIntrinsics::_indexOfU:                 return inline_string_indexOf(StrIntrinsicNode::UU);
   case vmIntrinsics::_indexOfUL:                return inline_string_indexOf(StrIntrinsicNode::UL);
@@ -306,6 +320,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_indexOfL_char:            return inline_string_indexOfChar(StrIntrinsicNode::L);
 
   case vmIntrinsics::_equalsL:                  return inline_string_equals(StrIntrinsicNode::LL);
+  case vmIntrinsics::_equalsLChecked:           return inline_string_equals(StrIntrinsicNode::LL);
 
   case vmIntrinsics::_vectorizedHashCode:       return inline_vectorizedHashCode();
 
@@ -1221,6 +1236,51 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   result = _gvn.transform(result);
   set_result(result);
   replace_in_map(index, result);
+  return true;
+}
+
+bool LibraryCallKit::inline_stringzilla_char() {
+  Node* src = must_be_not_null(argument(0), true);
+  Node* offset = argument(1);
+  Node* length = argument(2);
+  RegionNode* bailout = create_bailout();
+  generate_string_range_check(src, offset, length, false, bailout);
+  if (check_bailout(bailout)) return true;
+  const Type** fields = TypeTuple::fields(3);
+  fields[TypeFunc::Parms] = TypePtr::NOTNULL;
+  fields[TypeFunc::Parms + 1] = TypeInt::INT;
+  fields[TypeFunc::Parms + 2] = TypeInt::INT;
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 3, fields);
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms] = TypeInt::INT;
+  const TypeFunc* type = TypeFunc::make(domain, TypeTuple::make(TypeFunc::Parms + 1, fields));
+  Node* start = array_element_address(src, offset, T_BYTE);
+  Node* call = make_runtime_call(RC_LEAF, type, StringZilla::entry(intrinsic_id()),
+                                "stringzillaChar", TypePtr::BOTTOM, start, length, argument(3));
+  set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  clear_upper_avx();
+  return true;
+}
+
+bool LibraryCallKit::inline_stringzilla() {
+  Node* src = must_be_not_null(argument(0), true);
+  Node* offset = argument(1);
+  Node* length = argument(2);
+  Node* tgt = must_be_not_null(argument(3), true);
+  Node* tgt_length = argument(4);
+  RegionNode* bailout = create_bailout();
+  generate_string_range_check(src, offset, length, false, bailout);
+  bool equality = intrinsic_id() == vmIntrinsics::_stringzillaEqualsRange;
+  generate_string_range_check(tgt, equality ? tgt_length : intcon(0),
+                              equality ? length : tgt_length, false, bailout);
+  if (check_bailout(bailout)) return true;
+  Node* src_start = array_element_address(src, offset, T_BYTE);
+  Node* tgt_start = array_element_address(tgt, intcon(0), T_BYTE);
+  Node* call = make_runtime_call(RC_LEAF, OptoRuntime::string_IndexOf_Type(),
+                                StringZilla::entry(intrinsic_id()), "stringzillaSearch",
+                                TypePtr::BOTTOM, src_start, length, tgt_start, tgt_length);
+  set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  clear_upper_avx();
   return true;
 }
 

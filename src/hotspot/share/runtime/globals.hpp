@@ -347,6 +347,9 @@ const int ObjectAlignmentInBytes = 8;
           "Use intrinsics for SHA3 crypto hash function. "                  \
           "Requires that UseSHA is enabled.")                               \
                                                                             \
+  product(bool, UseStringZillaIntrinsics, true,                             \
+          "Use StringZilla for string search and equality intrinsics")      \
+                                                                            \
   product(bool, UseCRC32Intrinsics, false, DIAGNOSTIC,                      \
           "use intrinsics for java.util.zip.CRC32")                         \
                                                                             \

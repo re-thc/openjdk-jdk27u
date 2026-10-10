@@ -29,6 +29,7 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stringZilla.hpp"
 #include "runtime/stubRoutines.hpp"
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
@@ -216,6 +217,95 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   __ jmp(rdi);
 
   // generate a vanilla native entry as the slow path
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}
+
+address TemplateInterpreterGenerator::generate_stringzilla_equals_entry() {
+  address entry = __ pc();
+  Label slow_path, different, equal, done;
+  __ safepoint_poll(slow_path, false, false);
+  const Register src = c_rarg0;
+  const Register tgt = c_rarg1;
+  const Register length = c_rarg2;
+  __ movptr(src, Address(rsp, 2 * wordSize));
+  __ movptr(tgt, Address(rsp, wordSize));
+  __ testptr(src, src);
+  __ jcc(Assembler::zero, slow_path);
+  __ testptr(tgt, tgt);
+  __ jcc(Assembler::zero, slow_path);
+  __ movl(length, Address(src, arrayOopDesc::length_offset_in_bytes()));
+  __ cmpl(length, Address(tgt, arrayOopDesc::length_offset_in_bytes()));
+  __ jcc(Assembler::notEqual, different);
+  __ testl(length, length);
+  __ jcc(Assembler::zero, equal);
+  __ movzbl(rax, Address(src, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+  __ cmpb(rax, Address(tgt, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+  __ jcc(Assembler::notEqual, different);
+  __ cmpl(length, StringZilla::max_bytes);
+  __ jcc(Assembler::above, slow_path);
+  __ addptr(src, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  __ addptr(tgt, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  __ super_call_VM_leaf(StringZilla::entry(vmIntrinsics::_equalsL), src, tgt, length);
+  __ jmp(done);
+  __ bind(different);
+  __ xorl(rax, rax);
+  __ jmp(done);
+  __ bind(equal);
+  __ movl(rax, 1);
+  __ bind(done);
+  __ pop(rdi);
+  __ mov(rsp, r13);
+  __ jmp(rdi);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}
+
+address TemplateInterpreterGenerator::generate_stringzilla_char_entry(AbstractInterpreter::MethodKind kind) {
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false, false);
+  const Register src = c_rarg0;
+  const Register length = c_rarg1;
+  const Register ch = c_rarg2;
+  __ movptr(src, Address(rsp, 4 * wordSize));
+  __ movl2ptr(length, Address(rsp, 3 * wordSize));
+  __ addq(src, length);
+  __ addptr(src, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  __ movl(length, Address(rsp, 2 * wordSize));
+  __ movl(ch, Address(rsp, wordSize));
+  __ super_call_VM_leaf(StringZilla::entry(AbstractInterpreter::method_intrinsic(kind)), src, length, ch);
+  __ pop(rdi);
+  __ mov(rsp, r13);
+  __ jmp(rdi);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}
+
+address TemplateInterpreterGenerator::generate_stringzilla_entry(AbstractInterpreter::MethodKind kind) {
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false, false);
+  const Register src = c_rarg0;
+  const Register length = c_rarg1;
+  const Register tgt = c_rarg2;
+  const Register tgt_length = c_rarg3;
+  __ movptr(src, Address(rsp, 5 * wordSize));
+  __ movl2ptr(length, Address(rsp, 4 * wordSize));
+  __ addq(src, length);
+  __ addptr(src, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  __ movl(length, Address(rsp, 3 * wordSize));
+  __ movptr(tgt, Address(rsp, 2 * wordSize));
+  __ addptr(tgt, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  __ movl(tgt_length, Address(rsp, wordSize));
+  __ super_call_VM_leaf(StringZilla::entry(AbstractInterpreter::method_intrinsic(kind)),
+                        src, length, tgt, tgt_length);
+  __ pop(rdi);
+  __ mov(rsp, r13);
+  __ jmp(rdi);
   __ bind(slow_path);
   __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
   return entry;

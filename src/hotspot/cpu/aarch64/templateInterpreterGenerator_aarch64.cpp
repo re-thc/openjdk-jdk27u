@@ -25,16 +25,16 @@
 
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.hpp"
-#include "compiler/disassembler.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
+#include "interpreter/bytecodeTracer.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
-#include "interpreter/interp_masm.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
-#include "interpreter/bytecodeTracer.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/method.hpp"
@@ -51,6 +51,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stringZilla.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/timer.hpp"
@@ -58,6 +59,7 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
+
 #include <sys/types.h>
 
 // Size of interpreter code.  Increase if too small.  Interpreter will
@@ -1022,6 +1024,102 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   __ ret(lr);
 
   // generate a vanilla native entry as the slow path
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}
+
+address TemplateInterpreterGenerator::generate_stringzilla_equals_entry() {
+  address entry = __ pc();
+  Label slow_path, different, equal, done;
+  __ safepoint_poll(slow_path, false, false);
+  const Register src = c_rarg0;
+  const Register tgt = c_rarg1;
+  const Register length = c_rarg2;
+  __ ldr(src, Address(esp, wordSize));
+  __ ldr(tgt, Address(esp));
+  __ cbz(src, slow_path);
+  __ cbz(tgt, slow_path);
+  __ ldrw(length, Address(src, arrayOopDesc::length_offset_in_bytes()));
+  __ ldrw(r3, Address(tgt, arrayOopDesc::length_offset_in_bytes()));
+  __ cmpw(length, r3);
+  __ br(Assembler::NE, different);
+  __ cbzw(length, equal);
+  __ ldrb(r3, Address(src, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+  __ ldrb(r4, Address(tgt, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+  __ cmpw(r3, r4);
+  __ br(Assembler::NE, different);
+  __ cmpw(length, StringZilla::max_bytes);
+  __ br(Assembler::HI, slow_path);
+  __ add(src, src, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  __ add(tgt, tgt, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  __ andr(sp, r19_sender_sp, -16);
+  __ stp(r29, r30, Address(__ pre(sp, -2 * wordSize)));
+  __ mov(r29, sp);
+  __ super_call_VM_leaf(StringZilla::entry(vmIntrinsics::_equalsL), src, tgt, length);
+  __ ldp(r29, r30, Address(__ post(sp, 2 * wordSize)));
+  __ ret(lr);
+  __ bind(different);
+  __ movw(r0, 0);
+  __ br(Assembler::AL, done);
+  __ bind(equal);
+  __ movw(r0, 1);
+  __ bind(done);
+  __ andr(sp, r19_sender_sp, -16);
+  __ ret(lr);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}
+
+address TemplateInterpreterGenerator::generate_stringzilla_char_entry(AbstractInterpreter::MethodKind kind) {
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false, false);
+  const Register src = c_rarg0;
+  const Register length = c_rarg1;
+  const Register ch = c_rarg2;
+  __ ldr(src, Address(esp, 3 * wordSize));
+  __ ldrw(length, Address(esp, 2 * wordSize));
+  __ add(src, src, length);
+  __ add(src, src, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  __ ldrw(length, Address(esp, wordSize));
+  __ ldrw(ch, Address(esp));
+  __ andr(sp, r19_sender_sp, -16);
+  __ stp(r29, r30, Address(__ pre(sp, -2 * wordSize)));
+  __ mov(r29, sp);
+  __ super_call_VM_leaf(StringZilla::entry(AbstractInterpreter::method_intrinsic(kind)), src, length, ch);
+  __ ldp(r29, r30, Address(__ post(sp, 2 * wordSize)));
+  __ ret(lr);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}
+
+address TemplateInterpreterGenerator::generate_stringzilla_entry(AbstractInterpreter::MethodKind kind) {
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false, false);
+  const Register src = c_rarg0;
+  const Register length = c_rarg1;
+  const Register tgt = c_rarg2;
+  const Register tgt_length = c_rarg3;
+  __ ldr(src, Address(esp, 4 * wordSize));
+  __ ldrw(length, Address(esp, 3 * wordSize));
+  __ add(src, src, length);
+  __ add(src, src, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  __ ldrw(length, Address(esp, 2 * wordSize));
+  __ ldr(tgt, Address(esp, wordSize));
+  __ add(tgt, tgt, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  __ ldrw(tgt_length, Address(esp));
+  // Preserve LR across the C++ leaf call and restore the caller's Java stack.
+  __ andr(sp, r19_sender_sp, -16);
+  __ stp(r29, r30, Address(__ pre(sp, -2 * wordSize)));
+  __ mov(r29, sp);
+  __ super_call_VM_leaf(StringZilla::entry(AbstractInterpreter::method_intrinsic(kind)),
+                        src, length, tgt, tgt_length);
+  __ ldp(r29, r30, Address(__ post(sp, 2 * wordSize)));
+  __ ret(lr);
   __ bind(slow_path);
   __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
   return entry;

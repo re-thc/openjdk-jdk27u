@@ -59,6 +59,7 @@ class SerializeClosure;
   template(java_lang_Class,                           "java/lang/Class")                          \
   template(java_lang_Module,                          "java/lang/Module")                         \
   template(java_lang_String,                          "java/lang/String")                         \
+  template(java_lang_StringZilla,                     "java/lang/StringZilla")                    \
   template(java_lang_StringLatin1,                    "java/lang/StringLatin1")                   \
   template(java_lang_StringUTF16,                     "java/lang/StringUTF16")                    \
   template(java_lang_Thread,                          "java/lang/Thread")                         \
