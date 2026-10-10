@@ -50,11 +50,19 @@ this evidence.
 
 ## Validation
 
-Post-sync validation is pending. The earlier
-[native sanity matrix](https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725033578)
-passed 96 jobs, and [targeted qualification](https://github.com/re-thc/openjdk-jdk27u/actions/runs/37725140740)
-passed 230 jtreg records on native x86-64/AArch64 release and fastdebug images.
-The pinned evidence revision records selections, VM options and exclusions.
+Implementation `c5b75f25a4b2ef00459c08fef8273323e0e286bd` is synced with
+`master` at `8d8d71a045285f6d4c42ba44e4a9c8f696ead5df`.
+
+The [native sanity matrix](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38065069718)
+passed all eight release/fastdebug builds and 48 configured tier1 test groups
+on Linux x86-64, Linux AArch64, macOS AArch64 and Windows x86-64.
+
+[Targeted qualification](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38065182849)
+passed six jtreg selections on each of Linux x86-64 and AArch64: common
+intrinsics in release and fastdebug, related HotSpot and JDK suites, and C1
+math at compilation levels 1 and 3. The 391-entry audit, official include-order
+checker, Python syntax, whitespace checks and compilation of all three JMH
+classes also passed.
 
 ## Reproduction
 
