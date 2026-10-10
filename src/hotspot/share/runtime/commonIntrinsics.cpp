@@ -99,7 +99,9 @@ class KnownField {
     : _class_name(class_name), _name(name), _signature(signature), _holder(nullptr), _offset(-1) {}
 
   int offset(oop obj) {
-    if (obj == nullptr) return -1;
+    if (obj == nullptr) {
+      return -1;
+    }
     Klass* holder = AtomicAccess::load_acquire(&_holder);
     if (holder != nullptr) {
       return obj->klass()->is_subclass_of(holder) ? AtomicAccess::load(&_offset) : -1;
@@ -168,36 +170,52 @@ jint polynomial_hash(const T* data, jint len, jint initial) {
     result *= 923521u;
   }
   result += h0 * 29791u + h1 * 961u + h2 * 31u + h3;
-  for (; i < len; i++) result = result * 31u + static_cast<uint32_t>(data[i]);
+  for (; i < len; i++) {
+    result = result * 31u + static_cast<uint32_t>(data[i]);
+  }
   return static_cast<jint>(result);
 }
 
 JRT_LEAF(jlong, common_multiplyToLen(const intptr_t* args))
   Arguments a(args, 5);
-  oop x = a.object(); jint xlen = a.integer();
-  oop y = a.object(); jint ylen = a.integer(); oop z = a.object();
+  oop x = a.object();
+  jint xlen = a.integer();
+  oop y = a.object();
+  jint ylen = a.integer();
+  oop z = a.object();
   address stub = StubRoutines::multiplyToLen();
-  if (stub == nullptr || xlen <= 0 || ylen <= 0 || xlen > max_quadratic_limbs || ylen > max_quadratic_limbs || z == x || z == y ||
+  if (stub == nullptr || xlen <= 0 || ylen <= 0 || xlen > max_quadratic_limbs || ylen > max_quadratic_limbs || z == x ||
+      z == y ||
       !array_range(x, T_INT, 0, xlen) || !array_range(y, T_INT, 0, ylen) ||
-      !array_range(z, T_INT, 0, static_cast<jlong>(xlen) + ylen)) return CommonIntrinsics::fallback;
+      !array_range(z, T_INT, 0, static_cast<jlong>(xlen) + ylen)) {
+    return CommonIntrinsics::fallback;
+  }
   invoke_stub<void>(stub, elements<jint>(x), xlen, elements<jint>(y), ylen, elements<jint>(z));
   return cast_from_oop<jlong>(z);
 JRT_END
 
 JRT_LEAF(jlong, common_squareToLen(const intptr_t* args))
   Arguments a(args, 4);
-  oop x = a.object(); jint len = a.integer(); oop z = a.object(); jint zlen = a.integer();
+  oop x = a.object();
+  jint len = a.integer();
+  oop z = a.object();
+  jint zlen = a.integer();
   address stub = StubRoutines::squareToLen();
   if (stub == nullptr || len <= 0 || len > max_quadratic_limbs || z == x || static_cast<jlong>(len) * 2 > zlen ||
-      !array_range(x, T_INT, 0, len) || !array_range(z, T_INT, 0, zlen)) return CommonIntrinsics::fallback;
+      !array_range(x, T_INT, 0, len) || !array_range(z, T_INT, 0, zlen)) {
+    return CommonIntrinsics::fallback;
+  }
   invoke_stub<void>(stub, elements<jint>(x), len, elements<jint>(z), zlen);
   return cast_from_oop<jlong>(z);
 JRT_END
 
 JRT_LEAF(jlong, common_mulAdd(const intptr_t* args))
   Arguments a(args, 5);
-  oop out = a.object(); oop in = a.object();
-  jint offset = a.integer(); jint len = a.integer(); jint k = a.integer();
+  oop out = a.object();
+  oop in = a.object();
+  jint offset = a.integer();
+  jint len = a.integer();
+  jint k = a.integer();
   address stub = StubRoutines::mulAdd();
   if (stub == nullptr || out == in || offset < 0 || len <= 0 ||
       !array_range(in, T_INT, 0, len) || !array_range(out, T_INT, 0, static_cast<jlong>(offset) + len)) {
@@ -210,174 +228,247 @@ JRT_END
 
 JRT_LEAF(jlong, common_montgomeryMultiply(const intptr_t* args))
   Arguments a(args, 7);
-  oop x = a.object(); oop y = a.object(); oop n = a.object();
-  jint len = a.integer(); jlong inv = a.long_value(); oop out = a.object();
+  oop x = a.object();
+  oop y = a.object();
+  oop n = a.object();
+  jint len = a.integer();
+  jlong inv = a.long_value();
+  oop out = a.object();
   address stub = StubRoutines::montgomeryMultiply();
   if (stub == nullptr || len <= 0 || (len & 1) != 0 || len > max_montgomery_limbs || out == x || out == n ||
       !array_range(x, T_INT, 0, len) || !array_range(n, T_INT, 0, len) ||
-      !array_range(out, T_INT, 0, len) || !array_range(y, T_INT, 0, len) || out == y) return CommonIntrinsics::fallback;
+      !array_range(out, T_INT, 0, len) || !array_range(y, T_INT, 0, len) || out == y) {
+    return CommonIntrinsics::fallback;
+  }
   invoke_stub<void>(stub, elements<jint>(x), elements<jint>(y), elements<jint>(n), len, inv, elements<jint>(out));
   return cast_from_oop<jlong>(out);
 JRT_END
 
 JRT_LEAF(jlong, common_montgomerySquare(const intptr_t* args))
   Arguments a(args, 6);
-  oop x = a.object(); oop n = a.object();
-  jint len = a.integer(); jlong inv = a.long_value(); oop out = a.object();
+  oop x = a.object();
+  oop n = a.object();
+  jint len = a.integer();
+  jlong inv = a.long_value();
+  oop out = a.object();
   address stub = StubRoutines::montgomerySquare();
   if (stub == nullptr || len <= 0 || (len & 1) != 0 || len > max_montgomery_limbs || out == x || out == n ||
       !array_range(x, T_INT, 0, len) || !array_range(n, T_INT, 0, len) ||
-      !array_range(out, T_INT, 0, len)) return CommonIntrinsics::fallback;
+      !array_range(out, T_INT, 0, len)) {
+    return CommonIntrinsics::fallback;
+  }
   invoke_stub<void>(stub, elements<jint>(x), elements<jint>(n), len, inv, elements<jint>(out));
   return cast_from_oop<jlong>(out);
 JRT_END
 
 JRT_LEAF(jlong, common_bigIntegerRightShiftWorker(const intptr_t* args))
   Arguments a(args, 5);
-  oop out = a.object(); oop in = a.object();
-  jint index = a.integer(); jint shift = a.integer(); jint count = a.integer();
+  oop out = a.object();
+  oop in = a.object();
+  jint index = a.integer();
+  jint shift = a.integer();
+  jint count = a.integer();
   address stub = StubRoutines::bigIntegerRightShift();
   // High-to-low iteration preserves unread words for primitiveRightShift's
   // in-place destination at index 1. Other aliased shapes stay in Java.
   // The stub supports destination indices 0 and 1; Java handles larger ones.
   if (stub == nullptr || index > 1 || (out == in && index != 1) || shift <= 0 || shift >= 32 || count <= 0 ||
       !array_range(in, T_INT, 0, static_cast<jlong>(count) + 1) ||
-      !array_range(out, T_INT, index, count)) return CommonIntrinsics::fallback;
+      !array_range(out, T_INT, index, count)) {
+    return CommonIntrinsics::fallback;
+  }
   invoke_stub<void>(stub, elements<jint>(out), elements<jint>(in), index, shift, count);
   return 0;
 JRT_END
 
 JRT_LEAF(jlong, common_bigIntegerLeftShiftWorker(const intptr_t* args))
   Arguments a(args, 5);
-  oop out = a.object(); oop in = a.object();
-  jint index = a.integer(); jint shift = a.integer(); jint count = a.integer();
+  oop out = a.object();
+  oop in = a.object();
+  jint index = a.integer();
+  jint shift = a.integer();
+  jint count = a.integer();
   address stub = StubRoutines::bigIntegerLeftShift();
   // Low-to-high iteration preserves unread words for primitiveLeftShift's
   // in-place destination at index 0. Other aliased shapes stay in Java.
   if (stub == nullptr || (out == in && index != 0) || shift <= 0 || shift >= 32 || count <= 0 ||
       !array_range(in, T_INT, 0, static_cast<jlong>(count) + 1) ||
-      !array_range(out, T_INT, index, count)) return CommonIntrinsics::fallback;
+      !array_range(out, T_INT, index, count)) {
+    return CommonIntrinsics::fallback;
+  }
   invoke_stub<void>(stub, elements<jint>(out), elements<jint>(in), index, shift, count);
   return 0;
 JRT_END
 
 JRT_LEAF(jlong, common_ghash_processBlocks(const intptr_t* args))
   Arguments a(args, 5);
-  oop src = a.object(); jint offset = a.integer(); jint blocks = a.integer();
-  oop state = a.object(); oop key = a.object();
+  oop src = a.object();
+  jint offset = a.integer();
+  jint blocks = a.integer();
+  oop state = a.object();
+  oop key = a.object();
   address stub = StubRoutines::ghash_processBlocks();
   if (stub == nullptr || blocks <= 0 ||
       !array_range(src, T_BYTE, offset, static_cast<jlong>(blocks) * 16) ||
-      !array_range(state, T_LONG, 0, 2) || !array_range(key, T_LONG, 0, 18)) return CommonIntrinsics::fallback;
+      !array_range(state, T_LONG, 0, 2) || !array_range(key, T_LONG, 0, 18)) {
+    return CommonIntrinsics::fallback;
+  }
   invoke_stub<void>(stub, elements<jlong>(state), elements<jlong>(key), elements<jbyte>(src) + offset, blocks);
   return 0;
 JRT_END
 
 JRT_LEAF(jlong, common_chacha20Block(const intptr_t* args))
   Arguments a(args, 2);
-  oop state = a.object(); oop out = a.object();
+  oop state = a.object();
+  oop out = a.object();
   address stub = StubRoutines::chacha20Block();
   // The AVX-512 stub can generate sixteen 64-byte blocks in one call.
   if (stub == nullptr || !array_range(state, T_INT, 0, 16) ||
-      !array_range(out, T_BYTE, 0, 1024)) return CommonIntrinsics::fallback;
+      !array_range(out, T_BYTE, 0, 1024)) {
+    return CommonIntrinsics::fallback;
+  }
   return invoke_stub<jint>(stub, elements<jint>(state), elements<jbyte>(out));
 JRT_END
 
 JRT_LEAF(jlong, common_poly1305_processBlocks(const intptr_t* args))
   Arguments a(args, 6);
-  oop receiver = a.object(); oop src = a.object();
-  jint offset = a.integer(); jint len = a.integer(); oop acc = a.object(); oop r = a.object();
+  oop receiver = a.object();
+  oop src = a.object();
+  jint offset = a.integer();
+  jint len = a.integer();
+  oop acc = a.object();
+  oop r = a.object();
   address stub = StubRoutines::poly1305_processBlocks();
   if (stub == nullptr || receiver == nullptr || len <= 0 || (len & 15) != 0 ||
       !array_range(src, T_BYTE, offset, len) || !array_range(acc, T_LONG, 0, 5) ||
-      !array_range(r, T_LONG, 0, 5)) return CommonIntrinsics::fallback;
+      !array_range(r, T_LONG, 0, 5)) {
+    return CommonIntrinsics::fallback;
+  }
   invoke_stub<void>(stub, elements<jbyte>(src) + offset, len, elements<jlong>(acc), elements<jlong>(r));
   return 0;
 JRT_END
 
 JRT_LEAF(jlong, common_intpoly_montgomeryMult_P256(const intptr_t* args))
   Arguments a(args, 4);
-  oop receiver = a.object(); oop x = a.object(); oop y = a.object(); oop out = a.object();
+  oop receiver = a.object();
+  oop x = a.object();
+  oop y = a.object();
+  oop out = a.object();
   address stub = StubRoutines::intpoly_montgomeryMult_P256();
   if (stub == nullptr || receiver == nullptr || !array_range(x, T_LONG, 0, 5) ||
-      !array_range(y, T_LONG, 0, 5) || !array_range(out, T_LONG, 0, 5)) return CommonIntrinsics::fallback;
+      !array_range(y, T_LONG, 0, 5) || !array_range(out, T_LONG, 0, 5)) {
+    return CommonIntrinsics::fallback;
+  }
   invoke_stub<void>(stub, elements<jlong>(x), elements<jlong>(y), elements<jlong>(out));
   return 0;
 JRT_END
 
 JRT_LEAF(jlong, common_intpoly_assign(const intptr_t* args))
   Arguments a(args, 3);
-  jint set = a.integer(); oop x = a.object(); oop y = a.object();
+  jint set = a.integer();
+  oop x = a.object();
+  oop y = a.object();
   address stub = StubRoutines::intpoly_assign();
   if (stub == nullptr || !array_range(x, T_LONG, 0, 0) ||
-      !array_range(y, T_LONG, 0, typeArrayOop(x)->length())) return CommonIntrinsics::fallback;
+      !array_range(y, T_LONG, 0, typeArrayOop(x)->length())) {
+    return CommonIntrinsics::fallback;
+  }
   invoke_stub<void>(stub, set, elements<jlong>(x), elements<jlong>(y), typeArrayOop(x)->length());
   return 0;
 JRT_END
 
 JRT_LEAF(jlong, common_double_keccak(const intptr_t* args))
   Arguments a(args, 2);
-  oop s0 = a.object(); oop s1 = a.object();
+  oop s0 = a.object();
+  oop s1 = a.object();
   address stub = StubRoutines::double_keccak();
-  if (stub == nullptr || !array_range(s0, T_LONG, 0, 25) || !array_range(s1, T_LONG, 0, 25)) return CommonIntrinsics::fallback;
+  if (stub == nullptr || !array_range(s0, T_LONG, 0, 25) || !array_range(s1, T_LONG, 0, 25)) {
+    return CommonIntrinsics::fallback;
+  }
   return invoke_stub<jint>(stub, elements<jlong>(s0), elements<jlong>(s1));
 JRT_END
 
 JRT_LEAF(jlong, common_quad_keccak(const intptr_t* args))
   Arguments a(args, 4);
-  oop s0 = a.object(); oop s1 = a.object(); oop s2 = a.object(); oop s3 = a.object();
+  oop s0 = a.object();
+  oop s1 = a.object();
+  oop s2 = a.object();
+  oop s3 = a.object();
   address stub = StubRoutines::quad_keccak();
-  if (stub == nullptr || !array_range(s0, T_LONG, 0, 25) || !array_range(s1, T_LONG, 0, 25) || !array_range(s2, T_LONG, 0, 25) || !array_range(s3, T_LONG, 0, 25)) return CommonIntrinsics::fallback;
+  if (stub == nullptr || !array_range(s0, T_LONG, 0, 25) || !array_range(s1, T_LONG, 0, 25) ||
+      !array_range(s2, T_LONG, 0, 25) || !array_range(s3, T_LONG, 0, 25)) {
+    return CommonIntrinsics::fallback;
+  }
   return invoke_stub<jint>(stub, elements<jlong>(s0), elements<jlong>(s1), elements<jlong>(s2), elements<jlong>(s3));
 JRT_END
 
 JRT_LEAF(jlong, common_kyberNtt(const intptr_t* args))
   Arguments a(args, 2);
-  oop poly = a.object(); oop zetas = a.object();
+  oop poly = a.object();
+  oop zetas = a.object();
   address stub = StubRoutines::kyberNtt();
   if (stub == nullptr || !array_range(poly, T_SHORT, 0, 256) ||
-      !array_range(zetas, T_SHORT, 0, 896)) return CommonIntrinsics::fallback;
+      !array_range(zetas, T_SHORT, 0, 896)) {
+    return CommonIntrinsics::fallback;
+  }
   return invoke_stub<jint>(stub, elements<jshort>(poly), elements<jshort>(zetas));
 JRT_END
 
 JRT_LEAF(jlong, common_kyberInverseNtt(const intptr_t* args))
   Arguments a(args, 2);
-  oop poly = a.object(); oop zetas = a.object();
+  oop poly = a.object();
+  oop zetas = a.object();
   address stub = StubRoutines::kyberInverseNtt();
   if (stub == nullptr || !array_range(poly, T_SHORT, 0, 256) ||
-      !array_range(zetas, T_SHORT, 0, 896)) return CommonIntrinsics::fallback;
+      !array_range(zetas, T_SHORT, 0, 896)) {
+    return CommonIntrinsics::fallback;
+  }
   return invoke_stub<jint>(stub, elements<jshort>(poly), elements<jshort>(zetas));
 JRT_END
 
 JRT_LEAF(jlong, common_kyberNttMult(const intptr_t* args))
   Arguments a(args, 4);
-  oop out = a.object(); oop x = a.object(); oop y = a.object(); oop zetas = a.object();
+  oop out = a.object();
+  oop x = a.object();
+  oop y = a.object();
+  oop zetas = a.object();
   address stub = StubRoutines::kyberNttMult();
   if (stub == nullptr || !array_range(out, T_SHORT, 0, 256) ||
       !array_range(x, T_SHORT, 0, 256) ||
       !array_range(y, T_SHORT, 0, 256) ||
-      !array_range(zetas, T_SHORT, 0, 128)) return CommonIntrinsics::fallback;
+      !array_range(zetas, T_SHORT, 0, 128)) {
+    return CommonIntrinsics::fallback;
+  }
   return invoke_stub<jint>(stub, elements<jshort>(out), elements<jshort>(x), elements<jshort>(y), elements<jshort>(zetas));
 JRT_END
 
 JRT_LEAF(jlong, common_kyberAddPoly_2(const intptr_t* args))
   Arguments a(args, 3);
-  oop out = a.object(); oop x = a.object(); oop y = a.object();
+  oop out = a.object();
+  oop x = a.object();
+  oop y = a.object();
   address stub = StubRoutines::kyberAddPoly_2();
   if (stub == nullptr || !array_range(out, T_SHORT, 0, 256) ||
       !array_range(x, T_SHORT, 0, 256) ||
-      !array_range(y, T_SHORT, 0, 256)) return CommonIntrinsics::fallback;
+      !array_range(y, T_SHORT, 0, 256)) {
+    return CommonIntrinsics::fallback;
+  }
   return invoke_stub<jint>(stub, elements<jshort>(out), elements<jshort>(x), elements<jshort>(y));
 JRT_END
 
 JRT_LEAF(jlong, common_kyberAddPoly_3(const intptr_t* args))
   Arguments a(args, 4);
-  oop out = a.object(); oop x = a.object(); oop y = a.object(); oop z = a.object();
+  oop out = a.object();
+  oop x = a.object();
+  oop y = a.object();
+  oop z = a.object();
   address stub = StubRoutines::kyberAddPoly_3();
   if (stub == nullptr || !array_range(out, T_SHORT, 0, 256) ||
       !array_range(x, T_SHORT, 0, 256) ||
       !array_range(y, T_SHORT, 0, 256) ||
-      !array_range(z, T_SHORT, 0, 256)) return CommonIntrinsics::fallback;
+      !array_range(z, T_SHORT, 0, 256)) {
+    return CommonIntrinsics::fallback;
+  }
   return invoke_stub<jint>(stub, elements<jshort>(out), elements<jshort>(x), elements<jshort>(y), elements<jshort>(z));
 JRT_END
 
@@ -385,159 +476,226 @@ JRT_LEAF(jlong, common_kyberBarrettReduce(const intptr_t* args))
   Arguments a(args, 1);
   oop poly = a.object();
   address stub = StubRoutines::kyberBarrettReduce();
-  if (stub == nullptr || !array_range(poly, T_SHORT, 0, 256)) return CommonIntrinsics::fallback;
+  if (stub == nullptr || !array_range(poly, T_SHORT, 0, 256)) {
+    return CommonIntrinsics::fallback;
+  }
   return invoke_stub<jint>(stub, elements<jshort>(poly));
 JRT_END
 
 JRT_LEAF(jlong, common_dilithiumAlmostNtt(const intptr_t* args))
   Arguments a(args, 2);
-  oop poly = a.object(); oop zetas = a.object();
+  oop poly = a.object();
+  oop zetas = a.object();
   address stub = StubRoutines::dilithiumAlmostNtt();
   if (stub == nullptr || !array_range(poly, T_INT, 0, 256) ||
-      !array_range(zetas, T_INT, 0, 1024)) return CommonIntrinsics::fallback;
+      !array_range(zetas, T_INT, 0, 1024)) {
+    return CommonIntrinsics::fallback;
+  }
   return invoke_stub<jint>(stub, elements<jint>(poly), elements<jint>(zetas));
 JRT_END
 
 JRT_LEAF(jlong, common_dilithiumAlmostInverseNtt(const intptr_t* args))
   Arguments a(args, 2);
-  oop poly = a.object(); oop zetas = a.object();
+  oop poly = a.object();
+  oop zetas = a.object();
   address stub = StubRoutines::dilithiumAlmostInverseNtt();
   if (stub == nullptr || !array_range(poly, T_INT, 0, 256) ||
-      !array_range(zetas, T_INT, 0, 1024)) return CommonIntrinsics::fallback;
+      !array_range(zetas, T_INT, 0, 1024)) {
+    return CommonIntrinsics::fallback;
+  }
   return invoke_stub<jint>(stub, elements<jint>(poly), elements<jint>(zetas));
 JRT_END
 
 JRT_LEAF(jlong, common_dilithiumNttMult(const intptr_t* args))
   Arguments a(args, 3);
-  oop out = a.object(); oop x = a.object(); oop y = a.object();
+  oop out = a.object();
+  oop x = a.object();
+  oop y = a.object();
   address stub = StubRoutines::dilithiumNttMult();
   if (stub == nullptr || !array_range(out, T_INT, 0, 256) ||
       !array_range(x, T_INT, 0, 256) ||
-      !array_range(y, T_INT, 0, 256)) return CommonIntrinsics::fallback;
+      !array_range(y, T_INT, 0, 256)) {
+    return CommonIntrinsics::fallback;
+  }
   return invoke_stub<jint>(stub, elements<jint>(out), elements<jint>(x), elements<jint>(y));
 JRT_END
 
 JRT_LEAF(jlong, common_kyber12To16(const intptr_t* args))
   Arguments a(args, 4);
-  oop src = a.object(); jint offset = a.integer(); oop out = a.object(); jint len = a.integer();
+  oop src = a.object();
+  jint offset = a.integer();
+  oop out = a.object();
+  jint len = a.integer();
   address stub = StubRoutines::kyber12To16();
   jlong chunks = (static_cast<jlong>(len) + 127) / 128;
   if (stub == nullptr || len <= 0 || (len & 1) != 0 ||
       !array_range(src, T_BYTE, offset, chunks * 192) ||
-      !array_range(out, T_SHORT, 0, chunks * 128)) return CommonIntrinsics::fallback;
+      !array_range(out, T_SHORT, 0, chunks * 128)) {
+    return CommonIntrinsics::fallback;
+  }
   return invoke_stub<jint>(stub, elements<jbyte>(src), offset, elements<jshort>(out), len);
 JRT_END
 
 JRT_LEAF(jlong, common_dilithiumMontMulByConstant(const intptr_t* args))
   Arguments a(args, 2);
-  oop poly = a.object(); jint constant = a.integer();
+  oop poly = a.object();
+  jint constant = a.integer();
   address stub = StubRoutines::dilithiumMontMulByConstant();
-  if (stub == nullptr || !array_range(poly, T_INT, 0, 256)) return CommonIntrinsics::fallback;
+  if (stub == nullptr || !array_range(poly, T_INT, 0, 256)) {
+    return CommonIntrinsics::fallback;
+  }
   return invoke_stub<jint>(stub, elements<jint>(poly), constant);
 JRT_END
 
 JRT_LEAF(jlong, common_dilithiumDecomposePoly(const intptr_t* args))
   Arguments a(args, 5);
-  oop src = a.object(); oop low = a.object(); oop high = a.object();
-  jint gamma = a.integer(); jint multiplier = a.integer();
+  oop src = a.object();
+  oop low = a.object();
+  oop high = a.object();
+  jint gamma = a.integer();
+  jint multiplier = a.integer();
   address stub = StubRoutines::dilithiumDecomposePoly();
   if (stub == nullptr || !array_range(src, T_INT, 0, 256) ||
-      !array_range(low, T_INT, 0, 256) || !array_range(high, T_INT, 0, 256)) return CommonIntrinsics::fallback;
+      !array_range(low, T_INT, 0, 256) || !array_range(high, T_INT, 0, 256)) {
+    return CommonIntrinsics::fallback;
+  }
   return invoke_stub<jint>(stub, elements<jint>(src), elements<jint>(low), elements<jint>(high), gamma, multiplier);
 JRT_END
 
 JRT_LEAF(jlong, common_aescrypt_encryptBlock(const intptr_t* args))
   Arguments a(args, 5);
-  oop receiver = a.object(); oop src = a.object(); jint offset = a.integer();
-  oop dst = a.object(); jint dp = a.integer();
+  oop receiver = a.object();
+  oop src = a.object();
+  jint offset = a.integer();
+  oop dst = a.object();
+  jint dp = a.integer();
   address stub = StubRoutines::aescrypt_encryptBlock();
   oop key = aes_encrypt_key.object(receiver);
   if (stub == nullptr || !aes_key(key) ||
-      !array_range(src, T_BYTE, offset, 16) || !array_range(dst, T_BYTE, dp, 16)) return CommonIntrinsics::fallback;
+      !array_range(src, T_BYTE, offset, 16) || !array_range(dst, T_BYTE, dp, 16)) {
+    return CommonIntrinsics::fallback;
+  }
   invoke_stub<void>(stub, elements<jbyte>(src) + offset, elements<jbyte>(dst) + dp, elements<jint>(key));
   return 0;
 JRT_END
 
 JRT_LEAF(jlong, common_electronicCodeBook_encryptAESCrypt(const intptr_t* args))
   Arguments a(args, 6);
-  oop receiver = a.object(); oop src = a.object(); jint offset = a.integer();
-  jint len = a.integer(); oop dst = a.object(); jint dp = a.integer();
+  oop receiver = a.object();
+  oop src = a.object();
+  jint offset = a.integer();
+  jint len = a.integer();
+  oop dst = a.object();
+  jint dp = a.integer();
   address stub = StubRoutines::electronicCodeBook_encryptAESCrypt();
   oop cipher = embedded_cipher.object(receiver);
   oop key = aes_encrypt_key.object(cipher);
   if (stub == nullptr || !aes_key(key) || len <= 0 || (len & 15) != 0 || (src == dst && offset != dp) ||
-      !array_range(src, T_BYTE, offset, len) || !array_range(dst, T_BYTE, dp, len)) return CommonIntrinsics::fallback;
+      !array_range(src, T_BYTE, offset, len) || !array_range(dst, T_BYTE, dp, len)) {
+    return CommonIntrinsics::fallback;
+  }
   return invoke_stub<jint>(stub, elements<jbyte>(src) + offset, elements<jbyte>(dst) + dp,
                            elements<jint>(key), len);
 JRT_END
 
 JRT_LEAF(jlong, common_cipherBlockChaining_encryptAESCrypt(const intptr_t* args))
   Arguments a(args, 6);
-  oop receiver = a.object(); oop src = a.object(); jint offset = a.integer();
-  jint len = a.integer(); oop dst = a.object(); jint dp = a.integer();
+  oop receiver = a.object();
+  oop src = a.object();
+  jint offset = a.integer();
+  jint len = a.integer();
+  oop dst = a.object();
+  jint dp = a.integer();
   address stub = StubRoutines::cipherBlockChaining_encryptAESCrypt();
   oop cipher = embedded_cipher.object(receiver);
   oop key = aes_encrypt_key.object(cipher);
   oop r = cbc_r.object(receiver);
   if (stub == nullptr || !aes_key(key) || len <= 0 || (len & 15) != 0 || (src == dst && offset != dp) ||
       !array_range(src, T_BYTE, offset, len) || !array_range(dst, T_BYTE, dp, len) ||
-      !array_range(r, T_BYTE, 0, 16)) return CommonIntrinsics::fallback;
+      !array_range(r, T_BYTE, 0, 16)) {
+    return CommonIntrinsics::fallback;
+  }
   return invoke_stub<jint>(stub, elements<jbyte>(src) + offset, elements<jbyte>(dst) + dp,
                            elements<jint>(key), elements<jbyte>(r), len);
 JRT_END
 
 JRT_LEAF(jlong, common_aescrypt_decryptBlock(const intptr_t* args))
   Arguments a(args, 5);
-  oop receiver = a.object(); oop src = a.object(); jint offset = a.integer();
-  oop dst = a.object(); jint dp = a.integer();
+  oop receiver = a.object();
+  oop src = a.object();
+  jint offset = a.integer();
+  oop dst = a.object();
+  jint dp = a.integer();
   address stub = StubRoutines::aescrypt_decryptBlock();
   oop key = aes_decrypt_key.object(receiver);
   if (stub == nullptr || !aes_key(key) ||
-      !array_range(src, T_BYTE, offset, 16) || !array_range(dst, T_BYTE, dp, 16)) return CommonIntrinsics::fallback;
+      !array_range(src, T_BYTE, offset, 16) || !array_range(dst, T_BYTE, dp, 16)) {
+    return CommonIntrinsics::fallback;
+  }
   invoke_stub<void>(stub, elements<jbyte>(src) + offset, elements<jbyte>(dst) + dp, elements<jint>(key));
   return 0;
 JRT_END
 
 JRT_LEAF(jlong, common_electronicCodeBook_decryptAESCrypt(const intptr_t* args))
   Arguments a(args, 6);
-  oop receiver = a.object(); oop src = a.object(); jint offset = a.integer();
-  jint len = a.integer(); oop dst = a.object(); jint dp = a.integer();
+  oop receiver = a.object();
+  oop src = a.object();
+  jint offset = a.integer();
+  jint len = a.integer();
+  oop dst = a.object();
+  jint dp = a.integer();
   address stub = StubRoutines::electronicCodeBook_decryptAESCrypt();
   oop cipher = embedded_cipher.object(receiver);
   oop key = aes_decrypt_key.object(cipher);
   if (stub == nullptr || !aes_key(key) || len <= 0 || (len & 15) != 0 || (src == dst && offset != dp) ||
-      !array_range(src, T_BYTE, offset, len) || !array_range(dst, T_BYTE, dp, len)) return CommonIntrinsics::fallback;
+      !array_range(src, T_BYTE, offset, len) || !array_range(dst, T_BYTE, dp, len)) {
+    return CommonIntrinsics::fallback;
+  }
   return invoke_stub<jint>(stub, elements<jbyte>(src) + offset, elements<jbyte>(dst) + dp,
                            elements<jint>(key), len);
 JRT_END
 
 JRT_LEAF(jlong, common_cipherBlockChaining_decryptAESCrypt(const intptr_t* args))
   Arguments a(args, 6);
-  oop receiver = a.object(); oop src = a.object(); jint offset = a.integer();
-  jint len = a.integer(); oop dst = a.object(); jint dp = a.integer();
+  oop receiver = a.object();
+  oop src = a.object();
+  jint offset = a.integer();
+  jint len = a.integer();
+  oop dst = a.object();
+  jint dp = a.integer();
   address stub = StubRoutines::cipherBlockChaining_decryptAESCrypt();
   oop cipher = embedded_cipher.object(receiver);
   oop key = aes_decrypt_key.object(cipher);
   oop r = cbc_r.object(receiver);
   if (stub == nullptr || !aes_key(key) || len <= 0 || (len & 15) != 0 || src == dst ||
       !array_range(src, T_BYTE, offset, len) || !array_range(dst, T_BYTE, dp, len) ||
-      !array_range(r, T_BYTE, 0, 16)) return CommonIntrinsics::fallback;
+      !array_range(r, T_BYTE, 0, 16)) {
+    return CommonIntrinsics::fallback;
+  }
   return invoke_stub<jint>(stub, elements<jbyte>(src) + offset, elements<jbyte>(dst) + dp,
                            elements<jint>(key), elements<jbyte>(r), len);
 JRT_END
 
 JRT_LEAF(jlong, common_counterMode_AESCrypt(const intptr_t* args))
   Arguments a(args, 6);
-  oop receiver = a.object(); oop src = a.object(); jint offset = a.integer();
-  jint len = a.integer(); oop dst = a.object(); jint dp = a.integer();
+  oop receiver = a.object();
+  oop src = a.object();
+  jint offset = a.integer();
+  jint len = a.integer();
+  oop dst = a.object();
+  jint dp = a.integer();
   address stub = StubRoutines::counterMode_AESCrypt();
   oop key = aes_encrypt_key.object(embedded_cipher.object(receiver));
-  oop counter = ctr_counter.object(receiver); oop encrypted = ctr_encrypted.object(receiver);
-  int used_offset = ctr_used.offset(receiver); jint used = ctr_used.integer(receiver);
+  oop counter = ctr_counter.object(receiver);
+  oop encrypted = ctr_encrypted.object(receiver);
+  int used_offset = ctr_used.offset(receiver);
+  jint used = ctr_used.integer(receiver);
   if (stub == nullptr || !aes_key(key) || len <= 0 || used < 0 || used > 16 ||
       (src == dst && offset != dp) || !array_range(src, T_BYTE, offset, len) ||
       !array_range(dst, T_BYTE, dp, len) || !array_range(counter, T_BYTE, 0, 16) ||
-      !array_range(encrypted, T_BYTE, 0, 16)) return CommonIntrinsics::fallback;
+      !array_range(encrypted, T_BYTE, 0, 16)) {
+    return CommonIntrinsics::fallback;
+  }
   jint* used_addr = reinterpret_cast<jint*>(cast_from_oop<intptr_t>(receiver) + used_offset);
   return invoke_stub<jint>(stub, elements<jbyte>(src) + offset, elements<jbyte>(dst) + dp,
                            elements<jint>(key), elements<jbyte>(counter), len, elements<jbyte>(encrypted), used_addr);
@@ -545,80 +703,124 @@ JRT_END
 
 JRT_LEAF(jlong, common_md5_implCompress(const intptr_t* args))
   Arguments a(args, 3);
-  oop receiver = a.object(); oop src = a.object(); jint offset = a.integer();
+  oop receiver = a.object();
+  oop src = a.object();
+  jint offset = a.integer();
   address stub = StubRoutines::md5_implCompress();
-  oop state = md5_state.object(receiver); constexpr jint block = 64;
+  oop state = md5_state.object(receiver);
+  constexpr jint block = 64;
   if (stub == nullptr ||
-      !array_range(src, T_BYTE, offset, block) || !array_range(state, T_INT, 0, 4)) return CommonIntrinsics::fallback;
+      !array_range(src, T_BYTE, offset, block) || !array_range(state, T_INT, 0, 4)) {
+    return CommonIntrinsics::fallback;
+  }
   invoke_stub<void>(stub, elements<jbyte>(src) + offset, elements<jint>(state));
   return 0;
 JRT_END
 
 JRT_LEAF(jlong, common_sha_implCompress(const intptr_t* args))
   Arguments a(args, 3);
-  oop receiver = a.object(); oop src = a.object(); jint offset = a.integer();
+  oop receiver = a.object();
+  oop src = a.object();
+  jint offset = a.integer();
   address stub = StubRoutines::sha1_implCompress();
-  oop state = sha1_state.object(receiver); constexpr jint block = 64;
+  oop state = sha1_state.object(receiver);
+  constexpr jint block = 64;
   if (stub == nullptr ||
-      !array_range(src, T_BYTE, offset, block) || !array_range(state, T_INT, 0, 5)) return CommonIntrinsics::fallback;
+      !array_range(src, T_BYTE, offset, block) || !array_range(state, T_INT, 0, 5)) {
+    return CommonIntrinsics::fallback;
+  }
   invoke_stub<void>(stub, elements<jbyte>(src) + offset, elements<jint>(state));
   return 0;
 JRT_END
 
 JRT_LEAF(jlong, common_sha2_implCompress(const intptr_t* args))
   Arguments a(args, 3);
-  oop receiver = a.object(); oop src = a.object(); jint offset = a.integer();
+  oop receiver = a.object();
+  oop src = a.object();
+  jint offset = a.integer();
   address stub = StubRoutines::sha256_implCompress();
-  oop state = sha256_state.object(receiver); constexpr jint block = 64;
+  oop state = sha256_state.object(receiver);
+  constexpr jint block = 64;
   if (stub == nullptr ||
-      !array_range(src, T_BYTE, offset, block) || !array_range(state, T_INT, 0, 8)) return CommonIntrinsics::fallback;
+      !array_range(src, T_BYTE, offset, block) || !array_range(state, T_INT, 0, 8)) {
+    return CommonIntrinsics::fallback;
+  }
   invoke_stub<void>(stub, elements<jbyte>(src) + offset, elements<jint>(state));
   return 0;
 JRT_END
 
 JRT_LEAF(jlong, common_sha5_implCompress(const intptr_t* args))
   Arguments a(args, 3);
-  oop receiver = a.object(); oop src = a.object(); jint offset = a.integer();
+  oop receiver = a.object();
+  oop src = a.object();
+  jint offset = a.integer();
   address stub = StubRoutines::sha512_implCompress();
-  oop state = sha512_state.object(receiver); constexpr jint block = 128;
+  oop state = sha512_state.object(receiver);
+  constexpr jint block = 128;
   if (stub == nullptr ||
-      !array_range(src, T_BYTE, offset, block) || !array_range(state, T_LONG, 0, 8)) return CommonIntrinsics::fallback;
+      !array_range(src, T_BYTE, offset, block) || !array_range(state, T_LONG, 0, 8)) {
+    return CommonIntrinsics::fallback;
+  }
   invoke_stub<void>(stub, elements<jbyte>(src) + offset, elements<jlong>(state));
   return 0;
 JRT_END
 
 JRT_LEAF(jlong, common_sha3_implCompress(const intptr_t* args))
   Arguments a(args, 3);
-  oop receiver = a.object(); oop src = a.object(); jint offset = a.integer();
+  oop receiver = a.object();
+  oop src = a.object();
+  jint offset = a.integer();
   address stub = StubRoutines::sha3_implCompress();
-  oop state = sha3_state.object(receiver); jint block = digest_block_size.integer(receiver);
+  oop state = sha3_state.object(receiver);
+  jint block = digest_block_size.integer(receiver);
   if (stub == nullptr || block <= 0 || block > 200 || (block & 7) != 0 ||
-      !array_range(src, T_BYTE, offset, block) || !array_range(state, T_LONG, 0, 25)) return CommonIntrinsics::fallback;
+      !array_range(src, T_BYTE, offset, block) || !array_range(state, T_LONG, 0, 25)) {
+    return CommonIntrinsics::fallback;
+  }
   invoke_stub<void>(stub, elements<jbyte>(src) + offset, elements<jlong>(state), block);
   return 0;
 JRT_END
 
 JRT_LEAF(jlong, common_digestBase_implCompressMB(const intptr_t* args))
   Arguments a(args, 4);
-  oop receiver = a.object(); oop src = a.object(); jint offset = a.integer(); jint limit = a.integer();
-  address stub = nullptr; oop state = nullptr; BasicType type = T_INT; jint words = 0;
+  oop receiver = a.object();
+  oop src = a.object();
+  jint offset = a.integer();
+  jint limit = a.integer();
+  address stub = nullptr;
+  oop state = nullptr;
+  BasicType type = T_INT;
+  jint words = 0;
   jint block = digest_block_size.integer(receiver);
   if (receiver == nullptr || block <= 0 || block > 200 || (block & 7) != 0 || limit < offset ||
-      !array_range(src, T_BYTE, offset, static_cast<jlong>(limit) - offset + block)) return CommonIntrinsics::fallback;
+      !array_range(src, T_BYTE, offset, static_cast<jlong>(limit) - offset + block)) {
+    return CommonIntrinsics::fallback;
+  }
   if ((state = md5_state.object(receiver)) != nullptr && vmIntrinsics::is_intrinsic_available(vmIntrinsics::_md5_implCompress)) {
-    stub = StubRoutines::md5_implCompressMB(); words = 4;
+    stub = StubRoutines::md5_implCompressMB();
+    words = 4;
   } else if ((state = sha1_state.object(receiver)) != nullptr && vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha_implCompress)) {
-    stub = StubRoutines::sha1_implCompressMB(); words = 5;
+    stub = StubRoutines::sha1_implCompressMB();
+    words = 5;
   } else if ((state = sha256_state.object(receiver)) != nullptr && vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha2_implCompress)) {
-    stub = StubRoutines::sha256_implCompressMB(); words = 8;
+    stub = StubRoutines::sha256_implCompressMB();
+    words = 8;
   } else if ((state = sha512_state.object(receiver)) != nullptr && vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha5_implCompress)) {
-    stub = StubRoutines::sha512_implCompressMB(); words = 8; type = T_LONG;
+    stub = StubRoutines::sha512_implCompressMB();
+    words = 8;
+    type = T_LONG;
   } else if ((state = sha3_state.object(receiver)) != nullptr && vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha3_implCompress)) {
-    stub = StubRoutines::sha3_implCompressMB(); words = 25; type = T_LONG;
-    if (stub == nullptr || !array_range(state, type, 0, words)) return CommonIntrinsics::fallback;
+    stub = StubRoutines::sha3_implCompressMB();
+    words = 25;
+    type = T_LONG;
+    if (stub == nullptr || !array_range(state, type, 0, words)) {
+      return CommonIntrinsics::fallback;
+    }
     return invoke_stub<jint>(stub, elements<jbyte>(src) + offset, elements<jlong>(state), block, offset, limit);
   }
-  if (stub == nullptr || !array_range(state, type, 0, words)) return CommonIntrinsics::fallback;
+  if (stub == nullptr || !array_range(state, type, 0, words)) {
+    return CommonIntrinsics::fallback;
+  }
   // Both state element types use the same pointer ABI.
   return invoke_stub<jint>(stub, elements<jbyte>(src) + offset,
                            typeArrayOop(state)->base(type), offset, limit);
@@ -626,17 +828,26 @@ JRT_END
 
 JRT_LEAF(jlong, common_galoisCounterMode_AESCrypt(const intptr_t* args))
   Arguments a(args, 9);
-  oop in = a.object(); jint offset = a.integer(); jint len = a.integer();
-  oop ct = a.object(); jint ctp = a.integer(); oop out = a.object(); jint dp = a.integer();
-  oop gctr = a.object(); oop ghash = a.object();
+  oop in = a.object();
+  jint offset = a.integer();
+  jint len = a.integer();
+  oop ct = a.object();
+  jint ctp = a.integer();
+  oop out = a.object();
+  jint dp = a.integer();
+  oop gctr = a.object();
+  oop ghash = a.object();
   address stub = StubRoutines::galoisCounterMode_AESCrypt();
   oop key = aes_encrypt_key.object(embedded_cipher.object(gctr));
   oop counter = ctr_counter.object(gctr);
-  oop state = ghash_state.object(ghash); oop h = ghash_key.object(ghash);
+  oop state = ghash_state.object(ghash);
+  oop h = ghash_key.object(ghash);
   if (stub == nullptr || !aes_key(key) || len <= 0 || in == out ||
       !array_range(in, T_BYTE, offset, len) || !array_range(ct, T_BYTE, ctp, len) ||
       !array_range(out, T_BYTE, dp, len) || !array_range(counter, T_BYTE, 0, 16) ||
-      !array_range(state, T_LONG, 0, 2) || !array_range(h, T_LONG, 0, 18)) return CommonIntrinsics::fallback;
+      !array_range(state, T_LONG, 0, 2) || !array_range(h, T_LONG, 0, 18)) {
+    return CommonIntrinsics::fallback;
+  }
   return invoke_stub<jint>(stub, elements<jbyte>(in) + offset, len, elements<jbyte>(ct) + ctp,
                            elements<jbyte>(out) + dp, elements<jint>(key), elements<jlong>(state),
                            elements<jlong>(h), elements<jbyte>(counter));
@@ -644,18 +855,29 @@ JRT_END
 
 JRT_LEAF(jlong, common_vectorizedHashCode(const intptr_t* args))
   Arguments a(args, 5);
-  oop array = a.object(); jint offset = a.integer(); jint len = a.integer();
-  jint initial = a.integer(); jint type = a.integer();
-  if (len > max_hash_elements) return CommonIntrinsics::fallback;
+  oop array = a.object();
+  jint offset = a.integer();
+  jint len = a.integer();
+  jint initial = a.integer();
+  jint type = a.integer();
+  if (len > max_hash_elements) {
+    return CommonIntrinsics::fallback;
+  }
   switch (type) {
     case T_BOOLEAN:
-      if (array_range(array, T_BYTE, offset, len)) return polynomial_hash(elements<uint8_t>(array) + offset, len, initial);
+      if (array_range(array, T_BYTE, offset, len)) {
+        return polynomial_hash(elements<uint8_t>(array) + offset, len, initial);
+      }
       break;
     case T_BYTE:
-      if (array_range(array, T_BYTE, offset, len)) return polynomial_hash(elements<jbyte>(array) + offset, len, initial);
+      if (array_range(array, T_BYTE, offset, len)) {
+        return polynomial_hash(elements<jbyte>(array) + offset, len, initial);
+      }
       break;
     case T_SHORT:
-      if (array_range(array, T_SHORT, offset, len)) return polynomial_hash(elements<jshort>(array) + offset, len, initial);
+      if (array_range(array, T_SHORT, offset, len)) {
+        return polynomial_hash(elements<jshort>(array) + offset, len, initial);
+      }
       break;
     case T_CHAR:
       if (array_range(array, T_CHAR, offset, len) ||
@@ -665,7 +887,9 @@ JRT_LEAF(jlong, common_vectorizedHashCode(const intptr_t* args))
       }
       break;
     case T_INT:
-      if (array_range(array, T_INT, offset, len)) return polynomial_hash(elements<jint>(array) + offset, len, initial);
+      if (array_range(array, T_INT, offset, len)) {
+        return polynomial_hash(elements<jint>(array) + offset, len, initial);
+      }
       break;
   }
   return CommonIntrinsics::fallback;
@@ -736,7 +960,9 @@ bool CommonIntrinsics::can_fallback(vmIntrinsics::ID id) {
 }
 
 bool CommonIntrinsics::is_supported(vmIntrinsics::ID id) {
-  if (!enabled()) return false;
+  if (!enabled()) {
+    return false;
+  }
   if (id == vmIntrinsics::_digestBase_implCompressMB && !all_digest_intrinsics_enabled()) {
     return false;
   }
@@ -758,7 +984,9 @@ bool CommonIntrinsics::is_supported(vmIntrinsics::ID id) {
     return false;
   }
 #endif
-  if (is_scalar(id)) return true;
+  if (is_scalar(id)) {
+    return true;
+  }
 #ifdef COMPILER2
   return entry_for(id) != nullptr;
 #else
@@ -768,9 +996,11 @@ bool CommonIntrinsics::is_supported(vmIntrinsics::ID id) {
 
 // Interpreter entries precede compiler stubs, so consult the CPU predicates
 // used by their generators rather than the still-empty stub slots. Keep this
-// separate from is_supported: C1's short Java shift helpers need no stub.
+// separate from C1 availability, which checks the generated stub slots.
 bool CommonIntrinsics::is_available_for_interpreter(vmIntrinsics::ID id) {
-  if (!is_supported(id)) return false;
+  if (!is_supported(id)) {
+    return false;
+  }
 #if defined(AMD64) && !defined(ZERO)
   switch (id) {
     case vmIntrinsics::_bigIntegerRightShiftWorker:
@@ -782,15 +1012,21 @@ bool CommonIntrinsics::is_available_for_interpreter(vmIntrinsics::ID id) {
   }
 #endif
 #if defined(AARCH64) && !defined(ZERO)
-  if (id == vmIntrinsics::_double_keccak) return UseSIMDForSHA3Intrinsic;
+  if (id == vmIntrinsics::_double_keccak) {
+    return UseSIMDForSHA3Intrinsic;
+  }
 #endif
   return true;
 }
 
 // C1 runs after compiler-stub generation and can check actual backend slots.
 bool CommonIntrinsics::is_available_for_c1(vmIntrinsics::ID id) {
-  if (!is_supported(id)) return false;
-  if (is_scalar(id)) return true;
+  if (!is_supported(id)) {
+    return false;
+  }
+  if (is_scalar(id)) {
+    return true;
+  }
   switch (id) {
     case vmIntrinsics::_multiplyToLen: return StubRoutines::multiplyToLen() != nullptr;
     case vmIntrinsics::_squareToLen: return StubRoutines::squareToLen() != nullptr;
@@ -848,7 +1084,9 @@ bool CommonIntrinsics::is_available_for_c1(vmIntrinsics::ID id) {
 }
 
 address CommonIntrinsics::entry_for(vmIntrinsics::ID id) {
-  if (id == vmIntrinsics::_vectorizedHashCodeLeaf) id = vmIntrinsics::_vectorizedHashCode;
+  if (id == vmIntrinsics::_vectorizedHashCodeLeaf) {
+    id = vmIntrinsics::_vectorizedHashCode;
+  }
   switch (id) {
 #define COMMON_ENTRY(id, slots, result) \
     case vmIntrinsics::id: return CAST_FROM_FN_PTR(address, common##id);

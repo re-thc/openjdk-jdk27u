@@ -370,7 +370,7 @@ public class ArraysSupport {
             case T_BYTE -> hashCode(initialValue, (byte[]) array, fromIndex, length);
             case T_SHORT -> hashCode(initialValue, (short[]) array, fromIndex, length);
             case T_INT -> hashCode(initialValue, (int[]) array, fromIndex, length);
-                default -> throw new IllegalArgumentException("unrecognized basic type: " + basicType);
+            default -> throw new IllegalArgumentException("unrecognized basic type: " + basicType);
         };
     }
 

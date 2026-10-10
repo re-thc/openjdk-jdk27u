@@ -2828,9 +2828,8 @@ void LIRGenerator::do_CommonScalarIntrinsic(Intrinsic* x) {
   LIR_Opr tmp1 = LIR_OprFact::illegalOpr;
   LIR_Opr tmp2 = LIR_OprFact::illegalOpr;
   LIR_Opr vtmp = LIR_OprFact::illegalOpr;
-  bool fixed = false;
 #ifdef AMD64
-  fixed = id == vmIntrinsics::_multiplyHigh || id == vmIntrinsics::_unsignedMultiplyHigh ||
+  bool fixed = id == vmIntrinsics::_multiplyHigh || id == vmIntrinsics::_unsignedMultiplyHigh ||
           id == vmIntrinsics::_divideUnsigned_i || id == vmIntrinsics::_divideUnsigned_l ||
           id == vmIntrinsics::_remainderUnsigned_i || id == vmIntrinsics::_remainderUnsigned_l;
 #endif

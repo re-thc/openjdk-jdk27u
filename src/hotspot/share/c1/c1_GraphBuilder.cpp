@@ -3636,7 +3636,8 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   // create intrinsic node
   const bool has_receiver = !callee->is_static();
   ValueType* result_type = as_ValueType(callee->return_type());
-  ValueStack* state_before = CommonIntrinsics::is_supported(id) && CommonIntrinsics::can_fallback(id) ? copy_state_before() : copy_state_for_exception();
+  ValueStack* state_before = CommonIntrinsics::is_supported(id) && CommonIntrinsics::can_fallback(id)
+    ? copy_state_before() : copy_state_for_exception();
 
   Values* args = state()->pop_arguments(callee->arg_size());
 
@@ -3703,7 +3704,9 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
   if (callee->intrinsic_id() == vmIntrinsics::_vectorizedHashCode && CommonIntrinsics::enabled()) {
     ciMethod* helper = callee->holder()->find_method(ciSymbol::make("vectorizedHashCodeC1"),
                                                   callee->signature()->as_symbol());
-    if (helper == nullptr) return false;
+    if (helper == nullptr) {
+      return false;
+    }
     return try_inline_full(helper, true, ignore_return, Bytecodes::_invokestatic);
   }
   if (CommonIntrinsics::enabled() &&

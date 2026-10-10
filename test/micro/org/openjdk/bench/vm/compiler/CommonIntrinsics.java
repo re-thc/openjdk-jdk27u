@@ -74,7 +74,9 @@ public class CommonIntrinsics {
         output = new byte[length];
         random.nextBytes(input);
         integers = new int[length / 4];
-        for (int i = 0; i < integers.length; i++) integers[i] = random.nextInt();
+        for (int i = 0; i < integers.length; i++) {
+            integers[i] = random.nextInt();
+        }
         sha256 = MessageDigest.getInstance("SHA-256");
         sha3 = MessageDigest.getInstance("SHA3-256");
         aes = Cipher.getInstance("AES/CTR/NoPadding");
