@@ -88,12 +88,12 @@ public class TestOopMapSizeMinimal {
         }
         if (is_64_bit) {
             if (WB.getBooleanVMFlag("UseCompactObjectHeaders")) {
-                HEADER_SIZE_IN_BYTES = 8;
+                HEADER_SIZE_IN_BYTES = Boolean.TRUE.equals(WB.getBooleanVMFlag("UseFourByteObjectHeaders")) ? 4 : 8;
             } else {
                 HEADER_SIZE_IN_BYTES = 12;
             }
         } else {
-            HEADER_SIZE_IN_BYTES = 8;
+            HEADER_SIZE_IN_BYTES = Boolean.TRUE.equals(WB.getBooleanVMFlag("UseFourByteObjectHeaders")) ? 4 : 8;
         }
     }
 
@@ -181,7 +181,7 @@ public class TestOopMapSizeMinimal {
         // Otherwise, the same logic applies.
 
         if (OOP_SIZE_IN_BYTES == 4 ||                               // oop size == int size
-            (OOP_SIZE_IN_BYTES == 8 && HEADER_SIZE_IN_BYTES == 12)
+            (OOP_SIZE_IN_BYTES == 8 && (HEADER_SIZE_IN_BYTES == 12 || HEADER_SIZE_IN_BYTES == 4))
         ) {
             // No gaps
 

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,11 +52,13 @@ public class Mark extends VMObject {
     lockBits            = db.lookupLongConstant("markWord::lock_bits").longValue();
     maxHashBits         = db.lookupLongConstant("markWord::max_hash_bits").longValue();
     hashBits            = db.lookupLongConstant("markWord::hash_bits").longValue();
+    hashCtrlBits        = db.lookupLongConstant("markWord::hashctrl_bits").longValue();
     lockShift           = db.lookupLongConstant("markWord::lock_shift").longValue();
     ageShift            = db.lookupLongConstant("markWord::age_shift").longValue();
     hashShift           = db.lookupLongConstant("markWord::hash_shift").longValue();
+    hashCtrlShift       = db.lookupLongConstant("markWord::hashctrl_shift").longValue();
     if (VM.getVM().isLP64()) {
-      klassShift          = db.lookupLongConstant("markWord::klass_shift").longValue();
+      klassShift          = db.lookupLongConstant(VM.getVM().isFourByteObjectHeadersEnabled() ? "markWord::four_byte_klass_shift" : "markWord::klass_shift").longValue();
     }
     lockMask            = db.lookupLongConstant("markWord::lock_mask").longValue();
     lockMaskInPlace     = db.lookupLongConstant("markWord::lock_mask_in_place").longValue();
@@ -63,6 +66,9 @@ public class Mark extends VMObject {
     ageMaskInPlace      = db.lookupLongConstant("markWord::age_mask_in_place").longValue();
     hashMask            = db.lookupLongConstant("markWord::hash_mask").longValue();
     hashMaskInPlace     = db.lookupLongConstant("markWord::hash_mask_in_place").longValue();
+    hashCtrlMaskInPlace = db.lookupLongConstant("markWord::hashctrl_mask_in_place").longValue();
+    hashCtrlHashedMaskInPlace =   db.lookupLongConstant("markWord::hashctrl_hashed_mask_in_place").longValue();
+    hashCtrlExpandedMaskInPlace = db.lookupLongConstant("markWord::hashctrl_expanded_mask_in_place").longValue();
     lockedValue         = db.lookupLongConstant("markWord::locked_value").longValue();
     unlockedValue       = db.lookupLongConstant("markWord::unlocked_value").longValue();
     monitorValue        = db.lookupLongConstant("markWord::monitor_value").longValue();
@@ -81,10 +87,12 @@ public class Mark extends VMObject {
   private static long lockBits;
   private static long maxHashBits;
   private static long hashBits;
+  private static long hashCtrlBits;
 
   private static long lockShift;
   private static long ageShift;
   private static long hashShift;
+  private static long hashCtrlShift;
   private static long klassShift;
 
   private static long lockMask;
@@ -93,6 +101,9 @@ public class Mark extends VMObject {
   private static long ageMaskInPlace;
   private static long hashMask;
   private static long hashMaskInPlace;
+  private static long hashCtrlMaskInPlace;
+  private static long hashCtrlHashedMaskInPlace;
+  private static long hashCtrlExpandedMaskInPlace;
 
   private static long lockedValue;
   private static long unlockedValue;
@@ -186,11 +197,49 @@ public class Mark extends VMObject {
 
   // hash operations
   public long hash() {
-    return Bits.maskBitsLong(value() >> hashShift, hashMask);
+    if (VM.getVM().isFourByteObjectHeadersEnabled()) {
+      if (hasNoHash()) return 0;
+      if (isExpanded()) {
+        Oop object = VM.getVM().getObjectHeap().newOop(addr.addOffsetToAsOopHandle(0));
+        Klass klass = object.getKlass();
+        long offset;
+        if (object instanceof Array array) {
+          ArrayKlass arrayKlass = (ArrayKlass) klass;
+          offset = arrayKlass.getArrayHeaderInBytes() + (array.getLength() << arrayKlass.getLog2ElementSize());
+        } else if (klass instanceof InstanceMirrorKlass) {
+          offset = java_lang_Class.getOopSize(object) * VM.getVM().getAddressSize();
+        } else {
+          offset = ((InstanceKlass) klass).getHashOffset();
+        }
+        return addr.getCIntegerAt(offset, 4, true);
+      }
+      if (VM.getVM().getCommandLineFlag("hashCode").getIntx() == 2) return 1;
+      long address = addr.asLongValue();
+      int x = (int) address;
+      int y = (int) (address >>> 32);
+      // Keep this bit-identical to FastHash::get_hash32 in
+      // src/hotspot/share/utilities/fastHash.hpp.
+      int multiplier = 0x337954D5;
+      int low = x ^ 0xAAAAAAAA;
+      long product = Integer.toUnsignedLong(low) * Integer.toUnsignedLong(multiplier);
+      int firstLow = (int) product;
+      int mixed = ((x ^ y) * multiplier) ^ (int) (product >>> 32);
+      product = Integer.toUnsignedLong(mixed) * Integer.toUnsignedLong(multiplier);
+      int rotated = Integer.rotateRight(firstLow ^ multiplier, mixed);
+      return ((int) product ^ rotated ^ (int) (product >>> 32)) & hashMask;
+    } else {
+      return Bits.maskBitsLong(value() >> hashShift, hashMask);
+    }
   }
 
   public boolean hasNoHash() {
-    return hash() == noHash;
+    return VM.getVM().isFourByteObjectHeadersEnabled() ?
+        Bits.maskBitsLong(value(), hashCtrlHashedMaskInPlace) == 0 : hash() == noHash;
+  }
+
+  public boolean isExpanded() {
+    assert(VM.getVM().isFourByteObjectHeadersEnabled());
+    return Bits.maskBitsLong(value(), hashCtrlExpandedMaskInPlace) != 0;
   }
 
   public Klass getKlass() {

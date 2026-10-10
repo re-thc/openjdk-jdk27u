@@ -47,8 +47,7 @@ public class Oop {
     Type type  = db.lookupType("oopDesc");
     mark       = new CIntField(type.getCIntegerField("_mark"), 0);
     if (VM.getVM().isCompactObjectHeadersEnabled()) {
-      Type markType = db.lookupType("markWord");
-      headerSize = markType.getSize();
+      headerSize = VM.getVM().isFourByteObjectHeadersEnabled() ? 4 : VM.getVM().getAddressSize();
     } else {
       headerSize = type.getSize();
       compressedKlass  = new NarrowKlassField(type.getAddressField("_compressed_klass"), 0);
@@ -127,6 +126,9 @@ public class Oop {
 
   /** Identity hash in the target VM */
   public long identityHash() {
+    if (VM.getVM().isFourByteObjectHeadersEnabled()) {
+      return getMark().hash();
+    }
     Mark mark = getMark();
     if (mark.isUnlocked() && (!mark.hasNoHash())) {
       return (int) mark.hash();

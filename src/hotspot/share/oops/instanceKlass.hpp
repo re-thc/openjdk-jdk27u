@@ -237,6 +237,8 @@ class InstanceKlass: public Klass {
 
   JavaThread* volatile _init_thread;        // Pointer to current thread doing initialization (to handle recursive initialization)
 
+  int             _hash_offset;             // Offset of hidden field for i-hash
+
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
   JNIid*          _jni_ids;                  // First JNI identifier for static fields in this class
   jmethodID* volatile _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or null if none
@@ -902,7 +904,7 @@ public:
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
                                                   Array<InstanceKlass*>* transitive_interfaces) override;
   bool can_be_primary_super_slow() const override;
-  size_t oop_size(oop obj) const override { return size_helper(); }
+  size_t oop_size(oop obj, markWord mark) const override { return size_helper(); }
   // slow because it's a virtual call and used for verifying the layout_helper.
   // Using the layout_helper bits, we can call is_instance_klass without a virtual call.
   DEBUG_ONLY(bool is_instance_klass_slow() const override { return true; })
@@ -967,6 +969,15 @@ public:
   // Use this to return the size of an instance in heap words:
   int size_helper() const {
     return layout_helper_to_size_helper(layout_helper());
+  }
+
+  virtual size_t hash_offset_in_bytes(oop obj, markWord m) const override {
+    assert(UseFourByteObjectHeaders, "only with compact i-hash");
+    return _hash_offset;
+  }
+  static int hash_offset_offset_in_bytes() {
+    assert(UseFourByteObjectHeaders, "only with compact i-hash");
+    return (int)offset_of(InstanceKlass, _hash_offset);
   }
 
   // This bit is initialized in classFileParser.cpp.

@@ -68,6 +68,7 @@ inline ZForwarding::ZForwarding(ZPage* page, ZPageAge to_age, size_t nentries)
     _ref_lock(),
     _ref_count(1),
     _done(false),
+    _hash_expansion_bytes(0),
     _relocated_remembered_fields_state(ZPublishState::none),
     _relocated_remembered_fields_array(),
     _relocated_remembered_fields_publish_young_seqnum(0),

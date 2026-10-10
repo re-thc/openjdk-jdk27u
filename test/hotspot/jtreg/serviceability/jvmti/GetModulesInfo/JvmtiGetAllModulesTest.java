@@ -65,10 +65,8 @@ public class JvmtiGetAllModulesTest {
 
         Set<Module> modules = Arrays.stream(getModulesNative()).collect(Collectors.toSet());
 
-        // JVMTI reports unnamed modules, Java API does not
-        // remove the unnamed modules here, so the resulting report can be expected
-        // to be equal to what Java reports
-        modules.removeIf(mod -> !mod.isNamed());
+        // The layer API excludes unnamed and dynamic named modules without a layer.
+        modules.removeIf(mod -> !mod.isNamed() || mod.getLayer() == null);
 
         return modules;
     }

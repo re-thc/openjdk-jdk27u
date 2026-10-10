@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,19 +60,39 @@ markWord oopDesc::mark_acquire() const {
 }
 
 void oopDesc::set_mark(markWord m) {
+  if (UseFourByteObjectHeaders) {
+    AtomicAccess::store(reinterpret_cast<uint32_t volatile*>(&_mark), m.value32());
+  } else {
+    AtomicAccess::store(&_mark, m);
+  }
+}
+
+void oopDesc::set_mark_full(markWord m) {
   AtomicAccess::store(&_mark, m);
 }
 
 void oopDesc::set_mark(HeapWord* mem, markWord m) {
-  *(markWord*)(((char*)mem) + mark_offset_in_bytes()) = m;
+  if (UseFourByteObjectHeaders) {
+    *(uint32_t*)(((char*)mem) + mark_offset_in_bytes()) = m.value32();
+  } else {
+    *(markWord*)(((char*)mem) + mark_offset_in_bytes()) = m;
+  }
 }
 
 void oopDesc::release_set_mark(HeapWord* mem, markWord m) {
-  AtomicAccess::release_store((markWord*)(((char*)mem) + mark_offset_in_bytes()), m);
+  if (UseFourByteObjectHeaders) {
+    AtomicAccess::release_store((uint32_t*)(((char*)mem) + mark_offset_in_bytes()), m.value32());
+  } else {
+    AtomicAccess::release_store((markWord*)(((char*)mem) + mark_offset_in_bytes()), m);
+  }
 }
 
 void oopDesc::release_set_mark(markWord m) {
-  AtomicAccess::release_store(&_mark, m);
+  if (UseFourByteObjectHeaders) {
+    AtomicAccess::release_store(reinterpret_cast<uint32_t volatile*>(&_mark), m.value32());
+  } else {
+    AtomicAccess::release_store(&_mark, m);
+  }
 }
 
 markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark) {
@@ -92,6 +113,16 @@ markWord oopDesc::prototype_mark() const {
 
 void oopDesc::init_mark() {
   set_mark(prototype_mark());
+}
+
+void oopDesc::reinit_mark() {
+  if (UseFourByteObjectHeaders) {
+    markWord m = prototype_mark().copy_hashctrl_from(mark());
+    assert(m.is_neutral(), "must be neutral");
+    set_mark(m);
+  } else {
+    set_mark(prototype_mark());
+  }
 }
 
 Klass* oopDesc::klass() const {
@@ -154,11 +185,74 @@ bool oopDesc::is_a(Klass* k) const {
   return klass()->is_subtype_of(k);
 }
 
-size_t oopDesc::size()  {
-  return size_given_klass(klass());
+size_t oopDesc::size_given_mark_and_klass(markWord mrk, const Klass* kls) {
+  size_t sz = base_size_given_klass(mrk, kls);
+  if (UseFourByteObjectHeaders) {
+    assert(!mrk.has_displaced_mark_helper(), "must not be displaced");
+    if (mrk.is_expanded() && kls->expand_for_hash(cast_to_oop(this), mrk)) {
+      sz = hash_expanded_size(sz);
+    }
+  }
+  return sz;
 }
 
-size_t oopDesc::size_given_klass(Klass* klass)  {
+size_t oopDesc::size_forwarded() {
+  assert(is_forwarded(), "must be forwarded");
+  markWord m = mark();
+  oop fwd = forwardee(m);
+  if (!UseFourByteObjectHeaders) {
+    return fwd->size();
+  }
+  markWord fm = fwd->mark();
+  Klass* klass = fm.klass();
+  if (m.is_forward_expanded()) {
+    // Forwardee was expanded during copy but the original was not.
+    // Original must have base size.
+    return fwd->base_size_given_klass(fm, klass);
+  }
+  // Original and copy have same size (whether expanded or not).
+  return fwd->size_given_mark_and_klass(fm, klass);
+}
+
+size_t oopDesc::copy_size(size_t size, markWord mark) const {
+  if (UseFourByteObjectHeaders) {
+    assert(!mark.has_displaced_mark_helper(), "must not be displaced");
+    Klass* klass = mark.klass();
+    if (mark.is_hashed_not_expanded() && klass->expand_for_hash(cast_to_oop(this), mark)) {
+      size = hash_expanded_size(size);
+    }
+  }
+  assert(is_object_aligned(size), "Oop size is not properly aligned: %zu", size);
+  return size;
+}
+
+size_t oopDesc::copy_size_cds(size_t size, markWord mark) const {
+  if (UseFourByteObjectHeaders) {
+    assert(!mark.has_displaced_mark_helper(), "must not be displaced");
+    Klass* klass = mark.klass();
+    if (mark.is_not_hashed_expanded()) {
+      assert(klass->expand_for_hash(cast_to_oop(this), mark), "must be?");
+    }
+    if (mark.is_hashed_not_expanded() && klass->expand_for_hash(cast_to_oop(this), mark)) {
+      size = hash_expanded_size(size);
+    }
+    if (mark.is_not_hashed_expanded() && klass->expand_for_hash(cast_to_oop(this), mark)) {
+      size = align_object_size(size - ObjectAlignmentInBytes / HeapWordSize);
+    }
+  }
+  assert(is_object_aligned(size), "Oop size is not properly aligned: %zu", size);
+  return size;
+}
+
+size_t oopDesc::size()  {
+  return size_given_mark_and_klass(mark(), klass());
+}
+
+size_t oopDesc::size_given_klass(const Klass* klass) {
+  return size_given_mark_and_klass(mark(), klass);
+}
+
+size_t oopDesc::base_size_given_klass(markWord mrk, const Klass* klass)  {
   int lh = klass->layout_helper();
   size_t s;
 
@@ -177,7 +271,7 @@ size_t oopDesc::size_given_klass(Klass* klass)  {
     if (!Klass::layout_helper_needs_slow_path(lh)) {
       s = lh >> LogHeapWordSize;  // deliver size scaled by wordSize
     } else {
-      s = klass->oop_size(this);
+      s = klass->oop_size(this, mrk);
     }
   } else if (lh <= Klass::_lh_neutral_value) {
     // The most common case is instances; fall through if so.
@@ -186,7 +280,14 @@ size_t oopDesc::size_given_klass(Klass* klass)  {
       // length of the array, shift (multiply) it appropriately,
       // up to wordSize, add the header, and align to object size.
       size_t size_in_bytes;
-      size_t array_length = (size_t) ((arrayOop)this)->length();
+      size_t array_length;
+#ifdef _LP64
+      if (UseFourByteObjectHeaders) {
+        array_length = (size_t) mrk.array_length();
+      } else
+#endif
+        array_length = (size_t)((arrayOop)this)->length();
+
       size_in_bytes = array_length << Klass::layout_helper_log2_element_size(lh);
       size_in_bytes += Klass::layout_helper_header_size(lh);
 
@@ -194,11 +295,10 @@ size_t oopDesc::size_given_klass(Klass* klass)  {
       // in units of bytes and doing it this way we can round up just once,
       // skipping the intermediate round to HeapWordSize.
       s = align_up(size_in_bytes, MinObjAlignmentInBytes) / HeapWordSize;
-
-      assert(s == klass->oop_size(this), "wrong array object size");
+      assert(s == klass->oop_size(this, mrk), "wrong array object size, s: %zu, oop_size: %zu", s, klass->oop_size(this, mrk));
     } else {
       // Must be zero, so bite the bullet and take the virtual call.
-      s = klass->oop_size(this);
+      s = klass->oop_size(this, mrk);
     }
   }
 
@@ -215,7 +315,7 @@ bool oopDesc::is_objArray()    const { return klass()->is_objArray_klass();     
 bool oopDesc::is_typeArray()   const { return klass()->is_typeArray_klass();            }
 
 template<typename T>
-T*       oopDesc::field_addr(int offset)     const { return reinterpret_cast<T*>(cast_from_oop<intptr_t>(as_oop()) + offset); }
+T*       oopDesc::field_addr(ptrdiff_t offset)     const { return reinterpret_cast<T*>(cast_from_oop<intptr_t>(as_oop()) + offset); }
 
 template <typename T>
 size_t   oopDesc::field_offset(T* p) const { return pointer_delta((void*)p, (void*)this, 1); }
@@ -241,8 +341,8 @@ inline void     oopDesc::bool_field_put_volatile(int offset, jboolean value) { R
 inline jshort oopDesc::short_field(int offset) const                { return *field_addr<jshort>(offset);   }
 inline void   oopDesc::short_field_put(int offset, jshort value)    { *field_addr<jshort>(offset) = value;  }
 
-inline jint oopDesc::int_field(int offset) const                    { return *field_addr<jint>(offset);     }
-inline void oopDesc::int_field_put(int offset, jint value)          { *field_addr<jint>(offset) = value;    }
+inline jint oopDesc::int_field(ptrdiff_t offset) const                    { return *field_addr<jint>(offset);     }
+inline void oopDesc::int_field_put(ptrdiff_t offset, jint value)          { *field_addr<jint>(offset) = value;    }
 inline jint oopDesc::int_field_relaxed(int offset) const            { return AtomicAccess::load(field_addr<jint>(offset)); }
 inline void oopDesc::int_field_put_relaxed(int offset, jint value)  { AtomicAccess::store(field_addr<jint>(offset), value); }
 
@@ -281,12 +381,35 @@ void oopDesc::forward_to(oop p) {
   assert(cast_from_oop<oopDesc*>(p) != this,
          "must not be used for self-forwarding, use forward_to_self() instead");
   markWord m = markWord::encode_pointer_as_mark(p);
+  // copy_size expands exactly hashed-not-expanded sources; as in the
+  // atomic path, this tag lets size_forwarded recover the original size.
+  if (UseFourByteObjectHeaders && mark().is_hashed_not_expanded()) {
+    m = m.set_forward_expanded();
+  }
   assert(m.decode_pointer() == p, "encoding must be reversible");
-  set_mark(m);
+  // A full forwarding pointer overwrites an array's length. Its copy
+  // retains that length; size_forwarded reads the copy until restoration.
+  set_mark_full(m);
 }
 
 void oopDesc::forward_to_self() {
   set_mark(mark().set_self_forwarded());
+}
+
+void oopDesc::reset_forwarded() {
+  markWord m = mark();
+  if (m.is_self_forwarded()) {
+    unset_self_forwarded();
+  } else if (m.is_forwarded()) {
+    // Restore Klass* and hash-bits in the header,
+    // for correct iteration.
+    markWord fwd_mark = forwardee()->mark();
+    if (m.is_forward_expanded()) {
+      // Un-expand original object.
+      fwd_mark = fwd_mark.set_hashed_not_expanded();
+    }
+    set_mark_full(fwd_mark);
+  }
 }
 
 oop oopDesc::cas_set_forwardee(markWord new_mark, markWord compare, atomic_memory_order order) {
@@ -303,6 +426,9 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
   assert(cast_from_oop<oopDesc*>(p) != this,
          "must not be used for self-forwarding, use forward_to_self_atomic() instead");
   markWord m = markWord::encode_pointer_as_mark(p);
+  if (UseFourByteObjectHeaders && compare.is_hashed_not_expanded()) {
+    m = m.set_forward_expanded();
+  }
   assert(forwardee(m) == p, "encoding must be reversible");
   return cas_set_forwardee(m, compare, order);
 }
@@ -367,7 +493,7 @@ void oopDesc::oop_iterate(OopClosureType* cl, MemRegion mr) {
 template <typename OopClosureType>
 size_t oopDesc::oop_iterate_size(OopClosureType* cl) {
   Klass* k = klass();
-  size_t size = size_given_klass(k);
+  size_t size = size_given_mark_and_klass(mark(), k);
   OopIteratorClosureDispatch::oop_oop_iterate(cl, this, k);
   return size;
 }
@@ -375,7 +501,7 @@ size_t oopDesc::oop_iterate_size(OopClosureType* cl) {
 template <typename OopClosureType>
 size_t oopDesc::oop_iterate_size(OopClosureType* cl, MemRegion mr) {
   Klass* k = klass();
-  size_t size = size_given_klass(k);
+  size_t size = size_given_mark_and_klass(mark(), k);
   OopIteratorClosureDispatch::oop_oop_iterate(cl, this, k, mr);
   return size;
 }
@@ -399,14 +525,23 @@ bool oopDesc::is_instanceof_or_null(oop obj, Klass* klass) {
 intptr_t oopDesc::identity_hash() {
   // Fast case; if the object is unlocked and the hash value is set, no locking is needed
   // Note: The mark must be read into local variable to avoid concurrent updates.
-  markWord mrk = mark();
-  if (mrk.is_unlocked() && !mrk.has_no_hash()) {
-    return mrk.hash();
-  } else if (mrk.is_marked()) {
-    return mrk.hash();
+  if (UseFourByteObjectHeaders) {
+    markWord mrk = mark();
+    if (mrk.is_hashed_expanded()) {
+      Klass* klass = mrk.klass();
+      return int_field(klass->hash_offset_in_bytes(cast_to_oop(this), mrk));
+    }
+    // Fall-through to slow-case.
   } else {
-    return slow_identity_hash();
+    markWord mrk = mark();
+    if (mrk.is_unlocked() && !mrk.has_no_hash()) {
+      return mrk.hash();
+    } else if (mrk.is_marked()) {
+      return mrk.hash();
+    }
+    // Fall-through to slow-case.
   }
+  return slow_identity_hash();
 }
 
 // This checks fast simple case of whether the oop has_no_hash,
@@ -414,7 +549,7 @@ intptr_t oopDesc::identity_hash() {
 bool oopDesc::fast_no_hash_check() {
   markWord mrk = mark_acquire();
   assert(!mrk.is_marked(), "should never be marked");
-  return mrk.is_unlocked() && mrk.has_no_hash();
+  return (UseFourByteObjectHeaders || mrk.is_unlocked()) && mrk.has_no_hash();
 }
 
 bool oopDesc::has_displaced_mark() const {
@@ -436,5 +571,17 @@ bool oopDesc::mark_must_be_preserved() const {
 bool oopDesc::mark_must_be_preserved(markWord m) const {
   return m.must_be_preserved();
 }
+
+inline void oopDesc::initialize_hash_if_necessary(oop obj) {
+  if (!UseFourByteObjectHeaders) {
+    return;
+  }
+  markWord m = mark();
+  assert(!m.has_displaced_mark_helper(), "must not be displaced header");
+  if (m.is_hashed_not_expanded()) {
+    set_mark(initialize_hash_if_necessary(obj, m.klass(), m));
+  }
+}
+
 
 #endif // SHARE_OOPS_OOP_INLINE_HPP

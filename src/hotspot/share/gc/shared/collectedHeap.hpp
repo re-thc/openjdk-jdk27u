@@ -261,6 +261,8 @@ protected:
 
   void initialize_reserved_region(const ReservedHeapSpace& rs);
 
+  HeapWord* reserved_start() const { return _reserved.start(); }
+
   virtual size_t capacity() const = 0;
   virtual size_t used() const = 0;
 
@@ -292,7 +294,7 @@ protected:
 
   oop obj_allocate(Klass* klass, size_t size, TRAPS);
   virtual oop array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS);
-  oop class_allocate(Klass* klass, size_t size, TRAPS);
+  oop class_allocate(Klass* klass, size_t size, size_t base_size, TRAPS);
 
   // Utilities for turning raw memory into filler objects.
   //

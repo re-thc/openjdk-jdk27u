@@ -32,7 +32,8 @@
 narrowKlass markWord::narrow_klass() const {
 #ifdef _LP64
   assert(UseCompactObjectHeaders, "only used with compact object headers");
-  return narrowKlass(value() >> klass_shift);
+  return UseFourByteObjectHeaders ? narrowKlass(value32() >> four_byte_klass_shift)
+                                  : narrowKlass(value() >> klass_shift);
 #else
   ShouldNotReachHere();
   return 0;
@@ -42,6 +43,9 @@ narrowKlass markWord::narrow_klass() const {
 markWord markWord::set_narrow_klass(narrowKlass narrow_klass) const {
 #ifdef _LP64
   assert(UseCompactObjectHeaders, "only used with compact object headers");
+  if (UseFourByteObjectHeaders) {
+    return markWord((value() & ~four_byte_klass_mask_in_place) | ((uintptr_t) narrow_klass << four_byte_klass_shift));
+  }
   return markWord((value() & ~klass_mask_in_place) | ((uintptr_t) narrow_klass << klass_shift));
 #else
   ShouldNotReachHere();

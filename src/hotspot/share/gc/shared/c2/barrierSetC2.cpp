@@ -704,25 +704,28 @@ int BarrierSetC2::arraycopy_payload_base_offset(bool is_array) {
   int base_off = is_array ? arrayOopDesc::length_offset_in_bytes() :
                             instanceOopDesc::base_offset_in_bytes();
   // base_off:
-  // 8  - 32-bit VM or 64-bit VM, compact headers
+  // 4  - 64-bit VM, four-byte headers
+  // 8  - 32-bit VM or 64-bit VM, eight-byte compact headers
   // 12 - 64-bit VM, compressed klass
   // 16 - 64-bit VM, normal klass
   if (base_off % BytesPerLong != 0) {
-    assert(!UseCompactObjectHeaders, "");
     if (is_array) {
       // Exclude length to copy by 8 bytes words.
       base_off += sizeof(int);
     } else {
-      // Include klass to copy by 8 bytes words.
-      base_off = instanceOopDesc::klass_offset_in_bytes();
+      if (!UseFourByteObjectHeaders) {
+        // Include klass to copy by 8 bytes words.
+        base_off = instanceOopDesc::klass_offset_in_bytes();
+      }
     }
-    assert(base_off % BytesPerLong == 0, "expect 8 bytes alignment");
+    assert(base_off % BytesPerLong == 0 || UseFourByteObjectHeaders, "expect 8 bytes alignment");
   }
   return base_off;
 }
 
 void BarrierSetC2::clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* size, bool is_array) const {
   int base_off = arraycopy_payload_base_offset(is_array);
+
   Node* payload_size = size;
   Node* offset = kit->MakeConX(base_off);
   payload_size = kit->gvn().transform(new SubXNode(payload_size, offset));
@@ -854,8 +857,12 @@ void BarrierSetC2::clone_in_runtime(PhaseMacroExpand* phase, ArrayCopyNode* ac,
 
   // The native clone we are calling here expects the object size in words.
   // Add header/offset size to payload size to get object size.
-  Node* const base_offset = phase->MakeConX(arraycopy_payload_base_offset(ac->is_clone_array()) >> LogBytesPerLong);
+
+  // We need the full object size - payload (already aligned) plus base offset (which is not always aligned, so round *up*),
+  // because clone_in_runtime copies the whole object from 0 to end.
+  Node* const base_offset = phase->MakeConX((arraycopy_payload_base_offset(ac->is_clone_array()) + (BytesPerLong - 1)) >> LogBytesPerLong);
   Node* const full_size = phase->transform_later(new AddXNode(size, base_offset));
+
   // HeapAccess<>::clone expects size in heap words.
   // For 64-bits platforms, this is a no-operation.
   // For 32-bits platforms, we need to multiply full_size by HeapWordsPerLong (2).
@@ -884,6 +891,15 @@ void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac
   Node* payload_src = phase->basic_plus_adr(src, src_offset);
   Node* payload_dst = phase->basic_plus_adr(dest, dest_offset);
 
+  if (should_copy_int_prefix(phase, ac)) {
+    mem = arraycopy_copy_int_prefix(phase, ctrl, mem, payload_src, payload_dst);
+
+    // We've copied the prefix, bump the pointers.
+    payload_src = phase->basic_plus_adr(src, payload_src, BytesPerInt);
+    payload_dst = phase->basic_plus_adr(dest, payload_dst, BytesPerInt);
+  }
+
+  // Bulk copy.
   const char* copyfunc_name = "arraycopy";
   address     copyfunc_addr = phase->basictype2arraycopy(T_LONG, nullptr, nullptr, true, copyfunc_name, true);
 
@@ -894,6 +910,55 @@ void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac
   phase->transform_later(call);
 
   phase->igvn().replace_node(ac, call);
+}
+
+bool BarrierSetC2::should_copy_int_prefix(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
+  // We do our bulk copy in longs. If base offset is not aligned, then we must copy the prefix separately.
+  // With four-byte headers, the base offset for an instance is 4 bytes.
+  // We cannot simply expand the copy to the previous long-alignment, as that will copy the object header,
+  // which is stateful with COH - it contains hash and lock bits that are specific to the instance.
+
+  // Skip this when src has an array type. With StressReflectiveCode, the
+  // instance path of the clone can be live in the IR even when the type system
+  // knows src is an array. The pre-copy is unnecessary on such paths (they
+  // are unreachable at runtime), and creating a LoadNode at the array length
+  // offset would assert (LoadRangeNode required).
+  Node* src = ac->in(ArrayCopyNode::Src);
+  if (phase->igvn().type(src)->isa_aryptr()) {
+    return false;
+  }
+
+  int base_off = arraycopy_payload_base_offset(ac->is_clone_array());
+  if (is_aligned(base_off, BytesPerLong)) {
+    // We're aligned, no need to copy anything separately.
+    return false;
+  }
+
+  assert(UseFourByteObjectHeaders, "non-aligned base offset only possible with compact object headers");
+  assert(is_aligned(base_off, BytesPerInt), "must be 4-bytes aligned");
+  return true;
+}
+
+MergeMemNode* BarrierSetC2::arraycopy_copy_int_prefix(PhaseMacroExpand* phase, Node* ctrl, Node* mem, Node* src, Node* dst) const {
+  // Manual load/store of one int.
+  MergeMemNode* mm = phase->transform_later(MergeMemNode::make(mem))->as_MergeMem();
+  const TypePtr* s_adr_type = phase->igvn().type(src)->is_ptr();
+  const TypePtr* d_adr_type = phase->igvn().type(dst)->is_ptr();
+  uint s_alias_idx = phase->C->get_alias_index(s_adr_type);
+  uint d_alias_idx = phase->C->get_alias_index(d_adr_type);
+  // This copies the first 4 bytes after the compact header (hash field or first instance field) as a raw int.
+  // The actual field at this offset may be a narrowOop, so the load/store must be marked as mismatched to
+  // avoid StoreN-vs-StoreI assertion failures during IGVN.
+  Node* load_prefix = phase->transform_later(
+      LoadNode::make(phase->igvn(), ctrl, mm->memory_at(s_alias_idx), src, s_adr_type,
+                      TypeInt::INT, T_INT, MemNode::unordered, LoadNode::DependsOnlyOnTest,
+                      false /*require_atomic_access*/, false /*unaligned*/, true /*mismatched*/));
+  Node* store_prefix = phase->transform_later(
+      StoreNode::make(phase->igvn(), ctrl, mm->memory_at(d_alias_idx), dst, d_adr_type,
+                      load_prefix, T_INT, MemNode::unordered));
+  store_prefix->as_Store()->set_mismatched_access();
+  mm->set_memory_at(d_alias_idx, store_prefix);
+  return mm;
 }
 
 #undef XTOP

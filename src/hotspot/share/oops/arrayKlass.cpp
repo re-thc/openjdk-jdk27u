@@ -287,3 +287,11 @@ void ArrayKlass::oop_verify_on(oop obj, outputStream* st) {
   arrayOop a = arrayOop(obj);
   guarantee(a->length() >= 0, "array with negative length?");
 }
+
+size_t ArrayKlass::hash_offset_in_bytes(oop obj, markWord m) const {
+  assert(UseFourByteObjectHeaders, "only with compact i-hash");
+  arrayOop ary = arrayOop(obj);
+  BasicType type = element_type();
+  int length = LP64_ONLY(m.array_length()) NOT_LP64(ary->length());
+  return ary->base_offset_in_bytes(type) + (static_cast<size_t>(length) << log2_element_size());
+}

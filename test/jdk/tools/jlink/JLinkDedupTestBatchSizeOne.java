@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +39,7 @@ import tests.JImageGenerator;
  * @bug 8311591
  * @library /test/lib
  *          ../lib
- * @modules java.base/jdk.internal.jimage
+ * @modules java.base/jdk.internal.jimage java.desktop
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.plugin
  *          jdk.jlink/jdk.tools.jmod

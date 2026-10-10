@@ -207,6 +207,7 @@
   volatile_nonstatic_field(InstanceKlass,      _init_thread,                                  JavaThread*)                           \
   nonstatic_field(InstanceKlass,               _itable_len,                                   int)                                   \
   nonstatic_field(InstanceKlass,               _nest_host_index,                              u2)                                    \
+  nonstatic_field(InstanceKlass,               _hash_offset,                                  int)                                    \
   nonstatic_field(InstanceKlass,               _reference_type,                               u1)                                    \
   volatile_nonstatic_field(InstanceKlass,      _oop_map_cache,                                OopMapCache*)                          \
   nonstatic_field(InstanceKlass,               _jni_ids,                                      JNIid*)                                \
@@ -1801,11 +1802,14 @@
   declare_constant(markWord::lock_bits)                                   \
   declare_constant(markWord::max_hash_bits)                               \
   declare_constant(markWord::hash_bits)                                   \
+  declare_constant(markWord::hashctrl_bits)                               \
                                                                           \
   declare_constant(markWord::lock_shift)                                  \
   declare_constant(markWord::age_shift)                                   \
   declare_constant(markWord::hash_shift)                                  \
+  declare_constant(markWord::hashctrl_shift)                              \
   LP64_ONLY(declare_constant(markWord::klass_shift))                      \
+  LP64_ONLY(declare_constant(markWord::four_byte_klass_shift))            \
                                                                           \
   declare_constant(markWord::lock_mask)                                   \
   declare_constant(markWord::lock_mask_in_place)                          \
@@ -1813,6 +1817,9 @@
   declare_constant(markWord::age_mask_in_place)                           \
   declare_constant(markWord::hash_mask)                                   \
   declare_constant(markWord::hash_mask_in_place)                          \
+  declare_constant(markWord::hashctrl_mask_in_place)                      \
+  declare_constant(markWord::hashctrl_hashed_mask_in_place)               \
+  declare_constant(markWord::hashctrl_expanded_mask_in_place)             \
                                                                           \
   declare_constant(markWord::locked_value)                                \
   declare_constant(markWord::unlocked_value)                              \

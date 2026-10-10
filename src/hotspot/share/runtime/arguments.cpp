@@ -3466,13 +3466,50 @@ void Arguments::set_compact_headers_flags() {
     }
     FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
   }
+  if (UseFourByteObjectHeaders && FLAG_IS_DEFAULT(hashCode)) {
+    hashCode = 6;
+  }
+  if (UseFourByteObjectHeaders && FLAG_IS_DEFAULT(CompressedClassSpaceSize)) {
+    FLAG_SET_DEFAULT(CompressedClassSpaceSize, CompressedKlassPointers::max_klass_range_size_coh);
+  }
 #endif
 }
 
 jint Arguments::apply_ergo() {
+#ifdef _LP64
+  // A legacy-layout request from arguments, environment variables or a flag
+  // file also disables the fork default. AOT child VMs inherit their options
+  // through JAVA_TOOL_OPTIONS.
+  // An explicit +UseFourByteObjectHeaders still implies compact headers.
+  if (FLAG_IS_DEFAULT(UseFourByteObjectHeaders) &&
+      !FLAG_IS_DEFAULT(UseCompactObjectHeaders) && !UseCompactObjectHeaders) {
+    FLAG_SET_ERGO(UseFourByteObjectHeaders, false);
+  }
+  if (UseFourByteObjectHeaders) {
+#if (!defined(AMD64) && !defined(AARCH64)) || defined(ZERO)
+    warning("UseFourByteObjectHeaders is only supported on x64 and AArch64; disabling it");
+    FLAG_SET_ERGO(UseFourByteObjectHeaders, false);
+#else
+    if (!FLAG_IS_DEFAULT(hashCode) && hashCode != 2 && hashCode != 6) {
+      warning("UseFourByteObjectHeaders requires hashCode=2 or hashCode=6; disabling it");
+      FLAG_SET_ERGO(UseFourByteObjectHeaders, false);
+    }
+    if (UseFourByteObjectHeaders) {
+      FLAG_SET_ERGO(UseCompactObjectHeaders, true);
+    }
+#endif
+  }
+#endif
   // Set flags based on ergonomics.
   jint result = set_ergonomics_flags();
   if (result != JNI_OK) return result;
+
+#ifdef _LP64
+  if (UseFourByteObjectHeaders && !(UseSerialGC || UseG1GC || UseZGC)) {
+    warning("UseFourByteObjectHeaders is only supported with Serial, G1 and ZGC; disabling it");
+    FLAG_SET_ERGO(UseFourByteObjectHeaders, false);
+  }
+#endif
 
   // Set heap size based on available physical memory
   GCConfig::arguments()->set_heap_size();

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +30,7 @@
 #include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/objectMonitorTable.hpp"
 #include "runtime/os.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/synchronizer.hpp"
@@ -91,7 +93,11 @@ TEST_VM(markWord, printing) {
 
   // Hash the object then print it.
   intx hash = h_obj->identity_hash();
-  assert_test_pattern(h_obj, "is_unlocked hash=0x");
+  if (UseFourByteObjectHeaders) {
+    assert_test_pattern(h_obj, "is_unlocked hash is-hashed=true is-copied=false");
+  } else {
+    assert_test_pattern(h_obj, "is_unlocked hash=0x");
+  }
 
   // Wait gets the lock inflated.
   {
@@ -107,4 +113,46 @@ TEST_VM(markWord, printing) {
     done.wait_with_safepoint_check(THREAD);  // wait till the thread is done.
   }
 }
+TEST_VM(markWord, zero_hash_monitor) {
+  if (!UseFourByteObjectHeaders) return;
+  JavaThread* THREAD = JavaThread::current();
+  ThreadInVMfromNative invm(THREAD);
+  HandleMark hm(THREAD);
+  Handle object(THREAD, vmClasses::Long_klass()->allocate_instance(THREAD));
+  ASSERT_FALSE(HAS_PENDING_EXCEPTION);
+  markWord mark = object()->mark();
+  const size_t offset = object()->klass()->hash_offset_in_bytes(object(), mark);
+  ASSERT_LT(offset, size_t(object()->size() * HeapWordSize));
+  object()->int_field_put(offset, 0);
+  object()->set_mark(mark.set_hashed_expanded());
+  ASSERT_EQ(object()->identity_hash(), 0);
+  ObjectLocker locker(object, THREAD);
+  // notify_all on a lightweight lock has no waiters and does not inflate.
+  ObjectMonitor* monitor = ObjectSynchronizer::inflate_locked_or_imse(
+      object(), ObjectSynchronizer::inflate_cause_wait, THREAD);
+  ASSERT_FALSE(HAS_PENDING_EXCEPTION);
+  ASSERT_NE(monitor, nullptr);
+  locker.notify_all(THREAD);
+  ASSERT_EQ(ObjectMonitorTable::monitor_get(object()), monitor);
+  // A failed evacuation retains header metadata in a self-forwarded object.
+  markWord live_mark = object()->mark();
+  object()->set_mark(live_mark.set_self_forwarded());
+  ASSERT_EQ(ObjectMonitorTable::monitor_get(object()), monitor);
+  ASSERT_EQ(ObjectSynchronizer::get_hash(object()->mark(), object()), 0u);
+  object()->set_mark(live_mark);
+}
+
 #endif // PRODUCT
+
+TEST_VM(markWord, forwarded_monitor_lookup_does_not_decode_klass) {
+  if (!UseFourByteObjectHeaders) {
+    return;
+  }
+  alignas(16) HeapWord storage[4] = {};
+  oop source = cast_to_oop(&storage[0]);
+  markWord forwarded = markWord::encode_pointer_as_mark(cast_to_oop(&storage[2]));
+  // These bits belong to the pointer, not to the hash-control state.
+  forwarded = markWord(forwarded.value() | markWord::hashctrl_mask_in_place);
+  source->set_mark_full(forwarded);
+  ASSERT_EQ(ObjectMonitorTable::monitor_get(source), nullptr);
+}

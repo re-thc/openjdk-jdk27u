@@ -22,6 +22,8 @@
  */
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Platform;
@@ -83,7 +85,25 @@ public class CDSPluginTest {
 
         if (Platform.isAArch64() || Platform.isX64()) {
             helper.checkImage(image, module, null, null,
-                      new String[] { subDir + "classes" + suffix, subDir + "classes_nocoops" + suffix});
+                      new String[] { subDir + "classes.jsa", subDir + "classes_nocoops.jsa",
+                                     subDir + "classes_nocoh.jsa", subDir + "classes_nocoops_nocoh.jsa",
+                                     subDir + "classes_fourbyte.jsa", subDir + "classes_nocoops_fourbyte.jsa" });
+            // Force archive loading for every supported header/oop combination.
+            // Merely finding files would miss archives that cannot be mapped.
+            for (String layout : new String[] { "eight", "legacy", "four" }) {
+                for (boolean coops : new boolean[] { true, false }) {
+                    List<String> command = new ArrayList<>();
+                    command.add(image.resolve("bin").resolve(Platform.isWindows() ? "java.exe" : "java").toString());
+                    command.add("-Xshare:on");
+                    command.add("-XX:" + (layout.equals("four") ? "+" : "-") + "UseFourByteObjectHeaders");
+                    command.add("-XX:" + (layout.equals("legacy") ? "-" : "+") + "UseCompactObjectHeaders");
+                    command.add("-XX:" + (coops ? "+" : "-") + "UseCompressedOops");
+                    command.add("-version");
+                    ProcessTools.executeProcess(new ProcessBuilder(command))
+                                .shouldHaveExitValue(0)
+                                .shouldContain("sharing");
+                }
+            }
         } else {
             helper.checkImage(image, module, null, null,
                       new String[] { subDir + "classes" + suffix });

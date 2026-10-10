@@ -1,5 +1,6 @@
 //
 // Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -7290,16 +7291,21 @@ instruct loadNKlassCompactHeaders(rRegN dst, memory mem, rFlagsReg cr)
   effect(KILL cr);
   ins_cost(125);
   format %{
-    "movl    $dst, $mem\t# compressed klass ptr, shifted\n\t"
-    "shrl    $dst, markWord::klass_shift_at_offset"
+    $$template
+    $$emit$$"movl    $dst, $mem\t# compressed klass ptr, shifted\n\tshrl    $dst, "
+    st->print("%d", UseFourByteObjectHeaders ? markWord::four_byte_klass_shift : markWord::klass_shift_at_offset);
   %}
   ins_encode %{
+    // The incoming address is pointing into obj-start + Type::klass_offset(). We need to extract
+    // obj-start, so that we can load from the object's mark-word instead.
+    Register d = $dst$$Register;
+    Address s = UseFourByteObjectHeaders ? ($mem$$Address).plus_disp(-Type::klass_offset()) : $mem$$Address;
+    int shift = UseFourByteObjectHeaders ? markWord::four_byte_klass_shift : markWord::klass_shift_at_offset;
     if (UseAPX) {
-      __ eshrl($dst$$Register, $mem$$Address, markWord::klass_shift_at_offset, false);
-    }
-    else {
-      __ movl($dst$$Register, $mem$$Address);
-      __ shrl($dst$$Register, markWord::klass_shift_at_offset);
+      __ eshrl(d, s, shift, false);
+    } else {
+      __ movl(d, s);
+      __ shrl(d, shift);
     }
   %}
   ins_pipe(ialu_reg_mem);
@@ -17201,12 +17207,27 @@ instruct jmpConUCFE_short(cmpOpUCFE cop, rFlagsRegUCFE cmp, label labl) %{
 // inlined locking and unlocking
 
 instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI rax_reg, rRegP tmp) %{
+  predicate(!UseFourByteObjectHeaders);
   match(Set cr (FastLock object box));
   effect(TEMP rax_reg, TEMP tmp, USE_KILL box);
   ins_cost(300);
   format %{ "fastlock $object,$box\t! kills $box,$rax_reg,$tmp" %}
   ins_encode %{
     __ fast_lock($object$$Register, $box$$Register, $rax_reg$$Register, $tmp$$Register, r15_thread);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmpFastLockFourByte(rFlagsReg cr, rRegP object, rbx_RegP box,
+                            rax_RegI rax_reg, rRegP tmp, rcx_RegL hash_temp) %{
+  predicate(UseFourByteObjectHeaders);
+  match(Set cr (FastLock object box));
+  effect(TEMP rax_reg, TEMP tmp, TEMP hash_temp, USE_KILL box);
+  ins_cost(300);
+  format %{ "fastlock $object,$box\t! kills $box,$rax_reg,$tmp,$hash_temp" %}
+  ins_encode %{
+    __ fast_lock($object$$Register, $box$$Register, $rax_reg$$Register,
+                 $tmp$$Register, r15_thread, $hash_temp$$Register);
   %}
   ins_pipe(pipe_slow);
 %}

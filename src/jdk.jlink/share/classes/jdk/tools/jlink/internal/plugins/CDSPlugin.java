@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +45,7 @@ import jdk.tools.jlink.plugin.ResourcePoolBuilder;
  */
 public final class CDSPlugin extends AbstractPlugin implements PostProcessor {
     private static final String NAME = "generate-cds-archive";
+    private enum HeaderLayout { EIGHT_BYTE, LEGACY, FOUR_BYTE }
     private Platform targetPlatform;
     private Platform runtimePlatform;
 
@@ -60,7 +62,7 @@ public final class CDSPlugin extends AbstractPlugin implements PostProcessor {
         }
     }
 
-    private void generateCDSArchive(ExecutableImage image, boolean noCoops, boolean noCoh) {
+    private void generateCDSArchive(ExecutableImage image, boolean noCoops, HeaderLayout headers) {
         List<String> javaCmd = new ArrayList<String>();
         Path javaPath = image.getHome().resolve("bin").resolve(javaExecutableName());
         if (!Files.exists(javaPath)) {
@@ -73,9 +75,18 @@ public final class CDSPlugin extends AbstractPlugin implements PostProcessor {
             javaCmd.add("-XX:-UseCompressedOops");
             archiveMsg += "-NOCOOPS";
         }
-        if (noCoh) {
-            javaCmd.add("-XX:-UseCompactObjectHeaders");
+        if (Architecture.is64bit()) {
+            javaCmd.add("-XX:" + (headers == HeaderLayout.FOUR_BYTE ? "+" : "-") +
+                        "UseFourByteObjectHeaders");
+            javaCmd.add("-XX:" + (headers == HeaderLayout.LEGACY ? "-" : "+") +
+                        "UseCompactObjectHeaders");
+        }
+        if (headers == HeaderLayout.LEGACY) {
             archiveMsg += "-NOCOH";
+        } else if (headers == HeaderLayout.FOUR_BYTE) {
+            // Use the deterministic dump-only hash inputs.
+            javaCmd.add("-Xint");
+            archiveMsg += "-FOURBYTE";
         }
         ProcessBuilder builder = new ProcessBuilder(javaCmd);
         int status = -1;
@@ -104,13 +115,19 @@ public final class CDSPlugin extends AbstractPlugin implements PostProcessor {
 
         Path classListPath = image.getHome().resolve("lib").resolve("classlist");
         if (Files.exists(classListPath)) {
-            generateCDSArchive(image, false, false);
+            generateCDSArchive(image, false, HeaderLayout.EIGHT_BYTE);
 
-            // Generate all of the CDS archive combinations: nocoops, nocoh, nocoops_nocoh.
+            // Generate matching archives for each supported layout, both with
+            // and without compressed oops. The target VM's default is four-byte
+            // headers, so select the eight-byte layout explicitly as well.
             if (Architecture.is64bit()) {
-                generateCDSArchive(image, true, false);
-                generateCDSArchive(image, false, true);
-                generateCDSArchive(image, true, true);
+                generateCDSArchive(image, true, HeaderLayout.EIGHT_BYTE);
+                generateCDSArchive(image, false, HeaderLayout.LEGACY);
+                generateCDSArchive(image, true, HeaderLayout.LEGACY);
+                if (Architecture.isX64() || Architecture.isAARCH64()) {
+                    generateCDSArchive(image, false, HeaderLayout.FOUR_BYTE);
+                    generateCDSArchive(image, true, HeaderLayout.FOUR_BYTE);
+                }
             }
             System.out.println("Created CDS archive successfully");
         } else {

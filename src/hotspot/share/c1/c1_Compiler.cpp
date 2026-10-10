@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,10 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 
 bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   switch (id) {
+  case vmIntrinsics::_getObjectSize:
+    // The fixed-layout intrinsic does not include hash expansion. The native
+    // JVMTI implementation uses the current mark and also handles mirrors.
+    return !UseFourByteObjectHeaders;
   case vmIntrinsics::_compareAndSetLong:
     break;
   case vmIntrinsics::_getAndAddInt:
@@ -237,7 +241,6 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
 #endif
-  case vmIntrinsics::_getObjectSize:
 #if defined(X86) || defined(AARCH64) || defined(S390) || defined(RISCV64) || defined(PPC64)
   case vmIntrinsics::_clone:
 #endif

@@ -235,6 +235,10 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   }
 
   switch (id) {
+  case vmIntrinsics::_getObjectSize:
+    // Four-byte objects may grow when GC preserves their identity hash.
+    // Use JVMTI's mark-aware size calculation instead of a fixed layout.
+    return !UseFourByteObjectHeaders;
   case vmIntrinsics::_compressStringC:
   case vmIntrinsics::_compressStringB:
     if (!Matcher::match_rule_supported(Op_StrCompressedCopy)) return false;
@@ -830,7 +834,6 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_isCompileConstant:
   case vmIntrinsics::_Preconditions_checkIndex:
   case vmIntrinsics::_Preconditions_checkLongIndex:
-  case vmIntrinsics::_getObjectSize:
     break;
   case vmIntrinsics::_VectorCompressExpand:
   case vmIntrinsics::_VectorUnaryOp:

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,6 +199,19 @@ protected:
   void assert_type_verify_empty() const NOT_DEBUG_RETURN;
 
 public:
+
+  // This is used as a marker to identify narrow Klass* loads, which
+  // are really extracted from the mark-word, but we still want to
+  // distinguish it.
+  static int klass_offset() {
+    if (UseFourByteObjectHeaders) {
+      // Synthetic AddP offset for LoadNKlass only; offset 1 is inside the
+      // header and cannot address a Java field or array element.
+      return 1;
+    } else {
+      return oopDesc::klass_offset_in_bytes();
+    }
+  }
 
   inline void* operator new( size_t x ) throw() {
     Compile* compile = Compile::current();
@@ -1654,7 +1668,7 @@ class TypeAryPtr : public TypeOopPtr {
 
     if (UseCompressedOops && (elem()->make_oopptr() != nullptr && !top_or_bottom) &&
         _offset != 0 && _offset != arrayOopDesc::length_offset_in_bytes() &&
-        _offset != arrayOopDesc::klass_offset_in_bytes()) {
+        _offset != Type::klass_offset()) {
       _is_ptr_to_narrowoop = true;
     }
 

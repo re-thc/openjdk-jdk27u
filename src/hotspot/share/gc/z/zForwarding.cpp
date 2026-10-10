@@ -21,6 +21,7 @@
  * questions.
  */
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
@@ -366,6 +367,13 @@ bool ZForwarding::relocated_remembered_fields_published_contains(volatile zpoint
   return false;
 }
 
+void ZForwarding::record_hash_expansion(size_t old_size, size_t new_size) {
+  if (UseFourByteObjectHeaders && ZVerifyForwarding && old_size != new_size) {
+    const size_t alignment = _page->object_alignment();
+    _hash_expansion_bytes.add_then_fetch(align_up(new_size, alignment) - align_up(old_size, alignment));
+  }
+}
+
 void ZForwarding::verify() const {
   guarantee(_ref_count.load_relaxed() != 0, "Invalid reference count");
   guarantee(_page != nullptr, "Invalid page");
@@ -396,12 +404,23 @@ void ZForwarding::verify() const {
     }
 
     const zaddress to_addr = ZOffset::address(to_zoffset(entry.to_offset()));
-    const size_t size = ZUtils::object_size(to_addr);
+    // Source headers remain readable for normal relocation. Hashing after marking
+    // can change whether the target grows, so a prediction made at mark time is
+    // insufficient. In-place relocation overwrites source objects; use actual
+    // expansion recorded by the relocating threads instead. Claiming the page
+    // waits for those threads before in-place relocation begins.
+    const zaddress size_addr = UseFourByteObjectHeaders && !_in_place
+        ? ZOffset::address(start() + (entry.from_index() << object_alignment_shift()))
+        : to_addr;
+    const size_t size = ZUtils::object_size(size_addr);
     const size_t aligned_size = align_up(size, _page->object_alignment());
     live_bytes += aligned_size;
     live_objects++;
   }
 
   // Verify number of live objects and bytes
+  if (UseFourByteObjectHeaders && _in_place) {
+    live_bytes -= _hash_expansion_bytes.load_relaxed();
+  }
   _page->verify_live(live_objects, live_bytes, _in_place);
 }
