@@ -1,6 +1,29 @@
 # Rust regex performance
 
-## Workloads and method
+## Development profile (2026-10-10)
+
+Source `e68d8de5cd3`, built with `bin/configure-dev`, GCC 14.2 and the default
+linker. Linux x86_64, Xeon Platinum 8573C, one pinned CPU, Serial GC and one
+active processor. Same-image Java baseline uses `-XX:-UseRustRegex`. Two
+alternating process pairs per case; each process runs three 500 ms warmups and
+five 500 ms measurements. Each case has its own JVM, with no child JMH forks.
+These exploratory shared-host means include `Matcher.reset().find()`.
+Values below 1 are losses. Binary hashes, JVM options and all samples are recorded
+in the `sync-summary` records in [the results](rust-regex-performance.jsonl).
+
+| Workload | Tier | Java ns/op | Default ns/op | Speedup |
+| --- | --- | ---: | ---: | ---: |
+| Prefix/digit miss, 4,096 chars | Interpreter | 114,216.6 | 2,474.1 | 46.16x |
+| Prefix/digit miss, 4,096 chars | C1 | 6,270.9 | 207.4 | 30.23x |
+| Prefix/digit miss, 4,096 chars | C2 | 4,867.9 | 170.8 | 28.50x |
+| Digit miss, 16 chars | C2 | 88.4 | 29.7 | 2.98x |
+| Prefix/digit miss, 8 chars | C2 | 24.5 | 33.1 | 0.74x |
+| Captured email, early hit, 16 chars | C2 | 68.0 | 137.2 | 0.50x |
+
+The expanded study below used an earlier revision and build profile. Compare
+within each pair; absolute timings across revisions are not directly comparable.
+
+## Expanded shape and lifetime study (2026-10-06)
 
 Compare default-on Rust matching with `-XX:-UseRustRegex` in the same fork.
 Linux x86_64, Xeon Platinum 8573C; one pinned CPU, Serial GC, one active processor.
@@ -112,8 +135,7 @@ The measurements support retaining a hybrid by shape and work performed:
 16-character C2 digit misses improve 5.20x, while fixed-width misses lose
 (0.44x). C2 prefix misses at 8 characters remain slower (0.50x); fixed-width,
 alternation and captured early hits also have native overhead. These are
-remaining targets for compact short plans. Input length alone cannot select
-the faster path, and short expressions do not justify adding a miss counter.
+remaining targets for compact short plans. Input length alone cannot select the faster path.
 
 ## Complete Pattern lifetimes
 
@@ -159,12 +181,13 @@ avoids construction entirely.
 
 ## Reproduction
 
-Build the fork and JMH microbenchmarks, then supply the benchmark classpath:
+Configure with `--with-jmh=<jmh-directory>`, then build the image and microbenchmarks:
 
 ```sh
+make CONF=<configuration> images build-microbenchmark
 python3 make/scripts/benchmark-rust-regex.py \
-    --java build/<configuration>/jdk/bin/java \
-    --classpath '<benchmark-classes>:<jmh-jars>/*' \
+    --java build/<configuration>/images/jdk/bin/java \
+    --classpath build/<configuration>/images/test/micro/benchmarks.jar \
     --output build/rust-regex-benchmarks
 ```
 
@@ -178,15 +201,15 @@ compiler/engine options without Java boundary costs.
 
 ## Validation
 
-The full x86 JDK build passes. Direct differential checks pass 305,450
-comparisons per configuration across default/on/off, interpreter, C1, C2,
-JNI-only and noncompact Strings. Intrinsic and JNI budget tests exhaust
-admission with 155 retained engines, preserve existing engines, select Java
-for new allocations, and restore capacity after cleanup. AArch64
-fastdebug/QEMU passes focused end-state/bounds checks and startup matching
-in C1/C2 with `CheckUnhandledOops`; logs confirm the matching intrinsic.
-AArch64 performance was not measured.
+The x86 desktop-free image and profile smoke checks pass. JMH builds successfully
+with desktop benchmarks excluded. jtreg passes all 106 selected test descriptions
+in regex, Scanner, String, startup and source checks (5,980 framework checks).
+RustRegexTest passes 305,454 differential comparisons in each of eight modes:
+default/on/off, interpreter, C1, C2, JNI-only and noncompact Strings. Intrinsic
+and JNI budget tests preserve existing engines, select Java after admission
+exhaustion, and restore capacity after cleanup. Rust tests, Clippy, formatting
+and the frozen release build pass.
 
-Local jtreg cannot start tests: its JDK-version probe fails to create a VM
-thread (`pthread_create EAGAIN`). Direct checks are reported separately;
-the CI matrix is required for a full jtreg result.
+AArch64 C1/C2 functional coverage was collected with fastdebug under QEMU,
+including bounds/end-state checks and startup matching with `CheckUnhandledOops`.
+AArch64 performance requires native hardware and was not measured.
