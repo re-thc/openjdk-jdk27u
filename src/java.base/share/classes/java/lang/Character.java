@@ -10125,6 +10125,9 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         if (seq instanceof String string) {
             return string.codePointCount(beginIndex, endIndex);
         }
+        if (seq instanceof AbstractStringBuilder builder) {
+            return builder.codePointCount(beginIndex, endIndex);
+        }
         int n = endIndex - beginIndex;
         for (int i = beginIndex; i < endIndex; ) {
             if (isHighSurrogate(seq.charAt(i++)) && i < endIndex &&

@@ -134,6 +134,8 @@ public class SimdUTFTest {
                     if (text.codePointCount(begin, end) != expected
                             || Character.codePointCount(chars, begin, end - begin) != expected
                             || Character.codePointCount((CharSequence)text, begin, end) != expected
+                            || Character.codePointCount(new StringBuilder(text), begin, end) != expected
+                            || Character.codePointCount(new StringBuffer(text), begin, end) != expected
                             || new StringBuilder(text).codePointCount(begin, end) != expected
                             || new StringBuffer(text).codePointCount(begin, end) != expected) {
                         throw new AssertionError("code-point count or split-surrogate range");

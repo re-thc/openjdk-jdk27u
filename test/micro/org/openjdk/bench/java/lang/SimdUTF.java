@@ -36,7 +36,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
 
-/** Run the same binary with +/-UseSIMDUTFIntrinsics in -Xint, C1 and C2 forks. */
+/** Bulk Unicode and Base64 benchmarks for interpreter, C1 and C2 execution. */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
@@ -44,12 +44,14 @@ import org.openjdk.jmh.annotations.*;
 @Measurement(iterations = 5, time = 1)
 @Fork(3)
 public class SimdUTF {
-    @Param({"32", "256", "4096", "65536"})
+    @Param({"32", "64", "128", "256", "4096", "65536"})
     public int size;
     private String ascii, latin1, bmp, supplementary;
     private byte[] asciiBytes, latin1Bytes, utf8Bytes, supplementaryBytes, binary, base64, encoded, decoded;
     private char[] chars, targetChars;
     private char[] supplementaryChars;
+    private StringBuilder supplementaryBuilder;
+    private StringBuffer supplementaryBuffer;
     private ByteBuffer charsetBytes, charsetInput;
     private CharBuffer charsetChars, charsetOutput;
     private ByteBuffer asciiCharsetInput;
@@ -69,7 +71,6 @@ public class SimdUTF {
     private OutputStream base64Stream;
     private Base64.Encoder base64Encoder;
     private Base64.Decoder base64Decoder;
-    private char[] asciiChars, latin1Chars;
     private CharBuffer asciiInput, latin1Input, utf32TightOutput;
     private ByteBuffer singleByteOutput;
     private CharsetEncoder asciiEncoder, latin1Encoder, latin1Validator;
@@ -81,6 +82,8 @@ public class SimdUTF {
         bmp = "漢".repeat(size);
         supplementary = "😃".repeat(size / 2);
         supplementaryChars = supplementary.toCharArray();
+        supplementaryBuilder = new StringBuilder(supplementary);
+        supplementaryBuffer = new StringBuffer(supplementary);
         asciiBytes = ascii.getBytes(StandardCharsets.UTF_8);
         latin1Bytes = latin1.getBytes(StandardCharsets.UTF_8);
         utf8Bytes = bmp.getBytes(StandardCharsets.UTF_8);
@@ -114,12 +117,10 @@ public class SimdUTF {
         utf32Input = ByteBuffer.wrap(bmp.getBytes(utf32));
         utf32Output = CharBuffer.allocate(size * 2);
         base64Stream = base64Encoder.wrap(OutputStream.nullOutputStream());
-        asciiChars = ascii.toCharArray();
-        latin1Chars = latin1.toCharArray();
-        asciiInput = CharBuffer.wrap(asciiChars);
+        asciiInput = CharBuffer.wrap(ascii.toCharArray());
         asciiCharsetInput = ByteBuffer.wrap(asciiBytes);
         asciiCharsetOutput = CharBuffer.allocate(size);
-        latin1Input = CharBuffer.wrap(latin1Chars);
+        latin1Input = CharBuffer.wrap(latin1.toCharArray());
         singleByteOutput = ByteBuffer.allocate(size);
         asciiEncoder = StandardCharsets.US_ASCII.newEncoder();
         latin1Encoder = StandardCharsets.ISO_8859_1.newEncoder();
@@ -153,6 +154,12 @@ public class SimdUTF {
     }
     @Benchmark public int charArrayCodePointCount() {
         return Character.codePointCount(supplementaryChars, 0, supplementaryChars.length);
+    }
+    @Benchmark public int builderCodePointCount() {
+        return Character.codePointCount(supplementaryBuilder, 0, supplementaryBuilder.length());
+    }
+    @Benchmark public int bufferCodePointCount() {
+        return Character.codePointCount(supplementaryBuffer, 0, supplementaryBuffer.length());
     }
 
     @Benchmark public int utf16CharsetEncode() {

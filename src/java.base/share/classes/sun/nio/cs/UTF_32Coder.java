@@ -158,8 +158,9 @@ class UTF_32Coder {
         protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
             if (SimdUTF.isEligible(src.remaining()) && src.hasArray() && dst.hasArray()) {
                 if (!doneBOM && src.hasRemaining()) {
-                    if (dst.remaining() < 4)
+                    if (dst.remaining() < 4) {
                         return CoderResult.OVERFLOW;
+                    }
                     put(BOM_BIG, dst);
                     doneBOM = true;
                 }
