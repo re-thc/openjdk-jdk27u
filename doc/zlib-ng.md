@@ -24,8 +24,9 @@ Dictionary setup selects zlib-ng. Each stream keeps its backend until reset,
 which can select a different backend and reuses the allocation when possible.
 Inflater and native libzip consumers use the selected backend throughout.
 
-C1 and C2 share a GC-safe ZIP runtime call. The interpreter and intrinsic
-fallback reuse the existing JNI entry points.
+C1 and C2 share a GC-safe ZIP runtime call. Interpreter compression uses the
+original JNI calls; compiler intrinsic fallback reuses the same native entry
+points.
 Heap arrays are pinned during native processing; exception handling follows
 unpinning. Java synchronization, buffer positions, memory-session handling,
 counters and streaming semantics are preserved. Direct-to-direct Inflater calls
