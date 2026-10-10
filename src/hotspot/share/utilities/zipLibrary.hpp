@@ -53,7 +53,7 @@ class ZipLibrary : AllStatic {
   static void* handle();
   static jlong complete(JNIEnv* env, jboolean inflate, jobject receiver, jlong stream,
                         jint input_len, jint output_len, jint params, jint status);
-  static jlong process(JNIEnv* env, jboolean inflate, jobject receiver, jlong stream,
+  static jlong process(jboolean inflate, jlong stream,
                        jlong input, jint input_len, jlong output, jint output_len,
                        jint flush, jint params);
 };

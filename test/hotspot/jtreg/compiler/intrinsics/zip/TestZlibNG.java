@@ -30,6 +30,8 @@
  * @run main/othervm -Xmx64m -XX:+UseZlibNG -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 TestZlibNG
  * @run main/othervm -Xmx64m -XX:+UseZlibNG -Xint TestZlibNG
  * @run main/othervm -Xmx64m -XX:+UseZlibNG -XX:+UnlockDiagnosticVMOptions -XX:-UseZipIntrinsics TestZlibNG
+ * @run main/othervm -Xmx64m -XX:+UseZlibNG -Xbatch -XX:TieredStopAtLevel=1 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_zipProcess TestZlibNG
+ * @run main/othervm -Xmx64m -XX:+UseZlibNG -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_zipProcess TestZlibNG
  * @run main/othervm -Xmx64m -XX:-UseZlibNG TestZlibNG
  */
 
