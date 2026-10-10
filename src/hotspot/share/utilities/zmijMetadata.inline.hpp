@@ -27,10 +27,10 @@
 #ifndef SHARE_UTILITIES_ZMIJMETADATA_INLINE_HPP
 #define SHARE_UTILITIES_ZMIJMETADATA_INLINE_HPP
 
-// Included after zmij-impl.hpp. The vendor updater compiles this same bridge
-// and checks its table/representation assumptions with exact integer arithmetic.
+// Include after zmij-impl.hpp. The updater verifies this bridge against
+// the staged vendor tables and decimal representation.
 inline uint64_t hotspot_zmij_decimal_metadata(uint64_t bits) {
-  // This pure entry is total, even if C2 removes or commons repeated calls.
+  // Keep this pure entry total when C2 hoists or shares calls.
   if (bits <= 128 || bits >= UINT64_C(0x7ff0000000000000)) {
     return 0;
   }

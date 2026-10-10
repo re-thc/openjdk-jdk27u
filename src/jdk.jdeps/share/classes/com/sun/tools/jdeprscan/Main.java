@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.tools.jdeprscan;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.module.ModuleFinder;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -340,7 +341,7 @@ public class Main implements DiagnosticListener<JavaFileObject> {
      */
     boolean processSelf(Collection<String> classes) throws IOException {
         options.add("--add-modules");
-        options.add("java.se");
+        options.add(String.join(",", systemJavaSEModules()));
 
         if (classes.isEmpty()) {
             Path modules = FileSystems.getFileSystem(URI.create("jrt:/"))
@@ -357,6 +358,19 @@ public class Main implements DiagnosticListener<JavaFileObject> {
         } else {
             return doClassNames(classes);
         }
+    }
+
+    private static List<String> systemJavaSEModules() {
+        var finder = ModuleFinder.ofSystem();
+        if (finder.find("java.se").isPresent()) {
+            return List.of("java.se");
+        }
+        // Reduced images can contain Java SE modules without the java.se aggregator.
+        return finder.findAll().stream()
+                     .map(ref -> ref.descriptor().name())
+                     .filter(name -> name.startsWith("java."))
+                     .sorted()
+                     .toList();
     }
 
     /**
@@ -386,6 +400,9 @@ public class Main implements DiagnosticListener<JavaFileObject> {
         if (hasModules) {
             List<String> rootMods = hasJavaSE_EE ? List.of("java.se", "java.se.ee")
                                                  : List.of("java.se");
+            if (release.equals(Integer.toString(Runtime.version().feature()))) {
+                rootMods = systemJavaSEModules();
+            }
             TraverseProc proc = new TraverseProc(rootMods);
             JavaCompiler.CompilationTask task =
                 compiler.getTask(null, fm, this,

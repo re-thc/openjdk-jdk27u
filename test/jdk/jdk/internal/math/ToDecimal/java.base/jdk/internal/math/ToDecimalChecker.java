@@ -37,8 +37,8 @@ import static jdk.internal.math.MathUtilsChecker.*;
  */
 abstract class ToDecimalChecker extends BasicChecker {
 
-    // The fork accepts the vendor's shortest round-tripping significand.
-    // Product opt-out retains the full original JDK two-digit specification.
+    // Native shortest formatting permits one meaningful digit; the Java
+    // fallback retains its two-digit selection rule.
     private final int minimumDigits = Zmij.isEnabled() ? 1 : 2;
 
     /* The string to check */

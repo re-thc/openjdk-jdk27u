@@ -95,6 +95,12 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_OPEN_OR_CUSTOM],
 
 AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 [
+  UTIL_ARG_ENABLE(NAME: desktop, DEFAULT: true,
+      RESULT: ENABLE_DESKTOP,
+      DESC: [build desktop modules and tools],
+      CHECKING_MSG: [if we should build desktop modules and tools])
+  AC_SUBST(ENABLE_DESKTOP)
+
   # Should we build a JDK without a graphical UI?
   UTIL_ARG_ENABLE(NAME: headless-only, DEFAULT: false,
       RESULT: ENABLE_HEADLESS_ONLY,
@@ -102,8 +108,9 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
       CHECKING_MSG: [if we should build headless-only (no GUI)])
   AC_SUBST(ENABLE_HEADLESS_ONLY)
 
-  # Avoid headless-only on macOS and Windows, it is not supported there
-  if test "x$ENABLE_HEADLESS_ONLY" = xtrue; then
+  # macOS/Windows desktop libraries do not support headless-only builds.
+  # With desktop modules omitted, there are no such libraries to build.
+  if test "x$ENABLE_HEADLESS_ONLY" = xtrue && test "x$ENABLE_DESKTOP" = xtrue; then
     if test "x$OPENJDK_TARGET_OS" = xwindows || test "x$OPENJDK_TARGET_OS" = xmacosx; then
       AC_MSG_ERROR([headless-only is not supported on macOS and Windows])
     fi
@@ -190,6 +197,10 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 
   # Should we build the serviceability agent (SA)?
   INCLUDE_SA=true
+  # The SA module includes its GUI and requires java.desktop.
+  if test "x$ENABLE_DESKTOP" = xfalse; then
+    INCLUDE_SA=false
+  fi
   if HOTSPOT_CHECK_JVM_VARIANT(zero); then
     INCLUDE_SA=false
   fi

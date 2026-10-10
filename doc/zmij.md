@@ -19,7 +19,7 @@ A local native-core comparison used GCC 14.2, `-O3 -std=c++17 -march=x86-64
 Xeon Platinum 8370C. These are medians in ns/value, excluding JNI, String
 construction, and adaptation to Java's notation. Each of nine samples processes
 256 passes over the same 16,384 values (seed `0xf70a111`), and consumes the
-result length and a destination byte. [Recorded medians and ranges](benchmarks/zmij/native-core-results.txt):
+result length and a destination byte. [Recorded medians and ranges](benchmarks/decimal-original-baseline/native-core-results.txt):
 
 | Implementation | double | float |
 |---|---:|---:|

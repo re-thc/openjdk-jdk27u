@@ -28,9 +28,7 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/zmij.hpp"
 
-// Compile the portable upstream implementation here; SSE4.1 has its own
-// translation unit. Wide stores remain in our stack buffer, including bytes
-// past the logical result.
+// The SSE4.1 implementation is compiled in a separate translation unit.
 #define ZMIJ_HOTSPOT_SHORTEST_ONLY
 #define ZMIJ_MALLOC(size) os::malloc(size, mtInternal)
 #define ZMIJ_FREE(ptr) os::free(ptr)

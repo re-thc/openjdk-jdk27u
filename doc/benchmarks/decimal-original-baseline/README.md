@@ -8,9 +8,9 @@ Ratios compare original/default means; values above 1 indicate lower conversion
 time in the default-on image.
 
 [source-manifest.json](source-manifest.json) identifies the measured sources,
-VMs and modules by commit and SHA-256. Published runtime, vendor and benchmark
-files match those measurements; maintenance-tool differences are recorded
-separately. The original image has exploded modules and the comparison image
+VMs and modules by commit and SHA-256. These measurements precede the
+base-branch synchronization at `8d8d71a0452`; the decimal algorithms are
+unchanged. They qualify the recorded images, rather than a newly timed build. The original image has exploded modules and the comparison image
 has packaged modules. Both run with CDS disabled and warmed conversion code.
 
 ## Measurement protocol
@@ -40,8 +40,7 @@ are retained in [measurements.json](measurements.json).
 record the selections and execution order. Adjust their image, classpath,
 root and CPU paths to reproduce. Benchmark compilation is documented in the
 [parser notes](../../fast-float.md) and [formatter notes](../../zmij.md).
-The [same-image parsing](../fast-float/README.md) and
-[formatting](../zmij/README.md) controls are supplementary data.
+
 
 ## Parsing
 
@@ -162,18 +161,6 @@ BigDecimal scale/precision and DecimalFormat/Formatter rounding. Independent
 mathematical checks verify minimum meaningful length, nearest equal-length
 candidates and ties under both selection policies. Consumer fixtures cover
 canonical text and precision-sensitive output separately.
-
-## Float append control
-
-C2 normally uses the Java float-append kernel, with native handling for tiny
-nonzero subnormals. An alternative Java kernel with one meaningful digit for
-those values passed compact/UTF16 correctness checks but had no reliable
-aggregate timing benefit. In three paired forks, append measured
-52.93 ± 2.57 ns for production and 61.07 ± 28.17 ns for the alternative,
-with 83.60 B/op in both. Concatenation measured 51.27 ± 15.24 versus
-47.79 ± 3.93 ns; canonical float Strings 42.78 ± 9.43 versus 39.68 ± 2.81 ns.
-The [control patch](java-shortest.patch) and
-[raw measurements](java-shortest-results.json) document the tradeoff.
 
 ## Detailed samples and controls
 
@@ -343,6 +330,7 @@ The [control patch](java-shortest.patch) and
 
 [validation.txt](validation.txt) records commands, individual outcomes and
 limits. [Native CI](https://github.com/re-thc/openjdk-jdk27u/actions/runs/37369428416)
-tracks the tested runtime revision independently of these local results.
+completed with 96 successful jobs and one intentional skip for the
+pre-sync runtime revision. Updated-base validation is recorded in the PR.
 These samples qualify the selected workloads and platforms, rather than
 establishing universal performance or regression freedom.

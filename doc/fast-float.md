@@ -79,8 +79,8 @@ small-String gate. Linux x86 intrinsic measurements do not establish a win for
 JNI-only ports. Existing forced-JNI samples use Linux x86 and must be assessed
 separately. Native ARM64 and Windows timing are unmeasured. A backend-specific
 cutoff would require representative measurements.
-Use the [original/default benchmark runner](benchmarks/decimal-review-followup/README.md)
-to compare original/default/opt-out/JNI with allocation profiling by tier.
+Use `make/scripts/bench-decimal-review.py` to compare original/default/opt-out/JNI
+with allocation profiling by tier.
 
 ## Consumers audited
 
@@ -132,6 +132,11 @@ It changes layout only; parsing logic and error reporting are unchanged.
 The original upstream headers can be compared with the vendor copy using
 `make/data/fast_float/layout.patch`.
 
+Alternating GCC measurements did not establish the MSVC speedup reported
+upstream. The [layout control source](benchmarks/decimal-original-baseline/fast-float-layout.cpp)
+and [recorded samples](benchmarks/decimal-original-baseline/fast-float-layout.tsv)
+retain the size and timing evidence.
+
 ## Reproducing validation and measurements
 
 The differential test uses the original Java parser as its oracle for both
@@ -159,8 +164,7 @@ controls and saves raw JSON and logs:
 taskset -c <cpu> make/scripts/bench-fast-float.sh /path/to/jdk '/path/to/jmh/*' /path/to/results -f 3 -wi 3 -i 3 -w 500ms -r 500ms
 ```
 
-Results, platform details, validation totals, and any limitations are recorded
-in the [original-JDK benchmark report](benchmarks/decimal-original-baseline/README.md)
-(the earlier [same-image controls](benchmarks/fast-float/README.md) are retained) and pull request.
+Results, platform details, validation totals and limitations are recorded in
+the [original-JDK benchmark report](benchmarks/decimal-original-baseline/README.md).
 Set `FAST_FLOAT_TIERS='c1 c2'` to repeat only selected tiers. Emulation is suitable for
 ARM correctness checks; it is not evidence of native ARM performance.
