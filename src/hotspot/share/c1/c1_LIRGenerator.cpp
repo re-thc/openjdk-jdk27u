@@ -39,6 +39,7 @@
 #include "gc/shared/c1/barrierSetC1.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/methodCounters.hpp"
+#include "runtime/commonIntrinsics.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
@@ -2808,7 +2809,127 @@ void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
 
 
 
+void LIRGenerator::do_CommonScalarIntrinsic(Intrinsic* x) {
+  vmIntrinsics::ID id = x->id();
+  bool wide = CommonIntrinsics::scalar_is_wide(id);
+  bool binary = CommonIntrinsics::is_binary_scalar(id);
+  // state_for may emit code for pending expression-stack values. Materialize
+  // those before loading fixed registers needed by multiply and divide.
+  CodeEmitInfo* info = nullptr;
+  CodeStub* fallback = nullptr;
+  if (CommonIntrinsics::can_fallback(id)) {
+    info = state_for(x, x->state_before());
+    info->set_force_reexecute();
+    fallback = new PredicateFailedStub(info);
+  }
+  LIRItem left(x->argument_at(0), this);
+  left.load_item();
+  LIR_Opr right = LIR_OprFact::illegalOpr;
+  LIR_Opr tmp1 = LIR_OprFact::illegalOpr;
+  LIR_Opr tmp2 = LIR_OprFact::illegalOpr;
+  LIR_Opr vtmp = LIR_OprFact::illegalOpr;
+#ifdef AMD64
+  bool fixed = id == vmIntrinsics::_multiplyHigh || id == vmIntrinsics::_unsignedMultiplyHigh ||
+          id == vmIntrinsics::_divideUnsigned_i || id == vmIntrinsics::_divideUnsigned_l ||
+          id == vmIntrinsics::_remainderUnsigned_i || id == vmIntrinsics::_remainderUnsigned_l;
+#endif
+  if (binary) {
+    LIRItem item(x->argument_at(1), this);
+#ifdef AMD64
+    if (fixed) item.load_item_force(wide ? FrameMap::as_long_opr(rcx) : FrameMap::rcx_opr);
+    else
+#endif
+      item.load_item();
+    right = item.result();
+  }
+#ifdef AMD64
+  if (fixed) {
+    // Values use virtual registers until allocation; pinning the right
+    // operand first cannot overwrite a physical left operand.
+    assert(left.result()->is_virtual(), "unallocated left operand");
+    left.load_item_force(wide ? FrameMap::long0_opr : FrameMap::rax_opr);
+    tmp1 = wide ? FrameMap::as_long_opr(rdx) : FrameMap::rdx_opr;
+  } else if (id == vmIntrinsics::_reverse_i || id == vmIntrinsics::_reverse_l ||
+             id == vmIntrinsics::_iabs || id == vmIntrinsics::_labs ||
+             id == vmIntrinsics::_compareUnsigned_i || id == vmIntrinsics::_compareUnsigned_l ||
+             (binary && CommonIntrinsics::can_fallback(id))) {
+    tmp1 = new_register(T_LONG);
+    if (id == vmIntrinsics::_reverse_l) tmp2 = new_register(T_LONG);
+  }
+#endif
+#ifdef AARCH64
+  if (id == vmIntrinsics::_numberOfTrailingZeros_i || id == vmIntrinsics::_numberOfTrailingZeros_l ||
+      id == vmIntrinsics::_bitCount_i || id == vmIntrinsics::_bitCount_l ||
+      id == vmIntrinsics::_compareUnsigned_i || id == vmIntrinsics::_compareUnsigned_l ||
+      id == vmIntrinsics::_multiplyExactI || id == vmIntrinsics::_multiplyExactL ||
+      id == vmIntrinsics::_remainderUnsigned_i || id == vmIntrinsics::_remainderUnsigned_l) {
+    tmp1 = new_register(T_LONG);
+  }
+  if (id == vmIntrinsics::_bitCount_i || id == vmIntrinsics::_bitCount_l) {
+    vtmp = new_register(T_DOUBLE);
+  }
+#endif
+  __ append(new LIR_OpCommonScalar(vmIntrinsics::as_int(id), left.result(), right,
+                                  rlock_result(x), tmp1, tmp2, vtmp, info, fallback));
+}
+
+void LIRGenerator::do_CommonIntrinsic(Intrinsic* x) {
+  assert(CommonIntrinsics::is_available_for_c1(x->id()), "available common backend");
+  // Preserve Java evaluation order and finish any pending code before writing
+  // the outgoing argument vector or calling the shared leaf.
+  CodeEmitInfo* info = state_for(x, x->state_before());
+  info->set_force_reexecute();
+  CodeStub* fallback = new PredicateFailedStub(info);
+  int slots = CommonIntrinsics::parameter_slots(x->id());
+  // Keep the raw argument vector clear of the C ABI register-save area.
+  const int base = 4 * wordSize;
+  frame_map()->update_reserved_argument_area_size(base + slots * wordSize);
+  int remaining = slots;
+  for (int i = 0; i < x->number_of_arguments(); i++) {
+    Value arg = x->argument_at(i);
+    BasicType type = as_BasicType(arg->type());
+    remaining -= type2size[type];
+    LIRItem item(arg, this);
+    item.load_item();
+    LIR_Address* dst = new LIR_Address(FrameMap::stack_pointer(), base + remaining * wordSize, type);
+    if (type == T_OBJECT) {
+      __ move_wide(item.result(), dst);
+    } else {
+      __ move(item.result(), dst);
+    }
+  }
+  assert(remaining == 0, "common intrinsic signature mismatch");
+
+  LIR_Opr argv = new_pointer_register();
+  __ leal(LIR_OprFact::address(new LIR_Address(FrameMap::stack_pointer(), base, T_ADDRESS)), argv);
+  BasicTypeList signature;
+  signature.append(T_ADDRESS);
+  LIR_OprList args(1);
+  args.append(argv);
+  LIR_Opr result = call_runtime(&signature, &args, CommonIntrinsics::entry_for(x->id()), longType, nullptr);
+
+  LIR_Opr sentinel = new_register(T_LONG);
+  __ move(LIR_OprFact::longConst(CommonIntrinsics::fallback), sentinel);
+  __ cmp(lir_cond_equal, result, sentinel);
+  __ branch(lir_cond_equal, fallback);
+  if (x->type() == voidType) {
+    set_no_result(x);
+  } else if (x->type()->is_object_kind()) {
+    __ move(result, rlock_result(x));
+  } else {
+    __ convert(Bytecodes::_l2i, result, rlock_result(x));
+  }
+}
+
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
+  if (CommonIntrinsics::is_available_for_c1(x->id())) {
+    if (CommonIntrinsics::is_scalar(x->id())) {
+      do_CommonScalarIntrinsic(x);
+    } else {
+      do_CommonIntrinsic(x);
+    }
+    return;
+  }
   switch (x->id()) {
   case vmIntrinsics::_intBitsToFloat      :
   case vmIntrinsics::_doubleToRawLongBits :

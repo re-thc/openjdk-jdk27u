@@ -221,6 +221,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseSHA, false,                                              \
           "Control whether SHA instructions are used when available")       \
                                                                             \
+  product(bool, UseCommonIntrinsics, true,                                   \
+          "Use shared runtime intrinsics in the interpreter and C1")         \
+                                                                            \
   product(bool, UseGHASHIntrinsics, false, DIAGNOSTIC,                      \
           "Use intrinsics for GHASH versions of crypto")                    \
                                                                             \

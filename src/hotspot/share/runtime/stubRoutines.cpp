@@ -29,6 +29,7 @@
 #include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/vectorSupport.hpp"
+#include "runtime/commonIntrinsics.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -330,7 +331,7 @@ void stubs_AOTAddressTable_init() { StubRoutines::init_AOTAddressTable(); }
  */
 
 void compiler_stubs_init(bool in_compiler_thread) {
-  if (in_compiler_thread && DelayCompilerStubsGeneration) {
+  if (in_compiler_thread && DelayCompilerStubsGeneration && !CommonIntrinsics::needs_compiler_stubs()) {
     // Temporarily revert state of stubs generation because
     // it is called after final_stubs_init() finished
     // during compiler runtime initialization.
@@ -339,7 +340,8 @@ void compiler_stubs_init(bool in_compiler_thread) {
     StubCodeDesc::unfreeze();
     StubRoutines::initialize_compiler_stubs();
     StubCodeDesc::freeze();
-  } else if (!in_compiler_thread && !DelayCompilerStubsGeneration) {
+  } else if (!in_compiler_thread && (!DelayCompilerStubsGeneration || CommonIntrinsics::needs_compiler_stubs())) {
+    // The interpreter needs these leaf stubs even when no compiler runs.
     StubRoutines::initialize_compiler_stubs();
   }
 }

@@ -230,6 +230,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     case vmIntrinsics::_compareToUL:
     case vmIntrinsics::_equalsL:
     case vmIntrinsics::_equalsC:
+    case vmIntrinsics::_vectorizedHashCodeLeaf:
     case vmIntrinsics::_vectorizedHashCode:
     case vmIntrinsics::_getCharStringU:
     case vmIntrinsics::_putCharStringU:
@@ -571,6 +572,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_equalsL:
     if (!SpecialStringEquals) return true;
     break;
+  case vmIntrinsics::_vectorizedHashCodeLeaf:
   case vmIntrinsics::_vectorizedHashCode:
     if (!UseVectorizedHashCodeIntrinsic) return true;
     break;
@@ -693,6 +695,7 @@ bool vmIntrinsics::is_intrinsic_available(vmIntrinsics::ID id) {
 }
 
 bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
+  if (id == _vectorizedHashCodeLeaf && is_disabled_by_flags(_vectorizedHashCode)) return true;
   assert(id > _none && id < ID_LIMIT, "must be a VM intrinsic");
 
   // not initialized yet, process Control/DisableIntrinsic

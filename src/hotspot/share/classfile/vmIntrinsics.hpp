@@ -358,6 +358,8 @@ class methodHandle;
   do_intrinsic(_vectorizedHashCode,       jdk_internal_util_ArraysSupport, vectorizedHashCode_name,  vectorizedHashCode_signature, F_S)   \
    do_name(     vectorizedHashCode_name,                         "vectorizedHashCode")                                  \
    do_signature(vectorizedHashCode_signature,                    "(Ljava/lang/Object;IIII)I")                           \
+  do_intrinsic(_vectorizedHashCodeLeaf, jdk_internal_util_ArraysSupport, vectorizedHashCodeLeaf_name, vectorizedHashCode_signature, F_S) \
+   do_name(vectorizedHashCodeLeaf_name, "vectorizedHashCodeLeaf")                                                                      \
                                                                                                                         \
   do_intrinsic(_compressStringC,          java_lang_StringUTF16,  compressString_name, encodeISOArray_signature, F_S)   \
    do_name(     compressString_name,                                  "compress0")                                      \

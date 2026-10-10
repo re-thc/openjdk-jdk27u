@@ -33,6 +33,7 @@
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciInstance.hpp"
 #include "code/aotCodeCache.hpp"
+#include "commonIntrinsics_x86.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -88,6 +89,24 @@ const Register SYNC_header = rax;   // synchronization header
 const Register SHIFT_count = rcx;   // where count for shift operations must be
 
 #define __ _masm->
+
+#ifdef AMD64
+void LIR_Assembler::common_scalar_op(LIR_Op2* op) {
+  LIR_OpCommonScalar* scalar = static_cast<LIR_OpCommonScalar*>(op);
+  vmIntrinsics::ID id = vmIntrinsics::ID_from(scalar->intrinsic_id());
+  // lir_common_scalar requires registers for every operand in LinearScan.
+  assert(op->in_opr1()->is_cpu_register() && op->result_opr()->is_cpu_register(), "register operands");
+  assert(!op->in_opr2()->is_valid() || op->in_opr2()->is_cpu_register(), "register right operand");
+  Register src = op->in_opr1()->as_pointer_register();
+  Register rhs = op->in_opr2()->is_valid() ? op->in_opr2()->as_pointer_register() : noreg;
+  Register dst = op->result_opr()->as_pointer_register();
+  Register tmp1 = op->tmp1_opr()->is_valid() ? op->tmp1_opr()->as_pointer_register() : noreg;
+  Register tmp2 = op->tmp2_opr()->is_valid() ? op->tmp2_opr()->as_pointer_register() : noreg;
+  Label* slow = scalar->fallback() != nullptr ? scalar->fallback()->entry() : nullptr;
+  common_scalar_intrinsic(_masm, id, dst, src, rhs, tmp1, tmp2, slow);
+}
+#endif
+
 
 static void select_different_registers(Register preserve,
                                        Register extra,
