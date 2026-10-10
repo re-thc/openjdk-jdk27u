@@ -1639,6 +1639,25 @@ void InterpreterMacroAssembler::notify_method_exit(
   }
 }
 
+// Scale a resolved entry index by entry_size, returning the scale factor to apply when
+// adding the index to the entries array. Every invoke, return and field access goes
+// through here, so the 24-byte product entries use index * 3 * 8 instead of imul.
+Address::ScaleFactor InterpreterMacroAssembler::scale_resolved_entry_index(Register index, int entry_size) {
+  int pow2_size = entry_size;
+  if (entry_size % 3 == 0 && is_power_of_2(entry_size / 3)) {
+    lea(index, Address(index, index, Address::times_2)); // index * 3
+    pow2_size = entry_size / 3;
+  } else if (!is_power_of_2(entry_size)) {
+    imull(index, index, entry_size);
+    return Address::times_1;
+  }
+  if (pow2_size <= 8) {
+    return Address::times(pow2_size);
+  }
+  shll(index, log2i_exact(pow2_size));
+  return Address::times_1;
+}
+
 void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Register index) {
   // Get index out of bytecode pointer
   get_cache_index_at_bcp(index, 1, sizeof(u4));
@@ -1659,13 +1678,9 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
   get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
 
   movptr(cache, Address(cache, ConstantPoolCache::field_entries_offset()));
-  // Take shortcut if the size is a power of 2
-  if (is_power_of_2(sizeof(ResolvedFieldEntry))) {
-    shll(index, log2i_exact(sizeof(ResolvedFieldEntry))); // Scale index by power of 2
-  } else {
-    imull(index, index, sizeof(ResolvedFieldEntry)); // Scale the index to be the entry index * sizeof(ResolvedFieldEntry)
-  }
-  lea(cache, Address(cache, index, Address::times_1, Array<ResolvedFieldEntry>::base_offset_in_bytes()));
+  // Scale the index to be the entry index * sizeof(ResolvedFieldEntry)
+  Address::ScaleFactor scale = scale_resolved_entry_index(index, sizeof(ResolvedFieldEntry));
+  lea(cache, Address(cache, index, scale, Array<ResolvedFieldEntry>::base_offset_in_bytes()));
 }
 
 void InterpreterMacroAssembler::load_method_entry(Register cache, Register index, int bcp_offset) {
@@ -1674,6 +1689,7 @@ void InterpreterMacroAssembler::load_method_entry(Register cache, Register index
   get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
 
   movptr(cache, Address(cache, ConstantPoolCache::method_entries_offset()));
-  imull(index, index, sizeof(ResolvedMethodEntry)); // Scale the index to be the entry index * sizeof(ResolvedMethodEntry)
-  lea(cache, Address(cache, index, Address::times_1, Array<ResolvedMethodEntry>::base_offset_in_bytes()));
+  // Scale the index to be the entry index * sizeof(ResolvedMethodEntry)
+  Address::ScaleFactor scale = scale_resolved_entry_index(index, sizeof(ResolvedMethodEntry));
+  lea(cache, Address(cache, index, scale, Array<ResolvedMethodEntry>::base_offset_in_bytes()));
 }
