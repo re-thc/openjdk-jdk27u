@@ -206,6 +206,10 @@ class Abstract_VM_Version: AllStatic {
   // Does platform support fast class initialization checks for static methods?
   static bool supports_fast_class_init_checks() { return false; }
 
+  // Does the template interpreter check the receiver of invokeinterface calls
+  // that resolve to java.lang.Object methods?
+  static bool supports_fast_invokeinterface_object_checks() { return false; }
+
   // Does platform support stack watermark barriers for concurrent stack processing?
   constexpr static bool supports_stack_watermark_barrier() { return false; }
 

@@ -2437,12 +2437,27 @@ void TemplateTable::load_resolved_method_entry_interface(Register cache,
   // Invokeinterface can behave in different ways:
   // If calling a method from java.lang.Object, the forced virtual flag is true so the invocation will
   // behave like an invokevirtual call. The state of the virtual final flag will determine whether a method or
-  // vtable index is placed in the register.
+  // vtable index is placed in the register. The klass register is populated with REFC.
   // Otherwise, the registers will be populated with the klass and method.
 
   Label NotVirtual; Label NotVFinal; Label Done;
   __ testl(flags, 1 << ResolvedMethodEntry::is_forced_virtual_shift);
   __ jcc(Assembler::zero, NotVirtual);
+
+  // The receiver is checked against REFC, which is not cached in the entry. It is the class
+  // referenced by the entry's InterfaceMethodref, and is resolved if the entry is.
+  __ get_constant_pool(rscratch1);
+  __ load_unsigned_short(rscratch2, Address(cache, in_bytes(ResolvedMethodEntry::constant_pool_index_offset())));
+  __ load_unsigned_short(rscratch2, Address(rscratch1, rscratch2, Address::times_ptr, sizeof(ConstantPool)));
+  __ load_resolved_klass_at_index(klass, rscratch1, rscratch2);
+#ifdef ASSERT
+  Label L_refc_resolved;
+  __ testptr(klass, klass);
+  __ jcc(Assembler::notZero, L_refc_resolved);
+  __ stop("REFC of a resolved invokeinterface entry must be resolved");
+  __ bind(L_refc_resolved);
+#endif
+
   __ testl(flags, (1 << ResolvedMethodEntry::is_vfinal_shift));
   __ jcc(Assembler::zero, NotVFinal);
   __ movptr(method_or_table_index, Address(cache, in_bytes(ResolvedMethodEntry::method_offset())));
@@ -3348,6 +3363,9 @@ void TemplateTable::invokeinterface(int byte_no) {
   // First check for Object case, then private interface method,
   // then regular interface method.
 
+  Label no_such_interface; // for receiver subtype check
+  Register recvKlass; // used for exception processing
+
   // Special case of invokeinterface called for virtual method of
   // java.lang.Object.  See cpCache.cpp for details.
   Label notObjectMethod;
@@ -3355,12 +3373,47 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ andl(rlocals, (1 << ResolvedMethodEntry::is_forced_virtual_shift));
   __ jcc(Assembler::zero, notObjectMethod);
 
-  invokevirtual_helper(rbx, rcx, rdx);
+  // Get receiver klass into rlocals - also a null check
+  __ load_klass(rlocals, rcx, rscratch1);
+
+  // Receiver subtype check against REFC.
+  Label objectSubtype;
+  __ check_klass_subtype(rlocals, rax, rbcp, objectSubtype);
+  // If we get here the typecheck failed
+  recvKlass = rdx;
+  __ mov(recvKlass, rlocals); // shuffle receiver class for exception use
+  __ jmp(no_such_interface);
+
+  __ bind(objectSubtype);
+
+  // Test for an invoke of a final method
+  Label objectNotFinal;
+  __ testl(rdx, (1 << ResolvedMethodEntry::is_vfinal_shift));
+  __ jcc(Assembler::zero, objectNotFinal);
+
+  // do the call - rbx is actually the method to call
+  __ profile_final_call(rdx);
+  __ profile_arguments_type(rdx, rbx, rbcp, true);
+
+  __ jump_from_interpreted(rbx, rdx);
+  // no return from above
+  __ bind(objectNotFinal);
+
+  // profile this call
+  __ profile_virtual_call(rlocals, rax);
+  // get target Method* & entry point
+  __ lookup_virtual_method(rlocals, rbx, rbx);
+
+  // The selected method must be public
+  Label illegal_access;
+  __ load_unsigned_short(rscratch1, Address(rbx, Method::access_flags_offset()));
+  __ testl(rscratch1, JVM_ACC_PUBLIC);
+  __ jcc(Assembler::zero, illegal_access);
+
+  __ profile_arguments_type(rdx, rbx, rbcp, true);
+  __ jump_from_interpreted(rbx, rdx);
   // no return from above
   __ bind(notObjectMethod);
-
-  Label no_such_interface; // for receiver subtype check
-  Register recvKlass; // used for exception processing
 
   // Check for private method invocation - indicated by vfinal
   Label notVFinal;
@@ -3471,6 +3524,19 @@ void TemplateTable::invokeinterface(int byte_no) {
   }
   __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose),
              recvKlass, rax);
+  // the call_VM checks for exception, so we should never return here.
+  __ should_not_reach_here();
+
+  __ bind(illegal_access);
+  // throw exception
+  __ pop(rax);           // pop return address (pushed by prepare_invoke)
+  __ restore_bcp();      // rbcp must be correct for exception handler   (was destroyed)
+  // Pass arguments for generating a verbose error message.
+  __ mov(c_rarg1, rlocals);  // receiver class
+  __ mov(c_rarg2, rbx);      // selected method
+  __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_IllegalAccessErrorVerbose),
+             c_rarg1, c_rarg2);
   // the call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
 }
