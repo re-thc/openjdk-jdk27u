@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,14 @@ include $(TOPDIR)/make/ModuleTools.gmk
 
 GENGRAPHS_DIR := $(IMAGES_OUTPUTDIR)/gengraphs
 SPEC_DOTFILES_DIR := $(GENGRAPHS_DIR)/spec-dotfiles
+SPEC_DOTFILE := $(SPEC_DOTFILES_DIR)/$(if $(filter false, $(ENABLE_DESKTOP)),java.base,java.se).dot
 TOOLS_MODULE_SRCDIR := $(TOPDIR)/make/jdk/src/classes/build/tools/jigsaw
 
 $(GENGRAPHS_DIR)/jdk.dot: $(BUILD_JIGSAW_TOOLS)
 	$(call MakeTargetDir)
 	$(TOOL_GENGRAPHS) --output $(GENGRAPHS_DIR)
 
-$(SPEC_DOTFILES_DIR)/java.se.dot: $(BUILD_JIGSAW_TOOLS)
+$(SPEC_DOTFILE): $(BUILD_JIGSAW_TOOLS)
 	$(call MakeTargetDir)
 	$(TOOL_GENGRAPHS) --spec --output $(SPEC_DOTFILES_DIR)
 
@@ -48,7 +49,7 @@ $(GENGRAPHS_DIR)/module-summary.html: $(BUILD_JIGSAW_TOOLS) $(GENGRAPHS_DIR)/tec
 	$(call MakeTargetDir)
 	$(TOOL_MODULESUMMARY) -o $@ --module-path $(IMAGES_OUTPUTDIR)/jmods
 
-all: $(GENGRAPHS_DIR)/jdk.dot $(GENGRAPHS_DIR)/module-summary.html $(SPEC_DOTFILES_DIR)/java.se.dot
+all: $(GENGRAPHS_DIR)/jdk.dot $(GENGRAPHS_DIR)/module-summary.html $(SPEC_DOTFILE)
 
 ################################################################################
 

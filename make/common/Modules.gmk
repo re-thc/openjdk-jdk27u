@@ -45,6 +45,13 @@ include $(TOPDIR)/make/conf/docs-modules.conf
 
 include $(TOPDIR)/make/conf/build-module-sets.conf
 
+# Desktop APIs and their dependent modules are omitted before any build phase.
+ifeq ($(ENABLE_DESKTOP), false)
+  MODULES_FILTER += java.desktop java.datatransfer java.se \
+      jdk.accessibility jdk.editpad jdk.hotspot.agent jdk.jconsole \
+      jdk.jpackage jdk.unsupported.desktop
+endif
+
 ################################################################################
 # Depending on the configuration, we might need to filter out some modules that
 # normally should have been included
