@@ -41,8 +41,7 @@ typedef jint(*ZIP_CRC32_t)(jint crc, const jbyte* buf, jint len);
 typedef const char* (*ZIP_GZip_InitParams_t)(size_t, size_t*, size_t*, int);
 typedef size_t(*ZIP_GZip_Fully_t)(char*, size_t, char*, size_t, char*, size_t, int, char*, char const**);
 
-typedef jlong (*ZIP_Process_t)(JNIEnv*, jboolean, jobject, jlong, jlong, jint,
-                               jlong, jint, jint, jint);
+typedef jlong (*ZIP_Process_t)(jboolean, jlong, jlong, jint, jlong, jint, jint, jint);
 static ZIP_Process_t ZIP_Process = nullptr;
 typedef jlong (*ZIP_Complete_t)(JNIEnv*, jboolean, jobject, jlong, jint, jint, jint, jint);
 static ZIP_Complete_t ZIP_Complete = nullptr;
@@ -223,11 +222,11 @@ void* ZipLibrary::handle() {
   return _zip_handle;
 }
 
-jlong ZipLibrary::process(JNIEnv* env, jboolean inflate, jobject receiver, jlong stream,
+jlong ZipLibrary::process(jboolean inflate, jlong stream,
                          jlong input, jint input_len, jlong output, jint output_len,
                          jint flush, jint params) {
   initialize();
-  return ZIP_Process(env, inflate, receiver, stream, input, input_len,
+  return ZIP_Process(inflate, stream, input, input_len,
                      output, output_len, flush, params);
 }
 

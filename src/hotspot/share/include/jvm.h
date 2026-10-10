@@ -105,11 +105,6 @@ JVM_UseZlibNG(void);
 JNIEXPORT jboolean JNICALL
 JVM_ZipIntrinsicsEnabled(void);
 
-JNIEXPORT jlong JNICALL
-JVM_ZipProcess(JNIEnv* env, jclass cls, jboolean inflate, jobject receiver, jlong stream,
-               jbyteArray input, jlong inputOffset, jint inputLen,
-               jbyteArray output, jlong outputOffset, jint outputLen, jint flush, jint params);
-
 JNIEXPORT void JNICALL
 JVM_ArrayCopy(JNIEnv *env, jclass ignored, jobject src, jint src_pos,
               jobject dst, jint dst_pos, jint length);

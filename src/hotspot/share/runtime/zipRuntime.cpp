@@ -48,8 +48,8 @@ jlong ZipRuntime::process(jint inflate, oop receiver, jlong stream,
   jlong result;
   {
     ThreadToNativeFromVM transition(current);
-    result = ZipLibrary::process(current->jni_environment(), inflate, nullptr,
-        stream, in_addr, input_len, out_addr, output_len, flush, params);
+    result = ZipLibrary::process(inflate, stream, in_addr, input_len,
+                                out_addr, output_len, flush, params);
   }
   if (out.not_null()) Universe::heap()->unpin_object(current, out());
   if (in.not_null()) Universe::heap()->unpin_object(current, in());

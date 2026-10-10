@@ -95,7 +95,6 @@
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vm_version.hpp"
 #include "runtime/vmOperations.hpp"
-#include "runtime/zipRuntime.hpp"
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
 #include "services/threadService.hpp"
@@ -239,14 +238,6 @@ JVM_ENTRY(jboolean, JVM_AOTEndRecording(JNIEnv *env))
 #else
   return JNI_FALSE;
 #endif // INCLUDE_CDS
-JVM_END
-
-JVM_ENTRY(jlong, JVM_ZipProcess(JNIEnv* env, jclass cls, jboolean inflate, jobject receiver, jlong stream,
-    jbyteArray input, jlong inputOffset, jint inputLen,
-    jbyteArray output, jlong outputOffset, jint outputLen, jint flush, jint params))
-  return ZipRuntime::process(inflate, JNIHandles::resolve(receiver), stream,
-      JNIHandles::resolve(input), inputOffset, inputLen,
-      JNIHandles::resolve(output), outputOffset, outputLen, flush, params, thread);
 JVM_END
 
 JVM_LEAF(jboolean, JVM_ZipIntrinsicsEnabled())
