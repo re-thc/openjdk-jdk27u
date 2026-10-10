@@ -38,6 +38,8 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.util.regex.RustRegex;
+
 /**
  * An engine that performs match operations on a {@linkplain
  * java.lang.CharSequence character sequence} by interpreting a {@link Pattern}.
@@ -233,6 +235,13 @@ public final class Matcher implements MatchResult {
 
     private Map<String, Integer> namedGroups;
 
+    // Native results without exact end flags are replayed in Java if queried.
+    // Save immutable input so reset or mutation cannot change those flags.
+    private Pattern nativeEndPattern;
+    private String nativeEndInput;
+    private int nativeEndFrom, nativeEndTo, nativeEndStart, nativeEndMode;
+    private boolean nativeEndTransparent, nativeEndAnchoring;
+
     /**
      * No default constructor.
      */
@@ -247,7 +256,7 @@ public final class Matcher implements MatchResult {
         this.text = text;
 
         // Allocate state storage
-        groups = new int[parent.capturingGroupCount * 2];
+        groups = new int[parent.capturingGroupCount * 2 + (parent.rustRegex != null ? 4 : 0)];
         locals = new int[parent.localCount];
         localsPos = new IntHashSet[parent.localTCNCount];
 
@@ -421,7 +430,7 @@ public final class Matcher implements MatchResult {
         namedGroups = null;
 
         // Reallocate state storage
-        groups = new int[newPattern.capturingGroupCount * 2];
+        groups = new int[newPattern.capturingGroupCount * 2 + (newPattern.rustRegex != null ? 4 : 0)];
         locals = new int[newPattern.localCount];
         for (int i = 0; i < groups.length; i++)
             groups[i] = -1;
@@ -1715,6 +1724,7 @@ public final class Matcher implements MatchResult {
      * @since 1.5
      */
     public boolean hitEnd() {
+        ensureEndFlags();
         return hitEnd;
     }
 
@@ -1733,6 +1743,7 @@ public final class Matcher implements MatchResult {
      * @since 1.5
      */
     public boolean requireEnd() {
+        ensureEndFlags();
         return requireEnd;
     }
 
@@ -1762,9 +1773,14 @@ public final class Matcher implements MatchResult {
                 localsPos[i].clear();
         }
         acceptMode = NOANCHOR;
-        boolean result = parentPattern.root.match(this, from, text);
-        if (!result)
-            this.first = -1;
+        int nativeResult = nativeMatch(from, 0);
+        boolean result;
+        if (nativeResult >= 0) result = nativeResult == 1;
+        else {
+            javaStorage();
+            result = parentPattern.root.match(this, from, text);
+        }
+        if (!result) this.first = -1;
         this.oldLast = this.last;
         this.modCount++;
         return result;
@@ -1789,12 +1805,95 @@ public final class Matcher implements MatchResult {
                 localsPos[i].clear();
         }
         acceptMode = anchor;
-        boolean result = parentPattern.matchRoot.match(this, from, text);
+        int nativeResult = nativeMatch(from, anchor == ENDANCHOR ? 2 : 1);
+        boolean result;
+        if (nativeResult >= 0) result = nativeResult == 1;
+        else {
+            javaStorage();
+            result = parentPattern.matchRoot.match(this, from, text);
+        }
         if (!result)
             this.first = -1;
         this.oldLast = this.last;
         this.modCount++;
         return result;
+    }
+
+    private int nativeMatch(int start, int mode) {
+        nativeEndPattern = null;
+        nativeEndInput = null;
+        RustRegex engine = parentPattern.rustRegex;
+        if (engine == null) return -1;
+        if (to - from > RustRegex.MAX_LENGTH && !engine.hasShortPlan()) {
+            parentPattern.ensureJava();
+            return -1;
+        }
+        String input = text instanceof String s ? s : text.toString();
+        int base = parentPattern.capturingGroupCount * 2;
+        groups[base] = from;
+        groups[base+1] = to;
+        groups[base+2] = start;
+        groups[base+3] = mode;
+        int result = engine.match(input, groups, transparentBounds, anchoringBounds);
+        if (result < 0) {
+            for (int i = 0; i < base; i++) groups[i] = -1;
+            parentPattern.ensureJava();
+            return -1;
+        }
+        if (result == 1) {
+            first = groups[0];
+            last = groups[1];
+        }
+        // These digit-tail results have exact end flags already. Avoid saving
+        // replay state on the common path, whether or not callers query them.
+        if (engine.hasShortPlan() && (result == 1 || mode == 0)) {
+            hitEnd = result == 0 || last == to;
+            return result;
+        }
+        nativeEndPattern = parentPattern;
+        nativeEndInput = input;
+        nativeEndFrom = from;
+        nativeEndTo = to;
+        nativeEndStart = start;
+        nativeEndMode = mode;
+        nativeEndTransparent = transparentBounds;
+        nativeEndAnchoring = anchoringBounds;
+        return result;
+    }
+
+    private void javaStorage() {
+        if (locals.length != parentPattern.localCount) {
+            locals = new int[parentPattern.localCount];
+            for (int i = 0; i < locals.length; i++) locals[i] = -1;
+        }
+        if (localsPos.length != parentPattern.localTCNCount)
+            localsPos = new IntHashSet[parentPattern.localTCNCount];
+    }
+
+    private void ensureEndFlags() {
+        Pattern pattern = nativeEndPattern;
+        if (pattern == null) return;
+        RustRegex engine = pattern.rustRegex;
+        int flags = engine == null ? -1 : engine.anchoredMissEndFlags(nativeEndInput,
+                nativeEndTo, nativeEndStart);
+        if (flags >= 0) {
+            hitEnd = (flags & 1) != 0;
+            requireEnd = false;
+            nativeEndPattern = null;
+            nativeEndInput = null;
+            return;
+        }
+        pattern.ensureJava();
+        Matcher replay = pattern.matcher(nativeEndInput)
+                .region(nativeEndFrom, nativeEndTo)
+                .useTransparentBounds(nativeEndTransparent)
+                .useAnchoringBounds(nativeEndAnchoring);
+        if (nativeEndMode == 0) replay.search(nativeEndStart);
+        else replay.match(nativeEndStart, nativeEndMode == 2 ? ENDANCHOR : NOANCHOR);
+        hitEnd = replay.hitEnd;
+        requireEnd = replay.requireEnd;
+        nativeEndPattern = null;
+        nativeEndInput = null;
     }
 
     /**

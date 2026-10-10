@@ -46,6 +46,7 @@ import java.util.stream.StreamSupport;
 import jdk.internal.lang.CaseFolding;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.regex.Grapheme;
+import jdk.internal.util.regex.RustRegex;
 
 /**
  * A compiled representation of a regular expression.
@@ -1007,6 +1008,29 @@ public final class Pattern
      */
     transient Node root;
 
+    transient volatile RustRegex rustRegex;
+    private transient volatile boolean javaCompiled;
+
+    // Native Patterns retain no Java node graph. Promote permanently on an
+    // unsupported input/operation; active native calls retain their own wrapper.
+    void ensureJava() {
+        if (javaCompiled) return;
+        synchronized (this) {
+            if (!javaCompiled) {
+                Pattern fallback = new Pattern(pattern, flags, false);
+                assert fallback.capturingGroupCount == capturingGroupCount;
+                root = fallback.root;
+                matchRoot = fallback.matchRoot;
+                flags0 = fallback.flags0;
+                localCount = fallback.localCount;
+                localTCNCount = fallback.localTCNCount;
+                namedGroups = fallback.namedGroups;
+                javaCompiled = true;
+                rustRegex = null;
+            }
+        }
+    }
+
     /**
      * The root of object tree for a match operation.  The pattern is matched
      * at the beginning.  This may include a find that uses BnM or a First
@@ -1543,6 +1567,7 @@ public final class Pattern
         if (pattern.isEmpty()) {
             root = new Start(lastAccept);
             matchRoot = lastAccept;
+            javaCompiled = true;
             compiled = true;
         }
     }
@@ -1554,6 +1579,10 @@ public final class Pattern
      * only a Start node and a LastNode node.
      */
     private Pattern(String p, int f) {
+        this(p, f, true);
+    }
+
+    private Pattern(String p, int f, boolean preferNative) {
         if ((f & ~ALL_FLAGS) != 0) {
             throw new IllegalArgumentException("Unknown flag 0x"
                                                + Integer.toHexString(f));
@@ -1575,13 +1604,16 @@ public final class Pattern
 
         if (!pattern.isEmpty()) {
             try {
-                compile();
+                if (preferNative) compile();
+                else { compileJava(); javaCompiled = true; }
             } catch (StackOverflowError soe) {
                 throw error("Stack overflow during pattern compilation");
             }
         } else {
             root = new Start(lastAccept);
             matchRoot = lastAccept;
+            javaCompiled = true;
+            compiled = true;
         }
     }
 
@@ -1904,6 +1936,19 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      * of the expression which will create the object tree.
      */
     private void compile() {
+        RustRegex nativePattern = RustRegex.compile(pattern, flags);
+        if (nativePattern != null) {
+            rustRegex = nativePattern;
+            capturingGroupCount = nativePattern.groupCount;
+            namedGroups = nativePattern.namedGroups;
+            compiled = true;
+            return;
+        }
+        compileJava();
+        javaCompiled = true;
+    }
+
+    private void compileJava() {
         // Handle canonical equivalences
         if (has(CANON_EQ) && !has(LITERAL)) {
             normalizedPattern = normalize(pattern);

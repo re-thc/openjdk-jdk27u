@@ -105,6 +105,9 @@ jobs:
           debug-level: ${{ matrix.debug-level }}
           toolchain: xcode-${{ inputs.xcode-toolset-version }}
 
+      - name: 'Get Rust regex toolchain'
+        uses: ./.github/actions/get-rust-regex
+
       - name: 'Configure'
         run: >
           bash bin/configure-dev

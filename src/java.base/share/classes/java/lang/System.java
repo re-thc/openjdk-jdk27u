@@ -2164,6 +2164,10 @@ public final class System {
                 return String.getBytesOrThrow(s, cs);
             }
 
+            public byte[] getLatin1Bytes(String s) {
+                return s.isLatin1() ? s.value() : null;
+            }
+
             public byte[] getBytesUTF8OrThrow(String s) throws CharacterCodingException {
                 return String.getBytesUTF8OrThrow(s);
             }

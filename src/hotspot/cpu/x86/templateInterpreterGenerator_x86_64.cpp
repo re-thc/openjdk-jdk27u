@@ -28,6 +28,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
+#include "runtime/rustRegex.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -216,6 +217,24 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   __ jmp(rdi);
 
   // generate a vanilla native entry as the slow path
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}
+
+address TemplateInterpreterGenerator::generate_rustRegex_entry() {
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false, false);
+  __ movptr(c_rarg0, Address(rsp, 3 * wordSize)); // long handle (two slots)
+  __ movptr(c_rarg1, Address(rsp, 2 * wordSize)); // byte[] input
+  __ lea(c_rarg1, Address(c_rarg1, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+  __ movptr(c_rarg2, Address(rsp, wordSize)); // int[] captures and arguments
+  __ lea(c_rarg2, Address(c_rarg2, arrayOopDesc::base_offset_in_bytes(T_INT)));
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, RustRegex::match), c_rarg0, c_rarg1, c_rarg2);
+  __ pop(rdi);
+  __ mov(rsp, r13);
+  __ jmp(rdi);
   __ bind(slow_path);
   __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
   return entry;

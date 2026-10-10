@@ -176,6 +176,19 @@ ifneq ($(TOOLCHAIN_TYPE), gcc)
   LEGAL_EXCLUDES += gcc.md
 endif
 
+ifneq ($(RUST_REGEX_ENABLED), true)
+  LEGAL_EXCLUDES += rust_regex.md
+else
+  # libjvm contains Rust standard library code, whose dependency notices
+  # must match the compiler used for this particular build.
+  $(eval $(call SetupCopyFiles, COPY_RUST_REGEX_LICENSE, \
+      FILES := $(RUST_REGEX_LICENSE), \
+      DEST := $(SUPPORT_OUTPUTDIR)/modules_legal/java.base/rust-standard-library, \
+      FLATTEN := true, \
+  ))
+  TARGETS += $(COPY_RUST_REGEX_LICENSE)
+endif
+
 $(eval $(call SetupCopyLegalFiles, COPY_LEGAL, \
     EXCLUDES := $(LEGAL_EXCLUDES), \
 ))
