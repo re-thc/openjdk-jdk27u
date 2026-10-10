@@ -4,6 +4,7 @@ import hashlib
 import io
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -144,9 +145,42 @@ def defaults(jdk):
         ratio = after["score"] / before["score"]
         if ratio > 1.02 and after["score"] - after["scoreError"] > before["score"] + before["scoreError"]:
             regressions.append((row["tier"], row["benchmark"], row["params"], round(ratio, 3)))
-    if regressions:
-        raise RuntimeError("Significant default-path slowdowns above 2%: " + repr(regressions))
-    print("Default-path performance check passed: no significant slowdowns above 2%", flush=True)
+    confirmed = []
+    for index, (tier, benchmark, params, ratio) in enumerate(regressions):
+        # Confirm on the same host in both orders; configurations are otherwise
+        # separated by several minutes in the broad discovery matrix.
+        flags = dict([("int", ["-Xint"]), ("c1", ["-Xbatch", "-XX:TieredStopAtLevel=1"]),
+                      ("c2", ["-Xbatch", "-XX:-TieredCompilation", "-XX:CompileThreshold=1000"])])[tier]
+        parameter_args = [arg for key, value in sorted(params.items()) for arg in ["-p", key + "=" + value]]
+        evidence = []
+        for order in range(2):
+            metrics = {}
+            labels = ["stock-jni", "stock-intrinsic"] if order == 0 else ["stock-intrinsic", "stock-jni"]
+            for label in labels:
+                name = f"confirmation-{index}-{order}-{label}"
+                result = OUT / (name + ".json")
+                extra = ["-XX:+UnlockDiagnosticVMOptions", "-XX:-UseZipIntrinsics"] if label == "stock-jni" else []
+                if label == "stock-jni" and tier != "c2" and benchmark.endswith(".adler32"):
+                    extra += ["-XX:-UseAdler32Intrinsics"]
+                options = ["-XX:-UseZlibNG", "-Xshare:off", "-Xms128m", "-Xmx128m", "-XX:+UseSerialGC", "-XX:ActiveProcessorCount=2"] + flags + extra
+                run(name, [jdk / "bin/java", "-Djmh.blackhole.mode=FULL_DONTINLINE", "-cp", cp, "org.openjdk.jmh.Main",
+                           "^" + re.escape(benchmark) + "$"] + parameter_args + ["-f", "3", "-wi", "3", "-i", "6", "-w", "500ms", "-r", "500ms",
+                           "-jvm", jdk / "bin/java", "-jvmArgsAppend", " ".join(options), "-rf", "json", "-rff", result])
+                group = json.loads(result.read_text())
+                if len(group) != 1:
+                    raise RuntimeError("Missing confirmation result")
+                metrics[label] = group[0]["primaryMetric"]
+            before = metrics["stock-jni"]
+            after = metrics["stock-intrinsic"]
+            paired_ratio = after["score"] / before["score"]
+            significant = after["score"] - after["scoreError"] > before["score"] + before["scoreError"]
+            evidence.append(paired_ratio > 1.02 and significant)
+            print("CONFIRMATION", tier, benchmark, params, order, paired_ratio, significant, flush=True)
+        if all(evidence):
+            confirmed.append((tier, benchmark, params, ratio))
+    if confirmed:
+        raise RuntimeError("Confirmed default-path slowdowns above 2%: " + repr(confirmed))
+    print("Default-path performance check passed: no confirmed significant slowdowns above 2%", flush=True)
 
 
 if __name__ == "__main__":
