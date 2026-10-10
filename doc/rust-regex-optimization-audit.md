@@ -1,6 +1,6 @@
 # Rust regex optimization audit
 
-Audited against the live [regex 1.13.1 performance guide](https://github.com/rust-lang/regex/blob/1.13.1/src/lib.rs#L430-L548) on 2026-10-06 (Asia/Taipei). The guide describes workload choices, not a switch that makes every expression faster. The adapter uses regex-automata's meta engine so it can reuse captures, control mutable caches and account for native storage.
+Audited against the [regex 1.13.1 performance guide](https://github.com/rust-lang/regex/blob/1.13.1/src/lib.rs#L430-L548) on 2026-10-06. The adapter uses regex-automata's meta engine to reuse captures, control mutable caches and account for native storage.
 
 | Upstream recommendation | Integration |
 | --- | --- |

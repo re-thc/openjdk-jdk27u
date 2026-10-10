@@ -7,8 +7,8 @@ Linux x86_64, Xeon Platinum 8573C; one pinned CPU, Serial GC, one active process
 Each side runs in a separate JVM. Interpreter, C1-only and C2-only settings are
 measured separately. JMH 1.37 uses two 300 ms warmups and three 300 ms samples.
 Each shape and lifetime reuse mode has a separate JVM, and process order
-alternates between two pairs. The runner uses no child forks to fit
-this host's thread quota. These are exploratory shared-host measurements;
+alternates between two pairs. The runner uses no child forks.
+These are exploratory shared-host measurements;
 per-process scores and all six samples per side accompany the means in the
 [machine-readable results](rust-regex-performance.jsonl). The runtime source
 is `ffa0899c6d2`; the native adapter is unchanged from the option audit.
@@ -107,7 +107,6 @@ builds Rust when that plan cannot answer the operation.
 The digit-only plan skips nondigits directly and reads each digit once;
 inputs too short for the required prefix and digit reject immediately.
 This avoids empty-prefix String searches and repeated character access.
-The capture offsets and native handoff limits are unchanged.
 
 The measurements support retaining a hybrid by shape and work performed:
 16-character C2 digit misses improve 5.20x, while fixed-width misses lose
@@ -156,7 +155,7 @@ costs; it confirms that general engine construction is much more expensive
 than an individual warmed search. Cold use, engine sharing, and an early hit
 must therefore be assessed separately. More reuse does not guarantee a gain:
 32 shared short fixed-width calls are slower here (0.33x). The short-only plan
-avoids construction entirely, and there is no activation threshold at call 9.
+avoids construction entirely.
 
 ## Reproduction
 

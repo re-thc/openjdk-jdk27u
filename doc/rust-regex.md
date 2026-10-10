@@ -4,7 +4,7 @@ This fork selects Rust at Pattern compilation for a parsed common subset of
 `java.util.regex`. Supported Patterns return matches and captures directly
 from Rust or a narrow short-match specialization, and retain no Java node graph.
 Unsupported syntax compiles with Java. Unsupported inputs/operations permanently
-promote the affected Pattern to Java. There is no miss counter or activation gate.
+promote the affected Pattern to Java.
 
 ## Build and runtime controls
 
@@ -30,8 +30,8 @@ A recursive grammar recognizer translates ASCII expressions and records capture
 numbers/names and nullable subexpressions. It accepts ordinary/noncapturing/named
 groups, ordered alternation, ranges, negated classes, default ASCII d/D/w/W/s/S,
 greedy/reluctant quantifiers, quoting, byte-valued escapes, anchors and boundaries.
-Supported flags are UNIX_LINES, ASCII CASE_INSENSITIVE, DOTALL and LITERAL.
-Plain literals keep Java's optimized literal path.
+Supported native flags are UNIX_LINES, ASCII CASE_INSENSITIVE and DOTALL.
+Plain literals and LITERAL mode keep Java's optimized literal path.
 
 Literal-prefix/digit-tail expressions, including ordinary/named captures, get
 a compact specialization containing only the prefix and capture indices. It
@@ -40,9 +40,7 @@ longer searches. Numeric runs return to Rust after 256 characters on short
 inputs or 32 characters on larger inputs.
 Digit-only searches skip nondigits directly and read each digit once. Inputs
 shorter than the required prefix plus one digit reject immediately.
-Literal searches respect the region end, including small regions within large
-Strings. The tiny candidate helper is forced inline; full-input searches retain
-the existing String search path.
+Literal searches respect the region end, including small regions within large Strings.
 This avoids the native boundary for short/early matches. The Rust engine is
 compiled on the first operation that needs it, with no use-count threshold.
 Patterns used exclusively through the specialization allocate no native engine
@@ -113,7 +111,8 @@ The budget bounds accounted engine/cache storage and construction reservations;
 allocator metadata, fragmentation and the Rust runtime are outside that metric.
 Selected Patterns keep no Java graph. Promotion releases the backend reference;
 other Patterns may still own the shared engine, and Cleaner cleanup is eventual.
-Matcher arrays retain captures plus four ABI ints. Compilation/destruction use
+Native Matcher arrays retain captures plus four ABI ints; Java-only Matchers
+keep the original array size. Compilation/destruction use
 native thread state; match calls retain no heap addresses after return. All
 three C ABI exports contain unwinding panics and fail open.
 

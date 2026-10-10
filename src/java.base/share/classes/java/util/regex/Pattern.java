@@ -25,8 +25,6 @@
 
 package java.util.regex;
 
-import jdk.internal.util.regex.RustRegex;
-
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 import java.util.Locale;
@@ -48,6 +46,7 @@ import java.util.stream.StreamSupport;
 import jdk.internal.lang.CaseFolding;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.regex.Grapheme;
+import jdk.internal.util.regex.RustRegex;
 
 /**
  * A compiled representation of a regular expression.

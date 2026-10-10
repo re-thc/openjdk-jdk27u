@@ -88,13 +88,9 @@ public final class RustRegex {
         public void run() { free0(handle); }
     }
 
-    public static boolean isLatin1(String input) {
-        return SharedSecrets.getJavaLangAccess().getLatin1Bytes(input) != null;
-    }
-
     public static RustRegex compile(String pattern, int flags) {
         if (!ENABLED || pattern.length() > 4096 ||
-                (flags & ~(Pattern.UNIX_LINES | Pattern.CASE_INSENSITIVE | Pattern.LITERAL | Pattern.DOTALL)) != 0)
+                (flags & ~(Pattern.UNIX_LINES | Pattern.CASE_INSENSITIVE | Pattern.DOTALL)) != 0)
             return null;
         CacheKey key = new CacheKey(pattern, flags);
         synchronized (CompiledCache.ENTRIES) {
@@ -266,9 +262,7 @@ public final class RustRegex {
             if (scan && !prefix.isEmpty() && (at == to || character(input, bytes, at) != prefix.charAt(0)))
                 at = candidate(input, at, to);
             if (scan && prefix.isEmpty()) {
-                // A digit-only expression has no literal candidate to search
-                // for. Skip nondigits directly instead of repeatedly calling
-                // startsWith/indexOf with the empty string.
+                // Digit-only expressions have no literal prefix to search for.
                 while (at < to) {
                     int c = character(input, bytes, at);
                     if (c >= '0' && c <= '9') break;
@@ -335,12 +329,11 @@ public final class RustRegex {
         Subset(String source, int flags) {
             this.flags = flags;
             StringBuilder expanded = new StringBuilder();
-            boolean quoted = (flags & Pattern.LITERAL) != 0;
-            boolean literal = quoted;
+            boolean quoted = false;
             for (int i = 0; i < source.length(); i++) {
                 char c = source.charAt(i);
                 if (c > 127) fail();
-                if (!literal && c == '\\' && i+1 < source.length()) {
+                if (c == '\\' && i+1 < source.length()) {
                     char next = source.charAt(i+1);
                     if (next > 127) fail();
                     if (!quoted && next == 'Q') { quoted = true; i++; continue; }
@@ -449,7 +442,7 @@ public final class RustRegex {
                     return new Shape(true, 0, false);
                 }
                 cursor--;
-                character(output, false);
+                character(output);
                 return new Shape(false, 0, false);
             }
             if ("*+?{}".indexOf(c) >= 0 || c == '\0') fail();
@@ -482,12 +475,12 @@ public final class RustRegex {
             if (peek() == '-' && cursor+1 < source.length() && source.charAt(cursor+1) == '-') fail();
             char c = take();
             if (c == '[' || c == '&' || c == '~' || c == '|') fail();
-            if (c == '\\') return character(target, true);
+            if (c == '\\') return character(target);
             hex(target, c);
             return c;
         }
 
-        int character(StringBuilder target, boolean inClass) {
+        int character(StringBuilder target) {
             char c = take();
             if ("dDwWsS".indexOf(c) >= 0) {
                 target.append('\\').append(c); complex = true; return -1;

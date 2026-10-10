@@ -25,8 +25,6 @@
 
 package java.util.regex;
 
-import jdk.internal.util.regex.RustRegex;
-
 import java.io.IOException;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
@@ -39,6 +37,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import jdk.internal.util.regex.RustRegex;
 
 /**
  * An engine that performs match operations on a {@linkplain
@@ -235,9 +235,8 @@ public final class Matcher implements MatchResult {
 
     private Map<String, Integer> namedGroups;
 
-    // Java's traversal-specific end flags are computed only if requested.
-    // Keep the operation's immutable input so later reset/mutation cannot
-    // change their meaning. Querying them permanently promotes its Pattern.
+    // Native results without exact end flags are replayed in Java if queried.
+    // Save immutable input so reset or mutation cannot change those flags.
     private Pattern nativeEndPattern;
     private String nativeEndInput;
     private int nativeEndFrom, nativeEndTo, nativeEndStart, nativeEndMode;
@@ -257,7 +256,7 @@ public final class Matcher implements MatchResult {
         this.text = text;
 
         // Allocate state storage
-        groups = new int[parent.capturingGroupCount * 2 + 4];
+        groups = new int[parent.capturingGroupCount * 2 + (parent.rustRegex != null ? 4 : 0)];
         locals = new int[parent.localCount];
         localsPos = new IntHashSet[parent.localTCNCount];
 
@@ -431,7 +430,7 @@ public final class Matcher implements MatchResult {
         namedGroups = null;
 
         // Reallocate state storage
-        groups = new int[newPattern.capturingGroupCount * 2 + 4];
+        groups = new int[newPattern.capturingGroupCount * 2 + (newPattern.rustRegex != null ? 4 : 0)];
         locals = new int[newPattern.localCount];
         for (int i = 0; i < groups.length; i++)
             groups[i] = -1;

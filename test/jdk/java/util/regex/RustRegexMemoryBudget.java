@@ -43,9 +43,9 @@ public class RustRegexMemoryBudget {
             return;
         }
         List<RustRegex> retained = new ArrayList<>();
-        RustRegex filter;
-        while ((filter = RustRegex.compile("a{512}(?:x" + retained.size() + ")?", 0)) != null) {
-            retained.add(filter);
+        RustRegex engine;
+        while ((engine = RustRegex.compile("a{512}(?:x" + retained.size() + ")?", 0)) != null) {
+            retained.add(engine);
             if (retained.size() == 16384) throw new AssertionError("native budget never exhausted");
         }
         if (retained.isEmpty()) throw new AssertionError("first native allocation failed");
@@ -77,8 +77,8 @@ public class RustRegexMemoryBudget {
         do {
             System.gc();
             Thread.sleep(20);
-            filter = RustRegex.compile("error[0-9]+(?:x)?", 0);
-            if (filter != null) {
+            engine = RustRegex.compile("error[0-9]+(?:x)?", 0);
+            if (engine != null) {
                 System.out.println("Native budget capacity restored after cleanup");
                 Reference.reachabilityFence(first);
                 return;

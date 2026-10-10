@@ -116,7 +116,7 @@ public class RustRegexTest {
                     for (int start : new int[]{0, input.length()/2, input.length()})
                         equal(a,b,a.find(start),b.find(start),false);
                 }
-                nativeOnly(p); // No eighth-call gate and no Java verification scan.
+                nativeOnly(p);
                 java.lang.ref.Reference.reachabilityFence(owner);
             }
             System.gc();
@@ -159,6 +159,16 @@ public class RustRegexTest {
         a.reset("other").usePattern(Pattern.compile("x+"));
         b.reset("other").usePattern(Pattern.compile("x+"));
         if (a.hitEnd()!=b.hitEnd() || a.requireEnd()!=b.requireEnd()) throw new AssertionError("saved end state");
+
+        // Switching backends must resize capture storage for the new Pattern.
+        a = Pattern.compile("error123").matcher("error123");
+        b = reference("error123", 0).matcher("error123");
+        for (String expression : new String[]{"error([0-9]+)", "(?=error)error([0-9]+)",
+                "(error)([0-9]+)", "error123"}) {
+            a.usePattern(Pattern.compile(expression)).reset();
+            b.usePattern(reference(expression, 0)).reset();
+            equal(a, b, a.matches(), b.matches(), false);
+        }
     }
 
     private static void digitEndFlags() throws Exception {
@@ -291,7 +301,7 @@ public class RustRegexTest {
 
     private static void fallbackGrammar() throws Exception {
         // The leading literal ] must remain inside the class when escaped
-        // operator characters follow it. Exercise the former activation sequence.
+        // operator characters follow it, even across repeated misses and a hit.
         for (String expression : new String[]{"[]a~~a]+", "[]a\\~\\~a]+"}) {
             Pattern p=Pattern.compile(expression),ref=reference(expression,0);
             for (int i=0; i<8; i++) {
