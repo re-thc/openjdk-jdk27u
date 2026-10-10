@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +27,7 @@ import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
+ * @modules java.management
  * @bug 8142968
  * @summary Access a jrt:/ resource in an observable module that is not in
  *          the boot layer and hence not known to the built-in class loaders.
