@@ -1,0 +1,35 @@
+name: ZIP native library comparison
+on:
+  push:
+    branches: [pr/zlib-ng-native-comparison]
+permissions:
+  contents: read
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux-x64
+          - runner: ubuntu-24.04-arm
+            platform: linux-aarch64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-14 g++-14 cmake python3 zlib1g-dev
+          mkdir -p validation/results
+          lscpu > validation/results/cpu.txt
+          gcc-14 --version > validation/results/compiler.txt
+          git rev-parse HEAD > validation/results/source.txt
+          python3 .github/scripts/validate-review-fixes.py native
+          cat validation/results/ld-configure.log
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: native-comparison-${{ matrix.platform }}
+          path: validation/results
+          retention-days: 30
