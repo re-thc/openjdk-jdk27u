@@ -51,7 +51,7 @@ with tarfile.open(args.archive) as archive:
             parser.error('unsafe archive path')
         if ((len(path.parts) == 1 and
              (path.suffix in ('.c', '.h', '.in') or path.name in ('configure', 'LICENSE.md')))
-                or path.parts[0] == 'arch'
+                or (path.parts[0] == 'arch' and path.suffix in ('.c', '.h', '.in'))
                 or str(path) in ('tools/config.sub', 'test/Makefile.in')):
             files[path] = (archive.extractfile(member).read(), member.mode & 0o777)
 if Path('LICENSE.md') not in files:
