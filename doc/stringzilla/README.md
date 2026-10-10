@@ -20,8 +20,9 @@ headers remain outside HotSpot. No additional shared library is required.
 
 x86 GCC/Clang builds select upstream AVX2 or AVX-512 kernels according to
 HotSpot's CPU capabilities and `UseAVX`. AArch64 uses NEON. MSVC x64, Zero and
-other ports use serial kernels. The immutable callback table is published with
-release/acquire ordering during native bootstrap and initialized idempotently
+other ports use serial kernels. GCC/Clang use upstream portable scalar loads
+for byte arrays at arbitrary offsets. The immutable callback table is published
+with release/acquire ordering during native bootstrap and initialized idempotently
 at Java class initialization. Bootstrap equality has a VM-owned scalar fallback.
 
 Search dispatch starts at 256 source bytes. Short ranges and immediate matches
@@ -114,9 +115,10 @@ functional and tier-specific performance checks before changing dispatch gates.
 
 ## Validation and benchmarks
 
-Local release jtreg validation passed **159 tests, zero failures/errors**:
-String (94), StringBuilder (16), StringBuffer (25), and HotSpot string intrinsics
-(24). Two other HotSpot tests retain platform exclusions. Clean GCC 14 release/CDS
+Local release jtreg validation passed **161 tests, zero failures/errors**:
+String (94), StringBuilder (16), StringBuffer (25), HotSpot string intrinsics (24),
+and LoggerFinder (2). Two other HotSpot tests retain platform exclusions. Clean
+GCC 14 release/CDS
 and fastdebug builds use the fork development profile. Eight targeted fastdebug
 tests passed. AArch64 cross checks cover HotSpot and java.base native libraries.
 
@@ -124,10 +126,11 @@ The tests cover all three execution tiers, JNI fallback, explicit opt-out,
 threshold/window edges, long needles, coder combinations, surrogate pairs,
 builder capacity/mutations and concurrent GC. WhiteBox forces 26 public callers
 through C1/C2 and checks equality/helper caller state and method handles.
-Native tests check every capability mask, executable backend, invalid input and
-work limit independently of Java gates. AArch64/QEMU provides functional coverage.
-Native ASan/UBSan passed with alignment instrumentation excluded for upstream
-unaligned loads.
+Native tests check every capability mask, executable backend, invalid input,
+work limit and unaligned long-needle search independently of Java gates.
+AArch64/QEMU provides functional coverage.
+Native ASan/UBSan passed with alignment checks enabled. GCC 16 kernels also
+passed the string-search, literal-replacement and logger tests.
 
 ```sh
 make CONF=cloud test \

@@ -87,6 +87,39 @@ static jint check_kernels(void) {
         test_initialize();
         CHECK(published == kernels);
         if (!can_execute(kernels->capabilities)) continue;
+
+        // Long-needle verification must accept every byte-array alignment.
+        sz_align_(64) char unaligned_source[576];
+        sz_align_(64) char unaligned_target[320];
+        const jint lengths[] = {24, 32, 64, 90, 128, 254, 256, 258};
+        for (unsigned int n = 0; n < sizeof(lengths) / sizeof(lengths[0]); n++) {
+            jint length = lengths[n];
+            for (int offset = 0; offset < 32; offset++) {
+                char* text = unaligned_source + offset;
+                char* needle = unaligned_target + offset;
+                memset(text, 'a', 512);
+                memset(needle, 'a', length);
+                needle[0] = 'b';
+                needle[length - 1] = 'c';
+                memcpy(text + 64, needle, length);
+                CHECK(kernels->findLatin1(text, 512, needle, length) == 64);
+                CHECK(kernels->rfindLatin1(text, 512, needle, length) == 64);
+                CHECK(kernels->equal(text + 64, needle, length) == 1);
+                if ((offset & 1) == 0) {
+                    CHECK(kernels->findUTF16(text, 512, needle, length) == 64);
+                    CHECK(kernels->rfindUTF16(text, 512, needle, length) == 64);
+                }
+                needle[length / 2] ^= 1;
+                CHECK(kernels->findLatin1(text, 512, needle, length) == -1);
+                CHECK(kernels->rfindLatin1(text, 512, needle, length) == -1);
+                CHECK(kernels->equal(text + 64, needle, length) == 0);
+                if ((offset & 1) == 0) {
+                    CHECK(kernels->findUTF16(text, 512, needle, length) == -1);
+                    CHECK(kernels->rfindUTF16(text, 512, needle, length) == -1);
+                }
+            }
+        }
+
         // Limits are enforced by every table, before touching either array.
         StringZillaSearchFn bounded[] = {kernels->findLatin1, kernels->rfindLatin1,
                                         kernels->findUTF16, kernels->rfindUTF16};

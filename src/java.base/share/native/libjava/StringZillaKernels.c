@@ -28,6 +28,10 @@
 
 #define SZ_AVOID_LIBC 1
 #define SZ_DEBUG 0
+#if defined(__GNUC__) || defined(__clang__)
+// Byte arrays and search offsets need not have word alignment.
+#define SZ_USE_MISALIGNED_LOADS 0
+#endif
 #if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
 #define SZ_USE_SKYLAKE 1
 #define SZ_USE_HASWELL 1
