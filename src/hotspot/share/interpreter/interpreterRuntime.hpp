@@ -76,6 +76,9 @@ class InterpreterRuntime: AllStatic {
   static void    throw_IncompatibleClassChangeErrorVerbose(JavaThread* current,
                                                            Klass* resc,
                                                            Klass* interfaceKlass);
+  static void    throw_IllegalAccessErrorVerbose(JavaThread* current,
+                                                 Klass* recvKlass,
+                                                 Method* selectedMethod);
   static void    throw_StackOverflowError(JavaThread* current);
   static void    throw_delayed_StackOverflowError(JavaThread* current);
   static void    throw_ArrayIndexOutOfBoundsException(JavaThread* current, arrayOopDesc* a, jint index);

@@ -66,7 +66,8 @@ void ResolvedMethodEntry::mark_and_relocate(ConstantPool* src_cp) {
   } else {
     ArchiveBuilder::current()->mark_and_relocate_to_buffered_addr(&_method);
   }
-  if (bytecode1() == Bytecodes::_invokeinterface) {
+  if (bytecode1() == Bytecodes::_invokeinterface && !is_forced_virtual()) {
+    // A forced virtual entry has a table index (or nothing) in place of the klass.
     ArchiveBuilder::current()->mark_and_relocate_to_buffered_addr(&_entry_specific._interface_klass);
   }
 }
@@ -81,7 +82,7 @@ void ResolvedMethodEntry::print_on(outputStream* st) const {
     st->print_cr("- Method: null");
   }
   // Some fields are mutually exclusive and are only used by certain invoke codes
-  if (bytecode1() == Bytecodes::_invokeinterface && interface_klass() != nullptr) {
+  if (bytecode1() == Bytecodes::_invokeinterface && !is_forced_virtual() && interface_klass() != nullptr) {
     st->print_cr(" - Klass: " INTPTR_FORMAT " %s", p2i(interface_klass()), interface_klass()->external_name());
   } else {
     st->print_cr("- Klass: null");

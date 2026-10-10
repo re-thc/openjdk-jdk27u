@@ -231,6 +231,10 @@ public:
 
   // Aarch64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() { return true; }
+
+  // Aarch64 checks receivers of invokeinterface calls to Object methods in the interpreter
+  static bool supports_fast_invokeinterface_object_checks() { return true; }
+
   constexpr static bool supports_stack_watermark_barrier() { return true; }
   constexpr static bool supports_recursive_fast_locking() { return true; }
 
