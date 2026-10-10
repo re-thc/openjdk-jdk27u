@@ -54,18 +54,38 @@ import jdk.test.whitebox.WhiteBox;
 
 public class FourByteHeaderObjectSize extends ASimpleInstrumentationTestCase {
     static final WhiteBox WB = WhiteBox.getWhiteBox();
-    static final class Cell { int value; Cell(int value) { this.value = value; } }
+
+    static final class Cell {
+        int value;
+
+        Cell(int value) {
+            this.value = value;
+        }
+    }
+
     static Instrumentation instrumentation;
     static volatile Object garbage;
     static volatile long sink;
-    static long sizeObject(Object value) { return instrumentation.getObjectSize(value); }
-    static long sizeCell(Cell value) { return instrumentation.getObjectSize(value); }
-    static long sizeArray(int[] value) { return instrumentation.getObjectSize(value); }
+    static long sizeObject(Object value) {
+        return instrumentation.getObjectSize(value);
+    }
 
-    public FourByteHeaderObjectSize(String name) { super(name); }
+    static long sizeCell(Cell value) {
+        return instrumentation.getObjectSize(value);
+    }
+
+    static long sizeArray(int[] value) {
+        return instrumentation.getObjectSize(value);
+    }
+
+    public FourByteHeaderObjectSize(String name) {
+        super(name);
+    }
+
     public static void main(String[] args) throws Throwable {
         new FourByteHeaderObjectSize(args[0]).runTest();
     }
+
     static void compile(String name, Class<?> parameter, int level) throws Exception {
         Method method = FourByteHeaderObjectSize.class.getDeclaredMethod(name, parameter);
         WB.deoptimizeMethod(method);
@@ -73,7 +93,8 @@ public class FourByteHeaderObjectSize extends ASimpleInstrumentationTestCase {
         Asserts.assertTrue(WB.enqueueMethodForCompilation(method, level));
         Utils.waitForCondition(() -> WB.getMethodCompilationLevel(method) == level);
     }
-    @Override protected void doRunTest() throws Throwable {
+    @Override
+    protected void doRunTest() throws Throwable {
         instrumentation = fInst;
         var objects = new ArrayList<Object>();
         for (int i = 0; i < 12000; i++) {
@@ -102,12 +123,16 @@ public class FourByteHeaderObjectSize extends ASimpleInstrumentationTestCase {
             compile("sizeObject", Object.class, level);
             compile("sizeCell", Cell.class, level);
             compile("sizeArray", int[].class, level);
-            for (int round = 0; round < 3; round++) System.gc();
+            for (int round = 0; round < 3; round++) {
+                System.gc();
+            }
             int expanded = 0;
             for (int i = 0; i < objects.size(); i++) {
                 Object object = objects.get(i);
                 long actual = WB.getObjectSize(object);
-                if (actual > baseSizes[i]) expanded++;
+                if (actual > baseSizes[i]) {
+                    expanded++;
+                }
                 Asserts.assertEQ(sizeObject(object), actual, "generic size at compilation level " + level);
                 if (object instanceof Cell value) {
                     Asserts.assertEQ(sizeCell(value), actual, "exact instance size");

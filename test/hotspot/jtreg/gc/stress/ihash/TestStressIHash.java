@@ -99,7 +99,7 @@ import java.util.Random;
  */
 public class TestStressIHash {
 
-    // With compact headers: header(4) + int(4) = 8 bytes (1 HeapWord).
+    // With four-byte headers: header(4) + int(4) = 8 bytes (1 HeapWord).
     // The identity hash needs 4 bytes but there is no gap in the layout,
     // so GC must expand the object by one word when preserving the hash.
     static class Payload implements Cloneable {
@@ -145,9 +145,7 @@ public class TestStressIHash {
     static final int BATCH_SIZE = 100_000;
     static final int MAX_SURVIVORS = 1_000_000;
 
-    // Small helper methods that C2 will compile and inline the clone
-    // intrinsic into. Keeping them small encourages C2 to intrinsify
-    // Object.clone() rather than emitting a call.
+    // Keep the clone small enough for C2 to inline its intrinsic.
     static Payload clonePayload(Payload p) {
         return p.clone();
     }
@@ -170,9 +168,7 @@ public class TestStressIHash {
         }
     }
 
-    // C2 regression test: exercises the clone pre-copy StoreI/StoreN
-    // mismatch at offset 4. Runs cloneRefPayload in a tight loop so C2
-    // compiles it and hits the assertion during IGVN.
+    // Exercise the clone pre-copy StoreI/StoreN mismatch at offset four in C2.
     static void testCloneRefPayload() {
         Object anchor = new Object();
         for (int i = 0; i < 100_000; i++) {
@@ -194,7 +190,7 @@ public class TestStressIHash {
         int totalCloned = 0;
 
         while (survivorCount < MAX_SURVIVORS) {
-            // Phase 1: Create a batch of objects and hash every one of them.
+            // Hash a batch of objects before relocation.
             Payload[] batch = new Payload[BATCH_SIZE];
             int[] srcHashes = new int[BATCH_SIZE];
             for (int i = 0; i < BATCH_SIZE; i++) {
@@ -202,15 +198,10 @@ public class TestStressIHash {
                 srcHashes[i] = System.identityHashCode(batch[i]);
             }
 
-            // Phase 2: Force a GC cycle. Surviving hashed objects that need
-            // expansion get relocated with an extra HeapWord and their
-            // hashctrl bits set to "hashed-expanded" (11).
+            // Relocation installs each hash in an expanded object.
             System.gc();
 
-            // Phase 3: Clone the (now expanded) batch objects and verify that
-            // clones do not systematically inherit identity hashes. With the bug, clones
-            // inherit the source's hash because the hashctrl bits and stored
-            // hash value are copied from the source mark-word.
+            // Clones must not inherit the source's hash state or stored hash.
             for (int i = 0; i < BATCH_SIZE; i++) {
                 Payload clone = clonePayload(batch[i]);
                 totalCloned++;
@@ -231,9 +222,7 @@ public class TestStressIHash {
         // corrupt clones if the allocation-size vs mark-word bug is present.
         System.gc();
 
-        // Verify that clones got independent identity hashes. Random hash
-        // collisions are possible but extremely rare (~1 in 2^32 per pair).
-        // The threshold of 10 accounts for any statistical noise.
+        // Allow occasional collisions between independent 31-bit hashes.
         if (sharedHashes > 10) {
             throw new RuntimeException("FAIL: " + sharedHashes + " / " + totalCloned
                 + " clones share identity hash with source object");
