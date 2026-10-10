@@ -51,6 +51,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubInfo.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/zipRuntime.hpp"
 #include "utilities/copy.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
@@ -1868,7 +1869,7 @@ void AOTCodeReader::read_dbg_strings(DbgStrings& dbg_strings) {
 // [_stubs_base, _stubs_base + _stubs_max -1], [_c_str_base,
 // _c_str_base + _c_str_max -1],
 
-#define _extrs_max 380
+#define _extrs_max 382
 #define _stubs_max static_cast<int>(EntryId::NUM_ENTRYIDS)
 
 #define _extrs_base 0
@@ -1881,9 +1882,9 @@ void AOTCodeReader::read_dbg_strings(DbgStrings& dbg_strings) {
 
 #define ADD_EXTERNAL_ADDRESS(addr)                               \
   {                                                              \
+    assert(_extrs_length < _extrs_max, "increase size");         \
     hash_address((address) addr, _extrs_base + _extrs_length);   \
     _extrs_addr[_extrs_length++] = (address) (addr);             \
-    assert(_extrs_length <= _extrs_max, "increase size");        \
   }
 
 // insert into to the address hash table the index of an external
@@ -2051,6 +2052,7 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(Runtime1::move_appendix_patching);
     ADD_EXTERNAL_ADDRESS(Runtime1::predicate_failed_trap);
     ADD_EXTERNAL_ADDRESS(Runtime1::unimplemented_entry);
+    ADD_EXTERNAL_ADDRESS(ZipRuntime::process_c1);
     // already added
     // ADD_EXTERNAL_ADDRESS(Thread::current);
     ADD_EXTERNAL_ADDRESS(CompressedKlassPointers::base_addr());
@@ -2080,6 +2082,7 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_start_final_transition_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_start_transition_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_end_transition_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::zip_process_C);
     // already added for
 #if defined(AARCH64) && ! defined(PRODUCT)
     ADD_EXTERNAL_ADDRESS(JavaThread::verify_cross_modify_fence_failure);

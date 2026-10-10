@@ -122,6 +122,12 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
 
     switch (iid) {
 #ifndef ZERO
+#if defined(AMD64) || defined(AARCH64)
+      case vmIntrinsics::_updateBytesAdler32:
+        return java_util_zip_Adler32_updateBytes;
+      case vmIntrinsics::_updateByteBufferAdler32:
+        return java_util_zip_Adler32_updateByteBuffer;
+#endif
       // Use optimized stub code for CRC32 native methods.
       case vmIntrinsics::_updateCRC32:       return java_util_zip_CRC32_update;
       case vmIntrinsics::_updateBytesCRC32:  return java_util_zip_CRC32_updateBytes;
@@ -212,6 +218,8 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case java_lang_math_fmaD        : return vmIntrinsics::_fmaD;
   case java_lang_math_fmaF        : return vmIntrinsics::_fmaF;
   case java_lang_ref_reference_get0: return vmIntrinsics::_Reference_get0;
+  case java_util_zip_Adler32_updateBytes: return vmIntrinsics::_updateBytesAdler32;
+  case java_util_zip_Adler32_updateByteBuffer: return vmIntrinsics::_updateByteBufferAdler32;
   case java_util_zip_CRC32_update : return vmIntrinsics::_updateCRC32;
   case java_util_zip_CRC32_updateBytes
                                   : return vmIntrinsics::_updateBytesCRC32;
@@ -318,6 +326,8 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_math_fmaF    : tty->print("java_lang_math_fmaF"    ); break;
     case java_lang_math_sqrt    : tty->print("java_lang_math_sqrt"    ); break;
     case java_lang_math_sqrt_strict           : tty->print("java_lang_math_sqrt_strict"); break;
+    case java_util_zip_Adler32_updateBytes: tty->print("java_util_zip_Adler32_updateBytes"); break;
+    case java_util_zip_Adler32_updateByteBuffer: tty->print("java_util_zip_Adler32_updateByteBuffer"); break;
     case java_util_zip_CRC32_update           : tty->print("java_util_zip_CRC32_update"); break;
     case java_util_zip_CRC32_updateBytes      : tty->print("java_util_zip_CRC32_updateBytes"); break;
     case java_util_zip_CRC32_updateByteBuffer : tty->print("java_util_zip_CRC32_updateByteBuffer"); break;

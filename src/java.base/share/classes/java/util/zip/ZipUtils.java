@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,27 @@ class ZipUtils {
 
     // static final ByteBuffer defaultBuf = ByteBuffer.allocateDirect(0);
     static final ByteBuffer defaultBuf = ByteBuffer.allocate(0);
+
+    private static final long ZIP_INTRINSIC_LIMITS = initZipIntrinsics();
+
+    // Keep JNI where its transition cost is lower in the tiered benchmarks.
+    static final int DEFLATE_INTRINSIC_MIN_INPUT = 1024;
+    // The high word is the input upper bound; the low word enables mixed-buffer inflate.
+    static final int DEFLATE_INTRINSIC_MAX_INPUT = (int) (ZIP_INTRINSIC_LIMITS >>> 32);
+    static final boolean USE_INFLATE_MIXED_INTRINSICS = (int) ZIP_INTRINSIC_LIMITS != 0;
+    static final boolean USE_ZIP_INTRINSICS = DEFLATE_INTRINSIC_MAX_INPUT != 0;
+
+    private static long initZipIntrinsics() {
+        loadLibrary();
+        return zipIntrinsicLimits();
+    }
+
+    private static native long zipIntrinsicLimits();
+
+    @jdk.internal.vm.annotation.IntrinsicCandidate
+    static native long process(boolean inflate, Object receiver, long stream,
+        byte[] input, long inputOffset, int inputLen,
+        byte[] output, long outputOffset, int outputLen, int flush, int params);
 
     /**
      * Converts Windows time (in microseconds, UTC/GMT) time to FileTime.

@@ -1033,7 +1033,9 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
  *   int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
  */
 address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
-  assert(UseCRC32Intrinsics, "this intrinsic is not supported");
+  bool adler = kind == Interpreter::java_util_zip_Adler32_updateBytes ||
+               kind == Interpreter::java_util_zip_Adler32_updateByteBuffer;
+  assert(adler ? UseAdler32Intrinsics : UseCRC32Intrinsics, "this intrinsic is not supported");
   address entry = __ pc();
 
   // rmethod,: Method*
@@ -1054,7 +1056,8 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
 
   // Arguments are reversed on java expression stack
   // Calculate address of start element
-  if (kind == Interpreter::java_util_zip_CRC32_updateByteBuffer) {
+  if ((kind == Interpreter::java_util_zip_CRC32_updateByteBuffer ||
+      kind == Interpreter::java_util_zip_Adler32_updateByteBuffer)) {
     __ ldr(buf, Address(esp, 2*wordSize)); // long buf
     __ ldrw(off, Address(esp, wordSize)); // offset
     __ add(buf, buf, off); // + offset
@@ -1072,7 +1075,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
   __ andr(sp, r19_sender_sp, -16); // Restore the caller's SP
 
   // We are frameless so we can just jump to the stub.
-  __ b(CAST_FROM_FN_PTR(address, StubRoutines::updateBytesCRC32()));
+  __ b(CAST_FROM_FN_PTR(address, (adler ? StubRoutines::updateBytesAdler32() : StubRoutines::updateBytesCRC32())));
 
   // generate a vanilla native entry as the slow path
   __ bind(slow_path);

@@ -1577,6 +1577,13 @@ bool Arguments::check_vm_args_consistency() {
   // before returning an error.
   // Note: Needs platform-dependent factoring.
   bool status = true;
+#if !defined(LINUX) || !(defined(AMD64) || defined(AARCH64))
+  if (UseZlibNG) {
+    jio_fprintf(defaultStream::error_stream(),
+                "UseZlibNG is supported on Linux x86_64 and AArch64 only\n");
+    status = false;
+  }
+#endif
 
   status = CompilerConfig::check_args_consistency(status);
 #if INCLUDE_JFR

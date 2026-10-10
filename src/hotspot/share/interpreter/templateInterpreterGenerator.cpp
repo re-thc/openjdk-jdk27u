@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,6 +230,11 @@ void TemplateInterpreterGenerator::generate_all() {
   // intrinsic is disabled.
   native_method_entry(java_lang_Thread_currentThread)
   native_method_entry(java_lang_ref_reference_get0)
+
+#if defined(AMD64) || defined(AARCH64)
+  native_method_entry(java_util_zip_Adler32_updateBytes)
+  native_method_entry(java_util_zip_Adler32_updateByteBuffer)
+#endif
 
   native_method_entry(java_util_zip_CRC32_update)
   native_method_entry(java_util_zip_CRC32_updateBytes)
@@ -470,6 +475,11 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
                                            : entry_point = generate_math_entry(Interpreter::java_lang_math_sqrt); break;
   case Interpreter::java_lang_ref_reference_get0
                                            : entry_point = generate_Reference_get_entry(); break;
+#if defined(AMD64) || defined(AARCH64)
+  case Interpreter::java_util_zip_Adler32_updateBytes:
+  case Interpreter::java_util_zip_Adler32_updateByteBuffer:
+    entry_point = generate_CRC32_updateBytes_entry(kind); break;
+#endif
   case Interpreter::java_util_zip_CRC32_update
                                            : entry_point = generate_CRC32_update_entry();  break;
   case Interpreter::java_util_zip_CRC32_updateBytes

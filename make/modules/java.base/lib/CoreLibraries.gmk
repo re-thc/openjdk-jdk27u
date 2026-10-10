@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,33 @@ TARGETS += $(BUILD_LIBJAVA)
 ################################################################################
 
 BUILD_LIBZIP_EXCLUDES :=
+LIBZIP_EXCLUDES += zlib-ng
+ifneq ($(filter x86_64 aarch64, $(OPENJDK_TARGET_CPU)), )
+  ifeq ($(call isTargetOs, linux), true)
+    ZLIBNG_SRC := $(TOPDIR)/src/java.base/share/native/libzip/zlib-ng
+    ZLIBNG_OUT := $(SUPPORT_OUTPUTDIR)/native/zlib-ng
+    ZLIBNG_LIB := $(ZLIBNG_OUT)/libz.a
+
+    $(ZLIBNG_LIB): $(call FindFiles, $(ZLIBNG_SRC)) $(SPEC) \
+        $(TOPDIR)/make/modules/java.base/lib/CoreLibraries.gmk
+	# Upstream makefiles do not track all configuration/header dependencies.
+	$(RM) -r $(ZLIBNG_OUT)
+	$(MKDIR) -p $(ZLIBNG_OUT)
+	# Handle compiler environment assignments added by ccache.
+	cd $(ZLIBNG_OUT) && CC="env $(CC)" AR="$(AR)" \
+	    CFLAGS="$(CFLAGS_JDKLIB) $(SYSROOT_CFLAGS) -fPIC -Wno-undef" \
+	    LDFLAGS="$(LDFLAGS_JDKLIB) $(SYSROOT_LDFLAGS)" CHOST="$(OPENJDK_TARGET_CPU)-unknown-linux-gnu" \
+	    $(BASH) $(ZLIBNG_SRC)/configure --static --zlib-compat --sprefix=jdk_ng_ \
+	    > configure-output.log 2>&1 || { \
+	      $(CAT) $(ZLIBNG_OUT)/configure-output.log $(ZLIBNG_OUT)/configure.log; \
+	      exit 1; \
+	    }
+	+$(MAKE) -C $(ZLIBNG_OUT) libz.a
+
+    LIBZIP_ZLIBNG_CFLAGS := -DINCLUDE_ZLIBNG=1
+  endif
+endif
+
 ifeq ($(USE_EXTERNAL_LIBZ), true)
   LIBZIP_EXCLUDES += zlib
 endif
@@ -90,14 +117,15 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBZIP, \
     NAME := zip, \
     OPTIMIZATION := LOW, \
     EXCLUDES := $(LIBZIP_EXCLUDES), \
-    CFLAGS := $(LIBZ_CFLAGS), \
+    CFLAGS := $(LIBZ_CFLAGS) $(LIBZIP_ZLIBNG_CFLAGS), \
     CFLAGS_unix := $(BUILD_LIBZIP_MMAP) -UDEBUG, \
     DISABLED_WARNINGS_gcc_zip_util.c := unused-function, \
     DISABLED_WARNINGS_clang := deprecated-non-prototype, \
     DISABLED_WARNINGS_clang_gzwrite.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_zip_util.c := unused-function, \
     JDK_LIBS := libjava libjvm, \
-    LIBS_unix := $(LIBZ_LIBS), \
+    LIBS_unix := $(LIBZ_LIBS) $(ZLIBNG_LIB), \
+    EXTRA_DEPS := $(ZLIBNG_LIB), \
 ))
 
 TARGETS += $(BUILD_LIBZIP)

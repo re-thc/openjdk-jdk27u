@@ -41,6 +41,10 @@ typedef jint(*ZIP_CRC32_t)(jint crc, const jbyte* buf, jint len);
 typedef const char* (*ZIP_GZip_InitParams_t)(size_t, size_t*, size_t*, int);
 typedef size_t(*ZIP_GZip_Fully_t)(char*, size_t, char*, size_t, char*, size_t, int, char*, char const**);
 
+typedef jlong (*ZIP_Process_t)(jboolean, jlong, jlong, jint, jlong, jint, jint, jint);
+static ZIP_Process_t ZIP_Process = nullptr;
+typedef jlong (*ZIP_Complete_t)(JNIEnv*, jboolean, jobject, jlong, jint, jint, jint, jint);
+static ZIP_Complete_t ZIP_Complete = nullptr;
 static ZIP_Open_t ZIP_Open = nullptr;
 static ZIP_Close_t ZIP_Close = nullptr;
 static ZIP_FindEntry_t ZIP_FindEntry = nullptr;
@@ -78,6 +82,8 @@ static void* dll_lookup(const char* name, const char* path, bool vm_exit_on_fail
 
 static void store_function_pointers(const char* path, bool vm_exit_on_failure) {
   assert(_zip_handle != nullptr, "invariant");
+  ZIP_Complete = CAST_TO_FN_PTR(ZIP_Complete_t, dll_lookup("ZIP_Complete", path, vm_exit_on_failure));
+  ZIP_Process = CAST_TO_FN_PTR(ZIP_Process_t, dll_lookup("ZIP_Process", path, vm_exit_on_failure));
   ZIP_Open = CAST_TO_FN_PTR(ZIP_Open_t, dll_lookup("ZIP_Open", path, vm_exit_on_failure));
   ZIP_Close = CAST_TO_FN_PTR(ZIP_Close_t, dll_lookup("ZIP_Close", path, vm_exit_on_failure));
   ZIP_FindEntry = CAST_TO_FN_PTR(ZIP_FindEntry_t, dll_lookup("ZIP_FindEntry", path, vm_exit_on_failure));
@@ -214,4 +220,17 @@ void* ZipLibrary::handle() {
   assert(is_loaded(), "invariant");
   assert(_zip_handle != nullptr, "invariant");
   return _zip_handle;
+}
+
+jlong ZipLibrary::process(jboolean inflate, jlong stream,
+                         jlong input, jint input_len, jlong output, jint output_len,
+                         jint flush, jint params) {
+  initialize();
+  return ZIP_Process(inflate, stream, input, input_len,
+                     output, output_len, flush, params);
+}
+
+jlong ZipLibrary::complete(JNIEnv* env, jboolean inflate, jobject receiver, jlong stream,
+                          jint input_len, jint output_len, jint params, jint status) {
+  return ZIP_Complete(env, inflate, receiver, stream, input_len, output_len, params, status);
 }

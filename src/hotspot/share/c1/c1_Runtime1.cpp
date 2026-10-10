@@ -350,6 +350,7 @@ const char* Runtime1::name_for_address(address entry) {
 #ifdef JFR_HAVE_INTRINSICS
   FUNCTION_CASE(entry, JfrTime::time_function());
 #endif
+  FUNCTION_CASE(entry, StubRoutines::updateBytesAdler32());
   FUNCTION_CASE(entry, StubRoutines::updateBytesCRC32());
   FUNCTION_CASE(entry, StubRoutines::updateBytesCRC32C());
   FUNCTION_CASE(entry, StubRoutines::vectorizedMismatch());
