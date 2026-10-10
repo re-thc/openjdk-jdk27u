@@ -756,6 +756,11 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_tryUpdateEpochField:
 #endif
   case vmIntrinsics::_currentTimeMillis:
+  case vmIntrinsics::_useJavaFloatAppend:
+  case vmIntrinsics::_decimalZmij:
+  case vmIntrinsics::_formatZmij:
+  case vmIntrinsics::_parseFastFloatDigits:
+  case vmIntrinsics::_parseFastFloat:
   case vmIntrinsics::_nanoTime:
   case vmIntrinsics::_allocateInstance:
   case vmIntrinsics::_allocateUninitializedArray:

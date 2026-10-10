@@ -1,0 +1,117 @@
+{
+  "source_commit": "cfbc2f3ce028b747cb9bc70303e9d5c304d3dea1",
+  "original_commit": "33e539f2d4a847f283a3793df6eebd41b9d1dfac",
+  "previous_commit": "e9dbce2b547fa5ccb23b4bc8a97b95c869848f88",
+  "sources": {
+    "make/data/fast_float/layout.patch": "b14d8d5f5285b2c02084e8b4a4d83aa55e7b8a9083e4b18bf6cef08df880f1b6",
+    "make/data/fast_float/version.txt": "b9d043588bd7a9adaf13e21060fac026ce49c17a6b76f8bab121a2d06c988dc3",
+    "make/data/zmij/clang-compat.patch": "15bb0a6c774f4f80f75c9bf27e102f510204351c28a6fa387e3d2813f1e7eb63",
+    "make/data/zmij/java-format.patch": "680bcaf3d6934c844fec7de95f1fb339a52c3685e3ca731e3e0b8d1cde7cbc5b",
+    "make/data/zmij/shortest-only.patch": "5d41b396236965f886494a800b64c64f58e7d7f70ad9225646d94c6c2587565b",
+    "make/data/zmij/verify-metadata.cpp": "eb7cfa2147723a1f8a35b9357fa431e183c2c2990873cf8f3fc8a6ad619d432d",
+    "make/data/zmij/version.txt": "ebb6cf5423b880bee123ad09a27c31ea29955ff9441d007df64d072230ae5b57",
+    "make/hotspot/lib/CompileJvm.gmk": "cd3de50705a40cb565c8b5b4a4502bc578e143ff79473613011ea5d6aa4ddda3",
+    "make/scripts/bench-fast-float.sh": "38d06f3e952a9abe017b7d2a6235c3a0b8bf7e7ff628bfec31d13c26bc03c0ad",
+    "make/scripts/bench-zmij.sh": "5510279c2faf76fcd46ff3306f8407d8ef1feb2a1327e25c5c24187dbfa23658",
+    "make/scripts/check-zmij-metadata.py": "2458302239a812734604ec8d90c2b71cfff008c9270fc68dc5c3aaf8f978a580",
+    "make/scripts/update-fast-float.py": "08098cf017b5a40300e7337abcde0b14819a76af27ca302bfa7f02e1c921217f",
+    "make/scripts/update-zmij.py": "8b77c55fa56a60bde45d61838d4e944088f15f3708c757e6e3dc22e7708c6547",
+    "src/hotspot/cpu/aarch64/templateInterpreterGenerator_aarch64.cpp": "2a6169eaa3243804e9d3981a91e400fe0222a6756f65519cfcbb573029abd68e",
+    "src/hotspot/cpu/x86/templateInterpreterGenerator_x86_64.cpp": "edccf7f3d5ba2330d4192dafa3d1047016d674f2d8a625a25c9f90b70c1f1891",
+    "src/hotspot/cpu/x86/zmij_sse.cpp": "bbf7a1ebf5a271e186578c859a5e76a969305251919582d50e6584bd59ba161f",
+    "src/hotspot/share/c1/c1_Compiler.cpp": "9c828531ac6fbad47ba246f78e14565adb064031c9ce92a9ea02872cef54f7b7",
+    "src/hotspot/share/c1/c1_LIRGenerator.cpp": "44a0e247d19148ac64cdd1f0f6708910ca149ccf193666dede4b779481a01034",
+    "src/hotspot/share/c1/c1_LIRGenerator.hpp": "d3367a816f926d387ecb39025387a8ca1500622c4b4d7bce45a761e7828d5386",
+    "src/hotspot/share/c1/c1_Runtime1.cpp": "263fc05e4389313c50118524028da3184f6b1fdaccf355b2d682c01ae5b9398a",
+    "src/hotspot/share/classfile/vmIntrinsics.cpp": "6fb59a719999ea03ec8b6b8a04a88a652ea9ff8cb8af708f621f28e22b66c4af",
+    "src/hotspot/share/classfile/vmIntrinsics.hpp": "6e57af1699ae9195a2177b2f3431e7d6c1df95535f6451214f5d169295d3dceb",
+    "src/hotspot/share/include/jvm.h": "83a9bfa62cc5ca31a5526c6ff900e72be9b6c4c2cb64fb2470520fd4618b4f92",
+    "src/hotspot/share/interpreter/abstractInterpreter.cpp": "dcf4146eab1739cbb4f2617dbf3311bacdc0e03c043b1f3869971777b7bfaafa",
+    "src/hotspot/share/interpreter/abstractInterpreter.hpp": "580530dbc06aacd3b0431edb9c6f8173a3790a23da8a8366904147ad2824bfa9",
+    "src/hotspot/share/interpreter/templateInterpreterGenerator.cpp": "79bebe399784d12ec298a81150aa6db994a81fa55d41d19ba8e27064305fd7c6",
+    "src/hotspot/share/interpreter/templateInterpreterGenerator.hpp": "9de6cea9166f6592d923068e483bf486abf26eae69e6feb94f4401abcdec9320",
+    "src/hotspot/share/opto/c2compiler.cpp": "21570831e8ea7e88a66d68ad1d1e72336bd7558e2f0153e0061273737da9e69c",
+    "src/hotspot/share/opto/escape.cpp": "35ee1358c0f00204ac40e3f3997b71b99c4ba6511f5403337500ea0186263583",
+    "src/hotspot/share/opto/library_call.cpp": "2c9ed4414a289345a2432f74f30a83660c25b5197afa5ffc23acaf765dfb75cc",
+    "src/hotspot/share/opto/library_call.hpp": "65714e9108832926a93f62998474469ffdb2f54bbd730ea390435871cfca414c",
+    "src/hotspot/share/prims/jvm.cpp": "7f181612706aad016ca2e9bcac3f73bd0bd5985066b798ecf6b318c852694364",
+    "src/hotspot/share/runtime/globals.hpp": "e680fe55ddaeddf0ad9953c7f40f5b6927ae9b80c2015806f33cc44f8a4c64e8",
+    "src/hotspot/share/utilities/fastFloat.cpp": "edcf6872ac5141f4afcb89c35ddca204a3bc4e431c9d69d5a44071e2597458b2",
+    "src/hotspot/share/utilities/fastFloat.hpp": "44f443d4dd62ec12e75eada82124b50c996bd9c394b86acd18e0c41e04f6a344",
+    "src/hotspot/share/utilities/fast_float/ascii_number.h": "b71908c4b0146393b92a25dc1d18a30ba9a6a91f67284421baa23f3fb8379556",
+    "src/hotspot/share/utilities/fast_float/bigint.h": "ba39c5d8d8c8fe9ca8d7300aea8392a4367fd60689a9b8e3268aadceca729e53",
+    "src/hotspot/share/utilities/fast_float/constexpr_feature_detect.h": "2dd2dc5f98a8f1a78813e62d47e82a19ebe42af726356723d60f6eb387c6dd38",
+    "src/hotspot/share/utilities/fast_float/decimal_to_binary.h": "82fad8134c272a3f1bc545b3ef367a2e9e3c7464b9dcef75640c37e325dfb973",
+    "src/hotspot/share/utilities/fast_float/digit_comparison.h": "4dd408feceaa4dadafd2450a1e8f6c1b6c566ebec32474868811564d2f648fb4",
+    "src/hotspot/share/utilities/fast_float/fast_float.h": "fec4c0dc177fb3986a9007824c81fb93338ef83a6dba23325d430174a8686ce1",
+    "src/hotspot/share/utilities/fast_float/fast_table.h": "c18e0a0a2513215730557cc1dd53541cacd72855ddc0287934e78b364f989edb",
+    "src/hotspot/share/utilities/fast_float/float_common.h": "b798ecd1bee76dedf452c5669a24cb7184b9e4b3256ceef2fc5469b475c3009d",
+    "src/hotspot/share/utilities/fast_float/parse_number.h": "7831be00ec49c242656febb8feb89018c5d4ab3f7d390be8a317b06c37ed6a9b",
+    "src/hotspot/share/utilities/zmij.cpp": "36da5169cdd63aff45b614b93953182d783d74071dfea72164452d93a72e927a",
+    "src/hotspot/share/utilities/zmij.hpp": "b771c63317ddb50fbd6a9834dc290aaeb2ea3f8c674eaeff0441aa17d30aeb53",
+    "src/hotspot/share/utilities/zmij/zmij-impl.hpp": "d2ccf71bff81770d17a67a5df4f8302de6527e42433aa4ccb00c2a7f6754c37d",
+    "src/hotspot/share/utilities/zmij/zmij.h": "26e028fb3a9800554e73f82a3d77c360d90f98e81a15139a3c5690ff3f128c5e",
+    "src/hotspot/share/utilities/zmijMetadata.inline.hpp": "bac818af7a37589dc89bfa2de9d31fc2c84db5027c93aefb086d1d40f52a8eaf",
+    "src/java.base/share/classes/java/lang/AbstractStringBuilder.java": "2a629bc1592f498841473478888aa0ba133aaf817169fd401c45f1f861d03d2f",
+    "src/java.base/share/classes/java/lang/Double.java": "96e5c66d4ab0d0232ef00c747c1b3a4b275b9dd19685d1ceda9a73da529853dc",
+    "src/java.base/share/classes/java/lang/Float.java": "138cfb0d8d9cf7f80437b2d43e636a412c520e60c885888250c662b8bb541559",
+    "src/java.base/share/classes/java/math/BigDecimal.java": "6fae34ad9c0402823a79ac096ecb076a8d035dfdf77e4a0f3208a6b54d48a17d",
+    "src/java.base/share/classes/jdk/internal/math/DoubleToDecimal.java": "b8cd820aeb0d20e79d54da1662885330b2eea911505ecb9848cf5ad82f659ba6",
+    "src/java.base/share/classes/jdk/internal/math/FloatToDecimal.java": "2705e75e6c2229bc640210e2195db23bf34c8e99e9fbc0c122b1521baaccff4f",
+    "src/java.base/share/classes/jdk/internal/math/FloatingDecimal.java": "4b5b2ff733747242039a866509d51b428511928b5a1f122dd0a133fa06fcece7",
+    "src/java.base/share/classes/jdk/internal/math/FormattedFPDecimal.java": "3acd39983d3ddace73b83863f6c7c21ffa763361290ab00329615d237ee83269",
+    "src/java.base/share/classes/jdk/internal/math/ToDecimal.java": "98e1d60a7860a661791219495f0cb2b69232ffd6ae69c0b2167be307a7dea8d5",
+    "src/java.base/share/classes/jdk/internal/math/Zmij.java": "e82cb71b8a4a4dd2a0d8b390e60e3c78a08956540190346f395359bbb29948f6",
+    "src/java.base/share/legal/fast_float.md": "5ee4fe3fdee2343a9af97aaff36d03776a550d101f7cc5ae0518853dd8829fca",
+    "src/java.base/share/legal/zmij.md": "c4a1cee723305e64183e1d8435b8af33de77511921c9ff63336204e1a09cd049",
+    "src/java.base/share/native/libjava/FloatingDecimal.c": "6c87f616738c79f0d9a2da6b418215cdb518c864bde6130122a2c6fd5f224b64",
+    "src/java.base/share/native/libjava/Zmij.c": "91aad1752310e91b5ec346ba63b5b4d1bbbc68bd510176d0234002e0a60e1a4e",
+    "test/micro/org/openjdk/bench/java/lang/FastFloatParsing.java": "4fe35de9dd419a52768f44ec8a5ccf1fb55b25a2025f86d67d6c8dc9de152ac7",
+    "test/micro/org/openjdk/bench/java/lang/ZmijFormatting.java": "aad71fdb7b8da04f8af1ef561af67acc44aa4e387f5b45e4713da52187140a91"
+  },
+  "images": {
+    "original": {
+      "release": "SOURCE=\".:git:33e539f2d4a8\"\nIMPLEMENTOR=\"N/A\"\nJAVA_VERSION_DATE=\"2027-01-19\"\nJAVA_RUNTIME_VERSION=\"27.0.2-internal-adhoc.agent.openjdk-jdk27u\"\nOS_NAME=\"Linux\"\nOS_ARCH=\"x86_64\"\nLIBC=\"gnu\"\n",
+      "layout": "exploded modules",
+      "sha256": {
+        "lib/server/libjvm.so": "3bad7aad69f1eaa5fed0c8206f7904c4d4e4e6f8757de37013424484422419f7",
+        "modules/java.base/jdk/internal/math/DoubleConsts.class": "bcb5bd327b2ce450dd27adfb7bf1bdc750a1cd8d66dcbc08c9b8ce7b64c34fc2",
+        "modules/java.base/jdk/internal/math/DoubleToDecimal.class": "06310d16cae70f1ae006b0e2a95bb73cb605d678b7d177c7be4248caf491e7b1",
+        "modules/java.base/jdk/internal/math/FDBigInteger.class": "9868ef814d883e6eb3531bb9a5eeb9ad59a8e46c479e612f1d6357de29b1fa0b",
+        "modules/java.base/jdk/internal/math/FloatConsts.class": "bb3c7c961cbb6f2360d7079b951c65dd217f734b6ecb6e9753887923d19108e7",
+        "modules/java.base/jdk/internal/math/FloatToDecimal.class": "4616f807c13cde340d0065c3889457abab572365852f188aa8fbcdac75698a12",
+        "modules/java.base/jdk/internal/math/FloatingDecimal$ASCIIToBinaryBuffer.class": "138442c5407b672ab9e8905d81f129142566209b84f762ac4e1a97813c30b4c1",
+        "modules/java.base/jdk/internal/math/FloatingDecimal$BinaryToASCIIBuffer.class": "c7fcf18aed1cedaf2e81fc1876d98c690001bba2c9a1341626a61c8b9e399d3b",
+        "modules/java.base/jdk/internal/math/FloatingDecimal.class": "0af1416de00195bdf765c31393491f8eb7e32419257a6fde0d877c2845504cff",
+        "modules/java.base/jdk/internal/math/FormattedFPDecimal.class": "a397a5a6e4d85f3d05b3655ca99748e93cdc7a3bc6238562503f52e95c4a4d11",
+        "modules/java.base/jdk/internal/math/MathUtils.class": "cad3ca42bba04153e263e5ef7c7f28bfceb3f4743d4fdd06452ada42a81c4c39",
+        "modules/java.base/jdk/internal/math/ToDecimal.class": "b33fdcbceeabb7fe23a3fafe8fb7a85eefdf5e6cc9c3e3fe209207a677a17f91"
+      }
+    },
+    "previous": {
+      "release": "IMPLEMENTOR=\"N/A\"\nJAVA_RUNTIME_VERSION=\"27.0.2-internal-adhoc.agent.openjdk-jdk27u\"\nJAVA_VERSION=\"27.0.2\"\nJAVA_VERSION_DATE=\"2027-01-19\"\nLIBC=\"gnu\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"x86_64\"\nOS_NAME=\"Linux\"\nSOURCE=\".:git:c49478493b69+\"\n",
+      "layout": "jimage",
+      "sha256": {
+        "lib/server/libjvm.so": "7c857158a59fa9c373f413eb43c9456367ed11dab0a432cf599314165d896748",
+        "lib/modules": "dee9f87a571230212dcf2ebf0c83225eae3f1a74bb8df88cd520fd36165a3a09"
+      }
+    },
+    "final": {
+      "release": "IMPLEMENTOR=\"N/A\"\nJAVA_RUNTIME_VERSION=\"27.0.2-internal-adhoc.agent.openjdk-jdk27u\"\nJAVA_VERSION=\"27.0.2\"\nJAVA_VERSION_DATE=\"2027-01-19\"\nLIBC=\"gnu\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"x86_64\"\nOS_NAME=\"Linux\"\nSOURCE=\".:git:cfbc2f3ce028\"\n",
+      "layout": "jimage",
+      "sha256": {
+        "lib/server/libjvm.so": "c5b2e4e60734d171fff4a2b7d70e4ef879ae8a960de5f1b956af4d244199a4a1",
+        "lib/modules": "bfb538a35107d00f568bc3579ddebf398cbab0e2f57d7b10a5b653f8f462f2b6"
+      }
+    }
+  },
+  "constructor_patch_sha256": "b3647291a5e4de8246669c80605bdf730c5367d318185cf40917888b933d9c56",
+  "maintenance_changes_after_measurement": {
+    "make/scripts/update-zmij.py": {
+      "measured_sha256": "8b77c55fa56a60bde45d61838d4e944088f15f3708c757e6e3dc22e7708c6547",
+      "published_sha256": "21bf007366cf61241e33f77a94cb5d3b936d7a52297681dfc5ca94710b66be42",
+      "reason": "Merge the concurrently published supplemental UBSan checker into the updater; runtime sources unchanged."
+    }
+  },
+  "merged_remote_commit": "9c534af36ca1d254aa91dc3d89ee8d37a17d8109"
+}

@@ -103,9 +103,11 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
+#include "utilities/fastFloat.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
 #include "utilities/zipLibrary.hpp"
+#include "utilities/zmij.hpp"
 #if INCLUDE_CDS
 #include "classfile/systemDictionaryShared.hpp"
 #endif
@@ -3195,6 +3197,45 @@ JVM_END
 
 
 // JNI version ///////////////////////////////////////////////////////////////////////////////
+
+JVM_LEAF(jboolean, JVM_IsZmijEnabled(void))
+#if defined(VM_LITTLE_ENDIAN) && (defined(AMD64) || defined(AARCH64))
+  return UseZmijIntrinsics;
+#else
+  return false;
+#endif
+JVM_END
+
+JVM_LEAF(jlong, JVM_DecimalZmij(jlong bits))
+  return jlong(Zmij::decimal(uint64_t(bits)));
+JVM_END
+
+JVM_ENTRY(jint, JVM_FormatZmij(JNIEnv* env, jbyteArray output, jint index, jlong bits, jint format))
+  typeArrayOop value = typeArrayOop(JNIHandles::resolve_non_null(output));
+  int capacity = ((format & 1) == 0 ? 15 : 24) << ((format & 2) >> 1);
+  if (index < 0 || index > value->length() - capacity) {
+    return 0;
+  }
+  return Zmij::formatter()(static_cast<char*>(value->base(T_BYTE)) + index, uint64_t(bits), format);
+JVM_END
+
+JVM_LEAF(jboolean, JVM_IsFastFloatEnabled(void))
+  return UseFastFloatIntrinsics;
+JVM_END
+
+JVM_ENTRY(jdouble, JVM_ParseFastFloatDigits(JNIEnv* env, jbyteArray digits,
+                                          jint length, jint decExp))
+  typeArrayOop value = typeArrayOop(JNIHandles::resolve_non_null(digits));
+  return FastFloat::parse_digits(value->base(T_BYTE), length, decExp);
+JVM_END
+
+JVM_ENTRY(jdouble, JVM_ParseFastFloat(JNIEnv* env, jstring s, jint ix))
+  oop str = JNIHandles::resolve_non_null(s);
+  typeArrayOop value = java_lang_String::value(str);
+  // All oop access remains in VM state; the parser cannot allocate or safepoint.
+  return FastFloat::parse(value->base(T_BYTE), value->length(),
+                          java_lang_String::is_latin1(str) ? java_lang_String::CODER_LATIN1 : java_lang_String::CODER_UTF16, ix);
+JVM_END
 
 JVM_LEAF(jboolean, JVM_IsSupportedJNIVersion(jint version))
   return Threads::is_supported_jni_version_including_1_1(version);

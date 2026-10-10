@@ -1,0 +1,13 @@
+--- a/ascii_number.h
++++ b/ascii_number.h
+@@ -310,9 +310,9 @@
+   UC const *lastmatch{nullptr};
++  parse_error error{parse_error::no_error};
+   bool negative{false};
+   bool valid{false};
+   bool too_many_digits{false};
+   // contains the range of the significant digits
+   span<UC const> integer{};  // non-nullable
+   span<UC const> fraction{}; // nullable
+-  parse_error error{parse_error::no_error};
+ };

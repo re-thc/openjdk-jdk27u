@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
+ * Copyright (c) 2026, Harry Chan. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +32,7 @@ import static java.lang.Long.*;
 import static java.lang.Math.multiplyHigh;
 import static jdk.internal.math.MathUtils.*;
 
-import sun.nio.cs.ISO_8859_1;
+import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * This class exposes a method to render a {@code double} as a string.
@@ -159,20 +160,24 @@ public final class DoubleToDecimal extends ToDecimal {
         int type = pair & 0xFF00;
         if (type == NON_SPECIAL) {
             int size = pair & 0xFF;
-            return new String(str, 0, size, ISO_8859_1.INSTANCE);
+            return decimalString(str, size);
         }
         return special(type);
     }
 
     /**
-     * Splits the decimal <i>d</i> described in
-     * {@link Double#toString(double)} in integers <i>f</i> and <i>e</i>
+     * Splits the Java-compatible decimal <i>d</i> used by precision-formatting
+     * consumers in integers <i>f</i> and <i>e</i>
      * such that <i>d</i> = <i>f</i> 10<sup><i>e</i></sup>.
      *
      * <p>Further, determines integer <i>n</i> such that <i>n</i> = 0 when
      * <i>f</i> = 0, and
      * 10<sup><i>n</i>-1</sup> &le; <i>f</i> &lt; 10<sup><i>n</i></sup>
      * otherwise.
+     *
+     * <p>The native shortest rendering may use fewer significant digits for
+     * tiny subnormal values. Precision consumers retain the Java-compatible
+     * choice, independently of that rendering preference.
      *
      * <p>The argument {@code v} is assumed to be a positive finite value or
      * positive zero.
@@ -182,8 +187,10 @@ public final class DoubleToDecimal extends ToDecimal {
      * @param fd    the object that will carry <i>f</i>, <i>e</i>, and <i>n</i>.
      */
     public static void split(double v, FormattedFPDecimal fd) {
-        byte[] str = new byte[MAX_CHARS];
-        LATIN1.toDecimal(str, 0, v, fd);
+        if (!Zmij.split(v, fd)) {
+            byte[] str = new byte[MAX_CHARS];
+            LATIN1.toDecimalJava(str, 0, v, fd);
+        }
     }
 
     /**
@@ -216,7 +223,26 @@ public final class DoubleToDecimal extends ToDecimal {
      *     NAN             iff v is NaN
      *     otherwise NON_SPECIAL
      */
+    @ForceInline
     private int toDecimal(byte[] str, int index, double v, FormattedFPDecimal fd) {
+        long bits = doubleToRawLongBits(v);
+        long magnitude = bits & 0x7fffffffffffffffL;
+        if (magnitude == 0) {
+            return bits == 0 ? PLUS_ZERO : MINUS_ZERO;
+        }
+        if (magnitude >= 0x7ff0000000000000L) {
+            return magnitude != 0x7ff0000000000000L ? NAN : (bits > 0 ? PLUS_INF : MINUS_INF);
+        }
+        if (fd == null && str != null) {
+            int size = Zmij.format(str, index, bits, 1, isLatin1());
+            if (size != 0) {
+                return size;
+            }
+        }
+        return toDecimalJava(str, index, v, fd);
+    }
+
+    private int toDecimalJava(byte[] str, int index, double v, FormattedFPDecimal fd) {
         /*
          * For full details see references [2] and [1].
          *

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
+ * Copyright (c) 2026, Harry Chan. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +29,8 @@ package jdk.internal.math;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.annotation.ForceInline;
+import sun.nio.cs.ISO_8859_1;
 
 import static java.lang.Math.multiplyHigh;
 
@@ -52,6 +55,22 @@ abstract sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
 
     ToDecimal(boolean latin1) {
         this.latin1 = latin1;
+    }
+
+    @ForceInline
+    static String decimalString(byte[] str, int size) {
+        if (Zmij.isEnabled() && JLA.stringInitCoder() == 0) {
+            // Transfer only an exactly sized, exclusively owned array. The
+            // formatter's reserved buffer remains separate and mutable.
+            byte[] owned = new byte[size];
+            System.arraycopy(str, 0, owned, 0, size);
+            return JLA.uncheckedNewStringWithLatin1Bytes(owned);
+        }
+        return new String(str, 0, size, ISO_8859_1.INSTANCE);
+    }
+
+    final boolean isLatin1() {
+        return latin1;
     }
 
     final int putChar(byte[] str, int index, int c) {

@@ -59,8 +59,10 @@
 #include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/fastFloat.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/zmij.hpp"
 
 //---------------------------make_vm_intrinsic----------------------------
 CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
@@ -625,6 +627,15 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_bigIntegerLeftShiftWorker:
     return inline_bigIntegerShift(false);
 
+  case vmIntrinsics::_useJavaFloatAppend:
+    set_result(intcon(1));
+    return true;
+  case vmIntrinsics::_decimalZmij:
+  case vmIntrinsics::_formatZmij:
+    return inline_formatZmij();
+  case vmIntrinsics::_parseFastFloatDigits:
+  case vmIntrinsics::_parseFastFloat:
+    return inline_parseFastFloat();
   case vmIntrinsics::_vectorizedMismatch:
     return inline_vectorizedMismatch();
 
@@ -6572,6 +6583,82 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
                                    numIter);
   }
 
+  return true;
+}
+
+bool LibraryCallKit::inline_formatZmij() {
+  if (intrinsic_id() == vmIntrinsics::_decimalZmij) {
+    const Type** fields = TypeTuple::fields(2);
+    fields[TypeFunc::Parms] = TypeLong::LONG;
+    fields[TypeFunc::Parms + 1] = Type::HALF;
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 2, fields);
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 2, fields);
+    const TypeFunc* type = TypeFunc::make(domain, range);
+    Node* call = make_runtime_call(RC_LEAF | RC_PURE, type, CAST_FROM_FN_PTR(address, Zmij::decimal),
+                                  "decimalZmij", nullptr, argument(0), top());
+    set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+    return true;
+  }
+  Node* output = null_check(argument(0));
+  if (stopped()) {
+    return true;
+  }
+  Node* data = array_element_address(output, argument(1), T_BYTE);
+  const Type** fields = TypeTuple::fields(4);
+  fields[TypeFunc::Parms] = TypePtr::NOTNULL;
+  fields[TypeFunc::Parms + 1] = TypeLong::LONG;
+  fields[TypeFunc::Parms + 2] = Type::HALF;
+  fields[TypeFunc::Parms + 3] = TypeInt::INT;
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 4, fields);
+  fields = TypeTuple::fields(1);
+  Node* kind = _gvn.transform(new AndINode(argument(4), intcon(1)));
+  int max_chars = _gvn.type(kind) == TypeInt::ZERO ? 15 : 24;
+  // Float's result fits its 15-character buffer. A wider range prevents C2
+  // from removing checks and padding in the subsequent String array copy.
+  fields[TypeFunc::Parms] = TypeInt::make(0, max_chars, Type::WidenMin);
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  const TypeFunc* type = TypeFunc::make(domain, range);
+  // Keep a wide memory input to order allocation and initialization, but
+  // record writes only to byte-array bodies. This leaf cannot change object
+  // headers, Java fields, or the thread's allocation cursor.
+  Node* call = make_runtime_call(RC_LEAF, type, CAST_FROM_FN_PTR(address, Zmij::formatter()),
+                                "formatZmij", TypeAryPtr::BYTES, data, argument(2), top(), argument(4));
+  set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  return true;
+}
+
+bool LibraryCallKit::inline_parseFastFloat() {
+  Node* str = null_check(argument(0));
+  if (stopped()) {
+    return true;
+  }
+  bool digits = intrinsic_id() == vmIntrinsics::_parseFastFloatDigits;
+  Node* value = digits ? str : load_String_value(str, true);
+  Node* coder = digits ? argument(2) : load_String_coder(str, true);
+  Node* length = digits ? argument(1) : load_array_length(value);
+  Node* data = array_element_address(value, intcon(0), T_BYTE);
+  int argc = digits ? 3 : 4;
+  const Type** fields = TypeTuple::fields(argc);
+  fields[TypeFunc::Parms] = TypePtr::NOTNULL;
+  fields[TypeFunc::Parms + 1] = TypeInt::INT;
+  fields[TypeFunc::Parms + 2] = TypeInt::INT;
+  if (!digits) {
+    fields[TypeFunc::Parms + 3] = TypeInt::INT;
+  }
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argc, fields);
+  fields = TypeTuple::fields(2);
+  fields[TypeFunc::Parms] = Type::DOUBLE;
+  fields[TypeFunc::Parms + 1] = Type::HALF;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 2, fields);
+  const TypeFunc* type = TypeFunc::make(domain, range);
+  // A leaf call cannot safepoint while holding the interior array pointer.
+  // Its memory input keeps String storage alive and orders the byte reads.
+  address entry = digits ? CAST_FROM_FN_PTR(address, FastFloat::parse_digits)
+                         : CAST_FROM_FN_PTR(address, FastFloat::parse);
+  Node* call = make_runtime_call(RC_LEAF, type, entry,
+                                "parseFastFloat", TypePtr::BOTTOM,
+                                data, length, coder, digits ? nullptr : argument(1));
+  set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
   return true;
 }
 

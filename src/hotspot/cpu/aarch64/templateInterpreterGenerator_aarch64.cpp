@@ -57,7 +57,9 @@
 #include "runtime/vframeArray.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/fastFloat.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/zmij.hpp"
 #include <sys/types.h>
 
 // Size of interpreter code.  Increase if too small.  Interpreter will
@@ -981,9 +983,69 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 }
 
 /**
- * Method entry for static native methods:
- *   int java.util.zip.CRC32.update(int crc, int b)
+ * Method entries for the native Żmij formatting and decimal-splitting helpers.
  */
+address TemplateInterpreterGenerator::generate_zmij_entry(AbstractInterpreter::MethodKind kind) {
+  if (!UseZmijIntrinsics) {
+    return nullptr;
+  }
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false, false);
+  address target;
+  if (kind == Interpreter::jdk_internal_math_decimalZmij) {
+    __ ldr(c_rarg0, Address(esp));
+    target = CAST_FROM_FN_PTR(address, Zmij::decimal);
+  } else {
+    __ ldr(c_rarg0, Address(esp, 4 * wordSize));
+    __ ldrw(rscratch1, Address(esp, 3 * wordSize));
+    __ add(c_rarg0, c_rarg0, rscratch1);
+    __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    __ ldr(c_rarg1, Address(esp, wordSize));
+    __ ldrw(c_rarg2, Address(esp));
+    target = CAST_FROM_FN_PTR(address, Zmij::formatter());
+  }
+  __ andr(sp, r19_sender_sp, -16);
+  __ lea(rscratch1, RuntimeAddress(target));
+  __ br(rscratch1);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}
+
+address TemplateInterpreterGenerator::generate_fast_float_entry(AbstractInterpreter::MethodKind kind) {
+  if (!UseFastFloatIntrinsics) {
+    return nullptr;
+  }
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false, false);
+  bool digits = kind == Interpreter::jdk_internal_math_parseFastFloatDigits;
+  if (digits) {
+    __ ldr(c_rarg0, Address(esp, 2 * wordSize));
+    __ ldrw(c_rarg1, Address(esp, wordSize));
+    __ ldrw(c_rarg2, Address(esp));
+  } else {
+    __ ldr(c_rarg0, Address(esp, wordSize));
+    __ ldrw(c_rarg3, Address(esp));
+    __ ldrb(c_rarg2, Address(c_rarg0, java_lang_String::coder_offset()));
+    __ load_heap_oop(c_rarg0, Address(c_rarg0, java_lang_String::value_offset()),
+                      rscratch1, rscratch2);
+    __ ldrw(c_rarg1, Address(c_rarg0, arrayOopDesc::length_offset_in_bytes()));
+  }
+  __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  // Tail call with the caller's aligned stack and original link register.
+  // The C ABI and interpreter both return double in v0.
+  __ andr(sp, r19_sender_sp, -16);
+  address target = digits ? CAST_FROM_FN_PTR(address, FastFloat::parse_digits)
+                          : CAST_FROM_FN_PTR(address, FastFloat::parse);
+  __ lea(rscratch1, RuntimeAddress(target));
+  __ br(rscratch1);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}
+
 address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   assert(UseCRC32Intrinsics, "this intrinsic is not supported");
   address entry = __ pc();

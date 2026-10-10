@@ -169,6 +169,24 @@ JNIEXPORT void * JNICALL
 JVM_FindLibraryEntry(void *handle, const char *name);
 
 JNIEXPORT jboolean JNICALL
+JVM_IsZmijEnabled(void);
+
+JNIEXPORT jlong JNICALL
+JVM_DecimalZmij(jlong bits);
+
+JNIEXPORT jint JNICALL
+JVM_FormatZmij(JNIEnv* env, jbyteArray output, jint index, jlong bits, jint format);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsFastFloatEnabled(void);
+
+JNIEXPORT jdouble JNICALL
+JVM_ParseFastFloat(JNIEnv *env, jstring s, jint ix);
+
+JNIEXPORT jdouble JNICALL
+JVM_ParseFastFloatDigits(JNIEnv *env, jbyteArray digits, jint length, jint decExp);
+
+JNIEXPORT jboolean JNICALL
 JVM_IsSupportedJNIVersion(jint version);
 
 JNIEXPORT jobjectArray JNICALL

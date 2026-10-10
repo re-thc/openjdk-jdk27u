@@ -23,6 +23,7 @@
  */
 
 #include "asm/macroAssembler.hpp"
+#include "classfile/javaClasses.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
@@ -30,6 +31,8 @@
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/fastFloat.hpp"
+#include "utilities/zmij.hpp"
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
@@ -177,9 +180,73 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
 #endif  // __WIN64
 
 /**
- * Method entry for static native methods:
- *   int java.util.zip.CRC32.update(int crc, int b)
+ * Method entries for the native Żmij formatting and decimal-splitting helpers.
  */
+address TemplateInterpreterGenerator::generate_zmij_entry(AbstractInterpreter::MethodKind kind) {
+  if (!UseZmijIntrinsics) {
+    return nullptr;
+  }
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false, false);
+  if (kind == Interpreter::jdk_internal_math_decimalZmij) {
+    __ movptr(c_rarg0, Address(rsp, wordSize));
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, Zmij::decimal), c_rarg0);
+  } else {
+    __ movptr(c_rarg0, Address(rsp, 5 * wordSize));
+    __ movl(rax, Address(rsp, 4 * wordSize));
+    __ addptr(c_rarg0, rax);
+    __ addptr(c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    __ movptr(c_rarg1, Address(rsp, 2 * wordSize));
+    __ movl(c_rarg2, Address(rsp, wordSize));
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, Zmij::formatter()), c_rarg0, c_rarg1, c_rarg2);
+  }
+  __ pop(rdi);
+  __ mov(rsp, r13);
+  __ jmp(rdi);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}
+
+address TemplateInterpreterGenerator::generate_fast_float_entry(AbstractInterpreter::MethodKind kind) {
+  if (!UseFastFloatIntrinsics) {
+    return nullptr;
+  }
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false, false);
+  bool digits = kind == Interpreter::jdk_internal_math_parseFastFloatDigits;
+  if (digits) {
+    __ movptr(c_rarg0, Address(rsp, 3 * wordSize));
+    __ movl(c_rarg1, Address(rsp, 2 * wordSize));
+    __ movl(c_rarg2, Address(rsp, wordSize));
+  } else {
+    __ movptr(c_rarg0, Address(rsp, 2 * wordSize));
+    __ movl(c_rarg3, Address(rsp, wordSize));
+    __ load_unsigned_byte(c_rarg2, Address(c_rarg0, java_lang_String::coder_offset()));
+    // Supply a distinct scratch when source and destination overlap. In
+    // particular, Shenandoah must preserve the field address for its barrier.
+    __ load_heap_oop(c_rarg0, Address(c_rarg0, java_lang_String::value_offset()), rax);
+    __ movl(c_rarg1, Address(c_rarg0, arrayOopDesc::length_offset_in_bytes()));
+  }
+  __ addptr(c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  if (digits) {
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, FastFloat::parse_digits),
+                          c_rarg0, c_rarg1, c_rarg2);
+  } else {
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, FastFloat::parse),
+                          c_rarg0, c_rarg1, c_rarg2, c_rarg3);
+  }
+  // The C ABI and interpreter both return double in xmm0.
+  __ pop(rdi);
+  __ mov(rsp, r13);
+  __ jmp(rdi);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}
+
 address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   assert(UseCRC32Intrinsics, "this intrinsic is not supported");
   address entry = __ pc();

@@ -1,0 +1,18 @@
+--- a/zmij.cc
++++ b/zmij.cc
+@@ -2226,6 +2226,7 @@
+   return w.write(exp, int(write_hex_exp(exp, bin_exp) - exp));
+ }
+
++#ifndef ZMIJ_HOTSPOT_SHORTEST_ONLY
+ template auto to_decimal(float value) noexcept -> dec_fp<>;
+ template auto to_decimal(double value) noexcept -> dec_fp<>;
+
+@@ -2269,5 +2270,7 @@
+                         bool prefix) noexcept -> size_t;
+ #endif
+
++#endif // ZMIJ_HOTSPOT_SHORTEST_ONLY
++
+ }  // namespace detail
+ }  // namespace zmij

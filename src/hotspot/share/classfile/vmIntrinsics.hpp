@@ -457,6 +457,23 @@ class methodHandle;
   do_intrinsic(_bigIntegerLeftShiftWorker, java_math_BigInteger, leftShift_name, big_integer_shift_worker_signature, F_S) \
    do_name(     leftShift_name,                                 "shiftLeftImplWorker")                                  \
                                                                                                                         \
+  do_class(jdk_internal_math_Zmij, "jdk/internal/math/Zmij")                                                           \
+  do_intrinsic(_useJavaFloatAppend, jdk_internal_math_Zmij, useJavaFloatAppend_name, void_boolean_signature, F_S)              \
+   do_name(useJavaFloatAppend_name, "useJavaFloatAppend")                                                                \
+  do_intrinsic(_decimalZmij, jdk_internal_math_Zmij, decimalZmij_name, long_long_signature, F_SN)                          \
+   do_name(decimalZmij_name, "decimal0")                                                                                \
+  do_intrinsic(_formatZmij, jdk_internal_math_Zmij, formatZmij_name, formatZmij_signature, F_SN)                             \
+   do_name(formatZmij_name, "format0")                                                                                 \
+   do_signature(formatZmij_signature, "([BIJI)I")                                                                       \
+                                                                                                                     \
+  do_class(jdk_internal_math_FloatingDecimal, "jdk/internal/math/FloatingDecimal")                                     \
+  do_intrinsic(_parseFastFloat, jdk_internal_math_FloatingDecimal, parseFastFloat_name, parseFastFloat_signature, F_SN)   \
+  do_intrinsic(_parseFastFloatDigits, jdk_internal_math_FloatingDecimal, parseFastFloatDigits_name, parseFastFloatDigits_signature, F_SN) \
+   do_name(parseFastFloatDigits_name, "parseFastFloatDigits")                                                             \
+   do_signature(parseFastFloatDigits_signature, "([BII)D")                                                               \
+   do_name(parseFastFloat_name, "parseFastFloat")                                                                        \
+   do_signature(parseFastFloat_signature, "(Ljava/lang/String;I)D")                                                      \
+                                                                                                                       \
   do_class(jdk_internal_util_ArraysSupport, "jdk/internal/util/ArraysSupport")                                                          \
   do_intrinsic(_vectorizedMismatch, jdk_internal_util_ArraysSupport, vectorizedMismatch_name, vectorizedMismatch_signature, F_S)\
    do_name(vectorizedMismatch_name, "vectorizedMismatch")                                                               \
