@@ -112,28 +112,22 @@ dependency closure, refreshes hashes/license text and removes obsolete headers.
 Review the dependency and license changes, build x86-64/AArch64, and rerun the
 functional and tier-specific performance checks before changing dispatch gates.
 
-Linux GCC workflow inputs select GCC 14 on Ubuntu 24.04. The native test uses
-CPUID for LZCNT detection across supported compiler versions. GCC/Clang test
-flags suppress vendored region-pragma warnings without disabling other warnings;
-Zero excludes ISA-specific VM checks.
-
 ## Validation and benchmarks
 
-Local selected jtreg validation passed **159 tests, zero failures/errors**:
+Local release jtreg validation passed **159 tests, zero failures/errors**:
 String (94), StringBuilder (16), StringBuffer (25), and HotSpot string intrinsics
-(24). Two other HotSpot tests retain platform exclusions. Release/CDS,
-fastdebug and AArch64 cross builds passed. A full GCC 14 Zero HotSpot release
-build passed, and its VM passed public search/bounded oracles using matching
-release Java modules in default, opt-out and compact-strings-off modes.
+(24). Two other HotSpot tests retain platform exclusions. Clean GCC 14 release/CDS
+and fastdebug builds use the fork development profile. Eight targeted fastdebug
+tests passed. AArch64 cross checks cover HotSpot and java.base native libraries.
 
 The tests cover all three execution tiers, JNI fallback, explicit opt-out,
 threshold/window edges, long needles, coder combinations, surrogate pairs,
 builder capacity/mutations and concurrent GC. WhiteBox forces 26 public callers
 through C1/C2 and checks equality/helper caller state and method handles.
 Native tests check every capability mask, executable backend, invalid input and
-work limit independently of Java gates. Targeted fastdebug checks include
-compiler stress; AArch64/QEMU provides functional coverage. Native ASan/UBSan
-passed with alignment instrumentation excluded for upstream unaligned loads.
+work limit independently of Java gates. AArch64/QEMU provides functional coverage.
+Native ASan/UBSan passed with alignment instrumentation excluded for upstream
+unaligned loads.
 
 ```sh
 make CONF=cloud test \

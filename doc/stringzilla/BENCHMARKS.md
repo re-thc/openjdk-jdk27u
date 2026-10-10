@@ -1,7 +1,7 @@
 # StringZilla benchmarks
 
-The current implementation was measured against the preceding default-on
-revision, `6e8756207e3afb50145510d8c60ca2c16b16ab0b`. Both images enable
+The bounded-search and checked C1 equality implementation was measured against
+the preceding default-on revision, `6e8756207e3afb50145510d8c60ca2c16b16ab0b`. Both images enable
 StringZilla. This comparison measures the portable alignment filter, bounded
 native work and checked C1 equality changes; it is not a feature off/on or
 pristine-upstream comparison. The
@@ -11,14 +11,13 @@ pristine-upstream comparison. The
 ## Method
 
 AMD EPYC 9V74, x86-64 Linux, CPU 0 pinned, JMH 1.37 average time in ns/op.
+Both images use GCC 14 release builds with the standard OpenJDK build profile.
 Each of the 30 paired cases uses two isolated forks, three 500 ms warmups and
 five 500 ms measurements per fork. Runs are sequential, after builds/tests,
 with one active processor, Serial GC and CDS disabled. Interpreter uses `-Xint`,
 C1 uses `-XX:TieredStopAtLevel=1`, and C2 uses `-XX:-TieredCompilation`.
 VM/libjava/module hashes, source hashes, VM arguments and every iteration sample
 are preserved in [bounded-results.json](measurements/bounded-results.json).
-The subsequent test-only CPUID fix and CI compiler update do not change these
-benchmarked runtime sources.
 
 `StringZillaLongNeedle.lastIndexOf` tests UTF-16 reverse searches with repeated
 prefixes, near-start/near-end mismatches and actual odd-byte occurrences.
@@ -121,7 +120,6 @@ image with two active processors, CPUs 0/1 pinned, Serial GC, CDS disabled,
 classes on the application classpath. Preserve the recorded flag state and
 JVM arguments for both images.
 
-The [measurement index](measurements/README.md) describes the archived feature
-controls, mixed-needle guard comparison and unmerged C1 experiment. Raw records
-are retained unchanged; implementation and current validation are documented
-in [README.md](README.md).
+The [measurement index](measurements/README.md) links the raw records and earlier
+feature off/on controls. Implementation and validation are documented in
+[README.md](README.md).

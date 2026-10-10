@@ -25,11 +25,11 @@
 
 package java.lang;
 
-import jdk.internal.vm.annotation.IntrinsicCandidate;
-import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.DontInline;
+import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
-/** Shared, allocation-free substring search entry points. */
+/** Bounded search and equality bridges to StringZilla. */
 final class StringZilla {
     static final boolean ENABLED = isEnabled();
     // Keep small inputs on the existing Java / platform intrinsic paths.
@@ -45,7 +45,9 @@ final class StringZilla {
     @ForceInline
     static boolean matches(byte[] src, int offset, byte[] tgt, int length) {
         for (int i = 0; i < length; i++) {
-            if (src[offset + i] != tgt[i]) return false;
+            if (src[offset + i] != tgt[i]) {
+                return false;
+            }
         }
         return true;
     }
@@ -53,15 +55,19 @@ final class StringZilla {
     @ForceInline
     static boolean matchesUTF16(byte[] src, int offset, byte[] tgt, int length) {
         for (int i = 0; i < length; i++) {
-            if (StringUTF16.getChar(src, offset + i) != StringUTF16.getChar(tgt, i)) return false;
+            if (StringUTF16.getChar(src, offset + i) != StringUTF16.getChar(tgt, i)) {
+                return false;
+            }
         }
         return true;
     }
 
     @ForceInline
-    static boolean matchesLatin1UTF16(byte[] src, int offset, byte[] tgt, int length) {
+    static boolean matchesUTF16Latin1(byte[] src, int offset, byte[] tgt, int length) {
         for (int i = 0; i < length; i++) {
-            if (StringUTF16.getChar(src, offset + i) != (tgt[i] & 0xff)) return false;
+            if (StringUTF16.getChar(src, offset + i) != (tgt[i] & 0xff)) {
+                return false;
+            }
         }
         return true;
     }
@@ -70,42 +76,61 @@ final class StringZilla {
     @DontInline
     static int indexOfLatin1(byte[] src, int end, byte[] tgt, int count, int from) {
         int result = findLatin1(src, from, end - from, tgt, count);
-        if (result == FALLBACK) result = searchLarge(src, from, end - from, tgt, count, 0, false);
-        if (result == FALLBACK) return FALLBACK;
+        if (result == FALLBACK) {
+            result = searchLarge(src, from, end - from, tgt, count, 0, false);
+        }
+        if (result == FALLBACK) {
+            return FALLBACK;
+        }
         return result < 0 ? -1 : from + result;
     }
 
     @DontInline
     static int indexOfUTF16(byte[] src, int end, byte[] tgt, int count, int from) {
         int result = findUTF16(src, from << 1, (end - from) << 1, tgt, count << 1);
-        if (result == FALLBACK) result = searchLarge(src, from << 1, (end - from) << 1, tgt, count << 1, 1, false);
-        if (result == FALLBACK) return FALLBACK;
+        if (result == FALLBACK) {
+            result = searchLarge(src, from << 1, (end - from) << 1, tgt, count << 1, 1, false);
+        }
+        if (result == FALLBACK) {
+            return FALLBACK;
+        }
         return result < 0 ? -1 : from + (result >> 1);
     }
 
     @DontInline
     static int indexOfUTF16Latin1(byte[] src, int end, byte[] tgt, int count, int from) {
         int result = findUTF16Latin1(src, from << 1, (end - from) << 1, tgt, count);
-        if (result == FALLBACK) result = searchLarge(src, from << 1, (end - from) << 1, tgt, count, 2, false);
-        if (result == FALLBACK) return FALLBACK;
+        if (result == FALLBACK) {
+            result = searchLarge(src, from << 1, (end - from) << 1, tgt, count, 2, false);
+        }
+        if (result == FALLBACK) {
+            return FALLBACK;
+        }
         return result < 0 ? -1 : from + (result >> 1);
     }
 
     private StringZilla() {}
+
     private static native boolean isEnabled();
 
-    // These cold loops split large requests. Native calls never poll while
-    // holding heap addresses; Java loop backedges provide safepoint boundaries.
+    // Chunk boundaries provide safepoint polls without retaining heap addresses.
+    // Source ranges use bytes; mixed-coder needle counts use Latin-1 code units.
     @DontInline
     static int searchLarge(byte[] src, int offset, int length, byte[] tgt,
                            int count, int encoding, boolean reverse) {
         int unit = encoding == 0 ? 1 : 2;
-        if (encoding == 2 && count > MAX_MIXED_NEEDLE) return FALLBACK;
+        if (encoding == 2 && count > MAX_MIXED_NEEDLE) {
+            return FALLBACK;
+        }
         int bytes = encoding == 2 ? count * 2 : count;
-        if (bytes == 0) return reverse ? length : 0;
+        if (bytes == 0) {
+            return reverse ? length : 0;
+        }
         int window = Math.min(MAX_BYTES, MAX_WORK / bytes) & -unit;
         // Avoid almost-complete overlaps: at most half a chunk is rescanned.
-        if (bytes > window / 2) return FALLBACK;
+        if (bytes > window / 2) {
+            return FALLBACK;
+        }
         int end = offset + length;
         int cursor = reverse ? end : offset;
         while ((reverse ? cursor - offset : end - cursor) >= bytes) {
@@ -122,8 +147,12 @@ final class StringZilla {
                 result = reverse ? rfindUTF16Latin1(src, start, size, tgt, count)
                                  : findUTF16Latin1(src, start, size, tgt, count);
             }
-            if (result == FALLBACK) return FALLBACK;
-            if (result >= 0) return start - offset + result;
+            if (result == FALLBACK) {
+                return FALLBACK;
+            }
+            if (result >= 0) {
+                return start - offset + result;
+            }
             // Overlap by needle length minus one code unit, so matches crossing
             // either chunk boundary are seen exactly in the search order.
             int step = size - bytes + unit;
@@ -150,8 +179,12 @@ final class StringZilla {
                 result = reverse ? rfindCharLatin1(src, start, size, ch)
                                  : findCharLatin1(src, start, size, ch);
             }
-            if (result == FALLBACK) return FALLBACK;
-            if (result >= 0) return start - offset + result;
+            if (result == FALLBACK) {
+                return FALLBACK;
+            }
+            if (result >= 0) {
+                return start - offset + result;
+            }
             int step = size - bytes + unit;
             cursor += reverse ? -step : step;
         }
@@ -160,22 +193,30 @@ final class StringZilla {
 
     @DontInline
     static boolean equalsLarge(byte[] src, byte[] tgt) {
-        if (src.length != tgt.length) return false;
+        if (src.length != tgt.length) {
+            return false;
+        }
         int offset = 0;
         while (offset < src.length) {
             int size = Math.min(MAX_BYTES, src.length - offset);
             int result = equalsRange(src, offset, size, tgt, offset);
-            if (result == FALLBACK) return StringLatin1.equalsJava(src, tgt);
-            if (result == 0) return false;
+            if (result == FALLBACK) {
+                return StringLatin1.equalsJava(src, tgt);
+            }
+            if (result == 0) {
+                return false;
+            }
             offset += size;
         }
         return true;
     }
 
-    // Same calling shape as search, reusing its interpreter/C1/C2 adapters.
+    // Use the search adapters' calling convention for bounded equality.
     @IntrinsicCandidate
     static native int equalsRange(byte[] src, int offset, int length, byte[] tgt, int tgtOffset);
 
+    // Callers validate nulls and ranges. Search results are relative byte offsets;
+    // mixed-coder needle lengths count Latin-1 code units.
     @IntrinsicCandidate
     static native int findUTF16Latin1(byte[] src, int offset, int length, byte[] tgt, int tgtLength);
 
@@ -194,8 +235,6 @@ final class StringZilla {
     @IntrinsicCandidate
     static native int rfindCharUTF16(byte[] src, int offset, int length, int ch);
 
-    // Callers check nulls and ranges before entering these leaf intrinsics.
-    // All offsets and lengths are in bytes; the result is a relative byte offset.
     @IntrinsicCandidate
     static native int findLatin1(byte[] src, int offset, int length, byte[] tgt, int tgtLength);
 
@@ -207,5 +246,4 @@ final class StringZilla {
 
     @IntrinsicCandidate
     static native int rfindUTF16(byte[] src, int offset, int length, byte[] tgt, int tgtLength);
-
 }

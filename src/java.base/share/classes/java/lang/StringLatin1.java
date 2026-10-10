@@ -37,8 +37,8 @@ import java.util.stream.StreamSupport;
 import jdk.internal.lang.CaseFolding;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
-import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
@@ -483,13 +483,18 @@ final class StringLatin1 {
     @IntrinsicCandidate
     private static int indexOfChar0(byte[] value, int ch, int fromIndex, int max) {
         byte c = (byte)ch;
-        if (fromIndex < max && value[fromIndex] == c) return fromIndex;
+        if (fromIndex < max && value[fromIndex] == c) {
+            return fromIndex;
+        }
         fromIndex++;
         if (max - fromIndex >= StringZilla.MIN_BYTES && StringZilla.ENABLED) {
             int result = StringZilla.findCharLatin1(value, fromIndex, max - fromIndex, ch);
-            if (result == StringZilla.FALLBACK)
+            if (result == StringZilla.FALLBACK) {
                 result = StringZilla.searchCharLarge(value, fromIndex, max - fromIndex, ch, false, false);
-            if (result != StringZilla.FALLBACK) return result < 0 ? -1 : fromIndex + result;
+            }
+            if (result != StringZilla.FALLBACK) {
+                return result < 0 ? -1 : fromIndex + result;
+            }
         }
         for (int i = fromIndex; i < max; i++) {
             if (value[i] == c) {
@@ -566,13 +571,17 @@ final class StringLatin1 {
                 int j = i + 1;
                 int end = j + strToIndex - 1;
                 for (int k = 1; j < end && value[j] == str[k]; j++, k++);
-                if (j == end) return i;
+                if (j == end) {
+                    return i;
+                }
             }
             i++;
         }
         if (valueToIndex - valueFromIndex >= StringZilla.MIN_BYTES && StringZilla.ENABLED) {
             int result = StringZilla.indexOfLatin1(value, valueToIndex, str, strToIndex, i);
-            if (result != StringZilla.FALLBACK) return result;
+            if (result != StringZilla.FALLBACK) {
+                return result;
+            }
         }
         int max = (valueToIndex - strToIndex);
         for (; i <= max; i++) {
@@ -604,9 +613,12 @@ final class StringLatin1 {
             }
             int result = StringZilla.rfindLatin1(src, 0, searchLength,
                     tgt, tgtCount);
-            if (result == StringZilla.FALLBACK)
+            if (result == StringZilla.FALLBACK) {
                 result = StringZilla.searchLarge(src, 0, searchLength, tgt, tgtCount, 0, true);
-            if (result != StringZilla.FALLBACK) return result;
+            }
+            if (result != StringZilla.FALLBACK) {
+                return result;
+            }
         }
         return lastIndexOfJava(src, tgt, tgtCount, fromIndex);
     }
@@ -647,12 +659,17 @@ final class StringLatin1 {
         if (off >= StringZilla.MIN_BYTES - 1 && StringZilla.ENABLED) {
             int stop = off - 8;
             for (; off > stop; off--) {
-                if (value[off] == (byte)ch) return off;
+                if (value[off] == (byte)ch) {
+                    return off;
+                }
             }
             int result = StringZilla.rfindCharLatin1(value, 0, off + 1, ch);
-            if (result == StringZilla.FALLBACK)
+            if (result == StringZilla.FALLBACK) {
                 result = StringZilla.searchCharLarge(value, 0, off + 1, ch, false, true);
-            if (result != StringZilla.FALLBACK) return result;
+            }
+            if (result != StringZilla.FALLBACK) {
+                return result;
+            }
         }
         for (; off >= 0; off--) {
             if (value[off] == (byte)ch) {

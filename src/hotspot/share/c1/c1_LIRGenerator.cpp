@@ -2809,7 +2809,6 @@ void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
 
 
 
-// Existing _equalsL: a bounded unrolled prefix before the libjava equality leaf.
 // Keep the prefix within one LIR block; embedded loops have no allocator backedge.
 void LIRGenerator::do_stringzilla_equals(Intrinsic* x) {
   CodeEmitInfo* src_info = state_for(x, x->state_before());

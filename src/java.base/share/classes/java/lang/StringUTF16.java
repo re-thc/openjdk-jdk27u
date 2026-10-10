@@ -969,13 +969,17 @@ final class StringUTF16 {
                     int j = valueFromIndex + 1;
                     int end = j + strToIndex - 1;
                     for (int k = 1; j < end && getChar(value, j) == getChar(str, k); j++, k++);
-                    if (j == end) return valueFromIndex;
+                    if (j == end) {
+                        return valueFromIndex;
+                    }
                 }
             }
             if (StringZilla.ENABLED) {
                 int result = StringZilla.indexOfUTF16(value, valueToIndex, str, strToIndex,
                         valueFromIndex + (strToIndex <= 8 ? 1 : 0));
-                if (result != StringZilla.FALLBACK) return result;
+                if (result != StringZilla.FALLBACK) {
+                    return result;
+                }
             }
         }
         int max = (valueToIndex - strToIndex);
@@ -1087,13 +1091,17 @@ final class StringUTF16 {
                     int j = fromIndex + 1;
                     int end = j + tgtCount - 1;
                     for (int k = 1; j < end && getChar(src, j) == (tgt[k] & 0xff); j++, k++);
-                    if (j == end) return fromIndex;
+                    if (j == end) {
+                        return fromIndex;
+                    }
                 }
             }
             if (StringZilla.ENABLED && tgtCount <= StringZilla.MAX_MIXED_NEEDLE) {
                 int result = StringZilla.indexOfUTF16Latin1(src, srcCount, tgt, tgtCount,
                         fromIndex + (tgtCount <= 8 ? 1 : 0));
-                if (result != StringZilla.FALLBACK) return result;
+                if (result != StringZilla.FALLBACK) {
+                    return result;
+                }
             }
         }
         int max = (srcCount - tgtCount);
@@ -1121,14 +1129,19 @@ final class StringUTF16 {
     // vmIntrinsics::_indexOfU_char
     @IntrinsicCandidate
     private static int indexOfChar0(byte[] value, int ch, int fromIndex, int max) {
-        if (fromIndex < max && getChar(value, fromIndex) == ch) return fromIndex;
+        if (fromIndex < max && getChar(value, fromIndex) == ch) {
+            return fromIndex;
+        }
         fromIndex++;
         if (max - fromIndex >= (StringZilla.MIN_BYTES >> 1) && StringZilla.ENABLED
                 && Character.isValidCodePoint(ch)) {
             int result = StringZilla.findCharUTF16(value, fromIndex << 1, (max - fromIndex) << 1, ch);
-            if (result == StringZilla.FALLBACK)
+            if (result == StringZilla.FALLBACK) {
                 result = StringZilla.searchCharLarge(value, fromIndex << 1, (max - fromIndex) << 1, ch, true, false);
-            if (result != StringZilla.FALLBACK) return result < 0 ? -1 : fromIndex + (result >> 1);
+            }
+            if (result != StringZilla.FALLBACK) {
+                return result < 0 ? -1 : fromIndex + (result >> 1);
+            }
         }
         for (int i = fromIndex; i < max; i++) {
             if (getChar(value, i) == ch) {
@@ -1145,9 +1158,12 @@ final class StringUTF16 {
         if (max - fromIndex >= (StringZilla.MIN_BYTES >> 1) && StringZilla.ENABLED
                 && Character.isValidCodePoint(ch)) {
             int result = StringZilla.findCharUTF16(value, fromIndex << 1, (max - fromIndex) << 1, ch);
-            if (result == StringZilla.FALLBACK)
+            if (result == StringZilla.FALLBACK) {
                 result = StringZilla.searchCharLarge(value, fromIndex << 1, (max - fromIndex) << 1, ch, true, false);
-            if (result != StringZilla.FALLBACK) return result < 0 ? -1 : fromIndex + (result >> 1);
+            }
+            if (result != StringZilla.FALLBACK) {
+                return result < 0 ? -1 : fromIndex + (result >> 1);
+            }
         }
         if (Character.isValidCodePoint(ch)) {
             final char hi = Character.highSurrogate(ch);
@@ -1172,9 +1188,12 @@ final class StringUTF16 {
             }
             int result = StringZilla.rfindUTF16(src, 0, searchLength << 1,
                     tgt, tgtCount << 1);
-            if (result == StringZilla.FALLBACK)
+            if (result == StringZilla.FALLBACK) {
                 result = StringZilla.searchLarge(src, 0, searchLength << 1, tgt, tgtCount << 1, 1, true);
-            if (result != StringZilla.FALLBACK) return result < 0 ? -1 : result >> 1;
+            }
+            if (result != StringZilla.FALLBACK) {
+                return result < 0 ? -1 : result >> 1;
+            }
         }
         assert fromIndex >= 0;
         assert tgtCount > 0;
@@ -1219,7 +1238,9 @@ final class StringUTF16 {
                 int stop = limit - 8;
                 if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
                     for (; limit > stop; limit--) {
-                        if (getChar(value, limit) == ch) return limit;
+                        if (getChar(value, limit) == ch) {
+                            return limit;
+                        }
                     }
                     searchLength = limit + 1;
                 } else {
@@ -1227,14 +1248,19 @@ final class StringUTF16 {
                     char lo = Character.lowSurrogate(ch);
                     for (; limit > stop; limit--) {
                         if (limit + 1 < length(value) && getChar(value, limit) == hi
-                                && getChar(value, limit + 1) == lo) return limit;
+                                && getChar(value, limit + 1) == lo) {
+                            return limit;
+                        }
                     }
                     searchLength = limit + 2;
                 }
                 int result = StringZilla.rfindCharUTF16(value, 0, searchLength << 1, ch);
-                if (result == StringZilla.FALLBACK)
+                if (result == StringZilla.FALLBACK) {
                     result = StringZilla.searchCharLarge(value, 0, searchLength << 1, ch, true, true);
-                if (result != StringZilla.FALLBACK) return result < 0 ? -1 : result >> 1;
+                }
+                if (result != StringZilla.FALLBACK) {
+                    return result < 0 ? -1 : result >> 1;
+                }
             }
         }
         if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
@@ -2072,13 +2098,16 @@ final class StringUTF16 {
         int searchLength = fromIndex + tgtCount;
         if (searchLength >= (StringZilla.MIN_BYTES >> 1) && StringZilla.ENABLED
                 && tgtCount <= StringZilla.MAX_MIXED_NEEDLE) {
-            if (tgtCount <= 8 && StringZilla.matchesLatin1UTF16(src, fromIndex, tgt, tgtCount)) {
+            if (tgtCount <= 8 && StringZilla.matchesUTF16Latin1(src, fromIndex, tgt, tgtCount)) {
                 return fromIndex;
             }
             int result = StringZilla.rfindUTF16Latin1(src, 0, searchLength << 1, tgt, tgtCount);
-            if (result == StringZilla.FALLBACK)
+            if (result == StringZilla.FALLBACK) {
                 result = StringZilla.searchLarge(src, 0, searchLength << 1, tgt, tgtCount, 2, true);
-            if (result != StringZilla.FALLBACK) return result < 0 ? -1 : result >> 1;
+            }
+            if (result != StringZilla.FALLBACK) {
+                return result < 0 ? -1 : result >> 1;
+            }
         }
         assert fromIndex >= 0;
         assert tgtCount > 0;

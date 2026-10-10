@@ -222,7 +222,6 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   return entry;
 }
 
-// Leaf entries for the validated java.lang.StringZilla search methods.
 address TemplateInterpreterGenerator::generate_stringzilla_equals_entry() {
   address entry = __ pc();
   Label slow_path, different, equal, done;

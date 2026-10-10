@@ -77,7 +77,6 @@ int StringZilla::equal_range(const char* src, int length, const char* tgt, int t
   return equal_bytes(src, tgt + tgt_offset, length);
 }
 
-
 int StringZilla::capabilities() {
 #if defined(AMD64) && !defined(ZERO)
   if (UseAVX >= 2 && VM_Version::supports_avx2() && VM_Version::supports_bmi1() &&
@@ -91,7 +90,6 @@ int StringZilla::capabilities() {
   return JVM_STRINGZILLA_SERIAL;
 }
 
-// Leaf adapters: only an acquire load and a tail call into independent libjava.
 int StringZilla::search(const char* src, int length, const char* tgt, int tgt_length,
                        int encoding, bool reverse) {
   assert(encoding != 2 || tgt_length <= 64, "mixed needle limit");

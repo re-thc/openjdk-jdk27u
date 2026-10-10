@@ -49,8 +49,7 @@ JNIEXPORT void JNICALL test_register_kernels(const void* kernels) {
 static int can_execute(jint capabilities) {
 #if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
     if (capabilities & (JVM_STRINGZILLA_HASWELL | JVM_STRINGZILLA_SKYLAKE)) {
-        // GCC 10 does not recognize "lzcnt" in __builtin_cpu_supports.
-        // CPUID extended leaf 1, ECX bit 5 reports LZCNT on both AMD and Intel.
+        // CPUID extended leaf 1, ECX bit 5 reports LZCNT on AMD and Intel.
         unsigned int eax, ebx, ecx, edx;
         if (!__get_cpuid(0x80000001, &eax, &ebx, &ecx, &edx) || !(ecx & (1u << 5))) return 0;
         if (!(__builtin_cpu_supports("avx2") && __builtin_cpu_supports("bmi") &&
