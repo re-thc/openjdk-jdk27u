@@ -1,4 +1,4 @@
-name: ZIP paired small-stream controls
+name: ZIP paired routing controls
 on:
   push:
     branches: [pr/zlib-ng-validation]
@@ -18,8 +18,6 @@ jobs:
         include:
           - runner: ubuntu-24.04
             platform: linux-x64
-          - runner: ubuntu-24.04-arm
-            platform: linux-aarch64
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 45
     steps:
@@ -27,7 +25,7 @@ jobs:
       - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: build/zip-review/images/jdk
-          key: zip-review-image-v3-${{ matrix.platform }}-71b1ffe02554ad195387a415bb5b57d40a1593dd
+          key: zip-review-image-v3-${{ matrix.platform }}-f686abea6873c2673a306136818d7df7c25ffe1a
           fail-on-cache-miss: true
       - run: |
           mkdir -p validation/results
