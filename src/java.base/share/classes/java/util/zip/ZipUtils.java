@@ -58,9 +58,9 @@ class ZipUtils {
 
     // Keep JNI where its transition cost is lower in the tiered benchmarks.
     static final int DEFLATE_INTRINSIC_MIN_INPUT = 1024;
-    // The high word is the input upper bound; the low word is the output lower bound.
+    // The high word is the input upper bound; the low word enables mixed-buffer inflate.
     static final int DEFLATE_INTRINSIC_MAX_INPUT = (int) (ZIP_INTRINSIC_LIMITS >>> 32);
-    static final int INFLATE_MIXED_INTRINSIC_MIN_OUTPUT = (int) ZIP_INTRINSIC_LIMITS;
+    static final boolean USE_INFLATE_MIXED_INTRINSICS = (int) ZIP_INTRINSIC_LIMITS != 0;
     static final boolean USE_ZIP_INTRINSICS = DEFLATE_INTRINSIC_MAX_INPUT != 0;
 
     private static long initZipIntrinsics() {

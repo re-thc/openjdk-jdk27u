@@ -67,17 +67,16 @@ ZIP_Complete(JNIEnv* env, jboolean inflate, jobject receiver, jlong stream,
 JNIEXPORT jlong JNICALL
 Java_java_util_zip_ZipUtils_zipIntrinsicLimits(JNIEnv* env, jclass cls) {
     jint maxInput = 0;
-    jint minOutput = INT_MAX;
+    jint mixedBuffers = 0;
     if (JVM_ZipIntrinsicsEnabled()) {
 #ifdef __aarch64__
         maxInput = 65536;
-        minOutput = -1;
+        mixedBuffers = 1;
 #else
         maxInput = INT_MAX;
-        minOutput = 1024;
 #endif
     }
-    return ((jlong)maxInput << 32) | (jlong)(unsigned int)minOutput;
+    return ((jlong)maxInput << 32) | (jlong)mixedBuffers;
 }
 
 JNIEXPORT jlong JNICALL
