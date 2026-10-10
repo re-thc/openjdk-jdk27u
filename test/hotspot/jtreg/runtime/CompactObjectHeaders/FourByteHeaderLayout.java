@@ -30,6 +30,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI FourByteHeaderLayout
  */
+
 import java.util.IdentityHashMap;
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.Asserts;
@@ -37,16 +38,41 @@ import jdk.test.lib.Asserts;
 public class FourByteHeaderLayout {
     static final WhiteBox WB = WhiteBox.getWhiteBox();
     static volatile Object sink;
+
     static class IntObject implements Cloneable {
         int value;
-        IntObject(int value) { this.value = value; }
-        public IntObject clone() { try { return (IntObject) super.clone(); } catch (CloneNotSupportedException e) { throw new AssertionError(e); } }
+
+        IntObject(int value) {
+            this.value = value;
+        }
+
+        @Override
+        public IntObject clone() {
+            try {
+                return (IntObject) super.clone();
+            } catch (CloneNotSupportedException e) {
+                throw new AssertionError(e);
+            }
+        }
     }
+
     static class RefObject implements Cloneable {
         Object value;
-        RefObject(Object value) { this.value = value; }
-        public RefObject clone() { try { return (RefObject) super.clone(); } catch (CloneNotSupportedException e) { throw new AssertionError(e); } }
+
+        RefObject(Object value) {
+            this.value = value;
+        }
+
+        @Override
+        public RefObject clone() {
+            try {
+                return (RefObject) super.clone();
+            } catch (CloneNotSupportedException e) {
+                throw new AssertionError(e);
+            }
+        }
     }
+
     public static void main(String[] args) throws Exception {
         boolean four = Boolean.TRUE.equals(WB.getBooleanVMFlag("UseFourByteObjectHeaders"));
         long alignment = WB.getIntVMFlag("ObjectAlignmentInBytes");
@@ -73,14 +99,26 @@ public class FourByteHeaderLayout {
                     Asserts.assertEQ(System.identityHashCode(object), hashes[i]);
                     Asserts.assertEQ(map.get(object).intValue(), i);
                 }
-                if (object instanceof IntObject v) Asserts.assertEQ(v.clone().value, i);
-                if (object instanceof RefObject v) Asserts.assertTrue(v.clone().value == v.value);
-                if (object instanceof int[] v) Asserts.assertEQ(v.clone().length, v.length);
-                if (object instanceof Object[] v) Asserts.assertTrue(v.clone()[0] == v[0]);
+                if (object instanceof IntObject v) {
+                    Asserts.assertEQ(v.clone().value, i);
+                }
+                if (object instanceof RefObject v) {
+                    Asserts.assertTrue(v.clone().value == v.value);
+                }
+                if (object instanceof int[] v) {
+                    Asserts.assertEQ(v.clone().length, v.length);
+                }
+                if (object instanceof Object[] v) {
+                    Asserts.assertTrue(v.clone()[0] == v[0]);
+                }
             }
-            for (int i = 0; i < 12000; i++) sink = new byte[1024];
+            for (int i = 0; i < 12000; i++) {
+                sink = new byte[1024];
+            }
             System.gc();
         }
-        for (int i = 0; i < objects.length; i++) Asserts.assertEQ(System.identityHashCode(objects[i]), hashes[i]);
+        for (int i = 0; i < objects.length; i++) {
+            Asserts.assertEQ(System.identityHashCode(objects[i]), hashes[i]);
+        }
     }
 }

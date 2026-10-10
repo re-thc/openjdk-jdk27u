@@ -71,7 +71,10 @@ public class FourByteHeaderMonitorLookup {
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
     static final int ROUNDS = 20_000;
     static final int[] COUNTERS = new int[16];
-    static final class Lock { int value = 123; }
+
+    static final class Lock {
+        int value = 123;
+    }
 
     static void increment(Object lock, int index) {
         synchronized (lock) {
@@ -96,7 +99,9 @@ public class FourByteHeaderMonitorLookup {
 
     public static void main(String[] args) throws Exception {
         Object[] locks = new Object[16];
-        for (int i = 0; i < 12; i++) locks[i] = new Lock();
+        for (int i = 0; i < 12; i++) {
+            locks[i] = new Lock();
+        }
         locks[12] = new int[31];
         locks[13] = new Object[17];
         locks[14] = new WeakReference<>(locks[0]);
@@ -118,14 +123,18 @@ public class FourByteHeaderMonitorLookup {
             UNSAFE.putInt(locks[0], 8, 0);
             hashes[0] = 0;
         }
-        for (Object lock : locks) inflate(lock);
+        for (Object lock : locks) {
+            inflate(lock);
+        }
         // Keep one newly inflated instance in the address-derived hash state.
         locks[11] = new Lock();
         hashes[11] = System.identityHashCode(locks[11]);
         inflate(locks[11]);
         Runnable work = () -> {
             for (int round = 0; round < ROUNDS; round++) {
-                for (int i = 0; i < locks.length; i++) increment(locks[i], i);
+                for (int i = 0; i < locks.length; i++) {
+                    increment(locks[i], i);
+                }
             }
         };
         Thread first = new Thread(work);
@@ -140,7 +149,9 @@ public class FourByteHeaderMonitorLookup {
         for (int i = 0; i < locks.length; i++) {
             Asserts.assertEQ(COUNTERS[i], ROUNDS * 2, "Lost update for monitor " + i);
             Asserts.assertEQ(System.identityHashCode(locks[i]), hashes[i], "Changed identity hash");
-            if (locks[i] instanceof Lock target) Asserts.assertEQ(target.value, 123);
+            if (locks[i] instanceof Lock target) {
+                Asserts.assertEQ(target.value, 123);
+            }
         }
     }
 }

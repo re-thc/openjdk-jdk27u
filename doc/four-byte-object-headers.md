@@ -3,21 +3,12 @@
 This fork uses four-byte object headers by default on x64 and AArch64.
 Four-byte headers support Serial, G1 and ZGC, the collectors included in the
 development profile. Other collectors in custom builds retain their existing
-header layouts. The ordinary upstream
-JDK 27u default remains eight-byte compact headers. This fork retains that
-layout with `-XX:-UseFourByteObjectHeaders` and the twelve-byte layout with
-`-XX:-UseCompactObjectHeaders`. Other 64-bit architectures and Zero keep their
+header layouts. Upstream JDK 27u defaults to eight-byte compact headers.
+This fork retains that layout with `-XX:-UseFourByteObjectHeaders` and the
+twelve-byte layout with `-XX:-UseCompactObjectHeaders`. Other 64-bit
+architectures and Zero keep their
 existing defaults; explicit four-byte requests there are disabled with a
 warning. The flag is unavailable in 32-bit builds.
-
-Run normally, or select a supported collector:
-
-```sh
-java Main
-java -XX:+UseSerialGC Main
-java -XX:+UseZGC Main
-java -XX:-UseFourByteObjectHeaders Main
-```
 
 `UseFourByteObjectHeaders` is an ordinary product option and requires no
 experimental unlock. An explicit request for four-byte headers implies
@@ -65,22 +56,13 @@ Four-byte mode limits compressed class space to 512 MiB. There is no fallback
 class encoding. Applications that exhaust that space fail with
 `OutOfMemoryError: Compressed class space`; disable the option for applications
 that need more space. The number of loadable classes depends on their metadata
-size and is not a fixed 512K-class allowance.
-The per-class hash-offset field also has a metadata and alignment cost;
+size. The per-class hash-offset field also has a metadata and alignment cost;
 object-heap savings do not imply equivalent savings in class metadata or RSS.
 
 CDS archives encode the selected header layout. This port changes the archive
 format, so recreate custom CDS and AOT caches when switching from an unmodified
 JDK. Archives created with one header layout are rejected by another layout.
 JDK images include matching default archives for all three layouts, with and
-without compressed oops. Interpreter-only classic static dumps derive identity
-hash inputs from class names for mirrors and heap-relative addresses for
-other objects, so address randomization and regenerated mirror allocation
-do not change the archive. Already-hashed archived objects retain those hash values.
-The four-byte variants are `classes_fourbyte.jsa` and
-`classes_nocoops_fourbyte.jsa`.
-The jlink `--generate-cds-archive` plugin also generates all six variants.
-Image and jlink four-byte archive dumps use `-Xint` to select those deterministic
-static-dump hash inputs.
-JFR old-object sampling remains available with Serial and G1; leak-context
-edge indices use the JDK 27 side table and do not consume header bits.
+without compressed oops. The four-byte variants are `classes_fourbyte.jsa` and
+`classes_nocoops_fourbyte.jsa`. The jlink `--generate-cds-archive` plugin also
+generates all six variants.

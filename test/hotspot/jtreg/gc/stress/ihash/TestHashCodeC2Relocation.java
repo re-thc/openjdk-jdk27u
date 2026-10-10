@@ -71,32 +71,9 @@ package gc.stress.ihash;
  *      -XX:+ZStressRelocateInPlace -Xms64m -Xmx64m gc.stress.ihash.TestHashCodeC2Relocation
  */
 
-/**
- * Regression test for a C2 miscompilation of the {@code System.identityHashCode}
- * intrinsic under {@code -XX:+UseFourByteObjectHeaders}.
- *
- * With compact headers there is no room in the 64-bit header to always store a
- * 31-bit identity hash. An object that has been hashed but not yet expanded by
- * the GC (hashctrl state {@code 0b01}) has its identity hash recomputed on every
- * read from the object's current heap address ({@code FastHash(address)}). This
- * is only correct while the object stays at the same address; when the GC
- * relocates the object it freezes the hash into a hidden field (state
- * {@code 0b11}).
- *
- * The C2 intrinsic inlined the {@code 0b01} recompute and materialized the raw
- * object address with a free-floating {@code CastP2X} (null control input).
- * Global Code Motion could hoist that materialization above a GC safepoint;
- * after a relocation the oop reference is updated but the already-materialized
- * raw address is not, so the recomputed hash was derived from the stale
- * pre-relocation address. The result: {@code System.identityHashCode} returned
- * inconsistent values for a single live object, violating the
- * {@code Object.hashCode()} stability contract.
- *
- * The reproducer hashes a fresh object, forces young-gen relocation via
- * allocation churn, and re-reads the hash. The "install after relocation"
- * ordering, warmed up so probe() is C2-compiled, is the shape that triggered the
- * miscompiled path. A correct VM reports zero mismatches.
- */
+// C2 must not hoist the raw address used by identityHashCode across a GC
+// safepoint. After relocation, the reference is updated but a raw address
+// computed before the safepoint would be stale.
 public class TestHashCodeC2Relocation {
 
     // Keep GC honest; defeat allocation elimination of the churn garbage.
@@ -121,16 +98,16 @@ public class TestHashCodeC2Relocation {
             Object o = new Object();
             int h0, h1;
             if (installBefore) {
-                h0 = System.identityHashCode(o);   // install hash, THEN relocate
+                h0 = System.identityHashCode(o);   // Hash before relocation.
                 churn();
                 h1 = System.identityHashCode(o);
             } else {
-                churn();                           // relocate, THEN first read installs/loads hash
+                churn();                           // Relocate before hashing.
                 h0 = System.identityHashCode(o);
                 h1 = System.identityHashCode(o);
             }
             if (h1 != h0) {
-                int settled = System.identityHashCode(o); // re-read returns the TRUE (frozen) hash
+                int settled = System.identityHashCode(o);
                 return "identityHashCode returned inconsistent values for a live object"
                         + " at iter=" + i + ": h0=" + h0 + " h1=" + h1
                         + " settledReread=" + settled;
