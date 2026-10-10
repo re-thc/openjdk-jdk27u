@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,12 @@ MICROBENCHMARK_NATIVE_SRC_DIRS := $(MICROBENCHMARK_SRC)
 MICROBENCHMARK_NATIVE_OUTPUT := $(MICROBENCHMARK_OUTPUT)/native
 MICROBENCHMARK_NATIVE_EXCLUDE :=
 
+ifeq ($(ENABLE_DESKTOP), false)
+  MICROBENCHMARK_JAVA_EXCLUDES += org/openjdk/bench/java/awt \
+      org/openjdk/bench/javax/imageio
+  MICROBENCHMARK_JAVA_EXCLUDE_FILES += AttributedStringBench.java
+endif
+
 ###
 
 # Need double \n to get new lines and no trailing spaces
@@ -86,6 +92,8 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
     DISABLED_WARNINGS := restricted this-escape processing rawtypes removal cast \
         serial preview dangling-doc-comments, \
     SRC := $(MICROBENCHMARK_SRC), \
+    EXCLUDES := $(MICROBENCHMARK_JAVA_EXCLUDES), \
+    EXCLUDE_FILES := $(MICROBENCHMARK_JAVA_EXCLUDE_FILES), \
     BIN := $(MICROBENCHMARK_CLASSES), \
     JAVAC_FLAGS := \
         --add-exports java.base/jdk.internal.classfile.components=ALL-UNNAMED \
