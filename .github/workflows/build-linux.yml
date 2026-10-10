@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ on:
       runs-on:
         required: false
         type: string
-        default: 'ubuntu-24.04'
+        default: 'ubuntu-26.04'
       bootjdk-platform:
         required: false
         type: string
@@ -86,13 +86,12 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
 
     strategy:
-      fail-fast: false
       matrix:
         debug-level: ${{ fromJSON(inputs.debug-levels) }}
 
     steps:
       - name: 'Checkout the JDK source'
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: 'Get the BootJDK'
         id: bootjdk
@@ -123,29 +122,53 @@ jobs:
           if [[ '${{ inputs.apt-architecture }}' != '' ]]; then
             sudo dpkg --add-architecture ${{ inputs.apt-architecture }}
           fi
+          # Ubuntu 26.04 packages GCC 16 in universe; it is not preinstalled.
           sudo apt update
           sudo apt install --only-upgrade apt
           sudo apt install \
             gcc-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }} \
             g++-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }} \
-            libasound2-dev${{ steps.arch.outputs.suffix }} \
-            libcups2-dev${{ steps.arch.outputs.suffix }} \
-            libfontconfig1-dev${{ steps.arch.outputs.suffix }} \
-            libx11-dev${{ steps.arch.outputs.suffix }} \
-            libxext-dev${{ steps.arch.outputs.suffix }} \
-            libxrandr-dev${{ steps.arch.outputs.suffix }} \
-            libxrender-dev${{ steps.arch.outputs.suffix }} \
-            libxt-dev${{ steps.arch.outputs.suffix }} \
-            libxtst-dev${{ steps.arch.outputs.suffix }} \
+            ccache \
             ${{ inputs.apt-extra-packages }}
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
+
+      - name: 'Install mold 3.0.0'
+        run: |
+          # Ubuntu's older mold cannot read GCC 16's AS_NEEDED linker script.
+          case "$(uname -m)" in
+            x86_64) checksum=6c90d4a474c7c0409dfb575be03a5345878ac14fdba18de8b40fa58c60121189 ;;
+            aarch64) checksum=52c759d3689babaea4c42af2f31062a74ab83e17ffb5a8090232534c67b70577 ;;
+            *) exit 1 ;;
+          esac
+          archive="$RUNNER_TEMP/mold.tar.gz"
+          curl --fail --location --retry 3 \
+            "https://github.com/rui314/mold/releases/download/v3.0.0/mold-3.0.0-$(uname -m)-linux.tar.gz" \
+            --output "$archive"
+          echo "$checksum  $archive" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/mold"
+          tar --extract --file "$archive" --strip-components=1 --directory "$RUNNER_TEMP/mold"
+          echo "$RUNNER_TEMP/mold/bin" >> "$GITHUB_PATH"
+
+      - name: 'Verify GCC version'
+        run: |
+          test "$(gcc -dumpversion)" = "${{ inputs.gcc-major-version }}"
+          test "$(g++ -dumpversion)" = "${{ inputs.gcc-major-version }}"
+          gcc --version
+          mold --version
+
+      - name: 'Restore compiler cache'
+        uses: ./.github/actions/compiler-cache
+        with:
+          platform: ${{ inputs.platform }}
+          debug-level: ${{ matrix.debug-level }}
+          toolchain: gcc-${{ inputs.gcc-major-version }}
 
       - name: 'Get Rust regex toolchain'
         uses: ./.github/actions/get-rust-regex
 
       - name: 'Configure'
         run: >
-          bash configure
+          bash bin/configure-dev
           --with-conf-name=${{ inputs.platform }}
           ${{ matrix.debug-level == 'debug' && '--with-debug-level=fastdebug' || '' }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
@@ -170,6 +193,10 @@ jobs:
           debug-suffix: "${{ matrix.debug-level == 'debug' && '-debug' || '' }}"
         if: ${{ inputs.dry-run == false }}
 
+      - name: 'Check development profile'
+        run: bash .github/scripts/check-dev-profile.sh "build/${{ inputs.platform }}/images/jdk" "build/${{ inputs.platform }}/spec.gmk"
+        if: ${{ inputs.dry-run == false }}
+
       - name: 'Upload bundles'
         uses: ./.github/actions/upload-bundles
         with:
@@ -178,3 +205,7 @@ jobs:
           bundle-suffix: ${{ inputs.bundle-suffix }}
           static-suffix: ${{ inputs.static-suffix }}
         if: ${{ inputs.dry-run == false }}
+
+      - name: 'Compiler cache statistics'
+        run: ccache --show-stats | tee -a "$GITHUB_STEP_SUMMARY"
+        if: ${{ !cancelled() }}
