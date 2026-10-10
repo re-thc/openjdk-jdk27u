@@ -23,6 +23,8 @@
  * questions.
  */
 
+#include <limits.h>
+
 #include "jni.h"
 #include "jvm.h"
 #include "jlong.h"
@@ -59,9 +61,20 @@ ZIP_Complete(JNIEnv* env, jboolean inflate, jobject receiver, jlong stream,
     return ZIP_FinishDeflate(env, receiver, stream, inputLen, outputLen, params, status);
 }
 
-JNIEXPORT jboolean JNICALL
-Java_java_util_zip_ZipUtils_useZipIntrinsics(JNIEnv* env, jclass cls) {
-    return JVM_ZipIntrinsicsEnabled();
+JNIEXPORT jlong JNICALL
+Java_java_util_zip_ZipUtils_zipIntrinsicLimits(JNIEnv* env, jclass cls) {
+    jint maxInput = 0;
+    jint minOutput = INT_MAX;
+    if (JVM_ZipIntrinsicsEnabled()) {
+#ifdef __aarch64__
+        maxInput = 65536;
+        minOutput = -1;
+#else
+        maxInput = INT_MAX;
+        minOutput = 1024;
+#endif
+    }
+    return ((jlong)maxInput << 32) | (jlong)(unsigned int)minOutput;
 }
 
 JNIEXPORT jlong JNICALL

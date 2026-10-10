@@ -39,7 +39,6 @@ import static java.util.zip.ZipConstants.ENDHDR;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.util.Architecture;
 import jdk.internal.util.Preconditions;
 
 class ZipUtils {
@@ -55,22 +54,21 @@ class ZipUtils {
     // static final ByteBuffer defaultBuf = ByteBuffer.allocateDirect(0);
     static final ByteBuffer defaultBuf = ByteBuffer.allocate(0);
 
-    static final boolean USE_ZIP_INTRINSICS = initZipIntrinsics();
+    private static final long ZIP_INTRINSIC_LIMITS = initZipIntrinsics();
 
     // Keep JNI where its transition cost is lower in the tiered benchmarks.
     static final int DEFLATE_INTRINSIC_MIN_INPUT = 1024;
-    // Disabled intrinsics use bounds that exclude every valid length.
-    static final int DEFLATE_INTRINSIC_MAX_INPUT = USE_ZIP_INTRINSICS
-        ? (Architecture.isAARCH64() ? 65536 : Integer.MAX_VALUE) : 0;
-    static final int INFLATE_MIXED_INTRINSIC_MIN_OUTPUT = USE_ZIP_INTRINSICS
-        ? (Architecture.isX64() ? 1024 : -1) : Integer.MAX_VALUE;
+    // The high word is the input upper bound; the low word is the output lower bound.
+    static final int DEFLATE_INTRINSIC_MAX_INPUT = (int) (ZIP_INTRINSIC_LIMITS >>> 32);
+    static final int INFLATE_MIXED_INTRINSIC_MIN_OUTPUT = (int) ZIP_INTRINSIC_LIMITS;
+    static final boolean USE_ZIP_INTRINSICS = DEFLATE_INTRINSIC_MAX_INPUT != 0;
 
-    private static boolean initZipIntrinsics() {
+    private static long initZipIntrinsics() {
         loadLibrary();
-        return useZipIntrinsics();
+        return zipIntrinsicLimits();
     }
 
-    private static native boolean useZipIntrinsics();
+    private static native long zipIntrinsicLimits();
 
     @jdk.internal.vm.annotation.IntrinsicCandidate
     static native long process(boolean inflate, Object receiver, long stream,
