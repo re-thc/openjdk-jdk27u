@@ -27,6 +27,7 @@ package sun.nio.cs;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.SimdUTF;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -231,6 +232,12 @@ public final class UTF_8 extends Unicode {
             sp += n;
             dp += n;
 
+            // Preserve the existing ASCII intrinsic before bulk Unicode work.
+            int converted = SimdUTF.isEligible(sl - sp) ? SimdUTF.decodeUTF8(sa, sp, sl - sp, da, dp, dl - dp) : -1;
+            if (converted >= 0) {
+                updatePositions(src, sl, dst, dp + converted);
+                return CoderResult.UNDERFLOW;
+            }
             while (sp < sl) {
                 int b1 = sa[sp];
                 if (b1 >= 0) {
@@ -461,6 +468,11 @@ public final class UTF_8 extends Unicode {
             dp += n;
 
             if (sp < sl) {
+                int converted = SimdUTF.isEligible(sl - sp) ? SimdUTF.encodeUTF16(sa, sp, sl - sp, da, dp, dl - dp) : -1;
+                if (converted >= 0) {
+                    updatePositions(src, sl, dst, dp + converted);
+                    return CoderResult.UNDERFLOW;
+                }
                 return encodeArrayLoopSlow(src, sa, sp, sl, dst, da, dp, dl);
             } else {
                 updatePositions(src, sp, dst, dp);

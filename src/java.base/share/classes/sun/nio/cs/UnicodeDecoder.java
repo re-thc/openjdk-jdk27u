@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.nio.cs;
 
+import jdk.internal.util.SimdUTF;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -68,6 +69,28 @@ abstract class UnicodeDecoder extends CharsetDecoder {
         int mark = src.position();
 
         try {
+            // Resolve the initial BOM once, before attempting an array conversion.
+            boolean bulk = SimdUTF.isEligible(src.remaining()) && src.hasArray() && dst.hasArray();
+            if (bulk && currentByteOrder == NONE && src.remaining() > 1) {
+                char first = (char)(((src.get(mark) & 0xff) << 8) | (src.get(mark + 1) & 0xff));
+                if (first == BYTE_ORDER_MARK || first == REVERSED_MARK) {
+                    currentByteOrder = first == BYTE_ORDER_MARK ? BIG : LITTLE;
+                    mark += 2;
+                    src.position(mark);
+                } else {
+                    currentByteOrder = defaultByteOrder;
+                }
+            }
+            if (bulk && currentByteOrder != NONE) {
+                int converted = SimdUTF.decodeUTF16Bytes(src.array(), src.arrayOffset() + mark,
+                        src.remaining(), dst.array(), dst.arrayOffset() + dst.position(),
+                        dst.remaining(), currentByteOrder == BIG);
+                if (converted >= 0) {
+                    mark = src.limit();
+                    dst.position(dst.position() + converted);
+                    return CoderResult.UNDERFLOW;
+                }
+            }
             while (src.remaining() > 1) {
                 int b1 = src.get() & 0xff;
                 int b2 = src.get() & 0xff;

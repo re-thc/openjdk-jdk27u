@@ -27,6 +27,7 @@
 package java.lang;
 
 import jdk.internal.util.Preconditions;
+import jdk.internal.util.SimdUTF;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.util.function.BiFunction;
@@ -77,6 +78,18 @@ class StringCoding {
         return strlen;
     }
 
+    static int validateStringEncoding(String s, int kind) {
+        if (s.isLatin1()) {
+            if (kind == 0 || kind == 2) {
+                return 1;
+            }
+            // Preserve the existing C2 counter intrinsic; its Java body also
+            // reaches simdutf in the interpreter and C1.
+            return countPositives(s.value(), 0, s.length()) == s.length() ? 1 : 0;
+        }
+        return SimdUTF.validateUTF16(s.value(), 0, s.length(), kind);
+    }
+
     static boolean hasNegatives(byte[] ba, int off, int len) {
         return countPositives(ba, off, len) != len;
     }
@@ -106,6 +119,13 @@ class StringCoding {
 
     @IntrinsicCandidate
     private static int countPositives0(byte[] ba, int off, int len) {
+        if (len > 0 && ba[off] < 0) {
+            return 0;
+        }
+        int count = SimdUTF.isEligible(len) ? SimdUTF.countAscii(ba, off, len) : -1;
+        if (count >= 0) {
+            return count;
+        }
         int limit = off + len;
         for (int i = off; i < limit; i++) {
             if (ba[i] < 0) {
@@ -146,6 +166,13 @@ class StringCoding {
     @IntrinsicCandidate
     private static int encodeISOArray0(byte[] sa, int sp,
                                        byte[] da, int dp, int len) {
+        if (len > 0 && StringUTF16.getChar(sa, sp) > '\u00ff') {
+            return 0;
+        }
+        int count = SimdUTF.isEligible(len) ? SimdUTF.encodeLatin1FromUTF16(sa, sp, len, da, dp) : -1;
+        if (count >= 0) {
+            return count;
+        }
         int i = 0;
         for (; i < len; i++) {
             char c = StringUTF16.getChar(sa, sp++);
@@ -185,6 +212,13 @@ class StringCoding {
     @IntrinsicCandidate
     static int encodeAsciiArray0(char[] sa, int sp,
                                  byte[] da, int dp, int len) {
+        if (len > 0 && sa[sp] >= '\u0080') {
+            return 0;
+        }
+        int count = SimdUTF.isEligible(len) ? SimdUTF.encodeAscii(sa, sp, len, da, dp) : -1;
+        if (count >= 0) {
+            return count;
+        }
         int i = 0;
         for (; i < len; i++) {
             char c = sa[sp++];

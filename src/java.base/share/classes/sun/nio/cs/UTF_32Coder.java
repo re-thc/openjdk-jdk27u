@@ -31,6 +31,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
+import jdk.internal.util.SimdUTF;
+import jdk.internal.vm.annotation.DontInline;
 
 class UTF_32Coder {
     protected static final int BOM_BIG = 0xFEFF;
@@ -84,6 +86,17 @@ class UTF_32Coder {
                         else
                             currentBO = expectedBO;
                         src.position(mark);
+                    }
+                }
+                if (SimdUTF.isEligible(src.remaining()) && src.hasArray() && dst.hasArray()) {
+                    int length = src.remaining() & ~3;
+                    int written = SimdUTF.decodeUTF32Bytes(src.array(), src.arrayOffset() + mark,
+                            length, dst.array(), dst.arrayOffset() + dst.position(),
+                            dst.remaining(), currentBO == BIG);
+                    if (written >= 0) {
+                        mark += length;
+                        dst.position(dst.position() + written);
+                        return CoderResult.UNDERFLOW;
                     }
                 }
                 while (src.remaining() >= 4) {
@@ -143,6 +156,31 @@ class UTF_32Coder {
         }
 
         protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
+            if (SimdUTF.isEligible(src.remaining()) && src.hasArray() && dst.hasArray()) {
+                if (!doneBOM && src.hasRemaining()) {
+                    if (dst.remaining() < 4) {
+                        return CoderResult.OVERFLOW;
+                    }
+                    put(BOM_BIG, dst);
+                    doneBOM = true;
+                }
+                int length = src.remaining();
+                int written = SimdUTF.encodeUTF32Bytes(src.array(), src.arrayOffset() + src.position(),
+                        length, dst.array(), dst.arrayOffset() + dst.position(),
+                        dst.remaining(), byteOrder == BIG);
+                if (written >= 0) {
+                    src.position(src.position() + length);
+                    dst.position(dst.position() + written);
+                    return CoderResult.UNDERFLOW;
+                }
+            }
+            return encodeLoopScalar(src, dst);
+        }
+
+        // Keep scalar buffer accesses separate from the native call's memory
+        // effects so C2 can optimize short inputs independently.
+        @DontInline
+        private CoderResult encodeLoopScalar(CharBuffer src, ByteBuffer dst) {
             int mark = src.position();
             if (!doneBOM && src.hasRemaining()) {
                 if (dst.remaining() < 4)

@@ -58,6 +58,7 @@
 #include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/simdutfSupport.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -573,6 +574,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_PhantomReference_refersTo0: return inline_reference_refersTo0(true);
   case vmIntrinsics::_Reference_clear0:         return inline_reference_clear0(false);
   case vmIntrinsics::_PhantomReference_clear0:  return inline_reference_clear0(true);
+
+  case vmIntrinsics::_simdutf_process:          return inline_simdutf_process();
 
   case vmIntrinsics::_Class_cast:               return inline_Class_cast();
 
@@ -9275,3 +9278,34 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
   return true;
 }
 
+// Keep oop arguments live throughout a leaf call. The shared entry derives raw
+// array addresses only after validating their types and ranges. TypePtr::BOTTOM
+// models both the source reads and all destination writes (including failure).
+bool LibraryCallKit::inline_simdutf_process() {
+  const TypeInt* operation = _gvn.type(argument(6))->isa_int();
+  if (operation != nullptr &&
+      ((operation->_lo == SimdUTF::COUNT_ASCII && operation->_hi == SimdUTF::COUNT_ASCII) ||
+       (operation->_lo >= SimdUTF::ENCODE_ASCII && operation->_hi <= SimdUTF::DECODE_BASE64_URL) ||
+       (operation->_lo == SimdUTF::INFLATE_LATIN1 && operation->_hi == SimdUTF::INFLATE_LATIN1))) {
+    // Existing C2 ASCII, narrowing and Base64 stubs avoid a C ABI call and
+    // outperform this bridge. Interpreter/C1 still benefit from simdutf.
+    set_result(intcon(-1));
+    return true;
+  }
+  const Type** fields = TypeTuple::fields(7);
+  for (int i = 0; i < 7; i++) {
+    fields[TypeFunc::Parms + i] = i == 0 || i == 3 ? static_cast<const Type*>(TypeOopPtr::BOTTOM) : TypeInt::INT;
+  }
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 7, fields);
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms] = TypeInt::INT;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  const TypeFunc* type = TypeFunc::make(domain, range);
+  Node* call = make_runtime_call(RC_LEAF, type,
+      CAST_FROM_FN_PTR(address, SimdUTF::process), "simdutf_process", TypePtr::BOTTOM,
+      argument(0), argument(1), argument(2), argument(3),
+      argument(4), argument(5), argument(6));
+  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  set_result(result);
+  return true;
+}

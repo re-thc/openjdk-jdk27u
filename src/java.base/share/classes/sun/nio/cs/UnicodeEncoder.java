@@ -25,6 +25,7 @@
 
 package sun.nio.cs;
 
+import jdk.internal.util.SimdUTF;
 import java.nio.*;
 import java.nio.charset.*;
 
@@ -77,6 +78,16 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
             needsMark = false;
         }
         try {
+            if (SimdUTF.isEligible(src.remaining()) && src.hasArray() && dst.hasArray()) {
+                int converted = SimdUTF.encodeUTF16Bytes(src.array(), src.arrayOffset() + mark,
+                        src.remaining(), dst.array(), dst.arrayOffset() + dst.position(),
+                        dst.remaining(), byteOrder == BIG);
+                if (converted >= 0) {
+                    mark = src.limit();
+                    dst.position(dst.position() + converted);
+                    return CoderResult.UNDERFLOW;
+                }
+            }
             while (src.hasRemaining()) {
                 char c = src.get();
                 if (!Character.isSurrogate(c)) {

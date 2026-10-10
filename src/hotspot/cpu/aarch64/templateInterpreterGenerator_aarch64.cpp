@@ -51,6 +51,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/simdutfSupport.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/timer.hpp"
@@ -2154,3 +2155,25 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
 }
 
 #endif // !PRODUCT
+
+address TemplateInterpreterGenerator::generate_simdutf_entry() {
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
+  __ ldr(c_rarg0, Address(esp, 6 * wordSize));
+  __ ldrw(c_rarg1, Address(esp, 5 * wordSize));
+  __ ldrw(c_rarg2, Address(esp, 4 * wordSize));
+  __ ldr(c_rarg3, Address(esp, 3 * wordSize));
+  __ ldrw(c_rarg4, Address(esp, 2 * wordSize));
+  __ ldrw(c_rarg5, Address(esp, wordSize));
+  __ ldrw(c_rarg6, Address(esp, 0));
+  __ andr(sp, r19_sender_sp, -16);
+  // The C++ leaf preserves the interpreter's callee-saved registers and LR.
+  // The target is in libjvm, outside the code cache's branch-range guarantee.
+  // IP0 permits a tail branch to a C entry protected by BTI.
+  __ lea(r16, RuntimeAddress(CAST_FROM_FN_PTR(address, SimdUTF::process)));
+  __ br(r16);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}

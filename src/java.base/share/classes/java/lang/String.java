@@ -55,6 +55,7 @@ import java.util.stream.StreamSupport;
 
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.Preconditions;
+import jdk.internal.util.SimdUTF;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -606,6 +607,10 @@ public final class String
             // Decode with a stable copy, to be the result if the decoded length is the same
             byte[] latin1 = Arrays.copyOfRange(bytes, offset, offset + length);
             int sp = dp;            // first dp bytes are already in the copy
+            byte[] compact = decodeUTF8Latin1(latin1, sp, length - sp, latin1, dp);
+            if (compact != null) {
+                return new String(compact, LATIN1);
+            }
             while (sp < length) {
                 int b1 = latin1[sp++];
                 if (b1 >= 0) {
@@ -646,6 +651,17 @@ public final class String
             }
             return new String(dst, UTF16);
         }
+    }
+
+    // Keep utf8's ASCII path within C2's hot-method inlining limit.
+    private static byte[] decodeUTF8Latin1(byte[] src, int sp, int len, byte[] dst, int dp) {
+        if ((src[sp] & 0xfe) == 0xc2 && SimdUTF.isEligible(len)) {
+            int converted = SimdUTF.decodeLatin1(src, sp, len, dst, dp, dst.length - dp);
+            if (converted >= 0) {
+                return Arrays.copyOf(dst, dp + converted);
+            }
+        }
+        return null;
     }
 
     private static String iso88591(byte[] bytes, int offset, int length) {
@@ -754,6 +770,10 @@ public final class String
             dst = new byte[length];
             System.arraycopy(bytes, offset, dst, 0, dp);
             offset += dp;
+            byte[] compact = decodeUTF8Latin1(bytes, offset, sl - offset, dst, dp);
+            if (compact != null) {
+                return new String(compact, LATIN1);
+            }
             while (offset < sl) {
                 int b1 = bytes[offset++];
                 if (b1 >= 0) {
@@ -1258,6 +1278,11 @@ public final class String
     private static <E extends Exception> int decodeUTF8_UTF16(
             byte[] src, int sp, int sl, byte[] dst, int dp, Class <E> exClass)
             throws E {
+        int converted = SimdUTF.isEligible(sl - sp)
+                ? SimdUTF.decodeUTF8(src, sp, sl - sp, dst, dp, (dst.length >> 1) - dp) : -1;
+        if (converted >= 0) {
+            return dp + converted;
+        }
         while (sp < sl) {
             int b1 = src[sp++];
             if (b1 >= 0) {
@@ -1480,6 +1505,11 @@ public final class String
             System.arraycopy(val, 0, dst, 0, positives);
         }
         int dp = positives;
+        int converted = SimdUTF.isEligible(val.length - positives)
+                ? SimdUTF.encodeLatin1(val, positives, val.length - positives, dst, dp, dst.length - dp) : -1;
+        if (converted >= 0) {
+            return Arrays.copyOf(dst, dp + converted);
+        }
         for (int i = dp; i < val.length; i++) {
             byte c = val[i];
             if (c < 0) {
@@ -1499,6 +1529,10 @@ public final class String
     private static int encodedLengthUTF8(byte coder, byte[] val) {
         if (coder == UTF16) {
             return encodedLengthUTF8_UTF16(val, null);
+        }
+        int converted = SimdUTF.isEligible(val.length) ? SimdUTF.encodedLengthLatin1(val, val.length) : -1;
+        if (converted >= 0) {
+            return converted;
         }
         int positives = StringCoding.countPositives(val, 0, val.length);
         if (positives == val.length) {
@@ -1535,6 +1569,10 @@ public final class String
         // For very large estimate, (as in overflow of 32 bit int), precompute the exact size
         int allocLen = (sl * 3 < 0) ? encodedLengthUTF8_UTF16(val, exClass) : sl * 3;
         byte[] dst = new byte[allocLen];
+        int converted = SimdUTF.isEligible(sl) ? SimdUTF.encodeUTF16(val, 0, sl, dst, 0, dst.length) : -1;
+        if (converted >= 0) {
+            return Arrays.copyOf(dst, converted);
+        }
         while (sp < sl) {
             // ascii fast loop;
             char c = StringUTF16.getChar(val, sp);
@@ -1594,6 +1632,10 @@ public final class String
      *           having to declare the exception
      */
     private static <E extends Exception> int encodedLengthUTF8_UTF16(byte[] val, Class<E> exClass) throws E {
+        int converted = SimdUTF.isEligible(val.length >> 1) ? SimdUTF.encodedLengthUTF16(val, val.length >> 1) : -1;
+        if (converted >= 0) {
+            return converted;
+        }
         long dp = 0L;
         int sp = 0;
         int sl = val.length >> 1;
