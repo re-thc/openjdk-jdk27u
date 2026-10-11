@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import jdk.test.whitebox.WhiteBox;
 class DetermineMaxHeapForCompressedOops {
   public static void main(String[] args) throws Exception {
     WhiteBox wb = WhiteBox.getWhiteBox();
-    System.out.print(wb.getCompressedOopsMaxHeapSize());
+    System.out.println("CompressedOopsMaxHeapSize=" + wb.getCompressedOopsMaxHeapSize());
   }
 }
 
@@ -56,7 +56,14 @@ class TestUseCompressedOopsErgoTools {
 
   public static long getMaxHeapForCompressedOops(String[] vmargs) throws Exception {
     OutputAnalyzer output = runWhiteBoxTest(vmargs, DetermineMaxHeapForCompressedOops.class.getName(), new String[] {});
-    return Long.parseLong(output.getStdout());
+    // VM startup warnings (for example, a class-space size adjustment) may
+    // precede the WhiteBox result on stdout.
+    Matcher result = Pattern.compile("(?m)^CompressedOopsMaxHeapSize=(\\d+)$")
+        .matcher(output.getStdout());
+    Asserts.assertTrue(result.find(), "Missing compressed-oops maximum heap size");
+    long maxHeapSize = Long.parseLong(result.group(1));
+    Asserts.assertFalse(result.find(), "Multiple compressed-oops maximum heap sizes");
+    return maxHeapSize;
   }
 
   public static boolean is64bitVM() {

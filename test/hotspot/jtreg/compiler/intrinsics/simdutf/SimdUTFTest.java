@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -44,7 +42,17 @@
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 SimdUTFTest
  * @run main/othervm -Xbatch -XX:ReservedCodeCacheSize=48M SimdUTFTest
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 SimdUTFTest
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:-UseBASE64Intrinsics SimdUTFTest
  * @run main/othervm -Xbatch -XX:SIMDUTFMinLength=64 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_simdutf_process SimdUTFTest
+ */
+
+/*
+ * @test id=sse
+ * @summary simdutf Base64 in C2 without AVX2 HotSpot stubs
+ * @requires (os.arch == "amd64" | os.arch == "x86_64") & vm.compiler2.enabled
+ * @modules java.base/jdk.internal.util:+open
+ *          jdk.management
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:UseAVX=0 SimdUTFTest
  */
 
 /*
@@ -114,7 +122,49 @@ public class SimdUTFTest {
         utf16Copies();
         utf8EncodeCapacity();
         codePointCounts();
+        indexOf();
         System.out.println("simdutf contracts passed");
+    }
+
+    private static void indexOf() {
+        for (int length : LENGTHS) {
+            for (String pattern : new String[]{"abcé\0", "漢x\ud800y\udc00😃"}) {
+                String text = pattern.repeat(length / pattern.length() + 1).substring(0, length);
+                char[] chars = text.toCharArray();
+                byte[] latin1 = pattern.charAt(0) == 'a' ? text.getBytes(StandardCharsets.ISO_8859_1) : null;
+                for (int ch : new int[]{-1, 0, 'a', 'é', '漢', 'z', 0xd800, 0xdc00, 0x1f603, 0x110000}) {
+                    for (int from : new int[]{-1, 0, 1, 31, 127, length - 1, length, length + 1}) {
+                        int begin = Math.min(length, Math.max(0, from));
+                        for (int end : new int[]{length, Math.max(begin, length - 1)}) {
+                            int expected = -1;
+                            for (int i = begin; i < end; i++) {
+                                if (ch <= 0xffff ? text.charAt(i) == ch
+                                        : i + 1 < end && Character.isSurrogatePair(text.charAt(i), text.charAt(i + 1))
+                                          && Character.toCodePoint(text.charAt(i), text.charAt(i + 1)) == ch) {
+                                    expected = i;
+                                    break;
+                                }
+                            }
+                            check(text.indexOf(ch, begin, end) == expected, "String indexOf bounded range");
+                            int relative = expected < 0 ? end - begin : expected - begin;
+                            int index = SimdUTF.indexOfUTF16(chars, begin, end - begin, ch);
+                            if (index >= 0) {
+                                check(index == relative, "UTF16 native search");
+                            }
+                            if (latin1 != null) {
+                                index = SimdUTF.indexOfLatin1(latin1, begin, end - begin, ch);
+                                if (index >= 0) {
+                                    check(index == relative, "Latin1 native search");
+                                }
+                            }
+                            if (end == length) {
+                                check(text.indexOf(ch, from) == expected, "String indexOf from index");
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private static void codePointCounts() {

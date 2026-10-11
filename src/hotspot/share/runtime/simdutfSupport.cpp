@@ -41,7 +41,7 @@ jint SimdUTF::initialize() {
   const auto& implementations = simdutf::get_available_implementations();
   const simdutf::implementation* impl = nullptr;
 #if defined(AMD64) && !defined(ZERO)
-  // Respect HotSpot's user-selected ISA limits as well as OS register support.
+  // HotSpot limits the ISA level; simdutf checks each backend's full CPU and OS requirements.
   if (UseAVX >= 3 && VM_Version::supports_avx512_vbmi2()) {
     impl = implementations["icelake"];
   }
@@ -156,7 +156,7 @@ static jint simdutf_decode_latin1(const char* input, jint len, char* output, jin
 JRT_LEAF(jint, SimdUTF::process(oopDesc* src_raw, jint sp, jint len,
                                oopDesc* dst_raw, jint dp, jint capacity, jint operation))
   if (simdutf_implementation == nullptr || len <= 0 || len > 1024 * 1024 ||
-      operation < COUNT_ASCII || operation > COPY_UTF16) {
+      operation < COUNT_ASCII || operation > INDEX_OF_UTF16) {
     return -1;
   }
   // Construct checked C++ oops only after entering through the raw-pointer ABI.
@@ -166,7 +166,8 @@ JRT_LEAF(jint, SimdUTF::process(oopDesc* src_raw, jint sp, jint len,
                (operation >= VALIDATE_UTF16 && operation <= ENCODED_LENGTH_UTF16) ||
                operation == ENCODE_UTF16_BE || operation == ENCODE_UTF16_LE ||
                operation == ENCODE_UTF32_BE || operation == ENCODE_UTF32_LE ||
-               operation == COUNT_CODE_POINTS || operation == COPY_UTF16;
+               operation == COUNT_CODE_POINTS || operation == COPY_UTF16 ||
+               operation == INDEX_OF_UTF16;
   bool dst16 = operation == DECODE_UTF8 ||
                operation == DECODE_UTF16_BE || operation == DECODE_UTF16_LE ||
                operation == INFLATE_LATIN1 ||
@@ -182,6 +183,17 @@ JRT_LEAF(jint, SimdUTF::process(oopDesc* src_raw, jint sp, jint len,
   }
   const char16_t* input16 = reinterpret_cast<const char16_t*>(input);
   switch (operation) {
+    // Searches use dp as the character and return len when it is absent.
+    case INDEX_OF_LATIN1:
+      if (dp < 0 || dp > 0xff) {
+        return -1;
+      }
+      return checked_cast<jint>(simdutf::find(input, input + len, char(dp)) - input);
+    case INDEX_OF_UTF16:
+      if (dp < 0 || dp > 0xffff) {
+        return -1;
+      }
+      return checked_cast<jint>(simdutf::find(input16, input16 + len, char16_t(dp)) - input16);
     case VALIDATE_UTF16:
       return simdutf::validate_utf16(input16, len) ? 1 : 0;
     case COUNT_CODE_POINTS:

@@ -81,6 +81,39 @@ public class CompressedClassSpaceSize {
     // ofent. Note: today's default archives are around 16-20 MB.
     final static long maxExpectedArchiveSize = 512 * MB;
 
+    private static void testLargeClassSpace(boolean four, boolean cds) throws Exception {
+        String headerOption = "-XX:" + (four ? "+" : "-") + "UseFourByteObjectHeaders";
+        String archiveOption = "-XX:SharedArchiveFile=./ccs-" + (four ? "4" : "8") + ".jsa";
+        if (cds) {
+            new OutputAnalyzer(ProcessTools.createLimitedTestJavaProcessBuilder(
+                    headerOption, archiveOption, "-Xshare:dump", "-version").start())
+                    .shouldHaveExitValue(0);
+        }
+        OutputAnalyzer output = new OutputAnalyzer(ProcessTools.createLimitedTestJavaProcessBuilder(
+                headerOption, "-XX:+PrintFlagsFinal",
+                "-XX:CompressedClassSpaceSize=" + maxClassSpaceSize,
+                archiveOption, "-Xshare:" + (cds ? "on" : "off"),
+                "-Xlog:metaspace*", "-version").start());
+        output.shouldHaveExitValue(0);
+        // Unsupported platforms disable the four-byte request. Verify the
+        // corresponding encoding limit, retaining the original 4 GiB coverage.
+        boolean usesFour = Boolean.parseBoolean(
+                output.firstMatch("UseFourByteObjectHeaders\\s+= (true|false)", 1));
+        long encodingLimit = usesFour ? 512 * MB : maxClassSpaceSize;
+        if (!cds) {
+            output.shouldMatch("Compressed class space.*" + encodingLimit);
+        } else {
+            long reducedSize = Long.parseLong(output.firstMatch(
+                    "reducing class space size from " + encodingLimit + " to (\\d+)", 1));
+            long archiveAllowance = Math.min(maxExpectedArchiveSize, encodingLimit / 4);
+            if (reducedSize < encodingLimit - archiveAllowance || reducedSize >= encodingLimit) {
+                output.reportDiagnosticSummary();
+                throw new RuntimeException("Unexpected class space after reserving the CDS archive");
+            }
+            output.shouldMatch("Compressed class space.*" + reducedSize);
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb;
         OutputAnalyzer output;
@@ -123,33 +156,13 @@ public class CompressedClassSpaceSize {
             }
             break;
             case "valid_large_nocds": {
-                // Without CDS, we should get 4G
-                pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:CompressedClassSpaceSize=" + maxClassSpaceSize,
-                        "-Xshare:off", "-Xlog:metaspace*", "-version");
-                output = new OutputAnalyzer(pb.start());
-                output.shouldMatch("Compressed class space.*" + maxClassSpaceSize)
-                        .shouldHaveExitValue(0);
+                testLargeClassSpace(false, false);
+                testLargeClassSpace(true, false);
             }
             break;
             case "valid_large_cds": {
-                // Create archive
-                pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                        "-XX:SharedArchiveFile=./abc.jsa", "-Xshare:dump", "-version");
-                output = new OutputAnalyzer(pb.start());
-                output.shouldHaveExitValue(0);
-
-                // With CDS, class space should fill whatever the CDS archive leaves us (modulo alignment)
-                pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:CompressedClassSpaceSize=" + maxClassSpaceSize,
-                        "-XX:SharedArchiveFile=./abc.jsa", "-Xshare:on", "-Xlog:metaspace*", "-version");
-                output = new OutputAnalyzer(pb.start());
-                output.shouldHaveExitValue(0);
-                long reducedSize = Long.parseLong(
-                        output.firstMatch("reducing class space size from " + maxClassSpaceSize + " to (\\d+)", 1));
-                if (reducedSize < (maxClassSpaceSize - maxExpectedArchiveSize)) {
-                    output.reportDiagnosticSummary();
-                    throw new RuntimeException("Class space size too small?");
-                }
-                output.shouldMatch("Compressed class space.*" + reducedSize);
+                testLargeClassSpace(false, true);
+                testLargeClassSpace(true, true);
             }
             break;
             default:

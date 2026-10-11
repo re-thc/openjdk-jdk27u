@@ -1115,7 +1115,30 @@ final class StringUTF16 {
     // vmIntrinsics::_indexOfU_char
     @IntrinsicCandidate
     private static int indexOfChar0(byte[] value, int ch, int fromIndex, int max) {
-        for (int i = fromIndex; i < max; i++) {
+        if (fromIndex >= max) {
+            return -1;
+        }
+        if (getChar(value, fromIndex) == ch) {
+            return fromIndex;
+        }
+        int i = fromIndex + 1;
+        if (SimdUTF.isEligible(max - i)) {
+            // Protect compiled near-start searches; interpretation benefits from native search directly.
+            if (SimdUTF.useIndexOfPrefix()) {
+                int limit = i + Math.min(15, max - i);
+                for (; i < limit; i++) {
+                    if (getChar(value, i) == ch) {
+                        return i;
+                    }
+                }
+            }
+            int len = max - i;
+            int index = SimdUTF.indexOfUTF16(value, i, len, ch);
+            if (index >= 0) {
+                return index == len ? -1 : i + index;
+            }
+        }
+        for (; i < max; i++) {
             if (getChar(value, i) == ch) {
                 return i;
             }

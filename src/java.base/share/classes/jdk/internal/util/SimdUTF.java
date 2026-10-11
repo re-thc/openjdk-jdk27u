@@ -31,7 +31,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 
 /**
- * Optional bulk UTF and Base64 operations. A negative result requests the Java
+ * Bulk UTF and Base64 operations. A negative result requests the Java
  * implementation, including its malformed-input and buffer-position semantics.
  * The VM validates array types, ranges and output capacity on every entry.
  */
@@ -66,6 +66,8 @@ public final class SimdUTF {
     private static final int DECODE_LATIN1 = 24;
     private static final int COUNT_CODE_POINTS = 25;
     private static final int COPY_UTF16 = 26;
+    private static final int INDEX_OF_LATIN1 = 27;
+    private static final int INDEX_OF_UTF16 = 28;
 
     // Kept zero during early bootstrap. Initialized once by System.initPhase1.
     @Stable
@@ -89,23 +91,29 @@ public final class SimdUTF {
     }
 
     @ForceInline
+    public static boolean useIndexOfPrefix() {
+        return automatic;
+    }
+
+    @ForceInline
     private static int process(Object src, int sp, int len,
                                Object dst, int dp, int capacity, int operation) {
-        if (!isEligible(len) || (automatic && len < compiledMinimumLength(operation))) {
+        if (!isEligible(len) || (automatic && len < operationMinimumLength(operation))) {
             return -1;
         }
         return process0(src, sp, len, dst, dp, capacity, operation);
     }
 
-    // Share fallback profiles across tiers; explicit thresholds bypass these floors.
+    // Share operation floors across tiers when compilation is enabled; explicit thresholds bypass them.
     @ForceInline
-    private static int compiledMinimumLength(int operation) {
+    private static int operationMinimumLength(int operation) {
         return switch (operation) {
             case DECODE_UTF8 -> 256;
             case ENCODE_UTF16, DECODE_BASE64, DECODE_BASE64_URL,
                  DECODE_LATIN1, COUNT_CODE_POINTS -> 128;
             case VALIDATE_ASCII, VALIDATE_LATIN1, ENCODED_LENGTH_UTF16,
-                 ENCODED_LENGTH_LATIN1, DECODE_UTF32_BE, DECODE_UTF32_LE -> 64;
+                 ENCODED_LENGTH_LATIN1, DECODE_UTF32_BE, DECODE_UTF32_LE,
+                 INDEX_OF_LATIN1, INDEX_OF_UTF16 -> 64;
             default -> 0;
         };
     }
@@ -128,6 +136,17 @@ public final class SimdUTF {
     @ForceInline
     public static int copyUTF16(Object src, int sp, int len, Object dst, int dp) {
         return process(src, sp, len, dst, dp, len, COPY_UTF16);
+    }
+
+    // Return a relative index, len when absent, or a negative value to decline.
+    @ForceInline
+    public static int indexOfLatin1(byte[] src, int sp, int len, int ch) {
+        return process(src, sp, len, src, ch, 0, INDEX_OF_LATIN1);
+    }
+
+    @ForceInline
+    public static int indexOfUTF16(Object src, int sp, int len, int ch) {
+        return process(src, sp, len, src, ch, 0, INDEX_OF_UTF16);
     }
 
     @ForceInline
@@ -159,13 +178,13 @@ public final class SimdUTF {
 
     @ForceInline
     public static int encodeUTF32Bytes(char[] src, int sp, int len,
-                                      byte[] dst, int dp, int capacity, boolean bigEndian) {
+                                       byte[] dst, int dp, int capacity, boolean bigEndian) {
         return process(src, sp, len, dst, dp, capacity, bigEndian ? ENCODE_UTF32_BE : ENCODE_UTF32_LE);
     }
 
     @ForceInline
     public static int decodeUTF32Bytes(byte[] src, int sp, int len,
-                                      char[] dst, int dp, int capacity, boolean bigEndian) {
+                                       char[] dst, int dp, int capacity, boolean bigEndian) {
         return process(src, sp, len, dst, dp, capacity, bigEndian ? DECODE_UTF32_BE : DECODE_UTF32_LE);
     }
 
@@ -182,13 +201,13 @@ public final class SimdUTF {
 
     @ForceInline
     public static int decodeLatin1(byte[] src, int sp, int len,
-                                  byte[] dst, int dp, int capacity) {
+                                   byte[] dst, int dp, int capacity) {
         return process(src, sp, len, dst, dp, capacity, DECODE_LATIN1);
     }
 
     @ForceInline
     public static int encodeLatin1(byte[] src, int sp, int len,
-                                    byte[] dst, int dp, int capacity) {
+                                   byte[] dst, int dp, int capacity) {
         return process(src, sp, len, dst, dp, capacity, ENCODE_LATIN1);
     }
 
@@ -200,7 +219,7 @@ public final class SimdUTF {
 
     @ForceInline
     public static int encodeAscii(char[] src, int sp, int len,
-                                   byte[] dst, int dp) {
+                                  byte[] dst, int dp) {
         return process(src, sp, len, dst, dp, len, ENCODE_ASCII);
     }
 
@@ -212,13 +231,13 @@ public final class SimdUTF {
 
     @ForceInline
     public static int encodeBase64(byte[] src, int sp, int len,
-                                    byte[] dst, int dp, boolean url) {
+                                   byte[] dst, int dp, boolean url) {
         return process(src, sp, len, dst, dp, dst.length - dp, url ? ENCODE_BASE64_URL : ENCODE_BASE64);
     }
 
     @ForceInline
     public static int decodeBase64(byte[] src, int sp, int len,
-                                    byte[] dst, int dp, boolean url) {
+                                   byte[] dst, int dp, boolean url) {
         return process(src, sp, len, dst, dp, dst.length - dp, url ? DECODE_BASE64_URL : DECODE_BASE64);
     }
 }

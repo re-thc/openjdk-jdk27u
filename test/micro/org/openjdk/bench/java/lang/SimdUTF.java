@@ -36,7 +36,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
 
-/** Bulk Unicode and Base64 benchmarks for interpreter, C1 and C2 execution. */
+/** Bulk Unicode, String search and Base64 benchmarks for interpreter, C1 and C2 execution. */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
@@ -47,6 +47,7 @@ public class SimdUTF {
     @Param({"32", "64", "128", "256", "4096", "65536"})
     public int size;
     private String ascii, latin1, bmp, supplementary;
+    private String latin1Near, utf16Near;
     private byte[] asciiBytes, latin1Bytes, utf8Bytes, supplementaryBytes, binary, base64, encoded, decoded;
     private char[] chars, targetChars;
     private char[] supplementaryChars;
@@ -80,6 +81,9 @@ public class SimdUTF {
         ascii = "a".repeat(size);
         latin1 = "é".repeat(size);
         bmp = "漢".repeat(size);
+        int near = Math.min(15, size - 1);
+        latin1Near = "é".repeat(near) + "z" + "é".repeat(size - near - 1);
+        utf16Near = "漢".repeat(near) + "z" + "漢".repeat(size - near - 1);
         supplementary = "😃".repeat(size / 2);
         supplementaryChars = supplementary.toCharArray();
         supplementaryBuilder = new StringBuilder(supplementary);
@@ -140,6 +144,12 @@ public class SimdUTF {
     @Benchmark public String charArrayString() { return new String(chars); }
     @Benchmark public String supplementaryDecode() { return new String(supplementaryBytes, StandardCharsets.UTF_8); }
     @Benchmark public byte[] supplementaryEncode() { return supplementary.getBytes(StandardCharsets.UTF_8); }
+    @Benchmark public int latin1IndexOf() { return latin1.indexOf('z'); }
+    @Benchmark public int latin1IndexOfFirst() { return latin1.indexOf('é'); }
+    @Benchmark public int latin1IndexOfNear() { return latin1Near.indexOf('z'); }
+    @Benchmark public int utf16IndexOf() { return bmp.indexOf('z'); }
+    @Benchmark public int utf16IndexOfFirst() { return bmp.indexOf('漢'); }
+    @Benchmark public int utf16IndexOfNear() { return utf16Near.indexOf('z'); }
     @Benchmark public int base64Encode() { return base64Encoder.encode(binary, encoded); }
     @Benchmark public int base64Decode() { return base64Decoder.decode(base64, decoded); }
     @Benchmark public void base64StreamEncode() throws IOException { base64Stream.write(binary); }
