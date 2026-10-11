@@ -933,6 +933,11 @@ public class VM {
     return compressedOopsEnabled.booleanValue();
   }
 
+  public boolean isFourByteObjectHeadersEnabled() {
+    Flag flag = getCommandLineFlag("UseFourByteObjectHeaders");
+    return flag != null && flag.getBool();
+  }
+
   public boolean isCompactObjectHeadersEnabled() {
     if (compactObjectHeadersEnabled == null) {
         Flag flag = getCommandLineFlag("UseCompactObjectHeaders");

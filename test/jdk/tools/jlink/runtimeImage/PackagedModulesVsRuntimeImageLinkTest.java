@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, Red Hat, Inc.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +44,7 @@ import tests.JImageGenerator;
  * @requires (jlink.packagedModules & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview
- * @modules java.base/jdk.internal.jimage
+ * @modules java.base/jdk.internal.jimage java.se
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.plugin
  *          jdk.jlink/jdk.tools.jimage

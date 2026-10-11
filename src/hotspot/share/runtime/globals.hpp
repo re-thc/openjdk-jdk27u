@@ -112,6 +112,12 @@ const size_t minimumStringTableSize = 128;
 const size_t defaultSymbolTableSize = 32768; // 2^15
 const size_t minimumSymbolTableSize = 1024;
 
+#if (defined(AMD64) || defined(AARCH64)) && !defined(ZERO)
+const bool defaultUseFourByteObjectHeaders = true;
+#else
+const bool defaultUseFourByteObjectHeaders = false;
+#endif
+
 #ifdef _LP64
 #define LP64_RUNTIME_FLAGS(develop,                                         \
                            develop_pd,                                      \
@@ -131,6 +137,9 @@ const size_t minimumSymbolTableSize = 1024;
   product(bool, UseCompactObjectHeaders, true,                              \
           "Use compact 64-bit object headers in 64-bit VM")                 \
                                                                             \
+  product(bool, UseFourByteObjectHeaders, defaultUseFourByteObjectHeaders,   \
+          "Use compact 32-bit object headers (implies UseCompactObjectHeaders)") \
+                                                                            \
   product(int, ObjectAlignmentInBytes, 8,                                   \
           "Default object alignment in bytes, 8 is minimum")                \
           range(8, 256)                                                     \
@@ -148,6 +157,7 @@ const size_t minimumSymbolTableSize = 1024;
 const bool UseCompressedOops = false;
 const bool AOTCompatibleOopCompression = false;
 const bool UseCompactObjectHeaders = false;
+const bool UseFourByteObjectHeaders = false;
 const int ObjectAlignmentInBytes = 8;
 
 #endif // _LP64
