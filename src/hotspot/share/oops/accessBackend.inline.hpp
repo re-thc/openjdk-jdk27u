@@ -326,7 +326,8 @@ inline void RawAccessBarrier<decorators>::clone(oop src, oop dst, size_t size) {
   AccessInternal::arraycopy_conjoint_atomic(reinterpret_cast<jlong*>((oopDesc*)src),
                                             reinterpret_cast<jlong*>((oopDesc*)dst),
                                             align_object_size(size) / HeapWordsPerLong);
-  // Clear the header
+  // Clone destinations are allocated at base size, without the source's hidden
+  // hash slot. Clear its hash state instead of retaining the expanded size.
   dst->init_mark();
 }
 

@@ -1,0 +1,135 @@
+/*
+ * Copyright (c) 2026, Amazon.com, Inc. or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+package gc.stress.ihash;
+
+/*
+ * @test id=g1
+ * @bug 8387150
+ * @summary Identity hash code stays stable across GC relocation when the
+ *          C2-compiled hashCode intrinsic recomputes an address-based hash.
+ * @requires vm.gc.G1
+ * @requires vm.compiler2.enabled
+ * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
+ * @run main/othervm -XX:+UseFourByteObjectHeaders -XX:+UseG1GC -Xms64m -Xmx64m
+ *      gc.stress.ihash.TestHashCodeC2Relocation
+ */
+
+/*
+ * @test id=serial
+ * @bug 8387150
+ * @summary Identity hash code stays stable across GC relocation when the
+ *          C2-compiled hashCode intrinsic recomputes an address-based hash.
+ * @requires vm.gc.Serial
+ * @requires vm.compiler2.enabled
+ * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
+ * @run main/othervm -XX:+UseFourByteObjectHeaders -XX:+UseSerialGC -Xms64m -Xmx64m
+ *      gc.stress.ihash.TestHashCodeC2Relocation
+ */
+
+/*
+ * @test id=zgc
+ * @bug 8387150
+ * @summary Identity hash code stays stable across GC relocation when the
+ *          C2-compiled hashCode intrinsic recomputes an address-based hash.
+ * @requires vm.gc.Z
+ * @requires vm.compiler2.enabled
+ * @requires vm.opt.UseFourByteObjectHeaders == null | vm.opt.UseFourByteObjectHeaders == true
+ * @run main/othervm -XX:+UseFourByteObjectHeaders -XX:+UseZGC -Xms64m -Xmx64m
+ *      gc.stress.ihash.TestHashCodeC2Relocation
+ */
+
+/*
+ * @test id=zgc-in-place
+ * @summary Verify actual hash expansion during concurrent and in-place ZGC relocation
+ * @requires vm.gc.Z & vm.compiler2.enabled
+ * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "aarch64")
+ * @run main/othervm -XX:+UseFourByteObjectHeaders
+ *      -XX:+UseZGC -XX:+UnlockDiagnosticVMOptions -XX:+ZVerifyForwarding
+ *      -XX:+ZStressRelocateInPlace -Xms64m -Xmx64m gc.stress.ihash.TestHashCodeC2Relocation
+ */
+
+// C2 must not hoist the raw address used by identityHashCode across a GC
+// safepoint. After relocation, the reference is updated but a raw address
+// computed before the safepoint would be stale.
+public class TestHashCodeC2Relocation {
+
+    // Keep GC honest; defeat allocation elimination of the churn garbage.
+    static volatile Object sink;
+
+    static final long ITERS = 2_000_000L;
+
+    /** Allocate short-lived garbage so the next young GC relocates our surviving object. */
+    static void churn() {
+        Object[] junk = new Object[64];
+        for (int k = 0; k < 64; k++) {
+            junk[k] = new byte[256];
+        }
+        sink = junk;
+    }
+
+    /**
+     * @return a non-null description of the first observed violation, or null if stable.
+     */
+    static String probe(long iters, boolean installBefore) {
+        for (long i = 0; i < iters; i++) {
+            Object o = new Object();
+            int h0, h1;
+            if (installBefore) {
+                h0 = System.identityHashCode(o);   // Hash before relocation.
+                churn();
+                h1 = System.identityHashCode(o);
+            } else {
+                churn();                           // Relocate before hashing.
+                h0 = System.identityHashCode(o);
+                h1 = System.identityHashCode(o);
+            }
+            if (h1 != h0) {
+                int settled = System.identityHashCode(o);
+                return "identityHashCode returned inconsistent values for a live object"
+                        + " at iter=" + i + ": h0=" + h0 + " h1=" + h1
+                        + " settledReread=" + settled;
+            }
+        }
+        return null;
+    }
+
+    public static void main(String[] args) {
+        // Warm up with the safe ordering first so that probe() is compiled by C2
+        // with the installBefore branch profiled -- the shape that exposed the bug.
+        String warmup = probe(ITERS, true);
+        if (warmup != null) {
+            throw new RuntimeException("[warmup/installBefore] " + warmup);
+        }
+
+        // Detection run: read the identity hash only after relocation.
+        String result = probe(ITERS, false);
+        if (result != null) {
+            throw new RuntimeException("[installAfter] " + result);
+        }
+
+        System.out.println("PASSED: identity hash codes stable across relocation");
+    }
+}

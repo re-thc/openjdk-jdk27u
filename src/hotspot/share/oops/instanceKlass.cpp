@@ -537,7 +537,8 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, Refe
   _nest_host_index(0),
   _init_state(allocated),
   _reference_type(reference_type),
-  _init_thread(nullptr)
+  _init_thread(nullptr),
+  _hash_offset(parser.hash_offset())
 {
   set_vtable_length(parser.vtable_size());
   set_access_flags(parser.access_flags());
@@ -3893,7 +3894,7 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
     }
   }
 
-  st->print_cr(BULLET"---- fields (total size %zu words):", oop_size(obj));
+  st->print_cr(BULLET"---- fields (total size %zu words):", oop_size(obj, obj->mark()));
   FieldPrinter print_field(st, obj);
   print_nonstatic_fields(&print_field);
 

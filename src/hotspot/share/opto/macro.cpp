@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1846,10 +1847,13 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
   if (!mark_node->is_Con()) {
     transform_later(mark_node);
   }
+  // With four-byte headers this word store also clears the array length or
+  // first field. The following length store and body initialization must remain
+  // ordered after it through rawmem. Prototype marks have zero upper bits.
   rawmem = make_store_raw(control, rawmem, object, oopDesc::mark_offset_in_bytes(), mark_node, TypeX_X->basic_type());
 
   if (!UseCompactObjectHeaders) {
-    rawmem = make_store_raw(control, rawmem, object, oopDesc::klass_offset_in_bytes(), klass_node, T_METADATA);
+    rawmem = make_store_raw(control, rawmem, object, Type::klass_offset(), klass_node, T_METADATA);
   }
   int header_size = alloc->minimum_header_size();  // conservatively small
 
@@ -2474,7 +2478,7 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
     if (_igvn.type(obj_or_subklass)->isa_klassptr()) {
       subklass = obj_or_subklass;
     } else {
-      Node* k_adr = basic_plus_adr(obj_or_subklass, oopDesc::klass_offset_in_bytes());
+      Node* k_adr = basic_plus_adr(obj_or_subklass, Type::klass_offset());
       subklass = _igvn.transform(LoadKlassNode::make(_igvn, C->immutable_memory(), k_adr, TypeInstPtr::KLASS));
     }
 
