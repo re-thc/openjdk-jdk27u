@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +28,7 @@
 #include "unittest.hpp"
 
 static markWord originalMark() { return markWord(markWord::lock_mask_in_place); }
-static markWord changedMark()  { return markWord(0x4711); }
+static markWord changedMark()  { return markWord(0x4712); }
 
 #define ASSERT_MARK_WORD_EQ(a, b) ASSERT_EQ((a).value(), (b).value())
 
@@ -55,6 +56,8 @@ TEST_VM(PreservedMarks, iterate_and_restore) {
   ASSERT_MARK_WORD_EQ(o1->mark(), changedMark());
   ASSERT_MARK_WORD_EQ(o2->mark(), changedMark());
 
+  FullGCForwarding::begin();
+
   // Push o1 and o2 to have their marks preserved.
   pm.push_if_necessary(o1, o1->mark());
   pm.push_if_necessary(o2, o2->mark());
@@ -68,9 +71,16 @@ TEST_VM(PreservedMarks, iterate_and_restore) {
   // make sure the mark is updated at the new location.
   pm.adjust_during_full_gc();
 
+  // Model compaction copying the source headers to the destinations.
+  // Restore reads hash control from the relocated object, never a forwardee.
+  o3->set_mark(changedMark());
+  o4->set_mark(changedMark());
+
   // Restore all preserved and verify that the changed
   // mark is now present at o3 and o4.
   pm.restore();
   ASSERT_MARK_WORD_EQ(o3->mark(), changedMark());
   ASSERT_MARK_WORD_EQ(o4->mark(), changedMark());
+
+  FullGCForwarding::end();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.nio.charset.StandardCharsets;
+import jdk.internal.misc.Unsafe;
 
 /*
  * @test
@@ -32,6 +33,7 @@ import java.nio.charset.StandardCharsets;
  * @summary Tests Compact String for maximum size strings
  * @requires os.maxMemory >= 8g & vm.bits == 64
  * @requires vm.flagless
+ * @modules java.base/jdk.internal.misc
  * @run junit/othervm/timeout=480 -XX:+CompactStrings -Xmx8g MaxSizeUTF16String
  * @run junit/othervm/timeout=480 -XX:-CompactStrings -Xmx8g MaxSizeUTF16String
  * @run junit/othervm/timeout=480 -Xcomp -Xmx8g MaxSizeUTF16String
@@ -128,15 +130,23 @@ public class MaxSizeUTF16String {
         final byte[] bytes1 = s.getBytes(StandardCharsets.UTF_8);
         assertEquals(3, bytes1.length, "UTF_8 encoded length of 0xffff");
 
-        int min = Integer.MAX_VALUE / bytes1.length - 1;
+        // With the default eight-byte object alignment, the VM reserves the
+        // byte-array header rounded up to a machine word from its length limit.
+        // Four-byte object headers permit one more byte than other layouts.
+        int headerWords = (int) ((Unsafe.ARRAY_BYTE_BASE_OFFSET + Unsafe.ADDRESS_SIZE - 1)
+                                / Unsafe.ADDRESS_SIZE);
+        int maxByteArrayLength = Integer.MAX_VALUE - headerWords;
+        int min = maxByteArrayLength / bytes1.length;
         int max = min + 3;
 
         // String of size min can be UTF_8 encoded.
         System.out.println("testing size: " + min);
         String s1 = s.repeat(min);
         byte[] bytes = s1.getBytes(StandardCharsets.UTF_8);
-        int remaining = Integer.MAX_VALUE - bytes.length;
-        assertTrue(remaining >= bytes1.length, "remainder too large: " + remaining);
+        assertEquals(min * bytes1.length, bytes.length);
+        int remaining = maxByteArrayLength - bytes.length;
+        assertTrue(remaining >= 0 && remaining < bytes1.length,
+                   "unexpected remainder: " + remaining);
 
         // Strings of size min+1...min+2, throw OOME
         // The resulting byte array would exceed implementation limits

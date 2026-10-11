@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +23,12 @@
  *
  */
 
+#include "../../share/runtime/globals.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/methodData.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/intrinsicnode.hpp"
@@ -224,9 +227,11 @@ inline Assembler::AvxVectorLen C2_MacroAssembler::vector_length_encoding(int vle
 // rax: tmp -- KILLED
 // t  : tmp -- KILLED
 void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
-                                  Register t, Register thread) {
+                                  Register t, Register thread, Register hash_temp) {
   assert(rax_reg == rax, "Used for CAS");
   assert_different_registers(obj, box, rax_reg, t, thread);
+  assert(!UseFourByteObjectHeaders || hash_temp == rcx, "Address hash rotation uses CL");
+  assert_different_registers(obj, box, rax_reg, t, thread, hash_temp);
 
   // Handle inflated monitor.
   Label inflated;
@@ -309,37 +314,94 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
       for (int i = 0; i < num_unrolled; i++) {
         movptr(monitor, Address(thread,  cache_offset + monitor_offset));
         cmpptr(obj, Address(thread, cache_offset));
-        jccb(Assembler::equal, monitor_found);
+        if (UseFourByteObjectHeaders) {
+          jcc(Assembler::equal, monitor_found);
+        } else {
+          jccb(Assembler::equal, monitor_found);
+        }
         cache_offset = cache_offset + OMCache::oop_to_oop_difference();
       }
 
-      // Look for the monitor in the table.
+      if (UseFourByteObjectHeaders) {
+        Label expanded, hash_ready;
+        movl(hash, Address(obj, oopDesc::mark_offset_in_bytes()));
+        movl(rax_reg, hash);
+        andl(rax_reg, markWord::lock_mask_in_place);
+        cmpl(rax_reg, markWord::monitor_value);
+        jcc(Assembler::notEqual, slow_path);
+        andl(hash, markWord::hashctrl_mask_in_place);
+        cmpl(hash, markWord::hashctrl_hashed_mask_in_place | markWord::hashctrl_expanded_mask_in_place);
+        jcc(Assembler::equal, expanded);
+        cmpl(hash, markWord::hashctrl_hashed_mask_in_place);
+        jcc(Assembler::notEqual, slow_path);
 
-      // Get the hash code.
-      movptr(hash, Address(obj, oopDesc::mark_offset_in_bytes()));
-      shrq(hash, markWord::hash_shift);
-      andq(hash, markWord::hash_mask);
+        if (hashCode == 2) {
+          movl(hash, 1);
+        } else {
+          assert(hashCode == 6, "Only address-derived or constant identity hashes");
+          // FastHash::get_hash32(low address, high address), using CL for
+          // its variable rotation. Both full products fit in 64 bits.
+          const int M = 0x337954D5;
+          movl(hash, obj);
+          movptr(hash_temp, obj);
+          shrq(hash_temp, 32);
+          movl(rax_reg, hash);
+          xorl(rax_reg, 0xAAAAAAAA);
+          imulq(rax_reg, rax_reg, M);  // U0:V0
+          xorl(hash, hash_temp);
+          imull(hash, hash, M);       // Q0
+          movptr(hash_temp, rax_reg);
+          shrq(rax_reg, 32);
+          xorl(hash, rax_reg);        // L1
+          movl(rax_reg, hash_temp);
+          xorl(rax_reg, M);           // P1
+          movl(hash_temp, hash);      // rotation distance
+          imulq(hash, hash, M);       // U1:V1
+          rorl(rax_reg);              // Q1
+          xorl(rax_reg, hash);
+          shrq(hash, 32);
+          xorl(hash, rax_reg);        // V1 ^ Q1 ^ U1
+          andl(hash, markWord::hash_mask);
+        }
+        jmp(hash_ready);
 
-      // Get the table and calculate the bucket's address.
-      lea(rax_reg, ExternalAddress(ObjectMonitorTable::current_table_address()));
-      movptr(rax_reg, Address(rax_reg));
-      andq(hash, Address(rax_reg, ObjectMonitorTable::table_capacity_mask_offset()));
-      movptr(rax_reg, Address(rax_reg, ObjectMonitorTable::table_buckets_offset()));
+        // Moved, hashed instances keep their identity hash in a hidden slot.
+        // Special instance/array layouts retain the runtime fallback.
+        bind(expanded);
+        load_klass(rax_reg, obj, hash);
+        cmpl(Address(rax_reg, Klass::kind_offset_in_bytes()), Klass::InstanceKlassKind);
+        jcc(Assembler::notEqual, slow_path);
+        movl(hash, Address(rax_reg, InstanceKlass::hash_offset_offset_in_bytes()));
+        movl(hash, Address(obj, hash, Address::times_1));
+        bind(hash_ready);
+      } else {
+        // Get the hash code.
+        movptr(hash, Address(obj, oopDesc::mark_offset_in_bytes()));
+        shrq(hash, markWord::hash_shift);
+        andq(hash, markWord::hash_mask);
+      }
 
-      // Read the monitor from the bucket.
-      movptr(monitor, Address(rax_reg, hash, Address::times_ptr));
+      { // Look for the monitor in the table.
+        // Get the table and calculate the bucket's address.
+        lea(rax_reg, ExternalAddress(ObjectMonitorTable::current_table_address()));
+        movptr(rax_reg, Address(rax_reg));
+        andq(hash, Address(rax_reg, ObjectMonitorTable::table_capacity_mask_offset()));
+        movptr(rax_reg, Address(rax_reg, ObjectMonitorTable::table_buckets_offset()));
 
-      // Check if the monitor in the bucket is special (empty, tombstone or removed)
-      cmpptr(monitor, ObjectMonitorTable::SpecialPointerValues::below_is_special);
-      jcc(Assembler::below, slow_path);
+        // Read the monitor from the bucket.
+        movptr(monitor, Address(rax_reg, hash, Address::times_ptr));
 
-      // Check if object matches.
-      movptr(rax_reg, Address(monitor, ObjectMonitor::object_offset()));
-      BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-      bs_asm->try_peek_weak_handle_in_nmethod(this, rax_reg, rax_reg, slow_path);
-      cmpptr(rax_reg, obj);
-      jcc(Assembler::notEqual, slow_path);
+        // Check if the monitor in the bucket is special (empty, tombstone or removed)
+        cmpptr(monitor, ObjectMonitorTable::SpecialPointerValues::below_is_special);
+        jcc(Assembler::below, slow_path);
 
+        // Check if object matches.
+        movptr(rax_reg, Address(monitor, ObjectMonitor::object_offset()));
+        BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+        bs_asm->try_peek_weak_handle_in_nmethod(this, rax_reg, rax_reg, slow_path);
+        cmpptr(rax_reg, obj);
+        jcc(Assembler::notEqual, slow_path);
+      }
       bind(monitor_found);
     }
     const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));

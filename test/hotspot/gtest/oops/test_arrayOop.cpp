@@ -22,6 +22,8 @@
  */
 
 #include "oops/arrayOop.hpp"
+#include "oops/typeArrayKlass.hpp"
+#include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "unittest.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -81,7 +83,11 @@ TEST_VM(arrayOopDesc, narrowOop) {
 
 TEST_VM(arrayOopDesc, base_offset) {
 #ifdef _LP64
-  if (UseCompactObjectHeaders) {
+  if (UseFourByteObjectHeaders) {
+    for (BasicType type : {T_BOOLEAN, T_BYTE, T_SHORT, T_CHAR, T_INT, T_FLOAT, T_LONG, T_DOUBLE, T_OBJECT, T_ARRAY}) {
+      EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(type), 8);
+    }
+  } else if (UseCompactObjectHeaders) {
     EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_BOOLEAN), 12);
     EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_BYTE),    12);
     EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_SHORT),   12);
@@ -120,5 +126,19 @@ TEST_VM(arrayOopDesc, base_offset) {
   EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_DOUBLE),  16);
   EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_OBJECT),  12);
   EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_ARRAY),   12);
+#endif
+}
+
+TEST_VM(arrayOopDesc, four_byte_large_hash_offset) {
+#ifdef _LP64
+  if (!UseFourByteObjectHeaders) return;
+  const int length = 300000000;
+  markWord mark = Universe::longArrayKlass()->prototype_header();
+  mark = markWord(mark.value() | (static_cast<uintptr_t>(length) << 32));
+  HeapWord memory[2] = {};
+  oop obj = cast_to_oop(memory);
+  obj->set_mark_full(mark);
+  EXPECT_EQ(Universe::longArrayKlass()->hash_offset_in_bytes(obj, mark),
+            size_t(8) + size_t(length) * sizeof(jlong));
 #endif
 }

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +34,14 @@ import java.net.URLConnection;
 public class OtherResources {
     public static void main(String[] args) throws IOException {
 
-        // check that java.desktop is not in the set of readable modules
+        // check that java.management is not in the set of readable modules
         try {
-            Class.forName("java.awt.Component");
+            Class.forName("java.lang.management.ManagementFactory");
             throw new RuntimeException("Need to run with --limit-modules java.base");
         } catch (ClassNotFoundException expected) { }
 
-        // access resource in the java.desktop module
-        URL url = new URL("jrt:/java.desktop/java/awt/Component.class");
+        // access resource in the java.management module
+        URL url = new URL("jrt:/java.management/java/lang/management/ManagementFactory.class");
         URLConnection uc = url.openConnection();
         System.out.println(uc.getInputStream());
     }
