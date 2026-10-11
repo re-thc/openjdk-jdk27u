@@ -23,12 +23,7 @@
 
 /*
  * @test
- * @summary Test the first compilation level that the tiered policy picks for a method that was
- *          never compiled before. With the default TieredLazyProfiling it is tier 2 and the method
- *          is promoted to tier 3 once it stays hot; with -XX:-TieredLazyProfiling it is tier 3; and
- *          a CompileCommand that excludes tier 2 for the method makes it start at tier 3 even with
- *          TieredLazyProfiling. The method is compiled by the policy itself, not enqueued through
- *          WhiteBox, and -Xbatch makes each compilation finish inside the triggering invocation.
+ * @summary Test the level of a method's first compilation with and without TieredLazyProfiling
  * @requires vm.compiler1.enabled & vm.compiler2.enabled & vm.flagless
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox

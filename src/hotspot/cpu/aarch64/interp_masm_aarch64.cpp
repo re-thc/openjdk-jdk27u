@@ -1606,9 +1606,8 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
   }
 }
 
-// Scale a resolved entry index by entry_size, returning the left shift to apply when
-// adding the index to the entries array. Every invoke, return and field access goes
-// through here, so the 24-byte product entries use index * 3 << 3 instead of mul.
+// Scales a resolved entry index by entry_size and returns the left shift to address the
+// entry with. Sizes of 3 * 2^k, such as the 24-byte entries of product builds, avoid mul.
 // Clobbers tmp only if entry_size is neither 2^k nor 3 * 2^k.
 int InterpreterMacroAssembler::scale_resolved_entry_index(Register index, Register tmp, int entry_size) {
   int pow2_size = entry_size;
