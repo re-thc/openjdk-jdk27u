@@ -50,8 +50,14 @@ def native():
                     "--static", "--zlib-compat", "--sprefix=jdk_release_"], cwd=release, env=env, check=True,
                    stdout=(OUT / "native-release-configure.log").open("w"), stderr=subprocess.STDOUT)
     run("native-release-build", ["make", "-j4", "libz.a"], release)
-    run("release-private-symbols", ["objcopy", "--redefine-sym", "free_inflate=jdk_release_free_inflate",
-         "--redefine-sym", "inflateInit2=jdk_release_inflateInit2", release / "libz.a"])
+    symbols = subprocess.check_output(["nm", "-g", "--defined-only", release / "libz.a"], text=True)
+    private_symbols = sorted({m.group(1) for line in symbols.splitlines()
+                              if (m := re.match(r"^[0-9a-fA-F]+\s+\w\s+(\S+)$", line))
+                              and not m.group(1).startswith("jdk_release_")})
+    symbol_map = area / "release-symbols.txt"
+    symbol_map.write_text("".join(symbol + " jdk_release_private_" + symbol + "\n"
+                                  for symbol in private_symbols))
+    run("release-private-symbols", ["objcopy", "--redefine-syms=" + str(symbol_map), release / "libz.a"])
     subprocess.run(["bash", str(area / ("zlib-ng-" + ng_revision) / "configure"),
                     "--static", "--zlib-compat", "--sprefix=jdk_ng_"], cwd=ng, env=env, check=True,
                    stdout=(OUT / "native-ng-configure.log").open("w"), stderr=subprocess.STDOUT)
