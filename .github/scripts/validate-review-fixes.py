@@ -35,7 +35,10 @@ def native():
     ng_revision = "f18efb822a2fc24a1209a836d51bb217476fc08e"
     urllib.request.urlretrieve("https://codeload.github.com/zlib-ng/zlib-ng/tar.gz/" + ng_revision, ng_archive)
     print("ZLIB_NG_REVISION", ng_revision, flush=True)
-    print("ZLIB_NG_ARCHIVE_SHA256", hashlib.sha256(ng_archive.read_bytes()).hexdigest(), flush=True)
+    ng_digest = hashlib.sha256(ng_archive.read_bytes()).hexdigest()
+    if ng_digest != "acf89dcbbb22b263a29728d8f24fe3e57a7fb7d3058398ec904bf7dcbcf54895":
+        raise RuntimeError("zlib-ng development archive checksum")
+    print("ZLIB_NG_ARCHIVE_SHA256", ng_digest, flush=True)
     with tarfile.open(ng_archive) as tf: tf.extractall(area, filter="data")
     release = area / "ng-release"
     release.mkdir(exist_ok=True)
@@ -47,6 +50,8 @@ def native():
                     "--static", "--zlib-compat", "--sprefix=jdk_release_"], cwd=release, env=env, check=True,
                    stdout=(OUT / "native-release-configure.log").open("w"), stderr=subprocess.STDOUT)
     run("native-release-build", ["make", "-j4", "libz.a"], release)
+    run("release-private-symbols", ["objcopy", "--redefine-sym", "free_inflate=jdk_release_free_inflate",
+         "--redefine-sym", "inflateInit2=jdk_release_inflateInit2", release / "libz.a"])
     subprocess.run(["bash", str(area / ("zlib-ng-" + ng_revision) / "configure"),
                     "--static", "--zlib-compat", "--sprefix=jdk_ng_"], cwd=ng, env=env, check=True,
                    stdout=(OUT / "native-ng-configure.log").open("w"), stderr=subprocess.STDOUT)
