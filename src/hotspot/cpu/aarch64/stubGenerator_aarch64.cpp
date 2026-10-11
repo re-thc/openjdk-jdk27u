@@ -8164,7 +8164,8 @@ class StubGenerator: public StubCodeGenerator {
     Label use_simd;
     __ cmpw(c_rarg2, 65536);
     __ br(Assembler::LT, use_simd);
-    __ far_jump(RuntimeAddress(bulk_adler));
+    __ lea(rscratch1, RuntimeAddress(bulk_adler));
+    __ br(rscratch1);
     __ bind(use_simd);
 #endif
 
