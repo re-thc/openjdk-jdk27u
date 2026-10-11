@@ -1,7 +1,7 @@
 # ZIP intrinsics and zlib-ng
 
 Linux x86-64 and AArch64 builds use zlib-ng for ZIP compression, decompression
-and native Adler32/CRC32 calls. There is no runtime backend selection.
+and native Adler32/CRC32 calls.
 
 `-XX:+UseZipIntrinsics` is the default. C1 and C2 use a shared GC-safe runtime
 call for supported Deflater/Inflater buffer shapes. `-XX:-UseZipIntrinsics`
@@ -12,7 +12,12 @@ handling. Buffer positions, counters, dictionaries, flush operations, parameter
 changes and reset preserve the Java ZIP API semantics. Interpreter compression
 uses JNI. Direct-to-direct Inflater calls and x86-64 mixed-buffer Inflater calls
 use JNI. Deflater uses JNI for chunks at most 1 KiB and, on AArch64, chunks of at
-least 64 KiB. These thresholds control call overhead, not the compression library.
+least 64 KiB. All these call paths use zlib-ng.
+
+C2 bulk Adler32 calls of at least 64 KiB call zlib-ng directly on AArch64 and
+x86-64 CPUs with AVX-512 VNNI. Short inputs keep the existing HotSpot SIMD
+kernel. Interpreter and C1 Adler32 use zlib-ng through JNI. Existing CRC32 and
+CRC32C intrinsics are unchanged.
 
 Native consumers include ZIP/JAR class loading, CDS checksums, jimage
 decompression and compressed heap dumps. Java ZIP/GZIP, ZIP filesystem and jlink

@@ -146,8 +146,8 @@ public class TestZlibNGSmallStreams {
                     try (Deflater d = new Deflater(level)) {
                         for (int reuse = 0; reuse < 3; reuse++) {
                             d.reset();
-                            // A large input on a call that cannot progress must not
-                            // select zlib-ng for the later tiny streaming operation.
+                            // Zero-capacity calls must leave input and output
+                            // counters unchanged before the tiny stream starts.
                             d.setInput(new byte[8192]);
                             ByteBuffer empty = direct ? ByteBuffer.allocateDirect(0) : ByteBuffer.allocate(0);
                             if (d.deflate(empty) != 0 || d.getBytesRead() != 0 ||

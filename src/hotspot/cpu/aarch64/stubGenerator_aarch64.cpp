@@ -57,6 +57,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/intpow.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/zipLibrary.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
@@ -8145,6 +8146,9 @@ class StubGenerator: public StubCodeGenerator {
    *   c_rarg0   - int adler result
    */
   address generate_updateBytesAdler32() {
+#ifdef LINUX
+    address bulk_adler = ZipLibrary::adler32_address();
+#endif
     StubId stub_id = StubId::stubgen_updateBytesAdler32_id;
     int entry_count = StubInfo::entry_count(stub_id);
     assert(entry_count == 1, "sanity check");
@@ -8155,6 +8159,14 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
     start = __ pc();
+
+#ifdef LINUX
+    Label use_simd;
+    __ cmpw(c_rarg2, 65536);
+    __ br(Assembler::LT, use_simd);
+    __ far_jump(RuntimeAddress(bulk_adler));
+    __ bind(use_simd);
+#endif
 
     Label L_simple_by1_loop, L_nmax, L_nmax_loop, L_by16, L_by16_loop, L_by1_loop, L_do_mod, L_combine, L_by1;
 

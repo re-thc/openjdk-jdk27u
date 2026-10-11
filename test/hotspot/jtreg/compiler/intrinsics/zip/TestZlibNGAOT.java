@@ -39,6 +39,7 @@
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.zip.Adler32;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
@@ -111,10 +112,21 @@ class ZlibNGAOTApp {
         for (int i = 0; i < input.length; i++) {
             input[i] = (byte) (i % 23);
         }
+        Adler32 checksum = new Adler32();
+        // The scalar path provides an independent reference for the bulk call.
+        for (byte value : input) {
+            checksum.update(value);
+        }
+        long expectedChecksum = checksum.getValue();
         byte[] compressed = new byte[input.length + 1024];
         byte[] restored = new byte[input.length];
         try (Deflater deflater = new Deflater(); Inflater inflater = new Inflater()) {
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 10000; i++) {
+                checksum.reset();
+                checksum.update(input);
+                if (checksum.getValue() != expectedChecksum) {
+                    throw new AssertionError("Incorrect bulk checksum");
+                }
                 deflater.reset();
                 deflater.setInput(input);
                 deflater.finish();

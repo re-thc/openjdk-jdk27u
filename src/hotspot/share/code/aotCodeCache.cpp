@@ -53,6 +53,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/zipRuntime.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/zipLibrary.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
@@ -1869,7 +1870,7 @@ void AOTCodeReader::read_dbg_strings(DbgStrings& dbg_strings) {
 // [_stubs_base, _stubs_base + _stubs_max -1], [_c_str_base,
 // _c_str_base + _c_str_max -1],
 
-#define _extrs_max 382
+#define _extrs_max 383
 #define _stubs_max static_cast<int>(EntryId::NUM_ENTRYIDS)
 
 #define _extrs_base 0
@@ -1928,6 +1929,10 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_StackOverflowError);
     ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_delayed_StackOverflowError);
   }
+
+#if defined(LINUX) && (defined(AMD64) || defined(AARCH64))
+  ADD_EXTERNAL_ADDRESS(ZipLibrary::adler32_address());
+#endif
 
   // Record addresses of VM runtime methods
   ADD_EXTERNAL_ADDRESS(SharedRuntime::fixup_callers_callsite);
