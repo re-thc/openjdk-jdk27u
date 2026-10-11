@@ -1208,7 +1208,8 @@ CompLevel CompilationPolicy::trained_transition(const methodHandle& method, Comp
  *    This case occurs when the load on C2 is deemed too high. So, instead of transitioning
  *    into state 3 directly and over-profiling while a method is in the C2 queue we transition to
  *    level 2 and wait until the load on C2 decreases. This path is disabled for OSRs.
- *    With TieredLazyProfiling it is also taken by every method that has never been compiled before.
+ *    Unless -XX:-TieredLazyProfiling is set, it is also the default path for a method's first
+ *    compilation.
  *
  * c. 0 -> (3->2) -> 4.
  *    In this case we enqueue a method for compilation at level 3, but the C1 queue is long enough
@@ -1298,6 +1299,19 @@ CompLevel CompilationPolicy::standard_transition(const methodHandle& method, Com
   return next_level;
 }
 
+// With lazy profiling, a method that has never been compiled is first compiled at level 2:
+// most methods never reach C2, so running them in the slower fully profiled code is wasted.
+// They move on to level 3 only if they stay hot, see transition_from_limited_profile().
+// Recompilations (e.g. after a deoptimization) still go straight to level 3, and so do methods
+// that a CompileCommand excludes from level 2 or 3: an excluded level 2 compile would make the
+// method not C1 compilable, and an excluded promotion would keep it at level 2, away from C2.
+static bool should_profile_lazily(const methodHandle& method) {
+  return TieredLazyProfiling &&
+         method->highest_comp_level() == CompLevel_none &&
+         !CompilerOracle::should_exclude(method, CompLevel_limited_profile) &&
+         !CompilerOracle::should_exclude(method, CompLevel_full_profile);
+}
+
 template<typename Predicate>
 CompLevel CompilationPolicy::transition_from_none(const methodHandle& method, CompLevel cur_level, bool disable_feedback) {
   precond(cur_level == CompLevel_none);
@@ -1315,14 +1329,10 @@ CompLevel CompilationPolicy::transition_from_none(const methodHandle& method, Co
     // we introduce a feedback on the C2 queue size. If the C2 queue is sufficiently long
     // we choose to compile a limited profiled version and then recompile with full profiling
     // when the load on C2 goes down.
-    // With lazy profiling we always do that for a method that has never been compiled
-    // before: most methods never reach C2, so running them in the slower fully profiled
-    // code is wasted. They move on to level 3 only if they stay hot, see
-    // transition_from_limited_profile(). Recompilations (e.g. after a deoptimization)
-    // and old methods still go straight to level 3.
-    const bool lazy_profiling = TieredLazyProfiling && method->highest_comp_level() == CompLevel_none;
+    // With lazy profiling we always do that for a method that is compiled for the first time,
+    // see should_profile_lazily().
     if (!disable_feedback &&
-        (lazy_profiling || CompileBroker::queue_size(CompLevel_full_optimization) > Tier3DelayOn * compiler_count(CompLevel_full_optimization))) {
+        (should_profile_lazily(method) || CompileBroker::queue_size(CompLevel_full_optimization) > Tier3DelayOn * compiler_count(CompLevel_full_optimization))) {
       next_level = CompLevel_limited_profile;
     } else {
       next_level = CompLevel_full_profile;

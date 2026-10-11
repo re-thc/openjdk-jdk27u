@@ -229,7 +229,7 @@
           "allow methods compiled at tier 2 transition to tier 3")          \
           range(0, max_jint)                                                \
                                                                             \
-  product(bool, TieredLazyProfiling, false,                                 \
+  product(bool, TieredLazyProfiling, true,                                  \
           "Compile methods at tier 2 first and recompile them at tier 3 "   \
           "only once they stay hot")                                        \
                                                                             \

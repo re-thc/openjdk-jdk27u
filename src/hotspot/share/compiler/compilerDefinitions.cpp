@@ -338,6 +338,13 @@ void CompilerConfig::set_compilation_policy_flags() {
 
   }
 
+  // Lazily profiled methods move from tier 2 to tier 3 at a tier 2 invocation notification,
+  // see CompilationPolicy::transition_from_limited_profile(). Notify less often, so that only
+  // methods that stay hot pay for full profiling.
+  if (TieredLazyProfiling && FLAG_IS_DEFAULT(Tier2InvokeNotifyFreqLog)) {
+    FLAG_SET_DEFAULT(Tier2InvokeNotifyFreqLog, 14);
+  }
+
   // Scale tiered compilation thresholds.
   // CompileThresholdScaling == 0.0 is equivalent to -Xint and leaves compilation thresholds unchanged.
   if (!FLAG_IS_DEFAULT(CompileThresholdScaling) && CompileThresholdScaling > 0.0) {

@@ -105,6 +105,9 @@ public class TestVMProcess {
         cmds.add(bootClassPath);
         cmds.add("-XX:+UnlockDiagnosticVMOptions");
         cmds.add("-XX:+WhiteBoxAPI");
+        // Keep the upstream tier policy: tests count on methods reaching C2 after a fixed number of invocations,
+        // which lazy profiling delays. Flags from jtreg or the test itself come later and can turn it back on.
+        cmds.add("-XX:-TieredLazyProfiling");
         // Ignore CompileCommand flags which have an impact on the profiling information.
         List<String> jtregVMFlags = Arrays.stream(Utils.getTestJavaOpts()).filter(s -> !s.contains("CompileThreshold")).toList();
         if (!PREFER_COMMAND_LINE_FLAGS) {

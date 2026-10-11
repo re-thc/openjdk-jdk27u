@@ -29,6 +29,7 @@
  * @requires vm.compMode != "Xcomp"
  * @run main/othervm -XX:-BackgroundCompilation -XX:TieredStopAtLevel=3 -XX:TypeProfileLevel=111
  *                   -XX:Tier3InvocationThreshold=200 -XX:Tier0InvokeNotifyFreqLog=7
+ *                   -XX:-TieredLazyProfiling
  *                   compiler.profiling.TestUnexpectedProfilingMismatch
  */
 
