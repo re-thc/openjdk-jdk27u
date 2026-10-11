@@ -49,7 +49,7 @@ jobs:
           python3 .github/scripts/qualify-zip-adler.py prepare
           bash configure --with-conf-name=zip-adler --with-boot-jdk="$zip_boot_jdk" --with-debug-level=release --with-native-debug-symbols=none --with-zlib=system
           make CONF=zip-adler JOBS=4 hotspot java.base-libs
-          cp build/zip-adler/hotspot/variant-server/libjvm/libjvm.so validation/new-jdk/lib/server/
+          cp build/zip-adler/support/modules_libs/java.base/server/libjvm.so validation/new-jdk/lib/server/
           cp build/zip-adler/support/modules_libs/java.base/libzip.so validation/new-jdk/lib/
           validation/new-jdk/bin/java -Xshare:off -version
       - name: Build assertion-enabled VM for AOT and GC checks
@@ -60,7 +60,7 @@ jobs:
           bash configure --with-conf-name=zip-adler-debug --with-boot-jdk="$PWD/validation/old-jdk" --with-debug-level=fastdebug --with-native-debug-symbols=none --with-zlib=system
           make CONF=zip-adler-debug JOBS=4 hotspot
           cp -a validation/new-jdk validation/debug-jdk
-          cp build/zip-adler-debug/hotspot/variant-server/libjvm/libjvm.so validation/debug-jdk/lib/server/
+          cp build/zip-adler-debug/support/modules_libs/java.base/server/libjvm.so validation/debug-jdk/lib/server/
       - name: Verify checksum boundaries, GC and AOT restoration
         run: python3 .github/scripts/qualify-zip-adler.py tests
       - name: Compare checksum kernels on the same runner
