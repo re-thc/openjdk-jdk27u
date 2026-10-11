@@ -1,0 +1,121 @@
+name: ZIP backend qualification
+on:
+  push:
+    branches: [pr/zlib-ng-validation]
+    paths:
+      - 'src/**'
+      - 'make/**'
+      - 'test/**'
+      - '.github/scripts/qualify-zip-single-backend.py'
+      - '.github/scripts/validate-zip-backend.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: zip-review-fixes-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  jtreg:
+    runs-on: ubuntu-24.04
+    outputs:
+      jtreg-version: ${{ steps.version.outputs.value }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/config
+        id: version
+        with:
+          var: JTREG_VERSION
+      - uses: ./.github/actions/build-jtreg
+  full:
+    needs: jtreg
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux-x64
+          - runner: ubuntu-24.04-arm
+            platform: linux-aarch64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/get-bootjdk
+        id: boot
+        with:
+          platform: ${{ matrix.platform }}
+      - uses: actions/download-artifact@v8
+        with:
+          name: bundles-jtreg-${{ needs.jtreg.outputs.jtreg-version }}
+          path: jtreg/installed
+      - name: Install toolchain and create nondefault target sysroot
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-14 g++-14 autoconf gawk make python3 zlib1g-dev libasound2-dev libcups2-dev libfontconfig1-dev libx11-dev libxext-dev libxrandr-dev libxrender-dev libxt-dev libxtst-dev
+          mkdir -p validation/results validation/sysroot/usr
+          cp -a /usr/include validation/sysroot/usr/
+          ln -s /usr/lib validation/sysroot/usr/lib
+          ln -s /lib validation/sysroot/lib
+          ln -s /lib64 validation/sysroot/lib64
+          echo "#define ZIP_SYSROOT_PROBE 1" > validation/sysroot/usr/include/zip_sysroot_probe.h
+          lscpu > validation/results/cpu.txt
+          git rev-parse HEAD > validation/results/source.txt
+          python3 -m py_compile .github/scripts/qualify-zip-single-backend.py
+      - name: Verify pinned vendor import and production diff
+        run: |
+          curl -fsSL https://codeload.github.com/zlib-ng/zlib-ng/tar.gz/f18efb822a2fc24a1209a836d51bb217476fc08e -o validation/zlib-ng.tar.gz
+          python3 make/scripts/update-zlib-ng.py --archive validation/zlib-ng.tar.gz --revision f18efb822a2fc24a1209a836d51bb217476fc08e --sha256 acf89dcbbb22b263a29728d8f24fe3e57a7fb7d3058398ec904bf7dcbcf54895
+          git diff --exit-code -- src/java.base/share/native/libzip/zlib-ng src/java.base/share/legal/zlib-ng.md
+          git fetch --no-tags --depth=1 origin 87edd79d3104ff502f7befec034716b081436f49
+          git diff 87edd79d3104ff502f7befec034716b081436f49 --check -- src make test doc ':(exclude)src/java.base/share/native/libzip/zlib-ng'
+          git ls-tree HEAD src make test doc > validation/results/production-trees.txt
+      - name: Build full sysroot image and probe libzip target flags
+        id: build
+        env:
+          CC: gcc-14
+          CXX: g++-14
+          BOOT_JDK: ${{ steps.boot.outputs.path }}
+        run: |
+          bash configure --with-conf-name=zip-review --with-boot-jdk="$BOOT_JDK" --with-zlib=system --with-debug-level=release --with-native-debug-symbols=none --with-jmod-compress=zip-1 --with-sysroot="$PWD/validation/sysroot"
+          make CONF=zip-review JOBS=4 images
+          cp build/zip-review/spec.gmk validation/results/spec-before-probe.gmk
+          echo "CFLAGS_JDKLIB += -include zip_sysroot_probe.h" >> build/zip-review/spec.gmk
+          make CONF=zip-review JOBS=4 java.base-libs-only
+          cp build/zip-review/support/modules_libs/java.base/libzip.so build/zip-review/images/jdk/lib/
+          grep -- "-include zip_sysroot_probe.h" build/zip-review/support/native/zlib-ng/Makefile
+          grep -- "$PWD/validation/sysroot" build/zip-review/support/native/zlib-ng/Makefile
+          cp build/zip-review/spec.gmk validation/results/probe-spec.gmk
+          cp build/zip-review/spec.gmk validation/results/spec.gmk
+          cp build/zip-review/support/native/zlib-ng/Makefile validation/results/ng-Makefile
+          build/zip-review/images/jdk/bin/java -XX:+PrintFlagsFinal -version > validation/results/default-flags.txt 2>&1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 87edd79d3104ff502f7befec034716b081436f49
+          path: validation/baseline
+      - name: Build matching upstream stock-zlib image
+        env:
+          CC: gcc-14
+          CXX: g++-14
+          BOOT_JDK: ${{ steps.boot.outputs.path }}
+        run: |
+          zip_boot_jdk="$(realpath "$BOOT_JDK")"
+          zip_sysroot="$PWD/validation/sysroot"
+          cd validation/baseline
+          bash configure --with-conf-name=zip-baseline --with-boot-jdk="$zip_boot_jdk" --with-zlib=bundled --with-debug-level=release --with-native-debug-symbols=none --with-jmod-compress=zip-1 --with-sysroot="$zip_sysroot"
+          make CONF=zip-baseline JOBS=4 images
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: build/zip-review/images/jdk
+          key: zip-review-image-v3-${{ matrix.platform }}-${{ github.sha }}
+      - name: Run ZIP jtreg, GC and JNI checks
+        run: python3 .github/scripts/validate-zip-backend.py tests --jdk build/zip-review/images/jdk --jtreg jtreg/installed
+      - name: Qualify ZIP call paths and checksum implementations
+        if: success()
+        run: python3 .github/scripts/qualify-zip-single-backend.py build/zip-review/images/jdk validation/baseline/build/zip-baseline/images/jdk
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: review-fixes-${{ matrix.platform }}
+          path: validation/results
+          retention-days: 14
