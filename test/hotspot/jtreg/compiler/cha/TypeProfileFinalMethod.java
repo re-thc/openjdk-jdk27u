@@ -48,7 +48,6 @@ public class TypeProfileFinalMethod {
            "-Xbatch", "-XX:-UseOnStackReplacement",
            "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
            "-XX:Tier3InvocationThreshold=200", "-XX:Tier4InvocationThreshold=5000",
-           "-XX:-TieredLazyProfiling",
            "-XX:CompileCommand=CompileOnly," + Launcher.class.getName() + "::test*",
            Launcher.class.getName());
        OutputAnalyzer output = ProcessTools.executeProcess(pb);

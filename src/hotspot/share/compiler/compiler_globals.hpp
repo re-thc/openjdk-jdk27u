@@ -229,10 +229,6 @@
           "allow methods compiled at tier 2 transition to tier 3")          \
           range(0, max_jint)                                                \
                                                                             \
-  product(bool, TieredLazyProfiling, true,                                  \
-          "Compile methods at tier 2 first and recompile them at tier 3 "   \
-          "only once they stay hot")                                        \
-                                                                            \
   product(intx, Tier3LoadFeedback, 5,                                       \
           "Tier 3 thresholds will increase twofold when C1 queue size "     \
           "reaches this amount per compiler thread"                         \
