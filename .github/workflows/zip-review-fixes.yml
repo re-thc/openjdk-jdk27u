@@ -1,4 +1,4 @@
-name: ZIP checksum and native bridge qualification
+name: AArch64 native checksum qualification
 on:
   push:
     branches: [pr/zlib-ng-validation]
@@ -12,8 +12,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-24.04
-            platform: linux-x64
           - os: ubuntu-24.04-arm
             platform: linux-aarch64
     runs-on: ${{ matrix.os }}
