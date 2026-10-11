@@ -1,7 +1,7 @@
 # Native decimal conversion with fast_float
 
-This change vendors fast_float **8.3.0**, tag commit
-`b0ab987b3dfdde13fa1915f65ef2a5c068d9208c`, under its MIT license.
+This change vendors fast_float **8.3.2**, tag commit
+`42f254836ee416ffcf2f4e6576260003ac33d48c`, under its MIT license.
 The library is header-only and has no runtime dependencies. The release and
 commit are recorded in `make/data/fast_float/version.txt`; the distributed
 license is `src/java.base/share/legal/fast_float.md`.
@@ -11,12 +11,6 @@ license is `src/java.base/share/legal/fast_float.md`.
 Native decimal conversion is **enabled by default** on all platforms. The
 interpreter and C1 have intrinsic ports for little-endian x86-64 and AArch64.
 Other interpreter/C1 ports, including Zero, use the portable JNI parser.
-Using this fork requires no enabling flags. Default-on JNI on other ports is
-a policy choice, not a measured speedup on those machines. There is no
-backend-specific small-String gate; forced JNI measurements on x86-64 quantify
-transition costs separately from intrinsic measurements. They cannot establish
-performance on unmeasured ports. Native Windows and ARM64 performance remains
-unmeasured.
 `-XX:-UseFastFloatIntrinsics` opts out and selects the existing Java implementation.
 The two intrinsic IDs, `_parseFastFloat` and `_parseFastFloatDigits`, also obey
 `DisableIntrinsic` and `ControlIntrinsic`. Disabling an intrinsic alone leaves
@@ -114,23 +108,30 @@ representation would regress cold conversions. Native conversion neither
 allocates nor retains an additional String. Large cached representations
 also stay on the existing arithmetic path.
 
+## Integer parsing
+
+fast_float also provides signed and unsigned integer `from_chars` overloads,
+including 32-bit and 64-bit types and radices 2 through 36. No additional
+library is required for those conversions. This integration currently uses
+its float/double APIs; Integer/Long parsing retains Java's Unicode digit and
+overflow handling. Arbitrary-precision BigInteger parsing requires a separate
+algorithm.
+
 ## Updating the vendor copy
 
-1. Check upstream releases and check out a clean release tag (8.3.0 or newer).
+1. Check upstream releases and check out a clean release tag (8.3.2 or newer).
 2. Run `python3 make/scripts/update-fast-float.py /path/to/fast_float`.
 3. Review the header and license diff and the recorded tag/commit. The updater
-   rejects tracked local changes and applies the recorded layout patch before
-   installing headers. If upstream has incorporated the patch, review and
-   remove it from the updater rather than applying a second field move.
+   rejects modified upstream headers and licenses and copies the release headers
+   without local patches.
 4. Build, run the differential and existing parsing/math/format tests, and
    repeat interpreter/C1/C2/JNI benchmarks before committing an update.
 
-The local patch moves `parsed_number_string_t::error` next to `lastmatch`,
-reducing the structure from 72 to 64 bytes on the tested 64-bit ABI. This is
-upstream issue [#418](https://github.com/fastfloat/fast_float/issues/418).
-It changes layout only; parsing logic and error reporting are unchanged.
-The original upstream headers can be compared with the vendor copy using
-`make/data/fast_float/layout.patch`.
+Upstream incorporated the field-layout fix for
+[#418](https://github.com/fastfloat/fast_float/issues/418) in 8.3.1, keeping
+`parsed_number_string_t` at 64 bytes on the tested 64-bit ABI. The obsolete
+local patch has been removed. Release 8.3.2 also fixes signed overflow in
+`integer_times_pow10` and classification of negative wide-character units.
 
 Alternating GCC measurements did not establish the MSVC speedup reported
 upstream. The [layout control source](benchmarks/decimal-original-baseline/fast-float-layout.cpp)

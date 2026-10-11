@@ -8,10 +8,11 @@ Ratios compare original/default means; values above 1 indicate lower conversion
 time in the default-on image.
 
 [source-manifest.json](source-manifest.json) identifies the measured sources,
-VMs and modules by commit and SHA-256. These measurements precede the
-base-branch synchronization at `8d8d71a0452`; the decimal algorithms are
-unchanged. They qualify the recorded images, rather than a newly timed build. The original image has exploded modules and the comparison image
-has packaged modules. Both run with CDS disabled and warmed conversion code.
+VMs and modules by commit and SHA-256. The comparison uses fast_float 8.3.0
+and Żmij v1.2. These measurements predate the current base and vendor updates;
+they qualify the recorded images. The original image has exploded modules
+and the comparison image has packaged modules. Both run with CDS disabled
+and warmed conversion code.
 
 ## Measurement protocol
 

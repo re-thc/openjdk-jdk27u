@@ -1,4 +1,4 @@
-## fast_float v8.3.0
+## fast_float v8.3.2
 
 ### fast_float License
 
