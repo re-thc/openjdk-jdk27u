@@ -4881,7 +4881,6 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
     set_control(if_true);
 
     Node* obj_klass = load_object_klass(obj);
-    Node* hash_addr;
     const TypeKlassPtr* klass_t = _gvn.type(obj_klass)->isa_klassptr();
     bool load_offset_runtime = true;
 
@@ -4891,7 +4890,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
         if (!ciKlass->is_mirror_instance_klass() && !ciKlass->is_reference_instance_klass()) {
           // We know the InstanceKlass, load hash_offset from there at compile-time.
           int hash_offset = ciKlass->hash_offset_in_bytes();
-          hash_addr = basic_plus_adr(obj, hash_offset);
+          Node* hash_addr = basic_plus_adr(obj, hash_offset);
           Node* loaded_hash = make_load(control(), hash_addr, TypeInt::INT, T_INT, MemNode::unordered);
           result_val->init_req(_fast_path2, loaded_hash);
           result_reg->init_req(_fast_path2, control());

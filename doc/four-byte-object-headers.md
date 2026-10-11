@@ -11,9 +11,10 @@ existing defaults; explicit four-byte requests there are disabled with a
 warning. The flag is unavailable in 32-bit builds.
 
 `UseFourByteObjectHeaders` is an ordinary product option and requires no
-experimental unlock. An explicit request for four-byte headers implies
-`UseCompactObjectHeaders`; an explicit legacy-layout request disables the
-four-byte default. Header opt-outs also work through `JAVA_TOOL_OPTIONS`,
+experimental unlock. Four-byte headers imply `UseCompactObjectHeaders`.
+An explicit `-XX:-UseCompactObjectHeaders` disables four-byte headers; combining
+it with `-XX:+UseFourByteObjectHeaders` also produces a warning. Header opt-outs
+also work through `JAVA_TOOL_OPTIONS`,
 `_JAVA_OPTIONS`, `JDK_JAVA_OPTIONS` and VM flag files, including inherited AOT
 assembly options. Object alignment remains configurable; its default is
 eight bytes. Smaller headers reduce allocation and retained object size when
@@ -43,6 +44,11 @@ object and collector alignment. A hashed object may therefore lose its
 initial size saving after movement. Unhashed objects retain their smaller
 size. Explicit `-XX:hashCode=2` is also supported for tests. Other explicit
 hash algorithms disable the four-byte layout with a warning.
+
+Serial and G1 full compaction temporarily allocate a native forwarding table
+with one eight-byte entry per 4 KiB of reserved heap, rounded up to a power of
+two. A 256 GiB reserved heap therefore needs 512 MiB for this table, plus any
+fallback forwarding entries. The tables are freed after compaction.
 
 ZGC handles this growth during relocation, including in-place relocation.
 The old layouts retain their original forwarding encoding. C1 and C2 use the

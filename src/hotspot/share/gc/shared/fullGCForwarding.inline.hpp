@@ -103,7 +103,10 @@ uintptr_t FullGCForwardingImpl<BITS>::encode_forwarding(HeapWord* from, HeapWord
   }
   uintptr_t encoded = (offset << OFFSET_BITS_SHIFT) | markWord::marked_value;
 
-  assert(is_fallback(encoded) || to == decode_forwarding(from, encoded), "must be reversible: " PTR_FORMAT " -> " PTR_FORMAT ", reversed: " PTR_FORMAT ", encoded: " INTPTR_FORMAT ", to_region_base: " PTR_FORMAT ", from_block_idx: %lu", p2i(from), p2i(to), p2i(decode_forwarding(from, encoded)), encoded, p2i(to_region_base), from_block_idx);
+  assert(is_fallback(encoded) || to == decode_forwarding(from, encoded),
+         "must be reversible: " PTR_FORMAT " -> " PTR_FORMAT ", reversed: " PTR_FORMAT
+         ", encoded: " INTPTR_FORMAT ", to_region_base: " PTR_FORMAT ", from_block_idx: " SIZE_FORMAT,
+         p2i(from), p2i(to), p2i(decode_forwarding(from, encoded)), encoded, p2i(to_region_base), from_block_idx);
   assert((encoded & ~AVAILABLE_BITS_MASK) == 0, "must encode to available bits");
   return encoded;
 }
@@ -148,7 +151,6 @@ void FullGCForwardingImpl<BITS>::forward_to(oop obj, oop fwd) {
 #ifdef _LP64
   assert(_bases_table != nullptr, "expect sliding forwarding initialized");
   forward_to_impl(obj, fwd);
-  // assert(forwardee(obj) == fwd, "must be forwarded to correct forwardee, obj: " PTR_FORMAT ", forwardee(obj): " PTR_FORMAT ", fwd: " PTR_FORMAT ", mark: " INTPTR_FORMAT ", num-regions: %lu, base: " PTR_FORMAT ", OFFSET_MASK: " INTPTR_FORMAT ", encoded: " PTR_FORMAT ", biased-base: " PTR_FORMAT ", heap-start: " PTR_FORMAT, p2i(obj), p2i(forwardee(obj)), p2i(fwd), obj->mark().value(), _num_regions, p2i(_bases_table[0]), OFFSET_MASK, encode_forwarding(cast_from_oop<HeapWord*>(obj), cast_from_oop<HeapWord*>(fwd)), p2i(_biased_bases[biased_region_index_containing(cast_from_oop<HeapWord*>(obj))]), p2i(_heap_start));
 #else
   obj->forward_to(fwd);
 #endif

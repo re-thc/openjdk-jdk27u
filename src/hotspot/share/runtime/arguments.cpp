@@ -3480,9 +3480,11 @@ jint Arguments::apply_ergo() {
   // A legacy-layout request from arguments, environment variables or a flag
   // file also disables the fork default. AOT child VMs inherit their options
   // through JAVA_TOOL_OPTIONS.
-  // An explicit +UseFourByteObjectHeaders still implies compact headers.
-  if (FLAG_IS_DEFAULT(UseFourByteObjectHeaders) &&
+  if (UseFourByteObjectHeaders &&
       !FLAG_IS_DEFAULT(UseCompactObjectHeaders) && !UseCompactObjectHeaders) {
+    if (!FLAG_IS_DEFAULT(UseFourByteObjectHeaders)) {
+      warning("-UseCompactObjectHeaders is incompatible with +UseFourByteObjectHeaders; disabling UseFourByteObjectHeaders");
+    }
     FLAG_SET_ERGO(UseFourByteObjectHeaders, false);
   }
   if (UseFourByteObjectHeaders) {

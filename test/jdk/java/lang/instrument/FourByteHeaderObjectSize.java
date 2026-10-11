@@ -43,6 +43,18 @@
  *      -XX:+UseFourByteObjectHeaders -XX:+UseZGC
  *      -XX:+TieredCompilation -Xbatch -Xmx256m -javaagent:basicAgent.jar
  *      FourByteHeaderObjectSize FourByteHeaderObjectSize
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseSerialGC -XX:ObjectAlignmentInBytes=16
+ *      -XX:+TieredCompilation -Xbatch -Xmx256m -javaagent:basicAgent.jar
+ *      FourByteHeaderObjectSize FourByteHeaderObjectSize
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseG1GC -XX:ObjectAlignmentInBytes=16
+ *      -XX:+TieredCompilation -Xbatch -Xmx256m -javaagent:basicAgent.jar
+ *      FourByteHeaderObjectSize FourByteHeaderObjectSize
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:+UseFourByteObjectHeaders -XX:+UseZGC -XX:ObjectAlignmentInBytes=16
+ *      -XX:+TieredCompilation -Xbatch -Xmx256m -javaagent:basicAgent.jar
+ *      FourByteHeaderObjectSize FourByteHeaderObjectSize
  */
 
 import java.lang.instrument.Instrumentation;
@@ -96,6 +108,7 @@ public class FourByteHeaderObjectSize extends ASimpleInstrumentationTestCase {
     @Override
     protected void doRunTest() throws Throwable {
         instrumentation = fInst;
+        long alignment = WB.getIntVMFlag("ObjectAlignmentInBytes");
         var objects = new ArrayList<Object>();
         for (int i = 0; i < 12000; i++) {
             objects.add(new Cell(i));
@@ -132,6 +145,7 @@ public class FourByteHeaderObjectSize extends ASimpleInstrumentationTestCase {
                 long actual = WB.getObjectSize(object);
                 if (actual > baseSizes[i]) {
                     expanded++;
+                    Asserts.assertEQ(actual, baseSizes[i] + alignment, "hash expansion follows object alignment");
                 }
                 Asserts.assertEQ(sizeObject(object), actual, "generic size at compilation level " + level);
                 if (object instanceof Cell value) {

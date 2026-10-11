@@ -60,11 +60,11 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class FourByteHeaderOptions {
-    static void check(boolean four, boolean compact, String... options) throws Exception {
-        check(null, four, compact, options);
+    static OutputAnalyzer check(boolean four, boolean compact, String... options) throws Exception {
+        return check(null, four, compact, options);
     }
 
-    static void check(String environment, boolean four, boolean compact, String... options) throws Exception {
+    static OutputAnalyzer check(String environment, boolean four, boolean compact, String... options) throws Exception {
         var args = new java.util.ArrayList<String>();
         if (java.util.Arrays.stream(options).anyMatch(option -> option.startsWith("-XX:hashCode="))) {
             args.add("-XX:+UnlockExperimentalVMOptions");
@@ -83,6 +83,7 @@ public class FourByteHeaderOptions {
         output.shouldHaveExitValue(0);
         output.shouldMatch("UseFourByteObjectHeaders\\s+= " + four);
         output.shouldMatch("UseCompactObjectHeaders\\s+= " + compact);
+        return output;
     }
     public static void main(String[] args) throws Exception {
         if (args.length != 0) {
@@ -95,16 +96,20 @@ public class FourByteHeaderOptions {
         check(true, true);
         check(true, true, "-XX:hashCode=6");
         check(false, true, "-XX:-UseFourByteObjectHeaders");
-        check(false, false, "-XX:-UseCompactObjectHeaders");
+        check(false, false, "-XX:-UseCompactObjectHeaders").shouldNotContain("incompatible");
         check(false, false, "-XX:-UseFourByteObjectHeaders", "-XX:-UseCompactObjectHeaders");
         check(true, true, "-XX:+UseFourByteObjectHeaders");
-        check(true, true, "-XX:+UseFourByteObjectHeaders", "-XX:-UseCompactObjectHeaders");
+        check(false, false, "-XX:+UseFourByteObjectHeaders", "-XX:-UseCompactObjectHeaders")
+                .shouldContain("-UseCompactObjectHeaders is incompatible with +UseFourByteObjectHeaders");
+        check(false, false, "-XX:-UseCompactObjectHeaders", "-XX:+UseFourByteObjectHeaders")
+                .shouldContain("-UseCompactObjectHeaders is incompatible with +UseFourByteObjectHeaders");
         check(false, true, "-XX:+UseFourByteObjectHeaders", "-XX:hashCode=3");
         check(false, true, "-XX:hashCode=3");
         for (String environment : java.util.List.of("JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "JDK_JAVA_OPTIONS")) {
             check(environment, false, false, "-XX:-UseCompactObjectHeaders");
             check(environment, false, true, "-XX:-UseFourByteObjectHeaders");
-            check(environment, true, true, "-XX:+UseFourByteObjectHeaders", "-XX:-UseCompactObjectHeaders");
+            check(environment, false, false, "-XX:+UseFourByteObjectHeaders", "-XX:-UseCompactObjectHeaders")
+                    .shouldContain("-UseCompactObjectHeaders is incompatible with +UseFourByteObjectHeaders");
         }
         for (String gc : java.util.List.of("Serial", "G1", "Z")) {
             check(true, true, "-XX:+Use" + gc + "GC");
