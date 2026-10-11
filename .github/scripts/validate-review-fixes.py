@@ -31,11 +31,23 @@ def native():
         run("stock-" + src.stem, ["gcc-14", "-O2", "-fPIC", "-DZ_HAVE_UNISTD_H", "-I", stock, "-c", src, "-o", obj])
         objs.append(obj)
     run("stock-archive", ["ar", "rcs", area / "stock.a"] + objs)
+    ng_archive = area / "zlib-ng-develop.tar.gz"
+    ng_revision = "f18efb822a2fc24a1209a836d51bb217476fc08e"
+    urllib.request.urlretrieve("https://codeload.github.com/zlib-ng/zlib-ng/tar.gz/" + ng_revision, ng_archive)
+    print("ZLIB_NG_REVISION", ng_revision, flush=True)
+    print("ZLIB_NG_ARCHIVE_SHA256", hashlib.sha256(ng_archive.read_bytes()).hexdigest(), flush=True)
+    with tarfile.open(ng_archive) as tf: tf.extractall(area, filter="data")
+    release = area / "ng-release"
+    release.mkdir(exist_ok=True)
     ng = area / "ng"
     ng.mkdir(exist_ok=True)
     env = os.environ.copy()
     env.update(CC="gcc-14", AR="ar", CFLAGS="-O2 -fPIC")
     subprocess.run(["bash", str(ROOT / "src/java.base/share/native/libzip/zlib-ng/configure"),
+                    "--static", "--zlib-compat", "--sprefix=jdk_release_"], cwd=release, env=env, check=True,
+                   stdout=(OUT / "native-release-configure.log").open("w"), stderr=subprocess.STDOUT)
+    run("native-release-build", ["make", "-j4", "libz.a"], release)
+    subprocess.run(["bash", str(area / ("zlib-ng-" + ng_revision) / "configure"),
                     "--static", "--zlib-compat", "--sprefix=jdk_ng_"], cwd=ng, env=env, check=True,
                    stdout=(OUT / "native-ng-configure.log").open("w"), stderr=subprocess.STDOUT)
     run("native-ng-build", ["make", "-j4", "libz.a"], ng)
@@ -50,7 +62,7 @@ def native():
     run("ld-build", ["cmake", "--build", area / "ld", "-j4"])
     exe = area / "compare"
     run("native-compile", ["gcc-14", "-O2", "-I", stock, "-I", ld,
-        ROOT / ".github/scripts/zip-compare-backends.c", area / "stock.a", ng / "libz.a",
+        ROOT / ".github/scripts/zip-compare-backends.c", area / "stock.a", release / "libz.a", ng / "libz.a",
         area / "ld/libdeflate.a", "-o", exe])
     patterns = {
         "java": "src/java.base/share/classes/java/util/*.java",
@@ -58,6 +70,7 @@ def native():
         "documentation": "doc/*.md",
     }
     rows = []
+    checksum_rows = []
     manifest = {}
     for name, pattern in patterns.items():
         files = sorted(ROOT.glob(pattern))
@@ -67,12 +80,25 @@ def native():
         file.write_bytes(corpus)
         manifest[name] = {"bytes": len(corpus), "sha256": hashlib.sha256(corpus).hexdigest(),
                          "files": {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in files}}
+        for batch in range(3):
+            output = run("checksums-" + name + "-" + str(batch), [exe, file, "checksums"])
+            for row in csv.DictReader(io.StringIO(output)):
+                row.update(corpus=name, batch=batch)
+                checksum_rows.append(row)
         for level in [1, 3, 6, 9]:
             for batch in range(3):
                 output = run("native-" + name + "-" + str(level) + "-" + str(batch), [exe, file, str(level)])
                 for row in csv.DictReader(io.StringIO(output)):
                     row.update(corpus=name, batch=batch)
                     rows.append(row)
+    with (OUT / "checksums.csv").open("w") as f:
+        writer = csv.DictWriter(f, fieldnames=list(checksum_rows[0]))
+        writer.writeheader()
+        writer.writerows(checksum_rows)
+    print("CHECKSUM TABLE: native ns/call; raw inputs and three batches in checksums.csv", flush=True)
+    for row in checksum_rows:
+        if row["corpus"] == "java" and row["batch"] == 0:
+            print("CHECKSUM", row, flush=True)
     (OUT / "corpora.json").write_text(json.dumps(manifest, indent=2))
     with (OUT / "real-corpora.csv").open("w") as f:
         writer = csv.DictWriter(f, fieldnames=list(rows[0]))
@@ -83,7 +109,7 @@ def native():
     print("corpus,bytes,level,library,compress_us,same_input_inflate_us,compressed_bytes")
     for name, info in manifest.items():
         for level in [1, 3, 6, 9]:
-            for backend in ["zlib", "zlib-ng", "libdeflate"]:
+            for backend in ["zlib", "zlib-ng-release", "zlib-ng-develop", "libdeflate"]:
                 group = [r for r in rows if r["corpus"] == name and int(r["size"]) == info["bytes"]
                          and int(r["level"]) == level and r["library"] == backend]
                 print(",".join(map(str, [name, info["bytes"], level, backend,
