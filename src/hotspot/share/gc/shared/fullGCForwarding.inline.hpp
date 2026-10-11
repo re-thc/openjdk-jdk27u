@@ -105,7 +105,7 @@ uintptr_t FullGCForwardingImpl<BITS>::encode_forwarding(HeapWord* from, HeapWord
 
   assert(is_fallback(encoded) || to == decode_forwarding(from, encoded),
          "must be reversible: " PTR_FORMAT " -> " PTR_FORMAT ", reversed: " PTR_FORMAT
-         ", encoded: " INTPTR_FORMAT ", to_region_base: " PTR_FORMAT ", from_block_idx: " SIZE_FORMAT,
+         ", encoded: " INTPTR_FORMAT ", to_region_base: " PTR_FORMAT ", from_block_idx: %zu",
          p2i(from), p2i(to), p2i(decode_forwarding(from, encoded)), encoded, p2i(to_region_base), from_block_idx);
   assert((encoded & ~AVAILABLE_BITS_MASK) == 0, "must encode to available bits");
   return encoded;
