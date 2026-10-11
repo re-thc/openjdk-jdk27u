@@ -1,4 +1,4 @@
-name: ZIP native result summary
+name: ZIP qualification result summary
 on:
   push:
     branches: [pr/zlib-ng-native-comparison]
@@ -15,8 +15,20 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           github-token: ${{ github.token }}
-          run-id: 38175068362
-          pattern: native-comparison-*
-          path: validation/native-artifacts
-      - name: Read completed native measurements
-        run: python3 .github/scripts/summarize-native.py
+          run-id: 38176106419
+          pattern: review-fixes-*
+          path: validation/qualification-artifacts
+      - name: Read qualification hardware and defaults
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for root in sorted(Path('validation/qualification-artifacts').iterdir()):
+              print('QUALIFICATION', root.name)
+              for name in ('cpu.txt', 'source.txt', 'tests-passed.txt'):
+                  print(name)
+                  print((root / name).read_text())
+              flags = (root / 'default-flags.txt').read_text()
+              for line in flags.splitlines():
+                  if any(key in line for key in ('UseAVX', 'UseAdler32', 'UseCRC32', 'UseZip')):
+                      print(line)
+          PY
