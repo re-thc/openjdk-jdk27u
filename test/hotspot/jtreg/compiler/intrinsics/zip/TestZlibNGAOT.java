@@ -23,10 +23,9 @@
 
 /**
  * @test
- * @summary Verify AOT code cache compatibility and ZIP backend initialization
+ * @summary Verify AOT code cache compatibility with ZIP intrinsic configuration
  * @requires os.family == "linux"
  * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
- * @requires os.simpleArch == "aarch64" | vm.cpu.features ~= ".*avx2.*"
  * @requires vm.cds.supports.aot.code.caching
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @requires vm.compMode != "Xcomp" & vm.compMode != "Xint"
@@ -48,17 +47,15 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestZlibNGAOT {
     public static void main(String[] args) throws Exception {
-        for (String flag : List.of("UseZlibNG", "UseZipIntrinsics", "UseAdler32Intrinsics")) {
-            for (boolean saved : new boolean[] {false, true}) {
-                for (boolean changed : new boolean[] {false, true}) {
-                    test(flag, saved, changed);
-                }
+        for (boolean saved : new boolean[] {false, true}) {
+            for (boolean changed : new boolean[] {false, true}) {
+                test(saved, changed);
             }
         }
     }
 
-    private static void test(String flag, boolean saved, boolean changed) throws Exception {
-        new CDSAppTester("ZIP-" + flag + "-" + saved + "-" + changed) {
+    private static void test(boolean saved, boolean changed) throws Exception {
+        new CDSAppTester("ZIP-" + saved + "-" + changed) {
             private boolean value(RunMode mode) {
                 return mode == RunMode.PRODUCTION && changed ? !saved : saved;
             }
@@ -67,10 +64,9 @@ public class TestZlibNGAOT {
             public String[] vmArgs(RunMode mode) {
                 List<String> options = new ArrayList<>(List.of(
                     "-XX:+UnlockDiagnosticVMOptions", "-XX:-AbortVMOnAOTCodeFailure",
-                    "-XX:+UseZlibNG", "-XX:+UseZipIntrinsics", "-XX:+UseAdler32Intrinsics",
                     "-Xlog:aot+codecache*=debug",
                     "--add-opens=java.base/java.util.zip=ALL-UNNAMED"));
-                options.add("-XX:" + (value(mode) ? "+" : "-") + flag);
+                options.add("-XX:" + (value(mode) ? "+" : "-") + "UseZipIntrinsics");
                 return options.toArray(String[]::new);
             }
 
@@ -81,8 +77,7 @@ public class TestZlibNGAOT {
 
             @Override
             public String[] appCommandLine(RunMode mode) {
-                boolean enabled = flag.equals("UseZipIntrinsics") ? value(mode) : true;
-                return new String[] {"ZlibNGAOTApp", Boolean.toString(enabled)};
+                return new String[] {"ZlibNGAOTApp", Boolean.toString(value(mode))};
             }
 
             @Override
@@ -90,9 +85,9 @@ public class TestZlibNGAOT {
                 if (mode == RunMode.ASSEMBLY) {
                     out.shouldMatch("AOT code cache size: [1-9][0-9]+ bytes");
                 } else if (mode == RunMode.PRODUCTION) {
-                    out.shouldContain("ZIP backend initialized correctly");
+                    out.shouldContain("ZIP intrinsic configuration initialized correctly");
                     if (changed) {
-                        out.shouldContain("AOT Code Cache disabled: it was created with " + flag +
+                        out.shouldContain("AOT Code Cache disabled: it was created with UseZipIntrinsics" +
                             " = " + saved + " vs current " + !saved);
                     } else {
                         out.shouldMatch("Loaded [1-9][0-9]+ AOT code entries from AOT Code Cache");
@@ -135,6 +130,6 @@ class ZlibNGAOTApp {
                 }
             }
         }
-        System.out.println("ZIP backend initialized correctly");
+        System.out.println("ZIP intrinsic configuration initialized correctly");
     }
 }

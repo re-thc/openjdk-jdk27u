@@ -12,14 +12,12 @@
  * relicensed under the zlib license.
  */
 
+#ifdef S390_VX
+
 #include "zbuild.h"
 #include "arch_functions.h"
 
-#include <vecintrin.h>
-
-typedef unsigned char uv16qi __attribute__((vector_size(16)));
-typedef unsigned int uv4si __attribute__((vector_size(16)));
-typedef unsigned long long uv2di __attribute__((vector_size(16)));
+#include "vx_intrins.h"
 
 static uint32_t crc32_le_vgfm_16(uint32_t crc, const uint8_t *buf, size_t len) {
     /*
@@ -195,7 +193,7 @@ static uint32_t crc32_le_vgfm_16(uint32_t crc, const uint8_t *buf, size_t len) {
 }
 
 #define VX_MIN_LEN 64
-#define VX_ALIGNMENT 16L
+#define VX_ALIGNMENT 16UL
 #define VX_ALIGN_MASK (VX_ALIGNMENT - 1)
 
 uint32_t Z_INTERNAL crc32_s390_vx(uint32_t crc, const unsigned char *buf, size_t len) {
@@ -205,18 +203,26 @@ uint32_t Z_INTERNAL crc32_s390_vx(uint32_t crc, const unsigned char *buf, size_t
         return crc32_braid(crc, buf, len);
 
     if ((uintptr_t)buf & VX_ALIGN_MASK) {
-        prealign = VX_ALIGNMENT - ((uintptr_t)buf & VX_ALIGN_MASK);
+        prealign = (size_t)ALIGN_DIFF(buf, VX_ALIGNMENT);
         len -= prealign;
         crc = crc32_braid(crc, buf, prealign);
         buf += prealign;
     }
-    aligned = len & ~VX_ALIGN_MASK;
+    aligned = ALIGN_DOWN(len, VX_ALIGNMENT);
     remaining = len & VX_ALIGN_MASK;
 
-    crc = crc32_le_vgfm_16(crc ^ 0xffffffff, buf, aligned) ^ 0xffffffff;
+    crc = ~crc32_le_vgfm_16(~crc, buf, aligned);
 
     if (remaining)
         crc = crc32_braid(crc, buf + aligned, remaining);
 
     return crc;
 }
+
+Z_INTERNAL uint32_t crc32_copy_s390_vx(uint32_t crc, uint8_t *dst, const uint8_t *src, size_t len) {
+    crc = crc32_s390_vx(crc, src, len);
+    memcpy(dst, src, len);
+    return crc;
+}
+
+#endif

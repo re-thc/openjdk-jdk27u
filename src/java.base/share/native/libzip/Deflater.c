@@ -29,7 +29,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include "jlong.h"
 #include "jni.h"
 #include "jni_util.h"
@@ -38,90 +37,9 @@
 #include "java_util_zip_Deflater.h"
 
 #define DEF_MEM_LEVEL 8
-#define ZIP_SMALL_DEFLATE_LIMIT 1024
 
-/* The z_stream stays first: the packed-return and counter code uses its ABI.
- * A backend is selected before the first operation of each stream. It cannot
- * change after output or dictionary state has been established. */
-typedef struct {
-    z_stream stream;
-    int backend;
-    int select_backend;
-    int level;
-    int strategy;
-    int window_bits;
-} ZipDeflater;
-
-enum { ZIP_DEFLATE_NONE, ZIP_DEFLATE_STOCK, ZIP_DEFLATE_NG };
-
-/* Deflater has per-stream dispatch. Other libzip consumers retain the
- * startup-selected backend from zip_zlib_backend.h. */
-#undef deflate
-#undef deflateEnd
-#undef deflateReset
-#undef deflateParams
-#undef deflateSetDictionary
-#undef deflateInit2
-
-static int endStream(ZipDeflater *d) {
-#ifdef INCLUDE_ZLIBNG
-    if (d->backend == ZIP_DEFLATE_NG) return jdk_ng_deflateEnd(&d->stream);
-#endif
-    if (d->backend == ZIP_DEFLATE_STOCK) return deflateEnd(&d->stream);
-    return Z_OK;
-}
-
-static int selectBackend(ZipDeflater *d, int backend) {
-    int ret;
-    if (d->backend == backend) {
-        d->select_backend = 0;
-        return Z_OK;
-    }
-    ret = endStream(d);
-    /* A freshly reset raw stream may report Z_DATA_ERROR on end even
-     * though it has consumed no input. Its allocation is still released. */
-    if (ret != Z_OK && ret != Z_DATA_ERROR) return ret;
-    memset(&d->stream, 0, sizeof(z_stream));
-    d->stream.adler = 1;
-    d->backend = ZIP_DEFLATE_NONE;
-#ifdef INCLUDE_ZLIBNG
-    if (backend == ZIP_DEFLATE_NG) {
-        ret = jdk_ng_deflateInit2_(&d->stream, d->level, Z_DEFLATED,
-                                  d->window_bits, DEF_MEM_LEVEL, d->strategy,
-                                  ZLIB_VERSION, sizeof(z_stream));
-    } else
-#endif
-    {
-        ret = deflateInit2_(&d->stream, d->level, Z_DEFLATED,
-                           d->window_bits, DEF_MEM_LEVEL, d->strategy,
-                           ZLIB_VERSION, sizeof(z_stream));
-    }
-    if (ret == Z_OK) {
-        d->backend = backend;
-        d->select_backend = 0;
-    }
-    return ret;
-}
-
-static int setDictionary(ZipDeflater *d, const Bytef *dictionary, uInt length) {
-    if (!JVM_UseZlibNG()) {
-        return deflateSetDictionary((z_stream *)d, dictionary, length);
-    }
-    if (d->select_backend) {
-        int ret = selectBackend(d, ZIP_DEFLATE_NG);
-        if (ret != Z_OK) return ret;
-    }
-#ifdef INCLUDE_ZLIBNG
-    if (d->backend == ZIP_DEFLATE_NG) {
-        return jdk_ng_deflateSetDictionary(&d->stream, dictionary, length);
-    }
-#endif
-    return deflateSetDictionary(&d->stream, dictionary, length);
-}
-
-/* Preserve the original stream allocation and zlib initialization when the
- * optional backend is disabled. Only enabled streams need backend metadata. */
-static jlong initStock(JNIEnv *env, jint level,
+JNIEXPORT jlong JNICALL
+Java_java_util_zip_Deflater_init(JNIEnv *env, jclass cls, jint level,
                                  jint strategy, jboolean nowrap)
 {
     z_stream *strm = calloc(1, sizeof(z_stream));
@@ -159,34 +77,6 @@ static jlong initStock(JNIEnv *env, jint level,
     }
 }
 
-JNIEXPORT jlong JNICALL
-Java_java_util_zip_Deflater_init(JNIEnv *env, jclass cls, jint level,
-                                 jint strategy, jboolean nowrap)
-{
-    ZipDeflater *d;
-    if (!JVM_UseZlibNG()) {
-        return initStock(env, level, strategy, nowrap);
-    }
-    if (level < Z_DEFAULT_COMPRESSION || level > Z_BEST_COMPRESSION ||
-        strategy < Z_DEFAULT_STRATEGY || strategy > Z_FIXED) {
-        JNU_ThrowIllegalArgumentException(env, 0);
-        return jlong_zero;
-    }
-    d = calloc(1, sizeof(ZipDeflater));
-    if (d == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
-        return jlong_zero;
-    }
-    d->level = level;
-    d->strategy = strategy;
-    d->window_bits = nowrap ? -MAX_WBITS : MAX_WBITS;
-    d->stream.adler = 1;
-    /* Delay allocation until the input/flush shape is known. This avoids
-     * allocating both libraries for a short, single-call stream. */
-    d->select_backend = 1;
-    return ptr_to_jlong(d);
-}
-
 static void throwInternalErrorHelper(JNIEnv *env, z_stream *strm, const char *fixmsg) {
     const char *msg = NULL;
     msg = (strm->msg != NULL) ? strm->msg : fixmsg;
@@ -219,7 +109,7 @@ Java_java_util_zip_Deflater_setDictionary(JNIEnv *env, jclass cls, jlong addr,
     Bytef *buf = (*env)->GetPrimitiveArrayCritical(env, b, 0);
     if (buf == NULL) /* out of memory */
         return;
-    res = setDictionary(jlong_to_ptr(addr), buf + off, len);
+    res = deflateSetDictionary(jlong_to_ptr(addr), buf + off, len);
     (*env)->ReleasePrimitiveArrayCritical(env, b, buf, 0);
     checkSetDictionaryResult(env, addr, res);
 }
@@ -230,11 +120,11 @@ Java_java_util_zip_Deflater_setDictionaryBuffer(JNIEnv *env, jclass cls, jlong a
 {
     int res;
     Bytef *buf = jlong_to_ptr(bufferAddr);
-    res = setDictionary(jlong_to_ptr(addr), buf, len);
+    res = deflateSetDictionary(jlong_to_ptr(addr), buf, len);
     checkSetDictionaryResult(env, addr, res);
 }
 
-static jint doDeflateStock(JNIEnv *env, jlong addr,
+static jint doDeflate(JNIEnv *env, jlong addr,
                        jbyte *input, jint inputLen,
                        jbyte *output, jint outputLen,
                        jint flush, jint params)
@@ -253,80 +143,6 @@ static jint doDeflateStock(JNIEnv *env, jlong addr,
         int level = params >> 3;
         res = deflateParams(strm, level, strategy);
     } else {
-        res = deflate(strm, flush);
-    }
-    return res;
-}
-
-static jint doDeflate(JNIEnv *env, jlong addr,
-                       jbyte *input, jint inputLen,
-                       jbyte *output, jint outputLen,
-                       jint flush, jint params)
-{
-    ZipDeflater *d;
-    z_stream *strm;
-    int setParams = params & 1;
-    int res;
-
-    if (!JVM_UseZlibNG()) {
-        return doDeflateStock(env, addr, input, inputLen, output, outputLen, flush, params);
-    }
-    d = jlong_to_ptr(addr);
-    strm = &d->stream;
-
-    strm->next_in  = (Bytef *) input;
-    strm->next_out = (Bytef *) output;
-    strm->avail_in  = inputLen;
-    strm->avail_out = outputLen;
-
-    if (d->select_backend && setParams && d->backend == ZIP_DEFLATE_NONE) {
-        /* A parameter-only call has no data to flush on an unallocated stream.
-         * Retain the settings without choosing a backend from its empty input.
-         * The first compression call and subsequent resets can then make the
-         * same choice from the actual input chunk. */
-        d->strategy = (params >> 1) & 3;
-        d->level = params >> 3;
-        return Z_OK;
-    }
-
-    if (d->select_backend && outputLen == 0) {
-        /* No input can be consumed without output capacity. Keep selection
-         * pending, including after reset. An allocated reset stream applies
-         * parameter changes below without committing the backend. */
-        if (!setParams) return Z_BUF_ERROR;
-    } else if (d->select_backend) {
-        /* Streaming clients call NO_FLUSH before FINISH. Choose conservatively
-         * from the first input chunk, then keep this backend until reset. */
-        int backend = inputLen <= ZIP_SMALL_DEFLATE_LIMIT
-                      ? ZIP_DEFLATE_STOCK : ZIP_DEFLATE_NG;
-        res = selectBackend(d, backend);
-        if (res != Z_OK) return res;
-        /* selectBackend may replace and clear the z_stream. */
-        strm->next_in  = (Bytef *) input;
-        strm->next_out = (Bytef *) output;
-        strm->avail_in  = inputLen;
-        strm->avail_out = outputLen;
-    }
-
-    if (setParams) {
-        int strategy = (params >> 1) & 3;
-        int level = params >> 3;
-#ifdef INCLUDE_ZLIBNG
-        if (d->backend == ZIP_DEFLATE_NG) {
-            res = jdk_ng_deflateParams(strm, level, strategy);
-        } else
-#endif
-        {
-            res = deflateParams(strm, level, strategy);
-        }
-        if (res == Z_OK) {
-            d->level = level;
-            d->strategy = strategy;
-        }
-    } else {
-#ifdef INCLUDE_ZLIBNG
-        if (d->backend == ZIP_DEFLATE_NG) return jdk_ng_deflate(strm, flush);
-#endif
         res = deflate(strm, flush);
     }
     return res;
@@ -500,43 +316,17 @@ Java_java_util_zip_Deflater_getAdler(JNIEnv *env, jclass cls, jlong addr)
 JNIEXPORT void JNICALL
 Java_java_util_zip_Deflater_reset(JNIEnv *env, jclass cls, jlong addr)
 {
-    ZipDeflater *d;
-    int ret = Z_OK;
-    if (!JVM_UseZlibNG()) {
-        if (deflateReset((z_stream *)jlong_to_ptr(addr)) != Z_OK) {
-            JNU_ThrowInternalError(env, "deflateReset failed");
-        }
-        return;
-    }
-    d = jlong_to_ptr(addr);
-#ifdef INCLUDE_ZLIBNG
-    if (d->backend == ZIP_DEFLATE_NG) ret = jdk_ng_deflateReset(&d->stream);
-#endif
-    if (d->backend == ZIP_DEFLATE_STOCK) ret = deflateReset(&d->stream);
-    if (ret != Z_OK) {
+    if (deflateReset((z_stream *)jlong_to_ptr(addr)) != Z_OK) {
         JNU_ThrowInternalError(env, "deflateReset failed");
-    } else {
-        d->select_backend = 1;
-        d->stream.adler = 1;
     }
 }
 
 JNIEXPORT void JNICALL
 Java_java_util_zip_Deflater_end(JNIEnv *env, jclass cls, jlong addr)
 {
-    ZipDeflater *d;
-    if (!JVM_UseZlibNG()) {
-        if (deflateEnd((z_stream *)jlong_to_ptr(addr)) == Z_STREAM_ERROR) {
-            JNU_ThrowInternalError(env, "deflateEnd failed");
-        } else {
-            free(jlong_to_ptr(addr));
-        }
-        return;
-    }
-    d = jlong_to_ptr(addr);
-    if (endStream(d) == Z_STREAM_ERROR) {
+    if (deflateEnd((z_stream *)jlong_to_ptr(addr)) == Z_STREAM_ERROR) {
         JNU_ThrowInternalError(env, "deflateEnd failed");
     } else {
-        free(d);
+        free((z_stream *)jlong_to_ptr(addr));
     }
 }

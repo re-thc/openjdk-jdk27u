@@ -1,4 +1,4 @@
-## zlib-ng v2.3.3
+## zlib-ng (commit f18efb822a2fc24a1209a836d51bb217476fc08e)
 
 ### zlib License
 <pre>

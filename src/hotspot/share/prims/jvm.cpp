@@ -248,10 +248,6 @@ JVM_LEAF(jboolean, JVM_ZipIntrinsicsEnabled())
 #endif
 JVM_END
 
-JVM_LEAF(jboolean, JVM_UseZlibNG())
-  return UseZlibNG;
-JVM_END
-
 JVM_LEAF(jlong, JVM_CurrentTimeMillis(JNIEnv *env, jclass ignored))
   return os::javaTimeMillis();
 JVM_END
@@ -690,7 +686,12 @@ JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
   }
 
   // Make shallow object copy
-  const size_t size = obj->size();
+  // With compact object headers, the original might have been expanded by GC
+  // for the identity hash. The clone must be allocated at the base size, since
+  // it will get a fresh (not-hashed, not-expanded) mark word.
+  const size_t size = UseFourByteObjectHeaders
+    ? obj->base_size_given_klass(obj->mark(), klass)
+    : obj->size();
   oop new_obj_oop = nullptr;
   if (obj->is_array()) {
     const int length = ((arrayOop)obj())->length();

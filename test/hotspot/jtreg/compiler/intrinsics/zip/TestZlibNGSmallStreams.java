@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Tiny incremental ZIP/GZIP streams retain stock output, including zero-capacity calls
+ * @summary Tiny incremental ZIP/GZIP streams preserve data across call paths and zero-capacity calls
  * @requires (os.family == "linux") & (os.arch == "amd64" | os.arch == "aarch64")
  * @library /test/lib
  * @run driver TestZlibNGSmallStreams
@@ -70,8 +70,7 @@ public class TestZlibNGSmallStreams {
 
             d.setInput(input);
             d.finish();
-            // Level-1 fixed blocks can expand incompressible input by more
-            // than stock zlib's stored blocks. Allow for that expansion.
+            // Allow for expansion of incompressible input.
             byte[] first = new byte[input.length * 2];
             int length = d.deflate(first);
             if (!d.finished()) {
@@ -80,7 +79,7 @@ public class TestZlibNGSmallStreams {
 
             // A fresh stream and a reset stream with the same input/settings
             // must fit in the same output buffer. No-data parameter calls must
-            // not select a different backend before the first input arrives.
+            // not change the stream before the first input arrives.
             d.reset();
             d.setInput(input);
             d.finish();
@@ -88,7 +87,7 @@ public class TestZlibNGSmallStreams {
             int repeated = d.deflate(second);
             if (!d.finished() || repeated != length ||
                 !Arrays.equals(first, 0, length, second, 0, repeated)) {
-                throw new AssertionError("parameter-only call changed backend selection");
+                throw new AssertionError("parameter-only call changed stream output");
             }
         }
     }
@@ -193,8 +192,8 @@ public class TestZlibNGSmallStreams {
         String[] tiers = {"-Xint", "-XX:TieredStopAtLevel=1", "-XX:-TieredCompilation"};
         for (String tier : tiers) {
             String expected = null;
-            for (String backend : new String[]{"-XX:-UseZlibNG", "-XX:+UseZlibNG"}) {
-                String output = ProcessTools.executeTestJava(tier, backend, "-Xbatch",
+            for (String intrinsic : new String[]{"-XX:-UseZipIntrinsics", "-XX:+UseZipIntrinsics"}) {
+                String output = ProcessTools.executeTestJava(tier, intrinsic, "-Xbatch",
                     "-cp", System.getProperty("test.class.path"),
                     TestZlibNGSmallStreams.class.getName(), "emit")
                     .shouldHaveExitValue(0).getStdout().strip();

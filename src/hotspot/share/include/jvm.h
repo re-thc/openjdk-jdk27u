@@ -100,9 +100,6 @@ JNIEXPORT jlong JNICALL
 JVM_GetNanoTimeAdjustment(JNIEnv *env, jclass ignored, jlong offset_secs);
 
 JNIEXPORT jboolean JNICALL
-JVM_UseZlibNG(void);
-
-JNIEXPORT jboolean JNICALL
 JVM_ZipIntrinsicsEnabled(void);
 
 JNIEXPORT void JNICALL

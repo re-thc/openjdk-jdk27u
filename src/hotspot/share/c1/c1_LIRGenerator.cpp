@@ -2906,10 +2906,6 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
-#if defined(AMD64) || defined(AARCH64)
-  case vmIntrinsics::_updateBytesAdler32:
-  case vmIntrinsics::_updateByteBufferAdler32:
-#endif
     do_update_CRC32(x);
     break;
 

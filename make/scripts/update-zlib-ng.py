@@ -21,19 +21,21 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-#
 
 """Import an explicitly verified upstream source archive without local edits."""
 import argparse
 import hashlib
+import re
 from pathlib import Path
 import tarfile
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--archive', type=Path, required=True)
-parser.add_argument('--version', required=True)
+parser.add_argument('--revision', required=True)
 parser.add_argument('--sha256', required=True)
 args = parser.parse_args()
+if not re.fullmatch(r'[0-9a-f]{40}', args.revision):
+    parser.error('revision must be a full upstream commit hash')
 if hashlib.sha256(args.archive.read_bytes()).hexdigest() != args.sha256:
     parser.error('archive SHA-256 does not match')
 root = Path(__file__).resolve().parents[2]
@@ -44,9 +46,9 @@ with tarfile.open(args.archive) as archive:
         if not member.isfile():
             continue
         try:
-            path = Path(member.name).relative_to('zlib-ng-' + args.version)
+            path = Path(member.name).relative_to('zlib-ng-' + args.revision)
         except ValueError:
-            parser.error('archive path is outside the requested upstream release')
+            parser.error('archive path is outside the requested upstream revision')
         if '..' in path.parts or path.is_absolute():
             parser.error('unsafe archive path')
         if ((len(path.parts) == 1 and
@@ -68,5 +70,5 @@ for path, (content, mode) in files.items():
         target.chmod(mode)
 license = files[Path('LICENSE.md')][0].decode()
 (root / 'src/java.base/share/legal/zlib-ng.md').write_text(
-    '## zlib-ng v' + args.version + '\n\n### zlib License\n<pre>\n\n' + license + '\n</pre>\n')
-print('Imported', len(files), 'unmodified upstream files for zlib-ng', args.version)
+    '## zlib-ng (commit ' + args.revision + ')' + '\n\n### zlib License\n<pre>\n\n' + license + '\n</pre>\n')
+print('Imported', len(files), 'unmodified upstream files for zlib-ng', args.revision)

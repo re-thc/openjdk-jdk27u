@@ -210,11 +210,13 @@ class OptoRuntime : public AllStatic {
   // Implementation of runtime methods
   // =================================
 
-  // Allocate storage for a Java instance.
+  // Process a ZIP stream with pinned heap arrays.
   static jlong zip_process_C(jint inflate, jint input_len, jint output_len,
       jint flush, jint params, oopDesc* receiver, jlong stream,
       oopDesc* input, oopDesc* output, jlong input_offset, jlong output_offset,
       JavaThread* current);
+
+  // Allocate storage for a Java instance.
   static void new_instance_C(Klass* instance_klass, JavaThread* current);
 
   // Allocate storage for a objArray or typeArray
@@ -709,10 +711,11 @@ private:
     return _updateBytesCRC32C_Type;
   }
 
+  static const TypeFunc* zip_process_Type() { return _zip_process_Type; }
+
   /**
    *  int updateBytesAdler32(int adler, bytes* b, int off, int len)
    */
-  static const TypeFunc* zip_process_Type() { return _zip_process_Type; }
   static inline const TypeFunc* updateBytesAdler32_Type() {
     assert(_updateBytesAdler32_Type != nullptr, "should be initialized");
     return _updateBytesAdler32_Type;

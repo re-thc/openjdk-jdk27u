@@ -25,14 +25,13 @@
  * @test
  * @summary Exercise zlib-ng runtime calls across buffer shapes and compilation tiers with GC
  * @requires (os.family == "linux") & (os.arch == "amd64" | os.arch == "aarch64")
- * @run main/othervm -Xmx64m -XX:+UseZlibNG TestZlibNG
- * @run main/othervm -Xmx64m -XX:+UseZlibNG -Xbatch -XX:TieredStopAtLevel=1 TestZlibNG
- * @run main/othervm -Xmx64m -XX:+UseZlibNG -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 TestZlibNG
- * @run main/othervm -Xmx64m -XX:+UseZlibNG -Xint TestZlibNG
- * @run main/othervm -Xmx64m -XX:+UseZlibNG -XX:+UnlockDiagnosticVMOptions -XX:-UseZipIntrinsics TestZlibNG
- * @run main/othervm -Xmx64m -XX:+UseZlibNG -Xbatch -XX:TieredStopAtLevel=1 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_zipProcess TestZlibNG
- * @run main/othervm -Xmx64m -XX:+UseZlibNG -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_zipProcess TestZlibNG
- * @run main/othervm -Xmx64m -XX:-UseZlibNG TestZlibNG
+ * @run main/othervm -Xmx64m TestZlibNG
+ * @run main/othervm -Xmx64m -Xbatch -XX:TieredStopAtLevel=1 TestZlibNG
+ * @run main/othervm -Xmx64m -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 TestZlibNG
+ * @run main/othervm -Xmx64m -Xint TestZlibNG
+ * @run main/othervm -Xmx64m -XX:-UseZipIntrinsics TestZlibNG
+ * @run main/othervm -Xmx64m -Xbatch -XX:TieredStopAtLevel=1 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_zipProcess TestZlibNG
+ * @run main/othervm -Xmx64m -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_zipProcess TestZlibNG
  */
 
 import java.io.ByteArrayOutputStream;
@@ -120,7 +119,7 @@ public class TestZlibNG {
         }
     }
 
-    private static void hybridReset() throws Exception {
+    private static void resetStreams() throws Exception {
         for (int badLevel : new int[]{-2, 10}) {
             try {
                 new Deflater(badLevel).close();
@@ -139,7 +138,7 @@ public class TestZlibNG {
                 if (d.getAdler() != 1) {
                     throw new AssertionError("initial Adler32");
                 }
-                d.reset(); // Also exercise reset before lazy initialization.
+                d.reset(); // Also exercise reset before the first input.
                 for (int n = 0; n < 160; n++) {
                     int length = lengths[n % lengths.length];
                     boolean dict = n % 3 == 0;
@@ -154,7 +153,7 @@ public class TestZlibNG {
                     int encoded = 0;
                     for (int attempt = 0; !d.finished(); attempt++) {
                         if (attempt == 10) {
-                            throw new AssertionError("hybrid deflate stalled");
+                            throw new AssertionError("stream deflate stalled");
                         }
                         encoded += d.deflate(compressed, encoded, compressed.length - encoded);
                     }
@@ -166,7 +165,7 @@ public class TestZlibNG {
                     int decoded = 0;
                     for (int attempt = 0; !i.finished(); attempt++) {
                         if (attempt == 10) {
-                            throw new AssertionError("hybrid inflate stalled");
+                            throw new AssertionError("stream inflate stalled");
                         }
                         decoded += i.inflate(output, decoded, output.length - decoded);
                         if (i.needsDictionary()) {
@@ -174,7 +173,7 @@ public class TestZlibNG {
                         }
                     }
                     if (decoded != length || !Arrays.equals(input, 0, length, output, 0, length)) {
-                        throw new AssertionError("hybrid reset round trip");
+                        throw new AssertionError("stream reset round trip");
                     }
                 }
             }
@@ -209,7 +208,7 @@ public class TestZlibNG {
                             if (attempt > data.length + 1) {
                                 throw new AssertionError("direct stalled");
                             }
-                            // Alternate JNI and intrinsic calls within the same stream.
+                            // Exercise both output buffer shapes within the same stream.
                             ByteBuffer output = mixedOutput && (attempt & 1) != 0
                                 ? heapOutput : directOutput;
                             output.clear();
@@ -237,7 +236,7 @@ public class TestZlibNG {
 
     public static void main(String[] args) throws Exception {
         directCallPaths();
-        hybridReset();
+        resetStreams();
         byte[] data = new byte[4096];
         new Random(12345).nextBytes(data);
         byte[] dictionary = Arrays.copyOfRange(data, 0, 1024);

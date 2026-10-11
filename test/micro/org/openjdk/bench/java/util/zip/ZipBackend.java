@@ -28,7 +28,6 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.Adler32;
 import java.util.zip.CRC32;
-import java.util.zip.CRC32C;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
@@ -56,7 +55,6 @@ public class ZipBackend {
     private Inflater inflater;
     private Adler32 adler;
     private CRC32 crc;
-    private CRC32C crc32c;
 
     @Setup
     public void setup() {
@@ -76,7 +74,6 @@ public class ZipBackend {
         inflater = new Inflater();
         adler = new Adler32();
         crc = new CRC32();
-        crc32c = new CRC32C();
         deflater.setInput(input);
         deflater.finish();
         compressedLength = deflater.deflate(compressed);
@@ -128,10 +125,4 @@ public class ZipBackend {
         return crc.getValue();
     }
 
-    @Benchmark
-    public long crc32c() {
-        crc32c.reset();
-        crc32c.update(input);
-        return crc32c.getValue();
-    }
 }

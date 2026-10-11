@@ -3,13 +3,13 @@
  */
 
 #ifdef POWER8_VSX
-#include <altivec.h>
+
 #include "zbuild.h"
 #include "zmemory.h"
 
-typedef vector unsigned char chunk_t;
+#include <altivec.h>
 
-#define CHUNK_SIZE 16
+typedef vector unsigned char chunk_t;
 
 #define HAVE_CHUNKMEMSET_2
 #define HAVE_CHUNKMEMSET_4
@@ -44,6 +44,11 @@ static inline void storechunk(uint8_t *out, chunk_t *chunk) {
 #include "chunkset_tpl.h"
 
 #define INFLATE_FAST     inflate_fast_power8
+
+#include "inffast_tpl.h"
+
+#define INFLATE_FAST     inflate_fast_safe_power8
+#define USE_SAFE_MODE
 
 #include "inffast_tpl.h"
 

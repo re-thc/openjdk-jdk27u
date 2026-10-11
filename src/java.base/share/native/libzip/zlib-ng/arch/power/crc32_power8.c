@@ -25,9 +25,10 @@
  * This code uses gcc vector builtins instead using assembly directly.
  */
 
-#include <altivec.h>
-#include "zendian.h"
+#ifdef POWER8_VSX_CRC32
+
 #include "zbuild.h"
+#include "zendian.h"
 
 #include "crc32_constants.h"
 #include "crc32_braid_tbl.h"
@@ -52,9 +53,6 @@ Z_INTERNAL uint32_t crc32_power8(uint32_t crc, const unsigned char *p, size_t _l
 
     unsigned long len = (unsigned long) _len;
 
-    if (p == (const unsigned char *) 0x0)
-        return 0;
-
     crc ^= 0xffffffff;
 
     if (len < VMX_ALIGN + VMX_ALIGN_MASK) {
@@ -63,23 +61,29 @@ Z_INTERNAL uint32_t crc32_power8(uint32_t crc, const unsigned char *p, size_t _l
     }
 
     if ((unsigned long)p & VMX_ALIGN_MASK) {
-        prealign = VMX_ALIGN - ((unsigned long)p & VMX_ALIGN_MASK);
+        prealign = (unsigned int)ALIGN_DIFF(p, VMX_ALIGN);
         crc = crc32_align(crc, p, prealign);
         len -= prealign;
         p += prealign;
     }
 
-    crc = __crc32_vpmsum(crc, p, len & ~VMX_ALIGN_MASK);
+    crc = __crc32_vpmsum(crc, p, ALIGN_DOWN(len, VMX_ALIGN));
 
     tail = len & VMX_ALIGN_MASK;
     if (tail) {
-        p += len & ~VMX_ALIGN_MASK;
+        p += ALIGN_DOWN(len, VMX_ALIGN);
         crc = crc32_align(crc, p, tail);
     }
 
 out:
     crc ^= 0xffffffff;
 
+    return crc;
+}
+
+Z_INTERNAL uint32_t crc32_copy_power8(uint32_t crc, uint8_t *dst, const uint8_t *src, size_t len) {
+    crc = crc32_power8(crc, src, len);
+    memcpy(dst, src, len);
     return crc;
 }
 
@@ -585,3 +589,5 @@ static unsigned int ALIGNED_(32) __crc32_vpmsum(unsigned int crc, const void* p,
     return v0[1];
 #endif
 }
+
+#endif

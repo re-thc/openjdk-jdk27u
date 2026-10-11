@@ -624,22 +624,6 @@
                                     do_arch_entry_array)                \
   end_blob(preuniverse)                                                 \
 
-// The interpreter and C1 use Adler32 on these ports, so the stub must be
-// available before interpreter generation and without C2 initialization.
-#if defined(AMD64) || defined(AARCH64)
-#define STUBGEN_INITIAL_ADLER32_DO(do_stub, do_entry)                    \
-  do_stub(initial, updateBytesAdler32)                                   \
-  do_entry(initial, updateBytesAdler32, updateBytesAdler32,              \
-           updateBytesAdler32)
-#define STUBGEN_COMPILER_ADLER32_DO(do_stub, do_entry)
-#else
-#define STUBGEN_INITIAL_ADLER32_DO(do_stub, do_entry)
-#define STUBGEN_COMPILER_ADLER32_DO(do_stub, do_entry)                    \
-  do_stub(compiler, updateBytesAdler32)                                  \
-  do_entry(compiler, updateBytesAdler32, updateBytesAdler32,             \
-           updateBytesAdler32)
-#endif
-
 #define STUBGEN_INITIAL_BLOBS_DO(do_blob, end_blob,                     \
                                  do_stub,                               \
                                  do_entry, do_entry_init,               \
@@ -664,7 +648,6 @@
   do_stub(initial, updateBytesCRC32C)                                   \
   do_entry(initial, updateBytesCRC32C, updateBytesCRC32C,               \
            updateBytesCRC32C)                                           \
-  STUBGEN_INITIAL_ADLER32_DO(do_stub, do_entry)                         \
   do_stub(initial, f2hf)                                                \
   do_entry(initial, f2hf, f2hf, f2hf_adr)                               \
   do_stub(initial, hf2f)                                                \
@@ -855,7 +838,9 @@
   do_stub(compiler, sha3_implCompressMB)                                \
   do_entry(compiler, sha3_implCompressMB, sha3_implCompressMB,          \
            sha3_implCompressMB)                                         \
-  STUBGEN_COMPILER_ADLER32_DO(do_stub, do_entry)                        \
+  do_stub(compiler, updateBytesAdler32)                                 \
+  do_entry(compiler, updateBytesAdler32, updateBytesAdler32,            \
+           updateBytesAdler32)                                          \
   do_stub(compiler, multiplyToLen)                                      \
   do_entry(compiler, multiplyToLen, multiplyToLen, multiplyToLen)       \
   do_stub(compiler, squareToLen)                                        \

@@ -1577,13 +1577,6 @@ bool Arguments::check_vm_args_consistency() {
   // before returning an error.
   // Note: Needs platform-dependent factoring.
   bool status = true;
-#if !defined(LINUX) || !(defined(AMD64) || defined(AARCH64))
-  if (UseZlibNG) {
-    jio_fprintf(defaultStream::error_stream(),
-                "UseZlibNG is supported on Linux x86_64 and AArch64 only\n");
-    status = false;
-  }
-#endif
 
   status = CompilerConfig::check_args_consistency(status);
 #if INCLUDE_JFR
@@ -3473,13 +3466,52 @@ void Arguments::set_compact_headers_flags() {
     }
     FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
   }
+  if (UseFourByteObjectHeaders && FLAG_IS_DEFAULT(hashCode)) {
+    hashCode = 6;
+  }
+  if (UseFourByteObjectHeaders && FLAG_IS_DEFAULT(CompressedClassSpaceSize)) {
+    FLAG_SET_DEFAULT(CompressedClassSpaceSize, CompressedKlassPointers::max_klass_range_size_coh);
+  }
 #endif
 }
 
 jint Arguments::apply_ergo() {
+#ifdef _LP64
+  // A legacy-layout request from arguments, environment variables or a flag
+  // file also disables the fork default. AOT child VMs inherit their options
+  // through JAVA_TOOL_OPTIONS.
+  if (UseFourByteObjectHeaders &&
+      !FLAG_IS_DEFAULT(UseCompactObjectHeaders) && !UseCompactObjectHeaders) {
+    if (!FLAG_IS_DEFAULT(UseFourByteObjectHeaders)) {
+      warning("-UseCompactObjectHeaders is incompatible with +UseFourByteObjectHeaders; disabling UseFourByteObjectHeaders");
+    }
+    FLAG_SET_ERGO(UseFourByteObjectHeaders, false);
+  }
+  if (UseFourByteObjectHeaders) {
+#if (!defined(AMD64) && !defined(AARCH64)) || defined(ZERO)
+    warning("UseFourByteObjectHeaders is only supported on x64 and AArch64; disabling it");
+    FLAG_SET_ERGO(UseFourByteObjectHeaders, false);
+#else
+    if (!FLAG_IS_DEFAULT(hashCode) && hashCode != 2 && hashCode != 6) {
+      warning("UseFourByteObjectHeaders requires hashCode=2 or hashCode=6; disabling it");
+      FLAG_SET_ERGO(UseFourByteObjectHeaders, false);
+    }
+    if (UseFourByteObjectHeaders) {
+      FLAG_SET_ERGO(UseCompactObjectHeaders, true);
+    }
+#endif
+  }
+#endif
   // Set flags based on ergonomics.
   jint result = set_ergonomics_flags();
   if (result != JNI_OK) return result;
+
+#ifdef _LP64
+  if (UseFourByteObjectHeaders && !(UseSerialGC || UseG1GC || UseZGC)) {
+    warning("UseFourByteObjectHeaders is only supported with Serial, G1 and ZGC; disabling it");
+    FLAG_SET_ERGO(UseFourByteObjectHeaders, false);
+  }
+#endif
 
   // Set heap size based on available physical memory
   GCConfig::arguments()->set_heap_size();

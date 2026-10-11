@@ -109,6 +109,10 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 
 bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   switch (id) {
+  case vmIntrinsics::_getObjectSize:
+    // The fixed-layout intrinsic does not include hash expansion. The native
+    // JVMTI implementation uses the current mark and also handles mirrors.
+    return !UseFourByteObjectHeaders;
   case vmIntrinsics::_compareAndSetLong:
     break;
   case vmIntrinsics::_getAndAddInt:
@@ -240,16 +244,10 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
 #endif
-  case vmIntrinsics::_getObjectSize:
 #if defined(X86) || defined(AARCH64) || defined(S390) || defined(RISCV64) || defined(PPC64)
   case vmIntrinsics::_clone:
 #endif
     break;
-#if defined(AMD64) || defined(AARCH64)
-  case vmIntrinsics::_updateBytesAdler32:
-  case vmIntrinsics::_updateByteBufferAdler32:
-    break;
-#endif
   case vmIntrinsics::_blackhole:
     break;
   default:

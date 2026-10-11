@@ -102,12 +102,15 @@ ifneq ($(filter x86_64 aarch64, $(OPENJDK_TARGET_CPU)), )
 	+$(MAKE) -C $(ZLIBNG_OUT) libz.a
 
     LIBZIP_ZLIBNG_CFLAGS := -DINCLUDE_ZLIBNG=1
+    LIBZIP_EXCLUDES += zlib
   endif
 endif
 
 ifeq ($(USE_EXTERNAL_LIBZ), true)
   LIBZIP_EXCLUDES += zlib
 endif
+
+LIBZIP_LIBZ_LIBS := $(if $(ZLIBNG_LIB),,$(LIBZ_LIBS))
 
 ifeq ($(LIBZIP_CAN_USE_MMAP), true)
   BUILD_LIBZIP_MMAP := -DUSE_MMAP
@@ -124,7 +127,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBZIP, \
     DISABLED_WARNINGS_clang_gzwrite.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_zip_util.c := unused-function, \
     JDK_LIBS := libjava libjvm, \
-    LIBS_unix := $(LIBZ_LIBS) $(ZLIBNG_LIB), \
+    LIBS_unix := $(LIBZIP_LIBZ_LIBS) $(ZLIBNG_LIB), \
     EXTRA_DEPS := $(ZLIBNG_LIB), \
 ))
 

@@ -26,7 +26,6 @@
 #ifndef ZIP_ZLIB_BACKEND_H
 #define ZIP_ZLIB_BACKEND_H
 #include <zlib.h>
-#include "jvm.h"
 
 #ifdef INCLUDE_ZLIBNG
 /* zlib-ng is built in compatibility mode with a private symbol prefix. */
@@ -45,26 +44,20 @@ extern int jdk_ng_inflateInit2_(z_streamp, int, const char *, int);
 extern uLong jdk_ng_crc32(uLong, const Bytef *, uInt);
 extern uLong jdk_ng_adler32(uLong, const Bytef *, uInt);
 extern uLong jdk_ng_deflateBound(z_streamp, uLong);
-#define deflate(...) (JVM_UseZlibNG() ? jdk_ng_deflate(__VA_ARGS__) : deflate(__VA_ARGS__))
-#define deflateEnd(...) (JVM_UseZlibNG() ? jdk_ng_deflateEnd(__VA_ARGS__) : deflateEnd(__VA_ARGS__))
-#define deflateReset(...) (JVM_UseZlibNG() ? jdk_ng_deflateReset(__VA_ARGS__) : deflateReset(__VA_ARGS__))
-#define deflateParams(...) (JVM_UseZlibNG() ? jdk_ng_deflateParams(__VA_ARGS__) : deflateParams(__VA_ARGS__))
-#define deflateSetDictionary(...) (JVM_UseZlibNG() ? jdk_ng_deflateSetDictionary(__VA_ARGS__) : deflateSetDictionary(__VA_ARGS__))
-#define deflateSetHeader(...) (JVM_UseZlibNG() ? jdk_ng_deflateSetHeader(__VA_ARGS__) : deflateSetHeader(__VA_ARGS__))
-#define inflate(...) (JVM_UseZlibNG() ? jdk_ng_inflate(__VA_ARGS__) : inflate(__VA_ARGS__))
-#define inflateEnd(...) (JVM_UseZlibNG() ? jdk_ng_inflateEnd(__VA_ARGS__) : inflateEnd(__VA_ARGS__))
-#define inflateReset(...) (JVM_UseZlibNG() ? jdk_ng_inflateReset(__VA_ARGS__) : inflateReset(__VA_ARGS__))
-#define inflateSetDictionary(...) (JVM_UseZlibNG() ? jdk_ng_inflateSetDictionary(__VA_ARGS__) : inflateSetDictionary(__VA_ARGS__))
-#define crc32(...) (JVM_UseZlibNG() ? jdk_ng_crc32(__VA_ARGS__) : crc32(__VA_ARGS__))
-#define adler32(...) (JVM_UseZlibNG() ? jdk_ng_adler32(__VA_ARGS__) : adler32(__VA_ARGS__))
-#define deflateBound(...) (JVM_UseZlibNG() ? jdk_ng_deflateBound(__VA_ARGS__) : deflateBound(__VA_ARGS__))
-#undef inflateInit2
-#define inflateInit2(s, w) (JVM_UseZlibNG() \
-    ? jdk_ng_inflateInit2_((s), (w), ZLIB_VERSION, sizeof(z_stream)) \
-    : inflateInit2_((s), (w), ZLIB_VERSION, sizeof(z_stream)))
-#undef deflateInit2
-#define deflateInit2(s, l, m, w, mem, st) (JVM_UseZlibNG() \
-    ? jdk_ng_deflateInit2_((s), (l), (m), (w), (mem), (st), ZLIB_VERSION, sizeof(z_stream)) \
-    : deflateInit2_((s), (l), (m), (w), (mem), (st), ZLIB_VERSION, sizeof(z_stream)))
+#define deflate jdk_ng_deflate
+#define deflateEnd jdk_ng_deflateEnd
+#define deflateReset jdk_ng_deflateReset
+#define deflateParams jdk_ng_deflateParams
+#define deflateSetDictionary jdk_ng_deflateSetDictionary
+#define deflateSetHeader jdk_ng_deflateSetHeader
+#define deflateInit2_ jdk_ng_deflateInit2_
+#define inflate jdk_ng_inflate
+#define inflateEnd jdk_ng_inflateEnd
+#define inflateReset jdk_ng_inflateReset
+#define inflateSetDictionary jdk_ng_inflateSetDictionary
+#define inflateInit2_ jdk_ng_inflateInit2_
+#define crc32 jdk_ng_crc32
+#define adler32 jdk_ng_adler32
+#define deflateBound jdk_ng_deflateBound
 #endif
 #endif

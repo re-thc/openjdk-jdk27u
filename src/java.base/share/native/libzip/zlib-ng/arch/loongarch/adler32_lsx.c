@@ -7,10 +7,10 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
+#ifdef LOONGARCH_LSX
+
 #include "zbuild.h"
 #include "adler32_p.h"
-
-#ifdef LOONGARCH_LSX
 
 #include <lsxintrin.h>
 #include "lsxintrin_ext.h"
@@ -29,22 +29,14 @@ static inline uint32_t hsum(__m128i x) {
     return __lsx_vpickve2gr_w(sum4, 0);
 }
 
-static inline uint32_t adler32_fold_copy_impl(uint32_t adler, uint8_t *dst, const uint8_t *src, size_t len, const int COPY) {
-    if (src == NULL) return 1L;
-    if (len == 0) return adler;
-
+Z_FORCEINLINE static uint32_t adler32_copy_impl(uint32_t adler, uint8_t *dst, const uint8_t *src, size_t len, const int COPY) {
     uint32_t adler0, adler1;
     adler1 = (adler >> 16) & 0xffff;
     adler0 = adler & 0xffff;
 
 rem_peel:
-    if (len < 16) {
-        if (COPY) {
-            return adler32_copy_len_16(adler0, src, dst, len, adler1);
-        } else {
-            return adler32_len_16(adler0, src, len, adler1);
-        }
-    }
+    if (len < 16)
+        return adler32_copy_tail(adler0, dst, src, len, adler1, 1, 15, COPY);
 
     __m128i vbuf, vbuf_0;
     __m128i vs1_0, vs3, vs1, vs2, vs2_0, v_sad_sum1, v_short_sum2, v_short_sum2_0,
@@ -57,8 +49,7 @@ rem_peel:
 
     while (len >= 16) {
 
-        k = MIN(len, NMAX);
-        k -= k % 16;
+        k = ALIGN_DOWN(MIN(len, NMAX), 16);
         len -= k;
 
         vs1 = __lsx_vinsgr2vr_w(zero, adler0, 0);
@@ -146,11 +137,11 @@ rem_peel:
 }
 
 Z_INTERNAL uint32_t adler32_lsx(uint32_t adler, const uint8_t *src, size_t len) {
-    return adler32_fold_copy_impl(adler, NULL, src, len, 0);
+    return adler32_copy_impl(adler, NULL, src, len, 0);
 }
 
-Z_INTERNAL uint32_t adler32_fold_copy_lsx(uint32_t adler, uint8_t *dst, const uint8_t *src, size_t len) {
-    return adler32_fold_copy_impl(adler, dst, src, len, 1);
+Z_INTERNAL uint32_t adler32_copy_lsx(uint32_t adler, uint8_t *dst, const uint8_t *src, size_t len) {
+    return adler32_copy_impl(adler, dst, src, len, 1);
 }
 
 #endif
