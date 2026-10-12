@@ -22,8 +22,8 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 240
     env:
-      SOURCE_REVISION: 4fd6e18869c3d39d2851d1a907c5c8e34c9f50e5
-      BUILD_RUN: '38310619235'
+      SOURCE_REVISION: d33ce778497da4845e1616d910c457d225c57785
+      BUILD_RUN: '38310976070'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -31,7 +31,7 @@ jobs:
           sparse-checkout: .github/qualification
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: 4fd6e18869c3d39d2851d1a907c5c8e34c9f50e5
+          ref: d33ce778497da4845e1616d910c457d225c57785
           path: jdk
           fetch-depth: 0
       - name: Wait for matching native build artifacts
@@ -50,20 +50,20 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: bundles-${{ matrix.platform }}
-          run-id: '38310619235'
+          run-id: '38310976070'
           github-token: ${{ github.token }}
           path: jdk/bundles
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: bundles-${{ matrix.platform }}-debug
-          run-id: '38310619235'
+          run-id: '38310976070'
           github-token: ${{ github.token }}
           path: jdk/bundles
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           pattern: bundles-jtreg-*
           merge-multiple: true
-          run-id: '38310619235'
+          run-id: '38310976070'
           github-token: ${{ github.token }}
           path: jdk/jtreg
       - name: Extract native images
@@ -89,7 +89,7 @@ jobs:
           python3 -m py_compile make/scripts/check-common-intrinsics.py
           git diff --check 87edd79d3104ff502f7befec034716b081436f49
           python3 make/scripts/check-common-intrinsics.py > qualification/source-audit.log
-          "$RELEASE_JDK/bin/java" -Xint test/hotspot/jtreg/sources/SortIncludes.java src/hotspot/share src/hotspot/os/linux src/hotspot/os/posix src/hotspot/cpu/aarch64/commonIntrinsics_aarch64.inline.hpp src/hotspot/cpu/aarch64/templateInterpreterGenerator_aarch64.cpp src/hotspot/cpu/x86/commonIntrinsics_x86.inline.hpp src/hotspot/cpu/x86/templateInterpreterGenerator_x86_64.cpp > qualification/includes.log
+          "$RELEASE_JDK/bin/java" -Xint test/hotspot/jtreg/sources/SortIncludes.java src/hotspot/share src/hotspot/os/linux src/hotspot/os/posix src/hotspot/cpu/aarch64/commonIntrinsics_aarch64.inline.hpp src/hotspot/cpu/aarch64/templateInterpreterGenerator_aarch64.cpp src/hotspot/cpu/x86/commonIntrinsics_x86.inline.hpp src/hotspot/cpu/x86/templateInterpreterGenerator_x86_64.cpp src/hotspot/cpu/x86/stubGenerator_x86_64.cpp src/hotspot/cpu/aarch64/stubGenerator_aarch64.cpp > qualification/includes.log
           python3 ../orchestration/.github/qualification/run.py "$RELEASE_JDK" "$DEBUG_JDK" "$PWD/jtreg" "$PWD/images/tests/hotspot/jtreg/native"
       - name: Compile JMH benchmarks
         working-directory: jdk
