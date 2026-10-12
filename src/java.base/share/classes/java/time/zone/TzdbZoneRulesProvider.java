@@ -65,7 +65,7 @@ import sun.util.calendar.ZoneInfoFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
@@ -84,9 +84,9 @@ final class TzdbZoneRulesProvider extends ZoneRulesProvider {
      */
     private String versionId;
     /**
-     * Region to rules mapping
+     * Region to rules mapping, with room for all of the roughly 600 regions
      */
-    private final Map<String, Object> regionToRules = new ConcurrentHashMap<>();
+    private final Map<String, Object> regionToRules = new ConcurrentHashMap<>(512);
 
     /**
      * Creates an instance.
@@ -107,7 +107,7 @@ final class TzdbZoneRulesProvider extends ZoneRulesProvider {
 
     @Override
     protected Set<String> provideZoneIds() {
-        return new HashSet<>(regionToRules.keySet());
+        return Collections.unmodifiableSet(regionToRules.keySet());
     }
 
     @Override
