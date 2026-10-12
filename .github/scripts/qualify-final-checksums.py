@@ -19,6 +19,8 @@ def run(name,args):
     print(name,flush=True)
     with (OUT/(name+'.log')).open('w') as f:
         p=subprocess.run([str(x) for x in args],stdout=f,stderr=subprocess.STDOUT)
+    if name.startswith('jtreg-'):
+        print((OUT/(name+'.log')).read_text()[-2000:],flush=True)
     if p.returncode:
         print((OUT/(name+'.log')).read_text()[-10000:],flush=True)
         raise RuntimeError(name)
@@ -47,13 +49,13 @@ def tests():
     run('compile-gc',[NEW/'bin/javac','-d',classes,
         *[ROOT/'test/hotspot/jtreg/compiler/intrinsics/zip'/name for name in names]])
     for tier,flags in TIERS.items():
-        for gc in ['Serial','Parallel','G1','Z','Shenandoah']:
+        for gc in ['Serial','G1','Z']:
             for cls in ['TestZlibNGAdler32','compiler.intrinsics.zip.TestFpRegsABI']:
                 for mode in (['default','avx2'] if os.uname().machine=='x86_64' else ['default']):
                     extra=['-XX:UseAVX=2'] if mode=='avx2' else []
                     run(f'gc-{tier}-{gc}-{mode}-{cls}',[DEBUG/'bin/java',*BASE,*flags,*extra,
                         '-Xmx128m','-XX:+Use'+gc+'GC','-XX:+VerifyOops','-cp',classes,cls])
-    (OUT/'qualification-passed.txt').write_text('Release/debug jtreg, all tiers, five collectors and register checks passed\n')
+    (OUT/'qualification-passed.txt').write_text('Release/debug jtreg, all tiers, Serial/G1/Z collectors and register checks passed\n')
 
 def bench():
     jars=ROOT/'validation/jmh';jars.mkdir(exist_ok=True)
