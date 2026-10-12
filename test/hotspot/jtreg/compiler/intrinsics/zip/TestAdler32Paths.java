@@ -24,14 +24,32 @@
 /**
  * @test
  * @summary Verify Adler32 intrinsics with scalar, heap and direct input
+ * @modules jdk.management
  * @run main/othervm -Xint compiler.intrinsics.zip.TestAdler32Paths
  * @run main/othervm -XX:TieredStopAtLevel=1 -Xbatch compiler.intrinsics.zip.TestAdler32Paths
  * @run main/othervm -XX:-TieredCompilation -Xbatch compiler.intrinsics.zip.TestAdler32Paths
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-UseAdler32Intrinsics -Xcheck:jni compiler.intrinsics.zip.TestAdler32Paths
  */
 
+/**
+ * @test id=limited-avx
+ * @summary Verify default Adler32 acceleration without the AVX2 HotSpot stub
+ * @requires os.family == "linux" & os.simpleArch == "x64"
+ * @requires vm.compiler1.enabled & vm.compiler2.enabled
+ * @requires vm.opt.UseAdler32Intrinsics == null | vm.opt.UseAdler32Intrinsics == true
+ * @modules jdk.management
+ * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:UseAVX=0 compiler.intrinsics.zip.TestAdler32Paths enabled
+ * @run main/othervm -XX:TieredStopAtLevel=1 -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:UseAVX=0 compiler.intrinsics.zip.TestAdler32Paths enabled
+ * @run main/othervm -XX:-TieredCompilation -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:UseAVX=0 compiler.intrinsics.zip.TestAdler32Paths enabled
+ * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:UseAVX=1 compiler.intrinsics.zip.TestAdler32Paths enabled
+ * @run main/othervm -XX:TieredStopAtLevel=1 -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:UseAVX=1 compiler.intrinsics.zip.TestAdler32Paths enabled
+ * @run main/othervm -XX:-TieredCompilation -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:UseAVX=1 compiler.intrinsics.zip.TestAdler32Paths enabled
+ */
+
 package compiler.intrinsics.zip;
 
+import com.sun.management.HotSpotDiagnosticMXBean;
+import java.lang.management.ManagementFactory;
 import java.nio.ByteBuffer;
 import java.util.Random;
 import java.util.zip.Adler32;
@@ -53,6 +71,11 @@ public class TestAdler32Paths {
     }
 
     public static void main(String[] args) {
+        if (args.length != 0 && !Boolean.parseBoolean(ManagementFactory
+                .getPlatformMXBean(HotSpotDiagnosticMXBean.class)
+                .getVMOption("UseAdler32Intrinsics").getValue())) {
+            throw new AssertionError("Adler32 intrinsics were disabled without AVX2");
+        }
         byte[] data = new byte[65536 + 31];
         new Random(17).nextBytes(data);
         ByteBuffer direct = ByteBuffer.allocateDirect(data.length);

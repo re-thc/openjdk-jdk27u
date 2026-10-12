@@ -28,6 +28,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/zipLibrary.hpp"
 #include "macroAssembler_x86.hpp"
 #include "stubGenerator_x86_64.hpp"
@@ -82,6 +83,10 @@ address StubGenerator::generate_updateBytesAdler32() {
   start = __ pc();
 
 #ifdef LINUX
+  if (!VM_Version::supports_avx2()) {
+    __ jump(RuntimeAddress(bulk_adler), r10);
+    return start;
+  }
   Label use_simd;
   __ cmpl(c_rarg2, 1024);
   __ jcc(Assembler::less, use_simd);

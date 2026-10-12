@@ -17,6 +17,7 @@ least 64 KiB. All these call paths use zlib-ng.
 Adler32 calls zlib-ng directly from the interpreter and C1 for scalar, heap
 array and direct-buffer updates. C2 calls zlib-ng for scalar updates and bulk
 updates of at least 1 KiB; shorter bulk updates use the HotSpot SIMD kernel.
+On x86-64 without AVX2, C2 uses zlib-ng for all bulk sizes.
 
 CRC32 bulk updates of at least 64 bytes use zlib-ng on Linux x86-64 when the
 HotSpot AVX-512 kernel is unavailable. The interpreter, C1 and C2 use the same
@@ -51,7 +52,7 @@ private `jdk_ng_` symbols and the configured target toolchain and sysroot.
 ## Validation
 
 Regression tests are in `test/hotspot/jtreg/compiler/intrinsics/zip/` and
-`test/jdk/java/util/zip/`. JMH benchmarks `ZipBackend`, `ZipBufferCalls` and
-`ZipStreamCalls` and `ChecksumPaths` cover reusable streams, checksums, buffer combinations and
-complete ZIP/GZIP writes. Record the CPU, revision, execution tier, forks,
-warmup, measurement settings and compressed sizes when comparing results.
+`test/jdk/java/util/zip/`. JMH benchmarks `ZipBackend`, `ZipBufferCalls`,
+`ZipStreamCalls` and `ChecksumPaths` cover reusable streams, checksums, buffer
+combinations and complete ZIP/GZIP writes. Record the CPU, revision, execution
+tier, forks, warmup, measurement settings and compressed sizes when comparing results.

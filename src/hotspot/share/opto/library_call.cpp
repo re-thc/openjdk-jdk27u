@@ -7147,10 +7147,10 @@ bool LibraryCallKit::inline_updateDirectByteBufferCRC32C() {
   return true;
 }
 
-//------------------------------inline_updateBytesAdler32----------------------
+//------------------------------inline_updateAdler32---------------------------
 //
-// Calculate Adler32 checksum for byte[] array.
-// int java.util.zip.Adler32.updateBytes(int crc, byte[] buf, int off, int len)
+// Calculate Adler32 for a single byte.
+// int java.util.zip.Adler32.update(int adler, int value)
 //
 bool LibraryCallKit::inline_updateAdler32() {
   assert(UseAdler32Intrinsics, "Adler32 intrinsic must be enabled");
@@ -7161,6 +7161,11 @@ bool LibraryCallKit::inline_updateAdler32() {
   return true;
 }
 
+//------------------------------inline_updateBytesAdler32----------------------
+//
+// Calculate Adler32 checksum for byte[] array.
+// int java.util.zip.Adler32.updateBytes(int crc, byte[] buf, int off, int len)
+//
 bool LibraryCallKit::inline_updateBytesAdler32() {
   assert(UseAdler32Intrinsics, "Adler32 Intrinsic support need"); // check if we actually need to check this flag or check a different one
   assert(callee()->signature()->size() == 4, "updateBytes has 4 parameters");
