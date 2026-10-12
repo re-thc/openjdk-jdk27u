@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,6 +26,7 @@
 
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "oops/instanceKlass.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/compile.hpp"
 #include "opto/intrinsicnode.hpp"
@@ -243,32 +245,80 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
         cache_offset = cache_offset + OMCache::oop_to_oop_difference();
       }
 
-      // Look for the monitor in the table.
+      if (UseFourByteObjectHeaders) {
+        Label expanded, hash_ready;
+        // Acquire the state published after installing an expanded hash slot.
+        // Only ordinary instances have a fixed slot offset in InstanceKlass.
+        ldarw(t1_hash, obj);
+        andw(t2, t1_hash, markWord::lock_mask_in_place);
+        cmpw(t2, markWord::monitor_value);
+        br(Assembler::NE, slow_path);
+        ubfx(t1_hash, t1_hash, markWord::hashctrl_shift, markWord::hashctrl_bits);
+        cmpw(t1_hash, 3);
+        br(Assembler::EQ, expanded);
+        cmpw(t1_hash, 1);
+        br(Assembler::NE, slow_path);
 
-      // Get the hash code.
-      ubfx(t1_hash, t3, markWord::hash_shift, markWord::hash_bits);
+        if (hashCode == 2) {
+          movw(t1_hash, 1);
+        } else {
+          assert(hashCode == 6, "Only address-derived or constant identity hashes");
+          // FastHash::get_hash32(low address, high address).
+          mov(rscratch1, 0x337954D5);
+          movw(t1_hash, obj);
+          lsr(t2, obj, 32);
+          movw(t3, 0xAAAAAAAA);
+          eorw(t3, t1_hash, t3);
+          mul(t3, t3, rscratch1);       // U0:V0
+          eorw(t1_hash, t1_hash, t2);
+          mulw(t1_hash, t1_hash, rscratch1); // Q0
+          lsr(t2, t3, 32);
+          eorw(t1_hash, t1_hash, t2);  // L1
+          eorw(t3, t3, rscratch1);     // P1
+          mul(t2, t1_hash, rscratch1); // U1:V1
+          rorvw(t3, t3, t1_hash);     // Q1
+          eorw(t3, t3, t2);
+          lsr(t2, t2, 32);
+          eorw(t1_hash, t3, t2);      // V1 ^ Q1 ^ U1
+          andw(t1_hash, t1_hash, markWord::hash_mask);
+        }
+        b(hash_ready);
 
-      // Get the table and calculate the bucket's address
-      lea(t3, ExternalAddress(ObjectMonitorTable::current_table_address()));
-      ldr(t3, Address(t3));
-      ldr(t2, Address(t3, ObjectMonitorTable::table_capacity_mask_offset()));
-      ands(t1_hash, t1_hash, t2);
-      ldr(t3, Address(t3, ObjectMonitorTable::table_buckets_offset()));
+        bind(expanded);
+        load_klass(t3, obj);
+        ldrw(t2, Address(t3, Klass::kind_offset_in_bytes()));
+        cmpw(t2, Klass::InstanceKlassKind);
+        br(Assembler::NE, slow_path);
+        ldrw(t1_hash, Address(t3, InstanceKlass::hash_offset_offset_in_bytes()));
+        ldrw(t1_hash, Address(obj, t1_hash, Address::uxtw(0)));
+        bind(hash_ready);
+      } else {
+        // Get the hash code.
+        ubfx(t1_hash, t3, markWord::hash_shift, markWord::hash_bits);
+      }
 
-      // Read the monitor from the bucket.
-      ldr(t1_monitor, Address(t3, t1_hash, Address::lsl(LogBytesPerWord)));
+      { // Look for the monitor in the table.
+        // Get the table and calculate the bucket's address
+        lea(t3, ExternalAddress(ObjectMonitorTable::current_table_address()));
+        ldr(t3, Address(t3));
+        ldr(t2, Address(t3, ObjectMonitorTable::table_capacity_mask_offset()));
+        ands(t1_hash, t1_hash, t2);
+        ldr(t3, Address(t3, ObjectMonitorTable::table_buckets_offset()));
 
-      // Check if the monitor in the bucket is special (empty, tombstone or removed).
-      cmp(t1_monitor, (unsigned char)ObjectMonitorTable::SpecialPointerValues::below_is_special);
-      br(Assembler::LO, slow_path);
+        // Read the monitor from the bucket.
+        ldr(t1_monitor, Address(t3, t1_hash, Address::lsl(LogBytesPerWord)));
 
-      // Check if object matches.
-      ldr(t3, Address(t1_monitor, ObjectMonitor::object_offset()));
-      BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-      bs_asm->try_peek_weak_handle_in_nmethod(this, t3, t3, t2, slow_path);
-      cmp(t3, obj);
-      br(Assembler::NE, slow_path);
+        // Check if the monitor in the bucket is special (empty, tombstone or removed).
+        cmp(t1_monitor, (unsigned char)ObjectMonitorTable::SpecialPointerValues::below_is_special);
+        br(Assembler::LO, slow_path);
 
+        // Check if object matches.
+        ldr(t3, Address(t1_monitor, ObjectMonitor::object_offset()));
+        BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+        bs_asm->try_peek_weak_handle_in_nmethod(this, t3, t3, t2, slow_path);
+        cmp(t3, obj);
+        br(Assembler::NE, slow_path);
+      }
       bind(monitor_found);
     }
 

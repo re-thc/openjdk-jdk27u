@@ -12,7 +12,8 @@ AMD EPYC 9V74, x86-64 Linux, CPU 0 pinned, JMH 1.37 average time in ns/op.
 Production StringZilla kernels use GCC 16.0.1 (Ubuntu 16-20260322-1ubuntu1);
 the VM and other native objects use GCC 14.2.0 release builds with the fork
 development profile. This is a GCC 16 kernel integration measurement, not a
-full GCC 16 VM build. All controls use the same image.
+full GCC 16 VM build. All controls use the same image with four-byte object
+headers enabled by default.
 
 Each of the 54 cases uses two isolated forks, three 500 ms warmups and five
 500 ms measurements per fork. Runs are sequential with no concurrent builds or
@@ -23,7 +24,7 @@ tests, one active processor, Serial GC and CDS disabled. Interpreter uses
 * **Enabled:** `-XX:+UseStringZillaIntrinsics`.
 * **Disabled:** `-XX:-UseStringZillaIntrinsics`, retaining the fork's Java gates.
 * **Original Java:** the same disabled VM with unmodified `StringLatin1` and
-  `StringUTF16` from base revision `8d8d71a045285f6d4c42ba44e4a9c8f696ead5df`
+  `StringUTF16` from base revision `87edd79d3104ff502f7befec034716b081436f49`
   compiled into a `java.base` patch. This isolates the original search bodies;
   it is not a pristine whole-JDK build.
 
@@ -47,29 +48,29 @@ all iteration samples, JVM arguments, compiler flags and artifact/source hashes.
 
 | Fixture | Tier | Original Java (ns/op) | Disabled (ns/op) | Enabled (ns/op) | Original / enabled | Disabled / enabled |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| Near-end miss | Interpreter | 475,061.66 ± 15,208.97 | 477,483.94 ± 12,181.53 | 1,573.01 ± 102.19 | 302.01× | 303.55× |
-| Near-end miss | C1 | 7,494.48 ± 626.33 | 6,884.89 ± 122.52 | 1,023.86 ± 20.76 | 7.32× | 6.72× |
-| Near-end miss | C2 | 2,763.66 ± 133.33 | 2,652.34 ± 90.36 | 1,063.99 ± 107.48 | 2.60× | 2.49× |
-| Repeated-suffix match | Interpreter | 4,521,322.71 ± 303,529.06 | 4,552,596.72 ± 204,509.82 | 1,048.25 ± 43.19 | 4313.23× | 4343.06× |
-| Repeated-suffix match | C1 | 63,122.67 ± 2,388.68 | 50,498.60 ± 3,396.19 | 757.37 ± 26.52 | 83.34× | 66.68× |
-| Repeated-suffix match | C2 | 23,091.57 ± 1,763.54 | 20,073.62 ± 1,337.54 | 755.68 ± 42.97 | 30.56× | 26.56× |
-| Crossed-byte control | Interpreter | 151,558.93 ± 10,304.63 | 152,069.53 ± 3,946.01 | 655.01 ± 28.76 | 231.38× | 232.16× |
-| Crossed-byte control | C1 | 4,725.43 ± 97.64 | 3,186.96 ± 331.61 | 294.65 ± 6.25 | 16.04× | 10.82× |
-| Crossed-byte control | C2 | 717.10 ± 41.49 | 710.83 ± 25.28 | 291.15 ± 9.75 | 2.46× | 2.44× |
+| Near-end miss | Interpreter | 460,328.24 ± 22,331.11 | 475,919.96 ± 30,272.28 | 1,519.75 ± 41.85 | 302.90× | 313.16× |
+| Near-end miss | C1 | 7,616.15 ± 453.53 | 7,128.79 ± 396.75 | 1,010.36 ± 18.02 | 7.54× | 7.06× |
+| Near-end miss | C2 | 2,495.47 ± 251.27 | 3,237.13 ± 881.23 | 1,017.19 ± 34.05 | 2.45× | 3.18× |
+| Repeated-suffix match | Interpreter | 4,314,745.29 ± 108,232.67 | 4,315,818.94 ± 91,600.19 | 952.81 ± 54.31 | 4528.43× | 4529.55× |
+| Repeated-suffix match | C1 | 60,005.70 ± 1,779.62 | 50,819.99 ± 1,835.27 | 730.20 ± 93.51 | 82.18× | 69.60× |
+| Repeated-suffix match | C2 | 19,450.75 ± 309.29 | 21,503.13 ± 3,001.02 | 694.16 ± 41.33 | 28.02× | 30.98× |
+| Crossed-byte control | Interpreter | 142,427.28 ± 5,969.68 | 155,282.01 ± 9,618.02 | 656.77 ± 29.65 | 216.86× | 236.43× |
+| Crossed-byte control | C1 | 4,905.76 ± 254.86 | 2,576.43 ± 160.26 | 300.37 ± 6.25 | 16.33× | 8.58× |
+| Crossed-byte control | C2 | 695.87 ± 50.85 | 694.34 ± 38.39 | 290.41 ± 16.15 | 2.40× | 2.39× |
 
 ### AVX-512
 
 | Fixture | Tier | Original Java (ns/op) | Disabled (ns/op) | Enabled (ns/op) | Original / enabled | Disabled / enabled |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| Near-end miss | Interpreter | 476,076.28 ± 36,364.67 | 483,272.95 ± 20,330.76 | 851.50 ± 10.17 | 559.10× | 567.56× |
-| Near-end miss | C1 | 7,696.65 ± 487.07 | 7,039.69 ± 448.58 | 372.03 ± 9.76 | 20.69× | 18.92× |
-| Near-end miss | C2 | 2,668.88 ± 132.45 | 2,602.35 ± 71.66 | 398.12 ± 18.84 | 6.70× | 6.54× |
-| Repeated-suffix match | Interpreter | 4,360,687.04 ± 126,351.44 | 4,622,864.72 ± 260,748.85 | 295.51 ± 4.21 | 14756.43× | 15643.64× |
-| Repeated-suffix match | C1 | 66,500.99 ± 10,750.51 | 50,056.90 ± 2,625.06 | 52.81 ± 3.70 | 1259.21× | 947.84× |
-| Repeated-suffix match | C2 | 20,982.74 ± 2,286.83 | 20,988.46 ± 1,294.33 | 48.72 ± 3.87 | 430.64× | 430.76× |
-| Crossed-byte control | Interpreter | 151,922.06 ± 4,015.58 | 154,848.36 ± 4,139.62 | 657.60 ± 27.12 | 231.03× | 235.48× |
-| Crossed-byte control | C1 | 4,784.09 ± 168.81 | 2,642.52 ± 363.42 | 295.94 ± 8.44 | 16.17× | 8.93× |
-| Crossed-byte control | C2 | 706.11 ± 64.20 | 673.25 ± 8.12 | 309.89 ± 23.09 | 2.28× | 2.17× |
+| Near-end miss | Interpreter | 468,090.02 ± 22,959.54 | 467,730.18 ± 20,888.39 | 888.98 ± 32.18 | 526.55× | 526.14× |
+| Near-end miss | C1 | 7,777.84 ± 542.19 | 7,037.32 ± 391.84 | 364.53 ± 9.76 | 21.34× | 19.31× |
+| Near-end miss | C2 | 2,769.42 ± 104.01 | 3,190.28 ± 860.97 | 376.18 ± 18.80 | 7.36× | 8.48× |
+| Repeated-suffix match | Interpreter | 4,361,690.93 ± 194,510.93 | 4,292,977.22 ± 153,885.23 | 299.23 ± 7.99 | 14576.39× | 14346.76× |
+| Repeated-suffix match | C1 | 60,972.70 ± 3,107.61 | 50,368.27 ± 1,795.68 | 49.70 ± 2.77 | 1226.87× | 1013.49× |
+| Repeated-suffix match | C2 | 21,036.82 ± 1,920.65 | 19,853.62 ± 619.25 | 48.34 ± 2.68 | 435.15× | 410.68× |
+| Crossed-byte control | Interpreter | 141,860.84 ± 4,905.04 | 146,843.45 ± 2,841.66 | 651.34 ± 38.93 | 217.80× | 225.45× |
+| Crossed-byte control | C1 | 4,755.61 ± 104.69 | 2,623.69 ± 204.10 | 303.36 ± 9.18 | 15.68× | 8.65× |
+| Crossed-byte control | C2 | 678.50 ± 9.30 | 671.19 ± 21.55 | 300.59 ± 21.34 | 2.26× | 2.23× |
 
 For each measured case, the enabled 99.9% interval lies below both control
 intervals. These results cover the selected x86 workloads and both executable SIMD
@@ -86,7 +87,7 @@ the JMH dependencies. Build the original Java helper control from the base:
 ```sh
 mkdir -p original-src/java/lang original-classes
 for class in StringLatin1 StringUTF16; do
-    git show 8d8d71a045285f6d4c42ba44e4a9c8f696ead5df:src/java.base/share/classes/java/lang/$class.java > original-src/java/lang/$class.java
+    git show 87edd79d3104ff502f7befec034716b081436f49:src/java.base/share/classes/java/lang/$class.java > original-src/java/lang/$class.java
 done
 "$TEST_JDK/bin/javac" --patch-module=java.base=original-src \
     -d original-classes original-src/java/lang/*.java

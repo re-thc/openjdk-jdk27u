@@ -44,6 +44,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class DeterministicDump {
 
@@ -62,8 +63,9 @@ public class DeterministicDump {
         }
     }
 
-    public static void doTest(boolean compressed) throws Exception {
+    public static void doTest(boolean compressed, String... extraArgs) throws Exception {
         ArrayList<String> baseArgs = new ArrayList<>();
+        baseArgs.addAll(Arrays.asList(extraArgs));
 
         // Try to reduce indeterminism of GC heap sizing and evacuation.
         baseArgs.add("-Xmx128M");

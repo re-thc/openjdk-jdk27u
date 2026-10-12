@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +23,8 @@
  *
  */
 
+#include "cds/cdsConfig.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -31,6 +34,7 @@
 #include "memory/padded.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/arrayKlass.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomicAccess.hpp"
@@ -63,6 +67,7 @@
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
+#include "utilities/fastHash.hpp"
 #include "utilities/globalCounter.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/linkedlist.hpp"
@@ -599,7 +604,7 @@ static SharedGlobals GVars;
 //   There are simple ways to "diffuse" the middle address bits over the
 //   generated hashCode values:
 
-static intptr_t get_next_hash(Thread* current, oop obj) {
+static intptr_t get_next_hash_legacy(Thread* current, oop obj) {
   intptr_t value = 0;
   if (hashCode == 0) {
     // This form uses global Park-Miller RNG.
@@ -639,20 +644,107 @@ static intptr_t get_next_hash(Thread* current, oop obj) {
   return value;
 }
 
+#ifdef _LP64
+// Keep dump-only class metadata and hashing work out of the normal address hash path.
+NOINLINE static uint64_t static_archive_hash_input(oop obj, oop metadata_obj, Klass* obj_klass) {
+  if (metadata_obj == nullptr) {
+    metadata_obj = obj;
+    obj_klass = obj->klass();
+  }
+  // Regenerated mirrors can be allocated at different offsets by concurrent GCs.
+  // Class names give these mirrors a stable hash while dumping.
+  if (obj_klass == vmClasses::Class_klass()) {
+    Klass* klass = java_lang_Class::as_Klass(metadata_obj);
+    if (klass == nullptr) {
+      // Hash expansion also runs during GC, before global mirror handles are fixed.
+      // Read the stable array metadata instead of resolving those handles.
+      Klass* array_klass = java_lang_Class::array_klass_acquire(metadata_obj);
+      BasicType type = array_klass == nullptr ? T_VOID : ArrayKlass::cast(array_klass)->element_type();
+      return static_cast<uint32_t>(type);
+    }
+    Symbol* name = klass->name();
+    return java_lang_String::hash_code(reinterpret_cast<const jbyte*>(name->bytes()), name->utf8_length());
+  }
+  // Other objects must not depend on heap address randomization.
+  // Hashed archived objects retain this value in their expanded hash slot.
+  return cast_from_oop<uint64_t>(obj) - reinterpret_cast<uintptr_t>(Universe::heap()->reserved_start());
+}
+#endif
+
+static intptr_t get_four_byte_hash(oop obj, oop metadata_obj = nullptr, Klass* obj_klass = nullptr) {
+  assert(UseFourByteObjectHeaders, "Only with compact i-hash");
+  assert(hashCode == 6 || hashCode == 2, "must have idempotent hashCode");
+  if (hashCode == 2) {
+    return 1;
+  }
+#ifdef _LP64
+  uint64_t val = cast_from_oop<uint64_t>(obj);
+  if (!UseCompiler && CDSConfig::is_dumping_classic_static_archive()) {
+    val = static_archive_hash_input(obj, metadata_obj, obj_klass);
+  }
+  uint32_t hash = FastHash::get_hash32((uint32_t)val, (uint32_t)(val >> 32));
+#else
+  uint32_t val = cast_from_oop<uint32_t>(obj);
+  uint32_t hash = FastHash::get_hash32(val, UCONST64(0xAAAAAAAA));
+#endif
+  // Zero is a valid hash in the address-derived scheme.
+  return static_cast<intptr_t>(hash & markWord::hash_mask);
+}
+
+intptr_t ObjectSynchronizer::get_next_hash(Thread* current, oop obj) {
+  return UseFourByteObjectHeaders ? get_four_byte_hash(obj) : get_next_hash_legacy(current, obj);
+}
+
+intptr_t ObjectSynchronizer::get_hash_for_copy(oop from, oop to, Klass* klass) {
+  assert(UseFourByteObjectHeaders, "only with four-byte headers");
+  // The source header may already contain a forwarding pointer. Use the
+  // captured class and copied fields for dump-only metadata hashing, while
+  // preserving the source address for ordinary address-derived hashes.
+  return get_four_byte_hash(from, to, klass);
+}
+
+// Keep this path out of the legacy hash loop. Combining both layouts makes
+// native compilers stop inlining the legacy RNG and spill additional registers.
+NOINLINE static intptr_t four_byte_hash_code(oop obj) {
+  while (true) {
+    markWord mark = obj->mark_acquire();
+    if (mark.is_hashed()) {
+      return ObjectSynchronizer::get_hash(mark, obj);
+    }
+    intptr_t hash = get_four_byte_hash(obj);
+    markWord new_mark;
+    if (mark.is_not_hashed_expanded()) {
+      new_mark = mark.set_hashed_expanded();
+      size_t offset = mark.klass()->hash_offset_in_bytes(obj, mark);
+      obj->int_field_put(offset, (jint) hash);
+    } else {
+      new_mark = mark.set_hashed_not_expanded();
+    }
+    markWord old_mark = obj->cas_set_mark(new_mark, mark);
+    if (old_mark == mark) {
+      return hash;
+    }
+    // CAS failed, retry.
+  }
+}
+
 intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
+  if (UseFourByteObjectHeaders) {
+    return four_byte_hash_code(obj);
+  }
   while (true) {
     ObjectMonitor* monitor = nullptr;
     markWord temp, test;
     intptr_t hash;
     markWord mark = obj->mark_acquire();
-    // If UseObjectMonitorTable is set the hash can simply be installed in the
-    // object header, since the monitor isn't in the object header.
     if (UseObjectMonitorTable || !mark.has_monitor()) {
+      // If UseObjectMonitorTable is set the hash can simply be installed in the
+      // object header, since the monitor isn't in the object header.
       hash = mark.hash();
       if (hash != 0) {                     // if it has a hash, just return it
         return hash;
       }
-      hash = get_next_hash(current, obj);  // get a new hash
+      hash = get_next_hash_legacy(current, obj);  // get a new hash
       temp = mark.copy_set_hash(hash);     // merge the hash into header
                                            // try to install the hash
       test = obj->cas_set_mark(temp, mark);
@@ -707,7 +799,7 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
     assert(mark.is_neutral(), "invariant: header=" INTPTR_FORMAT, mark.value());
     hash = mark.hash();
     if (hash == 0) {                       // if it does not have a hash
-      hash = get_next_hash(current, obj);  // get a new hash
+      hash = get_next_hash_legacy(current, obj);  // get a new hash
       temp = mark.copy_set_hash(hash)   ;  // merge the hash into header
       assert(temp.is_neutral(), "invariant: header=" INTPTR_FORMAT, temp.value());
       uintptr_t v = AtomicAccess::cmpxchg(monitor->metadata_addr(), mark.value(), temp.value());
@@ -734,6 +826,28 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
     // We finally get the hash.
     return hash;
   }
+}
+
+
+uint32_t ObjectSynchronizer::get_hash(markWord mark, oop obj, Klass* klass) {
+  assert(UseFourByteObjectHeaders, "Only with compact i-hash");
+  assert((mark.value() & markWord::lock_mask_in_place) != markWord::marked_value,
+         "forwarding pointers do not contain hash metadata");
+  assert(mark.is_hashed(), "only from hashed or copied object");
+  if (mark.is_hashed_expanded()) {
+    return obj->int_field(klass->hash_offset_in_bytes(obj, mark));
+  } else {
+    assert(mark.is_hashed_not_expanded(), "must be hashed");
+    assert(hashCode == 6 || hashCode == 2, "must have idempotent hashCode");
+    // Already marked as hashed, but not yet copied. Recompute hash and return it.
+    return get_four_byte_hash(obj); // recompute hash
+  }
+}
+
+uint32_t ObjectSynchronizer::get_hash(markWord mark, oop obj) {
+  assert((mark.value() & markWord::lock_mask_in_place) != markWord::marked_value,
+         "must resolve forwarding before decoding the klass");
+  return get_hash(mark, obj, mark.klass());
 }
 
 bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
@@ -1545,8 +1659,14 @@ ObjectMonitor* ObjectSynchronizer::add_monitor(ObjectMonitor* monitor, oop obj) 
   assert(UseObjectMonitorTable, "must be");
   assert(obj == monitor->object(), "must be");
 
-  intptr_t hash = obj->mark().hash();
-  assert(hash != 0, "must be set when claiming the object monitor");
+  markWord mark = obj->mark();
+  intptr_t hash;
+  if (UseFourByteObjectHeaders) {
+    hash = static_cast<intptr_t>(get_hash(mark, obj));
+  } else {
+    hash = mark.hash();
+  }
+  assert(UseFourByteObjectHeaders ? mark.is_hashed() : hash != 0, "must be set when claiming the object monitor");
   monitor->set_hash(hash);
 
   return ObjectMonitorTable::monitor_put_get(monitor, obj);

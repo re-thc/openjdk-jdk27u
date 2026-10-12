@@ -39,6 +39,8 @@ to exercise compiled JNI fallback for every search.
 Search bridges accept validated byte-array ranges and return relative byte offsets.
 Java helpers convert these offsets to character indices. Builder searches use
 the logical length, including when the backing array has spare capacity.
+VM array offsets follow the selected header layout. Overlap regressions cover
+four-byte headers and the compact/legacy opt-outs in each execution tier.
 
 | Limit | Bound |
 | --- | --- |
@@ -125,12 +127,12 @@ functional and tier-specific performance checks before changing dispatch gates.
 
 ## Validation and benchmarks
 
-Local release jtreg validation passed **162 tests, zero failures/errors**:
-String (95), StringBuilder (16), StringBuffer (25), HotSpot string intrinsics (24),
+Local release jtreg validation passed **163 tests, zero failures/errors**:
+String (96), StringBuilder (16), StringBuffer (25), HotSpot string intrinsics (24),
 and LoggerFinder (2). Two other HotSpot tests retain platform exclusions. Clean
 GCC 14 release/CDS
-and fastdebug builds use the fork development profile. Nine targeted fastdebug
-tests passed. Eight targeted tests passed with final GCC 16 kernels and AVX2
+and fastdebug builds use the fork development profile. Ten targeted fastdebug
+tests passed. Nine targeted tests passed with final GCC 16 kernels and AVX2
 dispatch. AArch64 cross checks cover HotSpot and java.base native libraries.
 
 The tests cover all three execution tiers, JNI fallback, explicit opt-out,

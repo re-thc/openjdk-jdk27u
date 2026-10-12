@@ -67,6 +67,7 @@ private:
   mutable ZConditionLock _ref_lock;
   Atomic<int32_t>        _ref_count;
   Atomic<bool>           _done;
+  Atomic<size_t>         _hash_expansion_bytes;
 
   // Relocated remembered set fields support
   Atomic<ZPublishState>  _relocated_remembered_fields_state;
@@ -168,6 +169,7 @@ public:
   void relocated_remembered_fields_apply_to_published(Function function);
   bool relocated_remembered_fields_published_contains(volatile zpointer* p);
 
+  void record_hash_expansion(size_t old_size, size_t new_size);
   void verify() const;
 };
 

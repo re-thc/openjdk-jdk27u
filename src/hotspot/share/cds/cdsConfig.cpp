@@ -156,6 +156,8 @@ const char* CDSConfig::default_archive_path() {
       // Note that generation of xxx_nocoh.jsa variants require
       // --enable-cds-archive-nocoh at build time
       tmp.print_raw("_nocoh");
+    } else if (UseFourByteObjectHeaders) {
+      tmp.print_raw("_fourbyte");
     }
 #endif
     tmp.print_raw(".jsa");

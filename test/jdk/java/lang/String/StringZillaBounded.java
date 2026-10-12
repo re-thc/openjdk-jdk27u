@@ -48,6 +48,19 @@
  * @run main/othervm -Xbatch -XX:UseAVX=2 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaRfindLatin1,_stringzillaRfindUTF16 StringZillaBounded overlaps
  */
 
+/*
+ * @test id=headerLayouts
+ * @summary Long reverse-search overlaps with compact and legacy array headers
+ * @requires (vm.bits == "64")
+ * @requires (os.arch == "amd64" | os.arch == "x86_64" | os.arch == "aarch64")
+ * @run main/othervm -Xint -XX:-UseFourByteObjectHeaders StringZillaBounded overlaps
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:-UseFourByteObjectHeaders StringZillaBounded overlaps
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:-UseFourByteObjectHeaders StringZillaBounded overlaps
+ * @run main/othervm -Xint -XX:-UseCompactObjectHeaders StringZillaBounded overlaps
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:-UseCompactObjectHeaders StringZillaBounded overlaps
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:-UseCompactObjectHeaders StringZillaBounded overlaps
+ */
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
