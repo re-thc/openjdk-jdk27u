@@ -54,10 +54,18 @@ checks in each native, scalar, no-int128, SSE4.1 and SSE4.1/no-int128 profile
 under ASan/UBSan. Exact arrays, offsets, adjacent text and rejected bounds are
 covered. These native checks establish correctness, not Java performance.
 
-Native ARM64/Windows performance and local Clang/cross-build qualification are
-unavailable in this environment. The AArch64-only stack-alignment correction
-is explicitly recorded as an unbuilt platform difference in the source/image
-manifest. No platform timing is inferred from emulation or native-core data.
+[Exact-head CI at `6f2dab5daf4`](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38198348084)
+passed all 57 jobs, including native Linux x86-64/AArch64, macOS AArch64 and
+Windows x86-64 debug/release builds and tier-1 tests. The repaired AArch64
+interpreter generator also passed GCC 14.2 cross compilation; its pre-fix
+source reproduced the original CI diagnostics with the same command.
+
+Native ARM64/Windows performance remains unmeasured. The historical Linux
+benchmark image and its source/image hashes are unchanged: its manifest
+records the then-unbuilt AArch64-only stack-alignment correction. The later
+AArch64 compiler repair and successful native CI qualify the PR source,
+not that historical image on other platforms. No platform timing is inferred
+from emulation or native-core data.
 
 ## Integer results
 

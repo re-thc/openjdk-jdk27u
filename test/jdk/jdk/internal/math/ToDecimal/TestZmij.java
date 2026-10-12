@@ -170,6 +170,8 @@ public class TestZmij {
         var actual = DECIMAL.newInstance();
         DOUBLE.invoke(DoubleToDecimal.LATIN1, new byte[24], 0, v, expected);
         DoubleToDecimal.split(v, actual);
+        checkPrecision(v, expected);
+        checkPrecision(v, actual);
         long ef = expected.getSignificand(), af = actual.getSignificand();
         int ee = expected.getExp(), ae = actual.getExp();
         while (ef != 0 && ef % 10 == 0) { ef /= 10; ++ee; }
@@ -179,6 +181,17 @@ public class TestZmij {
             throw new AssertionError("split " + Long.toHexString(Double.doubleToRawLongBits(v))
                     + ": expected " + ef + "e" + ee + " exact=" + expected.getExact() + " away=" + expected.getAway()
                     + ", got " + af + "e" + ae + " exact=" + actual.getExact() + " away=" + actual.getAway());
+        }
+    }
+
+    private static void checkPrecision(double v, FormattedFPDecimal decimal) {
+        long f = decimal.getSignificand();
+        int n = 0;
+        // Count without formatting, floating-point powers, or overflowing 10^n.
+        for (long digits = f; digits != 0; digits /= 10) ++n;
+        if (f < 0 || decimal.getPrecision() != n) {
+            throw new AssertionError("split precision " + Long.toHexString(Double.doubleToRawLongBits(v))
+                    + ": significand=" + f + " expected=" + n + ", got " + decimal.getPrecision());
         }
     }
 
