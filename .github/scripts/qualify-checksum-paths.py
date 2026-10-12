@@ -87,6 +87,16 @@ def tests():
         'compiler.intrinsics.zip.TestAdler32Paths'])
 
 def bench():
+    classes=ROOT/'validation/smoke-classes'
+    classes.mkdir(exist_ok=True)
+    run('compile-smoke',[NEW/'bin/javac','-d',classes,
+        ROOT/'test/hotspot/jtreg/compiler/intrinsics/zip/TestAdler32Paths.java',
+        ROOT/'test/hotspot/jtreg/compiler/intrinsics/zip/TestFpRegsABI.java'])
+    for tier,flags in TIERS.items():
+        for cls in ['TestAdler32Paths','TestFpRegsABI']:
+            run('smoke-'+tier+'-'+cls,[NEW/'bin/java',*BASE,*flags,
+                '-XX:+UseZlibNGCRC32','-XX:Adler32Kernel=2','-Xmx128m',
+                '-cp',classes,'compiler.intrinsics.zip.'+cls])
     prepare()
     cp=(OUT/'jmh-classpath.txt').read_text()
     for tier,tierflags in TIERS.items():
@@ -102,7 +112,7 @@ def bench():
                 '-p','size=0,1,64,256,1024,4096,65536,1048576',
                 '-f','2','-wi','2','-w','300ms','-i','3','-r','300ms',
                 '-jvm',NEW/'bin/java','-jvmArgsAppend',' '.join(flags),
-                '-rf','json','-rff',OUT/(name+'.json')])
+                '-foe','true','-rf','json','-rff',OUT/(name+'.json')])
     # CRC32C uses a different polynomial; its Java fallback is a control, not zlib-ng.
     for tier,tierflags in TIERS.items():
         for route,flags in [('kernel',[]),('java',['-XX:-UseCRC32CIntrinsics'])]:
@@ -111,7 +121,7 @@ def bench():
                 'ChecksumPaths.crc32c(Byte|Heap|Direct)','-p','size=64,1024,65536',
                 '-f','2','-wi','2','-w','300ms','-i','3','-r','300ms',
                 '-jvm',NEW/'bin/java','-jvmArgsAppend',' '.join(BASE+tierflags+flags),
-                '-rf','json','-rff',OUT/(name+'.json')])
+                '-foe','true','-rf','json','-rff',OUT/(name+'.json')])
 
 if __name__=='__main__':
     {'image':image,'prepare':prepare,'tests':tests,'bench':bench}[sys.argv[1]]()

@@ -38,6 +38,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/zipLibrary.hpp"
 #include "stubGenerator_x86_64.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"

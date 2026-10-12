@@ -3495,8 +3495,9 @@ void LIRGenerator::do_update_Adler32(Intrinsic* x) {
 
     LIR_Opr base = buf.result();
     if (x->id() == vmIntrinsics::_updateBytesAdler32) {
-      base = new_register(T_ADDRESS);
-      __ add(buf.result(), LIR_OprFact::intConst(arrayOopDesc::base_offset_in_bytes(T_BYTE)), base);
+      base = new_pointer_register();
+      __ leal(LIR_OprFact::address(new LIR_Address(buf.result(),
+          arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), base);
     }
     LIR_Opr index = new_register(T_LONG);
     __ convert(Bytecodes::_i2l, off.result(), index);
