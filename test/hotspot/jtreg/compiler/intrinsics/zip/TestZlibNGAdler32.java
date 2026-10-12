@@ -36,7 +36,7 @@ import java.util.zip.Adler32;
 
 public class TestZlibNGAdler32 {
     private static final int[] OFFSETS = {0, 1, 7, 31};
-    private static final int[] LENGTHS = {65535, 65536, 65537};
+    private static final int[] LENGTHS = {1023, 1024, 1025, 65535, 65536, 65537};
 
     private static long reference(long adler, byte[] input, int offset, int length) {
         int s1 = (int) adler & 0xffff;

@@ -28,7 +28,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/vm_version.hpp"
 #include "utilities/zipLibrary.hpp"
 #include "macroAssembler_x86.hpp"
 #include "stubGenerator_x86_64.hpp"
@@ -68,8 +67,7 @@ address StubGenerator::generate_updateBytesAdler32() {
   assert(UseAdler32Intrinsics, "");
 
 #ifdef LINUX
-  address bulk_adler = VM_Version::supports_avx512_vnni()
-      ? ZipLibrary::adler32_address() : nullptr;
+  address bulk_adler = ZipLibrary::adler32_address();
 #endif
 
   __ align(CodeEntryAlignment);
@@ -84,13 +82,11 @@ address StubGenerator::generate_updateBytesAdler32() {
   start = __ pc();
 
 #ifdef LINUX
-  if (bulk_adler != nullptr) {
-    Label use_simd;
-    __ cmpl(c_rarg2, 65536);
-    __ jcc(Assembler::less, use_simd);
-    __ jump(RuntimeAddress(bulk_adler), r10);
-    __ bind(use_simd);
-  }
+  Label use_simd;
+  __ cmpl(c_rarg2, 1024);
+  __ jcc(Assembler::less, use_simd);
+  __ jump(RuntimeAddress(bulk_adler), r10);
+  __ bind(use_simd);
 #endif
 
   // Choose an appropriate LIMIT for inner loop based on the granularity

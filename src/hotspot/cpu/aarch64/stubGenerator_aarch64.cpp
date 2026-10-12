@@ -8162,7 +8162,7 @@ class StubGenerator: public StubCodeGenerator {
 
 #ifdef LINUX
     Label use_simd;
-    __ cmpw(c_rarg2, 65536);
+    __ cmpw(c_rarg2, 1024);
     __ br(Assembler::LT, use_simd);
     __ lea(rscratch1, RuntimeAddress(bulk_adler));
     __ br(rscratch1);

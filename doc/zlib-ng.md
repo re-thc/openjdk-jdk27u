@@ -14,9 +14,8 @@ uses JNI. Direct-to-direct Inflater calls and x86-64 mixed-buffer Inflater calls
 use JNI. Deflater uses JNI for chunks at most 1 KiB and, on AArch64, chunks of at
 least 64 KiB. All these call paths use zlib-ng.
 
-C2 bulk Adler32 calls of at least 64 KiB call zlib-ng directly on AArch64 and
-x86-64 CPUs with AVX-512 VNNI. Short inputs keep the existing HotSpot SIMD
-kernel. Interpreter and C1 Adler32 use zlib-ng through JNI. Existing CRC32 and
+C2 bulk Adler32 calls of at least 1 KiB call zlib-ng directly on x86-64 and
+AArch64. Short inputs keep the existing HotSpot SIMD kernel. Interpreter and C1 Adler32 use zlib-ng through JNI. Existing CRC32 and
 CRC32C intrinsics are unchanged.
 
 Native consumers include ZIP/JAR class loading, CDS checksums, jimage
