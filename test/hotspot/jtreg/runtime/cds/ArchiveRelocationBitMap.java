@@ -57,7 +57,7 @@ public class ArchiveRelocationBitMap {
                 out.shouldContain("Relocated archive application ran");
             });
         tester.run(args);
-        tester.rerunProduction("-XX:+AOTCacheParallelRelocation");
+        tester.rerunProduction("-XX:ActiveProcessorCount=2", "-XX:+AOTCacheParallelRelocation");
     }
 }
 
