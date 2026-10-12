@@ -26,7 +26,7 @@ jobs:
           sparse-checkout-cone-mode: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: 614eb685f636dc864c1dc88e3e39d0a3ee05f6ca
+          ref: 1202591ff1302fe9b3e02424ba5f57ca8171ab13
           path: production
       - name: Wait for existing standard CI bundles
         env:
@@ -36,8 +36,8 @@ jobs:
           python3 - <<'PY'
           import json,os,subprocess,time
           required={'bundles-'+os.environ['CHECKSUM_PLATFORM'],'bundles-'+os.environ['CHECKSUM_PLATFORM']+'-debug'}
-          for attempt in range(40):
-              result=subprocess.check_output(['gh','api','repos/re-thc/openjdk-jdk27u/actions/runs/38274841772/artifacts?per_page=100'],text=True)
+          for attempt in range(180):
+              result=subprocess.check_output(['gh','api','repos/re-thc/openjdk-jdk27u/actions/runs/38286963396/artifacts?per_page=100'],text=True)
               names={x['name'] for x in json.loads(result)['artifacts']}
               if required <= names: break
               print('Waiting for completed build artifacts',sorted(required-names),flush=True)
@@ -47,13 +47,13 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           github-token: ${{ github.token }}
-          run-id: 38274841772
+          run-id: 38286963396
           name: bundles-${{ matrix.platform }}
           path: production/validation/release
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           github-token: ${{ github.token }}
-          run-id: 38274841772
+          run-id: 38286963396
           name: bundles-${{ matrix.platform }}-debug
           path: production/validation/debug
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
@@ -65,7 +65,7 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           github-token: ${{ github.token }}
-          run-id: 38274841772
+          run-id: 38286963396
           name: bundles-jtreg-8.2.1+1
           path: production/jtreg/installed
       - name: Verify final production images

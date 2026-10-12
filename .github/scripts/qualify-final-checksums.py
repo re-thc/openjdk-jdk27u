@@ -38,7 +38,7 @@ def tests():
            'TestZlibNGAdler32.java','TestZlibNGAOT.java','TestCRC32.java','TestCRC32C.java']
     for kind,jdk in [('release',NEW),('debug',DEBUG)]:
         run('jtreg-'+kind,[jdk/'bin/java','-XX:ActiveProcessorCount=2','-jar',jtreg,
-            '-jdk:'+str(jdk),'-conc:2','-timeoutFactor:3',
+            '-jdk:'+str(jdk),'-conc:2','-timeoutFactor:3','-verbose:fail,error,summary',
             '-w:'+str(OUT/('work-'+kind)),'-r:'+str(OUT/('report-'+kind)),
             *[ROOT/'test/hotspot/jtreg/compiler/intrinsics/zip'/name for name in names]])
     classes=ROOT/'validation/classes'
@@ -85,6 +85,6 @@ def bench():
                 for row in rows:
                     m=row['primaryMetric']
                     print('FINAL_SCORE',json.dumps({'route':name,'method':row['benchmark'].split('.')[-1],
-                        'size':row.get('params',{}).get('size','scalar'),'ns':m['score'],'error':m['scoreError']}),flush=True)
+                        'size':row.get('params',{}).get('size','scalar'),'ns':m['score'],'error':m['scoreError'],'raw':m['rawData']}),flush=True)
 
 {'unpack':unpack,'tests':tests,'bench':bench}[sys.argv[1]]()
