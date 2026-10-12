@@ -1,0 +1,92 @@
+name: CRC32 cutoff and final checksum qualification
+on:
+  push:
+    branches: [pr/zlib-ng-validation]
+    paths: ['.github/workflows/checksum-cutoff.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  qualify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: diagnostic
+          sparse-checkout: .github/scripts/qualify-crc-cutoff.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 4c3d3c2fd622f92e47e7e1e859a6c767ffa2f4cb
+          path: production
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ github.token }}
+          run-id: 38288356485
+          pattern: final-checksum-*
+          path: previous-results
+      - name: Print previous benchmark CPU metadata
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for cpu in Path('previous-results').rglob('cpu.txt'):
+              print(str(cpu),flush=True)
+              print(cpu.read_text(),flush=True)
+          PY
+      - name: Wait for existing standard CI bundles
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json,subprocess,time
+          required={'bundles-linux-x64','bundles-linux-x64-debug','bundles-jtreg-8.2.1+1'}
+          for attempt in range(180):
+              result=subprocess.check_output(['gh','api','repos/re-thc/openjdk-jdk27u/actions/runs/38305964372/artifacts?per_page=100'],text=True)
+              names={x['name'] for x in json.loads(result)['artifacts']}
+              if required <= names: break
+              print('Waiting for completed build artifacts',sorted(required-names),flush=True)
+              time.sleep(15)
+          else: raise RuntimeError('Existing build artifacts were not ready')
+          PY
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ github.token }}
+          run-id: 38305964372
+          name: bundles-linux-x64
+          path: production/validation/release
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ github.token }}
+          run-id: 38305964372
+          name: bundles-linux-x64-debug
+          path: production/validation/debug
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ github.token }}
+          run-id: 38190562646
+          name: bundles-linux-x64
+          path: production/validation/old
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ github.token }}
+          run-id: 38305964372
+          name: bundles-jtreg-8.2.1+1
+          path: production/jtreg/installed
+      - name: Check release and debug images
+        working-directory: production
+        run: |
+          mkdir -p validation/results
+          lscpu | tee validation/results/cpu.txt
+          git rev-parse HEAD > validation/results/source.txt
+          python3 ../diagnostic/.github/scripts/qualify-crc-cutoff.py unpack
+          python3 ../diagnostic/.github/scripts/qualify-crc-cutoff.py tests
+      - name: Compare short CRC32 paths and recheck large C1 Adler32
+        working-directory: production
+        run: python3 ../diagnostic/.github/scripts/qualify-crc-cutoff.py bench
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: crc-cutoff-linux-x64
+          path: production/validation/results
+          retention-days: 14
