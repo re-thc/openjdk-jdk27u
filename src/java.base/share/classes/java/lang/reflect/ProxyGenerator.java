@@ -774,7 +774,9 @@ final class ProxyGenerator {
          */
         private void codeFieldInitialization(CodeBuilder cob) {
             var cp = cob.constantPool();
-            codeClassForName(cob, fromClass);
+            // fromClass is a proxy interface or Object. Either way it is already
+            // resolved by this class, so there is no need to look it up by name.
+            cob.ldc(cp.classEntry(binaryNameToDesc(fromClass.getName())));
 
             Class<?>[] parameterTypes = parameterTypes();
             cob.ldc(method.getName())
