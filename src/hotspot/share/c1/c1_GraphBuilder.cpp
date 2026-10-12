@@ -3695,7 +3695,7 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
   }
   if (CommonIntrinsics::is_supported(callee->intrinsic_id()) &&
       CommonIntrinsics::can_fallback(callee->intrinsic_id()) &&
-      method()->method_data()->has_trap_at(bci(), method(), Deoptimization::Reason_intrinsic) != 0) {
+      method()->method_data()->has_trap_at(bci(), nullptr, Deoptimization::Reason_intrinsic) != 0) {
     // Keep unrelated call sites accelerated after a guard fails, including
     // inlined callers and level-1 compilations without ordinary profiling.
     return false;

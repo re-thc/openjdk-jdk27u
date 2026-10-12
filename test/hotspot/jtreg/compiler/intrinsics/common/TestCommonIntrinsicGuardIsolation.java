@@ -92,10 +92,12 @@ public class TestCommonIntrinsicGuardIsolation {
         return NMethod.get(method, false).compile_id;
     }
 
-    private static void checkCompilation(Method method, int id) {
+    private static void checkCompilation(Method method, int id, int site) {
         NMethod code = NMethod.get(method, false);
         if (code == null || code.compile_id != id) {
-            throw new AssertionError("guard failure caused recompilation");
+            throw new AssertionError("guard failure caused recompilation at site " + site +
+                    ", predicate traps=" + WB.getMethodTrapCount(method, "none") +
+                    ", intrinsic traps=" + WB.getMethodTrapCount(method, "intrinsic"));
         }
     }
 
@@ -125,7 +127,7 @@ public class TestCommonIntrinsicGuardIsolation {
                 }
                 sink ^= mixed(i & 1023, 7, INPUT);
             }
-            checkCompilation(method, id);
+            checkCompilation(method, id, site);
         }
     }
 }
