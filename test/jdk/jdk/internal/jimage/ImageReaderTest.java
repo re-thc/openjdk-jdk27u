@@ -246,6 +246,23 @@ public class ImageReaderTest {
     }
 
     @Test
+    public void testPackageDirectories_afterLookup() throws IOException {
+        for (PreviewMode mode : new PreviewMode[] {PreviewMode.DISABLED, PreviewMode.ENABLED}) {
+            try (ImageReader reader = ImageReader.open(image, mode)) {
+                // Looking up a package directory first must not make it appear twice, or
+                // as a different node, when "/packages" is listed afterwards.
+                Node fooDir = assertDir(reader, "/packages/com.foo");
+                assertAbsent(reader, "/packages/com.unknown");
+                Node root = assertDir(reader, "/packages");
+                assertEquals(1, root.getChildNames().filter("/packages/com.foo"::equals).count());
+                assertSame(fooDir, reader.findNode("/packages/com.foo"));
+                assertSame(assertLink(reader, "/packages/com.foo/modfoo"),
+                        reader.findNode("/packages/com.foo/modfoo"));
+            }
+        }
+    }
+
+    @Test
     public void testPackageLinks() throws IOException {
         try (ImageReader reader = ImageReader.open(image, PreviewMode.DISABLED)) {
             Node moduleFoo = assertDir(reader, "/modules/modfoo");

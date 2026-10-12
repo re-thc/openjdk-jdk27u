@@ -51,6 +51,7 @@ import java.util.stream.Stream;
 import static jdk.internal.jimage.ImageLocation.LocationType.MODULES_DIR;
 import static jdk.internal.jimage.ImageLocation.LocationType.MODULES_ROOT;
 import static jdk.internal.jimage.ImageLocation.LocationType.PACKAGES_DIR;
+import static jdk.internal.jimage.ImageLocation.LocationType.PACKAGES_ROOT;
 import static jdk.internal.jimage.ImageLocation.LocationType.RESOURCE;
 import static jdk.internal.jimage.ImageLocation.MODULES_PREFIX;
 import static jdk.internal.jimage.ImageLocation.PACKAGES_PREFIX;
@@ -294,12 +295,14 @@ public final class ImageReader implements AutoCloseable {
             root.setChildren(Arrays.asList(packages, modules));
             ensureCached(root);
 
-            // By scanning the /packages directory information early we can determine
-            // which module/package pairs have preview resources, and build the (small)
-            // set of preview nodes early. This also ensures that preview-only entries
-            // in the /packages directory are not present in non-preview mode.
+            // In preview mode, scanning the /packages directory information early
+            // determines which module/package pairs have preview resources, so
+            // that the (small) set of preview nodes can be built early. Otherwise
+            // the "/packages" directory and its subdirectories are built on demand.
             this.previewDirectoriesToMerge = isPreviewEnabled ? new HashMap<>() : null;
-            packages.setChildren(processPackagesDirectory(isPreviewEnabled));
+            if (isPreviewEnabled) {
+                packages.setChildren(processPackagesDirectory(true));
+            }
         }
 
         /**
@@ -328,7 +331,7 @@ public final class ImageReader implements AutoCloseable {
                 // it references have that package marked as preview only.
                 // Skipping these entries avoids empty package subdirectories.
                 if (previewMode || !ImageLocation.isPreviewOnly(flags)) {
-                    pkgDirs.add(ensureCached(newDirectory(pkgDir.getFullName())));
+                    pkgDirs.add(nodes.computeIfAbsent(pkgDir.getFullName(), this::newDirectory));
                 }
                 if (previewMode && ImageLocation.hasPreviewVersion(flags)) {
                     // Only do this in preview mode for the small set of packages with
@@ -445,8 +448,7 @@ public final class ImageReader implements AutoCloseable {
          *     "/modules" or "/packages".
          */
         synchronized Node findNode(String name) {
-            // Root directories "/", "/modules" and "/packages", as well
-            // as all "/packages/xxx" subdirectories are already cached.
+            // Root directories "/", "/modules" and "/packages" are already cached.
             Node node = nodes.get(name);
             if (node == null) {
                 if (name.startsWith(MODULES_PREFIX + "/")) {
@@ -609,21 +611,37 @@ public final class ImageReader implements AutoCloseable {
             // derived from the name information in the parent directory).
             int packageStart = PACKAGES_PREFIX.length() + 1;
             int packageEnd = name.indexOf('/', packageStart);
-            // We already built the 2-level "/packages/xxx" directories,
-            // so if this is a 2-level name, it cannot reference a node.
-            if (packageEnd >= 0) {
-                String dirName = name.substring(0, packageEnd);
-                // If no parent exists here, the name cannot be valid.
-                Directory parent = (Directory) nodes.get(dirName);
-                if (parent != null) {
-                    if (!parent.isCompleted()) {
-                        // This caches all child links of the parent directory.
-                        completePackageSubdirectory(parent, findLocation(dirName));
-                    }
-                    return nodes.get(name);
+            // A 2-level "/packages/xxx" name can only reference a directory.
+            if (packageEnd < 0) {
+                return findPackageDirectory(name);
+            }
+            // If no parent exists here, the name cannot be valid.
+            return findPackageDirectory(name.substring(0, packageEnd)) != null
+                    ? nodes.get(name)
+                    : null;
+        }
+
+        /**
+         * Returns the complete "/packages/xxx" directory with the given name,
+         * or null if there is no such directory. Directories not built yet are
+         * built and cached, which also caches all their child links.
+         */
+        private Directory findPackageDirectory(String dirName) {
+            Node dir = nodes.get(dirName);
+            ImageLocation loc = null;
+            // In preview mode all package directories are cached up front.
+            if (dir == null && !isPreviewEnabled) {
+                loc = findLocation(dirName);
+                // Preview-only packages are not visible in non-preview mode.
+                if (loc != null && loc.getType() == PACKAGES_DIR
+                        && !ImageLocation.isPreviewOnly(loc.getFlags())) {
+                    dir = ensureCached(newDirectory(dirName));
                 }
             }
-            return null;
+            if (dir != null && !dir.isCompleted()) {
+                completePackageSubdirectory((Directory) dir, loc != null ? loc : findLocation(dirName));
+            }
+            return (Directory) dir;
         }
 
         /** Completes a directory by ensuring its child list is populated correctly. */
@@ -638,6 +656,8 @@ public final class ImageReader implements AutoCloseable {
             LocationType type = loc.getType();
             if (type == MODULES_DIR || type == MODULES_ROOT) {
                 completeModuleDirectory(dir, loc);
+            } else if (type == PACKAGES_ROOT) {
+                dir.setChildren(processPackagesDirectory(isPreviewEnabled));
             } else {
                 assert type == PACKAGES_DIR : "Invalid location type: " + loc;
                 completePackageSubdirectory(dir, loc);
