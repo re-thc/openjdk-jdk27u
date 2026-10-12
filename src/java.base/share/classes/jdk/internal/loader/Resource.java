@@ -30,6 +30,7 @@ import java.net.URL;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.CodeSigner;
+import java.security.CodeSource;
 import java.util.jar.Manifest;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -66,6 +67,14 @@ public abstract class Resource {
      * Returns the length of the Resource data, or -1 if unknown.
      */
     public abstract int getContentLength() throws IOException;
+
+    /**
+     * Returns the CodeSource for the Resource. Like {@link #getCodeSigners},
+     * this is to be called after reading the Resource data.
+     */
+    public CodeSource getCodeSource() {
+        return new CodeSource(getCodeSourceURL(), getCodeSigners());
+    }
 
     private InputStream cis;
 

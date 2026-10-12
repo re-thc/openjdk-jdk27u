@@ -766,13 +766,11 @@ public class BuiltinClassLoader
         // defines the class to the runtime
         ByteBuffer bb = res.getByteBuffer();
         if (bb != null) {
-            CodeSigner[] signers = res.getCodeSigners();
-            CodeSource cs = new CodeSource(url, signers);
+            CodeSource cs = res.getCodeSource();
             return defineClass(cn, bb, cs);
         } else {
             byte[] b = res.getBytes();
-            CodeSigner[] signers = res.getCodeSigners();
-            CodeSource cs = new CodeSource(url, signers);
+            CodeSource cs = res.getCodeSource();
             return defineClass(cn, b, 0, b.length, cs);
         }
     }
