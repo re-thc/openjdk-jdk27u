@@ -900,11 +900,15 @@ public class BuiltinClassLoader
      * @throws SecurityException if the package name is untrusted in the manifest
      */
     private boolean isSealed(String pn, Manifest man) {
-        Attributes attr = SharedSecrets.javaUtilJarAccess()
-                .getTrustedAttributes(man, pn.replace('.', '/').concat("/"));
+        Attributes attr;
         String sealed = null;
-        if (attr != null)
-            sealed = attr.getValue(Attributes.Name.SEALED);
+        // Only look up the entry of the package if the manifest has entries
+        if (!man.getEntries().isEmpty()) {
+            attr = SharedSecrets.javaUtilJarAccess()
+                    .getTrustedAttributes(man, pn.replace('.', '/').concat("/"));
+            if (attr != null)
+                sealed = attr.getValue(Attributes.Name.SEALED);
+        }
         if (sealed == null && (attr = man.getMainAttributes()) != null)
             sealed = attr.getValue(Attributes.Name.SEALED);
         return "true".equalsIgnoreCase(sealed);
