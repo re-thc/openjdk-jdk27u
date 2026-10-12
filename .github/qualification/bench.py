@@ -22,11 +22,12 @@ cases = [
     ('bulk', 'org.openjdk.bench.vm.compiler.CommonIntrinsics.(aesCtr|sha256|sha3|hashBytes|multiply|modPow)', ['-p', 'length=4096']),
     ('scalar', 'org.openjdk.bench.vm.compiler.CommonScalarIntrinsics.bitCount', []),
 ]
-tiers = [('int', ['-Xint']), ('c1', ['-XX:TieredStopAtLevel=1']), ('c2', ['-XX:-TieredCompilation'])]
+tiers = [('int', ['-Xint']), ('c1', ['-Xbatch', '-XX:TieredStopAtLevel=1']),
+         ('c2', ['-Xbatch', '-XX:-TieredCompilation'])]
 if args.suite == 'guard':
     cases = [('mixed', 'org.openjdk.bench.vm.compiler.CommonGuardIntrinsics.mixedOperations',
               ['-p', 'size=1024,4096', '-p', 'failedGuard=false,true'])]
-    tiers = [('c1', ['-XX:TieredStopAtLevel=1'])]
+    tiers = [('c1', ['-Xbatch', '-XX:TieredStopAtLevel=1'])]
 manifest = dict(java=args.java, classpath=args.classpath, worker_cpu=worker, flags=flags,
                 suite=args.suite, runs=[])
 for tier, tier_flags in tiers:
