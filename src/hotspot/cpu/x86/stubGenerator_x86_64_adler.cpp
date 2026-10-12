@@ -88,7 +88,7 @@ address StubGenerator::generate_updateBytesAdler32() {
     Label use_simd;
     __ cmpl(c_rarg2, 65536);
     __ jcc(Assembler::less, use_simd);
-    __ jump(RuntimeAddress(bulk_adler));
+    __ jump(RuntimeAddress(bulk_adler), r10);
     __ bind(use_simd);
   }
 #endif
