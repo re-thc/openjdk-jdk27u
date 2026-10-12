@@ -529,7 +529,20 @@ public final class SunPKCS11 extends AuthProvider {
 
     private static final String KDF  = "KDF";
 
-    static {
+    // The descriptors are only needed by a configured provider, so they are
+    // registered when one is first used, not when the unconfigured provider
+    // is loaded.
+    private static final class DescriptorRegistry {
+        static {
+            registerDescriptors();
+        }
+
+        static Map<Integer,List<Descriptor>> descriptors() {
+            return descriptors;
+        }
+    }
+
+    private static void registerDescriptors() {
         // names of all the implementation classes
         // use local variables, only used here
         String P11Digest           = "sun.security.pkcs11.P11Digest";
@@ -1286,7 +1299,8 @@ public final class SunPKCS11 extends AuthProvider {
             }
             int mech = (int)longMech;
             Integer integerMech = Integer.valueOf(mech);
-            List<Descriptor> ds = descriptors.get(integerMech);
+            List<Descriptor> ds =
+                    DescriptorRegistry.descriptors().get(integerMech);
             if (ds == null) {
                 continue;
             }
