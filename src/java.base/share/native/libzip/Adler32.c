@@ -67,7 +67,14 @@ Java_java_util_zip_Adler32_updateByteBuffer(JNIEnv *env, jclass cls, jint adler,
     return adler;
 }
 
-/* C ABI entry used by the compiled bulk-checksum stub. */
+/* Leaf entries used by checksum intrinsics. */
+JNIEXPORT jint JNICALL
+ZIP_Adler32Byte(jint adler, jint value)
+{
+    const Bytef b = (Bytef)value;
+    return (jint)adler32((uLong)(uInt)adler, &b, 1);
+}
+
 JNIEXPORT jint JNICALL
 ZIP_Adler32(jint adler, const jbyte* buf, jint len)
 {

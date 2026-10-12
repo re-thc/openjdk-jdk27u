@@ -38,6 +38,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/zipLibrary.hpp"
 #include "stubGenerator_x86_64.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
@@ -3533,6 +3534,16 @@ address StubGenerator::generate_updateBytesCRC32() {
   StubCodeMark mark(this, stub_id);
 
   start = __ pc();
+
+#ifdef LINUX
+  if (StubRoutines::use_zlib_ng_crc32()) {
+    Label use_kernel;
+    __ cmpl(c_rarg2, StubRoutines::zlib_ng_crc32_min_length);
+    __ jcc(Assembler::less, use_kernel);
+    __ jump(RuntimeAddress(ZipLibrary::crc32_address()), r10);
+    __ bind(use_kernel);
+  }
+#endif
 
   // Win64: rcx, rdx, r8, r9 (c_rarg0, c_rarg1, ...)
   // Unix:  rdi, rsi, rdx, rcx, r8, r9 (c_rarg0, c_rarg1, ...)

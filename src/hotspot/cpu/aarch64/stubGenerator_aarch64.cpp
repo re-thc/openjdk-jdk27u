@@ -8164,8 +8164,9 @@ class StubGenerator: public StubCodeGenerator {
     Label use_simd;
     __ cmpw(c_rarg2, 1024);
     __ br(Assembler::LT, use_simd);
-    __ lea(rscratch1, RuntimeAddress(bulk_adler));
-    __ br(rscratch1);
+    // BR through IP0 is compatible with a native BTI call landing pad.
+    __ lea(r16, RuntimeAddress(bulk_adler));
+    __ br(r16);
     __ bind(use_simd);
 #endif
 

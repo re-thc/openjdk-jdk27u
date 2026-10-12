@@ -355,11 +355,13 @@ class LibraryCallKit : public GraphKit {
   bool inline_encodeISOArray(bool ascii);
   bool inline_zip_process();
   bool inline_updateCRC32();
+  Node* make_crc32_call(Node* crc, Node* src, Node* length);
   bool inline_updateBytesCRC32();
   bool inline_updateByteBufferCRC32();
   Node* get_table_from_crc32c_class(ciInstanceKlass *crc32c_class);
   bool inline_updateBytesCRC32C();
   bool inline_updateDirectByteBufferCRC32C();
+  bool inline_updateAdler32();
   bool inline_updateBytesAdler32();
   bool inline_updateByteBufferAdler32();
   bool inline_multiplyToLen();

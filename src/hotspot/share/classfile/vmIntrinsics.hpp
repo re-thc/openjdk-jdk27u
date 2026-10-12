@@ -644,6 +644,7 @@ class methodHandle;
                                                                                                                         \
    /* support for java.util.zip.Adler32 */                                                                              \
   do_class(java_util_zip_Adler32,        "java/util/zip/Adler32")                                                       \
+  do_intrinsic(_updateAdler32,            java_util_zip_Adler32,  update_name, int2_int_signature,                F_SN)                          \
   do_intrinsic(_updateBytesAdler32,       java_util_zip_Adler32,  updateBytes_C_name,  updateBytes_signature,  F_SN)    \
   do_intrinsic(_updateByteBufferAdler32,  java_util_zip_Adler32,  updateByteBuffer_A_name,  updateByteBuffer_signature,  F_SN) \
    do_name(     updateByteBuffer_A_name,                          "updateByteBuffer")                                   \

@@ -541,6 +541,13 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
 #else
     return true;
 #endif
+  case vmIntrinsics::_updateAdler32:
+#if defined(LINUX) && (defined(AMD64) || defined(AARCH64))
+    if (!UseAdler32Intrinsics) return true;
+    break;
+#else
+    return true;
+#endif
   case vmIntrinsics::_updateBytesAdler32:
   case vmIntrinsics::_updateByteBufferAdler32:
     if (!UseAdler32Intrinsics) return true;

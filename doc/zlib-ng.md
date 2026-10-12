@@ -14,9 +14,14 @@ uses JNI. Direct-to-direct Inflater calls and x86-64 mixed-buffer Inflater calls
 use JNI. Deflater uses JNI for chunks at most 1 KiB and, on AArch64, chunks of at
 least 64 KiB. All these call paths use zlib-ng.
 
-C2 bulk Adler32 calls of at least 1 KiB call zlib-ng directly on x86-64 and
-AArch64. Short inputs keep the existing HotSpot SIMD kernel. Interpreter and C1 Adler32 use zlib-ng through JNI. Existing CRC32 and
-CRC32C intrinsics are unchanged.
+Adler32 calls zlib-ng directly from the interpreter and C1 for scalar, heap
+array and direct-buffer updates. C2 calls zlib-ng for scalar updates and bulk
+updates of at least 1 KiB; shorter bulk updates use the HotSpot SIMD kernel.
+
+CRC32 bulk updates of at least 64 bytes use zlib-ng on Linux x86-64 when the
+HotSpot AVX-512 kernel is unavailable. The interpreter, C1 and C2 use the same
+selection. Short inputs, scalar updates, AVX-512 hosts and AArch64 retain the
+HotSpot kernels. CRC32C is unchanged; zlib-ng does not implement its polynomial.
 
 Native consumers include ZIP/JAR class loading, CDS checksums, jimage
 decompression and compressed heap dumps. Java ZIP/GZIP, ZIP filesystem and jlink
@@ -25,9 +30,9 @@ pre-VM launcher retain their existing zlib integration.
 
 ## Updating the dependency
 
-- Upstream commit: [f18efb822a2fc24a1209a836d51bb217476fc08e](https://github.com/zlib-ng/zlib-ng/commit/f18efb822a2fc24a1209a836d51bb217476fc08e)
-- Archive: `https://codeload.github.com/zlib-ng/zlib-ng/tar.gz/f18efb822a2fc24a1209a836d51bb217476fc08e`
-- SHA-256: `acf89dcbbb22b263a29728d8f24fe3e57a7fb7d3058398ec904bf7dcbcf54895`
+- Upstream commit: [88601f0bdd192e9f87d4bd0a50d5d2e2dc9b8cd0](https://github.com/zlib-ng/zlib-ng/commit/88601f0bdd192e9f87d4bd0a50d5d2e2dc9b8cd0)
+- Archive: `https://codeload.github.com/zlib-ng/zlib-ng/tar.gz/88601f0bdd192e9f87d4bd0a50d5d2e2dc9b8cd0`
+- SHA-256: `ba09b6d7d45f0aaf6f58976fe943b3de2fd3b6e4ee9d7ebad93876ef12fbcc63`
 - Sources: `src/java.base/share/native/libzip/zlib-ng/`
 - License: `src/java.base/share/legal/zlib-ng.md`
 
@@ -47,6 +52,6 @@ private `jdk_ng_` symbols and the configured target toolchain and sysroot.
 
 Regression tests are in `test/hotspot/jtreg/compiler/intrinsics/zip/` and
 `test/jdk/java/util/zip/`. JMH benchmarks `ZipBackend`, `ZipBufferCalls` and
-`ZipStreamCalls` cover reusable streams, checksums, buffer combinations and
+`ZipStreamCalls` and `ChecksumPaths` cover reusable streams, checksums, buffer combinations and
 complete ZIP/GZIP writes. Record the CPU, revision, execution tier, forks,
 warmup, measurement settings and compressed sizes when comparing results.

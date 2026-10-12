@@ -1,4 +1,4 @@
-## zlib-ng (commit f18efb822a2fc24a1209a836d51bb217476fc08e)
+## zlib-ng (commit 88601f0bdd192e9f87d4bd0a50d5d2e2dc9b8cd0)
 
 ### zlib License
 <pre>

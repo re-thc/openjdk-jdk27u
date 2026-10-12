@@ -34,6 +34,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/timerTrace.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #ifdef COMPILER2
@@ -78,6 +79,17 @@ jint    StubRoutines::_verify_oop_count                         = 0;
 
 
 address StubRoutines::_string_indexof_array[4]   =    { nullptr };
+
+bool StubRoutines::use_zlib_ng_crc32() {
+#if defined(LINUX) && defined(AMD64)
+  // The AVX-512 HotSpot kernel wins; zlib-ng beats the older vector kernel.
+  return !(VM_Version::supports_sse4_1() &&
+           VM_Version::supports_avx512_vpclmulqdq() &&
+           VM_Version::supports_avx512bw() && VM_Version::supports_avx512vl());
+#else
+  return false;
+#endif
+}
 
 const char* StubRoutines::get_blob_name(BlobId id) {
   assert(StubInfo::is_stubgen(id), "not a stubgen blob %s", StubInfo::name(id));

@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.zip.Adler32;
+import java.util.zip.CRC32;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
@@ -113,11 +114,14 @@ class ZlibNGAOTApp {
             input[i] = (byte) (i % 23);
         }
         Adler32 checksum = new Adler32();
-        // The scalar path provides an independent reference for the bulk call.
+        CRC32 crc = new CRC32();
+        // Compare bulk updates with the scalar result.
         for (byte value : input) {
             checksum.update(value);
+            crc.update(value);
         }
         long expectedChecksum = checksum.getValue();
+        long expectedCRC = crc.getValue();
         byte[] compressed = new byte[input.length + 1024];
         byte[] restored = new byte[input.length];
         try (Deflater deflater = new Deflater(); Inflater inflater = new Inflater()) {
@@ -126,6 +130,11 @@ class ZlibNGAOTApp {
                 checksum.update(input);
                 if (checksum.getValue() != expectedChecksum) {
                     throw new AssertionError("Incorrect bulk checksum");
+                }
+                crc.reset();
+                crc.update(input);
+                if (crc.getValue() != expectedCRC) {
+                    throw new AssertionError("Incorrect bulk CRC32");
                 }
                 deflater.reset();
                 deflater.setInput(input);

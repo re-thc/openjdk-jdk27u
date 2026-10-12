@@ -61,6 +61,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/zipLibrary.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 //---------------------------make_vm_intrinsic----------------------------
@@ -687,6 +688,10 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
     return inline_updateDirectByteBufferCRC32C();
 
+#if defined(LINUX) && (defined(AMD64) || defined(AARCH64))
+  case vmIntrinsics::_updateAdler32:
+    return inline_updateAdler32();
+#endif
   case vmIntrinsics::_updateBytesAdler32:
     return inline_updateBytesAdler32();
   case vmIntrinsics::_updateByteBufferAdler32:
@@ -6948,6 +6953,38 @@ bool LibraryCallKit::inline_updateCRC32() {
   return true;
 }
 
+Node* LibraryCallKit::make_crc32_call(Node* crc, Node* src, Node* length) {
+  if (!StubRoutines::use_zlib_ng_crc32()) {
+    Node* call = make_runtime_call(RC_LEAF | RC_NO_FP, OptoRuntime::updateBytesCRC32_Type(),
+        StubRoutines::updateBytesCRC32(), "updateBytesCRC32", TypePtr::BOTTOM,
+        crc, src, length);
+    return _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  }
+
+  IdealKit ideal(this);
+  IdealVariable result(ideal);
+  ideal.declarations_done();
+  ideal.if_then(length, BoolTest::ge, intcon(StubRoutines::zlib_ng_crc32_min_length)); {
+    sync_kit(ideal);
+    // A native C call must use the full C ABI floating-point clobber mask.
+    Node* call = make_runtime_call(RC_LEAF, OptoRuntime::updateBytesCRC32_Type(),
+        ZipLibrary::crc32_address(), "updateBytesCRC32", TypePtr::BOTTOM,
+        crc, src, length);
+    ideal.sync_kit(this);
+    ideal.set(result, _gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  } ideal.else_(); {
+    sync_kit(ideal);
+    // The shared stub takes its original kernel path for inputs below the cutoff.
+    Node* call = make_runtime_call(RC_LEAF | RC_NO_FP, OptoRuntime::updateBytesCRC32_Type(),
+        StubRoutines::updateBytesCRC32(), "updateBytesCRC32", TypePtr::BOTTOM,
+        crc, src, length);
+    ideal.sync_kit(this);
+    ideal.set(result, _gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  } ideal.end_if();
+  final_sync(ideal);
+  return ideal.value(result);
+}
+
 /**
  * Calculate CRC32 for byte[] array.
  * int java.util.zip.CRC32.updateBytes(int crc, byte[] buf, int off, int len)
@@ -6980,15 +7017,7 @@ bool LibraryCallKit::inline_updateBytesCRC32() {
   // We assume that range check is done by caller.
   // TODO: generate range check (offset+length < src.length) in debug VM.
 
-  // Call the stub.
-  address stubAddr = StubRoutines::updateBytesCRC32();
-  const char *stubName = "updateBytesCRC32";
-
-  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::updateBytesCRC32_Type(),
-                                 stubAddr, stubName, TypePtr::BOTTOM,
-                                 crc, src_start, length);
-  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-  set_result(result);
+  set_result(make_crc32_call(crc, src_start, length));
   return true;
 }
 
@@ -7012,15 +7041,7 @@ bool LibraryCallKit::inline_updateByteBufferCRC32() {
   // 'src_start' points to src array + scaled offset
   Node* src_start = off_heap_plus_addr(base, offset);
 
-  // Call the stub.
-  address stubAddr = StubRoutines::updateBytesCRC32();
-  const char *stubName = "updateBytesCRC32";
-
-  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::updateBytesCRC32_Type(),
-                                 stubAddr, stubName, TypePtr::BOTTOM,
-                                 crc, src_start, length);
-  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-  set_result(result);
+  set_result(make_crc32_call(crc, src_start, length));
   return true;
 }
 
@@ -7131,6 +7152,15 @@ bool LibraryCallKit::inline_updateDirectByteBufferCRC32C() {
 // Calculate Adler32 checksum for byte[] array.
 // int java.util.zip.Adler32.updateBytes(int crc, byte[] buf, int off, int len)
 //
+bool LibraryCallKit::inline_updateAdler32() {
+  assert(UseAdler32Intrinsics, "Adler32 intrinsic must be enabled");
+  Node* call = make_runtime_call(RC_LEAF, OptoRuntime::updateAdler32_Type(),
+      ZipLibrary::adler32_byte_address(), "updateAdler32", TypePtr::BOTTOM,
+      argument(0), argument(1));
+  set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  return true;
+}
+
 bool LibraryCallKit::inline_updateBytesAdler32() {
   assert(UseAdler32Intrinsics, "Adler32 Intrinsic support need"); // check if we actually need to check this flag or check a different one
   assert(callee()->signature()->size() == 4, "updateBytes has 4 parameters");
