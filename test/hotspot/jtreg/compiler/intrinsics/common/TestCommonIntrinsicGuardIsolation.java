@@ -115,7 +115,10 @@ public class TestCommonIntrinsicGuardIsolation {
         WB.deoptimizeMethod(method);
         WB.clearMethodState(method);
         compile(method, level);
-        for (int site = 0; site < 3; site++) {
+        Method hashLeaf = ArraysSupport.class.getDeclaredMethod("vectorizedHashCodeLeaf",
+                Object.class, int.class, int.class, int.class, int.class);
+        int sites = WB.isIntrinsicAvailable(hashLeaf, level) ? 3 : 2;
+        for (int site = 0; site < sites; site++) {
             reject(site);
             if (WB.isMethodCompiled(method)) {
                 throw new AssertionError("unrelated call site lost its intrinsic: " + site);
