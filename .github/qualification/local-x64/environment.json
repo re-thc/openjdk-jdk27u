@@ -1,0 +1,263 @@
+{
+  "source_revision": "190109a0d2dffbd96bdb606f1d7f8a4ceb0b439e",
+  "base_revision": "87edd79d3104ff502f7befec034716b081436f49",
+  "cpu": {
+    "lscpu": [
+      {
+        "field": "Architecture:",
+        "data": "x86_64"
+      },
+      {
+        "field": "CPU op-mode(s):",
+        "data": "32-bit, 64-bit"
+      },
+      {
+        "field": "Address sizes:",
+        "data": "46 bits physical, 48 bits virtual"
+      },
+      {
+        "field": "Byte Order:",
+        "data": "Little Endian"
+      },
+      {
+        "field": "CPU(s):",
+        "data": "5"
+      },
+      {
+        "field": "On-line CPU(s) list:",
+        "data": "0-4"
+      },
+      {
+        "field": "Vendor ID:",
+        "data": "AuthenticAMD"
+      },
+      {
+        "field": "Model name:",
+        "data": "AMD EPYC 9V74 80-Core Processor"
+      },
+      {
+        "field": "CPU family:",
+        "data": "25"
+      },
+      {
+        "field": "Model:",
+        "data": "17"
+      },
+      {
+        "field": "Thread(s) per core:",
+        "data": "1"
+      },
+      {
+        "field": "Core(s) per socket:",
+        "data": "5"
+      },
+      {
+        "field": "Socket(s):",
+        "data": "1"
+      },
+      {
+        "field": "Stepping:",
+        "data": "1"
+      },
+      {
+        "field": "BogoMIPS:",
+        "data": "5192.28"
+      },
+      {
+        "field": "Flags:",
+        "data": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology nonstop_tsc cpuid extd_apicid tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx512_bf16 clzero xsaveerptr arat npt nrip_save tsc_scale vmcb_clean flushbyasid pausefilter pfthreshold v_vmsave_vmload avx512vbmi umip avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid fsrm arch_capabilities"
+      },
+      {
+        "field": "Hypervisor vendor:",
+        "data": "KVM"
+      },
+      {
+        "field": "Virtualization type:",
+        "data": "full"
+      },
+      {
+        "field": "L1d cache:",
+        "data": "96 KiB (3 instances)"
+      },
+      {
+        "field": "L1i cache:",
+        "data": "96 KiB (3 instances)"
+      },
+      {
+        "field": "L2 cache:",
+        "data": "3 MiB (3 instances)"
+      },
+      {
+        "field": "L3 cache:",
+        "data": "32 MiB (1 instance)"
+      },
+      {
+        "field": "NUMA node(s):",
+        "data": "1"
+      },
+      {
+        "field": "NUMA node0 CPU(s):",
+        "data": "0-4"
+      },
+      {
+        "field": "Vulnerability Gather data sampling:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Ghostwrite:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Indirect target selection:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Itlb multihit:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability L1tf:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Meltdown:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mmio stale data:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Old microcode:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Reg file data sampling:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Retbleed:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Spec rstack overflow:",
+        "data": "Vulnerable"
+      },
+      {
+        "field": "Vulnerability Spec store bypass:",
+        "data": "Vulnerable"
+      },
+      {
+        "field": "Vulnerability Spectre v1:",
+        "data": "Vulnerable: __user pointer sanitization and usercopy barriers only; no swapgs barriers"
+      },
+      {
+        "field": "Vulnerability Spectre v2:",
+        "data": "Vulnerable; STIBP: disabled; PBRSB-eIBRS: Not affected; BHI: Not affected"
+      },
+      {
+        "field": "Vulnerability Srbds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Tsa:",
+        "data": "Vulnerable"
+      },
+      {
+        "field": "Vulnerability Tsx async abort:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Vmscape:",
+        "data": "Not affected"
+      }
+    ]
+  },
+  "affinity": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "images": {
+    "baseline": {
+      "files": {
+        "lib/server/libjvm.so": {
+          "sha256": "095f8945896f49fb2682da96db7b322c60e8dae18bf805c26f839ee98e2b7a73",
+          "bytes": 30467656
+        },
+        "lib/modules": {
+          "sha256": "a6f5ecbb0ebe14a04fe28d7bedf9661b230d52bd69ae8f4161237b5a4023bbc5",
+          "bytes": 116059770
+        },
+        "release": {
+          "sha256": "39125ad8eb6f0f185c4858e89fa12db57f4dccf1760588ec9809547479e6d36d",
+          "bytes": 1026
+        }
+      },
+      "version": "openjdk version \"27.0.2-internal\" 2027-01-19\nOpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.common-intrinsics-baseline)\nOpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.common-intrinsics-baseline, mixed mode, sharing)\n"
+    },
+    "release": {
+      "files": {
+        "lib/server/libjvm.so": {
+          "sha256": "5b492b87a107f6091888624e5c2cfdafd5feab805055b61359ab32437cf76519",
+          "bytes": 30467816
+        },
+        "lib/modules": {
+          "sha256": "9f94b0228df889923bee45f977405fcd6ac1ee75de7d19d24b48935439b6a3c5",
+          "bytes": 116059734
+        },
+        "release": {
+          "sha256": "f7a98bf56acdcacd598933b16409d58e9a04b7d3a857a816b86df6cdcd474700",
+          "bytes": 1021
+        }
+      },
+      "version": "openjdk version \"27.0.2-internal\" 2027-01-19\nOpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.common-intrinsics-dot)\nOpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.common-intrinsics-dot, mixed mode)\n"
+    },
+    "debug": {
+      "files": {
+        "lib/server/libjvm.so": {
+          "sha256": "529974342a4c18aeb3a54e80e2b5ec2eea471883bf404ed487f841253a42157e",
+          "bytes": 48456632
+        },
+        "lib/modules": {
+          "sha256": "305478ed3b7ab1ed46054d7a0f380926791dd5f91a86c63119d439dff6661667",
+          "bytes": 116059725
+        },
+        "release": {
+          "sha256": "f7a98bf56acdcacd598933b16409d58e9a04b7d3a857a816b86df6cdcd474700",
+          "bytes": 1021
+        }
+      },
+      "version": "openjdk version \"27.0.2-internal\" 2027-01-19\nOpenJDK Runtime Environment (fastdebug build 27.0.2-internal-adhoc.agent.common-intrinsics-dot)\nOpenJDK 64-Bit Server VM (fastdebug build 27.0.2-internal-adhoc.agent.common-intrinsics-dot, mixed mode)\n"
+    },
+    "c1_only": {
+      "files": {
+        "lib/server/libjvm.so": {
+          "sha256": "31874f24b7f7ae88adea4fecc37a76aa4d88e6b2c5c60098fa2da3062f3fda5c",
+          "bytes": 19010696
+        },
+        "lib/modules": {
+          "sha256": "9f94b0228df889923bee45f977405fcd6ac1ee75de7d19d24b48935439b6a3c5",
+          "bytes": 116059734
+        },
+        "release": {
+          "sha256": "8b6b18e3d4e51516cebf92f65983d595a3beba0422123f7f9f54be8e23e8550e",
+          "bytes": 1021
+        }
+      },
+      "version": "openjdk version \"27.0.2-internal\" 2027-01-19\nOpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.common-intrinsics-dot)\nOpenJDK 64-Bit Client VM (build 27.0.2-internal-adhoc.agent.common-intrinsics-dot, mixed mode)\n"
+    }
+  },
+  "c1_only_revision": "750110e38dacdc529f0be5e1041b1fdd100792e1",
+  "debug_linker_options": [
+    "--threads=1",
+    "--no-fork"
+  ],
+  "baseline_revision": "d55aaad40b2b887309566763c006026f7c745d1b"
+}
