@@ -38,6 +38,7 @@ import java.util.stream.StreamSupport;
 import jdk.internal.lang.CaseFolding;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -1077,16 +1078,16 @@ final class StringUTF16 {
     // - Sub-ranges are valid
     // - The `tgt` sub-range is not empty
     // - The `src` sub-range length is greater than or equal to the `tgt` sub-range length
-    // Let C1 keep this mixed-coder helper separate on short scalar searches.
+    @ForceInline
     private static int indexOfLatin1Unsafe(byte[] src, int srcCount, byte[] tgt, int tgtCount, int fromIndex) {
         assert fromIndex >= 0;
         assert tgtCount > 0;
         assert tgtCount <= tgt.length;
         assert (srcCount - fromIndex) >= tgtCount;
-        char first = (char)(tgt[0] & 0xff);
         // Keep the short/scalar loop unchanged; probe only eligible windows.
         if (srcCount - fromIndex >= (StringZilla.MIN_BYTES >> 1)) {
             if (tgtCount <= 8) {
+                char first = (char)(tgt[0] & 0xff);
                 if (getChar(src, fromIndex) == first) {
                     int j = fromIndex + 1;
                     int end = j + tgtCount - 1;
@@ -1104,6 +1105,13 @@ final class StringUTF16 {
                 }
             }
         }
+        return indexOfLatin1Java(src, srcCount, tgt, tgtCount, fromIndex);
+    }
+
+    // Keep C1's scalar loop independent of native-call register allocation.
+    @DontInline
+    private static int indexOfLatin1Java(byte[] src, int srcCount, byte[] tgt, int tgtCount, int fromIndex) {
+        char first = (char)(tgt[0] & 0xff);
         int max = (srcCount - tgtCount);
         for (int i = fromIndex; i <= max; i++) {
             // Look for first character.
