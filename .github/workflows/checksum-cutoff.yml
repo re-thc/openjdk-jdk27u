@@ -41,7 +41,7 @@ jobs:
           python3 - <<'PY'
           import json,subprocess,time
           required={'bundles-linux-x64','bundles-linux-x64-debug','bundles-jtreg-8.2.1+1'}
-          for attempt in range(180):
+          for attempt in range(480):
               result=subprocess.check_output(['gh','api','repos/re-thc/openjdk-jdk27u/actions/runs/38305964372/artifacts?per_page=100'],text=True)
               names={x['name'] for x in json.loads(result)['artifacts']}
               if required <= names: break
