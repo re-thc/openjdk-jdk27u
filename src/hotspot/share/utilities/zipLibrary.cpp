@@ -38,7 +38,9 @@ typedef jzentry* (*ZIP_FindEntry_t)(jzfile* zip, const char* name, jint* sizeP, 
 typedef jboolean(*ZIP_ReadEntry_t)(jzfile* zip, jzentry* entry, unsigned char* buf, char* namebuf);
 typedef void(*ZIP_FreeEntry_t)(jzfile *zip, jzentry *entry);
 typedef jint(*ZIP_CRC32_t)(jint crc, const jbyte* buf, jint len);
+typedef jint(*ZIP_CRC32Byte_t)(jint crc, jint value);
 typedef jint(*ZIP_Adler32_t)(jint adler, const jbyte* buf, jint len);
+typedef jint(*ZIP_Adler32Byte_t)(jint adler, jint value);
 typedef const char* (*ZIP_GZip_InitParams_t)(size_t, size_t*, size_t*, int);
 typedef size_t(*ZIP_GZip_Fully_t)(char*, size_t, char*, size_t, char*, size_t, int, char*, char const**);
 
@@ -52,7 +54,9 @@ static ZIP_FindEntry_t ZIP_FindEntry = nullptr;
 static ZIP_ReadEntry_t ZIP_ReadEntry = nullptr;
 static ZIP_FreeEntry_t ZIP_FreeEntry = nullptr;
 static ZIP_CRC32_t ZIP_CRC32 = nullptr;
+static ZIP_CRC32Byte_t ZIP_CRC32Byte = nullptr;
 static ZIP_Adler32_t ZIP_Adler32 = nullptr;
+static ZIP_Adler32Byte_t ZIP_Adler32Byte = nullptr;
 static ZIP_GZip_InitParams_t ZIP_GZip_InitParams = nullptr;
 static ZIP_GZip_Fully_t ZIP_GZip_Fully = nullptr;
 
@@ -92,7 +96,9 @@ static void store_function_pointers(const char* path, bool vm_exit_on_failure) {
   ZIP_ReadEntry = CAST_TO_FN_PTR(ZIP_ReadEntry_t, dll_lookup("ZIP_ReadEntry", path, vm_exit_on_failure));
   ZIP_FreeEntry = CAST_TO_FN_PTR(ZIP_FreeEntry_t, dll_lookup("ZIP_FreeEntry", path, vm_exit_on_failure));
   ZIP_CRC32 = CAST_TO_FN_PTR(ZIP_CRC32_t, dll_lookup("ZIP_CRC32", path, vm_exit_on_failure));
+  ZIP_CRC32Byte = CAST_TO_FN_PTR(ZIP_CRC32Byte_t, dll_lookup("ZIP_CRC32Byte", path, vm_exit_on_failure));
   ZIP_Adler32 = CAST_TO_FN_PTR(ZIP_Adler32_t, dll_lookup("ZIP_Adler32", path, vm_exit_on_failure));
+  ZIP_Adler32Byte = CAST_TO_FN_PTR(ZIP_Adler32Byte_t, dll_lookup("ZIP_Adler32Byte", path, vm_exit_on_failure));
   // The following entry points are most likely optional from a zip library implementation perspective.
   // Hence no vm_exit on a resolution failure. Further refactorings should investigate this,
   // and if possible, streamline setting all entry points consistently.
@@ -242,4 +248,19 @@ address ZipLibrary::adler32_address() {
   initialize();
   assert(ZIP_Adler32 != nullptr, "invariant");
   return CAST_FROM_FN_PTR(address, ZIP_Adler32);
+}
+
+address ZipLibrary::adler32_byte_address() {
+  initialize();
+  assert(ZIP_Adler32Byte != nullptr, "invariant");
+  return CAST_FROM_FN_PTR(address, ZIP_Adler32Byte);
+}
+
+address ZipLibrary::crc32_address() {
+  initialize();
+  return CAST_FROM_FN_PTR(address, ZIP_CRC32);
+}
+address ZipLibrary::crc32_byte_address() {
+  initialize();
+  return CAST_FROM_FN_PTR(address, ZIP_CRC32Byte);
 }

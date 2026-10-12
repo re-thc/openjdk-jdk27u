@@ -193,6 +193,7 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _updateBytesCRC32_Type;
   static const TypeFunc* _updateBytesCRC32C_Type;
   static const TypeFunc* _updateBytesAdler32_Type;
+  static const TypeFunc* _updateAdler32_Type;
   static const TypeFunc* _zip_process_Type;
   static const TypeFunc* _osr_end_Type;
   static const TypeFunc* _register_finalizer_Type;
@@ -716,6 +717,11 @@ private:
   /**
    *  int updateBytesAdler32(int adler, bytes* b, int off, int len)
    */
+  static inline const TypeFunc* updateAdler32_Type() {
+    assert(_updateAdler32_Type != nullptr, "should be initialized");
+    return _updateAdler32_Type;
+  }
+
   static inline const TypeFunc* updateBytesAdler32_Type() {
     assert(_updateBytesAdler32_Type != nullptr, "should be initialized");
     return _updateBytesAdler32_Type;

@@ -37,6 +37,7 @@
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/zipLibrary.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_aarch64.inline.hpp"
 
@@ -929,6 +930,14 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
   LIR_Opr result = rlock_result(x);
   switch (x->id()) {
     case vmIntrinsics::_updateCRC32: {
+#ifdef LINUX
+      if (UseZlibNGCRC32) {
+        LIR_Opr value = call_runtime(x->argument_at(0), x->argument_at(1),
+                                    ZipLibrary::crc32_byte_address(), x->type(), nullptr);
+        __ move(value, result);
+        break;
+      }
+#endif
       LIRItem crc(x->argument_at(0), this);
       LIRItem val(x->argument_at(1), this);
       // val is destroyed by update_crc32

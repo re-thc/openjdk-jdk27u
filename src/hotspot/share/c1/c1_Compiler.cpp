@@ -235,6 +235,11 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
 #endif
 #if defined(AMD64) || defined(AARCH64)
   case vmIntrinsics::_zipProcess:
+#if defined(LINUX) && (defined(AMD64) || defined(AARCH64))
+  case vmIntrinsics::_updateAdler32:
+  case vmIntrinsics::_updateBytesAdler32:
+  case vmIntrinsics::_updateByteBufferAdler32:
+#endif
 #endif
   case vmIntrinsics::_vectorizedMismatch:
   case vmIntrinsics::_compareAndSetInt:

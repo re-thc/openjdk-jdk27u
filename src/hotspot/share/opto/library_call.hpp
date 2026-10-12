@@ -360,6 +360,7 @@ class LibraryCallKit : public GraphKit {
   Node* get_table_from_crc32c_class(ciInstanceKlass *crc32c_class);
   bool inline_updateBytesCRC32C();
   bool inline_updateDirectByteBufferCRC32C();
+  bool inline_updateAdler32();
   bool inline_updateBytesAdler32();
   bool inline_updateByteBufferAdler32();
   bool inline_multiplyToLen();

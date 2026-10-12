@@ -54,6 +54,13 @@ Java_java_util_zip_CRC32_updateBytes0(JNIEnv *env, jclass cls, jint crc,
     return crc;
 }
 
+JNIEXPORT jint JNICALL
+ZIP_CRC32Byte(jint crc, jint value)
+{
+    const Bytef b = (Bytef)value;
+    return (jint)crc32((uLong)(uInt)crc, &b, 1);
+}
+
 JNIEXPORT jint
 ZIP_CRC32(jint crc, const jbyte *buf, jint len)
 {

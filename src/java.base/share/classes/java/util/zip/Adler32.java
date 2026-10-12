@@ -132,6 +132,7 @@ public class Adler32 implements Checksum {
         return (long)adler & 0xffffffffL;
     }
 
+    @IntrinsicCandidate
     private static native int update(int adler, int b);
 
     @IntrinsicCandidate

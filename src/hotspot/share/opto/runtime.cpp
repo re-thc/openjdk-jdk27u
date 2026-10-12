@@ -242,6 +242,7 @@ const TypeFunc* OptoRuntime::_intpoly_assign_Type                 = nullptr;
 const TypeFunc* OptoRuntime::_updateBytesCRC32_Type               = nullptr;
 const TypeFunc* OptoRuntime::_updateBytesCRC32C_Type              = nullptr;
 const TypeFunc* OptoRuntime::_updateBytesAdler32_Type             = nullptr;
+const TypeFunc* OptoRuntime::_updateAdler32_Type                  = nullptr;
 const TypeFunc* OptoRuntime::_osr_end_Type                        = nullptr;
 const TypeFunc* OptoRuntime::_register_finalizer_Type             = nullptr;
 const TypeFunc* OptoRuntime::_vthread_transition_Type             = nullptr;
@@ -1079,6 +1080,16 @@ static const TypeFunc* make_updateBytesCRC32C_Type() {
   fields[TypeFunc::Parms+0] = TypeInt::INT; // crc result
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms+1, fields);
   return TypeFunc::make(domain, range);
+}
+
+static const TypeFunc* make_updateAdler32_Type() {
+  const Type** fields = TypeTuple::fields(2);
+  fields[TypeFunc::Parms] = TypeInt::INT;
+  fields[TypeFunc::Parms + 1] = TypeInt::INT;
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 2, fields);
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms] = TypeInt::INT;
+  return TypeFunc::make(domain, TypeTuple::make(TypeFunc::Parms + 1, fields));
 }
 
 static const TypeFunc* make_updateBytesAdler32_Type() {
@@ -2383,6 +2394,7 @@ void OptoRuntime::initialize_types() {
   _updateBytesCRC32_Type              = make_updateBytesCRC32_Type();
   _updateBytesCRC32C_Type             = make_updateBytesCRC32C_Type();
   _updateBytesAdler32_Type            = make_updateBytesAdler32_Type();
+  _updateAdler32_Type                 = make_updateAdler32_Type();
   _osr_end_Type                       = make_osr_end_Type();
   _register_finalizer_Type            = make_register_finalizer_Type();
   _vthread_transition_Type            = make_vthread_transition_Type();

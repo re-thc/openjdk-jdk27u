@@ -51,6 +51,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/zipLibrary.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/timer.hpp"
@@ -984,7 +985,90 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
  * Method entry for static native methods:
  *   int java.util.zip.CRC32.update(int crc, int b)
  */
+#ifdef LINUX
+address TemplateInterpreterGenerator::generate_Adler32_entry(AbstractInterpreter::MethodKind kind) {
+  assert(UseAdler32Intrinsics, "Adler32 intrinsic must be enabled");
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
+
+  const Register adler = c_rarg0;
+  const Register buf = c_rarg1;
+  const Register len = c_rarg2;
+  address target;
+  if (kind == Interpreter::java_util_zip_Adler32_update) {
+    __ ldrw(buf, Address(esp));
+    __ ldrw(adler, Address(esp, wordSize));
+    target = ZipLibrary::adler32_byte_address();
+  } else {
+    __ ldr(buf, Address(esp, 2 * wordSize));
+    __ ldrw(len, Address(esp, wordSize));
+    if (kind == Interpreter::java_util_zip_Adler32_updateBytes) {
+      __ add(buf, buf, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+      __ ldrw(adler, Address(esp, 3 * wordSize));
+    } else {
+      __ ldrw(adler, Address(esp, 4 * wordSize));
+    }
+    __ add(buf, buf, len);
+    __ ldrw(len, Address(esp));
+    target = ZipLibrary::adler32_address();
+  }
+
+  // A leaf call can return directly to the interpreter's caller.
+  __ andr(sp, r19_sender_sp, -16);
+  __ lea(rscratch1, RuntimeAddress(target));
+  __ br(rscratch1);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}
+
+#endif
+
+#ifdef LINUX
+address TemplateInterpreterGenerator::generate_CRC32NG_entry() {
+  assert(UseCRC32Intrinsics, "CRC32 intrinsic must be enabled");
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
+
+  const Register adler = c_rarg0;
+  const Register buf = c_rarg1;
+  const Register len = c_rarg2;
+  address target;
+  if (true) {
+    __ ldrw(buf, Address(esp));
+    __ ldrw(adler, Address(esp, wordSize));
+    target = ZipLibrary::crc32_byte_address();
+  } else {
+    __ ldr(buf, Address(esp, 2 * wordSize));
+    __ ldrw(len, Address(esp, wordSize));
+    if (true) {
+      __ add(buf, buf, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+      __ ldrw(adler, Address(esp, 3 * wordSize));
+    } else {
+      __ ldrw(adler, Address(esp, 4 * wordSize));
+    }
+    __ add(buf, buf, len);
+    __ ldrw(len, Address(esp));
+    target = ZipLibrary::crc32_address();
+  }
+
+  // A leaf call can return directly to the interpreter's caller.
+  __ andr(sp, r19_sender_sp, -16);
+  __ lea(rscratch1, RuntimeAddress(target));
+  __ br(rscratch1);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}
+
+#endif
+
 address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
+#ifdef LINUX
+  if (UseZlibNGCRC32) return generate_CRC32NG_entry();
+#endif
   assert(UseCRC32Intrinsics, "this intrinsic is not supported");
   address entry = __ pc();
 

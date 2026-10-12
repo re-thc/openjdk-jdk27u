@@ -7414,7 +7414,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ldr(v29, __ Q, Address(dilithiumConsts, 48));  // rSquare
 
     __ mov(len, zr);
-    __ add(len, len, 1024);
+    __ add(len, len, (Adler32Kernel == 2 ? 0 : 1024));
 
     __ BIND(L_loop);
 
@@ -8059,6 +8059,14 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, stub_id);
 
     start = __ pc();
+#ifdef LINUX
+    if (UseZlibNGCRC32) {
+      __ lea(rscratch1, RuntimeAddress(ZipLibrary::crc32_address()));
+      __ br(rscratch1);
+      return start;
+    }
+#endif
+
 
     const Register crc   = c_rarg0;  // crc
     const Register buf   = c_rarg1;  // source java byte array address
@@ -8162,10 +8170,12 @@ class StubGenerator: public StubCodeGenerator {
 
 #ifdef LINUX
     Label use_simd;
-    __ cmpw(c_rarg2, 65536);
+    if (Adler32Kernel != 1) {
+    __ cmpw(c_rarg2, 1024);
     __ br(Assembler::LT, use_simd);
     __ lea(rscratch1, RuntimeAddress(bulk_adler));
     __ br(rscratch1);
+    }
     __ bind(use_simd);
 #endif
 

@@ -44,6 +44,7 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/zipLibrary.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #ifdef ASSERT
@@ -2903,6 +2904,13 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     do_zip_process(x);
     break;
 #endif
+#if defined(LINUX) && (defined(AMD64) || defined(AARCH64))
+  case vmIntrinsics::_updateAdler32:
+  case vmIntrinsics::_updateBytesAdler32:
+  case vmIntrinsics::_updateByteBufferAdler32:
+    do_update_Adler32(x);
+    break;
+#endif
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
@@ -3469,6 +3477,45 @@ LIR_Opr LIRGenerator::mask_boolean(LIR_Opr array, LIR_Opr value, CodeEmitInfo*& 
 }
 
 #if defined(AMD64) || defined(AARCH64)
+void LIRGenerator::do_update_Adler32(Intrinsic* x) {
+  assert(UseAdler32Intrinsics, "Adler32 intrinsic must be enabled");
+  LIR_Opr result;
+  if (x->id() == vmIntrinsics::_updateAdler32) {
+    result = call_runtime(x->argument_at(0), x->argument_at(1),
+                          ZipLibrary::adler32_byte_address(), x->type(), nullptr);
+  } else {
+    LIRItem adler(x->argument_at(0), this);
+    LIRItem buf(x->argument_at(1), this);
+    LIRItem off(x->argument_at(2), this);
+    LIRItem len(x->argument_at(3), this);
+    adler.load_item();
+    buf.load_item();
+    off.load_item();
+    len.load_item();
+
+    LIR_Opr base = buf.result();
+    if (x->id() == vmIntrinsics::_updateBytesAdler32) {
+      base = new_register(T_ADDRESS);
+      __ add(buf.result(), LIR_OprFact::intConst(arrayOopDesc::base_offset_in_bytes(T_BYTE)), base);
+    }
+    LIR_Opr index = new_register(T_LONG);
+    __ convert(Bytecodes::_i2l, off.result(), index);
+    LIR_Opr addr = new_register(T_ADDRESS);
+    __ leal(LIR_OprFact::address(new LIR_Address(base, index, 0, T_BYTE)), addr);
+
+    BasicTypeList signature(3);
+    signature.append(T_INT);
+    signature.append(T_ADDRESS);
+    signature.append(T_INT);
+    LIR_OprList args(3);
+    args.append(adler.result());
+    args.append(addr);
+    args.append(len.result());
+    result = call_runtime(&signature, &args, ZipLibrary::adler32_address(), x->type(), nullptr);
+  }
+  __ move(result, rlock_result(x));
+}
+
 void LIRGenerator::do_zip_process(Intrinsic* x) {
   CodeEmitInfo* info = state_for(x, x->state());
   frame_map()->update_reserved_argument_area_size(x->number_of_arguments() * BytesPerLong);

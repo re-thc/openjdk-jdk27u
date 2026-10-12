@@ -357,6 +357,8 @@ const int ObjectAlignmentInBytes = 8;
           "Use intrinsics for SHA3 crypto hash function. "                  \
           "Requires that UseSHA is enabled.")                               \
                                                                             \
+  product(bool, UseZlibNGCRC32, false, "Checksum comparison only")            \
+  product(int, Adler32Kernel, 0, "Checksum comparison only")                 \
   product(bool, UseZipIntrinsics, true,                                     \
           "Use intrinsics for ZIP compression and decompression")           \
                                                                             \

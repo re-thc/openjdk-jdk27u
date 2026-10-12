@@ -3533,6 +3533,13 @@ address StubGenerator::generate_updateBytesCRC32() {
   StubCodeMark mark(this, stub_id);
 
   start = __ pc();
+#ifdef LINUX
+    if (UseZlibNGCRC32) {
+      __ jump(RuntimeAddress(ZipLibrary::crc32_address()), r10);
+      return start;
+    }
+#endif
+
 
   // Win64: rcx, rdx, r8, r9 (c_rarg0, c_rarg1, ...)
   // Unix:  rdi, rsi, rdx, rcx, r8, r9 (c_rarg0, c_rarg1, ...)
