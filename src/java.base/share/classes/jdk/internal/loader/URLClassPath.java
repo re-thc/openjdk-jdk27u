@@ -52,6 +52,7 @@ import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarFile;
 import java.util.zip.CRC32;
 import java.util.jar.JarEntry;
@@ -116,6 +117,12 @@ public class URLClassPath {
 
     /* The resulting search path of Loaders */
     private final ArrayList<Loader> loaders = new ArrayList<>();
+
+    /* The number of Loaders at the start of the search path that cannot have
+     * a resource in a given directory (see directoryOf). A Loader that cannot
+     * have it will never have it, and Loaders are only added at the end. */
+    private final ConcurrentHashMap<String, Integer> skippedLoaders
+            = new ConcurrentHashMap<>();
 
     /* Map of each URL opened to its corresponding Loader */
     private final HashMap<String, Loader> lmap = new HashMap<>();
@@ -330,17 +337,26 @@ public class URLClassPath {
         }
 
         String dir = directoryOf(name);
+        int start = skippedLoaders.getOrDefault(dir, 0);
+        int skip = start;
+        Resource res = null;
         Loader loader;
-        for (int i = 0; (loader = getLoader(i)) != null; i++) {
+        for (int i = start; (loader = getLoader(i)) != null; i++) {
             if (!loader.mayContain(dir)) {
+                if (skip == i) {
+                    skip++;
+                }
                 continue;
             }
-            Resource res = loader.getResource(name);
+            res = loader.getResource(name);
             if (res != null) {
-                return res;
+                break;
             }
         }
-        return null;
+        if (skip > start) {
+            skippedLoaders.put(dir, skip);
+        }
+        return res;
     }
 
     /**
