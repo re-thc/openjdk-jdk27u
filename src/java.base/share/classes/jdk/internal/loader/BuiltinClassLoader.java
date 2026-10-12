@@ -644,7 +644,7 @@ public class BuiltinClassLoader
      * Returns {@code null} if none of the modules defined to this
      * class loader contain the API package for the class.
      */
-    private LoadedModule findLoadedModule(String cn) {
+    LoadedModule findLoadedModule(String cn) {
         int pos = cn.lastIndexOf('.');
         if (pos < 0)
             return null; // unnamed package
