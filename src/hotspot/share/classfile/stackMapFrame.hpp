@@ -57,6 +57,7 @@ class StackMapFrame : public ResourceObj {
   u2 _max_stack;
 
   u1 _flags;
+  uint32_t _locals_version;  // changes whenever the types in _locals do
   VerificationType* _locals; // local variable type array
   VerificationType* _stack;  // operand stack type array
 
@@ -67,7 +68,7 @@ class StackMapFrame : public ResourceObj {
       _offset(cp._offset), _locals_size(cp._locals_size),
       _stack_size(cp._stack_size), _stack_mark(cp._stack_mark),
       _max_locals(cp._max_locals), _max_stack(cp._max_stack),
-      _flags(cp._flags) {
+      _flags(cp._flags), _locals_version(cp._locals_version) {
     _locals = NEW_RESOURCE_ARRAY(VerificationType, _max_locals);
     for (int i = 0; i < _max_locals; ++i) {
       if (i < _locals_size) {
@@ -112,6 +113,7 @@ class StackMapFrame : public ResourceObj {
                                     _stack_mark(-1),
                                     _max_locals(max_locals),
                                     _max_stack(max_stack),  _flags(flags),
+                                    _locals_version(1),
                                     _locals(locals), _stack(stack),
                                     _verifier(v) { }
 
@@ -128,6 +130,7 @@ class StackMapFrame : public ResourceObj {
   inline int32_t offset()   const             { return _offset; }
   inline ClassVerifier* verifier() const      { return _verifier; }
   inline u1 flags() const                     { return _flags; }
+  inline uint32_t locals_version() const      { return _locals_version; }
   inline int32_t locals_size() const          { return _locals_size; }
   inline VerificationType* locals() const     { return _locals; }
   inline int32_t stack_size() const           { return _stack_size; }
@@ -138,6 +141,7 @@ class StackMapFrame : public ResourceObj {
 
   // Set locals and stack types to bogus
   inline void reset() {
+    _locals_version++;
     int32_t i;
     for (i = 0; i < _max_locals; i++) {
       _locals[i] = VerificationType::bogus_type();
