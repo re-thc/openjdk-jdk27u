@@ -26,8 +26,11 @@
 package jdk.internal.reflect;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+
+import static jdk.internal.reflect.MethodHandleAccessorFactory.LazyStaticHolder.JLIA;
 
 abstract class MethodHandleFieldAccessorImpl extends FieldAccessorImpl {
     private static final int IS_READ_ONLY_BIT = 0x0001;
@@ -36,15 +39,45 @@ abstract class MethodHandleFieldAccessorImpl extends FieldAccessorImpl {
 
     private final int fieldFlags;
     protected final MethodHandle getter;
-    protected final MethodHandle setter;
+    // created on first use as most fields are only ever read
+    private volatile MethodHandle setter;
 
-    protected MethodHandleFieldAccessorImpl(Field field, MethodHandle getter, MethodHandle setter, boolean isReadOnly, boolean isStatic) {
+    protected MethodHandleFieldAccessorImpl(Field field, MethodHandle getter, boolean isReadOnly, boolean isStatic) {
         super(field);
         this.fieldFlags = (isReadOnly ? IS_READ_ONLY_BIT : 0) |
                           (isStatic ? IS_STATIC_BIT : 0) |
                           NONZERO_BIT;
         this.getter = getter;
-        this.setter = setter;
+    }
+
+    /**
+     * Returns the setter, adapted to {@code (Object, T)void} for an instance field
+     * or {@code (T)void} for a static field, where {@code T} is the field type for
+     * a primitive field and {@code Object} otherwise.  Must not be called when
+     * this accessor is read-only.
+     */
+    protected final MethodHandle setter() {
+        MethodHandle mh = setter;
+        if (mh == null) {
+            // racing threads may each create a setter, which are interchangeable
+            setter = mh = newSetter();
+        }
+        return mh;
+    }
+
+    private MethodHandle newSetter() {
+        assert !isReadOnly();
+        Class<?> type = field.getType();
+        if (!type.isPrimitive()) {
+            type = Object.class;
+        }
+        MethodType mtype = isStatic() ? MethodType.methodType(void.class, type)
+                                      : MethodType.methodType(void.class, Object.class, type);
+        try {
+            return JLIA.unreflectField(field, true).asType(mtype);
+        } catch (IllegalAccessException e) {
+            throw new InternalError(e);
+        }
     }
 
     protected final boolean isReadOnly() {
