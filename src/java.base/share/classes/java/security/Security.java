@@ -1024,6 +1024,7 @@ public final class Security {
 
         HashSet<String> result = new HashSet<>();
         Provider[] providers = Security.getProviders();
+        String prefix = serviceName.toUpperCase(Locale.ENGLISH);
 
         for (int i = 0; i < providers.length; i++) {
             // Check the keys for each provider.
@@ -1031,8 +1032,7 @@ public final class Security {
                                                 e.hasMoreElements(); ) {
                 String currentKey =
                         ((String)e.nextElement()).toUpperCase(Locale.ENGLISH);
-                if (currentKey.startsWith(
-                        serviceName.toUpperCase(Locale.ENGLISH))) {
+                if (currentKey.startsWith(prefix)) {
                     // We should skip the currentKey if it contains a
                     // whitespace. The reason is: such an entry in the
                     // provider property contains attributes for the
