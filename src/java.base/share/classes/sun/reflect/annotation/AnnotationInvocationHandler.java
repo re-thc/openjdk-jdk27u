@@ -466,27 +466,24 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
 
     /**
      * Returns the member methods for our annotation type.  These are
-     * obtained lazily and cached, as they're expensive to obtain
-     * and we only need them if our equals method is invoked (which should
-     * be rare).
+     * obtained lazily and cached per annotation type, as they're expensive
+     * to obtain and we only need them if our equals method is invoked.
      */
     private Method[] getMemberMethods() {
-        Method[] value = memberMethods;
-        if (value == null) {
-            value = computeMemberMethods();
-            memberMethods = value;
+        return MemberMethods.INSTANCE.get(type);
+    }
+
+    private static final class MemberMethods extends ClassValue<Method[]> {
+        static final MemberMethods INSTANCE = new MemberMethods();
+
+        @Override
+        protected Method[] computeValue(Class<?> type) {
+            final Method[] methods = type.getDeclaredMethods();
+            validateAnnotationMethods(methods);
+            AccessibleObject.setAccessible(methods, true);
+            return methods;
         }
-        return value;
     }
-
-    private Method[] computeMemberMethods() {
-        final Method[] methods = type.getDeclaredMethods();
-        validateAnnotationMethods(methods);
-        AccessibleObject.setAccessible(methods, true);
-        return methods;
-    }
-
-    private transient volatile Method[] memberMethods;
 
     /**
      * Validates that a method is structurally appropriate for an
@@ -495,7 +492,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
      * annotation type must take zero arguments and there are
      * restrictions on the return type.
      */
-    private void validateAnnotationMethods(Method[] memberMethods) {
+    private static void validateAnnotationMethods(Method[] memberMethods) {
         /*
          * Specification citations below are from JLS
          * 9.6.1. Annotation Type Elements
