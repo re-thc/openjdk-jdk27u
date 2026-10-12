@@ -25,7 +25,13 @@ def image():
     old=ROOT/'validation/old-jdk'
     extracted=ROOT/'validation/java-base'
     run('extract-java-base',[old/'bin/jmod','extract','--dir',extracted,old/'jmods/java.base.jmod'])
-    shutil.copy2(ROOT/'build/zip-checksums/jdk/modules/java.base/java/util/zip/Adler32.class',
+    source=ROOT/'validation/patch-src/java/util/zip'
+    source.mkdir(parents=True,exist_ok=True)
+    shutil.copy2(ROOT/'src/java.base/share/classes/java/util/zip/Adler32.java',source/'Adler32.java')
+    patch=ROOT/'validation/patch-classes'
+    run('compile-adler-annotation',[old/'bin/javac','--patch-module',
+        'java.base='+str(ROOT/'validation/patch-src'),'-d',patch,source/'Adler32.java'])
+    shutil.copy2(patch/'java/util/zip/Adler32.class',
                  extracted/'classes/java/util/zip/Adler32.class')
     shutil.copy2(ROOT/'build/zip-checksums/support/modules_libs/java.base/libzip.so',extracted/'lib/libzip.so')
     shutil.copy2(ROOT/'build/zip-checksums/support/modules_libs/java.base/server/libjvm.so',extracted/'lib/server/libjvm.so')
@@ -46,7 +52,7 @@ def prepare():
         urllib.request.urlretrieve('https://repo.maven.apache.org/maven2/'+path,jars/Path(path).name)
     classes=ROOT/'validation/bench-classes';classes.mkdir(exist_ok=True)
     cp=os.pathsep.join(str(p) for p in jars.glob('*.jar'))
-    run('compile-benchmark',[NEW/'bin/javac','-cp',cp,'-d',classes,
+    run('compile-benchmark',[NEW/'bin/javac','-proc:full','-cp',cp,'-d',classes,
         ROOT/'test/micro/org/openjdk/bench/java/util/zip/ChecksumPaths.java'])
     (OUT/'jmh-classpath.txt').write_text(cp+os.pathsep+str(classes))
 

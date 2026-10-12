@@ -1,4 +1,4 @@
-name: Checksum call-path qualification (native-width C1 pointers)
+name: Checksum qualification using the standard bootstrap JDK
 on:
   push:
     branches: [pr/zlib-ng-validation]
@@ -20,6 +20,10 @@ jobs:
     timeout-minutes: 150
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: ./.github/actions/get-bootjdk
+        id: boot
+        with:
+          platform: ${{ matrix.platform }}
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           github-token: ${{ github.token }}
@@ -51,8 +55,8 @@ jobs:
           CC: gcc-14
           CXX: g++-14
         run: |
-          bash configure --with-conf-name=zip-checksums --with-boot-jdk="$PWD/validation/old-jdk" --with-debug-level=release --with-native-debug-symbols=none --with-zlib=system
-          make CONF=zip-checksums JOBS=4 hotspot java.base-libs java.base-java
+          bash configure --with-conf-name=zip-checksums --with-boot-jdk="${{ steps.boot.outputs.path }}" --with-debug-level=release --with-native-debug-symbols=none --with-zlib=system
+          make CONF=zip-checksums JOBS=4 hotspot java.base-libs
           python3 .github/scripts/qualify-checksum-paths.py image
           validation/new-jdk/bin/java -Xshare:off -version
       - name: Compare existing kernels, zlib-ng JNI and direct zlib-ng
@@ -62,7 +66,7 @@ jobs:
           CC: gcc-14
           CXX: g++-14
         run: |
-          bash configure --with-conf-name=zip-checksums-debug --with-boot-jdk="$PWD/validation/old-jdk" --with-debug-level=fastdebug --with-native-debug-symbols=none --with-zlib=system
+          bash configure --with-conf-name=zip-checksums-debug --with-boot-jdk="${{ steps.boot.outputs.path }}" --with-debug-level=fastdebug --with-native-debug-symbols=none --with-zlib=system
           make CONF=zip-checksums-debug JOBS=4 hotspot
           cp -a validation/new-jdk validation/debug-jdk
           cp build/zip-checksums-debug/support/modules_libs/java.base/server/libjvm.so validation/debug-jdk/lib/server/
