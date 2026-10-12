@@ -21,7 +21,9 @@
  * questions.
  */
 
-#include "oops/fieldStreams.inline.hpp"
+#include "classfile/classLoaderData.hpp"
+#include "oops/fieldInfo.inline.hpp"
+#include "oops/instanceKlass.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/atomicAccess.hpp"
@@ -108,12 +110,23 @@ class KnownField {
     }
     for (Klass* k = obj->klass(); k != nullptr; k = k->super()) {
       if (k->is_instance_klass() && k->name()->equals(_class_name) &&
-          InstanceKlass::cast(k)->class_loader() == nullptr) {
-        for (JavaFieldStream f(InstanceKlass::cast(k)); !f.done(); f.next()) {
-          if (!f.access_flags().is_static() && f.name()->equals(_name) && f.signature()->equals(_signature)) {
-            AtomicAccess::store(&_offset, f.offset());
+          k->class_loader_data()->is_the_null_class_loader_data()) {
+        // Decode immutable metadata directly. FieldStreamBase creates a
+        // metadata handle, whose backing array can allocate in this leaf.
+        InstanceKlass* ik = InstanceKlass::cast(k);
+        FieldInfoReader reader(ik->fieldinfo_stream());
+        int java_fields, injected_fields;
+        reader.read_field_counts(&java_fields, &injected_fields);
+        for (int i = 0; i < java_fields; i++) {
+          FieldInfo field;
+          reader.read_field_info(field);
+          if (!field.access_flags().is_static() &&
+              field.name(ik->constants())->equals(_name) &&
+              field.signature(ik->constants())->equals(_signature)) {
+            int offset = field.offset();
+            AtomicAccess::store(&_offset, offset);
             AtomicAccess::release_store(&_holder, k);
-            return f.offset();
+            return offset;
           }
         }
         return -1;
@@ -382,7 +395,8 @@ JRT_LEAF(jlong, common_double_keccak(const intptr_t* args))
   oop s0 = a.object();
   oop s1 = a.object();
   address stub = StubRoutines::double_keccak();
-  if (stub == nullptr || !array_range(s0, T_LONG, 0, 25) || !array_range(s1, T_LONG, 0, 25)) {
+  if (stub == nullptr || s0 == s1 ||
+      !array_range(s0, T_LONG, 0, 25) || !array_range(s1, T_LONG, 0, 25)) {
     return CommonIntrinsics::fallback;
   }
   return invoke_stub<jint>(stub, elements<jlong>(s0), elements<jlong>(s1));
@@ -395,7 +409,9 @@ JRT_LEAF(jlong, common_quad_keccak(const intptr_t* args))
   oop s2 = a.object();
   oop s3 = a.object();
   address stub = StubRoutines::quad_keccak();
-  if (stub == nullptr || !array_range(s0, T_LONG, 0, 25) || !array_range(s1, T_LONG, 0, 25) ||
+  // Parallel permutations cannot implement Java's sequential aliased updates.
+  if (stub == nullptr || s0 == s1 || s0 == s2 || s0 == s3 || s1 == s2 || s1 == s3 || s2 == s3 ||
+      !array_range(s0, T_LONG, 0, 25) || !array_range(s1, T_LONG, 0, 25) ||
       !array_range(s2, T_LONG, 0, 25) || !array_range(s3, T_LONG, 0, 25)) {
     return CommonIntrinsics::fallback;
   }

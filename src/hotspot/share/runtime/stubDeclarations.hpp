@@ -156,6 +156,7 @@
   do_blob(fpu2long_stub)                                               \
   do_blob(counter_overflow)                                            \
   do_blob(predicate_failed_trap)                                       \
+  do_blob(intrinsic_failed_trap)                                       \
 
 #else
 #define C1_STUBS_DO(do_blob)

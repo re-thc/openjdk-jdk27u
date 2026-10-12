@@ -28,7 +28,7 @@
  * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
  * @modules java.base/jdk.internal.util
  * @library /test/lib
- * @build jdk.test.whitebox.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox jdk.test.whitebox.code.NMethod
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseCommonIntrinsics -XX:CompileCommand=inline,jdk.internal.util.ArraysSupport::hashCode compiler.intrinsics.common.TestCommonIntrinsicRecompilation 1
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:TieredStopAtLevel=3 -XX:+UseCommonIntrinsics -XX:CompileCommand=inline,jdk.internal.util.ArraysSupport::hashCode compiler.intrinsics.common.TestCommonIntrinsicRecompilation 3
@@ -39,6 +39,7 @@ package compiler.intrinsics.common;
 import java.lang.reflect.Method;
 import jdk.internal.util.ArraysSupport;
 import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.code.NMethod;
 
 public class TestCommonIntrinsicRecompilation {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
@@ -84,19 +85,18 @@ public class TestCommonIntrinsicRecompilation {
             WB.deoptimizeMethod(method);
             WB.clearMethodState(method);
             compile(method, level);
-            int before = WB.getMethodTrapCount(method, "none");
             reject(name);
-            int after = WB.getMethodTrapCount(method, "none");
-            if (after != before + 1 || WB.isMethodCompiled(method)) {
-                throw new AssertionError("expected one guarded deoptimization: " + name +
-                        ", traps " + before + " -> " + after + ", compiled=" + WB.isMethodCompiled(method));
+            if (WB.isMethodCompiled(method)) {
+                throw new AssertionError("expected a guarded deoptimization: " + name);
             }
             compile(method, level);
+            int compileId = NMethod.get(method, false).compile_id;
             for (int i = 0; i < 1_000; i++) {
                 reject(name);
                 call(name, false);
             }
-            if (!WB.isMethodCompiled(method) || WB.getMethodTrapCount(method, "none") != after) {
+            NMethod code = NMethod.get(method, false);
+            if (code == null || code.compile_id != compileId) {
                 throw new AssertionError("guard failure caused recompile churn: " + name);
             }
         }

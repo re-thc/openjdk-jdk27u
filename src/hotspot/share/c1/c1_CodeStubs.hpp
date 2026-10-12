@@ -170,9 +170,13 @@ class RangeCheckStub: public CodeStub {
 class PredicateFailedStub: public CodeStub {
  private:
   CodeEmitInfo* _info;
+  bool _is_intrinsic = false;
 
  public:
   PredicateFailedStub(CodeEmitInfo* info);
+  PredicateFailedStub(CodeEmitInfo* info, bool is_intrinsic) : PredicateFailedStub(info) {
+    _is_intrinsic = is_intrinsic;
+  }
   virtual void emit_code(LIR_Assembler* e);
   virtual CodeEmitInfo* info() const             { return _info; }
   virtual void visit(LIR_OpVisitState* visitor) {

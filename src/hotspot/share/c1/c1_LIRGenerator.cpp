@@ -2820,7 +2820,7 @@ void LIRGenerator::do_CommonScalarIntrinsic(Intrinsic* x) {
   if (CommonIntrinsics::can_fallback(id)) {
     info = state_for(x, x->state_before());
     info->set_force_reexecute();
-    fallback = new PredicateFailedStub(info);
+    fallback = new PredicateFailedStub(info, true);
   }
   LIRItem left(x->argument_at(0), this);
   left.load_item();
@@ -2879,7 +2879,7 @@ void LIRGenerator::do_CommonIntrinsic(Intrinsic* x) {
   // the outgoing argument vector or calling the shared leaf.
   CodeEmitInfo* info = state_for(x, x->state_before());
   info->set_force_reexecute();
-  CodeStub* fallback = new PredicateFailedStub(info);
+  CodeStub* fallback = new PredicateFailedStub(info, true);
   int slots = CommonIntrinsics::parameter_slots(x->id());
   // Keep the raw argument vector clear of the C ABI register-save area.
   const int base = 4 * wordSize;

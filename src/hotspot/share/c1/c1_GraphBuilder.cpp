@@ -3695,13 +3695,16 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
   }
   if (CommonIntrinsics::is_supported(callee->intrinsic_id()) &&
       CommonIntrinsics::can_fallback(callee->intrinsic_id()) &&
-      compilation()->method()->method_data()->trap_count(Deoptimization::Reason_none) != 0) {
-    // PredicateFailedStub records a trap in the root caller's MDO, including
-    // level-1 compilations. Recompile its guarded operations as Java after the
-    // first failure instead of repeating input-dependent deoptimization.
+      method()->method_data()->has_trap_at(bci(), method(), Deoptimization::Reason_intrinsic) != 0) {
+    // Keep unrelated call sites accelerated after a guard fails, including
+    // inlined callers and level-1 compilations without ordinary profiling.
     return false;
   }
   if (callee->intrinsic_id() == vmIntrinsics::_vectorizedHashCode && CommonIntrinsics::enabled()) {
+    if (method()->intrinsic_id() == vmIntrinsics::_vectorizedHashCodeLeaf) {
+      // The leaf's Java body is the fallback, so do not substitute its helper again.
+      return false;
+    }
     ciMethod* helper = callee->holder()->find_method(ciSymbol::make("vectorizedHashCodeC1"),
                                                   callee->signature()->as_symbol());
     if (helper == nullptr) {

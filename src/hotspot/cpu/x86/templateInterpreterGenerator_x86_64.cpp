@@ -29,6 +29,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
+#include "oops/methodCounters.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/commonIntrinsics.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -511,6 +512,16 @@ address TemplateInterpreterGenerator::generate_common_intrinsic_entry(vmIntrinsi
     __ jcc(Assembler::notEqual, slow_path);
   }
   __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
+#if INCLUDE_JVMTI
+  // Breakpoint events alone do not put the thread in interpreter-only mode.
+  Label no_breakpoints;
+  __ movptr(rscratch1, Address(rbx, Method::method_counters_offset()));
+  __ testptr(rscratch1, rscratch1);
+  __ jcc(Assembler::zero, no_breakpoints);
+  __ cmpw(Address(rscratch1, in_bytes(MethodCounters::number_of_breakpoints_offset())), 0);
+  __ jcc(Assembler::notEqual, slow_path);
+  __ bind(no_breakpoints);
+#endif
   if (CommonIntrinsics::is_scalar(id)) {
     bool binary = CommonIntrinsics::is_binary_scalar(id);
     bool wide = CommonIntrinsics::scalar_is_wide(id);
