@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test id=level1
  * @summary Guarded linkTo targets preserve caller arguments, locals and exception handlers
  * @requires vm.compiler1.enabled
  * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
@@ -30,6 +30,16 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseCommonIntrinsics compiler.intrinsics.common.TestCommonMethodHandles 1
+ */
+
+/*
+ * @test id=level3
+ * @summary Common C1 intrinsics preserve method-handle caller state with profiling
+ * @requires vm.compiler1.enabled & vm.compiler2.enabled
+ * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:TieredStopAtLevel=3 -XX:+UseCommonIntrinsics compiler.intrinsics.common.TestCommonMethodHandles 3
  */
 
