@@ -3535,16 +3535,6 @@ address StubGenerator::generate_updateBytesCRC32() {
 
   start = __ pc();
 
-#ifdef LINUX
-  if (StubRoutines::use_zlib_ng_crc32()) {
-    Label use_kernel;
-    __ cmpl(c_rarg2, StubRoutines::zlib_ng_crc32_min_length);
-    __ jcc(Assembler::less, use_kernel);
-    __ jump(RuntimeAddress(ZipLibrary::crc32_address()), r10);
-    __ bind(use_kernel);
-  }
-#endif
-
   // Win64: rcx, rdx, r8, r9 (c_rarg0, c_rarg1, ...)
   // Unix:  rdi, rsi, rdx, rcx, r8, r9 (c_rarg0, c_rarg1, ...)
   // rscratch1: r10
@@ -3559,6 +3549,14 @@ address StubGenerator::generate_updateBytesCRC32() {
   BLOCK_COMMENT("Entry:");
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
+  Label bulk_entry;
+  Label* bulk_target = nullptr;
+#ifdef LINUX
+  if (StubRoutines::use_zlib_ng_crc32()) {
+    bulk_target = &bulk_entry;
+  }
+#endif
+
   if (VM_Version::supports_sse4_1() && VM_Version::supports_avx512_vpclmulqdq() &&
       VM_Version::supports_avx512bw() &&
       VM_Version::supports_avx512vl()) {
@@ -3570,13 +3568,23 @@ address StubGenerator::generate_updateBytesCRC32() {
     __ kernel_crc32_avx512(crc, buf, len, table, tmp1, tmp2);
     __ notl(crc);
   } else {
-    __ kernel_crc32(crc, buf, len, table, tmp1);
+    __ kernel_crc32(crc, buf, len, table, tmp1,
+                    StubRoutines::zlib_ng_crc32_min_length, bulk_target);
   }
 
   __ movl(rax, crc);
   __ vzeroupper();
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
+
+#ifdef LINUX
+  if (bulk_target != nullptr) {
+    __ bind(bulk_entry);
+    __ notl(crc);
+    __ leave();
+    __ jump(RuntimeAddress(ZipLibrary::crc32_address()), r10);
+  }
+#endif
 
   // record the stub entry and end
   store_archive_data(stub_id, start, __ pc());

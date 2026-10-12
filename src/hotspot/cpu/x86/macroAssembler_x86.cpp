@@ -7771,8 +7771,11 @@ void MacroAssembler::fold_8bit_crc32(Register crc, Register table, Register tmp)
  * @param len   register containing number of bytes
  * @param table register that will contain address of CRC table
  * @param tmp   scratch register
+ * @param bulk_threshold minimum length for the optional bulk continuation
+ * @param bulk_entry continuation receiving the original buffer and length, and complemented CRC
  */
-void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Register table, Register tmp) {
+void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Register table, Register tmp,
+                                  int bulk_threshold, Label* bulk_entry) {
   assert_different_registers(crc, buf, len, table, tmp, rax);
 
   Label L_tail, L_tail_restore, L_tail_loop, L_exit, L_align_loop, L_aligned;
@@ -7785,6 +7788,12 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
   notl(crc); // ~crc
   cmpl(len, 16);
   jcc(Assembler::less, L_tail);
+
+  if (bulk_entry != nullptr) {
+    assert(bulk_threshold >= 16, "bulk continuation must preserve the scalar tail");
+    cmpl(len, bulk_threshold);
+    jcc(Assembler::greaterEqual, *bulk_entry);
+  }
 
   // Align buffer to 16 bytes
   movl(tmp, buf);
