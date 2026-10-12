@@ -1,0 +1,36 @@
+name: Summarize completed checksum measurements
+on:
+  push:
+    branches: [pr/zlib-ng-validation]
+    paths: ['.github/workflows/checksum-summary.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  summarize:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ github.token }}
+          run-id: 38264246368
+          pattern: checksum-paths-*
+          path: measurements
+      - name: Print measured scores and regression summaries
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for arch in sorted(Path('measurements').iterdir()):
+              print('CPU',arch.name)
+              print((arch/'cpu.txt').read_text())
+              for path in sorted(arch.glob('*.json')):
+                  try: rows=json.loads(path.read_text())
+                  except ValueError: continue
+                  for row in rows:
+                      m=row['primaryMetric']
+                      print('SCORE',json.dumps({'cpu':arch.name,'route':path.stem,'method':row['benchmark'].split('.')[-1],
+                          'size':row.get('params',{}).get('size','scalar'),'ns':m['score'],'error':m['scoreError'],'raw':m['rawData']}))
+              for path in sorted(arch.glob('jtreg-*.log')):
+                  print('REGRESSION',path.name,path.read_text()[-2000:])
+          PY
