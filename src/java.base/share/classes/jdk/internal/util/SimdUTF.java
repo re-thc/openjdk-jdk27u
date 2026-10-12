@@ -105,14 +105,9 @@ public final class SimdUTF {
         if (!isEligible(len) || (automatic && len < operationMinimumLength(operation))) {
             return -1;
         }
-        // Avoid native calls on an immediately malformed prefix, including replacement loops.
-        boolean validStart = switch (operation) {
-            case DECODE_UTF8 -> src instanceof byte[] bytes && validUTF8Start(bytes, sp, len);
-            case ENCODE_UTF16, ENCODE_UTF16_BE, ENCODE_UTF16_LE, ENCODE_UTF32_BE, ENCODE_UTF32_LE ->
-                    validUTF16Start(src, sp, len);
-            default -> true;
-        };
-        if (!validStart) {
+        if ((operation == ENCODE_UTF16_BE || operation == ENCODE_UTF16_LE
+                || operation == ENCODE_UTF32_BE || operation == ENCODE_UTF32_LE)
+                && !validUTF16Start(src, sp, len)) {
             return -1;
         }
         return len <= MAX_CHUNK ? process0(src, sp, len, dst, dp, capacity, operation)
@@ -244,28 +239,6 @@ public final class SimdUTF {
         }
         return Character.isHighSurrogate(first) && len > 1 && Character.isLowSurrogate(
                 src instanceof char[] chars ? chars[sp + 1] : byteChar((byte[])src, (sp + 1) << 1, BIG_ENDIAN));
-    }
-
-    private static boolean validUTF8Start(byte[] src, int sp, int len) {
-        if (!range(src, false, sp, len) || len == 0) {
-            return false;
-        }
-        int first = src[sp] & 0xff;
-        if (first < 0x80) {
-            return true;
-        }
-        int width = first < 0xe0 ? 2 : first < 0xf0 ? 3 : 4;
-        if (first < 0xc2 || first > 0xf4 || len < width) {
-            return false;
-        }
-        int second = src[sp + 1] & 0xff;
-        if ((second & 0xc0) != 0x80 || first == 0xe0 && second < 0xa0
-                || first == 0xed && second >= 0xa0 || first == 0xf0 && second < 0x90
-                || first == 0xf4 && second >= 0x90) {
-            return false;
-        }
-        return (width < 3 || (src[sp + 2] & 0xc0) == 0x80)
-                && (width < 4 || (src[sp + 3] & 0xc0) == 0x80);
     }
 
     // Keep operation constants visible to C2, including its preferred existing stubs.

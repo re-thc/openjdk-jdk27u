@@ -116,15 +116,19 @@ static jint simdutf_representable_prefix(const char16_t* input, jint len, char16
 }
 
 static bool simdutf_utf8_is_latin1(const char* input, jint len) {
-  if (!simdutf::validate_utf8(input, len)) {
-    return false;
+  char latin1[4096];
+  for (jint off = 0; off < len;) {
+    size_t size = MIN2(sizeof(latin1), size_t(len - off));
+    if (off + size < size_t(len)) {
+      size = simdutf::trim_partial_utf8(input + off, size);
+    }
+    if (size == 0 || simdutf::convert_utf8_to_latin1_with_errors(
+        input + off, size, latin1).error != simdutf::SUCCESS) {
+      return false;
+    }
+    off += checked_cast<jint>(size);
   }
-  uint8_t maximum = 0;
-  for (jint i = 0; i < len; i++) {
-    maximum = MAX2(maximum, uint8_t(input[i]));
-  }
-  // Valid UTF-8 represents Latin-1 exactly when every byte is below 0xc4.
-  return maximum < 0xc4;
+  return true;
 }
 
 static jint simdutf_decode_latin1(const char* input, jint len, char* output, jint capacity) {
@@ -132,11 +136,11 @@ static jint simdutf_decode_latin1(const char* input, jint len, char* output, jin
   if (capacity < len || !simdutf_utf8_is_latin1(input, len)) {
     return -1;
   }
-  char utf8[256];
-  char latin1[256];
+  char utf8[4096];
+  char latin1[4096];
   jint written = 0;
   for (jint off = 0; off < len;) {
-    size_t size = MIN2(size_t(256), size_t(len - off));
+    size_t size = MIN2(sizeof(utf8), size_t(len - off));
     memcpy(utf8, input + off, size);
     if (off + size < size_t(len)) {
       size = simdutf::trim_partial_utf8(utf8, size);
@@ -430,7 +434,7 @@ JRT_LEAF(jint, SimdUTF::process(oopDesc* src_raw, jint sp, jint len,
       break;
     }
     case DECODE_UTF8: {
-      // Keep unchecked writes on the worst-case capacity path; stage tighter outputs.
+      // Convert directly with worst-case room; stage tighter outputs before copying.
       if (simdutf::validate_utf8_with_errors(input, len).error != simdutf::SUCCESS) {
         return -1;
       }
