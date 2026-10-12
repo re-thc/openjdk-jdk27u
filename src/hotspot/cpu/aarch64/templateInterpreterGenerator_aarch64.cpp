@@ -1002,10 +1002,11 @@ address TemplateInterpreterGenerator::generate_integer_entry(AbstractInterpreter
     __ ldrw(rscratch1, Address(rthread, JavaThread::interp_only_mode_offset()));
     __ cbnz(rscratch1, slow_path);
   }
+  address target;
   if (parse) {
     __ ldrw(rscratch1, Address(esp));
     __ cmpw(rscratch1, 10);
-    __ b(Assembler::NE, slow_path);
+    __ br(Assembler::NE, slow_path);
     __ ldr(c_rarg0, Address(esp, wordSize));
     __ cbz(c_rarg0, slow_path);
     __ ldrb(c_rarg2, Address(c_rarg0, java_lang_String::coder_offset()));
@@ -1033,14 +1034,14 @@ address TemplateInterpreterGenerator::generate_integer_entry(AbstractInterpreter
   // super_call_VM_leaf preserves rmethod; esp and the sender SP are callee-saved.
   __ mov(rscratch2, sp);
   __ andr(sp, rscratch2, -16);
-  __ stp(rscratch2, lr, Address(pre(sp, -2 * wordSize)));
+  __ stp(rscratch2, lr, Address(__ pre(sp, -2 * wordSize)));
   __ super_call_VM_leaf(target, c_rarg0, c_rarg1, c_rarg2, c_rarg3);
-  __ ldp(rscratch2, lr, Address(post(sp, 2 * wordSize)));
+  __ ldp(rscratch2, lr, Address(__ post(sp, 2 * wordSize)));
   __ mov(sp, rscratch2);
   if (parse) {
     __ mov(rscratch1, (uint64_t)min_jlong);
     __ cmp(r0, rscratch1);
-    __ b(Assembler::EQ, slow_path);
+    __ br(Assembler::EQ, slow_path);
   } else {
     __ tbnz(r0, 31, slow_path);
   }
