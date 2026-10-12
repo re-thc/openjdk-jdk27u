@@ -1,0 +1,85 @@
+name: Portable Adler32 qualification without AVX2
+on:
+  push:
+    branches: [pr/zlib-ng-validation]
+    paths: ['.github/workflows/checksum-portable.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  qualify:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: linux-x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: diagnostic
+          sparse-checkout: .github/scripts/qualify-portable-adler.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 62f900114b32770ae6b963824f5f6fdb1ea97d0f
+          path: production
+      - name: Wait for existing standard CI bundles
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CHECKSUM_PLATFORM: ${{ matrix.platform }}
+        run: |
+          python3 - <<'PY'
+          import json,os,subprocess,time
+          required={'bundles-'+os.environ['CHECKSUM_PLATFORM'],'bundles-'+os.environ['CHECKSUM_PLATFORM']+'-debug'}
+          for attempt in range(180):
+              result=subprocess.check_output(['gh','api','repos/re-thc/openjdk-jdk27u/actions/runs/38291456732/artifacts?per_page=100'],text=True)
+              names={x['name'] for x in json.loads(result)['artifacts']}
+              if required <= names: break
+              print('Waiting for completed build artifacts',sorted(required-names),flush=True)
+              time.sleep(15)
+          else: raise RuntimeError('Existing build artifacts were not ready')
+          PY
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ github.token }}
+          run-id: 38291456732
+          name: bundles-${{ matrix.platform }}
+          path: production/validation/release
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ github.token }}
+          run-id: 38291456732
+          name: bundles-${{ matrix.platform }}-debug
+          path: production/validation/debug
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ github.token }}
+          run-id: 38190562646
+          name: bundles-${{ matrix.platform }}
+          path: production/validation/old
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ github.token }}
+          run-id: 38291456732
+          name: bundles-jtreg-8.2.1+1
+          path: production/jtreg/installed
+      - name: Verify final production images
+        working-directory: production
+        run: |
+          mkdir -p validation/results
+          lscpu | tee validation/results/cpu.txt
+          git rev-parse HEAD > validation/results/source.txt
+          python3 ../diagnostic/.github/scripts/qualify-portable-adler.py unpack
+          python3 ../diagnostic/.github/scripts/qualify-portable-adler.py tests
+      - name: Compare portable defaults with the previous JNI paths
+        working-directory: production
+        run: python3 ../diagnostic/.github/scripts/qualify-portable-adler.py bench
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: portable-adler-${{ matrix.platform }}
+          path: production/validation/results
+          retention-days: 14
