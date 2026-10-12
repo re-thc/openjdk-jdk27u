@@ -46,6 +46,10 @@ public class TestStringZillaCompilation {
     private static String largeUTF16 = "\u0400".repeat(65537);
     private static String largeLatinCopy = new String(largeLatin.toCharArray());
     private static String largeUTF16Copy = new String(largeUTF16.toCharArray());
+    private static String overlappingLatinNeedle = "b" + "a".repeat(256);
+    private static String overlappingUTF16Needle = "\u0402" + "\u0401".repeat(128);
+    private static String overlappingLatin = overlappingLatinNeedle + "a";
+    private static String overlappingUTF16 = overlappingUTF16Needle + "\u0401";
 
     public static int probeLatin() { return latin.indexOf(latinNeedle); }
     public static int probeUTF16() { return utf16.indexOf(utf16Needle); }
@@ -74,6 +78,10 @@ public class TestStringZillaCompilation {
     public static int probeLocalBuilder() { return new StringBuilder(latin).indexOf(latinNeedle); }
     public static int probeLocalString() { return new StringBuilder(utf16).toString().lastIndexOf(utf16Needle); }
     public static int probeLocalChar() { return new StringBuilder(utf16).toString().lastIndexOf(0x0413); }
+    public static int probeOverlappingLatin() { return overlappingLatin.lastIndexOf(overlappingLatinNeedle); }
+    public static int probeOverlappingUTF16() { return overlappingUTF16.lastIndexOf(overlappingUTF16Needle); }
+    public static int probeOverlappingBuilder() { return new StringBuilder(overlappingLatin).lastIndexOf(overlappingLatinNeedle); }
+    public static int probeOverlappingBuffer() { return new StringBuffer(overlappingUTF16).lastIndexOf(overlappingUTF16Needle); }
 
     public static void main(String[] args) throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
@@ -95,6 +103,7 @@ public class TestStringZillaCompilation {
 
     private static void check(Method method) throws Exception {
         int result = (Integer) method.invoke(null);
-        if (result != -1) throw new AssertionError(method + " returned " + result);
+        int expected = method.getName().startsWith("probeOverlapping") ? 0 : -1;
+        if (result != expected) throw new AssertionError(method + " returned " + result);
     }
 }

@@ -1,0 +1,4146 @@
+{
+  "description": "Final portable-load, overlapping-suffix and strengthened UTF-16 filter implementation",
+  "completed_at_utc": "2026-10-12T19:14:51.226233+00:00",
+  "host": {
+    "cpu": "AMD EPYC 9V74",
+    "system": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "cpu_affinity": [
+      0
+    ]
+  },
+  "source_parent_revision": "bbc786bd1d4dcec9eb2fe5486f2fd9e05774269d",
+  "source_sha256": {
+    "src/java.base/share/native/libjava/StringZillaKernels.c": "027c1c4a65defaf32296cf32f1bb11f6599c2f9528f061cd349864f198162fcf",
+    "src/java.base/share/native/libjava/StringZillaKernels.h": "3d63078bdb763d0ff4b22cc83ee03cc9dc814c982ef8b66e898d7eb2f3e91caa",
+    "src/java.base/share/native/libjava/stringzilla/stringzilla/find/serial.h": "27dec3aef8dc2029c00406f2afa47742c89651f3f865bb23df410432a7db6019",
+    "src/java.base/share/native/libjava/stringzilla/UPSTREAM.json": "e6ab7b278eb3d15a9a9eba3773d5cb4153e900ec377168f262aba58e1414d403",
+    "src/java.base/share/native/libjava/stringzilla/patches/0001-preserve-reverse-search-overlaps.patch": "8fdfd905c94355e64ae5e6f5a197d804aebc820dac3206fe6d9609b3e621d3ed",
+    "src/java.base/share/classes/java/lang/StringLatin1.java": "2572467762321788b6e8775cedfeb715a0c9ef9e05a4946237e99dd6f151126e",
+    "src/java.base/share/classes/java/lang/StringUTF16.java": "414e6a144e8790f7ced8f9f54068f4b0fd8c9c5c8ffc220e2ae9a5b45f9aad80",
+    "src/java.base/share/classes/java/lang/StringZilla.java": "91553e60b545bf4903f93ad783ed94b7bb9a2622f60ea2c7afc6e67d04b4ecae",
+    "test/micro/org/openjdk/bench/java/lang/StringZillaLongNeedle.java": "50b56c2d3a9660fbcdc2a4eaa99aaa8f60eb1a3d24933269c5ef62f501a92a34"
+  },
+  "build": {
+    "profile": "fork development profile, release, desktop disabled, x86-64-v3",
+    "vm_and_other_native_compiler": "gcc (Debian 14.2.0-19) 14.2.0",
+    "stringzilla_kernel_compiler": "x86_64-linux-gnu-gcc-16 (Ubuntu 16-20260322-1ubuntu1) 16.0.1 20260322 (experimental) [trunk r16-8246-g569ace1fa50]",
+    "stringzilla_kernel_command": [
+      "/tmp/stringzilla-gcc16/usr/bin/x86_64-linux-gnu-gcc-16",
+      "-MMD",
+      "-MF",
+      "/tmp/stringzilla-overlap/kernels16.d",
+      "-fvisibility=hidden",
+      "-pipe",
+      "-fstack-protector",
+      "-finput-charset=utf-8",
+      "-DLIBC=gnu",
+      "-D_GNU_SOURCE",
+      "-D_REENTRANT",
+      "-D_FILE_OFFSET_BITS=64",
+      "-DLINUX",
+      "-DNDEBUG",
+      "-fmacro-prefix-map=/workspace/openjdk-jdk27u/=",
+      "-std=c11",
+      "-fno-strict-aliasing",
+      "-Wall",
+      "-Wextra",
+      "-Wformat=2",
+      "-Winvalid-pch",
+      "-Wpointer-arith",
+      "-Wreturn-type",
+      "-Wsign-compare",
+      "-Wtrampolines",
+      "-Wtype-limits",
+      "-Wundef",
+      "-Wuninitialized",
+      "-Wunused-const-variable=1",
+      "-Wunused-function",
+      "-Wunused-result",
+      "-Wunused-value",
+      "-m64",
+      "-march=x86-64-v3",
+      "-mtune=generic",
+      "-D_LITTLE_ENDIAN",
+      "-DARCH=\"amd64\"",
+      "-Damd64",
+      "-D_LP64=1",
+      "-fno-omit-frame-pointer",
+      "-fno-lifetime-dse",
+      "-fPIC",
+      "-I/workspace/openjdk-jdk27u/src/java.base/linux/native/libjava",
+      "-I/workspace/openjdk-jdk27u/src/java.base/unix/native/libjava",
+      "-I/workspace/openjdk-jdk27u/src/java.base/share/native/libjava",
+      "-I/workspace/openjdk-jdk27u/build/cloud/support/headers/java.base",
+      "-I/workspace/openjdk-jdk27u/src/hotspot/share/include",
+      "-I/workspace/openjdk-jdk27u/src/hotspot/os/posix/include",
+      "-I/workspace/openjdk-jdk27u/build/cloud/support/modules_include/java.base",
+      "-I/workspace/openjdk-jdk27u/src/java.base/unix/native/include",
+      "-I/workspace/openjdk-jdk27u/src/java.base/share/native/include",
+      "-gdwarf-4",
+      "-g",
+      "-fdebug-prefix-map=/workspace/openjdk-jdk27u/=",
+      "-fdebug-prefix-map=/usr/include/=/usr/include/",
+      "-fdebug-prefix-map=/usr/lib/gcc/x86_64-linux-gnu/14/include/=/usr/local/gcc_include/",
+      "-fdebug-prefix-map=/usr/include/c++/14/=/usr/local/gxx_include/",
+      "-fdebug-prefix-map=/workspace/openjdk-jdk27u/build/cloud/=",
+      "-Wno-unused-parameter",
+      "-Werror",
+      "-O3",
+      "-I/workspace/openjdk-jdk27u/src/java.base/share/native/libjava/stringzilla",
+      "-Wno-unknown-pragmas",
+      "-c",
+      "-o",
+      "/tmp/stringzilla-overlap/kernels16.o",
+      "/workspace/openjdk-jdk27u/src/java.base/share/native/libjava/StringZillaKernels.c",
+      "-frandom-seed=StringZillaKernels.c"
+    ],
+    "scope": "Production GCC 16 kernels linked into the GCC 14 release image; not a full GCC 16 VM build"
+  },
+  "runtime_sha256": {
+    "lib/modules": "73c0ae30ba3dec702bc88654e081c8581c7675e75cc5f8dd731bb2d69b2a4899",
+    "lib/server/libjvm.so": "d9066131e3af2f590881f7211aa5eb6e2ec0fe7eb9c56312bc43a51322c7360b",
+    "lib/libjava.so": "ded3f3f61baea4e3314cd6b54cb79a244ca9f05f95dbe830f56d1e801c3e17e8"
+  },
+  "original_java": {
+    "revision": "8d8d71a045285f6d4c42ba44e4a9c8f696ead5df",
+    "control": "Unmodified StringLatin1 and StringUTF16 compiled into a java.base patch on the same fork VM with StringZilla disabled",
+    "source_sha256": {
+      "java/lang/StringLatin1.java": "962c37b0376c62c1207878aea5e2f553f69a31d368da2eb393607be82db51d0e",
+      "java/lang/StringUTF16.java": "719d7f4015187b722d85c0f84952876b3131c46a0d149637f26cd7fc9c617299"
+    },
+    "class_sha256": {
+      "java/lang/StringLatin1$CharsSpliterator.class": "711a4b7421d111448ea958f85e356013dfe7949081d813d902ebb1f3af3a13d0",
+      "java/lang/StringLatin1$LinesSpliterator.class": "656f7376aa4186e3eb492513255e036b04b493259e636ca4324293bad7ee0704",
+      "java/lang/StringLatin1.class": "a367fa7f5b403d3c8bed0d9b42622f4f8a71c9a17741ade1e2cf846da63875b8",
+      "java/lang/StringUTF16$CharsSpliterator.class": "51178ae743807aceeffc042fe8bec4fe03c362aeba5592d29f98e7b40896f755",
+      "java/lang/StringUTF16$CodePointsSpliterator.class": "b0337f5b1ae46d4c5d0093ad092454867e8956e2f853119f18dd11fba1e6aab1",
+      "java/lang/StringUTF16$LinesSpliterator.class": "0db5b63a6026f272063da703e084de3ee2bbaa737fdff17a4077e8d2a14457f4",
+      "java/lang/StringUTF16.class": "5a584f99321f2f3dd8d557408fe8ce5927ef259fe49a0713ec16c84deaeda490"
+    }
+  },
+  "jmh_class_sha256": {
+    "org/openjdk/bench/java/lang/StringZillaLongNeedle.class": "0befc36fdbcd72ef4ab5061f8509f1475a3bbb6aeda042b454448e55d92b8ff4",
+    "org/openjdk/bench/java/lang/jmh_generated/StringZillaLongNeedle_indexOf_jmhTest.class": "cfc7a59e9c89b8a50ce75f8985f7f720b776cb2a813df1193279d39733da8f3b",
+    "org/openjdk/bench/java/lang/jmh_generated/StringZillaLongNeedle_jmhType.class": "ec20c715cc352bffcaa10e206ee3ed2fcf5cf41df7c6a2cae73b12507d2954ad",
+    "org/openjdk/bench/java/lang/jmh_generated/StringZillaLongNeedle_jmhType_B1.class": "13afef7e771a932b25ffcb4fcef6b5b06fab4800fbcbe40a83eb1020e4d3e173",
+    "org/openjdk/bench/java/lang/jmh_generated/StringZillaLongNeedle_jmhType_B2.class": "e336416d0725c10236307dda5a517bd76c4920fc17fc980398f6e77d050b6bbb",
+    "org/openjdk/bench/java/lang/jmh_generated/StringZillaLongNeedle_jmhType_B3.class": "a13c7c1cc5646b85623763b8934b5fb27b2812b1f417e7d05a8415705d7f3a7a",
+    "org/openjdk/bench/java/lang/jmh_generated/StringZillaLongNeedle_lastIndexOf_jmhTest.class": "3323d74724f39627d3888ba54b09950a95b2c9c0b425095d0218a3835eac845c"
+  },
+  "results": [
+    {
+      "backend": "avx2",
+      "tier": "interpreter",
+      "control": "original",
+      "fixture": "NEAR_END",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-Xint",
+          "-XX:-UseStringZillaIntrinsics",
+          "--patch-module=java.base=/tmp/stringzilla-overlap/original-classes"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "256",
+          "shape": "NEAR_END"
+        },
+        "primaryMetric": {
+          "score": 475061.660821685,
+          "scoreError": 15208.965812574723,
+          "scoreConfidence": [
+            459852.69500911026,
+            490270.6266342597
+          ],
+          "scorePercentiles": {
+            "0.0": 464230.33209647494,
+            "50.0": 469985.7365573291,
+            "90.0": 494885.45957827556,
+            "95.0": 495834.0614469772,
+            "99.0": 495834.0614469772,
+            "99.9": 495834.0614469772,
+            "99.99": 495834.0614469772,
+            "99.999": 495834.0614469772,
+            "99.9999": 495834.0614469772,
+            "100.0": 495834.0614469772
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              486348.0427599611,
+              467420.23589269194,
+              468892.1443298969,
+              468535.5814606742,
+              464230.33209647494
+            ],
+            [
+              495834.0614469772,
+              480348.7428571429,
+              479035.9942583732,
+              470359.170112782,
+              469612.30300187616
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "interpreter",
+      "control": "disabled",
+      "fixture": "NEAR_END",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-Xint",
+          "-XX:-UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "256",
+          "shape": "NEAR_END"
+        },
+        "primaryMetric": {
+          "score": 477483.94105578493,
+          "scoreError": 12181.529009998681,
+          "scoreConfidence": [
+            465302.4120457863,
+            489665.4700657836
+          ],
+          "scorePercentiles": {
+            "0.0": 468149.736202058,
+            "50.0": 478088.2735766132,
+            "90.0": 491859.59575908585,
+            "95.0": 492515.0796460177,
+            "99.0": 492515.0796460177,
+            "99.9": 492515.0796460177,
+            "99.99": 492515.0796460177,
+            "99.999": 492515.0796460177,
+            "99.9999": 492515.0796460177,
+            "100.0": 492515.0796460177
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              473287.8817407758,
+              479214.69407265773,
+              476961.8530805687,
+              485960.24077669904,
+              492515.0796460177
+            ],
+            [
+              480434.4112060779,
+              468149.736202058,
+              468702.7743445693,
+              468547.51217228465,
+              481065.22731614136
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "interpreter",
+      "control": "enabled",
+      "fixture": "NEAR_END",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-Xint",
+          "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "256",
+          "shape": "NEAR_END"
+        },
+        "primaryMetric": {
+          "score": 1573.0107068765874,
+          "scoreError": 102.19025135178411,
+          "scoreConfidence": [
+            1470.8204555248033,
+            1675.2009582283715
+          ],
+          "scorePercentiles": {
+            "0.0": 1496.8789147611637,
+            "50.0": 1545.5993570178293,
+            "90.0": 1706.6499944142881,
+            "95.0": 1711.1646099686277,
+            "99.0": 1711.1646099686277,
+            "99.9": 1711.1646099686277,
+            "99.99": 1711.1646099686277,
+            "99.999": 1711.1646099686277,
+            "99.9999": 1711.1646099686277,
+            "100.0": 1711.1646099686277
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              1666.0184544252313,
+              1539.3818041625104,
+              1548.969220953785,
+              1603.9704653794493,
+              1711.1646099686277
+            ],
+            [
+              1525.00000304892,
+              1533.4254270857605,
+              1563.068675898553,
+              1542.2294930818734,
+              1496.8789147611637
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "interpreter",
+      "control": "original",
+      "fixture": "OVERLAP",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-Xint",
+          "-XX:-UseStringZillaIntrinsics",
+          "--patch-module=java.base=/tmp/stringzilla-overlap/original-classes"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "512",
+          "needleLength": "129",
+          "shape": "OVERLAP"
+        },
+        "primaryMetric": {
+          "score": 4521322.705498597,
+          "scoreError": 303529.0605979147,
+          "scoreConfidence": [
+            4217793.644900682,
+            4824851.766096511
+          ],
+          "scorePercentiles": {
+            "0.0": 4132000.2622950817,
+            "50.0": 4520632.1486486485,
+            "90.0": 4897408.163636363,
+            "95.0": 4929477.833333333,
+            "99.0": 4929477.833333333,
+            "99.9": 4929477.833333333,
+            "99.99": 4929477.833333333,
+            "99.999": 4929477.833333333,
+            "99.9999": 4929477.833333333,
+            "100.0": 4929477.833333333
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              4511251.607142857,
+              4608781.136363637,
+              4518107.198198198,
+              4605430.880733945,
+              4463034.557522124
+            ],
+            [
+              4363309.92173913,
+              4558676.558558558,
+              4929477.833333333,
+              4132000.2622950817,
+              4523157.099099099
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "interpreter",
+      "control": "disabled",
+      "fixture": "OVERLAP",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-Xint",
+          "-XX:-UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "512",
+          "needleLength": "129",
+          "shape": "OVERLAP"
+        },
+        "primaryMetric": {
+          "score": 4552596.719013282,
+          "scoreError": 204509.81798722493,
+          "scoreConfidence": [
+            4348086.901026057,
+            4757106.537000507
+          ],
+          "scorePercentiles": {
+            "0.0": 4423315.347826087,
+            "50.0": 4513618.273612228,
+            "90.0": 4792013.102216288,
+            "95.0": 4800682.076190476,
+            "99.0": 4800682.076190476,
+            "99.9": 4800682.076190476,
+            "99.99": 4800682.076190476,
+            "99.999": 4800682.076190476,
+            "99.9999": 4800682.076190476,
+            "100.0": 4800682.076190476
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              4565096.945454545,
+              4713992.336448598,
+              4438020.6460176995,
+              4438791.185840708,
+              4659870.861111111
+            ],
+            [
+              4462139.601769911,
+              4437338.7894736845,
+              4800682.076190476,
+              4423315.347826087,
+              4586719.4
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "interpreter",
+      "control": "enabled",
+      "fixture": "OVERLAP",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-Xint",
+          "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "512",
+          "needleLength": "129",
+          "shape": "OVERLAP"
+        },
+        "primaryMetric": {
+          "score": 1048.246324180592,
+          "scoreError": 43.18753469726483,
+          "scoreConfidence": [
+            1005.0587894833271,
+            1091.433858877857
+          ],
+          "scorePercentiles": {
+            "0.0": 1002.2499641022368,
+            "50.0": 1050.6772452338798,
+            "90.0": 1084.8751961157354,
+            "95.0": 1085.2443664248688,
+            "99.0": 1085.2443664248688,
+            "99.9": 1085.2443664248688,
+            "99.99": 1085.2443664248688,
+            "99.999": 1085.2443664248688,
+            "99.9999": 1085.2443664248688,
+            "100.0": 1085.2443664248688
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              1073.7227577382664,
+              1059.729472208464,
+              1041.563646435533,
+              1081.552663333535,
+              1085.2443664248688
+            ],
+            [
+              1057.9658944277803,
+              1022.9758570483124,
+              1014.0700240469422,
+              1043.3885960399793,
+              1002.2499641022368
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "interpreter",
+      "control": "original",
+      "fixture": "CROSSED",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-Xint",
+          "-XX:-UseStringZillaIntrinsics",
+          "--patch-module=java.base=/tmp/stringzilla-overlap/original-classes"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "4",
+          "shape": "CROSSED"
+        },
+        "primaryMetric": {
+          "score": 151558.93034383102,
+          "scoreError": 10304.628605614984,
+          "scoreConfidence": [
+            141254.30173821602,
+            161863.55894944601
+          ],
+          "scorePercentiles": {
+            "0.0": 143607.52574679942,
+            "50.0": 153453.13166265044,
+            "90.0": 163542.09469439427,
+            "95.0": 164274.52183908047,
+            "99.0": 164274.52183908047,
+            "99.9": 164274.52183908047,
+            "99.99": 164274.52183908047,
+            "99.999": 164274.52183908047,
+            "99.9999": 164274.52183908047,
+            "100.0": 164274.52183908047
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              145434.3390025944,
+              164274.52183908047,
+              144342.9341991342,
+              144755.41215629524,
+              143607.52574679942
+            ],
+            [
+              154777.85041297032,
+              152495.7243902439,
+              154540.2063639172,
+              154410.53893505695,
+              156950.25039221838
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "interpreter",
+      "control": "disabled",
+      "fixture": "CROSSED",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-Xint",
+          "-XX:-UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "4",
+          "shape": "CROSSED"
+        },
+        "primaryMetric": {
+          "score": 152069.52997119573,
+          "scoreError": 3946.0058104243785,
+          "scoreConfidence": [
+            148123.52416077137,
+            156015.5357816201
+          ],
+          "scorePercentiles": {
+            "0.0": 146034.7730970366,
+            "50.0": 152385.93382627508,
+            "90.0": 155606.6714268636,
+            "95.0": 155766.52586206896,
+            "99.0": 155766.52586206896,
+            "99.9": 155766.52586206896,
+            "99.99": 155766.52586206896,
+            "99.999": 155766.52586206896,
+            "99.9999": 155766.52586206896,
+            "100.0": 155766.52586206896
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              154167.9815100154,
+              155766.52586206896,
+              151273.7465981252,
+              152486.94268292683,
+              152753.72183206107
+            ],
+            [
+              153715.75814382298,
+              151787.44652003614,
+              150423.4784962406,
+              152284.92496962333,
+              146034.7730970366
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "interpreter",
+      "control": "enabled",
+      "fixture": "CROSSED",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-Xint",
+          "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "4",
+          "shape": "CROSSED"
+        },
+        "primaryMetric": {
+          "score": 655.009963433553,
+          "scoreError": 28.757928531177587,
+          "scoreConfidence": [
+            626.2520349023754,
+            683.7678919647307
+          ],
+          "scorePercentiles": {
+            "0.0": 636.4898086707748,
+            "50.0": 649.52303078611,
+            "90.0": 690.4681015393885,
+            "95.0": 692.3671187632542,
+            "99.0": 692.3671187632542,
+            "99.9": 692.3671187632542,
+            "99.99": 692.3671187632542,
+            "99.999": 692.3671187632542,
+            "99.9999": 692.3671187632542,
+            "100.0": 692.3671187632542
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              662.2133092177303,
+              669.8773390343051,
+              654.5529216377086,
+              692.3671187632542,
+              673.376946524597
+            ],
+            [
+              644.4931399345114,
+              636.5170337052472,
+              642.3978108208655,
+              637.8142060265363,
+              636.4898086707748
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "c1",
+      "control": "original",
+      "fixture": "NEAR_END",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:-UseStringZillaIntrinsics",
+          "--patch-module=java.base=/tmp/stringzilla-overlap/original-classes"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "256",
+          "shape": "NEAR_END"
+        },
+        "primaryMetric": {
+          "score": 7494.481492904386,
+          "scoreError": 626.3333646059783,
+          "scoreConfidence": [
+            6868.148128298408,
+            8120.814857510364
+          ],
+          "scorePercentiles": {
+            "0.0": 7053.143880345481,
+            "50.0": 7427.160740695812,
+            "90.0": 8051.969960001876,
+            "95.0": 8056.992509423629,
+            "99.0": 8056.992509423629,
+            "99.9": 8056.992509423629,
+            "99.99": 8056.992509423629,
+            "99.999": 8056.992509423629,
+            "99.9999": 8056.992509423629,
+            "100.0": 8056.992509423629
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              8056.992509423629,
+              8006.7670152060955,
+              7839.239659577136,
+              7825.17614696009,
+              7613.847878704845
+            ],
+            [
+              7155.75456743494,
+              7240.473602686779,
+              7087.551012367914,
+              7065.868656336954,
+              7053.143880345481
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "c1",
+      "control": "disabled",
+      "fixture": "NEAR_END",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:-UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "256",
+          "shape": "NEAR_END"
+        },
+        "primaryMetric": {
+          "score": 6884.8860618551535,
+          "scoreError": 122.52172432243788,
+          "scoreConfidence": [
+            6762.364337532716,
+            7007.407786177591
+          ],
+          "scorePercentiles": {
+            "0.0": 6799.494528201852,
+            "50.0": 6879.611532372515,
+            "90.0": 7025.74418644189,
+            "95.0": 7027.416506259397,
+            "99.0": 7027.416506259397,
+            "99.9": 7027.416506259397,
+            "99.99": 7027.416506259397,
+            "99.999": 7027.416506259397,
+            "99.9999": 7027.416506259397,
+            "100.0": 7027.416506259397
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              7027.416506259397,
+              7010.693308084325,
+              6852.763961199101,
+              6881.689797423744,
+              6887.26936105756
+            ],
+            [
+              6799.494528201852,
+              6909.390217257719,
+              6801.055913627587,
+              6877.533267321286,
+              6801.553758118975
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "c1",
+      "control": "enabled",
+      "fixture": "NEAR_END",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "256",
+          "shape": "NEAR_END"
+        },
+        "primaryMetric": {
+          "score": 1023.8612813934175,
+          "scoreError": 20.75843066085087,
+          "scoreConfidence": [
+            1003.1028507325666,
+            1044.6197120542683
+          ],
+          "scorePercentiles": {
+            "0.0": 1006.5481640390738,
+            "50.0": 1020.198485778991,
+            "90.0": 1046.4968225028458,
+            "95.0": 1046.8903481164361,
+            "99.0": 1046.8903481164361,
+            "99.9": 1046.8903481164361,
+            "99.99": 1046.8903481164361,
+            "99.999": 1046.8903481164361,
+            "99.9999": 1046.8903481164361,
+            "100.0": 1046.8903481164361
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              1031.9572037176486,
+              1046.8903481164361,
+              1021.1712611527389,
+              1018.2551882436853,
+              1006.5481640390738
+            ],
+            [
+              1029.081513612987,
+              1019.2257104052431,
+              1007.2803801368622,
+              1015.2479525289675,
+              1042.955091980532
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "c1",
+      "control": "original",
+      "fixture": "OVERLAP",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:-UseStringZillaIntrinsics",
+          "--patch-module=java.base=/tmp/stringzilla-overlap/original-classes"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "512",
+          "needleLength": "129",
+          "shape": "OVERLAP"
+        },
+        "primaryMetric": {
+          "score": 63122.671355354265,
+          "scoreError": 2388.6794321234297,
+          "scoreConfidence": [
+            60733.99192323084,
+            65511.35078747769
+          ],
+          "scorePercentiles": {
+            "0.0": 61177.791340508804,
+            "50.0": 63814.0039367248,
+            "90.0": 64892.379933780474,
+            "95.0": 64906.5616686039,
+            "99.0": 64906.5616686039,
+            "99.9": 64906.5616686039,
+            "99.99": 64906.5616686039,
+            "99.999": 64906.5616686039,
+            "99.9999": 64906.5616686039,
+            "100.0": 64906.5616686039
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              61864.62601525966,
+              64764.74432036966,
+              63800.15182444501,
+              64010.93306885078,
+              64513.07439601176
+            ],
+            [
+              61182.38116207951,
+              61178.59370840895,
+              63827.85604900459,
+              64906.5616686039,
+              61177.791340508804
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "c1",
+      "control": "disabled",
+      "fixture": "OVERLAP",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:-UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "512",
+          "needleLength": "129",
+          "shape": "OVERLAP"
+        },
+        "primaryMetric": {
+          "score": 50498.60331753823,
+          "scoreError": 3396.1897302364077,
+          "scoreConfidence": [
+            47102.413587301824,
+            53894.79304777464
+          ],
+          "scorePercentiles": {
+            "0.0": 48423.95420660277,
+            "50.0": 49945.18357824172,
+            "90.0": 55441.49675535752,
+            "95.0": 55733.595543175485,
+            "99.0": 55733.595543175485,
+            "99.9": 55733.595543175485,
+            "99.99": 55733.595543175485,
+            "99.999": 55733.595543175485,
+            "99.9999": 55733.595543175485,
+            "100.0": 55733.595543175485
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              49633.100029770765,
+              50854.03408628409,
+              49593.989166830805,
+              48702.16124634859,
+              50257.26712671267
+            ],
+            [
+              50302.65843909264,
+              48423.95420660277,
+              48672.66566556869,
+              52812.60766499582,
+              55733.595543175485
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "c1",
+      "control": "enabled",
+      "fixture": "OVERLAP",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "512",
+          "needleLength": "129",
+          "shape": "OVERLAP"
+        },
+        "primaryMetric": {
+          "score": 757.3707837481843,
+          "scoreError": 26.52125750174367,
+          "scoreConfidence": [
+            730.8495262464406,
+            783.892041249928
+          ],
+          "scorePercentiles": {
+            "0.0": 733.0414323300281,
+            "50.0": 756.3395711932799,
+            "90.0": 786.6242750616357,
+            "95.0": 787.1340667123061,
+            "99.0": 787.1340667123061,
+            "99.9": 787.1340667123061,
+            "99.99": 787.1340667123061,
+            "99.999": 787.1340667123061,
+            "99.9999": 787.1340667123061,
+            "100.0": 787.1340667123061
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              733.0414323300281,
+              742.2923094144974,
+              768.8500170629053,
+              756.7347424445977,
+              782.0361502056016
+            ],
+            [
+              747.3692590223901,
+              742.4847636308582,
+              787.1340667123061,
+              755.944399941962,
+              757.8206967166967
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "c1",
+      "control": "original",
+      "fixture": "CROSSED",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:-UseStringZillaIntrinsics",
+          "--patch-module=java.base=/tmp/stringzilla-overlap/original-classes"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "4",
+          "shape": "CROSSED"
+        },
+        "primaryMetric": {
+          "score": 4725.427920839468,
+          "scoreError": 97.6411869856858,
+          "scoreConfidence": [
+            4627.786733853783,
+            4823.069107825154
+          ],
+          "scorePercentiles": {
+            "0.0": 4609.51607760011,
+            "50.0": 4722.129319435913,
+            "90.0": 4837.401236026187,
+            "95.0": 4842.338093209673,
+            "99.0": 4842.338093209673,
+            "99.9": 4842.338093209673,
+            "99.99": 4842.338093209673,
+            "99.999": 4842.338093209673,
+            "99.9999": 4842.338093209673,
+            "100.0": 4842.338093209673
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              4758.9841540296475,
+              4842.338093209673,
+              4792.969521374805,
+              4719.090528262367,
+              4707.436672345151
+            ],
+            [
+              4725.168110609459,
+              4732.517173513994,
+              4663.694368298368,
+              4702.564509151101,
+              4609.51607760011
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "c1",
+      "control": "disabled",
+      "fixture": "CROSSED",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:-UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "4",
+          "shape": "CROSSED"
+        },
+        "primaryMetric": {
+          "score": 3186.956782728356,
+          "scoreError": 331.6057405924574,
+          "scoreConfidence": [
+            2855.3510421358983,
+            3518.5625233208134
+          ],
+          "scorePercentiles": {
+            "0.0": 2900.683452656821,
+            "50.0": 3187.8734141266355,
+            "90.0": 3495.1779303544367,
+            "95.0": 3502.1883539475607,
+            "99.0": 3502.1883539475607,
+            "99.9": 3502.1883539475607,
+            "99.99": 3502.1883539475607,
+            "99.999": 3502.1883539475607,
+            "99.9999": 3502.1883539475607,
+            "100.0": 3502.1883539475607
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              3432.0841180163216,
+              3019.0950541424727,
+              2900.683452656821,
+              2935.0938676473156,
+              3279.7114117284477
+            ],
+            [
+              3096.035416524823,
+              3398.629624345203,
+              3287.1415318357176,
+              3018.9049964388755,
+              3502.1883539475607
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "c1",
+      "control": "enabled",
+      "fixture": "CROSSED",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "4",
+          "shape": "CROSSED"
+        },
+        "primaryMetric": {
+          "score": 294.6451162331191,
+          "scoreError": 6.2475645529266215,
+          "scoreConfidence": [
+            288.39755168019246,
+            300.89268078604573
+          ],
+          "scorePercentiles": {
+            "0.0": 284.94925696601484,
+            "50.0": 294.9544332996112,
+            "90.0": 299.7284027410575,
+            "95.0": 299.92576963343294,
+            "99.0": 299.92576963343294,
+            "99.9": 299.92576963343294,
+            "99.99": 299.92576963343294,
+            "99.999": 299.92576963343294,
+            "99.9999": 299.92576963343294,
+            "100.0": 299.92576963343294
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              294.24954312498437,
+              295.659323474238,
+              284.94925696601484,
+              292.98061577754214,
+              297.5596022751789
+            ],
+            [
+              296.63087779764896,
+              293.8610616448215,
+              292.6830109276504,
+              299.92576963343294,
+              297.9521007096787
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "c2",
+      "control": "original",
+      "fixture": "NEAR_END",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-XX:-TieredCompilation",
+          "-XX:-UseStringZillaIntrinsics",
+          "--patch-module=java.base=/tmp/stringzilla-overlap/original-classes"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "256",
+          "shape": "NEAR_END"
+        },
+        "primaryMetric": {
+          "score": 2763.663393483324,
+          "scoreError": 133.33120272835058,
+          "scoreConfidence": [
+            2630.3321907549735,
+            2896.9945962116744
+          ],
+          "scorePercentiles": {
+            "0.0": 2648.760166713447,
+            "50.0": 2770.6540084719536,
+            "90.0": 2918.856935455115,
+            "95.0": 2928.2839988993424,
+            "99.0": 2928.2839988993424,
+            "99.9": 2928.2839988993424,
+            "99.99": 2928.2839988993424,
+            "99.999": 2928.2839988993424,
+            "99.9999": 2928.2839988993424,
+            "100.0": 2928.2839988993424
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              2928.2839988993424,
+              2834.0133644570687,
+              2787.3404026381663,
+              2764.3396873998254,
+              2750.5866115693443
+            ],
+            [
+              2776.968329544082,
+              2821.465501971558,
+              2663.5893352944627,
+              2648.760166713447,
+              2661.2865363459423
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "c2",
+      "control": "disabled",
+      "fixture": "NEAR_END",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-XX:-TieredCompilation",
+          "-XX:-UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "256",
+          "shape": "NEAR_END"
+        },
+        "primaryMetric": {
+          "score": 2652.3391204124355,
+          "scoreError": 90.35561248498844,
+          "scoreConfidence": [
+            2561.983507927447,
+            2742.694732897424
+          ],
+          "scorePercentiles": {
+            "0.0": 2598.245896834701,
+            "50.0": 2639.8166410569447,
+            "90.0": 2778.975370704982,
+            "95.0": 2788.5546350139102,
+            "99.0": 2788.5546350139102,
+            "99.9": 2788.5546350139102,
+            "99.99": 2788.5546350139102,
+            "99.999": 2788.5546350139102,
+            "99.9999": 2788.5546350139102,
+            "100.0": 2788.5546350139102
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              2788.5546350139102,
+              2692.76199192463,
+              2687.694637071943,
+              2633.210943720404,
+              2666.1151250559715
+            ],
+            [
+              2598.245896834701,
+              2646.4223383934855,
+              2607.0067971270946,
+              2600.0970737007365,
+              2603.2817652814792
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "c2",
+      "control": "enabled",
+      "fixture": "NEAR_END",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-XX:-TieredCompilation",
+          "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "256",
+          "shape": "NEAR_END"
+        },
+        "primaryMetric": {
+          "score": 1063.9876743166128,
+          "scoreError": 107.48021398636445,
+          "scoreConfidence": [
+            956.5074603302484,
+            1171.4678883029774
+          ],
+          "scorePercentiles": {
+            "0.0": 1007.4923990178246,
+            "50.0": 1030.4842192272636,
+            "90.0": 1172.1916396848944,
+            "95.0": 1173.0629986880624,
+            "99.0": 1173.0629986880624,
+            "99.9": 1173.0629986880624,
+            "99.99": 1173.0629986880624,
+            "99.999": 1173.0629986880624,
+            "99.9999": 1173.0629986880624,
+            "100.0": 1173.0629986880624
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              1011.231726010863,
+              1173.0629986880624,
+              1010.1503015320981,
+              1164.3494086563821,
+              1160.0000324689631
+            ],
+            [
+              1032.4042170229015,
+              1028.5642214316256,
+              1039.2129169535276,
+              1013.4085213838805,
+              1007.4923990178246
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "c2",
+      "control": "original",
+      "fixture": "OVERLAP",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-XX:-TieredCompilation",
+          "-XX:-UseStringZillaIntrinsics",
+          "--patch-module=java.base=/tmp/stringzilla-overlap/original-classes"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "512",
+          "needleLength": "129",
+          "shape": "OVERLAP"
+        },
+        "primaryMetric": {
+          "score": 23091.56703688809,
+          "scoreError": 1763.537999989415,
+          "scoreConfidence": [
+            21328.029036898675,
+            24855.105036877503
+          ],
+          "scorePercentiles": {
+            "0.0": 21587.27607944732,
+            "50.0": 22653.506647000017,
+            "90.0": 25316.770544029725,
+            "95.0": 25399.140210037363,
+            "99.0": 25399.140210037363,
+            "99.9": 25399.140210037363,
+            "99.99": 25399.140210037363,
+            "99.999": 25399.140210037363,
+            "99.9999": 25399.140210037363,
+            "100.0": 25399.140210037363
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              22406.859107606844,
+              22446.41557919199,
+              21587.27607944732,
+              22382.90997027111,
+              22364.670228939365
+            ],
+            [
+              23789.512247324612,
+              23102.845681293304,
+              24575.443549960968,
+              25399.140210037363,
+              22860.597714808046
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "c2",
+      "control": "disabled",
+      "fixture": "OVERLAP",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-XX:-TieredCompilation",
+          "-XX:-UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "512",
+          "needleLength": "129",
+          "shape": "OVERLAP"
+        },
+        "primaryMetric": {
+          "score": 20073.61817093274,
+          "scoreError": 1337.5407532054423,
+          "scoreConfidence": [
+            18736.077417727298,
+            21411.15892413818
+          ],
+          "scorePercentiles": {
+            "0.0": 19387.761846201145,
+            "50.0": 19836.99045236103,
+            "90.0": 22231.05787351957,
+            "95.0": 22426.563690983276,
+            "99.0": 22426.563690983276,
+            "99.9": 22426.563690983276,
+            "99.99": 22426.563690983276,
+            "99.999": 22426.563690983276,
+            "99.9999": 22426.563690983276,
+            "100.0": 22426.563690983276
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              19387.761846201145,
+              19783.49256387944,
+              19659.36958572439,
+              19584.38502195795,
+              19501.919483760284
+            ],
+            [
+              19923.433227471218,
+              20471.50551634623,
+              22426.563690983276,
+              19890.48834084262,
+              20107.262432160805
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "c2",
+      "control": "enabled",
+      "fixture": "OVERLAP",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-XX:-TieredCompilation",
+          "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "512",
+          "needleLength": "129",
+          "shape": "OVERLAP"
+        },
+        "primaryMetric": {
+          "score": 755.676889592559,
+          "scoreError": 42.974745589715276,
+          "scoreConfidence": [
+            712.7021440028436,
+            798.6516351822743
+          ],
+          "scorePercentiles": {
+            "0.0": 730.452923960381,
+            "50.0": 754.73367103696,
+            "90.0": 821.5579353408466,
+            "95.0": 828.1848580034209,
+            "99.0": 828.1848580034209,
+            "99.9": 828.1848580034209,
+            "99.99": 828.1848580034209,
+            "99.999": 828.1848580034209,
+            "99.9999": 828.1848580034209,
+            "100.0": 828.1848580034209
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              761.9156313776774,
+              761.5955908839119,
+              828.1848580034209,
+              730.452923960381,
+              739.5479033929206
+            ],
+            [
+              732.1398791182571,
+              734.043267708415,
+              759.4214994066855,
+              752.9536513069254,
+              756.5136907669945
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "c2",
+      "control": "original",
+      "fixture": "CROSSED",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-XX:-TieredCompilation",
+          "-XX:-UseStringZillaIntrinsics",
+          "--patch-module=java.base=/tmp/stringzilla-overlap/original-classes"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "4",
+          "shape": "CROSSED"
+        },
+        "primaryMetric": {
+          "score": 717.0953782650695,
+          "scoreError": 41.48681446586903,
+          "scoreConfidence": [
+            675.6085637992005,
+            758.5821927309385
+          ],
+          "scorePercentiles": {
+            "0.0": 671.8236924961584,
+            "50.0": 715.0676436079216,
+            "90.0": 757.9290932215062,
+            "95.0": 759.0381238040276,
+            "99.0": 759.0381238040276,
+            "99.9": 759.0381238040276,
+            "99.99": 759.0381238040276,
+            "99.999": 759.0381238040276,
+            "99.9999": 759.0381238040276,
+            "100.0": 759.0381238040276
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              727.968483023956,
+              703.0986750804435,
+              707.1598665298324,
+              747.9478179788129,
+              739.5875915850776
+            ],
+            [
+              713.1955473992512,
+              716.939739816592,
+              759.0381238040276,
+              684.1942449365438,
+              671.8236924961584
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "c2",
+      "control": "disabled",
+      "fixture": "CROSSED",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-XX:-TieredCompilation",
+          "-XX:-UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "4",
+          "shape": "CROSSED"
+        },
+        "primaryMetric": {
+          "score": 710.8294935733832,
+          "scoreError": 25.2770829653304,
+          "scoreConfidence": [
+            685.5524106080528,
+            736.1065765387135
+          ],
+          "scorePercentiles": {
+            "0.0": 686.4713100072879,
+            "50.0": 705.977347265873,
+            "90.0": 734.9304799952939,
+            "95.0": 734.9696381944842,
+            "99.0": 734.9696381944842,
+            "99.9": 734.9696381944842,
+            "99.99": 734.9696381944842,
+            "99.999": 734.9696381944842,
+            "99.9999": 734.9696381944842,
+            "100.0": 734.9696381944842
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              734.9696381944842,
+              727.8470308589042,
+              706.6920639093971,
+              686.4713100072879,
+              705.2626306223489
+            ],
+            [
+              734.5780562025807,
+              713.9025696037965,
+              702.2825732876155,
+              702.2503513646709,
+              694.0387116827468
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx2",
+      "tier": "c2",
+      "control": "enabled",
+      "fixture": "CROSSED",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=2",
+          "-XX:-TieredCompilation",
+          "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "4",
+          "shape": "CROSSED"
+        },
+        "primaryMetric": {
+          "score": 291.1489070944132,
+          "scoreError": 9.746103123350919,
+          "scoreConfidence": [
+            281.40280397106227,
+            300.8950102177641
+          ],
+          "scorePercentiles": {
+            "0.0": 282.05212316781365,
+            "50.0": 290.660855280208,
+            "90.0": 303.149874590239,
+            "95.0": 303.6693982157379,
+            "99.0": 303.6693982157379,
+            "99.9": 303.6693982157379,
+            "99.99": 303.6693982157379,
+            "99.999": 303.6693982157379,
+            "99.9999": 303.6693982157379,
+            "100.0": 303.6693982157379
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              288.5108382709496,
+              303.6693982157379,
+              292.8512412808212,
+              289.61301756779056,
+              290.04288263924565
+            ],
+            [
+              282.05212316781365,
+              282.98576762254476,
+              291.2788279211703,
+              298.474161960749,
+              292.01081229730937
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "interpreter",
+      "control": "original",
+      "fixture": "NEAR_END",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-Xint",
+          "-XX:-UseStringZillaIntrinsics",
+          "--patch-module=java.base=/tmp/stringzilla-overlap/original-classes"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "256",
+          "shape": "NEAR_END"
+        },
+        "primaryMetric": {
+          "score": 476076.2762065731,
+          "scoreError": 36364.67253729615,
+          "scoreConfidence": [
+            439711.603669277,
+            512440.94874386926
+          ],
+          "scorePercentiles": {
+            "0.0": 451377.78268710553,
+            "50.0": 469809.5110968676,
+            "90.0": 531038.1670067434,
+            "95.0": 535558.2080679405,
+            "99.0": 535558.2080679405,
+            "99.9": 535558.2080679405,
+            "99.99": 535558.2080679405,
+            "99.999": 535558.2080679405,
+            "99.9999": 535558.2080679405,
+            "100.0": 535558.2080679405
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              456793.64474885847,
+              473080.4561734213,
+              451377.78268710553,
+              490357.7974559687,
+              463310.4313364055
+            ],
+            [
+              535558.2080679405,
+              475660.6787072243,
+              484329.98741529527,
+              463755.2094531974,
+              466538.56602031394
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "interpreter",
+      "control": "disabled",
+      "fixture": "NEAR_END",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-Xint",
+          "-XX:-UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "256",
+          "shape": "NEAR_END"
+        },
+        "primaryMetric": {
+          "score": 483272.95091010974,
+          "scoreError": 20330.758220904157,
+          "scoreConfidence": [
+            462942.1926892056,
+            503603.7091310139
+          ],
+          "scorePercentiles": {
+            "0.0": 461868.28505535057,
+            "50.0": 484973.1808254402,
+            "90.0": 502324.3199585526,
+            "95.0": 503232.4221105528,
+            "99.0": 503232.4221105528,
+            "99.9": 503232.4221105528,
+            "99.99": 503232.4221105528,
+            "99.999": 503232.4221105528,
+            "99.9999": 503232.4221105528,
+            "100.0": 503232.4221105528
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              461868.28505535057,
+              483811.8038277512,
+              471402.1393596987,
+              493323.42209072976,
+              466576.71295433363
+            ],
+            [
+              486134.55782312923,
+              494151.4005905512,
+              503232.4221105528,
+              493439.9011741683,
+              478788.86411483254
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "interpreter",
+      "control": "enabled",
+      "fixture": "NEAR_END",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-Xint",
+          "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "256",
+          "shape": "NEAR_END"
+        },
+        "primaryMetric": {
+          "score": 851.497424962891,
+          "scoreError": 10.17130764456087,
+          "scoreConfidence": [
+            841.3261173183301,
+            861.668732607452
+          ],
+          "scorePercentiles": {
+            "0.0": 843.0060291631481,
+            "50.0": 850.3225749392998,
+            "90.0": 865.8819535190243,
+            "95.0": 866.8927075822286,
+            "99.0": 866.8927075822286,
+            "99.9": 866.8927075822286,
+            "99.99": 866.8927075822286,
+            "99.999": 866.8927075822286,
+            "99.9999": 866.8927075822286,
+            "100.0": 866.8927075822286
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              849.0569794959375,
+              849.7970455465638,
+              844.6760984408355,
+              848.5100638918013,
+              851.548469254016
+            ],
+            [
+              853.85358497216,
+              866.8927075822286,
+              843.0060291631481,
+              850.8481043320357,
+              856.7851669501847
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "interpreter",
+      "control": "original",
+      "fixture": "OVERLAP",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-Xint",
+          "-XX:-UseStringZillaIntrinsics",
+          "--patch-module=java.base=/tmp/stringzilla-overlap/original-classes"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "512",
+          "needleLength": "129",
+          "shape": "OVERLAP"
+        },
+        "primaryMetric": {
+          "score": 4360687.04473528,
+          "scoreError": 126351.44060448794,
+          "scoreConfidence": [
+            4234335.6041307915,
+            4487038.485339768
+          ],
+          "scorePercentiles": {
+            "0.0": 4218460.806722689,
+            "50.0": 4365846.656521739,
+            "90.0": 4485905.8539823005,
+            "95.0": 4488238.061946902,
+            "99.0": 4488238.061946902,
+            "99.9": 4488238.061946902,
+            "99.99": 4488238.061946902,
+            "99.999": 4488238.061946902,
+            "99.9999": 4488238.061946902,
+            "100.0": 4488238.061946902
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              4378849.8782608695,
+              4488238.061946902,
+              4397943.552631579,
+              4464915.982300885,
+              4397517.46491228
+            ],
+            [
+              4271367.0672268905,
+              4338414.7155172415,
+              4352843.434782608,
+              4298319.483050847,
+              4218460.806722689
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "interpreter",
+      "control": "disabled",
+      "fixture": "OVERLAP",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-Xint",
+          "-XX:-UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "512",
+          "needleLength": "129",
+          "shape": "OVERLAP"
+        },
+        "primaryMetric": {
+          "score": 4622864.717033086,
+          "scoreError": 260748.8517387829,
+          "scoreConfidence": [
+            4362115.865294304,
+            4883613.568771869
+          ],
+          "scorePercentiles": {
+            "0.0": 4283496.35042735,
+            "50.0": 4642634.1115548,
+            "90.0": 4828551.9564959565,
+            "95.0": 4832119.876190476,
+            "99.0": 4832119.876190476,
+            "99.9": 4832119.876190476,
+            "99.99": 4832119.876190476,
+            "99.999": 4832119.876190476,
+            "99.9999": 4832119.876190476,
+            "100.0": 4832119.876190476
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              4283496.35042735,
+              4544233.432432433,
+              4706644.168224299,
+              4784041.542857143,
+              4832119.876190476
+            ],
+            [
+              4584342.709090909,
+              4478398.339285715,
+              4518004.558558558,
+              4796440.679245283,
+              4700925.514018691
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "interpreter",
+      "control": "enabled",
+      "fixture": "OVERLAP",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-Xint",
+          "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "512",
+          "needleLength": "129",
+          "shape": "OVERLAP"
+        },
+        "primaryMetric": {
+          "score": 295.5108921827524,
+          "scoreError": 4.212684228074447,
+          "scoreConfidence": [
+            291.29820795467793,
+            299.72357641082687
+          ],
+          "scorePercentiles": {
+            "0.0": 291.77386502308804,
+            "50.0": 294.609619813644,
+            "90.0": 300.7950380860903,
+            "95.0": 301.03519210726444,
+            "99.0": 301.03519210726444,
+            "99.9": 301.03519210726444,
+            "99.99": 301.03519210726444,
+            "99.999": 301.03519210726444,
+            "99.9999": 301.03519210726444,
+            "100.0": 301.03519210726444
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              293.3035569140258,
+              296.7698652447027,
+              293.44702642855174,
+              294.1816025250398,
+              294.68551474309834
+            ],
+            [
+              291.77386502308804,
+              298.6336518955233,
+              294.5337248841896,
+              296.74492206204064,
+              301.03519210726444
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "interpreter",
+      "control": "original",
+      "fixture": "CROSSED",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-Xint",
+          "-XX:-UseStringZillaIntrinsics",
+          "--patch-module=java.base=/tmp/stringzilla-overlap/original-classes"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "4",
+          "shape": "CROSSED"
+        },
+        "primaryMetric": {
+          "score": 151922.0577636456,
+          "scoreError": 4015.578562920792,
+          "scoreConfidence": [
+            147906.4792007248,
+            155937.6363265664
+          ],
+          "scorePercentiles": {
+            "0.0": 147199.8693733451,
+            "50.0": 151589.30144079024,
+            "90.0": 156478.0246856947,
+            "95.0": 156658.614622057,
+            "99.0": 156658.614622057,
+            "99.9": 156658.614622057,
+            "99.99": 156658.614622057,
+            "99.999": 156658.614622057,
+            "99.9999": 156658.614622057,
+            "100.0": 156658.614622057
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              152553.1473010064,
+              156658.614622057,
+              151141.7839879154,
+              147199.8693733451,
+              151322.1488203267
+            ],
+            [
+              151499.17413688672,
+              151679.42874469375,
+              149234.19875776398,
+              153079.49663402693,
+              154852.71525843392
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "interpreter",
+      "control": "disabled",
+      "fixture": "CROSSED",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-Xint",
+          "-XX:-UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "4",
+          "shape": "CROSSED"
+        },
+        "primaryMetric": {
+          "score": 154848.35507971823,
+          "scoreError": 4139.6170294716985,
+          "scoreConfidence": [
+            150708.73805024652,
+            158987.97210918993
+          ],
+          "scorePercentiles": {
+            "0.0": 151339.81227436822,
+            "50.0": 154693.75788514904,
+            "90.0": 159485.4629164107,
+            "95.0": 159677.16975111677,
+            "99.0": 159677.16975111677,
+            "99.9": 159677.16975111677,
+            "99.99": 159677.16975111677,
+            "99.999": 159677.16975111677,
+            "99.9999": 159677.16975111677,
+            "100.0": 159677.16975111677
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              159677.16975111677,
+              155119.1872693727,
+              152601.82092739476,
+              152446.19104204752,
+              151339.81227436822
+            ],
+            [
+              154268.32850092536,
+              155125.8223255814,
+              157760.10140405616,
+              152626.69066503967,
+              157518.4266372796
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "interpreter",
+      "control": "enabled",
+      "fixture": "CROSSED",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-Xint",
+          "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "4",
+          "shape": "CROSSED"
+        },
+        "primaryMetric": {
+          "score": 657.5959228767056,
+          "scoreError": 27.118983598089223,
+          "scoreConfidence": [
+            630.4769392786163,
+            684.7149064747948
+          ],
+          "scorePercentiles": {
+            "0.0": 632.9072469050033,
+            "50.0": 661.198390389717,
+            "90.0": 684.0845905018028,
+            "95.0": 684.9328093716019,
+            "99.0": 684.9328093716019,
+            "99.9": 684.9328093716019,
+            "99.99": 684.9328093716019,
+            "99.999": 684.9328093716019,
+            "99.9999": 684.9328093716019,
+            "100.0": 684.9328093716019
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              669.3315012319302,
+              647.5621015397204,
+              659.9964039647443,
+              662.4003768146897,
+              676.4506206736114
+            ],
+            [
+              636.3314449883653,
+              638.4937788684879,
+              632.9072469050033,
+              684.9328093716019,
+              667.5529444089016
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "c1",
+      "control": "original",
+      "fixture": "NEAR_END",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:-UseStringZillaIntrinsics",
+          "--patch-module=java.base=/tmp/stringzilla-overlap/original-classes"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "256",
+          "shape": "NEAR_END"
+        },
+        "primaryMetric": {
+          "score": 7696.6503667204215,
+          "scoreError": 487.06503401097604,
+          "scoreConfidence": [
+            7209.5853327094455,
+            8183.7154007313975
+          ],
+          "scorePercentiles": {
+            "0.0": 7056.236874391843,
+            "50.0": 7839.031834188475,
+            "90.0": 8012.4837395515315,
+            "95.0": 8015.316815144766,
+            "99.0": 8015.316815144766,
+            "99.9": 8015.316815144766,
+            "99.99": 8015.316815144766,
+            "99.999": 8015.316815144766,
+            "99.9999": 8015.316815144766,
+            "100.0": 8015.316815144766
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              7308.1631671999885,
+              7582.05151469706,
+              7056.236874391843,
+              7860.126550907164,
+              7507.661422996097
+            ],
+            [
+              7817.937117469786,
+              8015.316815144766,
+              7934.5114468719285,
+              7986.986059212418,
+              7897.512698313162
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "c1",
+      "control": "disabled",
+      "fixture": "NEAR_END",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:-UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "256",
+          "shape": "NEAR_END"
+        },
+        "primaryMetric": {
+          "score": 7039.690686503527,
+          "scoreError": 448.58015787436125,
+          "scoreConfidence": [
+            6591.110528629166,
+            7488.270844377888
+          ],
+          "scorePercentiles": {
+            "0.0": 6684.147752178329,
+            "50.0": 6938.170292543051,
+            "90.0": 7577.47948079117,
+            "95.0": 7588.271524680626,
+            "99.0": 7588.271524680626,
+            "99.9": 7588.271524680626,
+            "99.99": 7588.271524680626,
+            "99.999": 7588.271524680626,
+            "99.9999": 7588.271524680626,
+            "100.0": 7588.271524680626
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              6939.5255570663485,
+              7588.271524680626,
+              7182.871508620689,
+              7068.371565432376,
+              6811.951815433225
+            ],
+            [
+              7480.351085786073,
+              6910.405988695926,
+              6936.815028019752,
+              6684.147752178329,
+              6794.19503912193
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "c1",
+      "control": "enabled",
+      "fixture": "NEAR_END",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "256",
+          "shape": "NEAR_END"
+        },
+        "primaryMetric": {
+          "score": 372.02651203179636,
+          "scoreError": 9.755063025593952,
+          "scoreConfidence": [
+            362.27144900620243,
+            381.7815750573903
+          ],
+          "scorePercentiles": {
+            "0.0": 365.1120340917386,
+            "50.0": 370.47928056369443,
+            "90.0": 384.86614587307145,
+            "95.0": 385.3088982312686,
+            "99.0": 385.3088982312686,
+            "99.9": 385.3088982312686,
+            "99.99": 385.3088982312686,
+            "99.999": 385.3088982312686,
+            "99.9999": 385.3088982312686,
+            "100.0": 385.3088982312686
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              385.3088982312686,
+              373.3668647576004,
+              371.98261430967517,
+              380.88137464929724,
+              370.02129982888226
+            ],
+            [
+              368.3600539105394,
+              365.1120340917386,
+              368.5609300584161,
+              365.73378918203895,
+              370.9372612985066
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "c1",
+      "control": "original",
+      "fixture": "OVERLAP",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:-UseStringZillaIntrinsics",
+          "--patch-module=java.base=/tmp/stringzilla-overlap/original-classes"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "512",
+          "needleLength": "129",
+          "shape": "OVERLAP"
+        },
+        "primaryMetric": {
+          "score": 66500.98645749691,
+          "scoreError": 10750.506031680383,
+          "scoreConfidence": [
+            55750.480425816524,
+            77251.4924891773
+          ],
+          "scorePercentiles": {
+            "0.0": 57149.72223491773,
+            "50.0": 66211.37383181448,
+            "90.0": 79916.40412158228,
+            "95.0": 80835.65957446808,
+            "99.0": 80835.65957446808,
+            "99.9": 80835.65957446808,
+            "99.99": 80835.65957446808,
+            "99.999": 80835.65957446808,
+            "99.9999": 80835.65957446808,
+            "100.0": 80835.65957446808
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              69654.88901267233,
+              80835.65957446808,
+              70999.39387060159,
+              71643.10504561003,
+              66011.71493922363
+            ],
+            [
+              62615.21807711567,
+              60726.26925863318,
+              66411.0327244053,
+              58962.8598373217,
+              57149.72223491773
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "c1",
+      "control": "disabled",
+      "fixture": "OVERLAP",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:-UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "512",
+          "needleLength": "129",
+          "shape": "OVERLAP"
+        },
+        "primaryMetric": {
+          "score": 50056.90008446185,
+          "scoreError": 2625.0562728914397,
+          "scoreConfidence": [
+            47431.84381157041,
+            52681.95635735329
+          ],
+          "scorePercentiles": {
+            "0.0": 48159.622571073036,
+            "50.0": 49716.71242628178,
+            "90.0": 53585.737792595835,
+            "95.0": 53795.856205635624,
+            "99.0": 53795.856205635624,
+            "99.9": 53795.856205635624,
+            "99.99": 53795.856205635624,
+            "99.999": 53795.856205635624,
+            "99.9999": 53795.856205635624,
+            "100.0": 53795.856205635624
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              48497.017154973015,
+              48159.622571073036,
+              49087.04749754661,
+              48621.39982502187,
+              49264.50469208211
+            ],
+            [
+              50168.920160481444,
+              50398.78082328317,
+              50881.1798392839,
+              51694.6720752377,
+              53795.856205635624
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "c1",
+      "control": "enabled",
+      "fixture": "OVERLAP",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "512",
+          "needleLength": "129",
+          "shape": "OVERLAP"
+        },
+        "primaryMetric": {
+          "score": 52.811546017637,
+          "scoreError": 3.698796109377426,
+          "scoreConfidence": [
+            49.11274990825957,
+            56.510342127014425
+          ],
+          "scorePercentiles": {
+            "0.0": 48.545532127778266,
+            "50.0": 52.93841855369118,
+            "90.0": 55.656803884381375,
+            "95.0": 55.71727515047598,
+            "99.0": 55.71727515047598,
+            "99.9": 55.71727515047598,
+            "99.99": 55.71727515047598,
+            "99.999": 55.71727515047598,
+            "99.9999": 55.71727515047598,
+            "100.0": 55.71727515047598
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              55.71727515047598,
+              54.53550584150078,
+              55.11256248952997,
+              54.46396239040957,
+              53.078375944401
+            ],
+            [
+              48.545532127778266,
+              48.81307368693777,
+              52.79846116298135,
+              52.465969632622645,
+              52.58474174973269
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "c1",
+      "control": "original",
+      "fixture": "CROSSED",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:-UseStringZillaIntrinsics",
+          "--patch-module=java.base=/tmp/stringzilla-overlap/original-classes"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "4",
+          "shape": "CROSSED"
+        },
+        "primaryMetric": {
+          "score": 4784.088302297721,
+          "scoreError": 168.8102719368697,
+          "scoreConfidence": [
+            4615.2780303608515,
+            4952.898574234591
+          ],
+          "scorePercentiles": {
+            "0.0": 4627.082971695058,
+            "50.0": 4786.533931575825,
+            "90.0": 4946.033456613218,
+            "95.0": 4950.9882628875675,
+            "99.0": 4950.9882628875675,
+            "99.9": 4950.9882628875675,
+            "99.99": 4950.9882628875675,
+            "99.999": 4950.9882628875675,
+            "99.9999": 4950.9882628875675,
+            "100.0": 4950.9882628875675
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              4872.413007052955,
+              4901.440200144072,
+              4808.184613018275,
+              4731.680165786357,
+              4764.883250133374
+            ],
+            [
+              4855.781152993348,
+              4647.595965321464,
+              4627.082971695058,
+              4680.833433944741,
+              4950.9882628875675
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "c1",
+      "control": "disabled",
+      "fixture": "CROSSED",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:-UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "4",
+          "shape": "CROSSED"
+        },
+        "primaryMetric": {
+          "score": 2642.521283788149,
+          "scoreError": 363.4152953356783,
+          "scoreConfidence": [
+            2279.1059884524707,
+            3005.9365791238274
+          ],
+          "scorePercentiles": {
+            "0.0": 2396.0000383233532,
+            "50.0": 2554.023207804358,
+            "90.0": 2943.8724025828305,
+            "95.0": 2944.277239208371,
+            "99.0": 2944.277239208371,
+            "99.9": 2944.277239208371,
+            "99.99": 2944.277239208371,
+            "99.999": 2944.277239208371,
+            "99.9999": 2944.277239208371,
+            "100.0": 2944.277239208371
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              2405.6206375035895,
+              2497.808920762118,
+              2396.0000383233532,
+              2410.2529082375163,
+              2458.7909747978615
+            ],
+            [
+              2883.8335031657525,
+              2878.1622480833676,
+              2940.2288729529632,
+              2610.237494846598,
+              2944.277239208371
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "c1",
+      "control": "enabled",
+      "fixture": "CROSSED",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "4",
+          "shape": "CROSSED"
+        },
+        "primaryMetric": {
+          "score": 295.93582696493684,
+          "scoreError": 8.439880647831158,
+          "scoreConfidence": [
+            287.4959463171057,
+            304.375707612768
+          ],
+          "scorePercentiles": {
+            "0.0": 289.5887037007015,
+            "50.0": 294.43747266980563,
+            "90.0": 308.70058163473584,
+            "95.0": 309.802964073512,
+            "99.0": 309.802964073512,
+            "99.9": 309.802964073512,
+            "99.99": 309.802964073512,
+            "99.999": 309.802964073512,
+            "99.9999": 309.802964073512,
+            "100.0": 309.802964073512
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              296.70691013707744,
+              297.37611541315476,
+              298.77913968575064,
+              293.1921002418114,
+              293.8566819783963
+            ],
+            [
+              291.7800094502777,
+              293.25738160747164,
+              295.018263361215,
+              309.802964073512,
+              289.5887037007015
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "c2",
+      "control": "original",
+      "fixture": "NEAR_END",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-XX:-TieredCompilation",
+          "-XX:-UseStringZillaIntrinsics",
+          "--patch-module=java.base=/tmp/stringzilla-overlap/original-classes"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "256",
+          "shape": "NEAR_END"
+        },
+        "primaryMetric": {
+          "score": 2668.8757447190455,
+          "scoreError": 132.44561302908767,
+          "scoreConfidence": [
+            2536.4301316899578,
+            2801.3213577481333
+          ],
+          "scorePercentiles": {
+            "0.0": 2577.765621456697,
+            "50.0": 2670.831099652362,
+            "90.0": 2862.7315534830373,
+            "95.0": 2881.5242484627647,
+            "99.0": 2881.5242484627647,
+            "99.9": 2881.5242484627647,
+            "99.99": 2881.5242484627647,
+            "99.999": 2881.5242484627647,
+            "99.9999": 2881.5242484627647,
+            "100.0": 2881.5242484627647
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              2881.5242484627647,
+              2689.115249790318,
+              2693.5972986654892,
+              2675.215745948788,
+              2659.5624687603026
+            ],
+            [
+              2666.446453355936,
+              2676.8427846637983,
+              2579.750025619479,
+              2577.765621456697,
+              2588.9375504668833
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "c2",
+      "control": "disabled",
+      "fixture": "NEAR_END",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-XX:-TieredCompilation",
+          "-XX:-UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "256",
+          "shape": "NEAR_END"
+        },
+        "primaryMetric": {
+          "score": 2602.349690314596,
+          "scoreError": 71.65734161593335,
+          "scoreConfidence": [
+            2530.6923486986625,
+            2674.0070319305296
+          ],
+          "scorePercentiles": {
+            "0.0": 2560.2489377058514,
+            "50.0": 2583.118376605961,
+            "90.0": 2706.505475539711,
+            "95.0": 2714.118086880964,
+            "99.0": 2714.118086880964,
+            "99.9": 2714.118086880964,
+            "99.99": 2714.118086880964,
+            "99.999": 2714.118086880964,
+            "99.9999": 2714.118086880964,
+            "100.0": 2714.118086880964
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              2566.4571862540347,
+              2560.2489377058514,
+              2636.417646655738,
+              2578.5459906997844,
+              2586.1893778405124
+            ],
+            [
+              2637.9919734684363,
+              2580.0473753714095,
+              2576.281099012043,
+              2587.19922925719,
+              2714.118086880964
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "c2",
+      "control": "enabled",
+      "fixture": "NEAR_END",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-XX:-TieredCompilation",
+          "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "256",
+          "shape": "NEAR_END"
+        },
+        "primaryMetric": {
+          "score": 398.12306627512856,
+          "scoreError": 18.844971731985538,
+          "scoreConfidence": [
+            379.278094543143,
+            416.9680380071141
+          ],
+          "scorePercentiles": {
+            "0.0": 376.1856591939653,
+            "50.0": 398.5595822223378,
+            "90.0": 417.27782417476544,
+            "95.0": 417.5663460815989,
+            "99.0": 417.5663460815989,
+            "99.9": 417.5663460815989,
+            "99.99": 417.5663460815989,
+            "99.999": 417.5663460815989,
+            "99.9999": 417.5663460815989,
+            "100.0": 417.5663460815989
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              398.49557049717674,
+              398.6235939474989,
+              403.9986881126153,
+              400.92704927428423,
+              417.5663460815989
+            ],
+            [
+              390.0177303222355,
+              376.1856591939653,
+              414.68112701326396,
+              394.61636502354736,
+              386.11853328509966
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "c2",
+      "control": "original",
+      "fixture": "OVERLAP",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-XX:-TieredCompilation",
+          "-XX:-UseStringZillaIntrinsics",
+          "--patch-module=java.base=/tmp/stringzilla-overlap/original-classes"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "512",
+          "needleLength": "129",
+          "shape": "OVERLAP"
+        },
+        "primaryMetric": {
+          "score": 20982.740787452396,
+          "scoreError": 2286.8300893969304,
+          "scoreConfidence": [
+            18695.910698055464,
+            23269.570876849328
+          ],
+          "scorePercentiles": {
+            "0.0": 19466.357949709865,
+            "50.0": 20947.361253207047,
+            "90.0": 22821.07455448632,
+            "95.0": 22863.676814774182,
+            "99.0": 22863.676814774182,
+            "99.9": 22863.676814774182,
+            "99.99": 22863.676814774182,
+            "99.999": 22863.676814774182,
+            "99.9999": 22863.676814774182,
+            "100.0": 22863.676814774182
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              19506.773739422064,
+              19757.16164954944,
+              19466.357949709865,
+              19571.602778321267,
+              19500.884630380537
+            ],
+            [
+              22332.982630826933,
+              22252.75261277947,
+              22863.676814774182,
+              22137.560856864653,
+              22437.654211895577
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "c2",
+      "control": "disabled",
+      "fixture": "OVERLAP",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-XX:-TieredCompilation",
+          "-XX:-UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "512",
+          "needleLength": "129",
+          "shape": "OVERLAP"
+        },
+        "primaryMetric": {
+          "score": 20988.457996740588,
+          "scoreError": 1294.3281712987061,
+          "scoreConfidence": [
+            19694.129825441883,
+            22282.786168039293
+          ],
+          "scorePercentiles": {
+            "0.0": 20161.492706709825,
+            "50.0": 20681.04349406484,
+            "90.0": 22491.58910579266,
+            "95.0": 22536.889244356327,
+            "99.0": 22536.889244356327,
+            "99.9": 22536.889244356327,
+            "99.99": 22536.889244356327,
+            "99.999": 22536.889244356327,
+            "99.9999": 22536.889244356327,
+            "100.0": 22536.889244356327
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              22536.889244356327,
+              22083.887858719645,
+              21511.611880169716,
+              21392.52393043037,
+              20969.47786349153
+            ],
+            [
+              20347.169921080465,
+              20198.153787422143,
+              20290.763650387693,
+              20392.609124638155,
+              20161.492706709825
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "c2",
+      "control": "enabled",
+      "fixture": "OVERLAP",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-XX:-TieredCompilation",
+          "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "512",
+          "needleLength": "129",
+          "shape": "OVERLAP"
+        },
+        "primaryMetric": {
+          "score": 48.724101804549136,
+          "scoreError": 3.87206404853807,
+          "scoreConfidence": [
+            44.852037756011065,
+            52.59616585308721
+          ],
+          "scorePercentiles": {
+            "0.0": 46.22853839813302,
+            "50.0": 48.444322009260716,
+            "90.0": 51.48510389637646,
+            "95.0": 51.50212494022447,
+            "99.0": 51.50212494022447,
+            "99.9": 51.50212494022447,
+            "99.99": 51.50212494022447,
+            "99.999": 51.50212494022447,
+            "99.9999": 51.50212494022447,
+            "100.0": 51.50212494022447
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              51.33191450174437,
+              51.11441801555336,
+              51.50212494022447,
+              50.48008688273909,
+              51.2740647991779
+            ],
+            [
+              46.40855713578235,
+              46.22853839813302,
+              46.35627330323184,
+              46.26021857423159,
+              46.2848214946734
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "c2",
+      "control": "original",
+      "fixture": "CROSSED",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-XX:-TieredCompilation",
+          "-XX:-UseStringZillaIntrinsics",
+          "--patch-module=java.base=/tmp/stringzilla-overlap/original-classes"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "4",
+          "shape": "CROSSED"
+        },
+        "primaryMetric": {
+          "score": 706.110369509039,
+          "scoreError": 64.19811966163394,
+          "scoreConfidence": [
+            641.9122498474051,
+            770.3084891706728
+          ],
+          "scorePercentiles": {
+            "0.0": 663.8971873050426,
+            "50.0": 700.1700492157759,
+            "90.0": 790.1913654778687,
+            "95.0": 794.4466546971788,
+            "99.0": 794.4466546971788,
+            "99.9": 794.4466546971788,
+            "99.99": 794.4466546971788,
+            "99.999": 794.4466546971788,
+            "99.9999": 794.4466546971788,
+            "100.0": 794.4466546971788
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              794.4466546971788,
+              692.6314519187198,
+              722.8154512881366,
+              707.708646512832,
+              716.0843022136532
+            ],
+            [
+              664.9604220899221,
+              681.7540549437799,
+              751.8937625040772,
+              663.8971873050426,
+              664.9117616170479
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "c2",
+      "control": "disabled",
+      "fixture": "CROSSED",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-XX:-TieredCompilation",
+          "-XX:-UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "4",
+          "shape": "CROSSED"
+        },
+        "primaryMetric": {
+          "score": 673.2516861793356,
+          "scoreError": 8.115126004583077,
+          "scoreConfidence": [
+            665.1365601747525,
+            681.3668121839187
+          ],
+          "scorePercentiles": {
+            "0.0": 663.8626543722252,
+            "50.0": 673.4152373255629,
+            "90.0": 679.3745946166799,
+            "95.0": 679.4570700038173,
+            "99.0": 679.4570700038173,
+            "99.9": 679.4570700038173,
+            "99.99": 679.4570700038173,
+            "99.999": 679.4570700038173,
+            "99.9999": 679.4570700038173,
+            "100.0": 679.4570700038173
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              663.8626543722252,
+              670.9878679334474,
+              672.6923347927581,
+              671.8646246267223,
+              665.6813418195273
+            ],
+            [
+              679.4570700038173,
+              677.1443397141303,
+              674.1381398583678,
+              678.632316132443,
+              678.056172539918
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    },
+    {
+      "backend": "avx512",
+      "tier": "c2",
+      "control": "enabled",
+      "fixture": "CROSSED",
+      "jmh": {
+        "jmhVersion": "1.37",
+        "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode": "avgt",
+        "threads": 1,
+        "forks": 2,
+        "jvm": "/tmp/stringzilla-overlap/jdk16/bin/java",
+        "jvmArgs": [
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xshare:off",
+          "-XX:UseAVX=3",
+          "-XX:-TieredCompilation",
+          "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion": "27.0.2-internal",
+        "vmName": "OpenJDK 64-Bit Server VM",
+        "vmVersion": "27.0.2-internal-adhoc.agent.openjdk-jdk27u",
+        "warmupIterations": 3,
+        "warmupTime": "500 ms",
+        "warmupBatchSize": 1,
+        "measurementIterations": 5,
+        "measurementTime": "500 ms",
+        "measurementBatchSize": 1,
+        "params": {
+          "length": "4096",
+          "needleLength": "4",
+          "shape": "CROSSED"
+        },
+        "primaryMetric": {
+          "score": 309.8892905229917,
+          "scoreError": 23.08915159714722,
+          "scoreConfidence": [
+            286.80013892584446,
+            332.97844212013894
+          ],
+          "scorePercentiles": {
+            "0.0": 286.30647184899516,
+            "50.0": 307.74750367139904,
+            "90.0": 330.7697626672583,
+            "95.0": 330.9882927939672,
+            "99.0": 330.9882927939672,
+            "99.9": 330.9882927939672,
+            "99.99": 330.9882927939672,
+            "99.999": 330.9882927939672,
+            "99.9999": 330.9882927939672,
+            "100.0": 330.9882927939672
+          },
+          "scoreUnit": "ns/op",
+          "rawData": [
+            [
+              328.8029915268778,
+              320.73967094905083,
+              321.31848361327127,
+              330.9882927939672,
+              314.1473012092537
+            ],
+            [
+              298.678739697587,
+              286.30647184899516,
+              299.93598907145116,
+              301.3477061335443,
+              296.6272583859183
+            ]
+          ]
+        },
+        "secondaryMetrics": {}
+      }
+    }
+  ]
+}

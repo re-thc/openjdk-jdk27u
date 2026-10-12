@@ -61,7 +61,9 @@ work, not elapsed time or every existing JDK intrinsic.
 UTF-16 byte matches at odd addresses are rejected. A portable C batch filter
 checks aligned candidates in the remaining prefix/suffix. Verification starts
 at the search-direction end and checks both ends inward; filtered boundary
-characters are not compared twice. GCC/Clang compile an AVX2 copy of this C loop
+characters are not compared twice. For long needles, the batch filter also
+checks the adjacent character in the search direction to reject repeated
+candidates before verification. GCC/Clang compile an AVX2 copy of this C loop
 under the VM capability gate. The adapter contains no handwritten AVX2/NEON
 operations. Isolated surrogates and supplementary pairs retain Java semantics.
 
@@ -96,10 +98,14 @@ without hiding Java/leaf alternatives inside a single LIR block.
 
 ## Vendoring and updates
 
-The 28 upstream files are unmodified StringZilla 5.2.0 at commit
+The 28 upstream files come from StringZilla 5.2.0 at commit
 `82e15261d0a723e7bb97a03abd61641953fd45c0`, licensed under Apache-2.0.
+One [tracked patch](../../src/java.base/share/native/libjava/stringzilla/patches/0001-preserve-reverse-search-overlaps.patch)
+preserves overlapping suffix candidates after a rejected long-needle prefix in
+reverse search. The other 27 files are unmodified.
 [UPSTREAM.json](../../src/java.base/share/native/libjava/stringzilla/UPSTREAM.json)
-records SHA-256 hashes; [the shipped notice](../../src/java.base/share/legal/stringzilla.md)
+records upstream, patch and patched-file SHA-256 hashes;
+[the shipped notice](../../src/java.base/share/legal/stringzilla.md)
 contains the license. Independent Classpath-excepted adapters follow
 `ADDITIONAL_LICENSE_INFO`.
 
@@ -109,26 +115,33 @@ python3 make/scripts/update-stringzilla.py --version NEW_VERSION --commit FULL_U
 ```
 
 Resolve the release to an immutable upstream commit. The updater downloads its
-dependency closure, refreshes hashes/license text and removes obsolete headers.
+dependency closure, applies tracked patches in a temporary directory, refreshes
+hashes/license text and removes obsolete headers. Patch application rejects
+fuzz and reversed patches; a failure leaves the checkout untouched. Review each
+patch against the new revision and remove its manifest entry only when upstream
+contains the fix.
 Review the dependency and license changes, build x86-64/AArch64, and rerun the
 functional and tier-specific performance checks before changing dispatch gates.
 
 ## Validation and benchmarks
 
-Local release jtreg validation passed **161 tests, zero failures/errors**:
-String (94), StringBuilder (16), StringBuffer (25), HotSpot string intrinsics (24),
+Local release jtreg validation passed **162 tests, zero failures/errors**:
+String (95), StringBuilder (16), StringBuffer (25), HotSpot string intrinsics (24),
 and LoggerFinder (2). Two other HotSpot tests retain platform exclusions. Clean
 GCC 14 release/CDS
-and fastdebug builds use the fork development profile. Eight targeted fastdebug
-tests passed. AArch64 cross checks cover HotSpot and java.base native libraries.
+and fastdebug builds use the fork development profile. Nine targeted fastdebug
+tests passed. Eight targeted tests passed with final GCC 16 kernels and AVX2
+dispatch. AArch64 cross checks cover HotSpot and java.base native libraries.
 
 The tests cover all three execution tiers, JNI fallback, explicit opt-out,
 threshold/window edges, long needles, coder combinations, surrogate pairs,
-builder capacity/mutations and concurrent GC. WhiteBox forces 26 public callers
+builder capacity/mutations and concurrent GC. WhiteBox forces 30 public callers
 through C1/C2 and checks equality/helper caller state and method handles.
 Native tests check every capability mask, executable backend, invalid input,
-work limit and unaligned long-needle search independently of Java gates.
-AArch64/QEMU provides functional coverage.
+work limit, unaligned long-needle search and repeated-suffix overlaps
+independently of Java gates.
+AArch64/QEMU covers executable serial/NEON backends and repeated-suffix
+overlaps in the interpreter, C1, C2, JNI fallback and opt-out paths.
 Native ASan/UBSan passed with alignment checks enabled. GCC 16 kernels also
 passed the string-search, literal-replacement and logger tests.
 

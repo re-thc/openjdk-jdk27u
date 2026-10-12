@@ -6,7 +6,8 @@ revision; its validation metadata is a snapshot, not the current CI status.
 
 | Dataset | Comparison |
 | --- | --- |
-| [bounded-results.json](bounded-results.json) | 30 pairs comparing the bounded implementation with the preceding default-on revision; includes safepoint-response samples |
+| [long-needle-results.json](long-needle-results.json) | Final GCC 16 kernels: enabled, disabled and original-Java controls across interpreter/C1/C2 with AVX2 and AVX-512; [rendered tables](../BENCHMARKS.md) |
+| [bounded-results.json](bounded-results.json) | Historical 30-pair comparison of the bounded implementation with the preceding default-on revision; includes safepoint-response samples; [rendered tables](BOUNDED_BENCHMARKS.md) |
 | [original-results.json](original-results.json) | 259 feature off/on pairs for the earlier implementation, plus original-Java and longer/layout controls; [rendered tables](ORIGINAL_BENCHMARKS.md) |
 
 Machine-local paths in the records identify the measured artifacts. Reproduction

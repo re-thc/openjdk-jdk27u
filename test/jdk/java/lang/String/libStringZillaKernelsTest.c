@@ -88,6 +88,38 @@ static jint check_kernels(void) {
         CHECK(published == kernels);
         if (!can_execute(kernels->capabilities)) continue;
 
+        // A rejected long-needle prefix must not skip overlapping suffixes.
+        const jint overlap_lengths[] = {128, 129, 130, 255, 256, 257, 258, 259, 511, 512, 513, 768};
+        char overlap_source[1536];
+        char overlap_target[1024];
+        jchar overlap_utf16_source[1536];
+        jchar overlap_utf16_target[1024];
+        for (unsigned int n = 0; n < sizeof(overlap_lengths) / sizeof(overlap_lengths[0]); n++) {
+            jint count = overlap_lengths[n];
+            for (jint pos = 0; pos <= 17; pos += 17) {
+                for (jint extra = 1; extra <= 256; extra *= 2) {
+                    jint size = pos + count + extra;
+                    memset(overlap_source, 'a', size);
+                    memset(overlap_target, 'a', count);
+                    overlap_source[pos] = overlap_target[0] = 'b';
+                    CHECK(kernels->rfindLatin1(overlap_source, size, overlap_target, count) == pos);
+                    CHECK(kernels->rfindLatin1(overlap_source, pos + count - 1, overlap_target, count) == -1);
+                    overlap_source[pos] = 'a';
+                    CHECK(kernels->rfindLatin1(overlap_source, size, overlap_target, count) == -1);
+                    for (int i = 0; i < size; i++) overlap_utf16_source[i] = 0x0401;
+                    for (int i = 0; i < count; i++) overlap_utf16_target[i] = 0x0401;
+                    overlap_utf16_source[pos] = overlap_utf16_target[0] = 0x0402;
+                    CHECK(kernels->rfindUTF16((const char*)overlap_utf16_source, size * 2,
+                                             (const char*)overlap_utf16_target, count * 2) == pos * 2);
+                    CHECK(kernels->rfindUTF16((const char*)overlap_utf16_source, (pos + count - 1) * 2,
+                                             (const char*)overlap_utf16_target, count * 2) == -1);
+                    overlap_utf16_source[pos] = 0x0401;
+                    CHECK(kernels->rfindUTF16((const char*)overlap_utf16_source, size * 2,
+                                             (const char*)overlap_utf16_target, count * 2) == -1);
+                }
+            }
+        }
+
         // Long-needle verification must accept every byte-array alignment.
         sz_align_(64) char unaligned_source[576];
         sz_align_(64) char unaligned_target[320];

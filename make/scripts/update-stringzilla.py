@@ -21,12 +21,14 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-"""Update the unmodified StringZilla search headers from an immutable commit."""
+"""Update pinned StringZilla headers and apply tracked local patches."""
 import argparse
 import hashlib
 import json
 from pathlib import Path, PurePosixPath
 import re
+import subprocess
+import tempfile
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -36,11 +38,34 @@ LEGAL = ROOT / 'src/java.base/share/legal/stringzilla.md'
 
 def verify():
     manifest = json.loads((VENDOR / 'UPSTREAM.json').read_text())
+    patched = manifest.get('patched_sha256', {})
     for name, digest in manifest['sha256'].items():
         data = (VENDOR / name).read_bytes()
-        if hashlib.sha256(data).hexdigest() != digest:
-            raise SystemExit('Vendored file differs from upstream: ' + name)
-    print('Verified', len(manifest['sha256']), 'unmodified upstream files')
+        if hashlib.sha256(data).hexdigest() != patched.get(name, digest):
+            raise SystemExit('Vendored file differs from manifest: ' + name)
+    for name, digest in manifest.get('patches', {}).items():
+        if hashlib.sha256((VENDOR / name).read_bytes()).hexdigest() != digest:
+            raise SystemExit('Local patch differs from manifest: ' + name)
+    print('Verified', len(manifest['sha256']), 'upstream files;', len(patched), 'locally patched')
+
+
+def apply_patches(files, patches):
+    with tempfile.TemporaryDirectory(prefix='stringzilla-') as directory:
+        stage = Path(directory)
+        for name, data in files.items():
+            destination = stage / name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(data)
+        for name, digest in patches.items():
+            data = (VENDOR / name).read_bytes()
+            if hashlib.sha256(data).hexdigest() != digest:
+                raise SystemExit('Local patch differs from manifest: ' + name)
+            result = subprocess.run(['patch', '--batch', '--forward', '--fuzz=0', '-p1', '-d', directory],
+                                    input=data, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            if result.returncode:
+                raise SystemExit('Review local patch against new upstream: ' + name + '\n'
+                                 + result.stdout.decode())
+        return {name: (stage / name).read_bytes() for name in files}
 
 
 def main():
@@ -68,8 +93,13 @@ def main():
         pending.extend(re.findall(r'#include\s+"(stringzilla/[^"\n]+)"', files[name].decode()))
     with urllib.request.urlopen(base + 'LICENSE') as response:
         files['LICENSE'] = response.read()
-    # Fetch all dependencies before modifying the checkout.
+    # Fetch dependencies and apply patches before modifying the checkout.
     old = json.loads((VENDOR / 'UPSTREAM.json').read_text()) if (VENDOR / 'UPSTREAM.json').exists() else {'sha256': {}}
+    upstream_hashes = {name: hashlib.sha256(data).hexdigest() for name, data in sorted(files.items())}
+    patches = old.get('patches', {})
+    files = apply_patches(files, patches)
+    patched_hashes = {name: hashlib.sha256(data).hexdigest() for name, data in sorted(files.items())
+                      if hashlib.sha256(data).hexdigest() != upstream_hashes[name]}
     for name in old['sha256'].keys() - files.keys():
         (VENDOR / name).unlink()
     for name, data in files.items():
@@ -77,7 +107,7 @@ def main():
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(data)
     manifest = {'version': args.version, 'commit': args.commit,
-                'sha256': {name: hashlib.sha256(data).hexdigest() for name, data in sorted(files.items())}}
+                'sha256': upstream_hashes, 'patches': patches, 'patched_sha256': patched_hashes}
     (VENDOR / 'UPSTREAM.json').write_text(json.dumps(manifest, indent=2) + '\n')
     LEGAL.write_text('## StringZilla v' + args.version + '\n\n### Notice\n\n'
                     'Source: https://github.com/ashvardanian/StringZilla/tree/' + args.commit + '\n\n'

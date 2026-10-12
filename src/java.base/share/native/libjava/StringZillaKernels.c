@@ -64,14 +64,26 @@ SZ_HELPER_INLINE int search_utf16_aligned(const jchar* src, int length, const jc
     const int lanes = 32;
     jchar candidates[32];
     jchar first = tgt[0], last = tgt[count - 1];
+    int inner = reverse ? count - 2 : 1;
+    jchar next = count > lanes ? tgt[inner] : 0;
     int remaining = length - count + 1;
     int consumed = 0;
     while (remaining >= lanes) {
         int start = reverse ? remaining - lanes : consumed;
         jchar any = 0;
-        for (int j = 0; j < lanes; j++) {
-            candidates[j] = (src[start + j] == first) & (src[start + j + count - 1] == last);
-            any += candidates[j];
+        // Long repeated needles often reject at the adjacent character.
+        if (count > lanes) {
+            for (int j = 0; j < lanes; j++) {
+                candidates[j] = (src[start + j] == first) &
+                                (src[start + j + count - 1] == last) &
+                                (src[start + j + inner] == next);
+                any += candidates[j];
+            }
+        } else {
+            for (int j = 0; j < lanes; j++) {
+                candidates[j] = (src[start + j] == first) & (src[start + j + count - 1] == last);
+                any += candidates[j];
+            }
         }
         if (any != 0) {
             for (int j = 0; j < lanes; j++) {
@@ -87,6 +99,7 @@ SZ_HELPER_INLINE int search_utf16_aligned(const jchar* src, int length, const jc
     for (int j = 0; j < remaining; j++) {
         int index = reverse ? remaining - 1 - j : consumed + j;
         if (src[index] == first && src[index + count - 1] == last &&
+                (count <= lanes || src[index + inner] == next) &&
                 matches_utf16_aligned(src + index, tgt, count, reverse)) {
             return index * 2;
         }

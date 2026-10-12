@@ -34,6 +34,20 @@
  * @run main/othervm -Xbatch -XX:-UseStringZillaIntrinsics StringZillaBounded
  */
 
+/*
+ * @test id=limitedAVX
+ * @summary Long reverse-search overlaps in serial and AVX2 kernels
+ * @requires (os.arch == "amd64" | os.arch == "x86_64")
+ * @run main/othervm -Xint -XX:UseAVX=0 StringZillaBounded overlaps
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:UseAVX=0 StringZillaBounded overlaps
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:UseAVX=0 StringZillaBounded overlaps
+ * @run main/othervm -Xint -XX:UseAVX=2 StringZillaBounded overlaps
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:UseAVX=2 StringZillaBounded overlaps
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:UseAVX=2 StringZillaBounded overlaps
+ * @run main/othervm -Xint -XX:UseAVX=2 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaRfindLatin1,_stringzillaRfindUTF16 StringZillaBounded overlaps
+ * @run main/othervm -Xbatch -XX:UseAVX=2 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaRfindLatin1,_stringzillaRfindUTF16 StringZillaBounded overlaps
+ */
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
@@ -71,7 +85,28 @@ public class StringZillaBounded {
         return target;
     }
 
+    private static void overlaps() {
+        for (String unit : new String[]{"a", "\u0401"}) {
+            String first = unit.equals("a") ? "b" : "\u0402";
+            for (int count : new int[]{128, 129, 130, 255, 256, 257, 258, 259, 511, 512, 513, 1024}) {
+                String t = first + unit.repeat(count - 1);
+                for (int pos : new int[]{0, 1, 17}) {
+                    for (int extra : new int[]{1, 2, 64, 255, 256}) {
+                        String s = unit.repeat(pos) + t + unit.repeat(extra);
+                        check(s, t, pos);
+                        check(unit.repeat(s.length()), t, -1);
+                        // A later complete match must win over the earlier one.
+                        equal((s + t + unit).lastIndexOf(t), s.length());
+                        equal(s.lastIndexOf(t, pos), pos);
+                    }
+                }
+            }
+        }
+    }
+
     public static void main(String[] args) {
+        overlaps();
+        if (args.length != 0) return;
         // One occurrence, with unique first/last characters: expected positions
         // follow construction rather than another search implementation.
         for (int size : new int[]{32767, 32768, 32769, 65535, 65536, 65537, 131072}) {
