@@ -52,6 +52,7 @@ import java.lang.classfile.constantpool.ConstantPoolBuilder;
 
 import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.NESTMATE_CLASS;
+import static java.lang.invoke.MethodHandleNatives.Constants.REF_newInvokeSpecial;
 import static java.lang.invoke.MethodHandleNatives.Constants.STRONG_LOADER_LINK;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
@@ -68,6 +69,9 @@ import sun.invoke.util.Wrapper;
     private static final String LAMBDA_INSTANCE_FIELD = "LAMBDA_INSTANCE$";
     private static final @Stable String[] ARG_NAME_CACHE = {"arg$1", "arg$2", "arg$3", "arg$4", "arg$5", "arg$6", "arg$7", "arg$8"};
     private static final ClassDesc[] EMPTY_CLASSDESC_ARRAY = ConstantUtils.EMPTY_CLASSDESC;
+
+    // The generated methods have no branches or exception handlers, hence need no stack maps
+    private static final ClassFile CF_CONTEXT = ClassFile.of(StackMapsOption.DROP_STACK_MAPS);
 
     // For dumping generated classes to disk, for debugging purposes
     private static final ClassFileDumper lambdaProxyClassFileDumper;
@@ -86,16 +90,18 @@ import sun.invoke.util.Wrapper;
     }
 
     // See context values in AbstractValidatingLambdaMetafactory
-    private final ClassDesc implMethodClassDesc;     // Name of type containing implementation "CC"
     private final String implMethodName;             // Name of implementation method "impl"
-    private final MethodTypeDesc implMethodDesc;     // Type descriptor for implementation methods "(I)Ljava/lang/String;"
     private final MethodType constructorType;        // Generated class constructor type "(CC)void"
-    private final MethodTypeDesc constructorTypeDesc;// Type descriptor for the generated class constructor type "(CC)void"
-    private final ClassDesc[] argDescs;              // Type descriptors for the constructor arguments
-    private final String lambdaClassName;            // Generated name for the generated class "X$$Lambda$1"
-    private final ConstantPoolBuilder pool = ConstantPoolBuilder.of();
-    private final ClassEntry lambdaClassEntry;       // Class entry for the generated class "X$$Lambda$1"
     private final boolean useImplMethodHandle;       // use MethodHandle invocation instead of symbolic bytecode invocation
+
+    // Only needed when the class is generated, rather than loaded from the CDS archive; see initClassGeneration()
+    private ClassDesc implMethodClassDesc;           // Name of type containing implementation "CC"
+    private MethodTypeDesc implMethodDesc;           // Type descriptor for implementation methods "(I)Ljava/lang/String;"
+    private MethodTypeDesc constructorTypeDesc;      // Type descriptor for the generated class constructor type "(CC)void"
+    private ClassDesc[] argDescs;                    // Type descriptors for the constructor arguments
+    private String lambdaClassName;                  // Generated name for the generated class "X$$Lambda$1"
+    private ConstantPoolBuilder pool;
+    private ClassEntry lambdaClassEntry;             // Class entry for the generated class "X$$Lambda$1"
 
     /**
      * General meta-factory constructor, supporting both standard cases and
@@ -147,12 +153,8 @@ import sun.invoke.util.Wrapper;
         super(caller, factoryType, interfaceMethodName, interfaceMethodType,
               implementation, dynamicMethodType,
               isSerializable, altInterfaces, altMethods);
-        implMethodClassDesc = implClassDesc(implClass);
         implMethodName = implInfo.getName();
-        implMethodDesc = methodDesc(implInfo.getMethodType());
         constructorType = factoryType.changeReturnType(Void.TYPE);
-        lambdaClassName = lambdaClassName(targetClass);
-        lambdaClassEntry = pool.classEntry(ConstantUtils.internalNameToDesc(lambdaClassName));
         // If the target class invokes a protected method inherited from a
         // superclass in a different package, or does 'invokespecial', the
         // lambda class has no access to the resolved method, or does
@@ -164,9 +166,15 @@ import sun.invoke.util.Wrapper;
                                !VerifyAccess.isSamePackage(targetClass, implInfo.getDeclaringClass())) ||
                                implKind == MethodHandleInfo.REF_invokeSpecial ||
                                implKind == MethodHandleInfo.REF_invokeStatic && implClass.isHidden();
+    }
+
+    private void initClassGeneration() {
+        implMethodClassDesc = implClassDesc(implClass);
+        implMethodDesc = methodDesc(implInfo.getMethodType());
+        lambdaClassName = lambdaClassName(targetClass);
+        pool = ConstantPoolBuilder.of();
+        lambdaClassEntry = pool.classEntry(ConstantUtils.internalNameToDesc(lambdaClassName));
         int parameterCount = factoryType.parameterCount();
-        ClassDesc[] argDescs;
-        MethodTypeDesc constructorTypeDesc;
         if (parameterCount > 0) {
             argDescs = new ClassDesc[parameterCount];
             for (int i = 0; i < parameterCount; i++) {
@@ -177,8 +185,6 @@ import sun.invoke.util.Wrapper;
             argDescs = EMPTY_CLASSDESC_ARRAY;
             constructorTypeDesc = MTD_void;
         }
-        this.argDescs = argDescs;
-        this.constructorTypeDesc = constructorTypeDesc;
     }
 
     private static String argName(int i) {
@@ -222,13 +228,15 @@ import sun.invoke.util.Wrapper;
             }
         } else {
             try {
-                MethodHandle mh = caller.findConstructor(innerClass, constructorType);
+                MemberName ctor = caller.resolveOrFail(REF_newInvokeSpecial, innerClass, INIT_NAME, constructorType);
+                // The inner class implements the interface, so this has the factory type
+                MethodHandle mh = DirectMethodHandle.makeAllocator(innerClass, ctor, factoryType);
                 if (factoryType.parameterCount() == 0) {
                     // In the case of a non-capturing lambda, we optimize linkage by pre-computing a single instance
                     Object inst = mh.invokeBasic();
                     return new ConstantCallSite(MethodHandles.constant(interfaceClass, inst));
                 } else {
-                    return new ConstantCallSite(mh.asType(factoryType));
+                    return new ConstantCallSite(mh);
                 }
             } catch (ReflectiveOperationException e) {
                 throw new LambdaConversionException("Exception finding constructor", e);
@@ -291,6 +299,7 @@ import sun.invoke.util.Wrapper;
      * is not found
      */
     private Class<?> generateInnerClass() throws LambdaConversionException {
+        initClassGeneration();
         List<ClassDesc> interfaces;
         ClassDesc interfaceDesc = classDesc(interfaceClass);
         boolean accidentallySerializable = !isSerializable && Serializable.class.isAssignableFrom(interfaceClass);
@@ -307,7 +316,7 @@ import sun.invoke.util.Wrapper;
             interfaces = List.copyOf(itfs);
         }
         final boolean finalAccidentallySerializable = accidentallySerializable;
-        final byte[] classBytes = ClassFile.of().build(lambdaClassEntry, pool, new Consumer<ClassBuilder>() {
+        final byte[] classBytes = CF_CONTEXT.build(lambdaClassEntry, pool, new Consumer<ClassBuilder>() {
             @Override
             public void accept(ClassBuilder clb) {
                 clb.withFlags(ACC_SUPER | ACC_FINAL | ACC_SYNTHETIC)
