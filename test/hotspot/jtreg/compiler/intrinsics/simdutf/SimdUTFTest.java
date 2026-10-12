@@ -121,9 +121,52 @@ public class SimdUTFTest {
         compactLatin1();
         utf16Copies();
         utf8EncodeCapacity();
+        tightBuffers();
         codePointCounts();
         indexOf();
         System.out.println("simdutf contracts passed");
+    }
+
+    private static void tightBuffers() {
+        for (String pattern : new String[]{"漢", "😃", "aé漢😃"}) {
+            String text = pattern.repeat(4096);
+            byte[] input = utf8(text);
+            char[] output = new char[text.length() + 14];
+            Arrays.fill(output, '\u5555');
+            int n = SimdUTF.decodeUTF8(input, 0, input.length, output, 7, text.length());
+            if (SimdUTF.isEligible(input.length)) {
+                check(n == text.length(), "tight UTF8 acceleration");
+                check(text.equals(new String(output, 7, n)), "tight UTF8 contents");
+                for (int i = 0; i < output.length; i++) {
+                    if (i < 7 || i >= 7 + n) check(output[i] == '\u5555', "tight UTF8 canary");
+                }
+            }
+            for (boolean big : new boolean[]{false, true}) {
+                byte[] expected = utf32Bytes(text, big, false);
+                byte[] bytes = new byte[expected.length + 16];
+                Arrays.fill(bytes, SENTINEL);
+                n = SimdUTF.encodeUTF32Bytes(text.toCharArray(), 0, text.length(), bytes, 8,
+                        expected.length, big);
+                if (SimdUTF.isEligible(text.length())) {
+                    check(n == expected.length, "tight UTF32 acceleration");
+                    equal(expected, Arrays.copyOfRange(bytes, 8, 8 + n));
+                    guards(bytes, 8, n);
+                }
+            }
+            CharBuffer tight = CharBuffer.allocate(text.length());
+            ByteBuffer source = ByteBuffer.wrap(input);
+            var result = StandardCharsets.UTF_8.newDecoder().decode(source, tight, true);
+            check(result.isUnderflow() && !source.hasRemaining() && !tight.hasRemaining(), "tight decoder positions");
+            tight.flip();
+            check(text.contentEquals(tight), "tight decoder contents");
+            for (int capacity : new int[]{0, 1, text.length() - 1}) {
+                source.rewind();
+                CharBuffer small = CharBuffer.allocate(capacity);
+                result = StandardCharsets.UTF_8.newDecoder().decode(source, small, true);
+                check(result.isOverflow(), "small decoder overflow");
+                check(text.startsWith(small.flip().toString()), "small decoder prefix");
+            }
+        }
     }
 
     private static void indexOf() {

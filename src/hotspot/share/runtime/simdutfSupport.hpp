@@ -63,7 +63,8 @@ class SimdUTF : AllStatic {
     COUNT_CODE_POINTS = 25,
     COPY_UTF16 = 26,
     INDEX_OF_LATIN1 = 27,
-    INDEX_OF_UTF16 = 28
+    INDEX_OF_UTF16 = 28,
+    VALIDATE_UTF8_LATIN1 = 29
   };
 
   static jint initialize();

@@ -29,9 +29,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.Charset;
+import java.nio.charset.CodingErrorAction;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.util.Base64;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
@@ -53,8 +55,10 @@ public class SimdUTF {
     private char[] supplementaryChars;
     private StringBuilder supplementaryBuilder;
     private StringBuffer supplementaryBuffer;
-    private ByteBuffer charsetBytes, charsetInput;
+    private ByteBuffer charsetBytes, charsetInput, charsetTightInput;
     private CharBuffer charsetChars, charsetOutput;
+    private CharBuffer charsetTightOutput, supplementaryInput;
+    private ByteBuffer utf32SupplementaryBytes;
     private ByteBuffer asciiCharsetInput;
     private CharBuffer asciiCharsetOutput;
     private CharsetEncoder charsetEncoder;
@@ -75,6 +79,10 @@ public class SimdUTF {
     private CharBuffer asciiInput, latin1Input, utf32TightOutput;
     private ByteBuffer singleByteOutput;
     private CharsetEncoder asciiEncoder, latin1Encoder, latin1Validator;
+    private CharsetDecoder malformedDecoder;
+    private CharsetEncoder malformedEncoder;
+    private ByteBuffer malformedInput, malformedBytes;
+    private CharBuffer malformedChars, malformedOutput;
 
     @Setup
     public void setup() {
@@ -105,6 +113,11 @@ public class SimdUTF {
         charsetInput = ByteBuffer.wrap(utf8Bytes);
         charsetChars = CharBuffer.wrap(chars);
         charsetOutput = CharBuffer.wrap(targetChars);
+        String tightText = "漢".repeat(size / 3) + "a".repeat(size % 3);
+        charsetTightInput = ByteBuffer.wrap(tightText.getBytes(StandardCharsets.UTF_8));
+        charsetTightOutput = CharBuffer.allocate(tightText.length());
+        supplementaryInput = CharBuffer.wrap(supplementaryChars);
+        utf32SupplementaryBytes = ByteBuffer.allocate(supplementaryChars.length * 2);
         charsetEncoder = StandardCharsets.UTF_8.newEncoder();
         charsetDecoder = StandardCharsets.UTF_8.newDecoder();
         unicodeValidator = StandardCharsets.UTF_8.newEncoder();
@@ -130,6 +143,16 @@ public class SimdUTF {
         latin1Encoder = StandardCharsets.ISO_8859_1.newEncoder();
         latin1Validator = StandardCharsets.ISO_8859_1.newEncoder();
         utf32TightOutput = CharBuffer.allocate(size);
+        byte[] invalidBytes = new byte[size];
+        Arrays.fill(invalidBytes, (byte)0x80);
+        char[] invalidChars = new char[size];
+        Arrays.fill(invalidChars, '\udc00');
+        malformedInput = ByteBuffer.wrap(invalidBytes);
+        malformedChars = CharBuffer.wrap(invalidChars);
+        malformedOutput = CharBuffer.allocate(size);
+        malformedBytes = ByteBuffer.allocate(size);
+        malformedDecoder = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPLACE);
+        malformedEncoder = StandardCharsets.UTF_8.newEncoder().onMalformedInput(CodingErrorAction.REPLACE);
     }
 
     @Benchmark public String asciiDecode() { return new String(asciiBytes, StandardCharsets.UTF_8); }
@@ -233,5 +256,30 @@ public class SimdUTF {
         charsetDecoder.reset(); charsetInput.clear(); charsetOutput.clear();
         charsetDecoder.decode(charsetInput, charsetOutput, true);
         return charsetOutput.position();
+    }
+
+    @Benchmark public int charsetDecodeTight() {
+        // This workload's size is the input byte count, including boundary cases.
+        charsetDecoder.reset(); charsetTightInput.clear(); charsetTightOutput.clear();
+        charsetDecoder.decode(charsetTightInput, charsetTightOutput, true);
+        return charsetTightOutput.position();
+    }
+
+    @Benchmark public int utf32SupplementaryCharsetEncode() {
+        utf32Encoder.reset(); supplementaryInput.clear(); utf32SupplementaryBytes.clear();
+        utf32Encoder.encode(supplementaryInput, utf32SupplementaryBytes, true);
+        return utf32SupplementaryBytes.position();
+    }
+
+    @Benchmark public int malformedCharsetDecode() {
+        malformedDecoder.reset(); malformedInput.clear(); malformedOutput.clear();
+        malformedDecoder.decode(malformedInput, malformedOutput, true);
+        return malformedOutput.position();
+    }
+
+    @Benchmark public int malformedCharsetEncode() {
+        malformedEncoder.reset(); malformedChars.clear(); malformedBytes.clear();
+        malformedEncoder.encode(malformedChars, malformedBytes, true);
+        return malformedBytes.position();
     }
 }

@@ -1508,7 +1508,8 @@ public final class String
         int converted = SimdUTF.isEligible(val.length - positives)
                 ? SimdUTF.encodeLatin1(val, positives, val.length - positives, dst, dp, dst.length - dp) : -1;
         if (converted >= 0) {
-            return Arrays.copyOf(dst, dp + converted);
+            dp += converted;
+            return dp == dst.length ? dst : Arrays.copyOf(dst, dp);
         }
         for (int i = dp; i < val.length; i++) {
             byte c = val[i];
@@ -1571,7 +1572,7 @@ public final class String
         byte[] dst = new byte[allocLen];
         int converted = SimdUTF.isEligible(sl) ? SimdUTF.encodeUTF16(val, 0, sl, dst, 0, dst.length) : -1;
         if (converted >= 0) {
-            return Arrays.copyOf(dst, converted);
+            return converted == dst.length ? dst : Arrays.copyOf(dst, converted);
         }
         while (sp < sl) {
             // ascii fast loop;

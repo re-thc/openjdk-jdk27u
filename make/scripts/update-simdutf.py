@@ -22,6 +22,7 @@
 
 """Regenerate the vendored simdutf from an unmodified upstream release checkout."""
 import argparse
+import os
 from pathlib import Path
 import re
 import shutil
@@ -51,12 +52,15 @@ if f'#define SIMDUTF_VERSION "{version}"' not in version_header:
     parser.error("release tag does not match the source version")
 destination = root / "src/utils/simdutf"
 with tempfile.TemporaryDirectory(prefix="update-simdutf-") as temporary:
+    environment = os.environ.copy()
+    for name in ("AMALGAMATE_SOURCE_PATH", "AMALGAMATE_INCLUDE_PATH", "AMALGAMATE_OUTPUT_PATH"):
+        environment.pop(name, None)
     subprocess.run([sys.executable, str(upstream / "singleheader/amalgamate.py"),
                     "--source-dir", str(upstream / "src"),
                     "--include-dir", str(upstream / "include"),
                     "--output-dir", temporary, "--no-zip", "--no-readme",
                     "--with-utf8", "--with-utf16", "--with-utf32", "--with-base64",
-                    "--with-ascii", "--with-latin1"], check=True, cwd=upstream)
+                    "--with-ascii", "--with-latin1"], check=True, cwd=upstream, env=environment)
     destination.mkdir(parents=True, exist_ok=True)
     for name in ("simdutf.h", "simdutf.cpp"):
         shutil.copyfile(Path(temporary) / name, destination / name)

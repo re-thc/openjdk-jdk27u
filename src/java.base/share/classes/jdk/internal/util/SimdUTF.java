@@ -26,6 +26,7 @@
 
 package jdk.internal.util;
 
+import java.nio.ByteOrder;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -68,6 +69,9 @@ public final class SimdUTF {
     private static final int COPY_UTF16 = 26;
     private static final int INDEX_OF_LATIN1 = 27;
     private static final int INDEX_OF_UTF16 = 28;
+    private static final int VALIDATE_UTF8_LATIN1 = 29;
+    private static final int MAX_CHUNK = 1024 * 1024;
+    private static final boolean BIG_ENDIAN = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
 
     // Kept zero during early bootstrap. Initialized once by System.initPhase1.
     @Stable
@@ -87,7 +91,7 @@ public final class SimdUTF {
     @ForceInline
     public static boolean isEligible(int len) {
         int threshold = minLength;
-        return threshold > 0 && len >= threshold && len <= 1024 * 1024;
+        return threshold > 0 && len >= threshold;
     }
 
     @ForceInline
@@ -101,7 +105,186 @@ public final class SimdUTF {
         if (!isEligible(len) || (automatic && len < operationMinimumLength(operation))) {
             return -1;
         }
-        return process0(src, sp, len, dst, dp, capacity, operation);
+        // Avoid native calls on an immediately malformed prefix, including replacement loops.
+        boolean validStart = switch (operation) {
+            case DECODE_UTF8 -> src instanceof byte[] bytes && validUTF8Start(bytes, sp, len);
+            case ENCODE_UTF16, ENCODE_UTF16_BE, ENCODE_UTF16_LE, ENCODE_UTF32_BE, ENCODE_UTF32_LE ->
+                    validUTF16Start(src, sp, len);
+            default -> true;
+        };
+        if (!validStart) {
+            return -1;
+        }
+        return len <= MAX_CHUNK ? process0(src, sp, len, dst, dp, capacity, operation)
+                               : processChunks(src, sp, len, dst, dp, capacity, operation);
+    }
+
+    // Return between bounded leaves so compiled loops can poll for safepoints.
+    private static int processChunks(Object src, int sp, int len,
+                                     Object dst, int dp, int capacity, int operation) {
+        boolean src16 = operation >= ENCODE_UTF16 && operation <= ENCODE_LATIN1_FROM_UTF16
+                || operation >= VALIDATE_UTF16 && operation <= ENCODED_LENGTH_UTF16
+                || operation == ENCODE_UTF16_BE || operation == ENCODE_UTF16_LE
+                || operation == ENCODE_UTF32_BE || operation == ENCODE_UTF32_LE
+                || operation == COUNT_CODE_POINTS || operation == COPY_UTF16 || operation == INDEX_OF_UTF16;
+        boolean dst16 = operation == DECODE_UTF8 || operation == DECODE_UTF16_BE || operation == DECODE_UTF16_LE
+                || operation == INFLATE_LATIN1 || operation == DECODE_UTF32_BE || operation == DECODE_UTF32_LE
+                || operation == COPY_UTF16;
+        boolean readOnly = operation == COUNT_ASCII
+                || operation >= VALIDATE_UTF16 && operation <= ENCODED_LENGTH_LATIN1
+                || operation == COUNT_CODE_POINTS || operation >= INDEX_OF_LATIN1;
+        if (!range(src, src16, sp, len)
+                || (!readOnly && (!range(dst, dst16, dp, capacity)
+                    || (src == dst && (operation != DECODE_LATIN1 || dp > sp))))) {
+            return -1;
+        }
+        if (src == dst && operation == DECODE_LATIN1
+                && (capacity < len || processChunks(src, sp, len, src, 0, 0, VALIDATE_UTF8_LATIN1) != 1)) {
+            // A failed in-place conversion must not change input before Java retries it.
+            return -1;
+        }
+        int consumed = 0;
+        int written = 0;
+        while (consumed < len) {
+            int size = chunkLength(src, sp + consumed, len - consumed, operation);
+            int result = processChunk(src, sp + consumed, size, dst,
+                    readOnly ? dp : dp + written, readOnly ? capacity : capacity - written, operation);
+            if (result < 0) {
+                return -1;
+            }
+            switch (operation) {
+                case VALIDATE_UTF16, VALIDATE_ASCII, VALIDATE_LATIN1, VALIDATE_UTF8_LATIN1 -> {
+                    if (result == 0) {
+                        return 0;
+                    }
+                }
+                case INDEX_OF_LATIN1, INDEX_OF_UTF16 -> {
+                    if (result < size) {
+                        return consumed + result;
+                    }
+                }
+                default -> {
+                    if (result > Integer.MAX_VALUE - written) {
+                        return -1;
+                    }
+                    written += result;
+                    if ((operation == COUNT_ASCII || operation == ENCODE_ASCII
+                            || operation == ENCODE_LATIN1_FROM_UTF16) && result < size) {
+                        return written;
+                    }
+                }
+            }
+            consumed += size;
+        }
+        return switch (operation) {
+            case VALIDATE_UTF16, VALIDATE_ASCII, VALIDATE_LATIN1, VALIDATE_UTF8_LATIN1 -> 1;
+            case INDEX_OF_LATIN1, INDEX_OF_UTF16 -> len;
+            default -> written;
+        };
+    }
+
+    private static boolean range(Object array, boolean utf16, int off, int len) {
+        int length;
+        if (array instanceof byte[] bytes) {
+            length = utf16 ? bytes.length >> 1 : bytes.length;
+        } else if (utf16 && array instanceof char[] chars) {
+            length = chars.length;
+        } else {
+            return false;
+        }
+        return (off | len) >= 0 && off <= length && len <= length - off;
+    }
+
+    private static int chunkLength(Object src, int sp, int remaining, int operation) {
+        int size = Math.min(remaining, MAX_CHUNK);
+        if (size == remaining) {
+            return size;
+        }
+        switch (operation) {
+            case DECODE_UTF8, DECODE_LATIN1, VALIDATE_UTF8_LATIN1 -> {
+                byte[] bytes = (byte[])src;
+                int minimum = size - 3;
+                while (size > minimum && (bytes[sp + size] & 0xc0) == 0x80) {
+                    size--;
+                }
+            }
+            case ENCODE_UTF16, VALIDATE_UTF16, ENCODED_LENGTH_UTF16,
+                 ENCODE_UTF16_BE, ENCODE_UTF16_LE, ENCODE_UTF32_BE, ENCODE_UTF32_LE, COUNT_CODE_POINTS -> {
+                char last = src instanceof char[] chars ? chars[sp + size - 1]
+                        : byteChar((byte[])src, (sp + size - 1) << 1, BIG_ENDIAN);
+                if (Character.isHighSurrogate(last)) {
+                    size--;
+                }
+            }
+            case DECODE_UTF16_BE, DECODE_UTF16_LE -> {
+                size &= ~1;
+                if (Character.isHighSurrogate(byteChar((byte[])src, sp + size - 2,
+                        operation == DECODE_UTF16_BE))) {
+                    size -= 2;
+                }
+            }
+            case ENCODE_BASE64, ENCODE_BASE64_URL -> size -= size % 3;
+            case DECODE_BASE64, DECODE_BASE64_URL, DECODE_UTF32_BE, DECODE_UTF32_LE -> size &= ~3;
+        }
+        return size;
+    }
+
+    private static char byteChar(byte[] bytes, int off, boolean bigEndian) {
+        return (char)(bigEndian ? (bytes[off] & 0xff) << 8 | (bytes[off + 1] & 0xff)
+                               : (bytes[off] & 0xff) | (bytes[off + 1] & 0xff) << 8);
+    }
+
+    private static boolean validUTF16Start(Object src, int sp, int len) {
+        if (!range(src, true, sp, len) || len == 0) {
+            return false;
+        }
+        char first = src instanceof char[] chars ? chars[sp] : byteChar((byte[])src, sp << 1, BIG_ENDIAN);
+        if (!Character.isSurrogate(first)) {
+            return true;
+        }
+        return Character.isHighSurrogate(first) && len > 1 && Character.isLowSurrogate(
+                src instanceof char[] chars ? chars[sp + 1] : byteChar((byte[])src, (sp + 1) << 1, BIG_ENDIAN));
+    }
+
+    private static boolean validUTF8Start(byte[] src, int sp, int len) {
+        if (!range(src, false, sp, len) || len == 0) {
+            return false;
+        }
+        int first = src[sp] & 0xff;
+        if (first < 0x80) {
+            return true;
+        }
+        int width = first < 0xe0 ? 2 : first < 0xf0 ? 3 : 4;
+        if (first < 0xc2 || first > 0xf4 || len < width) {
+            return false;
+        }
+        int second = src[sp + 1] & 0xff;
+        if ((second & 0xc0) != 0x80 || first == 0xe0 && second < 0xa0
+                || first == 0xed && second >= 0xa0 || first == 0xf0 && second < 0x90
+                || first == 0xf4 && second >= 0x90) {
+            return false;
+        }
+        return (width < 3 || (src[sp + 2] & 0xc0) == 0x80)
+                && (width < 4 || (src[sp + 3] & 0xc0) == 0x80);
+    }
+
+    // Keep operation constants visible to C2, including its preferred existing stubs.
+    @ForceInline
+    private static int processChunk(Object src, int sp, int len,
+                                    Object dst, int dp, int capacity, int operation) {
+        return switch (operation) {
+            case COUNT_ASCII -> process0(src, sp, len, dst, dp, capacity, COUNT_ASCII);
+            case ENCODE_ASCII -> process0(src, sp, len, dst, dp, capacity, ENCODE_ASCII);
+            case ENCODE_LATIN1_FROM_UTF16 -> process0(src, sp, len, dst, dp, capacity, ENCODE_LATIN1_FROM_UTF16);
+            case ENCODE_BASE64 -> process0(src, sp, len, dst, dp, capacity, ENCODE_BASE64);
+            case ENCODE_BASE64_URL -> process0(src, sp, len, dst, dp, capacity, ENCODE_BASE64_URL);
+            case DECODE_BASE64 -> process0(src, sp, len, dst, dp, capacity, DECODE_BASE64);
+            case DECODE_BASE64_URL -> process0(src, sp, len, dst, dp, capacity, DECODE_BASE64_URL);
+            case INFLATE_LATIN1 -> process0(src, sp, len, dst, dp, capacity, INFLATE_LATIN1);
+            case INDEX_OF_LATIN1 -> process0(src, sp, len, dst, dp, capacity, INDEX_OF_LATIN1);
+            case INDEX_OF_UTF16 -> process0(src, sp, len, dst, dp, capacity, INDEX_OF_UTF16);
+            default -> process0(src, sp, len, dst, dp, capacity, operation);
+        };
     }
 
     // Share operation floors across tiers when compilation is enabled; explicit thresholds bypass them.
