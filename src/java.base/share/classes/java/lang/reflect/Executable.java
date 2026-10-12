@@ -597,6 +597,39 @@ public abstract sealed class Executable extends AccessibleObject
         if (parameterAnnotations == null)
             return new Annotation[numParameters][0];
 
+        // As with getDeclaredAnnotations, the annotation instances are shared
+        // among callers. The arrays are not, as callers may modify them.
+        Annotation[][] result = declaredParameterAnnotations(parameterTypes, parameterAnnotations).clone();
+        for (int i = 0; i < result.length; i++) {
+            result[i] = result[i].clone();
+        }
+        return result;
+    }
+
+    private transient volatile Annotation[][] declaredParameterAnnotations;
+
+    private Annotation[][] declaredParameterAnnotations(Class<?>[] parameterTypes,
+                                                        byte[] parameterAnnotations) {
+        Annotation[][] result;
+        if ((result = declaredParameterAnnotations) == null) {
+            synchronized (this) {
+                if ((result = declaredParameterAnnotations) == null) {
+                    Executable root = (Executable)getRoot();
+                    if (root != null) {
+                        result = root.declaredParameterAnnotations(parameterTypes, parameterAnnotations);
+                    } else {
+                        result = parseDeclaredParameterAnnotations(parameterTypes, parameterAnnotations);
+                    }
+                    declaredParameterAnnotations = result;
+                }
+            }
+        }
+        return result;
+    }
+
+    private Annotation[][] parseDeclaredParameterAnnotations(Class<?>[] parameterTypes,
+                                                             byte[] parameterAnnotations) {
+        int numParameters = parameterTypes.length;
         Annotation[][] result = parseParameterAnnotations(parameterAnnotations);
 
         if (result.length != numParameters &&
