@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('java')
 parser.add_argument('classpath')
 parser.add_argument('output')
-parser.add_argument('--suite', choices=['current', 'guard'], default='current')
+parser.add_argument('--suite', choices=['current', 'guard', 'controls'], default='current')
 args = parser.parse_args()
 output = Path(args.output)
 output.mkdir(parents=True, exist_ok=True)
@@ -28,10 +28,20 @@ if args.suite == 'guard':
     cases = [('mixed', 'org.openjdk.bench.vm.compiler.CommonGuardIntrinsics.mixedOperations',
               ['-p', 'size=1024,4096', '-p', 'failedGuard=false,true'])]
     tiers = [('c1', ['-Xbatch', '-XX:TieredStopAtLevel=1'])]
+pairs = 3
+warmups, measurements, measurement_time = 3, 5, '1s'
+if args.suite == 'controls':
+    cases = [
+        ('multiply', 'org.openjdk.bench.vm.compiler.CommonIntrinsics.multiply', ['-p', 'length=4096']),
+        ('bitCount', 'org.openjdk.bench.vm.compiler.CommonScalarIntrinsics.bitCount', []),
+    ]
+    tiers = [('c2', ['-Xbatch', '-XX:-TieredCompilation'])]
+    pairs = 6
+    warmups, measurements, measurement_time = 8, 10, '2s'
 manifest = dict(java=args.java, classpath=args.classpath, worker_cpu=worker, flags=flags,
                 suite=args.suite, runs=[])
 for tier, tier_flags in tiers:
-    for pair in range(3):
+    for pair in range(pairs):
         order = ['off', 'on'] if pair % 2 == 0 else ['on', 'off']
         if args.suite == 'guard':
             order = ['on']
@@ -40,8 +50,8 @@ for tier, tier_flags in tiers:
                 name = f'{tier}-{label}-{setting}-{pair}'
                 result_file = output / (name + '.json')
                 command = ['taskset', '-c', str(worker), args.java, *flags, '-cp', args.classpath,
-                           'org.openjdk.jmh.Main', pattern, *params, '-f', '1', '-wi', '3', '-i', '5',
-                           '-w', '1s', '-r', '1s', '-t', '1', '-foe', 'true', '-rf', 'json',
+                           'org.openjdk.jmh.Main', pattern, *params, '-f', '1', '-wi', str(warmups), '-i', str(measurements),
+                           '-w', '1s', '-r', measurement_time, '-t', '1', '-foe', 'true', '-rf', 'json',
                            '-rff', str(result_file), '-jvm', args.java, '-jvmArgs',
                            ' '.join(flags + tier_flags + ['-XX:' + ('+' if setting == 'on' else '-') + 'UseCommonIntrinsics'])]
                 print(name, flush=True)
