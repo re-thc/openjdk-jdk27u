@@ -44,9 +44,14 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     implements com.sun.management.UnixOperatingSystemMXBean {
 
     private static final int MAX_ATTEMPTS_NUMBER = 10;
-    private final Metrics containerMetrics;
     private ContainerCpuTicks systemLoadTicks = new SystemCpuTicks();
     private ContainerCpuTicks processLoadTicks = new ProcessCpuTicks();
+
+    // The container metrics are looked up on first use, as that reads the cgroup
+    // configuration. A holder class is used because the metrics can be null.
+    private static class ContainerMetricsHolder {
+        static final Metrics METRICS = jdk.internal.platform.Container.metrics();
+    }
 
     private abstract class ContainerCpuTicks {
         private volatile long usageTicks;
@@ -81,6 +86,7 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
         }
 
         public double getContainerCpuLoad() {
+            Metrics containerMetrics = containerMetrics();
             assert(containerMetrics != null);
             long quota = containerMetrics.getCpuQuota();
             long share = containerMetrics.getCpuShares();
@@ -165,14 +171,13 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
 
         @Override
         protected LongSupplier cpuUsageSupplier() {
-            return () -> containerMetrics.getCpuUsage();
+            return () -> containerMetrics().getCpuUsage();
         }
 
     }
 
     OperatingSystemImpl(VMManagement vm) {
         super(vm);
-        this.containerMetrics = jdk.internal.platform.Container.metrics();
     }
 
     public long getCommittedVirtualMemorySize() {
@@ -180,6 +185,7 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     }
 
     public long getTotalSwapSpaceSize() {
+        Metrics containerMetrics = containerMetrics();
         if (containerMetrics != null) {
             long limit = containerMetrics.getMemoryAndSwapLimit();
             // The memory limit metrics is not available if JVM runs on Linux host (not in a docker container)
@@ -195,6 +201,7 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     }
 
     public long getFreeSwapSpaceSize() {
+        Metrics containerMetrics = containerMetrics();
         if (containerMetrics != null) {
             long memSwapLimit = containerMetrics.getMemoryAndSwapLimit();
             long memLimit = containerMetrics.getMemoryLimit();
@@ -231,6 +238,7 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     }
 
     public long getFreeMemorySize() {
+        Metrics containerMetrics = containerMetrics();
         if (containerMetrics != null) {
             long usage = containerMetrics.getMemoryUsage();
             long limit = containerMetrics.getMemoryLimit();
@@ -242,6 +250,7 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     }
 
     public long getTotalMemorySize() {
+        Metrics containerMetrics = containerMetrics();
         if (containerMetrics != null) {
             long limit = containerMetrics.getMemoryLimit();
             if (limit >= 0) {
@@ -260,20 +269,25 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     }
 
     public double getCpuLoad() {
-        if (containerMetrics != null) {
+        if (containerMetrics() != null) {
             return systemLoadTicks.getContainerCpuLoad();
         }
         return getCpuLoad0();
     }
 
     public double getProcessCpuLoad() {
-        if (containerMetrics != null) {
+        if (containerMetrics() != null) {
             return processLoadTicks.getContainerCpuLoad();
         }
         return getProcessCpuLoad0();
     }
 
+    private static Metrics containerMetrics() {
+        return ContainerMetricsHolder.METRICS;
+    }
+
     private boolean isCpuSetSameAsHostCpuSet() {
+        Metrics containerMetrics = containerMetrics();
         if (containerMetrics != null) {
             // The return value may change (including from non-null to null) and
             // the call may involve I/O, so keep the result in a local variable.
