@@ -25,6 +25,7 @@
 package compiler.c2.irTests;
 
 import java.util.Arrays;
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
@@ -48,7 +49,8 @@ import jdk.test.lib.Platform;
  */
 public class TestAArch64SVENarrowingCastStore {
     private static final ByteOrder ORDER = ByteOrder.nativeOrder();
-    private static final MemorySegment ALIASED = MemorySegment.ofArray(new byte[128]);
+    private static final MemorySegment ALIASED = Arena.ofAuto().allocate(128, 8);
+    private static final MemorySegment HEAP_ALIASED = MemorySegment.ofArray(new byte[128]);
     private static final int SIZE = 2048;
     private static final int[] LENGTHS = {0, 1, 2, 3, 4, 7, 8, 15, 16, 17, 31, 32, 33,
                                           63, 64, 65, 127, 128, 129, 1023, 1024, 1027};
@@ -198,8 +200,19 @@ public class TestAArch64SVENarrowingCastStore {
         converted.intoMemorySegment(ALIASED, 34, ORDER);
     }
 
+    @Test
+    @IR(applyIfPlatform = {"aarch64", "true"}, failOn = {"storeV_vcastDtoF_sve16"},
+        phase = CompilePhase.MATCHING)
+    public static void testHeapAliasFallback() {
+        // C2 retains the fallback for a float access to a known byte[] segment.
+        DoubleVector src = DoubleVector.fromMemorySegment(DoubleVector.SPECIES_256, HEAP_ALIASED, 32, ORDER);
+        ((FloatVector) src.convertShape(VectorOperators.D2F, FloatVector.SPECIES_128, 0))
+                .intoMemorySegment(HEAP_ALIASED, 34, ORDER);
+    }
+
     @Run(test = {"testD2S", "testD2F", "testL2F", "testL2B", "testD2SAlias",
-                 "testD2FAlias", "testL2FAlias", "testL2BAlias", "testSharedCastStore"})
+                 "testD2FAlias", "testL2FAlias", "testL2BAlias", "testSharedCastStore",
+                 "testHeapAliasFallback"})
     public void run(RunInfo info) {
         if (info.isWarmUp()) {
             check(0, 3, 1027);
@@ -244,7 +257,8 @@ public class TestAArch64SVENarrowingCastStore {
 
     @DontCompile
     private static void checkAliases(int index) {
-        for (int conversion = 0; conversion < 5; conversion++) {
+        for (int conversion = 0; conversion < 6; conversion++) {
+            MemorySegment segment = conversion == 5 ? HEAP_ALIASED : ALIASED;
             byte[] expected = new byte[128];
             Arrays.fill(expected, BYTE_SENTINEL);
             MemorySegment reference = MemorySegment.ofArray(expected);
@@ -254,24 +268,25 @@ public class TestAArch64SVENarrowingCastStore {
             for (int lane = 0; lane < 4; lane++) {
                 ds[lane] = DOUBLE_VALUES[(index + lane) % DOUBLE_VALUES.length];
                 ls[lane] = LONG_VALUES[(index + lane) % LONG_VALUES.length];
-                if (conversion < 2 || conversion == 4) {
+                if (conversion < 2 || conversion >= 4) {
                     reference.set(ValueLayout.JAVA_DOUBLE_UNALIGNED, 32 + lane * 8, ds[lane]);
                 } else {
                     reference.set(ValueLayout.JAVA_LONG_UNALIGNED, 32 + lane * 8, ls[lane]);
                 }
             }
-            ALIASED.copyFrom(reference);
+            segment.copyFrom(reference);
             switch (conversion) {
                 case 0 -> testD2SAlias();
                 case 1 -> testD2FAlias();
                 case 2 -> testL2FAlias();
                 case 3 -> testL2BAlias();
                 case 4 -> testSharedCastStore();
+                case 5 -> testHeapAliasFallback();
             }
             for (int lane = 0; lane < 4; lane++) {
                 switch (conversion) {
                     case 0 -> reference.set(ValueLayout.JAVA_SHORT_UNALIGNED, 34 + lane * 2, (short) ds[lane]);
-                    case 1 -> reference.set(ValueLayout.JAVA_FLOAT_UNALIGNED, 34 + lane * 4, (float) ds[lane]);
+                    case 1, 5 -> reference.set(ValueLayout.JAVA_FLOAT_UNALIGNED, 34 + lane * 4, (float) ds[lane]);
                     case 2 -> reference.set(ValueLayout.JAVA_FLOAT_UNALIGNED, 34 + lane * 4, (float) ls[lane]);
                     case 3 -> reference.set(ValueLayout.JAVA_BYTE, 34 + lane, (byte) ls[lane]);
                     case 4 -> {
@@ -287,16 +302,16 @@ public class TestAArch64SVENarrowingCastStore {
                 }
             }
             for (int i = 0; i < 128; i++) {
-                boolean floatStore = (conversion == 1 || conversion == 2 || conversion == 4) && i >= 34 && i < 50;
+                boolean floatStore = (conversion == 1 || conversion == 2 || conversion >= 4) && i >= 34 && i < 50;
                 boolean sharedFloatStore = conversion == 4 && i < 16;
                 if (floatStore || sharedFloatStore) {
                     int start = sharedFloatStore ? 0 : 34;
                     if ((i - start) % 4 == 0) {
-                        checkFloat(ALIASED.get(ValueLayout.JAVA_FLOAT_UNALIGNED, i),
+                        checkFloat(segment.get(ValueLayout.JAVA_FLOAT_UNALIGNED, i),
                                    reference.get(ValueLayout.JAVA_FLOAT_UNALIGNED, i));
                     }
                 } else {
-                    Asserts.assertEQ(ALIASED.get(ValueLayout.JAVA_BYTE, i), expected[i]);
+                    Asserts.assertEQ(segment.get(ValueLayout.JAVA_BYTE, i), expected[i]);
                 }
             }
         }
