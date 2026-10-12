@@ -62,6 +62,39 @@ double parse_java_decimal(const void* value, int length, int ix) {
                  : parse_java_decimal<double>(first, first + length);
 }
 
+template <typename T, typename C>
+int64_t parse_java_integer(const C* first, const C* last) {
+  // Java accepts one leading plus, but no whitespace, suffix or base prefix.
+  if (first != last && *first == C('+')) {
+    ++first;
+    if (first != last && (*first == C('+') || *first == C('-'))) {
+      return INT64_MIN;
+    }
+  }
+  T value;
+  auto parsed = fast_float::from_chars(first, last, value, 10);
+  if (parsed.ec != std::errc() || parsed.ptr != last) {
+    return INT64_MIN;
+  }
+  uint64_t bits = uint64_t(value);
+  int64_t result;
+  memcpy(&result, &bits, sizeof(result));
+  return result;
+}
+
+template <typename C>
+int64_t parse_java_integer(const void* value, int length, int mode) {
+  const C* first = static_cast<const C*>(value);
+  const C* last = first + length;
+  switch (mode) {
+    case 0: return parse_java_integer<int32_t>(first, last);
+    case 1: return parse_java_integer<int64_t>(first, last);
+    case 2: return parse_java_integer<uint32_t>(first, last);
+    case 3: return parse_java_integer<uint64_t>(first, last);
+    default: return INT64_MIN;
+  }
+}
+
 } // namespace
 
 double FastFloat::parse(const void* value, int byte_length, int coder, int ix) {
@@ -72,6 +105,16 @@ double FastFloat::parse(const void* value, int byte_length, int coder, int ix) {
   return coder == java_lang_String::CODER_LATIN1
       ? parse_java_decimal<char>(value, length, ix)
       : parse_java_decimal<char16_t>(value, length, ix);
+}
+
+int64_t FastFloat::parse_integer(const void* value, int byte_length, int coder, int mode) {
+  int length = byte_length >> coder;
+  if (length <= 0 || length > max_input_length) {
+    return INT64_MIN;
+  }
+  return coder == java_lang_String::CODER_LATIN1
+      ? parse_java_integer<char>(value, length, mode)
+      : parse_java_integer<char16_t>(value, length, mode);
 }
 
 // DecimalFormat's DigitList supplies a decimal point position separately.

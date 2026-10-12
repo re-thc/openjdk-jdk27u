@@ -29,12 +29,42 @@
 
 #ifdef _MSC_VER
 #  include <intrin.h>  // __lzcnt64/_umul128/__umulh
+#  define ZMIJ_MSC_VER _MSC_VER
+#else
+#  define ZMIJ_MSC_VER 0
+#endif
+
+#if defined(__has_builtin) && !defined(ZMIJ_NO_BUILTINS)
+#  define ZMIJ_HAS_BUILTIN(x) __has_builtin(x)
+#else
+#  define ZMIJ_HAS_BUILTIN(x) 0
+#endif
+#ifdef __has_attribute
+#  define ZMIJ_HAS_ATTRIBUTE(x) __has_attribute(x)
+#else
+#  define ZMIJ_HAS_ATTRIBUTE(x) 0
+#endif
+#ifdef __has_cpp_attribute
+#  define ZMIJ_HAS_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
+#else
+#  define ZMIJ_HAS_CPP_ATTRIBUTE(x) 0
 #endif
 
 #ifdef __cpp_lib_is_constant_evaluated
 #  define ZMIJ_CONSTEXPR20 constexpr
 #else
 #  define ZMIJ_CONSTEXPR20
+#endif
+
+#ifdef ZMIJ_USE_IS_CONSTANT_EVALUATED
+// Use the provided definition.
+#elif defined(__cpp_lib_is_constant_evaluated) ||                    \
+    ZMIJ_HAS_BUILTIN(__builtin_is_constant_evaluated) ||             \
+    (defined(_MSC_VER) && _MSC_VER >= 1925 && !defined(__clang__) && \
+     !defined(__CUDACC__) && !defined(ZMIJ_NO_BUILTINS))
+#  define ZMIJ_USE_IS_CONSTANT_EVALUATED 1
+#else
+#  define ZMIJ_USE_IS_CONSTANT_EVALUATED 0
 #endif
 
 // Disabling C++14 relaxed constexpr costs ~2x, so it is opt-in, not detected.
@@ -48,6 +78,80 @@
 #  define ZMIJ_CONSTEXPR
 // A default member initializer makes its class a non-aggregate in C++11.
 #  define ZMIJ_DEFAULT(...)
+#endif
+
+#ifdef __x86_64__
+#  define ZMIJ_X86_64 1
+#else
+#  define ZMIJ_X86_64 0
+#endif
+
+#ifndef ZMIJ_USE_SIMD
+#  define ZMIJ_USE_SIMD 1
+#endif
+
+#ifdef ZMIJ_USE_NEON
+// Use the provided definition.
+#elif defined(__ARM_NEON) || defined(_M_ARM64)
+#  define ZMIJ_USE_NEON ZMIJ_USE_SIMD
+#else
+#  define ZMIJ_USE_NEON 0
+#endif
+
+#ifdef ZMIJ_USE_SSE
+// Use the provided definition.
+#elif defined(__SSE2__)
+#  define ZMIJ_USE_SSE ZMIJ_USE_SIMD
+#elif defined(_M_AMD64) || (defined(_M_IX86_FP) && _M_IX86_FP == 2)
+#  define ZMIJ_USE_SSE ZMIJ_USE_SIMD
+#else
+#  define ZMIJ_USE_SSE 0
+#endif
+
+#ifdef ZMIJ_USE_SSE4_1
+// Use the provided definition.
+static_assert(!ZMIJ_USE_SSE4_1 || ZMIJ_USE_SSE, "SSE4.1 requires SSE");
+#elif defined(__SSE4_1__) || defined(__AVX__)
+// On MSVC there's no way to check for SSE4.1 specifically so check __AVX__.
+#  define ZMIJ_USE_SSE4_1 ZMIJ_USE_SSE
+#else
+#  define ZMIJ_USE_SSE4_1 0
+#endif
+
+#ifdef ZMIJ_OPTIMIZE_SIZE
+// Use the provided definition.
+#elif defined(__OPTIMIZE_SIZE__)
+#  define ZMIJ_OPTIMIZE_SIZE 1
+#else
+#  define ZMIJ_OPTIMIZE_SIZE 0
+#endif
+
+#if ZMIJ_HAS_ATTRIBUTE(always_inline) && !ZMIJ_OPTIMIZE_SIZE
+#  define ZMIJ_INLINE __attribute__((always_inline)) inline
+#elif ZMIJ_MSC_VER
+#  define ZMIJ_INLINE __forceinline
+#else
+#  define ZMIJ_INLINE inline
+#endif
+
+#if ZMIJ_HAS_CPP_ATTRIBUTE(likely) && ZMIJ_HAS_CPP_ATTRIBUTE(unlikely)
+#  define ZMIJ_LIKELY likely
+#  define ZMIJ_UNLIKELY unlikely
+#else
+#  define ZMIJ_LIKELY
+#  define ZMIJ_UNLIKELY
+#endif
+
+#if ZMIJ_HAS_CPP_ATTRIBUTE(maybe_unused)
+#  define ZMIJ_MAYBE_UNUSED maybe_unused
+#else
+#  define ZMIJ_MAYBE_UNUSED
+#endif
+
+#ifdef __GNUC__
+#  define ZMIJ_ASM(x) asm x
+#else
+#  define ZMIJ_ASM(x)
 #endif
 
 namespace zmij {
@@ -81,11 +185,24 @@ enum {
   long_double_buffer_size = 44,
 };
 
+// Minimum buffer capacities for integer write functions. They include space
+// for whole-block stores that may extend past the returned end pointer.
+enum {
+  uint32_buffer_size = 16,
+  int32_buffer_size = 17,
+  uint64_buffer_size = 20,
+  int64_buffer_size = 21,
+  uint128_buffer_size = 48,
+  int128_buffer_size = 49,
+};
+
 namespace detail {
 
 constexpr auto is_constant_evaluated() noexcept -> bool {
 #ifdef __cpp_lib_is_constant_evaluated
   return std::is_constant_evaluated();
+#elif ZMIJ_USE_IS_CONSTANT_EVALUATED
+  return __builtin_is_constant_evaluated();
 #else
   return false;
 #endif
@@ -178,8 +295,8 @@ inline ZMIJ_CONSTEXPR auto umul128(uint64_t x, uint64_t y) noexcept
 #if ZMIJ_USE_INT128
   return uint128_t(x) * y;
 #else
-#  ifdef __cpp_lib_is_constant_evaluated
-  if (!std::is_constant_evaluated()) {
+#  if ZMIJ_USE_IS_CONSTANT_EVALUATED
+  if (!is_constant_evaluated()) {
 #    if defined(_M_AMD64)
     uint64_t hi = 0;
     uint64_t lo = _umul128(x, y, &hi);
@@ -377,8 +494,7 @@ inline ZMIJ_CONSTEXPR auto compute_pow10(int exp) noexcept -> uint128 {
 // 10^dec_exp puts the decimal point in different bit positions:
 //   3 * 2**59 / 100 = 1.72...e+16  (needs shift = 1 + 1)
 //   3 * 2**60 / 100 = 3.45...e+16  (needs shift = 2 + 1)
-inline ZMIJ_CONSTEXPR auto compute_exp_shift(int bin_exp,
-                                             int dec_exp) noexcept
+inline ZMIJ_CONSTEXPR auto compute_exp_shift(int bin_exp, int dec_exp) noexcept
     -> signed char {
   assert(dec_exp >= -350 && dec_exp <= 350);
   // log2_pow10_sig = round(log2(10) * 2**log2_pow10_exp) + 1
@@ -391,8 +507,8 @@ inline ZMIJ_CONSTEXPR auto compute_exp_shift(int bin_exp,
 
 // Converts the nonzero finite binary value bin_sig * 2**bin_exp using yy.
 template <typename Float>
-inline ZMIJ_CONSTEXPR20 auto to_decimal(uint64_t bin_sig,
-                                        int bin_exp) noexcept -> dec_fp<> {
+inline ZMIJ_CONSTEXPR20 auto to_decimal(uint64_t bin_sig, int bin_exp) noexcept
+    -> dec_fp<> {
   assert(bin_sig != 0);
   constexpr uint64_t implicit_bit = float_traits<Float>::implicit_bit;
   bool irregular = bin_sig == implicit_bit;
@@ -618,14 +734,21 @@ inline auto clamp_end(char* out, size_t size, size_t n) noexcept -> char* {
 // Copies the result in [`buffer`, `end`) to `out`, truncating after `n` chars,
 // and returns the past-the-end pointer.
 inline ZMIJ_CONSTEXPR20 auto copy_clamped(char* out, size_t n,
-                                         const char* buffer,
-                                         const char* end) noexcept -> char* {
+                                          const char* buffer,
+                                          const char* end) noexcept -> char* {
   size_t size = size_t(end - buffer);
-  if (is_constant_evaluated())
-    return copy_n(out, buffer, size < n ? size : n);
+  if (is_constant_evaluated()) return copy_n(out, buffer, size < n ? size : n);
   memcpy(out, buffer, size < n ? size : n);
   return clamp_end(out, size, n);
 }
+
+// Writes an unsigned integer's decimal representation to `out` and returns its
+// logical end. Whole-block stores may extend past that pointer but never past
+// the corresponding *_buffer_size capacity.
+template <typename UInt> auto itoa(char* out, UInt value) noexcept -> char*;
+
+template <typename Int>
+auto itoa_signed(char* out, Int value) noexcept -> char*;
 
 }  // namespace detail
 
@@ -685,8 +808,8 @@ inline ZMIJ_CONSTEXPR20 auto write(char* out, size_t n, double value) noexcept
     -> char* {
   if (detail::is_constant_evaluated()) {
     char buffer[double_buffer_size] = {};
-    return detail::copy_clamped(
-        out, n, buffer, detail::write_constexpr(buffer, value));
+    return detail::copy_clamped(out, n, buffer,
+                                detail::write_constexpr(buffer, value));
   }
   char buffer[double_buffer_size];
   if (n >= sizeof(buffer)) return detail::write(out, value);
@@ -697,8 +820,8 @@ inline ZMIJ_CONSTEXPR20 auto write(char* out, size_t n, float value) noexcept
     -> char* {
   if (detail::is_constant_evaluated()) {
     char buffer[float_buffer_size] = {};
-    return detail::copy_clamped(
-        out, n, buffer, detail::write_constexpr(buffer, value));
+    return detail::copy_clamped(out, n, buffer,
+                                detail::write_constexpr(buffer, value));
   }
   char buffer[float_buffer_size];
   if (n >= sizeof(buffer)) return detail::write(out, value);
@@ -709,6 +832,65 @@ inline auto write(char* out, size_t n, long double value) noexcept -> char* {
   if (LDBL_MANT_DIG == DBL_MANT_DIG) return write(out, n, double(value));
   return detail::clamp_end(out, detail::write_big(out, n, value), n);
 }
+
+/// Writes the decimal representation of `value` to `out` without a null
+/// terminator. Returns a pointer past the last character written; if the
+/// representation exceeds `n` characters, only the first `n` are written.
+inline auto write(char* out, size_t n, int value) noexcept -> char* {
+  char buffer[int32_buffer_size];
+  if (n >= sizeof(buffer)) return detail::itoa_signed(out, int32_t(value));
+  return detail::copy_clamped(out, n, buffer,
+                              detail::itoa_signed(buffer, int32_t(value)));
+}
+
+inline auto write(char* out, size_t n, unsigned value) noexcept -> char* {
+  char buffer[uint32_buffer_size];
+  if (n >= sizeof(buffer)) return detail::itoa(out, uint32_t(value));
+  return detail::copy_clamped(out, n, buffer,
+                              detail::itoa(buffer, uint32_t(value)));
+}
+
+inline auto write(char* out, size_t n, long long value) noexcept -> char* {
+  char buffer[int64_buffer_size];
+  if (n >= sizeof(buffer)) return detail::itoa_signed(out, int64_t(value));
+  return detail::copy_clamped(out, n, buffer,
+                              detail::itoa_signed(buffer, int64_t(value)));
+}
+
+inline auto write(char* out, size_t n, unsigned long long value) noexcept
+    -> char* {
+  char buffer[uint64_buffer_size];
+  if (n >= sizeof(buffer)) return detail::itoa(out, uint64_t(value));
+  return detail::copy_clamped(out, n, buffer,
+                              detail::itoa(buffer, uint64_t(value)));
+}
+
+inline auto write(char* out, size_t n, long value) noexcept -> char* {
+  if (sizeof(long) <= sizeof(int32_t)) return write(out, n, int(value));
+  return write(out, n, static_cast<long long>(value));
+}
+
+inline auto write(char* out, size_t n, unsigned long value) noexcept -> char* {
+  if (sizeof(unsigned long) <= sizeof(uint32_t))
+    return write(out, n, static_cast<unsigned>(value));
+  return write(out, n, static_cast<unsigned long long>(value));
+}
+
+#if ZMIJ_USE_INT128
+inline auto write(char* out, size_t n, __int128 value) noexcept -> char* {
+  char buffer[int128_buffer_size];
+  if (n >= sizeof(buffer)) return detail::itoa_signed(out, value);
+  return detail::copy_clamped(out, n, buffer,
+                              detail::itoa_signed(buffer, value));
+}
+
+inline auto write(char* out, size_t n, unsigned __int128 value) noexcept
+    -> char* {
+  char buffer[uint128_buffer_size];
+  if (n >= sizeof(buffer)) return detail::itoa(out, value);
+  return detail::copy_clamped(out, n, buffer, detail::itoa(buffer, value));
+}
+#endif  // ZMIJ_USE_INT128
 
 /// Writes `value` in scientific format with `precision` digits after the
 /// decimal point (e.g. 1.234e+05) to `out`, without a null terminator, like

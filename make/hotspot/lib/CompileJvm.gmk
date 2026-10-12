@@ -141,8 +141,8 @@ JVM_PRECOMPILED_HEADER := $(TOPDIR)/src/hotspot/share/precompiled/precompiled.hp
 ifeq ($(TOOLCHAIN_TYPE), clang)
   ifeq ($(call isTargetOs, linux), true)
     ifeq ($(OPENJDK_TARGET_CPU_ARCH), x86)
-      JVM_PRECOMPILED_HEADER_EXCLUDE += fastFloat.cpp zmij.cpp zmij_sse.cpp
-      $(foreach file, fastFloat.cpp zmij.cpp zmij_sse.cpp, \
+      JVM_PRECOMPILED_HEADER_EXCLUDE += fastFloat.cpp zmij.cpp zmij_sse.cpp zmijInteger.cpp zmijInteger_sse.cpp
+      $(foreach file, fastFloat.cpp zmij.cpp zmij_sse.cpp zmijInteger.cpp zmijInteger_sse.cpp, \
           $(eval BUILD_LIBJVM_$(file)_EXTRA_CXXFLAGS += -include mm_malloc.h))
     endif
   endif
@@ -246,6 +246,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_clang_zTracer.cpp := undefined-var-template, \
     DISABLED_WARNINGS_clang_zmij.cpp := deprecated-declarations unneeded-internal-declaration, \
     DISABLED_WARNINGS_clang_zmij_sse.cpp := deprecated-declarations unneeded-internal-declaration, \
+    DISABLED_WARNINGS_clang_zmijInteger.cpp := deprecated-declarations unneeded-internal-declaration, \
+    DISABLED_WARNINGS_clang_zmijInteger_sse.cpp := deprecated-declarations unneeded-internal-declaration, \
     DISABLED_WARNINGS_clang_aix_debug.cpp := format-nonliteral, \
     DISABLED_WARNINGS_clang_aix_jvm.cpp := format-nonliteral, \
     DISABLED_WARNINGS_clang_aix_osThread_aix.cpp := tautological-undefined-compare, \
@@ -253,6 +255,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_microsoft_fastFloat.cpp := 4996, \
     DISABLED_WARNINGS_microsoft_zmij.cpp := 4390 4804, \
     DISABLED_WARNINGS_microsoft_zmij_sse.cpp := 4390 4804, \
+    DISABLED_WARNINGS_microsoft_zmijInteger.cpp := 4390 4804, \
+    DISABLED_WARNINGS_microsoft_zmijInteger_sse.cpp := 4390 4804, \
     ASFLAGS := $(JVM_ASFLAGS), \
     LD_SET_ORIGIN := false, \
     DEFAULT_LDFLAGS := false, \

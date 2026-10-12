@@ -85,6 +85,14 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_fmaF,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_math_fmaD,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_ref_reference_get0,                               // implementation of java.lang.ref.Reference.get()
+    java_lang_Integer_parseInt,
+    java_lang_Long_parseLong,
+    java_lang_Integer_parseUnsignedInt,
+    java_lang_Long_parseUnsignedLong,
+    jdk_internal_util_formatIntLatin1,
+    jdk_internal_util_formatIntUTF16,
+    jdk_internal_util_formatLongLatin1,
+    jdk_internal_util_formatLongUTF16,
     jdk_internal_math_decimalZmij,
     jdk_internal_math_formatZmij,
     jdk_internal_math_parseFastFloatDigits,

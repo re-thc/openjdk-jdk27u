@@ -38,6 +38,9 @@ class FastFloat : AllStatic {
   // ix == 1 rounds directly to float, then widens exactly to double.
   static double parse(const void* value, int byte_length, int coder, int ix);
   static double parse_digits(const void* digits, int length, int decimal_exponent);
+  // Mode bit 0 selects 64 bits, bit 1 selects unsigned. INT64_MIN requests
+  // Java fallback; a successful result with those bits also goes through Java.
+  static int64_t parse_integer(const void* value, int byte_length, int coder, int mode);
 };
 
 #endif // SHARE_UTILITIES_FASTFLOAT_HPP

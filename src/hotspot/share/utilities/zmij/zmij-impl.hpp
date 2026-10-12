@@ -17,42 +17,11 @@
 #include <limits>       // std::numeric_limits
 #include <type_traits>  // std::conditional
 
-#ifndef ZMIJ_USE_SIMD
-#  define ZMIJ_USE_SIMD 1
-#endif
-
-#ifdef ZMIJ_USE_NEON
-// Use the provided definition.
-#elif defined(__ARM_NEON) || defined(_M_ARM64)
-#  define ZMIJ_USE_NEON ZMIJ_USE_SIMD
-#else
-#  define ZMIJ_USE_NEON 0
-#endif
 #if ZMIJ_USE_NEON
 #  include <arm_neon.h>
 #endif
-
-#ifdef ZMIJ_USE_SSE
-// Use the provided definition.
-#elif defined(__SSE2__)
-#  define ZMIJ_USE_SSE ZMIJ_USE_SIMD
-#elif defined(_M_AMD64) || (defined(_M_IX86_FP) && _M_IX86_FP == 2)
-#  define ZMIJ_USE_SSE ZMIJ_USE_SIMD
-#else
-#  define ZMIJ_USE_SSE 0
-#endif
 #if ZMIJ_USE_SSE
 #  include <immintrin.h>
-#endif
-
-#ifdef ZMIJ_USE_SSE4_1
-// Use the provided definition.
-static_assert(!ZMIJ_USE_SSE4_1 || ZMIJ_USE_SSE);
-#elif defined(__SSE4_1__) || defined(__AVX__)
-// On MSVC there's no way to check for SSE4.1 specifically so check __AVX__.
-#  define ZMIJ_USE_SSE4_1 ZMIJ_USE_SSE
-#else
-#  define ZMIJ_USE_SSE4_1 0
 #endif
 
 #ifdef __aarch64__
@@ -61,75 +30,14 @@ static_assert(!ZMIJ_USE_SSE4_1 || ZMIJ_USE_SSE);
 #  define ZMIJ_AARCH64 0
 #endif
 
-#ifdef __x86_64__
-#  define ZMIJ_X86_64 1
-#else
-#  define ZMIJ_X86_64 0
-#endif
-
 #ifdef __clang__
 #  define ZMIJ_CLANG 1
 #else
 #  define ZMIJ_CLANG 0
 #endif
 
-#ifdef _MSC_VER
-#  define ZMIJ_MSC_VER _MSC_VER
-#else
-#  define ZMIJ_MSC_VER 0
-#endif
-
-#if defined(__has_builtin) && !defined(ZMIJ_NO_BUILTINS)
-#  define ZMIJ_HAS_BUILTIN(x) __has_builtin(x)
-#else
-#  define ZMIJ_HAS_BUILTIN(x) 0
-#endif
-#ifdef __has_attribute
-#  define ZMIJ_HAS_ATTRIBUTE(x) __has_attribute(x)
-#else
-#  define ZMIJ_HAS_ATTRIBUTE(x) 0
-#endif
-#ifdef __has_cpp_attribute
-#  define ZMIJ_HAS_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
-#else
-#  define ZMIJ_HAS_CPP_ATTRIBUTE(x) 0
-#endif
-
-#if ZMIJ_HAS_CPP_ATTRIBUTE(likely) && ZMIJ_HAS_CPP_ATTRIBUTE(unlikely)
-#  define ZMIJ_UNLIKELY unlikely
-#else
-#  define ZMIJ_UNLIKELY
-#endif
-
-#if ZMIJ_HAS_CPP_ATTRIBUTE(maybe_unused)
-#  define ZMIJ_MAYBE_UNUSED maybe_unused
-#else
-#  define ZMIJ_MAYBE_UNUSED
-#endif
-
-#ifdef ZMIJ_OPTIMIZE_SIZE
-// Use the provided definition.
-#elif defined(__OPTIMIZE_SIZE__)
-#  define ZMIJ_OPTIMIZE_SIZE 1
-#else
-#  define ZMIJ_OPTIMIZE_SIZE 0
-#endif
 #ifndef ZMIJ_USE_EXP_STRING_TABLE
 #  define ZMIJ_USE_EXP_STRING_TABLE ZMIJ_OPTIMIZE_SIZE == 0
-#endif
-
-#if ZMIJ_HAS_ATTRIBUTE(always_inline) && !ZMIJ_OPTIMIZE_SIZE
-#  define ZMIJ_INLINE __attribute__((always_inline)) inline
-#elif ZMIJ_MSC_VER
-#  define ZMIJ_INLINE __forceinline
-#else
-#  define ZMIJ_INLINE inline
-#endif
-
-#ifdef __GNUC__
-#  define ZMIJ_ASM(x) asm x
-#else
-#  define ZMIJ_ASM(x)
 #endif
 
 // Declares struct members that must live in memory on ARM64 but are encoded as
@@ -223,10 +131,10 @@ ZMIJ_INLINE auto select(uint64_t condition, int64_t true_value,
 using zmij::detail::compute_dec_exp;
 using zmij::detail::compute_exp_shift;
 using zmij::detail::float_traits;
-using zmij::detail::umul128;
-using zmij::detail::umul192_hi128;
 using zmij::detail::uint128;
 using zmij::detail::uint128_t;
+using zmij::detail::umul128;
+using zmij::detail::umul192_hi128;
 
 #if ZMIJ_USE_INT128 && defined(__APPLE__)
 constexpr bool use_umul128_hi64 = true;  // Use umul128_hi64 for division.
@@ -467,7 +375,9 @@ struct exp_string_table {
       if (abs_e >= 100) val |= uint64_t('0' + abs_e / 100) << (8 * len++);
       if (abs_e >= 10) val |= uint64_t('0' + abs_e / 10 % 10) << (8 * len++);
       val |= uint64_t('0' + abs_e % 10) << (8 * len++);
-      t.data[e + offset] = (uint64_t(len) << 48) | val;
+      // Retain the float shuffle's digit, point, zero and length bytes.
+      t.data[e + offset] = (uint64_t(len) << 56) | (uint64_t('0') << 48) |
+                          (uint64_t('.') << 40) | (uint64_t('0') << 32) | val;
     }
     return t;
   }
@@ -553,9 +463,8 @@ struct float_shuffle_table {
     float_shuffle_table t;
     for (int idx = 0; idx < num_variants && enable; ++idx) {
       int sig_index = idx >> 1;
-      sig_shuffle s = make_sig_shuffle(sig_index + 1,
-                                       sig_index == num_bcd_digits,
-                                       (idx & 1) != 0);
+      sig_shuffle s = make_sig_shuffle(
+          sig_index + 1, sig_index == num_bcd_digits, (idx & 1) != 0);
       for (int slot = 0; slot < num_slots; ++slot) {
         unsigned char* out = &t.data[(slot * num_variants + idx) * 16];
         // Shuffle high bit: output 0.
@@ -1081,15 +990,14 @@ ZMIJ_INLINE auto write_float_simd(char* buffer, const dec_digits<32>& dig,
                                   int last_digit, bool has_last_digit,
                                   bool has_extra_digit, int dec_exp,
                                   const data& d) noexcept -> char* {
-  // Packed for insertion into lane 1: byte 0 of `tail` lands at register
-  // byte exp_pos (8), so the exp string fills exp_pos..exp_pos+3; the prefix
-  // shifts place '0'+last_digit at last_digit_pos (12), '.' at point_pos (13)
-  // and '0' at zero_pos (14). Only exp_data's four exponent chars are used; the
-  // length it also carries comes from the shuffle entry instead.
+  // Inserted whole into lane 1: byte 0 of the entry lands at register byte
+  // exp_pos (8), so the exp string fills exp_pos..exp_pos+3, its '.' and '0'
+  // land at point_pos (13) and zero_pos (14), and its '0' at last_digit_pos
+  // (12) only has the last digit added to it. The entry's length ends up in
+  // byte 15, which no shuffle reads; the output length comes from the shuffle
+  // entry.
   uint64_t exp_data = d.exp_strings.data[dec_exp + exp_string_table::offset];
-  uint32_t prefix = (uint32_t('.') << 8) + uint32_t('0') + last_digit;
-  uint64_t tail =
-      uint32_t(exp_data) | (uint64_t(prefix) << 32) | (uint64_t('0') << 48);
+  uint64_t tail = exp_data + (uint64_t(last_digit) << 32);
   auto entry = d.float_shuffles.get_entry(dec_exp, dig.num_digits,
                                           has_last_digit, has_extra_digit);
 #if ZMIJ_USE_SSE4_1
@@ -1109,7 +1017,7 @@ ZMIJ_INLINE auto write_float_simd(char* buffer, const dec_digits<32>& dig,
 #endif
   bool scientific = dec_exp < float_traits<float>::min_fixed_dec_exp ||
                     dec_exp > float_traits<float>::max_fixed_dec_exp;
-  return buffer + entry.length - (scientific ? 4 - int(exp_data >> 48) : 0);
+  return buffer + entry.length - (scientific ? 4 - int(exp_data >> 56) : 0);
 }
 
 ZMIJ_INLINE auto write_float_simd(char*, const dec_digits<64>&, int, bool, bool,
@@ -1395,9 +1303,8 @@ ZMIJ_INLINE auto to_decimal(uint64_t bin_sig, int bin_exp,
     dec_sig = scaled.integral / 10;
     uint64_t last_digit = scaled.integral - dec_sig * 10;
     bool has_fraction = (scaled.fraction | scaled.fraction_tail) != 0;
-    bool round_up =
-        5 < last_digit ||
-        (last_digit == 5 && (has_fraction || (dec_sig & 1) != 0));
+    bool round_up = 5 < last_digit ||
+                    (last_digit == 5 && (has_fraction || (dec_sig & 1) != 0));
     dec_sig += round_up;
     ++dec_exp;
   }
@@ -1663,8 +1570,7 @@ namespace zmij {
 
 namespace detail {
 
-template <typename Float>
-auto to_decimal(Float value) noexcept -> dec_fp<> {
+template <typename Float> auto to_decimal(Float value) noexcept -> dec_fp<> {
   using traits = float_traits<Float>;
   auto bits = traits::to_bits(value);
   auto bin_exp = traits::get_exp(bits);  // binary exponent
@@ -1798,7 +1704,7 @@ auto write(char* buffer, Float value) noexcept -> char* {
   // Write exponent.
   if (exp_string_table::enable) {
     uint64_t exp_data = d->exp_strings.data[dec_exp + exp_string_table::offset];
-    int len = int(exp_data >> 48);
+    int len = int(exp_data >> 56);
     if (is_big_endian) exp_data = bswap64(exp_data);
     memcpy(buffer, &exp_data, traits::max_exponent10 >= 100 ? 8 : 4);
     return buffer + len;
@@ -2096,9 +2002,8 @@ auto write_fixed(char* buffer, Float value, int precision) noexcept -> char* {
     dec_sig = integral / pow;
     uint64_t remainder = integral - dec_sig * pow;
     uint64_t half = pow / 2;
-    bool round_up =
-        half < remainder ||
-        (half == remainder && (has_fraction || (dec_sig & 1) != 0));
+    bool round_up = half < remainder ||
+                    (half == remainder && (has_fraction || (dec_sig & 1) != 0));
     dec_sig += round_up;
   } else {
     dec_sig = round_even(scaled);
@@ -2146,8 +2051,10 @@ auto write_hex(char* buffer, Float value, bool prefix) noexcept -> char* {
   if (!traits::is_normal(bin_exp)) [[ZMIJ_UNLIKELY]] {
     if (bin_exp != 0) return write_inf_nan(buffer, bin_sig != 0);
     zero = bin_sig == 0;
-    if (zero) bin_exp = traits::exp_bias;  // This cancels to 0 below.
-    else normalize<Float>(bin_sig, bin_exp);
+    if (zero)
+      bin_exp = traits::exp_bias;  // This cancels to 0 below.
+    else
+      normalize<Float>(bin_sig, bin_exp);
   }
   bin_exp -= traits::exp_bias;
 
@@ -2182,8 +2089,10 @@ auto write_hex(char* out, size_t n, Float value, int precision,
   if (!traits::is_normal(bin_exp)) [[ZMIJ_UNLIKELY]] {
     if (bin_exp != 0) return w.write(bin_sig != 0 ? "nan" : "inf", 3);
     zero = bin_sig == 0;
-    if (zero) bin_exp = traits::exp_bias;  // This cancels to 0 below.
-    else normalize<Float>(bin_sig, bin_exp);
+    if (zero)
+      bin_exp = traits::exp_bias;  // This cancels to 0 below.
+    else
+      normalize<Float>(bin_sig, bin_exp);
   }
   bin_exp -= traits::exp_bias;
 

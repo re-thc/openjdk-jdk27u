@@ -211,6 +211,17 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_util_zip_CRC32C_updateBytes)
   method_entry(java_util_zip_CRC32C_updateDirectByteBuffer)
 
+#if (defined(AMD64) || defined(AARCH64)) && !defined(ZERO)
+  method_entry(java_lang_Integer_parseInt)
+  method_entry(java_lang_Long_parseLong)
+  method_entry(java_lang_Integer_parseUnsignedInt)
+  method_entry(java_lang_Long_parseUnsignedLong)
+  method_entry(jdk_internal_util_formatIntLatin1)
+  method_entry(jdk_internal_util_formatIntUTF16)
+  method_entry(jdk_internal_util_formatLongLatin1)
+  method_entry(jdk_internal_util_formatLongUTF16)
+#endif
+
   method_entry(java_lang_Float_float16ToFloat);
   method_entry(java_lang_Float_floatToFloat16);
 
@@ -477,6 +488,14 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   case Interpreter::java_lang_ref_reference_get0
                                            : entry_point = generate_Reference_get_entry(); break;
 #if (defined(AMD64) || defined(AARCH64)) && !defined(ZERO)
+  case Interpreter::java_lang_Integer_parseInt:
+  case Interpreter::java_lang_Long_parseLong:
+  case Interpreter::java_lang_Integer_parseUnsignedInt:
+  case Interpreter::java_lang_Long_parseUnsignedLong:
+  case Interpreter::jdk_internal_util_formatIntLatin1:
+  case Interpreter::jdk_internal_util_formatIntUTF16:
+  case Interpreter::jdk_internal_util_formatLongLatin1:
+  case Interpreter::jdk_internal_util_formatLongUTF16: entry_point = generate_integer_entry(kind); break;
   case Interpreter::jdk_internal_math_decimalZmij:
   case Interpreter::jdk_internal_math_formatZmij: entry_point = generate_zmij_entry(kind); break;
   case Interpreter::jdk_internal_math_parseFastFloatDigits:

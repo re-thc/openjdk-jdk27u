@@ -60,6 +60,7 @@
 #include "utilities/fastFloat.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/zmij.hpp"
+#include "utilities/zmijInteger.hpp"
 #include <sys/types.h>
 
 // Size of interpreter code.  Increase if too small.  Interpreter will
@@ -980,6 +981,74 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
   return entry;
 
+}
+
+// Decimal integer kernels are interpreter entries; compiled methods keep their Java bodies.
+address TemplateInterpreterGenerator::generate_integer_entry(AbstractInterpreter::MethodKind kind) {
+  bool parse = kind >= Interpreter::java_lang_Integer_parseInt &&
+               kind <= Interpreter::java_lang_Long_parseUnsignedLong;
+  // Keep ordinary profiling and compilation in tiered VMs. Frameless successes
+  // do not collect the bytecode profiles required by the Java C1/C2 algorithms.
+  if (UseCompiler || CountCompiledCalls ||
+      !(parse ? UseFastIntegerIntrinsics : UseZmijIntegerIntrinsics)) return nullptr;
+  int mode = parse ? int(kind - Interpreter::java_lang_Integer_parseInt)
+                   : int(kind - Interpreter::jdk_internal_util_formatIntLatin1);
+  // Writer kinds enumerate int Latin1/UTF16, then long Latin1/UTF16.
+  if (!parse) mode = ((mode & 1) << 1) | (mode >> 1);
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false, false);
+  if (JvmtiExport::can_post_interpreter_events()) {
+    __ ldrw(rscratch1, Address(rthread, JavaThread::interp_only_mode_offset()));
+    __ cbnz(rscratch1, slow_path);
+  }
+  if (parse) {
+    __ ldrw(rscratch1, Address(esp));
+    __ cmpw(rscratch1, 10);
+    __ b(Assembler::NE, slow_path);
+    __ ldr(c_rarg0, Address(esp, wordSize));
+    __ cbz(c_rarg0, slow_path);
+    __ ldrb(c_rarg2, Address(c_rarg0, java_lang_String::coder_offset()));
+    __ load_heap_oop(c_rarg0, Address(c_rarg0, java_lang_String::value_offset()), rscratch1, rscratch2);
+    __ ldrw(c_rarg1, Address(c_rarg0, arrayOopDesc::length_offset_in_bytes()));
+    __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    target = CAST_FROM_FN_PTR(address, FastFloat::parse_integer);
+  } else {
+    __ ldr(c_rarg0, Address(esp));
+    __ cbz(c_rarg0, slow_path);
+    __ ldrw(c_rarg1, Address(c_rarg0, arrayOopDesc::length_offset_in_bytes()));
+    __ lsl(c_rarg1, c_rarg1, 32);
+    __ ldrw(rscratch1, Address(esp, wordSize));
+    __ orr(c_rarg1, c_rarg1, rscratch1);
+    __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    if ((mode & 1) != 0) {
+      __ ldr(c_rarg2, Address(esp, 2 * wordSize));
+    } else {
+      __ ldrw(c_rarg2, Address(esp, 2 * wordSize));
+    }
+    target = CAST_FROM_FN_PTR(address, ZmijInteger::formatter());
+  }
+  __ mov(c_rarg3, mode);
+  // Keep the original Java stack and link register for a rejected-input fallback.
+  // super_call_VM_leaf preserves rmethod; esp and the sender SP are callee-saved.
+  __ mov(rscratch2, sp);
+  __ andr(sp, rscratch2, -16);
+  __ stp(rscratch2, lr, Address(pre(sp, -2 * wordSize)));
+  __ super_call_VM_leaf(target, c_rarg0, c_rarg1, c_rarg2, c_rarg3);
+  __ ldp(rscratch2, lr, Address(post(sp, 2 * wordSize)));
+  __ mov(sp, rscratch2);
+  if (parse) {
+    __ mov(rscratch1, (uint64_t)min_jlong);
+    __ cmp(r0, rscratch1);
+    __ b(Assembler::EQ, slow_path);
+  } else {
+    __ tbnz(r0, 31, slow_path);
+  }
+  __ andr(sp, r19_sender_sp, -16);
+  __ ret(lr);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
 }
 
 /**

@@ -122,6 +122,46 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
 
     switch (iid) {
 #if (defined(AMD64) || defined(AARCH64)) && !defined(ZERO)
+      case vmIntrinsics::_parseDecimalInt:
+        if (UseFastIntegerIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
+          return java_lang_Integer_parseInt;
+        }
+        break;
+      case vmIntrinsics::_parseDecimalLong:
+        if (UseFastIntegerIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
+          return java_lang_Long_parseLong;
+        }
+        break;
+      case vmIntrinsics::_parseUnsignedDecimalInt:
+        if (UseFastIntegerIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
+          return java_lang_Integer_parseUnsignedInt;
+        }
+        break;
+      case vmIntrinsics::_parseUnsignedDecimalLong:
+        if (UseFastIntegerIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
+          return java_lang_Long_parseUnsignedLong;
+        }
+        break;
+      case vmIntrinsics::_formatDecimalIntLatin1:
+        if (UseZmijIntegerIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
+          return jdk_internal_util_formatIntLatin1;
+        }
+        break;
+      case vmIntrinsics::_formatDecimalIntUTF16:
+        if (UseZmijIntegerIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
+          return jdk_internal_util_formatIntUTF16;
+        }
+        break;
+      case vmIntrinsics::_formatDecimalLongLatin1:
+        if (UseZmijIntegerIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
+          return jdk_internal_util_formatLongLatin1;
+        }
+        break;
+      case vmIntrinsics::_formatDecimalLongUTF16:
+        if (UseZmijIntegerIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
+          return jdk_internal_util_formatLongUTF16;
+        }
+        break;
       case vmIntrinsics::_decimalZmij:
         if (UseZmijIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
           return jdk_internal_math_decimalZmij;
@@ -234,6 +274,14 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case java_lang_math_fmaD        : return vmIntrinsics::_fmaD;
   case java_lang_math_fmaF        : return vmIntrinsics::_fmaF;
   case java_lang_ref_reference_get0: return vmIntrinsics::_Reference_get0;
+  case java_lang_Integer_parseInt: return vmIntrinsics::_parseDecimalInt;
+  case java_lang_Long_parseLong: return vmIntrinsics::_parseDecimalLong;
+  case java_lang_Integer_parseUnsignedInt: return vmIntrinsics::_parseUnsignedDecimalInt;
+  case java_lang_Long_parseUnsignedLong: return vmIntrinsics::_parseUnsignedDecimalLong;
+  case jdk_internal_util_formatIntLatin1: return vmIntrinsics::_formatDecimalIntLatin1;
+  case jdk_internal_util_formatIntUTF16: return vmIntrinsics::_formatDecimalIntUTF16;
+  case jdk_internal_util_formatLongLatin1: return vmIntrinsics::_formatDecimalLongLatin1;
+  case jdk_internal_util_formatLongUTF16: return vmIntrinsics::_formatDecimalLongUTF16;
   case jdk_internal_math_decimalZmij: return vmIntrinsics::_decimalZmij;
   case jdk_internal_math_formatZmij: return vmIntrinsics::_formatZmij;
   case jdk_internal_math_parseFastFloatDigits: return vmIntrinsics::_parseFastFloatDigits;
@@ -344,6 +392,14 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_math_fmaF    : tty->print("java_lang_math_fmaF"    ); break;
     case java_lang_math_sqrt    : tty->print("java_lang_math_sqrt"    ); break;
     case java_lang_math_sqrt_strict           : tty->print("java_lang_math_sqrt_strict"); break;
+    case java_lang_Integer_parseInt: tty->print("java_lang_Integer_parseInt"); break;
+    case java_lang_Long_parseLong: tty->print("java_lang_Long_parseLong"); break;
+    case java_lang_Integer_parseUnsignedInt: tty->print("java_lang_Integer_parseUnsignedInt"); break;
+    case java_lang_Long_parseUnsignedLong: tty->print("java_lang_Long_parseUnsignedLong"); break;
+    case jdk_internal_util_formatIntLatin1: tty->print("jdk_internal_util_formatIntLatin1"); break;
+    case jdk_internal_util_formatIntUTF16: tty->print("jdk_internal_util_formatIntUTF16"); break;
+    case jdk_internal_util_formatLongLatin1: tty->print("jdk_internal_util_formatLongLatin1"); break;
+    case jdk_internal_util_formatLongUTF16: tty->print("jdk_internal_util_formatLongUTF16"); break;
     case jdk_internal_math_decimalZmij: tty->print("jdk_internal_math_decimalZmij"); break;
     case jdk_internal_math_formatZmij: tty->print("jdk_internal_math_formatZmij"); break;
     case jdk_internal_math_parseFastFloatDigits: tty->print("jdk_internal_math_parseFastFloatDigits"); break;

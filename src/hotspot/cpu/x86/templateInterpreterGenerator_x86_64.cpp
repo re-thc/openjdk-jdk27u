@@ -29,10 +29,12 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/fastFloat.hpp"
 #include "utilities/zmij.hpp"
+#include "utilities/zmijInteger.hpp"
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
@@ -178,6 +180,69 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   return entry;
 }
 #endif  // __WIN64
+
+// Decimal integer kernels are interpreter entries; compiled methods keep their Java bodies.
+address TemplateInterpreterGenerator::generate_integer_entry(AbstractInterpreter::MethodKind kind) {
+  bool parse = kind >= Interpreter::java_lang_Integer_parseInt &&
+               kind <= Interpreter::java_lang_Long_parseUnsignedLong;
+  // Keep ordinary profiling and compilation in tiered VMs. Frameless successes
+  // do not collect the bytecode profiles required by the Java C1/C2 algorithms.
+  if (UseCompiler || CountCompiledCalls ||
+      !(parse ? UseFastIntegerIntrinsics : UseZmijIntegerIntrinsics)) return nullptr;
+  int mode = parse ? int(kind - Interpreter::java_lang_Integer_parseInt)
+                   : int(kind - Interpreter::jdk_internal_util_formatIntLatin1);
+  // Writer kinds enumerate int Latin1/UTF16, then long Latin1/UTF16.
+  if (!parse) mode = ((mode & 1) << 1) | (mode >> 1);
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false, false);
+  if (JvmtiExport::can_post_interpreter_events()) {
+    __ cmpl(Address(r15_thread, JavaThread::interp_only_mode_offset()), 0);
+    __ jcc(Assembler::notEqual, slow_path);
+  }
+  if (parse) {
+    __ cmpl(Address(rsp, wordSize), 10);
+    __ jcc(Assembler::notEqual, slow_path);
+    __ movptr(c_rarg0, Address(rsp, 2 * wordSize));
+    __ testptr(c_rarg0, c_rarg0);
+    __ jcc(Assembler::zero, slow_path);
+    __ load_unsigned_byte(c_rarg2, Address(c_rarg0, java_lang_String::coder_offset()));
+    __ load_heap_oop(c_rarg0, Address(c_rarg0, java_lang_String::value_offset()), rax);
+    __ movl(c_rarg1, Address(c_rarg0, arrayOopDesc::length_offset_in_bytes()));
+    __ addptr(c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    __ movl(c_rarg3, mode);
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, FastFloat::parse_integer),
+                          c_rarg0, c_rarg1, c_rarg2, c_rarg3);
+    __ movptr(rscratch1, (intptr_t)min_jlong);
+    __ cmpptr(rax, rscratch1);
+    __ jcc(Assembler::equal, slow_path);
+  } else {
+    __ movptr(c_rarg0, Address(rsp, wordSize));
+    __ testptr(c_rarg0, c_rarg0);
+    __ jcc(Assembler::zero, slow_path);
+    __ movl(c_rarg1, Address(c_rarg0, arrayOopDesc::length_offset_in_bytes()));
+    __ shlptr(c_rarg1, 32);
+    __ movl(rax, Address(rsp, 2 * wordSize));
+    __ orptr(c_rarg1, rax);
+    __ addptr(c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    if ((mode & 1) != 0) {
+      __ movptr(c_rarg2, Address(rsp, 3 * wordSize));
+    } else {
+      __ movl(c_rarg2, Address(rsp, 3 * wordSize));
+    }
+    __ movl(c_rarg3, mode);
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ZmijInteger::formatter()),
+                          c_rarg0, c_rarg1, c_rarg2, c_rarg3);
+    __ testl(rax, rax);
+    __ jcc(Assembler::negative, slow_path);
+  }
+  __ pop(rdi);
+  __ mov(rsp, r13);
+  __ jmp(rdi);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}
 
 /**
  * Method entries for the native Żmij formatting and decimal-splitting helpers.

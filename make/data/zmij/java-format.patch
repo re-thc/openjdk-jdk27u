@@ -5,7 +5,7 @@
  // A double-to-string conversion library: https://github.com/vitaut/zmij/
  //
  // Copyright (c) 2025 - present, Victor Zverovich
-@@ -237,9 +238,8 @@
+@@ -354,9 +355,8 @@
    static constexpr int exp_mask = (1 << num_exp_bits) - 1;
    static constexpr int exp_bias = (1 << (num_exp_bits - 1)) - 1;
    static constexpr int exp_offset = exp_bias + num_sig_bits;
@@ -24,7 +24,7 @@
  // A double-to-string conversion library: https://github.com/vitaut/zmij/
  //
  // Copyright (c) 2025 - present, Victor Zverovich
-@@ -251,6 +252,12 @@
+@@ -159,6 +160,12 @@
  // Computes a power of ten on the fly (no tables): 10**k = 5**k * 2**k. We raise
  // 5 (or 1/5 for k < 0) to the k as a fixed-width significand * 2**exp, top bit
  // set in work_limbs little-endian limbs, folding 2**k into the exponent.
@@ -37,27 +37,36 @@
  namespace pow10 {
  constexpr int work_bits = 320;                  // internal working precision
  constexpr int work_limbs = work_bits / 64;      // working limbs (5)
-@@ -454,12 +461,13 @@
+@@ -362,19 +369,15 @@
      exp_string_table t;
      for (int e = min_dec_exp; e <= traits::max_exponent10 && enable; ++e) {
        uint64_t abs_e = e >= 0 ? e : -e;
--      uint64_t bc = abs_e % 100;
--      uint64_t val = ((bc % 10 + '0') << 8) | (bc / 10 + '0');
--      if (uint64_t a = abs_e / 100) val = (val << 8) | (a + '0');
+-      // Left-aligning a two-digit exponent pads it with the '0' byte 4 holds.
+-      uint64_t ddd = abs_e < 100 ? abs_e * 10 : abs_e;
+-      uint64_t val = (ddd / 100 + '0') | ((ddd / 10 % 10 + '0') << 8) |
+-                     ((ddd % 10 + '0') << 16);
 -      uint64_t len = 4 + (abs_e >= 100);
--      t.data[e + offset] =
--          (len << 48) | (val << 16) | (uint64_t(e >= 0 ? '+' : '-') << 8) | 'e';
+-      // Bytes: 'e', sign, two digits, a third digit or '0', '.', '0', length.
+-      // The float emitters insert an entry whole and add their last digit to
+-      // the '0' in byte 4, so the point and the zero their shuffles need ride
+-      // along and the length lands in a register byte nothing reads; the
+-      // double path stores all eight bytes and returns past `len` of them.
+-      t.data[e + offset] = (len << 56) | (uint64_t('0') << 48) |
+-                           (uint64_t('.') << 40) | (val << 16) |
+-                           (uint64_t(e >= 0 ? '+' : '-') << 8) | 'e';
 +      uint64_t val = 'E';
 +      int len = 1;
 +      if (e < 0) val |= uint64_t('-') << (8 * len++);
 +      if (abs_e >= 100) val |= uint64_t('0' + abs_e / 100) << (8 * len++);
 +      if (abs_e >= 10) val |= uint64_t('0' + abs_e / 10 % 10) << (8 * len++);
 +      val |= uint64_t('0' + abs_e % 10) << (8 * len++);
-+      t.data[e + offset] = (uint64_t(len) << 48) | val;
++      // Retain the float shuffle's digit, point, zero and length bytes.
++      t.data[e + offset] = (uint64_t(len) << 56) | (uint64_t('0') << 48) |
++                          (uint64_t('.') << 40) | (uint64_t('0') << 32) | val;
      }
      return t;
    }
-@@ -566,12 +574,12 @@
+@@ -480,12 +483,12 @@
          if (int_digits < 1) out[len++] = zero_pos;
          for (int j = 0; j < int_sig; ++j) out[len++] = s.pos[j];
          for (int z = int_sig; z < split; ++z) out[len++] = zero_pos;
@@ -73,7 +82,7 @@
          }
          if (slot == sci_slot) {
            for (int i = 0; i < 4; ++i) out[len++] = exp_pos + i;
-@@ -647,7 +655,7 @@
+@@ -561,7 +564,7 @@
  
      for (int n = 1; n <= traits::max_digits10; ++n) {
        int end_pos = n;
@@ -82,7 +91,7 @@
        e.end_pos[n - 1] = end_pos;
      }
      return e;
-@@ -878,7 +886,7 @@
+@@ -792,7 +795,7 @@
    int len;
  };
  
@@ -91,18 +100,18 @@
    if (!ZMIJ_USE_SSE && !ZMIJ_USE_NEON) {
      // An optimization from Xiang JunBo.
      // Three steps BCD. Base 10000 -> base 100 -> base 10.
-@@ -1099,7 +1107,9 @@
+@@ -1012,7 +1015,9 @@
    uint8x16_t out = vqtbl1q_u8(src, shuffle);
    vst1q_u8(reinterpret_cast<uint8_t*>(buffer), out);
  #endif
 -  return buffer + entry.length;
 +  bool scientific = dec_exp < float_traits<float>::min_fixed_dec_exp ||
 +                    dec_exp > float_traits<float>::max_fixed_dec_exp;
-+  return buffer + entry.length - (scientific ? 4 - int(exp_data >> 48) : 0);
++  return buffer + entry.length - (scientific ? 4 - int(exp_data >> 56) : 0);
  }
  
  ZMIJ_INLINE auto write_float_simd(char*, const dec_digits<64>&, int, bool, bool,
-@@ -1783,7 +1793,7 @@
+@@ -1694,7 +1699,7 @@
    buffer += select(has_last_digit, bcd_size + 1, dig.num_digits);
    start[0] = start[1];
    start[1] = '.';
@@ -111,7 +120,7 @@
  
    // Write exponent.
    if (exp_string_table::enable) {
-@@ -1940,14 +1950,14 @@
+@@ -1851,14 +1856,14 @@
        traits::big_digits > float_traits<double>::big_digits;
    uint32_t stack_scratch[use_heap ? 1 : scratch_words];
    uint32_t* scratch =
