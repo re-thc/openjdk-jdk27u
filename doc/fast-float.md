@@ -110,12 +110,33 @@ also stay on the existing arithmetic path.
 
 ## Integer parsing
 
-fast_float also provides signed and unsigned integer `from_chars` overloads,
-including 32-bit and 64-bit types and radices 2 through 36. No additional
-library is required for those conversions. This integration currently uses
-its float/double APIs; Integer/Long parsing retains Java's Unicode digit and
-overflow handling. Arbitrary-precision BigInteger parsing requires a separate
-algorithm.
+fast_float's existing integer `from_chars` overloads implement signed and
+unsigned 32-bit and 64-bit decimal parsing. The interpreter calls this kernel
+from the original `Integer`/`Long` String-and-radix methods in interpreter-only
+execution. No Java wrapper, String encoding or allocation is added. Tiered VMs
+retain the standard Java interpreter entry and profiling, and C1/C2 compile
+the unchanged Java bodies. Frameless successes in mixed execution changed
+bytecode profiles and regressed compiled workloads. Counted execution and
+debugger events also retain the Java entry.
+
+The bounded leaf accepts at most 1,024 code units, one optional leading plus
+and complete ASCII decimal text, in Latin1 or native-endian UTF16. A failure
+sentinel returns to the original Java bytecode, preserving Unicode digits,
+nondecimal radices, overflow, null handling and exception messages. The valid
+64-bit value whose bits equal `Long.MIN_VALUE` also uses this fallback.
+CharSequence parsing and arbitrary-precision BigInteger parsing retain Java.
+
+`UseFastIntegerIntrinsics` controls these interpreter entries independently of
+floating-point parsing. The measured Linux x86-64 path is default-on. AArch64
+entries are implemented and can be enabled explicitly; other platforms keep
+Java until native performance qualification. Disabling the flag or one of
+`_parseDecimalInt`, `_parseDecimalLong`, `_parseUnsignedDecimalInt` and
+`_parseUnsignedDecimalLong` selects the original Java entry.
+
+`make/scripts/bench-integer-conversion.py` compares short, wide, mixed and
+individual digit-width workloads with alternating original/default/opt-out
+forks, allocation profiling and source/image hashes. It records interpreter,
+C1 and C2 separately. Native-core timings do not establish JDK speedups.
 
 ## Updating the vendor copy
 

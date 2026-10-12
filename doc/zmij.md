@@ -1,8 +1,9 @@
 # Native binary-to-decimal conversion with Żmij
 
-The formatter vendors **Żmij v1.2**, release commit
-`d1682cb47e67474319ed146d3ca2c0e1a70f9429`, under its **MIT license option**.
-The release is pinned in `make/data/zmij/version.txt`, with its license in
+The formatter vendors a coherent **Żmij main** snapshot at
+`31ee2b1287cfd51422466022ee7e4606a670543a`, including floating-point and
+integer implementations, under its **MIT license option**. The snapshot is
+pinned in `make/data/zmij/version.txt`, with its license in
 `src/java.base/share/legal/zmij.md`. Vendor patches and upgrade checks are
 tracked alongside the import.
 
@@ -124,21 +125,52 @@ concatenation consumers across all modules. All binary32/binary64 shortest
 decimal consumers reach these shared entries. Precision formatting additionally
 requires the splitting metadata; it cannot be replaced by the text-only API.
 
+## Integer formatting
+
+The coherent main snapshot supplies signed/unsigned integer kernels as well as
+floating-point conversion. The signed 32-bit and 64-bit kernels serve the four
+`DecimalDigits.uncheckedGetCharsLatin1/UTF16` entries in interpreter-only
+execution, shared by
+Integer/Long Strings, builders and concatenation. C1 and C2 compile the original
+Java bodies and profiling; measured mixed-mode selection changed profiles and
+slowed compiled conversions.
+Unsigned Long's separate decomposition algorithm remains Java.
+
+The vendor may store 17/21 bytes for signed int/long, while exact Java output
+needs at most 11/20. The bridge writes into a 32-byte stack scratch buffer and
+copies only the logical result, widening UTF16 exactly. It validates the
+array's byte length and exclusive end index before writing. Null or rejected
+bounds return to Java. Neither adjacent concat text nor exact arrays are exposed
+to vendor overstores. The CPU-specific entry is selected once when generating
+the interpreter entry, including the SSE2 fallback.
+
+`UseZmijIntegerIntrinsics` is independent of floating-point formatting. The
+measured Linux x86-64 interpreter path is default-on; AArch64 has explicit-enable
+entries pending native measurements. Disabling the flag or one of
+`_formatDecimalIntLatin1`, `_formatDecimalIntUTF16`, `_formatDecimalLongLatin1`
+and `_formatDecimalLongUTF16` selects Java. There is no new compiled wrapper
+or JNI transition for integer conversion.
+
 ## Updates
 
-Check out a clean upstream release tag at least v1.2 and run:
+Check out the exact upstream snapshot and run:
 
 ```
-python3 make/scripts/update-zmij.py /path/to/zmij
+python3 make/scripts/update-zmij.py /path/to/zmij --commit 31ee2b1287cfd51422466022ee7e4606a670543a
 ```
+
+The updater requires clean implementation, integer, header and license files.
+`--commit` must be a complete 40-hex hash matching upstream HEAD; omitting it
+requires an exact release tag with the integer API and compatible patches.
 
 The script records the version and commit, verifies the MIT license selection,
 preserves headers, and applies `make/data/zmij/java-format.patch`,
-`make/data/zmij/clang-compat.patch` and `make/data/zmij/shortest-only.patch`
+`make/data/zmij/clang-compat.patch`, `make/data/zmij/shortest-only.patch` and
+`make/data/zmij/integer-only.patch`
 with zero fuzz. The Clang compatibility patch gives three compressed
 power-of-ten arrays explicit bounds so Clang can construct the expanded
 tables at compile time; their values and sizes are unchanged.
-The implementation is named `zmij-impl.hpp`; the portable and SSE4.1 translation
+The implementations are named `zmij-impl.hpp` and `zmij-int-impl.hpp`; the portable and SSE4.1 translation
 units include it in distinct namespaces. The shortest-only patch suppresses
 explicit instantiations of unused precision, hexadecimal and long-double APIs;
 only the used formatter and metadata templates are instantiated. Shortest
@@ -152,7 +184,11 @@ arithmetic checks all 649 downward-rounded normalized power entries and
 25,635 deterministic boundary/random inputs, including significand packing,
 round trips and exactness/rounding direction. The supplemental `check-zmij.py`
 verifier checks 26,352 fixtures in full, shortest-only and compressed-table
-profiles under UBSan. Both checkers include the shared production bridge.
+profiles under UBSan. Both checkers include the shared production bridge. The integer verifier runs
+3,604,716 guarded production-bridge checks against `std::to_chars` in each
+applicable native, scalar, no-int128 and SSE4.1 profile under ASan/UBSan,
+including the SSE4.1/no-int128 configuration. It covers exact arrays, offsets,
+UTF16, adjacent text and rejected bounds before the updater installs files.
 A changed private representation,
 failed patch, compilation failure or failed assumption stops installation.
 Use a host GCC/Clang-compatible C++17 compiler; `--cxx` selects it explicitly.

@@ -32,7 +32,7 @@ for tier in "${tiers[@]}"; do
             jni) variant_flags='-XX:+UseFastFloatIntrinsics -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits' ;;
         esac
         "$jdk_dir/bin/java" -cp "$result_dir/classes:$jmh_classpath" org.openjdk.jmh.Main \
-            'org.openjdk.bench.java.lang.FastFloatParsing.*' \
+            "${FAST_FLOAT_BENCHMARKS:-org.openjdk.bench.java.lang.FastFloatParsing.*}" \
             -jvm "$jdk_dir/bin/java" \
             -jvmArgsAppend "--add-exports=java.base/jdk.internal.math=ALL-UNNAMED $tier_flags $variant_flags" \
             -rf json -rff "$result_dir/$tier-$variant.json" "$@" \

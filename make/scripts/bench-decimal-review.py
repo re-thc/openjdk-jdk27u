@@ -36,7 +36,7 @@ def digest(path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('original', type=Path, help='unmodified JDK image, without new flags')
+    parser.add_argument('original', type=Path, help='control JDK image, without additional flags')
     parser.add_argument('head', type=Path, help='current PR-head JDK image')
     parser.add_argument('jmh_classpath', help='JMH core/processor and dependencies')
     parser.add_argument('output', type=Path, help='new results directory')
@@ -46,6 +46,9 @@ def main():
     parser.add_argument('--cpu', type=int, help='pin controller and forks to one allowed CPU')
     parser.add_argument('--rounds', type=int, default=3, help='fresh forks per variant')
     parser.add_argument('--benchmarks', default=DEFAULT_BENCHMARKS)
+    parser.add_argument('--variants', nargs='+', choices=['original', 'default', 'optout', 'jni'],
+                        default=['original', 'default', 'optout', 'jni'])
+    parser.add_argument('--duration', default='1s', help='duration of each warmup/measurement')
     args = parser.parse_args()
     if args.rounds < 3:
         parser.error('use at least three alternating rounds')
@@ -82,7 +85,9 @@ def main():
         metadata['images'][label] = {
             'java': str(image / 'bin/java'),
             'sha256': {str(path.relative_to(image)): digest(path)
-                       for path in [image / 'bin/java', image / 'bin/javac', *libraries]},
+                       for path in [image / 'bin/java', image / 'bin/javac', image / 'lib/modules',
+                                    *libraries, *[path for path in image.rglob('*')
+                                                  if path.name in ('libjava.so', 'libjava.dylib', 'java.dll')]]},
             'release': (image / 'release').read_text(),
             'version': subprocess.check_output([str(image / 'bin/java'), '-version'],
                                               stderr=subprocess.STDOUT, text=True),
@@ -105,7 +110,7 @@ def main():
                         '-XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits,'
                         '_formatZmij,_decimalZmij']),
     }
-    names = list(variants)
+    names = args.variants
     observations = {}
     for tier in args.tiers:
         for round_number in range(args.rounds):
@@ -120,7 +125,7 @@ def main():
                            'org.openjdk.jmh.Main', args.benchmarks,
                            '-jvm', str(image / 'bin/java'),
                            '-jvmArgsAppend', shlex.join(common + TIERS[tier] + flags),
-                           '-f', '1', '-wi', '3', '-i', '3', '-w', '1s', '-r', '1s',
+                           '-f', '1', '-wi', '3', '-i', '3', '-w', args.duration, '-r', args.duration,
                            '-prof', 'gc', '-foe', 'true', '-rf', 'json',
                            '-rff', str(output / (prefix + '.json'))]
                 run(command, prefix + '.log')
@@ -135,12 +140,14 @@ def main():
         writer.writerow(header.split(','))
         for (tier, benchmark, params), samples in sorted(observations.items()):
             def mean(variant, metric='primaryMetric'):
+                if variant not in samples:
+                    return ''
                 values = [(item['primaryMetric'] if metric == 'primaryMetric'
                            else item.get('secondaryMetrics', {}).get(metric, {})).get('score')
                           for item in samples[variant]]
                 return sum(values) / len(values) if all(v is not None for v in values) else ''
             original, default = mean('original'), mean('default')
-            writer.writerow([tier, benchmark, params, original, default, original / default,
+            writer.writerow([tier, benchmark, params, original, default, original / default if original and default else '',
                              mean('original', 'gc.alloc.rate.norm'),
                              mean('default', 'gc.alloc.rate.norm'),
                              mean('optout'), mean('jni')])
