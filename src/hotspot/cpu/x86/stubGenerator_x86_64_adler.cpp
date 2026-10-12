@@ -85,6 +85,7 @@ address StubGenerator::generate_updateBytesAdler32() {
 #ifdef LINUX
   if (!VM_Version::supports_avx2()) {
     __ jump(RuntimeAddress(bulk_adler), r10);
+    store_archive_data(stub_id, start, __ pc());
     return start;
   }
   Label use_simd;
