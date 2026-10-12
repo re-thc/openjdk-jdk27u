@@ -28,11 +28,18 @@ def prepare():
         if text.count(needle) != 1:
             raise RuntimeError("Missing checksum threshold")
         path.write_text(text.replace(needle, "c_rarg2, 1024"))
+    stub = ROOT / "src/hotspot/cpu/x86/stubGenerator_x86_64_adler.cpp"
+    text = stub.read_text()
+    gate = ("address bulk_adler = VM_Version::supports_avx512_vnni()\n"
+            "      ? ZipLibrary::adler32_address() : nullptr;")
+    if text.count(gate) != 1:
+        raise RuntimeError("Missing x86 checksum gate")
+    stub.write_text(text.replace(gate, "address bulk_adler = ZipLibrary::adler32_address();"))
     fixture = ROOT / "test/hotspot/jtreg/compiler/intrinsics/zip/TestZlibNGAdler32.java"
     text = fixture.read_text()
     fixture.write_text(text.replace("{65535, 65536, 65537}",
                                     "{1023, 1024, 1025, 65535, 65536, 65537}"))
-    (OUT / "candidate.txt").write_text("C2 Adler32 threshold: 1024 bytes\n")
+    (OUT / "candidate.txt").write_text("C2 Adler32 threshold: 1024 bytes; x86 native call without AVX-512 gate\n")
     run("candidate-diff", ["git", "diff", "--check"])
 
 def regenerate(jdk):
