@@ -22,8 +22,8 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 240
     env:
-      SOURCE_REVISION: d33ce778497da4845e1616d910c457d225c57785
-      BUILD_RUN: '38310976070'
+      SOURCE_REVISION: 750110e38dacdc529f0be5e1041b1fdd100792e1
+      BUILD_RUN: '38311683979'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -31,7 +31,7 @@ jobs:
           sparse-checkout: .github/qualification
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: d33ce778497da4845e1616d910c457d225c57785
+          ref: 750110e38dacdc529f0be5e1041b1fdd100792e1
           path: jdk
           fetch-depth: 0
       - name: Wait for matching native build artifacts
@@ -50,20 +50,20 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: bundles-${{ matrix.platform }}
-          run-id: '38310976070'
+          run-id: '38311683979'
           github-token: ${{ github.token }}
           path: jdk/bundles
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: bundles-${{ matrix.platform }}-debug
-          run-id: '38310976070'
+          run-id: '38311683979'
           github-token: ${{ github.token }}
           path: jdk/bundles
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           pattern: bundles-jtreg-*
           merge-multiple: true
-          run-id: '38310976070'
+          run-id: '38311683979'
           github-token: ${{ github.token }}
           path: jdk/jtreg
       - name: Extract native images
