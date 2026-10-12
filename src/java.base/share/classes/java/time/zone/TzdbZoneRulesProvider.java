@@ -61,17 +61,11 @@
  */
 package java.time.zone;
 
-import jdk.internal.util.StaticProperty;
+import sun.util.calendar.ZoneInfoFile;
 
 import java.io.ByteArrayInputStream;
-import java.io.BufferedInputStream;
 import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.StreamCorruptedException;
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
@@ -85,10 +79,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 final class TzdbZoneRulesProvider extends ZoneRulesProvider {
 
-    /**
-     * All the regions that are available.
-     */
-    private List<String> regionIds;
     /**
      * Version Id of this tzdb rules
      */
@@ -106,20 +96,18 @@ final class TzdbZoneRulesProvider extends ZoneRulesProvider {
      */
     public TzdbZoneRulesProvider() {
         try {
-            String libDir = StaticProperty.javaHome() + File.separator + "lib";
-            try (DataInputStream dis = new DataInputStream(
-                     new BufferedInputStream(new FileInputStream(
-                         new File(libDir, "tzdb.dat"))))) {
-                load(dis);
-            }
-        } catch (Exception ex) {
+            // Share the tzdb.dat data parsed for java.util.TimeZone
+            versionId = ZoneInfoFile.getVersion();
+            ZoneInfoFile.putRules(regionToRules);
+        } catch (LinkageError ex) {
+            // ZoneInfoFile fails to initialize if it cannot load tzdb.dat
             throw new ZoneRulesException("Unable to load TZDB time-zone rules", ex);
         }
     }
 
     @Override
     protected Set<String> provideZoneIds() {
-        return new HashSet<>(regionIds);
+        return new HashSet<>(regionToRules.keySet());
     }
 
     @Override
@@ -149,53 +137,6 @@ final class TzdbZoneRulesProvider extends ZoneRulesProvider {
             map.put(versionId, rules);
         }
         return map;
-    }
-
-    /**
-     * Loads the rules from a DateInputStream, often in a jar file.
-     *
-     * @param dis  the DateInputStream to load, not null
-     * @throws Exception if an error occurs
-     */
-    private void load(DataInputStream dis) throws Exception {
-        if (dis.readByte() != 1) {
-            throw new StreamCorruptedException("File format not recognised");
-        }
-        // group
-        String groupId = dis.readUTF();
-        if ("TZDB".equals(groupId) == false) {
-            throw new StreamCorruptedException("File format not recognised");
-        }
-        // versions
-        int versionCount = dis.readShort();
-        for (int i = 0; i < versionCount; i++) {
-            versionId = dis.readUTF();
-        }
-        // regions
-        int regionCount = dis.readShort();
-        String[] regionArray = new String[regionCount];
-        for (int i = 0; i < regionCount; i++) {
-            regionArray[i] = dis.readUTF();
-        }
-        regionIds = Arrays.asList(regionArray);
-        // rules
-        int ruleCount = dis.readShort();
-        Object[] ruleArray = new Object[ruleCount];
-        for (int i = 0; i < ruleCount; i++) {
-            byte[] bytes = new byte[dis.readShort()];
-            dis.readFully(bytes);
-            ruleArray[i] = bytes;
-        }
-        // link version-region-rules
-        for (int i = 0; i < versionCount; i++) {
-            int versionRegionCount = dis.readShort();
-            regionToRules.clear();
-            for (int j = 0; j < versionRegionCount; j++) {
-                String region = regionArray[dis.readShort()];
-                Object rule = ruleArray[dis.readShort() & 0xffff];
-                regionToRules.put(region, rule);
-            }
-        }
     }
 
     @Override

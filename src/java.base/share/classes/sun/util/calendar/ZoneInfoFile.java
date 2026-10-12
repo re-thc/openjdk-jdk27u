@@ -176,6 +176,19 @@ public final class ZoneInfoFile {
     }
 
     /**
+     * Puts the serialized java.time.zone.ZoneRules of every region ID into
+     * the given map, so that java.time does not have to parse tzdb.dat again.
+     * The byte arrays are shared with this class and must not be modified.
+     *
+     * @param regionToRules the map to add to
+     */
+    public static void putRules(Map<String, ? super byte[]> regionToRules) {
+        for (int i = 0; i < regions.length; i++) {
+            regionToRules.put(regions[i], ruleArray[indices[i]]);
+        }
+    }
+
+    /**
      * Gets a ZoneInfo with the given GMT offset. The object
      * has its ID in the format of GMT{+|-}hh:mm.
      *
@@ -290,7 +303,7 @@ public final class ZoneInfoFile {
             indices = new int[regionCount];
             for (int j = 0; j < regionCount; j++) {
                 regions[j] = regionArray[dis.readShort()];
-                indices[j] = dis.readShort();
+                indices[j] = dis.readUnsignedShort();
             }
         }
         // remove the following ids from the map, they
