@@ -34,16 +34,22 @@
  * @run main/othervm -Xbatch -XX:CompileCommand=inline,*::calcValue compiler.intrinsics.zip.TestFpRegsABI
  * @run main/othervm -Xbatch -XX:CompileCommand=dontinline,*::calcValue compiler.intrinsics.zip.TestFpRegsABI
  * @run main/othervm -Xint compiler.intrinsics.zip.TestFpRegsABI
+ */
+
+/**
+ * @test id=avx2
+ * @summary Verify native checksum register preservation without AVX-512
+ * @requires os.family == "linux" & os.simpleArch == "x64"
  * @run main/othervm -XX:-TieredCompilation -Xbatch -XX:UseAVX=2 compiler.intrinsics.zip.TestFpRegsABI
  * @run main/othervm -XX:TieredStopAtLevel=1 -Xbatch -XX:UseAVX=2 compiler.intrinsics.zip.TestFpRegsABI
  */
 
 package compiler.intrinsics.zip;
 
-import java.util.zip.Checksum;
 import java.util.zip.Adler32;
 import java.util.zip.CRC32;
 import java.util.zip.CRC32C;
+import java.util.zip.Checksum;
 
 public class TestFpRegsABI {
     private static byte[] buf;

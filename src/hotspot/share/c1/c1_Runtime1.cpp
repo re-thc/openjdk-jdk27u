@@ -69,6 +69,7 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
+#include "utilities/zipLibrary.hpp"
 
 
 // Implementation of StubAssembler
@@ -352,6 +353,10 @@ const char* Runtime1::name_for_address(address entry) {
 #endif
   FUNCTION_CASE(entry, StubRoutines::updateBytesCRC32());
   FUNCTION_CASE(entry, StubRoutines::updateBytesCRC32C());
+#if defined(LINUX) && (defined(AMD64) || defined(AARCH64))
+  FUNCTION_CASE(entry, ZipLibrary::adler32_address());
+  FUNCTION_CASE(entry, ZipLibrary::adler32_byte_address());
+#endif
   FUNCTION_CASE(entry, StubRoutines::vectorizedMismatch());
   FUNCTION_CASE(entry, StubRoutines::dexp());
   FUNCTION_CASE(entry, StubRoutines::dlog());
