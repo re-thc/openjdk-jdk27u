@@ -4943,7 +4943,7 @@ void StubGenerator::generate_compiler_stubs() {
     StubRoutines::_sha512_implCompressMB = generate_sha512_implCompress(StubId::stubgen_sha512_implCompressMB_id);
   }
 
-  if (UseBASE64Intrinsics) {
+  if (UseCompiler && UseBASE64Intrinsics) {
     if(VM_Version::supports_avx2()) {
       StubRoutines::x86::_avx2_shuffle_base64 = base64_avx2_shuffle_addr();
       StubRoutines::x86::_avx2_input_mask_base64 = base64_avx2_input_mask_addr();
@@ -4992,7 +4992,7 @@ void StubGenerator::generate_compiler_stubs() {
 
   // Load x86_64_sort library on supported hardware to enable SIMD sort and partition intrinsics
 
-  if (VM_Version::supports_avx512dq() || VM_Version::supports_avx2()) {
+  if (UseCompiler && (VM_Version::supports_avx512dq() || VM_Version::supports_avx2())) {
     void *libsimdsort = nullptr;
     char ebuf_[1024];
     char dll_name_simd_sort[JVM_MAXPATHLEN];
