@@ -29,6 +29,7 @@ package java.util.logging;
 import java.io.*;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.function.Function;
 import jdk.internal.logger.SurrogateLogger;
 
 /**
@@ -62,8 +63,17 @@ public class SimpleFormatter extends Formatter {
         return LogManager.getLogManager().getProperty(name);
     }
 
+    // Not a method reference, which would be linked and spun with the first
+    // formatter.
+    private static final class LoggingPropertyGetter implements Function<String, String> {
+        @Override
+        public String apply(String name) {
+            return getLoggingProperty(name);
+        }
+    }
+
     private final String format =
-        SurrogateLogger.getSimpleFormat(SimpleFormatter::getLoggingProperty);
+        SurrogateLogger.getSimpleFormat(new LoggingPropertyGetter());
 
     /**
      * Create a {@code SimpleFormatter}.

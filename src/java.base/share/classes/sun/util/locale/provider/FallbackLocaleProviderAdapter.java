@@ -63,8 +63,17 @@ public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
     }
 
     @Override
-    protected Set<String> createLanguageTagSet(String category) {
-        var s = new HashSet<>(super.createLanguageTagSet(category));
+    protected Set<String> createBaseLanguageTagSet(String category) {
+        return withRequiredLangtags(super.createBaseLanguageTagSet(category));
+    }
+
+    @Override
+    protected Set<String> createAllLanguageTagSet(String category) {
+        return withRequiredLangtags(super.createAllLanguageTagSet(category));
+    }
+
+    private static Set<String> withRequiredLangtags(Set<String> langtags) {
+        var s = new HashSet<>(langtags);
         s.addAll(AVAILABLE_LANGTAGS);
         return s;
     }

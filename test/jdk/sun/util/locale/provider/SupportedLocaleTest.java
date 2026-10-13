@@ -26,21 +26,29 @@
  * @summary Check that the calendar data and currency name providers of the
  *          locale provider adapters support the locales that are specified
  *          by LocaleServiceProvider.isSupportedLocale, that the CLDR
- *          adapter has the same language tags for all categories, and that
- *          the available locales of the providers are not shared.
+ *          adapter has the same language tags for all categories, that
+ *          the available locales of the providers are not shared, and that
+ *          the language tags of the adapters are the same whichever of
+ *          them are asked for first.
  * @modules java.base/sun.util.locale.provider
+ *          java.base/sun.util.cldr
  * @run main SupportedLocaleTest
  */
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.Supplier;
 import java.util.spi.CalendarDataProvider;
 import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleServiceProvider;
 
+import sun.util.cldr.CLDRLocaleProviderAdapter;
+import sun.util.locale.provider.FallbackLocaleProviderAdapter;
 import sun.util.locale.provider.JRELocaleProviderAdapter;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleProviderAdapter.Type;
@@ -68,6 +76,16 @@ public class SupportedLocaleTest {
                 Locale.forLanguageTag("en-US-u-ca-japanese"),
                 Locale.forLanguageTag("de-u-nu-thai"),
                 Locale.forLanguageTag("x-private")));
+
+        // The language tags of java.base are known before those of jdk.localedata,
+        // which must not change what the sets answer.
+        for (String category : List.of("FormatData", "CollationData", "BreakIteratorInfo",
+                "BreakIteratorRules", "BreakIteratorResources", "TimeZoneNames", "LocaleNames",
+                "CurrencyNames", "CalendarData", "AvailableLocales", "NoSuchCategory")) {
+            checkTags(JRELocaleProviderAdapter::new, category);
+            checkTags(FallbackLocaleProviderAdapter::new, category);
+            checkTags(CLDRLocaleProviderAdapter::new, category);
+        }
 
         // The FALLBACK adapter supports few locales: do not try all of them.
         List<Locale> fewLocales = List.of(Locale.ROOT, Locale.ENGLISH, Locale.US,
@@ -110,6 +128,28 @@ public class SupportedLocaleTest {
                 throw new RuntimeException(provider.getClass().getSimpleName()
                         + ": not the locales of the adapter");
             }
+        }
+    }
+
+    // The tags of an adapter that is first asked about a few of them are those of one
+    // that is asked for all of them.
+    private static void checkTags(Supplier<JRELocaleProviderAdapter> newAdapter, String category) {
+        Set<String> lazy = newAdapter.get().getLanguageTagSet(category);
+        Set<String> all = new HashSet<>(newAdapter.get().getLanguageTagSet(category));
+        List<String> probes = new ArrayList<>(List.of("", "en", "en-US", "th", "ja", "de", "und", "xx"));
+        probes.addAll(all);
+        // A category without tags is empty, for LocaleData to weed out no locale
+        if (lazy.isEmpty() != all.isEmpty()) {
+            throw new RuntimeException(category + ": isEmpty " + lazy.isEmpty() + " for " + all);
+        }
+        for (String tag : probes) {
+            if (lazy.contains(tag) != all.contains(tag)) {
+                throw new RuntimeException(category + ": contains('" + tag + "') "
+                        + lazy.contains(tag) + " for " + all);
+            }
+        }
+        if (!lazy.equals(all) || lazy.size() != all.size() || lazy.hashCode() != all.hashCode()) {
+            throw new RuntimeException(category + ": " + new TreeSet<>(lazy) + " not " + new TreeSet<>(all));
         }
     }
 
