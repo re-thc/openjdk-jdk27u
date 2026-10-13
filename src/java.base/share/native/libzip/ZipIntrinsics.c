@@ -69,7 +69,7 @@ Java_java_util_zip_ZipUtils_zipIntrinsicLimits(JNIEnv* env, jclass cls) {
     jint maxInput = 0;
     jint mixedBuffers = 0;
     if (JVM_ZipIntrinsicsEnabled()) {
-#ifdef __aarch64__
+#if defined(__aarch64__) || defined(_M_ARM64)
         maxInput = 65536;
         mixedBuffers = 1;
 #else
