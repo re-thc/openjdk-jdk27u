@@ -123,7 +123,7 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: build/zip/images/jdk
-          key: zip-platform-v1-${{ matrix.platform }}-${{ matrix.debug }}-0e10069a5534b0f7dc22fc91cc859465dd3842c9
+          key: zip-platform-v1-${{ matrix.platform }}-${{ matrix.debug }}-7f27135f229bce9ba90b68ab3cce9626cf22dbdc
       - name: Same-image checksum and ZIP overhead measurements
         if: matrix.debug == 'release'
         run: python3 .github/scripts/qualify-zip-platform.py build/zip/images/jdk
@@ -140,34 +140,3 @@ jobs:
             build/zip/support/native/zlib-ng/CMakeCache.txt
             build/zip/support/native/zlib-ng/jdk-flags.cmake
           retention-days: 14
-  read-results:
-    runs-on: ubuntu-26.04
-    steps:
-      - name: Download completed macOS Intel evidence
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh run download 38455925680 --repo re-thc/openjdk-jdk27u \
-            --name zip-platform-macos-x64-release --dir work/results
-      - name: Print measurements and source provenance
-        run: |
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          root = Path('work/results')
-          for path in root.rglob('cpu.txt'):
-              print('CPU', path.read_text())
-          for path in root.rglob('source.txt'):
-              print('SOURCE', path.read_text())
-          for path in sorted(root.rglob('*.json')):
-              if path.name in ('dependencies.json', 'commands.json'):
-                  continue
-              data = json.loads(path.read_text())
-              if not isinstance(data, list):
-                  continue
-              for row in data:
-                  metric = row['primaryMetric']
-                  print(json.dumps({'file': path.name, 'benchmark': row['benchmark'],
-                      'params': row.get('params', {}), 'score': metric['score'],
-                      'error': metric['scoreError'], 'unit': metric['scoreUnit']}))
-          PY

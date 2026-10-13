@@ -100,7 +100,7 @@ ifneq ($(filter x86_64 aarch64, $(OPENJDK_TARGET_CPU)), )
 	MAKEFLAGS= MFLAGS= $(CMAKE) -C $(ZLIBNG_OUT)/jdk-flags.cmake -S $(ZLIBNG_SRC) -B $(ZLIBNG_OUT) -G "NMake Makefiles" \
 	    -DCMAKE_MAKE_PROGRAM="$(call FixPath, $(lastword $(NMAKE)))" \
 	    "-DCMAKE_C_COMPILER=$(subst $(SPACE),;,$(call FixPath, $(subst $(FIXPATH) ,,$(CC))))" \
-	    -DCMAKE_AR="$(call FixPath, $(lastword $(AR)))" \
+	    -DCMAKE_AR="$(call FixPath, $(lastword $(LIB)))" \
 	    -DCMAKE_LINKER="$(call FixPath, $(lastword $(LD)))" \
 	    -DCMAKE_BUILD_TYPE=Release -DCMAKE_TRY_COMPILE_CONFIGURATION=Release \
 	    -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF \
