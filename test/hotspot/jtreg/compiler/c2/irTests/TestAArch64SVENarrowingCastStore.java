@@ -24,18 +24,18 @@
 
 package compiler.c2.irTests;
 
-import java.util.Arrays;
+import compiler.lib.ir_framework.*;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 import jdk.incubator.vector.ByteVector;
 import jdk.incubator.vector.DoubleVector;
 import jdk.incubator.vector.FloatVector;
 import jdk.incubator.vector.LongVector;
 import jdk.incubator.vector.ShortVector;
 import jdk.incubator.vector.VectorOperators;
-import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 
@@ -59,6 +59,8 @@ public class TestAArch64SVENarrowingCastStore {
         Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.MAX_VALUE, -Double.MAX_VALUE,
         Double.MIN_VALUE, -Double.MIN_VALUE, Float.MIN_VALUE, -Float.MIN_VALUE,
         Float.MIN_NORMAL, -Float.MIN_NORMAL, Float.MAX_VALUE, -Float.MAX_VALUE,
+        Math.nextDown(0x1.ffffffp127), 0x1.ffffffp127, Math.nextUp(0x1.ffffffp127),
+        -Math.nextDown(0x1.ffffffp127), -0x1.ffffffp127, -Math.nextUp(0x1.ffffffp127),
         1.0 + 0x1.0p-24, Math.nextUp(1.0 + 0x1.0p-24), Math.nextDown(1.0 + 0x1.0p-24),
         -1.0 - 0x1.0p-24, 0x1.0p-150, Math.nextUp(0x1.0p-150),
         32767.9, 32768.0, -32768.9, -32769.0, 65535.9, 65536.0,
@@ -78,6 +80,7 @@ public class TestAArch64SVENarrowingCastStore {
     private static final long[] LONGS = new long[SIZE];
     private static final short[] SHORTS = new short[SIZE];
     private static final float[] FLOATS = new float[SIZE];
+    private static final float[] SHARED_FLOATS = new float[SIZE];
     private static final byte[] BYTES = new byte[SIZE];
     private static final short SHORT_SENTINEL = 0x5a5a;
     private static final float FLOAT_SENTINEL = -12345.25f;
@@ -172,8 +175,6 @@ public class TestAArch64SVENarrowingCastStore {
     }
 
     @Test
-    @IR(applyIfPlatform = {"aarch64", "true"}, failOn = {"storeV_vcastLtoB_sve4"},
-        phase = CompilePhase.MATCHING)
     public static void testL2BAlias() {
         LongVector src = LongVector.fromMemorySegment(LongVector.SPECIES_256, ALIASED, 32, ORDER);
         ((ByteVector) src.convertShape(VectorOperators.L2B, ByteVector.SPECIES_64, 0))
@@ -181,8 +182,6 @@ public class TestAArch64SVENarrowingCastStore {
     }
 
     @Test
-    @IR(applyIfPlatform = {"aarch64", "true"}, failOn = {"storeV_vcastDtoF_sve16"},
-        phase = CompilePhase.MATCHING)
     public static void testSharedCastStore() {
         DoubleVector src = DoubleVector.fromMemorySegment(DoubleVector.SPECIES_256, ALIASED, 32, ORDER);
         FloatVector converted = (FloatVector) src.convertShape(VectorOperators.D2F, FloatVector.SPECIES_128, 0);
@@ -192,10 +191,7 @@ public class TestAArch64SVENarrowingCastStore {
     }
 
     @Test
-    @IR(applyIfPlatform = {"aarch64", "true"}, failOn = {"storeV_vcastDtoF_sve16"},
-        phase = CompilePhase.MATCHING)
-    public static void testHeapAliasFallback() {
-        // C2 retains the fallback for a float access to a known byte[] segment.
+    public static void testHeapAlias() {
         DoubleVector src = DoubleVector.fromMemorySegment(DoubleVector.SPECIES_256, HEAP_ALIASED, 32, ORDER);
         ((FloatVector) src.convertShape(VectorOperators.D2F, FloatVector.SPECIES_128, 0))
                 .intoMemorySegment(HEAP_ALIASED, 34, ORDER);
@@ -204,25 +200,27 @@ public class TestAArch64SVENarrowingCastStore {
     @Test
     @IR(applyIfPlatform = {"aarch64", "true"}, failOn = {"storeV_vcastDtoF_sve16"},
         phase = CompilePhase.MATCHING)
-    public static void testSharedArrayCast(int srcOffset) {
-        DoubleVector src = DoubleVector.fromArray(DoubleVector.SPECIES_256, DOUBLES, srcOffset);
-        FloatVector converted = (FloatVector) src.convertShape(VectorOperators.D2F, FloatVector.SPECIES_128, 0);
-        converted.intoArray(FLOATS, 0);
-        converted.intoArray(FLOATS, 8);
+    @IR(applyIfPlatform = {"aarch64", "true"},
+        applyIfAnd = {"UseSVE", "> 0", "MaxVectorSize", "32"},
+        counts = {"vcvtDtoF_gt64b", ">0"}, phase = CompilePhase.MATCHING)
+    public static void testSharedArrayCast(int srcOffset, int dstOffset, int length) {
+        for (int i = 0; i < length; i++) {
+            float converted = (float) DOUBLES[i + srcOffset];
+            FLOATS[i + dstOffset] = converted;
+            SHARED_FLOATS[i + dstOffset] = converted;
+        }
     }
 
     @Run(test = {"testD2S", "testD2F", "testL2F", "testL2B", "testD2SAlias",
                  "testD2FAlias", "testL2FAlias", "testL2BAlias", "testSharedCastStore",
-                 "testHeapAliasFallback", "testSharedArrayCast"})
+                 "testHeapAlias", "testSharedArrayCast"})
     public void run(RunInfo info) {
         if (info.isWarmUp()) {
             check(0, 3, 1027);
             checkAliases(0);
-            checkSharedArrayCast(0);
         } else {
             for (int index = 0; index < Math.max(DOUBLE_VALUES.length, LONG_VALUES.length); index++) {
                 checkAliases(index);
-                checkSharedArrayCast(index);
             }
             for (int srcOffset : new int[] {0, 1, 3, 16}) {
                 for (int dstOffset : new int[] {0, 1, 3, 16}) {
@@ -231,16 +229,6 @@ public class TestAArch64SVENarrowingCastStore {
                     }
                 }
             }
-        }
-    }
-
-    @DontCompile
-    private static void checkSharedArrayCast(int srcOffset) {
-        Arrays.fill(FLOATS, FLOAT_SENTINEL);
-        testSharedArrayCast(srcOffset);
-        for (int i = 0; i < SIZE; i++) {
-            int lane = i < 4 ? i : i >= 8 && i < 12 ? i - 8 : -1;
-            checkFloat(FLOATS[i], lane >= 0 ? (float) DOUBLES[srcOffset + lane] : FLOAT_SENTINEL);
         }
     }
 
@@ -265,6 +253,16 @@ public class TestAArch64SVENarrowingCastStore {
         for (int i = 0; i < SIZE; i++) {
             boolean written = i >= dstOffset && i < dstOffset + length;
             checkFloat(FLOATS[i], written ? (float) LONGS[i - dstOffset + srcOffset] : FLOAT_SENTINEL);
+        }
+        Arrays.fill(FLOATS, FLOAT_SENTINEL);
+        Arrays.fill(SHARED_FLOATS, FLOAT_SENTINEL);
+        testSharedArrayCast(srcOffset, dstOffset, length);
+        for (int i = 0; i < SIZE; i++) {
+            boolean written = i >= dstOffset && i < dstOffset + length;
+            int src = i - dstOffset + srcOffset;
+            float expected = written ? (float) DOUBLES[src] : FLOAT_SENTINEL;
+            checkFloat(FLOATS[i], expected);
+            checkFloat(SHARED_FLOATS[i], expected);
         }
     }
 
@@ -294,7 +292,7 @@ public class TestAArch64SVENarrowingCastStore {
                 case 2 -> testL2FAlias();
                 case 3 -> testL2BAlias();
                 case 4 -> testSharedCastStore();
-                case 5 -> testHeapAliasFallback();
+                case 5 -> testHeapAlias();
             }
             for (int lane = 0; lane < 4; lane++) {
                 switch (conversion) {
