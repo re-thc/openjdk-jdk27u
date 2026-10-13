@@ -105,9 +105,9 @@ public final class RustRegex {
                 if (cached.javaOnly) return null;
                 RustRegex engine = cached.engine.get();
                 if (engine != null) return engine;
-                if (cached.fastSubset != null) {
-                    engine = new RustRegex(0, cached.fastSubset, cached.fastPlan);
-                    cache(key, new CacheEntry(false, new WeakReference<>(engine), cached.fastSubset, cached.fastPlan));
+                if (cached.preparedSubset != null) {
+                    engine = new RustRegex(0, cached.preparedSubset, cached.fastPlan);
+                    cache(key, new CacheEntry(false, new WeakReference<>(engine), cached.preparedSubset, cached.fastPlan));
                     return engine;
                 }
             }
@@ -130,7 +130,11 @@ public final class RustRegex {
                     : compile0(subset.output.toString().getBytes(StandardCharsets.US_ASCII), flags, subset.groups);
             if (handle == 0 && !defer) return null; // Budget failures remain retryable for new Patterns.
             RustRegex engine = new RustRegex(handle, subset, fast);
-            cache(key, new CacheEntry(false, new WeakReference<>(engine), defer ? subset : null, fast));
+            // A previously compiled native backend validates this preparation.
+            // Small preparations can survive collection of the weak backend;
+            // its replacement builds automata only if matching needs them.
+            cache(key, new CacheEntry(false, new WeakReference<>(engine),
+                    defer || pattern.length() <= 256 ? subset : null, fast));
             return engine;
         } catch (UnsupportedSyntax e) {
             cache(key, new CacheEntry(true, null, null, null));
@@ -140,7 +144,7 @@ public final class RustRegex {
 
     private record CacheKey(String pattern, int flags) { }
     private record CacheEntry(boolean javaOnly, WeakReference<RustRegex> engine,
-                              Subset fastSubset, FastPlan fastPlan) { }
+                              Subset preparedSubset, FastPlan fastPlan) { }
     private static final class CompiledCache {
         static final Map<CacheKey, CacheEntry> ENTRIES = new LinkedHashMap<>(32, 0.75f, true);
     }
@@ -186,6 +190,12 @@ public final class RustRegex {
         return tail.equals("[0-9]+") || tail.equals("\\d+");
     }
     public boolean hasExactEndFlags() { return fastPlan instanceof FastDigits; }
+    public boolean hasExactSuccessEndFlags() { return fastPlan instanceof FastEmail; }
+    public boolean successHitsEnd(int[] state, int to) {
+        // The bounded suffix tries another letter only below its maximum.
+        return state[1] == to && (!(fastPlan instanceof FastEmail)
+                || state[1] - state[5] - 1 < 4);
+    }
     public boolean anchoredMissHitsEnd(String input, int to, int start) {
         String prefix = ((FastDigits) fastPlan).prefix;
         int available = to - start;

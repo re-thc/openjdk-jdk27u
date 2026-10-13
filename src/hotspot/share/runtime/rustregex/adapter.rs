@@ -132,6 +132,7 @@ pub struct Handle<'a> {
     groups: usize,
     max_input: usize,
     minimum_len: usize,
+    first_bytes: [u64; 4],
     _reservation: Reservation<'a>,
 }
 
@@ -180,7 +181,54 @@ fn search_cost(hir: &Hir) -> usize {
     }
 }
 
-fn compile(pattern: &str, flags: u32) -> Option<(Regex, Option<Regex>, usize, usize)> {
+// A conservative set of possible first consumed bytes. Nullable parts add
+// their successors; look assertions add no bytes. Unknown Unicode classes
+// admit every byte rather than excluding a possible first candidate.
+fn first_bytes(hir: &Hir) -> [u64; 4] {
+    let mut bytes = [0; 4];
+    let mut insert = |byte: u8| bytes[usize::from(byte) / 64] |= 1 << (byte % 64);
+    match hir.kind() {
+        HirKind::Empty | HirKind::Look(_) => {}
+        HirKind::Literal(literal) => {
+            if let Some(&byte) = literal.0.first() {
+                insert(byte);
+            }
+        }
+        HirKind::Class(regex_syntax::hir::Class::Bytes(class)) => {
+            for range in class.iter() {
+                for byte in range.start()..=range.end() {
+                    insert(byte);
+                }
+            }
+        }
+        HirKind::Class(_) => return [u64::MAX; 4],
+        HirKind::Capture(capture) => return first_bytes(&capture.sub),
+        HirKind::Repetition(repetition) => return first_bytes(&repetition.sub),
+        HirKind::Concat(parts) | HirKind::Alternation(parts) => {
+            for part in parts {
+                for (set, other) in bytes.iter_mut().zip(first_bytes(part)) {
+                    *set |= other;
+                }
+                if matches!(hir.kind(), HirKind::Concat(_))
+                    && part.properties().minimum_len().unwrap_or(0) != 0
+                {
+                    break;
+                }
+            }
+        }
+    }
+    bytes
+}
+
+struct PreparedRegex {
+    regex: Regex,
+    full: Option<Regex>,
+    max_input: usize,
+    minimum_len: usize,
+    first_bytes: [u64; 4],
+}
+
+fn compile(pattern: &str, flags: u32) -> Option<PreparedRegex> {
     let hir = regex_syntax::ParserBuilder::new()
         .unicode(false)
         .utf8(false)
@@ -205,6 +253,7 @@ fn compile(pattern: &str, flags: u32) -> Option<(Regex, Option<Regex>, usize, us
     };
     let cost = search_cost(&hir);
     let minimum_len = hir.properties().minimum_len().unwrap_or(0);
+    let first_bytes = first_bytes(&hir);
     let max_input = if cost <= 64 {
         MAX_INPUT
     } else {
@@ -219,7 +268,13 @@ fn compile(pattern: &str, flags: u32) -> Option<(Regex, Option<Regex>, usize, us
     } else {
         Some(build(&Hir::concat(vec![hir, Hir::look(Look::End)]))?)
     };
-    Some((regex, full, max_input, minimum_len))
+    Some(PreparedRegex {
+        regex,
+        full,
+        max_input,
+        minimum_len,
+        first_bytes,
+    })
 }
 
 impl SearchCache<'_> {
@@ -281,7 +336,13 @@ fn compile_handle<'a>(
     let mut reservation = budget.reserve(MAX_BUILD_BYTES)?;
     #[cfg(test)]
     inject_panic(1);
-    let (regex, full, mut max_input, minimum_len) = compile(pattern, flags)?;
+    let PreparedRegex {
+        regex,
+        full,
+        mut max_input,
+        minimum_len,
+        first_bytes,
+    } = compile(pattern, flags)?;
     if groups == 0 || groups > 33 || regex.group_info().group_len(PatternID::ZERO) != groups {
         return None;
     }
@@ -309,6 +370,7 @@ fn compile_handle<'a>(
         groups,
         max_input,
         minimum_len,
+        first_bytes,
         _reservation: reservation,
     });
     // Admit and initialize the first cache while compilation is in native
@@ -460,7 +522,12 @@ unsafe fn match_impl(
         // An anchored first candidate avoids a boundary-finding DFA pass on
         // early positives and permits direct one-pass capture matching. Keep
         // general variable/alternative expressions on their normal search path.
-        let probe_first = mode == 0 && handle.full.is_none();
+        let probe_first = mode == 0
+            && handle.full.is_none()
+            && (handle.minimum_len == 0
+                || region.get((start - from) as usize).is_some_and(|&byte| {
+                    handle.first_bytes[usize::from(byte) / 64] & (1 << (byte % 64)) != 0
+                }));
         let mut matched = if probe_first {
             search(&input.clone().anchored(Anchored::Yes))
         } else {
@@ -512,6 +579,48 @@ mod tests {
         assert_eq!(result, 1);
         assert_eq!(&groups[..6], &[2, 11, 2, 6, 8, 11]);
         assert_eq!(run(&handle, b"normal", 0).0, 0);
+    }
+
+    #[test]
+    fn first_byte_filter_preserves_nullable_and_alternative_starts() {
+        let budget = Budget::new(64 * MIB);
+        for source in [
+            "error[0-9]+",
+            "[0-9]+",
+            "(?:a|[c-e])+",
+            "(?:ab)?[cd]+",
+            "a*b",
+            "(?:a|)b",
+            "^a+",
+            "a*$",
+            "\\xE9+",
+        ] {
+            for flags in [0, 2] {
+                let handle = compile_handle(source, flags, 1, &budget).unwrap();
+                for first in 0..=255u8 {
+                    for suffix in [b"".as_slice(), b"a", b"b", b"ab", b"cd", b"123"] {
+                        let mut bytes = vec![first];
+                        bytes.extend_from_slice(suffix);
+                        if let Some(found) = handle.regex.find(Input::new(&bytes)) {
+                            if found.start() == 0 && found.end() != 0 {
+                                assert_ne!(
+                                    handle.first_bytes[usize::from(first) / 64]
+                                        & (1 << (first % 64)),
+                                    0,
+                                    "{source} {bytes:?}"
+                                );
+                            }
+                        }
+                        let expected = handle.regex.find(Input::new(&bytes));
+                        let (result, captures) = run(&handle, &bytes, 0);
+                        assert_eq!(result == 1, expected.is_some(), "{source} {bytes:?}");
+                        if let Some(found) = expected {
+                            assert_eq!(&captures[..2], &[found.start() as i32, found.end() as i32]);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     #[test]

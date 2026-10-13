@@ -462,6 +462,8 @@ public class RustRegexTest {
 
     public static void main(String[] args) throws Exception {
         shortEmailMatches();
+        emailSuccessEndFlags();
+        collectedPreparation();
         primary();
         shortAndEarlyMatches();
         digitEndFlags();
@@ -470,5 +472,77 @@ public class RustRegexTest {
         sharingAndLifetime();
         apiState();
         System.out.println("Compared "+comparisons+" native/Java results and API states; enabled="+RustRegex.ENABLED);
+    }
+
+    private static void emailSuccessEndFlags() throws Exception {
+        String expression = "(?<user>[a-z0-9_]+)@(?<domain>[a-z0-9_]+)\\.[a-z]{2,4}";
+        Pattern ref = reference(expression, 0);
+        for (int suffix = 1; suffix <= 5; suffix++) {
+            for (String prefix : new String[]{"", "!", "a@b.x!", "\uD800!", "!".repeat(64), "a".repeat(40)}) {
+                for (String tail : new String[]{"", "!", "\uDC00"}) {
+                    String input = prefix + "a@b." + "c".repeat(suffix) + tail;
+                    for (int operation = 0; operation < 3; operation++) {
+                        for (boolean region : new boolean[]{false, true}) {
+                            Pattern p = Pattern.compile(expression);
+                            Matcher a = p.matcher(input), b = ref.matcher(input);
+                            if (region) { a.region(prefix.length(), input.length() - tail.length());
+                                b.region(prefix.length(), input.length() - tail.length()); }
+                            boolean av = switch (operation) { case 1 -> a.lookingAt(); case 2 -> a.matches(); default -> a.find(); };
+                            boolean bv = switch (operation) { case 1 -> b.lookingAt(); case 2 -> b.matches(); default -> b.find(); };
+                            equal(a, b, av, bv, true);
+                            if (av && input.chars().allMatch(ch -> ch <= 255)) nativeOnly(p);
+                            equal(a, b, a.find(), b.find(), true);
+                            a.reset("different").usePattern(Pattern.compile("!+"));
+                            b.reset("different").usePattern(reference("!+", 0));
+                            if (a.hitEnd() != b.hitEnd() || a.requireEnd() != b.requireEnd())
+                                throw new AssertionError("old email end state changed after reset/usePattern");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static void collectedPreparation() throws Exception {
+        if (!RustRegex.ENABLED) return;
+        String expression = "(?<parts>(?:ab|cd)+)[ef]";
+        Pattern first = Pattern.compile(expression);
+        Object engine = NATIVE.get(first);
+        if (engine == null || HANDLE.getLong(engine) == 0)
+            throw new AssertionError("initial general preparation was not validated natively");
+        Field entries = Class.forName("jdk.internal.util.regex.RustRegex$CompiledCache")
+                .getDeclaredField("ENTRIES");
+        entries.setAccessible(true);
+        Map<?, ?> cache = (Map<?, ?>) entries.get(null);
+        // Deterministically exercise the weak-backend collection path.
+        synchronized (cache) {
+            for (Object entry : cache.values()) {
+                Field weak = entry.getClass().getDeclaredField("engine");
+                weak.setAccessible(true);
+                if (weak.get(entry) instanceof java.lang.ref.WeakReference<?> reference
+                        && reference.get() == engine) reference.clear();
+            }
+        }
+        Pattern replacement = Pattern.compile(expression);
+        Object deferred = NATIVE.get(replacement);
+        if (deferred == null || deferred == engine || HANDLE.getLong(deferred) != 0)
+            throw new AssertionError("collected validated preparation was not reused lazily");
+        Pattern ref = reference(expression, 0);
+        Matcher a = replacement.matcher("\u0100\uD800"), b = ref.matcher("\u0100\uD800");
+        equal(a, b, a.find(), b.find(), true);
+        if (HANDLE.getLong(deferred) != 0)
+            throw new AssertionError("Java-only input compiled unused native automata");
+        Pattern nativeReplacement = Pattern.compile(expression);
+        a = nativeReplacement.matcher("abcdabe!"); b = ref.matcher("abcdabe!");
+        equal(a, b, a.find(), b.find(), false);
+        if (HANDLE.getLong(NATIVE.get(nativeReplacement)) == 0)
+            throw new AssertionError("native input did not compile prepared automata");
+        for (String invalid : new String[]{"(?<x>a)(?<x>b)", "a{3,2}", "[z-a]", "(abc"}) {
+            for (int i = 0; i < 2; i++) {
+                try { Pattern.compile(invalid); throw new AssertionError("deferred syntax error: " + invalid); }
+                catch (PatternSyntaxException expected) { }
+            }
+        }
+        java.lang.ref.Reference.reachabilityFence(first);
     }
 }

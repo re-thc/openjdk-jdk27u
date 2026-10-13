@@ -1777,7 +1777,8 @@ public final class Matcher implements MatchResult {
         from        = from < 0 ? 0 : from;
         this.first  = from;
         this.oldLast = oldLast < 0 ? from : oldLast;
-        for (int i = 0; i < parentPattern.capturingGroupCount * 2; i++)
+        int base = parentPattern.capturingGroupCount * 2;
+        for (int i = 0; i < base; i++)
             groups[i] = -1;
         for (int i = 0; i < localsPos.length; i++) {
             if (localsPos[i] != null)
@@ -1785,6 +1786,7 @@ public final class Matcher implements MatchResult {
         }
         acceptMode = NOANCHOR;
         Pattern.Node javaRoot;
+        RustRegex engine = null;
         if (!RustRegex.ENABLED) javaRoot = parentPattern.root;
         else {
             JavaMatchChoice choice = javaMatchChoice;
@@ -1797,7 +1799,13 @@ public final class Matcher implements MatchResult {
                     nativePendingLast = false;
                 }
                 javaRoot = choice.root;
-            } else javaRoot = null;
+            } else {
+                engine = parentPattern.rustRegex;
+                if (engine == null) {
+                    selectJavaOnly();
+                    javaRoot = javaMatchChoice.root;
+                } else javaRoot = null;
+            }
         }
         if (javaRoot != null) {
             boolean result = javaRoot.match(this, from, text);
@@ -1806,15 +1814,15 @@ public final class Matcher implements MatchResult {
             modCount++;
             return result;
         }
-        int nativeResult = nativeMatch(from, 0);
+        int nativeResult = nativeMatch(engine, base, from, 0);
         boolean result;
         if (nativeResult >= 0) result = nativeResult == 1;
         else if (nativeResult == -2) {
             result = javaMatchChoice.root.match(this, from, text);
         }
         else {
-            javaStorage(parentPattern);
-            result = parentPattern.root.match(this, from, text);
+            selectJavaOnly();
+            result = javaMatchChoice.root.match(this, from, text);
         }
         if (!result) first = -1;
         oldLast = last;
@@ -1835,7 +1843,8 @@ public final class Matcher implements MatchResult {
         from        = from < 0 ? 0 : from;
         this.first  = from;
         this.oldLast = oldLast < 0 ? from : oldLast;
-        for (int i = 0; i < parentPattern.capturingGroupCount * 2; i++)
+        int base = parentPattern.capturingGroupCount * 2;
+        for (int i = 0; i < base; i++)
             groups[i] = -1;
         for (int i = 0; i < localsPos.length; i++) {
             if (localsPos[i] != null)
@@ -1843,6 +1852,7 @@ public final class Matcher implements MatchResult {
         }
         acceptMode = anchor;
         Pattern.Node javaRoot;
+        RustRegex engine = null;
         if (!RustRegex.ENABLED) javaRoot = parentPattern.matchRoot;
         else {
             JavaMatchChoice choice = javaMatchChoice;
@@ -1856,7 +1866,13 @@ public final class Matcher implements MatchResult {
                     nativePendingLast = false;
                 }
                 javaRoot = choice.matchRoot;
-            } else javaRoot = null;
+            } else {
+                engine = parentPattern.rustRegex;
+                if (engine == null) {
+                    selectJavaOnly();
+                    javaRoot = javaMatchChoice.matchRoot;
+                } else javaRoot = null;
+            }
         }
         if (javaRoot != null) {
             boolean result = javaRoot.match(this, from, text);
@@ -1865,15 +1881,15 @@ public final class Matcher implements MatchResult {
             modCount++;
             return result;
         }
-        int nativeResult = nativeMatch(from, anchor == ENDANCHOR ? 2 : 1);
+        int nativeResult = nativeMatch(engine, base, from, anchor == ENDANCHOR ? 2 : 1);
         boolean result;
         if (nativeResult >= 0) result = nativeResult == 1;
         else if (nativeResult == -2) {
             result = javaMatchChoice.matchRoot.match(this, from, text);
         }
         else {
-            javaStorage(parentPattern);
-            result = parentPattern.matchRoot.match(this, from, text);
+            selectJavaOnly();
+            result = javaMatchChoice.matchRoot.match(this, from, text);
         }
         if (!result) first = -1;
         oldLast = last;
@@ -1882,14 +1898,12 @@ public final class Matcher implements MatchResult {
     }
 
     @ForceInline
-    private int nativeMatch(int start, int mode) {
+    private int nativeMatch(RustRegex engine, int base, int start, int mode) {
         if (nativeEndPattern != null) {
             nativeEndPattern = null;
             nativeEndInput = null;
             nativePendingLast = false;
         }
-        RustRegex engine = parentPattern.rustRegex;
-        if (engine == null) return -1;
         if (engine.prefersJava(to - from)) {
             selectJavaMatch(false, mode);
             return -2;
@@ -1899,7 +1913,6 @@ public final class Matcher implements MatchResult {
             return -1;
         }
         String input = text instanceof String s ? s : text.toString();
-        int base = parentPattern.capturingGroupCount * 2;
         int result = engine.match(input, groups, from, to, start, mode,
                 transparentBounds, anchoringBounds);
         // Java traversal can advance last even when an anchored match fails.
@@ -1916,8 +1929,8 @@ public final class Matcher implements MatchResult {
         }
         // These simple greedy tails preserve last on failure and have exact
         // end flags. General backtracking expressions need Java replay.
-        if (engine.hasExactEndFlags()) {
-            hitEnd = result == 1 ? last == to
+        if (engine.hasExactEndFlags() || result == 1 && engine.hasExactSuccessEndFlags()) {
+            hitEnd = result == 1 ? engine.successHitsEnd(groups, to)
                     : mode == 0 || engine.anchoredMissHitsEnd(input, to, start);
             return result;
         }
@@ -1940,6 +1953,15 @@ public final class Matcher implements MatchResult {
         javaStorage(pattern);
         javaMatchChoice = new JavaMatchChoice(pattern.root, pattern.matchRoot,
                 inputSpecific ? new WeakReference<>(text) : null, from, to, to - from, mode);
+    }
+
+    private void selectJavaOnly() {
+        javaStorage(parentPattern);
+        javaMatchChoice = new JavaMatchChoice(parentPattern.root, parentPattern.matchRoot,
+                null, 0, 0, Integer.MAX_VALUE, 0);
+        nativeEndPattern = null;
+        nativeEndInput = null;
+        nativePendingLast = false;
     }
 
     private void javaStorage(Pattern execution) {
