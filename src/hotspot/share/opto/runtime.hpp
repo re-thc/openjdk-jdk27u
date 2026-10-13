@@ -193,6 +193,7 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _updateBytesCRC32_Type;
   static const TypeFunc* _updateBytesCRC32C_Type;
   static const TypeFunc* _updateBytesAdler32_Type;
+  static const TypeFunc* _getRandomBytes_Type;
   static const TypeFunc* _osr_end_Type;
   static const TypeFunc* _register_finalizer_Type;
   static const TypeFunc* _vthread_transition_Type;
@@ -709,6 +710,14 @@ private:
   static inline const TypeFunc* updateBytesAdler32_Type() {
     assert(_updateBytesAdler32_Type != nullptr, "should be initialized");
     return _updateBytesAdler32_Type;
+  }
+
+  /**
+   * int getRandomBytes(byte* b, int len)
+   */
+  static inline const TypeFunc* getRandomBytes_Type() {
+    assert(_getRandomBytes_Type != nullptr, "should be initialized");
+    return _getRandomBytes_Type;
   }
 
 

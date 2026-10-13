@@ -1021,6 +1021,13 @@ class os: AllStatic {
   static int next_random(unsigned int rand_seed); // pure version of random()
   static void init_random(unsigned int initval);    // initialize random sequence
 
+  // Fills len bytes at buf with random bytes from the operating system's
+  // cryptographic random number generator, without blocking, like
+  // /dev/urandom. Returns 0, or the errno value.
+  // The NativePRNG intrinsic calls it from compiled code as a leaf, without
+  // a thread state transition, so it must not block.
+  static int get_random_bytes(void* buf, int len);
+
   // Structured OS Exception support
   static void os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, JavaThread* thread);
 

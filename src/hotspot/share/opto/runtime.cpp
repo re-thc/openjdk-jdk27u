@@ -240,6 +240,7 @@ const TypeFunc* OptoRuntime::_intpoly_assign_Type                 = nullptr;
 const TypeFunc* OptoRuntime::_updateBytesCRC32_Type               = nullptr;
 const TypeFunc* OptoRuntime::_updateBytesCRC32C_Type              = nullptr;
 const TypeFunc* OptoRuntime::_updateBytesAdler32_Type             = nullptr;
+const TypeFunc* OptoRuntime::_getRandomBytes_Type                 = nullptr;
 const TypeFunc* OptoRuntime::_osr_end_Type                        = nullptr;
 const TypeFunc* OptoRuntime::_register_finalizer_Type             = nullptr;
 const TypeFunc* OptoRuntime::_vthread_transition_Type             = nullptr;
@@ -1069,6 +1070,23 @@ static const TypeFunc* make_updateBytesAdler32_Type() {
   // result type needed
   fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeInt::INT; // crc result
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms+1, fields);
+  return TypeFunc::make(domain, range);
+}
+
+static const TypeFunc* make_getRandomBytes_Type() {
+  // create input type (domain)
+  int argcnt = 2;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // dst + offset
+  fields[argp++] = TypeInt::INT;        // len
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypeInt::INT; // 0 or errno
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms+1, fields);
   return TypeFunc::make(domain, range);
 }
@@ -2355,6 +2373,7 @@ void OptoRuntime::initialize_types() {
   _updateBytesCRC32_Type              = make_updateBytesCRC32_Type();
   _updateBytesCRC32C_Type             = make_updateBytesCRC32C_Type();
   _updateBytesAdler32_Type            = make_updateBytesAdler32_Type();
+  _getRandomBytes_Type                = make_getRandomBytes_Type();
   _osr_end_Type                       = make_osr_end_Type();
   _register_finalizer_Type            = make_register_finalizer_Type();
   _vthread_transition_Type            = make_vthread_transition_Type();

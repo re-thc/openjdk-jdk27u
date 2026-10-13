@@ -29,6 +29,7 @@ import java.io.*;
 import java.net.*;
 import java.security.*;
 
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.security.util.Debug;
 
 /**
@@ -42,10 +43,10 @@ import sun.security.util.Debug;
  * other than /dev/random or /dev/urandom, generateSeed() reads that file.
  * Otherwise the seed comes from the operating system as well.
  * <p>
- * The native call is told whether to behave like /dev/urandom, which never
- * blocks (getrandom() with GRND_INSECURE), or like /dev/random, which blocks
- * until the operating system random number generator is initialized
- * (getrandom() without flags). The bytes for nextBytes() and for the seed of
+ * The native code behaves either like /dev/urandom, which never blocks
+ * (getrandom() with GRND_INSECURE), or like /dev/random, which blocks until
+ * the operating system random number generator is initialized (getrandom()
+ * without flags). The bytes for nextBytes() and for the seed of
  * the SHA1PRNG behave like /dev/urandom, except in the blocking algorithm,
  * where they behave like /dev/random. The seed for generateSeed() behaves like
  * the seed file, which is /dev/random by default.
@@ -80,12 +81,51 @@ public final class NativePRNG extends SecureRandomSpi {
     // name of the pseudo random file
     private static final String NAME_URANDOM = "/dev/urandom";
 
-    // fills the first len bytes of bytes with random bytes from the OS
+    // The most bytes that one call of getRandomBytes0 gets from the OS.
+    // Compiled code makes the call without a thread state transition, so
+    // a safepoint waits for it. This bounds how long.
+    private static final int MAX_CHUNK = 4096;
+
+    // fills b with random bytes from the OS, blocking until its random
+    // number generator is initialized, like /dev/random
+    // Not an intrinsic candidate: while it blocks, it would stall safepoints.
+    private static native void getBlockingRandomBytes0(byte[] b)
+            throws IOException;
+
+    // fills b[off, off + len) with random bytes from the OS without blocking,
+    // like /dev/urandom
+    // returns 0, or the errno value if the OS fails to provide them
+    // the caller must make sure that the range is within b
+    @IntrinsicCandidate
+    private static native int getRandomBytes0(byte[] b, int off, int len);
+
+    // throws an IOException with the message for the errno value
+    private static native void throwIOException0(int errno) throws IOException;
+
+    // fills b with random bytes from the OS
     // urandom selects whether this does not block, like /dev/urandom, or
     // blocks until the OS random number generator is initialized, like
     // /dev/random
-    private static native void getRandomBytes0(byte[] bytes, int len,
-            boolean urandom) throws IOException;
+    private static void getRandomBytes(byte[] b, boolean urandom)
+            throws IOException {
+        if (!urandom) {
+            getBlockingRandomBytes0(b);
+            return;
+        }
+        int len = b.length;
+        int off = 0;
+        while (off < len) {
+            int n = len - off;
+            if (n > MAX_CHUNK) {
+                n = MAX_CHUNK;
+            }
+            int errno = getRandomBytes0(b, off, n);
+            if (errno != 0) {
+                throwIOException0(errno);
+            }
+            off += n;
+        }
+    }
 
     // which kind of RandomIO object are we creating?
     private enum Variant {
@@ -369,7 +409,7 @@ public final class NativePRNG extends SecureRandomSpi {
                 r = new sun.security.provider.SecureRandom();
                 try {
                     byte[] b = new byte[20];
-                    getRandomBytes0(b, b.length, nextUrandom);
+                    getRandomBytes(b, nextUrandom);
                     r.engineSetSeed(b);
                 } catch (IOException e) {
                     throw new ProviderException("init failed", e);
@@ -404,7 +444,7 @@ public final class NativePRNG extends SecureRandomSpi {
             try {
                 byte[] b = new byte[numBytes];
                 if (seedIn == null) {
-                    getRandomBytes0(b, b.length, seedUrandom);
+                    getRandomBytes(b, seedUrandom);
                 } else {
                     synchronized (LOCK_GET_SEED) {
                         readFully(seedIn, b);
@@ -448,11 +488,11 @@ public final class NativePRNG extends SecureRandomSpi {
             try {
                 sun.security.provider.SecureRandom mix = mixRandom;
                 if (mix == null) {
-                    getRandomBytes0(data, data.length, nextUrandom);
+                    getRandomBytes(data, nextUrandom);
                     return;
                 }
                 byte[] random = new byte[data.length];
-                getRandomBytes0(random, random.length, nextUrandom);
+                getRandomBytes(random, nextUrandom);
                 mix.engineNextBytes(data);
                 for (int i = 0; i < data.length; i++) {
                     data[i] ^= random[i];

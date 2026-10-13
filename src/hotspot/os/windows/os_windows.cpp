@@ -3964,6 +3964,11 @@ int os::current_process_id() {
   return (_initial_pid ? _initial_pid : _getpid());
 }
 
+// Not implemented, NativePRNG does not use the intrinsic on Windows.
+int os::get_random_bytes(void* buf, int len) {
+  return ENOSYS;
+}
+
 int                       os::win32::_processor_type            = 0;
 // Processor level is not available on non-NT systems, use vm_version instead
 int                       os::win32::_processor_level           = 0;
