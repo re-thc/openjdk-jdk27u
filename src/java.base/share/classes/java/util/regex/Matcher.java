@@ -246,6 +246,7 @@ public final class Matcher implements MatchResult {
     private boolean nativePendingLast;
     private int nativeEndLast, nativeEndOldLast;
     private JavaMatchChoice javaMatchChoice;
+    private boolean javaOnly;
     private record JavaMatchChoice(Pattern.Node root, Pattern.Node matchRoot,
             WeakReference<CharSequence> input, int from, int to, int width, int mode) { }
 
@@ -261,6 +262,7 @@ public final class Matcher implements MatchResult {
     Matcher(Pattern parent, CharSequence text) {
         this.parentPattern = parent;
         this.text = text;
+        javaOnly = parent.rustRegex == null;
 
         // Allocate state storage
         groups = new int[parent.capturingGroupCount * 2 + (parent.rustRegex != null ? 4 : 0)];
@@ -436,6 +438,7 @@ public final class Matcher implements MatchResult {
         ensureContinuation();
         javaMatchChoice = null;
         parentPattern = newPattern;
+        javaOnly = newPattern.rustRegex == null;
         namedGroups = null;
 
         // Reallocate state storage
@@ -1779,7 +1782,10 @@ public final class Matcher implements MatchResult {
         acceptMode = NOANCHOR;
         Pattern.Node javaRoot;
         RustRegex engine = null;
-        if (!RustRegex.ENABLED) javaRoot = parentPattern.root;
+        if (!RustRegex.ENABLED || javaOnly) {
+            clearNativeEnd();
+            javaRoot = parentPattern.root;
+        }
         else {
             JavaMatchChoice choice = javaMatchChoice;
             if (choice != null && (choice.input == null ? to - this.from <= choice.width :
@@ -1795,7 +1801,7 @@ public final class Matcher implements MatchResult {
                 engine = parentPattern.rustRegex;
                 if (engine == null) {
                     selectJavaOnly();
-                    javaRoot = javaMatchChoice.root;
+                    javaRoot = parentPattern.root;
                 } else javaRoot = null;
             }
         }
@@ -1817,7 +1823,7 @@ public final class Matcher implements MatchResult {
         else {
             selectJavaOnly();
             prepareJavaMatch(base);
-            result = javaMatchChoice.root.match(this, from, text);
+            result = parentPattern.root.match(this, from, text);
         }
         if (!result) first = -1;
         oldLast = last;
@@ -1842,7 +1848,10 @@ public final class Matcher implements MatchResult {
         acceptMode = anchor;
         Pattern.Node javaRoot;
         RustRegex engine = null;
-        if (!RustRegex.ENABLED) javaRoot = parentPattern.matchRoot;
+        if (!RustRegex.ENABLED || javaOnly) {
+            clearNativeEnd();
+            javaRoot = parentPattern.matchRoot;
+        }
         else {
             JavaMatchChoice choice = javaMatchChoice;
             if (choice != null && (choice.input == null ? to - this.from <= choice.width :
@@ -1859,7 +1868,7 @@ public final class Matcher implements MatchResult {
                 engine = parentPattern.rustRegex;
                 if (engine == null) {
                     selectJavaOnly();
-                    javaRoot = javaMatchChoice.matchRoot;
+                    javaRoot = parentPattern.matchRoot;
                 } else javaRoot = null;
             }
         }
@@ -1881,7 +1890,7 @@ public final class Matcher implements MatchResult {
         else {
             selectJavaOnly();
             prepareJavaMatch(base);
-            result = javaMatchChoice.matchRoot.match(this, from, text);
+            result = parentPattern.matchRoot.match(this, from, text);
         }
         if (!result) first = -1;
         oldLast = last;
@@ -1948,11 +1957,18 @@ public final class Matcher implements MatchResult {
 
     private void selectJavaOnly() {
         javaStorage(parentPattern);
-        javaMatchChoice = new JavaMatchChoice(parentPattern.root, parentPattern.matchRoot,
-                null, 0, 0, Integer.MAX_VALUE, 0);
-        nativeEndPattern = null;
-        nativeEndInput = null;
-        nativePendingLast = false;
+        javaOnly = true;
+        javaMatchChoice = null;
+        clearNativeEnd();
+    }
+
+    @ForceInline
+    private void clearNativeEnd() {
+        if (nativeEndPattern != null) {
+            nativeEndPattern = null;
+            nativeEndInput = null;
+            nativePendingLast = false;
+        }
     }
 
     private void prepareJavaMatch(int base) {
