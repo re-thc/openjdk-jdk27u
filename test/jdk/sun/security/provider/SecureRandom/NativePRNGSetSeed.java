@@ -47,12 +47,6 @@ public class NativePRNGSetSeed {
 
     public static void main(String[] args) throws Exception {
         String alg = args[0];
-        if (alg.equals("NativePRNGBlocking")
-                && System.getProperty("os.name").equals("Linux")) {
-            // /dev/random may block on Linux
-            System.out.println("Skipping " + alg);
-            return;
-        }
         if (alg.equals("default")) {
             testDefault();
         } else {
