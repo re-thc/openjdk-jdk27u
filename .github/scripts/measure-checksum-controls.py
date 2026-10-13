@@ -65,7 +65,9 @@ cases = {
     'scalar': ('ChecksumPaths.adlerByte', []),
 }
 
-paths.update({'kernel': [], 'direct': [], 'pmull': ['-XX:+UnlockDiagnosticVMOptions', '-XX:+UseCryptoPmullForCRC32']})
+paths.update({'kernel': [], 'direct': []})
+if platform.machine().lower() in ('arm64', 'aarch64'):
+    paths['pmull'] = ['-XX:+UnlockDiagnosticVMOptions', '-XX:+UseCryptoPmullForCRC32']
 images = {'selected': jdk, 'jni': jdk, 'kernel': root / 'qualification/controls/kernels',
           'pmull': root / 'qualification/controls/kernels', 'direct': root / 'qualification/controls/direct'}
 commands = []
