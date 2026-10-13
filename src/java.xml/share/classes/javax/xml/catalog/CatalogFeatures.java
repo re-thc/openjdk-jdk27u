@@ -556,7 +556,9 @@ public class CatalogFeatures {
      * @param builder the CatalogFeatures builder
      */
     private void setProperties(Builder builder) {
-        builder.values.forEach((feature, value) -> setProperty(feature, State.APIPROPERTY, value));
+        for (Map.Entry<Feature, String> entry : builder.values.entrySet()) {
+            setProperty(entry.getKey(), State.APIPROPERTY, entry.getValue());
+        }
     }
     /**
      * Sets the value of a property, updates only if it shall override.

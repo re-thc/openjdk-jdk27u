@@ -29,7 +29,6 @@ import com.sun.org.apache.xerces.internal.jaxp.validation.XMLSchemaFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
-import java.util.function.Supplier;
 import jdk.xml.internal.SecuritySupport;
 
 /**
@@ -50,14 +49,12 @@ class SchemaFactoryFinder  {
     }
 
     /**
-     * <p>Conditional debug printing.</p>
+     * <p>Debug printing. Callers must check {@code debug}.</p>
      *
-     * @param msgGen Supplier function that returns debug message
+     * @param msg the debug message
      */
-    private static void debugPrintln(Supplier<String> msgGen) {
-        if (debug) {
-            System.err.println("JAXP: " + msgGen.get());
-        }
+    private static void debugPrintln(String msg) {
+        System.err.println("JAXP: " + msg);
     }
 
     /**
@@ -86,7 +83,7 @@ class SchemaFactoryFinder  {
     private void debugDisplayClassLoader() {
         try {
             if( classLoader == SecuritySupport.getContextClassLoader() ) {
-                debugPrintln(()->"using thread context class loader ("+classLoader+") for search");
+                debugPrintln("using thread context class loader ("+classLoader+") for search");
                 return;
             }
         } catch( Throwable unused ) {
@@ -94,11 +91,11 @@ class SchemaFactoryFinder  {
         }
 
         if( classLoader==ClassLoader.getSystemClassLoader() ) {
-            debugPrintln(()->"using system class loader ("+classLoader+") for search");
+            debugPrintln("using system class loader ("+classLoader+") for search");
             return;
         }
 
-        debugPrintln(()->"using class loader ("+classLoader+") for search");
+        debugPrintln("using class loader ("+classLoader+") for search");
     }
 
     /**
@@ -121,10 +118,12 @@ class SchemaFactoryFinder  {
             throw new NullPointerException();
         }
         SchemaFactory f = _newFactory(schemaLanguage);
-        if (f != null) {
-            debugPrintln(()->"factory '" + f.getClass().getName() + "' was found for " + schemaLanguage);
-        } else {
-            debugPrintln(()->"unable to find a factory for " + schemaLanguage);
+        if (debug) {
+            if (f != null) {
+                debugPrintln("factory '" + f.getClass().getName() + "' was found for " + schemaLanguage);
+            } else {
+                debugPrintln("unable to find a factory for " + schemaLanguage);
+            }
         }
         return f;
     }
@@ -139,21 +138,26 @@ class SchemaFactoryFinder  {
     private SchemaFactory _newFactory(String schemaLanguage) {
         SchemaFactory sf;
 
-        String propertyName = SERVICE_CLASS.getName() + ":" + schemaLanguage;
+        String propertyName = SERVICE_CLASS.getName().concat(":").concat(schemaLanguage);
 
         // system property look up
         try {
-            debugPrintln(()->"Looking up system property '"+propertyName+"'" );
+            if (debug) {
+                debugPrintln("Looking up system property '"+propertyName+"'" );
+            }
             String r = System.getProperty(propertyName);
             if(r!=null) {
-                debugPrintln(()->"The value is '"+r+"'");
+                if (debug) {
+                    debugPrintln("The value is '"+r+"'");
+                }
                 sf = createInstance(r);
                 if(sf!=null)    return sf;
-            } else
-                debugPrintln(()->"The property is undefined.");
+            } else if (debug) {
+                debugPrintln("The property is undefined.");
+            }
         } catch( Throwable t ) {
             if( debug ) {
-                debugPrintln(()->"failed to look up system property '"+propertyName+"'" );
+                debugPrintln("failed to look up system property '"+propertyName+"'" );
                 t.printStackTrace();
             }
         }
@@ -180,11 +184,15 @@ class SchemaFactoryFinder  {
 
         // platform default
         if(schemaLanguage.equals("http://www.w3.org/2001/XMLSchema")) {
-            debugPrintln(()->"attempting to use the platform default XML Schema validator");
+            if (debug) {
+                debugPrintln("attempting to use the platform default XML Schema validator");
+            }
             return new XMLSchemaFactory();
         }
 
-        debugPrintln(()->"all things were tried, but none was found. bailing out.");
+        if (debug) {
+            debugPrintln("all things were tried, but none was found. bailing out.");
+        }
         return null;
     }
 
@@ -223,15 +231,21 @@ class SchemaFactoryFinder  {
     SchemaFactory createInstance(String className) {
         SchemaFactory schemaFactory = null;
 
-        debugPrintln(()->"createInstance(" + className + ")");
+        if (debug) {
+            debugPrintln("createInstance(" + className + ")");
+        }
 
         // get Class from className
         Class<?> clazz = createClass(className);
         if (clazz == null) {
-            debugPrintln(()->"failed to getClass(" + className + ")");
+            if (debug) {
+                debugPrintln("failed to getClass(" + className + ")");
+            }
             return null;
         }
-        debugPrintln(()->"loaded " + className + " from " + which(clazz));
+        if (debug) {
+            debugPrintln("loaded " + className + " from " + which(clazz));
+        }
 
         // instantiate Class as a SchemaFactory
         try {
@@ -242,9 +256,9 @@ class SchemaFactoryFinder  {
             schemaFactory = (SchemaFactory) clazz.getConstructor().newInstance();
         } catch (ClassCastException | IllegalAccessException | IllegalArgumentException |
             InstantiationException | InvocationTargetException | NoSuchMethodException ex) {
-            debugPrintln(()->"could not instantiate " + clazz.getName());
             if (debug) {
-                    ex.printStackTrace();
+                debugPrintln("could not instantiate " + clazz.getName());
+                ex.printStackTrace();
             }
             return null;
         }

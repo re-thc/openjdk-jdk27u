@@ -73,6 +73,7 @@ class RegexParser {
     String regex;
     int regexlen;
     int options;
+    private Locale locale;
     ResourceBundle resources;
     int chardata;
     int nexttoken;
@@ -93,21 +94,21 @@ class RegexParser {
     }
 
     public void setLocale(Locale locale) {
-        try {
-            if (locale != null) {
-                this.resources = SecuritySupport.getResourceBundle("com.sun.org.apache.xerces.internal.impl.xpath.regex.message", locale);
-            }
-            else {
-                this.resources = SecuritySupport.getResourceBundle("com.sun.org.apache.xerces.internal.impl.xpath.regex.message");
-            }
-        }
-        catch (MissingResourceException mre) {
-            throw new RuntimeException("Installation Problem???  Couldn't load messages: "
-                                       + mre.getMessage());
-        }
+        this.locale = (locale != null) ? locale : Locale.getDefault();
+        // the messages are only needed to report an error
+        this.resources = null;
     }
 
     final ParseException ex(String key, int loc) {
+        if (this.resources == null) {
+            try {
+                this.resources = SecuritySupport.getResourceBundle("com.sun.org.apache.xerces.internal.impl.xpath.regex.message", this.locale);
+            }
+            catch (MissingResourceException mre) {
+                throw new RuntimeException("Installation Problem???  Couldn't load messages: "
+                                           + mre.getMessage());
+            }
+        }
         return new ParseException(this.resources.getString(key), loc);
     }
 

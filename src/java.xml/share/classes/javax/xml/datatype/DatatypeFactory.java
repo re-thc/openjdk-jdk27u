@@ -82,11 +82,11 @@ public abstract class DatatypeFactory {
      * the fact that the value must be an xs:Duration, they simply exclude
      * some Durations.
      */
-    private static final Pattern XDTSCHEMA_YMD =
-        Pattern.compile("[^DT]*");
+    private static final class XDTSchema {
+        static final Pattern YMD = Pattern.compile("[^DT]*");
 
-    private static final Pattern XDTSCHEMA_DTD =
-        Pattern.compile("[^YM]*[DT].*");
+        static final Pattern DTD = Pattern.compile("[^YM]*[DT].*");
+    }
 
     /**
      * Protected constructor to prevent instantiation outside of package.
@@ -378,7 +378,7 @@ public abstract class DatatypeFactory {
         }
 
         // test lexicalRepresentation against spec regex
-        Matcher matcher = XDTSCHEMA_DTD.matcher(lexicalRepresentation);
+        Matcher matcher = XDTSchema.DTD.matcher(lexicalRepresentation);
         if (!matcher.matches()) {
             throw new IllegalArgumentException(
                 "Trying to create an xdt:dayTimeDuration with an invalid"
@@ -560,7 +560,7 @@ public abstract class DatatypeFactory {
         }
 
         // test lexicalRepresentation against spec regex
-        Matcher matcher = XDTSCHEMA_YMD.matcher(lexicalRepresentation);
+        Matcher matcher = XDTSchema.YMD.matcher(lexicalRepresentation);
         if (!matcher.matches()) {
             throw new IllegalArgumentException(
                     "Trying to create an xdt:yearMonthDuration with an invalid"

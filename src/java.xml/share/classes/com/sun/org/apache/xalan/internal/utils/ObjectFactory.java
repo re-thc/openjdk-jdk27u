@@ -20,7 +20,6 @@
 
 package com.sun.org.apache.xalan.internal.utils;
 
-import java.util.function.Supplier;
 import jdk.xml.internal.SecuritySupport;
 
 /**
@@ -46,11 +45,9 @@ public class ObjectFactory {
     private static final boolean DEBUG = false;
 
 
-    /** Prints a message to standard error if debugging is enabled. */
-    private static void debugPrintln(Supplier<String> msgGen) {
-        if (DEBUG) {
-            System.err.println("JAXP: " + msgGen.get());
-        }
+    /** Prints a message to standard error. Callers must check DEBUG. */
+    private static void debugPrintln(String msg) {
+        System.err.println("JAXP: " + msg);
     } // debugPrintln(String)
 
     /**
@@ -121,8 +118,10 @@ public class ObjectFactory {
         try{
             Class<?> providerClass = findProviderClass(className, cl, doFallback);
             Object instance = providerClass.getConstructor().newInstance();
-            debugPrintln(()->"created new instance of " + providerClass +
+            if (DEBUG) {
+                debugPrintln("created new instance of " + providerClass +
                              " using ClassLoader: " + cl);
+            }
             return instance;
         } catch (ClassNotFoundException x) {
             throw new ConfigurationError(

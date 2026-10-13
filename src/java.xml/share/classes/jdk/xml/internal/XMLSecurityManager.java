@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
 import javax.xml.catalog.CatalogManager;
 import javax.xml.catalog.CatalogResolver;
 import javax.xml.catalog.CatalogResolver.NotFoundAction;
@@ -815,8 +814,10 @@ public final class XMLSecurityManager implements Cloneable {
         public StringMapper(Map<String, Integer> map) {
             this.map = map;
             if (map != null) {
-                reverseMap = map.entrySet().stream()
-                    .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+                reverseMap = new HashMap<>();
+                for (Map.Entry<String, Integer> entry : map.entrySet()) {
+                    reverseMap.put(entry.getValue(), entry.getKey());
+                }
             } else {
                 reverseMap = null;
             }
