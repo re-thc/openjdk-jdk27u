@@ -1,0 +1,49 @@
+name: macOS ARM checksum controls
+on:
+  push:
+    branches: [pr/zlib-ng-platform-qualification]
+permissions:
+  contents: read
+concurrency:
+  group: zip-checksum-controls-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  controls:
+    if: contains(github.event.head_commit.message, 'macos-aarch64')
+    runs-on: macos-26
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Install build tools
+        run: |
+          brew install autoconf make ccache
+          echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
+          sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
+      - uses: ./.github/actions/get-bootjdk
+        id: bootjdk
+        with:
+          platform: macos-aarch64
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: build/zip/images/jdk
+          key: zip-platform-v1-macos-aarch64-release-e028309c31bba1c27370190381b3998eca8ef794
+          fail-on-cache-miss: true
+      - name: Compile-check scripts and record CPU features
+        run: |
+          mkdir -p qualification
+          python3 -m py_compile .github/scripts/build-checksum-controls.py .github/scripts/measure-checksum-controls.py
+          build/zip/images/jdk/bin/java -Xlog:os+cpu=info -version 2>&1 | tee qualification/cpu-features.txt
+      - name: Build and ABI-test controls
+        run: |
+          python3 .github/scripts/build-checksum-controls.py \
+            --jdk build/zip/images/jdk --bootjdk '${{ steps.bootjdk.outputs.path }}' --profile bin/configure-dev
+      - name: Compare JNI, kernels, PMULL and direct calls
+        run: python3 .github/scripts/measure-checksum-controls.py build/zip/images/jdk
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: macos-aarch64-checksum-controls
+          path: |
+            qualification
+            build/control/spec.gmk
+          retention-days: 14
