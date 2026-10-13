@@ -31,7 +31,6 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
-import java.util.SortedMap;
 import java.util.TreeMap;
 
 /**
@@ -74,7 +73,36 @@ public class ImmutableDescriptor implements Descriptor {
      * appears more than once.
      */
     public ImmutableDescriptor(String[] fieldNames, Object[] fieldValues) {
-        this(makeMap(fieldNames, fieldValues));
+        if (fieldNames == null || fieldValues == null)
+            throw new IllegalArgumentException("Null array parameter");
+        if (fieldNames.length != fieldValues.length)
+            throw new IllegalArgumentException("Different size arrays");
+        // The fields are kept sorted as they are added. A TreeMap does the
+        // same but costs much more, and this constructor is called often
+        // when an MBean is introspected.
+        String[] names = new String[fieldNames.length];
+        Object[] values = new Object[fieldNames.length];
+        int size = 0;
+        for (int i = 0; i < fieldNames.length; i++) {
+            String name = fieldNames[i];
+            if (name == null || name.isEmpty())
+                throw new IllegalArgumentException("Empty or null field name");
+            int index = Arrays.binarySearch(names, 0, size, name,
+                                            String.CASE_INSENSITIVE_ORDER);
+            if (index >= 0) {
+                if (values[index] != null) {
+                    throw new IllegalArgumentException(
+                            "Duplicate field name: " + name);
+                }
+                values[index] = fieldValues[i];
+            } else {
+                insert(names, values, size++, -index - 1, name, fieldValues[i]);
+            }
+        }
+        this.names = size == names.length
+                ? names : Arrays.copyOf(names, size);
+        this.values = size == values.length
+                ? values : Arrays.copyOf(values, size);
     }
 
     /**
@@ -91,7 +119,11 @@ public class ImmutableDescriptor implements Descriptor {
      * an {@code =} character.
      */
     public ImmutableDescriptor(String... fields) {
-        this(makeMap(fields));
+        this(splitFields(fields));
+    }
+
+    private ImmutableDescriptor(String[][] namesAndValues) {
+        this(namesAndValues[0], namesAndValues[1]);
     }
 
     /**
@@ -107,19 +139,38 @@ public class ImmutableDescriptor implements Descriptor {
     public ImmutableDescriptor(Map<String, ?> fields) {
         if (fields == null)
             throw new IllegalArgumentException("Null Map");
-        SortedMap<String, Object> map =
-                new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        // Sorted as it is filled, see the constructor with arrays. The map
+        // can change while it is read, so the arrays are grown if necessary.
+        String[] names = new String[fields.size()];
+        Object[] values = new Object[names.length];
+        int size = 0;
         for (Map.Entry<String, ?> entry : fields.entrySet()) {
             String name = entry.getKey();
             if (name == null || name.isEmpty())
                 throw new IllegalArgumentException("Empty or null field name");
-            if (map.containsKey(name))
+            int index = Arrays.binarySearch(names, 0, size, name,
+                                            String.CASE_INSENSITIVE_ORDER);
+            if (index >= 0)
                 throw new IllegalArgumentException("Duplicate name: " + name);
-            map.put(name, entry.getValue());
+            if (size == names.length) {
+                names = Arrays.copyOf(names, size + 4);
+                values = Arrays.copyOf(values, size + 4);
+            }
+            insert(names, values, size++, -index - 1, name, entry.getValue());
         }
-        int size = map.size();
-        this.names = map.keySet().toArray(new String[size]);
-        this.values = map.values().toArray(new Object[size]);
+        this.names = size == names.length
+                ? names : Arrays.copyOf(names, size);
+        this.values = size == values.length
+                ? values : Arrays.copyOf(values, size);
+    }
+
+    // Inserts a field at the given index of the first size fields.
+    private static void insert(String[] names, Object[] values, int size,
+                               int index, String name, Object value) {
+        System.arraycopy(names, index, names, index + 1, size - index);
+        System.arraycopy(values, index, values, index + 1, size - index);
+        names[index] = name;
+        values[index] = value;
     }
 
     /**
@@ -158,28 +209,7 @@ public class ImmutableDescriptor implements Descriptor {
         return this;
     }
 
-    private static SortedMap<String, ?> makeMap(String[] fieldNames,
-                                                Object[] fieldValues) {
-        if (fieldNames == null || fieldValues == null)
-            throw new IllegalArgumentException("Null array parameter");
-        if (fieldNames.length != fieldValues.length)
-            throw new IllegalArgumentException("Different size arrays");
-        SortedMap<String, Object> map =
-                new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        for (int i = 0; i < fieldNames.length; i++) {
-            String name = fieldNames[i];
-            if (name == null || name.isEmpty())
-                throw new IllegalArgumentException("Empty or null field name");
-            Object old = map.put(name, fieldValues[i]);
-            if (old != null) {
-                throw new IllegalArgumentException("Duplicate field name: " +
-                                                   name);
-            }
-        }
-        return map;
-    }
-
-    private static SortedMap<String, ?> makeMap(String[] fields) {
+    private static String[][] splitFields(String[] fields) {
         if (fields == null)
             throw new IllegalArgumentException("Null fields parameter");
         String[] fieldNames = new String[fields.length];
@@ -192,10 +222,10 @@ public class ImmutableDescriptor implements Descriptor {
                                                    field);
             }
             fieldNames[i] = field.substring(0, eq);
-            // makeMap will catch the case where the name is empty
+            // the constructor will catch the case where the name is empty
             fieldValues[i] = field.substring(eq + 1);
         }
-        return makeMap(fieldNames, fieldValues);
+        return new String[][] {fieldNames, fieldValues};
     }
 
     /**

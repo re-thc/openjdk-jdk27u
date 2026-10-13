@@ -256,6 +256,12 @@ public class DiagnosticCommandImpl extends NotificationEmitterSupport
         return sb.toString();
     }
 
+    private static final String[] ARGUMENT_FIELDS = {
+        "dcmd.arg.name", "dcmd.arg.type", "dcmd.arg.description",
+        "dcmd.arg.isMandatory", "dcmd.arg.isMultiple", "dcmd.arg.isOption",
+        "dcmd.arg.position"
+    };
+
     private Descriptor commandDescriptor(Wrapper w) throws IllegalArgumentException {
         HashMap<String, Object> map = new HashMap<>();
         map.put("dcmd.name", w.info.getName());
@@ -265,20 +271,18 @@ public class DiagnosticCommandImpl extends NotificationEmitterSupport
         if (w.info.getArgumentsInfo() != null && !w.info.getArgumentsInfo().isEmpty()) {
             HashMap<String, Object> allargmap = new HashMap<>();
             for (DiagnosticCommandArgumentInfo arginfo : w.info.getArgumentsInfo()) {
-                HashMap<String, Object> argmap = new HashMap<>();
-                argmap.put("dcmd.arg.name", arginfo.getName());
-                argmap.put("dcmd.arg.type", sanitiseType(arginfo.getType()));
-                argmap.put("dcmd.arg.description", arginfo.getDescription());
-                argmap.put("dcmd.arg.isMandatory", arginfo.isMandatory());
-                argmap.put("dcmd.arg.isMultiple", arginfo.isMultiple());
                 boolean isOption = arginfo.isOption();
-                argmap.put("dcmd.arg.isOption", isOption);
-                if(!isOption) {
-                    argmap.put("dcmd.arg.position", arginfo.getPosition());
-                } else {
-                    argmap.put("dcmd.arg.position", -1);
-                }
-                allargmap.put(arginfo.getName(), new ImmutableDescriptor(argmap));
+                Object[] argvalues = {
+                    arginfo.getName(),
+                    sanitiseType(arginfo.getType()),
+                    arginfo.getDescription(),
+                    arginfo.isMandatory(),
+                    arginfo.isMultiple(),
+                    isOption,
+                    isOption ? -1 : arginfo.getPosition()
+                };
+                allargmap.put(arginfo.getName(),
+                    new ImmutableDescriptor(ARGUMENT_FIELDS, argvalues));
             }
             map.put("dcmd.arguments", new ImmutableDescriptor(allargmap));
         }
