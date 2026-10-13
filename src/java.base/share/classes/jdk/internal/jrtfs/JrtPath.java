@@ -131,9 +131,9 @@ final class JrtPath implements Path {
         if (index == (offsets.length - 1)) {
             end = path.length();
         } else {
-            end = offsets[index + 1];
+            end = offsets[index + 1] - 1;  // before the separator
         }
-        return new JrtPath(jrtfs, path.substring(begin, end));
+        return new JrtPath(jrtfs, path.substring(begin, end), true);
     }
 
     @Override
@@ -286,6 +286,27 @@ final class JrtPath implements Path {
             sb.append('/');
         sb.append(o.path);
         return new JrtPath(jrtfs, sb.toString(), true);
+    }
+
+    // Resolves a non-empty, already normalized name element (it has no '/') against this path.
+    final JrtPath resolveName(String name) {
+        if (this.path.isEmpty()) {
+            return new JrtPath(jrtfs, name, true);
+        }
+        StringBuilder sb = new StringBuilder(path.length() + name.length() + 1);
+        sb.append(path);
+        if (path.charAt(path.length() - 1) != '/')
+            sb.append('/');
+        sb.append(name);
+        JrtPath result = new JrtPath(jrtfs, sb.toString(), true);
+        // The result needs no resolving of "." and ".." if this path did not, and
+        // the name does not end with a dot (which also makes ".", ".." and "x.").
+        // This is known without looking at the path again, which is done for the
+        // path of every file that is looked up.
+        if (resolved == path && name.charAt(name.length() - 1) != '.') {
+            result.resolved = result.path;
+        }
+        return result;
     }
 
     @Override
