@@ -1,0 +1,334 @@
+{
+  "source_revision": "8bf01e9ed8a3df53fd8836d61216ed511ad3e591",
+  "master_revision": "87edd79d3104ff502f7befec034716b081436f49",
+  "images": {
+    "release": {
+      "vm": {
+        "sha256": "db0c4a112cf92b2deaa25353bceb660c1c128e8926c7df953963a205a94804ad",
+        "bytes": 30469224
+      },
+      "modules": {
+        "sha256": "9f94b0228df889923bee45f977405fcd6ac1ee75de7d19d24b48935439b6a3c5",
+        "bytes": 116059734
+      },
+      "cds": {
+        "sha256": "12b74304dfebdb6904367b9589d5e0e6e9e010709e2ff3924a910baf971f3611",
+        "bytes": 15638528
+      }
+    },
+    "debug": {
+      "vm": {
+        "sha256": "8f8c9ee1439a91332de9afab2428949ac531324e43e8d723d7f6b6f906419497",
+        "bytes": 48458536
+      },
+      "modules": {
+        "sha256": "2d40590e53b68abe77a230f74de5e8bccc09dbc9f56396f52bba23a5453f0197",
+        "bytes": 116059734
+      },
+      "cds": {
+        "sha256": "d4f846986a1969c995419af3d23cd9c636719e0b066e998240d7a3db25709e2b",
+        "bytes": 16535552
+      }
+    },
+    "master": {
+      "vm": {
+        "sha256": "0c76a56a06b00e20fe14aaab2699aecf945fa587a14d9ca848a481a22dadf622",
+        "bytes": 30401120
+      },
+      "modules": {
+        "sha256": "1b0409c7f71d11b02e89c84125d69a68979c69182882a76cc94f4019378fe228",
+        "bytes": 116058436
+      },
+      "cds": {
+        "sha256": "48d49d1cff3dd9efb644b486601880437fcf1307789194d25d6e1e74745d8f50",
+        "bytes": 15638528
+      }
+    }
+  },
+  "common": {
+    "release": "compiler/intrinsics/common/TestCommonAVX512Intrinsics.java                Passed. Execution successful\ncompiler/intrinsics/common/TestCommonArithmeticIntrinsics.java            Passed. Execution successful\ncompiler/intrinsics/common/TestCommonBigIntegerShifts.java                Passed. Execution successful\ncompiler/intrinsics/common/TestCommonDigestStreaming.java                 Passed. Execution successful\ncompiler/intrinsics/common/TestCommonEvaluationOrder.java                 Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntPolyAssign.java                   Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicAvailability.java           Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicBreakpoints.java            Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicEvents.java                 Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicFallback.java               Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicGuardIsolation.java#level1  Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicGuardIsolation.java#level3  Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicInitialization.java         Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicRecompilation.java          Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsics.java                      Passed. Execution successful\ncompiler/intrinsics/common/TestCommonMethodHandles.java#level1            Passed. Execution successful\ncompiler/intrinsics/common/TestCommonMethodHandles.java#level3            Passed. Execution successful\ncompiler/intrinsics/common/TestCommonMulAdd.java                          Passed. Execution successful\ncompiler/intrinsics/common/TestCommonScalarFlags.java                     Passed. Execution successful\ncompiler/intrinsics/common/TestCommonScalarIntrinsics.java                Passed. Execution successful\n",
+    "debug": "compiler/intrinsics/common/TestCommonAVX512Intrinsics.java                Passed. Execution successful\ncompiler/intrinsics/common/TestCommonArithmeticIntrinsics.java            Passed. Execution successful\ncompiler/intrinsics/common/TestCommonBigIntegerShifts.java                Passed. Execution successful\ncompiler/intrinsics/common/TestCommonDigestStreaming.java                 Passed. Execution successful\ncompiler/intrinsics/common/TestCommonEvaluationOrder.java                 Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntPolyAssign.java                   Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicAvailability.java           Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicBreakpoints.java            Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicEvents.java                 Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicFallback.java               Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicGuardIsolation.java#level1  Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicGuardIsolation.java#level3  Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicInitialization.java         Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicRecompilation.java          Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsics.java                      Passed. Execution successful\ncompiler/intrinsics/common/TestCommonMethodHandles.java#level1            Passed. Execution successful\ncompiler/intrinsics/common/TestCommonMethodHandles.java#level3            Passed. Execution successful\ncompiler/intrinsics/common/TestCommonMulAdd.java                          Passed. Execution successful\ncompiler/intrinsics/common/TestCommonScalarFlags.java                     Passed. Execution successful\ncompiler/intrinsics/common/TestCommonScalarIntrinsics.java                Passed. Execution successful\n"
+  },
+  "regression": {
+    "source_revision": "8bf01e9ed8a3df53fd8836d61216ed511ad3e591",
+    "selections": [
+      {
+        "name": "final-jdk",
+        "exit_code": 0,
+        "command": [
+          "/workspace/toolchains/jdk27/bin/java",
+          "-Xint",
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-jar",
+          "/workspace/toolchains/jtreg83/lib/jtreg.jar",
+          "-othervm",
+          "-conc:1",
+          "-timeoutFactor:4",
+          "-jdk:/workspace/work/common-intrinsics-dot/build/common-review-release/images/jdk",
+          "-nativepath:/workspace/work/common-intrinsics-dot/build/common-review-release/support/test/hotspot/jtreg/native/lib",
+          "-w:/workspace/work/dot-evidence/jtreg/final-jdk-work",
+          "-r:/workspace/work/dot-evidence/jtreg/final-jdk-report",
+          "-vmoptions:-XX:ActiveProcessorCount=1 -XX:CICompilerCount=2 -XX:+UseSerialGC -Dseed=42 -Xms32m -Xmx256m",
+          "@/workspace/work/common-intrinsics-dot-qualification/.github/qualification/jdk-tests.txt"
+        ],
+        "summary": "com/sun/crypto/provider/Cipher/AEAD/AEADBufferTest.java                                   Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AEAD/Encrypt.java                                          Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AEAD/GCMIncrementByte4.java                                Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AEAD/GCMIncrementDirect4.java                              Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AEAD/GCMLargeDataKAT.java                                  Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AEAD/GCMParameterSpecTest.java                             Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AEAD/GCMShortBuffer.java                                   Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AEAD/GCMShortInput.java                                    Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AEAD/KeyWrapper.java                                       Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AEAD/OverlapByteBuffer.java                                Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AEAD/ReadWriteSkip.java                                    Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AEAD/SameBuffer.java                                       Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AEAD/SealedObjectTest.java                                 Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AEAD/WrongAAD.java                                         Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/CICO.java                                              Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/CTR.java                                               Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/Padding.java                                           Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/Test4511676.java                                       Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/Test4512524.java                                       Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/Test4512704.java                                       Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/Test4513830.java                                       Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/Test4517355.java                                       Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/Test4626070.java                                       Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/TestAESCipher.java                                     Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithDefaultProvider.java         Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithProviderChange.java          Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithRemoveAddProvider.java       Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/TestCICOWithGCM.java                                   Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/TestCICOWithGCMAndAAD.java                             Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/TestCopySafe.java                                      Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/TestGCMKeyAndIvCheck.java                              Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/TestGCMSplitBound.java                                 Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/TestGHASH.java                                         Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/TestISO10126Padding.java                               Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/TestKATForECB_IV.java                                  Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/TestKATForECB_VK.java                                  Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/TestKATForECB_VT.java                                  Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/TestKATForGCM.java                                     Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/TestNoPaddingModes.java                                Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/TestNonexpanding.java                                  Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/TestSameBuffer.java                                    Passed. Execution successful\ncom/sun/crypto/provider/Cipher/AES/TestShortBuffer.java                                   Passed. Execution successful\ncom/sun/crypto/provider/Cipher/ChaCha20/ChaCha20KAT.java                                  Passed. Execution successful\ncom/sun/crypto/provider/Cipher/ChaCha20/ChaCha20KeyGeneratorTest.java                     Passed. Execution successful\ncom/sun/crypto/provider/Cipher/ChaCha20/ChaCha20NoReuse.java                              Passed. Execution successful\ncom/sun/crypto/provider/Cipher/ChaCha20/ChaCha20Poly1305ParamTest.java                    Passed. Execution successful\ncom/sun/crypto/provider/Cipher/ChaCha20/OutputSizeTest.java                               Passed. Execution successful\ncom/sun/crypto/provider/Cipher/ChaCha20/UpdateAADTest.java                                Passed. Execution successful\ncom/sun/crypto/provider/Cipher/ChaCha20/unittest/ChaCha20CipherUnitTest.java              Passed. Execution successful\ncom/sun/crypto/provider/Cipher/ChaCha20/unittest/ChaCha20Poly1305ParametersUnitTest.java  Passed. Execution successful\ncom/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id0          Passed. Execution successful\ncom/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id1          Passed. Execution successful\ncom/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id2          Passed. Execution successful\ncom/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id3          Passed. Execution successful\ncom/sun/crypto/provider/Cipher/ChaCha20/unittest/Poly1305UnitTestDriver.java#id4          Passed. Execution successful\njava/lang/Integer/Unsigned.java                                                           Passed. Execution successful\njava/lang/Long/Unsigned.java                                                              Passed. Execution successful\njava/lang/Math/ExactArithTests.java                                                       Passed. Execution successful\njava/math/BigDecimal/SquareRootTests.java                                                 Passed. Execution successful\njava/math/BigInteger/BigIntegerTest.java                                                  Passed. Execution successful\njava/math/BigInteger/ModPow.java                                                          Passed. Execution successful\njava/security/MessageDigest/ArgumentSanity.java                                           Passed. Execution successful\njava/security/MessageDigest/ByteBuffers.java                                              Passed. Execution successful\njava/security/MessageDigest/TestCloneable.java                                            Passed. Execution successful\njava/security/MessageDigest/TestDigestIOStream.java                                       Passed. Execution successful\njava/security/MessageDigest/TestDisabledAlgorithms.java                                   Passed. Execution successful\njava/security/MessageDigest/TestSameLength.java                                           Passed. Execution successful\njava/security/MessageDigest/TestSameValue.java                                            Passed. Execution successful\njava/security/MessageDigest/ThreadSafetyTest.java                                         Passed. Execution successful\njava/util/Arrays/HashCode.java                                                            Passed. Execution successful\njava/util/Calendar/JavatimeTest.java                                                      Passed. Execution successful\njava/util/logging/HigherResolutionTimeStamps/LogRecordWithNanos.java                      Passed. Execution successful\nsun/security/provider/pqc/ML_DSA_Intrinsic_Test.java#id0                                  Passed. Execution successful\nsun/security/provider/pqc/ML_DSA_Intrinsic_Test.java#id1                                  Passed. Execution successful\n"
+      },
+      {
+        "name": "final-aot",
+        "exit_code": 0,
+        "command": [
+          "/workspace/toolchains/jdk27/bin/java",
+          "-Xint",
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-jar",
+          "/workspace/toolchains/jtreg83/lib/jtreg.jar",
+          "-othervm",
+          "-conc:1",
+          "-timeoutFactor:4",
+          "-jdk:/workspace/work/common-intrinsics-dot/build/common-review-debug/images/jdk",
+          "-nativepath:/workspace/work/common-intrinsics-dot/build/common-review-release/support/test/hotspot/jtreg/native/lib",
+          "-w:/workspace/work/dot-evidence/jtreg/final-aot-work",
+          "-r:/workspace/work/dot-evidence/jtreg/final-aot-report",
+          "-vmoptions:-XX:ActiveProcessorCount=1 -XX:CICompilerCount=2",
+          "test/hotspot/jtreg/runtime/cds/appcds/aotCache/HelloAOTCache.java",
+          "test/hotspot/jtreg/runtime/cds/appcds/aotCode/AOTCodeCPUFeatureIncompatibilityTest.java",
+          "test/hotspot/jtreg/runtime/cds/appcds/aotCode/AOTCodeCompressedOopsTest.java",
+          "test/hotspot/jtreg/runtime/cds/appcds/aotCode/AOTCodeTest.java",
+          "test/hotspot/jtreg/compiler/codecache/OverflowCodeCacheTest.java"
+        ],
+        "summary": "compiler/codecache/OverflowCodeCacheTest.java#id0                     Passed. Execution successful\ncompiler/codecache/OverflowCodeCacheTest.java#id1                     Passed. Execution successful\nruntime/cds/appcds/aotCache/HelloAOTCache.java                        Passed. Execution successful\nruntime/cds/appcds/aotCode/AOTCodeCPUFeatureIncompatibilityTest.java  Passed. Execution successful\nruntime/cds/appcds/aotCode/AOTCodeCompressedOopsTest.java             Passed. Execution successful\nruntime/cds/appcds/aotCode/AOTCodeTest.java#Z                         Passed. Execution successful\nruntime/cds/appcds/aotCode/AOTCodeTest.java#g1                        Passed. Execution successful\nruntime/cds/appcds/aotCode/AOTCodeTest.java#parallel                  Passed. Execution successful\nruntime/cds/appcds/aotCode/AOTCodeTest.java#serial                    Passed. Execution successful\nruntime/cds/appcds/aotCode/AOTCodeTest.java#shenandoah                Passed. Execution successful\n"
+      },
+      {
+        "name": "final-hotspot",
+        "exit_code": 0,
+        "command": [
+          "/workspace/toolchains/jdk27/bin/java",
+          "-Xint",
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-jar",
+          "/workspace/toolchains/jtreg83/lib/jtreg.jar",
+          "-othervm",
+          "-conc:1",
+          "-timeoutFactor:4",
+          "-jdk:/workspace/work/common-intrinsics-dot/build/common-review-release/images/jdk",
+          "-nativepath:/workspace/work/common-intrinsics-dot/build/common-review-release/support/test/hotspot/jtreg/native/lib",
+          "-w:/workspace/work/dot-evidence/jtreg/final-hotspot-work",
+          "-r:/workspace/work/dot-evidence/jtreg/final-hotspot-report",
+          "-vmoptions:-XX:ActiveProcessorCount=1 -XX:CICompilerCount=2 -XX:+UseSerialGC -Dseed=42 -Xms32m -Xmx256m",
+          "@/workspace/work/common-intrinsics-dot-qualification/.github/qualification/hotspot-tests.txt"
+        ],
+        "summary": "compiler/codegen/aes/Test8292158.java                               Passed. Execution successful\ncompiler/codegen/aes/Test8299817.java                               Passed. Execution successful\ncompiler/codegen/aes/TestAESMain.java                               Passed. Execution successful\ncompiler/codegen/aes/TestCipherBlockChainingEncrypt.java            Passed. Execution successful\ncompiler/intrinsics/bigInteger/MontgomeryMultiplyTest.java          Passed. Execution successful\ncompiler/intrinsics/bigInteger/TestMulAdd.java                      Passed. Execution successful\ncompiler/intrinsics/bigInteger/TestMultiplyToLen.java               Passed. Execution successful\ncompiler/intrinsics/bigInteger/TestMultiplyToLenReturnProfile.java  Passed. Execution successful\ncompiler/intrinsics/bigInteger/TestSquareToLen.java                 Passed. Execution successful\ncompiler/intrinsics/chacha/TestChaCha20.java                        Passed. Execution successful\ncompiler/intrinsics/sha/TestDigest.java                             Passed. Execution successful\n"
+      },
+      {
+        "name": "final-flagless",
+        "exit_code": 0,
+        "command": [
+          "/workspace/toolchains/jdk27/bin/java",
+          "-Xint",
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-jar",
+          "/workspace/toolchains/jtreg83/lib/jtreg.jar",
+          "-othervm",
+          "-conc:1",
+          "-timeoutFactor:4",
+          "-jdk:/workspace/work/common-intrinsics-dot/build/common-review-debug/images/jdk",
+          "-nativepath:/workspace/work/common-intrinsics-dot/build/common-review-release/support/test/hotspot/jtreg/native/lib",
+          "-w:/workspace/work/dot-evidence/jtreg/final-flagless-work",
+          "-r:/workspace/work/dot-evidence/jtreg/final-flagless-report",
+          "test/hotspot/jtreg/runtime/cds/MetaspaceAllocGaps.java"
+        ],
+        "summary": "runtime/cds/MetaspaceAllocGaps.java  Passed. Execution successful\n"
+      }
+    ]
+  },
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+  "cpu": {
+    "lscpu": [
+      {
+        "field": "Architecture:",
+        "data": "x86_64"
+      },
+      {
+        "field": "CPU op-mode(s):",
+        "data": "32-bit, 64-bit"
+      },
+      {
+        "field": "Address sizes:",
+        "data": "46 bits physical, 48 bits virtual"
+      },
+      {
+        "field": "Byte Order:",
+        "data": "Little Endian"
+      },
+      {
+        "field": "CPU(s):",
+        "data": "5"
+      },
+      {
+        "field": "On-line CPU(s) list:",
+        "data": "0-4"
+      },
+      {
+        "field": "Vendor ID:",
+        "data": "AuthenticAMD"
+      },
+      {
+        "field": "Model name:",
+        "data": "AMD EPYC 9V74 80-Core Processor"
+      },
+      {
+        "field": "CPU family:",
+        "data": "25"
+      },
+      {
+        "field": "Model:",
+        "data": "17"
+      },
+      {
+        "field": "Thread(s) per core:",
+        "data": "1"
+      },
+      {
+        "field": "Core(s) per socket:",
+        "data": "5"
+      },
+      {
+        "field": "Socket(s):",
+        "data": "1"
+      },
+      {
+        "field": "Stepping:",
+        "data": "1"
+      },
+      {
+        "field": "BogoMIPS:",
+        "data": "5192.28"
+      },
+      {
+        "field": "Flags:",
+        "data": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology nonstop_tsc cpuid extd_apicid tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx512_bf16 clzero xsaveerptr arat npt nrip_save tsc_scale vmcb_clean flushbyasid pausefilter pfthreshold v_vmsave_vmload avx512vbmi umip avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid fsrm arch_capabilities"
+      },
+      {
+        "field": "Hypervisor vendor:",
+        "data": "KVM"
+      },
+      {
+        "field": "Virtualization type:",
+        "data": "full"
+      },
+      {
+        "field": "L1d cache:",
+        "data": "96 KiB (3 instances)"
+      },
+      {
+        "field": "L1i cache:",
+        "data": "96 KiB (3 instances)"
+      },
+      {
+        "field": "L2 cache:",
+        "data": "3 MiB (3 instances)"
+      },
+      {
+        "field": "L3 cache:",
+        "data": "32 MiB (1 instance)"
+      },
+      {
+        "field": "NUMA node(s):",
+        "data": "1"
+      },
+      {
+        "field": "NUMA node0 CPU(s):",
+        "data": "0-4"
+      },
+      {
+        "field": "Vulnerability Gather data sampling:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Ghostwrite:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Indirect target selection:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Itlb multihit:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability L1tf:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Meltdown:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mmio stale data:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Old microcode:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Reg file data sampling:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Retbleed:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Spec rstack overflow:",
+        "data": "Vulnerable"
+      },
+      {
+        "field": "Vulnerability Spec store bypass:",
+        "data": "Vulnerable"
+      },
+      {
+        "field": "Vulnerability Spectre v1:",
+        "data": "Vulnerable: __user pointer sanitization and usercopy barriers only; no swapgs barriers"
+      },
+      {
+        "field": "Vulnerability Spectre v2:",
+        "data": "Vulnerable; STIBP: disabled; PBRSB-eIBRS: Not affected; BHI: Not affected"
+      },
+      {
+        "field": "Vulnerability Srbds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Tsa:",
+        "data": "Vulnerable"
+      },
+      {
+        "field": "Vulnerability Tsx async abort:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Vmscape:",
+        "data": "Not affected"
+      }
+    ]
+  },
+  "affinity": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "library_preparation": "Both release VM libraries rewritten with identical bytes under CPU 0 before warming; hashes unchanged",
+  "windows_probe": "Linux executable with Microsoft x64 ABI; not a Windows PR-JVM execution"
+}
