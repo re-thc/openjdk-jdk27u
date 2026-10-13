@@ -19,7 +19,8 @@ library, JNI adapter, FFM production call or new scan kernel.
   chunks. The Java backedge permits safepoints between calls. Heap-only calls
   retain their existing dispatch. Offsets/results stay in element units.
 - Inlining the segment bulk helper retains the base type information needed by
-  the existing intrinsic, including heap segments.
+  the existing intrinsic, including heap segments. This helper also uses
+  64 KiB chunks so newly accelerated heap segments retain polling between calls.
 - Large NIO comparisons retain ordinary direct-buffer owners through fences;
   these buffers have no segment session. Segment session checks, scoped stack
   metadata and session fences remain in the existing wrapper.

@@ -359,8 +359,10 @@ public final class SegmentBulkOperations {
         int i, size;
         boolean lastSubRange = false;
         while (remaining > 7 && !lastSubRange) {
-            if (remaining > Integer.MAX_VALUE) {
-                size = Integer.MAX_VALUE;
+            // Inlining exposes heap bases to C2 as well as native bases.
+            // Bound both kinds of newly accelerated leaf calls.
+            if (remaining > 65536) {
+                size = 65536;
             } else {
                 size = (int) remaining;
                 lastSubRange = true;

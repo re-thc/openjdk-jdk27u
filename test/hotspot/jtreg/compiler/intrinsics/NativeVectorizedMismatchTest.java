@@ -51,6 +51,7 @@ public class NativeVectorizedMismatchTest {
     private static final MemorySegment A = Arena.ofAuto().allocate(2 * LIMIT + 16);
     private static final MemorySegment B = Arena.ofAuto().allocate(2 * LIMIT + 16);
     private static final byte[] HEAP = new byte[2 * LIMIT + 16];
+    private static final byte[] OTHER_HEAP = new byte[2 * LIMIT + 16];
 
     @Test
     @IR(counts = {"CallLeaf.*vectorizedMismatch", "1",
@@ -81,6 +82,14 @@ public class NativeVectorizedMismatchTest {
     }
 
     @Test
+    @IR(counts = {"CallLeaf.*vectorizedMismatch", ">= 1", IRNode.SAFEPOINT, ">= 1"},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static long heapSegmentRange(byte[] a, byte[] b, long length) {
+        return MemorySegment.mismatch(MemorySegment.ofArray(a), 0, length,
+                MemorySegment.ofArray(b), 0, length);
+    }
+
+    @Test
     @IR(failOn = {"CallLeaf.*vectorizedMismatch"}, phase = CompilePhase.BEFORE_MATCHING)
     public static int nativeAboveLimit(long a, long b) {
         return ArraysSupport.vectorizedMismatch(null, a, null, b, LIMIT + 1, 0);
@@ -95,7 +104,7 @@ public class NativeVectorizedMismatchTest {
     }
 
     @Run(test = {"nativeRange", "nativeAtLimit", "nativeAboveLimit", "mixedRange",
-                 "nativeZero", "scopedRange"})
+                 "nativeZero", "scopedRange", "heapSegmentRange"})
     public static void run() {
         long a = A.address() + 1, b = B.address() + 3;
         B.set(ValueLayout.JAVA_BYTE, 3, (byte) 1);
@@ -124,6 +133,14 @@ public class NativeVectorizedMismatchTest {
             check(mixedRange(HEAP, b, length), length, position);
             check(scopedRange(a, b, length), length, position);
             B.set(ValueLayout.JAVA_BYTE, position + 3, (byte) 0);
+            if (heapSegmentRange(HEAP, OTHER_HEAP, length) != -1) {
+                throw new AssertionError("Equal heap segments: " + length);
+            }
+            OTHER_HEAP[position] = 1;
+            if (heapSegmentRange(HEAP, OTHER_HEAP, length) != position) {
+                throw new AssertionError("Heap segment difference: " + length);
+            }
+            OTHER_HEAP[position] = 0;
         }
         check(nativeAtLimit(a, b), LIMIT, -1);
         check(nativeAboveLimit(a, b), LIMIT + 1, -1);
