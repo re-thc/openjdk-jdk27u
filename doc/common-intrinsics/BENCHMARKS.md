@@ -167,12 +167,10 @@ The 391-entry applicability audit and official include-order checker pass.
 
 [Final native Linux CI](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38385226401)
 is in progress. [Windows/macOS CI](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38393501715)
-is scheduled separately. Native ARM performance qualification awaits matching
-release/debug artifacts; its idle runner waits were suspended. Final native
-qualification is pending. Windows AVX-512 execution and tier2 remain outside
+is scheduled separately. [Targeted native tests and master comparisons](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38397336007)
+use matching release/debug artifacts on x64 and ARM. Final native qualification
+is pending. Windows AVX-512 execution and tier2 remain outside
 the evidence.
-The [preceding AOT fix](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38325342685)
-passed all 57 native build/tier1 jobs before these changes.
 
 Earlier native ARM tests and the C1-only x64 scalar/guard/method-handle checks
 remain [reference evidence](https://github.com/re-thc/openjdk-jdk27u/blob/55353f8ced7c9b67a199791a255350f70fe29496/.github/qualification/local-x64/c1-current.json).
