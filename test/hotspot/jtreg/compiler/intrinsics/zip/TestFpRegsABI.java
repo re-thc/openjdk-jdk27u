@@ -46,6 +46,7 @@
 
 package compiler.intrinsics.zip;
 
+import java.nio.ByteBuffer;
 import java.util.zip.Adler32;
 import java.util.zip.CRC32;
 import java.util.zip.CRC32C;
@@ -106,7 +107,16 @@ public class TestFpRegsABI {
 
         public void run(byte[] buf, long expectedValue) {
             for (int i = 0; i < 20_000; ++i) {
-                runIteration(buf, expectedValue);
+                runIteration(buf, null, expectedValue);
+            }
+        }
+
+        public void runDirect(byte[] buf, long expectedValue) {
+            ByteBuffer direct = ByteBuffer.allocateDirect(buf.length);
+            direct.put(buf);
+            for (int i = 0; i < 20_000; i++) {
+                direct.flip();
+                runIteration(buf, direct, expectedValue);
             }
         }
 
@@ -127,10 +137,14 @@ public class TestFpRegsABI {
 
         // If checksum intrinsic does not save fp registers as ABI requires,
         // the second call of calcValue might produce a wrong result.
-        private void runIteration(byte[] buf, long expectedValue) {
+        private void runIteration(byte[] buf, ByteBuffer direct, long expectedValue) {
             int v1 = calcValue(buf);
             checksum.reset();
-            checksum.update(buf, 0, buf.length);
+            if (direct == null) {
+                checksum.update(buf, 0, buf.length);
+            } else {
+                checksum.update(direct);
+            }
             long checksumValue = checksum.getValue();
             if (checksumValue != expectedValue) {
                 System.err.printf("ERROR: checksum = 0x%016x, expected = 0x%016x\n",
@@ -147,7 +161,7 @@ public class TestFpRegsABI {
         // We create fp register pressure to get as many fp registers used as possible.
         private int calcValue(byte[] buf) {
             double v = 0.0;
-            for (int i = 24; i <= buf.length; i += 24) {
+            for (int i = 24; i <= Math.min(buf.length, 1024); i += 24) {
                 v += buf[i - 1] * ((double)i - 1.0) + (double)i - 1.0;
                 v += buf[i - 2] * ((double)i - 2.0) + (double)i - 2.0;
                 v += buf[i - 3] * ((double)i - 3.0) + (double)i - 3.0;
@@ -185,6 +199,38 @@ public class TestFpRegsABI {
         new TestIntrinsic(new CRC32C()).run(buf, 0x000000002cdf6e8fL);
         new RegressionTest(new CRC32()).run(buf, 0x00000000b70b4c26L);
         new RegressionTest(new CRC32C()).run(buf, 0x000000002cdf6e8fL);
+
+        buf = new byte[65536];
+        for (int i = 0; i < buf.length; i++) {
+            buf[i] = (byte)i;
+        }
+        long adler = referenceAdler32(buf);
+        long crc = referenceCRC32(buf);
+        new TestIntrinsic(new Adler32()).run(buf, adler);
+        new TestIntrinsic(new Adler32()).runDirect(buf, adler);
+        new TestIntrinsic(new CRC32()).run(buf, crc);
+        new TestIntrinsic(new CRC32()).runDirect(buf, crc);
+    }
+
+    private static long referenceAdler32(byte[] data) {
+        int a = 1;
+        int b = 0;
+        for (byte value : data) {
+            a = (a + (value & 255)) % 65521;
+            b = (b + a) % 65521;
+        }
+        return Integer.toUnsignedLong((b << 16) | a);
+    }
+
+    private static long referenceCRC32(byte[] data) {
+        int crc = -1;
+        for (byte value : data) {
+            crc ^= value & 255;
+            for (int bit = 0; bit < 8; bit++) {
+                crc = (crc >>> 1) ^ ((crc & 1) == 0 ? 0 : 0xedb88320);
+            }
+        }
+        return Integer.toUnsignedLong(~crc);
     }
 }
 

@@ -347,8 +347,8 @@ class GraphBuilder {
   void fill_sync_handler(Value lock, BlockBegin* sync_handler, bool default_handler = false);
 
   void build_graph_for_intrinsic(ciMethod* callee, bool ignore_return);
-#ifdef AMD64
-  void append_adler32_with_fallback(ciMethod* callee, bool ignore_return);
+#if defined(AMD64) || defined(AARCH64)
+  void append_checksum_with_fallback(ciMethod* callee, bool ignore_return, int cutoff);
 #endif
 
   // inliners

@@ -8060,6 +8060,16 @@ class StubGenerator: public StubCodeGenerator {
 
     start = __ pc();
 
+    if (StubRoutines::use_zlib_ng_crc32()) {
+      Label use_kernel;
+      __ cmpw(c_rarg2, StubRoutines::zlib_ng_crc32_min_length);
+      __ br(Assembler::LT, use_kernel);
+      // IP0 permits branching to a native BTI call landing pad.
+      __ lea(r16, RuntimeAddress(ZipLibrary::crc32_address()));
+      __ br(r16);
+      __ bind(use_kernel);
+    }
+
     const Register crc   = c_rarg0;  // crc
     const Register buf   = c_rarg1;  // source java byte array address
     const Register len   = c_rarg2;  // length

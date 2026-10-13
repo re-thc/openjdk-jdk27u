@@ -41,6 +41,7 @@
 #include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
@@ -3670,11 +3671,10 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   }
 }
 
-#ifdef AMD64
-void GraphBuilder::append_adler32_with_fallback(ciMethod* callee, bool ignore_return) {
-  // JNI is faster for large x86 C1 updates; smaller updates use the leaf call.
+#if defined(AMD64) || defined(AARCH64)
+void GraphBuilder::append_checksum_with_fallback(ciMethod* callee, bool ignore_return, int cutoff) {
   Value length = state()->stack_at(state()->stack_size() - 1);
-  Value limit = append(new Constant(new IntConstant(65536)));
+  Value limit = append(new Constant(new IntConstant(cutoff)));
   BlockBegin* leaf = new BlockBegin(bci());
   BlockBegin* native = new BlockBegin(bci());
   BlockBegin* continuation = new BlockBegin(next_bci());
@@ -3739,17 +3739,31 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
       return false;
     }
   }
+#if defined(AMD64) || defined(AARCH64)
+  int checksum_cutoff = 0;
 #ifdef AMD64
   if (callee->intrinsic_id() == vmIntrinsics::_updateBytesAdler32 ||
       callee->intrinsic_id() == vmIntrinsics::_updateByteBufferAdler32) {
+    checksum_cutoff = 65536;
+  }
+#else
+  if (VM_Version::cpu_family() == VM_Version::CPU_APPLE) {
+    if (callee->intrinsic_id() == vmIntrinsics::_updateBytesCRC32) {
+      checksum_cutoff = 65536;
+    } else if (callee->intrinsic_id() == vmIntrinsics::_updateByteBufferAdler32) {
+      checksum_cutoff = 4096;
+    }
+  }
+#endif
+  if (checksum_cutoff != 0) {
     Value length = state()->stack_at(state()->stack_size() - 1);
     IntConstant* constant = length->type()->as_IntConstant();
     if (constant != nullptr) {
-      if (constant->value() >= 65536) {
+      if (constant->value() >= checksum_cutoff) {
         return false;
       }
     } else {
-      append_adler32_with_fallback(callee, ignore_return);
+      append_checksum_with_fallback(callee, ignore_return, checksum_cutoff);
       return true;
     }
   }
