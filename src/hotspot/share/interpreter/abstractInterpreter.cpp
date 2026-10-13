@@ -105,14 +105,6 @@ AbstractInterpreterGenerator::AbstractInterpreterGenerator() {
 //------------------------------------------------------------------------------------------------------------------------
 // Entry points
 
-address AbstractInterpreter::entry_for_method(const methodHandle& m) {
-  address common_entry = _common_entry_table[vmIntrinsics::as_int(m->intrinsic_id())];
-  if (common_entry != nullptr && !m->is_synchronized() && !m->is_native()) {
-    return common_entry;
-  }
-  return entry_for_kind(method_kind(m));
-}
-
 AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHandle& m) {
   // Abstract method?
   if (m->is_abstract()) return abstract;

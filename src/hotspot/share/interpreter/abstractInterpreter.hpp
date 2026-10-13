@@ -140,7 +140,16 @@ class AbstractInterpreter: AllStatic {
   // Method activation
   static MethodKind method_kind(const methodHandle& m);
   static address    entry_for_kind(MethodKind k)                { assert(0 <= k && k < number_of_method_entries, "illegal kind"); return _entry_table[k]; }
-  static address    entry_for_method(const methodHandle& m);
+  static address    entry_for_method(const methodHandle& m) {
+    vmIntrinsics::ID id = m->intrinsic_id();
+    if (id != vmIntrinsics::_none) {
+      address common_entry = _common_entry_table[vmIntrinsics::as_int(id)];
+      if (common_entry != nullptr && !m->is_synchronized() && !m->is_native()) {
+        return common_entry;
+      }
+    }
+    return entry_for_kind(method_kind(m));
+  }
 
   // used for bootstrapping method handles:
   static void       set_entry_for_kind(MethodKind k, address e);
