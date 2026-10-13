@@ -1011,13 +1011,29 @@ public final class Pattern
     transient volatile RustRegex rustRegex;
     private transient volatile boolean javaCompiled;
 
-    // Native Patterns retain no Java node graph. Promote permanently on an
-    // unsupported input/operation; active native calls retain their own wrapper.
+    Pattern javaPattern() {
+        if (javaCompiled) return this;
+        RustRegex engine = rustRegex;
+        if (engine == null) return this;
+        synchronized (engine) {
+            Pattern fallback = engine.javaPattern();
+            if (fallback == null) {
+                fallback = new Pattern(pattern, flags, false);
+                assert fallback.capturingGroupCount == capturingGroupCount;
+                engine.cacheJavaPattern(fallback);
+            }
+            return fallback;
+        }
+    }
+
+    // Promote permanently on an unsupported input/operation. A measured Java
+    // choice may already have compiled a sibling; active native calls retain
+    // their own wrapper.
     void ensureJava() {
         if (javaCompiled) return;
         synchronized (this) {
             if (!javaCompiled) {
-                Pattern fallback = new Pattern(pattern, flags, false);
+                Pattern fallback = javaPattern();
                 assert fallback.capturingGroupCount == capturingGroupCount;
                 root = fallback.root;
                 matchRoot = fallback.matchRoot;

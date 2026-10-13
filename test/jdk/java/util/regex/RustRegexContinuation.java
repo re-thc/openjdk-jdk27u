@@ -36,6 +36,7 @@
  */
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Field;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -146,6 +147,28 @@ public class RustRegexContinuation {
             a.usePattern(Pattern.compile("."));
             b.usePattern(reference("."));
             equal(a, b, a.find(), b.find(), true);
+        }
+        // A Java choice for a small region or a repeated early hit must not
+        // permanently disable the same Pattern's long native searches.
+        Field backend = Pattern.class.getDeclaredField("rustRegex");
+        backend.setAccessible(true);
+        for (String expression : new String[]{"error[0-9]+", "(?:error|warning|fatal)[0-9]+",
+                "[0-9]{3}-[0-9]{2}-[0-9]{4}"}) {
+            Pattern pattern = Pattern.compile(expression);
+            Object engine = backend.get(pattern);
+            Matcher a = pattern.matcher("!!!!!!!!");
+            Matcher b = reference(expression).matcher("!!!!!!!!");
+            equal(a, b, a.find(), b.find(), false);
+            String hit = expression.startsWith("[0-9]") ? "123-45-6789!!!!!" : "error123!!!!!!!!";
+            for (int i = 0; i < 3; i++) {
+                a.reset(hit); b.reset(hit);
+                equal(a, b, a.find(), b.find(), false);
+            }
+            a.reset("!".repeat(4096)); b.reset("!".repeat(4096));
+            equal(a, b, a.find(), b.find(), false);
+            if (engine != null && backend.get(pattern) != engine)
+                throw new AssertionError("small/early match promoted " + expression);
+            equal(a, b, false, false, true);
         }
         System.out.println("Compared " + comparisons + " continuation results and end states");
     }

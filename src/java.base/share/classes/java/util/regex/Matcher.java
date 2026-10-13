@@ -26,6 +26,7 @@
 package java.util.regex;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.Map;
@@ -244,6 +245,9 @@ public final class Matcher implements MatchResult {
     private boolean nativeEndTransparent, nativeEndAnchoring;
     private boolean nativePendingLast;
     private int nativeEndLast, nativeEndOldLast;
+    private JavaMatchChoice javaMatchChoice;
+    private record JavaMatchChoice(Pattern.Node root, Pattern.Node matchRoot,
+            WeakReference<CharSequence> input, int from, int to, int width, int mode) { }
 
     /**
      * No default constructor.
@@ -430,6 +434,7 @@ public final class Matcher implements MatchResult {
         if (newPattern == null)
             throw new IllegalArgumentException("Pattern cannot be null");
         ensureContinuation();
+        javaMatchChoice = null;
         parentPattern = newPattern;
         namedGroups = null;
 
@@ -1779,17 +1784,23 @@ public final class Matcher implements MatchResult {
                 localsPos[i].clear();
         }
         acceptMode = NOANCHOR;
+        if (!RustRegex.ENABLED) {
+            return finishMatch(parentPattern.root.match(this, from, text));
+        }
+        JavaMatchChoice choice = selectedJavaChoice(from, 0);
+        if (choice != null) return finishMatch(choice.root.match(this, from, text));
         int nativeResult = nativeMatch(from, 0);
         boolean result;
         if (nativeResult >= 0) result = nativeResult == 1;
+        else if (nativeResult == -2) {
+            if (choice == null) choice = javaMatchChoice;
+            result = choice.root.match(this, from, text);
+        }
         else {
-            javaStorage();
+            javaStorage(parentPattern);
             result = parentPattern.root.match(this, from, text);
         }
-        if (!result) this.first = -1;
-        this.oldLast = this.last;
-        this.modCount++;
-        return result;
+        return finishMatch(result);
     }
 
     /**
@@ -1812,17 +1823,30 @@ public final class Matcher implements MatchResult {
                 localsPos[i].clear();
         }
         acceptMode = anchor;
+        if (!RustRegex.ENABLED) {
+            return finishMatch(parentPattern.matchRoot.match(this, from, text));
+        }
+        JavaMatchChoice choice = selectedJavaChoice(from, anchor == ENDANCHOR ? 2 : 1);
+        if (choice != null) return finishMatch(choice.matchRoot.match(this, from, text));
         int nativeResult = nativeMatch(from, anchor == ENDANCHOR ? 2 : 1);
         boolean result;
         if (nativeResult >= 0) result = nativeResult == 1;
+        else if (nativeResult == -2) {
+            if (choice == null) choice = javaMatchChoice;
+            result = choice.matchRoot.match(this, from, text);
+        }
         else {
-            javaStorage();
+            javaStorage(parentPattern);
             result = parentPattern.matchRoot.match(this, from, text);
         }
-        if (!result)
-            this.first = -1;
-        this.oldLast = this.last;
-        this.modCount++;
+        return finishMatch(result);
+    }
+
+    @ForceInline
+    private boolean finishMatch(boolean result) {
+        if (!result) first = -1;
+        oldLast = last;
+        modCount++;
         return result;
     }
 
@@ -1835,6 +1859,10 @@ public final class Matcher implements MatchResult {
         }
         RustRegex engine = parentPattern.rustRegex;
         if (engine == null) return -1;
+        if (engine.prefersJava(to - from)) {
+            selectJavaMatch(false, mode);
+            return -2;
+        }
         if (to - from > RustRegex.MAX_LENGTH && !engine.hasShortPlan()) {
             parentPattern.ensureJava();
             return -1;
@@ -1853,6 +1881,7 @@ public final class Matcher implements MatchResult {
         if (result == 1) {
             first = groups[0];
             last = groups[1];
+            if (first == from && engine.prefersJavaEarlyMatch(last - first)) selectJavaMatch(true, mode);
         }
         // These simple greedy tails preserve last on failure and have exact
         // end flags. General backtracking expressions need Java replay.
@@ -1875,17 +1904,40 @@ public final class Matcher implements MatchResult {
         return result;
     }
 
-    private void javaStorage() {
-        if (locals.length != parentPattern.localCount) {
-            locals = new int[parentPattern.localCount];
+    @ForceInline
+    private JavaMatchChoice selectedJavaChoice(int start, int mode) {
+        JavaMatchChoice choice = javaMatchChoice;
+        if (choice == null) return null;
+        if (choice.input == null) {
+            if (to - from > choice.width) return null;
+        } else if (mode != choice.mode || from != choice.from || to != choice.to ||
+                start != from || choice.input.get() != text) return null;
+        if (nativeEndPattern != null) {
+            nativeEndPattern = null;
+            nativeEndInput = null;
+            nativePendingLast = false;
+        }
+        return choice;
+    }
+
+    private void selectJavaMatch(boolean inputSpecific, int mode) {
+        Pattern pattern = parentPattern.javaPattern();
+        javaStorage(pattern);
+        javaMatchChoice = new JavaMatchChoice(pattern.root, pattern.matchRoot,
+                inputSpecific ? new WeakReference<>(text) : null, from, to, to - from, mode);
+    }
+
+    private void javaStorage(Pattern execution) {
+        if (locals.length != execution.localCount) {
+            locals = new int[execution.localCount];
             for (int i = 0; i < locals.length; i++) locals[i] = -1;
         }
-        if (localsPos.length != parentPattern.localTCNCount)
-            localsPos = new IntHashSet[parentPattern.localTCNCount];
+        if (localsPos.length != execution.localTCNCount)
+            localsPos = new IntHashSet[execution.localTCNCount];
     }
 
     private void ensureContinuation() {
-        if (nativePendingLast) replayNative();
+        if (RustRegex.ENABLED && nativePendingLast) replayNative();
     }
 
     private void ensureEndFlags() {

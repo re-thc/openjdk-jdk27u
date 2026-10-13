@@ -53,6 +53,10 @@ JNI_ENTRY(jboolean, RR_enabled(JNIEnv* env, jclass cls))
   return INCLUDE_RUST_REGEX && UseRustRegex;
 JNI_END
 
+JNI_ENTRY(jint, RR_javaTier(JNIEnv* env, jclass cls))
+  return !UseCompiler ? 0 : (TieredCompilation && TieredStopAtLevel < 4 ? 1 : 2);
+JNI_END
+
 JNI_ENTRY(jlong, RR_compile(JNIEnv* env, jclass cls, jbyteArray pattern, jint flags, jint groups))
 #if INCLUDE_RUST_REGEX
   int length;
@@ -139,6 +143,7 @@ JNI_END
 extern "C" void JNICALL JVM_RegisterRustRegexMethods(JNIEnv* env, jclass cls) {
   static const JNINativeMethod methods[] = {
     {const_cast<char*>("enabled0"), const_cast<char*>("()Z"), CAST_FROM_FN_PTR(void*, RR_enabled)},
+    {const_cast<char*>("javaTier0"), const_cast<char*>("()I"), CAST_FROM_FN_PTR(void*, RR_javaTier)},
     {const_cast<char*>("compile0"), const_cast<char*>("([BII)J"), CAST_FROM_FN_PTR(void*, RR_compile)},
     {const_cast<char*>("free0"), const_cast<char*>("(J)V"), CAST_FROM_FN_PTR(void*, RR_free)},
     {const_cast<char*>("match0"), const_cast<char*>("(J[B[I)I"), CAST_FROM_FN_PTR(void*, RR_match)},

@@ -39,6 +39,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 /** Native primary engine for a parsed common subset of Java regex syntax. */
 public final class RustRegex {
     public static final boolean ENABLED;
+    private static final int JAVA_TIER;
     public static final int MAX_LENGTH = 65536;
     public final int groupCount;
     public final Map<String, Integer> namedGroups;
@@ -47,10 +48,13 @@ public final class RustRegex {
     private final boolean contextSensitive;
     private final boolean finalTerminatorSensitive;
     private final FastPlan fastPlan;
+    private final boolean fixedWidth, shortAlternatives;
+    private volatile Pattern javaPattern;
 
     static {
         registerNatives();
         ENABLED = enabled0();
+        JAVA_TIER = javaTier0();
     }
 
     private RustRegex(long handle, Subset subset, FastPlan fastPlan) {
@@ -60,6 +64,8 @@ public final class RustRegex {
         contextSensitive = subset.contextSensitive;
         finalTerminatorSensitive = subset.finalTerminatorSensitive;
         this.fastPlan = fastPlan;
+        fixedWidth = !subset.variableLength;
+        shortAlternatives = shortLiteralAlternatives(subset.source);
         deferred = handle == 0 ? subset : null;
         if (handle != 0) registerCleanup(handle);
     }
@@ -116,11 +122,12 @@ public final class RustRegex {
             FastPlan fast = (flags & Pattern.CASE_INSENSITIVE) == 0 ? FastDigits.parse(subset.source, subset.groups) : null;
             if (fast == null && (flags & Pattern.CASE_INSENSITIVE) == 0)
                 fast = FastEmail.parse(subset.source, subset.groups);
-            long handle = fast != null ? 0
+            boolean defer = fast != null || JAVA_TIER == 2 && !subset.variableLength;
+            long handle = defer ? 0
                     : compile0(subset.output.toString().getBytes(StandardCharsets.US_ASCII), flags, subset.groups);
-            if (handle == 0 && fast == null) return null; // Budget failures remain retryable for new Patterns.
+            if (handle == 0 && !defer) return null; // Budget failures remain retryable for new Patterns.
             RustRegex engine = new RustRegex(handle, subset, fast);
-            cache(key, new CacheEntry(false, new WeakReference<>(engine), fast != null ? subset : null, fast));
+            cache(key, new CacheEntry(false, new WeakReference<>(engine), defer ? subset : null, fast));
             return engine;
         } catch (UnsupportedSyntax e) {
             cache(key, new CacheEntry(true, null, null, null));
@@ -143,6 +150,38 @@ public final class RustRegex {
     }
 
     public boolean hasShortPlan() { return fastPlan != null; }
+    public Pattern javaPattern() { return javaPattern; }
+    public void cacheJavaPattern(Pattern pattern) { javaPattern = pattern; }
+    public boolean prefersJava(int length) {
+        return fastPlan instanceof FastDigits digits && !digits.prefix.isEmpty() && length <= 8
+                || JAVA_TIER == 2 && fastPlan == null && fixedWidth && length <= 16;
+    }
+    public boolean prefersJavaEarlyMatch(int length) {
+        return length <= 64 && fastPlan == null &&
+                (JAVA_TIER == 2 && (fixedWidth || shortAlternatives) || JAVA_TIER == 1 && shortAlternatives);
+    }
+
+    // An early result alone does not bound backtracking work: a.*b|a may
+    // scan a long failed branch first. Limit this choice to short literal
+    // alternatives followed by one greedy digit run, or fixed-width patterns.
+    private static boolean shortLiteralAlternatives(String source) {
+        if (!source.startsWith("(")) return false;
+        int begin = source.startsWith("(?:") ? 3 : FastDigits.groupBody(source, 0);
+        if (begin < 0) return false;
+        int end = source.indexOf(')', begin);
+        if (end < 0 || end - begin > 64) return false;
+        int alternatives = 1, width = 0;
+        for (int at = begin; at < end; at++) {
+            char c = source.charAt(at);
+            if (c == '|') {
+                if (width == 0 || ++alternatives > 8) return false;
+                width = 0;
+            } else if (!FastDigits.literal(c) || ++width > 16) return false;
+        }
+        if (width == 0 || alternatives < 2) return false;
+        String tail = source.substring(end + 1);
+        return tail.equals("[0-9]+") || tail.equals("\\d+");
+    }
     public boolean hasExactEndFlags() { return fastPlan instanceof FastDigits; }
     public boolean anchoredMissHitsEnd(String input, int to, int start) {
         String prefix = ((FastDigits) fastPlan).prefix;
@@ -391,7 +430,7 @@ public final class RustRegex {
         final Map<String, Integer> names = new HashMap<>();
         final int flags;
         int cursor, groups = 1;
-        boolean complex, contextSensitive, finalTerminatorSensitive;
+        boolean complex, contextSensitive, finalTerminatorSensitive, variableLength;
 
         Subset(String source, int flags) {
             this.flags = flags;
@@ -442,6 +481,7 @@ public final class RustRegex {
                             cursor++; output.append('}');
                         }
                         if (quantified) {
+                            variableLength |= min != max;
                             if (max > 1 && atom.captures != 0 &&
                                     !(atom.singleCapture && atom.captures == 1 && !atom.nullable)) fail();
                             if (peek() == '?') { cursor++; output.append('?'); }
@@ -454,6 +494,7 @@ public final class RustRegex {
                 nullable |= sequenceNullable;
                 if (peek() != '|') break;
                 cursor++; output.append('|'); complex = true;
+                variableLength = true;
             } while (true);
             return new Shape(nullable, captures, false);
         }
@@ -602,6 +643,7 @@ public final class RustRegex {
 
     private static native void registerNatives();
     private static native boolean enabled0();
+    private static native int javaTier0();
     private static native long compile0(byte[] pattern, int flags, int groups);
     private static native void free0(long handle);
     @IntrinsicCandidate
