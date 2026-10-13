@@ -310,7 +310,42 @@ enum NamedGroup {
         }
 
         // Check the specific algorithm parameters.
-        if (mediator) {
+        if (mediator && (namedGroupSpec == NamedGroupSpec.NAMED_GROUP_XDH)) {
+            // Please remove the following code if the XDH/X25519/X448
+            // AlgorithmParameters algorithms are supported in JDK.
+            //
+            // Note: Please be careful if removing this block!
+            //
+            // The AlgorithmParameters are not supported in JDK, and looking
+            // up an unsupported algorithm loads all the providers.  So check
+            // the KeyAgreement impl first, and only look for the
+            // AlgorithmParameters if it is not available.
+            try {
+                KeyAgreement.getInstance(name);
+
+                // The following service is also needed.  But for
+                // performance, check the KeyAgreement impl only.
+                //
+                // KeyFactory.getInstance(name);
+                // KeyPairGenerator.getInstance(name);
+                // AlgorithmParameters.getInstance(name);
+            } catch (NoSuchAlgorithmException nsae) {
+                try {
+                    algParams = AlgorithmParameters.getInstance(
+                            namedGroupSpec.algorithm);
+                    algParams.init(keAlgParamSpec);
+                } catch (InvalidParameterSpecException
+                        | NoSuchAlgorithmException exp) {
+                    algParams = null;
+                    mediator = false;
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
+                        SSLLogger.warning(
+                            "No AlgorithmParameters for " + name, nsae);
+                    }
+                }
+            }
+        } else if (mediator) {
             try {
                 // Skip AlgorithmParameters for KEMs (not supported)
                 // Check KEM's availability via KeyFactory
@@ -328,37 +363,12 @@ enum NamedGroup {
                 }
             } catch (InvalidParameterSpecException
                     | NoSuchAlgorithmException exp) {
-                if (namedGroupSpec != NamedGroupSpec.NAMED_GROUP_XDH) {
-                    mediator = false;
-                    if (SSLLogger.isOn() &&
-                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
-                        SSLLogger.warning(
-                            "No AlgorithmParameters or KeyFactory for " + name,
-                                exp);
-                    }
-                } else {
-                    // Please remove the following code if the XDH/X25519/X448
-                    // AlgorithmParameters algorithms are supported in JDK.
-                    //
-                    // Note: Please be careful if removing this block!
-                    algParams = null;
-                    try {
-                        KeyAgreement.getInstance(name);
-
-                        // The following service is also needed.  But for
-                        // performance, check the KeyAgreement impl only.
-                        //
-                        // KeyFactory.getInstance(name);
-                        // KeyPairGenerator.getInstance(name);
-                        // AlgorithmParameters.getInstance(name);
-                    } catch (NoSuchAlgorithmException nsae) {
-                        mediator = false;
-                        if (SSLLogger.isOn() &&
-                                SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
-                            SSLLogger.warning(
-                                "No AlgorithmParameters for " + name, nsae);
-                        }
-                    }
+                mediator = false;
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
+                    SSLLogger.warning(
+                        "No AlgorithmParameters or KeyFactory for " + name,
+                            exp);
                 }
             }
         }
@@ -886,12 +896,7 @@ enum NamedGroup {
         // Filter default groups names against default constraints.
         // Those are the values being displayed to the user with
         // "java -XshowSettings:security:tls" command.
-        private static final String[] defaultNames = Arrays.stream(
-                        defaultGroups)
-                .filter(ng -> ng.isAvailable)
-                .filter(ng -> ng.isPermitted(SSLAlgorithmConstraints.DEFAULT))
-                .map(ng -> ng.name)
-                .toArray(String[]::new);
+        private static final String[] defaultNames = getDefaultNames();
 
         private static final NamedGroup[] customizedGroups =
                 getCustomizedNamedGroups();
@@ -917,6 +922,18 @@ enum NamedGroup {
                 }
                 namedGroups = defaultNames;
             }
+        }
+
+        private static String[] getDefaultNames() {
+            List<String> names = new ArrayList<>(defaultGroups.length);
+            for (NamedGroup ng : defaultGroups) {
+                if (ng.isAvailable &&
+                        ng.isPermitted(SSLAlgorithmConstraints.DEFAULT)) {
+                    names.add(ng.name);
+                }
+            }
+
+            return names.toArray(new String[0]);
         }
 
         // Avoid the group lookup for default and customized groups.

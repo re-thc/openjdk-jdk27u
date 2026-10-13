@@ -38,6 +38,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import jdk.internal.util.OperatingSystem;
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
 import sun.security.ssl.X509Authentication.X509Possession;
 import sun.security.util.KeyUtil;
@@ -309,8 +310,11 @@ enum SignatureScheme {
         }
 
         if (mediator && ((id >> 8) & 0xFF) == 0x03) {   // SHA224
-            // There are some problems to use SHA224 on Windows.
-            if (Security.getProvider("SunMSCAPI") != null) {
+            // There are some problems to use SHA224 on Windows.  Note that
+            // looking up a provider that is not installed loads all the
+            // providers, and SunMSCAPI is only available on Windows.
+            if (OperatingSystem.isWindows()
+                    && Security.getProvider("SunMSCAPI") != null) {
                 mediator = false;
             }
         }
@@ -680,11 +684,18 @@ enum SignatureScheme {
     // Default signature schemes for SSLConfiguration.
     static final class SupportedSigSchemes {
 
-        static final String[] DEFAULT = Arrays.stream(
-                        SignatureScheme.values())
-                .filter(ss -> ss.isAvailable
-                        && ss.isPermitted(
-                        SSLAlgorithmConstraints.DEFAULT, null))
-                .map(ss -> ss.name).toArray(String[]::new);
+        static final String[] DEFAULT = getDefault();
+
+        private static String[] getDefault() {
+            List<String> names = new ArrayList<>();
+            for (SignatureScheme ss : SignatureScheme.values()) {
+                if (ss.isAvailable && ss.isPermitted(
+                        SSLAlgorithmConstraints.DEFAULT, null)) {
+                    names.add(ss.name);
+                }
+            }
+
+            return names.toArray(new String[0]);
+        }
     }
 }
