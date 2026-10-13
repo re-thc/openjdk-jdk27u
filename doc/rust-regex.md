@@ -47,6 +47,11 @@ Patterns used exclusively through the specialization allocate no native engine
 or Cleaner registration. A bounded cache also retains these parsed plans, so
 recompiling an expression does not have to parse it again.
 
+The captured ASCII email shape `([a-z0-9_]+)@([a-z0-9_]+)\\.[a-z]{2,4}`,
+also with named captures, has a compact plan for regions of up to 32 characters
+and early candidates. Longer word runs and scans select Rust. Both plans receive
+scalar bounds; capture-array ABI arguments are written only for native calls.
+
 Dot uses Java's exact Latin-1 terminator set. Fixed-width expressions and
 fixed-width prefixes with greedy fixed-width repeated tails share one engine
 for all operations. Other expressions get a separate native engine with an
@@ -76,13 +81,14 @@ expressions promote for final Java line terminators.
 The selected backend supplies capture offsets, including unmatched groups, for find, matches,
 lookingAt, replacement, splitting, immutable results and streams. Matcher keeps
 zero-length progression. Literal-prefix/greedy-digit-tail plans compute exact
-Java hitEnd()/requireEnd() flags without promotion, including results returned
-by Rust for longer digit runs. Successful matches and failed searches set the
-flags immediately without retaining replay input or metadata; anchored misses
-inspect the saved prefix only if queried. General expressions still promote
-and replay the last operation using saved input/bounds when these flags are queried: Rust's
-match offsets do not describe Java's attempted reads and backtracking. Ordinary
-matching never performs that replay. Scanner streaming end-state queries
+Java hitEnd()/requireEnd() flags for successful matches and failed searches,
+including results returned by Rust for longer digit runs. General expressions
+promote and replay the last operation using saved input/bounds when these flags
+are queried: Rust's offsets do not describe Java's attempted reads and backtracking.
+Failed anchored operations replay immediately on the original Matcher, since
+Java can advance its continuation position before ultimately failing. General and captured-prefix
+failed searches defer that state replay until a subsequent find() or usePattern();
+reset discards the pending continuation. Scanner streaming end-state queries
 preserve Java behavior; general delimiter patterns select Java after the first
 query. Promotion publishes
 a separately compiled graph; existing Matchers allocate Java locals lazily.
@@ -154,6 +160,9 @@ records the live version/date/checksum in UPSTREAM.json. Review licenses and
 toolchain requirements on updates. The adapter is GPLv2; bundled crates and the
 Rust standard library use their MIT option.
 
+Configure retains the resolved `RUSTC` and passes it to Cargo. CI pins Rust
+1.99.0 and verifies a configure-only compiler override outside PATH.
+
 ## Upstream optimization guidance
 
 The [option audit](rust-regex-optimization-audit.md) maps the upstream performance
@@ -180,7 +189,8 @@ make test TEST="jtreg:test/jdk/java/util/Scanner jtreg:test/jdk/java/lang/String
 RustRegexTest compares captures and API state against a Java-only reference
 and asserts native matching keeps Java roots absent. Modes cover default,
 on/off, JNI, interpreter, C1, C2 and noncompact Strings. Separate tests exercise
-memory admission/recovery and startup. Rust tests cover captures, full matches,
+memory admission/recovery, stateful continuation and relocated hashed arrays
+under each supported header layout and compiler tier. Rust tests cover captures, full matches,
 nullable results, byte inputs, concurrency, accounting and contained FFI panics.
 
 RustRegexNative measures reusable searches, including positive/negative cases,
@@ -188,13 +198,11 @@ captures, fallback controls and short inputs. RustRegexEndFlags measures matchin
 plus both end-state queries, including early candidates in large regions.
 RustRegexLifetime includes every
 search in complete 1/8/9/10/16/32-call lifetimes, mixed workloads and shared
-Pattern contention. Its shared/cold/distinct parameter distinguishes a live
-shared engine, a collected previous owner of the same expression, and new
-expressions. Compare each tier with -XX:-UseRustRegex and JNI-only mode.
-Cold and distinct measurements collect before each invocation
-outside the timed operation; Cleaner completion is not synchronized and its
-asynchronous work can overlap measurement. Optional backend assertions ensure budget pressure
-cannot silently substitute Java for the native compiler being measured.
+Pattern contention. Shared runs retain another Pattern owning the same engine.
+Cold runs use one lifetime per single-shot iteration, with collection outside
+its timer. Runtime paths are warmed using other Patterns before measurement.
+Cleaner completion is asynchronous. The paired runner checks the selected
+backend so budget pressure cannot silently replace native compilation with Java.
 Cross compilation/emulation is functional coverage; AArch64
 performance requires real hardware.
 

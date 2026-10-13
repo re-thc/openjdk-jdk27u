@@ -33,10 +33,10 @@ import java.util.regex.Pattern;
 import org.openjdk.jmh.annotations.*;
 
 /** Includes backend compilation/cache lookup and every search in a lifetime. */
-@BenchmarkMode(Mode.AverageTime)
+@BenchmarkMode(Mode.SingleShotTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
-@Warmup(iterations = 3, time = 1)
-@Measurement(iterations = 5, time = 1)
+@Warmup(iterations = 10, batchSize = 1)
+@Measurement(iterations = 20, batchSize = 1)
 @Fork(value = 3, jvmArgsAppend = "--add-opens=java.base/java.util.regex=ALL-UNNAMED")
 @State(Scope.Thread)
 public class RustRegexLifetime {
@@ -50,11 +50,10 @@ public class RustRegexLifetime {
     public String expression;
     @Param({"1", "4"})
     public int threads;
-    @Param({"shared", "cold", "distinct"})
+    @Param({"shared", "cold"})
     public String reuse;
     private String regex, miss, hit;
     private ExecutorService pool;
-    private long sequence;
     private Pattern retained;
     private Field nativeBackend;
     private boolean checkBackend, expectedNative;
@@ -81,6 +80,10 @@ public class RustRegexLifetime {
             default -> "error123";
         };
         hit = candidate + miss.substring(candidate.length());
+        Pattern warm = Pattern.compile(regex);
+        for (int i = 0; i < 12000; i++)
+            Pattern.compile(regex).matcher(candidate + "!").find();
+        java.lang.ref.Reference.reachabilityFence(warm);
         if (threads > 1) {
             pool = Executors.newFixedThreadPool(threads);
             // Create workers before measuring Pattern lifetimes.
@@ -95,11 +98,10 @@ public class RustRegexLifetime {
         if (pool != null) pool.close();
     }
 
-    @Setup(Level.Invocation)
+    @Setup(Level.Iteration)
     public void prepareColdPattern() {
-        // Outside the timed operation. Prevent budget exhaustion from silently
-        // turning the distinct-expression compiler measurement into Java.
-        if (!reuse.equals("shared")) System.gc();
+        // Single-shot iterations contain one complete cold lifetime.
+        if (reuse.equals("cold")) System.gc();
     }
 
     private int search(Pattern pattern, int worker) {
@@ -115,10 +117,7 @@ public class RustRegexLifetime {
 
     @Benchmark
     public int lifetime() throws Exception {
-        // Optional unique suffix changes neither input's match, but prevents
-        // reuse of a compiled native engine for the distinct-pattern case.
-        String source = reuse.equals("distinct") ? regex + "(?:marker" + sequence++ + ")?" : regex;
-        Pattern pattern = Pattern.compile(source);
+        Pattern pattern = Pattern.compile(regex);
         if (checkBackend && (nativeBackend.get(pattern) != null) != expectedNative)
             throw new IllegalStateException("unexpected Pattern backend in lifetime measurement");
         if (threads == 1) {

@@ -1,6 +1,6 @@
 # Rust regex performance
 
-## Development profile (2026-10-10)
+## Eight-byte-header development profile (2026-10-10)
 
 Source `e68d8de5cd3`, built with `bin/configure-dev`, GCC 14.2 and the default
 linker. Linux x86_64, Xeon Platinum 8573C, one pinned CPU, Serial GC and one
@@ -165,7 +165,7 @@ calls alternate hits and misses.
 | Captured email | 16 | 4.16x | 1.58x | 1.64x |
 | Captured email | 4096 | 234.22x | 243.74x | 206.82x |
 
-Cold lifetimes were measured at the same call counts and lengths. They are
+The historical cold lifetimes were measured at the same call counts and lengths. They are
 **inconclusive for an exact break-even count**: process variation and the
 post-GC control dominate some rows, including prefix plans that allocate no
 native engine. For example, the two 16-character one-call default prefix
@@ -194,14 +194,30 @@ python3 make/scripts/benchmark-rust-regex.py \
 The script runs serially, pins a CPU where supported, writes commands as JSON
 argument arrays, and retains JMH samples. Use `--suite short`, `tiny` or
 `lifetime` to run a subset, `--tiers C2` to isolate a tier, or `--suite plans`
-to select the prefix/digit cases. Use `--resume` with the same JDK and commands
+to select the prefix/digit cases. `--suite review` includes both losing short
+shapes, large scans, complete 1/8/9/10/16/32-call lifetimes, mixed workloads and
+four-worker sharing on up to four CPUs. Cold lifetimes now use single-shot
+iterations; the historical cold rows above used invocation-level collection.
+The runner records runtime hashes, commands and samples. Use `--resume` with the same JDK and commands
 after an interrupted run. Default reproduction uses three process pairs.
 The [native option audit](rust-regex-optimization-audit.md) separately tests Rust
 compiler/engine options without Java boundary costs.
 
-## Validation
+## Latency qualification
 
-The x86 desktop-free image and profile smoke checks pass. JMH builds successfully
+`make/scripts/RustRegexLatency.java` measures 65,536-character searches with
+four shared-Pattern workers, new worker caches and concurrent explicit GC.
+It reports first-call maxima, steady p99/max and GC wall time for scanning,
+captures, ambiguous repetition and bounded alternation. Run with safepoint
+logging to distinguish time reaching a safepoint from collection work.
+These observations qualify the selected workloads; they are not a bound on
+all eligible expressions. The CI qualification job runs interpreter, C1, C2
+and JNI paths and stores raw samples and safepoint logs as artifacts.
+
+## Previous-revision validation
+
+At `9cfdc08f2ae`, all 57 GitHub Actions jobs passed on Linux x86_64/AArch64,
+macOS AArch64 and Windows x86_64. The x86 desktop-free image and profile smoke checks pass. JMH builds successfully
 with desktop benchmarks excluded. jtreg passes all 106 selected test descriptions
 in regex, Scanner, String, startup and source checks (5,980 framework checks).
 RustRegexTest passes 305,454 differential comparisons in each of eight modes:

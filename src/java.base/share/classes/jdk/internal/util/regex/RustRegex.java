@@ -46,20 +46,20 @@ public final class RustRegex {
     private final Subset deferred;
     private final boolean contextSensitive;
     private final boolean finalTerminatorSensitive;
-    private final FastDigits fastDigits;
+    private final FastPlan fastPlan;
 
     static {
         registerNatives();
         ENABLED = enabled0();
     }
 
-    private RustRegex(long handle, Subset subset, FastDigits fastDigits) {
+    private RustRegex(long handle, Subset subset, FastPlan fastPlan) {
         this.handle = handle;
         groupCount = subset.groups;
         namedGroups = Map.copyOf(subset.names);
         contextSensitive = subset.contextSensitive;
         finalTerminatorSensitive = subset.finalTerminatorSensitive;
-        this.fastDigits = fastDigits;
+        this.fastPlan = fastPlan;
         deferred = handle == 0 ? subset : null;
         if (handle != 0) registerCleanup(handle);
     }
@@ -100,8 +100,8 @@ public final class RustRegex {
                 RustRegex engine = cached.engine.get();
                 if (engine != null) return engine;
                 if (cached.fastSubset != null) {
-                    engine = new RustRegex(0, cached.fastSubset, cached.fastDigits);
-                    cache(key, new CacheEntry(false, new WeakReference<>(engine), cached.fastSubset, cached.fastDigits));
+                    engine = new RustRegex(0, cached.fastSubset, cached.fastPlan);
+                    cache(key, new CacheEntry(false, new WeakReference<>(engine), cached.fastSubset, cached.fastPlan));
                     return engine;
                 }
             }
@@ -113,7 +113,9 @@ public final class RustRegex {
                 cache(key, new CacheEntry(true, null, null, null));
                 return null;
             }
-            FastDigits fast = (flags & Pattern.CASE_INSENSITIVE) == 0 ? FastDigits.parse(subset.source, subset.groups) : null;
+            FastPlan fast = (flags & Pattern.CASE_INSENSITIVE) == 0 ? FastDigits.parse(subset.source, subset.groups) : null;
+            if (fast == null && (flags & Pattern.CASE_INSENSITIVE) == 0)
+                fast = FastEmail.parse(subset.source, subset.groups);
             long handle = fast != null ? 0
                     : compile0(subset.output.toString().getBytes(StandardCharsets.US_ASCII), flags, subset.groups);
             if (handle == 0 && fast == null) return null; // Budget failures remain retryable for new Patterns.
@@ -128,7 +130,7 @@ public final class RustRegex {
 
     private record CacheKey(String pattern, int flags) { }
     private record CacheEntry(boolean javaOnly, WeakReference<RustRegex> engine,
-                              Subset fastSubset, FastDigits fastDigits) { }
+                              Subset fastSubset, FastPlan fastPlan) { }
     private static final class CompiledCache {
         static final Map<CacheKey, CacheEntry> ENTRIES = new LinkedHashMap<>(32, 0.75f, true);
     }
@@ -140,30 +142,36 @@ public final class RustRegex {
         }
     }
 
-    public boolean hasShortPlan() { return fastDigits != null; }
+    public boolean hasShortPlan() { return fastPlan != null; }
+    public boolean hasExactEndFlags() { return fastPlan instanceof FastDigits; }
+    public boolean preservesLastOnMiss() {
+        return fastPlan instanceof FastDigits digits && digits.prefixGroup == 0;
+    }
 
-    // Four trailing ints in Matcher's capture array carry region/search/mode
-    // arguments. The intrinsic therefore needs only three platform ABI args.
-    public int match(String input, int[] state, boolean transparent, boolean anchoring) {
+    // Only native calls marshal region/search/mode into the capture array.
+    // Short plans use the scalar arguments without allocating native state.
+    @ForceInline
+    public int match(String input, int[] state, int from, int to, int start, int mode,
+                     boolean transparent, boolean anchoring) {
         int base = groupCount * 2;
-        if (state.length != base + 4 || (contextSensitive && (transparent || !anchoring))) return -1;
-        int from = state[base], to = state[base+1], start = state[base+2];
-        if (from < 0 || to < from || to > input.length() || start < from || start > to)
-            return -1;
-        boolean large = to-from > MAX_LENGTH;
-        if (large && fastDigits == null) return -1;
+        if (state.length != base + 4 || from < 0 || to < from || to > input.length()
+                || start < from || start > to) return -1;
+        if (fastPlan != null) {
+            int result = fastPlan.match(input, state, to, start, mode, to - from);
+            if (result != -2) return result;
+        }
+        return nativeMatch(input, state, from, to, start, mode, transparent, anchoring);
+    }
+
+    private int nativeMatch(String input, int[] state, int from, int to, int start, int mode,
+                            boolean transparent, boolean anchoring) {
+        if (contextSensitive && (transparent || !anchoring)) return -1;
+        if (to - from > MAX_LENGTH) return -1;
         if (finalTerminatorSensitive && to > from) {
             char last = input.charAt(to-1);
             if (last == '\n' || last == '\r' || last == 0x85) return -1;
         }
         byte[] bytes = SharedSecrets.getJavaLangAccess().getLatin1Bytes(input);
-        // The ASCII short plan can also handle Unicode Strings and early
-        // candidates in large regions, without encoding or entering a leaf.
-        if (fastDigits != null) {
-            int result = fastDigits.match(input, bytes, state, base);
-            if (result != -2) return result;
-        }
-        if (large) return -1;
         if (bytes == null) {
             if (input.length() > MAX_LENGTH) return -1;
             // Handles Latin-1 contents with compact strings disabled, and
@@ -175,6 +183,11 @@ public final class RustRegex {
                 bytes[i] = (byte)c;
             }
         }
+        int base = groupCount * 2;
+        state[base] = from;
+        state[base+1] = to;
+        state[base+2] = start;
+        state[base+3] = mode;
         try {
             long nativeHandle = handle;
             if (nativeHandle == 0) nativeHandle = nativeHandle();
@@ -184,27 +197,15 @@ public final class RustRegex {
         }
     }
 
-    // Matcher resolves successful digit-tail matches and failed searches
-    // immediately. Only anchored misses need to inspect the literal prefix.
-    // Bit zero is hitEnd; requireEnd is always false for this grammar.
-    // General expressions return -1 and still require Java replay.
-    public int anchoredMissEndFlags(String input, int to, int start) {
-        if (fastDigits == null) return -1;
-        String prefix = fastDigits.prefix;
-        int available = to - start;
-        for (int i = 0; i < Math.min(available, prefix.length()); i++) {
-            if (input.charAt(start + i) != prefix.charAt(i)) return 0;
-        }
-        // A partial prefix, or a complete prefix with no room for a digit,
-        // attempts to read the region end. A mismatch before it does not.
-        return available <= prefix.length() ? 1 : 0;
-    }
-
     // A narrow specialization of already parsed/validated expressions. This
     // keeps only a literal prefix and two capture indices, not a Java graph.
     // Short searches and early positives can avoid the foreign-call overhead;
     // general expressions and long scans continue through the Rust engine.
-    private record FastDigits(String prefix, int prefixGroup, int digitsGroup) {
+    private interface FastPlan {
+        int match(String input, int[] state, int to, int start, int mode, int length);
+    }
+
+    private record FastDigits(String prefix, int prefixGroup, int digitsGroup) implements FastPlan {
         static FastDigits parse(String source, int groups) {
             if (source.isEmpty()) return null;
             int cursor = 0, prefixGroup = 0, digitsGroup = 0;
@@ -254,17 +255,17 @@ public final class RustRegex {
                     || c == '_' || c == '-' || c == ':' || c == ' ' || c == ',';
         }
 
-        int match(String input, byte[] bytes, int[] state, int base) {
-            int to = state[base+1], start = state[base+2], mode = state[base+3];
+        @Override
+        public int match(String input, int[] state, int to, int start, int mode, int length) {
             if (to - start <= prefix.length()) return 0;
-            boolean scan = mode == 0 && to-state[base] <= 256;
+            boolean scan = mode == 0 && length <= 256;
             int at = start;
-            if (scan && !prefix.isEmpty() && (at == to || character(input, bytes, at) != prefix.charAt(0)))
+            if (scan && !prefix.isEmpty() && (at == to || input.charAt(at) != prefix.charAt(0)))
                 at = candidate(input, at, to);
             if (scan && prefix.isEmpty()) {
                 // Digit-only expressions have no literal prefix to search for.
                 while (at < to) {
-                    int c = character(input, bytes, at);
+                    int c = input.charAt(at);
                     if (c >= '0' && c <= '9') break;
                     at++;
                 }
@@ -276,7 +277,7 @@ public final class RustRegex {
                 if (digits <= to && (prefix.isEmpty() || input.startsWith(prefix, at))) {
                     int end = digits;
                     while (end < to) {
-                        int c = character(input, bytes, end);
+                        int c = input.charAt(end);
                         if (c < '0' || c > '9') break;
                         if (end-digits == limit) return -2;
                         end++;
@@ -303,14 +304,73 @@ public final class RustRegex {
             return 0;
         }
 
-        private static int character(String input, byte[] bytes, int at) {
-            return bytes == null ? input.charAt(at) : bytes[at];
-        }
-
         @ForceInline
         private int candidate(String input, int at, int to) {
             return to == input.length() ? input.indexOf(prefix, at)
                     : input.indexOf(prefix, at, to);
+        }
+    }
+
+    // Two captured ASCII words, an @ separator and a bounded lowercase suffix.
+    // The subset parser has already validated names and capture numbering.
+    private record FastEmail() implements FastPlan {
+        static FastEmail parse(String source, int groups) {
+            if (groups != 3 || source.isEmpty() || source.charAt(0) != '(') return null;
+            int first = FastDigits.groupBody(source, 0);
+            String word = "[a-z0-9_]+)";
+            if (first < 0 || !source.startsWith(word, first)) return null;
+            int next = first + word.length();
+            if (!source.startsWith("@(", next)) return null;
+            int second = FastDigits.groupBody(source, next + 1);
+            String tail = word + "\\.[a-z]{2,4}";
+            return second >= 0 && source.startsWith(tail, second)
+                    && second + tail.length() == source.length() ? new FastEmail() : null;
+        }
+
+        private static boolean word(char c) {
+            return c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '_';
+        }
+
+        @Override
+        public int match(String input, int[] state, int to, int start, int mode, int length) {
+            boolean scan = mode == 0 && length <= 32;
+            int at = start;
+            while (at < to) {
+                int user = at;
+                while (user < to && word(input.charAt(user))) {
+                    if (user - at >= 32) return -2;
+                    user++;
+                }
+                if (user != at && user < to && input.charAt(user) == '@') {
+                    int domain = user + 1, dot = domain;
+                    while (dot < to && word(input.charAt(dot))) {
+                        if (dot - at >= 32) return -2;
+                        dot++;
+                    }
+                    if (dot != domain && dot < to && input.charAt(dot) == '.') {
+                        int end = dot + 1;
+                        while (end < to && end - dot <= 4) {
+                            char c = input.charAt(end);
+                            if (c < 'a' || c > 'z') break;
+                            end++;
+                        }
+                        if (end - dot >= 3) {
+                            if (mode == 2 && end != to) return 0;
+                            state[0] = at;
+                            state[1] = end;
+                            state[2] = at;
+                            state[3] = user;
+                            state[4] = domain;
+                            state[5] = dot;
+                            return 1;
+                        }
+                    }
+                }
+                if (!scan) return mode == 0 ? -2 : 0;
+                // A shorter start inside this word has the same @ position.
+                at = Math.max(at + 1, user + 1);
+            }
+            return 0;
         }
     }
 

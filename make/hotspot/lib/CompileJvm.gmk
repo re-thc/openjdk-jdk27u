@@ -185,7 +185,7 @@ ifeq ($(RUST_REGEX_ENABLED), true)
   $(eval $(call SetupExecute, BUILD_RUST_REGEX, \
       INFO := Building bundled Rust regex, \
       WORKING_DIR := $(RUST_REGEX_SRC), \
-      COMMAND := $(CARGO) build --frozen --release --target $(RUST_REGEX_TARGET) \
+      COMMAND := RUSTC="$(RUSTC)" $(CARGO) build --frozen --release --target $(RUST_REGEX_TARGET) \
           --target-dir $(RUST_REGEX_OUT), \
       OUTPUT_FILE := $(RUST_REGEX_LIB), \
       DEPS := $(call FindFiles, $(RUST_REGEX_SRC)), \

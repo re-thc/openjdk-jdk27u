@@ -164,9 +164,20 @@ jobs:
           toolchain: gcc-${{ inputs.gcc-major-version }}
 
       - name: 'Get Rust regex toolchain'
+        id: rust-regex
         uses: ./.github/actions/get-rust-regex
 
+      - name: 'Check Rust adapter'
+        working-directory: src/hotspot/share/runtime/rustregex
+        run: |
+          cargo test --frozen
+          cargo clippy --frozen --all-targets -- -D warnings
+          cargo fmt --check
+        if: ${{ inputs.dry-run == false && inputs.platform == 'linux-x64' && matrix.debug-level == 'release' }}
+
       - name: 'Configure'
+        env:
+          RUSTC: ${{ steps.rust-regex.outputs.rustc }}
         run: >
           bash bin/configure-dev
           --with-conf-name=${{ inputs.platform }}
@@ -191,6 +202,29 @@ jobs:
           make-target: '${{ inputs.make-target }} ${{ inputs.make-arguments }}'
           platform: ${{ inputs.platform }}
           debug-suffix: "${{ matrix.debug-level == 'debug' && '-debug' || '' }}"
+        if: ${{ inputs.dry-run == false }}
+
+      - name: 'Check configured Rust compiler'
+        run: |
+          if grep -q '^RUST_REGEX_ENABLED := true
+        run: bash .github/scripts/check-dev-profile.sh "build/${{ inputs.platform }}/images/jdk" "build/${{ inputs.platform }}/spec.gmk"
+        if: ${{ inputs.dry-run == false }}
+
+      - name: 'Upload bundles'
+        uses: ./.github/actions/upload-bundles
+        with:
+          platform: ${{ inputs.platform }}
+          debug-suffix: "${{ matrix.debug-level == 'debug' && '-debug' || '' }}"
+          bundle-suffix: ${{ inputs.bundle-suffix }}
+          static-suffix: ${{ inputs.static-suffix }}
+        if: ${{ inputs.dry-run == false }}
+
+      - name: 'Compiler cache statistics'
+        run: ccache --show-stats | tee -a "$GITHUB_STEP_SUMMARY"
+        if: ${{ !cancelled() }}
+ "build/${{ inputs.platform }}/spec.gmk"; then
+            test -f "${{ steps.rust-regex.outputs.rustc }}.used"
+          fi
         if: ${{ inputs.dry-run == false }}
 
       - name: 'Check development profile'

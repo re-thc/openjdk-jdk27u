@@ -90,6 +90,18 @@ public class RustRegexTest {
         comparisons++;
     }
 
+    private static void anchored(Pattern p, Matcher reference, String input, int lo, int hi,
+                                 boolean transparent, boolean anchoring, boolean endFlags) {
+        Matcher actual = Pattern.compile(p.pattern(), p.flags()).matcher(input).region(lo, hi)
+                .useTransparentBounds(transparent).useAnchoringBounds(anchoring);
+        reference.reset().region(lo, hi).useTransparentBounds(transparent).useAnchoringBounds(anchoring);
+        equal(actual, reference, actual.matches(), reference.matches(), endFlags);
+        actual = Pattern.compile(p.pattern(), p.flags()).matcher(input).region(lo, hi)
+                .useTransparentBounds(transparent).useAnchoringBounds(anchoring);
+        reference.reset().region(lo, hi).useTransparentBounds(transparent).useAnchoringBounds(anchoring);
+        equal(actual, reference, actual.lookingAt(), reference.lookingAt(), endFlags);
+    }
+
     private static void primary() throws Exception {
         String[] expressions = {"error([0-9]+)", "(?<word>error|warn):\\s*(?<code>[0-9]+)",
                 "[0-9]{3}-[0-9]{2}-[0-9]{4}", "a.*b", "a.*?b", "(a|ab)",
@@ -111,8 +123,7 @@ public class RustRegexTest {
                         equal(a,b,av,bv,false);
                         if (!av) break;
                     }
-                    equal(a,b,a.reset().matches(),b.reset().matches(),false);
-                    equal(a,b,a.reset().lookingAt(),b.reset().lookingAt(),false);
+                    anchored(p, b, input, 0, input.length(), false, true, false);
                     for (int start : new int[]{0, input.length()/2, input.length()})
                         equal(a,b,a.find(start),b.find(start),false);
                 }
@@ -197,10 +208,7 @@ public class RustRegexTest {
                                     if (RustRegex.ENABLED) nativeOnly(p);
                                     if (!av) break;
                                 }
-                                equal(a, b, a.reset().region(lo, hi).matches(),
-                                        b.reset().region(lo, hi).matches(), true);
-                                equal(a, b, a.reset().region(lo, hi).lookingAt(),
-                                        b.reset().region(lo, hi).lookingAt(), true);
+                                anchored(p, b, input, lo, hi, transparent, anchoring, true);
                                 if (RustRegex.ENABLED) nativeOnly(p);
                             }
                         }
@@ -225,7 +233,8 @@ public class RustRegexTest {
             Matcher actual = large.matcher(text), expected = java.matcher(text);
             equal(actual, expected, actual.find(), expected.find(), true);
             equal(actual, expected, actual.reset().lookingAt(), expected.reset().lookingAt(), true);
-            equal(actual, expected, actual.reset().matches(), expected.reset().matches(), true);
+            Matcher full = Pattern.compile(large.pattern()).matcher(text);
+            equal(full, expected, full.matches(), expected.reset().matches(), true);
             if (RustRegex.ENABLED) {
                 nativeOnly(large);
                 if (HANDLE.getLong(NATIVE.get(large)) != 0)
@@ -289,13 +298,63 @@ public class RustRegexTest {
                                 equal(a,b,av,bv,false);
                                 if (!av) break;
                             }
-                            equal(a,b,a.reset().region(lo,hi).matches(),b.reset().region(lo,hi).matches(),false);
-                            equal(a,b,a.reset().region(lo,hi).lookingAt(),b.reset().region(lo,hi).lookingAt(),false);
+                            anchored(p, b, input, lo, hi, false, true, false);
                         }
                     }
                 }
                 nativeOnly(p);
             }
+        }
+    }
+
+    private static void shortEmailMatches() throws Exception {
+        String[] expressions = {"([a-z0-9_]+)@([a-z0-9_]+)\\.[a-z]{2,4}",
+                "(?<sender>[a-z0-9_]+)@(?<host>[a-z0-9_]+)\\.[a-z]{2,4}"};
+        List<String> inputs = new ArrayList<>(List.of("", "a@b.co", "a@b.c", "a@b.com",
+                "a@b.comm", "a@b.commm", "!a@b.co!", "a@b@c.co", "a@b..co",
+                "a_12@b_34.co", "a@B.co", "A@b.co", "a@b.CO", "\u00ff a@b.co",
+                "\u0100 a@b.co", "a".repeat(31) + "@b.co", "a".repeat(32) + "@b.co",
+                "a@" + "b".repeat(32) + ".co", "!".repeat(33) + "a@b.co"));
+        Random random = new Random(0x456d61696cL);
+        String alphabet = "ab012_@.c!\u00ff\u0100";
+        for (int i = 0; i < 500; i++) {
+            StringBuilder input = new StringBuilder();
+            for (int j = 0, size = random.nextInt(80); j < size; j++)
+                input.append(alphabet.charAt(random.nextInt(alphabet.length())));
+            if ((i & 1) == 0) input.append("a@b.co");
+            inputs.add(input.toString());
+        }
+        for (String expression : expressions) {
+            Pattern owner = Pattern.compile(expression), ref = reference(expression, 0);
+            nativeOnly(owner);
+            for (String input : inputs) {
+                for (int lo : new int[]{0, input.length() / 2, input.length()}) {
+                    for (int hi : new int[]{lo, (lo + input.length()) / 2, input.length()}) {
+                        Pattern p = Pattern.compile(expression);
+                        Matcher a = p.matcher(input).region(lo, hi), b = ref.matcher(input).region(lo, hi);
+                        boolean av = a.find(), bv = b.find();
+                        equal(a, b, av, bv, false);
+                        if (hi - lo <= 32 || input.chars().allMatch(c -> c <= 255)) nativeOnly(p);
+                        equal(a, b, av, bv, true);
+                        for (int i = 0; i < 3; i++) equal(a, b, a.find(), b.find(), true);
+                        anchored(owner, b, input, lo, hi, false, true, true);
+                    }
+                }
+            }
+            nativeOnly(owner);
+            java.lang.ref.Reference.reachabilityFence(owner);
+        }
+        if (RustRegex.ENABLED) {
+            Pattern p = Pattern.compile("(?<user>[a-z0-9_]+)@(?<domain>[a-z0-9_]+)\\.[a-z]{2,4}");
+            Object owner = NATIVE.get(p);
+            if (HANDLE.getLong(owner) != 0) throw new AssertionError("short email allocated native storage");
+            Matcher a = p.matcher("a@b.co!");
+            if (!a.find() || !a.group("user").equals("a") || !a.group("domain").equals("b")
+                    || HANDLE.getLong(owner) != 0)
+                throw new AssertionError("short email compiled a native engine");
+            if (p.matcher("! ".repeat(2048)).find() || HANDLE.getLong(owner) == 0)
+                throw new AssertionError("long email search did not select Rust");
+            nativeOnly(p);
         }
     }
 
@@ -402,6 +461,7 @@ public class RustRegexTest {
     }
 
     public static void main(String[] args) throws Exception {
+        shortEmailMatches();
         primary();
         shortAndEarlyMatches();
         digitEndFlags();

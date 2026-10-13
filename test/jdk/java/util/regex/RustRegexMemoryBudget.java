@@ -51,11 +51,9 @@ public class RustRegexMemoryBudget {
         if (retained.isEmpty()) throw new AssertionError("first native allocation failed");
         RustRegex first = retained.getFirst();
         int[] state = new int[first.groupCount * 2 + 4];
-        int base = first.groupCount * 2;
-        state[base+1] = 8192;
-        if (first.match("x".repeat(8192), state, false, true) != 0)
+        if (first.match("x".repeat(8192), state, 0, 8192, 0, 0, false, true) != 0)
             throw new AssertionError("retained engine stopped rejecting after budget exhaustion");
-        if (first.match("a".repeat(8192), state, false, true) != 1)
+        if (first.match("a".repeat(8192), state, 0, 8192, 0, 0, false, true) != 1)
             throw new AssertionError("retained engine lost a match after budget exhaustion");
         // Exhaustion must permanently choose Java for a newly compiled Pattern.
         Pattern pattern = Pattern.compile("error([0-9]+)");
