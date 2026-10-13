@@ -140,21 +140,7 @@ jobs:
 
       - name: 'Check configured Rust compiler'
         run: |
-          if grep -q '^RUST_REGEX_ENABLED := true
-        run: bash .github/scripts/check-dev-profile.sh "build/${{ inputs.platform }}/images/jdk" "build/${{ inputs.platform }}/spec.gmk"
-        if: ${{ inputs.dry-run == false }}
-
-      - name: 'Upload bundles'
-        uses: ./.github/actions/upload-bundles
-        with:
-          platform: ${{ inputs.platform }}
-          debug-suffix: '${{ matrix.suffix }}'
-        if: ${{ inputs.dry-run == false }}
-
-      - name: 'Compiler cache statistics'
-        run: ccache --show-stats | tee -a "$GITHUB_STEP_SUMMARY"
-        if: ${{ !cancelled() }}
- "build/${{ inputs.platform }}/spec.gmk"; then
+          if grep -q '^RUST_REGEX_ENABLED := true$' "build/${{ inputs.platform }}/spec.gmk"; then
             test -f "${{ steps.rust-regex.outputs.rustc }}.used"
           fi
         if: ${{ inputs.dry-run == false }}
