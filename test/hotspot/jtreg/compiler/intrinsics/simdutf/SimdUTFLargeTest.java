@@ -135,10 +135,14 @@ public class SimdUTFLargeTest {
                 "insufficient in-place capacity");
         check(Arrays.equals(input, inplace), "capacity failure changed in-place input");
         int n = SimdUTF.decodeLatin1(inplace, 0, inplace.length, inplace, 0, inplace.length);
-        if (SimdUTF.isEligible(input.length)) {
+        if (n >= 0) {
             check(n == LIMIT + 7, "large in-place Latin1 length");
             for (int i = 0; i < n; i++) check(inplace[i] == (byte)0xe9, "in-place Latin1 contents");
+        } else {
+            check(Arrays.equals(input, inplace), "declined in-place conversion changed input");
         }
+        check(new String(input, StandardCharsets.UTF_8).equals("é".repeat(LIMIT + 7)),
+                "large Latin1 String fallback");
         Arrays.fill(input, (byte)'a');
         input[LIMIT + 17] = (byte)0xe6;
         input[LIMIT + 18] = (byte)0xbc;

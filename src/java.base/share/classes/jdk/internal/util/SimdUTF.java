@@ -256,6 +256,8 @@ public final class SimdUTF {
             case INFLATE_LATIN1 -> process0(src, sp, len, dst, dp, capacity, INFLATE_LATIN1);
             case INDEX_OF_LATIN1 -> process0(src, sp, len, dst, dp, capacity, INDEX_OF_LATIN1);
             case INDEX_OF_UTF16 -> process0(src, sp, len, dst, dp, capacity, INDEX_OF_UTF16);
+            case DECODE_LATIN1 -> process0(src, sp, len, dst, dp, capacity, DECODE_LATIN1);
+            case VALIDATE_UTF8_LATIN1 -> process0(src, sp, len, dst, dp, capacity, VALIDATE_UTF8_LATIN1);
             default -> process0(src, sp, len, dst, dp, capacity, operation);
         };
     }

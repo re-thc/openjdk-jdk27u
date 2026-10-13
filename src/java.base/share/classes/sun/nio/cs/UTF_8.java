@@ -232,14 +232,7 @@ public final class UTF_8 extends Unicode {
             sp += n;
             dp += n;
 
-            // Preserve the existing ASCII intrinsic before bulk Unicode work.
-            int converted = sp < sl && (sa[sp] & 0xff) >= 0xc2 && (sa[sp] & 0xff) <= 0xf4
-                    && SimdUTF.isEligible(sl - sp)
-                    ? SimdUTF.decodeUTF8(sa, sp, sl - sp, da, dp, dl - dp) : -1;
-            if (converted >= 0) {
-                updatePositions(src, sl, dst, dp + converted);
-                return CoderResult.UNDERFLOW;
-            }
+            boolean tryBulk = true;
             while (sp < sl) {
                 int b1 = sa[sp];
                 if (b1 >= 0) {
@@ -323,6 +316,15 @@ public final class UTF_8 extends Unicode {
                     sp += 4;
                 } else
                     return malformed(src, sp, dst, dp, 1);
+                if (tryBulk) {
+                    tryBulk = false;
+                    int converted = SimdUTF.isEligible(sl - sp)
+                            ? SimdUTF.decodeUTF8(sa, sp, sl - sp, da, dp, dl - dp) : -1;
+                    if (converted >= 0) {
+                        updatePositions(src, sl, dst, dp + converted);
+                        return CoderResult.UNDERFLOW;
+                    }
+                }
             }
             return xflow(src, sp, sl, dst, dp, 0);
         }
@@ -470,15 +472,6 @@ public final class UTF_8 extends Unicode {
             dp += n;
 
             if (sp < sl) {
-                boolean validStart = !Character.isSurrogate(sa[sp])
-                        || Character.isHighSurrogate(sa[sp]) && sp + 1 < sl
-                            && Character.isLowSurrogate(sa[sp + 1]);
-                int converted = validStart && SimdUTF.isEligible(sl - sp)
-                        ? SimdUTF.encodeUTF16(sa, sp, sl - sp, da, dp, dl - dp) : -1;
-                if (converted >= 0) {
-                    updatePositions(src, sl, dst, dp + converted);
-                    return CoderResult.UNDERFLOW;
-                }
                 return encodeArrayLoopSlow(src, sa, sp, sl, dst, da, dp, dl);
             } else {
                 updatePositions(src, sp, dst, dp);
@@ -488,6 +481,7 @@ public final class UTF_8 extends Unicode {
 
         private CoderResult encodeArrayLoopSlow(CharBuffer src, char[] sa, int sp, int sl,
                                                 ByteBuffer dst, byte[] da, int dp, int dl) {
+            boolean tryBulk = true;
             while (sp < sl) {
                 char c = sa[sp];
                 if (c < 0x80) {
@@ -526,6 +520,15 @@ public final class UTF_8 extends Unicode {
                     da[dp++] = (byte)(0x80 | (c & 0x3f));
                 }
                 sp++;
+                if (tryBulk) {
+                    tryBulk = false;
+                    int converted = SimdUTF.isEligible(sl - sp)
+                            ? SimdUTF.encodeUTF16(sa, sp, sl - sp, da, dp, dl - dp) : -1;
+                    if (converted >= 0) {
+                        updatePositions(src, sl, dst, dp + converted);
+                        return CoderResult.UNDERFLOW;
+                    }
+                }
             }
             updatePositions(src, sp, dst, dp);
             return CoderResult.UNDERFLOW;

@@ -9446,11 +9446,32 @@ bool LibraryCallKit::inline_simdutf_process() {
        (operation->_lo >= SimdUTF::DECODE_BASE64 && operation->_hi <= SimdUTF::DECODE_BASE64_URL &&
         UseBASE64Intrinsics && StubRoutines::base64_decodeBlock() != nullptr) ||
        (operation->_lo == SimdUTF::INFLATE_LATIN1 && operation->_hi == SimdUTF::INFLATE_LATIN1) ||
+       (operation->_lo == SimdUTF::DECODE_LATIN1 && operation->_hi == SimdUTF::DECODE_LATIN1) ||
+       (operation->_lo == SimdUTF::VALIDATE_UTF8_LATIN1 && operation->_hi == SimdUTF::VALIDATE_UTF8_LATIN1) ||
        (operation->_lo >= SimdUTF::INDEX_OF_LATIN1 && operation->_hi <= SimdUTF::INDEX_OF_UTF16))) {
     // Prefer existing C2 intrinsics where they avoid a C ABI call. Base64
-    // stubs are not available on every CPU supported by simdutf.
+    // stubs are not available on every CPU supported by simdutf. Latin-1
+    // decoding retains Java to avoid the in-place staging and validation passes.
     set_result(intcon(-1));
     return true;
+  }
+  Node* small_control = nullptr;
+  Node* small_memory = nullptr;
+  // C2's Java count loop wins on short input; retain lower gates in other tiers.
+  if (FLAG_IS_DEFAULT(SIMDUTFMinLength) && operation != nullptr &&
+      operation->_lo == SimdUTF::COUNT_CODE_POINTS && operation->_hi == SimdUTF::COUNT_CODE_POINTS) {
+    Node* cmp = _gvn.transform(new CmpINode(argument(2), intcon(1024)));
+    Node* test = _gvn.transform(new BoolNode(cmp, BoolTest::lt));
+    small_control = generate_guard(test, nullptr, PROB_FAIR);
+    if (small_control != nullptr) {
+      if (stopped()) {
+        set_control(small_control);
+        set_result(intcon(-1));
+        return true;
+      }
+      small_memory = reset_memory();
+      set_all_memory(small_memory);
+    }
   }
   const Type** fields = TypeTuple::fields(7);
   for (int i = 0; i < 7; i++) {
@@ -9466,6 +9487,21 @@ bool LibraryCallKit::inline_simdutf_process() {
       argument(0), argument(1), argument(2), argument(3),
       argument(4), argument(5), argument(6));
   Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  if (small_control != nullptr) {
+    RegionNode* region = new RegionNode(3);
+    region->init_req(1, control());
+    region->init_req(2, small_control);
+    PhiNode* value = new PhiNode(region, TypeInt::INT);
+    value->init_req(1, result);
+    value->init_req(2, intcon(-1));
+    PhiNode* memory = new PhiNode(region, Type::MEMORY, TypePtr::BOTTOM);
+    memory->init_req(1, reset_memory());
+    memory->init_req(2, small_memory);
+    record_for_igvn(region);
+    set_control(_gvn.transform(region));
+    set_all_memory(_gvn.transform(memory));
+    result = _gvn.transform(value);
+  }
   set_result(result);
   return true;
 }

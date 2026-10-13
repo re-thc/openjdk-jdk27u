@@ -247,14 +247,20 @@ public class SimdUTFTest {
             byte[] output = new byte[input.length + 14];
             Arrays.fill(output, SENTINEL);
             int n = SimdUTF.decodeLatin1(input, 0, input.length, output, 7, input.length);
-            if (accelerationAvailable) {
+            if (n >= 0) {
                 check(n == expected.length, "UTF8 to Latin1 native conversion");
                 equal(expected, Arrays.copyOfRange(output, 7, 7 + n));
                 guards(output, 7, n);
-                byte[] inPlace = input.clone();
-                n = SimdUTF.decodeLatin1(inPlace, 0, inPlace.length, inPlace, 0, inPlace.length);
+            } else {
+                guards(output, 7, 0);
+            }
+            byte[] inPlace = input.clone();
+            n = SimdUTF.decodeLatin1(inPlace, 0, inPlace.length, inPlace, 0, inPlace.length);
+            if (n >= 0) {
                 check(n == expected.length, "UTF8 to Latin1 in-place conversion");
                 equal(expected, Arrays.copyOf(inPlace, n));
+            } else {
+                equal(input, inPlace);
             }
             check(text.equals(new String(input, StandardCharsets.UTF_8)), "compact Latin1 String");
             String mixed = text + "漢😃";
