@@ -54,6 +54,24 @@ public class ReinterpretContracts {
         return Double.doubleToRawLongBits(((double[]) a)[i]);
     }
 
+    private static void setBits(Object a, int i, long value) {
+        if (a instanceof byte[] v) v[i] = (byte) value;
+        else if (a instanceof short[] v) v[i] = (short) value;
+        else if (a instanceof int[] v) v[i] = (int) value;
+        else if (a instanceof long[] v) v[i] = value;
+        else if (a instanceof float[] v) v[i] = Float.intBitsToFloat((int) value);
+        else ((double[]) a)[i] = Double.longBitsToDouble(value);
+    }
+
+    private static Vector<?> replaceFirstLane(Vector<?> v, long oldBits) {
+        if (v instanceof ByteVector x) return x.withLane(0, oldBits == 1 ? (byte) 2 : (byte) 1);
+        if (v instanceof ShortVector x) return x.withLane(0, oldBits == 1 ? (short) 2 : (short) 1);
+        if (v instanceof IntVector x) return x.withLane(0, oldBits == 1 ? 2 : 1);
+        if (v instanceof LongVector x) return x.withLane(0, oldBits == 1 ? 2L : 1L);
+        if (v instanceof FloatVector x) return x.withLane(0, oldBits == 0x3f800000L ? 2.0f : 1.0f);
+        return ((DoubleVector) v).withLane(0, oldBits == 0x3ff0000000000000L ? 2.0 : 1.0);
+    }
+
     // The oracle packs scalar raw bits in the API's specified little-endian order.
     private static byte[] bytes(Object a, int laneBytes) {
         byte[] b = new byte[Array.getLength(a) * laneBytes];
@@ -151,7 +169,20 @@ public class ReinterpretContracts {
                 // Reinterpreting all the way through bytes exercises asByteVectorRaw.
                 Vector<?> roundTrip = v.reinterpretAsBytes().reinterpretShape(s, 0);
                 check(Arrays.equals(input, bytes(roundTrip.toArray(), s.elementSize() / 8)), "byte round trip");
-                // The same backing array can be both source and destination.
+                // Keep both values while independently mutating their array boundaries.
+                Vector<?> retained = view(v, fromType);
+                setBits(a, 0, bits(a, 0) ^ 1L);
+                check(Arrays.equals(input, bytes(v.toArray(), s.elementSize() / 8)), "input mutation original");
+                check(Arrays.equals(input, bytes(retained.toArray(), s.elementSize() / 8)), "input mutation view");
+                Object exported = retained.toArray();
+                setBits(exported, 0, bits(exported, 0) ^ 2L);
+                check(Arrays.equals(input, bytes(v.toArray(), s.elementSize() / 8)), "export mutation original");
+                check(Arrays.equals(input, bytes(retained.toArray(), s.elementSize() / 8)), "export mutation view");
+                Vector<?> replaced = replaceFirstLane(retained, bits(retained.toArray(), 0));
+                check(bits(replaced.toArray(), 0) != bits(v.toArray(), 0), "withLane changes replacement");
+                check(Arrays.equals(input, bytes(v.toArray(), s.elementSize() / 8)), "withLane original");
+                check(Arrays.equals(input, bytes(retained.toArray(), s.elementSize() / 8)), "withLane retained view");
+                // Write the original bits back into the now-mutated input array.
                 store(roundTrip, a, 0, s.maskAll(true));
                 check(Arrays.equals(input, bytes(a, s.elementSize() / 8)), "alias");
                 access(s, a);
