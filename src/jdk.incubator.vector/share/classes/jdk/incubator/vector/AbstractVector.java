@@ -632,6 +632,9 @@ abstract sealed class AbstractVector<E> extends Vector<E>
     @ForceInline
     final <F>
     AbstractVector<F> defaultReinterpret(AbstractSpecies<F> rsp) {
+        if (rsp == vspecies()) {
+            return check0(rsp);
+        }
         int blen = Math.max(this.bitSize(), rsp.vectorBitSize()) / Byte.SIZE;
         ByteOrder bo = ByteOrder.nativeOrder();
         MemorySegment ms = MemorySegment.ofArray(new byte[blen]);

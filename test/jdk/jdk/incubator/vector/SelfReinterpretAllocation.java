@@ -19,7 +19,7 @@
 
 /*
  * @test
- * @summary Same-lane reinterpretation must not materialize redundant vectors in Java fallback paths
+ * @summary Identity reinterpretation and casts must not materialize redundant vectors in Java fallback paths
  * @modules jdk.incubator.vector jdk.management
  * @library /test/lib
  * @run main/othervm -Xint SelfReinterpretAllocation
@@ -46,6 +46,15 @@ public class SelfReinterpretAllocation {
         };
     }
 
+    private static Vector<?> identity(Vector<?> v, int type, int operation) {
+        return switch (operation) {
+            case 0 -> view(v, type);
+            case 1 -> v.reinterpretShape(v.species(), 0);
+            case 2 -> v.castShape(v.species(), 0);
+            default -> throw new AssertionError(operation);
+        };
+    }
+
     public static void main(String[] args) {
         ThreadMXBean bean = (ThreadMXBean) ManagementFactory.getThreadMXBean();
         if (!bean.isThreadAllocatedMemorySupported()) {
@@ -67,12 +76,15 @@ public class SelfReinterpretAllocation {
         };
         for (int type = 0; type < values.length; type++) {
             Vector<?> value = values[type];
-            for (int i = 0; i < 20000; i++) escape = view(value, type);
-            before = bean.getCurrentThreadAllocatedBytes();
-            for (int i = 0; i < 10000; i++) escape = view(value, type);
-            long allocated = bean.getCurrentThreadAllocatedBytes() - before;
-            if (allocated != 0) {
-                throw new AssertionError(value.species() + " same-lane view allocated " + allocated + " bytes");
+            for (int operation = 0; operation < 3; operation++) {
+                for (int i = 0; i < 20000; i++) escape = identity(value, type, operation);
+                before = bean.getCurrentThreadAllocatedBytes();
+                for (int i = 0; i < 10000; i++) escape = identity(value, type, operation);
+                long allocated = bean.getCurrentThreadAllocatedBytes() - before;
+                if (allocated != 0) {
+                    throw new AssertionError(value.species() + " identity operation " + operation
+                                             + " allocated " + allocated + " bytes");
+                }
             }
         }
     }

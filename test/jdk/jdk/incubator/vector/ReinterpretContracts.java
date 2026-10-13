@@ -169,19 +169,30 @@ public class ReinterpretContracts {
                 // Reinterpreting all the way through bytes exercises asByteVectorRaw.
                 Vector<?> roundTrip = v.reinterpretAsBytes().reinterpretShape(s, 0);
                 check(Arrays.equals(input, bytes(roundTrip.toArray(), s.elementSize() / 8)), "byte round trip");
-                // Keep both values while independently mutating their array boundaries.
+                // Retain identity views while independently mutating their array boundaries.
                 Vector<?> retained = view(v, fromType);
+                Vector<?> reshaped = v.reinterpretShape(s, 0);
+                Vector<?> cast = v.castShape(s, 0);
+                check(Arrays.equals(input, bytes(cast.toArray(), s.elementSize() / 8)), "identity cast raw bits");
+                badIndex(() -> v.castShape(s, -1));
+                badIndex(() -> v.castShape(s, 1));
                 setBits(a, 0, bits(a, 0) ^ 1L);
                 check(Arrays.equals(input, bytes(v.toArray(), s.elementSize() / 8)), "input mutation original");
                 check(Arrays.equals(input, bytes(retained.toArray(), s.elementSize() / 8)), "input mutation view");
+                check(Arrays.equals(input, bytes(reshaped.toArray(), s.elementSize() / 8)), "input mutation reshape");
+                check(Arrays.equals(input, bytes(cast.toArray(), s.elementSize() / 8)), "input mutation cast");
                 Object exported = retained.toArray();
                 setBits(exported, 0, bits(exported, 0) ^ 2L);
                 check(Arrays.equals(input, bytes(v.toArray(), s.elementSize() / 8)), "export mutation original");
                 check(Arrays.equals(input, bytes(retained.toArray(), s.elementSize() / 8)), "export mutation view");
+                check(Arrays.equals(input, bytes(reshaped.toArray(), s.elementSize() / 8)), "export mutation reshape");
+                check(Arrays.equals(input, bytes(cast.toArray(), s.elementSize() / 8)), "export mutation cast");
                 Vector<?> replaced = replaceFirstLane(retained, bits(retained.toArray(), 0));
                 check(bits(replaced.toArray(), 0) != bits(v.toArray(), 0), "withLane changes replacement");
                 check(Arrays.equals(input, bytes(v.toArray(), s.elementSize() / 8)), "withLane original");
                 check(Arrays.equals(input, bytes(retained.toArray(), s.elementSize() / 8)), "withLane retained view");
+                check(Arrays.equals(input, bytes(reshaped.toArray(), s.elementSize() / 8)), "withLane retained reshape");
+                check(Arrays.equals(input, bytes(cast.toArray(), s.elementSize() / 8)), "withLane retained cast");
                 // Write the original bits back into the now-mutated input array.
                 store(roundTrip, a, 0, s.maskAll(true));
                 check(Arrays.equals(input, bytes(a, s.elementSize() / 8)), "alias");

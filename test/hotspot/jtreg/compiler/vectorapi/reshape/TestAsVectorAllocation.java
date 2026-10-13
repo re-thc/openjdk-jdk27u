@@ -40,9 +40,8 @@ import jdk.test.lib.RandomFactory;
 import java.util.Random;
 
 public class TestAsVectorAllocation {
-    // Kept static final so that C2 can constant fold the shape.  Override the
-    // vector size with -jvmArgsAppend -DvectorBits=128 (etc.) to match the
-    // 128-bit shape used in the original report.
+    // Keep the species constant for C2. Select a shape with jtreg's
+    // -javaoptions:-DvectorBits=128 option.
     private static final int VECTOR_BITS =
             Integer.getInteger("vectorBits", FloatVector.SPECIES_PREFERRED.vectorBitSize());
 

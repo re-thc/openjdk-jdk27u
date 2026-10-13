@@ -25,7 +25,7 @@ import jdk.incubator.vector.*;
 import org.openjdk.jmh.annotations.*;
 
 /**
- * Reinterpretation in numeric and raw-bit pipelines, with direct-path controls.
+ * Reinterpretation in numeric, raw-bit and identity-shape pipelines, with controls.
  * Select a fixed shape per fork using -jvmArgsAppend -DvectorBits=64 (or 128,
  * 256, 512). Use -prof gc to measure materialization as well as elapsed time.
  */
@@ -40,15 +40,17 @@ public class VectorReinterpretAllocation {
         VectorShape.forBitSize(Integer.getInteger("vectorBits", 128)));
     private static final VectorSpecies<Integer> IS = FS.withLanes(int.class);
     private float[] input;
+    private int[] intInput;
     private int[] output;
 
     @Setup
     public void setup() {
         input = new float[1024];
+        intInput = new int[1024];
         output = new int[1024];
         Random r = new Random(8392004);
         for (int i = 0; i < input.length; i++) input[i] = r.nextFloat() * 4.0f - 2.0f;
-        for (int i = 0; i < output.length; i++) output[i] = i;
+        for (int i = 0; i < output.length; i++) intInput[i] = output[i] = i;
     }
 
     @Benchmark
@@ -78,6 +80,26 @@ public class VectorReinterpretAllocation {
     public int[] directBits() {
         for (int i = 0; i < input.length; i += FS.length()) {
             FloatVector.fromArray(FS, input, i).reinterpretAsInts().intoArray(output, i);
+        }
+        return output;
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public int[] identityReinterpret() {
+        for (int i = 0; i < intInput.length; i += IS.length()) {
+            IntVector v = (IntVector) IntVector.fromArray(IS, intInput, i).reinterpretShape(IS, 0);
+            v.intoArray(output, i);
+        }
+        return output;
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public int[] identityCast() {
+        for (int i = 0; i < intInput.length; i += IS.length()) {
+            IntVector v = (IntVector) IntVector.fromArray(IS, intInput, i).castShape(IS, 0);
+            v.intoArray(output, i);
         }
         return output;
     }
