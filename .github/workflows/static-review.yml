@@ -39,8 +39,12 @@ jobs:
         id: boot
         with:
           platform: ${{ matrix.platform }}
-      - uses: ./.github/actions/get-jtreg
-        id: jtreg
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ github.token }}
+          run-id: 38305964372
+          name: bundles-jtreg-8.2.1+1
+          path: jtreg/installed
       - name: Install build dependencies
         run: |
           sudo apt-get update
@@ -63,7 +67,7 @@ jobs:
           CC: gcc-16
           CXX: g++-16
         run: |
-          bash bin/configure-dev --with-conf-name=review --with-boot-jdk="${{ steps.boot.outputs.path }}" --with-jtreg="${{ steps.jtreg.outputs.path }}" --with-zlib=${{ matrix.zlib }} --with-native-debug-symbols=none
+          bash bin/configure-dev --with-conf-name=review --with-boot-jdk="${{ steps.boot.outputs.path }}" --with-jtreg="$(pwd)/jtreg/installed" --with-zlib=${{ matrix.zlib }} --with-native-debug-symbols=none
           make CONF=review JOBS=4 images static-jdk-image static-libs-image
       - name: Verify static launcher and exported archives
         run: python3 diagnostic/.github/scripts/qualify-static-review.py static ${{ matrix.zlib }}
@@ -73,7 +77,7 @@ jobs:
           CC: gcc-16
           CXX: g++-16
         run: |
-          bash bin/configure-dev --with-conf-name=review-debug --with-boot-jdk="${{ steps.boot.outputs.path }}" --with-jtreg="${{ steps.jtreg.outputs.path }}" --with-zlib=bundled --with-debug-level=fastdebug --with-native-debug-symbols=none
+          bash bin/configure-dev --with-conf-name=review-debug --with-boot-jdk="${{ steps.boot.outputs.path }}" --with-jtreg="$(pwd)/jtreg/installed" --with-zlib=bundled --with-debug-level=fastdebug --with-native-debug-symbols=none
           make CONF=review-debug JOBS=4 hotspot
           python3 diagnostic/.github/scripts/qualify-static-review.py debug
       - name: Verify Java compression and checksum paths
