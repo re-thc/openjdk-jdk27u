@@ -1,0 +1,41 @@
+name: Paired macOS ZIP measurements
+on:
+  push:
+    branches: [pr/zlib-ng-platform-qualification]
+permissions:
+  contents: read
+concurrency:
+  group: zip-pairs-${{ github.ref }}-${{ github.event.head_commit.message }}
+  cancel-in-progress: true
+jobs:
+  measure:
+    if: startsWith(github.event.head_commit.message, 'Pair macos-zip ')
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-aarch64, macos-x64]
+        include:
+          - platform: macos-aarch64
+            runner: macos-26
+          - platform: macos-x64
+            runner: macos-15-intel
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: build/zip/images/jdk
+          key: zip-platform-v1-${{ matrix.platform }}-release-e028309c31bba1c27370190381b3998eca8ef794
+          fail-on-cache-miss: true
+      - name: Compare each parameter case in alternating order
+        run: |
+          mkdir -p qualification
+          python3 -m py_compile .github/scripts/measure-zip-pairs.py
+          python3 .github/scripts/measure-zip-pairs.py build/zip/images/jdk
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: ${{ matrix.platform }}-zip-pairs
+          path: qualification
+          retention-days: 14
