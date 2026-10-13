@@ -97,7 +97,7 @@ ifneq ($(filter x86_64 aarch64, $(OPENJDK_TARGET_CPU)), )
 	    $(ZLIBNG_OUT)/jdk-flags.cmake $(FIXPATH_BASE) \
 	    --cflags $(CFLAGS_JDKLIB) $(SYSROOT_CFLAGS) \
 	    --ldflags $(LDFLAGS_JDKEXE) $(SYSROOT_LDFLAGS)
-	$(CMAKE) -C $(ZLIBNG_OUT)/jdk-flags.cmake -S $(ZLIBNG_SRC) -B $(ZLIBNG_OUT) -G "NMake Makefiles" \
+	MAKEFLAGS= MFLAGS= $(CMAKE) -C $(ZLIBNG_OUT)/jdk-flags.cmake -S $(ZLIBNG_SRC) -B $(ZLIBNG_OUT) -G "NMake Makefiles" \
 	    -DCMAKE_MAKE_PROGRAM="$(call FixPath, $(lastword $(NMAKE)))" \
 	    "-DCMAKE_C_COMPILER=$(subst $(SPACE),;,$(call FixPath, $(subst $(FIXPATH) ,,$(CC))))" \
 	    -DCMAKE_AR="$(call FixPath, $(lastword $(AR)))" \
@@ -108,7 +108,7 @@ ifneq ($(filter x86_64 aarch64, $(OPENJDK_TARGET_CPU)), )
 	    > $(ZLIBNG_OUT)/configure-output.log 2>&1 || { \
 	      $(CAT) $(ZLIBNG_OUT)/configure-output.log; exit 1; \
 	    }
-	$(CMAKE) --build $(ZLIBNG_OUT) --target zlib-ng
+	MAKEFLAGS= MFLAGS= $(CMAKE) --build $(ZLIBNG_OUT) --target zlib-ng
     else
 	# Keep compiler environment assignments intact during configure probes.
 	$(PRINTF) '%s\n' '#!/bin/sh' 'exec env $(CC) "$$@"' > $(ZLIBNG_OUT)/cc
