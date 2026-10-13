@@ -27,6 +27,7 @@
 package jdk.internal.util;
 
 import java.nio.ByteOrder;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -381,7 +382,8 @@ public final class SimdUTF {
         return process(src, sp, len, dst, dp, capacity, ENCODE_LATIN1);
     }
 
-    @ForceInline
+    // Keep native call setup out of compilation of scalar encoder fallbacks.
+    @DontInline
     public static int encodeUTF16(Object src, int sp, int len,
                                   byte[] dst, int dp, int capacity) {
         return process(src, sp, len, dst, dp, capacity, ENCODE_UTF16);
