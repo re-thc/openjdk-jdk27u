@@ -37,7 +37,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.charset.StandardCharsets.UTF_16BE;
 
 import sun.security.util.*;
-import sun.security.pkcs.PKCS9Attribute;
 
 
 /**
@@ -355,7 +354,7 @@ public class AVA implements DerEncoder {
 
         // encode as PrintableString unless value contains
         // non-PrintableString chars
-        if (this.oid.equals(PKCS9Attribute.EMAIL_ADDRESS_OID) ||
+        if (this.oid.equals(X500Name.EMAIL_ADDRESS_OID) ||
             (this.oid.equals(X500Name.DOMAIN_COMPONENT_OID) &&
                     !PRESERVE_OLD_DC_ENCODING)) {
             // EmailAddress and DomainComponent must be IA5String
@@ -482,7 +481,7 @@ public class AVA implements DerEncoder {
 
         // encode as PrintableString unless value contains
         // non-PrintableString chars
-        if (this.oid.equals(PKCS9Attribute.EMAIL_ADDRESS_OID) ||
+        if (this.oid.equals(X500Name.EMAIL_ADDRESS_OID) ||
             (this.oid.equals(X500Name.DOMAIN_COMPONENT_OID) &&
                     !PRESERVE_OLD_DC_ENCODING)) {
             // EmailAddress and DomainComponent must be IA5String
@@ -906,7 +905,14 @@ public class AVA implements DerEncoder {
 
         String canon = typeAndValue.toString();
         canon = canon.toUpperCase(Locale.US).toLowerCase(Locale.US);
-        return Normalizer.normalize(canon, Normalizer.Form.NFKD);
+        // Normalizing a string of ASCII characters changes nothing, and the
+        // first normalization has to read the data of the normalizer.
+        for (int i = 0; i < canon.length(); i++) {
+            if (canon.charAt(i) > 0x7F) {
+                return Normalizer.normalize(canon, Normalizer.Form.NFKD);
+            }
+        }
+        return canon;
     }
 
     /*
@@ -1281,8 +1287,8 @@ class AVAKeyword {
         new AVAKeyword("INITIALS",     X500Name.INITIALS_OID,     false, false);
         new AVAKeyword("GENERATION",   X500Name.GENERATIONQUALIFIER_OID,
                                                                   false, false);
-        new AVAKeyword("EMAIL", PKCS9Attribute.EMAIL_ADDRESS_OID, false, false);
-        new AVAKeyword("EMAILADDRESS", PKCS9Attribute.EMAIL_ADDRESS_OID,
+        new AVAKeyword("EMAIL", X500Name.EMAIL_ADDRESS_OID, false, false);
+        new AVAKeyword("EMAILADDRESS", X500Name.EMAIL_ADDRESS_OID,
                                                                   false, false);
         new AVAKeyword("UID",          X500Name.userid_oid,       false, true);
         new AVAKeyword("SERIALNUMBER", X500Name.SERIALNUMBER_OID, false, false);

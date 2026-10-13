@@ -49,23 +49,87 @@ public class CurveDB {
     private static final int PD = 5; // prime curve, mark as default
     private static final int BD = 6; // binary curve, mark as default
 
-    private static final Map<String,NamedCurve> oidMap =
-            new LinkedHashMap<>();
-    private static final Map<String,NamedCurve> nameMap =
-            new HashMap<>();
-    private static final Map<Integer,NamedCurve> lengthMap =
-            new HashMap<>();
+    // The parameters of a curve, from which the NamedCurve is made when it
+    // is first needed.  Most processes use only a few of the curves, and
+    // making all of them takes a lot of BigIntegers.
+    private static final class Spec {
+        private final KnownOIDs ko;
+        private final int type;
+        private final String sfield, a, b, x, y, n;
+        private final int h;
+        final int fieldSize;
+        private volatile NamedCurve curve;
 
-    private static final Collection<? extends NamedCurve> specCollection;
+        Spec(KnownOIDs ko, int type, String sfield, String a, String b,
+                String x, String y, String n, int h) {
+            this.ko = ko;
+            this.type = type;
+            this.sfield = sfield;
+            this.a = a;
+            this.b = b;
+            this.x = x;
+            this.y = y;
+            this.n = n;
+            this.h = h;
+            // the size of the field, as ECField.getFieldSize() returns it
+            int length = bitLength(sfield);
+            this.fieldSize = (type == B || type == BD) ? length - 1 : length;
+        }
+
+        private static int bitLength(String hex) {
+            int i = 0;
+            while (i < hex.length() - 1 && hex.charAt(i) == '0') {
+                i++;
+            }
+            int top = Character.digit(hex.charAt(i), 16);
+            return (hex.length() - i - 1) * 4
+                    + (Integer.SIZE - Integer.numberOfLeadingZeros(top));
+        }
+
+        NamedCurve curve() {
+            NamedCurve c = curve;
+            if (c == null) {
+                synchronized (this) {
+                    c = curve;
+                    if (c == null) {
+                        c = make();
+                        curve = c;
+                    }
+                }
+            }
+            return c;
+        }
+
+        private NamedCurve make() {
+            BigInteger p = bi(sfield);
+            ECField field;
+            if ((type == P) || (type == PD)) {
+                field = new ECFieldFp(p);
+            } else {
+                field = new ECFieldF2m(p.bitLength() - 1, p);
+            }
+
+            EllipticCurve ec = new EllipticCurve(field, bi(a), bi(b));
+            ECPoint g = new ECPoint(bi(x), bi(y));
+            return new NamedCurve(ko, ec, g, bi(n), h);
+        }
+    }
+
+    private static final Map<String,Spec> oidMap =
+            new LinkedHashMap<>();
+    private static final Map<String,Spec> nameMap =
+            new HashMap<>();
+    private static final Map<Integer,Spec> lengthMap =
+            new HashMap<>();
 
     // Return a NamedCurve for the specified OID/name or null if unknown.
     public static NamedCurve lookup(String name) {
-        NamedCurve spec = oidMap.get(name);
-        if (spec != null) {
-            return spec;
+        Spec spec = oidMap.get(name);
+        if (spec == null) {
+            spec = nameMap.get(name.toLowerCase(Locale.ENGLISH));
         }
 
-        return nameMap.get(name.toLowerCase(Locale.ENGLISH));
+        return (spec == null) ? null : spec.curve();
     }
 
     // Return EC parameters for the specified field size. If there are known
@@ -75,7 +139,8 @@ public class CurveDB {
     // If no parameters are known, the method returns null.
     // NOTE that this method returns both prime and binary curves.
     static NamedCurve lookup(int length) {
-        return lengthMap.get(length);
+        Spec spec = lengthMap.get(length);
+        return (spec == null) ? null : spec.curve();
     }
 
     // Convert the given ECParameterSpec object to a NamedCurve object.
@@ -94,13 +159,14 @@ public class CurveDB {
         // the SunJSSE TLS ECC extensions are wrong, which could lead to
         // interoperability problems.
         int fieldSize = params.getCurve().getField().getFieldSize();
-        for (NamedCurve namedCurve : specCollection) {
-            // ECParameterSpec does not define equals, so check all the
-            // components ourselves.
+        for (Spec spec : oidMap.values()) {
             // Quick field size check first
-            if (namedCurve.getCurve().getField().getFieldSize() != fieldSize) {
+            if (spec.fieldSize != fieldSize) {
                 continue;
             }
+            NamedCurve namedCurve = spec.curve();
+            // ECParameterSpec does not define equals, so check all the
+            // components ourselves.
             if (ECUtil.equals(namedCurve, params)) {
                 // everything matches our named curve, return it
                 return namedCurve;
@@ -114,42 +180,38 @@ public class CurveDB {
         return new BigInteger(s, 16);
     }
 
-    private static NamedCurve add(KnownOIDs o, int type, String sfield,
+    private static Spec add(KnownOIDs o, int type, String sfield,
             String a, String b, String x, String y, String n, int h) {
-        BigInteger p = bi(sfield);
-        ECField field;
-        if ((type == P) || (type == PD)) {
-            field = new ECFieldFp(p);
-        } else if ((type == B) || (type == BD)) {
-            field = new ECFieldF2m(p.bitLength() - 1, p);
-        } else {
+        if ((type != P) && (type != PD) && (type != B) && (type != BD)) {
             throw new RuntimeException("Invalid type: " + type);
         }
 
-        EllipticCurve curve = new EllipticCurve(field, bi(a), bi(b));
-        ECPoint g = new ECPoint(bi(x), bi(y));
+        Spec spec = new Spec(o, type, sfield, a, b, x, y, n, h);
 
         String oid = o.value();
-        NamedCurve params = new NamedCurve(o, curve, g, bi(n), h);
-        if (oidMap.put(oid, params) != null) {
+        if (oidMap.put(oid, spec) != null) {
             throw new RuntimeException("Duplication oid: " + oid);
         }
 
-        for (String cn : params.getNameAndAliases()) {
-            if (nameMap.put(cn.toLowerCase(Locale.ENGLISH),
-                        params) != null) {
+        // the standard name followed by the aliases
+        if (nameMap.put(o.stdName().toLowerCase(Locale.ENGLISH), spec)
+                != null) {
+            throw new RuntimeException("Duplication name: " + o.stdName());
+        }
+        for (String cn : o.aliases()) {
+            if (nameMap.put(cn.toLowerCase(Locale.ENGLISH), spec) != null) {
                 throw new RuntimeException("Duplication name: " + cn);
             }
         }
 
-        int len = field.getFieldSize();
+        int len = spec.fieldSize;
         if ((type == PD) || (type == BD) || (lengthMap.get(len) == null)) {
             // add entry if none present for this field size or if
             // the curve is marked as a default curve.
-            lengthMap.put(len, params);
+            lengthMap.put(len, spec);
         }
 
-        return params;
+        return spec;
     }
 
     static {
@@ -262,7 +324,7 @@ public class CurveDB {
             "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141",
             1);
 
-        P_256 = add(KnownOIDs.secp256r1, PD,
+        add(KnownOIDs.secp256r1, PD,
             "FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF",
             "FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC",
             "5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B",
@@ -271,7 +333,7 @@ public class CurveDB {
             "FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551",
             1);
 
-        P_384 = add(KnownOIDs.secp384r1, PD,
+        add(KnownOIDs.secp384r1, PD,
             "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFF0000000000000000FFFFFFFF",
             "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFF0000000000000000FFFFFFFC",
             "B3312FA7E23EE7E4988E056BE3F82D19181D9C6EFE8141120314088F5013875AC656398D8A2ED19D2A85C8EDD3EC2AEF",
@@ -280,7 +342,7 @@ public class CurveDB {
             "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFC7634D81F4372DDF581A0DB248B0A77AECEC196ACCC52973",
             1);
 
-        P_521 = add(KnownOIDs.secp521r1, PD,
+        add(KnownOIDs.secp521r1, PD,
             "01FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
             "01FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFC",
             "0051953EB9618E1C9A1F929A21A0B68540EEA2DA725B99B315F3B8B489918EF109E156193951EC7E937B1652C0BD3BB1BF073573DF883D2C34F1EF451FD46B503F00",
@@ -718,6 +780,8 @@ public class CurveDB {
             "AADD9DB8DBE9C48B3FD4E6AE33C9FC07CB308DB3B3C9D20ED6639CCA70330870553E5C414CA92619418661197FAC10471DB1D381085DDADDB58796829CA90069",
             1);
 
-        specCollection = Collections.unmodifiableCollection(oidMap.values());
+        P_256 = lookup(KnownOIDs.secp256r1.value());
+        P_384 = lookup(KnownOIDs.secp384r1.value());
+        P_521 = lookup(KnownOIDs.secp521r1.value());
     }
 }
