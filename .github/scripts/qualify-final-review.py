@@ -35,12 +35,12 @@ def tests():
              'TestZlibNG.java', 'TestZlibNGSmallStreams.java', 'TestZlibNGAOT.java']
     for kind, jdk in [('release', NEW), ('debug', DEBUG)]:
         run('jtreg-' + kind, [jdk / 'bin/java', '-XX:ActiveProcessorCount=2', '-jar', jtreg,
-            '-jdk:' + str(jdk), '-conc:2', '-timeoutFactor:4', '-verbose:fail,error,summary',
+            '-jdk:' + str(jdk), '-conc:2', '-timeoutFactor:4', '-ignore:quiet', '-verbose:fail,error,summary',
             '-w:' + str(OUT / ('work-' + kind)), '-r:' + str(OUT / ('report-' + kind)),
             *[ZIP / name for name in names],
             ROOT / 'test/hotspot/jtreg/runtime/cds/appcds/aotCode/AOTCodeCPUFeatureIncompatibilityTest.java'])
     run('jtreg-zip', [NEW / 'bin/java', '-XX:ActiveProcessorCount=2', '-jar', jtreg,
-        '-jdk:' + str(NEW), '-conc:2', '-timeoutFactor:4', '-verbose:fail,error,summary',
+        '-jdk:' + str(NEW), '-conc:2', '-timeoutFactor:4', '-ignore:quiet', '-verbose:fail,error,summary',
         '-w:' + str(OUT / 'work-zip'), '-r:' + str(OUT / 'report-zip'),
         ROOT / 'test/jdk/java/util/zip', ROOT / 'test/jdk/jdk/nio/zipfs'])
     classes = ROOT / 'validation/static-classes'
