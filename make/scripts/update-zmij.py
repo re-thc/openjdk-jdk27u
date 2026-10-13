@@ -22,8 +22,10 @@ args = parser.parse_args()
 upstream = args.upstream.resolve()
 root = Path(__file__).resolve().parents[2]
 
+
 def git(*argv):
     return subprocess.check_output(['git', '-C', str(upstream), *argv], text=True).strip()
+
 
 commit = git('rev-parse', 'HEAD')
 if args.commit:
@@ -56,7 +58,6 @@ with tempfile.TemporaryDirectory() as tmp:
                     str(staged), '--cxx', args.cxx], check=True)
     destination = root / 'src/hotspot/share/utilities/zmij'
     destination.mkdir(exist_ok=True)
-    # Include the implementation once, avoiding a second VM translation unit.
     shutil.copyfile(staged / 'zmij.cc', destination / 'zmij-impl.hpp')
     shutil.copyfile(staged / 'zmij-int.cc', destination / 'zmij-int-impl.hpp')
     shutil.copyfile(staged / 'zmij.h', destination / 'zmij.h')

@@ -6,8 +6,8 @@
 """Refresh the vendored headers from an unmodified upstream release checkout."""
 import argparse
 from pathlib import Path
-import shutil
 import re
+import shutil
 import subprocess
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -16,8 +16,10 @@ args = parser.parse_args()
 upstream = args.upstream.resolve()
 root = Path(__file__).resolve().parents[2]
 
+
 def git(*argv):
     return subprocess.check_output(["git", "-C", str(upstream), *argv], text=True).strip()
+
 
 version = git("describe", "--tags", "--exact-match", "HEAD")
 release = re.fullmatch(r"v([0-9]+)\.([0-9]+)\.([0-9]+)", version)

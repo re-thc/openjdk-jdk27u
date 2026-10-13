@@ -40,16 +40,15 @@ import jdk.internal.util.DecimalDigits;
 public class TestDecimalIntegerIntrinsics {
     public static void main(String[] args) throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
-        Class<?> digits = Class.forName("jdk.internal.util.DecimalDigits");
         Method[] methods = {
             Integer.class.getDeclaredMethod("parseInt", String.class, int.class),
             Long.class.getDeclaredMethod("parseLong", String.class, int.class),
             Integer.class.getDeclaredMethod("parseUnsignedInt", String.class, int.class),
             Long.class.getDeclaredMethod("parseUnsignedLong", String.class, int.class),
-            digits.getDeclaredMethod("uncheckedGetCharsLatin1", int.class, int.class, byte[].class),
-            digits.getDeclaredMethod("uncheckedGetCharsUTF16", int.class, int.class, byte[].class),
-            digits.getDeclaredMethod("uncheckedGetCharsLatin1", long.class, int.class, byte[].class),
-            digits.getDeclaredMethod("uncheckedGetCharsUTF16", long.class, int.class, byte[].class)
+            DecimalDigits.class.getDeclaredMethod("uncheckedGetCharsLatin1", int.class, int.class, byte[].class),
+            DecimalDigits.class.getDeclaredMethod("uncheckedGetCharsUTF16", int.class, int.class, byte[].class),
+            DecimalDigits.class.getDeclaredMethod("uncheckedGetCharsLatin1", long.class, int.class, byte[].class),
+            DecimalDigits.class.getDeclaredMethod("uncheckedGetCharsUTF16", long.class, int.class, byte[].class)
         };
         // Tiered VMs retain ordinary Java entries and advance hot methods to compilation.
         byte[] output = new byte[64];
@@ -61,10 +60,12 @@ public class TestDecimalIntegerIntrinsics {
             sum += Long.parseUnsignedLong("123", 10);
             sum += DecimalDigits.uncheckedGetCharsLatin1(n, 32, output);
             sum += DecimalDigits.uncheckedGetCharsUTF16(n, 32, output);
-            sum += DecimalDigits.uncheckedGetCharsLatin1((long)n, 32, output);
-            sum += DecimalDigits.uncheckedGetCharsUTF16((long)n, 32, output);
+            sum += DecimalDigits.uncheckedGetCharsLatin1((long) n, 32, output);
+            sum += DecimalDigits.uncheckedGetCharsUTF16((long) n, 32, output);
         }
-        if (sum == 0) throw new AssertionError("Conversions were not consumed");
+        if (sum == 0) {
+            throw new AssertionError("Conversions were not consumed");
+        }
         int expectedLevel = Integer.parseInt(args[0]);
         for (Method method : methods) {
             int actual = wb.getMethodCompilationLevel(method);

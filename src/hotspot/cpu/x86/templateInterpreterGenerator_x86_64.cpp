@@ -188,11 +188,15 @@ address TemplateInterpreterGenerator::generate_integer_entry(AbstractInterpreter
   // Keep ordinary profiling and compilation in tiered VMs. Frameless successes
   // do not collect the bytecode profiles required by the Java C1/C2 algorithms.
   if (UseCompiler || CountCompiledCalls ||
-      !(parse ? UseFastIntegerIntrinsics : UseZmijIntegerIntrinsics)) return nullptr;
+      !(parse ? UseFastIntegerIntrinsics : UseZmijIntegerIntrinsics)) {
+    return nullptr;
+  }
   int mode = parse ? int(kind - Interpreter::java_lang_Integer_parseInt)
                    : int(kind - Interpreter::jdk_internal_util_formatIntLatin1);
   // Writer kinds enumerate int Latin1/UTF16, then long Latin1/UTF16.
-  if (!parse) mode = ((mode & 1) << 1) | (mode >> 1);
+  if (!parse) {
+    mode = ((mode & 1) << 1) | (mode >> 1);
+  }
   address entry = __ pc();
   Label slow_path;
   __ safepoint_poll(slow_path, false, false);

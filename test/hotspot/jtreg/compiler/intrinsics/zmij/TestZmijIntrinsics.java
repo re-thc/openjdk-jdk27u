@@ -43,7 +43,8 @@ public class TestZmijIntrinsics {
     public static void main(String[] args) throws Exception {
         boolean expected = Boolean.parseBoolean(args[0]);
         WhiteBox wb = WhiteBox.getWhiteBox();
-        Method gate = Class.forName("jdk.internal.math.Zmij").getDeclaredMethod("useJavaFloatAppend");
+        Class<?> zmij = Class.forName("jdk.internal.math.Zmij");
+        Method gate = zmij.getDeclaredMethod("useJavaFloatAppend");
         boolean javaAppend = args.length > 1 ? Boolean.parseBoolean(args[1])
                 : wb.getBooleanVMFlag("UseZmijIntrinsics");
         boolean c1Gate = wb.isIntrinsicAvailable(gate, 1);
@@ -53,8 +54,8 @@ public class TestZmijIntrinsics {
                     + ", C1=false; actual C1=" + c1Gate + ", C2=" + c2Gate);
         }
         Method[] methods = {
-            Class.forName("jdk.internal.math.Zmij").getDeclaredMethod("format0", byte[].class, int.class, long.class, int.class),
-            Class.forName("jdk.internal.math.Zmij").getDeclaredMethod("decimal0", long.class)
+            zmij.getDeclaredMethod("format0", byte[].class, int.class, long.class, int.class),
+            zmij.getDeclaredMethod("decimal0", long.class)
         };
         for (Method method : methods) {
             for (int level : new int[] {1, 4}) {

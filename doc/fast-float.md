@@ -1,192 +1,77 @@
-# Native decimal conversion with fast_float
+# Native decimal parsing with fast_float
 
-This change vendors fast_float **8.3.2**, tag commit
-`42f254836ee416ffcf2f4e6576260003ac33d48c`, under its MIT license.
-The library is header-only and has no runtime dependencies. The release and
-commit are recorded in `make/data/fast_float/version.txt`; the distributed
+The header-only fast_float import uses the MIT license. Its release and full
+revision are pinned in `make/data/fast_float/version.txt`; the distributed
 license is `src/java.base/share/legal/fast_float.md`.
 
-## Controls and implementation
+## Floating-point parsing
 
-Native decimal conversion is **enabled by default** on all platforms. The
-interpreter and C1 have intrinsic ports for little-endian x86-64 and AArch64.
-Other interpreter/C1 ports, including Zero, use the portable JNI parser.
-`-XX:-UseFastFloatIntrinsics` opts out and selects the existing Java implementation.
-The two intrinsic IDs, `_parseFastFloat` and `_parseFastFloatDigits`, also obey
-`DisableIntrinsic` and `ControlIntrinsic`. Disabling an intrinsic alone leaves
-its JNI implementation available. Disabling the product flag bypasses native
-conversion entirely, including BigDecimal and DecimalFormat.
+`FloatingDecimal.parseFloat` and `parseDouble` share the native adapter.
+`UseFastFloatIntrinsics` enables it by default on all platforms. Interpreter
+and C1 leaf entries support little-endian x86-64 and AArch64; C2 uses a shared
+runtime leaf. Other interpreter/C1 ports, including Zero, use JNI.
+`-XX:-UseFastFloatIntrinsics` selects Java throughout. Disabling
+`_parseFastFloat` or `_parseFastFloatDigits` with `DisableIntrinsic` or
+`ControlIntrinsic` retains JNI.
 
-`FloatingDecimal` passes the original String to a private native method.
-The interpreter, C1 and C2 read its backing byte array, coder and length and
-make a leaf C++ call. There is no String encoding, array allocation, JNI
-transition or pinning on these intrinsic paths. Both compact Latin-1 and
-native-endian UTF-16 String storage are supported. C1 uses the platform's C
-calling convention through shared LIR; the interpreter has x86-64 and
-AArch64 entries. C2 uses an ordinary leaf runtime call, requiring no new
-machine instructions or SIMD feature checks. Other interpreter/C1 targets
-use JNI.
+The String adapter reads Latin1 or native-endian UTF16 storage directly and
+accepts at most 1,024 code units. It handles Java trim whitespace, a leading
+plus and an optional `f/F/d/D` suffix, and requires complete consumption.
+Unsupported syntax returns a NaN sentinel to the Java parser, preserving
+symbolic values, hexadecimal literals and exception behavior. Range errors
+produce correctly rounded signed zero or infinity. Float parsing rounds
+directly to binary32 before widening to the common double-valued native ABI.
 
-The Java wrappers and eligibility check use `@ForceInline` so their new
-guards do not push these previously tiny entry points beyond C1's ordinary
-inline limit. This also lets the disabled flag fold away in compiled callers.
+The DigitList adapter accepts 8–768 trusted ASCII digits and a decimal point
+position. It tokenizes the significant prefix with eight-digit scans and keeps
+its complete span for exact rounding. The adjusted exponent uses 64-bit
+arithmetic. Shorter inputs retain the Java fast path.
 
-The leaf parser neither allocates nor reaches a safepoint. It accepts at most
-1,024 UTF-16 code units. The Java entry point also gates this bound so larger
-inputs proceed directly to the existing parser. Safepoint polling at the
-interpreter entry and normal compiled polls remain in place. String field
-loads use the normal GC barriers. The C2 call's memory dependency orders
-input reads, and interior pointers never cross a safepoint. The JNI fallback
-resolves arrays in VM state and calls the same bounded parser.
+Both leaves are bounded, allocate nothing and cannot safepoint while holding
+interior array pointers. String loads use normal GC barriers; C2's memory
+dependency orders input reads. JNI resolves arrays in VM state and calls the
+same kernels. Java eligibility checks are forced inline so disabled controls
+can fold away in compiled callers.
 
-A float is parsed directly with `from_chars<float>`, then widened exactly for
-the common double-valued native ABI. Parsing a double and narrowing it to
-float would introduce double rounding and is deliberately avoided.
-
-The adapter handles Java's leading plus, trim whitespace (code units
-`<= 0x20`), and optional `f/F/d/D` suffix. It requires complete consumption,
-rejects fast_float's infinity/NaN spellings, and treats range errors as Java's
-correctly rounded signed zero or infinity. A NaN sentinel delegates unsupported
-syntax, symbolic values, hexadecimal literals and exceptions to the original
-Java parser. The sentinel cannot collide with a successful decimal conversion. Java also
-skips the native call for ordinary symbolic and hexadecimal spellings.
-
-The digit-buffer adapter uses fast_float's `parse_eight_digits_unrolled` to
-tokenize at most 19 significant digits and supplies the full original digit
-span to `from_chars_advanced` for exact rounding when required. The decimal
-exponent is adjusted in 64-bit arithmetic, including extreme int exponents.
-Inputs shorter than eight digits keep the existing Java fast path, avoiding
-leaf-call overhead when a single word scan cannot be used.
-
-## Backend coverage
-
-| Execution tier | x86-64/AArch64 little-endian | Other ports |
-| --- | --- | --- |
-| Interpreter | Bounded leaf entry | JNI, including Zero |
-| C1 | C calling convention leaf | JNI |
-| C2 | Shared runtime leaf | Shared runtime leaf where C2 is built |
-| Intrinsic disabled | JNI | JNI |
-
-Parsing remains enabled by default on all ports. The eight-digit trusted-buffer
-gate and 1,024-code-unit String ceiling are shared; there is no JNI-specific
-small-String gate. Linux x86 intrinsic measurements do not establish a win for
-JNI-only ports. Existing forced-JNI samples use Linux x86 and must be assessed
-separately. Native ARM64 and Windows timing are unmeasured. A backend-specific
-cutoff would require representative measurements.
-Use `make/scripts/bench-decimal-review.py` to compare original/default/opt-out/JNI
-with allocation profiling by tier.
-
-## Consumers audited
-
-| Consumer | Integration |
-| --- | --- |
-| Float/Double parsing, `valueOf(String)`, String constructors | Shared `FloatingDecimal.parseFloat/parseDouble` entry points |
-| DecimalFormat and DigitList | `parseDoubleSignlessDigits`: 8–768 trusted ASCII digits and decimal exponent; eight-digit word scanning, no copy or Java String allocation |
-| BigDecimal `floatValue/doubleValue` | Full conversion with positive scale and an existing cached decimal representation of at most 1,024 code units |
-| BigDecimal simple conversions | Existing exact arithmetic, integer conversion, zero and obvious overflow/underflow paths run first |
-| BigDecimal constructors, exact arithmetic, BigInteger | Retain exact precision/scale and integer algorithms; binary floating point parsing cannot implement these operations |
-| Scanner floating point methods and lookahead | Already call Float/Double parsing |
-| ChoiceFormat and CompactNumberFormat | Already call Double parsing; DecimalFormat's separate digit path is covered above |
-| XML schema FloatDV/DoubleDV, XPath/XSLT conversions, XML durations/date-times | Already call Float/Double parsing |
-| Preferences, JDBC rowsets/XML readers, JMX option parsing, Provider version parsing, locale range weights | Already call Float/Double parsing or their String `valueOf` overloads |
-| AWT/Swing/CSS, beans decoders/editors, image metadata, audio configuration, Marlin and desktop property parsing | Already call Float/Double parsing or their String `valueOf` overloads |
-| javac literals/options, compiler/IGV utilities, JConsole/JDI/JStat, JLine colors, JFR metadata, demos | Already call Float/Double parsing or their String `valueOf` overloads |
-| Incubator Vector Float16 parsing | Its Double parsing stage benefits; its distinct binary16 rounding algorithm remains intact |
-| FloatToDecimal/DoubleToDecimal and formatting | The opposite conversion uses [Żmij](zmij.md); fast_float's decimal-to-binary algorithm does not apply |
-
-The source audit covered qualified `parseFloat/parseDouble`, the String
-`valueOf` overloads and constructors, every `FloatingDecimal` reference, and
-the independent conversion routines in BigDecimal, DigitList and Float16.
-Primitive boxing, class-file constant decoding, binary stream readers and
-floating-point arithmetic do not parse decimal text. All applicable String
-consumers reach the same two entry points; DigitList is the separate trusted
-digit-buffer consumer. This avoids duplicating native adapters in those callers.
-
-BigDecimal preserves arbitrary precision and scale. Native conversion changes
-only its final rounding to float/double. Uncached values stay on the existing arithmetic path: formatting a new
-representation would regress cold conversions. Native conversion neither
-allocates nor retains an additional String. Large cached representations
-also stay on the existing arithmetic path.
+BigDecimal reuses an existing cached decimal String only during full
+`floatValue`/`doubleValue` conversion. Exact arithmetic, simple conversions,
+zero and obvious overflow/underflow paths run first. Uncached values and large
+representations retain the arithmetic algorithm.
 
 ## Integer parsing
 
-fast_float's existing integer `from_chars` overloads implement signed and
-unsigned 32-bit and 64-bit decimal parsing. The interpreter calls this kernel
-from the original `Integer`/`Long` String-and-radix methods in interpreter-only
-execution. No Java wrapper, String encoding or allocation is added. Tiered VMs
-retain the standard Java interpreter entry and profiling, and C1/C2 compile
-the unchanged Java bodies. Frameless successes in mixed execution changed
-bytecode profiles and regressed compiled workloads. Counted execution and
-debugger events also retain the Java entry.
+The integer `from_chars` overloads serve signed and unsigned Integer/Long
+String-and-radix methods in interpreter-only execution on x86-64 and AArch64.
+The leaf accepts decimal radix, at most 1,024 code units, one leading plus and
+complete ASCII text. Rejected inputs return to Java, preserving Unicode digits,
+other radices, overflow, null handling and exceptions. A result whose bits
+equal `Long.MIN_VALUE` also uses Java because those bits encode the sentinel.
 
-The bounded leaf accepts at most 1,024 code units, one optional leading plus
-and complete ASCII decimal text, in Latin1 or native-endian UTF16. A failure
-sentinel returns to the original Java bytecode, preserving Unicode digits,
-nondecimal radices, overflow, null handling and exception messages. The valid
-64-bit value whose bits equal `Long.MIN_VALUE` also uses this fallback.
-CharSequence parsing and arbitrary-precision BigInteger parsing retain Java.
-
-`UseFastIntegerIntrinsics` controls these interpreter entries independently of
-floating-point parsing. The measured Linux x86-64 path is default-on. AArch64
-entries are implemented and can be enabled explicitly; other platforms keep
-Java until native performance qualification. Disabling the flag or one of
+`UseFastIntegerIntrinsics` is independent of floating-point parsing and defaults
+on only for Linux x86-64. AArch64 requires explicit enablement. The IDs are
 `_parseDecimalInt`, `_parseDecimalLong`, `_parseUnsignedDecimalInt` and
-`_parseUnsignedDecimalLong` selects the original Java entry.
+`_parseUnsignedDecimalLong`. Their controls select the original Java entry.
+Tiered VMs, counted execution and debugger events retain normal Java entries
+and profiling; C1/C2 compile the existing bodies. CharSequence and BigInteger
+parsing retain Java.
 
-`make/scripts/bench-integer-conversion.py` compares short, wide, mixed and
-individual digit-width workloads with alternating original/default/opt-out
-forks, allocation profiling and source/image hashes. It records interpreter,
-C1 and C2 separately. Native-core timings do not establish JDK speedups.
+## Updating and testing
 
-## Updating the vendor copy
-
-1. Check upstream releases and check out a clean release tag (8.3.2 or newer).
-2. Run `python3 make/scripts/update-fast-float.py /path/to/fast_float`.
-3. Review the header and license diff and the recorded tag/commit. The updater
-   rejects modified upstream headers and licenses and copies the release headers
-   without local patches.
-4. Build, run the differential and existing parsing/math/format tests, and
-   repeat interpreter/C1/C2/JNI benchmarks before committing an update.
-
-Upstream incorporated the field-layout fix for
-[#418](https://github.com/fastfloat/fast_float/issues/418) in 8.3.1, keeping
-`parsed_number_string_t` at 64 bytes on the tested 64-bit ABI. The obsolete
-local patch has been removed. Release 8.3.2 also fixes signed overflow in
-`integer_times_pow10` and classification of negative wide-character units.
-
-Alternating GCC measurements did not establish the MSVC speedup reported
-upstream. The [layout control source](benchmarks/decimal-original-baseline/fast-float-layout.cpp)
-and [recorded samples](benchmarks/decimal-original-baseline/fast-float-layout.tsv)
-retain the size and timing evidence.
-
-## Reproducing validation and measurements
-
-The differential test uses the original Java parser as its oracle for both
-precisions, including exception type/message and signed-zero bits. It runs
-in the interpreter, C1, C2, UTF-16, JNI-only and disabled configurations.
-The HotSpot WhiteBox test checks both intrinsic IDs at compiler levels 1 and 4
-and verifies the product flag and fine-grained intrinsic controls.
+Check out a clean upstream release tag, then run:
 
 ```sh
-make CONF=<configuration> jdk
-make CONF=<configuration> test TEST='test/jdk/jdk/internal/math/FloatingDecimal test/jdk/java/lang/Float test/jdk/java/lang/Double test/jdk/java/math/BigDecimal test/hotspot/jtreg/compiler/intrinsics/fastfloat'
+python3 make/scripts/update-fast-float.py /path/to/fast_float
 ```
 
-`FastFloatParsing` is a deterministic JMH benchmark covering short integers,
-ordinary decimals, floating point round trips, long mantissas, hex fallbacks,
-DecimalFormat's digit conversion, and cached/cold BigDecimal conversions.
-It consumes every result and reports nanoseconds per conversion. The cold
-BigDecimal benchmarks include construction and create fresh objects.
-
-With JMH 1.37 core, annotation processor, jopt-simple and commons-math jars in
-the classpath, the following runs all three execution tiers and both fallback
-controls and saves raw JSON and logs:
+The updater requires an unmodified release at least v8.3.2, copies headers
+without local patches, and records the release, revision and MIT license.
+Review the vendor diff and run parsing and precision tests before updating:
 
 ```sh
-taskset -c <cpu> make/scripts/bench-fast-float.sh /path/to/jdk '/path/to/jmh/*' /path/to/results -f 3 -wi 3 -i 3 -w 500ms -r 500ms
+make CONF=<configuration> images
+make CONF=<configuration> test TEST='test/jdk/jdk/internal/math/FloatingDecimal test/jdk/jdk/internal/util/DecimalDigits test/jdk/java/lang/Float test/jdk/java/lang/Double test/jdk/java/lang/Integer test/jdk/java/lang/Long test/jdk/java/math/BigDecimal test/hotspot/jtreg/compiler/intrinsics/fastfloat test/hotspot/jtreg/compiler/intrinsics/decimalinteger'
 ```
 
-Results, platform details, validation totals and limitations are recorded in
-the [original-JDK benchmark report](benchmarks/decimal-original-baseline/README.md).
-Set `FAST_FLOAT_TIERS='c1 c2'` to repeat only selected tiers. Emulation is suitable for
-ARM correctness checks; it is not evidence of native ARM performance.
+The differential tests compare raw bits and exception behavior with Java
+across execution tiers, UTF16, JNI and opt-outs. WhiteBox tests verify
+intrinsic controls and that integer methods keep their compiled Java bodies.
