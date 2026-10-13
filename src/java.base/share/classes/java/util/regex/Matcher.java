@@ -39,6 +39,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import jdk.internal.util.regex.RustRegex;
+import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * An engine that performs match operations on a {@linkplain
@@ -459,6 +460,7 @@ public final class Matcher implements MatchResult {
         if (nativeExactEndFlags) {
             nativeEndPattern = null;
             nativeEndInput = null;
+            nativeExactEndFlags = false;
         }
         first = -1;
         last = 0;
@@ -1828,11 +1830,14 @@ public final class Matcher implements MatchResult {
         return result;
     }
 
+    @ForceInline
     private int nativeMatch(int start, int mode) {
-        nativeEndPattern = null;
-        nativeEndInput = null;
-        nativePendingLast = false;
-        nativeExactEndFlags = false;
+        if (nativeEndPattern != null) {
+            nativeEndPattern = null;
+            nativeEndInput = null;
+            nativePendingLast = false;
+            nativeExactEndFlags = false;
+        }
         RustRegex engine = parentPattern.rustRegex;
         if (engine == null) return -1;
         if (to - from > RustRegex.MAX_LENGTH && !engine.hasShortPlan()) {
