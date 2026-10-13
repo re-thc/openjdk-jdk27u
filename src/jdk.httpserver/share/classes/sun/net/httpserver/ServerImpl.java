@@ -166,7 +166,10 @@ class ServerImpl {
             logger.log(Level.DEBUG, "MAX_RSP_TIME:  "+MAX_RSP_TIME);
         }
         events = new ArrayList<>();
-        logger.log(Level.DEBUG, "HttpServer created "+protocol+" "+ addr);
+        // Don't concatenate unless logged, the first concatenation is slow
+        if (logger.isLoggable(Level.DEBUG)) {
+            logger.log(Level.DEBUG, "HttpServer created "+protocol+" "+ addr);
+        }
     }
 
     public void bind(InetSocketAddress addr, int backlog) throws IOException {
@@ -305,7 +308,9 @@ class ServerImpl {
         }
         HttpContextImpl context = new HttpContextImpl(protocol, path, handler, this);
         contexts.add(context);
-        logger.log(Level.DEBUG, "context created: " + path);
+        if (logger.isLoggable(Level.DEBUG)) {
+            logger.log(Level.DEBUG, "context created: " + path);
+        }
         return context;
     }
 
@@ -315,7 +320,9 @@ class ServerImpl {
         }
         HttpContextImpl context = new HttpContextImpl(protocol, path, null, this);
         contexts.add(context);
-        logger.log(Level.DEBUG, "context created: " + path);
+        if (logger.isLoggable(Level.DEBUG)) {
+            logger.log(Level.DEBUG, "context created: " + path);
+        }
         return context;
     }
 

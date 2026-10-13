@@ -28,6 +28,7 @@ package java.net;
 import java.net.spi.InetAddressResolver;
 import java.net.spi.InetAddressResolverProvider;
 import java.net.spi.InetAddressResolver.LookupPolicy;
+import java.util.Iterator;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.ArrayList;
@@ -385,7 +386,6 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                     }
                 }
         );
-        Exceptions.setup(); // needed for native exceptions
         init();
     }
 
@@ -487,10 +487,16 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     }
 
     private static InetAddressResolver loadResolver() {
-        return ServiceLoader.load(InetAddressResolverProvider.class)
-                .findFirst()
-                .map(nsp -> nsp.get(builtinConfiguration()))
-                .orElse(BUILTIN_RESOLVER);
+        // Not findFirst().map(lambda): that spins a lambda class on first use
+        Iterator<InetAddressResolverProvider> providers =
+                ServiceLoader.load(InetAddressResolverProvider.class).iterator();
+        if (providers.hasNext()) {
+            InetAddressResolver provided = providers.next().get(builtinConfiguration());
+            if (provided != null) {
+                return provided;
+            }
+        }
+        return BUILTIN_RESOLVER;
     }
 
     private static InetAddressResolverProvider.Configuration builtinConfiguration() {
@@ -873,9 +879,12 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         new ConcurrentHashMap<>();
 
     // CachedAddresses that have to expire are kept ordered in this NavigableSet
-    // which is scanned on each access
-    private static final NavigableSet<CachedLookup> expirySet =
-        new ConcurrentSkipListSet<>();
+    // which is scanned on each access. It is created by the first lookup of a
+    // name, as initializing ConcurrentSkipListMap is not cheap.
+    private static final class ExpirySet {
+        static final NavigableSet<CachedLookup> INSTANCE =
+            new ConcurrentSkipListSet<>();
+    }
 
     // common interface
     private interface Addresses {
@@ -892,7 +901,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         volatile InetAddress[] inetAddresses;
         /**
          * Time of expiry (in terms of System.nanoTime()). Can be modified only
-         * when the record is not added to the "expirySet".
+         * when the record is not added to the expiry set.
          */
         volatile long expiryTime;
         final long id = seq.incrementAndGet(); // each instance is unique
@@ -926,7 +935,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
 
         /**
          * Checks if the current cache record is expired or not. Expired records
-         * are removed from the expirySet and cache.
+         * are removed from the expiry set and cache.
          *
          * @return {@code true} if the record was removed
          */
@@ -937,7 +946,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             if ((expiryTime - now) < 0L) {
                 // ConcurrentSkipListSet uses weakly consistent iterator,
                 // so removing while iterating is OK...
-                if (expirySet.remove(this)) {
+                if (ExpirySet.INSTANCE.remove(this)) {
                     // ... remove from cache
                     cache.remove(host, this);
                 }
@@ -987,7 +996,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                     refreshTime = now + InetAddressCachePolicy.get() * 1000_000_000L;
                     // getAddressesFromNameService returns non-empty/non-null value
                     inetAddresses = getAddressesFromNameService(host);
-                    // don't update the "expirySet", will do that later
+                    // don't update the expiry set, will do that later
                     staleTime = refreshTime + InetAddressCachePolicy.getStale() * 1000_000_000L;
                 } catch (UnknownHostException ignore) {
                 } finally {
@@ -1000,10 +1009,10 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         /**
          * Overrides the parent method to skip deleting the record from the
          * cache if the stale data can still be used. Note to update the
-         * "expiryTime" field we have to remove the record from the expirySet
+         * "expiryTime" field we have to remove the record from the expiry set
          * and add it back. It is not necessary to remove/add it here, we can do
          * that in the "get()" method above, but extracting it minimizes
-         * contention on "expirySet".
+         * contention on the expiry set.
          */
         @Override
         public boolean tryRemoveExpiredAddress(long now) {
@@ -1016,9 +1025,9 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                 }
                 // ConcurrentSkipListSet uses weakly consistent iterator,
                 // so removing while iterating is OK...
-                if (expirySet.remove(this)) {
+                if (ExpirySet.INSTANCE.remove(this)) {
                     expiryTime = staleTime;
-                    expirySet.add(this);
+                    ExpirySet.INSTANCE.add(this);
                 }
             }
             return false;
@@ -1095,7 +1104,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                         if (cache.replace(host, this, cachedLookup) &&
                             cachePolicy != InetAddressCachePolicy.FOREVER) {
                             // schedule expiry
-                            expirySet.add(cachedLookup);
+                            ExpirySet.INSTANCE.add(cachedLookup);
                         }
                     }
                     if (inetAddresses == null || inetAddresses.length == 0) {
@@ -1125,17 +1134,25 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
 
         public Stream<InetAddress> lookupByName(String host, LookupPolicy policy)
                 throws UnknownHostException {
+            return Arrays.stream(lookupAll(host, policy));
+        }
+
+        /**
+         * Same as lookupByName, for callers that want an array.
+         */
+        InetAddress[] lookupAll(String host, LookupPolicy policy)
+                throws UnknownHostException {
             Objects.requireNonNull(host);
             Objects.requireNonNull(policy);
             validate(host);
-            InetAddress[] addrs;
+            // Needed by the native code to build the message of a failed lookup
+            Exceptions.setup();
             boolean attempted = Blocker.begin();
             try {
-                addrs = impl.lookupAllHostAddr(host, policy);
+                return impl.lookupAllHostAddr(host, policy);
             } finally {
                 Blocker.end(attempted);
             }
-            return Arrays.stream(addrs);
         }
 
         public String lookupByAddress(byte[] addr) throws UnknownHostException {
@@ -1661,10 +1678,10 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         throws UnknownHostException  {
 
         /* If it gets here it is presumed to be a hostname */
-        // remove expired addresses from cache - expirySet keeps them ordered
+        // remove expired addresses from cache - the expiry set keeps them ordered
         // by expiry time so we only need to iterate the prefix of the NavigableSet...
         long now = System.nanoTime();
-        for (CachedLookup caddrs : expirySet) {
+        for (CachedLookup caddrs : ExpirySet.INSTANCE) {
             if (!caddrs.tryRemoveExpiredAddress(now)) {
                 // we encountered 1st element that expires in future
                 break;
@@ -1679,8 +1696,8 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             addrs = cache.remove(host);
             if (addrs != null) {
                 if (addrs instanceof CachedLookup) {
-                    // try removing from expirySet too if CachedAddresses
-                    expirySet.remove(addrs);
+                    // try removing from the expiry set too if CachedAddresses
+                    ExpirySet.INSTANCE.remove(addrs);
                 }
                 addrs = null;
             }
@@ -1705,14 +1722,20 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     static InetAddress[] getAddressesFromNameService(String host)
             throws UnknownHostException {
         Stream<InetAddress> addresses = null;
+        InetAddress[] result = null;
         UnknownHostException ex = null;
 
         var resolver = resolver();
         try {
-            addresses = resolver.lookupByName(host, PLATFORM_LOOKUP_POLICY);
+            if (resolver instanceof PlatformResolver platformResolver) {
+                // No stream and array conversion lambda for the built-in resolver
+                result = platformResolver.lookupAll(host, PLATFORM_LOOKUP_POLICY);
+            } else {
+                addresses = resolver.lookupByName(host, PLATFORM_LOOKUP_POLICY);
+            }
         } catch (RuntimeException | UnknownHostException x) {
             if (host.equalsIgnoreCase("localhost")) {
-                addresses = Stream.of(impl.loopbackAddress());
+                result = new InetAddress[] { impl.loopbackAddress() };
             } else if (x instanceof UnknownHostException uhe) {
                 ex = uhe;
             } else {
@@ -1720,8 +1743,9 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                 ex.initCause(x);
             }
         }
-        InetAddress[] result = addresses == null ? null
-                : addresses.toArray(InetAddress[]::new);
+        if (addresses != null) {
+            result = addresses.toArray(InetAddress[]::new);
+        }
         if (result == null || result.length == 0) {
             throw ex == null ? new UnknownHostException(formatMsg("%s", filterNonSocketInfo(host)))
                              : ex;
