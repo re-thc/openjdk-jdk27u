@@ -290,7 +290,10 @@ public class PropertyDescriptor extends FeatureDescriptor {
         setClass0(readMethod.getDeclaringClass());
 
         readMethodName = readMethod.getName();
-        setTransient(readMethod.getAnnotation(Transient.class));
+        // the annotations of Object's methods are JDK-internal and costly to instantiate
+        if (readMethod.getDeclaringClass() != Object.class) {
+            setTransient(readMethod.getAnnotation(Transient.class));
+        }
     }
 
     /**
@@ -365,7 +368,10 @@ public class PropertyDescriptor extends FeatureDescriptor {
         setClass0(writeMethod.getDeclaringClass());
 
         writeMethodName = writeMethod.getName();
-        setTransient(writeMethod.getAnnotation(Transient.class));
+        // the annotations of Object's methods are JDK-internal and costly to instantiate
+        if (writeMethod.getDeclaringClass() != Object.class) {
+            setTransient(writeMethod.getAnnotation(Transient.class));
+        }
     }
 
     /**

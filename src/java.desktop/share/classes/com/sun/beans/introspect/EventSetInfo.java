@@ -132,7 +132,11 @@ public final class EventSetInfo {
                 }
             }
         }
-        map.values().removeIf(eventSetInfo -> !eventSetInfo.initialize());
+        for (Iterator<EventSetInfo> iterator = map.values().iterator(); iterator.hasNext();) {
+            if (!iterator.next().initialize()) {
+                iterator.remove();
+            }
+        }
         return !map.isEmpty()
                 ? Collections.unmodifiableMap(map)
                 : Collections.emptyMap();

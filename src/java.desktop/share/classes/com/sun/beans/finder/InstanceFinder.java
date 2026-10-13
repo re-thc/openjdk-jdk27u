@@ -62,7 +62,7 @@ class InstanceFinder<T> {
         if (type == null) {
             return null;
         }
-        String name = type.getName() + this.suffix;
+        String name = type.getName().concat(this.suffix);
         T object = instantiate(type, name);
         if (object != null) {
             return object;

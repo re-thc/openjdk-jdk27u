@@ -41,7 +41,7 @@ final class MethodRef {
             this.typeRef = null;
         }
         else {
-            this.signature = method.toGenericString();
+            this.signature = signature(method);
             this.methodRef = new SoftReference<>(method);
             this.typeRef = new WeakReference<Class<?>>(method.getDeclaringClass());
         }
@@ -69,11 +69,28 @@ final class MethodRef {
         return method;
     }
 
+    /*
+     * Identifies a method among those declared by its class: the name, the
+     * parameter types and the return type are what the JVM tells apart.
+     */
+    private static String signature(Method method) {
+        StringBuilder sb = new StringBuilder(method.getReturnType().getName());
+        sb.append(' ').append(method.getName()).append('(');
+        Class<?>[] types = method.getParameterTypes();
+        for (int i = 0; i < types.length; i++) {
+            if (i > 0) {
+                sb.append(',');
+            }
+            sb.append(types[i].getName());
+        }
+        return sb.append(')').toString();
+    }
+
     private static Method find(Class<?> type, String signature) {
         if (type != null) {
             for (Method method : type.getMethods()) {
                 if (type.equals(method.getDeclaringClass())) {
-                    if (method.toGenericString().equals(signature)) {
+                    if (signature(method).equals(signature)) {
                         return method;
                     }
                 }
