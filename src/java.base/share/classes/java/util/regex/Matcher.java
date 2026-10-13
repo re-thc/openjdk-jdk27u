@@ -242,7 +242,7 @@ public final class Matcher implements MatchResult {
     private String nativeEndInput;
     private int nativeEndFrom, nativeEndTo, nativeEndStart, nativeEndMode;
     private boolean nativeEndTransparent, nativeEndAnchoring;
-    private boolean nativePendingLast, nativeExactEndFlags;
+    private boolean nativePendingLast;
     private int nativeEndLast, nativeEndOldLast;
 
     /**
@@ -457,11 +457,6 @@ public final class Matcher implements MatchResult {
      */
     public Matcher reset() {
         nativePendingLast = false;
-        if (nativeExactEndFlags) {
-            nativeEndPattern = null;
-            nativeEndInput = null;
-            nativeExactEndFlags = false;
-        }
         first = -1;
         last = 0;
         oldLast = -1;
@@ -1836,7 +1831,6 @@ public final class Matcher implements MatchResult {
             nativeEndPattern = null;
             nativeEndInput = null;
             nativePendingLast = false;
-            nativeExactEndFlags = false;
         }
         RustRegex engine = parentPattern.rustRegex;
         if (engine == null) return -1;
@@ -1850,7 +1844,7 @@ public final class Matcher implements MatchResult {
                 transparentBounds, anchoringBounds);
         // Java traversal can advance last even when an anchored match fails.
         // Replay on this Matcher so the next find() starts at the same position.
-        if (result < 0 || (result == 0 && mode != 0)) {
+        if (result < 0 || (result == 0 && mode != 0 && !engine.hasExactEndFlags())) {
             for (int i = 0; i < base; i++) groups[i] = -1;
             parentPattern.ensureJava();
             return -1;
@@ -1859,12 +1853,12 @@ public final class Matcher implements MatchResult {
             first = groups[0];
             last = groups[1];
         }
-        // Digit-tail plans provide exact end flags. Captured-prefix misses
-        // can still change the next search position and need deferred replay.
-        if (engine.hasExactEndFlags() && (result == 1 || mode == 0)) {
-            hitEnd = result == 0 || last == to;
-            if (result == 1 || engine.preservesLastOnMiss()) return result;
-            nativeExactEndFlags = true;
+        // These simple greedy tails preserve last on failure and have exact
+        // end flags. General backtracking expressions need Java replay.
+        if (engine.hasExactEndFlags()) {
+            hitEnd = result == 1 ? last == to
+                    : mode == 0 || engine.anchoredMissHitsEnd(input, to, start);
+            return result;
         }
         nativePendingLast = result == 0;
         nativeEndLast = last;
@@ -1894,7 +1888,7 @@ public final class Matcher implements MatchResult {
     }
 
     private void ensureEndFlags() {
-        if (!nativeExactEndFlags) replayNative();
+        replayNative();
     }
 
     private void replayNative() {
@@ -1916,7 +1910,6 @@ public final class Matcher implements MatchResult {
         }
         hitEnd = replay.hitEnd;
         requireEnd = replay.requireEnd;
-        nativeExactEndFlags = false;
         nativeEndPattern = null;
         nativeEndInput = null;
     }

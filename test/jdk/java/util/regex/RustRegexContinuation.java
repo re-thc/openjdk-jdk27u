@@ -94,7 +94,9 @@ public class RustRegexContinuation {
             {"error([0-9]+)", "error123x"}, {"(error)([0-9]+)", "error123x"},
             {"(error)[0-9]+", "errorx"}, {"(?<prefix>error)(?<number>[0-9]+)", "errorx"},
             {"[0-9]+", "123x"}, {"a.*b", "abx"}, {"a.*?b", "abx"},
-            {"a*", "aaax"}, {"(?:)", "x"}
+            {"a*", "aaax"}, {"(?:)", "x"},
+            {"([a-z0-9_]+)@([a-z0-9_]+)\\.[a-z]{2,4}", "a@b.c"},
+            {"([a-z0-9_]+)@([a-z0-9_]+)\\.[a-z]{2,4}", "a@b.co!"}
         };
         for (String[] c : cases) {
             for (int mode = 0; mode < 3; mode++) {

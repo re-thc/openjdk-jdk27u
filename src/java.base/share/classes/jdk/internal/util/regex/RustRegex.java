@@ -144,8 +144,13 @@ public final class RustRegex {
 
     public boolean hasShortPlan() { return fastPlan != null; }
     public boolean hasExactEndFlags() { return fastPlan instanceof FastDigits; }
-    public boolean preservesLastOnMiss() {
-        return fastPlan instanceof FastDigits digits && digits.prefixGroup == 0;
+    public boolean anchoredMissHitsEnd(String input, int to, int start) {
+        String prefix = ((FastDigits) fastPlan).prefix;
+        int available = to - start;
+        for (int i = 0; i < Math.min(available, prefix.length()); i++) {
+            if (input.charAt(start + i) != prefix.charAt(i)) return false;
+        }
+        return available <= prefix.length();
     }
 
     // Only native calls marshal region/search/mode into the capture array.

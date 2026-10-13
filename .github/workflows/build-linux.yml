@@ -177,9 +177,9 @@ jobs:
 
       - name: 'Configure'
         env:
-          RUSTC: ${{ steps.rust-regex.outputs.rustc }}
+          CONFIGURED_RUSTC: ${{ steps.rust-regex.outputs.rustc }}
         run: >
-          bash bin/configure-dev
+          bash bin/configure-dev RUSTC="$CONFIGURED_RUSTC"
           --with-conf-name=${{ inputs.platform }}
           ${{ matrix.debug-level == 'debug' && '--with-debug-level=fastdebug' || '' }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}

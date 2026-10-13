@@ -85,8 +85,8 @@ Java hitEnd()/requireEnd() flags for successful matches and failed searches,
 including results returned by Rust for longer digit runs. General expressions
 promote and replay the last operation using saved input/bounds when these flags
 are queried: Rust's offsets do not describe Java's attempted reads and backtracking.
-Failed anchored operations replay immediately on the original Matcher, since
-Java can advance its continuation position before ultimately failing. General and captured-prefix
+Failed anchored operations in general expressions replay immediately on the original Matcher, since
+Java can advance its continuation position before ultimately failing. General
 failed searches defer that state replay until a subsequent find() or usePattern();
 reset discards the pending continuation. Scanner streaming end-state queries
 preserve Java behavior; general delimiter patterns select Java after the first
