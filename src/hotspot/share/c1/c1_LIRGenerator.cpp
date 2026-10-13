@@ -2812,6 +2812,10 @@ void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
 
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   switch (x->id()) {
+  case vmIntrinsics::_simdutf_decodeLatin1:
+    // Decline before the Java chunking path can affect the scalar decoder.
+    __ move(LIR_OprFact::intConst(-1), rlock_result(x));
+    break;
   case vmIntrinsics::_simdutf_process: {
 #ifdef AARCH64
     IntConstant* operation = x->argument_at(6)->type()->as_IntConstant();

@@ -37,6 +37,7 @@
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_version.hpp"
@@ -109,6 +110,12 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 
 bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   switch (id) {
+  case vmIntrinsics::_simdutf_decodeLatin1:
+#ifdef AARCH64
+    return FLAG_IS_DEFAULT(SIMDUTFMinLength);
+#else
+    return false;
+#endif
   case vmIntrinsics::_getObjectSize:
     // The fixed-layout intrinsic does not include hash expansion. The native
     // JVMTI implementation uses the current mark and also handles mirrors.

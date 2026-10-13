@@ -419,6 +419,9 @@ class methodHandle;
   do_intrinsic(_simdutf_process, jdk_internal_util_SimdUTF, simdutf_process_name, simdutf_process_signature, F_SN)      \
    do_name(simdutf_process_name, "process0")                                                                             \
    do_signature(simdutf_process_signature, "(Ljava/lang/Object;IILjava/lang/Object;III)I")                              \
+  do_intrinsic(_simdutf_decodeLatin1, jdk_internal_util_SimdUTF, simdutf_latin1_name, simdutf_latin1_signature, F_S)     \
+   do_name(simdutf_latin1_name, "decodeLatin1")                                                                          \
+   do_signature(simdutf_latin1_signature, "([BII[BII)I")                                                                 \
                                                                                                                         \
   do_class(java_lang_StringCoding,        "java/lang/StringCoding")                                                     \
   do_intrinsic(_countPositives,     java_lang_StringCoding, countPositives_name, countPositives_signature, F_S)         \

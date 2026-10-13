@@ -68,6 +68,7 @@ inline bool match_F_SN(u2 flags) {
 bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
+  case vmIntrinsics::_simdutf_decodeLatin1:
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
 #endif
@@ -122,6 +123,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
 bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
+  case vmIntrinsics::_simdutf_decodeLatin1:
   case vmIntrinsics::_simdutf_process:
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
@@ -212,7 +214,8 @@ int vmIntrinsics::predicates_needed(vmIntrinsics::ID id) {
 }
 
 bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
-  if (id == vmIntrinsics::_simdutf_process && !UseSIMDUTFIntrinsics) {
+  if ((id == vmIntrinsics::_simdutf_process || id == vmIntrinsics::_simdutf_decodeLatin1)
+      && !UseSIMDUTFIntrinsics) {
     return true;
   }
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");

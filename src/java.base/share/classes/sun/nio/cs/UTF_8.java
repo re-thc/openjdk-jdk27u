@@ -232,7 +232,14 @@ public final class UTF_8 extends Unicode {
             sp += n;
             dp += n;
 
-            boolean tryBulk = true;
+            // Keep the ASCII intrinsic and reject invalid leading bytes before bulk conversion.
+            int converted = SimdUTF.isEligible(sl - sp)
+                    && (sa[sp] & 0xff) >= 0xc2 && (sa[sp] & 0xff) <= 0xf4
+                    ? SimdUTF.decodeUTF8(sa, sp, sl - sp, da, dp, dl - dp) : -1;
+            if (converted >= 0) {
+                updatePositions(src, sl, dst, dp + converted);
+                return CoderResult.UNDERFLOW;
+            }
             while (sp < sl) {
                 int b1 = sa[sp];
                 if (b1 >= 0) {
@@ -316,15 +323,6 @@ public final class UTF_8 extends Unicode {
                     sp += 4;
                 } else
                     return malformed(src, sp, dst, dp, 1);
-                if (tryBulk) {
-                    tryBulk = false;
-                    int converted = SimdUTF.isEligible(sl - sp)
-                            ? SimdUTF.decodeUTF8(sa, sp, sl - sp, da, dp, dl - dp) : -1;
-                    if (converted >= 0) {
-                        updatePositions(src, sl, dst, dp + converted);
-                        return CoderResult.UNDERFLOW;
-                    }
-                }
             }
             return xflow(src, sp, sl, dst, dp, 0);
         }
@@ -522,7 +520,7 @@ public final class UTF_8 extends Unicode {
                 sp++;
                 if (tryBulk) {
                     tryBulk = false;
-                    int converted = SimdUTF.isEligible(sl - sp)
+                    int converted = SimdUTF.isEligibleUTF16Encoding(sl - sp)
                             ? SimdUTF.encodeUTF16(sa, sp, sl - sp, da, dp, dl - dp) : -1;
                     if (converted >= 0) {
                         updatePositions(src, sl, dst, dp + converted);

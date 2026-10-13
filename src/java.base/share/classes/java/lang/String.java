@@ -654,6 +654,7 @@ public final class String
     }
 
     // Keep utf8's ASCII path within C2's hot-method inlining limit.
+    @ForceInline
     private static byte[] decodeUTF8Latin1(byte[] src, int sp, int len, byte[] dst, int dp) {
         if ((src[sp] & 0xfe) == 0xc2 && SimdUTF.isEligible(len)) {
             int converted = SimdUTF.decodeLatin1(src, sp, len, dst, dp, dst.length - dp);
@@ -1570,7 +1571,7 @@ public final class String
         // For very large estimate, (as in overflow of 32 bit int), precompute the exact size
         int allocLen = (sl * 3 < 0) ? encodedLengthUTF8_UTF16(val, exClass) : sl * 3;
         byte[] dst = new byte[allocLen];
-        int converted = SimdUTF.isEligible(sl) ? SimdUTF.encodeUTF16(val, 0, sl, dst, 0, dst.length) : -1;
+        int converted = SimdUTF.isEligibleUTF16Encoding(sl) ? SimdUTF.encodeUTF16(val, 0, sl, dst, 0, dst.length) : -1;
         if (converted >= 0) {
             return converted == dst.length ? dst : Arrays.copyOf(dst, converted);
         }

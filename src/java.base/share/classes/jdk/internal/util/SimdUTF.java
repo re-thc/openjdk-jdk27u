@@ -95,6 +95,13 @@ public final class SimdUTF {
     }
 
     @ForceInline
+    public static boolean isEligibleUTF16Encoding(int len) {
+        int threshold = minLength;
+        return threshold > 0 && len >= (automatic
+                ? Math.max(threshold, operationMinimumLength(ENCODE_UTF16)) : threshold);
+    }
+
+    @ForceInline
     public static boolean useIndexOfPrefix() {
         return automatic;
     }
@@ -362,6 +369,7 @@ public final class SimdUTF {
     }
 
     @ForceInline
+    @IntrinsicCandidate
     public static int decodeLatin1(byte[] src, int sp, int len,
                                    byte[] dst, int dp, int capacity) {
         return process(src, sp, len, dst, dp, capacity, DECODE_LATIN1);

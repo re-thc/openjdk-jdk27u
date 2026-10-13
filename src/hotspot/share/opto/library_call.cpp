@@ -577,6 +577,10 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_Reference_clear0:         return inline_reference_clear0(false);
   case vmIntrinsics::_PhantomReference_clear0:  return inline_reference_clear0(true);
 
+  case vmIntrinsics::_simdutf_decodeLatin1:
+    // Remove the chunking path before it can inhibit the original Java loop.
+    set_result(intcon(-1));
+    return true;
   case vmIntrinsics::_simdutf_process:          return inline_simdutf_process();
 
   case vmIntrinsics::_Class_cast:               return inline_Class_cast();
