@@ -165,10 +165,12 @@ A native Linux probe reproduces the old Microsoft x64 ABI register collision
 and passes with the fixed scalar loop; it is not a Windows PR-JVM execution.
 The 391-entry applicability audit and official include-order checker pass.
 
-[Final native platform CI](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38385226401)
-and [native x64/ARM qualification](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38385525844)
-are queued for runners. Final Windows, macOS and ARM qualification is pending;
-Windows AVX-512 execution and tier2 remain outside the evidence.
+[Final native Linux CI](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38385226401)
+is in progress. [Windows/macOS CI](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38393501715)
+is scheduled separately. Native ARM performance qualification awaits matching
+release/debug artifacts; its idle runner waits were suspended. Final native
+qualification is pending. Windows AVX-512 execution and tier2 remain outside
+the evidence.
 The [preceding AOT fix](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38325342685)
 passed all 57 native build/tier1 jobs before these changes.
 
