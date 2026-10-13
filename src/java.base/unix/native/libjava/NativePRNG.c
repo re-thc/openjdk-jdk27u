@@ -33,6 +33,9 @@
 
 #if defined(__linux__)
 #include <sys/random.h>
+#ifndef GRND_INSECURE
+#define GRND_INSECURE 0x0004
+#endif
 #elif !defined(__APPLE__)
 #error "No random number generator for this platform"
 #endif
@@ -42,14 +45,20 @@
 
 /*
  * Fills buf with len random bytes from the operating system.
+ * If urandom is true, this behaves like /dev/urandom and does not block.
+ * Otherwise it behaves like /dev/random and blocks until the random number
+ * generator of the operating system is initialized.
  * Returns 0 on success, or -1 with errno set.
  */
 static int
-getRandomBytes(char *buf, size_t len)
+getRandomBytes(char *buf, size_t len, jboolean urandom)
 {
 #if defined(__linux__)
+    /* GRND_INSECURE needs Linux 5.6, where /dev/random behaves like flags 0 */
+    unsigned int flags = urandom ? GRND_INSECURE : 0;
+
     while (len > 0) {
-        ssize_t n = getrandom(buf, len, 0);
+        ssize_t n = getrandom(buf, len, flags);
         if (n < 0) {
             if (errno == EINTR) {
                 continue;
@@ -60,6 +69,7 @@ getRandomBytes(char *buf, size_t len)
         len -= n;
     }
 #else
+    /* arc4random_buf() does not block */
     arc4random_buf(buf, len);
 #endif
     return 0;
@@ -68,14 +78,15 @@ getRandomBytes(char *buf, size_t len)
 JNIEXPORT void JNICALL
 Java_sun_security_provider_NativePRNG_getRandomBytes0(JNIEnv *env, jclass cls,
                                                       jbyteArray bytes,
-                                                      jint len)
+                                                      jint len,
+                                                      jboolean urandom)
 {
     char buf[BUF_SIZE];
     jint off = 0;
 
     while (off < len) {
         jint n = (len - off < BUF_SIZE) ? len - off : BUF_SIZE;
-        if (getRandomBytes(buf, n) < 0) {
+        if (getRandomBytes(buf, n, urandom) < 0) {
             JNU_ThrowIOExceptionWithMessageAndLastError(env,
                                                         "getrandom failed");
             return;

@@ -42,6 +42,14 @@ import sun.security.util.Debug;
  * other than /dev/random or /dev/urandom, generateSeed() reads that file.
  * Otherwise the seed comes from the operating system as well.
  * <p>
+ * The native call is told whether to behave like /dev/urandom, which never
+ * blocks (getrandom() with GRND_INSECURE), or like /dev/random, which blocks
+ * until the operating system random number generator is initialized
+ * (getrandom() without flags). The bytes for nextBytes() and for the seed of
+ * the SHA1PRNG behave like /dev/urandom, except in the blocking algorithm,
+ * where they behave like /dev/random. The seed for generateSeed() behaves like
+ * the seed file, which is /dev/random by default.
+ * <p>
  * setSeed() attempts to write to the seed file. However, this file may only be
  * writable by root in many configurations. Because we cannot just ignore bytes
  * specified via setSeed(), we keep a SHA1PRNG around in parallel. It is
@@ -73,8 +81,11 @@ public final class NativePRNG extends SecureRandomSpi {
     private static final String NAME_URANDOM = "/dev/urandom";
 
     // fills the first len bytes of bytes with random bytes from the OS
-    private static native void getRandomBytes0(byte[] bytes, int len)
-            throws IOException;
+    // urandom selects whether this does not block, like /dev/urandom, or
+    // blocks until the OS random number generator is initialized, like
+    // /dev/random
+    private static native void getRandomBytes0(byte[] bytes, int len,
+            boolean urandom) throws IOException;
 
     // which kind of RandomIO object are we creating?
     private enum Variant {
@@ -121,6 +132,7 @@ public final class NativePRNG extends SecureRandomSpi {
     private static RandomIO initIO(final Variant v) {
 
         File seedFile;
+        boolean nextUrandom;
 
         switch(v) {
         case MIXED:
@@ -142,14 +154,17 @@ public final class NativePRNG extends SecureRandomSpi {
                 // fall back to /dev/random.
                 seedFile = new File(NAME_RANDOM);
             }
+            nextUrandom = true;
             break;
 
         case BLOCKING:
             seedFile = new File(NAME_RANDOM);
+            nextUrandom = false;
             break;
 
         case NONBLOCKING:
             seedFile = new File(NAME_URANDOM);
+            nextUrandom = true;
             break;
 
         default:
@@ -171,10 +186,11 @@ public final class NativePRNG extends SecureRandomSpi {
         if (debug != null) {
             debug.println("NativePRNG." + v +
                 " seedFile: " + seedFile +
-                " readSeedFile: " + (seedIn != null));
+                " readSeedFile: " + (seedIn != null) +
+                " nextFile: " + (nextUrandom ? NAME_URANDOM : NAME_RANDOM));
         }
 
-        return new RandomIO(seedFile, seedIn);
+        return new RandomIO(seedFile, seedIn, nextUrandom);
     }
 
     // return whether the NativePRNG is available
@@ -319,6 +335,10 @@ public final class NativePRNG extends SecureRandomSpi {
         private final InputStream seedIn;
         private OutputStream seedOut;
 
+        // whether the OS gives the seed and the random bytes like
+        // /dev/urandom, which does not block, instead of /dev/random
+        private final boolean seedUrandom, nextUrandom;
+
         // flag indicating if we have tried to open seedOut yet
         private boolean seedOutInitialized;
 
@@ -333,9 +353,11 @@ public final class NativePRNG extends SecureRandomSpi {
         private final Object LOCK_SET_SEED = new Object();
 
         // constructor, called only once from initIO()
-        private RandomIO(File seedFile, InputStream seedIn) {
+        private RandomIO(File seedFile, InputStream seedIn, boolean nextUrandom) {
             this.seedFile = seedFile;
             this.seedIn = seedIn;
+            this.seedUrandom = seedFile.getPath().equals(NAME_URANDOM);
+            this.nextUrandom = nextUrandom;
         }
 
         // get the SHA1PRNG for mixing
@@ -347,7 +369,7 @@ public final class NativePRNG extends SecureRandomSpi {
                 r = new sun.security.provider.SecureRandom();
                 try {
                     byte[] b = new byte[20];
-                    getRandomBytes0(b, b.length);
+                    getRandomBytes0(b, b.length, nextUrandom);
                     r.engineSetSeed(b);
                 } catch (IOException e) {
                     throw new ProviderException("init failed", e);
@@ -382,7 +404,7 @@ public final class NativePRNG extends SecureRandomSpi {
             try {
                 byte[] b = new byte[numBytes];
                 if (seedIn == null) {
-                    getRandomBytes0(b, b.length);
+                    getRandomBytes0(b, b.length, seedUrandom);
                 } else {
                     synchronized (LOCK_GET_SEED) {
                         readFully(seedIn, b);
@@ -426,11 +448,11 @@ public final class NativePRNG extends SecureRandomSpi {
             try {
                 sun.security.provider.SecureRandom mix = mixRandom;
                 if (mix == null) {
-                    getRandomBytes0(data, data.length);
+                    getRandomBytes0(data, data.length, nextUrandom);
                     return;
                 }
                 byte[] random = new byte[data.length];
-                getRandomBytes0(random, random.length);
+                getRandomBytes0(random, random.length, nextUrandom);
                 mix.engineNextBytes(data);
                 for (int i = 0; i < data.length; i++) {
                     data[i] ^= random[i];
