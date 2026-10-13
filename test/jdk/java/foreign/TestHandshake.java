@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +40,12 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.IntBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -67,7 +72,7 @@ public class TestHandshake {
     static final AtomicBoolean started = new AtomicBoolean();
 
     @Test(dataProvider = "accessors")
-    public void testHandshake(String testName, AccessorFactory accessorFactory) throws InterruptedException {
+    public void testHandshake(String testName, AccessorFactory accessorFactory) throws Exception {
         for (int it = 0 ; it < ITERATIONS ; it++) {
             Arena arena = Arena.ofShared();
             MemorySegment segment = arena.allocate(SEGMENT_SIZE, 1);
@@ -75,15 +80,19 @@ public class TestHandshake {
             ExecutorService accessExecutor = Executors.newCachedThreadPool();
             start.set(System.currentTimeMillis());
             started.set(false);
+            List<Future<?>> results = new ArrayList<>();
             for (int i = 0; i < NUM_ACCESSORS ; i++) {
-                accessExecutor.execute(accessorFactory.make(i, segment, arena));
+                results.add(accessExecutor.submit(accessorFactory.make(i, segment, arena)));
             }
             int delay = ThreadLocalRandom.current().nextInt(MAX_DELAY_MILLIS);
             System.out.println("Starting handshaker with delay set to " + delay + " millis");
             Thread.sleep(delay);
-            accessExecutor.execute(new Handshaker(arena));
+            results.add(accessExecutor.submit(new Handshaker(arena)));
             accessExecutor.shutdown();
             assertTrue(accessExecutor.awaitTermination(MAX_EXECUTOR_WAIT_SECONDS, TimeUnit.SECONDS));
+            for (Future<?> result : results) {
+                result.get(); // Propagate accessor failures to the test thread.
+            }
             assertTrue(!segment.scope().isAlive());
         }
     }
@@ -248,6 +257,34 @@ public class TestHandshake {
         }
     }
 
+    static class BufferMismatchAccessor extends AbstractBufferAccessor {
+        final ByteBuffer other = ByteBuffer.allocate(SEGMENT_SIZE);
+
+        BufferMismatchAccessor(int id, MemorySegment segment, Arena arena) {
+            super(id, segment, arena);
+        }
+
+        @Override
+        void doAccess() {
+            assertEquals((id & 1) == 0 ? bb.mismatch(other) : other.mismatch(bb), -1);
+        }
+    }
+
+    static class BufferViewMismatchAccessor extends AbstractBufferAccessor {
+        final IntBuffer view;
+        final IntBuffer other = ByteBuffer.allocate(SEGMENT_SIZE).order(ByteOrder.nativeOrder()).asIntBuffer();
+
+        BufferViewMismatchAccessor(int id, MemorySegment segment, Arena arena) {
+            super(id, segment, arena);
+            view = bb.order(ByteOrder.nativeOrder()).asIntBuffer();
+        }
+
+        @Override
+        void doAccess() {
+            assertEquals((id & 1) == 0 ? view.mismatch(other) : other.mismatch(view), -1);
+        }
+    }
+
     static class BufferHandleAccessor extends AbstractBufferAccessor {
 
         static VarHandle handle = MethodHandles.byteBufferViewVarHandle(short[].class, ByteOrder.nativeOrder());
@@ -295,6 +332,8 @@ public class TestHandshake {
                 { "SegmentMismatchAccessor", (AccessorFactory)SegmentMismatchAccessor::new },
                 { "SegmentFillAccessor", (AccessorFactory)SegmentFillAccessor::new },
                 { "BufferAccessor", (AccessorFactory)BufferAccessor::new },
+                { "BufferMismatchAccessor", (AccessorFactory)BufferMismatchAccessor::new },
+                { "BufferViewMismatchAccessor", (AccessorFactory)BufferViewMismatchAccessor::new },
                 { "BufferHandleAccessor", (AccessorFactory)BufferHandleAccessor::new }
         };
     }

@@ -141,9 +141,9 @@ CI status are reported in the PR rather than inferred from this x86-64 host.
 Run focused tests on the release image and compiler IR matching on fastdebug:
 
 ```sh
-make CONF=release test TEST='jdk/java/foreign jdk/java/nio/Buffer jdk/java/nio/MappedByteBuffer'
-make CONF=fastdebug test TEST='hotspot/compiler/intrinsics/NativeVectorizedMismatchTest.java hotspot/compiler/intrinsics/VectorizedMismatchTest.java'
-make CONF=fastdebug test TEST='hotspot/compiler/intrinsics/unsafe hotspot/runtime/Unsafe hotspot/runtime/handshake hotspot/runtime/cds/appcds/aotCode'
+make CONF=release test TEST='test/jdk/java/foreign test/jdk/java/nio/Buffer test/jdk/java/nio/MappedByteBuffer' JTREG='KEYWORDS=!manual'
+make CONF=fastdebug test TEST='test/hotspot/jtreg/compiler/intrinsics/NativeVectorizedMismatchTest.java test/hotspot/jtreg/compiler/intrinsics/VectorizedMismatchTest.java'
+make CONF=fastdebug test TEST='test/hotspot/jtreg/compiler/intrinsics/unsafe test/hotspot/jtreg/runtime/Unsafe test/hotspot/jtreg/runtime/handshake test/hotspot/jtreg/runtime/cds/appcds/aotCode'
 ```
 
 The PR reports executed suites and failures explicitly. Additional focused runs

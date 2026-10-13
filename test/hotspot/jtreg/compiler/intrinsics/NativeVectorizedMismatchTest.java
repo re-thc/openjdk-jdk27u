@@ -28,10 +28,12 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.base/jdk.internal.util
  * @run driver compiler.intrinsics.NativeVectorizedMismatchTest
+ * @run driver compiler.intrinsics.NativeVectorizedMismatchTest disable-partial
  */
 
 package compiler.intrinsics;
 
+import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Run;
@@ -40,6 +42,7 @@ import compiler.lib.ir_framework.TestFramework;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 
@@ -51,41 +54,75 @@ public class NativeVectorizedMismatchTest {
 
     @Test
     @IR(counts = {"CallLeaf.*vectorizedMismatch", "1",
-                  IRNode.STATIC_CALL_OF_METHOD, "vectorizedMismatch", "1"})
+                  IRNode.STATIC_CALL_OF_METHOD, "vectorizedMismatch", "1"},
+        phase = CompilePhase.BEFORE_MATCHING)
     public static int nativeRange(long a, long b, int length) {
         return ArraysSupport.vectorizedMismatch(null, a, null, b, length, 0);
     }
 
     @Test
-    @IR(counts = {"CallLeaf.*vectorizedMismatch", "1"})
+    @IR(counts = {"CallLeaf.*vectorizedMismatch", "1"}, phase = CompilePhase.BEFORE_MATCHING)
     public static int nativeAtLimit(long a, long b) {
         return ArraysSupport.vectorizedMismatch(null, a, null, b, LIMIT, 0);
     }
 
     @Test
-    @IR(failOn = {"CallLeaf.*vectorizedMismatch"})
+    @IR(failOn = {"CallLeaf.*vectorizedMismatch"}, phase = CompilePhase.BEFORE_MATCHING)
+    public static int nativeZero(long a, long b) {
+        return ArraysSupport.vectorizedMismatch(null, a, null, b, 0, 0);
+    }
+
+    @Test
+    @IR(counts = {"CallLeaf.*vectorizedMismatch", ">= 1", IRNode.SAFEPOINT, ">= 1"},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int scopedRange(long a, long b, int length) {
+        return ScopedMemoryAccess.getScopedMemoryAccess().vectorizedMismatch(
+                null, null, null, a, null, b, length, 0);
+    }
+
+    @Test
+    @IR(failOn = {"CallLeaf.*vectorizedMismatch"}, phase = CompilePhase.BEFORE_MATCHING)
     public static int nativeAboveLimit(long a, long b) {
         return ArraysSupport.vectorizedMismatch(null, a, null, b, LIMIT + 1, 0);
     }
 
     @Test
     @IR(counts = {"CallLeaf.*vectorizedMismatch", "1",
-                  IRNode.STATIC_CALL_OF_METHOD, "vectorizedMismatch", "1"})
+                  IRNode.STATIC_CALL_OF_METHOD, "vectorizedMismatch", "1"},
+        phase = CompilePhase.BEFORE_MATCHING)
     public static int mixedRange(byte[] a, long b, int length) {
         return ArraysSupport.vectorizedMismatch(a, Unsafe.ARRAY_BYTE_BASE_OFFSET, null, b, length, 0);
     }
 
-    @Run(test = {"nativeRange", "nativeAtLimit", "nativeAboveLimit", "mixedRange"})
+    @Run(test = {"nativeRange", "nativeAtLimit", "nativeAboveLimit", "mixedRange",
+                 "nativeZero", "scopedRange"})
     public static void run() {
         long a = A.address() + 1, b = B.address() + 3;
+        B.set(ValueLayout.JAVA_BYTE, 3, (byte) 1);
+        check(nativeRange(a, b, 0), 0, -1);
+        check(mixedRange(HEAP, b, 0), 0, -1);
+        check(nativeZero(a, b), 0, -1);
+        B.set(ValueLayout.JAVA_BYTE, 3, (byte) 0);
+        // No native address is accessible here; an empty range must not read it.
+        check(nativeRange(0, 0, 0), 0, -1);
+        check(mixedRange(HEAP, 0, 0), 0, -1);
+        check(nativeZero(0, 0), 0, -1);
+        for (int length : new int[] {-1, -8, Integer.MIN_VALUE}) {
+            int expected = ~length;
+            if (nativeRange(0, 0, length) != expected || mixedRange(HEAP, 0, length) != expected) {
+                throw new AssertionError("Negative length fallback: " + length);
+            }
+        }
         for (int length : new int[] {1, 7, 8, 15, 16, 31, 32, 33, 63, 64,
                 LIMIT - 1, LIMIT, LIMIT + 1, 2 * LIMIT}) {
             check(nativeRange(a, b, length), length, -1);
             check(mixedRange(HEAP, b, length), length, -1);
+            check(scopedRange(a, b, length), length, -1);
             int position = length / 2;
             B.set(ValueLayout.JAVA_BYTE, position + 3, (byte) 1);
             check(nativeRange(a, b, length), length, position);
             check(mixedRange(HEAP, b, length), length, position);
+            check(scopedRange(a, b, length), length, position);
             B.set(ValueLayout.JAVA_BYTE, position + 3, (byte) 0);
         }
         check(nativeAtLimit(a, b), LIMIT, -1);
@@ -116,7 +153,13 @@ public class NativeVectorizedMismatchTest {
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
-                "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED");
+        String misc = "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED";
+        String util = "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED";
+        if (args.length != 0 && args[0].equals("disable-partial")) {
+            TestFramework.runWithFlags(misc, util, "-XX:-TieredCompilation", "-XX:+UnlockDiagnosticVMOptions",
+                    "-XX:ArrayOperationPartialInlineSize=0");
+        } else {
+            TestFramework.runWithFlags(misc, util, "-XX:-TieredCompilation");
+        }
     }
 }

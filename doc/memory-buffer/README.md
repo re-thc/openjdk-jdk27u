@@ -12,8 +12,9 @@ library, JNI adapter, FFM production call or new scan kernel.
 ## Selection and ownership
 
 - C2 accepts proven arrays or null native bases. Newly selected native calls
-  cover **up to 64 KiB** with a constant element scale from 0 to 3.
-  Other native sizes retain the Java implementation at this primitive boundary.
+  cover **1 byte through 64 KiB** with a constant element scale from 0 to 3.
+  Empty and larger native ranges retain the Java implementation at this
+  primitive boundary.
 - `ScopedMemoryAccess` splits larger native/mixed public operations into 64 KiB
   chunks. The Java backedge permits safepoints between calls. Heap-only calls
   retain their existing dispatch. Offsets/results stay in element units.

@@ -121,7 +121,7 @@ public class TestScopedOperations {
         ScopedOperation.ofSegment(s -> s.mismatch(s), "MemorySegment::mismatch");
         ScopedOperation.ofSegment(s -> s.fill((byte) 0), "MemorySegment::fill");
         // Buffer views retain the segment session, including bulk and typed paths.
-        for (int size : new int[] {8, 63, 64, 65, 4096, 65536}) {
+        for (int size : new int[] {8, 63, 64, 65, 4096, 65536, 65537, 1 << 20}) {
             String prefix = "ByteBuffer/" + size + "/";
             Function<Arena, ByteBuffer> buffer = a -> a.allocate(size).asByteBuffer();
             ScopedOperation.of(buffer, b -> b.mismatch(ByteBuffer.allocate(size)), prefix + "mismatch/source");

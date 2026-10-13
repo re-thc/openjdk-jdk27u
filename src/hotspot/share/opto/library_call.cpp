@@ -6763,7 +6763,7 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
     // an unbounded leaf. Larger ranges retain the existing Java implementation.
     native_limit = (64 * K) >> scale_type->get_con();
     const TypeInt* length_type = _gvn.type(length)->is_int();
-    if (length_type->_lo > native_limit || length_type->_hi < 0) {
+    if (length_type->_lo > native_limit || length_type->_hi <= 0) {
       return false;
     }
     C->set_has_unsafe_access(true);
@@ -6800,10 +6800,18 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   Node* io_phi = native_access ? new PhiNode(exit_block, Type::ABIO) : nullptr;
 
   if (native_access) {
-    Node* cmp = _gvn.transform(new CmpUNode(length, intcon(native_limit)));
-    Node* test = _gvn.transform(new BoolNode(cmp, BoolTest::gt));
-    Node* slow_control = generate_slow_guard(test, nullptr);
-    if (slow_control != nullptr) {
+    // The stub reads a first byte even for zero length. The unsigned upper
+    // bound also sends negative lengths to Java.
+    Node* zero_cmp = _gvn.transform(new CmpINode(length, intcon(0)));
+    Node* is_zero = _gvn.transform(new BoolNode(zero_cmp, BoolTest::eq));
+    Node* bound_cmp = _gvn.transform(new CmpUNode(length, intcon(native_limit)));
+    Node* out_of_bounds = _gvn.transform(new BoolNode(bound_cmp, BoolTest::gt));
+    RegionNode* slow_region = new RegionNode(1);
+    record_for_igvn(slow_region);
+    generate_slow_guard(is_zero, slow_region);
+    generate_slow_guard(out_of_bounds, slow_region);
+    Node* slow_control = _gvn.transform(slow_region);
+    if (slow_control != top()) {
       PreserveJVMState pjvms(this);
       set_control(slow_control);
       CallJavaNode* slow_call = generate_method_call_static(vmIntrinsics::_vectorizedMismatch, false);
