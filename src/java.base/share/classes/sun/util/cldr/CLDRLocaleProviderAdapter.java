@@ -27,6 +27,7 @@ package sun.util.cldr;
 
 import java.text.spi.BreakIteratorProvider;
 import java.text.spi.CollatorProvider;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -151,9 +152,8 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     @Override
     public Locale[] getAvailableLocales() {
         if (AVAILABLE_LOCALES == null) {
-            AVAILABLE_LOCALES = createLanguageTagSet("AvailableLocales").stream()
-                .map(Locale::forLanguageTag)
-                .toArray(Locale[]::new);
+            AVAILABLE_LOCALES = LocaleProviderAdapter.toLocaleArray(
+                getLanguageTagSet("AvailableLocales"));
         }
         return AVAILABLE_LOCALES;
     }
@@ -163,6 +163,12 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
             var alias = baseMetaInfo.getLanguageAliasMap().get(l.toLanguageTag());
             return alias != null ? Locale.forLanguageTag(alias) : l;
         });
+    }
+
+    @Override
+    public Set<String> getLanguageTagSet(String category) {
+        // All categories share the set of AvailableLocales, see below.
+        return super.getLanguageTagSet("AvailableLocales");
     }
 
     @Override
@@ -186,8 +192,32 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
             }
         }
         return supportedLocaleString != null ?
-                Set.of(supportedLocaleString.split("\s+")) :
+                Set.of(splitOnSpaces(supportedLocaleString)) :
                 Collections.emptySet();
+    }
+
+    // Same as s.split(" +"), without the regular expression processing
+    // of the tags of all the CLDR locales.
+    private static String[] splitOnSpaces(String s) {
+        if (s.indexOf(' ') < 0) {
+            return new String[] { s };
+        }
+        List<String> parts = new ArrayList<>();
+        int start = 0;
+        int end;
+        while ((end = s.indexOf(' ', start)) >= 0) {
+            parts.add(s.substring(start, end));
+            start = end + 1;
+            while (start < s.length() && s.charAt(start) == ' ') {
+                start++;
+            }
+        }
+        parts.add(s.substring(start));
+        int n = parts.size();
+        while (n > 0 && parts.get(n - 1).isEmpty()) {
+            n--;
+        }
+        return parts.subList(0, n).toArray(new String[0]);
     }
 
     // Implementation of ResourceBundleBasedAdapter
