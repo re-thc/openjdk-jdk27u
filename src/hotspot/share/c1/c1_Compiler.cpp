@@ -109,9 +109,6 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 }
 
 bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
-  if (CommonIntrinsics::is_available_for_c1(id)) {
-    return true;
-  }
   switch (id) {
   case vmIntrinsics::_getObjectSize:
     // The fixed-layout intrinsic does not include hash expansion. The native
@@ -252,7 +249,7 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_blackhole:
     break;
   default:
-    return false; // Intrinsics not on the previous list are not available.
+    return CommonIntrinsics::is_available_for_c1(id);
   }
 
   return true;
