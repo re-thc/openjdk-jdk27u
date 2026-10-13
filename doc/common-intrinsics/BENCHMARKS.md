@@ -1,14 +1,15 @@
 # Performance and qualification
 
-Measurements use `190109a0d2dffbd96bdb606f1d7f8a4ceb0b439e`, based on
-`master` at `87edd79d3104ff502f7befec034716b081436f49`, including four-byte
-object headers. The subsequent runtime change at `bcaa0c0cd43` registers the
-C1 guard handler for AOT code caching; intrinsic implementations are unchanged.
+Current x64 measurements use `8bf01e9ed8a3df53fd8836d61216ed511ad3e591`
+and unmodified `master` at `87edd79d3104ff502f7befec034716b081436f49`, with
+the same four-byte object-header defaults. ARM reference measurements use
+`190109a0d2d`; final-head native ARM qualification is pending.
 
 ## Methodology
 
-Measurements compare the same release image with `UseCommonIntrinsics`
-disabled and enabled. JMH 1.37 uses three alternating fresh-JVM pairs, one
+Current x64 measurements compare unmodified master with the modified release
+image at its default enabled setting. ARM reference measurements compare the
+same older image with the flag disabled and enabled. JMH 1.37 uses three alternating fresh-JVM pairs, one
 worker pinned to a CPU, three one-second warmups and five one-second
 measurements per fork. The VM uses Serial GC, a 128–256 MiB heap, one active
 processor and `CICompilerCount=2`. C1 stops at level 1; C2 disables tiered
@@ -16,39 +17,50 @@ compilation. Both compiled modes use `-Xbatch`. Compiler hints and compiler
 blackholes use the standard JMH fork machinery. No local build or test runs
 concurrently with the measurements.
 
-Means are ns/op; speedup is disabled/enabled. Paired 95% Student-t intervals
+Means are ns/op. Current x64 speedup is master/modified; ARM reference speedup
+is disabled/enabled. Paired 95% Student-t intervals
 use the three fork means, rather than treating iterations within a fork as
-independent observations. The [complete CSV](summary.csv) includes C2 controls.
+independent observations. The [current x64 CSV](summary.csv) includes C2 controls and experiment sizes.
 Public API cases include dispatch and allocation. BigInteger modPow uses
 exponent 65537. Scalar inputs are non-final JMH state fields.
 
-[Raw local samples, binary fingerprints and test summaries](https://github.com/re-thc/openjdk-jdk27u/tree/dce7a1df36b7ff3948464a4301fe0cd21efcf1ab/.github/qualification/local-x64)
-are pinned separately from the implementation.
-[Native x64 and ARM samples and test summaries](https://github.com/re-thc/openjdk-jdk27u/tree/c5ac319fa07293da056700b652a448a82ed8e889/.github/qualification)
-include the CI environment and binary fingerprints.
+[Current x64 samples, binary fingerprints and all test summaries](https://github.com/re-thc/openjdk-jdk27u/tree/08e855a448acda54c7b1872c286443495503f11a/.github/qualification/final-x64)
+are pinned separately from the implementation. The same record retains
+unprepared startup samples and the loading controls.
+[Historical native ARM evidence](https://github.com/re-thc/openjdk-jdk27u/tree/c5ac319fa07293da056700b652a448a82ed8e889/.github/qualification/ci-linux-aarch64)
+records the reference revision and hardware.
 
 ## Linux x86-64
 
 AMD EPYC 9V74, GCC 16.2, `UseAVX=3`, `MaxVectorSize=64`, SHA-3 enabled.
 
-| Workload | Input | Interpreter ns/op, off → on | Speedup | C1 ns/op, off → on | Speedup |
+| Workload | Input | Interpreter ns/op, master → modified | Speedup | C1 ns/op, master → modified | Speedup |
 | --- | --- | ---: | ---: | ---: | ---: |
-| AES-256 CTR | 4,096 bytes | 916,008.61 → 693.97 | 1319.96× | 37,911.08 → 353.61 | 107.21× |
-| SHA-256 | 4,096 bytes | 1,586,556.30 → 6,874.13 | 230.80× | 29,101.06 → 2,490.64 | 11.68× |
-| SHA3-256 | 4,096 bytes | 944,367.10 → 13,266.81 | 71.18× | 21,862.96 → 8,164.71 | 2.68× |
-| byte[] hash | 4,096 bytes | 33,408.92 → 1,531.69 | 21.81× | 3,480.26 → 1,493.97 | 2.33× |
-| BigInteger multiply | 4,096 bits | 518,747.33 → 36,427.54 | 14.24× | 25,771.01 → 5,753.75 | 4.48× |
-| BigInteger modPow | 4,096 bits | 19,117,847.57 → 733,349.46 | 26.07× | 826,828.74 → 123,143.06 | 6.71× |
-| long bitCount | scalar | 99.98 → 47.35 | 2.11× | 3.46 → 0.58 | 5.98× |
+| AES-256 CTR | 4,096 bytes | 958,959.60 → 744.37 | 1288.29× | 38,508.41 → 360.06 | 106.95× |
+| SHA-256 | 4,096 bytes | 1,610,809.35 → 7,021.25 | 229.42× | 30,532.93 → 2,571.65 | 11.87× |
+| SHA3-256 | 4,096 bytes | 941,863.50 → 13,652.17 | 68.99× | 21,967.80 → 8,249.30 | 2.66× |
+| byte[] hash | 4,096 bytes | 33,001.55 → 1,589.13 | 20.77× | 3,601.03 → 1,554.20 | 2.32× |
+| BigInteger multiply | 4,096 bits | 522,480.74 → 36,999.18 | 14.12× | 26,821.64 → 6,196.43 | 4.33× |
+| BigInteger modPow | 4,096 bits | 18,774,800.02 → 789,476.20 | 23.78× | 865,865.06 → 131,578.49 | 6.58× |
+| long bitCount | scalar | 98.87 → 48.45 | 2.04× | 3.58 → 0.59 | 6.06× |
 
-All seven C2 control intervals include zero; none establishes a slowdown in
-these selected cases. A separate GitHub Actions x64 run on an EPYC 9V74 also
-passes the C2 controls. These measurements do not establish whole-application
-throughput or the absence of every possible regression.
+The three-pair C2 intervals include zero. Multiplication and SHA-256 also
+have six alternating pairs with eight one-second warmups and ten two-second
+measurements per fork:
 
-## Linux AArch64
+| C2 control | Master → modified | Paired 95% change |
+| --- | ---: | ---: |
+| BigInteger multiply | 4,782.95 → 4,824.75 ns/op | −155.92 to +239.52 ns |
+| SHA-256 | 2,502.42 → 2,477.22 ns/op | −45.76 to −4.63 ns |
 
-Neoverse-N2, native GCC 16 release image from the same implementation revision.
+These selected controls do not establish a C2 slowdown. Kernel measurements
+include public API dispatch and allocation; they do not establish
+whole-application throughput.
+
+## Linux AArch64 reference
+
+Neoverse-N2, native GCC 16 release image at `190109a0d2d`. These historical
+flag comparisons are separate from the current x64 master comparison.
 
 | Workload | Input | Interpreter ns/op, off → on | Speedup | C1 ns/op, off → on | Speedup |
 | --- | --- | ---: | ---: | ---: | ---: |
@@ -96,79 +108,73 @@ mixed caller.
 
 ## Startup
 
-The historical interpreter startup regression was +1.07 ms, approximately
-4.2%, with a paired 95% interval of +0.145 to +1.986 ms. It is retained as a
-measured cost of the historical implementation, not dismissed as noise.
-[Historical methodology and samples](https://github.com/re-thc/openjdk-jdk27u/blob/5330bbb8568e6bdc89bf6528e066d06918c58184/doc/common-intrinsics/BENCHMARKS.md)
-remain pinned.
+The implementation defers compiler stubs until an enabled bulk-intrinsic class
+is linked after bootstrap, outside the leaf adapters. C2 initialization shares
+the same serialized publication. Interpreter entries retain Java until the
+stubs are ready. Scalar and hash entries do not require the compiler blob.
+Existing C1 availability checks keep their direct path, and interpreter entry
+lookup remains inline.
 
-The updated interpreter skips unused Base64 compiler stubs and x86 SIMD-sort
-library loading. A paired comparison on the same current host uses 100 blocks
-of four fresh `java -version` processes: each version with the flag off and on,
-reversing order in alternate blocks. Ten initial blocks are discarded. The
-baseline includes the upstream sync and uses the same object-header defaults.
+Current x64 measurements compare `8bf01e9ed8a` with unmodified `master` at
+`87edd79d3104`. Each mode uses 600 blocks containing master, modified flag-off
+and modified flag-on, cycling through all six orders. Eighteen warm blocks are
+discarded. The worker and coordinator use separate CPUs; Serial GC,
+32–256 MiB heap and one active processor are fixed.
 
-| Interpreter flag cost | Mean | Paired 95% interval |
-| --- | ---: | ---: |
-| Synced baseline | +1.513 ms | +0.741 to +2.285 ms |
-| Updated implementation | −0.120 ms | −0.797 to +0.557 ms |
-| Change in flag cost | −1.633 ms | −2.747 to −0.518 ms |
-
-A separate current-image run uses 100 alternating fresh-VM pairs per tier,
-with ten warm pairs discarded. Worker and coordinator use separate CPUs;
-Serial GC, a 32–256 MiB heap and one active processor are fixed.
-
-| Mode | Off → on | Mean change | Paired 95% interval |
+| Mode | Master → modified enabled | Paired change | 95% interval |
 | --- | ---: | ---: | ---: |
-| Interpreter | 21.052 → 21.211 ms | +0.160 ms | −0.233 to +0.552 ms |
-| C1 | 22.097 → 22.599 ms | +0.502 ms | −0.208 to +1.211 ms |
-| C2 | 24.304 → 24.302 ms | −0.003 ms | −0.507 to +0.502 ms |
+| Interpreter | 20.941 → 20.849 ms | −0.092 ms | −0.324 to +0.141 ms |
+| C1 | 22.478 → 22.597 ms | +0.119 ms | −0.150 to +0.387 ms |
+| C2 | 23.677 → 23.754 ms | +0.078 ms | −0.138 to +0.293 ms |
 
-The paired before/after result establishes a reduction in interpreter startup
-cost on this host. The local current-image intervals include zero, which does
-not prove zero overhead. The separate x64 CI run measures an interpreter cost
-of +0.366 ms (95% interval +0.214 to +0.518 ms) and a C1 cost of +0.643 ms
-(+0.568 to +0.718 ms). Its C2 interval includes zero. On ARM the interpreter
-cost is +0.208 ms
-(+0.016 to +0.400 ms), and the C1 cost is +0.212 ms (+0.002 to +0.423 ms).
-The ARM C2 interval also includes zero.
+The corresponding flag-off/on changes are +0.083 ms (−0.108 to +0.274),
++0.282 ms (−0.0003 to +0.563) and −0.024 ms (−0.307 to +0.260).
+These intervals do not establish a startup regression or prove zero overhead.
 
-The flag remains enabled by default: the measured interpreter and C1
-throughput gains justify retaining a small startup cost for these modes.
-`-XX:-UseCommonIntrinsics` remains available for startup-sensitive workloads.
+Both JVM libraries were prepared with an identical single-CPU copy before
+warming; SHA-256 verifies unchanged bytes. Unprepared local images measured
++0.37–0.50 ms against master, concentrated in library loading. A standalone
+`dlopen` control measured 1.410 versus 1.701 ms on the original files, while
+identically prepared copies measured 1.446 versus 1.459 ms (paired change
++0.013 ms, 95% interval −0.023 to +0.050 ms). Initial and
+controlled samples are retained with the evidence. These are warm-start
+measurements of these images, not cold-start or whole-application guarantees.
+Current native ARM startup qualification is pending.
 
 ## Hardware and runtime qualification
 
-On the AVX-512 host, release and fastdebug common-intrinsic tests pass,
-including breakpoint-only debugging, guard isolation at C1 levels 1 and 3,
-method handles, streaming digests, vector boundaries and aliases. Fastdebug
-uses `CheckUnhandledOops` and `VerifyOops`. The AVX-512 test requires native
-Keccak execution in interpreter and both C1 modes. Related HotSpot AES,
-BigInteger, ChaCha20 and digest tests also pass.
+The final x64 implementation at `8bf01e9ed8a` passes 136 jtreg records:
 
-[Final packaged-image qualification](https://github.com/re-thc/openjdk-jdk27u/blob/147796219f1a96a890994ee3bc264bf709aa0235/.github/qualification/local-x64/head-qualification.json)
-at `bcaa0c0cd43` passes all 18 common-intrinsic records in each build and the
-seven AOT/CDS records below. The report includes binary fingerprints.
+| Selection | Passed |
+| --- | ---: |
+| Common intrinsics, release | 20 |
+| Common intrinsics, fastdebug | 20 |
+| Related HotSpot crypto and BigInteger | 11 |
+| JDK crypto | 74 |
+| AOT/CDS and code-cache overflow, fastdebug | 10 |
+| Flagless metaspace/CDS | 1 |
 
-[Native Linux x64 and AArch64 qualification](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38315107246)
-passes release and fastdebug common-intrinsic suites, related HotSpot and JDK
-crypto/BigInteger tests, and C1 math tests at levels 1 and 3. The x64 CI host
-also executes the AVX-512 cases. ARM skips x86-only tests.
+Fastdebug common tests use `CheckUnhandledOops` and `VerifyOops`. AVX-512
+execution covers shifts, tails, aliases and native Keccak in interpreter and
+C1 levels 1 and 3. Tests also cover breakpoint-only debugging, per-site guard
+feedback, method handles and concurrent first-use publication.
 
-[AOT code-cache qualification](https://github.com/re-thc/openjdk-jdk27u/blob/55353f8ced7c9b67a199791a255350f70fe29496/.github/qualification/local-x64/aot-current.json)
-passes seven AOT/CDS runtime records on fastdebug, including
-G1, Serial and ZGC caches, compressed-oop configurations and CPU compatibility.
+Polynomial assignment tests cover lengths 0–33, selection and aliasing,
+and the public two-limb general-purpose field in interpreter, C1 and C2.
+A native Linux probe reproduces the old Microsoft x64 ABI register collision
+and passes with the fixed scalar loop; it is not a Windows PR-JVM execution.
+The 391-entry applicability audit and official include-order checker pass.
 
-A C1-only x86 VM built from the benchmarked implementation with
-`--with-jvm-features=-compiler2` passes scalar arithmetic, scalar operations,
-guard isolation and level-1 method handles.
-[WhiteBox verifies that C2 is excluded](https://github.com/re-thc/openjdk-jdk27u/blob/55353f8ced7c9b67a199791a255350f70fe29496/.github/qualification/local-x64/c1-current.json).
-The copied class image uses
-`-Xshare:off`; C1-only performance is outside this evidence.
+[Final native platform CI](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38385226401)
+and [native x64/ARM qualification](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38385525844)
+are queued for runners. Final Windows, macOS and ARM qualification is pending;
+Windows AVX-512 execution and tier2 remain outside the evidence.
+The [preceding AOT fix](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38325342685)
+passed all 57 native build/tier1 jobs before these changes.
 
-The 391-entry applicability audit, official include-order checker and
-compilation of all four JMH classes pass. Windows AVX-512 execution and tier2
-remain outside the qualified scope.
+Earlier native ARM tests and the C1-only x64 scalar/guard/method-handle checks
+remain [reference evidence](https://github.com/re-thc/openjdk-jdk27u/blob/55353f8ced7c9b67a199791a255350f70fe29496/.github/qualification/local-x64/c1-current.json).
+C1-only performance is unqualified.
 
 ## Reproduction
 
@@ -183,7 +189,9 @@ make CONF=your-build test \
   MICRO='FORK=3;VM_OPTIONS=-Xint -XX:+UseCommonIntrinsics'
 ```
 
-Repeat with `-XX:-UseCommonIntrinsics`, and use
+For current-head comparisons, build unmodified master with the same toolchain
+and run the same benchmarks at default flag settings. For flag comparisons,
+repeat with `-XX:-UseCommonIntrinsics`. Use
 `-Xbatch -XX:TieredStopAtLevel=1` or `-Xbatch -XX:-TieredCompilation` for the
 compiled modes. The mixed benchmark uses `failedGuard=false,true` and
 `size=1024,4096`.
