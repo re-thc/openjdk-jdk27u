@@ -96,7 +96,7 @@ jobs:
       - name: Native archive preflight
         run: |
           mkdir -p qualification
-          make -r -R -I make/common -f make/ModuleWrapper.gmk \
+          make -C make -r -R -I common -I common/modules -I modules/java.base -f ModuleWrapper.gmk \
             SPEC="$(pwd)/build/zip/spec.gmk" MODULE=java.base MAKEFILE_PREFIX=Lib \
             "$(pwd)/build/zip/support/native/zlib-ng/zlibstatic.lib" \
             2>&1 | tee qualification/native-archive.log
