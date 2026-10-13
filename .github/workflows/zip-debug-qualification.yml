@@ -1,0 +1,70 @@
+name: macOS debug ZIP qualification
+on:
+  push:
+    branches: [pr/zlib-ng-platform-qualification]
+permissions:
+  contents: read
+concurrency:
+  group: zip-debug-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  prepare:
+    if: contains(github.event.head_commit.message, 'macos-debug')
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: ./.github/actions/build-jtreg
+  debug:
+    needs: prepare
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-aarch64, macos-x64]
+        include:
+          - platform: macos-aarch64
+            runner: macos-26
+            profile: bin/configure-dev
+          - platform: macos-x64
+            runner: macos-15-intel
+            profile: configure
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Install build tools
+        run: |
+          brew install autoconf make ccache
+          echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
+          if [[ '${{ matrix.platform }}' == macos-aarch64 ]]; then
+            sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
+          fi
+      - uses: ./.github/actions/get-bootjdk
+        id: bootjdk
+        with:
+          platform: ${{ matrix.platform }}
+      - uses: ./.github/actions/get-jtreg
+        id: jtreg
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: build/zip/images/jdk
+          key: zip-platform-v1-${{ matrix.platform }}-release-e028309c31bba1c27370190381b3998eca8ef794
+          fail-on-cache-miss: true
+      - name: Build current debug VM and run ZIP qualification
+        run: |
+          mkdir -p qualification
+          git rev-parse HEAD | tee qualification/source.txt
+          python3 -m py_compile .github/scripts/qualify-debug-vm.py
+          python3 .github/scripts/qualify-debug-vm.py --jdk build/zip/images/jdk \
+            --bootjdk '${{ steps.bootjdk.outputs.path }}' --jtreg '${{ steps.jtreg.outputs.path }}' \
+            --profile ${{ matrix.profile }} 2>&1 | tee qualification/debug-qualification.log
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: ${{ matrix.platform }}-debug-zip
+          path: |
+            qualification
+            build/debug-check/spec.gmk
+          retention-days: 14

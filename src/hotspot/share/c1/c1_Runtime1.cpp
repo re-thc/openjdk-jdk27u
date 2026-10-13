@@ -353,7 +353,7 @@ const char* Runtime1::name_for_address(address entry) {
 #endif
   FUNCTION_CASE(entry, StubRoutines::updateBytesCRC32());
   FUNCTION_CASE(entry, StubRoutines::updateBytesCRC32C());
-#if defined(LINUX) && (defined(AMD64) || defined(AARCH64))
+#if defined(AMD64) || defined(AARCH64)
   FUNCTION_CASE(entry, ZipLibrary::adler32_address());
   FUNCTION_CASE(entry, ZipLibrary::adler32_byte_address());
 #endif

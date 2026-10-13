@@ -87,24 +87,28 @@ ifneq ($(filter x86_64 aarch64, $(OPENJDK_TARGET_CPU)), )
     ZLIBNG_HOST := $(OPENJDK_TARGET_CPU)-$(if $(filter macosx, $(OPENJDK_TARGET_OS)),apple-darwin,unknown-linux-gnu)
 
     $(ZLIBNG_LIB): $(call FindFiles, $(ZLIBNG_SRC)) $(SPEC) \
-        $(TOPDIR)/make/modules/java.base/lib/CoreLibraries.gmk
+        $(TOPDIR)/make/modules/java.base/lib/CoreLibraries.gmk \
+        $(TOPDIR)/make/scripts/zlib-ng-cmake-flags.sh
 	# Upstream makefiles do not track all configuration/header dependencies.
 	$(RM) -r $(ZLIBNG_OUT)
 	$(MKDIR) -p $(ZLIBNG_OUT)
     ifeq ($(call isTargetOs, windows), true)
-	$(CMAKE) -S $(ZLIBNG_SRC) -B $(ZLIBNG_OUT) -G "NMake Makefiles" \
+	$(BASH) $(TOPDIR)/make/scripts/zlib-ng-cmake-flags.sh \
+	    $(ZLIBNG_OUT)/jdk-flags.cmake $(FIXPATH_BASE) \
+	    --cflags $(CFLAGS_JDKLIB) $(SYSROOT_CFLAGS) \
+	    --ldflags $(LDFLAGS_JDKEXE) $(SYSROOT_LDFLAGS)
+	MAKEFLAGS= MFLAGS= $(CMAKE) -C $(ZLIBNG_OUT)/jdk-flags.cmake -S $(ZLIBNG_SRC) -B $(ZLIBNG_OUT) -G "NMake Makefiles" \
 	    -DCMAKE_MAKE_PROGRAM="$(call FixPath, $(lastword $(NMAKE)))" \
-	    -DCMAKE_C_COMPILER="$(call FixPath, $(lastword $(CC)))" \
-	    -DCMAKE_AR="$(call FixPath, $(lastword $(AR)))" \
+	    "-DCMAKE_C_COMPILER=$(subst $(SPACE),;,$(call FixPath, $(subst $(FIXPATH) ,,$(CC))))" \
+	    -DCMAKE_AR="$(call FixPath, $(lastword $(LIB)))" \
 	    -DCMAKE_LINKER="$(call FixPath, $(lastword $(LD)))" \
-	    "-DCMAKE_C_FLAGS=$(call FixPath, $(CFLAGS_JDKLIB) $(SYSROOT_CFLAGS))" \
-	    "-DCMAKE_EXE_LINKER_FLAGS=$(call FixPath, $(LDFLAGS_JDKEXE) $(SYSROOT_LDFLAGS))" \
-	    -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF \
+	    -DCMAKE_BUILD_TYPE=Release -DCMAKE_TRY_COMPILE_CONFIGURATION=Release \
+	    -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF \
 	    -DZLIB_COMPAT=ON -DZLIB_SYMBOL_PREFIX=jdk_ng_ \
 	    > $(ZLIBNG_OUT)/configure-output.log 2>&1 || { \
 	      $(CAT) $(ZLIBNG_OUT)/configure-output.log; exit 1; \
 	    }
-	$(CMAKE) --build $(ZLIBNG_OUT) --target zlib-ng
+	MAKEFLAGS= MFLAGS= $(CMAKE) --build $(ZLIBNG_OUT) --target zlib-ng
     else
 	# Keep compiler environment assignments intact during configure probes.
 	$(PRINTF) '%s\n' '#!/bin/sh' 'exec env $(CC) "$$@"' > $(ZLIBNG_OUT)/cc
