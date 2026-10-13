@@ -357,6 +357,9 @@ abstract sealed class AbstractVector<E> extends Vector<E>
         AbstractSpecies<F> rsp = (AbstractSpecies<F>) toSpecies;
         AbstractSpecies<E> vsp = vspecies();
         if (part == 0) {
+            if (vsp == rsp) {
+                return check0(rsp);
+            }
             // Works the same for in-place, selection (truncation) and insertion (padding)
             return convert0('X', rsp);
         } else {
@@ -413,6 +416,9 @@ abstract sealed class AbstractVector<E> extends Vector<E>
         vsp.check(c.domain());  // apply dynamic check to conv
         rsp.check(c.range());   // apply dynamic check to conv
         if (part == 0) {
+            if (kind == 'X' && vsp == rsp) {
+                return check0(rsp);
+            }
             // Works the same for in-place, selection (truncation) and insertion (padding)
             return convert0(kind, rsp);
         } else {
@@ -632,9 +638,6 @@ abstract sealed class AbstractVector<E> extends Vector<E>
     @ForceInline
     final <F>
     AbstractVector<F> defaultReinterpret(AbstractSpecies<F> rsp) {
-        if (rsp == vspecies()) {
-            return check0(rsp);
-        }
         int blen = Math.max(this.bitSize(), rsp.vectorBitSize()) / Byte.SIZE;
         ByteOrder bo = ByteOrder.nativeOrder();
         MemorySegment ms = MemorySegment.ofArray(new byte[blen]);
