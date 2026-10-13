@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -348,6 +349,7 @@ public final class SegmentBulkOperations {
     /**
      * Mismatch over long lengths.
      */
+    @ForceInline
     private static long vectorizedMismatchLargeForBytes(MemorySessionImpl aSession, MemorySessionImpl bSession,
                                                         Object a, long aOffset,
                                                         Object b, long bOffset,

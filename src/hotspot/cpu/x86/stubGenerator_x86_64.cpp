@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3747,8 +3748,11 @@ address StubGenerator::generate_vectorizedMismatch() {
   StubId stub_id = StubId::stubgen_vectorizedMismatch_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  address start = load_archive_data(stub_id);
+  GrowableArray<address> extras;
+  address start = load_archive_data(stub_id, nullptr, &extras);
   if (start != nullptr) {
+    assert(extras.length() == UnsafeMemoryAccess::COLUMN_COUNT, "unexpected handler count");
+    register_unsafe_access_handlers(extras, 0, 1);
     return start;
   }
   __ align(CodeEntryAlignment);
@@ -3781,14 +3785,26 @@ address StubGenerator::generate_vectorizedMismatch() {
   const XMMRegister vec1 = xmm1;
   const XMMRegister vec2 = xmm2;
 
-  __ vectorized_mismatch(obja, objb, length, scale, result, tmp1, tmp2, vec0, vec1, vec2);
-
+  // Buffer and segment callers can supply mapped addresses. Register the
+  // protected PC range without adding work to the normal kernel path.
+  {
+    UnsafeMemoryAccessMark umam(this, true, true);
+    __ vectorized_mismatch(obja, objb, length, scale, result, tmp1, tmp2, vec0, vec1, vec2);
+    __ vzeroupper();
+    __ leave();
+    __ ret(0);
+  }
+  // A fault skips the kernel, including its element-index scaling. Return a
+  // valid index while the pending asynchronous InternalError is delivered.
+  __ xorl(result, result);
   __ vzeroupper();
   __ leave();
   __ ret(0);
 
-  // record the stub entry and end
-  store_archive_data(stub_id, start, __ pc());
+  address end = __ pc();
+  retrieve_unsafe_access_handlers(start, end, extras);
+  assert(extras.length() == UnsafeMemoryAccess::COLUMN_COUNT, "unexpected handler count");
+  store_archive_data(stub_id, start, end, nullptr, &extras);
 
   return start;
 }
@@ -4736,7 +4752,7 @@ void StubGenerator::generate_initial_stubs() {
 
   // Initialize table for unsafe copy memeory check.
   if (UnsafeMemoryAccess::_table == nullptr) {
-    UnsafeMemoryAccess::create_table(16 + 4); // 16 for copyMemory; 4 for setMemory
+    UnsafeMemoryAccess::create_table(16 + 4 + 1); // copyMemory, setMemory, vectorizedMismatch
   }
 
   // entry points that exist in all platforms Note: This is code

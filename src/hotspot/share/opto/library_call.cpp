@@ -6744,10 +6744,29 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
 
   const TypeAryPtr* obja_t = _gvn.type(obja)->isa_aryptr();
   const TypeAryPtr* objb_t = _gvn.type(objb)->isa_aryptr();
-  if (obja_t == nullptr || obja_t->elem() == Type::BOTTOM ||
-      objb_t == nullptr || objb_t->elem() == Type::BOTTOM ||
+  bool a_native = _gvn.type(obja) == TypePtr::NULL_PTR;
+  bool b_native = _gvn.type(objb) == TypePtr::NULL_PTR;
+  if ((!a_native && (obja_t == nullptr || obja_t->elem() == Type::BOTTOM)) ||
+      (!b_native && (objb_t == nullptr || objb_t->elem() == Type::BOTTOM)) ||
       scale == top()) {
     return false; // failed input validation
+  }
+
+  bool native_access = a_native || b_native;
+  int native_limit = 0;
+  if (native_access) {
+    const TypeInt* scale_type = _gvn.type(scale)->is_int();
+    if (!scale_type->is_con() || scale_type->get_con() < 0 || scale_type->get_con() > 3) {
+      return false;
+    }
+    // Newly accelerated off-heap calls must not turn a Java polling loop into
+    // an unbounded leaf. Larger ranges retain the existing Java implementation.
+    native_limit = (64 * K) >> scale_type->get_con();
+    const TypeInt* length_type = _gvn.type(length)->is_int();
+    if (length_type->_lo > native_limit || length_type->_hi < 0) {
+      return false;
+    }
+    C->set_has_unsafe_access(true);
   }
 
   Node* obja_adr = make_unsafe_address(obja, aoffset);
@@ -6771,12 +6790,30 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   //
   enum { inline_path = 1,  // input is small enough to process it all at once
          stub_path   = 2,  // input is too large; call into the VM
-         PATH_LIMIT  = 3
+         java_path   = 3,  // off-heap work exceeds the leaf bound
+         PATH_LIMIT  = 4
   };
 
-  Node* exit_block = new RegionNode(PATH_LIMIT);
+  Node* exit_block = new RegionNode(native_access ? PATH_LIMIT : java_path);
   Node* result_phi = new PhiNode(exit_block, TypeInt::INT);
   Node* memory_phi = new PhiNode(exit_block, Type::MEMORY, TypePtr::BOTTOM);
+  Node* io_phi = native_access ? new PhiNode(exit_block, Type::ABIO) : nullptr;
+
+  if (native_access) {
+    Node* cmp = _gvn.transform(new CmpUNode(length, intcon(native_limit)));
+    Node* test = _gvn.transform(new BoolNode(cmp, BoolTest::gt));
+    Node* slow_control = generate_slow_guard(test, nullptr);
+    if (slow_control != nullptr) {
+      PreserveJVMState pjvms(this);
+      set_control(slow_control);
+      CallJavaNode* slow_call = generate_method_call_static(vmIntrinsics::_vectorizedMismatch, false);
+      Node* slow_result = set_results_for_java_call(slow_call);
+      exit_block->init_req(java_path, control());
+      memory_phi->init_req(java_path, reset_memory());
+      io_phi->init_req(java_path, i_o());
+      result_phi->init_req(java_path, slow_result);
+    }
+  }
 
   Node* call_stub_path = control();
 
@@ -6830,6 +6867,7 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
 
         exit_block->init_req(inline_path, control());
         memory_phi->init_req(inline_path, map()->memory());
+        if (io_phi != nullptr) io_phi->init_req(inline_path, i_o());
         result_phi->init_req(inline_path, result);
 
         C->set_max_vector_size(MAX2((uint)ArrayOperationPartialInlineSize, C->max_vector_size()));
@@ -6848,11 +6886,13 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
 
     exit_block->init_req(stub_path, control());
     memory_phi->init_req(stub_path, map()->memory());
+    if (io_phi != nullptr) io_phi->init_req(stub_path, i_o());
     result_phi->init_req(stub_path, _gvn.transform(new ProjNode(call, TypeFunc::Parms)));
   }
 
   exit_block = _gvn.transform(exit_block);
   memory_phi = _gvn.transform(memory_phi);
+  if (io_phi != nullptr) io_phi = _gvn.transform(io_phi);
   result_phi = _gvn.transform(result_phi);
 
   record_for_igvn(exit_block);
@@ -6861,6 +6901,7 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
 
   set_control(exit_block);
   set_all_memory(memory_phi);
+  if (io_phi != nullptr) set_i_o(io_phi);
   set_result(result_phi);
 
   return true;

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,11 +231,40 @@ public final class ScopedMemoryAccess {
             if (bSession != null) {
                 bSession.checkValidStateRaw();
             }
+            // Bound native-address mismatch calls, including C1's existing
+            // intrinsic. The loop between chunks provides safepoint polls.
+            if (log2ArrayIndexScale >= 0 && log2ArrayIndexScale <= 3 &&
+                    length > (65536 >> log2ArrayIndexScale) && (a == null || b == null)) {
+                return vectorizedMismatchLarge(a, aOffset, b, bOffset, length, log2ArrayIndexScale);
+            }
             return ArraysSupport.vectorizedMismatch(a, aOffset, b, bOffset, length, log2ArrayIndexScale);
         } finally {
             Reference.reachabilityFence(aSession);
             Reference.reachabilityFence(bSession);
         }
+    }
+
+    @ForceInline
+    private int vectorizedMismatchLarge(Object a, long aOffset, Object b, long bOffset,
+                                       int length, int log2ArrayIndexScale) {
+        int chunk = 65536 >> log2ArrayIndexScale;
+        int offset = 0;
+        while (length > chunk) {
+            long byteOffset = (long) offset << log2ArrayIndexScale;
+            int result = ArraysSupport.vectorizedMismatch(a, aOffset + byteOffset,
+                    b, bOffset + byteOffset, chunk, log2ArrayIndexScale);
+            if (result >= 0) {
+                return offset + result;
+            }
+            // A full chunk is a multiple of the word width and has no tail.
+            assert result == -1;
+            offset += chunk;
+            length -= chunk;
+        }
+        long byteOffset = (long) offset << log2ArrayIndexScale;
+        int result = ArraysSupport.vectorizedMismatch(a, aOffset + byteOffset,
+                b, bOffset + byteOffset, length, log2ArrayIndexScale);
+        return result >= 0 ? offset + result : result;
     }
 
     @ForceInline

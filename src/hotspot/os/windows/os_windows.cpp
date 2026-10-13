@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2807,7 +2808,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       }
 
       bool is_unsafe_memory_access = (in_native || in_java) && UnsafeMemoryAccess::contains_pc(pc);
-      if (((in_vm || in_native || is_unsafe_memory_access) && thread->doing_unsafe_access()) ||
+      if (((in_vm || in_native) && thread->doing_unsafe_access()) ||
+          (in_java && is_unsafe_memory_access) ||
           (nm != nullptr && nm->has_unsafe_access())) {
         address next_pc =  Assembler::locate_next_instruction(pc);
         if (is_unsafe_memory_access) {
