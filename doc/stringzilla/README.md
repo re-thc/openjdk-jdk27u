@@ -29,6 +29,35 @@ Search dispatch starts at 256 source bytes. Short ranges and immediate matches
 retain inexpensive Java/platform paths. Equality has separate length and prefix
 checks. C1 compiles the mixed-coder Java search loop separately from the
 acceleration branch, including the fallback for needles over 64 code units.
+
+Same-coder substring reverse searches also use the selected kernel and compiling
+tier. The tier query folds to a constant in C1/C2; its Java body returns zero for
+interpreted callers. Initialization records the actual callback table's backend,
+including serial-only builds. The following rules apply after the common
+256-source-byte gate and before native argument setup. Length is the searched
+prefix (`fromIndex + needleCount`), in code units, after API range normalization.
+
+| Backend and tier | Additional native eligibility |
+| --- | --- |
+| Serial C2, Latin-1 | Needle 32–256 code units with prefix at least 1024, or longer needle with comparison work at least 4096 |
+| Serial C1, UTF-16 | Needle up to 128 code units, or comparison work at least 1024 |
+| Serial or AVX2 C2, UTF-16 | Needle up to 128 code units with prefix at least 512, or longer needle with comparison work at least 2048 |
+| Interpreter, other backend/tier combinations, mixed-coder searches | Existing eligibility |
+
+Comparison work is `(prefix - needleCount + 1) * needleCount`, in code units,
+computed with 64-bit arithmetic. It selects native verification only when a long
+needle has enough candidate positions to amortize setup. This dispatch estimate
+is independent of the native maximum-work safety guard. The interpreter retains
+its existing eligibility, including minimal overlapping matches.
+
+Ineligible UTF-16 ranges use the existing Java reverse loop. Serial C2 Latin-1
+uses the existing character-search intrinsic to skip 256-byte blocks without
+the needle's last character, then resumes the original reverse loop. Forward search, character
+search and equality retain their dispatch rules. Serial UTF-16 bulk reverse
+searches with needles up to 128 code units reuse the existing aligned batch filter
+directly, avoiding ineffective byte-search shifts. Longer needles keep upstream
+byte search and its overlap-preserving prefix filter.
+
 Individual intrinsics can be disabled with
 `-XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=...`: search bridges use
 `_stringzilla*` names; equality uses `_equalsL`, the checked alias
@@ -130,12 +159,13 @@ functional and tier-specific performance checks before changing dispatch gates.
 
 ## Validation and benchmarks
 
-Local release jtreg validation passed **188 tests, zero failures/errors**:
-String (96), StringBuilder (16), StringBuffer (25), HotSpot string intrinsics (24),
+Local release jtreg validation passed **189 tests, zero failures/errors**:
+String (96), StringBuilder (16), StringBuffer (25), HotSpot string intrinsics (25),
 and LoggerFinder (27). Two other HotSpot tests retain platform exclusions. Clean
 GCC 14 release/CDS
-and fastdebug builds use the fork development profile. Ten targeted fastdebug
-tests passed. Nine targeted tests passed with final GCC 16 kernels and AVX2
+and fastdebug builds use the fork development profile. Eleven targeted fastdebug
+tests passed. Nine search/kernel tests passed with final GCC 16 kernels and AVX2;
+dispatch and availability tests also passed with serial, AVX2 and AVX-512
 dispatch. AArch64 cross checks cover HotSpot and java.base native libraries.
 
 The tests cover all three execution tiers, JNI fallback, explicit opt-out,
@@ -148,7 +178,8 @@ independently of Java gates.
 AArch64/QEMU covers executable serial/NEON backends and repeated-suffix
 overlaps in the interpreter, C1, C2, JNI fallback and opt-out paths.
 The full bounded-search suite also passed under AArch64 C1 after outlining the
-mixed-coder scalar loop.
+mixed-coder scalar loop. Compiler-folded dispatch and intrinsic availability
+checks passed on AArch64, with boundary matches tested in both C1 and C2.
 Native ASan/UBSan passed with alignment checks enabled. GCC 16 kernels also
 passed the string-search, literal-replacement and logger tests.
 

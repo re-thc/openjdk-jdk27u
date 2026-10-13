@@ -1,17 +1,17 @@
 #!/bin/bash
 # Copyright (c) 2026, re-thc. All rights reserved.
 # SPDX-License-Identifier: GPL-2.0-only
-# Usage: run-coverage-benchmarks.sh TEST_JDK JMH_CLASSPATH ORIGINAL_JAVA_CLASSES OUTPUT_DIR [CPU]
+# Usage: run-coverage-benchmarks.sh TEST_JDK JMH_CLASSPATH ORIGINAL_JAVA_CLASSES OUTPUT_DIR [CPU [CASE_MANIFEST]]
 set -euo pipefail
 
 usage() {
-    printf 'Usage: %s TEST_JDK JMH_CLASSPATH ORIGINAL_JAVA_CLASSES OUTPUT_DIR [CPU]\n' "${0##*/}"
+    printf 'Usage: %s TEST_JDK JMH_CLASSPATH ORIGINAL_JAVA_CLASSES OUTPUT_DIR [CPU [CASE_MANIFEST]]\n' "${0##*/}"
 }
 if [ "$#" -eq 1 ] && { [ "$1" = --help ] || [ "$1" = -h ]; }; then
     usage
     exit 0
 fi
-if [ "$#" -lt 4 ] || [ "$#" -gt 5 ]; then
+if [ "$#" -lt 4 ] || [ "$#" -gt 6 ]; then
     usage >&2
     exit 2
 fi
@@ -21,9 +21,10 @@ benchmark_classpath=$2
 benchmark_original=$(cd "$3" && pwd)
 benchmark_output=$4
 benchmark_cases=$(cd "$(dirname "$0")" && pwd)/coverage-cases.tsv
+if [ "$#" -eq 6 ]; then benchmark_cases=$6; fi
 mkdir -p "$benchmark_output"
 benchmark_pin=()
-if [ "$#" -eq 5 ]; then benchmark_pin=(taskset -c "$5"); fi
+if [ "$#" -ge 5 ]; then benchmark_pin=(taskset -c "$5"); fi
 unset JAVA_TOOL_OPTIONS _JAVA_OPTIONS JDK_JAVA_OPTIONS
 
 controls=(enabled disabled original)

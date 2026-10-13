@@ -1190,12 +1190,14 @@ final class StringUTF16 {
     static int lastIndexOf(byte[] src, int srcCount,
                            byte[] tgt, int tgtCount, int fromIndex) {
         int searchLength = fromIndex + tgtCount;
-        if (searchLength >= (StringZilla.MIN_BYTES >> 1) && StringZilla.ENABLED) {
+        if (searchLength >= (StringZilla.MIN_BYTES >> 1) && StringZilla.ENABLED
+                && StringZilla.useReverseUTF16(searchLength, tgtCount)) {
             if (tgtCount <= 8 && StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount)) {
                 return fromIndex;
             }
-            int result = StringZilla.rfindUTF16(src, 0, searchLength << 1,
-                    tgt, tgtCount << 1);
+            int result = StringZilla.compilerTier() == 1
+                    ? StringZilla.rfindUTF16C1(src, searchLength, tgt, tgtCount)
+                    : StringZilla.rfindUTF16(src, 0, searchLength << 1, tgt, tgtCount << 1);
             if (result == StringZilla.FALLBACK) {
                 result = StringZilla.searchLarge(src, 0, searchLength << 1, tgt, tgtCount << 1, 1, true);
             }

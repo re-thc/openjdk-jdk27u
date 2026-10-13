@@ -28,10 +28,10 @@
 #include "java_lang_StringZilla.h"
 #include "StringZillaKernels.h"
 
-JNIEXPORT jboolean JNICALL
-Java_java_lang_StringZilla_isEnabled(JNIEnv* env, jclass ignored) {
-    StringZilla_initialize();
-    return JVM_StringZillaEnabled(env, ignored);
+JNIEXPORT jint JNICALL
+Java_java_lang_StringZilla_initialize(JNIEnv* env, jclass ignored) {
+    jint capabilities = StringZilla_initialize();
+    return capabilities | (JVM_StringZillaEnabled(env, ignored) ? JVM_STRINGZILLA_ENABLED : 0);
 }
 
 JNIEXPORT jint JNICALL

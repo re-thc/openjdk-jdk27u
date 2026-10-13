@@ -55,6 +55,7 @@ public class TestStringZillaAvailability {
             check(wb, klass.getDeclaredMethod(name, byte[].class, int.class, int.class, byte[].class, int.class), expected);
         }
         check(wb, klass.getDeclaredMethod("equalsRange", byte[].class, int.class, int.class, byte[].class, int.class), expected);
+        check(wb, klass.getDeclaredMethod("compilerTier"), expected);
         for (String name : characters) {
             check(wb, klass.getDeclaredMethod(name, byte[].class, int.class, int.class, int.class), expected);
         }

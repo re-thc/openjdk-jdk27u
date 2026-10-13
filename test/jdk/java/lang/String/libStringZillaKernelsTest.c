@@ -88,6 +88,27 @@ static jint check_kernels(void) {
         CHECK(published == kernels);
         if (!can_execute(kernels->capabilities)) continue;
 
+        // Aligned short-needle filtering must verify interiors and batch edges.
+        const jint short_counts[] = {1, 2, 4, 16, 31, 32, 33, 63, 64, 65, 127, 128, 129};
+        jchar aligned_source[512];
+        jchar aligned_target[129];
+        for (unsigned int c = 0; c < sizeof(short_counts) / sizeof(short_counts[0]); c++) {
+            jint count = short_counts[c];
+            for (jint i = 0; i < count; i++) aligned_target[i] = 0x0401;
+            aligned_target[count / 2] = 0x0402;
+            const jint positions[] = {0, 1, 31, 32, 33, 257, 512 - count};
+            for (unsigned int p = 0; p < sizeof(positions) / sizeof(positions[0]); p++) {
+                jint position = positions[p];
+                for (jint i = 0; i < 512; i++) aligned_source[i] = 0x0401;
+                memcpy(aligned_source + position, aligned_target, count * sizeof(jchar));
+                CHECK(kernels->rfindUTF16((const char*)aligned_source, sizeof(aligned_source),
+                        (const char*)aligned_target, count * sizeof(jchar)) == position * 2);
+                aligned_source[position + count / 2] = 0x0403;
+                CHECK(kernels->rfindUTF16((const char*)aligned_source, sizeof(aligned_source),
+                        (const char*)aligned_target, count * sizeof(jchar)) == -1);
+            }
+        }
+
         // A rejected long-needle prefix must not skip overlapping suffixes.
         const jint overlap_lengths[] = {128, 129, 130, 255, 256, 257, 258, 259, 511, 512, 513, 768};
         char overlap_source[1536];

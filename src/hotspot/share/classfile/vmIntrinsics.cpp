@@ -68,6 +68,7 @@ inline bool match_F_SN(u2 flags) {
 bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
+  case vmIntrinsics::_stringzillaCompilerTier:
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
 #endif
@@ -122,6 +123,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
 bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
+  case vmIntrinsics::_stringzillaCompilerTier:
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
 #endif
@@ -532,6 +534,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
     if (!UseCRC32CIntrinsics) return true;
     break;
+  case vmIntrinsics::_stringzillaCompilerTier:
   case vmIntrinsics::_stringzillaEqualsRange:
   case vmIntrinsics::_stringzillaFindUTF16Latin1:
   case vmIntrinsics::_stringzillaRfindUTF16Latin1:

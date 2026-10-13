@@ -3569,6 +3569,9 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
 
   // Some intrinsics need special IR nodes.
   switch(id) {
+  case vmIntrinsics::_stringzillaCompilerTier:
+    if (!ignore_return) ipush(append(new Constant(new IntConstant(CompLevel_simple))));
+    return;
   case vmIntrinsics::_getReference           : append_unsafe_get(callee, T_OBJECT,  false); return;
   case vmIntrinsics::_getBoolean             : append_unsafe_get(callee, T_BOOLEAN, false); return;
   case vmIntrinsics::_getByte                : append_unsafe_get(callee, T_BYTE,    false); return;

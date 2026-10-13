@@ -298,6 +298,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_compareToLU:              return inline_string_compareTo(StrIntrinsicNode::LU);
   case vmIntrinsics::_compareToUL:              return inline_string_compareTo(StrIntrinsicNode::UL);
 
+  case vmIntrinsics::_stringzillaCompilerTier:
+    set_result(intcon(CompLevel_full_optimization));
+    return true;
   case vmIntrinsics::_stringzillaFindCharLatin1:
   case vmIntrinsics::_stringzillaFindCharUTF16:
   case vmIntrinsics::_stringzillaRfindCharLatin1:

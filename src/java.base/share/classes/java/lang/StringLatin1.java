@@ -611,6 +611,9 @@ final class StringLatin1 {
             if (tgtCount <= 8 && StringZilla.matches(src, fromIndex, tgt, tgtCount)) {
                 return fromIndex;
             }
+            if (!StringZilla.useReverseLatin1(searchLength, tgtCount)) {
+                return lastIndexOfJavaFiltered(src, tgt, tgtCount, fromIndex);
+            }
             int result = StringZilla.rfindLatin1(src, 0, searchLength,
                     tgt, tgtCount);
             if (result == StringZilla.FALLBACK) {
@@ -621,6 +624,22 @@ final class StringLatin1 {
             }
         }
         return lastIndexOfJava(src, tgt, tgtCount, fromIndex);
+    }
+
+    // Use C2's existing character-search intrinsic to skip empty reverse blocks.
+    // Once a block contains the last character, resume the original reverse loop.
+    @ForceInline
+    private static int lastIndexOfJavaFiltered(byte[] src, byte[] tgt, int count, int from) {
+        int last = count - 1;
+        int end = from + count;
+        while (end > last) {
+            int start = Math.max(last, end - 256);
+            if (indexOf(src, tgt[last] & 0xff, start, end) >= 0) {
+                return lastIndexOfJava(src, tgt, count, end - count);
+            }
+            end = start;
+        }
+        return -1;
     }
 
     // Keep native-call setup out of C1's scalar fallback register allocation.

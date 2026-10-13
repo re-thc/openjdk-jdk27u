@@ -31,7 +31,15 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /** Bounded search and equality bridges to StringZilla. */
 final class StringZilla {
-    static final boolean ENABLED = isEnabled();
+    private static final int ENABLED_BIT = 8;
+    private static final int BACKEND_MASK = 7;
+    private static final int CONFIGURATION = initialize();
+    static final boolean ENABLED = (CONFIGURATION & ENABLED_BIT) != 0;
+    private static final int BACKEND = CONFIGURATION & BACKEND_MASK;
+    private static final int SERIAL = 0;
+    private static final int HASWELL = 1;
+    private static final int C1 = 1;
+    private static final int C2 = 4;
     // Keep small inputs on the existing Java / platform intrinsic paths.
     static final int MIN_BYTES = 256;
     // Match the independent native bounds. Exceeding either resumes Java code.
@@ -111,7 +119,42 @@ final class StringZilla {
 
     private StringZilla() {}
 
-    private static native boolean isEnabled();
+    // The selected kernel, including serial-only builds, and the VM enable flag.
+    private static native int initialize();
+
+    // Compilers fold this into their tier; the Java body keeps interpreter routing.
+    @IntrinsicCandidate
+    @ForceInline
+    static int compilerTier() {
+        return 0;
+    }
+
+    // Same-coder reverse gates use the searched prefix length and needle count
+    // in code units, after the public API has normalized fromIndex.
+    @ForceInline
+    static boolean useReverseLatin1(int length, int count) {
+        return BACKEND != SERIAL || compilerTier() != C2
+                || (count > 256 ? ((long)length - count + 1) * count >= 4096 : count >= 32 && length >= 1024);
+    }
+
+    @ForceInline
+    static boolean useReverseUTF16(int length, int count) {
+        int tier = compilerTier();
+        if (tier == 0) {
+            return true;
+        }
+        if (BACKEND == SERIAL && tier == C1) {
+            return count <= 128 || ((long)length - count + 1) * count >= 1024;
+        }
+        return tier != C2 || (BACKEND != SERIAL && BACKEND != HASWELL)
+                || (count > 128 ? ((long)length - count + 1) * count >= 2048 : length >= 512);
+    }
+
+    // Isolate C1's native address setup from the surrounding scalar loop.
+    @DontInline
+    static int rfindUTF16C1(byte[] src, int length, byte[] tgt, int count) {
+        return rfindUTF16(src, 0, length << 1, tgt, count << 1);
+    }
 
     // Chunk boundaries provide safepoint polls without retaining heap addresses.
     // Source ranges use bytes; mixed-coder needle counts use Latin-1 code units.

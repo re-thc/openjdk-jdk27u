@@ -109,6 +109,8 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 
 bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   switch (id) {
+  case vmIntrinsics::_stringzillaCompilerTier:
+    return true;
 #if defined(AMD64) || defined(AARCH64)
   case vmIntrinsics::_equalsL:
   case vmIntrinsics::_equalsLChecked:
