@@ -1,0 +1,165 @@
+name: ZIP Windows qualification
+on:
+  push:
+    branches: [pr/zlib-ng-windows-qualification]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: zip-platform-qualification-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  prepare:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: ./.github/actions/build-jtreg
+  qualify:
+    needs: prepare
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        debug: [release, fastdebug]
+        platform: [windows-x64, windows-aarch64]
+        include:
+          - platform: windows-x64
+            runner: windows-2025
+            architecture: x86.x64
+            profile: bin/configure-dev
+            toolchain: --with-toolchain-version=2026 --with-msvc-toolset-version=14.44
+          - platform: windows-aarch64
+            runner: windows-11-arm
+            architecture: ARM64
+            profile: configure
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      CHERE_INVOKING: 1
+      MSYS2_PATH_TYPE: minimal
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Locate Windows CMake
+        id: cmake
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $cmake = (Get-Command cmake -ErrorAction Stop).Source.Replace('\', '/')
+          "path=$cmake" >> $env:GITHUB_OUTPUT
+      - uses: ./.github/actions/get-msys2
+        if: runner.os == 'Windows'
+        with:
+          architecture: ${{ matrix.architecture }}
+      - name: Install macOS build tools
+        if: runner.os == 'macOS'
+        run: |
+          brew install autoconf make ccache
+          echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
+          if [[ -n '${{ matrix.xcode }}' ]]; then
+            sudo xcode-select --switch '/Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer'
+          fi
+      - uses: ./.github/actions/get-bootjdk
+        id: bootjdk
+        with:
+          platform: ${{ matrix.platform }}
+      - uses: ./.github/actions/get-jtreg
+        id: jtreg
+      - name: Configure Windows
+        if: runner.os == 'Windows'
+        shell: env /usr/bin/bash --login -eo pipefail {0}
+        env:
+          PATH: ''
+        run: |
+          bash ${{ matrix.profile }} --with-conf-name=zip --with-debug-level=${{ matrix.debug }} \
+            --with-boot-jdk='${{ steps.bootjdk.outputs.path }}' \
+            --with-jtreg='${{ steps.jtreg.outputs.path }}' \
+            --disable-desktop --enable-headless-only \
+            --enable-jvm-feature-serialgc --enable-jvm-feature-g1gc --enable-jvm-feature-zgc \
+            --disable-jvm-feature-parallelgc --disable-jvm-feature-shenandoahgc --disable-jvm-feature-epsilongc \
+            --with-jmod-compress=zip-1 --with-native-debug-symbols=none \
+            --with-version-opt=zip-platform-${{ github.sha }} \
+            CMAKE='${{ steps.cmake.outputs.path }}' ${{ matrix.toolchain }}
+      - name: Configure macOS
+        if: runner.os == 'macOS'
+        run: |
+          bash ${{ matrix.profile }} --with-conf-name=zip --with-debug-level=${{ matrix.debug }} \
+            --with-boot-jdk='${{ steps.bootjdk.outputs.path }}' \
+            --with-jtreg='${{ steps.jtreg.outputs.path }}' \
+            --disable-desktop --enable-headless-only \
+            --enable-jvm-feature-serialgc --enable-jvm-feature-g1gc --enable-jvm-feature-zgc \
+            --disable-jvm-feature-parallelgc --disable-jvm-feature-shenandoahgc --disable-jvm-feature-epsilongc \
+            --with-jmod-compress=zip-1 --with-native-debug-symbols=none \
+            --with-version-opt=zip-platform-${{ github.sha }}
+      - name: Build and record target
+        run: |
+          mkdir -p qualification
+          git rev-parse HEAD | tee qualification/source.txt
+          uname -a | tee qualification/host.txt
+          make CONF=zip images LOG=info 2>&1 | tee qualification/build.log
+          cp build/zip/spec.gmk qualification/
+          build/zip/images/jdk/bin/java -version 2>&1 | tee qualification/jdk.txt
+      - name: ZIP, checksum, ABI, AOT and zipfs jtreg
+        run: |
+          make CONF=zip test TEST="test/hotspot/jtreg/compiler/intrinsics/zip test/jdk/java/util/zip test/jdk/jdk/nio/zipfs" \
+            JTREG="VERBOSE=fail,error,time" 2>&1 | tee qualification/jtreg.log
+      - name: GC and JNI checks across compilation tiers
+        run: |
+          for gc in UseSerialGC UseG1GC UseZGC; do
+            make CONF=zip test TEST="test/hotspot/jtreg/compiler/intrinsics/zip/TestZlibNG.java test/hotspot/jtreg/compiler/intrinsics/zip/TestZlibNGAdler32.java" \
+              JTREG="VERBOSE=fail,error,time;JAVA_OPTIONS=-XX:+$gc -Xcheck:jni" \
+              2>&1 | tee "qualification/jtreg-$gc.log"
+          done
+      - name: Save qualified image
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: build/zip/images/jdk
+          key: zip-platform-v1-${{ matrix.platform }}-${{ matrix.debug }}-f789efd867ff68a2f14f888248951a13f41eb451
+      - name: Same-image checksum and ZIP overhead measurements
+        if: matrix.debug == 'release'
+        run: python3 .github/scripts/qualify-zip-platform.py build/zip/images/jdk
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: zip-platform-${{ matrix.platform }}-${{ matrix.debug }}
+          path: |
+            qualification
+            build/zip/test-results
+            build/zip/support/native/zlib-ng/configure-output.log
+            build/zip/support/native/zlib-ng/configure.log
+            build/zip/support/native/zlib-ng/CMakeCache.txt
+          retention-days: 14
+  read-results:
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Download completed macOS ARM evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 38455925680 --repo re-thc/openjdk-jdk27u \
+            --name zip-platform-macos-aarch64-release --dir work/results
+      - name: Print measurements and source provenance
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('work/results')
+          for path in root.rglob('cpu.txt'):
+              print('CPU', path.read_text())
+          for path in root.rglob('source.txt'):
+              print('SOURCE', path.read_text())
+          for path in sorted(root.rglob('*.json')):
+              if path.name in ('dependencies.json', 'commands.json'):
+                  continue
+              data = json.loads(path.read_text())
+              if not isinstance(data, list):
+                  continue
+              for row in data:
+                  metric = row['primaryMetric']
+                  print(json.dumps({'file': path.name, 'benchmark': row['benchmark'],
+                      'params': row.get('params', {}), 'score': metric['score'],
+                      'error': metric['scoreError'], 'unit': metric['scoreUnit']}))
+          PY
