@@ -220,14 +220,15 @@ jobs:
       - name: 'Probe the previous successful image'
         env:
           GH_TOKEN: ${{ github.token }}
-          BASE_SHA: ${{ github.event.before }}
+          BASE_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           set -euo pipefail
-          run=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$BASE_SHA&event=pull_request&status=success" --jq '.workflow_runs[0].id // empty')
-          if [[ -z $run ]]; then
+          baseline=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?branch=$BASE_BRANCH&event=pull_request&status=success" --jq '.workflow_runs[0] // empty | [.id, .head_sha] | @tsv')
+          if [[ -z $baseline ]]; then
             echo 'No previous successful image is available.'
             exit 0
           fi
+          read -r run BASE_SHA <<< "$baseline"
           if ! gh run download "$run" --name bundles-linux-x64 --dir "$RUNNER_TEMP/regex-reference"; then
             echo 'Previous image artifacts have expired.'
             exit 0
