@@ -27,7 +27,9 @@ at Java class initialization. Bootstrap equality has a VM-owned scalar fallback.
 
 Search dispatch starts at 256 source bytes. Short ranges and immediate matches
 retain inexpensive Java/platform paths. Equality has separate length and prefix
-checks. Individual intrinsics can be disabled with
+checks. C1 compiles the mixed-coder Java search loop separately from the
+acceleration branch, including the fallback for needles over 64 code units.
+Individual intrinsics can be disabled with
 `-XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=...`: search bridges use
 `_stringzilla*` names; equality uses `_equalsL`, the checked alias
 `_equalsLChecked`, and `_stringzillaEqualsRange`. Disabling `_equalsL` also
@@ -104,7 +106,8 @@ The 28 upstream files come from StringZilla 5.2.0 at commit
 `82e15261d0a723e7bb97a03abd61641953fd45c0`, licensed under Apache-2.0.
 One [tracked patch](../../src/java.base/share/native/libjava/stringzilla/patches/0001-preserve-reverse-search-overlaps.patch)
 preserves overlapping suffix candidates after a rejected long-needle prefix in
-reverse search. The other 27 files are unmodified.
+reverse search and skips impossible prefixes using the upstream byte-search
+primitive. The other 27 files are unmodified.
 [UPSTREAM.json](../../src/java.base/share/native/libjava/stringzilla/UPSTREAM.json)
 records upstream, patch and patched-file SHA-256 hashes;
 [the shipped notice](../../src/java.base/share/legal/stringzilla.md)
@@ -127,9 +130,9 @@ functional and tier-specific performance checks before changing dispatch gates.
 
 ## Validation and benchmarks
 
-Local release jtreg validation passed **163 tests, zero failures/errors**:
+Local release jtreg validation passed **188 tests, zero failures/errors**:
 String (96), StringBuilder (16), StringBuffer (25), HotSpot string intrinsics (24),
-and LoggerFinder (2). Two other HotSpot tests retain platform exclusions. Clean
+and LoggerFinder (27). Two other HotSpot tests retain platform exclusions. Clean
 GCC 14 release/CDS
 and fastdebug builds use the fork development profile. Ten targeted fastdebug
 tests passed. Nine targeted tests passed with final GCC 16 kernels and AVX2
@@ -144,6 +147,8 @@ work limit, unaligned long-needle search and repeated-suffix overlaps
 independently of Java gates.
 AArch64/QEMU covers executable serial/NEON backends and repeated-suffix
 overlaps in the interpreter, C1, C2, JNI fallback and opt-out paths.
+The full bounded-search suite also passed under AArch64 C1 after outlining the
+mixed-coder scalar loop.
 Native ASan/UBSan passed with alignment checks enabled. GCC 16 kernels also
 passed the string-search, literal-replacement and logger tests.
 
@@ -153,7 +158,7 @@ make CONF=cloud test \
   'JTREG=JOBS=2;TIMEOUT_FACTOR=4'
 ```
 
-See [BENCHMARKS.md](BENCHMARKS.md) for measured improvements, complete controls,
+See [BENCHMARKS.md](BENCHMARKS.md) for measured performance, complete controls,
 confidence intervals and reproduction. CI results are reported by the PR checks;
 local validation does not replace them. ARM hardware timing, a local MSVC build,
 full local tier1/tier2 and whole-JDK sanitizers have not been run.

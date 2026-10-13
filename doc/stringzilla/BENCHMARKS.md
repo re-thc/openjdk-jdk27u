@@ -1,88 +1,137 @@
 # StringZilla benchmarks
 
-These measurements compare the final implementation with StringZilla disabled
-and with the original Java search helpers. They include portable scalar loads,
-the overlapping reverse-search fix and the strengthened UTF-16 candidate filter.
-The earlier 23–27× result compared two enabled revisions; it is preserved in
-[the historical report](measurements/BOUNDED_BENCHMARKS.md).
+The final-code matrix contains **53 distinct workloads**. All 53 run with AVX2;
+16 representative workloads also run with serial and AVX-512 dispatch. Each uses
+interpreter, C1 and C2 with enabled, disabled and original-Java controls: **255
+control triplets, 765 measurements and 1,530 isolated JVM forks**.
+
+The matrix includes:
+
+* UTF-16 reverse search with 64-code-unit needles, a mismatch near either end,
+  and repeated-prefix lengths of 512 and 4096. The appended odd-byte occurrence
+  makes the actual haystacks 577 and 4161 code units. It also retains the
+  256-code-unit mismatch, 129-code-unit UTF-16 and 257-byte Latin-1 overlapping matches, and crossed-byte cases.
+* Short searches and misses below, at and above the 256-source-byte gate:
+  Latin-1 lengths 255/256/257 and UTF-16 lengths 127/128/129, plus 4- and 32-code-unit
+  inputs and immediate forward matches.
+* Latin-1 forward/reverse search, a 64-code-unit Latin-1 needle, UTF-16 forward
+  search, and mixed-coder forward/reverse needles of 64 and 65 code units. The
+  latter exercises the Java fallback beyond the widening limit.
+* Equality on distinct strings constructed from separate character arrays:
+  4/8/9/32-code-unit and threshold equal inputs and 4096-code-unit equal, first-mismatch and
+  last-mismatch inputs, for both Latin-1 and UTF-16.
+* `StringBuilder`, `StringBuffer` and character-search callers.
+
+[The manifest](coverage-cases.tsv) specifies every operation, size, coder,
+position, needle and backend. The serial subset includes short/threshold cases,
+64- and 256-code-unit needles, overlapping matches, Latin-1/mixed search and
+equality; it is not an extrapolation from vector results.
 
 ## Method
 
 AMD EPYC 9V74, x86-64 Linux, CPU 0 pinned, JMH 1.37 average time in ns/op.
 Production StringZilla kernels use GCC 16.0.1 (Ubuntu 16-20260322-1ubuntu1);
 the VM and other native objects use GCC 14.2.0 release builds with the fork
-development profile. This is a GCC 16 kernel integration measurement, not a
-full GCC 16 VM build. All controls use the same image with four-byte object
-headers enabled by default.
+development profile. This measures GCC 16 kernels in the GCC 14 image, not a
+full GCC 16 VM build. All controls use the same post-merge image with default
+four-byte object headers, portable scalar loads, the overlapping reverse-search
+fix, first-byte prefix filter, strengthened UTF-16 candidate filter and separate C1 mixed scalar loop.
 
-Each of the 54 cases uses two isolated forks, three 500 ms warmups and five
-500 ms measurements per fork. Runs are sequential with no concurrent builds or
-tests, one active processor, Serial GC and CDS disabled. Interpreter uses
-`-Xint`, C1 uses `-XX:TieredStopAtLevel=1`, and C2 uses `-XX:-TieredCompilation`.
-`UseAVX=2` selects AVX2 kernels; `UseAVX=3` selects AVX-512 on this machine.
+Each measurement uses two forks, three 500 ms warmups and five 500 ms measurement
+iterations per fork. Runs are sequential, with no concurrent builds or tests,
+one active processor, Serial GC and CDS disabled. The three controls are
+interleaved for each workload, with rotating order. Interpreter uses `-Xint`,
+C1 uses `-XX:TieredStopAtLevel=1`, and C2 uses `-XX:-TieredCompilation`.
 
 * **Enabled:** `-XX:+UseStringZillaIntrinsics`.
 * **Disabled:** `-XX:-UseStringZillaIntrinsics`, retaining the fork's Java gates.
-* **Original Java:** the same disabled VM with unmodified `StringLatin1` and
-  `StringUTF16` from base revision `87edd79d3104ff502f7befec034716b081436f49`
-  compiled into a `java.base` patch. This isolates the original search bodies;
-  it is not a pristine whole-JDK build.
+* **Original Java:** the disabled VM with unmodified `StringLatin1` and
+  `StringUTF16` from base revision `87edd79d3104ff502f7befec034716b081436f49`,
+  compiled into a `java.base` patch. This isolates the original helper bodies;
+  it is not a pristine whole-JDK build. Existing C2 forward/equality intrinsics
+  remain available in this control.
 
-`StringZillaLongNeedle.lastIndexOf` validates every fixture against an independent
-scalar model before timing:
-
-| Fixture | Haystack code units | Needle code units | Expected result |
-| --- | ---: | ---: | ---: |
-| Near-end mismatch and odd-byte occurrence (`NEAR_END`) | 4353 | 256 | -1 |
-| Repeated suffix after a complete match (`OVERLAP`) | 642 | 129 (258 bytes) | 0 |
-| Crossed-byte short-needle control (`CROSSED`) | 4101 | 4 | -1 |
+`UseAVX=0`, `2` and `3` select serial, AVX2 and AVX-512 StringZilla dispatch on
+this machine. Serial dispatch is measured in the same GCC image; it does not
+qualify MSVC performance or a machine without AVX. Setup checks search results
+against independent scalar models and equality against character-array content
+before timing in every fork.
 
 ## Results
 
-Means include the JMH 99.9% confidence half-width. Ratios are control / enabled;
-values below 1 denote a slower enabled mean. Every case in this selected matrix
-is included. [Raw measurements](measurements/long-needle-results.json) preserve
-all iteration samples, JVM arguments, compiler flags and artifact/source hashes.
+Representative original-Java / enabled mean ratios are shown below. Sizes
+are code units (haystack / needle for search). Values below 1 indicate slower
+enabled means; the complete tables provide uncertainty and disabled controls.
 
-### AVX2
+| Backend | Workload | Interpreter | C1 | C2 |
+| --- | --- | ---: | ---: | ---: |
+| avx2 | Latin-1 forward miss, 32 / 4 | 0.95× | 0.97× | 0.91× |
+| avx2 | UTF-16 reverse miss, 128 / 4 | 12.06× | 2.76× | 0.63× |
+| avx2 | UTF-16 reverse, near-end mismatch, 577 / 64 | 167.98× | 14.36× | 4.78× |
+| avx2 | UTF-16 reverse, near-end mismatch, 4161 / 64 | 740.20× | 20.57× | 7.01× |
+| avx2 | UTF-16 reverse, near-start mismatch, 4161 / 64 | 2565.23× | 32.68× | 12.44× |
+| avx2 | Latin-1 reverse miss, 4096 / 4 | 70.46× | 17.58× | 3.25× |
+| avx2 | Mixed reverse miss, 4096 / 64 | 207.67× | 9.83× | 1.42× |
+| avx2 | Mixed reverse miss, 4096 / 65 | 0.96× | 1.67× | 1.00× |
+| avx2 | Mixed forward miss, 4096 / 65 | 1.09× | 1.00× | 1.00× |
+| avx2 | Latin-1 equality, 4096 | 244.37× | 40.17× | 0.72× |
+| avx2 | UTF-16 equality, 4096 | 351.78× | 41.31× | 1.00× |
+| serial | UTF-16 reverse, near-end mismatch, 4161 / 64 | 741.20× | 18.35× | 6.17× |
+| serial | UTF-16 reverse, overlapping match, 642 / 129 | 4837.30× | 85.86× | 37.04× |
+| serial | Latin-1 reverse, overlapping match, 770 / 257 | 1557.36× | 184.01× | 49.95× |
+| serial | UTF-16 reverse miss, 128 / 4 | 7.83× | 0.54× | 0.10× |
+| serial | Latin-1 reverse miss, 4096 / 4 | 16.11× | 1.98× | 0.36× |
+| serial | Latin-1 equality, 4096 | 263.56× | 4.90× | 1.10× |
+| avx512 | UTF-16 reverse, near-end mismatch, 4161 / 64 | 813.15× | 21.17× | 7.21× |
+| avx512 | Latin-1 equality, 4096 | 227.47× | 50.43× | 0.96× |
 
-| Fixture | Tier | Original Java (ns/op) | Disabled (ns/op) | Enabled (ns/op) | Original / enabled | Disabled / enabled |
-| --- | --- | ---: | ---: | ---: | ---: | ---: |
-| Near-end miss | Interpreter | 460,328.24 ± 22,331.11 | 475,919.96 ± 30,272.28 | 1,519.75 ± 41.85 | 302.90× | 313.16× |
-| Near-end miss | C1 | 7,616.15 ± 453.53 | 7,128.79 ± 396.75 | 1,010.36 ± 18.02 | 7.54× | 7.06× |
-| Near-end miss | C2 | 2,495.47 ± 251.27 | 3,237.13 ± 881.23 | 1,017.19 ± 34.05 | 2.45× | 3.18× |
-| Repeated-suffix match | Interpreter | 4,314,745.29 ± 108,232.67 | 4,315,818.94 ± 91,600.19 | 952.81 ± 54.31 | 4528.43× | 4529.55× |
-| Repeated-suffix match | C1 | 60,005.70 ± 1,779.62 | 50,819.99 ± 1,835.27 | 730.20 ± 93.51 | 82.18× | 69.60× |
-| Repeated-suffix match | C2 | 19,450.75 ± 309.29 | 21,503.13 ± 3,001.02 | 694.16 ± 41.33 | 28.02× | 30.98× |
-| Crossed-byte control | Interpreter | 142,427.28 ± 5,969.68 | 155,282.01 ± 9,618.02 | 656.77 ± 29.65 | 216.86× | 236.43× |
-| Crossed-byte control | C1 | 4,905.76 ± 254.86 | 2,576.43 ± 160.26 | 300.37 ± 6.25 | 16.33× | 8.58× |
-| Crossed-byte control | C2 | 695.87 ± 50.85 | 694.34 ± 38.39 | 290.41 ± 16.15 | 2.40× | 2.39× |
+Interval comparisons across the 255 control triplets:
 
-### AVX-512
+| Control | Enabled interval below control | Overlap | Enabled interval above control |
+| --- | ---: | ---: | ---: |
+| original | 176 | 71 | 8 |
+| disabled | 172 | 77 | 6 |
 
-| Fixture | Tier | Original Java (ns/op) | Disabled (ns/op) | Enabled (ns/op) | Original / enabled | Disabled / enabled |
-| --- | --- | ---: | ---: | ---: | ---: | ---: |
-| Near-end miss | Interpreter | 468,090.02 ± 22,959.54 | 467,730.18 ± 20,888.39 | 888.98 ± 32.18 | 526.55× | 526.14× |
-| Near-end miss | C1 | 7,777.84 ± 542.19 | 7,037.32 ± 391.84 | 364.53 ± 9.76 | 21.34× | 19.31× |
-| Near-end miss | C2 | 2,769.42 ± 104.01 | 3,190.28 ± 860.97 | 376.18 ± 18.80 | 7.36× | 8.48× |
-| Repeated-suffix match | Interpreter | 4,361,690.93 ± 194,510.93 | 4,292,977.22 ± 153,885.23 | 299.23 ± 7.99 | 14576.39× | 14346.76× |
-| Repeated-suffix match | C1 | 60,972.70 ± 3,107.61 | 50,368.27 ± 1,795.68 | 49.70 ± 2.77 | 1226.87× | 1013.49× |
-| Repeated-suffix match | C2 | 21,036.82 ± 1,920.65 | 19,853.62 ± 619.25 | 48.34 ± 2.68 | 435.15× | 410.68× |
-| Crossed-byte control | Interpreter | 141,860.84 ± 4,905.04 | 146,843.45 ± 2,841.66 | 651.34 ± 38.93 | 217.80× | 225.45× |
-| Crossed-byte control | C1 | 4,755.61 ± 104.69 | 2,623.69 ± 204.10 | 303.36 ± 9.18 | 15.68× | 8.65× |
-| Crossed-byte control | C2 | 678.50 ± 9.30 | 671.19 ± 21.55 | 300.59 ± 21.34 | 2.26× | 2.23× |
+Searches beyond the mixed-coder widening limit remain on Java. Existing C2
+forward-search/equality paths and short-input gates are measured as controls,
+not counted as universal acceleration.
 
-For each measured case, the enabled 99.9% interval lies below both control
-intervals. These results cover the selected x86 workloads and both executable SIMD
-backends. They do not establish zero regressions for every workload or processor.
-ARM hardware performance remains unmeasured; QEMU provides functional coverage.
+The higher enabled intervals include material serial-dispatch costs. The
+UTF-16 reverse miss at 128 code units takes 284 ns in C1 versus 153 ns original
+and 89 ns disabled, and 287 ns in C2 versus 28 ns original and 30 ns disabled.
+Serial C2 Latin-1 reverse misses take 133 ns at length 256 versus 49/52 ns
+original/disabled, and 1889 ns at length 4096 versus 686/685 ns.
+
+With AVX2, C2 UTF-16 reverse misses at lengths 128 and 129 take about 48 ns
+versus 27–30 ns for the controls. C2 Latin-1 equality at length 4096 takes
+71 ns versus 51 ns original and 71 ns disabled; the latter intervals overlap.
+The four-code-unit mixed-coder forward miss in the interpreter takes 270 ns
+versus 250 ns original and 268 ns disabled. These are remaining performance
+limitations, even though many longer searches and interpreter/C1 equality
+cases improve. Raising the shared search gate would also affect the measured
+interpreter/C1 gains; these results do not establish one optimal gate for
+every tier and backend.
+
+[Complete tables](measurements/COVERAGE_BENCHMARKS.md) include all 255 triplets,
+means, JMH 99.9% confidence intervals, both speedup ratios and slower cases.
+[Raw measurements](measurements/coverage-results.json) preserve all iteration
+samples, parameters, JVM options, compiler flags and source/artifact hashes.
+A ratio below 1 means the enabled mean was slower. Non-overlapping intervals
+are a descriptive comparison; overlapping intervals do not prove equivalence.
+
+These measurements cover the stated workloads on one x86 cloud host. They do
+not establish zero regressions for every workload or processor. ARM hardware
+performance and MSVC performance remain unmeasured. QEMU supplies functional
+ARM coverage; JNI fallback has functional tests rather than a separate timing
+matrix.
 
 ## Reproduction
 
-Build the JMH classes and generated harnesses for
-`test/micro/org/openjdk/bench/java/lang/StringZillaLongNeedle.java` with JMH 1.37,
-or use the OpenJDK microbenchmark build. Set `JMH_CLASSPATH` to those classes and
-the JMH dependencies. Build the original Java helper control from the base:
+Build the classes and generated JMH harnesses for both
+`test/micro/org/openjdk/bench/java/lang/StringZillaSearch.java` and
+`StringZillaLongNeedle.java` with JMH 1.37, or use the OpenJDK microbenchmark
+build. Set `JMH_CLASSPATH` to those classes and the JMH dependencies. Prepare the
+original-Java control:
 
 ```sh
 mkdir -p original-src/java/lang original-classes
@@ -93,13 +142,13 @@ done
     -d original-classes original-src/java/lang/*.java
 ```
 
-Run after all builds and tests finish:
+Run on an x86 host supporting AVX-512 after all builds and tests finish:
 
 ```sh
-doc/stringzilla/run-long-needle-benchmarks.sh "$TEST_JDK" "$JMH_CLASSPATH" original-classes final-avx2 0
-STRINGZILLA_USE_AVX=3 doc/stringzilla/run-long-needle-benchmarks.sh "$TEST_JDK" "$JMH_CLASSPATH" original-classes final-avx512 0
+doc/stringzilla/run-coverage-benchmarks.sh "$TEST_JDK" "$JMH_CLASSPATH" original-classes final-coverage 0
 ```
 
-The [measurement index](measurements/README.md) also retains the earlier feature
-off/on and bounded-implementation datasets with their original validation and
-build metadata. Integration and validation are documented in [README.md](README.md).
+The [measurement index](measurements/README.md) retains the earlier focused run
+and historical datasets. The earlier 23–27× result compared two enabled
+revisions and is not a feature speedup against original Java. Integration and
+functional validation are documented in [README.md](README.md).

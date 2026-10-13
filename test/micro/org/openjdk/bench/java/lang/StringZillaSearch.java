@@ -96,6 +96,25 @@ public class StringZillaSearch {
         equalityValue = new String(equalityChars);
         builder = new StringBuilder(value);
         buffer = new StringBuffer(value);
+        int first = scalarIndexOf(chars, target, false);
+        int last = scalarIndexOf(chars, target, true);
+        if (value.indexOf(needle) != first || value.lastIndexOf(needle) != last
+                || builder.indexOf(needle) != first || buffer.indexOf(needle) != first
+                || value.indexOf(ch) != scalarIndexOf(chars, new char[] {(char)ch}, false)
+                || value.lastIndexOf(ch) != scalarIndexOf(chars, new char[] {(char)ch}, true)
+                || value.equals(equalityValue) != java.util.Arrays.equals(chars, equalityChars)) {
+            throw new AssertionError("Invalid search or equality fixture");
+        }
+    }
+
+    private static int scalarIndexOf(char[] chars, char[] target, boolean reverse) {
+        int limit = chars.length - target.length;
+        for (int i = reverse ? limit : 0; i >= 0 && i <= limit; i += reverse ? -1 : 1) {
+            int j = 0;
+            while (j < target.length && chars[i + j] == target[j]) j++;
+            if (j == target.length) return i;
+        }
+        return -1;
     }
 
     @Benchmark public boolean equals() { return value.equals(equalityValue); }
