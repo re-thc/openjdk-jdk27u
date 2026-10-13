@@ -9,7 +9,7 @@ The [applicability audit](applicability.csv) covers all 391 C2 dispatch IDs:
 entries, 82 existing Java-body integrations, and the remaining exclusions or
 operations that require separate lowering. Base64/Unicode, decimal conversion,
 String search/equality, regex and ZIP/Adler32 remain within PRs #2–#6.
-Object-layout changes remain within PR #8.
+Object headers and field offsets follow the layouts provided by the base branch.
 
 ## Integration
 
@@ -34,14 +34,16 @@ the appropriate signedness.
 
 Leaves validate array types, ranges, receiver layouts, capacities and overlap
 before obtaining raw addresses or writing. Receiver fields are resolved against
-their declaring bootstrap class and cached with acquire/release publication.
+their declaring bootstrap class using allocation-free metadata decoding and
+cached with acquire/release publication.
 Array bases and field offsets use VM layout helpers.
 
 Leaves allocate no objects or handles, raise no exceptions and never safepoint.
 Work is bounded to 1,048,576 elements, 65,536 hash elements, 2,048 quadratic
 arithmetic limbs or 512 Montgomery limbs. In-place shifts use only the safe
 primitive-worker shapes: destination index 0 for left shift and 1 for right
-shift. Other aliases retain Java traversal semantics.
+shift. Other aliases retain Java traversal semantics. Parallel Keccak calls
+with repeated state arrays also retain the sequential Java implementation.
 
 ## Fallback and availability
 
@@ -50,13 +52,16 @@ results. The interpreter resumes the original Java entry. C1 preserves the
 invocation state and deoptimizes with forced reexecution. It materializes that
 state before loading fixed registers or writing outgoing arguments. Guarded
 method-handle targets are parsed as Java methods to retain a valid reexecution
-point. After the first predicate failure, the root caller's trap history makes
-subsequent C1 compilations retain Java for its guarded common operations,
-preventing repeated input-dependent deoptimization.
+point. A failed guard records the bytecode site in its actual Java scope,
+including inlined methods and level-1 compilations. Subsequent C1 compilations
+retain Java at that site while other guarded operations remain accelerated.
 
 Existing intrinsic flags, CPU checks, JVMTI interpreter-only mode and safepoint
-polling remain in force. Compiler stubs are generated during VM initialization
-when enabled interpreter entries require them, including `-Xint`.
+polling remain in force. Methods containing breakpoints use the ordinary
+interpreter even when only JVMTI Breakpoint events are enabled.
+Compiler stubs are generated during VM initialization when enabled interpreter
+entries require them, including `-Xint`. Unused Base64 stubs and the x86 SIMD
+sort library are skipped when compilation is disabled.
 Interpreter entries check generator CPU predicates before stubs exist; C1
 checks the generated stub slots. Unsupported backends retain Java directly.
 AArch64 omits AES-ECB, P-256 multiplication/assignment and four-way Keccak
