@@ -59,9 +59,11 @@ retain Java at that site while other guarded operations remain accelerated.
 Existing intrinsic flags, CPU checks, JVMTI interpreter-only mode and safepoint
 polling remain in force. Methods containing breakpoints use the ordinary
 interpreter even when only JVMTI Breakpoint events are enabled.
-Compiler stubs are generated during VM initialization when enabled interpreter
-entries require them, including `-Xint`. Unused Base64 stubs and the x86 SIMD
-sort library are skipped when compilation is disabled.
+Compiler stubs are generated when a class containing an enabled common leaf
+intrinsic is linked after bootstrap, including in `-Xint`. Publication is
+serialized with C2 initialization. Early interpreter calls use Java until the
+stubs are ready; leaf adapters never initialize them. Unused Base64 stubs and
+the x86 SIMD sort library are skipped when compilation is disabled.
 Interpreter entries check generator CPU predicates before stubs exist; C1
 checks the generated stub slots. Unsupported backends retain Java directly.
 AArch64 omits AES-ECB, P-256 multiplication/assignment and four-way Keccak

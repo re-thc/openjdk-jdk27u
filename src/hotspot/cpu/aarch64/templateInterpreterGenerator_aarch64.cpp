@@ -1013,6 +1013,11 @@ address TemplateInterpreterGenerator::generate_common_intrinsic_entry(vmIntrinsi
     __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
     return entry;
   }
+  if (CommonIntrinsics::needs_compiler_stubs(id)) {
+    __ lea(rscratch1, ExternalAddress(StubRoutines::compiler_stubs_initialized_address()));
+    __ ldarb(rscratch2, rscratch1);
+    __ cbz(rscratch2, slow_path);
+  }
   // Arguments stay on the expression stack so the Java fallback can reuse them.
   __ mov(c_rarg0, esp);
   __ stp(rscratch2, lr, Address(__ pre(sp, -2 * wordSize)));

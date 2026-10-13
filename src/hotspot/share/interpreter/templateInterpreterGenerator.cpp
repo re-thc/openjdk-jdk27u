@@ -240,10 +240,11 @@ void TemplateInterpreterGenerator::generate_all() {
 
 #if defined(AMD64) || defined(AARCH64)
   if (CommonIntrinsics::enabled() && InlineIntrinsics) {
+    CodeletMark cm(_masm, "common intrinsic entry points");
     for (int i = 1; i < static_cast<int>(vmIntrinsics::ID_LIMIT); i++) {
       vmIntrinsics::ID id = vmIntrinsics::ID_from(i);
       if (CommonIntrinsics::is_available_for_interpreter(id) && vmIntrinsics::is_intrinsic_available(id)) {
-        CodeletMark cm(_masm, vmIntrinsics::name_at(id));
+        __ align(CodeEntryAlignment);
         Interpreter::_common_entry_table[i] = generate_common_intrinsic_entry(id);
       }
     }

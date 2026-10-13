@@ -536,6 +536,11 @@ address TemplateInterpreterGenerator::generate_common_intrinsic_entry(vmIntrinsi
     __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
     return entry;
   }
+  if (CommonIntrinsics::needs_compiler_stubs(id)) {
+    __ lea(rscratch1, ExternalAddress(StubRoutines::compiler_stubs_initialized_address()));
+    __ cmpb(Address(rscratch1, 0), 0);
+    __ jcc(Assembler::equal, slow_path);
+  }
   __ lea(c_rarg0, Address(rsp, wordSize));
   __ super_call_VM_leaf(CommonIntrinsics::entry_for(id), c_rarg0);
   __ mov64(rscratch1, CommonIntrinsics::fallback);

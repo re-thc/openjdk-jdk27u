@@ -29,6 +29,7 @@
 #include "runtime/atomicAccess.hpp"
 #include "runtime/commonIntrinsics.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
@@ -921,12 +922,22 @@ bool CommonIntrinsics::enabled() {
 #endif
 }
 
-bool CommonIntrinsics::needs_compiler_stubs() {
+bool CommonIntrinsics::needs_compiler_stubs(vmIntrinsics::ID id) {
 #ifdef COMPILER2
-  return enabled();
+  return enabled() && !is_scalar(id) && id != vmIntrinsics::_vectorizedHashCode &&
+         id != vmIntrinsics::_vectorizedHashCodeLeaf && entry_for(id) != nullptr;
 #else
   return false;
 #endif
+}
+
+void CommonIntrinsics::prepare(vmIntrinsics::ID id) {
+  // Linking can allocate and block; the interpreter and C1 leaf adapters cannot.
+  // Bootstrap calls retain the Java fallback until the stubs are published.
+  if (is_init_completed() && needs_compiler_stubs(id) &&
+      is_available_for_interpreter(id) && vmIntrinsics::is_intrinsic_available(id)) {
+    StubRoutines::ensure_compiler_stubs_initialized();
+  }
 }
 
 bool CommonIntrinsics::is_scalar(vmIntrinsics::ID id) {
@@ -1035,8 +1046,11 @@ bool CommonIntrinsics::is_available_for_interpreter(vmIntrinsics::ID id) {
   return true;
 }
 
-// C1 runs after compiler-stub generation and can check actual backend slots.
+// Acquire the completed stub publication before inspecting backend slots.
 bool CommonIntrinsics::is_available_for_c1(vmIntrinsics::ID id) {
+  if (needs_compiler_stubs(id) && !StubRoutines::compiler_stubs_initialized()) {
+    return false;
+  }
   if (!is_supported(id)) {
     return false;
   }

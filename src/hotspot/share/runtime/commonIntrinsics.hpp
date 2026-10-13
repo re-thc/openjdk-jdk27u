@@ -131,7 +131,8 @@ class CommonIntrinsics : AllStatic {
   // so min_jlong cannot be confused with a successful result.
   static constexpr jlong fallback = min_jlong;
   static bool enabled();
-  static bool needs_compiler_stubs();
+  static bool needs_compiler_stubs(vmIntrinsics::ID id);
+  static void prepare(vmIntrinsics::ID id);
   static bool is_scalar(vmIntrinsics::ID id);
   static bool is_binary_scalar(vmIntrinsics::ID id);
   static bool scalar_is_wide(vmIntrinsics::ID id);

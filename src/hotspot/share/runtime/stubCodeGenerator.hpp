@@ -91,6 +91,7 @@ class StubCodeDesc: public CHeapObj<mtCode> {
     _stub_id = stub_id;
   };
 
+  static bool is_frozen() { return _frozen; }
   static void freeze();
   static void unfreeze();
 
