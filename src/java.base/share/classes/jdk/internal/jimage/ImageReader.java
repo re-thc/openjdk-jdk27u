@@ -199,6 +199,26 @@ public final class ImageReader implements AutoCloseable {
     }
 
     /**
+     * Returns whether a directory exists in the given module.
+     *
+     * <p>This is equivalent to checking that:
+     * <pre>{@code
+     * findNode("/modules/" + moduleName + "/" + dirPath)
+     * }</pre>
+     * is a directory, but more performant, and will not create or cache new
+     * nodes.
+     *
+     * @param moduleName The module name of the directory being tested for.
+     * @param dirPath Trailing module-relative directory path, not starting
+     *     with {@code '/'}.
+     */
+    public boolean containsDirectory(String moduleName, String dirPath)
+            throws IOException {
+        ensureOpen();
+        return reader.containsDirectory(moduleName, dirPath);
+    }
+
+    /**
      * Returns a copy of the content of a resource node. The buffer returned by
      * this method is not cached by the node, and each call returns a new array
      * instance.
@@ -539,6 +559,17 @@ public final class ImageReader implements AutoCloseable {
                 loc = findLocation(moduleName, resourcePath);
             }
             return loc != null && loc.getType() == RESOURCE;
+        }
+
+        /**
+         * Returns whether a directory exists in the given module.
+         */
+        boolean containsDirectory(String moduleName, String dirPath) {
+            if (moduleName.indexOf('/') >= 0) {
+                throw new IllegalArgumentException("invalid module name: " + moduleName);
+            }
+            ImageLocation loc = findLocation(MODULES_PREFIX + "/" + moduleName + "/" + dirPath);
+            return loc != null && loc.getType() == MODULES_DIR;
         }
 
         /**

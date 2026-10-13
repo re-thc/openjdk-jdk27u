@@ -25,10 +25,8 @@
 
 package java.util;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -43,7 +41,9 @@ import java.util.stream.StreamSupport;
 import sun.nio.cs.UTF_8;
 
 import jdk.internal.loader.BootLoader;
+import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.ClassLoaders;
+import jdk.internal.loader.Resource;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
@@ -990,7 +990,7 @@ public final class ServiceLoader<S>
         static final String PREFIX = "META-INF/services/";
 
         Set<String> providerNames = new HashSet<>();  // to avoid duplicates
-        Enumeration<URL> configs;
+        Enumeration<Resource> configs;
         Iterator<String> pending;
 
         Provider<T> nextProvider;
@@ -1000,55 +1000,74 @@ public final class ServiceLoader<S>
 
         /**
          * Parse a single line from the given configuration file, adding the
-         * name on the line to set of names if not already seen.
+         * name on the line to the names if not already seen.
          */
-        private int parseLine(URL u, BufferedReader r, int lc, Set<String> names)
-            throws IOException
-        {
-            String ln = r.readLine();
-            if (ln == null) {
-                return -1;
-            }
+        private void parseLine(Resource res, String ln, int lc, List<String> names) {
             int ci = ln.indexOf('#');
             if (ci >= 0) ln = ln.substring(0, ci);
             ln = ln.trim();
             int n = ln.length();
             if (n != 0) {
                 if ((ln.indexOf(' ') >= 0) || (ln.indexOf('\t') >= 0))
-                    fail(service, u, lc, "Illegal configuration-file syntax");
+                    fail(service, res.getURL(), lc, "Illegal configuration-file syntax");
                 int cp = ln.codePointAt(0);
                 if (!Character.isJavaIdentifierStart(cp))
-                    fail(service, u, lc, "Illegal provider-class name: " + ln);
+                    fail(service, res.getURL(), lc, "Illegal provider-class name: " + ln);
                 int start = Character.charCount(cp);
                 for (int i = start; i < n; i += Character.charCount(cp)) {
                     cp = ln.codePointAt(i);
                     if (!Character.isJavaIdentifierPart(cp) && (cp != '.'))
-                        fail(service, u, lc, "Illegal provider-class name: " + ln);
+                        fail(service, res.getURL(), lc, "Illegal provider-class name: " + ln);
                 }
                 if (providerNames.add(ln)) {
                     names.add(ln);
                 }
             }
-            return lc + 1;
         }
 
         /**
-         * Parse the content of the given URL as a provider-configuration file.
+         * Opens the given provider-configuration file for reading.
          */
-        private Iterator<String> parse(URL u) {
-            Set<String> names = new LinkedHashSet<>(); // preserve insertion order
+        private InputStream open(Resource res) throws IOException {
             try {
-                URLConnection uc = u.openConnection();
-                uc.setUseCaches(false);
-                try (InputStream in = uc.getInputStream();
-                     BufferedReader r
-                         = new BufferedReader(new InputStreamReader(in, UTF_8.INSTANCE)))
-                {
-                    int lc = 1;
-                    while ((lc = parseLine(u, r, lc, names)) >= 0);
+                return res.getInputStream();
+            } catch (IOException x) {
+                URL url = res.getURL();
+                if (res instanceof URLResource || url == null) {
+                    throw x;
                 }
+                // The class loader could not read it, e.g. it is a directory
+                // that a file URL lists. Let the URL decide, as for any loader.
+                return new URLResource(url).getInputStream();
+            }
+        }
+
+        /**
+         * Parse the content of the given resource as a provider-configuration file.
+         */
+        private Iterator<String> parse(Resource res) {
+            List<String> names = new ArrayList<>();
+            String text = null;
+            try (InputStream in = open(res)) {
+                text = new String(in.readAllBytes(), UTF_8.INSTANCE);
             } catch (IOException x) {
                 fail(service, "Error accessing configuration file", x);
+            }
+            // Not with a BufferedReader, which costs more to set up than to read
+            // the few lines of a file. Lines end with \n, \r or \r\n, as for readLine.
+            int lc = 1;
+            int len = text.length();
+            for (int pos = 0; pos < len; lc++) {
+                int end = pos;
+                char c = 0;
+                while (end < len && (c = text.charAt(end)) != '\n' && c != '\r') {
+                    end++;
+                }
+                parseLine(res, text.substring(pos, end), lc, names);
+                pos = end + 1;
+                if (c == '\r' && pos < len && text.charAt(pos) == '\n') {
+                    pos++;
+                }
             }
             return names.iterator();
         }
@@ -1061,17 +1080,21 @@ public final class ServiceLoader<S>
                 try {
                     String fullName = PREFIX + service.getName();
                     if (loader == null) {
-                        configs = ClassLoader.getSystemResources(fullName);
+                        configs = urlResources(ClassLoader.getSystemResources(fullName));
                     } else if (loader == ClassLoaders.platformClassLoader()) {
                         // The platform classloader doesn't have a class path,
                         // but the boot loader might.
                         if (BootLoader.hasClassPath()) {
-                            configs = BootLoader.findResources(fullName);
+                            configs = urlResources(BootLoader.findResources(fullName));
                         } else {
                             configs = Collections.emptyEnumeration();
                         }
+                    } else if (loader instanceof BuiltinClassLoader bcl) {
+                        // read the files through the class loader, which has
+                        // the JAR files of the class path open already
+                        configs = bcl.getMiscResources(fullName);
                     } else {
-                        configs = loader.getResources(fullName);
+                        configs = urlResources(loader.getResources(fullName));
                     }
                 } catch (IOException x) {
                     fail(service, "Error locating configuration files", x);
@@ -1694,6 +1717,61 @@ public final class ServiceLoader<S>
      */
     public String toString() {
         return "java.util.ServiceLoader[" + service.getName() + "]";
+    }
+
+    /**
+     * A provider-configuration file that is read by opening its URL. The
+     * connection does not use caches, so that a JAR file is not kept open.
+     */
+    private static final class URLResource extends Resource {
+        private final URL url;
+
+        URLResource(URL url) {
+            this.url = url;
+        }
+
+        @Override
+        public String getName() {
+            return url.getFile();
+        }
+
+        @Override
+        public URL getURL() {
+            return url;
+        }
+
+        @Override
+        public URL getCodeSourceURL() {
+            return null;
+        }
+
+        @Override
+        public InputStream getInputStream() throws IOException {
+            URLConnection uc = url.openConnection();
+            uc.setUseCaches(false);
+            return uc.getInputStream();
+        }
+
+        @Override
+        public int getContentLength() {
+            return -1;
+        }
+    }
+
+    /**
+     * Returns an enumeration of the resources that are located by the given URLs.
+     */
+    private static Enumeration<Resource> urlResources(Enumeration<URL> urls) {
+        return new Enumeration<>() {
+            @Override
+            public boolean hasMoreElements() {
+                return urls.hasMoreElements();
+            }
+            @Override
+            public Resource nextElement() {
+                return new URLResource(urls.nextElement());
+            }
+        };
     }
 
 }
