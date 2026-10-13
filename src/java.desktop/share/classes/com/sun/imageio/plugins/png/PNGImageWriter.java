@@ -36,6 +36,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.zip.CRC32;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 
@@ -52,56 +53,11 @@ import javax.imageio.stream.ImageOutputStreamImpl;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-final class CRC {
-
-    private static final int[] crcTable = new int[256];
-    private int crc = 0xffffffff;
-
-    static {
-        // Initialize CRC table
-        for (int n = 0; n < 256; n++) {
-            int c = n;
-            for (int k = 0; k < 8; k++) {
-                if ((c & 1) == 1) {
-                    c = 0xedb88320 ^ (c >>> 1);
-                } else {
-                    c >>>= 1;
-                }
-
-                crcTable[n] = c;
-            }
-        }
-    }
-
-    CRC() {}
-
-    void reset() {
-        crc = 0xffffffff;
-    }
-
-    void update(byte[] data, int off, int len) {
-        int c = crc;
-        for (int n = 0; n < len; n++) {
-            c = crcTable[(c ^ data[off + n]) & 0xff] ^ (c >>> 8);
-        }
-        crc = c;
-    }
-
-    void update(int data) {
-        crc = crcTable[(crc ^ data) & 0xff] ^ (crc >>> 8);
-    }
-
-    int getValue() {
-        return crc ^ 0xffffffff;
-    }
-}
-
-
 final class ChunkStream extends ImageOutputStreamImpl {
 
     private final ImageOutputStream stream;
     private final long startPos;
-    private final CRC crc = new CRC();
+    private final CRC32 crc = new CRC32();
 
     ChunkStream(int type, ImageOutputStream stream) throws IOException {
         this.stream = stream;
@@ -135,7 +91,7 @@ final class ChunkStream extends ImageOutputStreamImpl {
 
     void finish() throws IOException {
         // Write CRC
-        stream.writeInt(crc.getValue());
+        stream.writeInt((int)crc.getValue());
 
         // Write length
         long pos = stream.getStreamPosition();

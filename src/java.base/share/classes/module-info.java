@@ -160,6 +160,7 @@ module java.base {
         java.logging,
         java.management,
         java.rmi,
+        java.security.jgss,
         jdk.charsets,
         jdk.jartool,
         jdk.jlink,

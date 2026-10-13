@@ -98,6 +98,7 @@ public class SharedSecrets {
     @Stable private static JavaUtilConcurrentTLRAccess javaUtilConcurrentTLRAccess;
     @Stable private static JavaUtilConcurrentFJPAccess javaUtilConcurrentFJPAccess;
     @Stable private static JavaUtilJarAccess javaUtilJarAccess;
+    @Stable private static JavaUtilZipAccess javaUtilZipAccess;
     @Stable private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     @Stable private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
     @Stable private static JavaSecurityPropertiesAccess javaSecurityPropertiesAccess;
@@ -321,6 +322,19 @@ public class SharedSecrets {
             access = javaSecurityPropertiesAccess;
         }
         return access;
+    }
+
+    public static JavaUtilZipAccess getJavaUtilZipAccess() {
+        var access = javaUtilZipAccess;
+        if (access == null) {
+            ensureClassInitialized(java.util.zip.CRC32.class);
+            access = javaUtilZipAccess;
+        }
+        return access;
+    }
+
+    public static void setJavaUtilZipAccess(JavaUtilZipAccess access) {
+        javaUtilZipAccess = access;
     }
 
     public static JavaUtilZipFileAccess getJavaUtilZipFileAccess() {

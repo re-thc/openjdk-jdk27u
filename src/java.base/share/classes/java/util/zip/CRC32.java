@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package java.util.zip;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
+import jdk.internal.access.JavaUtilZipAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -172,5 +174,10 @@ public class CRC32 implements Checksum {
 
     static {
         ZipUtils.loadLibrary();
+        SharedSecrets.setJavaUtilZipAccess(new JavaUtilZipAccess() {
+            public int updateCRC32(int crc, byte[] data, int off, int len) {
+                return updateBytes(crc, data, off, len);
+            }
+        });
     }
 }

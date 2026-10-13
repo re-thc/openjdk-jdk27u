@@ -33,10 +33,14 @@ package sun.security.krb5.internal.crypto;
 import java.security.MessageDigestSpi;
 import java.security.DigestException;
 
+import jdk.internal.access.JavaUtilZipAccess;
+import jdk.internal.access.SharedSecrets;
+
 import static sun.security.krb5.internal.Krb5.DEBUG;
 
 public final class crc32 extends MessageDigestSpi implements Cloneable {
     private static final int CRC32_LENGTH = 4; //32-bit
+    private static final JavaUtilZipAccess ZIP_ACCESS = SharedSecrets.getJavaUtilZipAccess();
     private int seed;
     // buffer;
     // private int bufferIndex, bufferLeft;
@@ -196,10 +200,7 @@ public final class crc32 extends MessageDigestSpi implements Cloneable {
     }
 
     private void processData(byte[] data, int off, int len) {
-        int result = seed;
-        for (int i = 0; i < len; i++)
-            result = (result >>> 8) ^ crc32Table[(result ^ data[i]) & 0xff];
-        seed = result;
+        seed = byte2crc32sum(seed, data, len);
     }
 
     public static int int2crc32(int b) {
@@ -232,6 +233,10 @@ public final class crc32 extends MessageDigestSpi implements Cloneable {
     }
 
     public static int byte2crc32sum(int seed, byte[] data, int size) {
+        if (size >= 64) {
+            // Kerberos uses IEEE CRC32 without the standard pre/post conditioning.
+            return ~ZIP_ACCESS.updateCRC32(~seed, data, 0, size);
+        }
         int crc = seed;
 
         for (int i = 0; i < size; i++)

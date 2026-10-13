@@ -1,0 +1,49 @@
+name: Hidden CRC32 qualification
+on:
+  push:
+    branches: [pr/zlib-ng-hidden-checksums]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: hidden-checksums-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  qualify:
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux-x64, linux-aarch64]
+        include:
+          - platform: linux-x64
+            runner: ubuntu-26.04
+          - platform: linux-aarch64
+            runner: ubuntu-26.04-arm
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: ./.github/actions/get-bootjdk
+        id: bootjdk
+        with:
+          platform: ${{ matrix.platform }}
+      - name: Download the current qualified native image
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 38473153925 --repo re-thc/openjdk-jdk27u \
+            --name bundles-${{ matrix.platform }} --dir work/bundles
+      - name: Verify checksum semantics and measure call paths
+        run: |
+          python3 -m py_compile .github/scripts/qualify-hidden-checksums.py
+          python3 .github/scripts/qualify-hidden-checksums.py --bundles work/bundles \
+            --bootjdk '${{ steps.bootjdk.outputs.path }}'
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: ${{ matrix.platform }}-hidden-checksums
+          path: qualification
+          retention-days: 14
