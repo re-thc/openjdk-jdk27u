@@ -181,7 +181,7 @@ public class TestZlibNGSmallStreams {
                 }
             }
         }
-        System.out.println(HexFormat.of().formatHex(digest.digest()));
+        System.out.println("SHA-256: " + HexFormat.of().formatHex(digest.digest()));
     }
 
     public static void main(String[] args) throws Exception {
@@ -193,10 +193,13 @@ public class TestZlibNGSmallStreams {
         for (String tier : tiers) {
             String expected = null;
             for (String intrinsic : new String[]{"-XX:-UseZipIntrinsics", "-XX:+UseZipIntrinsics"}) {
+                // VM startup diagnostics can also appear on stdout.
                 String output = ProcessTools.executeTestJava(tier, intrinsic, "-Xbatch",
                     "-cp", System.getProperty("test.class.path"),
                     TestZlibNGSmallStreams.class.getName(), "emit")
-                    .shouldHaveExitValue(0).getStdout().strip();
+                    .shouldHaveExitValue(0)
+                    .stdoutShouldMatch("(?m)^SHA-256: [0-9a-f]{64}$")
+                    .firstMatch("^SHA-256: ([0-9a-f]{64})$", 1);
                 if (expected == null) {
                     expected = output;
                 } else if (!expected.equals(output)) {

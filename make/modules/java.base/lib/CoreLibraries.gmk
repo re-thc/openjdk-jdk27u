@@ -82,7 +82,7 @@ LIBZIP_EXCLUDES += zlib-ng
 ifneq ($(filter x86_64 aarch64, $(OPENJDK_TARGET_CPU)), )
   ifeq ($(call isTargetOs, linux), true)
     ZLIBNG_SRC := $(TOPDIR)/src/java.base/share/native/libzip/zlib-ng
-    ZLIBNG_OUT := $(SUPPORT_OUTPUTDIR)/native/zlib-ng
+    ZLIBNG_OUT := $(SUPPORT_OUTPUTDIR)/native/zlib-ng$(if $(filter true, $(STATIC_LIBS)),-static)
     ZLIBNG_LIB := $(ZLIBNG_OUT)/libz.a
 
     $(ZLIBNG_LIB): $(call FindFiles, $(ZLIBNG_SRC)) $(SPEC) \
@@ -105,6 +105,20 @@ ifneq ($(filter x86_64 aarch64, $(OPENJDK_TARGET_CPU)), )
 
     LIBZIP_ZLIBNG_CFLAGS := -DINCLUDE_ZLIBNG=1
     LIBZIP_EXCLUDES += zlib
+    $(MODULE)_INCLUDED_LIBS += zlibng
+
+    ifeq ($(STATIC_LIBS), true)
+      ZLIBNG_STATIC_LIB := $(SUPPORT_OUTPUTDIR)/native/java.base/libzlibng/static/$(LIBRARY_PREFIX)zlibng$(STATIC_LIBRARY_SUFFIX)
+
+      $(ZLIBNG_STATIC_LIB): $(ZLIBNG_LIB)
+	$(call MakeDir, $(@D))
+	$(CP) $< $@
+	$(ECHO) > $@.lib-flags.txt
+
+      TARGETS += $(ZLIBNG_STATIC_LIB)
+    else
+      LIBZIP_ZLIBNG_LIBS := $(ZLIBNG_LIB)
+    endif
   endif
 endif
 
@@ -129,8 +143,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBZIP, \
     DISABLED_WARNINGS_clang_gzwrite.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_zip_util.c := unused-function, \
     JDK_LIBS := libjava libjvm, \
-    LIBS_unix := $(LIBZIP_LIBZ_LIBS) $(ZLIBNG_LIB), \
-    EXTRA_DEPS := $(ZLIBNG_LIB), \
+    LIBS_unix := $(LIBZIP_LIBZ_LIBS) $(LIBZIP_ZLIBNG_LIBS), \
+    EXTRA_DEPS := $(ZLIBNG_LIB) $(ZLIBNG_STATIC_LIB), \
 ))
 
 TARGETS += $(BUILD_LIBZIP)
@@ -188,13 +202,12 @@ ifneq ($(USE_EXTERNAL_LIBZ), true)
       $(addprefix $(TOPDIR)/src/java.base/share/native/libzip/zlib/, \
           $(LIBJLI_EXTRA_FILE_LIST))
 
-  # Do not include these libz objects in the static libjli library.
-  # When statically linking the java launcher with all JDK and VM
-  # static libraries, we use the --whole-archive linker option.
-  # The duplicate objects in different static libraries cause linking
-  # errors due to duplicate symbols.
-  LIBJLI_STATIC_EXCLUDE_OBJS := \
-      $(subst .c,$(OBJ_SUFFIX),$(LIBJLI_EXTRA_FILE_LIST))
+  # Stock libzip supplies these symbols to the static launcher. With private
+  # zlib-ng symbols, libjli must retain its own inflate implementation.
+  ifeq ($(ZLIBNG_LIB), )
+    LIBJLI_STATIC_EXCLUDE_OBJS := \
+        $(subst .c,$(OBJ_SUFFIX),$(LIBJLI_EXTRA_FILE_LIST))
+  endif
 endif
 
 ifeq ($(call isTargetOs, aix), true)

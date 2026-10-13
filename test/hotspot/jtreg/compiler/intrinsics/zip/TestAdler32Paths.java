@@ -76,12 +76,13 @@ public class TestAdler32Paths {
                 .getVMOption("UseAdler32Intrinsics").getValue())) {
             throw new AssertionError("Adler32 intrinsics were disabled without AVX2");
         }
-        byte[] data = new byte[65536 + 31];
+        byte[] data = new byte[131072 + 31];
         new Random(17).nextBytes(data);
         ByteBuffer direct = ByteBuffer.allocateDirect(data.length);
         direct.put(data).flip();
         int[] sizes = {0, 1, 15, 16, 31, 32, 63, 64, 255, 256, 1023, 1024,
-                       1025, 4096, 5551, 5552, 5553, 65536};
+                       1025, 4096, 5551, 5552, 5553, 16384, 32768,
+                       65535, 65536, 65537, 131072};
         Adler32 adler = new Adler32();
         for (int off : new int[]{0, 1, 7, 31}) {
             for (int len : sizes) {

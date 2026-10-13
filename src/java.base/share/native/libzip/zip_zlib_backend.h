@@ -44,13 +44,22 @@ extern int jdk_ng_inflateInit2_(z_streamp, int, const char *, int);
 extern uLong jdk_ng_crc32(uLong, const Bytef *, uInt);
 extern uLong jdk_ng_adler32(uLong, const Bytef *, uInt);
 extern uLong jdk_ng_deflateBound(z_streamp, uLong);
+
+/* Use the fast encoder for level 1 to preserve zlib's speed/size balance. */
+static inline int zip_deflate_level(int level) {
+    return level == 1 ? 2 : level;
+}
+
 #define deflate jdk_ng_deflate
 #define deflateEnd jdk_ng_deflateEnd
 #define deflateReset jdk_ng_deflateReset
-#define deflateParams jdk_ng_deflateParams
+#define deflateParams(strm, level, strategy) \
+    jdk_ng_deflateParams((strm), zip_deflate_level(level), (strategy))
 #define deflateSetDictionary jdk_ng_deflateSetDictionary
 #define deflateSetHeader jdk_ng_deflateSetHeader
-#define deflateInit2_ jdk_ng_deflateInit2_
+#define deflateInit2_(strm, level, method, windowBits, memLevel, strategy, version, size) \
+    jdk_ng_deflateInit2_((strm), zip_deflate_level(level), (method), \
+                       (windowBits), (memLevel), (strategy), (version), (size))
 #define inflate jdk_ng_inflate
 #define inflateEnd jdk_ng_inflateEnd
 #define inflateReset jdk_ng_inflateReset

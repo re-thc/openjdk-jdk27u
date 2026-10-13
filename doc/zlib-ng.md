@@ -3,6 +3,10 @@
 Linux x86-64 and AArch64 builds use zlib-ng for ZIP compression, decompression
 and native Adler32/CRC32 calls.
 
+Compression level 1 maps to zlib-ng level 2, retaining a compression ratio
+comparable to stock zlib's fastest level. The mapping applies to initialization
+and parameter changes. Other levels, including the default, keep their values.
+
 `-XX:+UseZipIntrinsics` is the default. C1 and C2 use a shared GC-safe runtime
 call for supported Deflater/Inflater buffer shapes. `-XX:-UseZipIntrinsics`
 selects the original JNI calls. Both paths use zlib-ng.
@@ -15,7 +19,8 @@ use JNI. Deflater uses JNI for chunks at most 1 KiB and, on AArch64, chunks of a
 least 64 KiB. All these call paths use zlib-ng.
 
 Adler32 calls zlib-ng directly from the interpreter and C1 for scalar, heap
-array and direct-buffer updates. C2 calls zlib-ng for scalar updates and bulk
+array and direct-buffer updates. On x86-64, C1 uses JNI for bulk updates of at
+least 64 KiB. C2 calls zlib-ng for scalar updates and bulk
 updates of at least 1 KiB; shorter bulk updates use the HotSpot SIMD kernel.
 On x86-64 without AVX2, C2 uses zlib-ng for all bulk sizes.
 
