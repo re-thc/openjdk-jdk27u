@@ -3,7 +3,7 @@
  *  @file include/stringzilla/find/serial.h
  *  @author Ash Vardanian
  *  @sa include/stringzilla/find.h
- *  Local changes (re-thc, 2026): preserve overlapping reverse-search candidates.
+ *  Local changes (re-thc, 2026): preserve overlaps and filter impossible reverse-search prefixes.
  */
 #ifndef STRINGZILLA_FIND_SERIAL_H_
 #define STRINGZILLA_FIND_SERIAL_H_
@@ -799,9 +799,12 @@ SZ_HELPER_AUTO sz_cptr_t sz_rfind_with_suffix_(sz_cptr_t haystack, sz_size_t hay
         if (remaining < prefix_length) return SZ_NULL_CHAR;
         if (sz_equal_serial(found - prefix_length, needle, prefix_length)) return found - prefix_length;
 
-        // Exclude this suffix start while preserving earlier overlapping candidates.
+        // Every earlier complete match must start with the needle's first byte.
+        // Exclude this prefix start while preserving overlapping candidates.
         if (remaining <= prefix_length) return SZ_NULL_CHAR;
-        haystack_length = remaining + suffix_length - 1;
+        sz_cptr_t previous = sz_rfind_1byte_serial_(haystack, remaining - prefix_length, needle, 1);
+        if (!previous) return SZ_NULL_CHAR;
+        haystack_length = (previous - haystack) + needle_length;
     }
 
     // Unreachable, but helps silence compiler warnings:

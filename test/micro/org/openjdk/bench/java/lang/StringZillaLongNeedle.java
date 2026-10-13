@@ -41,7 +41,7 @@ public class StringZillaLongNeedle {
     public int length;
     @Param({"64", "256"})
     public int needleLength;
-    @Param({"NEAR_END", "NEAR_START", "CROSSED", "MISS", "END", "OVERLAP"})
+    @Param({"NEAR_END", "NEAR_START", "CROSSED", "MISS", "END", "OVERLAP", "OVERLAP_LATIN1"})
     public String shape;
 
     private String value;
@@ -49,6 +49,18 @@ public class StringZillaLongNeedle {
 
     @Setup
     public void setup() {
+        if (shape.equals("OVERLAP_LATIN1")) {
+            char[] target = new char[needleLength];
+            Arrays.fill(target, 'a');
+            target[0] = 'b';
+            needle = new String(target);
+            char[] chars = new char[length + needleLength + 1];
+            Arrays.fill(chars, 'a');
+            System.arraycopy(target, 0, chars, 0, target.length);
+            value = new String(chars);
+            validate(0);
+            return;
+        }
         char[] target = new char[needleLength];
         Arrays.fill(target, (char)0x0401);
         if (shape.equals("OVERLAP")) target[0] = 0x0402;
@@ -70,6 +82,10 @@ public class StringZillaLongNeedle {
         }
         value = new String(chars);
         int expected = shape.equals("END") ? length : shape.equals("OVERLAP") ? 0 : -1;
+        validate(expected);
+    }
+
+    private void validate(int expected) {
         if (scalar(value, needle, false) != expected || scalar(value, needle, true) != expected)
             throw new AssertionError("Invalid long-needle fixture");
         if (value.indexOf(needle) != expected || value.lastIndexOf(needle) != expected)
