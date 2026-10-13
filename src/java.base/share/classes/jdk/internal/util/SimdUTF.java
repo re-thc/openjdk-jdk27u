@@ -195,6 +195,10 @@ public final class SimdUTF {
         if (size == remaining) {
             return size;
         }
+        if (operation == COUNT_CODE_POINTS && remaining - size < 1024) {
+            // Keep the final leaf above C2's short-input counting gate.
+            size = remaining - 1024;
+        }
         switch (operation) {
             case DECODE_UTF8, DECODE_LATIN1, VALIDATE_UTF8_LATIN1 -> {
                 byte[] bytes = (byte[])src;
