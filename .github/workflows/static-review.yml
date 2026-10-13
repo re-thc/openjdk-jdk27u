@@ -1,0 +1,102 @@
+name: Static JDK and checksum review qualification
+on:
+  push:
+    branches: [pr/zlib-ng-validation]
+    paths: ['.github/workflows/static-review.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  qualify:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-26.04
+            platform: linux-x64
+            zlib: bundled
+          - os: ubuntu-26.04-arm
+            platform: linux-aarch64
+            zlib: bundled
+          - os: ubuntu-26.04
+            platform: linux-x64
+            zlib: system
+          - os: ubuntu-26.04-arm
+            platform: linux-aarch64
+            zlib: system
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 900e873c397e5fb544eb45fe6c103925b3bdd8a3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: diagnostic
+          sparse-checkout: .github/scripts/qualify-static-review.py
+          sparse-checkout-cone-mode: false
+      - uses: ./.github/actions/get-bootjdk
+        id: boot
+        with:
+          platform: ${{ matrix.platform }}
+      - uses: ./.github/actions/get-jtreg
+        id: jtreg
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-16 g++-16 autoconf gawk make python3 zlib1g-dev
+          case "$(uname -m)" in
+            x86_64) checksum=6c90d4a474c7c0409dfb575be03a5345878ac14fdba18de8b40fa58c60121189 ;;
+            aarch64) checksum=52c759d3689babaea4c42af2f31062a74ab83e17ffb5a8090232534c67b70577 ;;
+            *) exit 1 ;;
+          esac
+          curl --fail --location --retry 3 "https://github.com/rui314/mold/releases/download/v3.0.0/mold-3.0.0-$(uname -m)-linux.tar.gz" --output "$RUNNER_TEMP/mold.tar.gz"
+          echo "$checksum  $RUNNER_TEMP/mold.tar.gz" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/mold"
+          tar -xf "$RUNNER_TEMP/mold.tar.gz" --strip-components=1 -C "$RUNNER_TEMP/mold"
+          echo "$RUNNER_TEMP/mold/bin" >> "$GITHUB_PATH"
+          mkdir -p validation/results
+          lscpu > validation/results/cpu.txt
+          git rev-parse HEAD > validation/results/source.txt
+      - name: Build static launcher and library image
+        env:
+          CC: gcc-16
+          CXX: g++-16
+        run: |
+          bash bin/configure-dev --with-conf-name=review --with-boot-jdk="${{ steps.boot.outputs.path }}" --with-jtreg="${{ steps.jtreg.outputs.path }}" --with-zlib=${{ matrix.zlib }} --with-native-debug-symbols=none
+          make CONF=review JOBS=4 images static-jdk-image static-libs-image
+      - name: Verify static launcher and exported archives
+        run: python3 diagnostic/.github/scripts/qualify-static-review.py static ${{ matrix.zlib }}
+      - name: Build assertion-enabled candidate VM
+        if: matrix.zlib == 'bundled'
+        env:
+          CC: gcc-16
+          CXX: g++-16
+        run: |
+          bash bin/configure-dev --with-conf-name=review-debug --with-boot-jdk="${{ steps.boot.outputs.path }}" --with-jtreg="${{ steps.jtreg.outputs.path }}" --with-zlib=bundled --with-debug-level=fastdebug --with-native-debug-symbols=none
+          make CONF=review-debug JOBS=4 hotspot
+          python3 diagnostic/.github/scripts/qualify-static-review.py debug
+      - name: Verify Java compression and checksum paths
+        if: matrix.zlib == 'bundled'
+        run: python3 diagnostic/.github/scripts/qualify-static-review.py tests
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        if: matrix.zlib == 'bundled'
+        with:
+          github-token: ${{ github.token }}
+          run-id: 38305964372
+          name: bundles-${{ matrix.platform }}
+          path: validation/old
+      - name: Compare C1 cutoff with the exact PR head and same-image JNI
+        if: matrix.zlib == 'bundled'
+        run: python3 diagnostic/.github/scripts/qualify-static-review.py bench
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: static-review-${{ matrix.platform }}-${{ matrix.zlib }}
+          path: |
+            validation/results
+            build/review/build.log
+            build/review/build-failure-summary
+            build/review-debug/build.log
+            build/review-debug/build-failure-summary
+          retention-days: 14
