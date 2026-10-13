@@ -1,0 +1,31 @@
+name: Read final qualification provenance
+on:
+  push:
+    branches: [pr/zlib-ng-validation]
+    paths: ['.github/workflows/final-provenance.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  metadata:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ github.token }}
+          run-id: 38395401105
+          pattern: final-review-*
+          path: evidence
+      - name: Read recorded source and CPU
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for directory in sorted(Path('evidence').iterdir()):
+              print('ARTIFACT', directory.name)
+              print('SOURCE', (directory / 'source.txt').read_text().strip())
+              for line in (directory / 'cpu.txt').read_text().splitlines():
+                  if any(line.startswith(prefix) for prefix in ['Architecture:', 'Model name:', 'Vendor ID:', 'Flags:', 'CPU(s):']):
+                      print(line)
+              print('CHECKS', (directory / 'qualification-passed.txt').read_text().strip())
+          PY
