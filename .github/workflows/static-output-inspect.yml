@@ -1,0 +1,36 @@
+name: Inspect saved static qualification failure
+on:
+  push:
+    branches: [pr/zlib-ng-validation]
+    paths: ['.github/workflows/static-output-inspect.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ github.token }}
+          run-id: 38372024859
+          name: static-review-linux-aarch64-bundled
+          path: saved
+      - name: Compare actual emitted digests and startup messages
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          outputs=[]
+          for pid in [109089,109118]:
+              files=list(Path('saved').rglob('pid-'+str(pid)+'-output.log'))
+              assert len(files)==1,files
+              text=files[0].read_text()
+              print(files[0],flush=True)
+              print(text,flush=True)
+              digests=re.findall(r'(?m)^([0-9a-f]{64})$',text)
+              assert len(digests)==1,digests
+              outputs.append(digests[0])
+          assert outputs[0]==outputs[1],outputs
+          print('Compression digests match; startup diagnostics differ.',flush=True)
+          PY
