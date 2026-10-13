@@ -39,6 +39,13 @@ public final class NativePRNG {
         return false;
     }
 
+    // the implementation of the SecureRandom service with the algorithm name
+    // of the SUN provider, or null if it is not one of this class, for
+    // SunEntries.SecureRandomService
+    static java.security.SecureRandomSpi newInstance(String algorithm) {
+        return null;
+    }
+
     public static final class NonBlocking {
         static boolean isAvailable() {
             return false;

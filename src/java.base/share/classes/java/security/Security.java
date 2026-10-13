@@ -25,6 +25,8 @@
 
 package java.security;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -115,6 +117,11 @@ public final class Security {
 
         private static final List<Path> activePaths = new ArrayList<>();
 
+        // The master file is read with java.io, so that the first use of the
+        // security properties does not initialize the NIO file system. Its
+        // Path is only made if the file includes another one, see loadInclude.
+        private static File masterFile;
+
         static void loadAll() {
             // first load the master properties file to
             // determine the value of OVERRIDE_SEC_PROP
@@ -136,9 +143,22 @@ public final class Security {
         }
 
         private static void loadMaster() {
-            try {
-                loadFromPath(Path.of(StaticProperty.javaHome(), "conf",
-                        "security", "java.security"), LoadingMode.APPEND);
+            File file = new File(StaticProperty.javaHome(),
+                    "conf/security/java.security");
+            try (InputStream is = new FileInputStream(file)) {
+                masterFile = file;
+                try {
+                    debugLoad(true, file);
+                    props.load(is);
+                    debugLoad(false, file);
+                } finally {
+                    if (masterFile == null) {
+                        // loadInclude made the Path of the file
+                        activePaths.removeLast();
+                        currentPath = null;
+                    }
+                    masterFile = null;
+                }
             } catch (IOException e) {
                 throw new InternalError("Error loading java.security file", e);
             }
@@ -246,6 +266,12 @@ public final class Security {
                                 " (expanded to '" + expPropFile + "')"));
             }
             try {
+                if (masterFile != null) {
+                    Path master = masterFile.toPath();
+                    currentPath = Files.isRegularFile(master) ? master : null;
+                    activePaths.add(master);
+                    masterFile = null;
+                }
                 Path path = Path.of(expPropFile);
                 if (!path.isAbsolute()) {
                     if (currentPath == null) {

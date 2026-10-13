@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
 import java.util.HashMap;
@@ -102,20 +103,20 @@ public final class SunEntries {
          */
         attrs.put("ThreadSafe", "true");
         if (NativePRNG.isAvailable()) {
-            add(p, "SecureRandom", "NativePRNG",
+            addSecureRandom(p, "NativePRNG",
                     "sun.security.provider.NativePRNG", attrs);
         }
         if (NativePRNG.Blocking.isAvailable()) {
-            add(p, "SecureRandom", "NativePRNGBlocking",
+            addSecureRandom(p, "NativePRNGBlocking",
                     "sun.security.provider.NativePRNG$Blocking", attrs);
         }
         if (NativePRNG.NonBlocking.isAvailable()) {
-            add(p, "SecureRandom", "NativePRNGNonBlocking",
+            addSecureRandom(p, "NativePRNGNonBlocking",
                     "sun.security.provider.NativePRNG$NonBlocking", attrs);
         }
         attrs.put("ImplementedIn", "Software");
-        add(p, "SecureRandom", "DRBG", "sun.security.provider.DRBG", attrs);
-        add(p, "SecureRandom", "SHA1PRNG",
+        addSecureRandom(p, "DRBG", "sun.security.provider.DRBG", attrs);
+        addSecureRandom(p, "SHA1PRNG",
                 "sun.security.provider.SecureRandom", attrs);
 
         /*
@@ -336,6 +337,51 @@ public final class SunEntries {
             HashMap<String, String> attrs) {
         services.add(new Provider.Service(p, type, algo, cn,
             getAliases(algo), attrs));
+    }
+
+    private void addSecureRandom(Provider p, String algo, String cn,
+            HashMap<String, String> attrs) {
+        services.add(new SecureRandomService(p, algo, cn, attrs));
+    }
+
+    /*
+     * A SecureRandom service that makes its implementation without core
+     * reflection if no parameter is passed, the usual case. The first
+     * reflective call of a constructor with an argument spins method handle
+     * forms, which is a good part of the time of the first
+     * "new SecureRandom()".
+     */
+    private static final class SecureRandomService extends Provider.Service {
+
+        // whether the provider is known to have this service, as in Service
+        private boolean registered;
+
+        SecureRandomService(Provider p, String algo, String cn,
+                HashMap<String, String> attrs) {
+            super(p, "SecureRandom", algo, cn, null, attrs);
+        }
+
+        @Override
+        public Object newInstance(Object ctrParamObj)
+                throws NoSuchAlgorithmException {
+            if (ctrParamObj == null && (registered ||
+                    getProvider().getService(getType(), getAlgorithm()) == this)) {
+                registered = true;
+                try {
+                    Object spi = switch (getAlgorithm()) {
+                        case "DRBG" -> new DRBG(null);
+                        case "SHA1PRNG" -> new SecureRandom();
+                        default -> NativePRNG.newInstance(getAlgorithm());
+                    };
+                    if (spi != null) {
+                        return spi;
+                    }
+                } catch (RuntimeException e) {
+                    // the generic code below reports the failure as always
+                }
+            }
+            return super.newInstance(ctrParamObj);
+        }
     }
 
     private final LinkedHashSet<Provider.Service> services;

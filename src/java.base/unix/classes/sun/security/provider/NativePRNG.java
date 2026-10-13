@@ -238,6 +238,18 @@ public final class NativePRNG extends SecureRandomSpi {
         return true;
     }
 
+    // the implementation of the SecureRandom service with the algorithm name
+    // of the SUN provider, or null if it is not one of this class, for
+    // SunEntries.SecureRandomService
+    static SecureRandomSpi newInstance(String algorithm) {
+        return switch (algorithm) {
+            case "NativePRNG" -> new NativePRNG(null);
+            case "NativePRNGBlocking" -> new Blocking(null);
+            case "NativePRNGNonBlocking" -> new NonBlocking(null);
+            default -> null;
+        };
+    }
+
     // constructor, called by the JCA framework
     public NativePRNG(SecureRandomParameters params) {
         if (params != null) {
