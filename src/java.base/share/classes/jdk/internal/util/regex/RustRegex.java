@@ -196,7 +196,9 @@ public final class RustRegex {
         try {
             long nativeHandle = handle;
             if (nativeHandle == 0) nativeHandle = nativeHandle();
-            return nativeHandle == 0 ? -1 : match0(nativeHandle, bytes, state);
+            if (nativeHandle == 0) return -1;
+            int result = match0(nativeHandle, bytes, state);
+            return result == -2 ? matchSafepoint0(nativeHandle, bytes, state) : result;
         } finally {
             Reference.reachabilityFence(this);
         }
@@ -604,4 +606,5 @@ public final class RustRegex {
     private static native void free0(long handle);
     @IntrinsicCandidate
     private static native int match0(long handle, byte[] input, int[] state);
+    private static native int matchSafepoint0(long handle, byte[] input, int[] state);
 }

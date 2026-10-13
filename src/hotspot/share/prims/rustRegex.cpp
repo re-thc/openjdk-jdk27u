@@ -22,6 +22,7 @@
  *
  */
 
+#include "memory/allocation.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -33,6 +34,8 @@ extern "C" {
   void* jdk_regex_compile(const unsigned char* pattern, size_t length, unsigned int flags, size_t groups);
   void jdk_regex_free(void* handle);
   int jdk_regex_match(const void* handle, const unsigned char* bytes, int* state);
+  int jdk_regex_match_safepoint(const void* handle, const unsigned char* bytes, size_t length,
+                              int* state, size_t state_length);
 }
 #endif
 
@@ -85,12 +88,61 @@ JNI_ENTRY(jint, RR_match(JNIEnv* env, jclass cls, jlong handle, jbyteArray input
                          reinterpret_cast<address>(slots->base(T_INT)));
 JNI_END
 
+JNI_ENTRY(jint, RR_matchSafepoint(JNIEnv* env, jclass cls, jlong handle, jbyteArray input, jintArray state))
+#if INCLUDE_RUST_REGEX
+  if (handle == 0) return -1;
+  jint copy_state[70];
+  int slots, base, from, length;
+  {
+    typeArrayOop bytes = typeArrayOop(JNIHandles::resolve_non_null(input));
+    typeArrayOop output = typeArrayOop(JNIHandles::resolve_non_null(state));
+    slots = output->length();
+    if (slots < 6 || slots > 70) return -1;
+    base = slots - 4;
+    memcpy(copy_state, output->base(T_INT), slots * sizeof(jint));
+    from = copy_state[base];
+    int to = copy_state[base+1];
+    int start = copy_state[base+2];
+    int mode = copy_state[base+3];
+    if (from < 0 || to < from || to > bytes->length() || to - from > 65536 ||
+        start < from || start > to || mode < 0 || mode > 2) return -1;
+    length = to - from;
+  }
+  unsigned char* copy = NEW_C_HEAP_ARRAY_RETURN_NULL(unsigned char, MAX2(length, 1), mtInternal);
+  if (copy == nullptr) return -1;
+  {
+    typeArrayOop bytes = typeArrayOop(JNIHandles::resolve_non_null(input));
+    memcpy(copy, bytes->byte_at_addr(from), length);
+  } // No raw oop or heap address survives the native transition.
+  copy_state[base] = 0;
+  copy_state[base+1] = length;
+  copy_state[base+2] -= from;
+  int result;
+  {
+    ThreadToNativeFromVM ttn(THREAD);
+    result = jdk_regex_match_safepoint(reinterpret_cast<void*>(static_cast<intptr_t>(handle)),
+                                     copy, length, copy_state, slots);
+  }
+  FREE_C_HEAP_ARRAY(copy);
+  if (result >= 0) {
+    typeArrayOop output = typeArrayOop(JNIHandles::resolve_non_null(state));
+    for (int i = 0; i < base; i++) {
+      output->int_at_put(i, copy_state[i] < 0 ? copy_state[i] : copy_state[i] + from);
+    }
+  }
+  return result;
+#else
+  return -1;
+#endif
+JNI_END
+
 extern "C" void JNICALL JVM_RegisterRustRegexMethods(JNIEnv* env, jclass cls) {
   static const JNINativeMethod methods[] = {
     {const_cast<char*>("enabled0"), const_cast<char*>("()Z"), CAST_FROM_FN_PTR(void*, RR_enabled)},
     {const_cast<char*>("compile0"), const_cast<char*>("([BII)J"), CAST_FROM_FN_PTR(void*, RR_compile)},
     {const_cast<char*>("free0"), const_cast<char*>("(J)V"), CAST_FROM_FN_PTR(void*, RR_free)},
-    {const_cast<char*>("match0"), const_cast<char*>("(J[B[I)I"), CAST_FROM_FN_PTR(void*, RR_match)}
+    {const_cast<char*>("match0"), const_cast<char*>("(J[B[I)I"), CAST_FROM_FN_PTR(void*, RR_match)},
+    {const_cast<char*>("matchSafepoint0"), const_cast<char*>("(J[B[I)I"), CAST_FROM_FN_PTR(void*, RR_matchSafepoint)}
   };
   env->RegisterNatives(cls, methods, sizeof(methods) / sizeof(methods[0]));
 }

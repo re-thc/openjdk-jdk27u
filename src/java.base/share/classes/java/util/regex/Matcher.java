@@ -1799,6 +1799,7 @@ public final class Matcher implements MatchResult {
      * state of the match as it proceeds in this matcher.
      */
     boolean match(int from, int anchor) {
+        ensureContinuation();
         this.hitEnd = false;
         this.requireEnd = false;
         from        = from < 0 ? 0 : from;

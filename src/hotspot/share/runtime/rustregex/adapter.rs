@@ -41,7 +41,9 @@ const MAX_BUILD_BYTES: usize = 16 * MIB;
 const MAX_CACHE_BYTES: usize = 16 * MIB;
 const HYBRID_CAPACITY: usize = 32 * 1024;
 const MAX_INPUT: usize = 65536;
+const MAX_SEARCH_WORK: usize = 256 * 1024;
 const FALLBACK: i32 = -1;
+const SAFE_CALL: i32 = -2;
 static LIVE_MEMORY: Budget = Budget::new(64 * MIB);
 
 #[cfg(test)]
@@ -128,6 +130,8 @@ pub struct Handle<'a> {
     full: Option<Regex>,
     pool: Pool<Option<SearchCache<'a>>, CacheFactory<'a>>,
     groups: usize,
+    max_input: usize,
+    minimum_len: usize,
     _reservation: Reservation<'a>,
 }
 
@@ -157,7 +161,26 @@ fn full_from_primary(hir: &Hir) -> bool {
     }
 }
 
-fn compile(pattern: &str, flags: u32) -> Option<(Regex, Option<Regex>)> {
+// Bound the expanded automaton work on a non-safepointing call. Count
+// bounded repetitions in expanded form; unbounded repetitions add one loop.
+// This is a conservative admission estimate, not a wall-clock guarantee.
+fn search_cost(hir: &Hir) -> usize {
+    match hir.kind() {
+        HirKind::Empty | HirKind::Look(_) | HirKind::Class(_) => 1,
+        HirKind::Literal(literal) => literal.0.len().max(1),
+        HirKind::Capture(capture) => search_cost(&capture.sub).saturating_add(2),
+        HirKind::Concat(parts) | HirKind::Alternation(parts) => {
+            parts.iter().fold(1usize, |cost, part| {
+                cost.saturating_add(search_cost(part).saturating_add(1))
+            })
+        }
+        HirKind::Repetition(repeat) => search_cost(&repeat.sub)
+            .saturating_add(1)
+            .saturating_mul(repeat.max.unwrap_or(repeat.min.saturating_add(1)).max(1) as usize),
+    }
+}
+
+fn compile(pattern: &str, flags: u32) -> Option<(Regex, Option<Regex>, usize, usize)> {
     let hir = regex_syntax::ParserBuilder::new()
         .unicode(false)
         .utf8(false)
@@ -180,6 +203,13 @@ fn compile(pattern: &str, flags: u32) -> Option<(Regex, Option<Regex>)> {
             .build_from_hir(hir)
             .ok()
     };
+    let cost = search_cost(&hir);
+    let minimum_len = hir.properties().minimum_len().unwrap_or(0);
+    let max_input = if cost <= 64 {
+        MAX_INPUT
+    } else {
+        MAX_INPUT.min(MAX_SEARCH_WORK / cost)
+    };
     let regex = build(&hir)?;
     // Separate patterns preserve the primary engine's one-pass capture path.
     // Common greedy tails need only the primary engine, saving compilation,
@@ -189,7 +219,7 @@ fn compile(pattern: &str, flags: u32) -> Option<(Regex, Option<Regex>)> {
     } else {
         Some(build(&Hir::concat(vec![hir, Hir::look(Look::End)]))?)
     };
-    Some((regex, full))
+    Some((regex, full, max_input, minimum_len))
 }
 
 impl SearchCache<'_> {
@@ -251,9 +281,14 @@ fn compile_handle<'a>(
     let mut reservation = budget.reserve(MAX_BUILD_BYTES)?;
     #[cfg(test)]
     inject_panic(1);
-    let (regex, full) = compile(pattern, flags)?;
+    let (regex, full, mut max_input, minimum_len) = compile(pattern, flags)?;
     if groups == 0 || groups > 33 || regex.group_info().group_len(PatternID::ZERO) != groups {
         return None;
+    }
+    // Capture recovery can select the Pike VM even for a small automaton.
+    // Keep large capture scans in native thread state as well.
+    if groups > 1 {
+        max_input = max_input.min(4096);
     }
     let bytes = regex
         .memory_usage()
@@ -272,6 +307,8 @@ fn compile_handle<'a>(
         full,
         pool: Pool::with_capacity(1, factory),
         groups,
+        max_input,
+        minimum_len,
         _reservation: reservation,
     });
     // Admit and initialize the first cache while compilation is in native
@@ -327,6 +364,44 @@ pub unsafe extern "C" fn jdk_regex_match(
     bytes: *const u8,
     state: *mut i32,
 ) -> i32 {
+    match_impl(handle, bytes, state, false)
+}
+
+/// # Safety
+/// The JVM caller must enter native thread state. The input and output must be
+/// stable native copies for this call, with the compiled handle's capture count.
+#[no_mangle]
+pub unsafe extern "C" fn jdk_regex_match_safepoint(
+    handle: *const Handle<'_>,
+    bytes: *const u8,
+    byte_len: usize,
+    state: *mut i32,
+    state_len: usize,
+) -> i32 {
+    if handle.is_null() || bytes.is_null() || state.is_null() || byte_len > MAX_INPUT {
+        return FALLBACK;
+    }
+    catch_unwind(AssertUnwindSafe(|| {
+        let handle_ref = &*handle;
+        if state_len != handle_ref.groups * 2 + 4 {
+            return FALLBACK;
+        }
+        let args = slice::from_raw_parts(state, state_len);
+        let to = args[handle_ref.groups * 2 + 1];
+        if to < 0 || to as usize > byte_len {
+            return FALLBACK;
+        }
+        match_impl(handle, bytes, state, true)
+    }))
+    .unwrap_or(FALLBACK)
+}
+
+unsafe fn match_impl(
+    handle: *const Handle<'_>,
+    bytes: *const u8,
+    state: *mut i32,
+    safepoint: bool,
+) -> i32 {
     if handle.is_null() || bytes.is_null() || state.is_null() {
         return FALLBACK;
     }
@@ -343,6 +418,12 @@ pub unsafe extern "C" fn jdk_regex_match(
             || (to - from) as usize > MAX_INPUT
         {
             return FALLBACK;
+        }
+        if ((to - start) as usize) < handle.minimum_len {
+            return 0;
+        }
+        if !safepoint && (to - from) as usize > handle.max_input {
+            return SAFE_CALL;
         }
         let region = slice::from_raw_parts(bytes.add(from as usize), (to - from) as usize);
         let input = Input::new(region)
@@ -431,6 +512,109 @@ mod tests {
         assert_eq!(result, 1);
         assert_eq!(&groups[..6], &[2, 11, 2, 6, 8, 11]);
         assert_eq!(run(&handle, b"normal", 0).0, 0);
+    }
+
+    #[test]
+    fn large_automata_limit_leaf_regions() {
+        let budget = Budget::new(64 * MIB);
+        for source in ["(?:[ab]{0,500})*[bc]", "[ab]{1000}[cd]"] {
+            let handle = compile_handle(source, 0, 1, &budget).unwrap();
+            assert!(handle.max_input >= 128 && handle.max_input < 1024);
+            assert_eq!(run(&handle, &[b'a'; 128], 0).0, 0);
+            let before = budget.used.load(Ordering::Relaxed);
+            // A new caller would otherwise allocate its first pooled cache.
+            std::thread::scope(|scope| {
+                scope
+                    .spawn(|| {
+                        for mode in 0..=2 {
+                            // Short remaining spans reject without acquiring a cache.
+                            let expected = if handle.minimum_len > MAX_INPUT {
+                                0
+                            } else {
+                                SAFE_CALL
+                            };
+                            assert_eq!(run(&handle, &[b'a'; MAX_INPUT], mode).0, expected);
+                        }
+                    })
+                    .join()
+                    .unwrap();
+            });
+            assert_eq!(budget.used.load(Ordering::Relaxed), before);
+        }
+        let handle = compile_handle("error[0-9]+", 0, 1, &budget).unwrap();
+        assert_eq!(handle.max_input, MAX_INPUT);
+    }
+
+    #[test]
+    fn safepoint_calls_preserve_results_and_validate_buffers() {
+        let budget = Budget::new(64 * MIB);
+        for source in ["(ab)+", "([ab]{32,64})+([cd]+)", "(?:[ab]{0,64})*[bc]"] {
+            for mode in 0..=2 {
+                let expression = if mode == 2 {
+                    format!("\\A(?:{source})\\z")
+                } else if mode == 1 {
+                    format!("\\A(?:{source})")
+                } else {
+                    source.to_string()
+                };
+                let reference = regex::bytes::RegexBuilder::new(&expression)
+                    .unicode(false)
+                    .build()
+                    .unwrap();
+                let handle = compile_handle(source, 0, reference.captures_len(), &budget).unwrap();
+                for text in [b"abx".to_vec(), [vec![b'a'; 2048], b"c".to_vec()].concat()] {
+                    let mut output = vec![-1; handle.groups * 2 + 4];
+                    output[handle.groups * 2..].copy_from_slice(&[0, text.len() as i32, 0, mode]);
+                    let expected = reference.captures(&text);
+                    let result = unsafe {
+                        jdk_regex_match_safepoint(
+                            &*handle,
+                            text.as_ptr(),
+                            text.len(),
+                            output.as_mut_ptr(),
+                            output.len(),
+                        )
+                    };
+                    assert_eq!(result, i32::from(expected.is_some()));
+                    if let Some(expected) = expected {
+                        for i in 0..handle.groups {
+                            assert_eq!(
+                                output[2 * i],
+                                expected.get(i).map_or(-1, |m| m.start() as i32)
+                            );
+                            assert_eq!(
+                                output[2 * i + 1],
+                                expected.get(i).map_or(-1, |m| m.end() as i32)
+                            );
+                        }
+                    }
+                    assert_eq!(
+                        unsafe {
+                            jdk_regex_match_safepoint(
+                                &*handle,
+                                text.as_ptr(),
+                                text.len(),
+                                output.as_mut_ptr(),
+                                output.len() - 1,
+                            )
+                        },
+                        FALLBACK
+                    );
+                    assert_eq!(
+                        unsafe {
+                            jdk_regex_match_safepoint(
+                                &*handle,
+                                text.as_ptr(),
+                                0,
+                                output.as_mut_ptr(),
+                                output.len(),
+                            )
+                        },
+                        FALLBACK
+                    );
+                }
+            }
+        }
     }
 
     #[test]

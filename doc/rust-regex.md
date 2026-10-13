@@ -112,6 +112,18 @@ an allowance for fixed state and lazy-DFA growth. Admission failure selects
 Java; errors, unwinding and Cleaner cleanup return reservations.
 The first search cache is admitted and initialized during native compilation, while
 the thread is in native state, so the selected engine is ready for its first call.
+The intrinsic leaf path admits at most 262,144 / estimated expanded cost input
+bytes for automata whose cost exceeds 64. Capture-bearing engines also limit
+leaf regions to 4,096 bytes, since capture recovery may use the Pike VM.
+Minimum-length misses return before cache acquisition. Operations above those
+limits request a JNI call that copies at most 65,536 input bytes and 70 state
+ints before entering native thread state. It restores absolute capture offsets
+after returning to VM state and resolving the output array again. These native
+copies allow GC to proceed during expensive searches while preserving Rust
+matching. Input copies are temporary storage outside the engine/cache accounting
+budget, bounded by 65,536 bytes per active call. Unsupported operations and
+admission failures still use Java. These policies do not impose a matching timeout;
+Java fallback restores safepoints but can still run for a long time.
 
 The budget bounds accounted engine/cache storage and construction reservations;
 allocator metadata, fragmentation and the Rust runtime are outside that metric.
@@ -120,7 +132,7 @@ other Patterns may still own the shared engine, and Cleaner cleanup is eventual.
 Native Matcher arrays retain captures plus four ABI ints; Java-only Matchers
 keep the original array size. Compilation/destruction use
 native thread state; match calls retain no heap addresses after return. All
-three C ABI exports contain unwinding panics and fail open.
+four C ABI exports contain unwinding panics and fail open.
 
 ## JDK applicability
 

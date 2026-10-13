@@ -19,19 +19,20 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
 /*
  * @test
- * @summary Native regex results preserve Matcher continuation and observer state
+ * @summary Preserve Matcher continuation after failed operations without reset
  * @modules java.base/java.util.regex:open
- * @run main/othervm RustRegexContinuation
- * @run main/othervm -XX:-UseRustRegex RustRegexContinuation
- * @run main/othervm -XX:-UseRustRegexIntrinsics RustRegexContinuation
  * @run main/othervm -Xint RustRegexContinuation
+ * @run main/othervm -Xint -XX:-UseRustRegexIntrinsics RustRegexContinuation
  * @run main/othervm -XX:TieredStopAtLevel=1 -Xbatch RustRegexContinuation
+ * @run main/othervm -XX:TieredStopAtLevel=1 -Xbatch -XX:-UseRustRegexIntrinsics RustRegexContinuation
  * @run main/othervm -XX:-TieredCompilation -Xbatch RustRegexContinuation
+ * @run main/othervm -XX:-TieredCompilation -Xbatch -XX:-UseRustRegexIntrinsics RustRegexContinuation
+ * @run main/othervm -XX:-UseRustRegex RustRegexContinuation
+ * @run main/othervm -XX:-CompactStrings RustRegexContinuation
  */
 
 import java.lang.reflect.Method;
@@ -40,6 +41,7 @@ import java.util.regex.Pattern;
 
 public class RustRegexContinuation {
     private static final Method JAVA;
+    private static int comparisons;
     static {
         try {
             JAVA = Pattern.class.getDeclaredMethod("ensureJava");
@@ -50,82 +52,101 @@ public class RustRegexContinuation {
     }
 
     private static Pattern reference(String expression) throws Exception {
-        Pattern p = Pattern.compile(expression);
-        JAVA.invoke(p);
-        return p;
+        Pattern pattern = Pattern.compile(expression);
+        JAVA.invoke(pattern);
+        return pattern;
     }
 
-    private static void equal(Matcher actual, Matcher expected, boolean av, boolean ev,
-                              boolean observeEnd) {
-        if (av != ev) throw new AssertionError(actual.pattern() + ": match result");
-        if (av) {
-            if (actual.groupCount() != expected.groupCount())
-                throw new AssertionError("capture count");
-            for (int i = 0; i <= actual.groupCount(); i++) {
-                if (actual.start(i) != expected.start(i) || actual.end(i) != expected.end(i)
-                        || !java.util.Objects.equals(actual.group(i), expected.group(i)))
-                    throw new AssertionError(actual.pattern() + ": capture " + i);
+    private static boolean operation(Matcher matcher, int mode) {
+        return switch (mode) {
+            case 0 -> matcher.find();
+            case 1 -> matcher.lookingAt();
+            default -> matcher.matches();
+        };
+    }
+
+    private static String state(Matcher matcher, boolean found, boolean flags) {
+        StringBuilder result = new StringBuilder().append(found);
+        if (found) {
+            for (int group = 0; group <= matcher.groupCount(); group++) {
+                result.append('/').append(matcher.start(group)).append(':')
+                        .append(matcher.end(group)).append(':').append(matcher.group(group));
             }
         }
-        if (observeEnd && (actual.hitEnd() != expected.hitEnd()
-                || actual.requireEnd() != expected.requireEnd()))
-            throw new AssertionError(actual.pattern() + ": end flags");
+        if (flags) result.append('/').append(matcher.hitEnd()).append('/').append(matcher.requireEnd());
+        return result.toString();
     }
 
-    private static boolean operation(Matcher m, int mode) {
-        return switch (mode) {
-            case 0 -> m.find();
-            case 1 -> m.lookingAt();
-            default -> m.matches();
-        };
+    private static void equal(Matcher actual, Matcher expected, boolean a, boolean b, boolean flags) {
+        String av = state(actual, a, flags), bv = state(expected, b, flags);
+        if (!av.equals(bv)) {
+            throw new AssertionError(actual.pattern() + " region=" + actual.regionStart() + ":"
+                    + actual.regionEnd() + " actual=" + av + " expected=" + bv);
+        }
+        comparisons++;
     }
 
     public static void main(String[] args) throws Exception {
-        // Warm the shared entry points before using fresh Patterns in each case.
-        Pattern warm = Pattern.compile("(ab)+");
-        Matcher m = warm.matcher("ab".repeat(1024));
-        for (int i = 0; i < 12000; i++) {
-            if (!m.reset().find() || !m.reset().matches() || !m.reset().lookingAt())
-                throw new AssertionError("warmup");
+        Matcher warm = Pattern.compile("(ab)+").matcher("ab".repeat(64));
+        for (int i = 0; i < 20_000; i++) {
+            if (!warm.reset().matches() || !warm.reset().lookingAt() || !warm.reset().find()) {
+                throw new AssertionError("warmup match");
+            }
         }
-        String[][] cases = {
-            {"(ab)+", "abx"}, {"(ab)+x|b", "abz"}, {"a?b", "abx"},
-            {"(ab)+x", "abz"}, {"(a|ab)+x", "abz"}, {"(a)?b", "abx"},
-            {"error([0-9]+)", "error123x"}, {"(error)([0-9]+)", "error123x"},
-            {"(error)[0-9]+", "errorx"}, {"(?<prefix>error)(?<number>[0-9]+)", "errorx"},
-            {"[0-9]+", "123x"}, {"a.*b", "abx"}, {"a.*?b", "abx"},
-            {"a*", "aaax"}, {"(?:)", "x"},
-            {"([a-z0-9_]+)@([a-z0-9_]+)\\.[a-z]{2,4}", "a@b.c"},
-            {"([a-z0-9_]+)@([a-z0-9_]+)\\.[a-z]{2,4}", "a@b.co!"}
-        };
-        for (String[] c : cases) {
-            for (int mode = 0; mode < 3; mode++) {
-                for (boolean observeEnd : new boolean[]{false, true}) {
-                    for (boolean switchPattern : new boolean[]{false, true}) {
-                        for (int lo : new int[]{0, 1}) {
-                            Pattern p = Pattern.compile(c[0]);
-                            Matcher actual = p.matcher("!" + c[1]).region(lo, c[1].length() + 1);
-                            Matcher expected = reference(c[0]).matcher("!" + c[1])
-                                    .region(lo, c[1].length() + 1);
-                            equal(actual, expected, operation(actual, mode),
-                                    operation(expected, mode), observeEnd);
-                            if (switchPattern) {
-                                actual.usePattern(Pattern.compile("(a)|(b)|(e)|(r)|(o)|(x)"));
-                                expected.usePattern(reference("(a)|(b)|(e)|(r)|(o)|(x)"));
-                                if (observeEnd && (actual.hitEnd() != expected.hitEnd()
-                                        || actual.requireEnd() != expected.requireEnd()))
-                                    throw new AssertionError("usePattern end flags");
+        String[] expressions = {"(ab)+", "(ab)+x|b", "a?b", "(ab)+x", "a{1,3}b", "a*?b",
+                "(?:ab)+x|b", "(a|ab)+x", "(a)?b", "a.*b|a", "a*", "(?:)",
+                "error([0-9]+)", "(error)[0-9]+", "(?<prefix>error)(?<number>[0-9]+)", "(1)([0-9]+)", "[0-9]+", "^a?b$", "a?b$", "([a-z0-9_]+)@([a-z0-9_]+)\\.[a-z]{2,4}"};
+        String[] inputs = {"", "abx", "abz", "ax", "ababx", "aabx", "b", "abcabx",
+                "123x", "error123x", "errorx", "a\n", "\u0100abx", "abx" + "!".repeat(125),
+                "abz" + "!".repeat(125), "ax" + "!".repeat(126), "a@b.c", "a@b.co!"};
+        for (int repetition = 0; repetition < 3; repetition++) {
+            for (String expression : expressions) {
+                Pattern ref = reference(expression);
+                for (String input : inputs) {
+                    for (int mode = 0; mode < 3; mode++) {
+                        for (int sequence = 0; sequence < 6; sequence++) {
+                            for (int lo : new int[]{0, input.length() / 2}) {
+                                Pattern pattern = Pattern.compile(expression);
+                                Matcher a = pattern.matcher(input).region(lo, input.length());
+                                Matcher b = ref.matcher(input).region(lo, input.length());
+                                equal(a, b, operation(a, mode), operation(b, mode), sequence == 1);
+                                if (sequence == 2 || sequence == 3) {
+                                    // Keep position across both native and unsupported-pattern transitions.
+                                    String next = sequence == 2 ? "." : "(?=.)";
+                                    a.usePattern(Pattern.compile(next));
+                                    b.usePattern(reference(next));
+                                } else if (sequence == 4) {
+                                    // Reset clears continuation but preserves the old end flags.
+                                    a.reset("other");
+                                    b.reset("other");
+                                    equal(a, b, false, false, true);
+                                } else if (sequence == 5) {
+                                    a.useTransparentBounds(true).useAnchoringBounds(false);
+                                    b.useTransparentBounds(true).useAnchoringBounds(false);
+                                }
+                                for (int next = 0; next < 3; next++) {
+                                    equal(a, b, a.find(), b.find(), sequence != 0);
+                                }
+                                equal(a, b, a.lookingAt(), b.lookingAt(), true);
+                                equal(a, b, a.matches(), b.matches(), true);
                             }
-                            for (int i = 0; i < 5; i++)
-                                equal(actual, expected, actual.find(), expected.find(), observeEnd);
-                            actual.reset();
-                            expected.reset();
-                            equal(actual, expected, actual.find(), expected.find(), true);
                         }
                     }
                 }
             }
         }
-        System.out.println("Matcher continuation states agree");
+        for (int mode : new int[]{1, 2}) {
+            StringBuilder mutable = new StringBuilder("abz");
+            Matcher a = Pattern.compile("(ab)+x").matcher(mutable);
+            Matcher b = reference("(ab)+x").matcher(mutable);
+            equal(a, b, a.find(), b.find(), false);
+            mutable.setCharAt(0, 'x');
+            mutable.setCharAt(1, 'x');
+            equal(a, b, operation(a, mode), operation(b, mode), false);
+            a.usePattern(Pattern.compile("."));
+            b.usePattern(reference("."));
+            equal(a, b, a.find(), b.find(), true);
+        }
+        System.out.println("Compared " + comparisons + " continuation results and end states");
     }
 }

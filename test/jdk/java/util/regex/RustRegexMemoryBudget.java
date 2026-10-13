@@ -44,7 +44,7 @@ public class RustRegexMemoryBudget {
         }
         List<RustRegex> retained = new ArrayList<>();
         RustRegex engine;
-        while ((engine = RustRegex.compile("a{512}(?:x" + retained.size() + ")?", 0)) != null) {
+        while ((engine = RustRegex.compile("a{16}(?:x" + retained.size() + ")?", 0)) != null) {
             retained.add(engine);
             if (retained.size() == 16384) throw new AssertionError("native budget never exhausted");
         }
