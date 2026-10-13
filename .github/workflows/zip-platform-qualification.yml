@@ -123,7 +123,7 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: build/zip/images/jdk
-          key: zip-platform-v1-${{ matrix.platform }}-${{ matrix.debug }}-7f27135f229bce9ba90b68ab3cce9626cf22dbdc
+          key: zip-platform-v1-${{ matrix.platform }}-${{ matrix.debug }}-3f71d03f3297f94e8c2cc34160262a880be337fc
       - name: Same-image checksum and ZIP overhead measurements
         if: matrix.debug == 'release'
         run: python3 .github/scripts/qualify-zip-platform.py build/zip/images/jdk
