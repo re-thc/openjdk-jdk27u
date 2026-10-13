@@ -47,6 +47,11 @@ the exponent. Positive zero leaves metadata unchanged. The metadata bridge
 depends on private vendor tables and representation, so upgrades must pass
 the production-bridge verifier.
 
+The precision factory chain is forced inline so compiled callers can optimize
+the metadata holder together with the resulting value. When native splitting
+is unavailable, positive non-tiny inputs with a holder omit the unused text
+buffer. Null holders, negative inputs and tiny subnormals keep that buffer.
+
 ## Integer formatting
 
 The signed int/long kernels serve the four DecimalDigits Latin1/UTF16 writers

@@ -188,9 +188,19 @@ public final class DoubleToDecimal extends ToDecimal {
      */
     public static void split(double v, FormattedFPDecimal fd) {
         if (!Zmij.split(v, fd)) {
-            byte[] str = new byte[MAX_CHARS];
+            byte[] str = splitBuffer(v, fd);
             LATIN1.toDecimalJava(str, 0, v, fd);
         }
+    }
+
+    @ForceInline
+    private static byte[] splitBuffer(double v, FormattedFPDecimal fd) {
+        // Keep native-declined inputs on the original allocation path.
+        // Null holders, negative inputs and tiny subnormals also retain the buffer.
+        if (!Zmij.isEnabled() && fd != null && doubleToRawLongBits(v) > 128) {
+            return null;
+        }
+        return new byte[MAX_CHARS];
     }
 
     /**

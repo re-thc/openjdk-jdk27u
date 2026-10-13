@@ -26,6 +26,7 @@
 #include "utilities/zmijInteger.hpp"
 
 #define ZMIJ_HOTSPOT_INTEGER_ONLY
+#define ZMIJ_USE_SSE4_1 0
 #define ZMIJ_USE_AVX2 0
 #define ZMIJ_USE_FMA 0
 #include "utilities/zmij/zmij-int-impl.hpp"

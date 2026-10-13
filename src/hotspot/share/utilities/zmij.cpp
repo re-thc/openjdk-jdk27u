@@ -29,6 +29,7 @@
 #include "utilities/zmij.hpp"
 
 // The SSE4.1 implementation is compiled in a separate translation unit.
+#define ZMIJ_USE_SSE4_1 0
 #define ZMIJ_HOTSPOT_SHORTEST_ONLY
 #define ZMIJ_MALLOC(size) os::malloc(size, mtInternal)
 #define ZMIJ_FREE(ptr) os::free(ptr)

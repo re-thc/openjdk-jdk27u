@@ -43,6 +43,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.math.FloatingDecimal;
 import jdk.internal.math.FormattedFPDecimal;
 import jdk.internal.util.DecimalDigits;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -1389,6 +1390,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @throws NumberFormatException if {@code val} is infinite or NaN.
      * @since  1.5
      */
+    @ForceInline
     public static BigDecimal valueOf(double val) {
         if (!Double.isFinite(val)) {
             throw new NumberFormatException("Infinite or NaN");
