@@ -3443,17 +3443,16 @@ public final class Class<T> implements java.io.Serializable,
         if (constants == null) {
             if (!isEnum()) return null;
             try {
+                // Invoked once, so don't create a method handle accessor
                 final Method values = getMethod("values");
-                values.setAccessible(true);
                 @SuppressWarnings("unchecked")
-                T[] temporaryConstants = (T[])values.invoke(null);
+                T[] temporaryConstants = (T[])getReflectionFactory().invokeStatic(values);
                 enumConstants = constants = temporaryConstants;
             }
             // These can happen when users concoct enum-like classes
             // that don't comply with the enum spec.
             catch (InvocationTargetException | NoSuchMethodException |
-                   IllegalAccessException | NullPointerException |
-                   ClassCastException ex) { return null; }
+                   NullPointerException | ClassCastException ex) { return null; }
         }
         return constants;
     }

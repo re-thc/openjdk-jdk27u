@@ -26,12 +26,10 @@
 package java.lang.reflect;
 
 import java.lang.annotation.Annotation;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.Objects;
 import java.util.StringJoiner;
-import java.util.stream.Collectors;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.Stable;
@@ -103,13 +101,9 @@ public abstract sealed class Executable extends AccessibleObject
 
             appendModifiers(sb);
             specificToStringHeader(sb);
-            sb.append(Arrays.stream(parameterTypes)
-                      .map(Type::getTypeName)
-                      .collect(Collectors.joining(",", "(", ")")));
+            sb.append(joinTypeNames(parameterTypes, ",", "(", ")"));
             if (exceptionTypes.length > 0) {
-                sb.append(Arrays.stream(exceptionTypes)
-                          .map(Type::getTypeName)
-                          .collect(Collectors.joining(",", " throws ", "")));
+                sb.append(joinTypeNames(exceptionTypes, ",", " throws ", ""));
             }
             return sb.toString();
         } catch (Exception e) {
@@ -123,15 +117,23 @@ public abstract sealed class Executable extends AccessibleObject
      */
     abstract void specificToStringHeader(StringBuilder sb);
 
+    // Not a stream: the display string of a method is built on common error paths
+    private static String joinTypeNames(Type[] types, String delimiter,
+                                        String prefix, String suffix) {
+        StringJoiner sj = new StringJoiner(delimiter, prefix, suffix);
+        for (Type type : types) {
+            sj.add(type.getTypeName());
+        }
+        return sj.toString();
+    }
+
     static String typeVarBounds(TypeVariable<?> typeVar) {
         Type[] bounds = typeVar.getBounds();
         if (bounds.length == 1 && bounds[0].equals(Object.class)) {
             return typeVar.getName();
         } else {
             return typeVar.getName() + " extends " +
-                Arrays.stream(bounds)
-                .map(Type::getTypeName)
-                .collect(Collectors.joining(" & "));
+                joinTypeNames(bounds, " & ", "", "");
         }
     }
 
@@ -143,9 +145,11 @@ public abstract sealed class Executable extends AccessibleObject
 
             TypeVariable<?>[] typeparms = getTypeParameters();
             if (typeparms.length > 0) {
-                sb.append(Arrays.stream(typeparms)
-                          .map(Executable::typeVarBounds)
-                          .collect(Collectors.joining(",", "<", "> ")));
+                StringJoiner tj = new StringJoiner(",", "<", "> ");
+                for (TypeVariable<?> typeparm : typeparms) {
+                    tj.add(typeVarBounds(typeparm));
+                }
+                sb.append(tj);
             }
 
             specificToGenericStringHeader(sb);
@@ -164,9 +168,7 @@ public abstract sealed class Executable extends AccessibleObject
 
             Type[] exceptionTypes = getGenericExceptionTypes();
             if (exceptionTypes.length > 0) {
-                sb.append(Arrays.stream(exceptionTypes)
-                          .map(Type::getTypeName)
-                          .collect(Collectors.joining(",", " throws ", "")));
+                sb.append(joinTypeNames(exceptionTypes, ",", " throws ", ""));
             }
             return sb.toString();
         } catch (Exception e) {
