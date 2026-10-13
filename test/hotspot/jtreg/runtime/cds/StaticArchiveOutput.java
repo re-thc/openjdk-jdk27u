@@ -73,7 +73,7 @@ public class StaticArchiveOutput {
             if (existing) {
                 Files.writeString(archive, SENTINEL);
             }
-            Path classDir = Files.createDirectory(Path.of("classes"));
+            Path classDir = Files.createDirectory(Path.of("classes")).toRealPath();
             Files.copy(Path.of(System.getProperty("test.classes"), "StaticArchiveOutputApp.class"),
                        classDir.resolve("StaticArchiveOutputApp.class"));
             Path classList = Path.of("classes.list");
