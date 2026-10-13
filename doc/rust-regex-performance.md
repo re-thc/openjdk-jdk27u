@@ -1,6 +1,110 @@
 # Rust regex performance
 
-## Current routing qualification
+## Integration qualification
+
+Runtime source `1d66c34a98c`, Linux x86_64, GCC 16.2, Rust 1.99.0,
+release with four-byte object headers. The native adapter uses a conservative
+first-byte hint to skip futile anchored probes, and shares capture automata
+for greedy runs separated by excluded literal bytes. Matching algorithms stay
+in the pinned Rust library. Matcher clears captures before Java traversal,
+avoids successful-email end-flag replay, and uses a small dispatcher after
+promotion to Java. A collected, previously validated small preparation can
+rebuild its backend lazily; first compilation still diagnoses syntax errors.
+
+The public-API workload includes `reset().find()`, every capture's start/end,
+`hitEnd()` and `requireEnd()`. Two alternating process pairs run JMH 1.37 on
+one pinned CPU, Serial GC, one active processor, two 300 ms warmups and three
+300 ms samples. These rows are medians of six samples, rather than the means
+in the older reports below. Original-source controls patch Pattern/Matcher
+from `8d8d71a` into the preceding release image; disabled controls run the
+new image with `-XX:-UseRustRegex`. This is not a separately built original
+HotSpot baseline.
+
+| Captured-email public API | Tier | Original ns/op | Disabled ns/op | Default ns/op |
+| --- | --- | ---: | ---: | ---: |
+| Early hit, 16 chars | Interpreter | 5,696.8 | 4,775.1 | 2,952.8 |
+| Early hit, 16 chars | C1 | 234.2 | 388.9 | 146.0 |
+| Early hit, 16 chars | C2 | 81.6 | 83.3 | 34.1 |
+| Full-length hit, 16 chars | C2 | 133.8 | 125.5 | 47.5 |
+| Early hit, 4,096 chars | C2 | 81.9 | 73.3 | 38.8 |
+| Full-length hit, 4,096 chars | Interpreter | 1,890,771.4 | 1,246,926.8 | 20,475.6 |
+| Full-length hit, 4,096 chars | C1 | 86,209.4 | 62,362.0 | 15,603.1 |
+| Full-length hit, 4,096 chars | C2 | 22,673.9 | 26,215.2 | 18,744.1 |
+
+All these reused cases allocate approximately zero Java bytes per operation.
+Short email results may use the existing compact plan; long full-length hits
+use native matching. These figures must not be presented as a pure-native
+ceiling. Separate untimed native-entry counters establish actual intrinsic
+and JNI calls for interpreter, C1 and C2, and separate forced-native runs
+retain raw, wrapper and complete Matcher costs.
+
+Against the preceding runtime, the final short C2 public-API pairs improve
+email early hits from 103.7/80.2 to 32.0/31.3 ns/op and full-length hits from
+140.1/142.6 to 74.1/77.6 ns/op. Unsupported-pattern results are mixed:
+full-length hits change from 122.2/93.6 to 80.8/100.3 ns/op; misses change from
+110.5/156.3 to 206.1/145.9. Shared-host process variation remains material.
+The raw pair results accompany the medians; these are not universal latency
+guarantees or evidence that every fallback workload improves.
+
+Cold post-GC complete lifetimes include Pattern compilation, Matcher creation
+and matching. The JVM is already warmed; these are not process startup times.
+For a 16-character one-call alternation miss, original / preceding / new
+sample medians are 28.2 / 333.5 / 289.2 microseconds. For the corresponding
+email case they are 34.6 / 52.3 / 49.5 microseconds. Java allocations for the
+alternation case fall from about 5,925 to 5,114 bytes per lifetime; Rust
+allocations are not included in that Java counter. At 4,096 characters and
+32 calls, alternation medians are 2,656.2 / 282.1 / 260.2 microseconds;
+email medians are 2,666.7 / 176.2 / 161.0 microseconds. Low-reuse cold use still
+loses, and these measurements do not establish an automatic reuse crossover.
+Native ARM throughput remains unmeasured.
+
+The exact image hashes, source checkpoint, benchmark sources, commands,
+individual samples and allocation counters are saved with the qualification
+archive in Library. The release image passes 109 regex, Scanner and String
+tests with 5,989 framework checks. The native adapter passes 14 tests and
+Clippy. Fastdebug compilation encountered GCC 16's `-Werror=nonnull` in unchanged
+OpenJDK handshake code. Retrying with `-Wno-error=nonnull` compiled that code,
+then failed with `/usr/bin/bash: fork: Resource temporarily unavailable`.
+The workspace had about 32,400 tasks, including over 31,000 unreaped `tee`
+processes owned by PID 1. The current-image latency probe then failed before
+execution: `pthread_create failed (EAGAIN)` and
+`OutOfMemoryError: unable to create native thread`. Fastdebug tests and the
+refreshed four-mode leaf/GC measurements are unrun; earlier latency observations
+below describe their earlier source. Managed limits and the supervisor were
+not changed.
+
+## Remaining routing and startup limits
+
+A refreshed same-image original-source control confirms the C2 scan wins:
+4,096-character prefix misses change from 4,762.1 to 183.7 ns/op; digit misses
+change from 122.0 to 33.8 ns/op at 16 characters, and 28,711.7 to 195.4 ns/op
+at 4,096. Unsupported 16-character misses measure 90.1 / 88.4 / 85.5 ns/op
+in original / disabled / default controls. The interpreter and C1 still show
+a short-prefix miss loss: at 16 characters, interpreter original / disabled /
+default medians are 961.6 / 958.7 / 1,645.1 ns/op, and C1 medians are
+36.0 / 37.0 / 77.2 ns/op. Diagnostic wider and first-byte-selective Java
+choices reduce it, but worsen other cases or retain C1 overhead, so neither
+candidate is included in the production source.
+
+Forced-native C2 16-character prefix measurements separate the Rust path from
+the existing compact Java plan. Against runtime `90bfbafc664`, raw-call miss
+medians change from 85.3 to 70.8 ns/op, and complete Matcher miss medians from
+81.5 to 54.3. Raw early hits are essentially unchanged at 80.3 / 81.0 ns/op.
+Raw late hits improve from 131.4 to 119.0; the wrapper late-hit result moves
+from 133.7 to 144.2. These small-source diagnostics establish specific changes,
+not a universal native-call win.
+
+Five alternating subprocess samples per control measure fresh first regex
+use, including compilation, Matcher creation, one successful match and end
+flags. First-use medians for email are 10.6 / 23.4 / 40.5 ms, and alternation
+5.4 / 18.4 / 50.0 ms, in original / disabled / default controls. Whole-process
+wall medians are 175.9 / 90.2 / 110.2 ms for email and 169.5 / 84.4 / 119.9 ms
+for alternation. The original control's patch-module loading contributes to
+process startup; no original-HotSpot startup comparison is claimed. Default
+first use remains more expensive than disabled. The timed runs pause the
+local compiler build; the build resumes after timing.
+
+## Earlier routing qualification
 
 Linux x86_64, GCC 16.2, Rust 1.99.0, release image with four-byte object headers.
 The fixed-digit/email/large-scan measurements use runtime source `a756ecf00b3`;
