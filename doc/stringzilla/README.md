@@ -39,8 +39,10 @@ prefix (`fromIndex + needleCount`), in code units, after API range normalization
 
 | Backend and tier | Additional native eligibility |
 | --- | --- |
+| Serial or AVX2 C1, Latin-1 | Needle up to 256 code units, or comparison work at least 1024 |
 | Serial C2, Latin-1 | Needle 32–256 code units with prefix at least 1024, or longer needle with comparison work at least 4096 |
-| Serial C1, UTF-16 | Needle up to 128 code units, or comparison work at least 1024 |
+| AVX2 C2, Latin-1 | Needle up to 128 code units; needle 129–256 with comparison work at least 1024; longer needle with comparison work at least 4096 |
+| Serial or AVX2 C1, UTF-16 | Needle up to 128 code units, or comparison work at least 1024 |
 | Serial or AVX2 C2, UTF-16 | Needle up to 128 code units with prefix at least 512, or longer needle with comparison work at least 2048 |
 | Interpreter, other backend/tier combinations, mixed-coder searches | Existing eligibility |
 
@@ -50,10 +52,12 @@ needle has enough candidate positions to amortize setup. This dispatch estimate
 is independent of the native maximum-work safety guard. The interpreter retains
 its existing eligibility, including minimal overlapping matches.
 
-Ineligible UTF-16 ranges use the existing Java reverse loop. Serial C2 Latin-1
+Ineligible UTF-16, C1 Latin-1 and AVX2 C2 Latin-1 ranges use the existing Java
+reverse loop. AVX2 C2 uses a Java helper with explicit range checks, so scalar
+verification can retain array bounds optimizations. Serial C2 Latin-1
 uses the existing character-search intrinsic to skip 256-byte blocks without
-the needle's last character, then resumes the original reverse loop. Forward search, character
-search and equality retain their dispatch rules. Serial UTF-16 bulk reverse
+the needle's last character, then resumes the original reverse loop. Forward
+search, character search and equality retain their dispatch rules. Serial UTF-16 bulk reverse
 searches with needles up to 128 code units reuse the existing aligned batch filter
 directly, avoiding ineffective byte-search shifts. Longer needles keep upstream
 byte search and its overlap-preserving prefix filter.

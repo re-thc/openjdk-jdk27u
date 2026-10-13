@@ -1195,7 +1195,7 @@ final class StringUTF16 {
             if (tgtCount <= 8 && StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount)) {
                 return fromIndex;
             }
-            int result = StringZilla.compilerTier() == 1
+            int result = StringZilla.compilerTier() == StringZilla.C1
                     ? StringZilla.rfindUTF16C1(src, searchLength, tgt, tgtCount)
                     : StringZilla.rfindUTF16(src, 0, searchLength << 1, tgt, tgtCount << 1);
             if (result == StringZilla.FALLBACK) {

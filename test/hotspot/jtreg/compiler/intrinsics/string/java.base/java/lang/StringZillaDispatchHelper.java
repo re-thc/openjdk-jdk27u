@@ -32,6 +32,10 @@ public class StringZillaDispatchHelper {
         return StringZilla.useReverseLatin1(length, count);
     }
 
+    public static boolean latinFilter() {
+        return StringZilla.useReverseLatin1Filter();
+    }
+
     public static boolean utf16(int length, int count) {
         return StringZilla.useReverseUTF16(length, count);
     }

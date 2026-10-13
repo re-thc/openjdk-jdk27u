@@ -50,11 +50,12 @@ public class TestStringZillaDispatch {
         Class<?> helper = Class.forName("java.lang.StringZillaDispatchHelper");
         Method tier = helper.getMethod("tier");
         Method latin = helper.getMethod("latin", int.class, int.class);
+        Method latinFilter = helper.getMethod("latinFilter");
         Method utf16 = helper.getMethod("utf16", int.class, int.class);
         Method search = helper.getMethod("search", String.class, String.class, int.class);
         Method intrinsic = bridge.getDeclaredMethod("compilerTier");
         for (int level : new int[]{1, 4}) {
-            for (Method method : new Method[]{tier, latin, utf16, search}) {
+            for (Method method : new Method[]{tier, latin, latinFilter, utf16, search}) {
                 WB.deoptimizeMethod(method);
                 if (!WB.enqueueMethodForCompilation(method, level)
                         || !WB.isMethodCompiled(method)
@@ -67,30 +68,39 @@ public class TestStringZillaDispatch {
                 throw new AssertionError("Tier not folded at compilation level " + level);
             }
             boolean serialC2 = backend == 0 && expectedTier == 4;
+            boolean scalarC1 = (backend == 0 || backend == 1) && expectedTier == 1;
+            boolean scalarC2 = (backend == 0 || backend == 1) && expectedTier == 4;
+            if ((boolean)latinFilter.invoke(null) != serialC2) {
+                throw new AssertionError("Latin-1 filter routing at compilation level " + level);
+            }
             check(latin, 4096, 31, !serialC2);
             check(latin, 1023, 32, !serialC2);
             check(latin, 1024, 32, true);
             check(latin, 4096, 64, true);
-            check(latin, 257, 256, !serialC2);
-            check(latin, 258, 257, !serialC2);
-            check(latin, 271, 257, !serialC2);
+            check(latin, 257, 256, !scalarC2);
+            check(latin, 258, 256, !scalarC2);
+            check(latin, 259, 256, !serialC2);
+            check(latin, 260, 256, !serialC2);
+            check(latin, 258, 257, !scalarC1 && !scalarC2);
+            check(latin, 259, 257, !scalarC1 && !scalarC2);
+            check(latin, 260, 257, !scalarC2);
+            check(latin, 261, 257, !scalarC2);
+            check(latin, 271, 257, !scalarC2);
             check(latin, 272, 257, true);
             check(latin, 273, 257, true);
             check(latin, 770, 257, true);
-            boolean serialC1 = backend == 0 && expectedTier == 1;
-            boolean shortC2 = (backend == 0 || backend == 1) && expectedTier == 4;
-            check(utf16, 128, 4, !shortC2);
-            check(utf16, 255, 4, !shortC2);
-            check(utf16, 256, 4, !shortC2);
-            check(utf16, 511, 32, !shortC2);
+            check(utf16, 128, 4, !scalarC2);
+            check(utf16, 255, 4, !scalarC2);
+            check(utf16, 256, 4, !scalarC2);
+            check(utf16, 511, 32, !scalarC2);
             check(utf16, 512, 32, true);
-            check(utf16, 128, 33, !shortC2);
-            check(utf16, 129, 128, !shortC2);
-            check(utf16, 130, 129, !serialC1 && !shortC2);
-            check(utf16, 135, 129, !serialC1 && !shortC2);
-            check(utf16, 136, 129, !shortC2);
-            check(utf16, 137, 129, !shortC2);
-            check(utf16, 143, 129, !shortC2);
+            check(utf16, 128, 33, !scalarC2);
+            check(utf16, 129, 128, !scalarC2);
+            check(utf16, 130, 129, !scalarC1 && !scalarC2);
+            check(utf16, 135, 129, !scalarC1 && !scalarC2);
+            check(utf16, 136, 129, !scalarC2);
+            check(utf16, 137, 129, !scalarC2);
+            check(utf16, 143, 129, !scalarC2);
             check(utf16, 144, 129, true);
             check(utf16, 145, 129, true);
             check(utf16, 512, 385, true);
@@ -130,8 +140,9 @@ public class TestStringZillaDispatch {
     }
 
     private static void checkBoundaries(Method search) throws Exception {
-        for (int length : new int[]{127, 128, 129, 255, 256, 257, 511, 512, 513, 1023, 1024, 1025, 4096}) {
-            for (int count : new int[]{1, 2, 4, 16, 31, 32, 33, 64, 129, 257}) {
+        for (int length : new int[]{127, 128, 129, 255, 256, 257, 258, 259, 260, 261,
+                                  271, 272, 273, 511, 512, 513, 1023, 1024, 1025, 4096}) {
+            for (int count : new int[]{1, 2, 4, 16, 31, 32, 33, 64, 128, 129, 255, 256, 257, 258, 385}) {
                 if (count >= length) continue;
                 for (int base : new int[]{'a', 0x0401}) {
                     String repeated = String.valueOf((char)base);

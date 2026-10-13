@@ -25,6 +25,8 @@
 
 package java.lang;
 
+import java.util.Objects;
+
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -38,8 +40,8 @@ final class StringZilla {
     private static final int BACKEND = CONFIGURATION & BACKEND_MASK;
     private static final int SERIAL = 0;
     private static final int HASWELL = 1;
-    private static final int C1 = 1;
-    private static final int C2 = 4;
+    static final int C1 = 1;
+    static final int C2 = 4;
     // Keep small inputs on the existing Java / platform intrinsic paths.
     static final int MIN_BYTES = 256;
     // Match the independent native bounds. Exceeding either resumes Java code.
@@ -133,8 +135,31 @@ final class StringZilla {
     // in code units, after the public API has normalized fromIndex.
     @ForceInline
     static boolean useReverseLatin1(int length, int count) {
-        return BACKEND != SERIAL || compilerTier() != C2
-                || (count > 256 ? ((long)length - count + 1) * count >= 4096 : count >= 32 && length >= 1024);
+        int tier = compilerTier();
+        if (tier == 0 || (BACKEND != SERIAL && BACKEND != HASWELL)) {
+            return true;
+        }
+        if (tier == C1) {
+            return count <= 256 || reverseWork(length, count) >= 1024;
+        }
+        if (count > 256) {
+            return reverseWork(length, count) >= 4096;
+        }
+        return BACKEND == SERIAL ? count >= 32 && length >= 1024
+                                 : count <= 128 || reverseWork(length, count) >= 1024;
+    }
+
+    @ForceInline
+    static boolean useReverseLatin1Filter() {
+        return BACKEND == SERIAL && compilerTier() == C2;
+    }
+
+    // Expose the validated ranges to C2 before compiling the scalar loop.
+    @DontInline
+    static int lastIndexOfLatin1JavaC2(byte[] src, byte[] tgt, int count, int from) {
+        Objects.checkFromIndexSize(from, count, src.length);
+        Objects.checkFromIndexSize(0, count, tgt.length);
+        return StringLatin1.lastIndexOfJava(src, tgt, count, from);
     }
 
     @ForceInline
@@ -143,11 +168,16 @@ final class StringZilla {
         if (tier == 0) {
             return true;
         }
-        if (BACKEND == SERIAL && tier == C1) {
-            return count <= 128 || ((long)length - count + 1) * count >= 1024;
+        if ((BACKEND == SERIAL || BACKEND == HASWELL) && tier == C1) {
+            return count <= 128 || reverseWork(length, count) >= 1024;
         }
         return tier != C2 || (BACKEND != SERIAL && BACKEND != HASWELL)
-                || (count > 128 ? ((long)length - count + 1) * count >= 2048 : length >= 512);
+                || (count > 128 ? reverseWork(length, count) >= 2048 : length >= 512);
+    }
+
+    @ForceInline
+    private static long reverseWork(int length, int count) {
+        return ((long)length - count + 1) * count;
     }
 
     // Isolate C1's native address setup from the surrounding scalar loop.

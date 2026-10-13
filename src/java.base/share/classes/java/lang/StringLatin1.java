@@ -612,7 +612,12 @@ final class StringLatin1 {
                 return fromIndex;
             }
             if (!StringZilla.useReverseLatin1(searchLength, tgtCount)) {
-                return lastIndexOfJavaFiltered(src, tgt, tgtCount, fromIndex);
+                if (StringZilla.useReverseLatin1Filter()) {
+                    return lastIndexOfJavaFiltered(src, tgt, tgtCount, fromIndex);
+                }
+                return StringZilla.compilerTier() == StringZilla.C2
+                        ? StringZilla.lastIndexOfLatin1JavaC2(src, tgt, tgtCount, fromIndex)
+                        : lastIndexOfJava(src, tgt, tgtCount, fromIndex);
             }
             int result = StringZilla.rfindLatin1(src, 0, searchLength,
                     tgt, tgtCount);
@@ -643,7 +648,7 @@ final class StringLatin1 {
     }
 
     // Keep native-call setup out of C1's scalar fallback register allocation.
-    private static int lastIndexOfJava(byte[] src, byte[] tgt, int tgtCount, int fromIndex) {
+    static int lastIndexOfJava(byte[] src, byte[] tgt, int tgtCount, int fromIndex) {
         int min = tgtCount - 1;
         int i = min + fromIndex;
         int strLastIndex = tgtCount - 1;
