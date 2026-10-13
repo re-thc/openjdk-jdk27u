@@ -286,6 +286,40 @@ jobs:
           JDK: ${{ steps.bundles.outputs.jdk-path }}
         run: |
           python3 make/scripts/benchmark-rust-regex.py --java "$JDK/bin/java" --classpath "$RUNNER_TEMP/regex-jmh/classes:$RUNNER_TEMP/regex-jmh/lib/*" --output "$RUNNER_TEMP/regex-results/benchmarks" --suite review --pairs 2
+      - name: 'Print paired summaries'
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import collections
+          import json
+          import os
+          from pathlib import Path
+          import statistics
+
+          root = Path(os.environ['RUNNER_TEMP']) / 'regex-results' / 'benchmarks'
+          if not (root / 'results.jsonl').exists():
+              raise SystemExit(0)
+          print(json.dumps({'record': 'runtime', 'metadata': json.loads((root / 'metadata.json').read_text())}))
+          cases = collections.defaultdict(lambda: collections.defaultdict(list))
+          for line in (root / 'results.jsonl').read_text().splitlines():
+              row = json.loads(line)
+              result = row['result']
+              key = (row['suite'], row['tier'], tuple(sorted(result['params'].items())))
+              cases[key][row['enabled']].append({
+                  'pair': row['pair'], 'score': result['primaryMetric']['score'],
+                  'samples': result['primaryMetric']['rawData'],
+                  'unit': result['primaryMetric']['scoreUnit']})
+          for (suite, tier, params), sides in sorted(cases.items()):
+              if not sides[False] or not sides[True]:
+                  continue
+              java = statistics.mean(row['score'] for row in sides[False])
+              default = statistics.mean(row['score'] for row in sides[True])
+              print(json.dumps({'record': 'paired-summary', 'suite': suite, 'tier': tier,
+                                'params': dict(params), 'java': java, 'default': default,
+                                'speedup': java / default, 'java_processes': sides[False],
+                                'default_processes': sides[True]}))
+          PY
+
       - name: 'Upload qualification results'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
