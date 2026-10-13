@@ -1773,6 +1773,14 @@ public final class Matcher implements MatchResult {
      * the end of the previous match.
      */
     boolean search(int from) {
+        if (javaOnly) {
+            clearNativeEnd();
+            return searchJava(from);
+        }
+        return searchMixed(from);
+    }
+
+    private boolean searchMixed(int from) {
         this.hitEnd = false;
         this.requireEnd = false;
         from        = from < 0 ? 0 : from;
@@ -1838,6 +1846,15 @@ public final class Matcher implements MatchResult {
      * state of the match as it proceeds in this matcher.
      */
     boolean match(int from, int anchor) {
+        if (javaOnly) {
+            ensureContinuation();
+            clearNativeEnd();
+            return matchJava(from, anchor);
+        }
+        return matchMixed(from, anchor);
+    }
+
+    private boolean matchMixed(int from, int anchor) {
         ensureContinuation();
         this.hitEnd = false;
         this.requireEnd = false;
@@ -1895,6 +1912,48 @@ public final class Matcher implements MatchResult {
         if (!result) first = -1;
         oldLast = last;
         modCount++;
+        return result;
+    }
+
+    private boolean searchJava(int from) {
+        this.hitEnd = false;
+        this.requireEnd = false;
+        from        = from < 0 ? 0 : from;
+        this.first  = from;
+        this.oldLast = oldLast < 0 ? from : oldLast;
+        for (int i = 0; i < parentPattern.capturingGroupCount * 2; i++)
+            groups[i] = -1;
+        for (int i = 0; i < localsPos.length; i++) {
+            if (localsPos[i] != null)
+                localsPos[i].clear();
+        }
+        acceptMode = NOANCHOR;
+        boolean result = parentPattern.root.match(this, from, text);
+        if (!result)
+            this.first = -1;
+        this.oldLast = this.last;
+        this.modCount++;
+        return result;
+    }
+
+    private boolean matchJava(int from, int anchor) {
+        this.hitEnd = false;
+        this.requireEnd = false;
+        from        = from < 0 ? 0 : from;
+        this.first  = from;
+        this.oldLast = oldLast < 0 ? from : oldLast;
+        for (int i = 0; i < parentPattern.capturingGroupCount * 2; i++)
+            groups[i] = -1;
+        for (int i = 0; i < localsPos.length; i++) {
+            if (localsPos[i] != null)
+                localsPos[i].clear();
+        }
+        acceptMode = anchor;
+        boolean result = parentPattern.matchRoot.match(this, from, text);
+        if (!result)
+            this.first = -1;
+        this.oldLast = this.last;
+        this.modCount++;
         return result;
     }
 
