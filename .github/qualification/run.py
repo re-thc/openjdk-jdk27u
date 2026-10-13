@@ -1,4 +1,4 @@
-import json, subprocess, sys
+import hashlib, json, os, subprocess, sys
 from pathlib import Path
 root = Path.cwd()
 output = root / "qualification"
