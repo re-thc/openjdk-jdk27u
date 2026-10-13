@@ -133,6 +133,7 @@ pub struct Handle<'a> {
     max_input: usize,
     minimum_len: usize,
     first_bytes: [u64; 4],
+    required_separator: Option<u8>,
     _reservation: Reservation<'a>,
 }
 
@@ -160,6 +161,55 @@ fn full_from_primary(hir: &Hir) -> bool {
         }
         _ => false,
     }
+}
+
+// Greedy byte runs cannot backtrack across an excluded literal separator.
+// Such a concatenation has a unique longest prefix, including captured runs,
+// and does not need a second end-asserted automaton for matches().
+fn greedy_separator(hir: &Hir) -> Option<u8> {
+    fn uncapture(mut hir: &Hir) -> &Hir {
+        while let HirKind::Capture(capture) = hir.kind() {
+            hir = &capture.sub;
+        }
+        hir
+    }
+    let HirKind::Concat(parts) = uncapture(hir).kind() else {
+        return None;
+    };
+    let mut separator = None;
+    for (index, part) in parts.iter().enumerate() {
+        let part = uncapture(part);
+        if part.properties().minimum_len().is_some()
+            && part.properties().minimum_len() == part.properties().maximum_len()
+        {
+            continue;
+        }
+        let HirKind::Repetition(repeat) = part.kind() else {
+            return None;
+        };
+        let atom = uncapture(&repeat.sub);
+        if !repeat.greedy
+            || atom.properties().minimum_len() != Some(1)
+            || atom.properties().maximum_len() != Some(1)
+            || !matches!(
+                atom.kind(),
+                HirKind::Class(regex_syntax::hir::Class::Bytes(_)) | HirKind::Literal(_)
+            )
+        {
+            return None;
+        }
+        if index + 1 != parts.len() {
+            let HirKind::Literal(literal) = uncapture(&parts[index + 1]).kind() else {
+                return None;
+            };
+            let &byte = literal.0.first()?;
+            if first_bytes(atom)[usize::from(byte) / 64] & (1 << (byte % 64)) != 0 {
+                return None;
+            }
+            separator.get_or_insert(byte);
+        }
+    }
+    separator
 }
 
 // Bound the expanded automaton work on a non-safepointing call. Count
@@ -226,6 +276,7 @@ struct PreparedRegex {
     max_input: usize,
     minimum_len: usize,
     first_bytes: [u64; 4],
+    required_separator: Option<u8>,
 }
 
 fn compile(pattern: &str, flags: u32) -> Option<PreparedRegex> {
@@ -254,6 +305,7 @@ fn compile(pattern: &str, flags: u32) -> Option<PreparedRegex> {
     let cost = search_cost(&hir);
     let minimum_len = hir.properties().minimum_len().unwrap_or(0);
     let first_bytes = first_bytes(&hir);
+    let required_separator = greedy_separator(&hir);
     let max_input = if cost <= 64 {
         MAX_INPUT
     } else {
@@ -263,7 +315,7 @@ fn compile(pattern: &str, flags: u32) -> Option<PreparedRegex> {
     // Separate patterns preserve the primary engine's one-pass capture path.
     // Common greedy tails need only the primary engine, saving compilation,
     // retained automata and a second search cache.
-    let full = if full_from_primary(&hir) {
+    let full = if full_from_primary(&hir) || required_separator.is_some() {
         None
     } else {
         Some(build(&Hir::concat(vec![hir, Hir::look(Look::End)]))?)
@@ -274,6 +326,7 @@ fn compile(pattern: &str, flags: u32) -> Option<PreparedRegex> {
         max_input,
         minimum_len,
         first_bytes,
+        required_separator,
     })
 }
 
@@ -342,6 +395,7 @@ fn compile_handle<'a>(
         mut max_input,
         minimum_len,
         first_bytes,
+        required_separator,
     } = compile(pattern, flags)?;
     if groups == 0 || groups > 33 || regex.group_info().group_len(PatternID::ZERO) != groups {
         return None;
@@ -371,6 +425,7 @@ fn compile_handle<'a>(
         max_input,
         minimum_len,
         first_bytes,
+        required_separator,
         _reservation: reservation,
     });
     // Admit and initialize the first cache while compilation is in native
@@ -488,6 +543,12 @@ unsafe fn match_impl(
             return SAFE_CALL;
         }
         let region = slice::from_raw_parts(bytes.add(from as usize), (to - from) as usize);
+        if handle
+            .required_separator
+            .is_some_and(|separator| !region[(start - from) as usize..].contains(&separator))
+        {
+            return 0;
+        }
         let input = Input::new(region)
             .span((start - from) as usize..region.len())
             .anchored(match mode {
@@ -794,6 +855,54 @@ mod tests {
     }
 
     #[test]
+    fn separated_runs_preserve_full_match_captures() {
+        let budget = Budget::new(64 * MIB);
+        for source in [
+            "([a-z0-9_]+)@([a-z0-9_]+)[.][a-z]{2,4}",
+            "(a*):([bc]+)",
+            "a+bc*d",
+            "a+a",
+        ] {
+            let reference = regex::bytes::RegexBuilder::new(&format!("\\A(?:{source})\\z"))
+                .unicode(false)
+                .build()
+                .unwrap();
+            let handle = compile_handle(source, 0, reference.captures_len(), &budget).unwrap();
+            assert_eq!(handle.required_separator.is_some(), source != "a+a");
+            let examples: &[&[u8]] = &[
+                b"",
+                b":b",
+                b"aaa:bbb",
+                b"aaa:bc",
+                b"abcd",
+                b"aaabcd",
+                b"a@b.cc",
+                b"aaa@bbbb.cccc",
+                b"a@b.ccccc",
+                b" a@b.cc",
+                b"a@b.cc!",
+            ];
+            for text in examples {
+                let expected = reference.captures(text);
+                let (matched, captures) = run(&handle, text, 2);
+                assert_eq!(matched == 1, expected.is_some(), "{source} {text:?}");
+                if let Some(expected) = expected {
+                    for group in 0..handle.groups {
+                        assert_eq!(
+                            captures[2 * group],
+                            expected.get(group).map_or(-1, |m| m.start() as i32)
+                        );
+                        assert_eq!(
+                            captures[2 * group + 1],
+                            expected.get(group).map_or(-1, |m| m.end() as i32)
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
     fn zero_length_optional_groups_and_ascii_case() {
         let budget = Budget::new(64 * MIB);
         let empty = compile_handle("(a)?", 0, 2, &budget).unwrap();
@@ -895,6 +1004,9 @@ mod tests {
         let mut seed = 17u64;
         for expression in [
             "(?-u:[a-z]+[0-9]+)",
+            "(?-u:([a-z0-9_]+)@([a-z0-9_]+)[.][a-z]{2,4})",
+            "a*:[bc]+",
+            "a+a",
             "(?-u:[\\x00-\\xff]*?z)",
             "(a|ab)",
             "(ab)+",

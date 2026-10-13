@@ -465,8 +465,6 @@ public final class Matcher implements MatchResult {
         first = -1;
         last = 0;
         oldLast = -1;
-        for(int i=0; i<parentPattern.capturingGroupCount * 2; i++)
-            groups[i] = -1;
         for(int i=0; i<locals.length; i++)
             locals[i] = -1;
         for (int i = 0; i < localsPos.length; i++) {
@@ -1778,12 +1776,6 @@ public final class Matcher implements MatchResult {
         this.first  = from;
         this.oldLast = oldLast < 0 ? from : oldLast;
         int base = parentPattern.capturingGroupCount * 2;
-        for (int i = 0; i < base; i++)
-            groups[i] = -1;
-        for (int i = 0; i < localsPos.length; i++) {
-            if (localsPos[i] != null)
-                localsPos[i].clear();
-        }
         acceptMode = NOANCHOR;
         Pattern.Node javaRoot;
         RustRegex engine = null;
@@ -1808,6 +1800,7 @@ public final class Matcher implements MatchResult {
             }
         }
         if (javaRoot != null) {
+            prepareJavaMatch(base);
             boolean result = javaRoot.match(this, from, text);
             if (!result) first = -1;
             oldLast = last;
@@ -1818,10 +1811,12 @@ public final class Matcher implements MatchResult {
         boolean result;
         if (nativeResult >= 0) result = nativeResult == 1;
         else if (nativeResult == -2) {
+            prepareJavaMatch(base);
             result = javaMatchChoice.root.match(this, from, text);
         }
         else {
             selectJavaOnly();
+            prepareJavaMatch(base);
             result = javaMatchChoice.root.match(this, from, text);
         }
         if (!result) first = -1;
@@ -1844,12 +1839,6 @@ public final class Matcher implements MatchResult {
         this.first  = from;
         this.oldLast = oldLast < 0 ? from : oldLast;
         int base = parentPattern.capturingGroupCount * 2;
-        for (int i = 0; i < base; i++)
-            groups[i] = -1;
-        for (int i = 0; i < localsPos.length; i++) {
-            if (localsPos[i] != null)
-                localsPos[i].clear();
-        }
         acceptMode = anchor;
         Pattern.Node javaRoot;
         RustRegex engine = null;
@@ -1875,6 +1864,7 @@ public final class Matcher implements MatchResult {
             }
         }
         if (javaRoot != null) {
+            prepareJavaMatch(base);
             boolean result = javaRoot.match(this, from, text);
             if (!result) first = -1;
             oldLast = last;
@@ -1885,10 +1875,12 @@ public final class Matcher implements MatchResult {
         boolean result;
         if (nativeResult >= 0) result = nativeResult == 1;
         else if (nativeResult == -2) {
+            prepareJavaMatch(base);
             result = javaMatchChoice.matchRoot.match(this, from, text);
         }
         else {
             selectJavaOnly();
+            prepareJavaMatch(base);
             result = javaMatchChoice.matchRoot.match(this, from, text);
         }
         if (!result) first = -1;
@@ -1918,7 +1910,6 @@ public final class Matcher implements MatchResult {
         // Java traversal can advance last even when an anchored match fails.
         // Replay on this Matcher so the next find() starts at the same position.
         if (result < 0 || (result == 0 && mode != 0 && !engine.hasExactEndFlags())) {
-            for (int i = 0; i < base; i++) groups[i] = -1;
             parentPattern.ensureJava();
             return -1;
         }
@@ -1962,6 +1953,15 @@ public final class Matcher implements MatchResult {
         nativeEndPattern = null;
         nativeEndInput = null;
         nativePendingLast = false;
+    }
+
+    private void prepareJavaMatch(int base) {
+        // Native engines publish every capture on success. Java traversal can
+        // retain an unmatched optional capture, so clear only before that path.
+        for (int i = 0; i < base; i++) groups[i] = -1;
+        for (int i = 0; i < localsPos.length; i++) {
+            if (localsPos[i] != null) localsPos[i].clear();
+        }
     }
 
     private void javaStorage(Pattern execution) {

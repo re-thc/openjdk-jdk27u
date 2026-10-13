@@ -464,6 +464,7 @@ public class RustRegexTest {
         shortEmailMatches();
         emailSuccessEndFlags();
         collectedPreparation();
+        resetCapturePublication();
         primary();
         shortAndEarlyMatches();
         digitEndFlags();
@@ -544,5 +545,22 @@ public class RustRegexTest {
             }
         }
         java.lang.ref.Reference.reachabilityFence(first);
+    }
+
+    private static void resetCapturePublication() throws Exception {
+        for (String expression : new String[]{"(a)?b", "(?<x>a|ab)+", "(?=a)(a)", "([a-z0-9_]+)@([a-z0-9_]+)\\.[a-z]{2,4}"}) {
+            Pattern p = Pattern.compile(expression), ref = reference(expression, 0);
+            Matcher a = p.matcher("ab"), b = ref.matcher("ab");
+            for (String input : new String[]{"ab", "b", "none", "a@b.co", "ab", ""}) {
+                a.reset(input); b.reset(input);
+                MatchResult empty = a.toMatchResult();
+                if (empty.hasMatch() || a.hasMatch()) throw new AssertionError("reset retained a match");
+                try { empty.group(); throw new AssertionError("reset snapshot exposed captures"); }
+                catch (IllegalStateException expected) { }
+                equal(a, b, a.find(), b.find(), true);
+                a.region(0, input.length()); b.region(0, input.length());
+                equal(a, b, a.lookingAt(), b.lookingAt(), true);
+            }
+        }
     }
 }
