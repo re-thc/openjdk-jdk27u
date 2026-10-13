@@ -9446,8 +9446,10 @@ bool LibraryCallKit::inline_simdutf_process() {
        (operation->_lo >= SimdUTF::DECODE_BASE64 && operation->_hi <= SimdUTF::DECODE_BASE64_URL &&
         UseBASE64Intrinsics && StubRoutines::base64_decodeBlock() != nullptr) ||
        (operation->_lo == SimdUTF::INFLATE_LATIN1 && operation->_hi == SimdUTF::INFLATE_LATIN1) ||
-       (operation->_lo == SimdUTF::DECODE_LATIN1 && operation->_hi == SimdUTF::DECODE_LATIN1) ||
-       (operation->_lo == SimdUTF::VALIDATE_UTF8_LATIN1 && operation->_hi == SimdUTF::VALIDATE_UTF8_LATIN1) ||
+       (FLAG_IS_DEFAULT(SIMDUTFMinLength) && operation->_lo == SimdUTF::DECODE_LATIN1 &&
+        operation->_hi == SimdUTF::DECODE_LATIN1) ||
+       (FLAG_IS_DEFAULT(SIMDUTFMinLength) && operation->_lo == SimdUTF::VALIDATE_UTF8_LATIN1 &&
+        operation->_hi == SimdUTF::VALIDATE_UTF8_LATIN1) ||
        (operation->_lo >= SimdUTF::INDEX_OF_LATIN1 && operation->_hi <= SimdUTF::INDEX_OF_UTF16))) {
     // Prefer existing C2 intrinsics where they avoid a C ABI call. Base64
     // stubs are not available on every CPU supported by simdutf. Latin-1

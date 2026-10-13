@@ -2814,8 +2814,9 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_simdutf_process: {
 #ifdef AARCH64
     IntConstant* operation = x->argument_at(6)->type()->as_IntConstant();
-    if (operation != nullptr && (operation->value() == SimdUTF::DECODE_LATIN1 ||
-                                operation->value() == SimdUTF::VALIDATE_UTF8_LATIN1)) {
+    if (FLAG_IS_DEFAULT(SIMDUTFMinLength) && operation != nullptr &&
+        (operation->value() == SimdUTF::DECODE_LATIN1 ||
+         operation->value() == SimdUTF::VALIDATE_UTF8_LATIN1)) {
       // The original Java decoder is faster than staging on compiled AArch64.
       __ move(LIR_OprFact::intConst(-1), rlock_result(x));
       break;
