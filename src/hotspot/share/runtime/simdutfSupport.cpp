@@ -43,7 +43,10 @@ jint SimdUTF::initialize() {
 #if defined(AMD64) && !defined(ZERO)
   // Check the target attributes independently: simdutf's masks omit some
   // features and have aliased feature bits. HotSpot also checks OS vector state.
-  if (UseAVX >= 3 && VM_Version::supports_evex() && VM_Version::supports_avx2() &&
+  bool sse = VM_Version::supports_sse3() &&
+      VM_Version::supports_ssse3() && VM_Version::supports_sse4_1() && VM_Version::supports_sse4_2();
+  bool avx = sse && VM_Version::supports_avx() && VM_Version::supports_avx2();
+  if (UseAVX >= 3 && avx && VM_Version::supports_evex() &&
       VM_Version::supports_avx512dq() && VM_Version::supports_avx512cd() &&
       VM_Version::supports_avx512bw() && VM_Version::supports_avx512vl() &&
       VM_Version::supports_avx512_vbmi() && VM_Version::supports_avx512_vbmi2() &&
@@ -53,12 +56,12 @@ jint SimdUTF::initialize() {
     impl = implementations["icelake"];
   }
   if (impl == nullptr || !impl->supported_by_runtime_system()) {
-    impl = UseAVX >= 2 && VM_Version::supports_avx2() && VM_Version::supports_bmi1() &&
+    impl = UseAVX >= 2 && avx && VM_Version::supports_bmi1() &&
         VM_Version::supports_bmi2() && VM_Version::supports_lzcnt() && VM_Version::supports_popcnt()
         ? implementations["haswell"] : nullptr;
   }
   if (impl == nullptr || !impl->supported_by_runtime_system()) {
-    impl = UseSSE >= 4 && VM_Version::supports_sse4_2() && VM_Version::supports_popcnt()
+    impl = UseSSE >= 4 && sse && VM_Version::supports_popcnt()
         ? implementations["westmere"] : nullptr;
   }
 #elif defined(AARCH64) && !defined(ZERO)
