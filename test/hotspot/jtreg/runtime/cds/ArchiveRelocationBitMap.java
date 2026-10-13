@@ -46,9 +46,11 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class ArchiveRelocationBitMap {
     public static void main(String[] args) throws Exception {
         String jar = ClassFileInstaller.writeJar("relocation.jar", "ArchiveRelocationBitMapApp");
+        // An alternative mapping can reuse the preferred address; base zero guarantees relocation.
         SimpleCDSAppTester tester = SimpleCDSAppTester.of("relocation")
             .classpath(Path.of(jar).toAbsolutePath().toString())
             .addVmArgs("-XX:+UnlockDiagnosticVMOptions", "-XX:ArchiveRelocationMode=1",
+                       "-XX:SharedBaseAddress=0",
                        "-XX:-AOTCacheParallelRelocation", "-Xlog:cds+reloc=debug,aot+reloc=debug")
             .appCommandLine("ArchiveRelocationBitMapApp")
             .setProductionChecker((OutputAnalyzer out) -> {
