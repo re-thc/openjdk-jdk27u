@@ -22,8 +22,8 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 240
     env:
-      SOURCE_REVISION: d29d96ba02a5258122bb7ef3c00191b1f404ae2b
-      BUILD_RUN: '38378558222'
+      SOURCE_REVISION: 8bf01e9ed8a3df53fd8836d61216ed511ad3e591
+      BUILD_RUN: '38385226401'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -31,7 +31,7 @@ jobs:
           sparse-checkout: .github/qualification
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: d29d96ba02a5258122bb7ef3c00191b1f404ae2b
+          ref: 8bf01e9ed8a3df53fd8836d61216ed511ad3e591
           path: jdk
           fetch-depth: 0
       - name: Wait for matching native build artifacts
@@ -50,20 +50,20 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: bundles-${{ matrix.platform }}
-          run-id: '38378558222'
+          run-id: '38385226401'
           github-token: ${{ github.token }}
           path: jdk/bundles
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: bundles-${{ matrix.platform }}-debug
-          run-id: '38378558222'
+          run-id: '38385226401'
           github-token: ${{ github.token }}
           path: jdk/bundles
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           pattern: bundles-jtreg-*
           merge-multiple: true
-          run-id: '38378558222'
+          run-id: '38385226401'
           github-token: ${{ github.token }}
           path: jdk/jtreg
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
@@ -111,8 +111,21 @@ jobs:
       - name: Compare startup against unmodified master and flag controls
         working-directory: jdk
         run: |
-          python3 ../orchestration/.github/qualification/startup-master.py "$MASTER_JDK/bin/java" "$RELEASE_JDK/bin/java" qualification/startup-master.json
-          python3 ../orchestration/.github/qualification/startup.py "$RELEASE_JDK/bin/java" qualification/startup-flag.json --pairs 200
+          taskset -c "$BENCH_CPU" python3 - <<'PY'
+          import hashlib, os, stat
+          from pathlib import Path
+          for image in [os.environ['MASTER_JDK'], os.environ['RELEASE_JDK']]:
+              path = Path(image) / 'lib/server/libjvm.so'
+              before = hashlib.file_digest(path.open('rb'), 'sha256').hexdigest()
+              temporary = path.with_name('libjvm.so.normalized')
+              with path.open('rb') as src, temporary.open('wb') as dst:
+                  while data := src.read(1 << 20):
+                      dst.write(data)
+              os.chmod(temporary, stat.S_IMODE(path.stat().st_mode))
+              os.replace(temporary, path)
+              assert hashlib.file_digest(path.open('rb'), 'sha256').hexdigest() == before
+          PY
+          python3 ../orchestration/.github/qualification/startup-balanced.py "$MASTER_JDK/bin/java" "$RELEASE_JDK/bin/java" qualification/startup-balanced.json
       - name: Compare throughput against unmodified master
         working-directory: jdk
         run: |
