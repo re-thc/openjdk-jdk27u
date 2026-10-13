@@ -1,5 +1,53 @@
 # Rust regex performance
 
+## Current routing qualification
+
+Linux x86_64, GCC 16.2, Rust 1.99.0, release image with four-byte object headers.
+The fixed-digit/email/large-scan measurements use runtime source `a756ecf00b3`;
+the final interpreter prefix repeat uses `cad381c7a22`. Later documentation
+changes do not alter these runtime sources. JMH 1.37 runs on one pinned CPU,
+with Serial GC, one active processor, three one-second warmups and five
+one-second measurements. Two separate process pairs alternate control order.
+The original-source control patches Pattern/Matcher from `8d8d71a` into the
+same HotSpot image; it is not a separately built original HotSpot image.
+The disabled control uses `-XX:-UseRustRegex`.
+
+| Reused `reset().find()` workload | Tier | Original source ns/op | Disabled ns/op | Default ns/op |
+| --- | --- | ---: | ---: | ---: |
+| Prefix miss, 8 chars | Interpreter | 798.0 | 833.0 | 778.0 |
+| Digit miss, 16 chars | C2 | 179.4 | 224.5 | 72.2 |
+| Captured email early hit, 16 chars | C2 | 106.4 | 159.0 | 44.8 |
+| Captured email miss, 16 chars | C2 | 212.8 | 178.0 | 127.1 |
+| Fixed digit early hit, 16 chars | C2 | 115.5 | 88.6 | 72.5 |
+| Fixed digit miss, 16 chars | C2 | 62.7 | 79.5 | 48.1 |
+| Prefix miss, 4,096 chars | C2 | 7,030.2 | 6,360.3 | 269.6 |
+
+The earlier same-runtime short-routing repeat at `086237ef161` measured C2
+eight-character prefix misses at 28.9 / 28.2 / 27.7 ns/op in original,
+disabled and default controls. Short literal-alternative early hits measured
+67.4 / 56.2 / 44.3 ns/op; misses measured 196.7 / 202.7 / 133.9 ns/op.
+The subsequent fixed-digit plan addresses the separately observed C2
+fixed-width loss. Native x86/AArch64 calls remain the path for long scans.
+
+These are exploratory shared-host measurements. Some process/sample spreads
+are large; the individual samples, allocation counters, commands, CPU accounting
+and image hashes are preserved in the Library qualification archives. Reused
+searches allocate essentially zero Java bytes per operation. Full lifetime
+diagnostics include compilation, Matcher creation and 1/8/32 alternating calls,
+with original and disabled controls. Fresh general-engine construction can
+still lose at low reuse. The cache-clearing and post-GC diagnostics do not
+establish an exact cold break-even count or an automatic reuse threshold.
+Native AArch64 throughput and a full original-HotSpot baseline remain unmeasured.
+
+For native latency, `(?:[ab]{0,500})*[bc]` on 65,536 ASCII `a` bytes reproduced
+long leaf calls on the reviewed image. Copying expensive work into native
+thread state reduced GC reaching time from roughly 485 ms in the leaf probe
+to microseconds in the paired transition probe. The guarded integrated run's
+largest observed reaching time was 6.7 ms under the tested four-worker shapes.
+The cold/warm matrix includes adjacent bounded/unbounded repetitions, capture
+recovery, all three operation modes and allocation counts. These are tested
+observations, not a timeout or an upper bound for every regex and machine.
+
 ## Eight-byte-header development profile (2026-10-10)
 
 Source `e68d8de5cd3`, built with `bin/configure-dev`, GCC 14.2 and the default

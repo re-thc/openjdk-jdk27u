@@ -2,7 +2,8 @@
 
 This fork selects Rust at Pattern compilation for a parsed common subset of
 `java.util.regex`. Supported Patterns return matches and captures directly
-from Rust or a narrow short-match specialization, and retain no Java node graph.
+from Rust or a narrow short-match specialization. Their Java node fields are
+initially empty; measured Java choices share a lazily compiled sibling graph.
 Unsupported syntax compiles with Java. Unsupported inputs/operations permanently
 promote the affected Pattern to Java.
 
@@ -51,6 +52,20 @@ The captured ASCII email shape `([a-z0-9_]+)@([a-z0-9_]+)\\.[a-z]{2,4}`,
 also with named captures, has a compact plan for regions of up to 32 characters
 and early candidates. Longer word runs and scans select Rust. Both plans receive
 scalar bounds; capture-array ABI arguments are written only for native calls.
+The uncaptured fixed digit shape `[0-9]{3}-[0-9]{2}-[0-9]{4}` (also using `\\d`)
+uses a C2 scalar plan for regions up to 256 characters and early candidates;
+long scans still select Rust. General Java replay preserves its continuation
+and end flags, including partial failures.
+
+Literal-prefix/digit regions up to eight characters use the Java graph. General
+fixed-width regions up to sixteen characters do too in a VM configured for C2;
+their Rust construction is deferred. A short early native hit can select Java
+for repeated operations on the same input, region and operation in C2 for
+fixed-width expressions, or in C1/C2 for short literal alternatives followed
+by a digit run. This choice does not promote the Pattern: another input or larger region
+can still use Rust. The configured maximum compiler tier guides this policy;
+it does not observe the current tier of an individual Java method.
+Java locals are allocated when selecting the sibling graph and reused.
 
 Dot uses Java's exact Latin-1 terminator set. Fixed-width expressions and
 fixed-width prefixes with greedy fixed-width repeated tails share one engine
@@ -127,7 +142,8 @@ Java fallback restores safepoints but can still run for a long time.
 
 The budget bounds accounted engine/cache storage and construction reservations;
 allocator metadata, fragmentation and the Rust runtime are outside that metric.
-Selected Patterns keep no Java graph. Promotion releases the backend reference;
+Selected engines may retain one Java sibling graph after a measured Java choice;
+that graph is outside native engine/cache accounting. Promotion releases the backend reference;
 other Patterns may still own the shared engine, and Cleaner cleanup is eventual.
 Native Matcher arrays retain captures plus four ABI ints; Java-only Matchers
 keep the original array size. Compilation/destruction use
