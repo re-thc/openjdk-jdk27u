@@ -1,8 +1,6 @@
 //
 // Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2020, 2026, Arm Limited. All rights reserved.
-// Copyright (c) 2026, Huawei Technologies Co., Ltd. All rights reserved.
-// Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -118,30 +116,6 @@ source %{
     }
   }
 
-  // Narrowing stores select the low bytes of each 64-bit lane. Their
-  // effective addresses are byte offsets, unlike SVE's scaled immediates.
-  static void store_narrow_sve(C2_MacroAssembler* masm, FloatRegister src,
-                               BasicType bt, Register base, int index, int scale, int disp) {
-    Address adr(base);
-    if (index != -1) {
-      if (disp != 0) {
-        masm->lea(rscratch1, Address(base, disp));
-        base = rscratch1;
-      }
-      masm->lea(rscratch1, Address(base, as_Register(index), Address::lsl(scale)));
-      adr = Address(rscratch1);
-    } else if (disp != 0) {
-      masm->lea(rscratch1, Address(base, disp));
-      adr = Address(rscratch1);
-    }
-    switch (bt) {
-      case T_BYTE:  masm->sve_st1b(src, Assembler::D, ptrue, adr); break;
-      case T_SHORT: masm->sve_st1h(src, Assembler::D, ptrue, adr); break;
-      case T_FLOAT: masm->sve_st1w(src, Assembler::D, ptrue, adr); break;
-      default: ShouldNotReachHere();
-    }
-  }
-
   bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
     if (UseSVE == 0) {
       // These operations are not profitable to be vectorized on NEON, because no direct
@@ -227,23 +201,11 @@ source %{
         break;
       case Op_MulReductionVD:
       case Op_MulReductionVF:
+      case Op_MulReductionVI:
+      case Op_MulReductionVL:
         // No vector multiply reduction instructions, but we do
         // emit scalar instructions for 64/128-bit vectors.
         if (length_in_bytes != 8 && length_in_bytes != 16) {
-          return false;
-        }
-        break;
-      case Op_MulReductionVI:
-        // Keep the NEON reductions for short vectors. SVE folds require
-        // int lanes filling the configured vector register.
-        if (length_in_bytes != 8 && length_in_bytes != 16 &&
-            (bt != T_INT || UseSVE == 0 || length_in_bytes != MaxVectorSize)) {
-          return false;
-        }
-        break;
-      case Op_MulReductionVL:
-        if (length_in_bytes != 16 &&
-            (UseSVE == 0 || length_in_bytes != MaxVectorSize)) {
           return false;
         }
         break;
@@ -544,79 +506,6 @@ VECTOR_LOAD_STORE(load,  8,  dst, 64,  D)
 VECTOR_LOAD_STORE(store, 8,  src, 64,  D)
 VECTOR_LOAD_STORE(load,  16, dst, 128, Q)
 VECTOR_LOAD_STORE(store, 16, src, 128, Q)
-
-instruct storeV_vcastDtoS_sve8(vmem8 mem, vReg src, vReg tmp) %{
-  predicate(UseSVE > 0 &&
-            MaxVectorSize == 32 &&
-            n->as_StoreVector()->memory_size() == 8 &&
-            Matcher::vector_element_basic_type(n->as_StoreVector()->in(MemNode::ValueIn)) == T_SHORT &&
-            Matcher::vector_element_basic_type(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) == T_DOUBLE &&
-            Matcher::vector_length_in_bytes(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) == MaxVectorSize);
-  match(Set mem (StoreVector mem (VectorCastD2X src)));
-  effect(TEMP_DEF tmp);
-  format %{ "storeV_vcastDtoS_sve8 $mem, $src\t# KILL $tmp" %}
-  ins_encode %{
-    __ sve_fcvtzs($tmp$$FloatRegister, __ S, ptrue, $src$$FloatRegister, __ D);
-
-    store_narrow_sve(masm, $tmp$$FloatRegister, T_SHORT,
-                     $mem$$base$$Register, $mem$$index, $mem$$scale, $mem$$disp);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct storeV_vcastDtoF_sve16(vmem16 mem, vReg src, vReg tmp) %{
-  predicate(UseSVE > 0 &&
-            MaxVectorSize == 32 &&
-            n->as_StoreVector()->memory_size() == 16 &&
-            Matcher::vector_element_basic_type(n->as_StoreVector()->in(MemNode::ValueIn)) == T_FLOAT &&
-            Matcher::vector_element_basic_type(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) == T_DOUBLE &&
-            Matcher::vector_length_in_bytes(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) == MaxVectorSize);
-  match(Set mem (StoreVector mem (VectorCastD2X src)));
-  effect(TEMP_DEF tmp);
-  format %{ "storeV_vcastDtoF_sve16 $mem, $src\t# KILL $tmp" %}
-  ins_encode %{
-    __ sve_fcvt($tmp$$FloatRegister, __ S, ptrue, $src$$FloatRegister, __ D);
-
-    store_narrow_sve(masm, $tmp$$FloatRegister, T_FLOAT,
-                     $mem$$base$$Register, $mem$$index, $mem$$scale, $mem$$disp);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct storeV_vcastLtoF_sve16(vmem16 mem, vReg src, vReg tmp) %{
-  predicate(UseSVE > 0 &&
-            MaxVectorSize == 32 &&
-            n->as_StoreVector()->memory_size() == 16 &&
-            Matcher::vector_element_basic_type(n->as_StoreVector()->in(MemNode::ValueIn)) == T_FLOAT &&
-            Matcher::vector_element_basic_type(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) == T_LONG &&
-            Matcher::vector_length_in_bytes(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) == MaxVectorSize);
-  match(Set mem (StoreVector mem (VectorCastL2X src)));
-  effect(TEMP_DEF tmp);
-  format %{ "storeV_vcastLtoF_sve16 $mem, $src\t# KILL $tmp" %}
-  ins_encode %{
-    __ sve_scvtf($tmp$$FloatRegister, __ S, ptrue, $src$$FloatRegister, __ D);
-
-    store_narrow_sve(masm, $tmp$$FloatRegister, T_FLOAT,
-                     $mem$$base$$Register, $mem$$index, $mem$$scale, $mem$$disp);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct storeV_vcastLtoB_sve4(vmem4 mem, vReg src) %{
-  predicate(UseSVE > 0 &&
-            MaxVectorSize == 32 &&
-            n->as_StoreVector()->memory_size() == 4 &&
-            Matcher::vector_element_basic_type(n->as_StoreVector()->in(MemNode::ValueIn)) == T_BYTE &&
-            Matcher::vector_element_basic_type(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) == T_LONG &&
-            Matcher::vector_length_in_bytes(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) == MaxVectorSize);
-  match(Set mem (StoreVector mem (VectorCastL2X src)));
-  format %{ "storeV_vcastLtoB_sve4 $mem, $src" %}
-  ins_encode %{
-    store_narrow_sve(masm, $src$$FloatRegister, T_BYTE,
-                     $mem$$base$$Register, $mem$$index, $mem$$scale, $mem$$disp);
-  %}
-  ins_pipe(pipe_slow);
-%}
 
 // Load Vector (> 128 bits)
 instruct loadV(vReg dst, vmemA mem) %{
@@ -2392,23 +2281,6 @@ instruct reduce_mulI(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc,
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_mulI_sve(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, vReg tmp1, vReg tmp2) %{
-  predicate(UseSVE > 0 &&
-            Matcher::vector_element_basic_type(n->in(2)) == T_INT &&
-            Matcher::vector_length_in_bytes(n->in(2)) == MaxVectorSize &&
-            Matcher::vector_length_in_bytes(n->in(2)) > 16);
-  match(Set dst (MulReductionVI isrc vsrc));
-  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
-  format %{ "reduce_mulI_sve $dst, $isrc, $vsrc\t# KILL $tmp1, $tmp2" %}
-  ins_encode %{
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
-    __ sve_reduce_mul_integral($dst$$Register, T_INT, $isrc$$Register,
-                               $vsrc$$FloatRegister, length_in_bytes,
-                               $tmp1$$FloatRegister, $tmp2$$FloatRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 instruct reduce_mulL(iRegLNoSp dst, iRegL isrc, vReg vsrc) %{
   predicate(Matcher::vector_length_in_bytes(n->in(2)) == 16);
   match(Set dst (MulReductionVL isrc vsrc));
@@ -2417,23 +2289,6 @@ instruct reduce_mulL(iRegLNoSp dst, iRegL isrc, vReg vsrc) %{
   ins_encode %{
     __ neon_reduce_mul_integral($dst$$Register, T_LONG, $isrc$$Register,
                                 $vsrc$$FloatRegister, 16, fnoreg, fnoreg);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct reduce_mulL_sve(iRegLNoSp dst, iRegL isrc, vReg vsrc, vReg tmp1, vReg tmp2) %{
-  predicate(UseSVE > 0 &&
-            Matcher::vector_element_basic_type(n->in(2)) == T_LONG &&
-            Matcher::vector_length_in_bytes(n->in(2)) == MaxVectorSize &&
-            Matcher::vector_length_in_bytes(n->in(2)) > 16);
-  match(Set dst (MulReductionVL isrc vsrc));
-  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
-  format %{ "reduce_mulL_sve $dst, $isrc, $vsrc\t# KILL $tmp1, $tmp2" %}
-  ins_encode %{
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
-    __ sve_reduce_mul_integral($dst$$Register, T_LONG, $isrc$$Register,
-                               $vsrc$$FloatRegister, length_in_bytes,
-                               $tmp1$$FloatRegister, $tmp2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}

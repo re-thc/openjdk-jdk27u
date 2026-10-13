@@ -2,7 +2,6 @@
  * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * Copyright 2026 Arm Limited and/or its affiliates.
- * Copyright (c) 2026, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1923,34 +1922,6 @@ void C2_MacroAssembler::neon_reduce_mul_integral(Register dst, BasicType bt,
         ShouldNotReachHere();
     }
   BLOCK_COMMENT("} neon_reduce_mul_integral");
-}
-
-// Vector reduction multiply for integral type with SVE instructions.
-// Clobbers: rscratch1
-void C2_MacroAssembler::sve_reduce_mul_integral(Register dst, BasicType bt,
-                                                Register isrc, FloatRegister vsrc,
-                                                unsigned vector_length_in_bytes,
-                                                FloatRegister vtmp1, FloatRegister vtmp2) {
-  assert(bt == T_INT || bt == T_LONG, "unsupported element type");
-  assert(UseSVE > 0 && vector_length_in_bytes == MaxVectorSize && vector_length_in_bytes > 16,
-         "unsupported vector length");
-  uint length = vector_length_in_bytes / type2aelembytes(bt);
-  assert((length & (length - 1)) == 0, "vector length must be power of 2");
-  assert_different_registers(isrc, dst, rscratch1);
-  assert_different_registers(vsrc, vtmp1, vtmp2);
-
-  BLOCK_COMMENT("sve_reduce_mul_integral {");
-    Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
-    sve_orr(vtmp1, vsrc, vsrc);
-    // Each fold halves the unreduced lane count; lane zero holds the product.
-    for (uint step = length >> 1; step > 0; step >>= 1) {
-      sve_orr(vtmp2, vtmp1, vtmp1);
-      sve_ext(vtmp2, vtmp2, step * type2aelembytes(bt));
-      sve_mul(vtmp1, size, ptrue, vtmp2);
-    }
-    umov(rscratch1, vtmp1, size, 0);
-    bt == T_INT ? mulw(dst, isrc, rscratch1) : mul(dst, isrc, rscratch1);
-  BLOCK_COMMENT("} sve_reduce_mul_integral");
 }
 
 // Vector reduction multiply for floating-point type with ASIMD instructions.
