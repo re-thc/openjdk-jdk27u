@@ -22,35 +22,39 @@
  *
  */
 
-#include "gc/shared/fullGCForwarding.hpp"
-#include "memory/memRegion.hpp"
-#include "runtime/globals_extension.hpp"
+#ifndef GC_SHARED_LEGACYFULLGCFORWARDING_INLINE_HPP
+#define GC_SHARED_LEGACYFULLGCFORWARDING_INLINE_HPP
 
-HeapWord* FullGCForwarding::_heap_base = nullptr;
-int FullGCForwarding::_num_low_bits = 0;
+#include "gc/shared/legacyFullGCForwarding.hpp"
 
-void FullGCForwarding::initialize_flags(size_t max_heap_size) {
+#include "oops/oop.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+void LegacyFullGCForwarding::forward_to(oop from, oop to) {
 #ifdef _LP64
-  size_t max_narrow_heap_size = right_n_bits(NumLowBitsNarrow - Shift);
-  if (UseCompactObjectHeaders && max_heap_size > max_narrow_heap_size * HeapWordSize) {
-    warning("Compact object headers require a java heap size smaller than %zu"
-            "%s (given: %zu%s). Disabling compact object headers.",
-            byte_size_in_proper_unit(max_narrow_heap_size * HeapWordSize),
-            proper_unit_for_byte_size(max_narrow_heap_size * HeapWordSize),
-            byte_size_in_proper_unit(max_heap_size),
-            proper_unit_for_byte_size(max_heap_size));
-    FLAG_SET_ERGO(UseCompactObjectHeaders, false);
-  }
+  uintptr_t encoded = pointer_delta(cast_from_oop<HeapWord*>(to), _heap_base) << Shift;
+  assert(encoded <= static_cast<uintptr_t>(right_n_bits(_num_low_bits)), "encoded forwardee must fit");
+  uintptr_t mark = from->mark().value();
+  mark &= ~right_n_bits(_num_low_bits);
+  mark |= (encoded | markWord::marked_value);
+  from->set_mark(markWord(mark));
+#else
+  from->forward_to(to);
 #endif
 }
 
-void FullGCForwarding::initialize(MemRegion heap) {
+oop LegacyFullGCForwarding::forwardee(oop from) {
 #ifdef _LP64
-  _heap_base = heap.start();
-  if (UseCompactObjectHeaders) {
-    _num_low_bits = NumLowBitsNarrow;
-  } else {
-    _num_low_bits = NumLowBitsWide;
-  }
+  uintptr_t mark = from->mark().value();
+  HeapWord* decoded = _heap_base + ((mark & right_n_bits(_num_low_bits)) >> Shift);
+  return cast_to_oop(decoded);
+#else
+  return from->forwardee();
 #endif
 }
+
+bool LegacyFullGCForwarding::is_forwarded(oop obj) {
+  return obj->mark().is_forwarded();
+}
+
+#endif // GC_SHARED_LEGACYFULLGCFORWARDING_INLINE_HPP

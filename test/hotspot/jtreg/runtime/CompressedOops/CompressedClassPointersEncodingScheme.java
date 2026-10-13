@@ -43,6 +43,11 @@ import java.io.IOException;
 public class CompressedClassPointersEncodingScheme {
 
     private static void test(long forceAddress, boolean COH, long classSpaceSize, long expectedEncodingBase, int expectedEncodingShift) throws IOException {
+        test(forceAddress, COH, false, classSpaceSize, expectedEncodingBase, expectedEncodingShift);
+    }
+
+    private static void test(long forceAddress, boolean COH, boolean four, long classSpaceSize,
+                             long expectedEncodingBase, int expectedEncodingShift) throws IOException {
         String forceAddressString = String.format("0x%016X", forceAddress).toLowerCase();
         String expectedEncodingBaseString = String.format("0x%016X", expectedEncodingBase).toLowerCase();
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
@@ -50,6 +55,7 @@ public class CompressedClassPointersEncodingScheme {
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:-UseCompressedOops", // keep VM from optimizing heap location
                 "-XX:+UnlockExperimentalVMOptions",
+                "-XX:" + (four ? "+" : "-") + "UseFourByteObjectHeaders",
                 "-XX:" + (COH ? "+" : "-") + "UseCompactObjectHeaders",
                 "-XX:" + (COH ? "+" : "-") + "UseObjectMonitorTable",
                 "-XX:CompressedClassSpaceBaseAddress=" + forceAddress,
@@ -151,6 +157,17 @@ public class CompressedClassPointersEncodingScheme {
             ccsSize = 3 * G;
             expectedShift = 10;
             test(forceAddress, true, ccsSize, forceAddress, expectedShift);
+        }
+
+        // The 19-bit four-byte encoding needs larger shifts; requests above
+        // 512 MiB are capped before choosing the encoding. Keep the original
+        // eight-byte cases above and verify the smaller encoding separately.
+        if ((Platform.isAArch64() || Platform.isX64()) && !Platform.isZero()) {
+            long forceAddress = 32 * G;
+            test(forceAddress, true, true, 128 * M, forceAddress, 9);
+            test(forceAddress, true, true, 512 * M, forceAddress, 10);
+            test(forceAddress, true, true, G, forceAddress, 10);
+            test(forceAddress, true, true, 3 * G, forceAddress, 10);
         }
 
         // Test failure for -XX:CompressedClassBaseAddress and -Xshare:off
