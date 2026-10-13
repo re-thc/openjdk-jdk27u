@@ -151,9 +151,6 @@ public class TestAArch64SVENarrowingCastStore {
     }
 
     @Test
-    @IR(applyIfPlatform = {"aarch64", "true"},
-        applyIfAnd = {"UseSVE", "> 0", "MaxVectorSize", "32"},
-        counts = {"storeV_vcastDtoS_sve8", ">0"}, phase = CompilePhase.MATCHING)
     public static void testD2SAlias() {
         DoubleVector src = DoubleVector.fromMemorySegment(DoubleVector.SPECIES_256, ALIASED, 32, ORDER);
         ((ShortVector) src.convertShape(VectorOperators.D2S, ShortVector.SPECIES_64, 0))
@@ -161,9 +158,6 @@ public class TestAArch64SVENarrowingCastStore {
     }
 
     @Test
-    @IR(applyIfPlatform = {"aarch64", "true"},
-        applyIfAnd = {"UseSVE", "> 0", "MaxVectorSize", "32"},
-        counts = {"storeV_vcastDtoF_sve16", ">0"}, phase = CompilePhase.MATCHING)
     public static void testD2FAlias() {
         DoubleVector src = DoubleVector.fromMemorySegment(DoubleVector.SPECIES_256, ALIASED, 32, ORDER);
         ((FloatVector) src.convertShape(VectorOperators.D2F, FloatVector.SPECIES_128, 0))
@@ -171,9 +165,6 @@ public class TestAArch64SVENarrowingCastStore {
     }
 
     @Test
-    @IR(applyIfPlatform = {"aarch64", "true"},
-        applyIfAnd = {"UseSVE", "> 0", "MaxVectorSize", "32"},
-        counts = {"storeV_vcastLtoF_sve16", ">0"}, phase = CompilePhase.MATCHING)
     public static void testL2FAlias() {
         LongVector src = LongVector.fromMemorySegment(LongVector.SPECIES_256, ALIASED, 32, ORDER);
         ((FloatVector) src.convertShape(VectorOperators.L2F, FloatVector.SPECIES_128, 0))
@@ -195,7 +186,7 @@ public class TestAArch64SVENarrowingCastStore {
     public static void testSharedCastStore() {
         DoubleVector src = DoubleVector.fromMemorySegment(DoubleVector.SPECIES_256, ALIASED, 32, ORDER);
         FloatVector converted = (FloatVector) src.convertShape(VectorOperators.D2F, FloatVector.SPECIES_128, 0);
-        // The shared cast stays materialized for both stores.
+        // Cover a shared conversion with two overlapping destinations.
         converted.intoMemorySegment(ALIASED, 0, ORDER);
         converted.intoMemorySegment(ALIASED, 34, ORDER);
     }
@@ -210,16 +201,28 @@ public class TestAArch64SVENarrowingCastStore {
                 .intoMemorySegment(HEAP_ALIASED, 34, ORDER);
     }
 
+    @Test
+    @IR(applyIfPlatform = {"aarch64", "true"}, failOn = {"storeV_vcastDtoF_sve16"},
+        phase = CompilePhase.MATCHING)
+    public static void testSharedArrayCast(int srcOffset) {
+        DoubleVector src = DoubleVector.fromArray(DoubleVector.SPECIES_256, DOUBLES, srcOffset);
+        FloatVector converted = (FloatVector) src.convertShape(VectorOperators.D2F, FloatVector.SPECIES_128, 0);
+        converted.intoArray(FLOATS, 0);
+        converted.intoArray(FLOATS, 8);
+    }
+
     @Run(test = {"testD2S", "testD2F", "testL2F", "testL2B", "testD2SAlias",
                  "testD2FAlias", "testL2FAlias", "testL2BAlias", "testSharedCastStore",
-                 "testHeapAliasFallback"})
+                 "testHeapAliasFallback", "testSharedArrayCast"})
     public void run(RunInfo info) {
         if (info.isWarmUp()) {
             check(0, 3, 1027);
             checkAliases(0);
+            checkSharedArrayCast(0);
         } else {
             for (int index = 0; index < Math.max(DOUBLE_VALUES.length, LONG_VALUES.length); index++) {
                 checkAliases(index);
+                checkSharedArrayCast(index);
             }
             for (int srcOffset : new int[] {0, 1, 3, 16}) {
                 for (int dstOffset : new int[] {0, 1, 3, 16}) {
@@ -228,6 +231,16 @@ public class TestAArch64SVENarrowingCastStore {
                     }
                 }
             }
+        }
+    }
+
+    @DontCompile
+    private static void checkSharedArrayCast(int srcOffset) {
+        Arrays.fill(FLOATS, FLOAT_SENTINEL);
+        testSharedArrayCast(srcOffset);
+        for (int i = 0; i < SIZE; i++) {
+            int lane = i < 4 ? i : i >= 8 && i < 12 ? i - 8 : -1;
+            checkFloat(FLOATS[i], lane >= 0 ? (float) DOUBLES[srcOffset + lane] : FLOAT_SENTINEL);
         }
     }
 
