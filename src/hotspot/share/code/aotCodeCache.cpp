@@ -1930,7 +1930,7 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_delayed_StackOverflowError);
   }
 
-#if defined(LINUX) && (defined(AMD64) || defined(AARCH64))
+#if defined(AMD64) || defined(AARCH64)
   ADD_EXTERNAL_ADDRESS(ZipLibrary::adler32_address());
   ADD_EXTERNAL_ADDRESS(ZipLibrary::adler32_byte_address());
   ADD_EXTERNAL_ADDRESS(ZipLibrary::crc32_address());
