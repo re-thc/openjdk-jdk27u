@@ -45,12 +45,17 @@ for name in ('java/util/zip/CRC32.java', 'jdk/internal/access/SharedSecrets.java
 subprocess.run([str(jdk / 'bin/javac'), '--patch-module', 'java.base=' + str(base_src),
                 '-d', str(base), *sources], check=True)
 security = out / 'security'
+security_src = root / 'work/security-source'
+security_file = security_src / 'sun/security/krb5/internal/crypto/crc32.java'
+security_file.parent.mkdir(parents=True, exist_ok=True)
+shutil.copy2(root / 'src/java.security.jgss/share/classes/sun/security/krb5/internal/crypto/crc32.java',
+             security_file)
 exports = ['--add-exports=java.base/jdk.internal.access=java.security.jgss',
            '--add-exports=java.security.jgss/sun.security.krb5.internal.crypto=ALL-UNNAMED']
 base_args = ['--patch-module', 'java.base=' + str(base)]
 subprocess.run([str(jdk / 'bin/javac'), *base_args, *exports,
-    '--patch-module', 'java.security.jgss=src/java.security.jgss/share/classes',
-    '-d', str(security), 'src/java.security.jgss/share/classes/sun/security/krb5/internal/crypto/crc32.java'], check=True)
+    '--patch-module', 'java.security.jgss=' + str(security_src),
+    '-d', str(security), str(security_file)], check=True)
 patch_args = [*base_args, '--patch-module', 'java.security.jgss=' + str(security), *exports]
 classes = out / 'classes'
 classes.mkdir(exist_ok=True)
@@ -63,9 +68,14 @@ for flags in (['-Xint'], ['-XX:TieredStopAtLevel=1', '-Xbatch'],
                     '-cp', str(classes), 'RawCRC32'], check=True)
 # The full bootstrap image provides java.desktop for the PNG client tests.
 desktop = out / 'desktop'
+desktop_src = root / 'work/desktop-source'
+desktop_file = desktop_src / 'com/sun/imageio/plugins/png/PNGImageWriter.java'
+desktop_file.parent.mkdir(parents=True, exist_ok=True)
+shutil.copy2(root / 'src/java.desktop/share/classes/com/sun/imageio/plugins/png/PNGImageWriter.java',
+             desktop_file)
 subprocess.run([str(args.bootjdk / 'bin/javac'), '--patch-module',
-    'java.desktop=src/java.desktop/share/classes', '-d', str(desktop),
-    'src/java.desktop/share/classes/com/sun/imageio/plugins/png/PNGImageWriter.java'], check=True)
+    'java.desktop=' + str(desktop_src), '-d', str(desktop),
+    str(desktop_file)], check=True)
 subprocess.run([str(args.bootjdk / 'bin/javac'), '-d', str(classes),
     'test/jdk/javax/imageio/plugins/png/PNGChunkCRC32.java'], check=True)
 for flags in (['-Xint'], ['-XX:TieredStopAtLevel=1'], ['-XX:-TieredCompilation']):
