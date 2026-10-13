@@ -28,17 +28,24 @@ image = results / 'debug-jdk'
 shutil.copytree(args.jdk, image, dirs_exist_ok=True)
 shutil.copy2(root / 'build/debug-check/jdk/lib/server/libjvm.dylib',
              image / 'lib/server/libjvm.dylib')
+# Regenerate archives after replacing the VM, including its build identity.
+for archive in (image / 'lib/server').glob('*.jsa'):
+    archive.unlink()
+subprocess.run([str(image / 'bin/java'), '-Xshare:dump'], check=True)
+subprocess.run([str(image / 'bin/java'), '-XX:-UseCompressedOops',
+    '-XX:SharedArchiveFile=' + str(image / 'lib/server/classes_nocoops.jsa'),
+    '-Xshare:dump'], check=True)
 subprocess.run([str(image / 'bin/java'), '-version'], check=True)
 for label, tests in (
         ('intrinsics', ['test/hotspot/jtreg/compiler/intrinsics/zip']),
         ('zip', ['test/jdk/java/util/zip', 'test/jdk/jdk/nio/zipfs'])):
     subprocess.run([str(image / 'bin/java'), '-jar', str(args.jtreg.resolve() / 'lib/jtreg.jar'),
-        '-jdk:' + str(image), '-verbose:fail,error,time', '-timeoutFactor:4',
+        '-jdk:' + str(image), '-verbose:fail,error,time', '-timeoutFactor:4', '-ignore:quiet',
         '-w:' + str(results / (label + '-work')),
         '-r:' + str(results / (label + '-report')), *tests], check=True)
 for gc in ('UseSerialGC', 'UseG1GC', 'UseZGC'):
     subprocess.run([str(image / 'bin/java'), '-jar', str(args.jtreg.resolve() / 'lib/jtreg.jar'),
-        '-jdk:' + str(image), '-verbose:fail,error,time', '-timeoutFactor:4',
+        '-jdk:' + str(image), '-verbose:fail,error,time', '-timeoutFactor:4', '-ignore:quiet',
         '-javaoptions:-XX:+' + gc + ' -Xcheck:jni',
         '-w:' + str(results / (gc + '-work')),
         '-r:' + str(results / (gc + '-report')),
