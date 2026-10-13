@@ -590,7 +590,11 @@ public sealed class Console implements Flushable permits ProxyingConsole {
             var consModName = System.getProperty("jdk.console",
                     JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME);
 
-            for (var jcp : ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class)) {
+            // There is no provider in java.base, the built-in Console is used
+            Iterable<JdkConsoleProvider> providers = consModName.equals("java.base")
+                    ? List.of()
+                    : ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class);
+            for (var jcp : providers) {
                 if (consModName.equals(jcp.getClass().getModule().getName())) {
                     var jc = jcp.console(isStdinTty() && isStdoutTty(), STDIN_CHARSET, STDOUT_CHARSET);
                     if (jc != null) {
