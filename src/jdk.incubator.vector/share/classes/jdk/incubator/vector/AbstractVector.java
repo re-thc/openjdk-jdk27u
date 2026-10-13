@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,6 +183,10 @@ abstract sealed class AbstractVector<E> extends Vector<E>
         // NOTE:  This assumes that convert0('X')
         // respects REGISTER_ENDIAN order.
         AbstractSpecies<E> srcSpecies = vspecies();
+        // An unchanged lane type also preserves the shape and every raw bit.
+        if (srcSpecies.laneType == laneType) {
+            return this;
+        }
         AbstractSpecies dstSpecies = srcSpecies.withLanes(laneType);
         return dstSpecies.swapIfNeeded(srcSpecies, convert0('X', dstSpecies));
     }

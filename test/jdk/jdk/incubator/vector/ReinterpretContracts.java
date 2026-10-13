@@ -108,6 +108,15 @@ public class ReinterpretContracts {
         }
     }
 
+    private static Vector<?> view(Vector<?> v, Class<?> type) {
+        if (type == byte.class) return v.reinterpretAsBytes();
+        if (type == short.class) return v.reinterpretAsShorts();
+        if (type == int.class) return v.reinterpretAsInts();
+        if (type == long.class) return v.reinterpretAsLongs();
+        if (type == float.class) return v.reinterpretAsFloats();
+        return v.reinterpretAsDoubles();
+    }
+
     private static void shapes(byte[] payload) {
         for (VectorShape from : VectorShape.values()) {
             byte[] input = Arrays.copyOf(payload, from.vectorBitSize() / 8);
@@ -116,6 +125,11 @@ public class ReinterpretContracts {
                 Object a = array(fromType, input);
                 Vector<?> v = load(s, a, 0, s.maskAll(true));
                 check(Arrays.equals(input, bytes(v.toArray(), s.elementSize() / 8)), "load raw bits");
+                for (Class<?> type : TYPES) {
+                    Vector<?> result = view(v, type);
+                    check(Arrays.equals(input, bytes(result.toArray(), result.species().elementSize() / 8)),
+                          "raw view " + fromType + " -> " + type);
+                }
                 for (VectorShape to : VectorShape.values()) {
                     int outputBytes = to.vectorBitSize() / 8;
                     int first = outputBytes > input.length ? 1 - outputBytes / input.length : 0;
