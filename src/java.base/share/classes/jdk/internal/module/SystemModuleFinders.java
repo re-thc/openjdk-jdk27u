@@ -434,7 +434,8 @@ public final class SystemModuleFinders {
 
         @Override
         public Optional<InputStream> open(String name) throws IOException {
-            return read(name).map(this::toInputStream);
+            Optional<ByteBuffer> bb = read(name);
+            return bb.isPresent() ? Optional.of(toInputStream(bb.get())) : Optional.empty();
         }
 
         private InputStream toInputStream(ByteBuffer bb) { // ## -> ByteBuffer?
@@ -463,8 +464,9 @@ public final class SystemModuleFinders {
         @Override
         public Optional<ByteBuffer> read(String name) throws IOException {
             ImageReader reader = SystemImage.reader();
-            return Optional.ofNullable(findResource(reader, name))
-                    .map(reader::getResourceBuffer);
+            ImageReader.Node node = findResource(reader, name);
+            return node != null ? Optional.ofNullable(reader.getResourceBuffer(node))
+                                : Optional.empty();
         }
 
         @Override
