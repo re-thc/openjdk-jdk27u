@@ -277,10 +277,16 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/regex-results"
-          for mode in '-Xint' '-XX:TieredStopAtLevel=1' '-XX:-TieredCompilation' '-XX:-UseRustRegexIntrinsics'; do
-            "$JDK/bin/java" "$mode" -Xbatch -XX:CompileThreshold=100 --add-opens=java.base/java.util.regex=ALL-UNNAMED -cp "$RUNNER_TEMP/regex-jmh/classes" RustRegexProbe
-            "$JDK/bin/java" "$mode" -Xbatch -XX:CompileThreshold=100 --add-opens=java.base/java.util.regex=ALL-UNNAMED -cp "$RUNNER_TEMP/regex-jmh/classes" RustRegexContinuation
-            "$JDK/bin/java" "$mode" -Xbatch -XX:CompileThreshold=100 -XX:+UseG1GC -Xms128m -Xmx128m --add-opens=java.base/java.util.regex=ALL-UNNAMED "-Xlog:safepoint=info,gc=info:file=$RUNNER_TEMP/regex-results/latency$mode.log" -cp "$RUNNER_TEMP/regex-jmh/classes" RustRegexLatency | tee "$RUNNER_TEMP/regex-results/latency$mode.jsonl"
+          for label in int c1 c2 disabled; do
+            case "$label" in
+              int) mode_flags=(-Xint) ;;
+              c1) mode_flags=(-XX:TieredStopAtLevel=1) ;;
+              c2) mode_flags=(-XX:-TieredCompilation) ;;
+              disabled) mode_flags=(-XX:-UseRustRegexIntrinsics) ;;
+            esac
+            "$JDK/bin/java" "${mode_flags[@]}" -Xbatch -XX:CompileThreshold=100 --add-opens=java.base/java.util.regex=ALL-UNNAMED -cp "$RUNNER_TEMP/regex-jmh/classes" RustRegexProbe
+            "$JDK/bin/java" "${mode_flags[@]}" -Xbatch -XX:CompileThreshold=100 --add-opens=java.base/java.util.regex=ALL-UNNAMED -cp "$RUNNER_TEMP/regex-jmh/classes" RustRegexContinuation
+            "$JDK/bin/java" "${mode_flags[@]}" -Xbatch -XX:CompileThreshold=100 -XX:+UseG1GC -Xms128m -Xmx128m --add-opens=java.base/java.util.regex=ALL-UNNAMED "-Xlog:safepoint=info,gc=info:file=$RUNNER_TEMP/regex-results/latency-$label.log" -cp "$RUNNER_TEMP/regex-jmh/classes" RustRegexLatency | tee "$RUNNER_TEMP/regex-results/latency-$label.jsonl"
           done
       - name: 'Measure complete lifetimes and short routing'
         env:
