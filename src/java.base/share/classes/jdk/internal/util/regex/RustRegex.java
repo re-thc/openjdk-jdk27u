@@ -122,6 +122,9 @@ public final class RustRegex {
             FastPlan fast = (flags & Pattern.CASE_INSENSITIVE) == 0 ? FastDigits.parse(subset.source, subset.groups) : null;
             if (fast == null && (flags & Pattern.CASE_INSENSITIVE) == 0)
                 fast = FastEmail.parse(subset.source, subset.groups);
+            if (fast == null && JAVA_TIER == 2 && subset.groups == 1 &&
+                    (subset.source.equals("[0-9]{3}-[0-9]{2}-[0-9]{4}") ||
+                     subset.source.equals("\\d{3}-\\d{2}-\\d{4}"))) fast = FastFixedDigits.INSTANCE;
             boolean defer = fast != null || JAVA_TIER == 2 && !subset.variableLength;
             long handle = defer ? 0
                     : compile0(subset.output.toString().getBytes(StandardCharsets.US_ASCII), flags, subset.groups);
@@ -249,6 +252,33 @@ public final class RustRegex {
     // general expressions and long scans continue through the Rust engine.
     private interface FastPlan {
         int match(String input, int[] state, int to, int start, int mode, int length);
+    }
+
+    private enum FastFixedDigits implements FastPlan {
+        INSTANCE;
+
+        private static boolean digit(char c) { return c >= '0' && c <= '9'; }
+
+        @Override
+        public int match(String input, int[] state, int to, int start, int mode, int length) {
+            if (to - start < 11) return 0;
+            boolean scan = mode == 0 && length <= 256;
+            int limit = scan ? to - 11 : start;
+            for (int at = start; at <= limit; at++) {
+                if (digit(input.charAt(at)) && input.charAt(at + 3) == '-' &&
+                        input.charAt(at + 6) == '-' &&
+                        digit(input.charAt(at + 1)) && digit(input.charAt(at + 2)) &&
+                        digit(input.charAt(at + 4)) && digit(input.charAt(at + 5)) &&
+                        digit(input.charAt(at + 7)) && digit(input.charAt(at + 8)) &&
+                        digit(input.charAt(at + 9)) && digit(input.charAt(at + 10))) {
+                    if (mode == 2 && at + 11 != to) return 0;
+                    state[0] = at;
+                    state[1] = at + 11;
+                    return 1;
+                }
+            }
+            return scan || mode != 0 ? 0 : -2;
+        }
     }
 
     private record FastDigits(String prefix, int prefixGroup, int digitsGroup) implements FastPlan {

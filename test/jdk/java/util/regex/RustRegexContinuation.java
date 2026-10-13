@@ -96,10 +96,12 @@ public class RustRegexContinuation {
         }
         String[] expressions = {"(ab)+", "(ab)+x|b", "a?b", "(ab)+x", "a{1,3}b", "a*?b",
                 "(?:ab)+x|b", "(a|ab)+x", "(a)?b", "a.*b|a", "a*", "(?:)",
-                "error([0-9]+)", "(error)[0-9]+", "(?<prefix>error)(?<number>[0-9]+)", "(1)([0-9]+)", "[0-9]+", "^a?b$", "a?b$", "([a-z0-9_]+)@([a-z0-9_]+)\\.[a-z]{2,4}"};
+                "error([0-9]+)", "(error)[0-9]+", "(?<prefix>error)(?<number>[0-9]+)", "(1)([0-9]+)", "[0-9]+", "^a?b$", "a?b$", "([a-z0-9_]+)@([a-z0-9_]+)\\.[a-z]{2,4}",
+                "[0-9]{3}-[0-9]{2}-[0-9]{4}", "\\d{3}-\\d{2}-\\d{4}"};
         String[] inputs = {"", "abx", "abz", "ax", "ababx", "aabx", "b", "abcabx",
                 "123x", "error123x", "errorx", "a\n", "\u0100abx", "abx" + "!".repeat(125),
-                "abz" + "!".repeat(125), "ax" + "!".repeat(126), "a@b.c", "a@b.co!"};
+                "abz" + "!".repeat(125), "ax" + "!".repeat(126), "a@b.c", "a@b.co!",
+                "123-45-6789", "123-xx-6789", "123-45-xxxx"};
         for (int repetition = 0; repetition < 3; repetition++) {
             for (String expression : expressions) {
                 Pattern ref = reference(expression);
