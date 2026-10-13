@@ -99,9 +99,14 @@ final class TzdbZoneRulesProvider extends ZoneRulesProvider {
             // Share the tzdb.dat data parsed for java.util.TimeZone
             versionId = ZoneInfoFile.getVersion();
             ZoneInfoFile.putRules(regionToRules);
-        } catch (LinkageError ex) {
-            // ZoneInfoFile fails to initialize if it cannot load tzdb.dat
-            throw new ZoneRulesException("Unable to load TZDB time-zone rules", ex);
+        } catch (Error err) {
+            // ZoneInfoFile fails to initialize if it cannot load tzdb.dat. This
+            // is an Error at first and a NoClassDefFoundError afterwards.
+            Exception cause = ZoneInfoFile.LoadFailure.cause();
+            if (cause != null && !(err instanceof VirtualMachineError)) {
+                throw new ZoneRulesException("Unable to load TZDB time-zone rules", cause);
+            }
+            throw err;
         }
     }
 

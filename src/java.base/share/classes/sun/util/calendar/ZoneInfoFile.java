@@ -258,7 +258,29 @@ public final class ZoneInfoFile {
             }
             load(new TzdbReader(data));
         } catch (Exception x) {
+            LoadFailure.cause = x;
             throw new Error(x);
+        }
+    }
+
+    /**
+     * Holds the exception that made loading tzdb.dat fail, for java.time to
+     * report it. It is kept apart from ZoneInfoFile, which cannot be used any
+     * more once its initialization has failed.
+     */
+    public static final class LoadFailure {
+        private static Exception cause;
+
+        private LoadFailure() {
+        }
+
+        /**
+         * Returns the exception that made loading tzdb.dat fail.
+         *
+         * @return the exception, or null if loading did not fail
+         */
+        public static Exception cause() {
+            return cause;
         }
     }
 
