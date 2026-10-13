@@ -1787,8 +1787,17 @@ public final class Matcher implements MatchResult {
         Pattern.Node javaRoot;
         if (!RustRegex.ENABLED) javaRoot = parentPattern.root;
         else {
-            JavaMatchChoice choice = selectedJavaChoice(from, 0);
-            javaRoot = choice == null ? null : choice.root;
+            JavaMatchChoice choice = javaMatchChoice;
+            if (choice != null && (choice.input == null ? to - this.from <= choice.width :
+                    choice.mode == 0 && this.from == choice.from && to == choice.to &&
+                    from == this.from && choice.input.get() == text)) {
+                if (nativeEndPattern != null) {
+                    nativeEndPattern = null;
+                    nativeEndInput = null;
+                    nativePendingLast = false;
+                }
+                javaRoot = choice.root;
+            } else javaRoot = null;
         }
         if (javaRoot != null) {
             boolean result = javaRoot.match(this, from, text);
@@ -1836,8 +1845,18 @@ public final class Matcher implements MatchResult {
         Pattern.Node javaRoot;
         if (!RustRegex.ENABLED) javaRoot = parentPattern.matchRoot;
         else {
-            JavaMatchChoice choice = selectedJavaChoice(from, anchor == ENDANCHOR ? 2 : 1);
-            javaRoot = choice == null ? null : choice.matchRoot;
+            JavaMatchChoice choice = javaMatchChoice;
+            if (choice != null && (choice.input == null ? to - this.from <= choice.width :
+                    choice.mode == (anchor == ENDANCHOR ? 2 : 1) &&
+                    this.from == choice.from && to == choice.to && from == this.from &&
+                    choice.input.get() == text)) {
+                if (nativeEndPattern != null) {
+                    nativeEndPattern = null;
+                    nativeEndInput = null;
+                    nativePendingLast = false;
+                }
+                javaRoot = choice.matchRoot;
+            } else javaRoot = null;
         }
         if (javaRoot != null) {
             boolean result = javaRoot.match(this, from, text);
@@ -1914,22 +1933,6 @@ public final class Matcher implements MatchResult {
         nativeEndTransparent = transparentBounds;
         nativeEndAnchoring = anchoringBounds;
         return result;
-    }
-
-    @ForceInline
-    private JavaMatchChoice selectedJavaChoice(int start, int mode) {
-        JavaMatchChoice choice = javaMatchChoice;
-        if (choice == null) return null;
-        if (choice.input == null) {
-            if (to - from > choice.width) return null;
-        } else if (mode != choice.mode || from != choice.from || to != choice.to ||
-                start != from || choice.input.get() != text) return null;
-        if (nativeEndPattern != null) {
-            nativeEndPattern = null;
-            nativeEndInput = null;
-            nativePendingLast = false;
-        }
-        return choice;
     }
 
     private void selectJavaMatch(boolean inputSpecific, int mode) {
