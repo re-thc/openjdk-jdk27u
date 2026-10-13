@@ -1,0 +1,73 @@
+name: Resume macOS Intel debug qualification
+on:
+  push:
+    branches: [pr/zlib-ng-platform-qualification]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mac-debug-resume-${{ github.ref }}-${{ github.event.head_commit.message }}
+  cancel-in-progress: true
+jobs:
+  resume:
+    if: contains(github.event.head_commit.message, 'resume-macos-x64')
+    runs-on: macos-15-intel
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Download the already-built debug image and test harness
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 38473507454 --repo re-thc/openjdk-jdk27u \
+            --name macos-x64-debug-zip --dir work/debug
+          gh run download 38473153925 --repo re-thc/openjdk-jdk27u \
+            --name bundles-jtreg-8.2.1+1 --dir work/jtreg
+      - name: Rebuild matching CDS archives and rerun affected checks
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+          import tarfile
+          import zipfile
+          root = Path.cwd()
+          jdk = next((root / 'work/debug').rglob('debug-jdk/bin/java')).parent.parent
+          jtreg_root = root / 'work/jtreg'
+          for archive in list(jtreg_root.rglob('*.tar.gz')):
+              with tarfile.open(archive) as source:
+                  source.extractall(jtreg_root / 'installed', filter='data')
+          for archive in list(jtreg_root.rglob('*.zip')):
+              with zipfile.ZipFile(archive) as source:
+                  source.extractall(jtreg_root / 'installed')
+          jar = next(jtreg_root.rglob('jtreg.jar'))
+          java = str(jdk / 'bin/java')
+          for archive in (jdk / 'lib/server').glob('*.jsa'):
+              archive.unlink()
+          subprocess.run([java, '-Xshare:dump'], check=True)
+          subprocess.run([java, '-XX:-UseCompressedOops',
+              '-XX:SharedArchiveFile=' + str(jdk / 'lib/server/classes_nocoops.jsa'),
+              '-Xshare:dump'], check=True)
+          out = root / 'qualification'
+          out.mkdir(exist_ok=True)
+          jobs = [
+              ('zip64', [], ['test/jdk/jdk/nio/zipfs/LargeEntriesTest.java']),
+          ]
+          for gc in ('UseSerialGC', 'UseG1GC', 'UseZGC'):
+              jobs.append((gc, ['-javaoptions:-XX:+' + gc + ' -Xcheck:jni'],
+                  ['test/hotspot/jtreg/compiler/intrinsics/zip/TestZlibNG.java',
+                   'test/hotspot/jtreg/compiler/intrinsics/zip/TestZlibNGAdler32.java']))
+          for name, flags, tests in jobs:
+              subprocess.run([java, '-jar', str(jar), '-jdk:' + str(jdk),
+                  '-verbose:fail,error,time', '-timeoutFactor:4', '-ignore:quiet',
+                  '-w:' + str(out / (name + '-work')),
+                  '-r:' + str(out / (name + '-report')), *flags, *tests], check=True)
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: macos-x64-debug-resume
+          path: qualification
+          retention-days: 14
