@@ -1784,23 +1784,33 @@ public final class Matcher implements MatchResult {
                 localsPos[i].clear();
         }
         acceptMode = NOANCHOR;
-        if (!RustRegex.ENABLED) {
-            return finishMatch(parentPattern.root.match(this, from, text));
+        Pattern.Node javaRoot;
+        if (!RustRegex.ENABLED) javaRoot = parentPattern.root;
+        else {
+            JavaMatchChoice choice = selectedJavaChoice(from, 0);
+            javaRoot = choice == null ? null : choice.root;
         }
-        JavaMatchChoice choice = selectedJavaChoice(from, 0);
-        if (choice != null) return finishMatch(choice.root.match(this, from, text));
+        if (javaRoot != null) {
+            boolean result = javaRoot.match(this, from, text);
+            if (!result) first = -1;
+            oldLast = last;
+            modCount++;
+            return result;
+        }
         int nativeResult = nativeMatch(from, 0);
         boolean result;
         if (nativeResult >= 0) result = nativeResult == 1;
         else if (nativeResult == -2) {
-            if (choice == null) choice = javaMatchChoice;
-            result = choice.root.match(this, from, text);
+            result = javaMatchChoice.root.match(this, from, text);
         }
         else {
             javaStorage(parentPattern);
             result = parentPattern.root.match(this, from, text);
         }
-        return finishMatch(result);
+        if (!result) first = -1;
+        oldLast = last;
+        modCount++;
+        return result;
     }
 
     /**
@@ -1823,27 +1833,29 @@ public final class Matcher implements MatchResult {
                 localsPos[i].clear();
         }
         acceptMode = anchor;
-        if (!RustRegex.ENABLED) {
-            return finishMatch(parentPattern.matchRoot.match(this, from, text));
+        Pattern.Node javaRoot;
+        if (!RustRegex.ENABLED) javaRoot = parentPattern.matchRoot;
+        else {
+            JavaMatchChoice choice = selectedJavaChoice(from, anchor == ENDANCHOR ? 2 : 1);
+            javaRoot = choice == null ? null : choice.matchRoot;
         }
-        JavaMatchChoice choice = selectedJavaChoice(from, anchor == ENDANCHOR ? 2 : 1);
-        if (choice != null) return finishMatch(choice.matchRoot.match(this, from, text));
+        if (javaRoot != null) {
+            boolean result = javaRoot.match(this, from, text);
+            if (!result) first = -1;
+            oldLast = last;
+            modCount++;
+            return result;
+        }
         int nativeResult = nativeMatch(from, anchor == ENDANCHOR ? 2 : 1);
         boolean result;
         if (nativeResult >= 0) result = nativeResult == 1;
         else if (nativeResult == -2) {
-            if (choice == null) choice = javaMatchChoice;
-            result = choice.matchRoot.match(this, from, text);
+            result = javaMatchChoice.matchRoot.match(this, from, text);
         }
         else {
             javaStorage(parentPattern);
             result = parentPattern.matchRoot.match(this, from, text);
         }
-        return finishMatch(result);
-    }
-
-    @ForceInline
-    private boolean finishMatch(boolean result) {
         if (!result) first = -1;
         oldLast = last;
         modCount++;
