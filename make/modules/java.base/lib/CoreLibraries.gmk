@@ -80,28 +80,45 @@ TARGETS += $(BUILD_LIBJAVA)
 BUILD_LIBZIP_EXCLUDES :=
 LIBZIP_EXCLUDES += zlib-ng
 ifneq ($(filter x86_64 aarch64, $(OPENJDK_TARGET_CPU)), )
-  ifeq ($(call isTargetOs, linux), true)
+  ifeq ($(call isTargetOs, linux macosx windows), true)
     ZLIBNG_SRC := $(TOPDIR)/src/java.base/share/native/libzip/zlib-ng
     ZLIBNG_OUT := $(SUPPORT_OUTPUTDIR)/native/zlib-ng$(if $(filter true, $(STATIC_LIBS)),-static)
-    ZLIBNG_LIB := $(ZLIBNG_OUT)/libz.a
+    ZLIBNG_LIB := $(ZLIBNG_OUT)/$(if $(filter windows, $(OPENJDK_TARGET_OS)),zlibstatic.lib,libz.a)
+    ZLIBNG_HOST := $(OPENJDK_TARGET_CPU)-$(if $(filter macosx, $(OPENJDK_TARGET_OS)),apple-darwin,unknown-linux-gnu)
 
     $(ZLIBNG_LIB): $(call FindFiles, $(ZLIBNG_SRC)) $(SPEC) \
         $(TOPDIR)/make/modules/java.base/lib/CoreLibraries.gmk
 	# Upstream makefiles do not track all configuration/header dependencies.
 	$(RM) -r $(ZLIBNG_OUT)
 	$(MKDIR) -p $(ZLIBNG_OUT)
+    ifeq ($(call isTargetOs, windows), true)
+	$(CMAKE) -S $(ZLIBNG_SRC) -B $(ZLIBNG_OUT) -G "NMake Makefiles" \
+	    -DCMAKE_MAKE_PROGRAM="$(call FixPath, $(lastword $(NMAKE)))" \
+	    -DCMAKE_C_COMPILER="$(call FixPath, $(lastword $(CC)))" \
+	    -DCMAKE_AR="$(call FixPath, $(lastword $(AR)))" \
+	    -DCMAKE_LINKER="$(call FixPath, $(lastword $(LD)))" \
+	    "-DCMAKE_C_FLAGS=$(call FixPath, $(CFLAGS_JDKLIB) $(SYSROOT_CFLAGS))" \
+	    "-DCMAKE_EXE_LINKER_FLAGS=$(call FixPath, $(LDFLAGS_JDKEXE) $(SYSROOT_LDFLAGS))" \
+	    -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF \
+	    -DZLIB_COMPAT=ON -DZLIB_SYMBOL_PREFIX=jdk_ng_ \
+	    > $(ZLIBNG_OUT)/configure-output.log 2>&1 || { \
+	      $(CAT) $(ZLIBNG_OUT)/configure-output.log; exit 1; \
+	    }
+	$(CMAKE) --build $(ZLIBNG_OUT) --target zlib-ng
+    else
 	# Keep compiler environment assignments intact during configure probes.
 	$(PRINTF) '%s\n' '#!/bin/sh' 'exec env $(CC) "$$@"' > $(ZLIBNG_OUT)/cc
 	$(CHMOD) +x $(ZLIBNG_OUT)/cc
 	cd $(ZLIBNG_OUT) && CC="$(ZLIBNG_OUT)/cc" AR="$(AR)" \
 	    CFLAGS="$(CFLAGS_JDKLIB) $(SYSROOT_CFLAGS) -fPIC -Wno-undef" \
-	    LDFLAGS="$(LDFLAGS_JDKLIB) $(SYSROOT_LDFLAGS)" CHOST="$(OPENJDK_TARGET_CPU)-unknown-linux-gnu" \
+	    LDFLAGS="$(LDFLAGS_JDKLIB) $(SYSROOT_LDFLAGS)" CHOST="$(ZLIBNG_HOST)" \
 	    $(BASH) $(ZLIBNG_SRC)/configure --static --zlib-compat --sprefix=jdk_ng_ \
 	    > configure-output.log 2>&1 || { \
 	      $(CAT) $(ZLIBNG_OUT)/configure-output.log $(ZLIBNG_OUT)/configure.log; \
 	      exit 1; \
 	    }
 	+$(MAKE) -C $(ZLIBNG_OUT) libz.a
+    endif
 
     LIBZIP_ZLIBNG_CFLAGS := -DINCLUDE_ZLIBNG=1
     LIBZIP_EXCLUDES += zlib
@@ -143,7 +160,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBZIP, \
     DISABLED_WARNINGS_clang_gzwrite.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_zip_util.c := unused-function, \
     JDK_LIBS := libjava libjvm, \
-    LIBS_unix := $(LIBZIP_LIBZ_LIBS) $(LIBZIP_ZLIBNG_LIBS), \
+    LIBS := $(LIBZIP_ZLIBNG_LIBS), \
+    LIBS_unix := $(LIBZIP_LIBZ_LIBS), \
     EXTRA_DEPS := $(ZLIBNG_LIB) $(ZLIBNG_STATIC_LIB), \
 ))
 

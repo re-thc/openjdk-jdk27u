@@ -3551,11 +3551,9 @@ address StubGenerator::generate_updateBytesCRC32() {
 
   Label bulk_entry;
   Label* bulk_target = nullptr;
-#ifdef LINUX
   if (StubRoutines::use_zlib_ng_crc32()) {
     bulk_target = &bulk_entry;
   }
-#endif
 
   if (VM_Version::supports_sse4_1() && VM_Version::supports_avx512_vpclmulqdq() &&
       VM_Version::supports_avx512bw() &&
@@ -3577,14 +3575,12 @@ address StubGenerator::generate_updateBytesCRC32() {
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
-#ifdef LINUX
   if (bulk_target != nullptr) {
     __ bind(bulk_entry);
     __ notl(crc);
     __ leave();
     __ jump(RuntimeAddress(ZipLibrary::crc32_address()), r10);
   }
-#endif
 
   // record the stub entry and end
   store_archive_data(stub_id, start, __ pc());

@@ -95,7 +95,7 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_abstract_entry(void);
   address generate_math_entry(AbstractInterpreter::MethodKind kind);
   address generate_Reference_get_entry();
-#if defined(LINUX) && (defined(AMD64) || defined(AARCH64))
+#if defined(AMD64) || defined(AARCH64)
   address generate_Adler32_entry(AbstractInterpreter::MethodKind kind);
 #endif
   address generate_CRC32_update_entry();

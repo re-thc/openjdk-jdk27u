@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Exercise zlib-ng runtime calls across buffer shapes and compilation tiers with GC
- * @requires (os.family == "linux") & (os.arch == "amd64" | os.arch == "aarch64")
+ * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
  * @run main/othervm -Xmx64m TestZlibNG
  * @run main/othervm -Xmx64m -Xbatch -XX:TieredStopAtLevel=1 TestZlibNG
  * @run main/othervm -Xmx64m -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 TestZlibNG

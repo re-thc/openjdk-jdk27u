@@ -2904,7 +2904,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     do_zip_process(x);
     break;
 #endif
-#if defined(LINUX) && (defined(AMD64) || defined(AARCH64))
+#if defined(AMD64) || defined(AARCH64)
   case vmIntrinsics::_updateAdler32:
   case vmIntrinsics::_updateBytesAdler32:
   case vmIntrinsics::_updateByteBufferAdler32:
@@ -3477,7 +3477,6 @@ LIR_Opr LIRGenerator::mask_boolean(LIR_Opr array, LIR_Opr value, CodeEmitInfo*& 
 }
 
 #if defined(AMD64) || defined(AARCH64)
-#ifdef LINUX
 void LIRGenerator::do_update_Adler32(Intrinsic* x) {
   assert(UseAdler32Intrinsics, "Adler32 intrinsic must be enabled");
   LIR_Opr result;
@@ -3518,8 +3517,6 @@ void LIRGenerator::do_update_Adler32(Intrinsic* x) {
   }
   __ move(result, rlock_result(x));
 }
-
-#endif
 
 void LIRGenerator::do_zip_process(Intrinsic* x) {
   CodeEmitInfo* info = state_for(x, x->state());

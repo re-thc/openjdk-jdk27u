@@ -3670,7 +3670,7 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   }
 }
 
-#if defined(LINUX) && defined(AMD64)
+#ifdef AMD64
 void GraphBuilder::append_adler32_with_fallback(ciMethod* callee, bool ignore_return) {
   // JNI is faster for large x86 C1 updates; smaller updates use the leaf call.
   Value length = state()->stack_at(state()->stack_size() - 1);
@@ -3739,7 +3739,7 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
       return false;
     }
   }
-#if defined(LINUX) && defined(AMD64)
+#ifdef AMD64
   if (callee->intrinsic_id() == vmIntrinsics::_updateBytesAdler32 ||
       callee->intrinsic_id() == vmIntrinsics::_updateByteBufferAdler32) {
     Value length = state()->stack_at(state()->stack_size() - 1);

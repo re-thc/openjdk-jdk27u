@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Tiny incremental ZIP/GZIP streams preserve data across call paths and zero-capacity calls
- * @requires (os.family == "linux") & (os.arch == "amd64" | os.arch == "aarch64")
+ * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
  * @library /test/lib
  * @run driver TestZlibNGSmallStreams
  */

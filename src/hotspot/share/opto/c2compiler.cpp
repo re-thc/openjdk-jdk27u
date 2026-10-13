@@ -829,7 +829,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
   case vmIntrinsics::_zipProcess:
-#if defined(LINUX) && (defined(AMD64) || defined(AARCH64))
+#if defined(AMD64) || defined(AARCH64)
   case vmIntrinsics::_updateAdler32:
 #endif
   case vmIntrinsics::_updateBytesAdler32:

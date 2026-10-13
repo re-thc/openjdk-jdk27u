@@ -54,7 +54,12 @@ with tarfile.open(args.archive) as archive:
         if ((len(path.parts) == 1 and
              (path.suffix in ('.c', '.h', '.in') or path.name in ('configure', 'LICENSE.md')))
                 or (path.parts[0] == 'arch' and path.suffix in ('.c', '.h', '.in'))
-                or str(path) in ('tools/config.sub', 'test/Makefile.in')):
+                or (path.parts[0] == 'cmake' and
+                    not path.name.startswith('toolchain-') and path.suffix in ('.c', '.cmake'))
+                or (path.parts[0] == 'utils' and path.suffix == '.c')
+                or str(path) in ('CMakeLists.txt', 'utils/CMakeLists.txt',
+                                 'zlib.pc.cmakein', 'zlib_name_mangling.h.empty',
+                                 'tools/config.sub', 'test/Makefile.in')):
             files[path] = (archive.extractfile(member).read(), member.mode & 0o777)
 if Path('LICENSE.md') not in files:
     parser.error('missing upstream license')

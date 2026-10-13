@@ -24,7 +24,6 @@
 /**
  * @test
  * @summary Verify AOT code cache compatibility with ZIP intrinsic configuration
- * @requires os.family == "linux"
  * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
  * @requires vm.cds.supports.aot.code.caching
  * @requires vm.compiler1.enabled & vm.compiler2.enabled

@@ -67,9 +67,7 @@ ATTRIBUTE_ALIGNED(32) static const juint ADLER32_SHUF1_TABLE[] = {
 address StubGenerator::generate_updateBytesAdler32() {
   assert(UseAdler32Intrinsics, "");
 
-#ifdef LINUX
   address bulk_adler = ZipLibrary::adler32_address();
-#endif
 
   __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_updateBytesAdler32_id;
@@ -82,7 +80,6 @@ address StubGenerator::generate_updateBytesAdler32() {
   StubCodeMark mark(this, stub_id);
   start = __ pc();
 
-#ifdef LINUX
   if (!VM_Version::supports_avx2()) {
     __ jump(RuntimeAddress(bulk_adler), r10);
     store_archive_data(stub_id, start, __ pc());
@@ -93,7 +90,6 @@ address StubGenerator::generate_updateBytesAdler32() {
   __ jcc(Assembler::less, use_simd);
   __ jump(RuntimeAddress(bulk_adler), r10);
   __ bind(use_simd);
-#endif
 
   // Choose an appropriate LIMIT for inner loop based on the granularity
   // of intermediate results. For int, LIMIT of 5552 will ensure intermediate

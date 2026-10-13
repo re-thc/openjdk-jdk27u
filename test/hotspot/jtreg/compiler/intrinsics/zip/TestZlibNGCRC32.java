@@ -24,14 +24,20 @@
 /**
  * @test
  * @summary Verify CRC32 kernel selection, offsets, seeds and buffers
- * @requires os.family == "linux" & os.simpleArch == "x64"
+ * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
  * @run main/othervm -Xint compiler.intrinsics.zip.TestZlibNGCRC32
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 compiler.intrinsics.zip.TestZlibNGCRC32
  * @run main/othervm -Xbatch -XX:-TieredCompilation compiler.intrinsics.zip.TestZlibNGCRC32
+ * @run main/othervm -Xcheck:jni -XX:+UnlockDiagnosticVMOptions -XX:-UseCRC32Intrinsics compiler.intrinsics.zip.TestZlibNGCRC32
+ */
+
+/**
+ * @test id=avx2
+ * @summary Verify zlib-ng CRC32 calls without the AVX-512 kernel
+ * @requires os.simpleArch == "x64"
  * @run main/othervm -Xint -XX:UseAVX=2 compiler.intrinsics.zip.TestZlibNGCRC32
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:UseAVX=2 compiler.intrinsics.zip.TestZlibNGCRC32
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:UseAVX=2 compiler.intrinsics.zip.TestZlibNGCRC32
- * @run main/othervm -Xcheck:jni -XX:+UnlockDiagnosticVMOptions -XX:-UseCRC32Intrinsics compiler.intrinsics.zip.TestZlibNGCRC32
  */
 
 package compiler.intrinsics.zip;

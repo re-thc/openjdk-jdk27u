@@ -1,6 +1,6 @@
 # ZIP intrinsics and zlib-ng
 
-Linux x86-64 and AArch64 builds use zlib-ng for ZIP compression, decompression
+Linux, macOS and Windows x86-64 and AArch64 builds use zlib-ng for ZIP compression, decompression
 and native Adler32/CRC32 calls.
 
 Compression level 1 maps to zlib-ng level 2, retaining a compression ratio
@@ -24,15 +24,14 @@ least 64 KiB. C2 calls zlib-ng for scalar updates and bulk
 updates of at least 1 KiB; shorter bulk updates use the HotSpot SIMD kernel.
 On x86-64 without AVX2, C2 uses zlib-ng for all bulk sizes.
 
-CRC32 bulk updates of at least 64 bytes use zlib-ng on Linux x86-64 when the
+CRC32 bulk updates of at least 64 bytes use zlib-ng on x86-64 when the
 HotSpot AVX-512 kernel is unavailable. The interpreter, C1 and C2 use the same
 selection. Short inputs, scalar updates, AVX-512 hosts and AArch64 retain the
 HotSpot kernels. CRC32C is unchanged; zlib-ng does not implement its polynomial.
 
 Native consumers include ZIP/JAR class loading, CDS checksums, jimage
 decompression and compressed heap dumps. Java ZIP/GZIP, ZIP filesystem and jlink
-compression use the Deflater/Inflater integration. Other platforms and the
-pre-VM launcher retain their existing zlib integration.
+compression use the Deflater/Inflater integration. Other architectures and the pre-VM launcher retain their existing zlib integration.
 
 ## Updating the dependency
 
@@ -53,6 +52,7 @@ The importer preserves upstream source bytes and file modes, removes obsolete
 files and updates the license notice. Update this provenance record with it.
 No source patches are carried. The native build uses compatibility mode,
 private `jdk_ng_` symbols and the configured target toolchain and sysroot.
+Windows builds require CMake and the configured MSVC toolchain's NMake.
 
 ## Validation
 

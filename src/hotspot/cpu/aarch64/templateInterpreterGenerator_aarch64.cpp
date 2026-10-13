@@ -981,7 +981,6 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 
 }
 
-#ifdef LINUX
 address TemplateInterpreterGenerator::generate_Adler32_entry(AbstractInterpreter::MethodKind kind) {
   assert(UseAdler32Intrinsics, "Adler32 intrinsic must be enabled");
   address entry = __ pc();
@@ -1020,7 +1019,6 @@ address TemplateInterpreterGenerator::generate_Adler32_entry(AbstractInterpreter
   return entry;
 }
 
-#endif
 
 /**
  * Method entry for static native methods:

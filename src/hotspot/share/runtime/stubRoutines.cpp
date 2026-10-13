@@ -81,7 +81,7 @@ jint    StubRoutines::_verify_oop_count                         = 0;
 address StubRoutines::_string_indexof_array[4]   =    { nullptr };
 
 bool StubRoutines::use_zlib_ng_crc32() {
-#if defined(LINUX) && defined(AMD64)
+#ifdef AMD64
   // The AVX-512 HotSpot kernel wins; zlib-ng beats the older vector kernel.
   return !(VM_Version::supports_sse4_1() &&
            VM_Version::supports_avx512_vpclmulqdq() &&

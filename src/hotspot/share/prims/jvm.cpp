@@ -241,7 +241,7 @@ JVM_ENTRY(jboolean, JVM_AOTEndRecording(JNIEnv *env))
 JVM_END
 
 JVM_LEAF(jboolean, JVM_ZipIntrinsicsEnabled())
-#if defined(LINUX) && (defined(AMD64) || defined(AARCH64))
+#if defined(AMD64) || defined(AARCH64)
   return UseZipIntrinsics && UseCompiler;
 #else
   return false;

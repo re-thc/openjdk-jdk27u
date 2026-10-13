@@ -34,7 +34,7 @@
 /**
  * @test id=limited-avx
  * @summary Verify default Adler32 acceleration without the AVX2 HotSpot stub
- * @requires os.family == "linux" & os.simpleArch == "x64"
+ * @requires os.simpleArch == "x64"
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @requires vm.opt.UseAdler32Intrinsics == null | vm.opt.UseAdler32Intrinsics == true
  * @modules jdk.management

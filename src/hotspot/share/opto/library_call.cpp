@@ -688,7 +688,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
     return inline_updateDirectByteBufferCRC32C();
 
-#if defined(LINUX) && (defined(AMD64) || defined(AARCH64))
+#if defined(AMD64) || defined(AARCH64)
   case vmIntrinsics::_updateAdler32:
     return inline_updateAdler32();
 #endif

@@ -39,7 +39,7 @@
 /**
  * @test id=avx2
  * @summary Verify native checksum register preservation without AVX-512
- * @requires os.family == "linux" & os.simpleArch == "x64"
+ * @requires os.simpleArch == "x64"
  * @run main/othervm -XX:-TieredCompilation -Xbatch -XX:UseAVX=2 compiler.intrinsics.zip.TestFpRegsABI
  * @run main/othervm -XX:TieredStopAtLevel=1 -Xbatch -XX:UseAVX=2 compiler.intrinsics.zip.TestFpRegsABI
  */

@@ -1199,7 +1199,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
 
-#if defined(LINUX) && defined(AMD64)
+#ifdef AMD64
   // zlib-ng provides Adler32 without requiring the AVX2 HotSpot stub.
   if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
     FLAG_SET_DEFAULT(UseAdler32Intrinsics, true);

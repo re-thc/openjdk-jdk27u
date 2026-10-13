@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Check zlib-ng bulk Adler32 at the SIMD boundary with GC, offsets and nonzero seeds
- * @requires (os.family == "linux") & (os.arch == "amd64" | os.arch == "aarch64")
+ * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
  * @requires vm.compiler2.enabled
  * @run main/othervm -Xmx64m -Xint TestZlibNGAdler32
  * @run main/othervm -Xmx64m -Xbatch -XX:TieredStopAtLevel=1 TestZlibNGAdler32
