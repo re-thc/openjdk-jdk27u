@@ -30,6 +30,7 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.Charset;
 import java.nio.charset.CodingErrorAction;
+import java.nio.charset.CoderResult;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.util.Base64;
@@ -58,6 +59,7 @@ public class SimdUTF {
     private ByteBuffer charsetBytes, charsetInput, charsetTightInput;
     private CharBuffer charsetChars, charsetOutput;
     private CharBuffer charsetTightOutput, supplementaryInput;
+    private CharBuffer charsetSmallOutput, charsetEmptyOutput;
     private ByteBuffer utf32SupplementaryBytes;
     private ByteBuffer asciiCharsetInput;
     private CharBuffer asciiCharsetOutput;
@@ -116,6 +118,8 @@ public class SimdUTF {
         String tightText = "漢".repeat(size / 3) + "a".repeat(size % 3);
         charsetTightInput = ByteBuffer.wrap(tightText.getBytes(StandardCharsets.UTF_8));
         charsetTightOutput = CharBuffer.allocate(tightText.length());
+        charsetSmallOutput = CharBuffer.allocate(1);
+        charsetEmptyOutput = CharBuffer.allocate(0);
         supplementaryInput = CharBuffer.wrap(supplementaryChars);
         utf32SupplementaryBytes = ByteBuffer.allocate(supplementaryChars.length * 2);
         charsetEncoder = StandardCharsets.UTF_8.newEncoder();
@@ -263,6 +267,16 @@ public class SimdUTF {
         charsetDecoder.reset(); charsetTightInput.clear(); charsetTightOutput.clear();
         charsetDecoder.decode(charsetTightInput, charsetTightOutput, true);
         return charsetTightOutput.position();
+    }
+
+    @Benchmark public CoderResult charsetDecodeSmallBuffer() {
+        charsetDecoder.reset(); charsetTightInput.clear(); charsetSmallOutput.clear();
+        return charsetDecoder.decode(charsetTightInput, charsetSmallOutput, true);
+    }
+
+    @Benchmark public CoderResult charsetDecodeEmptyBuffer() {
+        charsetDecoder.reset(); charsetTightInput.clear(); charsetEmptyOutput.clear();
+        return charsetDecoder.decode(charsetTightInput, charsetEmptyOutput, true);
     }
 
     @Benchmark public int utf32SupplementaryCharsetEncode() {

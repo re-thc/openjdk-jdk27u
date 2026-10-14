@@ -28,6 +28,7 @@ package sun.nio.cs;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.SimdUTF;
+import jdk.internal.vm.annotation.ForceInline;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -97,6 +98,7 @@ public final class UTF_8 extends Unicode {
 
         //  [E0]     [A0..BF] [80..BF]
         //  [E1..EF] [80..BF] [80..BF]
+        @ForceInline
         private static boolean isMalformed3(int b1, int b2, int b3) {
             return (b1 == (byte)0xe0 && (b2 & 0xe0) == 0x80) ||
                    (b2 & 0xc0) != 0x80 || (b3 & 0xc0) != 0x80;
@@ -113,6 +115,7 @@ public final class UTF_8 extends Unicode {
         //  [F4]     [80..8F] [80..BF] [80..BF]
         //  only check 80-be range here, the [0xf0,0x80...] and [0xf4,0x90-...]
         //  will be checked by Character.isSupplementaryCodePoint(uc)
+        @ForceInline
         private static boolean isMalformed4(int b2, int b3, int b4) {
             return (b2 & 0xc0) != 0x80 || (b3 & 0xc0) != 0x80 ||
                    (b4 & 0xc0) != 0x80;
@@ -234,6 +237,7 @@ public final class UTF_8 extends Unicode {
 
             // Keep the ASCII intrinsic and reject invalid leading bytes before bulk conversion.
             n = SimdUTF.isEligible(sl - sp)
+                    && (long)(dl - dp) * 3 >= sl - sp
                     && (sa[sp] & 0xff) >= 0xc2 && (sa[sp] & 0xff) <= 0xf4
                     ? SimdUTF.decodeUTF8(sa, sp, sl - sp, da, dp, dl - dp) : -1;
             if (n >= 0) {

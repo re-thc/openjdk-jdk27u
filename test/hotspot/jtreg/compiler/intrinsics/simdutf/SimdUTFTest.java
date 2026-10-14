@@ -145,7 +145,8 @@ public class SimdUTFTest {
                 Arrays.fill(bytes, SENTINEL);
                 for (int i = 0; i < length; i++) bytes[7 + i] = pattern[i % pattern.length];
                 for (int capacity : new int[]{0, 1, length / 3, length, length + 1}) {
-                    for (var action : new CodingErrorAction[]{CodingErrorAction.REPORT, CodingErrorAction.REPLACE}) {
+                    for (var action : new CodingErrorAction[]{CodingErrorAction.REPORT,
+                            CodingErrorAction.REPLACE, CodingErrorAction.IGNORE}) {
                         for (boolean end : new boolean[]{false, true}) {
                             char[][] output = {new char[capacity + 14], new char[capacity + 14]};
                             int position = -1;
@@ -155,6 +156,7 @@ public class SimdUTFTest {
                                 Arrays.fill(output[mode], '\u5555');
                                 ByteBuffer source = ByteBuffer.wrap(bytes).position(3).limit(7 + length).slice();
                                 source.position(4);
+                                // Read-only input selects the buffer decoder as the reference.
                                 if (mode == 0) source = source.asReadOnlyBuffer();
                                 CharBuffer target = CharBuffer.wrap(output[mode]).position(3).slice();
                                 target.position(4).limit(4 + capacity);
