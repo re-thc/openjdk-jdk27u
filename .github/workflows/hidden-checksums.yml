@@ -6,10 +6,11 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: hidden-checksums-${{ github.ref }}
+  group: hidden-checksums-${{ github.ref }}-${{ github.event.head_commit.message }}
   cancel-in-progress: true
 jobs:
   qualify:
+    if: startsWith(github.event.head_commit.message, 'Qualify hidden checksums')
     timeout-minutes: 180
     strategy:
       fail-fast: false

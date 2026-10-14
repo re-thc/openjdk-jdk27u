@@ -175,6 +175,7 @@ public class CRC32 implements Checksum {
     static {
         ZipUtils.loadLibrary();
         SharedSecrets.setJavaUtilZipAccess(new JavaUtilZipAccess() {
+            @Override
             public int updateCRC32(int crc, byte[] data, int off, int len) {
                 return updateBytes(crc, data, off, len);
             }

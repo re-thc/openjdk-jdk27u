@@ -115,7 +115,7 @@ final class IDATOutputStream extends ImageOutputStreamImpl {
     private final ImageOutputStream stream;
     private final int chunkLength;
     private long startPos;
-    private final CRC crc = new CRC();
+    private final CRC32 crc = new CRC32();
 
     private final Deflater def;
     private final byte[] buf = new byte[512];
@@ -147,7 +147,7 @@ final class IDATOutputStream extends ImageOutputStreamImpl {
 
     private void finishChunk() throws IOException {
         // Write CRC
-        stream.writeInt(crc.getValue());
+        stream.writeInt((int)crc.getValue());
 
         // Write length
         long pos = stream.getStreamPosition();
