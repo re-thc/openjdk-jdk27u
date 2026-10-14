@@ -323,7 +323,6 @@ final class SignatureAlgorithmsExtension {
 
             // Use default hash and signature algorithm:
             //      {sha1,rsa}
-            //      {sha1,dsa}
             //      {sha1,ecdsa}
             // Per RFC 5246, If the client supports only the default hash
             // and signature algorithms, it MAY omit the
@@ -336,7 +335,6 @@ final class SignatureAlgorithmsExtension {
             // is willing to accept.
             List<SignatureScheme> schemes = Arrays.asList(
                     SignatureScheme.RSA_PKCS1_SHA1,
-                    SignatureScheme.DSA_SHA1,
                     SignatureScheme.ECDSA_SHA1
             );
 

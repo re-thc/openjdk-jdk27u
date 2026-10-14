@@ -60,7 +60,7 @@ final class CertificateRequest {
     private enum ClientCertificateType {
         // RFC 2246
         RSA_SIGN            ((byte)0x01, "rsa_sign", List.of("RSA"), true),
-        DSS_SIGN            ((byte)0x02, "dss_sign", List.of("DSA"), true),
+        DSS_SIGN            ((byte)0x02, "dss_sign"),
         RSA_FIXED_DH        ((byte)0x03, "rsa_fixed_dh"),
         DSS_FIXED_DH        ((byte)0x04, "dss_fixed_dh"),
 
@@ -79,11 +79,9 @@ final class CertificateRequest {
         private static final byte[] CERT_TYPES =
                 JsseJce.isEcAvailable() ? new byte[] {
                         ECDSA_SIGN.id,
-                        RSA_SIGN.id,
-                        DSS_SIGN.id
+                        RSA_SIGN.id
                     } :  new byte[] {
-                        RSA_SIGN.id,
-                        DSS_SIGN.id
+                        RSA_SIGN.id
                     };
 
         final byte id;

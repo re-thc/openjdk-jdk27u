@@ -639,7 +639,6 @@ final class CertificateMessage {
             String authType;
             switch (keyAlgorithm) {
                 case "RSA":
-                case "DSA":
                 case "EC":
                 case "RSASSA-PSS":
                     authType = keyAlgorithm;
@@ -1185,7 +1184,6 @@ final class CertificateMessage {
             String authType;
             switch (keyAlgorithm) {
                 case "RSA":
-                case "DSA":
                 case "EC":
                 case "RSASSA-PSS":
                     authType = keyAlgorithm;

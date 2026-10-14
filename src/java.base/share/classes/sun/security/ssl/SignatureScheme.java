@@ -119,18 +119,6 @@ enum SignatureScheme {
                                     ProtocolVersion.PROTOCOLS_OF_12),
 
     // Legacy algorithms
-    DSA_SHA256              (0x0402, "dsa_sha256", "SHA256withDSA",
-                                    "DSA",
-                                    ProtocolVersion.PROTOCOLS_OF_12),
-    ECDSA_SHA224            (0x0303, "ecdsa_sha224", "SHA224withECDSA",
-                                    "EC",
-                                    ProtocolVersion.PROTOCOLS_OF_12),
-    RSA_SHA224              (0x0301, "rsa_sha224", "SHA224withRSA",
-                                    "RSA", 511,
-                                    ProtocolVersion.PROTOCOLS_OF_12),
-    DSA_SHA224              (0x0302, "dsa_sha224", "SHA224withDSA",
-                                    "DSA",
-                                    ProtocolVersion.PROTOCOLS_OF_12),
     ECDSA_SHA1              (0x0203, "ecdsa_sha1", "SHA1withECDSA",
                                     "EC", null, null, -1,
                                     ProtocolVersion.PROTOCOLS_12_13,
@@ -138,12 +126,6 @@ enum SignatureScheme {
     RSA_PKCS1_SHA1          (0x0201, "rsa_pkcs1_sha1", "SHA1withRSA",
                                     "RSA", null, null, 511,
                                     ProtocolVersion.PROTOCOLS_12_13,
-                                    ProtocolVersion.PROTOCOLS_OF_12),
-    DSA_SHA1                (0x0202, "dsa_sha1", "SHA1withDSA",
-                                    "DSA",
-                                    ProtocolVersion.PROTOCOLS_OF_12),
-    RSA_MD5                 (0x0101, "rsa_md5", "MD5withRSA",
-                                    "RSA", 511,
                                     ProtocolVersion.PROTOCOLS_OF_12);
 
     final int id;                         // hash + signature

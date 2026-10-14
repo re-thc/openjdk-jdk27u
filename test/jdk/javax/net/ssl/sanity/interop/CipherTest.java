@@ -136,7 +136,7 @@ public class CipherTest {
         SSLSocket socket = (SSLSocket)factory.createSocket();
         String[] cipherSuites = socket.getSupportedCipherSuites();
         String[] protocols = socket.getSupportedProtocols();
-        String[] clientAuths = {null, "RSA", "DSA"};
+        String[] clientAuths = {null, "RSA", "EC"};
         tests = new ArrayList<TestParameters>(
             cipherSuites.length * protocols.length * clientAuths.length);
         for (int j = 0; j < protocols.length; j++) {
@@ -163,10 +163,8 @@ public class CipherTest {
 
                 for (int k = 0; k < clientAuths.length; k++) {
                     String clientAuth = clientAuths[k];
-                    // no client with anonymous cipher suites;
-                    // TLS 1.3 doesn't support DSA
-                    if ((clientAuth != null && cipherSuite.contains("DH_anon"))
-                            || ("DSA".equals(clientAuth) && "TLSv1.3".equals(protocol))) {
+                    // no client with anonymous cipher suites
+                    if (clientAuth != null && cipherSuite.contains("DH_anon")) {
                         continue;
                     }
                     tests.add(new TestParameters(

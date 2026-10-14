@@ -746,7 +746,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     // is willing to accept.
     private static final ArrayList<SignatureScheme> defaultPeerSupportedSignAlgs =
             new ArrayList<>(Arrays.asList(SignatureScheme.RSA_PKCS1_SHA1,
-                    SignatureScheme.DSA_SHA1,
                     SignatureScheme.ECDSA_SHA1));
 
     void setUseDefaultPeerSignAlgs() {

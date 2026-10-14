@@ -28,8 +28,6 @@
  *          SSLConfiguration#getSSLParameters() call
  * @library /javax/net/ssl/templates
  *          /test/lib
- * @comment *_sha224 signatures schemes are not available on Windows
- * @requires os.family != "windows"
  *
  * @run main/othervm DefaultSSLConfigSignatureSchemes
  * @run main/othervm
@@ -69,13 +67,8 @@ public class DefaultSSLConfigSignatureSchemes extends SSLEngineTemplate {
                     "rsa_pkcs1_sha256",
                     "rsa_pkcs1_sha384",
                     "rsa_pkcs1_sha512",
-                    "dsa_sha256",
-                    "ecdsa_sha224",
-                    "rsa_sha224",
-                    "dsa_sha224",
                     "ecdsa_sha1",
-                    "rsa_pkcs1_sha1",
-                    "dsa_sha1")
+                    "rsa_pkcs1_sha1")
             .sorted()
             .toList();
 
