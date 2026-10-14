@@ -1,0 +1,29 @@
+name: SIMDUTF C1 compiled-code analysis
+on:
+  push:
+    branches: [review/simdutf-decoder-code]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: simdutf-decoder-leaf-linux-aarch64
+          run-id: 38628323362
+          github-token: ${{ github.token }}
+          path: download
+      - name: Compare scalar decoder code
+        run: python3 make/scripts/simdutf-decoder-code.py
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: simdutf-c1-code-analysis
+          path: decoded-*.txt
+          retention-days: 14
