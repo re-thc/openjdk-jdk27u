@@ -39,7 +39,7 @@ for log in sorted(Path("download").rglob("inlining-*.log")):
         for order, binary in enumerate(versions):
             file = Path("code-" + log.stem + "-" + str(index) + "-" + str(order) + ".bin")
             file.write_bytes(binary)
-            result = subprocess.run(["objdump", "-D", "-b", "binary", "-m", "aarch64",
+            result = subprocess.run(["aarch64-linux-gnu-objdump", "-D", "-b", "binary", "-m", "aarch64",
                 "--adjust-vma=" + hex(start), str(file)], check=True, text=True, capture_output=True)
             lines = result.stdout.splitlines()
             instructions = []
