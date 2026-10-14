@@ -1,5 +1,52 @@
 # Rust regex performance
 
+## First-use preparation and verified native routes
+
+Runtime source `054933b4633`, Linux x86_64, GCC 16.2, Rust 1.99.0,
+release with four-byte object headers. The preparation-cache key now uses
+explicit hash and equality methods. This avoids the record-generated
+`ObjectMethods` bootstrap during the first cache lookup; separate class
+initialization logs confirm that bootstrap in the old-key control and its
+absence in the new-key control. Cache reuse, colliding pattern hashes and
+distinct flags retain their behavior.
+
+Nine alternating fresh-process samples per control use one pinned CPU,
+Serial GC, one active processor and `-Xshare:off`. First use includes Pattern
+compilation, Matcher creation, one successful find, capture boundaries and
+both end flags. Input is `a@b.co!` for email and `error123!` for the other
+shapes. These are medians in milliseconds; expensive diagnostics run separately.
+
+| First regex use | Original sources | Disabled | Default |
+| --- | ---: | ---: | ---: |
+| Captured email | 7.3 | 18.3 | 1.5 |
+| Literal alternation plus digits | 4.5 | 13.8 | 15.6 |
+| Literal prefix plus digits | 4.0 | 13.4 | 1.2 |
+| Unsupported lookahead | 3.9 | 13.6 | 14.3 |
+
+Original-source controls patch Pattern/Matcher from `8d8d71a` into the same
+image. Module loading affects startup, so this is not an original-HotSpot
+startup comparison. Equal module-loading controls isolate the key change:
+email first use falls from 20.9 to 4.1 ms and alternation from 22.5 to 5.5 ms.
+The normal default image still loses first-use time to disabled for alternation
+and unsupported syntax; the key change does not remove Java replay or sibling
+compilation costs. Whole-process wall medians for email are 88.8 ms disabled
+and 73.8 ms default, and for alternation 83.6 and 81.7 ms respectively.
+
+Untimed debugger counters observe 6,000 intrinsic-runtime entries each in the
+interpreter, C1 and C2, with zero JNI entries. Disabling intrinsics produces
+6,000 registered JNI entries. Compilation logs independently identify C1
+level 1 and C2 compilation of the native wrapper; the interpreter run has no
+compiled methods. These observations establish routes, not timing results.
+
+Reset/capture regression coverage now keeps Patterns native across find
+reuse and successful anchored reuse, asserts the route after each operation,
+and compares end flags separately on fresh Patterns. Failed anchored matches
+retain their existing Java continuation behavior. All eight configurations
+of `RustRegexTest` pass; enabled configurations compare 372,059 native/Java
+results and API states each. The `RustRegexState` microbenchmark adds capture
+boundaries and optional end flags across sizes, hit positions, unsupported
+syntax and Unicode input. Its setup checks pass in all three controls.
+
 ## Integration qualification
 
 Runtime source `1d66c34a98c`, Linux x86_64, GCC 16.2, Rust 1.99.0,
