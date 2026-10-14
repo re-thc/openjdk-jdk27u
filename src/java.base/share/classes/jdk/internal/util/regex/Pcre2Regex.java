@@ -287,21 +287,15 @@ public final class Pcre2Regex {
         }
         byte[] bytes = SharedSecrets.getJavaLangAccess().getLatin1Bytes(input);
         if (bytes == null) {
-            if (input.length() > MAX_LENGTH) return -1;
-            // PCRE2-16 is non-UTF: qualified BMP input has Java UTF-16 indices.
-            // Supplementary pairs, unpaired surrogates and Java-only newline
-            // semantics retain Java traversal until independently qualified.
-            for (int i = 0; i < input.length(); i++) {
-                char c = input.charAt(i);
-                if (Character.isSurrogate(c) || c == 0x2028 || c == 0x2029) return -1;
-            }
+            // The VM qualifies and snapshots only the opaque region directly
+            // from String's UTF-16 backing, without a Java char[] intermediary.
             int base = groupCount * 2;
             state[base] = from; state[base+1] = to;
             state[base+2] = start; state[base+3] = mode;
             try {
                 long wide = handle16;
                 if (wide == 0) wide = nativeHandle16();
-                return wide == 0 ? -1 : match16Safepoint0(wide, input.toCharArray(), state);
+                return wide == 0 ? -1 : match16Safepoint0(wide, input, state);
             } finally { Reference.reachabilityFence(this); }
         }
         int base = groupCount * 2;
@@ -313,6 +307,9 @@ public final class Pcre2Regex {
             long nativeHandle = handle;
             if (nativeHandle == 0) nativeHandle = nativeHandle();
             if (nativeHandle == 0) return -1;
+            // The leaf always rejects longer regions, independently of tier
+            // or intrinsic availability. Skip that guaranteed-rejected call.
+            if (to - from > 64) return matchSafepoint0(nativeHandle, bytes, state);
             int result = match0(nativeHandle, bytes, state);
             return result == -2 ? matchSafepoint0(nativeHandle, bytes, state) : result;
         } finally {
@@ -904,7 +901,7 @@ public final class Pcre2Regex {
     private static native void free0(long handle);
     private static native long compile16_0(byte[] pattern, int flags, int groups);
     private static native void free16_0(long handle);
-    private static native int match16Safepoint0(long handle, char[] input, int[] state);
+    private static native int match16Safepoint0(long handle, String input, int[] state);
     @IntrinsicCandidate
     private static native int match0(long handle, byte[] input, int[] state);
     private static native int matchSafepoint0(long handle, byte[] input, int[] state);

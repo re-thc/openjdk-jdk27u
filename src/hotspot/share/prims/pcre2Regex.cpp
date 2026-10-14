@@ -22,6 +22,7 @@
  *
  */
 
+#include "classfile/javaClasses.inline.hpp"
 #include "memory/allocation.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/globals.hpp"
@@ -172,13 +173,13 @@ JNI_ENTRY(jint, RR_matchSafepoint(JNIEnv* env, jclass cls, jlong handle, jbyteAr
 #endif
 JNI_END
 
-JNI_ENTRY(jint, RR_match16Safepoint(JNIEnv* env, jclass cls, jlong handle, jcharArray input, jintArray state))
+JNI_ENTRY(jint, RR_match16Safepoint(JNIEnv* env, jclass cls, jlong handle, jstring input, jintArray state))
 #if INCLUDE_PCRE2_REGEX
   if (handle == 0) return -1;
   jint copy_state[70];
   int slots, base, from, length;
   {
-    typeArrayOop bytes = typeArrayOop(JNIHandles::resolve_non_null(input));
+    oop string = JNIHandles::resolve_non_null(input);
     typeArrayOop output = typeArrayOop(JNIHandles::resolve_non_null(state));
     slots = output->length();
     if (slots < 6 || slots > 70) return -1;
@@ -188,16 +189,28 @@ JNI_ENTRY(jint, RR_match16Safepoint(JNIEnv* env, jclass cls, jlong handle, jchar
     int to = copy_state[base+1];
     int start = copy_state[base+2];
     int mode = copy_state[base+3];
-    if (from < 0 || to < from || to > bytes->length() || to - from > 65536 ||
+    if (java_lang_String::is_latin1(string) || from < 0 || to < from ||
+        to > java_lang_String::length(string) || to - from > 65536 ||
         start < from || start > to || mode < 0 || mode > 2) return -1;
     length = to - from;
   }
   uint16_t* copy = NEW_C_HEAP_ARRAY_RETURN_NULL(uint16_t, MAX2(length, 1), mtInternal);
   if (copy == nullptr) return -1;
+  bool qualified = true;
   {
-    typeArrayOop bytes = typeArrayOop(JNIHandles::resolve_non_null(input));
-    memcpy(copy, bytes->char_at_addr(from), length * sizeof(uint16_t));
+    typeArrayOop bytes = java_lang_String::value(JNIHandles::resolve_non_null(input));
+    // StringUTF16 uses native-order code units. No heap pointer is retained,
+    // and qualification visits only the opaque region being copied.
+    for (int i = 0; i < length; i++) {
+      uint16_t c = bytes->char_at(from + i);
+      if ((c >= 0xd800 && c <= 0xdfff) || c == 0x2028 || c == 0x2029) {
+        qualified = false;
+        break;
+      }
+      copy[i] = c;
+    }
   } // No raw oop or heap address survives the native transition.
+  if (!qualified) { FREE_C_HEAP_ARRAY(copy); return -1; }
   copy_state[base] = 0;
   copy_state[base+1] = length;
   copy_state[base+2] -= from;
@@ -240,7 +253,7 @@ extern "C" void JNICALL JVM_RegisterPcre2RegexMethods(JNIEnv* env, jclass cls) {
     {const_cast<char*>("compile0"), const_cast<char*>("([BII)J"), CAST_FROM_FN_PTR(void*, RR_compile)},
     {const_cast<char*>("compile16_0"), const_cast<char*>("([BII)J"), CAST_FROM_FN_PTR(void*, RR_compile16)},
     {const_cast<char*>("free16_0"), const_cast<char*>("(J)V"), CAST_FROM_FN_PTR(void*, RR_free16)},
-    {const_cast<char*>("match16Safepoint0"), const_cast<char*>("(J[C[I)I"), CAST_FROM_FN_PTR(void*, RR_match16Safepoint)},
+    {const_cast<char*>("match16Safepoint0"), const_cast<char*>("(JLjava/lang/String;[I)I"), CAST_FROM_FN_PTR(void*, RR_match16Safepoint)},
     {const_cast<char*>("free0"), const_cast<char*>("(J)V"), CAST_FROM_FN_PTR(void*, RR_free)},
     {const_cast<char*>("match0"), const_cast<char*>("(J[B[I)I"), CAST_FROM_FN_PTR(void*, RR_match)},
     {const_cast<char*>("matchSafepoint0"), const_cast<char*>("(J[B[I)I"), CAST_FROM_FN_PTR(void*, RR_matchSafepoint)}
