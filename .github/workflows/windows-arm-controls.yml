@@ -1,0 +1,60 @@
+name: Windows ARM native checksum controls
+on:
+  push:
+    branches: [pr/zlib-ng-windows-qualification2]
+permissions:
+  contents: read
+concurrency:
+  group: windows-arm-controls-${{ github.ref }}-${{ github.event.head_commit.message }}
+  cancel-in-progress: true
+jobs:
+  measure:
+    if: startsWith(github.event.head_commit.message, 'Measure Windows ARM ')
+    runs-on: windows-11-arm
+    timeout-minutes: 180
+    defaults:
+      run:
+        shell: bash
+    env:
+      CHERE_INVOKING: 1
+      MSYS2_PATH_TYPE: minimal
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Locate CMake
+        id: cmake
+        shell: pwsh
+        run: |
+          $cmake = (Get-Command cmake -ErrorAction Stop).Source.Replace('\', '/')
+          "path=$cmake" >> $env:GITHUB_OUTPUT
+      - uses: ./.github/actions/get-msys2
+        with:
+          architecture: ARM64
+      - uses: ./.github/actions/get-bootjdk
+        id: bootjdk
+        with:
+          platform: windows-aarch64
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: build/zip/images/jdk
+          key: zip-platform-v1-windows-aarch64-release-3f71d03f3297f94e8c2cc34160262a880be337fc
+          fail-on-cache-miss: true
+      - name: Record CPU features
+        run: |
+          mkdir -p qualification
+          build/zip/images/jdk/bin/java -Xlog:os+cpu=info -version 2>&1 | tee qualification/cpu-features.txt
+      - name: Build and ABI-test the direct native control
+        run: |
+          python3 .github/scripts/build-windows-arm-control.py \
+            --jdk build/zip/images/jdk --bootjdk '${{ steps.bootjdk.outputs.path }}' \
+            --profile configure --cmake '${{ steps.cmake.outputs.path }}'
+      - name: Compare the existing kernel, JNI and direct native code
+        run: python3 .github/scripts/measure-windows-arm-controls.py build/zip/images/jdk
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: windows-aarch64-native-controls
+          path: |
+            qualification
+            build/zip/images/jdk
+            build/control/spec.gmk
+          retention-days: 14
