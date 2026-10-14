@@ -6,7 +6,7 @@ PIN='3f71d03f3297f94e8c2cc34160262a880be337fc'
 NG='88601f0bdd192e9f87d4bd0a50d5d2e2dc9b8cd0'
 CORPUS='9870d54525f8f5a1315da6f2f9b289fb535e26a3'
 CC='gcc-14'
-a=argparse.ArgumentParser();a.add_argument('--root',type=Path,required=True);a.add_argument('--corpora',type=Path,required=True);a.add_argument('--out',type=Path,required=True);a.add_argument('--aa-only',action='store_true');args=a.parse_args()
+a=argparse.ArgumentParser();a.add_argument('--root',type=Path,required=True);a.add_argument('--corpora',type=Path,required=True);a.add_argument('--out',type=Path,required=True);a.add_argument('--aa-only',action='store_true');a.add_argument('--controls-only',action='store_true');args=a.parse_args()
 ROOT=args.root.resolve();CORPORA=args.corpora.resolve();OUT=args.out.resolve();TOOLS=Path(__file__).resolve().parent
 OUT.mkdir(parents=True,exist_ok=True)
 for d in ['logs','builds','sources','payloads','calibration','paired','retained','correctness','trees']:(OUT/d).mkdir(exist_ok=True)
@@ -137,6 +137,50 @@ try:
     assert all(text_ids['A/'+x]==text_ids['B/'+x] for x in ['deflate.o','trees.o','deflate_medium.o']);dump(OUT/'aa-object-text-identities.json',text_ids)
     cal_aa=driver('calibrate.c','calibrate-aa',[base,aa]);cpu=max(os.sched_getaffinity(0));os.sched_setaffinity(0,{cpu});state['cpu']=cpu
     dump(OUT/'preregister.json',dict(AA_gate='Both cells abs(mean of 12 chronological block paired means)+2.201*SEM <=100 ns, no exclusions; first/pre-timing/post-timing checkpoints must all pass',AA_source=str(TOOLS/'calibrate.c'),AA_source_sha256=sha(TOOLS/'calibrate.c'),cpu=cpu,processes=capture(['ps','-eo','pid,etime,pcpu,comm']),batch='128 operations, 12 blocks x20 pairs per calibration cell; end-to-end 6 blocks x10 pairs, 128/4/1 operations by size',comparisons='Baseline-stock; baseline-v1/v2/v3; direct candidate-stock tiny. Arm order alternates by pair/block.',warmup='64 reset+finish cycles per arm, default allocator; no tuning',meaningful_ordinary_long_regression='1% upper 95% paired ratio bound',tiny_parity='Direct candidate-stock lower 95% B-A bound >=-100 ns, level 6 and 64-byte cells; report actual intervals',source_pins=expected))
+    if args.controls_only:
+        # One fixed battery; never stop early on a failed gate or retry a mode.
+        import base64,gzip
+        from score_controls import score as score_control
+        state['warnings']=['Calibration-only identification experiment; no candidates, stock timing or speed claim.','Separate-library .text equality does not imply equal runtime code/data/heap addresses.']
+        fixed_modes=['shared-stream','two-states','separate-libraries']
+        control=driver('calibrate_controls.c','calibrate-controls',[base,aa])
+        protocol=dict(modes=fixed_modes,iterations=128,blocks=12,pairs_per_block=20,
+            gate='Unchanged: abs(mean of 12 chronological block paired differences)+2.201*SEM <=100 ns in each reset/reuse cell, all samples.',
+            state_diagnostic='Also apply that same 100 ns bound to the fixed physical slot1-minus-slot0 contrast, since logical assignment reverses in two-states.',
+            ordering='One process for all modes in fixed listed order, preserving DSO mappings across modes; 10 AB and 10 BA pairs per block; cells reset then reuse.',
+            warmup='64 reset/finish calls per logical arm; two-state and separate-library states each receive 64, shared stream receives 128.',
+            allocations='Default allocator, no hooks/tuning. Record initialization order, returned stream.state address, stream/input/output addresses, function addresses/DSO bases, mappings and block assignments before timing.',
+            limits='Fixed single battery even if a gate fails. No candidates or stock campaign; no post-correctness workload, reruns or threshold relaxation.')
+        dump(OUT/'controls-preregister.json',protocol);dump(OUT/'preregister.json',protocol);note('CONTROLS_PREREGISTER',json.dumps(protocol))
+        state['control_scores']={}
+        combined=OUT/'calibration/all-controls.txt';mapping=OUT/'calibration/all-addresses.log'
+        cmd=list(map(str,[control,OUT/'payloads/java-o0-64.bin']));state['commands'].append(dict(argv=cmd,cwd=str(ROOT)))
+        with combined.open('w') as stdout,mapping.open('w') as stderr:subprocess.run(cmd,cwd=ROOT,stdout=stdout,stderr=stderr,check=True)
+        def section(text,begin,end,mode):
+            assert text.count(begin+' '+mode+'\n')==1 and text.count(end+' '+mode+'\n')==1
+            return text.split(begin+' '+mode+'\n',1)[1].split(end+' '+mode+'\n',1)[0]
+        for mode in fixed_modes:
+            raw=OUT/'calibration'/(mode+'.csv');addresses=OUT/'calibration'/(mode+'-addresses.log')
+            raw.write_text(section(combined.read_text(),'CONTROL_DATA_BEGIN','CONTROL_DATA_END',mode))
+            addresses.write_text(section(mapping.read_text(),'CONTROL_ADDRESS_BEGIN','CONTROL_ADDRESS_END',mode))
+            result=score_control(raw,mode);dump(raw.with_suffix('.gate.json'),result)
+            state['control_scores'][mode]=result;state['calibrations'].append(dict(label=mode,**result))
+            note('CONTROL_RESULT',mode,json.dumps(result));write_state()
+        state['controls_primary_all_passed']=all(r['passed'] for r in state['control_scores'].values())
+        state['controls_physical_all_passed']=all(r['physical_states_within_100ns'] is not False for r in state['control_scores'].values())
+        state['status']='CALIBRATION_CONTROLS_COMPLETED'
+        write_state();identities()
+        lines=['# Calibration identification controls','',json.dumps(protocol,indent=2),'','```json',json.dumps(state['control_scores'],indent=2),'```','', 'All three controls ran once. No comparative candidate or stock timing ran. Physical and logical contrasts are both reported; neither is a prototype performance result.']
+        (OUT/'report.md').write_text('\n'.join(lines)+'\n')
+        # Retain selected text through completed job logs as well as the ZIP.
+        # The payload has no credentials and includes every calibration CSV row.
+        files={str(p.relative_to(OUT)):p.read_text() for p in sorted((OUT/'calibration').glob('*')) if p.is_file()}
+        for name in ['results.json','environment.json','controls-preregister.json','aa-object-text-identities.json','report.md','identities.json']:files[name]=(OUT/name).read_text()
+        packed=gzip.compress(json.dumps(files,separators=(',',':')).encode(),mtime=0)
+        encoded=base64.b64encode(packed).decode();note('CONTROLS_EVIDENCE_BEGIN',hashlib.sha256(packed).hexdigest(),len(packed))
+        for offset in range(0,len(encoded),200):note('CONTROLS_EVIDENCE_DATA',encoded[offset:offset+200])
+        note('CONTROLS_EVIDENCE_END')
+        sys.exit(0 if state['controls_primary_all_passed'] and state['controls_physical_all_passed'] else 2)
     if not calibration('first'):
         state['status']='AA_GATE_FAILED_BEFORE_CANDIDATE_WORK';report();identities();sys.exit(2)
     if args.aa_only:

@@ -1,5 +1,42 @@
 # Tiny zlib native diagnostic
 
+## Current calibration-only extension
+
+The current workflow runs one fixed identification battery, without candidates
+or stock timing. The earlier experiment remains in its original commit and
+artifact. Run native.py with --controls-only to execute, in fixed order:
+
+1. Shared function pointers and one shared stream for both logical arms.
+2. Shared function pointers and two independently owned states, reversing the
+   logical A/B assignment to the physical states on every block.
+3. The separate-library/separate-state control, with fixed A/B assignment.
+
+Each control keeps the retained 12 blocks, 20 alternating pairs per block,
+128 calls per batch, reset-only and 64-byte level-6 reset/finish cells. Both
+logical arms receive 64 warmups; the shared state consequently receives 128.
+Each measured operation begins with deflateReset. All samples remain included.
+The logical-arm gate remains abs(mean of 12 block paired means)+2.201*SEM <=100 ns.
+The same bound is additionally reported for physical slot1-minus-slot0 to make
+state effects visible when reversed assignments cancel in the logical mean.
+Both contrasts and order strata are retained; no failed contrast is hidden.
+
+Initialization order, state/stream/input/output addresses, function pointers,
+DSO bases/offsets, process mappings and each block's assignment are recorded
+before timing. Allocation uses the default allocator without hooks or tuning;
+the order record identifies initialization and returned states, not every
+internal allocator event. Core unrelocated .text equality remains a source/build
+control and does not establish equal runtime addresses.
+
+All three controls execute once in the same process, keeping DSO mappings fixed
+across modes, even if an earlier gate fails. No candidate,
+stock campaign, repeated-until-pass loop, post-correctness workload or threshold
+relaxation is part of this run. Every raw CSV and address record is saved in the
+artifact and also encoded into the completed job log for read-only recovery.
+This battery diagnoses calibration distinctions; it cannot qualify a prototype
+or a patched JDK speedup.
+
+## Retained earlier native experiment
+
 This is an isolated supporting experiment for PR6. The diagnostic branch changes
 only this directory and its scoped workflow. It does not change production code,
 change a compression level, update PR6, build a JDK, or merge anything.
