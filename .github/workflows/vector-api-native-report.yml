@@ -1,0 +1,35 @@
+name: Vector API qualification report
+'on':
+  push:
+    branches: [codex/vector-api-native-report]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  report:
+    name: Report native AArch64 ${{ matrix.cohort }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        cohort: [cold, observer]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Read retained native evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: 38514456333
+          name: vector-api-native-arm-${{ matrix.cohort }}
+          path: evidence
+      - name: Compute complete paired estimates
+        run: python3 qualification/report_results.py evidence
+      - name: Preserve summaries alongside retained raw evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: vector-api-native-summary-${{ matrix.cohort }}
+          path: |
+            evidence/**/summary.json
+            evidence/**/compilation-records.json
+          retention-days: 30
