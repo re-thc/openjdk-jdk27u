@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import argparse, collections, csv, gzip, json, pathlib, random, statistics, xml.etree.ElementTree as ET
 p=argparse.ArgumentParser();p.add_argument('directory');a=p.parse_args();root=pathlib.Path(a.directory)
-groups=collections.defaultdict(lambda:collections.defaultdict(dict));compilations=[];statuses=collections.Counter()
+groups=collections.defaultdict(lambda:collections.defaultdict(dict));compilations=[];statuses=collections.Counter();returncodes=collections.Counter()
 for line in (root/'commands.jsonl').read_text().splitlines():
- rec=json.loads(line);statuses[rec.get('status','completed')]+=1
+ rec=json.loads(line);statuses[rec.get('status','completed')]+=1;returncodes[str(rec['returncode'])]+=1
  if rec.get('status','completed')!='completed' or rec['returncode']!=0:continue
  lines=[s for s in (root/(rec['label']+'.stdout')).read_text().splitlines() if s.startswith(rec['kernel']+',')]
  header='kernel,phase,calls,count,start_uptime_ms,nanoseconds,allocated_bytes,compilation_ms,checksum,normal_before,osr_installed_before,normal_after,osr_installed_after'
@@ -17,6 +17,7 @@ for line in (root/'commands.jsonl').read_text().splitlines():
    'ns_per_call':statistics.mean(int(r['nanoseconds'])/int(r['calls']) for r in rows),
    'bytes_per_call':statistics.mean(int(r['allocated_bytes'])/int(r['calls']) for r in rows),
    'compiler_delta_ms':statistics.mean(int(r['compilation_ms']) for r in rows),
+   'calls_per_window':[int(r['calls']) for r in rows],
    'levels':[[int(r[k]) for k in ['normal_before','osr_installed_before','normal_after','osr_installed_after']] for r in rows]}
  log=root/(rec['label']+'.xml.gz')
  if log.exists():
@@ -44,5 +45,5 @@ for key,builds in sorted(groups.items()):
  summary.append(row)
  if row['header']=='four' and row['phase'] in ['first','primed','steady','call1','call2','call3']:
   print(f"{row['mode']}/{row['bits']}/{row['kernel']}/{row['phase']}/obs{int(row['observed'])}: {row['base']['ns_per_call']:.1f}->{row['patched']['ns_per_call']:.1f}ns {row['change_percent']:+.1f}% [{draws[249]:+.1f},{draws[9749]:+.1f}], B {row['base']['bytes_per_call']:.1f}->{row['patched']['bytes_per_call']:.1f}, pairs{n}")
-(root/'summary.json').write_text(json.dumps({'status_counts':dict(statuses),'results':summary},indent=2)+'\n')
+(root/'summary.json').write_text(json.dumps({'status_counts':dict(statuses),'returncode_counts':dict(returncodes),'results':summary},indent=2)+'\n')
 (root/'compilation-records.json').write_text(json.dumps(compilations,indent=2)+'\n')

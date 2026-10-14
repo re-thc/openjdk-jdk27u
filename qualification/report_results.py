@@ -12,7 +12,7 @@ for commands in sorted(root.rglob('commands.jsonl')):
     summary=json.loads((folder/'summary.json').read_text())
     print('STATUS_COUNTS',folder,json.dumps(summary['status_counts'],sort_keys=True))
     for row in summary['results']:
-        if row['phase'] in ['first','primed','steady','warmup','calibration'] or row['phase'].startswith('call'):
+        if row['phase'] in ['class_load','class_init','first','primed','early','steady','warmup','calibration'] or row['phase'].startswith('call'):
             print('RESULT_JSON',json.dumps({k:v for k,v in row.items() if k!='replicates'},sort_keys=True))
     codes=collections.defaultdict(list)
     for row in json.loads((folder/'compilation-records.json').read_text()):
