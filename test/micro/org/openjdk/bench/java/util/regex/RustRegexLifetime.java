@@ -83,7 +83,6 @@ public class RustRegexLifetime {
         Pattern warm = Pattern.compile(regex);
         for (int i = 0; i < 12000; i++)
             Pattern.compile(regex).matcher(candidate + "!").find();
-        java.lang.ref.Reference.reachabilityFence(warm);
         if (threads > 1) {
             pool = Executors.newFixedThreadPool(threads);
             // Create workers before measuring Pattern lifetimes.
@@ -91,6 +90,13 @@ public class RustRegexLifetime {
             for (int i = 0; i < threads; i++) tasks.add(() -> 0);
             pool.invokeAll(tasks);
         }
+        // Warm the complete facade before timing cold backends. In the paired
+        // C2 runs (CompileThreshold=1000), warming only Pattern.compile/find
+        // leaves this low-invocation method in the interpreter.
+        if (reuse.equals("cold")) {
+            for (int i = 0; i < 2000; i++) lifetime();
+        }
+        java.lang.ref.Reference.reachabilityFence(warm);
     }
 
     @TearDown

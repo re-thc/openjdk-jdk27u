@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.infra.BenchmarkParams;
 
 /** Public Matcher work, including capture publication and optional end-flag replay. */
 @BenchmarkMode(Mode.AverageTime)
@@ -48,7 +49,7 @@ public class RustRegexState {
     private Matcher matcher;
 
     @Setup
-    public void setup() {
+    public void setup(BenchmarkParams parameters) {
         String expression = switch (shape) {
             case "digits" -> "([0-9]+)";
             case "email" -> "(?<user>[a-z0-9_]+)@(?<domain>[a-z0-9_]+)\\.[a-z]{2,4}";
@@ -74,8 +75,15 @@ public class RustRegexState {
             default -> padding;
         };
         matcher = Pattern.compile(expression).matcher(input);
-        boolean found = matcher.find();
-        if (found == position.equals("miss") || input.length() != length)
+        String operation = parameters.getBenchmark();
+        boolean found = operation.endsWith(".matches") ? matcher.matches()
+                : operation.endsWith(".lookingAt") ? matcher.lookingAt() : matcher.find();
+        boolean expected = !position.equals("miss");
+        if (operation.endsWith(".matches"))
+            expected &= position.equals("full") && !shape.equals("unicode");
+        else if (operation.endsWith(".lookingAt"))
+            expected &= position.equals("early") || position.equals("full") && !shape.equals("unicode");
+        if (found != expected || input.length() != length)
             throw new IllegalStateException("input does not fit the benchmark scenario");
         // Validate observations during setup as well as consuming them below.
         observe(found);
@@ -94,5 +102,15 @@ public class RustRegexState {
     @Benchmark
     public long match() {
         return observe(matcher.reset().find());
+    }
+
+    @Benchmark
+    public long matches() {
+        return observe(matcher.reset().matches());
+    }
+
+    @Benchmark
+    public long lookingAt() {
+        return observe(matcher.reset().lookingAt());
     }
 }

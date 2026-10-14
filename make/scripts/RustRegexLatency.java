@@ -39,7 +39,18 @@ public class RustRegexLatency {
     private static final int SAMPLES = 512;
     private static final int LENGTH = 65536;
 
+    private static boolean match(Matcher matcher, String operation) {
+        matcher.reset();
+        return switch (operation) {
+            case "find" -> matcher.find();
+            case "matches" -> matcher.matches();
+            case "lookingAt" -> matcher.lookingAt();
+            default -> throw new IllegalArgumentException(operation);
+        };
+    }
+
     public static void main(String[] args) throws Exception {
+        String operation = args.length == 0 ? "find" : args[0];
         String[] names = {"scan", "capture", "ambiguous", "bounded"};
         String[] expressions = {
             "error([0-9]+)", "([a-z]+)@([a-z]+)\\.[a-z]{2,4}",
@@ -58,7 +69,7 @@ public class RustRegexLatency {
             Pattern pattern = Pattern.compile(expressions[shape]);
             if (backend.get(pattern) == null) throw new AssertionError("Java backend: " + names[shape]);
             Matcher warm = pattern.matcher(inputs[shape]);
-            for (int i = 0; i < 1200; i++) warm.reset().find();
+            for (int i = 0; i < 1200; i++) match(warm, operation);
             long[][] elapsed = new long[WORKERS][SAMPLES];
             CountDownLatch ready = new CountDownLatch(WORKERS + 1);
             CountDownLatch start = new CountDownLatch(1);
@@ -77,7 +88,7 @@ public class RustRegexLatency {
                         try {
                             for (int sample = 0; sample < SAMPLES; sample++) {
                                 long before = System.nanoTime();
-                                boolean found = matcher.reset().find();
+                                boolean found = match(matcher, operation);
                                 elapsed[index][sample] = System.nanoTime() - before;
                                 if (found != hit) throw new AssertionError("unexpected result");
                             }
@@ -113,10 +124,10 @@ public class RustRegexLatency {
             }
             Arrays.sort(steady);
             long gcMax = gc.stream().mapToLong(Long::longValue).max().orElseThrow();
-            System.out.printf("{\"record\":\"latency\",\"shape\":\"%s\",\"length\":%d,"
+            System.out.printf("{\"record\":\"latency\",\"shape\":\"%s\",\"operation\":\"%s\",\"length\":%d,"
                     + "\"workers\":%d,\"samplesPerWorker\":%d,\"coldMaxNs\":%d,"
                     + "\"steadyP99Ns\":%d,\"steadyMaxNs\":%d,\"gcCount\":%d,\"gcWallMaxNs\":%d}%n",
-                    names[shape], LENGTH, WORKERS, SAMPLES, coldMax,
+                    names[shape], operation, LENGTH, WORKERS, SAMPLES, coldMax,
                     steady[(int) Math.ceil(steady.length * 0.99) - 1],
                     steady[steady.length - 1], gc.size(), gcMax);
         }

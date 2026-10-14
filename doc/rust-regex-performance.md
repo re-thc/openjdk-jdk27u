@@ -36,16 +36,43 @@ Untimed debugger counters observe 6,000 intrinsic-runtime entries each in the
 interpreter, C1 and C2, with zero JNI entries. Disabling intrinsics produces
 6,000 registered JNI entries. Compilation logs independently identify C1
 level 1 and C2 compilation of the native wrapper; the interpreter run has no
-compiled methods. These observations establish routes, not timing results.
+compiled Java methods (its log contains two continuation stubs). These
+observations establish routes, not timing results.
 
 Reset/capture regression coverage now keeps Patterns native across find
 reuse and successful anchored reuse, asserts the route after each operation,
 and compares end flags separately on fresh Patterns. Failed anchored matches
 retain their existing Java continuation behavior. All eight configurations
 of `RustRegexTest` pass; enabled configurations compare 372,059 native/Java
-results and API states each. The `RustRegexState` microbenchmark adds capture
+results and API states each. Release and fastdebug each pass 109 tests and
+5,989 framework checks. Fastdebug uses GCC 14 with strict warnings enabled.
+The `RustRegexState` microbenchmark adds capture
 boundaries and optional end flags across sizes, hit positions, unsupported
 syntax and Unicode input. Its setup checks pass in all three controls.
+
+The refreshed native/GC probe covers find, lookingAt and matches in the
+interpreter, C1, C2 and JNI fallback: 48 workload records, each with four
+workers and 65,536-character regions. The largest observed GC reaching time
+is 3.21 ms, GC wall time 12.8 ms and steady-call time 26.8 ms. These describe
+the tested workloads and scheduling conditions, not latency upper bounds or
+matching timeouts.
+
+Cold-lifetime setup now warms 2,000 complete lifetimes before the iteration
+GCs. The paired C2 runs use `-XX:-TieredCompilation -Xbatch` and
+`-XX:CompileThreshold=1000`. Warming Pattern.compile/find alone left the
+benchmark facade interpreted under that configuration. A separate log confirms C2 code for
+the complete lifetime method before measurement. Instrumented diagnostics and
+setup smoke scores are excluded from timing comparisons.
+
+Two dispatch-only candidates are rejected. Forced FastDigits inlining and
+explicit concrete dispatch give C1 16-character prefix-miss medians of 47.5
+and 48.1 ns versus 48.6 ns for the baseline. Explicit dispatch worsens prefix
+full hits from 70.1 to 83.8 ns and digit full hits from 64.2 to 84.1 ns; both
+process pairs show those losses. Across the complete diagnostic matrix,
+median C2 ratios are 1.27 and 1.19 relative to the baseline. The comparisons
+include ordinary, shared-first-character and repeated-prefix misses, multiple
+sizes and hit positions, plus digit and email controls. Neither candidate is
+in the production source.
 
 ## Integration qualification
 
