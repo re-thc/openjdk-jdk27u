@@ -471,6 +471,8 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
                                            : entry_point = generate_math_entry(Interpreter::java_lang_math_sqrt); break;
   case Interpreter::java_lang_ref_reference_get0
                                            : entry_point = generate_Reference_get_entry(); break;
+  case Interpreter::java_lang_StringCoding_countPositives
+                                           : entry_point = generate_count_positives_entry(); break;
   case Interpreter::jdk_internal_util_SimdUTF_process
                                            : entry_point = generate_simdutf_entry(); break;
   case Interpreter::java_util_zip_CRC32_update
@@ -499,5 +501,9 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
 #if !defined(AMD64) && !defined(AARCH64)
 address TemplateInterpreterGenerator::generate_simdutf_entry() {
   return nullptr; // Other ports retain the JNI entry.
+}
+
+address TemplateInterpreterGenerator::generate_count_positives_entry() {
+  return nullptr;
 }
 #endif

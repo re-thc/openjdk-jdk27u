@@ -123,6 +123,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
     switch (iid) {
 #ifndef ZERO
       case vmIntrinsics::_simdutf_process: return jdk_internal_util_SimdUTF_process;
+      case vmIntrinsics::_countPositives: return java_lang_StringCoding_countPositives;
       // Use optimized stub code for CRC32 native methods.
       case vmIntrinsics::_updateCRC32:       return java_util_zip_CRC32_update;
       case vmIntrinsics::_updateBytesCRC32:  return java_util_zip_CRC32_updateBytes;
@@ -214,6 +215,7 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case java_lang_math_fmaF        : return vmIntrinsics::_fmaF;
   case java_lang_ref_reference_get0: return vmIntrinsics::_Reference_get0;
   case jdk_internal_util_SimdUTF_process: return vmIntrinsics::_simdutf_process;
+  case java_lang_StringCoding_countPositives: return vmIntrinsics::_countPositives;
   case java_util_zip_CRC32_update : return vmIntrinsics::_updateCRC32;
   case java_util_zip_CRC32_updateBytes
                                   : return vmIntrinsics::_updateBytesCRC32;
