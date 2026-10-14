@@ -34,10 +34,64 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 3)
+@State(Scope.Thread)
 public class SecureRandomBench {
+
+    // The default algorithm on Linux and macOS is NativePRNG. Each thread has
+    // a SecureRandom of its own, but they share the state of the NativePRNG.
+    private SecureRandom random;
+    private byte[] bytes16;
+    private byte[] bytes1024;
+
+    @Setup
+    public void setup() {
+        random = new SecureRandom();
+        bytes16 = new byte[16];
+        bytes1024 = new byte[1024];
+    }
 
     @Benchmark
     public SecureRandom create() throws Exception {
         return new SecureRandom();
+    }
+
+    @Benchmark
+    public byte[] nextBytes16() {
+        random.nextBytes(bytes16);
+        return bytes16;
+    }
+
+    @Benchmark
+    public byte[] nextBytes1024() {
+        random.nextBytes(bytes1024);
+        return bytes1024;
+    }
+
+    @Benchmark
+    public int nextInt() {
+        return random.nextInt();
+    }
+
+    // The same with all the processors the JVM can use, to measure how
+    // the threads wait for each other.
+
+    @Benchmark
+    @Threads(Threads.MAX)
+    public byte[] nextBytes16Parallel() {
+        random.nextBytes(bytes16);
+        return bytes16;
+    }
+
+    @Benchmark
+    @Threads(Threads.MAX)
+    public byte[] nextBytes1024Parallel() {
+        random.nextBytes(bytes1024);
+        return bytes1024;
+    }
+
+    @Benchmark
+    @Threads(Threads.MAX)
+    public int nextIntParallel() {
+        return random.nextInt();
     }
 }

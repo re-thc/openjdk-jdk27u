@@ -82,4 +82,17 @@ public class UUIDBench {
     public UUID fromType3Bytes() {
         return UUID.nameUUIDFromBytes(uuidBytes[index]);
     }
+
+    @Benchmark
+    public UUID randomUUID() {
+        return UUID.randomUUID();
+    }
+
+    // The threads share the SecureRandom of UUID.randomUUID, which is
+    // a NativePRNG by default.
+    @Benchmark
+    @Threads(Threads.MAX)
+    public UUID randomUUIDParallel() {
+        return UUID.randomUUID();
+    }
 }
