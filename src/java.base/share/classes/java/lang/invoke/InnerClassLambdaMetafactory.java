@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.classfile.impl.DirectCodeBuilder;
 import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.misc.CDS;
 import jdk.internal.util.ClassFileDumper;
@@ -387,6 +388,7 @@ import sun.invoke.util.Wrapper;
                    .invokespecial(pool.methodRefEntry(lambdaClassEntry, pool.nameAndTypeEntry(INIT_NAME, constructorTypeDesc)))
                    .putstatic(pool.fieldRefEntry(lambdaClassEntry, pool.nameAndTypeEntry(LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor)))
                    .return_();
+                DirectCodeBuilder.withMaxs(cob, 2, 0); // new, dup
             }
         });
     }
@@ -409,6 +411,10 @@ import sun.invoke.util.Wrapper;
                         cob.aload(0)
                            .invokespecial(CD_Object, INIT_NAME, MTD_void)
                            .return_();
+                        // this and a captured argument, which takes 2 slots if it is a long or double
+                        int slotCount = factoryType.parameterSlotCount();
+                        int maxStack = parameterCount == 0 ? 1 : slotCount > parameterCount ? 3 : 2;
+                        DirectCodeBuilder.withMaxs(cob, maxStack, 1 + slotCount);
                     }
                 });
     }
@@ -465,6 +471,11 @@ import sun.invoke.util.Wrapper;
                         cob.invokespecial(SerializationSupport.CD_SerializedLambda, INIT_NAME,
                                           SerializationSupport.MTD_CTOR_SERIALIZED_LAMBDA)
                            .areturn();
+                        // new, dup and the 10 constructor arguments, the last being the array; storing
+                        // a captured argument also has the array, index and value (2 slots if long or double)
+                        int slotCount = factoryType.parameterSlotCount();
+                        int maxStack = argDescs.length == 0 ? 12 : slotCount > argDescs.length ? 16 : 15;
+                        DirectCodeBuilder.withMaxs(cob, maxStack, 1);
                     }
                 });
     }
@@ -488,6 +499,7 @@ import sun.invoke.util.Wrapper;
                                         .invokespecial(cp.methodRefEntry(nseCE, cp.nameAndTypeEntry(INIT_NAME,
                                                 SerializationSupport.MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION)))
                                         .athrow();
+                                DirectCodeBuilder.withMaxs(cob, 3, 2); // this and the stream argument
                             }
                         });
             }
@@ -539,8 +551,40 @@ import sun.invoke.util.Wrapper;
                 Class<?> samReturnClass = methodType.returnType();
                 TypeConvertingMethodAdapter.convertType(cob, implReturnClass, samReturnClass, samReturnClass);
                 cob.return_(TypeKind.from(samReturnClass));
+                DirectCodeBuilder.withMaxs(cob, forwardingMaxStack(methodType), 1 + methodType.parameterSlotCount());
             }
         };
+    }
+
+    /**
+     * The operand stack depth needed by the code of {@link #forwardingMethod}: the
+     * captured and converted arguments are all on the stack for the invocation, and
+     * only the result of the invocation is on the stack for its conversion.
+     */
+    private int forwardingMaxStack(MethodType methodType) {
+        // new and dup for a constructor, the method handle to invoke, the captured arguments
+        int depth = (implKind == MethodHandleInfo.REF_newInvokeSpecial ? 2 : 0)
+                  + (useImplMethodHandle ? 1 : 0) + factoryType.parameterSlotCount();
+        int captureArity = factoryType.parameterCount();
+        int maxStack = depth;
+        for (int i = 0; i < methodType.parameterCount(); i++) {
+            Class<?> implParamType = implMethodType.parameterType(captureArity + i);
+            maxStack = Math.max(maxStack, depth + conversionSlots(methodType.parameterType(i), implParamType));
+            depth += Wrapper.forBasicType(implParamType).stackSlots();
+        }
+        return Math.max(maxStack, conversionSlots(implMethodType.returnType(), methodType.returnType()));
+    }
+
+    /**
+     * The most stack slots that {@link TypeConvertingMethodAdapter#convertType} takes
+     * for converting a value from one type to another.
+     */
+    private static int conversionSlots(Class<?> from, Class<?> to) {
+        // a primitive is widened to long or double before it is boxed to Long or Double
+        if (from.isPrimitive() && (to == Long.class || to == Double.class)) {
+            return 2;
+        }
+        return Math.max(Wrapper.forBasicType(from).stackSlots(), Wrapper.forBasicType(to).stackSlots());
     }
 
     private void convertArgumentTypes(CodeBuilder cob, MethodType samType) {
