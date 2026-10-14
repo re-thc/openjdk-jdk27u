@@ -548,19 +548,74 @@ public class RustRegexTest {
     }
 
     private static void resetCapturePublication() throws Exception {
-        for (String expression : new String[]{"(a)?b", "(?<x>a|ab)+", "(?=a)(a)", "([a-z0-9_]+)@([a-z0-9_]+)\\.[a-z]{2,4}"}) {
+        // End-flag queries can replay a match in Java and permanently promote
+        // the Pattern. Keep reuse checks independent so every reset and capture
+        // publication below still exercises the native Matcher state.
+        for (String expression : new String[]{"(a)?b", "(?<x>a|ab)+", "([a-z0-9_]+)@([a-z0-9_]+)\\.[a-z]{2,4}"}) {
             Pattern p = Pattern.compile(expression), ref = reference(expression, 0);
+            nativeOnly(p);
             Matcher a = p.matcher("ab"), b = ref.matcher("ab");
-            for (String input : new String[]{"ab", "b", "none", "a@b.co", "ab", ""}) {
+            nativeOnly(p);
+            for (String input : new String[]{"ab", "b", "none", "a@b.co", "ab", "", "a@b.co"}) {
+                for (int operation = 0; operation < 3; operation++) {
+                    a.reset(input); b.reset(input);
+                    nativeOnly(p);
+                    checkResetCaptures(a);
+                    checkResetCaptures(b);
+                    nativeOnly(p);
+                    if (operation == 1) {
+                        a.region(0, input.length()); b.region(0, input.length());
+                        nativeOnly(p);
+                    } else if (operation == 2) {
+                        a.reset(); b.reset();
+                        nativeOnly(p);
+                    }
+                    boolean av = a.find(), bv = b.find();
+                    nativeOnly(p);
+                    equal(a, b, av, bv, false);
+                    nativeOnly(p);
+                }
+            }
+            // Failed anchored matches intentionally select Java continuation.
+            // Exercise native anchored reuse with successful inputs instead.
+            String[] successes = expression.equals("(a)?b") ? new String[]{"ab", "b", "ab"}
+                    : expression.equals("(?<x>a|ab)+") ? new String[]{"a", "ab", "a"}
+                    : new String[]{"a@b.co", "xy@z.biz", "a@b.co"};
+            for (String input : successes) {
                 a.reset(input); b.reset(input);
-                MatchResult empty = a.toMatchResult();
-                if (empty.hasMatch() || a.hasMatch()) throw new AssertionError("reset retained a match");
-                try { empty.group(); throw new AssertionError("reset snapshot exposed captures"); }
-                catch (IllegalStateException expected) { }
+                nativeOnly(p);
+                equal(a, b, a.lookingAt(), b.lookingAt(), false);
+                nativeOnly(p);
+                a.reset(); b.reset();
+                nativeOnly(p);
+                checkResetCaptures(a);
+                checkResetCaptures(b);
+                nativeOnly(p);
+                equal(a, b, a.matches(), b.matches(), false);
+                nativeOnly(p);
+            }
+        }
+        // Retain public end-flag comparisons, using a fresh Pattern for each
+        // operation so replay cannot change the route of a later check.
+        for (String expression : new String[]{"(a)?b", "(?<x>a|ab)+", "(?=a)(a)", "([a-z0-9_]+)@([a-z0-9_]+)\\.[a-z]{2,4}"}) {
+            Pattern ref = reference(expression, 0);
+            for (String input : new String[]{"ab", "b", "none", "a@b.co", "ab", ""}) {
+                Matcher a = Pattern.compile(expression).matcher("ab"), b = ref.matcher("ab");
+                a.reset(input); b.reset(input);
+                checkResetCaptures(a);
+                checkResetCaptures(b);
                 equal(a, b, a.find(), b.find(), true);
+                a = Pattern.compile(expression).matcher(input); b.reset(input);
                 a.region(0, input.length()); b.region(0, input.length());
                 equal(a, b, a.lookingAt(), b.lookingAt(), true);
             }
         }
+    }
+
+    private static void checkResetCaptures(Matcher m) {
+        MatchResult empty = m.toMatchResult();
+        if (empty.hasMatch() || m.hasMatch()) throw new AssertionError("reset retained a match");
+        try { empty.group(); throw new AssertionError("reset snapshot exposed captures"); }
+        catch (IllegalStateException expected) { }
     }
 }
