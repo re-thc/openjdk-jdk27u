@@ -1,208 +1,98 @@
-#
-# Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
-# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-#
-# This code is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.  Oracle designates this
-# particular file as subject to the "Classpath" exception as provided
-# by Oracle in the LICENSE file that accompanied this code.
-#
-# This code is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-# version 2 for more details (a copy is included in the LICENSE file that
-# accompanied this code).
-#
-# You should have received a copy of the GNU General Public License version
-# 2 along with this work; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-#
-# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-# or visit www.oracle.com if you need additional information or have any
-# questions.
-#
-
-name: 'OpenJDK GHA Sanity Checks'
+name: FFM startup diagnostic
 
 on:
   push:
-    branches: [master]
-  pull_request:
-    branches: [master]
-  workflow_dispatch:
-    inputs:
-      platforms:
-        description: 'Targets: linux-x64, linux-aarch64, macos-aarch64, windows-x64'
-        required: true
-        default: 'linux-x64, linux-aarch64, macos-aarch64, windows-x64'
-      configure-arguments:
-        description: 'Additional configure arguments'
-        required: false
-      make-arguments:
-        description: 'Additional make arguments'
-        required: false
-      dry-run:
-        description: 'Skip builds and tests; only prepare dependencies and configure'
-        type: boolean
-        default: false
+    branches: [codex/ffm-startup-diagnostic-20261014]
 
 permissions:
   contents: read
-
-concurrency:
-  # PR updates share refs/pull/<number>/merge; branch runs share refs/heads/<branch>.
-  # Keep this key independent of the commit so new runs cancel stale builds/tests.
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  actions: read
 
 jobs:
-  prepare:
-    name: 'Prepare the run'
+  compare-linux-x64-release:
     runs-on: ubuntu-26.04
-    outputs:
-      linux-x64: ${{ steps.include.outputs.linux-x64 }}
-      linux-aarch64: ${{ steps.include.outputs.linux-aarch64 }}
-      macos-aarch64: ${{ steps.include.outputs.macos-aarch64 }}
-      windows-x64: ${{ steps.include.outputs.windows-x64 }}
-      dry-run: ${{ steps.include.outputs.dry-run }}
+    timeout-minutes: 240
     steps:
-      - name: 'Checkout the scripts'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          sparse-checkout: |
-            .github
-            make/conf/github-actions.conf
-
-      - name: 'Check what jobs to run'
-        id: include
-        env:
-          REQUESTED_PLATFORMS: ${{ github.event.inputs.platforms || secrets.JDK_SUBMIT_PLATFORMS }}
-          DRY_RUN: ${{ github.event.inputs.dry-run || 'false' }}
-        run: bash .github/scripts/select-platforms.sh
-
-      - name: 'Build JTReg'
+          fetch-depth: 0
+      - name: Install configured GCC16 toolchain
+        run: |
+          sudo apt update
+          sudo apt install gcc-16 g++-16 ccache libx11-dev libxext-dev libxrender-dev libxrandr-dev libxtst-dev libxt-dev libasound2-dev libcups2-dev libfontconfig1-dev libfreetype-dev
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-16 100 --slave /usr/bin/g++ g++ /usr/bin/g++-16
+          test "$(gcc -dumpversion)" = 16
+          test "$(g++ -dumpversion)" = 16
+          gcc --version
+      - name: Install configured mold 3.0.0
+        run: |
+          archive="$RUNNER_TEMP/mold.tar.gz"
+          curl --fail --location --retry 3 https://github.com/rui314/mold/releases/download/v3.0.0/mold-3.0.0-x86_64-linux.tar.gz --output "$archive"
+          echo "6c90d4a474c7c0409dfb575be03a5345878ac14fdba18de8b40fa58c60121189  $archive" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/mold"
+          tar --extract --file "$archive" --strip-components=1 --directory "$RUNNER_TEMP/mold"
+          echo "$RUNNER_TEMP/mold/bin" >> "$GITHUB_PATH"
+      - name: Get configured BootJDK
+        id: bootjdk
+        uses: ./.github/actions/get-bootjdk
+        with:
+          platform: linux-x64
+      - name: Build configured JTReg
         uses: ./.github/actions/build-jtreg
-        if: steps.include.outputs.linux-x64 == 'true' || steps.include.outputs.linux-aarch64 == 'true' || steps.include.outputs.macos-aarch64 == 'true' || steps.include.outputs.windows-x64 == 'true'
-
-  build-linux-x64:
-    name: linux-x64
-    needs: prepare
-    uses: ./.github/workflows/build-linux.yml
-    with:
-      platform: linux-x64
-      gcc-major-version: '16'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-    if: needs.prepare.outputs.linux-x64 == 'true'
-
-  build-linux-aarch64:
-    name: linux-aarch64
-    needs: prepare
-    uses: ./.github/workflows/build-linux.yml
-    with:
-      platform: linux-aarch64
-      runs-on: 'ubuntu-26.04-arm'
-      bootjdk-platform: linux-aarch64
-      gcc-major-version: '16'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-    if: needs.prepare.outputs.linux-aarch64 == 'true'
-
-  build-macos-aarch64:
-    name: macos-aarch64
-    needs:
-      - prepare
-      - test-linux-x64
-      - test-linux-aarch64
-    uses: ./.github/workflows/build-macos.yml
-    with:
-      platform: macos-aarch64
-      runs-on: 'macos-26'
-      xcode-toolset-version: '26.6'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-    # Selected Linux targets must finish successfully; manual non-Linux runs still work.
-    if: >-
-      !cancelled() && needs.prepare.result == 'success' &&
-      needs.prepare.outputs.macos-aarch64 == 'true' &&
-      (needs.prepare.outputs.linux-x64 != 'true' || needs.test-linux-x64.result == 'success') &&
-      (needs.prepare.outputs.linux-aarch64 != 'true' || needs.test-linux-aarch64.result == 'success')
-
-  build-windows-x64:
-    name: windows-x64
-    needs:
-      - prepare
-      - test-linux-x64
-      - test-linux-aarch64
-    uses: ./.github/workflows/build-windows.yml
-    with:
-      platform: windows-x64
-      runs-on: windows-2025
-      architecture: 'x86.x64'
-      msvc-toolset-version: '14.44'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-    if: >-
-      !cancelled() && needs.prepare.result == 'success' &&
-      needs.prepare.outputs.windows-x64 == 'true' &&
-      (needs.prepare.outputs.linux-x64 != 'true' || needs.test-linux-x64.result == 'success') &&
-      (needs.prepare.outputs.linux-aarch64 != 'true' || needs.test-linux-aarch64.result == 'success')
-
-  test-linux-x64:
-    name: linux-x64
-    needs:
-      - prepare
-      - build-linux-x64
-    uses: ./.github/workflows/test.yml
-    with:
-      platform: linux-x64
-      bootjdk-platform: linux-x64
-      runs-on: ubuntu-26.04
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-      debug-suffix: -debug
-
-  test-linux-aarch64:
-    name: linux-aarch64
-    needs:
-      - prepare
-      - build-linux-aarch64
-    uses: ./.github/workflows/test.yml
-    with:
-      platform: linux-aarch64
-      bootjdk-platform: linux-aarch64
-      runs-on: ubuntu-26.04-arm
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-      debug-suffix: -debug
-
-  test-macos-aarch64:
-    name: macos-aarch64
-    needs:
-      - prepare
-      - build-macos-aarch64
-    uses: ./.github/workflows/test.yml
-    with:
-      platform: macos-aarch64
-      bootjdk-platform: macos-aarch64
-      runs-on: macos-26
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-      xcode-toolset-version: '26.6'
-      debug-suffix: -debug
-
-  test-windows-x64:
-    name: windows-x64
-    needs:
-      - prepare
-      - build-windows-x64
-    uses: ./.github/workflows/test.yml
-    with:
-      platform: windows-x64
-      bootjdk-platform: windows-x64
-      architecture: 'x86.x64'
-      runs-on: windows-2025
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-      debug-suffix: -debug
+      - name: Configure isolated pinned baseline
+        env:
+          BOOTJDK_PATH: ${{ steps.bootjdk.outputs.path }}
+        run: |
+          baseline=02324e6bd026411407983df06284cd79460c33f6
+          target="$RUNNER_TEMP/ffm-target"
+          output="$RUNNER_TEMP/ffm-evidence"
+          git worktree add --detach "$target" "$baseline"
+          mkdir "$output"
+          export SOURCE_DATE_EPOCH="$(git -C "$target" show -s --format=%ct "$baseline")"
+          cd "$target"
+          bash configure --with-conf-name=ffm-diagnostic --with-debug-level=release \
+            --with-version-opt=ffm-diagnostic --with-boot-jdk="$BOOTJDK_PATH" \
+            --with-jtreg="$GITHUB_WORKSPACE/jtreg/installed" --with-freetype=system \
+            --with-jmod-compress=zip-1 --with-native-debug-symbols=none --with-extra-ldflags=-fuse-ld=mold > "$output/configure.log" 2>&1
+          cp build/ffm-diagnostic/spec.gmk "$output/spec.gmk"
+      - name: Build matched baseline, A and B2 images
+        id: build
+        run: |
+          python3 .github/ffm/diagnostic.py build --repo "$RUNNER_TEMP/ffm-target" --output "$RUNNER_TEMP/ffm-evidence"
+      - name: Fixed quiet comparisons and unchanged-control gates
+        id: measure
+        run: |
+          python3 .github/ffm/diagnostic.py measure --repo "$RUNNER_TEMP/ffm-target" --output "$RUNNER_TEMP/ffm-evidence"
+      - name: Separate compiler and class-load diagnostics
+        if: success()
+        run: |
+          python3 .github/ffm/diagnostic.py diagnostics --repo "$RUNNER_TEMP/ffm-target" --output "$RUNNER_TEMP/ffm-evidence"
+      - name: Correctness tests after measurements
+        if: always() && steps.build.outcome == 'success'
+        run: |
+          python3 .github/ffm/diagnostic.py tests --repo "$RUNNER_TEMP/ffm-target" --output "$RUNNER_TEMP/ffm-evidence" --jtreg "$GITHUB_WORKSPACE/jtreg/installed"
+      - name: Summarize gate status
+        if: always()
+        run: |
+          result="$RUNNER_TEMP/ffm-evidence/qualification.json"
+          if test -f "$result"; then
+            cat "$result" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Qualification did not run; inspect build/setup failure artifacts.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Preserve payload and every result
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/ffm-evidence/payload"
+          cp -a .github/ffm/. "$RUNNER_TEMP/ffm-evidence/payload/"
+          cp .github/workflows/main.yml "$RUNNER_TEMP/ffm-evidence/payload/"
+          # Hash the images, but keep the portable evidence artifact bounded.
+          tar --exclude=images --exclude=classes --exclude=native --exclude='jtreg-*-work/classes' \
+            -czf "$RUNNER_TEMP/ffm-diagnostic-evidence.tar.gz" -C "$RUNNER_TEMP/ffm-evidence" .
+      - name: Upload all evidence, including rejected data
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ffm-startup-linux-x64-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ffm-diagnostic-evidence.tar.gz
+          retention-days: 30

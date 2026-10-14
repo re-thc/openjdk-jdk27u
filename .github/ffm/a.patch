@@ -1,0 +1,404 @@
+diff --git a/src/java.base/share/classes/jdk/internal/foreign/abi/CallingSequence.java b/src/java.base/share/classes/jdk/internal/foreign/abi/CallingSequence.java
+index c2a74eb0965..6a32e5a0bc5 100644
+--- a/src/java.base/share/classes/jdk/internal/foreign/abi/CallingSequence.java
++++ b/src/java.base/share/classes/jdk/internal/foreign/abi/CallingSequence.java
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
++ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  *
+  * This code is free software; you can redistribute it and/or modify it
+@@ -188,6 +188,10 @@ public int capturedStateMask() {
+         return linkerOptions.capturedCallStateMask();
+     }
+ 
++    public boolean isVariadicFunction() {
++        return linkerOptions.isVariadicFunction();
++    }
++
+     public boolean needsTransition() {
+         return !linkerOptions.isCritical();
+     }
+diff --git a/src/java.base/share/classes/jdk/internal/foreign/abi/DowncallLinker.java b/src/java.base/share/classes/jdk/internal/foreign/abi/DowncallLinker.java
+index acdbef5822d..eed164166ca 100644
+--- a/src/java.base/share/classes/jdk/internal/foreign/abi/DowncallLinker.java
++++ b/src/java.base/share/classes/jdk/internal/foreign/abi/DowncallLinker.java
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
++ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  *
+  * This code is free software; you can redistribute it and/or modify it
+@@ -30,6 +30,7 @@
+ import jdk.internal.foreign.AbstractMemorySegmentImpl;
+ import jdk.internal.foreign.MemorySessionImpl;
+ import jdk.internal.invoke.MhUtil;
++import jdk.internal.vm.annotation.ForceInline;
+ 
+ import java.lang.foreign.AddressLayout;
+ import java.lang.foreign.Arena;
+@@ -86,7 +87,8 @@ public MethodHandle getBoundMethodHandle() {
+         MethodHandle handle = JLIA.nativeMethodHandle(nep);
+ 
+         if (USE_SPEC) {
+-            handle = BindingSpecializer.specializeDowncall(handle, callingSequence, abi);
++            MethodHandle simple = SimpleDowncall.specialize(handle, callingSequence);
++            handle = simple != null ? simple : BindingSpecializer.specializeDowncall(handle, callingSequence, abi);
+          } else {
+             InvocationData invData = new InvocationData(handle, callingSequence);
+             handle = insertArguments(MH_INVOKE_INTERP_BINDINGS.bindTo(this), 2, invData);
+@@ -210,4 +212,123 @@ public Object load(VMStorage storage, Class<?> type) {
+             }
+         }
+     }
++
++    private static class SimpleDowncall {
++        static MethodHandle specialize(MethodHandle leaf, CallingSequence cs) {
++            if (!cs.forDowncall() || cs.allocationSize() != 0 || cs.needsReturnBuffer() ||
++                    cs.capturedStateMask() != 0 || cs.usingAddressPairs() || cs.isVariadicFunction()) {
++                return null;
++            }
++            MethodType caller = cs.callerMethodType();
++            if (caller.parameterCount() == 0 || caller.parameterType(0) != MemorySegment.class ||
++                    !leaf.type().equals(caller.changeParameterType(0, long.class))) {
++                return null;
++            }
++            Class<?> type = caller.returnType();
++            int arity = caller.parameterCount() - 1;
++            String name;
++            if (type == void.class && arity == 0) {
++                name = "invokeV";
++            } else if (type == int.class && arity == 2 &&
++                    caller.parameterType(1) == int.class && caller.parameterType(2) == int.class) {
++                name = "invokeII";
++            } else if (arity == 1 && caller.parameterType(1) == type) {
++                if (type == int.class) name = "invokeI";
++                else if (type == long.class) name = "invokeJ";
++                else if (type == float.class) name = "invokeF";
++                else if (type == double.class) name = "invokeD";
++                else return null;
++            } else {
++                return null;
++            }
++            if (cs.argumentBindingsCount() != caller.parameterCount()) return null;
++            List<Binding> symbol = cs.argumentBindings(0);
++            if (symbol.size() != 2 || !(symbol.get(0) instanceof Binding.SegmentOffset offset) ||
++                    offset.allowHeap() || !(symbol.get(1) instanceof Binding.VMStore move) ||
++                    move.type() != long.class) return null;
++            for (int i = 1; i < cs.argumentBindingsCount(); i++) {
++                List<Binding> bindings = cs.argumentBindings(i);
++                if (bindings.size() != 1 || !(bindings.get(0) instanceof Binding.VMStore store) ||
++                        store.type() != caller.parameterType(i)) return null;
++            }
++            List<Binding> result = cs.returnBindings();
++            if (type == void.class ? !result.isEmpty() :
++                    (result.size() != 1 || !(result.get(0) instanceof Binding.VMLoad load) ||
++                            load.type() != type)) return null;
++            MethodType helperType = caller.insertParameterTypes(0, MethodHandle.class, SegmentAllocator.class);
++            return MhUtil.findStatic(MethodHandles.lookup(), SimpleDowncall.class, name, helperType).bindTo(leaf);
++        }
++
++        @ForceInline
++        private static long address(MemorySegment symbol) {
++            SharedUtils.checkNative(symbol);
++            return ((AbstractMemorySegmentImpl) symbol).unsafeGetOffset();
++        }
++
++        @ForceInline
++        private static void invokeV(MethodHandle leaf, SegmentAllocator allocator, MemorySegment symbol) throws Throwable {
++            MemorySessionImpl session = ((AbstractMemorySegmentImpl) symbol).sessionImpl();
++            session.acquire0();
++            try {
++                leaf.invokeExact(address(symbol));
++            } finally {
++                session.release0();
++            }
++        }
++
++        @ForceInline
++        private static int invokeI(MethodHandle leaf, SegmentAllocator allocator, MemorySegment symbol, int x) throws Throwable {
++            MemorySessionImpl session = ((AbstractMemorySegmentImpl) symbol).sessionImpl();
++            session.acquire0();
++            try {
++                return (int) leaf.invokeExact(address(symbol), x);
++            } finally {
++                session.release0();
++            }
++        }
++
++        @ForceInline
++        private static long invokeJ(MethodHandle leaf, SegmentAllocator allocator, MemorySegment symbol, long x) throws Throwable {
++            MemorySessionImpl session = ((AbstractMemorySegmentImpl) symbol).sessionImpl();
++            session.acquire0();
++            try {
++                return (long) leaf.invokeExact(address(symbol), x);
++            } finally {
++                session.release0();
++            }
++        }
++
++        @ForceInline
++        private static float invokeF(MethodHandle leaf, SegmentAllocator allocator, MemorySegment symbol, float x) throws Throwable {
++            MemorySessionImpl session = ((AbstractMemorySegmentImpl) symbol).sessionImpl();
++            session.acquire0();
++            try {
++                return (float) leaf.invokeExact(address(symbol), x);
++            } finally {
++                session.release0();
++            }
++        }
++
++        @ForceInline
++        private static double invokeD(MethodHandle leaf, SegmentAllocator allocator, MemorySegment symbol, double x) throws Throwable {
++            MemorySessionImpl session = ((AbstractMemorySegmentImpl) symbol).sessionImpl();
++            session.acquire0();
++            try {
++                return (double) leaf.invokeExact(address(symbol), x);
++            } finally {
++                session.release0();
++            }
++        }
++
++        @ForceInline
++        private static int invokeII(MethodHandle leaf, SegmentAllocator allocator, MemorySegment symbol, int x, int y) throws Throwable {
++            MemorySessionImpl session = ((AbstractMemorySegmentImpl) symbol).sessionImpl();
++            session.acquire0();
++            try {
++                return (int) leaf.invokeExact(address(symbol), x, y);
++            } finally {
++                session.release0();
++            }
++        }
++    }
+ }
+diff --git a/test/jdk/java/foreign/TestScalarDowncalls.java b/test/jdk/java/foreign/TestScalarDowncalls.java
+new file mode 100644
+index 00000000000..efe84504665
+--- /dev/null
++++ b/test/jdk/java/foreign/TestScalarDowncalls.java
+@@ -0,0 +1,171 @@
++/*
++ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
++ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
++ *
++ * This code is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 only, as
++ * published by the Free Software Foundation.
++ *
++ * This code is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ * version 2 for more details (a copy is included in the LICENSE file that
++ * accompanied this code).
++ *
++ * You should have received a copy of the GNU General Public License version
++ * 2 along with this work; if not, write to the Free Software Foundation,
++ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
++ *
++ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
++ * or visit www.oracle.com if you need additional information or have any
++ * questions.
++ */
++
++/*
++ * @test
++ * @summary Exercise scalar downcall adapters, fallback recipes and symbol lifetime
++ * @run main/othervm/native --enable-native-access=ALL-UNNAMED TestScalarDowncalls
++ * @run main/othervm/native -Xint --enable-native-access=ALL-UNNAMED TestScalarDowncalls
++ * @run main/othervm/native -XX:TieredStopAtLevel=1 --enable-native-access=ALL-UNNAMED TestScalarDowncalls
++ * @run main/othervm/native -XX:TieredStopAtLevel=3 --enable-native-access=ALL-UNNAMED TestScalarDowncalls
++ * @run main/othervm/native -Xbatch -XX:-TieredCompilation --enable-native-access=ALL-UNNAMED TestScalarDowncalls
++ */
++
++import java.lang.foreign.*;
++import java.lang.invoke.*;
++import java.util.concurrent.*;
++import java.util.concurrent.atomic.*;
++import static java.lang.foreign.ValueLayout.*;
++
++public class TestScalarDowncalls {
++    static final Linker L = Linker.nativeLinker();
++    static { System.loadLibrary("ScalarDowncalls"); }
++    static final SymbolLookup LOOKUP = SymbolLookup.loaderLookup();
++    static int assertions;
++    static CountDownLatch entered, release;
++    static MethodHandle mh(String name, FunctionDescriptor fd, Linker.Option... options) {
++        return L.downcallHandle(LOOKUP.findOrThrow(name), fd, options);
++    }
++    static void eq(long expected, long actual) {
++        ++assertions;
++        if (expected != actual) throw new AssertionError(expected+" != "+actual);
++    }
++    interface Action { void run() throws Throwable; }
++    static void fails(Class<? extends Throwable> type, Action action) throws Throwable {
++        ++assertions;
++        try { action.run(); } catch (Throwable t) { if (type.isInstance(t)) return; throw t; }
++        throw new AssertionError("Expected "+type);
++    }
++    static int callback(int x) { return x ^ 0x12345678; }
++    static int block(int x) {
++        entered.countDown();
++        try { if (!release.await(30, TimeUnit.SECONDS)) throw new AssertionError("timeout"); }
++        catch (InterruptedException e) { throw new AssertionError(e); }
++        return x;
++    }
++    static MethodHandle target(String name) throws Throwable {
++        return MethodHandles.lookup().findStatic(TestScalarDowncalls.class, name, MethodType.methodType(int.class, int.class));
++    }
++    public static void main(String[] args) throws Throwable {
++        FunctionDescriptor fi = FunctionDescriptor.of(JAVA_INT, JAVA_INT);
++        for (Linker.Option[] options : new Linker.Option[][] { {}, { Linker.Option.critical(false) } }) {
++            MethodHandle i = mh("id_i", fi, options);
++            MethodHandle ii = mh("add_i", FunctionDescriptor.of(JAVA_INT, JAVA_INT, JAVA_INT), options);
++            MethodHandle j = mh("id_j", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG), options);
++            MethodHandle f = mh("id_f", FunctionDescriptor.of(JAVA_FLOAT, JAVA_FLOAT), options);
++            MethodHandle d = mh("id_d", FunctionDescriptor.of(JAVA_DOUBLE, JAVA_DOUBLE), options);
++            for (int x : new int[] { 0, 1, -1, Integer.MIN_VALUE, Integer.MAX_VALUE, 0x76543210 }) {
++                eq(x, (int) i.invokeExact(x));
++                eq(x + 17, (int) ii.invokeExact(x, 17));
++            }
++            for (long x : new long[] { 0, 1, -1, Long.MIN_VALUE, Long.MAX_VALUE, 0x87654321fedcba98L }) eq(x, (long) j.invokeExact(x));
++            for (int bits : new int[] { 0, 0x80000000, 1, 0x7f7fffff, 0xff800000, 0x7fc12345 }) {
++                float x = Float.intBitsToFloat(bits);
++                eq(bits, Float.floatToRawIntBits((float) f.invokeExact(x)));
++            }
++            for (long bits : new long[] { 0, Long.MIN_VALUE, 1, 0x7fefffffffffffffL, 0xfff0000000000000L, 0x7ff812345678abcdL }) {
++                double x = Double.longBitsToDouble(bits);
++                eq(bits, Double.doubleToRawLongBits((double) d.invokeExact(x)));
++            }
++            mh("noop", FunctionDescriptor.ofVoid(), options).invokeExact();
++        }
++        MethodHandle unbound = L.downcallHandle(fi);
++        MemorySegment global = LOOKUP.findOrThrow("id_i");
++        eq(42, (int) unbound.invokeExact(global, 42));
++        fails(IllegalArgumentException.class, () -> { int ignored = (int) unbound.invokeExact(MemorySegment.NULL, 42); });
++        fails(IllegalArgumentException.class, () -> { int ignored = (int) unbound.invokeExact(MemorySegment.ofArray(new byte[8]), 42); });
++        fails(NullPointerException.class, () -> { int ignored = (int) unbound.invokeExact((MemorySegment) null, 42); });
++        try (Arena a = Arena.ofConfined()) {
++            MemorySegment scoped = global.reinterpret(0, a, null);
++            MethodHandle bound = L.downcallHandle(scoped, fi);
++            eq(-17, (int) bound.invokeExact(-17));
++            AtomicReference<Throwable> error = new AtomicReference<>();
++            Thread t = new Thread(() -> {
++                try { int ignored = (int) bound.invokeExact(17); error.set(new AssertionError("wrong-thread call succeeded")); }
++                catch (Throwable e) { if (!(e instanceof WrongThreadException)) error.set(e); }
++            });
++            t.start(); t.join();
++            if (error.get() != null) throw error.get();
++            ++assertions;
++        }
++        Arena closed = Arena.ofConfined();
++        MemorySegment scoped = global.reinterpret(0, closed, null);
++        MethodHandle bound = L.downcallHandle(scoped, fi);
++        closed.close();
++        fails(IllegalStateException.class, () -> { int ignored = (int) bound.invokeExact(17); });
++
++        MethodHandle b = mh("id_b", FunctionDescriptor.of(JAVA_BYTE, JAVA_BYTE));
++        MethodHandle s = mh("id_s", FunctionDescriptor.of(JAVA_SHORT, JAVA_SHORT));
++        MethodHandle c = mh("id_c", FunctionDescriptor.of(JAVA_CHAR, JAVA_CHAR));
++        for (int x = -128; x < 128; x++) eq((byte)x, (byte)b.invokeExact((byte)x));
++        eq(Short.MIN_VALUE, (short)s.invokeExact(Short.MIN_VALUE));
++        eq(0xffff, (char)c.invokeExact((char)0xffff));
++        try (Arena a = Arena.ofConfined()) {
++            MemorySegment p = a.allocate(JAVA_INT); p.set(JAVA_INT, 0, -44);
++            eq(-44, (int) mh("read_ptr", FunctionDescriptor.of(JAVA_INT, ADDRESS)).invokeExact(p));
++            fails(IllegalStateException.class, () -> {
++                Arena z = Arena.ofConfined(); MemorySegment q = z.allocate(JAVA_INT); z.close();
++                int ignored = (int) mh("read_ptr", FunctionDescriptor.of(JAVA_INT, ADDRESS)).invokeExact(q);
++            });
++            AddressLayout target = ADDRESS.withTargetLayout(MemoryLayout.structLayout(JAVA_INT, JAVA_INT).withByteAlignment(32));
++            MethodHandle ptr = mh("ptr_id", FunctionDescriptor.of(target, target));
++            MemorySegment aligned = a.allocate(40, 32).asSlice(4, 8);
++            MemorySegment result = (MemorySegment) ptr.invokeExact(aligned);
++            eq(8, result.byteSize());
++            fails(IllegalArgumentException.class, () -> { MemorySegment ignored = (MemorySegment) ptr.invokeExact(aligned.asSlice(1)); });
++            StructLayout pair = MemoryLayout.structLayout(JAVA_INT, JAVA_INT);
++            MemorySegment input = a.allocate(pair); input.set(JAVA_INT,0,17); input.set(JAVA_INT,4,-11);
++            MemorySegment output = (MemorySegment) mh("pair_id", FunctionDescriptor.of(pair,pair)).invokeExact((SegmentAllocator)a,input);
++            eq(17,output.get(JAVA_INT,0)); eq(-11,output.get(JAVA_INT,4));
++            MemorySegment stub = L.upcallStub(target("callback"),fi,a);
++            eq(42 ^ 0x12345678,(int)mh("callback",FunctionDescriptor.of(JAVA_INT,ADDRESS,JAVA_INT)).invokeExact(stub,42));
++            MethodHandle capture = mh("set_errno",fi,Linker.Option.captureCallState("errno"));
++            MemorySegment state = a.allocate(Linker.Option.captureStateLayout());
++            eq(17,(int)capture.invokeExact(state,17));
++            VarHandle errno = Linker.Option.captureStateLayout().varHandle(MemoryLayout.PathElement.groupElement("errno"));
++            eq(17,(int)errno.get(state,0L));
++            eq(18,(int)mh("sum_var",FunctionDescriptor.of(JAVA_INT,JAVA_INT,JAVA_INT),Linker.Option.firstVariadicArg(1)).invokeExact(17,1));
++        }
++        // Keep the library loaded independently so a failing scope protocol cannot unmap running code.
++        Arena symbolArena = Arena.ofShared();
++        try (Arena callbackArena = Arena.ofShared()) {
++            entered = new CountDownLatch(1); release = new CountDownLatch(1);
++            MemorySegment stub = L.upcallStub(target("block"),fi,callbackArena);
++            mh("install_callback",FunctionDescriptor.ofVoid(ADDRESS)).invokeExact(stub);
++            MemorySegment blockingSymbol = LOOKUP.findOrThrow("block_i").reinterpret(0,symbolArena,null);
++            MethodHandle blocking = L.downcallHandle(blockingSymbol,fi);
++            AtomicReference<Throwable> error = new AtomicReference<>();
++            Thread t = new Thread(() -> {
++                try { eq(123,(int)blocking.invokeExact(123)); } catch (Throwable e) { error.set(e); }
++            });
++            t.start();
++            if (!entered.await(30,TimeUnit.SECONDS)) throw new AssertionError("callback never entered");
++            try { fails(IllegalStateException.class,symbolArena::close); }
++            finally { release.countDown(); }
++            t.join();
++            if (error.get()!=null) throw error.get();
++            mh("install_callback",FunctionDescriptor.ofVoid(ADDRESS)).invokeExact(MemorySegment.NULL);
++        } finally { symbolArena.close(); }
++        System.out.println("PASS assertions="+assertions);
++    }
++}
+diff --git a/test/jdk/java/foreign/libScalarDowncalls.c b/test/jdk/java/foreign/libScalarDowncalls.c
+new file mode 100644
+index 00000000000..314cbaab0dd
+--- /dev/null
++++ b/test/jdk/java/foreign/libScalarDowncalls.c
+@@ -0,0 +1,46 @@
++/*
++ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
++ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
++ *
++ * This code is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 only, as
++ * published by the Free Software Foundation.
++ *
++ * This code is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ * version 2 for more details (a copy is included in the LICENSE file that
++ * accompanied this code).
++ *
++ * You should have received a copy of the GNU General Public License version
++ * 2 along with this work; if not, write to the Free Software Foundation,
++ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
++ *
++ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
++ * or visit www.oracle.com if you need additional information or have any
++ * questions.
++ */
++
++#include "shared.h"
++#include <stdint.h>
++#include <errno.h>
++#include <stdarg.h>
++EXPORT void noop(void) { }
++EXPORT int id_i(int x) { return x; }
++EXPORT int add_i(int x, int y) { return (int)((uint32_t)x + (uint32_t)y); }
++EXPORT long long id_j(long long x) { return x; }
++EXPORT float id_f(float x) { return x; }
++EXPORT double id_d(double x) { return x; }
++EXPORT int read_ptr(const int *x) { return *x; }
++EXPORT void *ptr_id(void *x) { return x; }
++EXPORT int8_t id_b(int8_t x) { return x; }
++EXPORT int16_t id_s(int16_t x) { return x; }
++EXPORT uint16_t id_c(uint16_t x) { return x; }
++static int (*blocker)(int);
++EXPORT void install_callback(int (*f)(int)) { blocker = f; }
++EXPORT int block_i(int x) { return blocker(x); }
++EXPORT int callback(int (*f)(int), int x) { return f(x); }
++EXPORT int set_errno(int x) { errno = x; return x; }
++struct pair { int x, y; };
++EXPORT struct pair pair_id(struct pair x) { return x; }
++EXPORT int sum_var(int x, ...) { va_list a; va_start(a, x); int y = va_arg(a, int); va_end(a); return x + y; }
