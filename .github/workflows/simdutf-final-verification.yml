@@ -1,0 +1,61 @@
+name: SIMDUTF final focused verification
+on:
+  push:
+    branches: [review/simdutf-final-verification]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  jtreg:
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux-x64
+          - runner: ubuntu-24.04-arm
+            platform: linux-aarch64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: bundles-${{ matrix.platform }}
+          run-id: 38604122112
+          github-token: ${{ github.token }}
+          path: bundles/release
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: bundles-${{ matrix.platform }}-debug
+          run-id: 38604122112
+          github-token: ${{ github.token }}
+          path: bundles/debug
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: bundles-jtreg-8.2.1+1
+          run-id: 38604122112
+          github-token: ${{ github.token }}
+          path: jtreg
+      - name: Verify final charset sources in release and debug VMs
+        run: |
+          set -e
+          mkdir -p image/release image/debug results
+          tar -xf bundles/release/jdk-${{ matrix.platform }}.tar.gz -C image/release
+          tar -xf bundles/debug/jdk-${{ matrix.platform }}-debug.tar.gz -C image/debug
+          task_release_java=$(find image/release -path '*/bin/java' -print -quit)
+          task_debug_java=$(find image/debug -path '*/bin/java' -print -quit)
+          task_jtreg_jar=$(find jtreg -name jtreg.jar -print -quit)
+          env -u DOCKER_HOST -u DOCKER_CONTEXT -u DOCKER_TLS -u DOCKER_TLS_VERIFY -u DOCKER_CERT_PATH docker --host=unix:///var/run/docker.sock run --rm --mount "type=bind,src=$GITHUB_WORKSPACE,dst=$GITHUB_WORKSPACE" --workdir "$GITHUB_WORKSPACE" ubuntu:26.04 /bin/bash -c 'set -e
+          apt-get -qq update
+          DEBIAN_FRONTEND=noninteractive apt-get -qq install -y python3 libstdc++6 zlib1g
+          python3 "$1" "$2" "$3" "$4" "$5"
+          ' _ make/scripts/simdutf-final-verification.py "$(dirname "$(dirname "$task_release_java")")" "$(dirname "$(dirname "$task_debug_java")")" "$(dirname "$(dirname "$task_jtreg_jar")")" "$GITHUB_WORKSPACE/results"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: simdutf-final-verification-${{ matrix.platform }}
+          path: results
+          retention-days: 14
