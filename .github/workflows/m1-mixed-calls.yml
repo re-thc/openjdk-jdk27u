@@ -5,7 +5,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: m1-mixed-calls-${{ github.ref }}
+  group: m1-mixed-calls-${{ github.ref }}-${{ github.event.head_commit.message }}
   cancel-in-progress: true
 jobs:
   measure:
