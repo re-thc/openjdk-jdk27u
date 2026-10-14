@@ -1,0 +1,149 @@
+name: AArch64 archive baseline qualification
+on:
+  push:
+    branches:
+      - pr/common-intrinsics-archive-qualification
+permissions:
+  contents: read
+  actions: read
+jobs:
+  compare:
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 87edd79d3104ff502f7befec034716b081436f49
+          path: baseline
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 8bf01e9ed8a3df53fd8836d61216ed511ad3e591
+          path: pr
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: bundles-linux-aarch64-debug
+          run-id: '38172262610'
+          github-token: ${{ github.token }}
+          path: bundles/baseline
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: bundles-linux-aarch64-debug
+          run-id: '38385226401'
+          github-token: ${{ github.token }}
+          path: bundles/pr
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          pattern: bundles-jtreg-*
+          merge-multiple: true
+          run-id: '38385226401'
+          github-token: ${{ github.token }}
+          path: jtreg
+      - name: Compare baseline and PR archives
+        run: |
+          python3 - <<'PY'
+          import hashlib, itertools, json, os, platform, re, shutil, subprocess, tarfile, time
+          from pathlib import Path
+          
+          root = Path.cwd()
+          out = root / "archive-results"
+          out.mkdir()
+          images = {}
+          for name in ["baseline", "pr"]:
+              target = root / "images" / name
+              target.mkdir(parents=True)
+              archives = list((root / "bundles" / name).glob("jdk-linux-aarch64-debug.tar.gz"))
+              assert len(archives) == 1, archives
+              with tarfile.open(archives[0]) as archive:
+                  archive.extractall(target, filter="data")
+              candidates = list(target.rglob("bin/java"))
+              assert len(candidates) == 1, candidates
+              images[name] = candidates[0].parent.parent
+          jtreg = root / "jtreg/lib/jtreg.jar"
+          assert jtreg.is_file(), jtreg
+          test = "test/hotspot/jtreg/runtime/cds/FourByteHeaderArchiveDeterminism.java"
+          sources = {}
+          for name in ["baseline", "pr"]:
+              path = root / name / test
+              sources[name] = hashlib.sha256(path.read_bytes()).hexdigest()
+          assert sources["baseline"] == sources["pr"], sources
+          identity = {}
+          for name, image in images.items():
+              vm = image / "lib/server/libjvm.so"
+              identity[name] = dict(java=str(image / "bin/java"),
+                                   version=subprocess.check_output([str(image / "bin/java"), "-version"], stderr=subprocess.STDOUT, text=True),
+                                   vm_sha256=hashlib.file_digest(vm.open("rb"), "sha256").hexdigest())
+          environment = dict(baseline_revision="87edd79d3104ff502f7befec034716b081436f49",
+                             pr_revision="8bf01e9ed8a3df53fd8836d61216ed511ad3e591",
+                             baseline_build_run=38172262610, pr_build_run=38385226401,
+                             run=int(os.environ["GITHUB_RUN_ID"]), machine=platform.machine(),
+                             cpu=subprocess.check_output(["lscpu"], text=True), images=identity, test_hashes=sources)
+          (out / "environment.json").write_text(json.dumps(environment, indent=2) + "\n")
+          variants = {"baseline": ("baseline", []),
+                      "pr-off": ("pr", ["-XX:-UseCommonIntrinsics"]),
+                      "pr-on": ("pr", ["-XX:+UseCommonIntrinsics"])}
+          results = []
+          for block in range(20):
+              order = list(itertools.permutations(variants))[block % 6]
+              for variant in order:
+                  name, options = variants[variant]
+                  case = out / f"{block:02}-{variant}"
+                  case.mkdir()
+                  command = [str(images["baseline"] / "bin/java"), "-jar", str(jtreg),
+                             "-jdk:" + str(images[name]), "-othervm", "-conc:1", "-timeoutFactor:4",
+                             "-retain:all", "-verbose:fail,error,time",
+                             "-vmoptions:" + " ".join(["-XX:MaxRAMPercentage=12.5"] + options),
+                             "-javaoptions:-XX:-CreateCoredumpOnCrash",
+                             "-w:" + str(case / "work"), "-r:" + str(case / "report"),
+                             str(root / name / test) + "#z"]
+                  start = time.time()
+                  with (case / "jtreg.log").open("w") as log:
+                      code = subprocess.run(command, cwd=root / name, stdout=log, stderr=subprocess.STDOUT).returncode
+                  jtrs = list((case / "work").rglob("*.jtr"))
+                  text = "\n".join(p.read_text(errors="replace") for p in jtrs)
+                  mismatch = re.findall(r"File content different at byte #(\d+), b0 = (-?\d+), b1 = (-?\d+)", text)
+                  record = dict(block=block, variant=variant, exit_code=code, seconds=time.time()-start,
+                                mismatches=sorted(set(mismatch)), command=command,
+                                summary=(case / "report/text/summary.txt").read_text() if (case / "report/text/summary.txt").exists() else "")
+                  results.append(record)
+                  (out / "results.json").write_text(json.dumps(results, indent=2) + "\n")
+                  print(json.dumps({k: record[k] for k in ["block", "variant", "exit_code", "seconds", "mismatches", "summary"]}), flush=True)
+                  if code == 0:
+                      for p in jtrs:
+                          shutil.copyfile(p, case / p.name)
+                      shutil.rmtree(case / "work")
+                  else:
+                      for p in (case / "work").rglob("*.class"):
+                          p.unlink()
+              baseline_failed = any(r["variant"] == "baseline" and r["mismatches"] for r in results)
+              pr_failed = any(r["variant"].startswith("pr-") and r["mismatches"] for r in results)
+              if block >= 9 and baseline_failed and pr_failed:
+                  break
+          
+          # Run all collector variants once as controls.
+          for variant, (name, options) in variants.items():
+              case = out / ("collectors-" + variant)
+              case.mkdir()
+              command = [str(images["baseline"] / "bin/java"), "-jar", str(jtreg),
+                         "-jdk:" + str(images[name]), "-othervm", "-conc:1", "-timeoutFactor:4",
+                         "-verbose:fail,error,time", "-vmoptions:" + " ".join(options),
+                         "-w:" + str(case / "work"), "-r:" + str(case / "report"),
+                         str(root / name / test)]
+              with (case / "jtreg.log").open("w") as log:
+                  code = subprocess.run(command, cwd=root / name, stdout=log, stderr=subprocess.STDOUT).returncode
+              results.append(dict(variant=variant, selection="all-collectors", exit_code=code, command=command,
+                                  summary=(case / "report/text/summary.txt").read_text() if (case / "report/text/summary.txt").exists() else ""))
+              (out / "results.json").write_text(json.dumps(results, indent=2) + "\n")
+              for p in (case / "work").rglob("*.jtr"):
+                  shutil.copyfile(p, case / p.name)
+              if code == 0:
+                  shutil.rmtree(case / "work")
+          unexpected = [r for r in results if "block" in r and r["exit_code"] != 0 and not r["mismatches"]]
+          if unexpected:
+              raise SystemExit("Unexpected test failures; inspect artifacts")
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: aarch64-archive-baseline-qualification
+          path: archive-results
+          compression-level: 9
