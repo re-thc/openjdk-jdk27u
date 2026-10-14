@@ -100,6 +100,10 @@ def main():
     (output / 'sha256.json').write_text(json.dumps(
         {str(path): sha256(path) for path in inputs}, indent=2) + '\n')
     (output / 'release').write_bytes((args.jdk / 'release').read_bytes())
+    for name in ['resources.json', 'sha256.json', 'release', 'startup.log',
+                 'source-revision.log']:
+        print('JDK_EVIDENCE ' + json.dumps({'name': name,
+              'content': (output / name).read_text()}), flush=True)
 
     deps = output / 'dependencies'
     deps.mkdir(exist_ok=True)
@@ -131,6 +135,8 @@ def main():
                 flags.append('-XX:-CompactStrings')
             run([java] + common + ['-Xint'] + flags + ['-cp', str(classes),
                 'TestDecimalIntegers'], f'checks-compact-{compact}-native-{native}', 180)
+            print((output / f'checks-compact-{compact}-native-{native}.log').read_text(),
+                  flush=True)
 
     profiles = {
         'interpreter': (['-Xint'], BENCHMARK, sizes),
@@ -157,6 +163,9 @@ def main():
                      '-wi', '3', '-i', '3', '-w', args.duration, '-r', args.duration,
                      '-prof', 'gc', '-foe', 'true', '-rf', 'json', '-rff',
                      str(output / (name + '.json'))], name)
+                for record in json.loads((output / (name + '.json')).read_text()):
+                    print('JMH_RESULT ' + json.dumps({'sample': name, 'data': record}),
+                          flush=True)
 
 
 if __name__ == '__main__':
