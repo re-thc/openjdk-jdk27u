@@ -1,8 +1,58 @@
 # Tiny zlib native diagnostic
 
-## Current calibration-only extension
+## Approved fixed candidate campaign
 
-The current workflow runs one fixed identification battery, without candidates
+The current workflow executes --candidate-campaign-only once. Production pins,
+all three saved patches and PR6 remain unchanged. Builds, full differential
+tree/stream checks and ASan/UBSan complete serially before the one timing process.
+No allocator hooks/tuning, offset correction or retry-until-pass loop is used.
+
+The frozen manifest contains 674 cells per layout: 98 tiny cells (three original
+prefixes plus random/zero/repeated/JSON 64-byte data; level 6, reuse/create;
+ng-stock, each prototype-ng and each prototype-stock); 192 ordinary/long cells
+(Java/random/repeated/JSON at 1KiB/64KiB/1MiB, levels 1/6 and both lifecycles;
+ng-stock plus each prototype-ng); and 384 unit-tree cells (all 128 retained
+generator cases for every prototype vs ng). Tree timing is in separate test
+images; backend tree sources are not modified to expose a test entry point.
+
+Both role-A and role-B images are isolated with -Bsymbolic, loaded by exact
+handles before timing. Layout0 initializes reference/A then comparator/B;
+layout1 initializes comparator/A then reference/B and reverses the cell order.
+Every stream permanently owns its initializing API; selecting a different role
+never assigns an existing stream to another backend. Create/end uses a fresh
+zeroed z_stream and ends it through that owner. Function/DSO mappings, initial
+state/stream/buffer addresses, initialization order and every timed batch's
+first/last state and initialization ordinal are retained. Recording adds equal
+driver bookkeeping to both arms; it is not a trace of internal malloc calls.
+
+Each layout is immediately bracketed in the same process by shared-owner and
+separate-unmodified-role A/A on reset, original Java64 reuse and create/end.
+Every A/A cell retains 12 blocks x20 alternating pairs x128 operations and the
+unchanged abs(mean block difference)+2.201*SEM <=100ns rule. Comparative cells
+use six blocks x10 alternating pairs; batches have 128/4/1 stream operations
+by size or 100 prepared tree builds. Setup, tree digest and representative
+stock-inflate validation are outside timing. All samples are retained. Both
+layouts finish once even if a bracket fails; any failed bracket makes winner
+qualification inconclusive. The prior 120.62ns failure stays failed.
+
+Canonical comparator-minus-reference differences and ratios are scored per
+layout with t(5)=2.571. Layouts are never averaged to hide a failed guard. Tiny
+stock parity keeps its lower95% stock-minus-candidate bound >=-100ns; ordinary/
+long screening keeps upper95% candidate/ng <=1.01. Tree-unit latency losses are
+reported separately, with no invented whole-stream margin. Instruction counts
+remain warnings. Correctness/calibration passes alone qualify no speedup or JDK.
+
+The artifact preserves sources, binaries, input identities, commands, the frozen
+manifest, all 173,280 raw rows, addresses and scores. A separately hashed gzip
+of the text evidence is also retained in completed job logs for read-only
+recovery. --validate-only on the C driver performs loading/ownership/output
+fixtures with zero timed blocks and no performance samples.
+
+## Retained earlier calibration-only extension
+
+### Calibration identification protocol
+
+The earlier workflow ran one fixed identification battery, without candidates
 or stock timing. The earlier experiment remains in its original commit and
 artifact. Run native.py with --controls-only to execute, in fixed order:
 

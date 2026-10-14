@@ -1,4 +1,4 @@
-name: Tiny zlib calibration identification
+name: Tiny zlib fixed candidate campaign
 on:
   push:
     branches: [diagnostic/tiny-zlib-native-20261014]
@@ -11,9 +11,9 @@ concurrency:
   group: tiny-zlib-native-${{ github.ref }}
   cancel-in-progress: false
 jobs:
-  calibration-controls:
+  candidate-campaign:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -40,18 +40,18 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y gcc-14 make python3 patch
           fi
-      - name: One fixed calibration-only battery
-        run: python3 production/.github/scripts/tiny-zlib/native.py --root production --corpora corpora --out validation/tiny-zlib-controls --controls-only
+      - name: One fixed candidate campaign
+        run: python3 production/.github/scripts/tiny-zlib/native.py --root production --corpora corpora --out validation/tiny-zlib-campaign --candidate-campaign-only
       - name: Diagnostic summary
         if: always()
         run: |
-          if test -f validation/tiny-zlib-controls/report.md; then
-            cat validation/tiny-zlib-controls/report.md >> "$GITHUB_STEP_SUMMARY"
+          if test -f validation/tiny-zlib-campaign/report.md; then
+            cat validation/tiny-zlib-campaign/report.md >> "$GITHUB_STEP_SUMMARY"
           fi
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         if: always()
         with:
-          name: tiny-zlib-calibration-controls-${{ github.run_id }}
-          path: validation/tiny-zlib-controls
+          name: tiny-zlib-fixed-campaign-${{ github.run_id }}
+          path: validation/tiny-zlib-campaign
           retention-days: 30
           if-no-files-found: error

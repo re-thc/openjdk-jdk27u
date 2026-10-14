@@ -6,7 +6,7 @@ PIN='3f71d03f3297f94e8c2cc34160262a880be337fc'
 NG='88601f0bdd192e9f87d4bd0a50d5d2e2dc9b8cd0'
 CORPUS='9870d54525f8f5a1315da6f2f9b289fb535e26a3'
 CC='gcc-14'
-a=argparse.ArgumentParser();a.add_argument('--root',type=Path,required=True);a.add_argument('--corpora',type=Path,required=True);a.add_argument('--out',type=Path,required=True);a.add_argument('--aa-only',action='store_true');a.add_argument('--controls-only',action='store_true');args=a.parse_args()
+a=argparse.ArgumentParser();a.add_argument('--root',type=Path,required=True);a.add_argument('--corpora',type=Path,required=True);a.add_argument('--out',type=Path,required=True);a.add_argument('--aa-only',action='store_true');a.add_argument('--controls-only',action='store_true');a.add_argument('--candidate-campaign-only',action='store_true');args=a.parse_args()
 ROOT=args.root.resolve();CORPORA=args.corpora.resolve();OUT=args.out.resolve();TOOLS=Path(__file__).resolve().parent
 OUT.mkdir(parents=True,exist_ok=True)
 for d in ['logs','builds','sources','payloads','calibration','paired','retained','correctness','trees']:(OUT/d).mkdir(exist_ok=True)
@@ -115,6 +115,92 @@ def screening():
         # means candidate is slower; a lower CI bound >=-100 ns is parity.
     state['screening']=results
 
+def candidate_campaign(base,aa):
+    import base64,gzip
+    from score_campaign import score as campaign_score,report as campaign_report
+    variants={'baseline':[base,aa]}
+    # Build every image and run correctness before the one performance process.
+    treebase=tree_test('campaign-baseline',base)
+    asanbase=ng_build('campaign-asan-baseline',OUT/'sources/baseline','jdk_ng_',True)
+    asan_payloads=['java-o0-64','hotspot-o0-64','documentation-o0-64',*[f'random-{n}' for n in [0,1,2,3,4,63,64,65]],'zeros-64','repeat-64','json-64','random-1024','java-65536','random-1048576','repeat-1048576']
+    for name in ['v1','v2','v3']:
+        note('CAMPAIGN_PREPARE',name)
+        source=OUT/'sources'/name;shutil.copytree(OUT/'sources/baseline',source,dirs_exist_ok=True)
+        run(['patch','--batch','-p1','-d',source,'-i',TOOLS/'patches'/(name+'.patch')],OUT/'logs'/('campaign-patch-'+name+'.log'))
+        libs=[ng_build('campaign-'+name+'-A',source,'jdk_ng_'),ng_build('campaign-'+name+'-B',source,'cand_')];variants[name]=libs
+        text_hashes={}
+        for role,lib in enumerate(libs):
+            for obj in ['deflate.o','trees.o','deflate_medium.o']:
+                target=lib['dir']/(obj+'.text');run(['objcopy','--dump-section','.text='+str(target),lib['dir']/obj],OUT/'logs'/f'campaign-text-{name}-{role}-{obj}.log');text_hashes[role,obj]=sha(target)
+        assert all(text_hashes[0,obj]==text_hashes[1,obj] for obj in ['deflate.o','trees.o','deflate_medium.o'])
+        tree=tree_test('campaign-'+name,libs[1]);assert tree['sha256']==treebase['sha256'] and tree['bytes']==treebase['bytes']
+        correct=driver('correctness.c','campaign-correctness-'+name,[base,libs[1]])
+        run([correct,*sorted((OUT/'payloads').glob('*.bin'))],OUT/'correctness'/(name+'.log'))
+        san=ng_build('campaign-asan-'+name,source,'cand_',True)
+        correctsan=driver('correctness.c','campaign-correctness-asan-'+name,[asanbase,san],sanitized=True)
+        run([correctsan,*[OUT/'payloads'/(n+'.bin') for n in asan_payloads]],OUT/'correctness'/(name+'-asan.log'),env=dict(os.environ,ASAN_OPTIONS='detect_leaks=1:halt_on_error=1',UBSAN_OPTIONS='halt_on_error=1:print_stacktrace=1'))
+        state['qualified'][name]=dict(passed=True,tree_sha256=tree['sha256']);write_state();note('CAMPAIGN_CORRECTNESS_PASS',name)
+    # Stock is timing context and the independent inflater, never a backend substitute.
+    images=[]
+    for name in ['baseline','stock','v1','v2','v3']:
+        for role in [0,1]:
+            tree='-'
+            if name=='stock':
+                so=OUT/'builds'/('libstock-'+str(role)+'.so')
+                run([CC,'-shared','-Wl,-Bsymbolic','-Wl,--whole-archive',stock,'-Wl,--no-whole-archive','-o',so],OUT/'logs'/f'campaign-stock-{role}.log');prefix='-'
+            else:
+                lib=variants[name][role];so=lib['so'];prefix=lib['prefix']
+                wrapper=lib['dir']/'campaign_trees.c';wrapper.write_text((TOOLS/'campaign_trees.c').read_text().replace('TREE_SOURCE',str(lib['source']/'trees.c')))
+                flags=shlex.split(next(x[7:] for x in (lib['dir']/'Makefile').read_text().splitlines() if x.startswith('CFLAGS=')))
+                tree=lib['dir']/'libcampaign-trees.so'
+                run([CC,*flags,'-shared','-Wl,-Bsymbolic','-I',lib['dir'],'-I',lib['source'],wrapper,lib['archive'],'-o',tree],OUT/'logs'/f'campaign-tree-image-{name}-{role}.log')
+            images.append(dict(name=name,role=role,so=str(so),prefix=prefix,tree=str(tree)))
+    image_file=OUT/'campaign-images.tsv';image_file.write_text(''.join(f"{x['name']}\t{x['role']}\t{x['so']}\t{x['prefix']}\t{x['tree']}\n" for x in images))
+    cells=[]
+    def cell(category,ref,cmp,payload,level,mode,kind=-1,leaves=-1,order=-1,domain=-1):
+        source=OUT/'payloads'/(payload+'.bin') if category!='tree' else None
+        n=source.stat().st_size if source else 0
+        cells.append(dict(id=len(cells),category=category,reference=ref,comparator=cmp,payload=str(source) if source else '-',payload_name=payload,level=level,mode=mode,kind=kind,leaves=leaves,order=order,domain=domain,iterations=100 if category=='tree' else 128 if n<=1024 else 4 if n<=65536 else 1,size=n))
+    contrasts=[('baseline','stock'),*[('baseline',v) for v in ['v1','v2','v3']],*[(v,'stock') for v in ['v1','v2','v3']]]
+    for payload in ['java-o0-64','hotspot-o0-64','documentation-o0-64','random-64','zeros-64','repeat-64','json-64']:
+        for mode in ['reuse','create']:
+            for ref,cmp in contrasts:cell('core' if payload.endswith('o0-64') else 'tiny',ref,cmp,payload,6,mode)
+    for payload in [f'{p}-{n}' for p in ['java','random','repeat','json'] for n in [1024,65536,1048576]]:
+        for level in [1,6]:
+            for mode in ['reuse','create']:
+                for ref,cmp in contrasts[:4]:cell('ordinary',ref,cmp,payload,level,mode)
+    tree_cells=[(1,n,o,d) for n in [0,1,2,8,16,17,19,30] for o in range(4) for d in range(2)]+[(2,n,o,d) for n in [0,1,2,8,16,17,19] for o in range(4) for d in range(2)]+[(0,286,o,d) for o in range(4) for d in range(2)]
+    assert len(tree_cells)==128
+    for kind,n,order,domain in tree_cells:
+        for variant in ['v1','v2','v3']:cell('tree','baseline',variant,'tree',6,'tree',kind,n,order,domain)
+    assert len(cells)==674
+    schedule=OUT/'campaign-cells.tsv';schedule.write_text(''.join('\t'.join(str(x[k]) for k in ['id','category','reference','comparator','payload','level','mode','kind','leaves','order','domain','iterations'])+'\n' for x in cells))
+    binary=OUT/'builds/candidate-campaign'
+    run([CC,'-O2','-Wall','-Wextra','-I',OUT/'sources/stock',TOOLS/'campaign.c',stock,'-ldl','-o',binary],OUT/'logs/campaign-compile.log')
+    manifest=dict(production_pin=PIN,ng=NG,stock='1.3.2',cpu=state['cpu'],images=images,cells=cells,
+        layouts=['A=reference/first init; B=comparator/second init; cells ascending','A=comparator/first init; B=reference/second init; cells descending'],
+        sample_rule='A/A:12 blocks x20 pairs x128 calls; comparative:6 blocks x10 pairs,128/4/1 stream operations or100 prepared trees; balanced AB/BA; all samples.',
+        bracket_rule='Same process, pre/post each layout, shared-owner and separate baseline-role images, reset/reuse/create; abs(mean of12 block paired means)+2.201*SEM <=100ns in every cell. Complete fixed schedule even on failure; any failure makes qualification inconclusive.',
+        margins=dict(tiny_stock_minus_candidate_lower95_ns=-100,ordinary_candidate_over_ng_upper95=1.01,tree='Report separately; no invented whole-stream margin'),
+        no_correction='Never subtract52.56ns or any other observed offset; layouts scored separately.',
+        ownership='Every owned stream calls only its initializing image API. Role swaps select different owned streams; no backend reassignment.',
+        warmup='64 operations per logical arm per cell, default allocator, no hooks/tuning; shared-owner gets128 total.',
+        timings=dict(binary_sha256=sha(binary),image_file_sha256=sha(image_file),schedule_sha256=sha(schedule)),payloads=json.loads((OUT/'payloads.json').read_text()),qualified=state['qualified'])
+    manifest_file=OUT/'campaign-manifest.json';dump(manifest_file,manifest);dump(OUT/'preregister.json',manifest);identities()
+    note('CAMPAIGN_FROZEN',sha(manifest_file),len(cells),'cells per layout; one process; no retry')
+    raw=OUT/'campaign.csv';addresses=OUT/'campaign-addresses.log';cmd=list(map(str,[binary,image_file,schedule,OUT/'payloads/java-o0-64.bin']));state['commands'].append(dict(argv=cmd,cwd=str(ROOT)))
+    with raw.open('w') as stdout,addresses.open('w') as stderr:subprocess.run(cmd,cwd=ROOT,stdout=stdout,stderr=stderr,check=True)
+    result=campaign_score(raw,manifest);dump(OUT/'campaign-score.json',result);(OUT/'report.md').write_text(campaign_report(result))
+    state['status']=result['status'];state['screening']=result['screening'];write_state()
+    note('CAMPAIGN_RESULT',json.dumps(dict(status=result['status'],rows=result['rows'],pairs=result['pairs'],brackets=[{k:x[k] for k in ['layout','phase','mode','mean_delta_ns','ci95_delta_ns','absolute_bound_ns','passed']} for x in result['brackets']])))
+    files={name:(OUT/name).read_text() for name in ['campaign.csv','campaign-addresses.log','campaign-manifest.json','campaign-score.json','environment.json','identities.json','results.json','report.md']}
+    for path in (OUT/'correctness').glob('*.log'):files[str(path.relative_to(OUT))]=path.read_text()
+    packed=gzip.compress(json.dumps(files,separators=(',',':')).encode(),mtime=0);encoded=base64.b64encode(packed).decode()
+    note('CAMPAIGN_EVIDENCE_BEGIN',hashlib.sha256(packed).hexdigest(),len(packed))
+    for offset in range(0,len(encoded),1000):note('CAMPAIGN_EVIDENCE_DATA',encoded[offset:offset+1000])
+    note('CAMPAIGN_EVIDENCE_END')
+    return result['all_brackets_passed']
+
 try:
     if subprocess.run(['git','cat-file','-e',PIN+'^{commit}'],cwd=ROOT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode:
         run(['git','fetch','--no-tags','--depth=1','origin',PIN],OUT/'logs/source-fetch.log')
@@ -137,6 +223,8 @@ try:
     assert all(text_ids['A/'+x]==text_ids['B/'+x] for x in ['deflate.o','trees.o','deflate_medium.o']);dump(OUT/'aa-object-text-identities.json',text_ids)
     cal_aa=driver('calibrate.c','calibrate-aa',[base,aa]);cpu=max(os.sched_getaffinity(0));os.sched_setaffinity(0,{cpu});state['cpu']=cpu
     dump(OUT/'preregister.json',dict(AA_gate='Both cells abs(mean of 12 chronological block paired means)+2.201*SEM <=100 ns, no exclusions; first/pre-timing/post-timing checkpoints must all pass',AA_source=str(TOOLS/'calibrate.c'),AA_source_sha256=sha(TOOLS/'calibrate.c'),cpu=cpu,processes=capture(['ps','-eo','pid,etime,pcpu,comm']),batch='128 operations, 12 blocks x20 pairs per calibration cell; end-to-end 6 blocks x10 pairs, 128/4/1 operations by size',comparisons='Baseline-stock; baseline-v1/v2/v3; direct candidate-stock tiny. Arm order alternates by pair/block.',warmup='64 reset+finish cycles per arm, default allocator; no tuning',meaningful_ordinary_long_regression='1% upper 95% paired ratio bound',tiny_parity='Direct candidate-stock lower 95% B-A bound >=-100 ns, level 6 and 64-byte cells; report actual intervals',source_pins=expected))
+    if args.candidate_campaign_only:
+        sys.exit(0 if candidate_campaign(base,aa) else 2)
     if args.controls_only:
         # One fixed battery; never stop early on a failed gate or retry a mode.
         import base64,gzip
