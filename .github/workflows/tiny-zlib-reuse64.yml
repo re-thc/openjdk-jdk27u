@@ -1,0 +1,57 @@
+name: Fixed physical ng1 ng6 reuse64
+on:
+  push:
+    branches: [diagnostic/tiny-zlib-order-gate-20261015]
+    paths:
+      - .github/scripts/level-study/reuse64-*
+      - .github/workflows/tiny-zlib-reuse64.yml
+permissions:
+  contents: read
+concurrency:
+  group: reuse64-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  fixed-reuse64:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: production
+          fetch-depth: 0
+          sparse-checkout: |
+            .github/scripts/level-study
+            .github/workflows
+            src/java.base/share/native/libzip
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 9870d54525f8f5a1315da6f2f9b289fb535e26a3
+          path: corpora
+          sparse-checkout: |
+            src/java.base/share/classes/java/util
+            src/hotspot/share/runtime
+            doc
+          persist-credentials: false
+      - name: Compiler prerequisites
+        run: |
+          if ! command -v gcc-14 >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y gcc-14 make python3
+          fi
+      - name: Execute one fixed approved reuse64 experiment
+        run: python3 production/.github/scripts/level-study/reuse64-study.py --root production --corpora corpora --out validation/reuse64 --execute-once
+      - name: Read and retain saved evidence only
+        if: always()
+        run: |
+          python3 production/.github/scripts/level-study/reuse64-score.py --export-local validation/reuse64
+          if test -f validation/reuse64/REPORT.md; then
+            cat validation/reuse64/REPORT.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: always()
+        with:
+          name: zlib-reuse64-evidence-${{ github.run_id }}
+          path: validation/reuse64
+          retention-days: 90
+          if-no-files-found: error
