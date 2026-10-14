@@ -233,6 +233,7 @@ def main():
     comparison = None
     if result['passed']:
         run(['bash', str(HERE / 'build.sh'), 'candidate'], 'build-candidate.log')
+        assert manifest(BASE) == frozen, 'baseline changed during candidate build'
         candidate_frozen = manifest(CANDIDATE)
         save('candidate-manifest-before.json', candidate_frozen)
         changed = [name for name in sorted(set(frozen) | set(candidate_frozen))

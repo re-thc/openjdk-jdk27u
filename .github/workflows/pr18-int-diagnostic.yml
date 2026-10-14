@@ -12,21 +12,18 @@ jobs:
   diagnostic:
     runs-on: ubuntu-26.04
     timeout-minutes: 90
-    env:
-      DIAGNOSTIC_ROOT: /tmp/pr18-int
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           sparse-checkout: diagnostics/pr18-int
+      - name: Select and record disk-backed runner scratch space
+        shell: bash
+        run: python3 diagnostics/pr18-int/filesystem.py select-scratch
       - name: Install fixed prerequisites
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p "$DIAGNOSTIC_ROOT/boot" "$DIAGNOSTIC_ROOT/mold" "$DIAGNOSTIC_ROOT/jmh" "$DIAGNOSTIC_ROOT/benchmark" "$DIAGNOSTIC_ROOT/evidence"
-          df -h / > "$DIAGNOSTIC_ROOT/evidence/disk-before.txt"
-          # These SDKs are unused by this JDK build on the disposable hosted runner.
-          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/share/swift
-          df -h / > "$DIAGNOSTIC_ROOT/evidence/disk-after.txt"
           sudo apt-get update
           sudo apt-get install -y gcc-16 g++-16 autoconf make unzip libasound2-dev libcups2-dev libfontconfig1-dev libx11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev
           curl -fL --retry 2 https://download.java.net/java/GA/jdk27/55ce5470a6294008af0057ff4626d0e5/35/GPL/openjdk-27_linux-x64_bin.tar.gz -o "$DIAGNOSTIC_ROOT/boot.tar.gz"

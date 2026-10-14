@@ -7,6 +7,19 @@ source_dir=$root/source
 mkdir -p "$root/evidence" "$root/images"
 export PATH="$root/mold/bin:$PATH"
 export CC=gcc-16 CXX=g++-16
+ct_source=$source_dir/build/diagnostic/support/symbols/ct.sym
+ct_target=$source_dir/build/diagnostic/support/modules_libs/jdk.compiler/ct.sym
+record_failure() {
+  local failure_status=${1:-$?}
+  if [[ $failure_status != 0 ]]; then
+    python3 "$here/filesystem.py" "build-$kind-failure" "$ct_source" "$ct_target" "$root/images" || true
+    if [[ -d $source_dir/build/diagnostic/make-support/failure-logs ]]; then
+      cp -a "$source_dir/build/diagnostic/make-support/failure-logs" "$root/evidence/failure-logs-$kind" || true
+    fi
+  fi
+  return "$failure_status"
+}
+trap record_failure EXIT
 if [[ $kind == base ]]; then
   git clone --depth=1 --no-tags --filter=blob:none --no-checkout https://github.com/re-thc/openjdk-jdk27u "$source_dir"
   git -C "$source_dir" fetch --depth=1 --no-tags origin 6d264328aefdc3ceff659360ead6567a8e36190c
@@ -17,8 +30,13 @@ if [[ $kind == base ]]; then
     --disable-jvm-feature-epsilongc --disable-jvm-feature-parallelgc --disable-jvm-feature-shenandoahgc \
     --with-boot-jdk="$root/boot" --with-debug-level=fastdebug --with-jobs=4 \
     --with-version-opt=port-audit --with-version-build=1 --with-extra-ldflags=-fuse-ld=mold
-  make CONF=diagnostic JOBS=4 BUILD_LIBJVM_handshake.cpp_CXXFLAGS=-Wno-error=nonnull images
-  cp -aL build/diagnostic/images/jdk "$root/images/base"
+  # This named copy rule occurs only for ct.sym in the pinned source.
+  test "$(git grep -l 'SetupCopyFiles, COPY_TO_LIBS' -- make)" = make/modules/jdk.compiler/Gendata.gmk
+  ct_copy="python3 $here/image_files.py ctsym $ct_source $ct_target"
+  python3 "$here/filesystem.py" before-build "$ct_source" "$ct_target" "$root/images"
+  make CONF=diagnostic JOBS=4 BUILD_LIBJVM_handshake.cpp_CXXFLAGS=-Wno-error=nonnull \
+    COPY_TO_LIBS_MACRO=diagnostic-ctsym "diagnostic-ctsym=$ct_copy" images
+  python3 "$here/image_files.py" freeze
   cp build/diagnostic/spec.gmk "$root/evidence/spec.gmk"
   cp build/diagnostic/configure.log "$root/evidence/configure.log"
   git rev-parse HEAD HEAD^{tree} > "$root/evidence/baseline-source.txt"
@@ -42,13 +60,11 @@ else
   test "$(git diff --name-only 6d264328aefdc3ceff659360ead6567a8e36190c 81ed5dfcfc5118b20857dceabe3571c37ea57827 -- src)" = "$file"
   cp "$file" "$root/evidence/baseline-vectornode.cpp"
   restore() { cp "$root/evidence/baseline-vectornode.cpp" "$file"; }
-  trap restore EXIT
+  trap 'failure_status=$?; restore; record_failure "$failure_status"' EXIT
   cp "$root/evidence/candidate-vectornode.cpp" "$file"
   git diff --binary > "$root/evidence/candidate-production.patch"
   make CONF=diagnostic JOBS=4 BUILD_LIBJVM_handshake.cpp_CXXFLAGS=-Wno-error=nonnull hotspot
-  cp -a "$root/images/base" "$root/images/candidate"
-  cp build/diagnostic/support/modules_libs/java.base/server/libjvm.so "$root/images/candidate/lib/server/libjvm.so"
-  cp build/diagnostic/support/modules_libs/java.base/server/libjvm.debuginfo "$root/images/candidate/lib/server/libjvm.debuginfo"
+  python3 "$here/image_files.py" candidate
   restore
   trap - EXIT
 fi
