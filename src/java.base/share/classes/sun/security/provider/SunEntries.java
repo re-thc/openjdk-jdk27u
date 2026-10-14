@@ -54,6 +54,7 @@ import static sun.security.util.SecurityProviderConstants.getAliases;
  *   SHAwithDSA, DSAWithSHA1, and the object
  *   identifier strings "OID.1.3.14.3.2.13", "OID.1.3.14.3.2.27" and
  *   "OID.1.2.840.10040.4.3".
+ *   All DSA signature schemes are verify-only.
  *
  * - SHA-2 is a set of message digest schemes described in FIPS 180-2.
  *   SHA-2 family of hash functions includes SHA-224, SHA-256, SHA-384,
@@ -67,7 +68,7 @@ import static sun.security.util.SecurityProviderConstants.getAliases;
  *   using SHA-3 family of digests with DSA. The associated object identifiers
  *   are "OID.2.16.840.1.101.3.4.3.[5|6|7|8]" respectively.
  *
- * - DSA is the key generation scheme as described in FIPS 186.
+ * - DSA is the key and parameter scheme as described in FIPS 186.
  *   Aliases for DSA include the OID strings "OID.1.3.14.3.2.12"
  *   and "OID.1.2.840.10040.4.1".
  *
@@ -122,17 +123,15 @@ public final class SunEntries {
          * Signature engines
          */
         attrs.clear();
-        String dsaKeyClasses = "java.security.interfaces.DSAPublicKey" +
-                "|java.security.interfaces.DSAPrivateKey";
-        attrs.put("SupportedKeyClasses", dsaKeyClasses);
+        // DSA is verify-only, so private keys go to other providers
+        attrs.put("SupportedKeyClasses",
+                "java.security.interfaces.DSAPublicKey");
         attrs.put("ImplementedIn", "Software");
 
-        attrs.put("KeySize", "1024"); // for NONE and SHA1 DSA signatures
+        attrs.put("KeySize", "1024"); // for SHA1 DSA signatures
 
         addWithAlias(p, "Signature", "SHA1withDSA",
                 "sun.security.provider.DSA$SHA1withDSA", attrs);
-        addWithAlias(p, "Signature", "NONEwithDSA",
-                "sun.security.provider.DSA$RawDSA", attrs);
 
         // for DSA signatures with 224/256-bit digests
         attrs.put("KeySize", "2048");
@@ -162,8 +161,6 @@ public final class SunEntries {
 
         add(p, "Signature", "SHA1withDSAinP1363Format",
                 "sun.security.provider.DSA$SHA1withDSAinP1363Format");
-        add(p, "Signature", "NONEwithDSAinP1363Format",
-                "sun.security.provider.DSA$RawDSAinP1363Format");
         add(p, "Signature", "SHA224withDSAinP1363Format",
                 "sun.security.provider.DSA$SHA224withDSAinP1363Format");
         add(p, "Signature", "SHA256withDSAinP1363Format",
@@ -195,12 +192,6 @@ public final class SunEntries {
          */
         attrs.clear();
         attrs.put("ImplementedIn", "Software");
-
-        String dsaKPGImplClass = "sun.security.provider.DSAKeyPairGenerator$";
-        dsaKPGImplClass += (useLegacyDSA? "Legacy" : "Current");
-        attrs.put("KeySize", "2048");
-        addWithAlias(p, "KeyPairGenerator", "DSA", dsaKPGImplClass, attrs);
-        attrs.remove("KeySize");
 
         add(p, "KeyPairGenerator", "ML-DSA", "sun.security.provider.ML_DSA_Impls$KPG", attrs);
         addWithAlias(p, "KeyPairGenerator", "ML-DSA-44", "sun.security.provider.ML_DSA_Impls$KPG2", attrs);
@@ -342,9 +333,6 @@ public final class SunEntries {
     private static final String PROP_EGD = "java.security.egd";
     // name of the *Security* property
     private static final String PROP_RNDSOURCE = "securerandom.source";
-
-    private static final boolean useLegacyDSA =
-        Boolean.getBoolean("jdk.security.legacyDSAKeyPairGenerator");
 
     static final String URL_DEV_RANDOM = "file:/dev/random";
     static final String URL_DEV_URANDOM = "file:/dev/urandom";

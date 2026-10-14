@@ -26,8 +26,8 @@
  * @bug 4114896
  * @summary Signature should support a sign() method that places the signature
  * in an already existing array.
- * @run main SignWithOutputBuffer DSS 512
- * @run main SignWithOutputBuffer SHA256withDSA 2048
+ * @run main SignWithOutputBuffer SHA256withECDSA 256
+ * @run main SignWithOutputBuffer SHA384withECDSA 384
  */
 
 import java.security.*;
@@ -38,7 +38,7 @@ public class SignWithOutputBuffer {
 
         int numBytes;
 
-        String kpgAlgorithm = "DSA";
+        String kpgAlgorithm = "EC";
         int keySize = Integer.parseInt(args[1]);
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance(kpgAlgorithm);
         kpGen.initialize(keySize);
@@ -49,8 +49,8 @@ public class SignWithOutputBuffer {
         sig.initSign(kp.getPrivate());
         sig.update((byte)0xff);
 
-        // Allocate buffer for signature. According to BSAFE, the size of the
-        // signature may be as many as 48 bytes.
+        // Allocate buffer for signature. The DER-encoded ECDSA signature
+        // may be as many as 104 bytes.
         // First, let's allocate a buffer that's too short.
         byte[] out = new byte[10];
         try {
@@ -63,7 +63,7 @@ public class SignWithOutputBuffer {
         sig = Signature.getInstance(signAlgo);
         sig.initSign(kp.getPrivate());
         sig.update((byte)0xff);
-        out = new byte[64];
+        out = new byte[104];
         numBytes = sig.sign(out, 0, out.length);
 
         System.out.println("Signature len="+numBytes);

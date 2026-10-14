@@ -67,7 +67,7 @@ public class Function {
         }
 
         sun.security.tools.keytool.Main.main(
-                ("-storetype jks -keystore ks -storepass changeit" +
+                ("-storetype pkcs12 -keystore ks -storepass changeit" +
                         " -keypass changeit -dname" +
                         " CN=RSA -alias r -genkeypair -keyalg rsa").split(" "));
 
