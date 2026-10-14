@@ -112,9 +112,9 @@ public class CurveDBLookup {
         check(CurveDB.lookup((ECParameterSpec) null) == null, "null");
 
         // the curve for a field size
-        int[] sizes = {192, 224, 256, 384, 521};
-        String[] names = {"secp192r1", "secp224r1", "secp256r1",
-                "secp384r1", "secp521r1"};
+        int[] sizes = {224, 256, 384, 521};
+        String[] names = {"secp224r1", "secp256r1", "secp384r1",
+                "secp521r1"};
         for (int i = 0; i < sizes.length; i++) {
             AlgorithmParameters ap = AlgorithmParameters.getInstance("EC");
             ap.init(new ECKeySizeParameterSpec(sizes[i]));

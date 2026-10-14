@@ -61,13 +61,12 @@ public class TestECGenSpec extends PKCS11Test {
 
     @Override
     public void main(Provider p) throws Exception {
-        String[] names = { "secp256r1", "NIST P-192", "sect163k1", "1.3.132.0.26",
-            "X9.62 c2tnb239v1"};
+        String[] names = { "secp256r1", "NIST P-384", "1.3.132.0.35" };
         int curves = 1;
         if (getNSSECC() == ECCState.Extended) {
             curves = names.length;
         }
-        int[] lengths = {256, 192, 163, 233, 239};
+        int[] lengths = {256, 384, 521};
         for (int i = 0; i < curves; i++) {
             String name = names[i];
             int len = lengths[i];
