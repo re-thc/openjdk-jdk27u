@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +24,7 @@
 
 /*
  * @test
- * @summary Test that the diagnostic command arguemnt parser works
+ * @summary Test the diagnostic command argument parser, including memory-size overflow
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -208,6 +209,25 @@ public class ParserTest {
         bi = bi.multiply(BigInteger.valueOf(1024));
         parse(name, bi.toString(), name + "=7g", args);
         parse(name, defaultValue, "", args);
+
+        BigInteger max = BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE);
+        // The parser stores an unsigned size; WhiteBox retains its signed rendering.
+        String renderedMax = Long.toString(max.longValue());
+        parse(name, renderedMax, name + "=" + max, args);
+        parse(name, renderedMax, name + "=" + max + "b", args);
+        String[] suffixes = {"kK", "mM", "gG"};
+        for (int i = 0; i < suffixes.length; i++) {
+            BigInteger multiplier = BigInteger.valueOf(1024).pow(i + 1);
+            BigInteger limit = max.divide(multiplier);
+            for (char suffix : suffixes[i].toCharArray()) {
+                parse(name, "0", name + "=0" + suffix, args);
+                parse(name, multiplier.toString(), name + "=1" + suffix, args);
+                parse(name, Long.toString(limit.multiply(multiplier).longValue()), name + "=" + limit + suffix, args);
+                shouldFail(name + "=" + limit.add(BigInteger.ONE) + suffix, args);
+                shouldFail(name + "=" + max + suffix, args);
+                shouldFail(name + "=-1" + suffix, args);
+            }
+        }
 
         //shouldFail(name + "=7gg", args); <---- should fail, doesn't
         //shouldFail(name + "=7t", args);  <----- should fail, doesn't
