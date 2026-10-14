@@ -1991,6 +1991,7 @@ public final class Matcher implements MatchResult {
                 from >= nativeQualifiedFrom && to <= nativeQualifiedTo;
         int result = engine.matchQualified(input, groups, from, to, start, mode,
                 transparentBounds, anchoringBounds, qualified);
+        boolean nativeWide = result >= 4;
         if (result >= 4) {
             if (!qualified) {
                 nativeQualifiedInput = input;
@@ -2015,7 +2016,8 @@ public final class Matcher implements MatchResult {
         if (result == 1) {
             first = groups[0];
             last = groups[1];
-            if (first == from && engine.prefersJavaEarlyMatch(last - first)) selectJavaMatch(true, mode);
+            if (first == from && (engine.prefersJavaEarlyMatch(last - first) ||
+                    nativeWide && engine.prefersJavaWidePositive(to - from))) selectJavaMatch(true, mode);
         }
         // These simple greedy tails preserve last on failure and have exact
         // end flags. General backtracking expressions need Java replay.

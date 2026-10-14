@@ -214,6 +214,19 @@ public final class Pcre2Regex {
         return length <= 64 && fastPlan == null &&
                 (JAVA_TIER == 2 && (fixedWidth || shortAlternatives) || JAVA_TIER == 1 && shortAlternatives);
     }
+    public boolean prefersJavaWidePositive(int length) {
+        if (JAVA_TIER != 2 || length > 32 || groupCount != 3) return false;
+        // Two flat disjoint captured runs have bounded Java work here. Keep
+        // native misses: their required suffix rejection wins on BMP input.
+        String source = preparation.source;
+        int begin = FastDigits.groupBody(source, 0);
+        if (begin < 0 || begin + 6 >= source.length() || !source.startsWith("[^", begin)) return false;
+        char literal = source.charAt(begin + 2);
+        if (!FastDigits.literal(literal) || !source.startsWith("]+)", begin + 3)) return false;
+        int second = FastDigits.groupBody(source, begin + 6);
+        return second >= 0 && second + 3 == source.length() && source.charAt(second) == literal
+                && source.startsWith("+)", second + 1);
+    }
 
     // An early result alone does not bound backtracking work: a.*b|a may
     // scan a long failed branch first. Limit this choice to short literal
@@ -490,6 +503,13 @@ public final class Pcre2Regex {
 
         @ForceInline
         private int candidate(String input, int at, int to) {
+            if (!prefix.isEmpty()) {
+                // A single-character search can reject a missing necessary
+                // prefix before the more expensive multi-character search.
+                at = to == input.length() ? input.indexOf(prefix.charAt(0), at)
+                        : input.indexOf(prefix.charAt(0), at, to);
+                if (at < 0) return -1;
+            }
             return to == input.length() ? input.indexOf(prefix, at)
                     : input.indexOf(prefix, at, to);
         }
