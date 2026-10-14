@@ -473,7 +473,9 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   case Interpreter::java_lang_ref_reference_get0
                                            : entry_point = generate_Reference_get_entry(); break;
   case Interpreter::java_lang_StringCoding_countPositives
-                                           : entry_point = generate_count_positives_entry(); break;
+                                           : entry_point = UseCompiler
+                                               ? Interpreter::entry_for_kind(Interpreter::zerolocals)
+                                               : generate_count_positives_entry(); break;
   case Interpreter::jdk_internal_util_SimdUTF_process
                                            : entry_point = generate_simdutf_entry(); break;
   case Interpreter::java_util_zip_CRC32_update

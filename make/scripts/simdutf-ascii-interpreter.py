@@ -18,8 +18,7 @@ os.sched_setaffinity(0, {cpu})
 common = ["-XX:+UseSerialGC", "-Xms1g", "-Xmx1g", "-XX:ActiveProcessorCount=2"]
 tiers = {"interp": ["-Xint"], "c1": ["-Xbatch", "-XX:TieredStopAtLevel=1"],
          "c2": ["-Xbatch", "-XX:-TieredCompilation", "-XX:CompileThreshold=100"]}
-modes = [("base", base, []), ("old-off", head, ["-XX:-UseSIMDUTFIntrinsics"]),
-         ("old-on", head, []), ("new-off", candidate, ["-XX:-UseSIMDUTFIntrinsics"]), ("new-on", candidate, [])]
+modes = [("base", base, []), ("old-on", head, []), ("new-off", candidate, ["-XX:-UseSIMDUTFIntrinsics"]), ("new-on", candidate, [])]
 print("ASCII_METADATA", json.dumps({"arch": platform.machine(), "cpu": cpu,
       "base": "6d264328aefdc3ceff659360ead6567a8e36190c",
       "control": "6473e580c7dd5aeef99f3397793ab952c8f72433",
@@ -28,9 +27,8 @@ for tier, flags in tiers.items():
   for mode, image, extra in modes:
     java = image / "bin/java"
     for study, methods, sizes in [
-        ("ascii", "asciiDecode|asciiCharsetDecode", "31,32,33,255,256,4096"),
-        ("malformed", "malformedCharsetDecode", "128,4096"),
-        ("latin1", "latin1Decode", "128,4096")]:
+        ("ascii", "asciiDecode|asciiCharsetDecode", "31,256,4096"),
+        ("malformed", "malformedCharsetDecode", "128,4096")]:
         label = study + "-" + mode + "-" + tier
         result = output / (label + ".json")
         command = [str(java), "-cp", cp, "org.openjdk.jmh.Main",
