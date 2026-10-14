@@ -45,7 +45,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.stream.Stream;
 import java.util.logging.*;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -83,12 +82,6 @@ public class HelloClasslist {
         Stream.of(helloWorld.split("([,x-z]{1,3})([\\s]*)"))
                 .map(String::toString)
                 .forEach(System.out::println);
-
-        new ArrayList<>(strings).stream()
-                .flatMap(str -> Stream.of(str))
-                .filter(str -> !str.isEmpty())
-                .findFirst();
-        strings.stream().allMatch(str -> !str.isEmpty());
 
         // Common concatenation patterns
         int i = args.length;
@@ -169,7 +162,6 @@ public class HelloClasslist {
         var obj = HelloClasslist.class.getMethod("staticMethod_L_L", Object.class).invoke(null, instance);
         HelloClasslist.class.getField("field").get(instance);
         HelloClasslist.class.getMethod("instanceMethod_I").invoke(instance);
-        HelloClasslist.class.getMethod("staticMethod_V").getAnnotations();
         MethodHandles.Lookup.ClassOption.class.getEnumConstants();
 
         // A selection of trivial and relatively common MH operations
