@@ -52,119 +52,6 @@ enum NamedGroup {
     // Elliptic Curves (RFC 4492)
     //
     // See sun.security.util.CurveDB for the OIDs
-    // NIST K-163
-
-    SECT163_K1(0x0001, "sect163k1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("sect163k1")),
-    SECT163_R1(0x0002, "sect163r1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("sect163r1")),
-
-    // NIST B-163
-    SECT163_R2(0x0003, "sect163r2",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("sect163r2")),
-    SECT193_R1(0x0004, "sect193r1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("sect193r1")),
-    SECT193_R2(0x0005, "sect193r2",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("sect193r2")),
-
-    // NIST K-233
-    SECT233_K1(0x0006, "sect233k1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("sect233k1")),
-
-    // NIST B-233
-    SECT233_R1(0x0007, "sect233r1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("sect233r1")),
-    SECT239_K1(0x0008, "sect239k1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("sect239k1")),
-
-    // NIST K-283
-    SECT283_K1(0x0009, "sect283k1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("sect283k1")),
-
-    // NIST B-283
-    SECT283_R1(0x000A, "sect283r1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("sect283r1")),
-
-    // NIST K-409
-    SECT409_K1(0x000B, "sect409k1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("sect409k1")),
-
-    // NIST B-409
-    SECT409_R1(0x000C, "sect409r1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("sect409r1")),
-
-    // NIST K-571
-    SECT571_K1(0x000D, "sect571k1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("sect571k1")),
-
-    // NIST B-571
-    SECT571_R1(0x000E, "sect571r1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("sect571r1")),
-    SECP160_K1(0x000F, "secp160k1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("secp160k1")),
-    SECP160_R1(0x0010, "secp160r1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("secp160r1")),
-    SECP160_R2(0x0011, "secp160r2",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("secp160r2")),
-    SECP192_K1(0x0012, "secp192k1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("secp192k1")),
-
-    // NIST P-192
-    SECP192_R1(0x0013, "secp192r1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("secp192r1")),
-    SECP224_K1(0x0014, "secp224k1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("secp224k1")),
-
-    // NIST P-224
-    SECP224_R1(0x0015, "secp224r1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("secp224r1")),
-    SECP256_K1(0x0016, "secp256k1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            CurveDB.lookup("secp256k1")),
-
     // NIST P-256
     SECP256_R1(0x0017, "secp256r1",
             NamedGroupSpec.NAMED_GROUP_ECDHE,
@@ -247,19 +134,7 @@ enum NamedGroup {
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
             Hybrid.SECP384R1_MLKEM1024,
-            HybridProvider.PROVIDER),
-
-    // Elliptic Curves (RFC 4492)
-    //
-    // arbitrary prime and characteristic-2 curves
-    ARBITRARY_PRIME(0xFF01, "arbitrary_explicit_prime_curves",
-            NamedGroupSpec.NAMED_GROUP_ARBITRARY,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            null),
-    ARBITRARY_CHAR2(0xFF02, "arbitrary_explicit_char2_curves",
-            NamedGroupSpec.NAMED_GROUP_ARBITRARY,
-            ProtocolVersion.PROTOCOLS_OF_12,
-            null);
+            HybridProvider.PROVIDER);
 
     final int id;               // hash + signature
     final String name;          // literal name
@@ -698,9 +573,6 @@ enum NamedGroup {
         // Post-Quantum Cryptography (PQC) KEM groups
         // Currently used for hybrid named groups
         NAMED_GROUP_KEM("KEM", KEMScheme.instance),
-
-        // arbitrary prime and curves (ECDHE)
-        NAMED_GROUP_ARBITRARY("EC", null),
 
         // Not predefined named group
         NAMED_GROUP_NONE("", null);
