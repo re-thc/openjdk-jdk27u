@@ -692,6 +692,8 @@ public class URLClassPath {
         // it has entries, so they cost about as much as the misses so far did.
         private volatile Set<String> directories;
         private int missesLeft;
+        // Whether the URLs of entries are made by the default jar handler
+        private final boolean defaultJarHandler;
         private static final JavaUtilZipFileAccess zipAccess =
                 SharedSecrets.getJavaUtilZipFileAccess();
         private static final String META_INF_VERSIONS = "META-INF/versions/";
@@ -705,6 +707,7 @@ public class URLClassPath {
         {
             super(newURL("jar", "", -1, url + "!/", jarHandler));
             csu = url;
+            defaultJarHandler = isDefaultJarHandler(getBaseURL());
             ensureOpen();
             missesLeft = jar.size();
         }
@@ -827,16 +830,23 @@ public class URLClassPath {
          */
         Resource createResource(final String name, final JarEntry entry) {
             // The URL is created on demand as defining a class doesn't need it.
-            // Only a name with a ':' can fail to make one, in which case the
-            // resource is not found.
-            if (name.indexOf(':') >= 0 && createURL(name, entry) == null) {
-                return null;
+            // With the default jar handler, only a name with a ':' can fail to
+            // make one, in which case the resource is not found.
+            final URL url;
+            if (!defaultJarHandler || name.indexOf(':') >= 0) {
+                url = createURL(name, entry);
+                if (url == null) {
+                    return null;
+                }
+            } else {
+                url = null;
             }
             return new Resource() {
                 private byte[] bytes;
                 private Exception dataError = null;
                 public String getName() { return name; }
-                public URL getURL() { return createURL(name, entry); }
+                public URL getURL()
+                    { return url != null ? url : createURL(name, entry); }
                 public URL getCodeSourceURL() { return csu; }
                 public CodeSource getCodeSource()
                     { return codeSourceFor(csu, getCodeSigners()); }
