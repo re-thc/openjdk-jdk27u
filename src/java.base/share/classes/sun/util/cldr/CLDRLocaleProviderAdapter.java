@@ -27,8 +27,8 @@ package sun.util.cldr;
 
 import java.text.spi.BreakIteratorProvider;
 import java.text.spi.CollatorProvider;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -52,8 +52,6 @@ import sun.util.locale.provider.LocaleProviderAdapter;
 public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
 
     private static final CLDRBaseLocaleDataMetaInfo baseMetaInfo = new CLDRBaseLocaleDataMetaInfo();
-    // Assumption: CLDR has only one non-Base module.
-    private final LocaleDataMetaInfo nonBaseMetaInfo;
 
     // parent locales map
     private static final Map<Locale, Locale> parentLocalesMap;
@@ -72,13 +70,6 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     }
 
     public CLDRLocaleProviderAdapter() {
-        for (LocaleDataMetaInfo ldmi : ServiceLoader.loadInstalled(LocaleDataMetaInfo.class)) {
-            if (ldmi.getType() == Type.CLDR) {
-                nonBaseMetaInfo = ldmi;
-                return;
-            }
-        }
-        nonBaseMetaInfo = null;
     }
 
     /**
@@ -151,9 +142,8 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     @Override
     public Locale[] getAvailableLocales() {
         if (AVAILABLE_LOCALES == null) {
-            AVAILABLE_LOCALES = createLanguageTagSet("AvailableLocales").stream()
-                .map(Locale::forLanguageTag)
-                .toArray(Locale[]::new);
+            AVAILABLE_LOCALES = LocaleProviderAdapter.toLocaleArray(
+                getLanguageTagSet("AvailableLocales"));
         }
         return AVAILABLE_LOCALES;
     }
@@ -166,28 +156,57 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     }
 
     @Override
-    protected Set<String> createLanguageTagSet(String category) {
+    public Set<String> getLanguageTagSet(String category) {
+        // All categories share the set of AvailableLocales, see below.
+        return super.getLanguageTagSet("AvailableLocales");
+    }
+
+    @Override
+    protected Set<String> createBaseLanguageTagSet(String category) {
         // Assume all categories support the same set as AvailableLocales
         // in CLDR adapter.
-        category = "AvailableLocales";
+        return Set.of(splitOnSpaces(baseMetaInfo.availableLanguageTags("AvailableLocales")));
+    }
 
-        // Directly call Base tags, as we know it's in the base module.
-        String supportedLocaleString = baseMetaInfo.availableLanguageTags(category);
-        String nonBaseTags = null;
+    @Override
+    protected Set<String> createAllLanguageTagSet(String category) {
+        String supportedLocaleString = baseMetaInfo.availableLanguageTags("AvailableLocales");
 
-        if (nonBaseMetaInfo != null) {
-            nonBaseTags = nonBaseMetaInfo.availableLanguageTags(category);
-        }
-        if (nonBaseTags != null) {
-            if (supportedLocaleString != null) {
-                supportedLocaleString += " " + nonBaseTags;
-            } else {
-                supportedLocaleString = nonBaseTags;
+        // Assumption: CLDR has only one non-Base module.
+        for (LocaleDataMetaInfo ldmi : ServiceLoader.loadInstalled(LocaleDataMetaInfo.class)) {
+            if (ldmi.getType() == Type.CLDR) {
+                String nonBaseTags = ldmi.availableLanguageTags("AvailableLocales");
+                if (nonBaseTags != null) {
+                    supportedLocaleString += " " + nonBaseTags;
+                }
+                break;
             }
         }
-        return supportedLocaleString != null ?
-                Set.of(supportedLocaleString.split("\s+")) :
-                Collections.emptySet();
+        return Set.of(splitOnSpaces(supportedLocaleString));
+    }
+
+    // Same as s.split(" +"), without the regular expression processing
+    // of the tags of all the CLDR locales.
+    private static String[] splitOnSpaces(String s) {
+        if (s.indexOf(' ') < 0) {
+            return new String[] { s };
+        }
+        List<String> parts = new ArrayList<>();
+        int start = 0;
+        int end;
+        while ((end = s.indexOf(' ', start)) >= 0) {
+            parts.add(s.substring(start, end));
+            start = end + 1;
+            while (start < s.length() && s.charAt(start) == ' ') {
+                start++;
+            }
+        }
+        parts.add(s.substring(start));
+        int n = parts.size();
+        while (n > 0 && parts.get(n - 1).isEmpty()) {
+            n--;
+        }
+        return parts.subList(0, n).toArray(new String[0]);
     }
 
     // Implementation of ResourceBundleBasedAdapter

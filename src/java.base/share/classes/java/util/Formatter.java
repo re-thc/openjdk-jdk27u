@@ -2034,24 +2034,34 @@ public final class Formatter implements Closeable, Flushable {
         return dfs;
     }
 
+    // Whether the locale has the symbols of the CLDR root locale, which are
+    // the ones used with no locale. The root, English and US locales do.
+    // Getting their DecimalFormatSymbols is slow the first time, so it is not
+    // done unless another provider could have different symbols for them.
+    private static boolean hasRootSymbols(Locale locale) {
+        return (locale.equals(Locale.US) || locale.equals(Locale.ENGLISH) || locale.equals(Locale.ROOT))
+                && LocaleProviderAdapter.getAdapterPreference().getFirst()
+                        == LocaleProviderAdapter.Type.CLDR;
+    }
+
     // Use zero from cached DecimalFormatSymbols.
     private static char getZero(Locale locale) {
-        return locale == null ? '0' : getDecimalFormatSymbols(locale).getZeroDigit();
+        return locale == null || hasRootSymbols(locale) ? '0' : getDecimalFormatSymbols(locale).getZeroDigit();
     }
 
     // Use decimal separator from cached DecimalFormatSymbols.
     private static char getDecimalSeparator(Locale locale) {
-        return locale == null ? '.' : getDecimalFormatSymbols(locale).getDecimalSeparator();
+        return locale == null || hasRootSymbols(locale) ? '.' : getDecimalFormatSymbols(locale).getDecimalSeparator();
     }
 
     // Use grouping separator from cached DecimalFormatSymbols.
     private static char getGroupingSeparator(Locale locale) {
-        return locale == null ? ',' : getDecimalFormatSymbols(locale).getGroupingSeparator();
+        return locale == null || hasRootSymbols(locale) ? ',' : getDecimalFormatSymbols(locale).getGroupingSeparator();
     }
 
     // Use minus sign from cached DecimalFormatSymbols.
     private static char getMinusSign(Locale locale) {
-        return locale == null ? '-' : getDecimalFormatSymbols(locale).getMinusSign();
+        return locale == null || hasRootSymbols(locale) ? '-' : getDecimalFormatSymbols(locale).getMinusSign();
     }
 
     private Appendable a;
