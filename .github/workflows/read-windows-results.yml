@@ -1,0 +1,41 @@
+name: Read qualified Windows measurements
+on:
+  push:
+    branches: [pr/zlib-ng-windows-results]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  results:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    steps:
+      - name: Download recorded measurements
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 38473227907 --repo re-thc/openjdk-jdk27u \
+            --name zip-platform-windows-x64-release --dir work/x64
+          gh run download 38473227907 --repo re-thc/openjdk-jdk27u \
+            --name zip-platform-windows-aarch64-release --dir work/aarch64
+      - name: Print CPU, source and benchmark results
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          for cpu in ('x64', 'aarch64'):
+              root = Path('work') / cpu
+              for name in ('cpu.txt', 'source.txt', 'jdk.txt'):
+                  for path in root.rglob(name):
+                      print(cpu, str(path), path.read_text())
+              for path in root.rglob('*.json'):
+                  if not path.name.endswith(('-checksum.json', '-zip.json')):
+                      continue
+                  tier, route, case = path.stem.split('-')
+                  for row in json.loads(path.read_text()):
+                      metric = row['primaryMetric']
+                      print('SCORE ' + json.dumps({'platform': cpu, 'tier': tier,
+                          'route': route, 'method': row['benchmark'],
+                          'params': row.get('params', {}), 'score': metric['score'],
+                          'error': metric['scoreError'], 'raw': metric['rawData']}))
+          PY
