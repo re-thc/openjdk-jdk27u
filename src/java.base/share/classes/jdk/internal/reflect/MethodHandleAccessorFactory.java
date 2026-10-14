@@ -183,26 +183,25 @@ final class MethodHandleAccessorFactory {
         try {
             // the declaring class of the field has been initialized
             var getter = JLIA.unreflectField(field, false);
-            var setter = isReadOnly ? null : JLIA.unreflectField(field, true);
             Class<?> type = field.getType();
             if (type == Boolean.TYPE) {
-                return MethodHandleBooleanFieldAccessorImpl.fieldAccessor(field, getter, setter, isReadOnly);
+                return MethodHandleBooleanFieldAccessorImpl.fieldAccessor(field, getter, isReadOnly);
             } else if (type == Byte.TYPE) {
-                return MethodHandleByteFieldAccessorImpl.fieldAccessor(field, getter, setter, isReadOnly);
+                return MethodHandleByteFieldAccessorImpl.fieldAccessor(field, getter, isReadOnly);
             } else if (type == Short.TYPE) {
-                return MethodHandleShortFieldAccessorImpl.fieldAccessor(field, getter, setter, isReadOnly);
+                return MethodHandleShortFieldAccessorImpl.fieldAccessor(field, getter, isReadOnly);
             } else if (type == Character.TYPE) {
-                return MethodHandleCharacterFieldAccessorImpl.fieldAccessor(field, getter, setter, isReadOnly);
+                return MethodHandleCharacterFieldAccessorImpl.fieldAccessor(field, getter, isReadOnly);
             } else if (type == Integer.TYPE) {
-                return MethodHandleIntegerFieldAccessorImpl.fieldAccessor(field, getter, setter, isReadOnly);
+                return MethodHandleIntegerFieldAccessorImpl.fieldAccessor(field, getter, isReadOnly);
             } else if (type == Long.TYPE) {
-                return MethodHandleLongFieldAccessorImpl.fieldAccessor(field, getter, setter, isReadOnly);
+                return MethodHandleLongFieldAccessorImpl.fieldAccessor(field, getter, isReadOnly);
             } else if (type == Float.TYPE) {
-                return MethodHandleFloatFieldAccessorImpl.fieldAccessor(field, getter, setter, isReadOnly);
+                return MethodHandleFloatFieldAccessorImpl.fieldAccessor(field, getter, isReadOnly);
             } else if (type == Double.TYPE) {
-                return MethodHandleDoubleFieldAccessorImpl.fieldAccessor(field, getter, setter, isReadOnly);
+                return MethodHandleDoubleFieldAccessorImpl.fieldAccessor(field, getter, isReadOnly);
             } else {
-                return MethodHandleObjectFieldAccessorImpl.fieldAccessor(field, getter, setter, isReadOnly);
+                return MethodHandleObjectFieldAccessorImpl.fieldAccessor(field, getter, isReadOnly);
             }
         } catch (IllegalAccessException e) {
             throw new InternalError(e);

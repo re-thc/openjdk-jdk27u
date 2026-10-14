@@ -189,6 +189,19 @@ public class ReflectionFactory {
         return langReflectAccess.newInstance(ctor, args, caller);
     }
 
+    /**
+     * Invokes the given static method, which has no parameters and is not
+     * caller-sensitive, via the VM's native reflection support. Access is not
+     * checked. Unlike {@link Method#invoke}, this does not create a method
+     * handle accessor, which is not worth it for a method invoked only once.
+     *
+     * @throws InvocationTargetException if the method throws an exception
+     * @throws NullPointerException if the method is not static
+     */
+    public Object invokeStatic(Method method) throws InvocationTargetException {
+        return DirectMethodHandleAccessor.nativeAccessor(method, false).invoke(null, null);
+    }
+
     //--------------------------------------------------------------------------
     //
     // Routines used by serialization

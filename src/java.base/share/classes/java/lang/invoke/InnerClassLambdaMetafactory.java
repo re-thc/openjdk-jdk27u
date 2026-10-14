@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.classfile.impl.DirectCodeBuilder;
 import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.misc.CDS;
 import jdk.internal.util.ClassFileDumper;
@@ -52,6 +53,7 @@ import java.lang.classfile.constantpool.ConstantPoolBuilder;
 
 import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.NESTMATE_CLASS;
+import static java.lang.invoke.MethodHandleNatives.Constants.REF_newInvokeSpecial;
 import static java.lang.invoke.MethodHandleNatives.Constants.STRONG_LOADER_LINK;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
@@ -68,6 +70,9 @@ import sun.invoke.util.Wrapper;
     private static final String LAMBDA_INSTANCE_FIELD = "LAMBDA_INSTANCE$";
     private static final @Stable String[] ARG_NAME_CACHE = {"arg$1", "arg$2", "arg$3", "arg$4", "arg$5", "arg$6", "arg$7", "arg$8"};
     private static final ClassDesc[] EMPTY_CLASSDESC_ARRAY = ConstantUtils.EMPTY_CLASSDESC;
+
+    // The generated methods have no branches or exception handlers, hence need no stack maps
+    private static final ClassFile CF_CONTEXT = ClassFile.of(StackMapsOption.DROP_STACK_MAPS);
 
     // For dumping generated classes to disk, for debugging purposes
     private static final ClassFileDumper lambdaProxyClassFileDumper;
@@ -86,16 +91,18 @@ import sun.invoke.util.Wrapper;
     }
 
     // See context values in AbstractValidatingLambdaMetafactory
-    private final ClassDesc implMethodClassDesc;     // Name of type containing implementation "CC"
     private final String implMethodName;             // Name of implementation method "impl"
-    private final MethodTypeDesc implMethodDesc;     // Type descriptor for implementation methods "(I)Ljava/lang/String;"
     private final MethodType constructorType;        // Generated class constructor type "(CC)void"
-    private final MethodTypeDesc constructorTypeDesc;// Type descriptor for the generated class constructor type "(CC)void"
-    private final ClassDesc[] argDescs;              // Type descriptors for the constructor arguments
-    private final String lambdaClassName;            // Generated name for the generated class "X$$Lambda$1"
-    private final ConstantPoolBuilder pool = ConstantPoolBuilder.of();
-    private final ClassEntry lambdaClassEntry;       // Class entry for the generated class "X$$Lambda$1"
     private final boolean useImplMethodHandle;       // use MethodHandle invocation instead of symbolic bytecode invocation
+
+    // Only needed when the class is generated, rather than loaded from the CDS archive; see initClassGeneration()
+    private ClassDesc implMethodClassDesc;           // Name of type containing implementation "CC"
+    private MethodTypeDesc implMethodDesc;           // Type descriptor for implementation methods "(I)Ljava/lang/String;"
+    private MethodTypeDesc constructorTypeDesc;      // Type descriptor for the generated class constructor type "(CC)void"
+    private ClassDesc[] argDescs;                    // Type descriptors for the constructor arguments
+    private String lambdaClassName;                  // Generated name for the generated class "X$$Lambda$1"
+    private ConstantPoolBuilder pool;
+    private ClassEntry lambdaClassEntry;             // Class entry for the generated class "X$$Lambda$1"
 
     /**
      * General meta-factory constructor, supporting both standard cases and
@@ -147,12 +154,8 @@ import sun.invoke.util.Wrapper;
         super(caller, factoryType, interfaceMethodName, interfaceMethodType,
               implementation, dynamicMethodType,
               isSerializable, altInterfaces, altMethods);
-        implMethodClassDesc = implClassDesc(implClass);
         implMethodName = implInfo.getName();
-        implMethodDesc = methodDesc(implInfo.getMethodType());
         constructorType = factoryType.changeReturnType(Void.TYPE);
-        lambdaClassName = lambdaClassName(targetClass);
-        lambdaClassEntry = pool.classEntry(ConstantUtils.internalNameToDesc(lambdaClassName));
         // If the target class invokes a protected method inherited from a
         // superclass in a different package, or does 'invokespecial', the
         // lambda class has no access to the resolved method, or does
@@ -164,9 +167,15 @@ import sun.invoke.util.Wrapper;
                                !VerifyAccess.isSamePackage(targetClass, implInfo.getDeclaringClass())) ||
                                implKind == MethodHandleInfo.REF_invokeSpecial ||
                                implKind == MethodHandleInfo.REF_invokeStatic && implClass.isHidden();
+    }
+
+    private void initClassGeneration() {
+        implMethodClassDesc = implClassDesc(implClass);
+        implMethodDesc = methodDesc(implInfo.getMethodType());
+        lambdaClassName = lambdaClassName(targetClass);
+        pool = ConstantPoolBuilder.of();
+        lambdaClassEntry = pool.classEntry(ConstantUtils.internalNameToDesc(lambdaClassName));
         int parameterCount = factoryType.parameterCount();
-        ClassDesc[] argDescs;
-        MethodTypeDesc constructorTypeDesc;
         if (parameterCount > 0) {
             argDescs = new ClassDesc[parameterCount];
             for (int i = 0; i < parameterCount; i++) {
@@ -177,8 +186,6 @@ import sun.invoke.util.Wrapper;
             argDescs = EMPTY_CLASSDESC_ARRAY;
             constructorTypeDesc = MTD_void;
         }
-        this.argDescs = argDescs;
-        this.constructorTypeDesc = constructorTypeDesc;
     }
 
     private static String argName(int i) {
@@ -222,13 +229,15 @@ import sun.invoke.util.Wrapper;
             }
         } else {
             try {
-                MethodHandle mh = caller.findConstructor(innerClass, constructorType);
+                MemberName ctor = caller.resolveOrFail(REF_newInvokeSpecial, innerClass, INIT_NAME, constructorType);
+                // The inner class implements the interface, so this has the factory type
+                MethodHandle mh = DirectMethodHandle.makeAllocator(innerClass, ctor, factoryType);
                 if (factoryType.parameterCount() == 0) {
                     // In the case of a non-capturing lambda, we optimize linkage by pre-computing a single instance
                     Object inst = mh.invokeBasic();
                     return new ConstantCallSite(MethodHandles.constant(interfaceClass, inst));
                 } else {
-                    return new ConstantCallSite(mh.asType(factoryType));
+                    return new ConstantCallSite(mh);
                 }
             } catch (ReflectiveOperationException e) {
                 throw new LambdaConversionException("Exception finding constructor", e);
@@ -291,6 +300,7 @@ import sun.invoke.util.Wrapper;
      * is not found
      */
     private Class<?> generateInnerClass() throws LambdaConversionException {
+        initClassGeneration();
         List<ClassDesc> interfaces;
         ClassDesc interfaceDesc = classDesc(interfaceClass);
         boolean accidentallySerializable = !isSerializable && Serializable.class.isAssignableFrom(interfaceClass);
@@ -307,7 +317,7 @@ import sun.invoke.util.Wrapper;
             interfaces = List.copyOf(itfs);
         }
         final boolean finalAccidentallySerializable = accidentallySerializable;
-        final byte[] classBytes = ClassFile.of().build(lambdaClassEntry, pool, new Consumer<ClassBuilder>() {
+        final byte[] classBytes = CF_CONTEXT.build(lambdaClassEntry, pool, new Consumer<ClassBuilder>() {
             @Override
             public void accept(ClassBuilder clb) {
                 clb.withFlags(ACC_SUPER | ACC_FINAL | ACC_SYNTHETIC)
@@ -378,6 +388,7 @@ import sun.invoke.util.Wrapper;
                    .invokespecial(pool.methodRefEntry(lambdaClassEntry, pool.nameAndTypeEntry(INIT_NAME, constructorTypeDesc)))
                    .putstatic(pool.fieldRefEntry(lambdaClassEntry, pool.nameAndTypeEntry(LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor)))
                    .return_();
+                DirectCodeBuilder.withMaxs(cob, 2, 0); // new, dup
             }
         });
     }
@@ -400,6 +411,10 @@ import sun.invoke.util.Wrapper;
                         cob.aload(0)
                            .invokespecial(CD_Object, INIT_NAME, MTD_void)
                            .return_();
+                        // this and a captured argument, which takes 2 slots if it is a long or double
+                        int slotCount = factoryType.parameterSlotCount();
+                        int maxStack = parameterCount == 0 ? 1 : slotCount > parameterCount ? 3 : 2;
+                        DirectCodeBuilder.withMaxs(cob, maxStack, 1 + slotCount);
                     }
                 });
     }
@@ -456,6 +471,11 @@ import sun.invoke.util.Wrapper;
                         cob.invokespecial(SerializationSupport.CD_SerializedLambda, INIT_NAME,
                                           SerializationSupport.MTD_CTOR_SERIALIZED_LAMBDA)
                            .areturn();
+                        // new, dup and the 10 constructor arguments, the last being the array; storing
+                        // a captured argument also has the array, index and value (2 slots if long or double)
+                        int slotCount = factoryType.parameterSlotCount();
+                        int maxStack = argDescs.length == 0 ? 12 : slotCount > argDescs.length ? 16 : 15;
+                        DirectCodeBuilder.withMaxs(cob, maxStack, 1);
                     }
                 });
     }
@@ -479,6 +499,7 @@ import sun.invoke.util.Wrapper;
                                         .invokespecial(cp.methodRefEntry(nseCE, cp.nameAndTypeEntry(INIT_NAME,
                                                 SerializationSupport.MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION)))
                                         .athrow();
+                                DirectCodeBuilder.withMaxs(cob, 3, 2); // this and the stream argument
                             }
                         });
             }
@@ -530,8 +551,40 @@ import sun.invoke.util.Wrapper;
                 Class<?> samReturnClass = methodType.returnType();
                 TypeConvertingMethodAdapter.convertType(cob, implReturnClass, samReturnClass, samReturnClass);
                 cob.return_(TypeKind.from(samReturnClass));
+                DirectCodeBuilder.withMaxs(cob, forwardingMaxStack(methodType), 1 + methodType.parameterSlotCount());
             }
         };
+    }
+
+    /**
+     * The operand stack depth needed by the code of {@link #forwardingMethod}: the
+     * captured and converted arguments are all on the stack for the invocation, and
+     * only the result of the invocation is on the stack for its conversion.
+     */
+    private int forwardingMaxStack(MethodType methodType) {
+        // new and dup for a constructor, the method handle to invoke, the captured arguments
+        int depth = (implKind == MethodHandleInfo.REF_newInvokeSpecial ? 2 : 0)
+                  + (useImplMethodHandle ? 1 : 0) + factoryType.parameterSlotCount();
+        int captureArity = factoryType.parameterCount();
+        int maxStack = depth;
+        for (int i = 0; i < methodType.parameterCount(); i++) {
+            Class<?> implParamType = implMethodType.parameterType(captureArity + i);
+            maxStack = Math.max(maxStack, depth + conversionSlots(methodType.parameterType(i), implParamType));
+            depth += Wrapper.forBasicType(implParamType).stackSlots();
+        }
+        return Math.max(maxStack, conversionSlots(implMethodType.returnType(), methodType.returnType()));
+    }
+
+    /**
+     * The most stack slots that {@link TypeConvertingMethodAdapter#convertType} takes
+     * for converting a value from one type to another.
+     */
+    private static int conversionSlots(Class<?> from, Class<?> to) {
+        // a primitive is widened to long or double before it is boxed to Long or Double
+        if (from.isPrimitive() && (to == Long.class || to == Double.class)) {
+            return 2;
+        }
+        return Math.max(Wrapper.forBasicType(from).stackSlots(), Wrapper.forBasicType(to).stackSlots());
     }
 
     private void convertArgumentTypes(CodeBuilder cob, MethodType samType) {

@@ -30,7 +30,6 @@ import java.lang.StackWalker.Option;
 import java.lang.StackWalker.StackFrame;
 
 import java.lang.annotation.Native;
-import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
@@ -537,7 +536,7 @@ final class StackStreamFactory {
         protected void initFrameBuffer() {
             this.frameBuffer = walker.hasOption(Option.DROP_METHOD_INFO)
                                     ? new ClassFrameBuffer(walker, getNextBatchSize())
-                                    : new StackFrameBuffer<>(StackFrameInfo.class, walker, getNextBatchSize());
+                                    : new StackFrameInfoBuffer(walker, getNextBatchSize());
         }
 
         @Override
@@ -604,20 +603,17 @@ final class StackStreamFactory {
         }
     }
 
-    static class StackFrameBuffer<T extends ClassFrameInfo> extends FrameBuffer<T> {
+    /*
+     * Buffer for the frame objects filled in by the VM.  The frame objects
+     * are allocated via bytecode invocation instead of via core reflection
+     * to minimize the overhead.
+     */
+    abstract static class StackFrameBuffer<T extends ClassFrameInfo> extends FrameBuffer<T> {
         final StackWalker walker;
-        private final Class<T> type;
-        private final Constructor<T> ctor;
         private T[] stackFrames;
-        StackFrameBuffer(Class<T> type, StackWalker walker, int initialBatchSize) {
+        StackFrameBuffer(StackWalker walker, int initialBatchSize) {
             super(initialBatchSize);
             this.walker = walker;
-            this.type = type;
-            try {
-                this.ctor = type.getDeclaredConstructor(StackWalker.class);
-            } catch (NoSuchMethodException e) {
-                throw new InternalError(e);
-            }
             this.stackFrames = fill(allocateArray(initialBatchSize), START_POS, initialBatchSize);
         }
 
@@ -626,18 +622,13 @@ final class StackStreamFactory {
             return stackFrames;
         }
 
-        @SuppressWarnings("unchecked")
-        T[] allocateArray(int size) {
-            return (T[])Array.newInstance(type, size);
-        }
+        abstract T[] allocateArray(int size);
+
+        abstract T newFrameInfo();
 
         T[] fill(T[] array, int startIndex, int size) {
-            try {
-                for (int i = startIndex; i < size; i++) {
-                    array[i] = ctor.newInstance(walker);
-                }
-            } catch (ReflectiveOperationException e) {
-                throw new InternalError(e);
+            for (int i = startIndex; i < size; i++) {
+                array[i] = newFrameInfo();
             }
             return array;
         }
@@ -678,12 +669,11 @@ final class StackStreamFactory {
     }
 
     /*
-     * Buffer for ClassFrameInfo.  It allocates ClassFrameInfo via bytecode
-     * invocation instead of via core reflection to minimize the overhead.
+     * Buffer for ClassFrameInfo.
      */
     static class ClassFrameBuffer extends StackFrameBuffer<ClassFrameInfo> {
         ClassFrameBuffer(StackWalker walker, int initialBatchSize) {
-            super(ClassFrameInfo.class, walker, initialBatchSize);
+            super(walker, initialBatchSize);
         }
 
         @Override
@@ -692,11 +682,46 @@ final class StackStreamFactory {
         }
 
         @Override
-        ClassFrameInfo[] fill(ClassFrameInfo[] array, int startIndex, int size) {
-            for (int i = startIndex; i < size; i++) {
-                array[i] = new ClassFrameInfo(walker);
-            }
-            return array;
+        ClassFrameInfo newFrameInfo() {
+            return new ClassFrameInfo(walker);
+        }
+    }
+
+    /*
+     * Buffer for StackFrameInfo.
+     */
+    static class StackFrameInfoBuffer extends StackFrameBuffer<StackFrameInfo> {
+        StackFrameInfoBuffer(StackWalker walker, int initialBatchSize) {
+            super(walker, initialBatchSize);
+        }
+
+        @Override
+        StackFrameInfo[] allocateArray(int size) {
+            return new StackFrameInfo[size];
+        }
+
+        @Override
+        StackFrameInfo newFrameInfo() {
+            return new StackFrameInfo(walker);
+        }
+    }
+
+    /*
+     * Buffer for LiveStackFrameInfo.
+     */
+    static class LiveStackFrameInfoBuffer extends StackFrameBuffer<LiveStackFrameInfo> {
+        LiveStackFrameInfoBuffer(StackWalker walker, int initialBatchSize) {
+            super(walker, initialBatchSize);
+        }
+
+        @Override
+        LiveStackFrameInfo[] allocateArray(int size) {
+            return new LiveStackFrameInfo[size];
+        }
+
+        @Override
+        LiveStackFrameInfo newFrameInfo() {
+            return new LiveStackFrameInfo(walker);
         }
     }
 
@@ -792,7 +817,7 @@ final class StackStreamFactory {
 
         @Override
         protected void initFrameBuffer() {
-            this.frameBuffer = new StackFrameBuffer<>(LiveStackFrameInfo.class, walker, getNextBatchSize());
+            this.frameBuffer = new LiveStackFrameInfoBuffer(walker, getNextBatchSize());
         }
     }
 

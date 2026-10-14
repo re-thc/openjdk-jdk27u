@@ -51,8 +51,8 @@ import java.lang.reflect.Field;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -297,8 +297,10 @@ abstract class MethodHandleImpl {
         MethodType midType = target.type().basicType();
         BoundMethodHandle mh = target.rebind();
 
-        // Match each unique conversion to the positions at which it is to be applied
-        HashMap<Object, int[]> convSpecMap = HashMap.newHashMap(convCount);
+        // Match each unique conversion to the positions at which it is to be applied.
+        // Iterate in argument order: an identity hash order would give the same
+        // conversions a different chain of LambdaForms from one run to the next.
+        LinkedHashMap<Object, int[]> convSpecMap = LinkedHashMap.newLinkedHashMap(convCount);
         for (int i = 0; i < convSpecs.length - MH_RECEIVER_OFFSET; i++) {
             Object convSpec = convSpecs[i];
             if (convSpec == null) continue;

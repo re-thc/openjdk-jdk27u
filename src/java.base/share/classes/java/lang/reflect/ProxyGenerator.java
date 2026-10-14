@@ -40,6 +40,8 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 
+import jdk.internal.classfile.impl.DirectCodeBuilder;
+import jdk.internal.classfile.impl.Util;
 import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
@@ -545,12 +547,14 @@ final class ProxyGenerator {
      * Generate the constructor method for the proxy class.
      */
     private void generateConstructor(ClassBuilder clb) {
-        clb.withMethodBody(INIT_NAME, MTD_void_InvocationHandler, ACC_PUBLIC, cob -> cob
-               .aload(0)
+        clb.withMethodBody(INIT_NAME, MTD_void_InvocationHandler, ACC_PUBLIC, cob -> {
+            cob.aload(0)
                .aload(1)
                .invokespecial(cp.methodRefEntry(proxyCE,
                    cp.nameAndTypeEntry(INIT_NAME, MTD_void_InvocationHandler)))
-               .return_());
+               .return_();
+            DirectCodeBuilder.withMaxs(cob, 2, 2); // this and the handler
+        });
     }
 
     /**
@@ -592,7 +596,10 @@ final class ProxyGenerator {
             cob.with(StackMapTableAttribute.of(List.of(
                        StackMapFrameInfo.of(c1, classLoaderLocal, throwableStack),
                        StackMapFrameInfo.of(c2, classLoaderLocal, throwableStack))));
-
+            // The deepest point is the Class.forName call when initializing a field: the
+            // Class and name for getMethod, the array twice, the index, and the class
+            // name, false and the class loader for forName
+            DirectCodeBuilder.withMaxs(cob, 8, 1);
         });
     }
 
@@ -630,6 +637,7 @@ final class ProxyGenerator {
                                        StackMapFrameInfo.of(failLabel,
                                                List.of(StackMapFrameInfo.ObjectVerificationTypeInfo.of(mhl)),
                                                List.of()))));
+                            DirectCodeBuilder.withMaxs(cob, 3, 1); // new, dup and the lookup argument
                         }));
     }
 
@@ -730,6 +738,12 @@ final class ProxyGenerator {
                                     StackMapFrameInfo.of(c1, List.of(), throwableStack),
                                     StackMapFrameInfo.of(c2, List.of(), throwableStack))));
                         }
+                        // The handler, this, Method and the arguments array (or null) are on the
+                        // stack; storing an argument adds the array, index and argument (2 slots
+                        // if long or double). The exception handlers and the result need less.
+                        int paramSlots = Util.parameterSlots(desc);
+                        int maxStack = parameterTypes.length == 0 ? 4 : paramSlots > parameterTypes.length ? 8 : 7;
+                        DirectCodeBuilder.withMaxs(cob, maxStack, 1 + paramSlots);
                     }));
         }
 
@@ -774,7 +788,9 @@ final class ProxyGenerator {
          */
         private void codeFieldInitialization(CodeBuilder cob) {
             var cp = cob.constantPool();
-            codeClassForName(cob, fromClass);
+            // fromClass is a proxy interface or Object. Either way it is already
+            // resolved by this class, so there is no need to look it up by name.
+            cob.ldc(cp.classEntry(binaryNameToDesc(fromClass.getName())));
 
             Class<?>[] parameterTypes = parameterTypes();
             cob.ldc(method.getName())
