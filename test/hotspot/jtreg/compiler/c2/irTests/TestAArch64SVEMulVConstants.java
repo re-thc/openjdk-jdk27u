@@ -152,6 +152,19 @@ public class TestAArch64SVEMulVConstants {
     @Test
     @IR(applyIfPlatform = {"aarch64", "true"},
         applyIfAnd = {"UseSVE", "> 0", "MaxVectorSize", "> 16"},
+        failOn = {"vmulI_sve"}, counts = {"\\bvaddImmI(?:_\\d+)?\\b", "1"}, phase = CompilePhase.MATCHING)
+    private static void testCommutedMultiply(int offset, int factor) {
+        IntVector broadcast = IntVector.broadcast(SPECIES, factor);
+        IntVector data = IntVector.fromArray(SPECIES, INT_A, offset);
+        IntVector left = data.mul(broadcast);
+        IntVector right = broadcast.mul(data);
+        left.lanewise(VectorOperators.XOR, right)
+            .lanewise(VectorOperators.XOR, data.add(42)).intoArray(INT_D1, offset);
+    }
+
+    @Test
+    @IR(applyIfPlatform = {"aarch64", "true"},
+        applyIfAnd = {"UseSVE", "> 0", "MaxVectorSize", "> 16"},
         counts = {"\\bvmla(?:_\\d+)?\\b", "1"}, phase = CompilePhase.MATCHING)
     private static void testMultiplyAdd(int offset, int factor) {
         IntVector broadcast = IntVector.broadcast(SPECIES, factor);
@@ -169,7 +182,8 @@ public class TestAArch64SVEMulVConstants {
         data.sub(data.mul(broadcast)).intoArray(INT_D1, offset);
     }
 
-    @Run(test = {"testByte", "testShort", "testInt", "testSingleUseBroadcast", "testSharedBroadcastAndData", "testMultiplyAdd", "testMultiplySubtract"})
+    @Run(test = {"testByte", "testShort", "testInt", "testSingleUseBroadcast", "testSharedBroadcastAndData",
+                 "testCommutedMultiply", "testMultiplyAdd", "testMultiplySubtract"})
     private void run(RunInfo info) {
         int cases = LENGTHS.length * OFFSETS.length * FACTORS.length;
         if (info.isWarmUp()) {
@@ -182,6 +196,7 @@ public class TestAArch64SVEMulVConstants {
             for (int i = 0; i < 10; i++) {
                 testSingleUseBroadcast(0, factor);
                 testSharedBroadcastAndData(0, factor);
+                testCommutedMultiply(0, factor);
                 testMultiplyAdd(0, factor);
                 testMultiplySubtract(0, factor);
             }
@@ -227,6 +242,10 @@ public class TestAArch64SVEMulVConstants {
         testMultiplyAdd(start, factor);
         for (int i = start; i < start + SPECIES.length(); i++) {
             Asserts.assertEquals(INT_D1[i], factor * INT_A[i] + INT_A[i]);
+        }
+        testCommutedMultiply(start, factor);
+        for (int i = start; i < start + SPECIES.length(); i++) {
+            Asserts.assertEquals(INT_D1[i], INT_A[i] + 42);
         }
         testMultiplySubtract(start, factor);
         for (int i = start; i < start + SPECIES.length(); i++) {

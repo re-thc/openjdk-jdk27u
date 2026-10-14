@@ -25,17 +25,20 @@
 package compiler.c2.irTests;
 
 import java.util.Arrays;
+import java.util.function.LongUnaryOperator;
 
 import compiler.lib.ir_framework.*;
 import jdk.incubator.vector.LongVector;
 import jdk.incubator.vector.VectorMask;
+import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 
 /*
  * @test
- * @summary Check four-way vector long multiplication, overflow and masked children
+ * @bug 8384963
+ * @summary Check vector long multiply reassociation, overflow and masked compound values
  * @requires vm.compiler2.enabled
  * @modules jdk.incubator.vector
  * @library /test/lib /
@@ -127,6 +130,33 @@ public class TestLongVectorMultiplyReassociation {
     }
 
     @Test
+    private static void testNegativeAndValue(int offset) {
+        LongVector value = LongVector.fromArray(SPECIES, A, offset).and(-2L);
+        value.mul(value).mul(value).mul(value).intoArray(V, 0);
+    }
+
+    @Test
+    private static void testMaskedAndValue(int offset, long bits) {
+        LongVector x = LongVector.fromArray(SPECIES, A, offset);
+        LongVector value = x.lanewise(VectorOperators.AND, 0xffff_ffffL, VectorMask.fromLong(SPECIES, bits));
+        value.mul(value).mul(value).mul(value).intoArray(V, 0);
+    }
+
+    @Test
+    private static void testMaskedUnsignedShiftValue(int offset, long bits) {
+        LongVector x = LongVector.fromArray(SPECIES, A, offset);
+        LongVector value = x.lanewise(VectorOperators.LSHR, 32, VectorMask.fromLong(SPECIES, bits));
+        value.mul(value).mul(value).mul(value).intoArray(V, 0);
+    }
+
+    @Test
+    private static void testMaskedSignedShiftValue(int offset, long bits) {
+        LongVector x = LongVector.fromArray(SPECIES, A, offset);
+        LongVector value = x.lanewise(VectorOperators.ASHR, 32, VectorMask.fromLong(SPECIES, bits));
+        value.mul(value).mul(value).mul(value).intoArray(V, 0);
+    }
+
+    @Test
     private static void testVectorDifferentLeaves(int offset) {
         LongVector x = LongVector.fromArray(SPECIES, A, offset);
         LongVector y = LongVector.fromArray(SPECIES, B, offset);
@@ -160,6 +190,13 @@ public class TestLongVectorMultiplyReassociation {
     }
 
     @Test
+    private static void testMaskedMiddle(int offset, long bits) {
+        LongVector x = LongVector.fromArray(SPECIES, A, offset);
+        VectorMask<Long> mask = VectorMask.fromLong(SPECIES, bits);
+        x.mul(x).mul(x, mask).mul(x).intoArray(V, 0);
+    }
+
+    @Test
     private static void testMaskedRoot(int offset, long bits) {
         LongVector x = LongVector.fromArray(SPECIES, A, offset);
         VectorMask<Long> mask = VectorMask.fromLong(SPECIES, bits);
@@ -174,8 +211,10 @@ public class TestLongVectorMultiplyReassociation {
     }
 
     @Run(test = {"testLoop", "testDifferentLeaves", "testVectorChain", "testVectorRightChain",
-                 "testCompoundValue", "testMaskedValue", "testVectorDifferentLeaves", "testTwoSquares", "testThreeFactors", "testFiveFactors",
-                 "testMaskedChild", "testMaskedRoot", "testTwoMaskedChildren"})
+                 "testCompoundValue", "testMaskedValue", "testNegativeAndValue", "testMaskedAndValue",
+                 "testMaskedUnsignedShiftValue", "testMaskedSignedShiftValue", "testVectorDifferentLeaves",
+                 "testTwoSquares", "testThreeFactors", "testFiveFactors",
+                 "testMaskedChild", "testMaskedMiddle", "testMaskedRoot", "testTwoMaskedChildren"})
     private void run(RunInfo info) {
         if (info.isWarmUp()) {
             check(iteration++ % (LENGTHS.length * 4), true);
@@ -213,6 +252,11 @@ public class TestLongVectorMultiplyReassociation {
                 long value = A[offset + lane] * B[offset + lane];
                 Asserts.assertEquals(V[lane], value * value * value * value);
             }
+            testNegativeAndValue(offset);
+            for (int lane = 0; lane < SPECIES.length(); lane++) {
+                long value = A[offset + lane] & -2L;
+                Asserts.assertEquals(V[lane], value * value * value * value);
+            }
             testVectorDifferentLeaves(offset);
             checkVector(offset, 3, true);
             testTwoSquares(offset);
@@ -231,7 +275,15 @@ public class TestLongVectorMultiplyReassociation {
                     long value = (bits & (1L << lane)) != 0 ? x * x : x;
                     Asserts.assertEquals(V[lane], value * value * value * value);
                 }
+                testMaskedAndValue(offset, bits);
+                checkMaskedValue(offset, bits, x -> x & 0xffff_ffffL);
+                testMaskedUnsignedShiftValue(offset, bits);
+                checkMaskedValue(offset, bits, x -> x >>> 32);
+                testMaskedSignedShiftValue(offset, bits);
+                checkMaskedValue(offset, bits, x -> x >> 32);
                 testMaskedChild(offset, bits);
+                checkMasked(offset, bits);
+                testMaskedMiddle(offset, bits);
                 checkMasked(offset, bits);
                 testMaskedRoot(offset, bits);
                 checkMasked(offset, bits);
@@ -252,6 +304,14 @@ public class TestLongVectorMultiplyReassociation {
                 expected *= B[offset + lane];
             }
             Asserts.assertEquals(V[lane], expected);
+        }
+    }
+
+    private static void checkMaskedValue(int offset, long bits, LongUnaryOperator operation) {
+        for (int lane = 0; lane < SPECIES.length(); lane++) {
+            long x = A[offset + lane];
+            long value = (bits & (1L << lane)) == 0 ? x : operation.applyAsLong(x);
+            Asserts.assertEquals(V[lane], value * value * value * value);
         }
     }
 
