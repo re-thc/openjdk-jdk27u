@@ -479,6 +479,10 @@ public final class UTF_8 extends Unicode {
 
         private CoderResult encodeArrayLoopSlow(CharBuffer src, char[] sa, int sp, int sl,
                                                 ByteBuffer dst, byte[] da, int dp, int dl) {
+            if (sp < sl && Character.isLowSurrogate(sa[sp])) {
+                updatePositions(src, sp, dst, dp);
+                return CoderResult.malformedForLength(1);
+            }
             boolean tryBulk = true;
             while (sp < sl) {
                 char c = sa[sp];
