@@ -39,6 +39,24 @@ public class Pcre2RegexUTF16 {
         Field backend=Pattern.class.getDeclaredField("pcre2Regex"); backend.setAccessible(true);
         Pattern p=Pattern.compile("([^x]+)(x+)"), ref=parser.newInstance(p.pattern(),0,false);
         Object owner=backend.get(p);
+        Field qualification=Matcher.class.getDeclaredField("nativeQualifiedInput"); qualification.setAccessible(true);
+        String qualified="\u0100".repeat(511)+"x\ud800";
+        Matcher reused=p.matcher(qualified).region(0,512);
+        if (!reused.find() || qualification.get(reused)!=qualified) throw new AssertionError("qualification missing");
+        if (!reused.reset().region(1,512).find() || qualification.get(reused)!=qualified) throw new AssertionError("subset invalidated qualification");
+        // Expanding into an excluded unit must requalify, without poisoning a
+        // subsequent return to the previously qualified opaque interval.
+        Matcher r=ref.matcher(qualified);
+        boolean av=reused.reset().find(), bv=r.find();
+        if (av!=bv || av && reused.end()!=r.end()) throw new AssertionError("expanded region");
+        if (!reused.reset().region(0,512).find()) throw new AssertionError("return to qualified region");
+        String replacement=new String("\u0100".repeat(511)+"x");
+        reused.reset(replacement);
+        if (qualification.get(reused)!=null) throw new AssertionError("new reset retained old input");
+        if (!reused.find() || qualification.get(reused)!=replacement) throw new AssertionError("new input qualification");
+        reused.reset(replacement);
+        if (qualification.get(reused)!=replacement) throw new AssertionError("same input reset discarded qualification");
+        for (int i=0;i<4;i++) { System.gc(); if(!reused.reset().find() || reused.end(2)!=512)throw new AssertionError("GC cached input"); }
         for (String input : new String[]{"\u0100".repeat(4095)+"x","\u0100".repeat(4096),"\u0100\ud800x",
                 "\u0100\udc00x","\u0100\ud83d\ude00x","\u0100\u2028x","\u0100\u2029x","latinxx"}) {
             Matcher a=p.matcher(input), b=ref.matcher(input);

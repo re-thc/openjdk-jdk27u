@@ -174,7 +174,7 @@ JNI_ENTRY(jint, RR_matchSafepoint(JNIEnv* env, jclass cls, jlong handle, jbyteAr
 #endif
 JNI_END
 
-JNI_ENTRY(jint, RR_match16Safepoint(JNIEnv* env, jclass cls, jlong handle, jstring input, jintArray state))
+JNI_ENTRY(jint, RR_match16Safepoint(JNIEnv* env, jclass cls, jlong handle, jstring input, jintArray state, jboolean qualified_bmp))
 #if INCLUDE_PCRE2_REGEX
   if (handle == 0) return -1;
   jint copy_state[70];
@@ -202,7 +202,9 @@ JNI_ENTRY(jint, RR_match16Safepoint(JNIEnv* env, jclass cls, jlong handle, jstri
     typeArrayOop bytes = java_lang_String::value(JNIHandles::resolve_non_null(input));
     // StringUTF16 uses native-order code units. No heap pointer is retained,
     // and qualification visits only the opaque region being copied.
-    for (int i = 0; i < length; i++) {
+    if (qualified_bmp) {
+      memcpy(copy, bytes->char_at_addr(from), length * sizeof(uint16_t));
+    } else for (int i = 0; i < length; i++) {
       uint16_t c = bytes->char_at(from + i);
       if ((c >= 0xd800 && c <= 0xdfff) || c == 0x2028 || c == 0x2029) {
         qualified = false;
@@ -268,7 +270,7 @@ extern "C" void JNICALL JVM_RegisterPcre2RegexMethods(JNIEnv* env, jclass cls) {
     {const_cast<char*>("compile0"), const_cast<char*>("([BII)J"), CAST_FROM_FN_PTR(void*, RR_compile)},
     {const_cast<char*>("compile16_0"), const_cast<char*>("([BII)J"), CAST_FROM_FN_PTR(void*, RR_compile16)},
     {const_cast<char*>("free16_0"), const_cast<char*>("(J)V"), CAST_FROM_FN_PTR(void*, RR_free16)},
-    {const_cast<char*>("match16Safepoint0"), const_cast<char*>("(JLjava/lang/String;[I)I"), CAST_FROM_FN_PTR(void*, RR_match16Safepoint)},
+    {const_cast<char*>("match16Safepoint0"), const_cast<char*>("(JLjava/lang/String;[IZ)I"), CAST_FROM_FN_PTR(void*, RR_match16Safepoint)},
     {const_cast<char*>("free0"), const_cast<char*>("(J)V"), CAST_FROM_FN_PTR(void*, RR_free)},
     {const_cast<char*>("match0"), const_cast<char*>("(J[B[I)I"), CAST_FROM_FN_PTR(void*, RR_match)},
     {const_cast<char*>("matchSafepoint0"), const_cast<char*>("(J[B[I)I"), CAST_FROM_FN_PTR(void*, RR_matchSafepoint)}

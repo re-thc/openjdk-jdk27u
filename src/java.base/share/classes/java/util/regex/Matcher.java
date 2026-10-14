@@ -245,6 +245,8 @@ public final class Matcher implements MatchResult {
     private boolean nativeEndTransparent, nativeEndAnchoring;
     private boolean nativePendingLast;
     private int nativeEndLast, nativeEndOldLast;
+    private String nativeQualifiedInput;
+    private int nativeQualifiedFrom, nativeQualifiedTo;
     private JavaMatchChoice javaMatchChoice;
     private boolean javaOnly;
     private Pattern javaExecution;
@@ -499,6 +501,7 @@ public final class Matcher implements MatchResult {
      * @return  This matcher
      */
     public Matcher reset(CharSequence input) {
+        if (text != input) nativeQualifiedInput = null;
         text = input;
         return reset();
     }
@@ -1984,8 +1987,18 @@ public final class Matcher implements MatchResult {
             return -2;
         }
         String input = text instanceof String s ? s : text.toString();
-        int result = engine.match(input, groups, from, to, start, mode,
-                transparentBounds, anchoringBounds);
+        boolean qualified = input == nativeQualifiedInput &&
+                from >= nativeQualifiedFrom && to <= nativeQualifiedTo;
+        int result = engine.matchQualified(input, groups, from, to, start, mode,
+                transparentBounds, anchoringBounds, qualified);
+        if (result >= 4) {
+            if (!qualified) {
+                nativeQualifiedInput = input;
+                nativeQualifiedFrom = from;
+                nativeQualifiedTo = to;
+            }
+            result -= 4;
+        }
         if (result == -3) {
             // A semantic exclusion depends on immutable input/region/mode.
             // Cache that local choice; transient native errors stay retryable.

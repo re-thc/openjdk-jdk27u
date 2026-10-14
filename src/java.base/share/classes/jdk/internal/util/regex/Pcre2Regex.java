@@ -268,6 +268,16 @@ public final class Pcre2Regex {
     @ForceInline
     public int match(String input, int[] state, int from, int to, int start, int mode,
                      boolean transparent, boolean anchoring) {
+        int result = matchQualified(input, state, from, to, start, mode, transparent, anchoring, false);
+        return result >= 4 ? result - 4 : result;
+    }
+
+    // The Matcher owns the immutable-input qualification interval. A native
+    // UTF-16 result adds four to 0/1, proving that the opaque region was checked
+    // (or was already within that interval). Managed plans never publish it.
+    @ForceInline
+    public int matchQualified(String input, int[] state, int from, int to, int start, int mode,
+                              boolean transparent, boolean anchoring, boolean qualifiedBMP) {
         int base = groupCount * 2;
         if (state.length != base + 4 || from < 0 || to < from || to > input.length()
                 || start < from || start > to) return -1;
@@ -277,11 +287,11 @@ public final class Pcre2Regex {
             if (fastPlan instanceof FastAlternationDigits || fastPlan instanceof FastDigits)
                 start = state[state.length - 2];
         }
-        return nativeMatch(input, state, from, to, start, mode, transparent, anchoring);
+        return nativeMatch(input, state, from, to, start, mode, transparent, anchoring, qualifiedBMP);
     }
 
     private int nativeMatch(String input, int[] state, int from, int to, int start, int mode,
-                            boolean transparent, boolean anchoring) {
+                            boolean transparent, boolean anchoring, boolean qualifiedBMP) {
         if (contextSensitive && (transparent || !anchoring)) return -3;
         if (to - from > MAX_LENGTH) return -1;
         if (finalTerminatorSensitive && to > from) {
@@ -306,7 +316,9 @@ public final class Pcre2Regex {
                     }
                     wide = nativeHandle16();
                 }
-                return wide == 0 ? -1 : match16Safepoint0(wide, input, state);
+                if (wide == 0) return -1;
+                int result = match16Safepoint0(wide, input, state, qualifiedBMP);
+                return result >= 0 ? result + 4 : result;
             } finally { Reference.reachabilityFence(this); }
         }
         int base = groupCount * 2;
@@ -962,7 +974,7 @@ public final class Pcre2Regex {
     private static native void free0(long handle);
     private static native long compile16_0(byte[] pattern, int flags, int groups);
     private static native void free16_0(long handle);
-    private static native int match16Safepoint0(long handle, String input, int[] state);
+    private static native int match16Safepoint0(long handle, String input, int[] state, boolean qualifiedBMP);
     @IntrinsicCandidate
     private static native int match0(long handle, byte[] input, int[] state);
     private static native int matchSafepoint0(long handle, byte[] input, int[] state);
