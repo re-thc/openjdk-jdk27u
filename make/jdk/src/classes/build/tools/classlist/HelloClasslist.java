@@ -37,12 +37,21 @@ import java.lang.invoke.MethodType;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.Security;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.stream.Stream;
 import java.util.logging.*;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.zip.CRC32;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -74,6 +83,12 @@ public class HelloClasslist {
         Stream.of(helloWorld.split("([,x-z]{1,3})([\\s]*)"))
                 .map(String::toString)
                 .forEach(System.out::println);
+
+        new ArrayList<>(strings).stream()
+                .flatMap(str -> Stream.of(str))
+                .filter(str -> !str.isEmpty())
+                .findFirst();
+        strings.stream().allMatch(str -> !str.isEmpty());
 
         // Common concatenation patterns
         int i = args.length;
@@ -137,11 +152,24 @@ public class HelloClasslist {
         StandardCharsets.US_ASCII.encode("");
         StandardCharsets.UTF_8.encode("");
 
+        // Common file, checksum, collection and security property operations
+        byte[] release = Files.readAllBytes(Path.of(System.getProperty("java.home"), "release"));
+        CRC32 crc = new CRC32();
+        crc.update(release);
+        var sorted = new TreeMap<String, Long>(Comparator.reverseOrder());
+        sorted.put("release", crc.getValue());
+        sorted.entrySet().iterator().next();
+        new ConcurrentSkipListSet<>(strings).first();
+        Collections.singletonMap("release", crc.getValue()).entrySet().iterator().next();
+        Security.getProperty("securerandom.source");
+
         // A selection of trivial and common reflection operations
         var instance = HelloClasslist.class.getConstructor().newInstance();
         HelloClasslist.class.getMethod("staticMethod_V").invoke(null);
         var obj = HelloClasslist.class.getMethod("staticMethod_L_L", Object.class).invoke(null, instance);
         HelloClasslist.class.getField("field").get(instance);
+        HelloClasslist.class.getMethod("instanceMethod_I").invoke(instance);
+        HelloClasslist.class.getMethod("staticMethod_V").getAnnotations();
         MethodHandles.Lookup.ClassOption.class.getEnumConstants();
 
         // A selection of trivial and relatively common MH operations
@@ -150,6 +178,8 @@ public class HelloClasslist {
         invoke(MethodHandles.identity(String.class), "x");
 
         invoke(handle("staticMethod_V", MethodType.methodType(void.class)));
+        invoke(MethodHandles.guardWithTest(MethodHandles.constant(boolean.class, true),
+                MethodHandles.identity(String.class), MethodHandles.identity(String.class)), "x");
 
         LOGGER.log(Level.FINE, "New Date: " + newDate + " - old: " + oldDate);
 
@@ -179,6 +209,8 @@ public class HelloClasslist {
     public String field = "someValue";
 
     public static void staticMethod_V() {}
+
+    public int instanceMethod_I() { return field.length(); }
 
     public static Object staticMethod_L_L(Object o) { return o; }
 
