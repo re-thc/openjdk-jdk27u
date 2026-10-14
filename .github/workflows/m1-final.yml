@@ -1,0 +1,77 @@
+name: Final M1 ZIP and checksum qualification
+on:
+  push:
+    branches: [pr/zlib-ng-m1-final]
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: ./.github/actions/build-jtreg
+  qualify:
+    needs: prepare
+    runs-on: macos-26
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        level: [release, fastdebug]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Install build tools
+        run: |
+          brew install autoconf make ccache
+          echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
+          sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
+      - uses: ./.github/actions/get-bootjdk
+        id: bootjdk
+        with:
+          platform: macos-aarch64
+      - uses: ./.github/actions/get-jtreg
+        id: jtreg
+      - name: Build the current VM and native libraries
+        run: |
+          mkdir -p qualification
+          bash bin/configure-dev --with-conf-name=zip --with-debug-level=${{ matrix.level }} \
+            --with-boot-jdk='${{ steps.bootjdk.outputs.path }}' \
+            --with-jtreg='${{ steps.jtreg.outputs.path }}' \
+            --disable-desktop --enable-headless-only --with-native-debug-symbols=none \
+            --enable-jvm-feature-serialgc --enable-jvm-feature-g1gc --enable-jvm-feature-zgc \
+            --disable-jvm-feature-parallelgc --disable-jvm-feature-shenandoahgc \
+            --disable-jvm-feature-epsilongc --with-jmod-compress=zip-1 \
+            --with-version-opt=zip-m1-qualified
+          make CONF=zip images LOG=info >qualification/build.log 2>&1
+          build/zip/images/jdk/bin/java -version
+      - name: ZIP, checksums, ABI, AOT and zipfs jtreg
+        run: |
+          make CONF=zip test \
+            TEST='test/hotspot/jtreg/compiler/intrinsics/zip test/jdk/java/util/zip test/jdk/jdk/nio/zipfs' \
+            JTREG='VERBOSE=fail,error,time' 2>&1 | tee qualification/jtreg.log
+          for gc in UseSerialGC UseG1GC UseZGC; do
+            make CONF=zip test \
+              TEST='test/hotspot/jtreg/compiler/intrinsics/zip/TestZlibNG.java test/hotspot/jtreg/compiler/intrinsics/zip/TestZlibNGAdler32.java' \
+              JTREG="VERBOSE=fail,error,time;JAVA_OPTIONS=-XX:+$gc -Xcheck:jni" \
+              2>&1 | tee qualification/jtreg-$gc.log
+          done
+      - name: Pair checksum and mixed-buffer measurements
+        if: matrix.level == 'release'
+        run: python3 .github/scripts/measure-m1-final.py build/zip/images/jdk
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: build/zip/images/jdk
+          key: zip-m1-final-v1-${{ matrix.level }}-${{ github.sha }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: macos-aarch64-final-${{ matrix.level }}
+          path: |
+            qualification
+            build/zip/spec.gmk
+            build/zip/images/jdk
+            build/zip/test-results
+          retention-days: 14
