@@ -31,8 +31,8 @@ jobs:
         run: |
           test "$(uname -m)" = aarch64
           mkdir base-debug patched-debug qualification/classes qualification/whitebox
-          tar -xf baseline-bundles/jdk-linux-aarch64-debug.tar.gz -C base-debug --strip-components=1
-          tar -xf patched-bundles/jdk-linux-aarch64-debug.tar.gz -C patched-debug --strip-components=1
+          tar -xf baseline-bundles/jdk-linux-aarch64-debug.tar.gz -C base-debug --strip-components=2
+          tar -xf patched-bundles/jdk-linux-aarch64-debug.tar.gz -C patched-debug --strip-components=2
           python3 qualification/native_unroll/record_native_host.py
           patched-debug/bin/javac -d qualification/whitebox test/lib/jdk/test/whitebox/parser/DiagnosticCommand.java test/lib/jdk/test/whitebox/WhiteBox.java
           patched-debug/bin/javac --add-modules jdk.incubator.vector -cp qualification/whitebox -d qualification/classes qualification/src/PhaseVectorKernels.java qualification/src/PhaseVectorProbe.java
