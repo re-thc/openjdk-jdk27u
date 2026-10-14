@@ -2,9 +2,9 @@
 import json,pathlib,subprocess
 root=pathlib.Path.cwd();qual=root/'qualification';out=root/'self-results/contracts';out.mkdir()
 records=[]
-for variant in ['rebuilt-b3','typed-self','identity-intrinsic']:
+for variant in ['rebuilt-b3','fallback-identity','intrinsic-view']:
     image=root/'self-images'/variant/'image';classes=out/variant;classes.mkdir()
-    sources=[root/'test/jdk/jdk/incubator/vector'/n for n in ['ReinterpretContracts.java','SelfReinterpretAllocation.java']]
+    sources=[root/'test/lib/jtreg/SkippedException.java']+[root/'test/jdk/jdk/incubator/vector'/n for n in ['ReinterpretContracts.java','SelfReinterpretAllocation.java']]
     subprocess.run([str(root/'verified-image/bin/javac'),'--add-modules','jdk.incubator.vector','-d',str(classes),*[str(s) for s in sources]],check=True)
     for name,flags in [('four',[]),('int',['-Xint']),('c1',['-XX:TieredStopAtLevel=1']),('c2',['-XX:-TieredCompilation','-Xbatch']),('eight',['-XX:-UseFourByteObjectHeaders']),('legacy',['-XX:-UseCompactObjectHeaders']),('fallback',['-XX:+UnlockDiagnosticVMOptions','-XX:DisableIntrinsic=_VectorConvert'])]:
         for test in ['ReinterpretContracts','SelfReinterpretAllocation']:

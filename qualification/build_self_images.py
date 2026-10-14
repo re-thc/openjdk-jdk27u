@@ -20,35 +20,42 @@ assert digest(boot/'lib/server/libjvm.so')=='2ea2db99d951082ddc60a9c2baf10654426
 description=run('original-module-describe',[boot/'bin/jmod','describe',boot/'jmods'/(module+'.jmod')])
 version=description.splitlines()[0].partition('@')[2]
 platform=next((line.split(' ',1)[1] for line in description.splitlines() if line.startswith('platform ')),None)
-for variant in ['rebuilt-b3','typed-self','identity-intrinsic']:
+for variant in ['rebuilt-b3','fallback-identity','intrinsic-view']:
     target=output/variant;target.mkdir()
     source=target/'source'/module;source.parent.mkdir()
     shutil.copytree(original,source)
     if variant!='rebuilt-b3':
-        proposal=root/'qualification/typed-self-files'
-        for name in ['Short','Int','Long','Float','Double']:
-            dest=source/'jdk/incubator/vector'/(name+'Vector.java')
-            shutil.copyfile(proposal/dest.name,dest)
-            if variant=='identity-intrinsic':
-                text=dest.read_text();method='reinterpretAs'+name+'s'
-                pattern=r'(public final '+name+r'Vector '+method+r'\(\) \{)\s*return this;\s*\}'
-                body='''
-        Class<?> vectorType = vspecies().vectorType();
-        int vectorLength = length();
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                vectorType, LANE_TYPE_ORDINAL, vectorLength,
-                vectorType, LANE_TYPE_ORDINAL, vectorLength,
-                this, vspecies(), (vector, species) -> vector);
-    }'''
-                text,count=re.subn(pattern,lambda m:m.group(1)+body,text)
-                assert count==1,(name,count)
-                dest.write_text(text)
-        template=source/'jdk/incubator/vector/X-Vector.java.template'
-        shutil.copyfile(proposal/template.name,template)
-        if variant=='identity-intrinsic':
-            text,count=re.subn(r'(public final \$abstractvectortype\$ reinterpretAs\$Type\$s\(\) \{)\s*return this;\s*\}',lambda m:m.group(1)+body,template.read_text())
-            assert count==1,count
-            template.write_text(text)
+        file=source/'jdk/incubator/vector/AbstractVector.java'
+        text=file.read_text()
+        old="""        // An unchanged lane type also preserves the shape and every raw bit.
+        if (srcSpecies.laneType == laneType) {
+            return this;
+        }
+"""
+        assert text.count(old)==1
+        if variant=='fallback-identity':
+            text=text.replace(old,'')
+            token='AbstractVector<F> defaultReinterpret(AbstractSpecies<F> rsp) {'
+            assert text.count(token)==1
+            text=text.replace(token,token+"""
+        if (vspecies() == rsp) {
+            return check0(rsp);
+        }
+""")
+        else:
+            replacement="""        if (srcSpecies.laneType == laneType) {
+            Class<?> vectorType = srcSpecies.vectorType();
+            int laneTypeOrdinal = srcSpecies.laneTypeOrdinal();
+            int laneCount = srcSpecies.laneCount();
+            return srcSpecies.swapIfNeeded(srcSpecies,
+                    VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
+                            vectorType, laneTypeOrdinal, laneCount,
+                            vectorType, laneTypeOrdinal, laneCount,
+                            this, srcSpecies, (vector, species) -> vector));
+        }
+"""
+            text=text.replace(old,replacement)
+        file.write_text(text)
     classes=target/'classes'
     run(variant+'-javac',[boot/'bin/javac','-g','-Xlint:none','--module-source-path',target/'source','-d',classes,'-m',module])
     jmods=target/'jmods';shutil.copytree(boot/'jmods',jmods)
