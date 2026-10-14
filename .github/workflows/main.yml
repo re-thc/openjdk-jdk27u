@@ -46,6 +46,10 @@ on:
         description: 'Skip builds and tests; only prepare dependencies and configure'
         type: boolean
         default: false
+      integer-benchmarks:
+        description: 'Measure interpreted integer conversions on native Linux AArch64'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -178,6 +182,17 @@ jobs:
       runs-on: ubuntu-26.04-arm
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       debug-suffix: -debug
+
+  benchmark-linux-aarch64:
+    name: linux-aarch64 integer benchmarks
+    needs:
+      - prepare
+      - build-linux-aarch64
+    uses: ./.github/workflows/benchmark-integer.yml
+    if: >-
+      needs.prepare.outputs.linux-aarch64 == 'true' &&
+      needs.prepare.outputs.dry-run != 'true' &&
+      (github.event_name == 'pull_request' || github.event.inputs.integer-benchmarks == 'true')
 
   test-macos-aarch64:
     name: macos-aarch64
