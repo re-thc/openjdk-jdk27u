@@ -2,8 +2,9 @@
 
 Current x64 measurements use `8bf01e9ed8a3df53fd8836d61216ed511ad3e591`
 and unmodified `master` at `87edd79d3104ff502f7befec034716b081436f49`, with
-the same four-byte object-header defaults. ARM reference measurements use
-`190109a0d2d`; final-head native ARM qualification is pending.
+the same four-byte object-header defaults. Native tests and startup comparisons
+also use these revisions on AArch64. The ARM throughput reference below uses
+`190109a0d2d`.
 
 ## Methodology
 
@@ -139,7 +140,22 @@ identically prepared copies measured 1.446 versus 1.459 ms (paired change
 +0.013 ms, 95% interval −0.023 to +0.050 ms). Initial and
 controlled samples are retained with the evidence. These are warm-start
 measurements of these images, not cold-start or whole-application guarantees.
-Current native ARM startup qualification is pending.
+An independent [native CI run](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38397336007)
+uses the same 600-block design and identical library preparation:
+
+| Architecture | Mode | Master → modified enabled | Paired change | 95% interval |
+| --- | --- | ---: | ---: | ---: |
+| x64 | Interpreter | 20.027 → 20.065 ms | +0.038 ms | −0.008 to +0.083 ms |
+| x64 | C1 | 21.452 → 21.420 ms | −0.032 ms | −0.083 to +0.019 ms |
+| x64 | C2 | 23.843 → 23.867 ms | +0.024 ms | −0.063 to +0.112 ms |
+| AArch64 | Interpreter | 20.656 → 20.394 ms | −0.262 ms | −0.342 to −0.183 ms |
+| AArch64 | C1 | 22.254 → 22.061 ms | −0.193 ms | −0.283 to −0.104 ms |
+| AArch64 | C2 | 23.979 → 23.922 ms | −0.056 ms | −0.127 to +0.014 ms |
+
+The native x64 flag-off/on interpreter comparison measures +0.051 ms
+(95% interval +0.013 to +0.090 ms). Its master comparison includes zero,
+as do all other native flag-off/on intervals. These results do not establish
+zero enabled-path cost.
 
 ## Hardware and runtime qualification
 
@@ -165,12 +181,18 @@ A native Linux probe reproduces the old Microsoft x64 ABI register collision
 and passes with the fixed scalar loop; it is not a Windows PR-JVM execution.
 The 391-entry applicability audit and official include-order checker pass.
 
-[Final native Linux CI](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38385226401)
-is in progress. [Windows/macOS CI](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38393501715)
-is scheduled separately. [Targeted native tests and master comparisons](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38397336007)
-use matching release/debug artifacts on x64 and ARM. Final native qualification
-is pending. Windows AVX-512 execution and tier2 remain outside
-the evidence.
+The [code-identical Linux run](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38385226401)
+passes all four release/debug builds and 23 of 24 tier1 selections. AArch64
+runtime fails `FourByteHeaderArchiveDeterminism.java#z`: the first two ZGC
+archives differ at byte 1,785,800. [Paired baseline/PR reproduction](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38640541680)
+is queued; this failure has not been attributed to the PR. The docs-only head
+has no new CI run.
+
+[Windows/macOS release/debug builds](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38393501715)
+pass; their tier1 jobs are skipped. The [targeted native run](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38397336007)
+passes all six test selections on both x64 and AArch64: common intrinsics in
+release/fastdebug, related HotSpot tests, JDK crypto and C1 math at levels 1
+and 3. Windows AVX-512 execution and tier2 remain outside the evidence.
 
 Earlier native ARM tests and the C1-only x64 scalar/guard/method-handle checks
 remain [reference evidence](https://github.com/re-thc/openjdk-jdk27u/blob/55353f8ced7c9b67a199791a255350f70fe29496/.github/qualification/local-x64/c1-current.json).
