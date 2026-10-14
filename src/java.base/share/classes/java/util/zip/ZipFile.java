@@ -617,6 +617,54 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     /*
+     * Returns the directories of the entries in this ZIP file, which are their
+     * names up to the last '/', or "" if there is none. A trailing '/' of a
+     * directory entry is ignored, so the directory of "a/b/" is "a".
+     *
+     * The directory of an entry is only decoded if it differs from the one of
+     * the previous entry, as the entries of a directory are usually adjacent.
+     * As in isMetaName, an ASCII-compatible encoding is assumed.
+     *
+     * @return the directories, which the caller may modify
+     * @throws IllegalStateException if the ZIP file has been closed
+     */
+    private Set<String> entryDirectories() {
+        synchronized (this) {
+            ensureOpen();
+            Source zsrc = res.zsrc;
+            byte[] cen = zsrc.cen;
+            Set<String> dirs = new HashSet<>();
+            ZipCoder lastZc = null;
+            int lastOff = 0, lastLen = -1;
+            for (int i = 0; i < zsrc.total; i++) {
+                int pos = zsrc.getEntryPos(i * 3);
+                int off = pos + CENHDR;
+                int end = off + CENNAM(cen, pos);
+                if (end > off && cen[end - 1] == '/') {
+                    end--;
+                }
+                int len = 0;
+                for (int j = end - 1; j >= off; j--) {
+                    if (cen[j] == '/') {
+                        len = j - off;
+                        break;
+                    }
+                }
+                ZipCoder zc = zipCoderFor(cen, pos, zipCoder);
+                if (zc != lastZc || len != lastLen
+                        || Arrays.mismatch(cen, off, off + len,
+                                           cen, lastOff, lastOff + len) != -1) {
+                    dirs.add(zc.toString(cen, off, len));
+                    lastZc = zc;
+                    lastOff = off;
+                    lastLen = len;
+                }
+            }
+            return dirs;
+        }
+    }
+
+    /*
      * Returns an ordered {@code Stream} over the ZIP file entries.
      *
      * Entries appear in the {@code Stream} in the order they appear in
@@ -1137,6 +1185,10 @@ public class ZipFile implements ZipConstants, Closeable {
                 @Override
                 public Stream<String> entryNameStream(ZipFile zip) {
                     return zip.entryNameStream();
+                }
+                @Override
+                public Set<String> entryDirectories(ZipFile zip) {
+                    return zip.entryDirectories();
                 }
                 @Override
                 public int getExternalFileAttributes(ZipEntry ze) {

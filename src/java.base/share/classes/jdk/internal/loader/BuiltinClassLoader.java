@@ -644,7 +644,7 @@ public class BuiltinClassLoader
      * Returns {@code null} if none of the modules defined to this
      * class loader contain the API package for the class.
      */
-    private LoadedModule findLoadedModule(String cn) {
+    LoadedModule findLoadedModule(String cn) {
         int pos = cn.lastIndexOf('.');
         if (pos < 0)
             return null; // unnamed package
@@ -766,13 +766,11 @@ public class BuiltinClassLoader
         // defines the class to the runtime
         ByteBuffer bb = res.getByteBuffer();
         if (bb != null) {
-            CodeSigner[] signers = res.getCodeSigners();
-            CodeSource cs = new CodeSource(url, signers);
+            CodeSource cs = res.getCodeSource();
             return defineClass(cn, bb, cs);
         } else {
             byte[] b = res.getBytes();
-            CodeSigner[] signers = res.getCodeSigners();
-            CodeSource cs = new CodeSource(url, signers);
+            CodeSource cs = res.getCodeSource();
             return defineClass(cn, b, 0, b.length, cs);
         }
     }
@@ -902,11 +900,15 @@ public class BuiltinClassLoader
      * @throws SecurityException if the package name is untrusted in the manifest
      */
     private boolean isSealed(String pn, Manifest man) {
-        Attributes attr = SharedSecrets.javaUtilJarAccess()
-                .getTrustedAttributes(man, pn.replace('.', '/').concat("/"));
+        Attributes attr;
         String sealed = null;
-        if (attr != null)
-            sealed = attr.getValue(Attributes.Name.SEALED);
+        // Only look up the entry of the package if the manifest has entries
+        if (!man.getEntries().isEmpty()) {
+            attr = SharedSecrets.javaUtilJarAccess()
+                    .getTrustedAttributes(man, pn.replace('.', '/').concat("/"));
+            if (attr != null)
+                sealed = attr.getValue(Attributes.Name.SEALED);
+        }
         if (sealed == null && (attr = man.getMainAttributes()) != null)
             sealed = attr.getValue(Attributes.Name.SEALED);
         return "true".equalsIgnoreCase(sealed);

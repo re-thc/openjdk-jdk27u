@@ -59,6 +59,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -224,20 +225,92 @@ class JrtFileSystem extends FileSystem {
         if (!node.isDirectory()) {
             throw new NotDirectoryException(path.getName());
         }
+        // No stream: setting it up and linking its lambdas costs more than the listing.
+        Iterator<String> names = node.getChildNameIterator();
         if (filter == null) {
-            return node.getChildNames()
-                    .map(child -> (Path) (path.resolve(new JrtPath(this, child).getFileName())))
-                    .iterator();
+            return new ChildPaths(path, names);
         }
-        return node.getChildNames()
-                .map(child -> (Path) (path.resolve(new JrtPath(this, child).getFileName())))
-                .filter(p -> {
-                    try {
-                        return filter.accept(p);
-                    } catch (IOException x) {}
-                    return false;
-                })
-                .iterator();
+        return new FilteredChildPaths(new ChildPaths(path, names), filter);
+    }
+
+    // Child paths of a directory, resolved against the path of the directory.
+    private final class ChildPaths implements Iterator<Path> {
+        private final JrtPath dir;
+        private final Iterator<String> names;
+
+        ChildPaths(JrtPath dir, Iterator<String> names) {
+            this.dir = dir;
+            this.names = names;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return names.hasNext();
+        }
+
+        @Override
+        public Path next() {
+            String name = names.next();
+            // The name of the child node is its last element in the node
+            // name. Names with characters the path normalizes are rare, so
+            // those go the long way round.
+            String fileName = name.substring(name.lastIndexOf('/') + 1);
+            if (isPlainName(fileName)) {
+                return dir.resolveName(fileName);
+            }
+            return dir.resolve(new JrtPath(JrtFileSystem.this, name).getFileName());
+        }
+    }
+
+    // Child paths that are accepted by a filter.
+    private static final class FilteredChildPaths implements Iterator<Path> {
+        private final Iterator<Path> paths;
+        private final DirectoryStream.Filter<? super Path> filter;
+        private Path next;
+
+        FilteredChildPaths(Iterator<Path> paths, DirectoryStream.Filter<? super Path> filter) {
+            this.paths = paths;
+            this.filter = filter;
+        }
+
+        @Override
+        public boolean hasNext() {
+            while (next == null && paths.hasNext()) {
+                Path p = paths.next();
+                try {
+                    if (filter.accept(p)) {
+                        next = p;
+                    }
+                } catch (IOException x) {}
+            }
+            return next != null;
+        }
+
+        @Override
+        public Path next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            Path p = next;
+            next = null;
+            return p;
+        }
+    }
+
+    // Whether a path element is non-empty and has no characters that
+    // JrtPath would normalize or reject.
+    private static boolean isPlainName(String name) {
+        int len = name.length();
+        if (len == 0) {
+            return false;
+        }
+        for (int i = 0; i < len; i++) {
+            char c = name.charAt(i);
+            if (c == '\\' || c == '\u0000') {
+                return false;
+            }
+        }
+        return true;
     }
 
     // returns the content of the file resource specified by the path

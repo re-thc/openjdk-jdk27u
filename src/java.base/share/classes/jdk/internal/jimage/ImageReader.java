@@ -39,18 +39,19 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static jdk.internal.jimage.ImageLocation.LocationType.MODULES_DIR;
 import static jdk.internal.jimage.ImageLocation.LocationType.MODULES_ROOT;
 import static jdk.internal.jimage.ImageLocation.LocationType.PACKAGES_DIR;
+import static jdk.internal.jimage.ImageLocation.LocationType.PACKAGES_ROOT;
 import static jdk.internal.jimage.ImageLocation.LocationType.RESOURCE;
 import static jdk.internal.jimage.ImageLocation.MODULES_PREFIX;
 import static jdk.internal.jimage.ImageLocation.PACKAGES_PREFIX;
@@ -198,6 +199,26 @@ public final class ImageReader implements AutoCloseable {
     }
 
     /**
+     * Returns whether a directory exists in the given module.
+     *
+     * <p>This is equivalent to checking that:
+     * <pre>{@code
+     * findNode("/modules/" + moduleName + "/" + dirPath)
+     * }</pre>
+     * is a directory, but more performant, and will not create or cache new
+     * nodes.
+     *
+     * @param moduleName The module name of the directory being tested for.
+     * @param dirPath Trailing module-relative directory path, not starting
+     *     with {@code '/'}.
+     */
+    public boolean containsDirectory(String moduleName, String dirPath)
+            throws IOException {
+        ensureOpen();
+        return reader.containsDirectory(moduleName, dirPath);
+    }
+
+    /**
      * Returns a copy of the content of a resource node. The buffer returned by
      * this method is not cached by the node, and each call returns a new array
      * instance.
@@ -279,6 +300,12 @@ public final class ImageReader implements AutoCloseable {
         // E.g. "/modules/xxx/foo/bar" -> Directory("/modules/xxx/META-INF/preview/foo/bar")
         private final Map<String, Directory> previewDirectoriesToMerge;
 
+        // Names of the modules which packages are linked to, by offset in the
+        // jimage strings (direct mapped, guarded by synchronizing 'this' instance).
+        // There are only a few dozen modules, but a link is made for every package.
+        private static final int MODULE_NAME_CACHE_SIZE = 256;
+        private final ModuleName[] moduleNames = new ModuleName[MODULE_NAME_CACHE_SIZE];
+
         private SharedImageReader(Path imagePath, ByteOrder byteOrder, boolean isPreviewEnabled) throws IOException {
             super(imagePath, byteOrder);
             this.imageFileAttributes = Files.readAttributes(imagePath, BasicFileAttributes.class);
@@ -294,12 +321,14 @@ public final class ImageReader implements AutoCloseable {
             root.setChildren(Arrays.asList(packages, modules));
             ensureCached(root);
 
-            // By scanning the /packages directory information early we can determine
-            // which module/package pairs have preview resources, and build the (small)
-            // set of preview nodes early. This also ensures that preview-only entries
-            // in the /packages directory are not present in non-preview mode.
+            // In preview mode, scanning the /packages directory information early
+            // determines which module/package pairs have preview resources, so
+            // that the (small) set of preview nodes can be built early. Otherwise
+            // the "/packages" directory and its subdirectories are built on demand.
             this.previewDirectoriesToMerge = isPreviewEnabled ? new HashMap<>() : null;
-            packages.setChildren(processPackagesDirectory(isPreviewEnabled));
+            if (isPreviewEnabled) {
+                packages.setChildren(processPackagesDirectory(true));
+            }
         }
 
         /**
@@ -318,9 +347,10 @@ public final class ImageReader implements AutoCloseable {
             IntBuffer offsets = getOffsetBuffer(pkgRoot);
             ArrayList<Node> pkgDirs = new ArrayList<>(offsets.capacity());
             // Package path to module map, sorted in reverse order so that
-            // longer child paths get processed first.
+            // longer child paths get processed first. Only needed in preview
+            // mode, where it is also the only user of the lambdas below.
             Map<String, List<String>> previewPackagesToModules =
-                    new TreeMap<>(Comparator.reverseOrder());
+                    previewMode ? new TreeMap<>(Comparator.reverseOrder()) : null;
             for (int i = 0; i < offsets.capacity(); i++) {
                 ImageLocation pkgDir = getLocation(offsets.get(i));
                 int flags = pkgDir.getFlags();
@@ -328,7 +358,13 @@ public final class ImageReader implements AutoCloseable {
                 // it references have that package marked as preview only.
                 // Skipping these entries avoids empty package subdirectories.
                 if (previewMode || !ImageLocation.isPreviewOnly(flags)) {
-                    pkgDirs.add(ensureCached(newDirectory(pkgDir.getFullName())));
+                    String pkgDirName = getPackageDirectoryName(pkgDir);
+                    Node pkgDirNode = nodes.get(pkgDirName);
+                    if (pkgDirNode == null) {
+                        pkgDirNode = newPackageDirectory(pkgDirName, pkgDir);
+                        nodes.put(pkgDirName, pkgDirNode);
+                    }
+                    pkgDirs.add(pkgDirNode);
                 }
                 if (previewMode && ImageLocation.hasPreviewVersion(flags)) {
                     // Only do this in preview mode for the small set of packages with
@@ -339,12 +375,30 @@ public final class ImageReader implements AutoCloseable {
                     previewPackagesToModules.put(pkgDir.getBase().replace('.', '/'), moduleNames);
                 }
             }
-            // Reverse sorted map means child directories are processed first.
-            previewPackagesToModules.forEach((pkgPath, modules) ->
-                    modules.forEach(modName -> processPreviewDir(MODULES_PREFIX + "/" + modName, pkgPath)));
+            if (previewMode) {
+                // Reverse sorted map means child directories are processed first.
+                previewPackagesToModules.forEach((pkgPath, modules) ->
+                        modules.forEach(modName -> processPreviewDir(MODULES_PREFIX + "/" + modName, pkgPath)));
+            }
             // We might have skipped some preview-only package entries.
             pkgDirs.trimToSize();
             return pkgDirs;
+        }
+
+        /**
+         * Returns the name of a "/packages/xxx" directory from its location,
+         * which is the same as {@code loc.getFullName()}. The location is for
+         * the "packages" module and has no parent, so those strings are not
+         * read from the image.
+         */
+        private static String getPackageDirectoryName(ImageLocation loc) {
+            if (loc.getModuleOffset() != ImageStrings.PACKAGES_STRING_OFFSET
+                    || loc.getParentOffset() != 0) {
+                return loc.getFullName();
+            }
+            return loc.getExtensionOffset() != 0
+                    ? PACKAGES_PREFIX + "/" + loc.getBase() + "." + loc.getExtension()
+                    : PACKAGES_PREFIX + "/" + loc.getBase();
         }
 
         void processPreviewDir(String namePrefix, String pkgPath) {
@@ -445,8 +499,7 @@ public final class ImageReader implements AutoCloseable {
          *     "/modules" or "/packages".
          */
         synchronized Node findNode(String name) {
-            // Root directories "/", "/modules" and "/packages", as well
-            // as all "/packages/xxx" subdirectories are already cached.
+            // Root directories "/", "/modules" and "/packages" are already cached.
             Node node = nodes.get(name);
             if (node == null) {
                 if (name.startsWith(MODULES_PREFIX + "/")) {
@@ -540,6 +593,17 @@ public final class ImageReader implements AutoCloseable {
         }
 
         /**
+         * Returns whether a directory exists in the given module.
+         */
+        boolean containsDirectory(String moduleName, String dirPath) {
+            if (moduleName.indexOf('/') >= 0) {
+                throw new IllegalArgumentException("invalid module name: " + moduleName);
+            }
+            ImageLocation loc = findLocation(MODULES_PREFIX + "/" + moduleName + "/" + dirPath);
+            return loc != null && loc.getType() == MODULES_DIR;
+        }
+
+        /**
          * Builds a node in the "/modules/..." namespace.
          *
          * <p>Called by {@link #findNode(String)} if a {@code /modules/...} node
@@ -590,6 +654,38 @@ public final class ImageReader implements AutoCloseable {
                     && (name.length() == previewEnd || name.charAt(previewEnd) == '/');
         }
 
+        /**
+         * Returns the name of a "/modules/..." directory from its location, which
+         * is the same as {@code loc.getFullName()}. The path in the module is all
+         * in the base name of the location, so the "modules" module and the parent
+         * are not read from the image.
+         */
+        private static String getModulesDirectoryName(ImageLocation loc) {
+            assert loc.getType() == MODULES_DIR : "Invalid location type: " + loc;
+            if (loc.getParentOffset() != 0 || loc.getExtensionOffset() != 0) {
+                return loc.getFullName();
+            }
+            return MODULES_PREFIX + "/" + loc.getBase();
+        }
+
+        /**
+         * Returns the name of a resource in the given "/modules/..." directory,
+         * which is the same as {@code loc.getFullName(true)}. A directory lists
+         * its own resources, so their module and parent are those of the directory
+         * and are not read from the image.
+         */
+        private static String getResourceName(String dirName, ImageLocation loc) {
+            int extensionOffset = loc.getExtensionOffset();
+            if (extensionOffset == 0) {
+                return dirName + "/" + loc.getBase();
+            }
+            // Most resources are classes, so that extension is not read from the image.
+            String extension = extensionOffset == ImageStrings.CLASS_STRING_OFFSET
+                    ? "class"
+                    : loc.getExtension();
+            return dirName + "/" + loc.getBase() + "." + extension;
+        }
+
         private String getBaseName(ImageLocation loc) {
             // Matches logic in ImageLocation#getFullName() regarding extensions.
             String trailingParts = loc.getBase()
@@ -609,21 +705,37 @@ public final class ImageReader implements AutoCloseable {
             // derived from the name information in the parent directory).
             int packageStart = PACKAGES_PREFIX.length() + 1;
             int packageEnd = name.indexOf('/', packageStart);
-            // We already built the 2-level "/packages/xxx" directories,
-            // so if this is a 2-level name, it cannot reference a node.
-            if (packageEnd >= 0) {
-                String dirName = name.substring(0, packageEnd);
-                // If no parent exists here, the name cannot be valid.
-                Directory parent = (Directory) nodes.get(dirName);
-                if (parent != null) {
-                    if (!parent.isCompleted()) {
-                        // This caches all child links of the parent directory.
-                        completePackageSubdirectory(parent, findLocation(dirName));
-                    }
-                    return nodes.get(name);
+            // A 2-level "/packages/xxx" name can only reference a directory.
+            if (packageEnd < 0) {
+                return findPackageDirectory(name);
+            }
+            // If no parent exists here, the name cannot be valid.
+            return findPackageDirectory(name.substring(0, packageEnd)) != null
+                    ? nodes.get(name)
+                    : null;
+        }
+
+        /**
+         * Returns the complete "/packages/xxx" directory with the given name,
+         * or null if there is no such directory. Directories not built yet are
+         * built and cached, which also caches all their child links.
+         */
+        private Directory findPackageDirectory(String dirName) {
+            Node dir = nodes.get(dirName);
+            ImageLocation loc = null;
+            // In preview mode all package directories are cached up front.
+            if (dir == null && !isPreviewEnabled) {
+                loc = findLocation(dirName);
+                // Preview-only packages are not visible in non-preview mode.
+                if (loc != null && loc.getType() == PACKAGES_DIR
+                        && !ImageLocation.isPreviewOnly(loc.getFlags())) {
+                    dir = ensureCached(newPackageDirectory(dirName, loc));
                 }
             }
-            return null;
+            if (dir != null && !dir.isCompleted()) {
+                completePackageSubdirectory((Directory) dir, loc != null ? loc : findLocation(dirName));
+            }
+            return (Directory) dir;
         }
 
         /** Completes a directory by ensuring its child list is populated correctly. */
@@ -633,11 +745,14 @@ public final class ImageReader implements AutoCloseable {
             // either "/modules" or "/packages", making differentiation easy.
             // It also means that the name is valid, so it must yield a location.
             assert name.startsWith(MODULES_PREFIX) || name.startsWith(PACKAGES_PREFIX);
-            ImageLocation loc = findLocation(name);
+            // Package directories keep the location they were made from.
+            ImageLocation loc = dir.location != null ? dir.location : findLocation(name);
             assert loc != null && name.equals(loc.getFullName()) : "Invalid location for name: " + name;
             LocationType type = loc.getType();
             if (type == MODULES_DIR || type == MODULES_ROOT) {
                 completeModuleDirectory(dir, loc);
+            } else if (type == PACKAGES_ROOT) {
+                dir.setChildren(processPackagesDirectory(isPreviewEnabled));
             } else {
                 assert type == PACKAGES_DIR : "Invalid location type: " + loc;
                 completePackageSubdirectory(dir, loc);
@@ -652,20 +767,41 @@ public final class ImageReader implements AutoCloseable {
             // We hide preview names from direct lookup, but must also prevent
             // the preview directory from appearing in any META-INF directories.
             boolean parentIsMetaInfDir = isMetaInf(dir);
-            List<Node> children = createChildNodes(loc, previewOnlyNodes.size(), childLoc -> {
-                LocationType type = childLoc.getType();
-                if (type == MODULES_DIR) {
-                    String name = childLoc.getFullName();
-                    return parentIsMetaInfDir && name.endsWith("/preview")
-                            ? null
-                            : nodes.computeIfAbsent(name, this::newDirectory);
+            assert loc.getType() == MODULES_DIR || loc.getType() == MODULES_ROOT : "Invalid location type: " + loc;
+            // This is a loop rather than createChildNodes() with a lambda, to
+            // avoid linking the lambda when the first directory is completed.
+            String dirName = dir.getName();
+            IntBuffer offsets = getOffsetBuffer(loc);
+            int childCount = offsets.capacity();
+            List<Node> children = new ArrayList<>(childCount + previewOnlyNodes.size());
+            for (int i = 0; i < childCount; i++) {
+                ImageLocation childLoc = getLocation(offsets.get(i));
+                Node childNode;
+                String name;
+                if (childLoc.getType() == MODULES_DIR) {
+                    name = getModulesDirectoryName(childLoc);
+                    assert name.equals(childLoc.getFullName()) : "Mismatched directory name: " + name;
+                    if (parentIsMetaInfDir && name.endsWith("/preview")) {
+                        continue;
+                    }
+                    childNode = nodes.get(name);
+                    if (childNode == null) {
+                        childNode = newDirectory(name);
+                        nodes.put(name, childNode);
+                    }
                 } else {
-                    assert type == RESOURCE : "Invalid location type: " + loc;
-                    // Add "/modules" prefix to image location paths to get node names.
-                    String resourceName = childLoc.getFullName(true);
-                    return nodes.computeIfAbsent(resourceName, n -> newResource(n, childLoc));
+                    assert childLoc.getType() == RESOURCE : "Invalid location type: " + loc;
+                    // Image location paths have no "/modules" prefix, node names do.
+                    name = getResourceName(dirName, childLoc);
+                    assert name.equals(childLoc.getFullName(true)) : "Mismatched resource name: " + name;
+                    childNode = nodes.get(name);
+                    if (childNode == null) {
+                        childNode = newResource(name, childLoc);
+                        nodes.put(name, childNode);
+                    }
                 }
-            });
+                children.add(childNode);
+            }
             children.addAll(previewOnlyNodes);
             dir.setChildren(children);
             return dir;
@@ -681,15 +817,27 @@ public final class ImageReader implements AutoCloseable {
             // entries, but it's not worth "right-sizing" the array for that.
             IntBuffer offsets = getOffsetBuffer(loc);
             List<Node> children = new ArrayList<>(offsets.capacity() / 2);
-            ModuleLink.readNameOffsets(offsets, /*normal*/ true, isPreviewEnabled)
-                    .forEachRemaining(n -> {
-                        String modName = getString(n);
-                        Node link = newLinkNode(dir.getName() + "/" + modName, MODULES_PREFIX + "/" + modName);
-                        children.add(ensureCached(link));
-                    });
+            ModuleLink.NameOffsetIterator nameOffsets =
+                    ModuleLink.nameOffsets(offsets, /*normal*/ true, isPreviewEnabled);
+            while (nameOffsets.hasNext()) {
+                ModuleName module = getModuleName(nameOffsets.nextOffset());
+                Node link = newLinkNode(dir.getName() + "/" + module.name, module.targetName);
+                children.add(ensureCached(link));
+            }
             // If the parent directory exists, there must be at least one child node.
             assert !children.isEmpty() : "Invalid empty package directory: " + dir;
             dir.setChildren(children);
+        }
+
+        /** Returns the module with the given name offset, which is read only once. */
+        private ModuleName getModuleName(int nameOffset) {
+            int slot = (nameOffset ^ (nameOffset >>> 8)) & (MODULE_NAME_CACHE_SIZE - 1);
+            ModuleName module = moduleNames[slot];
+            if (module == null || module.nameOffset != nameOffset) {
+                module = new ModuleName(nameOffset, getString(nameOffset));
+                moduleNames[slot] = module;
+            }
+            return module;
         }
 
         /**
@@ -745,6 +893,10 @@ public final class ImageReader implements AutoCloseable {
         /** Helper to extract the integer offset buffer from a directory location. */
         private IntBuffer getOffsetBuffer(ImageLocation dir) {
             assert dir.getType() != RESOURCE : "Not a directory: " + dir.getFullName();
+            IntBuffer ints = getContentInts(dir);
+            if (ints != null) {
+                return ints;
+            }
             byte[] offsets = getResource(dir);
             ByteBuffer buffer = ByteBuffer.wrap(offsets);
             buffer.order(getByteOrder());
@@ -758,6 +910,14 @@ public final class ImageReader implements AutoCloseable {
          */
         private Directory newDirectory(String name) {
             return new Directory(name, imageFileAttributes);
+        }
+
+        /**
+         * Creates an "incomplete" "/packages/xxx" directory node, which keeps its
+         * location to be completed with.
+         */
+        private Directory newPackageDirectory(String name, ImageLocation loc) {
+            return new Directory(name, imageFileAttributes, loc);
         }
 
         /**
@@ -776,7 +936,7 @@ public final class ImageReader implements AutoCloseable {
          * so if a link node is retained after its reader is closed, it will fail.
          */
         private LinkNode newLinkNode(String name, String targetName) {
-            return new LinkNode(name, () -> findNode(targetName), imageFileAttributes);
+            return new LinkNode(name, this, targetName, imageFileAttributes);
         }
 
         /** Returns the content of a resource node. */
@@ -899,6 +1059,18 @@ public final class ImageReader implements AutoCloseable {
         }
 
         /**
+         * Returns an iterator over the fully qualified names of any child
+         * nodes for a directory, in the order of {@link #getChildNames()}.
+         *
+         * <p>By default, this method is based on {@link #getChildNames()}, so
+         * it throws the same exceptions. Directories override it to avoid the
+         * cost of setting up a stream for each listing.
+         */
+        public Iterator<String> getChildNameIterator() {
+            return getChildNames().iterator();
+        }
+
+        /**
          * Returns the uncompressed size of this node's content. If this node is
          * not a resource, this method returns zero.
          */
@@ -974,9 +1146,16 @@ public final class ImageReader implements AutoCloseable {
     private static final class Directory extends Node {
         // Monotonic reference, will be set to the unmodifiable child list exactly once.
         private List<Node> children = null;
+        // Only for "/packages/xxx" directories, until they are completed.
+        private ImageLocation location = null;
 
         private Directory(String name, BasicFileAttributes fileAttrs) {
             super(name, fileAttrs);
+        }
+
+        private Directory(String name, BasicFileAttributes fileAttrs, ImageLocation location) {
+            super(name, fileAttrs);
+            this.location = location;
         }
 
         @Override
@@ -997,9 +1176,50 @@ public final class ImageReader implements AutoCloseable {
             throw new IllegalStateException("Cannot get child nodes of an incomplete directory: " + getName());
         }
 
+        @Override
+        public Iterator<String> getChildNameIterator() {
+            if (children != null) {
+                return new ChildNameIterator(children.iterator());
+            }
+            throw new IllegalStateException("Cannot get child nodes of an incomplete directory: " + getName());
+        }
+
         private void setChildren(List<? extends Node> children) {
             assert this.children == null : this + ": Cannot set child nodes twice!";
             this.children = Collections.unmodifiableList(children);
+            this.location = null;
+        }
+    }
+
+    /** The name of a module, and the name of its "/modules" directory. */
+    private static final class ModuleName {
+        final int nameOffset;
+        final String name;
+        final String targetName;
+
+        ModuleName(int nameOffset, String name) {
+            this.nameOffset = nameOffset;
+            this.name = name;
+            this.targetName = MODULES_PREFIX + "/" + name;
+        }
+    }
+
+    /** Iterates the names of the given child nodes. */
+    private static final class ChildNameIterator implements Iterator<String> {
+        private final Iterator<Node> children;
+
+        private ChildNameIterator(Iterator<Node> children) {
+            this.children = children;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return children.hasNext();
+        }
+
+        @Override
+        public String next() {
+            return children.next().getName();
         }
     }
 
@@ -1052,24 +1272,27 @@ public final class ImageReader implements AutoCloseable {
     /**
      * Link node (a symbolic link to a top-level modules directory).
      *
-     * <p>Link nodes resolve their target by invoking a given supplier, and do
+     * <p>Link nodes resolve their target by looking it up in their reader, and do
      * not cache the result. Since nodes are cached by the {@code ImageReader},
      * this means that only the first call to {@link #resolveLink(boolean)}
      * could do any significant work.
      */
     private static class LinkNode extends Node {
-        private final Supplier<Node> link;
+        private final SharedImageReader reader;
+        private final String targetName;
 
-        private LinkNode(String name, Supplier<Node> link, BasicFileAttributes fileAttrs) {
+        private LinkNode(String name, SharedImageReader reader, String targetName,
+                         BasicFileAttributes fileAttrs) {
             super(name, fileAttrs);
-            this.link = link;
+            this.reader = reader;
+            this.targetName = targetName;
         }
 
         @Override
         public Node resolveLink(boolean recursive) {
             // No need to use or propagate the recursive flag, since the target
             // cannot possibly be a link node (links only point to directories).
-            return link.get();
+            return reader.findNode(targetName);
         }
 
         @Override

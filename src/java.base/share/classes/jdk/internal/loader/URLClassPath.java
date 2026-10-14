@@ -40,6 +40,7 @@ import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
 import java.security.CodeSigner;
+import java.security.CodeSource;
 import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,7 +50,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Properties;
+import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarFile;
 import java.util.zip.CRC32;
 import java.util.jar.JarEntry;
@@ -114,6 +117,12 @@ public class URLClassPath {
 
     /* The resulting search path of Loaders */
     private final ArrayList<Loader> loaders = new ArrayList<>();
+
+    /* The number of Loaders at the start of the search path that cannot have
+     * a resource in a given directory (see directoryOf). A Loader that cannot
+     * have it will never have it, and Loaders are only added at the end. */
+    private final ConcurrentHashMap<String, Integer> skippedLoaders
+            = new ConcurrentHashMap<>();
 
     /* Map of each URL opened to its corresponding Loader */
     private final HashMap<String, Loader> lmap = new HashMap<>();
@@ -255,8 +264,12 @@ public class URLClassPath {
      * if the resource could not be found.
      */
     public URL findResource(String name) {
+        String dir = directoryOf(name);
         Loader loader;
         for (int i = 0; (loader = getLoader(i)) != null; i++) {
+            if (!loader.mayContain(dir)) {
+                continue;
+            }
             URL url = loader.findResource(name);
             if (url != null) {
                 return url;
@@ -273,6 +286,7 @@ public class URLClassPath {
      * @return an Enumeration of all the urls having the specified name
      */
     public Enumeration<URL> findResources(final String name) {
+        final String dir = directoryOf(name);
         return new Enumeration<>() {
             private int index = 0;
             private URL url = null;
@@ -283,6 +297,9 @@ public class URLClassPath {
                 } else {
                     Loader loader;
                     while ((loader = getLoader(index++)) != null) {
+                        if (!loader.mayContain(dir)) {
+                            continue;
+                        }
                         url = loader.findResource(name);
                         if (url != null) {
                             return true;
@@ -319,14 +336,27 @@ public class URLClassPath {
             System.err.println("URLClassPath.getResource(\"" + name + "\")");
         }
 
+        String dir = directoryOf(name);
+        int start = skippedLoaders.getOrDefault(dir, 0);
+        int skip = start;
+        Resource res = null;
         Loader loader;
-        for (int i = 0; (loader = getLoader(i)) != null; i++) {
-            Resource res = loader.getResource(name);
+        for (int i = start; (loader = getLoader(i)) != null; i++) {
+            if (!loader.mayContain(dir)) {
+                if (skip == i) {
+                    skip++;
+                }
+                continue;
+            }
+            res = loader.getResource(name);
             if (res != null) {
-                return res;
+                break;
             }
         }
-        return null;
+        if (skip > start) {
+            skippedLoaders.put(dir, skip);
+        }
+        return res;
     }
 
     /**
@@ -337,6 +367,7 @@ public class URLClassPath {
      * @return an Enumeration of all the resources having the specified name
      */
     public Enumeration<Resource> getResources(final String name) {
+        final String dir = directoryOf(name);
         return new Enumeration<>() {
             private int index = 0;
             private Resource res = null;
@@ -347,6 +378,9 @@ public class URLClassPath {
                 } else {
                     Loader loader;
                     while ((loader = getLoader(index++)) != null) {
+                        if (!loader.mayContain(dir)) {
+                            continue;
+                        }
                         res = loader.getResource(name);
                         if (res != null) {
                             return true;
@@ -369,6 +403,21 @@ public class URLClassPath {
                 return r;
             }
         };
+    }
+
+    /*
+     * Returns the directory of the given resource name, which is the part before
+     * the last '/' and empty for a name in the root. A trailing '/' is ignored
+     * as ZipFile finds a directory entry "dir/" with the name "dir" too.
+     * This is how ZipFile determines the directories of entries.
+     */
+    private static String directoryOf(String name) {
+        int end = name.length();
+        if (name.endsWith("/")) {
+            end--;
+        }
+        int i = name.lastIndexOf('/', end - 1);
+        return i < 0 ? "" : name.substring(0, i);
     }
 
     /*
@@ -499,6 +548,7 @@ public class URLClassPath {
     private static class Loader implements Closeable {
         private final URL base;
         private JarFile jarfile; // if this points to a jar file
+        private volatile CodeSource unsignedCodeSource;
 
         /*
          * Creates a new Loader for the specified URL.
@@ -512,6 +562,29 @@ public class URLClassPath {
          */
         final URL getBaseURL() {
             return base;
+        }
+
+        /*
+         * Returns false if this loader cannot have a resource in the given
+         * directory (see directoryOf), so that it can be skipped.
+         */
+        boolean mayContain(String dir) {
+            return true;
+        }
+
+        /*
+         * Returns the CodeSource for a resource with the given code source URL
+         * and code signers. Resources without signers share their CodeSource.
+         */
+        final CodeSource codeSourceFor(URL csu, CodeSigner[] signers) {
+            if (signers != null) {
+                return new CodeSource(csu, signers);
+            }
+            CodeSource cs = unsignedCodeSource;
+            if (cs == null) {
+                unsignedCodeSource = cs = new CodeSource(csu, (CodeSigner[]) null);
+            }
+            return cs;
         }
 
         URL findResource(final String name) {
@@ -614,8 +687,14 @@ public class URLClassPath {
         private JarFile jar;
         private final URL csu;
         private boolean closed = false;
+        // The directories of the entries, to skip lookups in other directories.
+        // They are only computed once the JAR file has missed as many lookups as
+        // it has entries, so they cost about as much as the misses so far did.
+        private volatile Set<String> directories;
+        private int missesLeft;
         private static final JavaUtilZipFileAccess zipAccess =
                 SharedSecrets.getJavaUtilZipFileAccess();
+        private static final String META_INF_VERSIONS = "META-INF/versions/";
 
         /*
          * Creates a new JarLoader for the specified URL referring to
@@ -627,6 +706,7 @@ public class URLClassPath {
             super(newURL("jar", "", -1, url + "!/", jarHandler));
             csu = url;
             ensureOpen();
+            missesLeft = jar.size();
         }
 
         @SuppressWarnings("deprecation")
@@ -696,11 +776,37 @@ public class URLClassPath {
         }
 
         /*
-         * Creates and returns the Resource. Returns null if the Resource couldn't be created.
+         * Returns false if the JAR file has no entry in the given directory.
          */
-        Resource createResource(final String name, final JarEntry entry) {
+        @Override
+        boolean mayContain(String dir) {
+            Set<String> dirs = directories;
+            if (dirs == null) {
+                // The directories are those of the ZIP file. A subclass of
+                // JarFile, such as one a JarURLConnection supplies, can find
+                // entries that the ZIP file does not have.
+                if (missesLeft > 0 || jar.getClass() != JarFile.class) {
+                    return true;
+                }
+                dirs = zipAccess.entryDirectories(jar);
+                if (jar.isMultiRelease()) {
+                    // An entry of a version is found with its unversioned name
+                    for (String d : List.copyOf(dirs)) {
+                        if (d.startsWith(META_INF_VERSIONS)) {
+                            int i = d.indexOf('/', META_INF_VERSIONS.length());
+                            dirs.add(i < 0 ? "" : d.substring(i + 1));
+                        }
+                    }
+                }
+                directories = dirs;
+            }
+            return dirs.contains(dir);
+        }
 
-            final URL url;
+        /*
+         * Returns the URL for the entry, or null if it cannot be created.
+         */
+        private URL createURL(String name, JarEntry entry) {
             try {
                 String nm;
                 if (jar.isMultiRelease()) {
@@ -709,16 +815,31 @@ public class URLClassPath {
                     nm = name;
                 }
                 @SuppressWarnings("deprecation")
-                var _unused = url = new URL(getBaseURL(), ParseUtil.encodePath(nm, false));
-            } catch (IOException e) {
+                URL url = new URL(getBaseURL(), ParseUtil.encodePath(nm, false));
+                return url;
+            } catch (MalformedURLException e) {
                 return null;
             }
+        }
 
+        /*
+         * Creates and returns the Resource. Returns null if the Resource couldn't be created.
+         */
+        Resource createResource(final String name, final JarEntry entry) {
+            // The URL is created on demand as defining a class doesn't need it.
+            // Only a name with a ':' can fail to make one, in which case the
+            // resource is not found.
+            if (name.indexOf(':') >= 0 && createURL(name, entry) == null) {
+                return null;
+            }
             return new Resource() {
+                private byte[] bytes;
                 private Exception dataError = null;
                 public String getName() { return name; }
-                public URL getURL() { return url; }
+                public URL getURL() { return createURL(name, entry); }
                 public URL getCodeSourceURL() { return csu; }
+                public CodeSource getCodeSource()
+                    { return codeSourceFor(csu, getCodeSigners()); }
                 public InputStream getInputStream() throws IOException
                     { return jar.getInputStream(entry); }
                 public int getContentLength()
@@ -731,17 +852,24 @@ public class URLClassPath {
                     { return entry.getCertificates(); };
                 public CodeSigner[] getCodeSigners()
                     { return entry.getCodeSigners(); };
-                public Exception getDataError()
-                    { return dataError; }
-                public byte[] getBytes() throws IOException {
-                    byte[] bytes = super.getBytes();
-                    CRC32 crc32 = new CRC32();
-                    crc32.update(bytes);
-                    if (crc32.getValue() != entry.getCrc()) {
-                        dataError = new IOException(
-                                "CRC error while extracting entry from JAR file");
+                // The CRC is only checked when asked for, as it is only of
+                // interest when defining the class failed
+                public Exception getDataError() {
+                    if (bytes != null) {
+                        CRC32 crc32 = new CRC32();
+                        crc32.update(bytes);
+                        if (crc32.getValue() != entry.getCrc()) {
+                            dataError = new IOException(
+                                    "CRC error while extracting entry from JAR file");
+                        }
+                        bytes = null;
                     }
-                    return bytes;
+                    return dataError;
+                }
+                public byte[] getBytes() throws IOException {
+                    byte[] b = super.getBytes();
+                    bytes = b;
+                    return b;
                 }
             };
         }
@@ -772,6 +900,7 @@ public class URLClassPath {
             if (entry != null) {
                 return createResource(name, entry);
             }
+            missesLeft--;
             return null;
         }
 
@@ -962,6 +1091,8 @@ public class URLClassPath {
                         public String getName() { return name; };
                         public URL getURL() { return url; };
                         public URL getCodeSourceURL() { return getBaseURL(); };
+                        public CodeSource getCodeSource()
+                            { return codeSourceFor(getBaseURL(), null); };
                         public InputStream getInputStream() throws IOException
                             { return new FileInputStream(file); };
                         public int getContentLength() throws IOException

@@ -39,12 +39,17 @@ import tests.JImageGenerator;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -242,6 +247,70 @@ public class ImageReaderTest {
             Set<String> comLinks = assertDir(reader, "/packages/com").getChildNames().collect(Collectors.toSet());
             assertTrue(comLinks.contains("/packages/com/modfoo"));
             assertTrue(comLinks.contains("/packages/com/modbar"));
+        }
+    }
+
+    @Test
+    public void testPackageDirectories_afterLookup() throws IOException {
+        for (PreviewMode mode : new PreviewMode[] {PreviewMode.DISABLED, PreviewMode.ENABLED}) {
+            try (ImageReader reader = ImageReader.open(image, mode)) {
+                // Looking up a package directory first must not make it appear twice, or
+                // as a different node, when "/packages" is listed afterwards.
+                Node fooDir = assertDir(reader, "/packages/com.foo");
+                assertAbsent(reader, "/packages/com.unknown");
+                Node root = assertDir(reader, "/packages");
+                assertEquals(1, root.getChildNames().filter("/packages/com.foo"::equals).count());
+                assertSame(fooDir, reader.findNode("/packages/com.foo"));
+                assertSame(assertLink(reader, "/packages/com.foo/modfoo"),
+                        reader.findNode("/packages/com.foo/modfoo"));
+            }
+        }
+    }
+
+    @Test
+    public void testPackageLinks_anyOrder() throws IOException {
+        for (PreviewMode mode : new PreviewMode[] {PreviewMode.DISABLED, PreviewMode.ENABLED}) {
+            try (ImageReader reader = ImageReader.open(image, mode)) {
+                // Directories are completed in the reverse of their order, and the
+                // names of the modules are shared by the links of many packages.
+                List<String> pkgDirNames = assertDir(reader, "/packages").getChildNames().collect(toList());
+                Collections.reverse(pkgDirNames);
+                for (String pkgDirName : pkgDirNames) {
+                    for (String linkName : assertDir(reader, pkgDirName).getChildNames().collect(toList())) {
+                        assertTrue(linkName.startsWith(pkgDirName + "/"), linkName);
+                        String moduleName = linkName.substring(pkgDirName.length() + 1);
+                        Node link = assertLink(reader, linkName);
+                        assertEquals(linkName, link.getName());
+                        assertEquals("/modules/" + moduleName, link.resolveLink().getName());
+                        assertSame(reader.findNode("/modules/" + moduleName), link.resolveLink());
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testChildNameIterator() throws IOException {
+        for (PreviewMode mode : new PreviewMode[] {PreviewMode.DISABLED, PreviewMode.ENABLED}) {
+            try (ImageReader reader = ImageReader.open(image, mode)) {
+                for (String name : List.of("/", "/modules", "/packages", "/modules/modfoo", "/modules/modfoo/com/foo",
+                        "/modules/modfoo/META-INF", "/modules/modbar/com/bar", "/packages/com", "/packages/com.foo")) {
+                    Node dir = assertDir(reader, name);
+                    List<String> names = new ArrayList<>();
+                    Iterator<String> iterator = dir.getChildNameIterator();
+                    while (iterator.hasNext()) {
+                        names.add(iterator.next());
+                    }
+                    assertFalse(names.isEmpty(), name);
+                    assertEquals(dir.getChildNames().collect(toList()), names, name);
+                    assertThrows(NoSuchElementException.class, iterator::next);
+                }
+                // Only directories have child names.
+                assertThrows(IllegalStateException.class,
+                        () -> assertNode(reader, "/modules/modfoo/com/foo/NormalFoo.class").getChildNameIterator());
+                assertThrows(IllegalStateException.class,
+                        () -> assertLink(reader, "/packages/com.foo/modfoo").getChildNameIterator());
+            }
         }
     }
 

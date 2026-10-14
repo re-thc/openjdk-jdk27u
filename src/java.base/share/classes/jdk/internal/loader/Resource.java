@@ -30,6 +30,7 @@ import java.net.URL;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.CodeSigner;
+import java.security.CodeSource;
 import java.util.jar.Manifest;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -67,6 +68,17 @@ public abstract class Resource {
      */
     public abstract int getContentLength() throws IOException;
 
+    /**
+     * Returns the CodeSource for the Resource. Like {@link #getCodeSigners},
+     * this is to be called after reading the Resource data.
+     */
+    public CodeSource getCodeSource() {
+        return new CodeSource(getCodeSourceURL(), getCodeSigners());
+    }
+
+    // The largest size of the array for the data that is allocated up front
+    private static final int MAX_INITIAL_SIZE = 64 * 1024;
+
     private InputStream cis;
 
     /* Cache result in case getBytes is called after getByteBuffer. */
@@ -87,7 +99,9 @@ public abstract class Resource {
         InputStream in = cachedInputStream();
         try {
             int len = getContentLength();
-            b = new byte[0];
+            // The content length is not trusted to be right, so a larger
+            // array is only allocated as the data is read
+            b = new byte[len > 0 ? Math.min(len, MAX_INITIAL_SIZE) : 0];
             if (len == -1) len = Integer.MAX_VALUE;
             int pos = 0;
             while (pos < len) {

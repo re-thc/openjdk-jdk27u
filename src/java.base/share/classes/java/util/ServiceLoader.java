@@ -25,10 +25,8 @@
 
 package java.util;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -1000,15 +998,9 @@ public final class ServiceLoader<S>
 
         /**
          * Parse a single line from the given configuration file, adding the
-         * name on the line to set of names if not already seen.
+         * name on the line to the names if not already seen.
          */
-        private int parseLine(URL u, BufferedReader r, int lc, Set<String> names)
-            throws IOException
-        {
-            String ln = r.readLine();
-            if (ln == null) {
-                return -1;
-            }
+        private void parseLine(URL u, String ln, int lc, List<String> names) {
             int ci = ln.indexOf('#');
             if (ci >= 0) ln = ln.substring(0, ci);
             ln = ln.trim();
@@ -1029,26 +1021,38 @@ public final class ServiceLoader<S>
                     names.add(ln);
                 }
             }
-            return lc + 1;
         }
 
         /**
          * Parse the content of the given URL as a provider-configuration file.
          */
         private Iterator<String> parse(URL u) {
-            Set<String> names = new LinkedHashSet<>(); // preserve insertion order
+            List<String> names = new ArrayList<>();
+            String text = null;
             try {
                 URLConnection uc = u.openConnection();
                 uc.setUseCaches(false);
-                try (InputStream in = uc.getInputStream();
-                     BufferedReader r
-                         = new BufferedReader(new InputStreamReader(in, UTF_8.INSTANCE)))
-                {
-                    int lc = 1;
-                    while ((lc = parseLine(u, r, lc, names)) >= 0);
+                try (InputStream in = uc.getInputStream()) {
+                    text = new String(in.readAllBytes(), UTF_8.INSTANCE);
                 }
             } catch (IOException x) {
                 fail(service, "Error accessing configuration file", x);
+            }
+            // Not with a BufferedReader, which costs more to set up than to read
+            // the few lines of a file. Lines end with \n, \r or \r\n, as for readLine.
+            int lc = 1;
+            int len = text.length();
+            for (int pos = 0; pos < len; lc++) {
+                int end = pos;
+                char c = 0;
+                while (end < len && (c = text.charAt(end)) != '\n' && c != '\r') {
+                    end++;
+                }
+                parseLine(u, text.substring(pos, end), lc, names);
+                pos = end + 1;
+                if (c == '\r' && pos < len && text.charAt(pos) == '\n') {
+                    pos++;
+                }
             }
             return names.iterator();
         }
