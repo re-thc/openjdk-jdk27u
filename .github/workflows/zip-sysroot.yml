@@ -37,10 +37,10 @@ jobs:
             "$(pwd)/build/sysroot/support/native/zlib-ng/libz.a" \
             2>&1 | tee qualification/native-archive.log
           test -s build/sysroot/support/native/zlib-ng/libz.a
-          rg --fixed-strings 'zip-ng-sysroot-marker.h' qualification/native-archive.log
-          rg --fixed-strings 'work/sysroot' qualification/native-archive.log
+          grep -F 'zip-ng-sysroot-marker.h' qualification/native-archive.log
+          grep -F 'work/sysroot' qualification/native-archive.log
           nm --defined-only build/sysroot/support/native/zlib-ng/libz.a \
-            | rg 'jdk_ng_(deflate|inflate|crc32|adler32)$'
+            | grep -E 'jdk_ng_(deflate|inflate|crc32|adler32)$'
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
