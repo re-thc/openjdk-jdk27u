@@ -274,8 +274,6 @@ public final class SecurityProviderConstants {
 
         store("SHA-1", KnownOIDs.SHA_1);
 
-        store("PBEWithMD5AndDES", KnownOIDs.PBEWithMD5AndDES, "PBE");
-
         store("DiffieHellman", KnownOIDs.DiffieHellman);
 
         store("EC", KnownOIDs.EC, "EllipticCurve");
@@ -283,6 +281,7 @@ public final class SecurityProviderConstants {
         store("X.509", null, "X509");
         store("NONEwithDSA", null, "RawDSA");
         store("DESede", null, "TripleDES");
+        store("PBEWithSHA1AndDESede", KnownOIDs.PBEWithSHA1AndDESede, "PBE");
         store("ARCFOUR", KnownOIDs.ARCFOUR);
         // For backward compatibility, refer to PKCS1 mapping for RSA
         // KeyPairGenerator and KeyFactory

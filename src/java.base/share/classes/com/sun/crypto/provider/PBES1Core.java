@@ -42,10 +42,9 @@ import javax.crypto.spec.*;
  */
 final class PBES1Core {
 
-    // the encapsulated DES cipher
+    // the encapsulated DESede cipher
     private final CipherCore cipher;
     private final MessageDigest md;
-    private final String algo;
     private byte[] salt = null;
     // RFC 8018 and NIST SP 800-132 sec 5.2 recommend 1000 as the minimum
     private int iCount = PKCS12PBECipherCore.DEFAULT_COUNT;
@@ -62,19 +61,17 @@ final class PBES1Core {
     }
 
     // utility method for generating 8-byte salts
-    private static byte[] generateSalt(String algo, SecureRandom sr) {
+    private static byte[] generateSalt(SecureRandom sr) {
         byte[] salt = new byte[8];
         sr.nextBytes(salt);
-        // check and re-generate for DESede if necessary
-        if (algo.equals("DESede")) {
-            // prevent an infinite-loop in case of a rigged SecureRandom
-            int numAttempts = 50;
-            while (isWeak(salt)) {
-                sr.nextBytes(salt);
-                if (numAttempts-- < 0) {
-                    throw new ProviderException(
-                            "Unable to find salts after 50 attempts");
-                }
+        // re-generate weak salts, but prevent an infinite-loop in case of
+        // a rigged SecureRandom
+        int numAttempts = 50;
+        while (isWeak(salt)) {
+            sr.nextBytes(salt);
+            if (numAttempts-- < 0) {
+                throw new ProviderException(
+                        "Unable to find salts after 50 attempts");
             }
         }
         return salt;
@@ -85,20 +82,10 @@ final class PBES1Core {
      * instance.
      *
      */
-    PBES1Core(String cipherAlg) throws NoSuchAlgorithmException,
+    PBES1Core() throws NoSuchAlgorithmException,
         NoSuchPaddingException {
-        algo = cipherAlg;
-        if (algo.equals("DES")) {
-            cipher = new CipherCore(new DESCrypt(),
-                                    DESConstants.DES_BLOCK_SIZE);
-        } else if (algo.equals("DESede")) {
-
-            cipher = new CipherCore(new DESedeCrypt(),
-                                    DESConstants.DES_BLOCK_SIZE);
-        } else {
-            throw new NoSuchAlgorithmException("No Cipher implementation " +
-                                               "for PBEWithMD5And" + algo);
-        }
+        cipher = new CipherCore(new DESedeCrypt(),
+                                DESConstants.DES_BLOCK_SIZE);
         cipher.setMode("CBC");
         cipher.setPadding("PKCS5Padding");
         // get instance of MD5
@@ -194,12 +181,11 @@ final class PBES1Core {
     AlgorithmParameters getParameters() {
         AlgorithmParameters params;
         if (salt == null) {
-            salt = generateSalt(algo, SunJCE.getRandom());
+            salt = generateSalt(SunJCE.getRandom());
         }
         PBEParameterSpec pbeSpec = new PBEParameterSpec(salt, iCount);
         try {
-            params = AlgorithmParameters.getInstance("PBEWithMD5And" +
-                (algo.equalsIgnoreCase("DES")? "DES":"TripleDES"),
+            params = AlgorithmParameters.getInstance("PBEWithMD5AndTripleDES",
                 SunJCE.getInstance());
             params.init(pbeSpec);
         } catch (NoSuchAlgorithmException nsae) {
@@ -257,7 +243,7 @@ final class PBES1Core {
 
             if (params == null) {
                 // create random salt and use default iteration count
-                salt = generateSalt(algo, random);
+                salt = generateSalt(random);
             } else {
                 if (!(params instanceof PBEParameterSpec)) {
                     throw new InvalidAlgorithmParameterException
@@ -269,9 +255,8 @@ final class PBES1Core {
                     throw new InvalidAlgorithmParameterException
                             ("Salt must be 8 bytes long");
                 }
-                // for DESede, reject weak salts for encryption
-                if (algo.equals("DESede") &&
-                        (opmode == Cipher.ENCRYPT_MODE ||
+                // reject weak salts for encryption
+                if ((opmode == Cipher.ENCRYPT_MODE ||
                         opmode == Cipher.WRAP_MODE) &&
                         isWeak(salt)) {
                     throw new InvalidAlgorithmParameterException(
@@ -290,7 +275,7 @@ final class PBES1Core {
         }
         // use all but the last 8 bytes as the key value
         SecretKeySpec cipherKey = new SecretKeySpec(derivedKey, 0,
-                                                    derivedKey.length-8, algo);
+                                                    derivedKey.length-8, "DESede");
         // use the last 8 bytes as the IV
         IvParameterSpec ivSpec = new IvParameterSpec(derivedKey,
                                                      derivedKey.length-8,
@@ -301,67 +286,48 @@ final class PBES1Core {
 
     private byte[] deriveCipherKey(byte[] passwdBytes) {
 
-        byte[] result = null;
+        byte[] result;
 
-        if (algo.equals("DES")) {
-            // P || S (password concatenated with salt)
-            md.update(passwdBytes);
-            md.update(salt);
-            // digest P || S with iCount iterations
+        // if the 2 salt halves are the same, invert one of them
+        int i;
+        for (i=0; i<4; i++) {
+            if (salt[i] != salt[i+4])
+                break;
+        }
+        if (i==4) { // same, invert 1st half
+            for (i=0; i<2; i++) {
+                byte tmp = salt[i];
+                salt[i] = salt[3-i];
+                salt[3-i] = tmp;
+            }
+        }
+
+        // Now digest each half (concatenated with password). For each
+        // half, go through the loop as many times as specified by the
+        // iteration count parameter (inner for loop).
+        // Concatenate the output from each digest round with the
+        // password, and use the result as the input to the next digest
+        // operation.
+        byte[] toBeHashed;
+        result = new byte[DESedeKeySpec.DES_EDE_KEY_LEN +
+                          DESConstants.DES_BLOCK_SIZE];
+        for (i = 0; i < 2; i++) {
             // first iteration
-            byte[] toBeHashed = md.digest(); // this resets the digest
+            md.update(salt, i * (salt.length / 2), salt.length / 2);
+            md.update(passwdBytes);
+            toBeHashed = md.digest();
             // remaining (iCount - 1) iterations
-            for (int i = 1; i < iCount; ++i) {
+            for (int j = 1; j < iCount; ++j) {
                 md.update(toBeHashed);
+                md.update(passwdBytes);
                 try {
                     md.digest(toBeHashed, 0, toBeHashed.length);
                 } catch (DigestException e) {
                     throw new ProviderException("Internal error", e);
                 }
             }
-            result = toBeHashed;
-        } else if (algo.equals("DESede")) {
-            // if the 2 salt halves are the same, invert one of them
-            int i;
-            for (i=0; i<4; i++) {
-                if (salt[i] != salt[i+4])
-                    break;
-            }
-            if (i==4) { // same, invert 1st half
-                for (i=0; i<2; i++) {
-                    byte tmp = salt[i];
-                    salt[i] = salt[3-i];
-                    salt[3-i] = tmp;
-                }
-            }
-
-            // Now digest each half (concatenated with password). For each
-            // half, go through the loop as many times as specified by the
-            // iteration count parameter (inner for loop).
-            // Concatenate the output from each digest round with the
-            // password, and use the result as the input to the next digest
-            // operation.
-            byte[] toBeHashed;
-            result = new byte[DESedeKeySpec.DES_EDE_KEY_LEN +
-                              DESConstants.DES_BLOCK_SIZE];
-            for (i = 0; i < 2; i++) {
-                // first iteration
-                md.update(salt, i * (salt.length / 2), salt.length / 2);
-                md.update(passwdBytes);
-                toBeHashed = md.digest();
-                // remaining (iCount - 1) iterations
-                for (int j = 1; j < iCount; ++j) {
-                    md.update(toBeHashed);
-                    md.update(passwdBytes);
-                    try {
-                        md.digest(toBeHashed, 0, toBeHashed.length);
-                    } catch (DigestException e) {
-                        throw new ProviderException("Internal error", e);
-                    }
-                }
-                System.arraycopy(toBeHashed, 0, result, i*16,
-                                 toBeHashed.length);
-            }
+            System.arraycopy(toBeHashed, 0, result, i*16,
+                             toBeHashed.length);
         }
         // clear data used in message
         md.reset();

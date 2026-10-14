@@ -58,12 +58,8 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
 
     static {
         validTypes = new HashSet<String>(
-                Set.of("PBEWithMD5AndDES".toUpperCase(Locale.ENGLISH),
-                "PBEWithSHA1AndDESede".toUpperCase(Locale.ENGLISH),
+                Set.of("PBEWithSHA1AndDESede".toUpperCase(Locale.ENGLISH),
                 "PBEWithSHA1AndRC2_40".toUpperCase(Locale.ENGLISH),
-                "PBEWithSHA1AndRC2_128".toUpperCase(Locale.ENGLISH),
-                "PBEWithSHA1AndRC4_40".toUpperCase(Locale.ENGLISH),
-                "PBEWithSHA1AndRC4_128".toUpperCase(Locale.ENGLISH),
                 // Proprietary algorithm.
                 "PBEWithMD5AndTripleDES".toUpperCase(Locale.ENGLISH),
                 "PBEWithHmacSHA1AndAES_128".toUpperCase(Locale.ENGLISH),
@@ -82,12 +78,6 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
                 "PBEWithHmacSHA512/256AndAES_256".toUpperCase(Locale.ENGLISH)));
     }
 
-    public static final class PBEWithMD5AndDES extends PBEKeyFactory {
-        public PBEWithMD5AndDES() {
-            super("PBEWithMD5AndDES");
-        }
-    }
-
     public static final class PBEWithSHA1AndDESede extends PBEKeyFactory {
         public PBEWithSHA1AndDESede() {
             super("PBEWithSHA1AndDESede");
@@ -97,24 +87,6 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
     public static final class PBEWithSHA1AndRC2_40 extends PBEKeyFactory {
         public PBEWithSHA1AndRC2_40() {
             super("PBEWithSHA1AndRC2_40");
-        }
-    }
-
-    public static final class PBEWithSHA1AndRC2_128 extends PBEKeyFactory {
-        public PBEWithSHA1AndRC2_128() {
-            super("PBEWithSHA1AndRC2_128");
-        }
-    }
-
-    public static final class PBEWithSHA1AndRC4_40 extends PBEKeyFactory {
-        public PBEWithSHA1AndRC4_40() {
-            super("PBEWithSHA1AndRC4_40");
-        }
-    }
-
-    public static final class PBEWithSHA1AndRC4_128 extends PBEKeyFactory {
-        public PBEWithSHA1AndRC4_128() {
-            super("PBEWithSHA1AndRC4_128");
         }
     }
 

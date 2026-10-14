@@ -305,9 +305,6 @@ public final class SunJCE extends Provider {
                 attrs);
 
         // PBES1
-        psA("Cipher", "PBEWithMD5AndDES",
-                "com.sun.crypto.provider.PBEWithMD5AndDESCipher",
-                null);
         ps("Cipher", "PBEWithMD5AndTripleDES",
                 "com.sun.crypto.provider.PBEWithMD5AndTripleDESCipher");
         psA("Cipher", "PBEWithSHA1AndDESede",
@@ -315,16 +312,6 @@ public final class SunJCE extends Provider {
                 null);
         psA("Cipher", "PBEWithSHA1AndRC2_40",
                 "com.sun.crypto.provider.PKCS12PBECipherCore$PBEWithSHA1AndRC2_40",
-                null);
-        psA("Cipher", "PBEWithSHA1AndRC2_128",
-                "com.sun.crypto.provider.PKCS12PBECipherCore$PBEWithSHA1AndRC2_128",
-                null);
-        psA("Cipher", "PBEWithSHA1AndRC4_40",
-                "com.sun.crypto.provider.PKCS12PBECipherCore$PBEWithSHA1AndRC4_40",
-                null);
-
-        psA("Cipher", "PBEWithSHA1AndRC4_128",
-                "com.sun.crypto.provider.PKCS12PBECipherCore$PBEWithSHA1AndRC4_128",
                 null);
 
         // PBES2
@@ -473,10 +460,6 @@ public final class SunJCE extends Provider {
         psA("AlgorithmParameters", "DESede",
                 "com.sun.crypto.provider.DESedeParameters", null);
 
-        psA("AlgorithmParameters", "PBEWithMD5AndDES",
-                "com.sun.crypto.provider.PBEParameters",
-                null);
-
         ps("AlgorithmParameters", "PBEWithMD5AndTripleDES",
                 "com.sun.crypto.provider.PBEParameters");
 
@@ -488,17 +471,6 @@ public final class SunJCE extends Provider {
                 "com.sun.crypto.provider.PBEParameters",
                 null);
 
-        psA("AlgorithmParameters", "PBEWithSHA1AndRC2_128",
-                "com.sun.crypto.provider.PBEParameters",
-                null);
-
-        psA("AlgorithmParameters", "PBEWithSHA1AndRC4_40",
-                "com.sun.crypto.provider.PBEParameters",
-                null);
-
-        psA("AlgorithmParameters", "PBEWithSHA1AndRC4_128",
-                "com.sun.crypto.provider.PBEParameters",
-                null);
 
         psA("AlgorithmParameters", "PBES2",
                 "com.sun.crypto.provider.PBES2Parameters$General",
@@ -580,10 +552,6 @@ public final class SunJCE extends Provider {
         psA("SecretKeyFactory", "DESede",
                 "com.sun.crypto.provider.DESedeKeyFactory", null);
 
-        psA("SecretKeyFactory", "PBEWithMD5AndDES",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithMD5AndDES",
-                null);
-
         /*
          * Internal in-house crypto algorithm used for
          * the JCEKS keystore type.  Since this was developed
@@ -601,17 +569,6 @@ public final class SunJCE extends Provider {
                 "com.sun.crypto.provider.PBEKeyFactory$PBEWithSHA1AndRC2_40",
                 null);
 
-        psA("SecretKeyFactory", "PBEWithSHA1AndRC2_128",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithSHA1AndRC2_128",
-                null);
-
-        psA("SecretKeyFactory", "PBEWithSHA1AndRC4_40",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithSHA1AndRC4_40",
-                null);
-
-        psA("SecretKeyFactory", "PBEWithSHA1AndRC4_128",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithSHA1AndRC4_128",
-                null);
 
         ps("SecretKeyFactory", "PBEWithHmacSHA1AndAES_128",
                 "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA1AndAES_128");

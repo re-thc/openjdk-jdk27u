@@ -38,8 +38,7 @@ import javax.security.auth.DestroyFailedException;
  * This class implements password-base encryption algorithm with
  * SHA1 digest and the following Ciphers (in CBC mode, where applicable):
  * - DESede cipher and
- * - RC2 Cipher with 40-bit or 128-bit effective key length and
- * - RC4 Cipher with 40-bit or 128-bit effective key length
+ * - RC2 Cipher with 40-bit effective key length
  * as defined by PKCS #12 version 1.0 standard.
  *
  * @author Valerie Peng
@@ -185,7 +184,6 @@ final class PKCS12PBECipherCore {
 
         algo = symmCipherAlg;
         pbeAlgo = switch (algo) {
-            case "RC4" -> "PBEWithSHA1AndRC4_" + keySizeInBits;
             case "DESede" -> "PBEWithSHA1AndDESede";
             case "RC2" -> "PBEWithSHA1AndRC2_" + keySizeInBits;
             default -> throw new NoSuchAlgorithmException(
@@ -310,7 +308,6 @@ final class PKCS12PBECipherCore {
             Arrays.fill(derivedKey, (byte)0);
 
             return switch (algo) {
-                case "RC4" -> new KeyAndIv(cipherKey, null);
                 case "RC2", "DESede" -> new KeyAndIv(cipherKey,
                     new IvParameterSpec(derive(passwdChars, salt, iCount, 8,
                             CIPHER_IV)));
@@ -464,79 +461,6 @@ final class PKCS12PBECipherCore {
     public static final class PBEWithSHA1AndRC2_40 extends PBEWithSHA1AndRC2 {
         public PBEWithSHA1AndRC2_40() throws NoSuchAlgorithmException {
             super(40);
-        }
-    }
-
-    public static final class PBEWithSHA1AndRC2_128 extends PBEWithSHA1AndRC2 {
-        public PBEWithSHA1AndRC2_128() throws NoSuchAlgorithmException {
-            super(128);
-        }
-    }
-
-    static sealed class PBEWithSHA1AndRC4 extends ARCFOURCipher {
-        private final PKCS12PBECipherCore core;
-
-        public PBEWithSHA1AndRC4(int keysize) throws NoSuchAlgorithmException {
-            core = new PKCS12PBECipherCore("RC4", keysize);
-        }
-        @Override
-        protected int engineGetKeySize(Key key) throws InvalidKeyException {
-            return core.implGetKeySize(key);
-        }
-        @Override
-        protected AlgorithmParameters engineGetParameters() {
-            return core.implGetParameters();
-        }
-        @Override
-        protected void engineInit(int opmode, Key key,
-                                  AlgorithmParameterSpec params,
-                                  SecureRandom random)
-                throws InvalidKeyException, InvalidAlgorithmParameterException {
-            try (var derived = core.implInit(opmode, key, params, random)) {
-                super.engineInit(opmode, derived.key(), derived.iv(), random);
-            }
-        }
-        @Override
-        protected void engineInit(int opmode, Key key,
-                                  AlgorithmParameters params,
-                                  SecureRandom random)
-                throws InvalidKeyException, InvalidAlgorithmParameterException {
-            engineInit(opmode, key, toParamSpec(params), random);
-        }
-        @Override
-        protected void engineInit(int opmode, Key key, SecureRandom random)
-                throws InvalidKeyException {
-            try {
-                engineInit(opmode, key, (AlgorithmParameterSpec) null, random);
-            } catch (InvalidAlgorithmParameterException iape) {
-                // should never happen
-            }
-        }
-        @Override
-        protected void engineSetMode(String mode)
-                throws NoSuchAlgorithmException {
-            if (!"ECB".equalsIgnoreCase(mode)) {
-                throw new NoSuchAlgorithmException("Unsupported mode: " + mode);
-            }
-        }
-        @Override
-        protected void engineSetPadding(String paddingScheme)
-                throws NoSuchPaddingException {
-            if (!"NoPadding".equalsIgnoreCase(paddingScheme)) {
-                throw new NoSuchPaddingException("Unsupported padding: " +
-                        paddingScheme);
-            }
-        }
-    }
-
-    public static final class PBEWithSHA1AndRC4_40 extends PBEWithSHA1AndRC4 {
-        public PBEWithSHA1AndRC4_40() throws NoSuchAlgorithmException {
-            super(40);
-        }
-    }
-    public static final class PBEWithSHA1AndRC4_128 extends PBEWithSHA1AndRC4 {
-        public PBEWithSHA1AndRC4_128() throws NoSuchAlgorithmException {
-            super(128);
         }
     }
 }

@@ -110,6 +110,9 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         }
     }
 
+    private static final String PBE_WITH_MD5_AND_DES_OID =
+            "1.2.840.113549.1.5.3";
+
     public static final int VERSION_3 = 3;
 
     private static final int MAX_ITERATION_COUNT = 5000000;
@@ -398,6 +401,10 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                             keyAlgo = "DES";
                         } else if (keyAlgo.equals(KnownOIDs.RC2$CBC$PKCS5Padding.stdName())) {
                             keyAlgo = "RC2";
+                        } else if (keyAlgo.equals(PBE_WITH_MD5_AND_DES_OID)) {
+                            // passwords stored by keytool -importpass in
+                            // older releases; the key only holds a password
+                            keyAlgo = "PBEWithSHA1AndDESede";
                         }
                         SecretKeySpec secretKeySpec =
                                 new SecretKeySpec(keyBytes, keyAlgo);
@@ -826,10 +833,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         AlgorithmParameters algParams;
 
         byte[] salt = getSalt();
-        if (KnownOIDs.findMatch(algorithm) == KnownOIDs.PBEWithMD5AndDES) {
-            // PBES1 scheme such as PBEWithMD5AndDES requires a 8-byte salt
-            salt = Arrays.copyOf(salt, 8);
-        }
 
         // create PBE parameters from salt and iteration count
         PBEParameterSpec paramSpec =

@@ -204,10 +204,6 @@ public enum KnownOIDs {
     DiffieHellman("1.2.840.113549.1.3.1", "DiffieHellman", "DH"),
 
     // PKCS5 1.2.840.113549.1.5.*
-    PBEWithMD5AndDES("1.2.840.113549.1.5.3"),
-    PBEWithMD5AndRC2("1.2.840.113549.1.5.6"),
-    PBEWithSHA1AndDES("1.2.840.113549.1.5.10"),
-    PBEWithSHA1AndRC2("1.2.840.113549.1.5.11"),
     PBKDF2("1.2.840.113549.1.5.12", "PBKDF2WithHmacSHA1"),
     PBES2("1.2.840.113549.1.5.13"),
     PBMAC1("1.2.840.113549.1.5.14"),
@@ -247,10 +243,7 @@ public enum KnownOIDs {
     CMSAlgorithmProtection("1.2.840.113549.1.9.52"),
 
     // PKCS12 1.2.840.113549.1.12.*
-    PBEWithSHA1AndRC4_128("1.2.840.113549.1.12.1.1"),
-    PBEWithSHA1AndRC4_40("1.2.840.113549.1.12.1.2"),
     PBEWithSHA1AndDESede("1.2.840.113549.1.12.1.3"),
-    PBEWithSHA1AndRC2_128("1.2.840.113549.1.12.1.5"),
     PBEWithSHA1AndRC2_40("1.2.840.113549.1.12.1.6"),
     PKCS8ShroudedKeyBag("1.2.840.113549.1.12.10.1.2"),
     CertBag("1.2.840.113549.1.12.10.1.3"),

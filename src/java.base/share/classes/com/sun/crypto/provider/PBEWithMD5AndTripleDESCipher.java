@@ -68,7 +68,7 @@ public final class PBEWithMD5AndTripleDESCipher extends CipherSpi {
         throws NoSuchAlgorithmException, NoSuchPaddingException
     {
         // set the encapsulated cipher to do triple DES
-        core = new PBES1Core("DESede");
+        core = new PBES1Core();
     }
 
     /**
