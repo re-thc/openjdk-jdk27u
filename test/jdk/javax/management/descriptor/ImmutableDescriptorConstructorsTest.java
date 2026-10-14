@@ -185,7 +185,7 @@ public class ImmutableDescriptorConstructorsTest {
     // as adding the fields in turn to a TreeMap, including which name is reported
     private static void manyFields() {
         Random random = new Random(4711);
-        for (int n : new int[] {15, 16, 17, 40, 1000}) {
+        for (int n : new int[] {31, 32, 33, 40, 1000}) {
             for (int round = 0; round < 60; round++) {
                 String[] names = new String[n];
                 Object[] values = new Object[n];
