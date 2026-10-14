@@ -73,13 +73,18 @@ public class SecureRandomBench {
     }
 
     // A request now and then: each one comes after the bytes that NativePRNG
-    // buffered for an earlier one have expired, which is after 100 ms.
+    // buffered for an earlier one have expired, which is after 100 ms. The
+    // thread keeps the processor busy meanwhile, so that waking it up from
+    // idle is not measured.
 
     @State(Scope.Thread)
     public static class Idle {
         @Setup(Level.Invocation)
-        public void idle() throws InterruptedException {
-            Thread.sleep(110);
+        public void idle() {
+            long end = System.nanoTime() + 110_000_000L;
+            while (System.nanoTime() < end) {
+                Thread.onSpinWait();
+            }
         }
     }
 
