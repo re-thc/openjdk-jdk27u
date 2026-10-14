@@ -690,9 +690,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_updateByteBufferAdler32:
     return inline_updateByteBufferAdler32();
 
-  case vmIntrinsics::_nativePRNG_getRandomBytes:
-    return inline_nativePRNG_getRandomBytes();
-
   case vmIntrinsics::_profileBoolean:
     return inline_profileBoolean();
   case vmIntrinsics::_isCompileConstant:
@@ -7191,41 +7188,6 @@ bool LibraryCallKit::inline_updateByteBufferAdler32() {
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  crc, src_start, length);
 
-  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-  set_result(result);
-  return true;
-}
-
-//----------------------------inline_nativePRNG_getRandomBytes----------------------------
-/**
- * Fill part of a byte array with random bytes from the operating system,
- * without blocking.
- * int sun.security.provider.NativePRNG.getRandomBytes0(byte[] b, int off, int len)
- */
-bool LibraryCallKit::inline_nativePRNG_getRandomBytes() {
-  assert(callee()->signature()->size() == 3, "getRandomBytes0 has 3 parameters");
-  // no receiver since it is static method
-  Node* dst    = argument(0); // type: oop
-  Node* offset = argument(1); // type: int
-  Node* length = argument(2); // type: int
-
-  const TypeAryPtr* dst_type = dst->Value(&_gvn)->isa_aryptr();
-  if (dst_type == nullptr || dst_type->elem() == Type::BOTTOM ||
-      dst_type->elem()->array_element_basic_type() != T_BYTE) {
-    // failed array check
-    return false;
-  }
-
-  // 'dst_start' points to dst array + scaled offset
-  dst = must_be_not_null(dst, true);
-  Node* dst_start = array_element_address(dst, offset, T_BYTE);
-
-  // We assume that range check is done by caller. The call is a leaf, so
-  // it takes no safepoint and the array does not move while it is filled.
-  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::getRandomBytes_Type(),
-                                 CAST_FROM_FN_PTR(address, os::get_random_bytes),
-                                 "get_random_bytes", TypePtr::BOTTOM,
-                                 dst_start, length);
   Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
   set_result(result);
   return true;

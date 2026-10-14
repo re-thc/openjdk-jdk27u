@@ -29,7 +29,6 @@ import java.io.*;
 import java.net.*;
 import java.security.*;
 
-import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.security.util.Debug;
 
 /**
@@ -64,8 +63,9 @@ import sun.security.util.Debug;
  * may be running for months.
  * <p>
  * Finally, note that we use a singleton for the actual work (RandomIO)
- * so that the SHA1PRNG is shared. However, there may be many NativePRNG
- * instances created by the JCA framework.
+ * so that the SHA1PRNG and the buffers for small requests are shared.
+ * However, there may be many NativePRNG instances created by the JCA
+ * framework.
  *
  * @since   1.5
  * @author  Andreas Sterbenz
@@ -81,51 +81,12 @@ public final class NativePRNG extends SecureRandomSpi {
     // name of the pseudo random file
     private static final String NAME_URANDOM = "/dev/urandom";
 
-    // The most bytes that one call of getRandomBytes0 gets from the OS.
-    // Compiled code makes the call without a thread state transition, so
-    // a safepoint waits for it. This bounds how long.
-    private static final int MAX_CHUNK = 4096;
-
-    // fills b with random bytes from the OS, blocking until its random
-    // number generator is initialized, like /dev/random
-    // Not an intrinsic candidate: while it blocks, it would stall safepoints.
-    private static native void getBlockingRandomBytes0(byte[] b)
-            throws IOException;
-
-    // fills b[off, off + len) with random bytes from the OS without blocking,
-    // like /dev/urandom
-    // returns 0, or the errno value if the OS fails to provide them
-    // the caller must make sure that the range is within b
-    @IntrinsicCandidate
-    private static native int getRandomBytes0(byte[] b, int off, int len);
-
-    // throws an IOException with the message for the errno value
-    private static native void throwIOException0(int errno) throws IOException;
-
     // fills b with random bytes from the OS
     // urandom selects whether this does not block, like /dev/urandom, or
     // blocks until the OS random number generator is initialized, like
     // /dev/random
-    private static void getRandomBytes(byte[] b, boolean urandom)
-            throws IOException {
-        if (!urandom) {
-            getBlockingRandomBytes0(b);
-            return;
-        }
-        int len = b.length;
-        int off = 0;
-        while (off < len) {
-            int n = len - off;
-            if (n > MAX_CHUNK) {
-                n = MAX_CHUNK;
-            }
-            int errno = getRandomBytes0(b, off, n);
-            if (errno != 0) {
-                throwIOException0(errno);
-            }
-            off += n;
-        }
-    }
+    private static native void getRandomBytes(byte[] b, boolean urandom)
+            throws IOException;
 
     // which kind of RandomIO object are we creating?
     private enum Variant {

@@ -25,8 +25,6 @@
 
 package sun.security.provider;
 
-import jdk.internal.vm.annotation.IntrinsicCandidate;
-
 /**
  * Native PRNG implementation for Windows. Currently a dummy, we do
  * not support a fully native PRNG on Windows.
@@ -35,12 +33,6 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * @author  Andreas Sterbenz
  */
 public final class NativePRNG {
-
-    // The VM defines an intrinsic for this method of NativePRNG on all
-    // platforms, and debug builds check that the class declares it. It is
-    // never called on Windows.
-    @IntrinsicCandidate
-    private static native int getRandomBytes0(byte[] b, int off, int len);
 
     // return whether the NativePRNG is available
     static boolean isAvailable() {

@@ -234,7 +234,6 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
 #endif
   case vmIntrinsics::_vectorizedMismatch:
-  case vmIntrinsics::_nativePRNG_getRandomBytes:
   case vmIntrinsics::_compareAndSetInt:
   case vmIntrinsics::_compareAndSetReference:
   case vmIntrinsics::_getCharStringU:

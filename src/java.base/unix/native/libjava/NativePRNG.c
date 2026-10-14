@@ -54,13 +54,23 @@ static int
 getRandomBytes(char *buf, size_t len, jboolean urandom)
 {
 #if defined(__linux__)
-    /* GRND_INSECURE needs Linux 5.6, where /dev/random behaves like flags 0 */
-    unsigned int flags = urandom ? GRND_INSECURE : 0;
+    /*
+     * GRND_INSECURE needs Linux 5.6, where /dev/random behaves like flags 0.
+     * Older kernels reject it. Then use flags 0, which blocks only until the
+     * random number generator is initialized, early during boot.
+     */
+    static volatile int noInsecure = 0;
+    unsigned int flags = (urandom && !noInsecure) ? GRND_INSECURE : 0;
 
     while (len > 0) {
         ssize_t n = getrandom(buf, len, flags);
         if (n < 0) {
             if (errno == EINTR) {
+                continue;
+            }
+            if (errno == EINVAL && flags == GRND_INSECURE) {
+                noInsecure = 1;
+                flags = 0;
                 continue;
             }
             return -1;
@@ -75,14 +85,10 @@ getRandomBytes(char *buf, size_t len, jboolean urandom)
     return 0;
 }
 
-/*
- * Fills the array with random bytes from the operating system. This blocks
- * until the random number generator of the operating system is initialized.
- */
 JNIEXPORT void JNICALL
-Java_sun_security_provider_NativePRNG_getBlockingRandomBytes0(JNIEnv *env,
-                                                              jclass cls,
-                                                              jbyteArray bytes)
+Java_sun_security_provider_NativePRNG_getRandomBytes(JNIEnv *env, jclass cls,
+                                                     jbyteArray bytes,
+                                                     jboolean urandom)
 {
     char buf[BUF_SIZE];
     jint len = (*env)->GetArrayLength(env, bytes);
@@ -90,7 +96,7 @@ Java_sun_security_provider_NativePRNG_getBlockingRandomBytes0(JNIEnv *env,
 
     while (off < len) {
         jint n = (len - off < BUF_SIZE) ? len - off : BUF_SIZE;
-        if (getRandomBytes(buf, n, JNI_FALSE) < 0) {
+        if (getRandomBytes(buf, n, urandom) < 0) {
             JNU_ThrowIOExceptionWithMessageAndLastError(env,
                                                         "getrandom failed");
             return;
@@ -98,37 +104,4 @@ Java_sun_security_provider_NativePRNG_getBlockingRandomBytes0(JNIEnv *env,
         (*env)->SetByteArrayRegion(env, bytes, off, n, (jbyte *)buf);
         off += n;
     }
-}
-
-/*
- * Fills b[off, off + len) with random bytes from the operating system without
- * blocking. Returns 0, or the errno value.
- * The VM replaces this method with a call to os::get_random_bytes() in
- * compiled code.
- */
-JNIEXPORT jint JNICALL
-Java_sun_security_provider_NativePRNG_getRandomBytes0(JNIEnv *env, jclass cls,
-                                                      jbyteArray b,
-                                                      jint off, jint len)
-{
-    char buf[BUF_SIZE];
-
-    while (len > 0) {
-        jint n = (len < BUF_SIZE) ? len : BUF_SIZE;
-        if (getRandomBytes(buf, n, JNI_TRUE) < 0) {
-            return errno;
-        }
-        (*env)->SetByteArrayRegion(env, b, off, n, (jbyte *)buf);
-        off += n;
-        len -= n;
-    }
-    return 0;
-}
-
-JNIEXPORT void JNICALL
-Java_sun_security_provider_NativePRNG_throwIOException0(JNIEnv *env, jclass cls,
-                                                        jint errnum)
-{
-    errno = errnum;
-    JNU_ThrowIOExceptionWithMessageAndLastError(env, "getrandom failed");
 }
