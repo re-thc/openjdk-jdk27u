@@ -1185,6 +1185,7 @@ final class StringUTF16 {
     }
 
     // srcCoder == UTF16 && tgtCoder == UTF16
+    @ForceInline
     static int lastIndexOf(byte[] src, int srcCount,
                            byte[] tgt, int tgtCount, int fromIndex) {
         assert fromIndex >= 0;
@@ -1193,6 +1194,19 @@ final class StringUTF16 {
         checkIndex(tgtCount - 1, tgt);
         checkIndex(fromIndex + tgtCount - 1, src);
 
+        if (tgtCount > 128 && fromIndex < 8 && StringZilla.ENABLED
+                && StringZilla.compilerTier() == StringZilla.C1) {
+            int last = tgtCount - 1;
+            char lastChar = getChar(tgt, last);
+            int candidateEnd = fromIndex + last;
+            while (candidateEnd >= last && getChar(src, candidateEnd) != lastChar) {
+                candidateEnd--;
+            }
+            if (candidateEnd < last) {
+                return -1;
+            }
+            fromIndex = candidateEnd - last;
+        }
         int searchLength = fromIndex + tgtCount;
         if (searchLength >= (StringZilla.MIN_BYTES >> 1) && StringZilla.ENABLED) {
             // Probe before tier dispatch, keeping short interpreted ranges in Java.
