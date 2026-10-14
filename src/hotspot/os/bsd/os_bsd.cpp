@@ -83,6 +83,7 @@
 # include <signal.h>
 # include <stdint.h>
 # include <stdio.h>
+# include <stdlib.h>
 # include <string.h>
 # include <sys/ioctl.h>
 # include <sys/mman.h>
@@ -991,6 +992,12 @@ intx os::current_thread_id() {
 
 int os::current_process_id() {
   return (int)(getpid());
+}
+
+int os::get_random_bytes(void* buf, int len) {
+  // arc4random_buf() does not block
+  arc4random_buf(buf, len);
+  return 0;
 }
 
 // DLL functions

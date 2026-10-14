@@ -361,6 +361,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_updateDirectByteBufferCRC32C();
   bool inline_updateBytesAdler32();
   bool inline_updateByteBufferAdler32();
+  bool inline_nativePRNG_getRandomBytes();
   bool inline_multiplyToLen();
   bool inline_countPositives();
   bool inline_squareToLen();

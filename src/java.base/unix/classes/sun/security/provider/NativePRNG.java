@@ -28,47 +28,44 @@ package sun.security.provider;
 import java.io.*;
 import java.net.*;
 import java.security.*;
-import java.util.Arrays;
 
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.security.util.Debug;
 
 /**
  * Native PRNG implementation for Linux/MacOS.
  * <p>
- * It obtains seed and random numbers by reading system files such as
- * the special device files /dev/random and /dev/urandom.  This
- * implementation respects the {@code securerandom.source} Security
- * property and {@code java.security.egd} System property for obtaining
- * seed material.  If the file specified by the properties does not
- * exist, /dev/random is the default seed source.  /dev/urandom is
- * the default source of random numbers.
+ * It obtains seed and random numbers from the random number generator of the
+ * operating system through a native call: getrandom() on Linux and
+ * arc4random_buf() on macOS.  This implementation respects the
+ * {@code securerandom.source} Security property and {@code java.security.egd}
+ * System property for obtaining seed material.  If they name a readable file
+ * other than /dev/random or /dev/urandom, generateSeed() reads that file.
+ * Otherwise the seed comes from the operating system as well.
  * <p>
- * On some Unix platforms, /dev/random may block until enough entropy is
- * available, but that may negatively impact the perceived startup
- * time.  By selecting these sources, this implementation tries to
- * strike a balance between performance and security.
+ * The native code behaves either like /dev/urandom, which never blocks
+ * (getrandom() with GRND_INSECURE), or like /dev/random, which blocks until
+ * the operating system random number generator is initialized (getrandom()
+ * without flags). The bytes for nextBytes() and for the seed of
+ * the SHA1PRNG behave like /dev/urandom, except in the blocking algorithm,
+ * where they behave like /dev/random. The seed for generateSeed() behaves like
+ * the seed file, which is /dev/random by default.
  * <p>
- * generateSeed() and setSeed() attempt to directly read/write to the seed
- * source. However, this file may only be writable by root in many
- * configurations. Because we cannot just ignore bytes specified via
- * setSeed(), we keep a SHA1PRNG around in parallel.
+ * setSeed() attempts to write to the seed file. However, this file may only be
+ * writable by root in many configurations. Because we cannot just ignore bytes
+ * specified via setSeed(), we keep a SHA1PRNG around in parallel. It is
+ * created by the first call to setSeed().
  * <p>
- * nextBytes() reads the bytes directly from the source of random
- * numbers (and then mixes them with bytes from the SHA1PRNG for the
- * reasons explained above). Reading bytes from the random generator means
- * that we are generally getting entropy from the operating system. This
- * is a notable advantage over the SHA1PRNG model, which acquires
- * entropy only initially during startup although the VM may be running
- * for months.
- * <p>
- * Also note for nextBytes() that we do not need any initial pure random
- * seed from /dev/random. This is an advantage because on some versions
- * of Linux entropy can be exhausted very quickly and could thus impact
- * startup time.
+ * nextBytes() gets the bytes directly from the operating system (and, once
+ * setSeed() has been called, mixes them with bytes from the SHA1PRNG for the
+ * reasons explained above). This means that we are generally getting entropy
+ * from the operating system. This is a notable advantage over the SHA1PRNG
+ * model, which acquires entropy only initially during startup although the VM
+ * may be running for months.
  * <p>
  * Finally, note that we use a singleton for the actual work (RandomIO)
- * to avoid having to open and close /dev/[u]random constantly. However,
- * there may be many NativePRNG instances created by the JCA framework.
+ * so that the SHA1PRNG is shared. However, there may be many NativePRNG
+ * instances created by the JCA framework.
  *
  * @since   1.5
  * @author  Andreas Sterbenz
@@ -84,12 +81,58 @@ public final class NativePRNG extends SecureRandomSpi {
     // name of the pseudo random file
     private static final String NAME_URANDOM = "/dev/urandom";
 
+    // The most bytes that one call of getRandomBytes0 gets from the OS.
+    // Compiled code makes the call without a thread state transition, so
+    // a safepoint waits for it. This bounds how long.
+    private static final int MAX_CHUNK = 4096;
+
+    // fills b with random bytes from the OS, blocking until its random
+    // number generator is initialized, like /dev/random
+    // Not an intrinsic candidate: while it blocks, it would stall safepoints.
+    private static native void getBlockingRandomBytes0(byte[] b)
+            throws IOException;
+
+    // fills b[off, off + len) with random bytes from the OS without blocking,
+    // like /dev/urandom
+    // returns 0, or the errno value if the OS fails to provide them
+    // the caller must make sure that the range is within b
+    @IntrinsicCandidate
+    private static native int getRandomBytes0(byte[] b, int off, int len);
+
+    // throws an IOException with the message for the errno value
+    private static native void throwIOException0(int errno) throws IOException;
+
+    // fills b with random bytes from the OS
+    // urandom selects whether this does not block, like /dev/urandom, or
+    // blocks until the OS random number generator is initialized, like
+    // /dev/random
+    private static void getRandomBytes(byte[] b, boolean urandom)
+            throws IOException {
+        if (!urandom) {
+            getBlockingRandomBytes0(b);
+            return;
+        }
+        int len = b.length;
+        int off = 0;
+        while (off < len) {
+            int n = len - off;
+            if (n > MAX_CHUNK) {
+                n = MAX_CHUNK;
+            }
+            int errno = getRandomBytes0(b, off, n);
+            if (errno != 0) {
+                throwIOException0(errno);
+            }
+            off += n;
+        }
+    }
+
     // which kind of RandomIO object are we creating?
     private enum Variant {
         MIXED, BLOCKING, NONBLOCKING
     }
 
-    // singleton instance or null if not available
+    // singleton instance
     private static final RandomIO INSTANCE = initIO(Variant.MIXED);
 
     /**
@@ -129,7 +172,7 @@ public final class NativePRNG extends SecureRandomSpi {
     private static RandomIO initIO(final Variant v) {
 
         File seedFile;
-        File nextFile;
+        boolean nextUrandom;
 
         switch(v) {
         case MIXED:
@@ -151,55 +194,64 @@ public final class NativePRNG extends SecureRandomSpi {
                 // fall back to /dev/random.
                 seedFile = new File(NAME_RANDOM);
             }
-            nextFile = new File(NAME_URANDOM);
+            nextUrandom = true;
             break;
 
         case BLOCKING:
             seedFile = new File(NAME_RANDOM);
-            nextFile = new File(NAME_RANDOM);
+            nextUrandom = false;
             break;
 
         case NONBLOCKING:
             seedFile = new File(NAME_URANDOM);
-            nextFile = new File(NAME_URANDOM);
+            nextUrandom = true;
             break;
 
         default:
             // Shouldn't happen!
-            return null;
+            throw new InternalError();
+        }
+
+        // The seed comes from the OS, unless the seed file is another file.
+        InputStream seedIn = null;
+        String path = seedFile.getPath();
+        if (!path.equals(NAME_RANDOM) && !path.equals(NAME_URANDOM)) {
+            try {
+                seedIn = FileInputStreamPool.getInputStream(seedFile);
+            } catch (IOException e) {
+                // Swallow, the seed comes from the OS
+            }
         }
 
         if (debug != null) {
             debug.println("NativePRNG." + v +
                 " seedFile: " + seedFile +
-                " nextFile: " + nextFile);
+                " readSeedFile: " + (seedIn != null) +
+                " nextFile: " + (nextUrandom ? NAME_URANDOM : NAME_RANDOM));
         }
 
-        if (!seedFile.canRead() || !nextFile.canRead()) {
-            if (debug != null) {
-                debug.println("NativePRNG." + v +
-                    " Couldn't read Files.");
-            }
-            return null;
-        }
-
-        try {
-            return new RandomIO(seedFile, nextFile);
-        } catch (Exception e) {
-            return null;
-        }
+        return new RandomIO(seedFile, seedIn, nextUrandom);
     }
 
     // return whether the NativePRNG is available
     static boolean isAvailable() {
-        return INSTANCE != null;
+        return true;
+    }
+
+    // the implementation of the SecureRandom service with the algorithm name
+    // of the SUN provider, or null if it is not one of this class, for
+    // SunEntries.SecureRandomService
+    static SecureRandomSpi newInstance(String algorithm) {
+        return switch (algorithm) {
+            case "NativePRNG" -> new NativePRNG(null);
+            case "NativePRNGBlocking" -> new Blocking(null);
+            case "NativePRNGNonBlocking" -> new NonBlocking(null);
+            default -> null;
+        };
     }
 
     // constructor, called by the JCA framework
     public NativePRNG(SecureRandomParameters params) {
-        if (INSTANCE == null) {
-            throw new AssertionError("NativePRNG not available");
-        }
         if (params != null) {
             throw new IllegalArgumentException("Unsupported params: " + params.getClass());
         }
@@ -224,14 +276,18 @@ public final class NativePRNG extends SecureRandomSpi {
     }
 
     /**
-     * A NativePRNG-like class that uses /dev/random for both
-     * seed and random material.
+     * A NativePRNG-like class that gets both seed and random material from
+     * the OS, and writes the seeds supplied to setSeed to /dev/random.
      *
      * Note that it does not respect the egd properties, since we have
      * no way of knowing what those qualities are.
      *
      * This is very similar to the outer NativePRNG class, minimizing any
      * breakage to the serialization of the existing implementation.
+     *
+     * Since Linux 5.6, /dev/random and getrandom() without flags behave the
+     * same: they only block until the OS random number generator has been
+     * initialized. So the native call serves this class as well.
      *
      * @since   1.8
      */
@@ -242,14 +298,11 @@ public final class NativePRNG extends SecureRandomSpi {
 
         // return whether this is available
         static boolean isAvailable() {
-            return INSTANCE != null;
+            return true;
         }
 
         // constructor, called by the JCA framework
         public Blocking(SecureRandomParameters params) {
-            if (INSTANCE == null) {
-                throw new AssertionError("NativePRNG$Blocking not available");
-            }
             if (params != null) {
                 throw new IllegalArgumentException("Unsupported params: " + params.getClass());
             }
@@ -275,8 +328,8 @@ public final class NativePRNG extends SecureRandomSpi {
     }
 
     /**
-     * A NativePRNG-like class that uses /dev/urandom for both
-     * seed and random material.
+     * A NativePRNG-like class that gets both seed and random material from
+     * the OS, and writes the seeds supplied to setSeed to /dev/urandom.
      *
      * Note that it does not respect the egd properties, since we have
      * no way of knowing what those qualities are.
@@ -293,15 +346,11 @@ public final class NativePRNG extends SecureRandomSpi {
 
         // return whether this is available
         static boolean isAvailable() {
-            return INSTANCE != null;
+            return true;
         }
 
         // constructor, called by the JCA framework
         public NonBlocking(SecureRandomParameters params) {
-            if (INSTANCE == null) {
-                throw new AssertionError(
-                    "NativePRNG$NonBlocking not available");
-            }
             if (params != null) {
                 throw new IllegalArgumentException("Unsupported params: " + params.getClass());
             }
@@ -331,51 +380,23 @@ public final class NativePRNG extends SecureRandomSpi {
      */
     private static class RandomIO {
 
-        // we buffer data we read from the "next" file for efficiency,
-        // but we limit the lifetime to avoid using stale bits
-        // lifetime in ms, currently 100 ms (0.1 s)
-        private static final long MAX_BUFFER_TIME = 100;
-
-        // size of the "next" buffer
-        private static final int MAX_BUFFER_SIZE = 65536;
-        private static final int MIN_BUFFER_SIZE = 32;
-        private int bufferSize = 256;
-
         // Holder for the seedFile.  Used if we ever add seed material.
         File seedFile;
 
-        // In/OutputStream for "seed" and "next"
-        private final InputStream seedIn, nextIn;
+        // stream for "seed" if the seed source is a file, null if it is the OS
+        private final InputStream seedIn;
         private OutputStream seedOut;
+
+        // whether the OS gives the seed and the random bytes like
+        // /dev/urandom, which does not block, instead of /dev/random
+        private final boolean seedUrandom, nextUrandom;
 
         // flag indicating if we have tried to open seedOut yet
         private boolean seedOutInitialized;
 
-        // SHA1PRNG instance for mixing
-        // initialized lazily on demand to avoid problems during startup
+        // SHA1PRNG instance for mixing in the bytes supplied via setSeed();
+        // null until setSeed() is first called
         private volatile sun.security.provider.SecureRandom mixRandom;
-
-        // buffer for next bits
-        private byte[] nextBuffer;
-
-        // number of bytes left in nextBuffer
-        private int buffered;
-
-        // time we read the data into the nextBuffer
-        private long lastRead;
-
-        // Count for the number of buffer size changes requests
-        // Positive value in increase size, negative to lower it.
-        private int change_buffer = 0;
-
-        // Request limit to trigger an increase in nextBuffer size
-        private static final int REQ_LIMIT_INC = 1000;
-
-        // Request limit to trigger a decrease in nextBuffer size
-        private static final int REQ_LIMIT_DEC = -100;
-
-        // mutex lock for nextBytes()
-        private final Object LOCK_GET_BYTES = new Object();
 
         // mutex lock for generateSeed()
         private final Object LOCK_GET_SEED = new Object();
@@ -384,32 +405,28 @@ public final class NativePRNG extends SecureRandomSpi {
         private final Object LOCK_SET_SEED = new Object();
 
         // constructor, called only once from initIO()
-        private RandomIO(File seedFile, File nextFile) throws IOException {
+        private RandomIO(File seedFile, InputStream seedIn, boolean nextUrandom) {
             this.seedFile = seedFile;
-            seedIn = FileInputStreamPool.getInputStream(seedFile);
-            nextIn = FileInputStreamPool.getInputStream(nextFile);
-            nextBuffer = new byte[bufferSize];
+            this.seedIn = seedIn;
+            this.seedUrandom = seedFile.getPath().equals(NAME_URANDOM);
+            this.nextUrandom = nextUrandom;
         }
 
         // get the SHA1PRNG for mixing
-        // initialize if not yet created
+        // create and seed it from the OS if not yet created
+        // called with LOCK_SET_SEED held
         private sun.security.provider.SecureRandom getMixRandom() {
             sun.security.provider.SecureRandom r = mixRandom;
             if (r == null) {
-                synchronized (LOCK_GET_BYTES) {
-                    r = mixRandom;
-                    if (r == null) {
-                        r = new sun.security.provider.SecureRandom();
-                        try {
-                            byte[] b = new byte[20];
-                            readFully(nextIn, b);
-                            r.engineSetSeed(b);
-                        } catch (IOException e) {
-                            throw new ProviderException("init failed", e);
-                        }
-                        mixRandom = r;
-                    }
+                r = new sun.security.provider.SecureRandom();
+                try {
+                    byte[] b = new byte[20];
+                    getRandomBytes(b, nextUrandom);
+                    r.engineSetSeed(b);
+                } catch (IOException e) {
+                    throw new ProviderException("init failed", e);
                 }
+                mixRandom = r;
             }
             return r;
         }
@@ -434,16 +451,20 @@ public final class NativePRNG extends SecureRandomSpi {
             }
         }
 
-        // get true random bytes, just read from "seed"
+        // get true random bytes, from the OS or by reading "seed"
         private byte[] implGenerateSeed(int numBytes) {
-            synchronized (LOCK_GET_SEED) {
-                try {
-                    byte[] b = new byte[numBytes];
-                    readFully(seedIn, b);
-                    return b;
-                } catch (IOException e) {
-                    throw new ProviderException("generateSeed() failed", e);
+            try {
+                byte[] b = new byte[numBytes];
+                if (seedIn == null) {
+                    getRandomBytes(b, seedUrandom);
+                } else {
+                    synchronized (LOCK_GET_SEED) {
+                        readFully(seedIn, b);
+                    }
                 }
+                return b;
+            } catch (IOException e) {
+                throw new ProviderException("generateSeed() failed", e);
             }
         }
 
@@ -472,94 +493,25 @@ public final class NativePRNG extends SecureRandomSpi {
             }
         }
 
-        // ensure that there is at least one valid byte in the buffer
-        // if not, read new bytes
-        private void ensureBufferValid() throws IOException {
-            long time = System.currentTimeMillis();
-            int new_buffer_size = 0;
-
-            // Check if buffer has bytes available that are not too old
-            if (buffered > 0) {
-                if (time - lastRead < MAX_BUFFER_TIME) {
-                    return;
-                } else {
-                    // byte is old, so subtract from counter to shrink buffer
-                    change_buffer--;
-                }
-            } else {
-                // No bytes available, so add to count to increase buffer
-                change_buffer++;
-            }
-
-            // If counter has it a limit, increase or decrease size
-            if (change_buffer > REQ_LIMIT_INC) {
-                new_buffer_size = nextBuffer.length * 2;
-            } else if (change_buffer < REQ_LIMIT_DEC) {
-                new_buffer_size = nextBuffer.length / 2;
-            }
-
-            // If buffer size is to be changed, replace nextBuffer.
-            if (new_buffer_size > 0) {
-                if (new_buffer_size <= MAX_BUFFER_SIZE &&
-                        new_buffer_size >= MIN_BUFFER_SIZE) {
-                    nextBuffer = new byte[new_buffer_size];
-                    if (debug != null) {
-                        debug.println("Buffer size changed to " +
-                                new_buffer_size);
-                    }
-                } else {
-                    if (debug != null) {
-                        debug.println("Buffer reached limit: " +
-                                nextBuffer.length);
-                    }
-                }
-                change_buffer = 0;
-            }
-
-            // Load fresh random bytes into nextBuffer
-            lastRead = time;
-            readFully(nextIn, nextBuffer);
-            buffered = nextBuffer.length;
-        }
-
         // get pseudo random bytes
-        // read from "next" and XOR with bytes generated by the
-        // mixing SHA1PRNG
+        // get them from the OS and, if setSeed() has been called, XOR with
+        // bytes generated by the mixing SHA1PRNG
         private void implNextBytes(byte[] data) {
-                try {
-                    getMixRandom().engineNextBytes(data);
-                    int data_len = data.length;
-                    int ofs = 0;
-                    int len;
-                    int buf_pos;
-                    int localofs;
-                    byte[] localBuffer;
-
-                    while (data_len > 0) {
-                        synchronized (LOCK_GET_BYTES) {
-                            ensureBufferValid();
-                            buf_pos = nextBuffer.length - buffered;
-                            if (data_len > buffered) {
-                                len = buffered;
-                                buffered = 0;
-                            } else {
-                                len = data_len;
-                                buffered -= len;
-                            }
-                            localBuffer = Arrays.copyOfRange(nextBuffer, buf_pos,
-                                    buf_pos + len);
-                        }
-                        localofs = 0;
-                        while (len > localofs) {
-                            data[ofs] ^= localBuffer[localofs];
-                            ofs++;
-                            localofs++;
-                        }
-                    data_len -= len;
-                    }
-                } catch (IOException e){
-                    throw new ProviderException("nextBytes() failed", e);
+            try {
+                sun.security.provider.SecureRandom mix = mixRandom;
+                if (mix == null) {
+                    getRandomBytes(data, nextUrandom);
+                    return;
                 }
+                byte[] random = new byte[data.length];
+                getRandomBytes(random, nextUrandom);
+                mix.engineNextBytes(data);
+                for (int i = 0; i < data.length; i++) {
+                    data[i] ^= random[i];
+                }
+            } catch (IOException e) {
+                throw new ProviderException("nextBytes() failed", e);
+            }
         }
-        }
+    }
 }

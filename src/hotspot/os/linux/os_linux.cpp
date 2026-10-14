@@ -103,6 +103,7 @@
 # include <sys/ipc.h>
 # include <sys/mman.h>
 # include <sys/prctl.h>
+# include <sys/random.h>
 # include <sys/resource.h>
 # include <sys/select.h>
 # include <sys/sendfile.h>
@@ -133,6 +134,11 @@
 // getrusage() is prepared to handle the associated failure.
 #ifndef RUSAGE_THREAD
   #define RUSAGE_THREAD   (1)               /* only the calling thread */
+#endif
+
+// if GRND_INSECURE for getrandom() has not been defined, do it here
+#ifndef GRND_INSECURE
+  #define GRND_INSECURE   0x0004
 #endif
 
 #define MAX_PATH    (2 * K)
@@ -1546,6 +1552,25 @@ void os::Linux::capture_initial_stack(size_t max_size) {
 intx os::current_thread_id() { return os::Linux::gettid(); }
 int os::current_process_id() {
   return ::getpid();
+}
+
+int os::get_random_bytes(void* buf, int len) {
+  // GRND_INSECURE keeps getrandom() from blocking until the kernel's random
+  // number generator is initialized. A large request can return early when a
+  // signal arrives.
+  char* p = static_cast<char*>(buf);
+  while (len > 0) {
+    ssize_t n = ::getrandom(p, len, GRND_INSECURE);
+    if (n < 0) {
+      if (errno == EINTR) {
+        continue;
+      }
+      return errno;
+    }
+    p += n;
+    len -= static_cast<int>(n);
+  }
+  return 0;
 }
 
 static bool is_writable_directory(const char* name) {

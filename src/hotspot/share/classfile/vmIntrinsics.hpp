@@ -643,6 +643,12 @@ class methodHandle;
   do_intrinsic(_updateByteBufferAdler32,  java_util_zip_Adler32,  updateByteBuffer_A_name,  updateByteBuffer_signature,  F_SN) \
    do_name(     updateByteBuffer_A_name,                          "updateByteBuffer")                                   \
                                                                                                                         \
+  /* support for sun.security.provider.NativePRNG */                                                                    \
+  do_class(sun_security_provider_NativePRNG, "sun/security/provider/NativePRNG")                                        \
+  do_intrinsic(_nativePRNG_getRandomBytes, sun_security_provider_NativePRNG, getRandomBytes0_name, getRandomBytes0_signature, F_SN) \
+   do_name(     getRandomBytes0_name,                             "getRandomBytes0")                                    \
+   do_alias(    getRandomBytes0_signature,                        countPositives_signature)                             \
+                                                                                                                        \
   /* jdk/internal/vm/Continuation */                                                                                    \
   do_class(jdk_internal_vm_Continuation, "jdk/internal/vm/Continuation")                                                \
   do_intrinsic(_Continuation_enter,        jdk_internal_vm_Continuation, enter_name,        continuationEnter_signature, F_S) \

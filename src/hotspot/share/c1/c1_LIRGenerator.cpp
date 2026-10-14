@@ -2806,7 +2806,33 @@ void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
   __ move(reg, result);
 }
 
+void LIRGenerator::do_getRandomBytes(Intrinsic* x) {
+  assert(x->number_of_arguments() == 3, "wrong type");
+  LIR_Opr result = rlock_result(x);
 
+  LIRItem dst(x->argument_at(0), this); // byte[]
+  LIRItem off(x->argument_at(1), this); // int
+  LIRItem len(x->argument_at(2), this); // int
+  dst.load_item();
+  off.load_nonconstant();
+
+  BasicTypeList signature(2);
+  signature.append(T_ADDRESS);
+  signature.append(T_INT);
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  const LIR_Opr result_reg = result_register_for(x->type());
+
+  // The caller has checked the range. The call is a leaf, so it takes no
+  // safepoint and the array does not move while it is filled.
+  LIR_Opr addr = new_register(T_ADDRESS);
+  __ leal(LIR_OprFact::address(emit_array_address(dst.result(), off.result(), T_BYTE)), addr);
+
+  __ move(addr, cc->at(0));
+  len.load_item_force(cc->at(1));
+
+  __ call_runtime_leaf(CAST_FROM_FN_PTR(address, os::get_random_bytes), getThreadTemp(), result_reg, cc->args());
+  __ move(result_reg, result);
+}
 
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   switch (x->id()) {
@@ -2911,6 +2937,10 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
 
   case vmIntrinsics::_vectorizedMismatch:
     do_vectorizedMismatch(x);
+    break;
+
+  case vmIntrinsics::_nativePRNG_getRandomBytes:
+    do_getRandomBytes(x);
     break;
 
   case vmIntrinsics::_blackhole:
