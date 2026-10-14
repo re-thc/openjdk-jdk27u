@@ -782,7 +782,10 @@ public class URLClassPath {
         boolean mayContain(String dir) {
             Set<String> dirs = directories;
             if (dirs == null) {
-                if (missesLeft > 0) {
+                // The directories are those of the ZIP file. A subclass of
+                // JarFile, such as one a JarURLConnection supplies, can find
+                // entries that the ZIP file does not have.
+                if (missesLeft > 0 || jar.getClass() != JarFile.class) {
                     return true;
                 }
                 dirs = zipAccess.entryDirectories(jar);
