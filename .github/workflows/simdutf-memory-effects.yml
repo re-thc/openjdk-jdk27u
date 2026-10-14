@@ -43,6 +43,16 @@ jobs:
           run-id: 38448260341
           github-token: ${{ github.token }}
           path: bundles/base
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        if: matrix.platform == 'linux-x64'
+        with:
+          name: simdutf-memory-linux-x64
+          run-id: 38543510836
+          github-token: ${{ github.token }}
+          path: previous-failure
+      - name: Read previous configure failure
+        if: matrix.platform == 'linux-x64'
+        run: cat previous-failure/configure-release.log
       - uses: ./.github/actions/get-bootjdk
         id: boot
         with:
@@ -67,7 +77,7 @@ jobs:
           task_head_image=$(dirname "$(dirname "$task_head_java")")
           task_base_image=$(dirname "$(dirname "$task_base_java")")
           for task_level in release fastdebug; do
-            bash configure --with-conf-name="$task_level" --with-debug-level="$task_level" --with-boot-jdk="$BOOT" --with-jtreg="$JTREG" --disable-desktop --enable-headless-only --enable-jvm-feature-serialgc --enable-jvm-feature-g1gc --enable-jvm-feature-zgc --disable-jvm-feature-epsilongc --disable-jvm-feature-parallelgc --disable-jvm-feature-shenandoahgc --with-extra-cflags="$CPU_FLAGS" --with-extra-cxxflags="$CPU_FLAGS" --with-extra-ldflags=-fuse-ld=mold --with-zlib=system --with-native-debug-symbols=none --disable-javac-server > "results/configure-$task_level.log" 2>&1
+            bash configure --with-conf-name="$task_level" --with-debug-level="$task_level" --with-boot-jdk="$BOOT" --with-jtreg="$JTREG" --disable-desktop --enable-headless-only --enable-jvm-feature-serialgc --enable-jvm-feature-g1gc --enable-jvm-feature-zgc --disable-jvm-feature-epsilongc --disable-jvm-feature-parallelgc --disable-jvm-feature-shenandoahgc --with-extra-cflags="$CPU_FLAGS" --with-extra-cxxflags="$CPU_FLAGS" --with-extra-ldflags=-fuse-ld=mold --with-zlib=system --with-native-debug-symbols=none --disable-javac-server > "results/configure-$task_level.log" 2>&1 || { tail -100 "results/configure-$task_level.log"; exit 1; }
             make CONF="$task_level" JOBS=4 hotspot > "results/build-$task_level.log" 2>&1 || { tail -100 "results/build-$task_level.log"; exit 1; }
             cp -a "$task_head_image" "image/$task_level"
             task_jvm=$(find "build/$task_level/hotspot" -name libjvm.so -print -quit)
