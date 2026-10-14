@@ -1,0 +1,53 @@
+name: SIMDUTF scalar decoder isolation
+on:
+  push:
+    branches: [review/simdutf-scalar-decoder]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  controls:
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-26.04
+            platform: linux-x64
+          - runner: ubuntu-26.04-arm
+            platform: linux-aarch64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: bundles-${{ matrix.platform }}
+          run-id: 38577343143
+          github-token: ${{ github.token }}
+          path: bundles/head
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: bundles-${{ matrix.platform }}
+          run-id: 38566499376
+          github-token: ${{ github.token }}
+          path: bundles/base
+      - name: Run residual overhead controls
+        run: |
+          mkdir -p image/head image/base results jmh
+          tar -xf bundles/head/jdk-${{ matrix.platform }}.tar.gz -C image/head
+          tar -xf bundles/base/jdk-${{ matrix.platform }}.tar.gz -C image/base
+          curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar -o jmh/core.jar
+          curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/org/openjdk/jmh/jmh-generator-annprocess/1.37/jmh-generator-annprocess-1.37.jar -o jmh/generator.jar
+          curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/net/sf/jopt-simple/jopt-simple/5.0.4/jopt-simple-5.0.4.jar -o jmh/options.jar
+          curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/org/apache/commons/commons-math3/3.6.1/commons-math3-3.6.1.jar -o jmh/math.jar
+          task_head_java=$(find image/head -path '*/bin/java' -print -quit)
+          task_base_java=$(find image/base -path '*/bin/java' -print -quit)
+          python3 make/scripts/simdutf-scalar-decoder.py "$(dirname "$(dirname "$task_head_java")")" "$(dirname "$(dirname "$task_base_java")")" "$GITHUB_WORKSPACE/results"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: simdutf-scalar-decoder-${{ matrix.platform }}
+          path: results
+          retention-days: 14
