@@ -53,11 +53,14 @@ public class TestLongVectorMultiplyReassociation {
     private static final long[] V = new long[SPECIES.length()];
     private int iteration;
 
-    public static void main(String[] args) {
+    static {
         for (int i = 0; i < SIZE; i++) {
             A[i] = VALUES[i % VALUES.length];
             B[i] = i * -0x3344_5566_7788L + 0x7fff_0000_1234_5678L;
         }
+    }
+
+    public static void main(String[] args) {
         TestFramework framework = new TestFramework();
         framework.addFlags("--add-modules=jdk.incubator.vector");
         if (Platform.isAArch64()) {

@@ -71,7 +71,7 @@ public class TestAArch64SVEMulVConstants {
             "(?ms)^\\s*(\\d+)\\s+replicateI\\b.*?" +
             "^\\s*\\d+\\s+vmul[BSI]_sve\\s+===\\s+_\\s+\\1\\b";
 
-    public static void main(String[] args) {
+    static {
         for (int i = 0; i < SIZE; i++) {
             BYTE_A[i] = (byte) (i * 7 - 120);
             BYTE_B[i] = (byte) (90 - i * 5);
@@ -80,6 +80,9 @@ public class TestAArch64SVEMulVConstants {
             INT_A[i] = i * 0x12345 - 0x5678_9abc;
             INT_B[i] = 0x1357_2468 - i * 0x54321;
         }
+    }
+
+    public static void main(String[] args) {
         TestFramework framework = new TestFramework();
         framework.addFlags("--add-modules=jdk.incubator.vector");
         if (Platform.isAArch64()) {
