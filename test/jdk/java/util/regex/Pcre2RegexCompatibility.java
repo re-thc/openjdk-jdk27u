@@ -50,6 +50,18 @@ public class Pcre2RegexCompatibility {
         Pattern selected = Pattern.compile(regex, flags), ref = original(regex, flags);
         Matcher a = selected.matcher(text).region(lo, hi).useTransparentBounds(transparent).useAnchoringBounds(anchoring);
         Matcher b = ref.matcher(text).region(lo, hi).useTransparentBounds(transparent).useAnchoringBounds(anchoring);
+        // Start on fresh native Patterns before a failed anchored operation
+        // or end-state observer can promote them to the Java traversal.
+        Matcher pure = selected.matcher(text).region(lo, hi)
+                .useTransparentBounds(transparent).useAnchoringBounds(anchoring);
+        Matcher pureReference = ref.matcher(text).region(lo, hi)
+                .useTransparentBounds(transparent).useAnchoringBounds(anchoring);
+        for (int i = 0; i <= text.length() + 1; i++) {
+            boolean av = pure.find(), bv = pureReference.find();
+            equal(pure, pureReference, av, bv, false);
+            if (!av) break;
+        }
+        equal(pure, pureReference, pure.find(), pureReference.find(), true);
         equal(a, b, a.matches(), b.matches(), observe);
         // Observe immediate continuation both with and without intervening end flags.
         equal(a, b, a.find(), b.find(), observe);
@@ -81,7 +93,7 @@ public class Pcre2RegexCompatibility {
                 "(?=(a+))(a+)", "(?=e)e(?=B)", "(a)\\1", "(?<x>a)\\k<x>", "a++a", "a?+a", "(?>a|aa)a",
                 "(a)?b", "(a|ab)+", "a.*?b", "[^x]+x", "^a+$", "\\ba+\\b", "(?i:a+)", "(?i)a+",
                 "(?=(a))b|a", "(?>(a))b|a", "(a)++b|a", "(?<=a{1,2})b", "\\p{L}+", "(?<a>\\p{L}+)", "(a(b)?)+", "[a-z&&[^b]]+"};
-        String[] inputs = {"", "a", "aa", "aab", "ababa", "b", "error1error2", "error123x", "oeB", "warn1error2",
+        String[] inputs = {"", "a", "aa", "aab", "ababa", "b", "error1error2", "error123x", "errorx", "oeB", "warn1error2",
                 "\u00ffa\u0100x", "a\u2028b", "a\ud83d\ude00b", "a\ud800b", "a\udc00b", "a\r\nb"};
         for (String regex : expressions) for (String text : inputs) for (int flags : new int[]{0,Pattern.CASE_INSENSITIVE,Pattern.MULTILINE,Pattern.UNICODE_CHARACTER_CLASS})
             for (boolean bounds : new boolean[]{false,true}) for (boolean observe : new boolean[]{false,true}) {
@@ -98,6 +110,18 @@ public class Pcre2RegexCompatibility {
         }
         String longText="error"+"3".repeat(4091);
         for(int i=0;i<100;i++) sequence("(?=error)(error)([0-9]+)",0,longText,0,4096,false,true,(i&1)==0);
+        // Matching retains the original API's interrupt behavior. An interrupt
+        // flag must not be consumed or converted into a false native result.
+        Thread.currentThread().interrupt();
+        try {
+            for (String regex : new String[]{"(a+)+\\z", "(?:a|aa)+$"}) {
+                String hostile = "a".repeat(22) + "x";
+                Matcher selected = Pattern.compile(regex).matcher(hostile);
+                Matcher reference = original(regex, 0).matcher(hostile);
+                equal(selected, reference, selected.matches(), reference.matches(), true);
+                if (!Thread.currentThread().isInterrupted()) throw new AssertionError("interrupt flag consumed");
+            }
+        } finally { Thread.interrupted(); }
         CharSequence guarded = new CharSequence() {
             final String value = "error" + "3".repeat(1024);
             public int length() { return value.length(); }

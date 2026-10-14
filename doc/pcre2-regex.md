@@ -45,7 +45,10 @@ intersection and capture histories under repeated nested groups remain Java.
 Captures inside assertions/atomic groups/possessive repetitions remain Java:
 Java can retain these captures when an enclosing alternative subsequently fails.
 
-PCRE2-8 sees compact Latin-1 bytes directly, without UTF-8 transcoding. PCRE2-16
+PCRE2-8 reads compact Latin-1 bytes without UTF-8 transcoding. The short leaf
+copies at most 64 bytes to native stack scratch because PCRE2 match data retains
+subject pointer values after a call; Java heap addresses must not enter those
+reusable caches. PCRE2-16
 uses non-UTF code units, a separate lazily compiled handle and stable native
 copies of a Java char-array snapshot. Its route qualifies BMP strings without
 surrogates or U+2028/U+2029. Supplementary pairs, unpaired surrogates and these
@@ -86,9 +89,9 @@ exhaustion or unsupported JIT options first retry the interpreter in native
 state. ENDANCHORED uses the interpreter. Adversarial Java fallback can remain
 expensive, as in the original API, but it runs with Java safepoints.
 
-PCRE2 allocation callbacks enforce a global 64 MiB budget. Generated executable
-code reserves 1 MiB per attempted JIT handle and must report at most 512 KiB of
-code; each stack reserves 64 KiB and grows from 32 to 64 KiB. Pools and stacks
+PCRE2 allocation callbacks enforce a global 64 MiB budget. JIT admission caps compiled patterns at 4 KiB and reserves 16 MiB during
+preparation; a successful handle retains a 1 MiB executable-code reservation
+and must report at most 512 KiB of code; each stack reserves 64 KiB and grows from 32 to 64 KiB. Pools and stacks
 have bounded owned lifetimes. Independent atomic memory snapshots expose native
 allocation count/bytes, freed bytes, conservative retained budget and actual
 reported JIT code bytes. These are not RSS or total allocator/mapping overhead.

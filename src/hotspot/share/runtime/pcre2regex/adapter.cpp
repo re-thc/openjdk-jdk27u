@@ -26,6 +26,7 @@
 namespace {
 constexpr size_t MAX_SUBJECT = 65536, MAX_CODE = 256 * 1024;
 constexpr size_t GLOBAL_BUDGET = 64 * 1024 * 1024, JIT_RESERVATION = 1024 * 1024;
+constexpr size_t JIT_BUILD_RESERVATION = 16 * 1024 * 1024;
 constexpr unsigned POOL_SIZE = 16, LEAF_INPUT = 64, LEAF_LIMIT = 32;
 std::atomic<size_t> live_bytes{0}, allocation_count{0}, allocated_bytes{0}, freed_bytes{0}, jit_bytes{0};
 
@@ -129,7 +130,7 @@ template<int W> struct Handle {
     if (!allow_jit || length < 256 || calls.load(std::memory_order_relaxed) < threshold) return;
     unsigned eligible = 0;
     if (!jit_state.compare_exchange_strong(eligible, 1)) return;
-    if (reserve(JIT_RESERVATION)) {
+    if (reserve(JIT_BUILD_RESERVATION)) {
       jit_reserved = true;
       auto* copy = A::copy(code);
       size_t bytes = 0;
@@ -138,7 +139,8 @@ template<int W> struct Handle {
         if (bytes <= JIT_RESERVATION / 2) { jit_size = bytes; jit_bytes.fetch_add(bytes); jit_code.store(copy, std::memory_order_release); copy = nullptr; }
       }
       A::free_code(copy);
-      if (!jit_code.load()) { jit_reserved = false; live_bytes.fetch_sub(JIT_RESERVATION); }
+      if (!jit_code.load()) { jit_reserved = false; live_bytes.fetch_sub(JIT_BUILD_RESERVATION); }
+      else live_bytes.fetch_sub(JIT_BUILD_RESERVATION - JIT_RESERVATION);
     }
     jit_state.store(2, std::memory_order_release);
   }
@@ -162,6 +164,7 @@ template<int W> void* compile(const unsigned char* bytes, size_t length, unsigne
   uint32_t count = 0; size_t code_size = 0;
   if (handle->code) { A::info(handle->code, PCRE2_INFO_CAPTURECOUNT, &count); A::info(handle->code, PCRE2_INFO_SIZE, &code_size); }
   handle->leaf_eligible = code_size <= 4096;
+  handle->allow_jit = handle->allow_jit && code_size <= 4096;
   bool valid = handle->code && count + 1 == groups && code_size <= MAX_CODE;
   if (valid) {
     auto& slot = handle->pool[0];
@@ -210,7 +213,7 @@ template<int W> int match(Handle<W>* handle, const typename Api<W>::Unit* text,
   uint32_t options = mode ? PCRE2_ANCHORED : 0;
   if (mode == 2) options |= PCRE2_ENDANCHORED;
   // Small work interprets even when this pattern owns JIT code.
-  auto* code = safepoint && mode != 2 ? handle->jit_code.load(std::memory_order_acquire) : nullptr;
+  auto* code = safepoint && mode != 2 && to - from >= 256 ? handle->jit_code.load(std::memory_order_acquire) : nullptr;
   if (code && !acquired->stack && reserve(65536)) {
     acquired->stack = A::stack(handle->general);
     acquired->stack_reserved = acquired->stack != nullptr;
@@ -218,7 +221,16 @@ template<int W> int match(Handle<W>* handle, const typename Api<W>::Unit* text,
     else live_bytes.fetch_sub(65536);
   }
   if (!code || !acquired->stack) { code = handle->code; options |= PCRE2_NO_JIT; }
-  int result = A::match(code, text + from, to - from, start - from, options, acquired->data, acquired->context);
+  // PCRE2 match data/scratch retain subject pointer values after returning.
+  // A leaf must not publish Java heap addresses into a reusable native cache.
+  // Its tiny copy has a fixed bound and does not transcode Latin-1.
+  typename A::Unit bounded_input[LEAF_INPUT];
+  const typename A::Unit* subject = text + from;
+  if (!safepoint) {
+    std::memcpy(bounded_input, subject, (to - from) * sizeof(typename A::Unit));
+    subject = bounded_input;
+  }
+  int result = A::match(code, subject, to - from, start - from, options, acquired->data, acquired->context);
   // JIT does not implement ENDANCHORED and can exhaust its fixed internal
   // stack. Repeat in the interpreter in native state, preserving the operation.
   if (safepoint && (result == PCRE2_ERROR_JIT_STACKLIMIT || result == PCRE2_ERROR_JIT_BADOPTION)) {
@@ -230,7 +242,7 @@ template<int W> int match(Handle<W>* handle, const typename Api<W>::Unit* text,
     // A long subject or frequent miss alone does not justify JIT. Count
     // successful long consumed spans; exact tiny-rejection counterexamples
     // remain interpreted. This policy is an ablated, conservative heuristic.
-    if (safepoint && mode != 2 && offsets[1] - offsets[0] >= 128) {
+    if (safepoint && mode != 2 && to - from >= 256 && offsets[1] - offsets[0] >= 128) {
       unsigned count = handle->calls.load(std::memory_order_relaxed);
       if (count < handle->threshold) handle->calls.fetch_add(1, std::memory_order_relaxed);
     }
