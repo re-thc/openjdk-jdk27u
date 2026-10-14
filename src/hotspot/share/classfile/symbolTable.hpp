@@ -86,6 +86,9 @@ class SymbolTable : public AllStatic {
                           const char** names, int* lengths, int* cp_indices);
 
   static Symbol* lookup_shared(const char* name, int len, unsigned int hash) NOT_CDS_RETURN_(nullptr);
+  // Sets syms[i] to the shared symbol of each name that has one.
+  static void lookup_shared(int count, const char** names, const int* lens,
+                            const unsigned int* hashes, Symbol** syms) NOT_CDS_RETURN;
   static Symbol* lookup_dynamic(const char* name, int len, unsigned int hash);
   static Symbol* lookup_common(const char* name, int len, unsigned int hash);
 

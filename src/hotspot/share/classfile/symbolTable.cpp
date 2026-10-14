@@ -28,7 +28,7 @@
 #include "cds/dynamicArchive.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "classfile/compactHashtable.hpp"
+#include "classfile/compactHashtable.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "memory/allocation.inline.hpp"
@@ -309,6 +309,29 @@ Symbol* SymbolTable::lookup_shared(const char* name,
   }
   return sym;
 }
+
+void SymbolTable::lookup_shared(int count, const char** names, const int* lens,
+                                const unsigned int* hashes, Symbol** syms) {
+  if (_shared_table.empty()) {
+    return;
+  }
+  if (_alt_hash) {
+    // The shared tables always use the original hash code.
+    unsigned int* shared_hashes = NEW_RESOURCE_ARRAY(unsigned int, count);
+    for (int i = 0; i < count; i++) {
+      shared_hashes[i] = hash_shared_symbol(names[i], lens[i]);
+    }
+    hashes = shared_hashes;
+  }
+  _shared_table.lookup_batch(names, hashes, lens, count, syms);
+  if (DynamicArchive::is_mapped()) {
+    for (int i = 0; i < count; i++) {
+      if (syms[i] == nullptr) {
+        syms[i] = _dynamic_shared_table.lookup(names[i], hashes[i], lens[i]);
+      }
+    }
+  }
+}
 #endif
 
 Symbol* SymbolTable::lookup_common(const char* name,
@@ -503,8 +526,9 @@ void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHa
   for (int i = 0; i < names_count; i++) {
     assert(lengths[i] <= Symbol::max_length(), "must be - these come from the constant pool");
     hashes[i] = hash_symbol(names[i], lengths[i], _alt_hash);
-    syms[i] = lookup_shared(names[i], lengths[i], hashes[i]);
+    syms[i] = nullptr;
   }
+  lookup_shared(names_count, names, lengths, hashes, syms);
 
   // Look up the other names together, to overlap their cache misses.
   SymbolTableLookup* lookups = NEW_RESOURCE_ARRAY_IN_THREAD(current, SymbolTableLookup, names_count);
