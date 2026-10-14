@@ -1,0 +1,152 @@
+import json
+import os
+from pathlib import Path
+import platform
+import subprocess
+import sys
+
+head, base, output = map(Path, sys.argv[1:])
+output.mkdir(exist_ok=True)
+root = Path("src/java.base/share/classes")
+constants = json.loads("{\"ascii\":\"private static int countPositives0(byte[] ba, int off, int len) {\\n        int limit = off + len;\\n        for (int i = off; i < limit; i++) {\\n            if (ba[i] < 0) {\\n                return i - off;\\n            }\\n        }\\n        return len;\\n    }\",\"b64encode\":\"private void encodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL) {\\n            char[] base64 = isURL ? toBase64URL : toBase64;\\n            for (int sp0 = sp, dp0 = dp ; sp0 < sl; ) {\\n                int bits = (src[sp0++] & 0xff) << 16 |\\n                           (src[sp0++] & 0xff) <<  8 |\\n                           (src[sp0++] & 0xff);\\n                dst[dp0++] = (byte)base64[(bits >>> 18) & 0x3f];\\n                dst[dp0++] = (byte)base64[(bits >>> 12) & 0x3f];\\n                dst[dp0++] = (byte)base64[(bits >>> 6)  & 0x3f];\\n                dst[dp0++] = (byte)base64[bits & 0x3f];\\n            }\\n        }\",\"b64decode\":\"private int decodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL, boolean isMIME) {\\n            int[] base64 = isURL ? fromBase64URL : fromBase64;\\n            int sl0 = sp + ((sl - sp) & ~0b11);\\n            int new_dp = dp;\\n            while (sp < sl0) {\\n                int b1 = base64[src[sp++] & 0xff];\\n                int b2 = base64[src[sp++] & 0xff];\\n                int b3 = base64[src[sp++] & 0xff];\\n                int b4 = base64[src[sp++] & 0xff];\\n                if ((b1 | b2 | b3 | b4) < 0) {    // non base64 byte\\n                    return new_dp - dp;\\n                }\\n                int bits0 = b1 << 18 | b2 << 12 | b3 << 6 | b4;\\n                dst[new_dp++] = (byte)(bits0 >> 16);\\n                dst[new_dp++] = (byte)(bits0 >>  8);\\n                dst[new_dp++] = (byte)(bits0);\\n            }\\n            return new_dp - dp;\\n        }\"}")
+sources = {name: (root / name).read_text() for name in
+    ("jdk/internal/util/SimdUTF.java", "java/lang/StringUTF16.java", "java/lang/Character.java",
+     "java/lang/StringCoding.java", "java/lang/StringLatin1.java", "sun/nio/cs/UTF_8.java", "java/util/Base64.java")}
+
+def method(source, needle):
+    start = source.index(needle)
+    brace = source.index("{", start)
+    depth, end = 1, brace + 1
+    while depth:
+        depth += (source[end] == "{") - (source[end] == "}")
+        end += 1
+    return start, end
+
+def replace_method(source, needle, replacement):
+    start, end = method(source, needle)
+    return source[:start] + replacement + source[end:]
+
+patches = {}
+def compile_patch(name, changed):
+    directory = output / ("src-" + name)
+    classes = output / ("patch-" + name)
+    files = []
+    for path, text in changed.items():
+        file = directory / path
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_text(text)
+        files.append(str(file))
+    classes.mkdir()
+    subprocess.run([str(head / "bin/javac"), "--patch-module", "java.base=" + str(directory),
+                    "-d", str(classes), *files], check=True)
+    patches[name] = ["--patch-module=java.base=" + str(classes)]
+
+
+source = json.loads("\"/*\\n * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.\\n * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.\\n *\\n * This code is free software; you can redistribute it and/or modify it\\n * under the terms of the GNU General Public License version 2 only, as\\n * published by the Free Software Foundation.  Oracle designates this\\n * particular file as subject to the \\\"Classpath\\\" exception as provided\\n * by Oracle in the LICENSE file that accompanied this code.\\n *\\n * This code is distributed in the hope that it will be useful, but WITHOUT\\n * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or\\n * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License\\n * version 2 for more details (a copy is included in the LICENSE file that\\n * accompanied this code).\\n *\\n * You should have received a copy of the GNU General Public License version\\n * 2 along with this work; if not, write to the Free Software Foundation,\\n * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.\\n *\\n * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA\\n * or visit www.oracle.com if you need additional information or have any\\n * questions.\\n *\\n */\\n\\npackage jdk.internal.util;\\n\\nimport java.nio.ByteOrder;\\nimport jdk.internal.vm.annotation.DontInline;\\nimport jdk.internal.vm.annotation.DontInline;\\nimport jdk.internal.vm.annotation.ForceInline;\\nimport jdk.internal.vm.annotation.IntrinsicCandidate;\\nimport jdk.internal.vm.annotation.Stable;\\n\\n/**\\n * Bulk UTF and Base64 operations. A negative result requests the Java\\n * implementation, including its malformed-input and buffer-position semantics.\\n * The VM validates array types, ranges and output capacity on every entry.\\n */\\npublic final class SimdUTF {\\n    private SimdUTF() { }\\n\\n    // Keep operation values in sync with SimdUTF::Operation in simdutfSupport.hpp.\\n    private static final int COUNT_ASCII = 0;\\n    private static final int DECODE_UTF8 = 1;\\n    private static final int ENCODE_LATIN1 = 2;\\n    private static final int ENCODE_UTF16 = 3;\\n    private static final int ENCODE_ASCII = 4;\\n    private static final int ENCODE_LATIN1_FROM_UTF16 = 5;\\n    private static final int ENCODE_BASE64 = 6;\\n    private static final int ENCODE_BASE64_URL = 7;\\n    private static final int DECODE_BASE64 = 8;\\n    private static final int DECODE_BASE64_URL = 9;\\n    private static final int VALIDATE_UTF16 = 10;\\n    private static final int VALIDATE_ASCII = 11;\\n    private static final int VALIDATE_LATIN1 = 12;\\n    private static final int ENCODED_LENGTH_UTF16 = 13;\\n    private static final int ENCODED_LENGTH_LATIN1 = 14;\\n    private static final int ENCODE_UTF16_BE = 15;\\n    private static final int ENCODE_UTF16_LE = 16;\\n    private static final int DECODE_UTF16_BE = 17;\\n    private static final int DECODE_UTF16_LE = 18;\\n    private static final int INFLATE_LATIN1 = 19;\\n    private static final int ENCODE_UTF32_BE = 20;\\n    private static final int ENCODE_UTF32_LE = 21;\\n    private static final int DECODE_UTF32_BE = 22;\\n    private static final int DECODE_UTF32_LE = 23;\\n    private static final int DECODE_LATIN1 = 24;\\n    private static final int COUNT_CODE_POINTS = 25;\\n    private static final int COPY_UTF16 = 26;\\n    private static final int INDEX_OF_LATIN1 = 27;\\n    private static final int INDEX_OF_UTF16 = 28;\\n    private static final int VALIDATE_UTF8_LATIN1 = 29;\\n    private static final int MAX_CHUNK = 1024 * 1024;\\n    private static final boolean BIG_ENDIAN = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;\\n\\n    // Kept zero during early bootstrap. Initialized once by System.initPhase1.\\n    @Stable\\n    private static int minLength;\\n\\n    @Stable\\n    private static boolean automatic;\\n\\n    public static void initialize() {\\n        int policy = registerNatives();\\n        automatic = policy < -1;\\n        minLength = automatic ? -(policy + 1) : policy;\\n    }\\n\\n    private static native int registerNatives();\\n\\n    @ForceInline\\n    public static boolean isEligible(int len) {\\n        int threshold = minLength;\\n        return threshold > 0 && len >= threshold;\\n    }\\n\\n    @ForceInline\\n    public static boolean isEligibleUTF16Encoding(int len) {\\n        int threshold = minLength;\\n        return threshold > 0 && len >= (automatic\\n                ? Math.max(threshold, operationMinimumLength(ENCODE_UTF16)) : threshold);\\n    }\\n\\n    @ForceInline\\n    public static boolean useIndexOfPrefix() {\\n        return automatic;\\n    }\\n\\n    @ForceInline\\n    private static int process(Object src, int sp, int len,\\n                               Object dst, int dp, int capacity, int operation) {\\n        if (!isEligible(len) || (automatic && len < operationMinimumLength(operation))) {\\n            return -1;\\n        }\\n        if ((operation == ENCODE_UTF16_BE || operation == ENCODE_UTF16_LE\\n                || operation == ENCODE_UTF32_BE || operation == ENCODE_UTF32_LE)\\n                && !validUTF16Start(src, sp, len)) {\\n            return -1;\\n        }\\n        return len <= MAX_CHUNK ? process0(src, sp, len, dst, dp, capacity, operation)\\n                               : processChunks(src, sp, len, dst, dp, capacity, operation);\\n    }\\n\\n    // Return between bounded leaves so compiled loops can poll for safepoints.\\n    private static int processChunks(Object src, int sp, int len,\\n                                     Object dst, int dp, int capacity, int operation) {\\n        boolean src16 = operation >= ENCODE_UTF16 && operation <= ENCODE_LATIN1_FROM_UTF16\\n                || operation >= VALIDATE_UTF16 && operation <= ENCODED_LENGTH_UTF16\\n                || operation == ENCODE_UTF16_BE || operation == ENCODE_UTF16_LE\\n                || operation == ENCODE_UTF32_BE || operation == ENCODE_UTF32_LE\\n                || operation == COUNT_CODE_POINTS || operation == COPY_UTF16 || operation == INDEX_OF_UTF16;\\n        boolean dst16 = operation == DECODE_UTF8 || operation == DECODE_UTF16_BE || operation == DECODE_UTF16_LE\\n                || operation == INFLATE_LATIN1 || operation == DECODE_UTF32_BE || operation == DECODE_UTF32_LE\\n                || operation == COPY_UTF16;\\n        boolean readOnly = operation == COUNT_ASCII\\n                || operation >= VALIDATE_UTF16 && operation <= ENCODED_LENGTH_LATIN1\\n                || operation == COUNT_CODE_POINTS || operation >= INDEX_OF_LATIN1;\\n        if (!range(src, src16, sp, len)\\n                || (!readOnly && (!range(dst, dst16, dp, capacity)\\n                    || (src == dst && (operation != DECODE_LATIN1 || dp > sp))))) {\\n            return -1;\\n        }\\n        if (src == dst && operation == DECODE_LATIN1\\n                && (capacity < len || processChunks(src, sp, len, src, 0, 0, VALIDATE_UTF8_LATIN1) != 1)) {\\n            // A failed in-place conversion must not change input before Java retries it.\\n            return -1;\\n        }\\n        int consumed = 0;\\n        int written = 0;\\n        while (consumed < len) {\\n            int size = chunkLength(src, sp + consumed, len - consumed, operation);\\n            int result = processChunk(src, sp + consumed, size, dst,\\n                    readOnly ? dp : dp + written, readOnly ? capacity : capacity - written, operation);\\n            if (result < 0) {\\n                return -1;\\n            }\\n            switch (operation) {\\n                case VALIDATE_UTF16, VALIDATE_ASCII, VALIDATE_LATIN1, VALIDATE_UTF8_LATIN1 -> {\\n                    if (result == 0) {\\n                        return 0;\\n                    }\\n                }\\n                case INDEX_OF_LATIN1, INDEX_OF_UTF16 -> {\\n                    if (result < size) {\\n                        return consumed + result;\\n                    }\\n                }\\n                default -> {\\n                    if (result > Integer.MAX_VALUE - written) {\\n                        return -1;\\n                    }\\n                    written += result;\\n                    if ((operation == COUNT_ASCII || operation == ENCODE_ASCII\\n                            || operation == ENCODE_LATIN1_FROM_UTF16) && result < size) {\\n                        return written;\\n                    }\\n                }\\n            }\\n            consumed += size;\\n        }\\n        return switch (operation) {\\n            case VALIDATE_UTF16, VALIDATE_ASCII, VALIDATE_LATIN1, VALIDATE_UTF8_LATIN1 -> 1;\\n            case INDEX_OF_LATIN1, INDEX_OF_UTF16 -> len;\\n            default -> written;\\n        };\\n    }\\n\\n    private static boolean range(Object array, boolean utf16, int off, int len) {\\n        int length;\\n        if (array instanceof byte[] bytes) {\\n            length = utf16 ? bytes.length >> 1 : bytes.length;\\n        } else if (utf16 && array instanceof char[] chars) {\\n            length = chars.length;\\n        } else {\\n            return false;\\n        }\\n        return (off | len) >= 0 && off <= length && len <= length - off;\\n    }\\n\\n    private static int chunkLength(Object src, int sp, int remaining, int operation) {\\n        int size = Math.min(remaining, MAX_CHUNK);\\n        if (size == remaining) {\\n            return size;\\n        }\\n        if (operation == COUNT_CODE_POINTS && remaining - size < 1024) {\\n            // Keep the final leaf above C2's short-input counting gate.\\n            size = remaining - 1024;\\n        }\\n        switch (operation) {\\n            case DECODE_UTF8, DECODE_LATIN1, VALIDATE_UTF8_LATIN1 -> {\\n                byte[] bytes = (byte[])src;\\n                int minimum = size - 3;\\n                while (size > minimum && (bytes[sp + size] & 0xc0) == 0x80) {\\n                    size--;\\n                }\\n            }\\n            case ENCODE_UTF16, VALIDATE_UTF16, ENCODED_LENGTH_UTF16,\\n                 ENCODE_UTF16_BE, ENCODE_UTF16_LE, ENCODE_UTF32_BE, ENCODE_UTF32_LE, COUNT_CODE_POINTS -> {\\n                char last = src instanceof char[] chars ? chars[sp + size - 1]\\n                        : byteChar((byte[])src, (sp + size - 1) << 1, BIG_ENDIAN);\\n                if (Character.isHighSurrogate(last)) {\\n                    size--;\\n                }\\n            }\\n            case DECODE_UTF16_BE, DECODE_UTF16_LE -> {\\n                size &= ~1;\\n                if (Character.isHighSurrogate(byteChar((byte[])src, sp + size - 2,\\n                        operation == DECODE_UTF16_BE))) {\\n                    size -= 2;\\n                }\\n            }\\n            case ENCODE_BASE64, ENCODE_BASE64_URL -> size -= size % 3;\\n            case DECODE_BASE64, DECODE_BASE64_URL, DECODE_UTF32_BE, DECODE_UTF32_LE -> size &= ~3;\\n        }\\n        return size;\\n    }\\n\\n    private static char byteChar(byte[] bytes, int off, boolean bigEndian) {\\n        return (char)(bigEndian ? (bytes[off] & 0xff) << 8 | (bytes[off + 1] & 0xff)\\n                               : (bytes[off] & 0xff) | (bytes[off + 1] & 0xff) << 8);\\n    }\\n\\n    private static boolean validUTF16Start(Object src, int sp, int len) {\\n        if (!range(src, true, sp, len) || len == 0) {\\n            return false;\\n        }\\n        char first = src instanceof char[] chars ? chars[sp] : byteChar((byte[])src, sp << 1, BIG_ENDIAN);\\n        if (!Character.isSurrogate(first)) {\\n            return true;\\n        }\\n        return Character.isHighSurrogate(first) && len > 1 && Character.isLowSurrogate(\\n                src instanceof char[] chars ? chars[sp + 1] : byteChar((byte[])src, (sp + 1) << 1, BIG_ENDIAN));\\n    }\\n\\n    // Keep operation constants visible to C2, including its preferred existing stubs.\\n    @ForceInline\\n    private static int processChunk(Object src, int sp, int len,\\n                                    Object dst, int dp, int capacity, int operation) {\\n        return switch (operation) {\\n            case COUNT_ASCII -> process0(src, sp, len, dst, dp, capacity, COUNT_ASCII);\\n            case ENCODE_ASCII -> process0(src, sp, len, dst, dp, capacity, ENCODE_ASCII);\\n            case ENCODE_LATIN1_FROM_UTF16 -> process0(src, sp, len, dst, dp, capacity, ENCODE_LATIN1_FROM_UTF16);\\n            case ENCODE_BASE64 -> process0(src, sp, len, dst, dp, capacity, ENCODE_BASE64);\\n            case ENCODE_BASE64_URL -> process0(src, sp, len, dst, dp, capacity, ENCODE_BASE64_URL);\\n            case DECODE_BASE64 -> process0(src, sp, len, dst, dp, capacity, DECODE_BASE64);\\n            case DECODE_BASE64_URL -> process0(src, sp, len, dst, dp, capacity, DECODE_BASE64_URL);\\n            case INFLATE_LATIN1 -> process0(src, sp, len, dst, dp, capacity, INFLATE_LATIN1);\\n            case INDEX_OF_LATIN1 -> process0(src, sp, len, dst, dp, capacity, INDEX_OF_LATIN1);\\n            case INDEX_OF_UTF16 -> process0(src, sp, len, dst, dp, capacity, INDEX_OF_UTF16);\\n            case DECODE_LATIN1 -> process0(src, sp, len, dst, dp, capacity, DECODE_LATIN1);\\n            case VALIDATE_UTF8_LATIN1 -> process0(src, sp, len, dst, dp, capacity, VALIDATE_UTF8_LATIN1);\\n            default -> process0(src, sp, len, dst, dp, capacity, operation);\\n        };\\n    }\\n\\n    // Share operation floors across tiers when compilation is enabled; explicit thresholds bypass them.\\n    @ForceInline\\n    private static int operationMinimumLength(int operation) {\\n        return switch (operation) {\\n            case DECODE_UTF8 -> 256;\\n            case ENCODE_UTF16, DECODE_BASE64, DECODE_BASE64_URL,\\n                 DECODE_LATIN1, COUNT_CODE_POINTS -> 128;\\n            case VALIDATE_ASCII, VALIDATE_LATIN1, ENCODED_LENGTH_UTF16,\\n                 ENCODED_LENGTH_LATIN1, DECODE_UTF32_BE, DECODE_UTF32_LE,\\n                 INDEX_OF_LATIN1, INDEX_OF_UTF16 -> 64;\\n            default -> 0;\\n        };\\n    }\\n\\n    @IntrinsicCandidate\\n    private static native int process0(Object src, int sp, int len,\\n                                       Object dst, int dp, int capacity, int operation);\\n\\n    // Validation kind: 0 = Unicode scalar sequence, 1 = ASCII, 2 = Latin-1.\\n    @ForceInline\\n    public static int validateUTF16(Object src, int sp, int len, int kind) {\\n        return process(src, sp, len, src, 0, 0, VALIDATE_UTF16 + kind);\\n    }\\n\\n    @ForceInline\\n    public static int countCodePoints(Object src, int sp, int len) {\\n        return process(src, sp, len, src, 0, 0, COUNT_CODE_POINTS);\\n    }\\n\\n    @ForceInline\\n    public static int copyUTF16(Object src, int sp, int len, Object dst, int dp) {\\n        return process(src, sp, len, dst, dp, len, COPY_UTF16);\\n    }\\n\\n    // Return a relative index, len when absent, or a negative value to decline.\\n    @ForceInline\\n    public static int indexOfLatin1(byte[] src, int sp, int len, int ch) {\\n        return process(src, sp, len, src, ch, 0, INDEX_OF_LATIN1);\\n    }\\n\\n    @ForceInline\\n    public static int indexOfUTF16(Object src, int sp, int len, int ch) {\\n        return process(src, sp, len, src, ch, 0, INDEX_OF_UTF16);\\n    }\\n\\n    @ForceInline\\n    public static int encodedLengthUTF16(byte[] src, int len) {\\n        return process(src, 0, len, src, 0, 0, ENCODED_LENGTH_UTF16);\\n    }\\n\\n    @ForceInline\\n    public static int encodedLengthLatin1(byte[] src, int len) {\\n        return process(src, 0, len, src, 0, 0, ENCODED_LENGTH_LATIN1);\\n    }\\n\\n    @ForceInline\\n    public static int encodeUTF16Bytes(char[] src, int sp, int len,\\n                                       byte[] dst, int dp, int capacity, boolean bigEndian) {\\n        return process(src, sp, len, dst, dp, capacity, bigEndian ? ENCODE_UTF16_BE : ENCODE_UTF16_LE);\\n    }\\n\\n    @ForceInline\\n    public static int decodeUTF16Bytes(byte[] src, int sp, int len,\\n                                       char[] dst, int dp, int capacity, boolean bigEndian) {\\n        return process(src, sp, len, dst, dp, capacity, bigEndian ? DECODE_UTF16_BE : DECODE_UTF16_LE);\\n    }\\n\\n    @DontInline\\n    public static int inflateLatin1(byte[] src, int sp, int len, Object dst, int dp) {\\n        return process(src, sp, len, dst, dp, len, INFLATE_LATIN1);\\n    }\\n\\n    @ForceInline\\n    public static int encodeUTF32Bytes(char[] src, int sp, int len,\\n                                       byte[] dst, int dp, int capacity, boolean bigEndian) {\\n        return process(src, sp, len, dst, dp, capacity, bigEndian ? ENCODE_UTF32_BE : ENCODE_UTF32_LE);\\n    }\\n\\n    @ForceInline\\n    public static int decodeUTF32Bytes(byte[] src, int sp, int len,\\n                                       char[] dst, int dp, int capacity, boolean bigEndian) {\\n        return process(src, sp, len, dst, dp, capacity, bigEndian ? DECODE_UTF32_BE : DECODE_UTF32_LE);\\n    }\\n\\n    @DontInline\\n    public static int countAscii(byte[] src, int sp, int len) {\\n        return process(src, sp, len, src, 0, 0, COUNT_ASCII);\\n    }\\n\\n    @ForceInline\\n    public static int decodeUTF8(byte[] src, int sp, int len,\\n                                 Object dst, int dp, int capacity) {\\n        return process(src, sp, len, dst, dp, capacity, DECODE_UTF8);\\n    }\\n\\n    @ForceInline\\n    @IntrinsicCandidate\\n    public static int decodeLatin1(byte[] src, int sp, int len,\\n                                   byte[] dst, int dp, int capacity) {\\n        return process(src, sp, len, dst, dp, capacity, DECODE_LATIN1);\\n    }\\n\\n    @ForceInline\\n    public static int encodeLatin1(byte[] src, int sp, int len,\\n                                   byte[] dst, int dp, int capacity) {\\n        return process(src, sp, len, dst, dp, capacity, ENCODE_LATIN1);\\n    }\\n\\n    // Keep native call setup out of compilation of scalar encoder fallbacks.\\n    @DontInline\\n    public static int encodeUTF16(Object src, int sp, int len,\\n                                  byte[] dst, int dp, int capacity) {\\n        return process(src, sp, len, dst, dp, capacity, ENCODE_UTF16);\\n    }\\n\\n    @DontInline\\n    public static int encodeAscii(char[] src, int sp, int len,\\n                                  byte[] dst, int dp) {\\n        return process(src, sp, len, dst, dp, len, ENCODE_ASCII);\\n    }\\n\\n    @DontInline\\n    public static int encodeLatin1FromUTF16(Object src, int sp, int len,\\n                                            byte[] dst, int dp) {\\n        return process(src, sp, len, dst, dp, len, ENCODE_LATIN1_FROM_UTF16);\\n    }\\n\\n    @ForceInline\\n    public static int encodeBase64(byte[] src, int sp, int len,\\n                                   byte[] dst, int dp, boolean url) {\\n        return process(src, sp, len, dst, dp, dst.length - dp, url ? ENCODE_BASE64_URL : ENCODE_BASE64);\\n    }\\n\\n    @ForceInline\\n    public static int decodeBase64(byte[] src, int sp, int len,\\n                                   byte[] dst, int dp, boolean url) {\\n        return process(src, sp, len, dst, dp, dst.length - dp, url ? DECODE_BASE64_URL : DECODE_BASE64);\\n    }\\n}\\n\"")
+compile_patch("outlined", {"jdk/internal/util/SimdUTF.java": source})
+testclasses = output / "tests"
+testclasses.mkdir()
+subprocess.run([str(head / "bin/javac"), "--add-exports", "java.base/jdk.internal.util=ALL-UNNAMED",
+                "-d", str(testclasses), "test/hotspot/jtreg/compiler/intrinsics/simdutf/SimdUTFTest.java"], check=True)
+tiers = {"interp": ["-Xint"], "c1": ["-Xbatch", "-XX:TieredStopAtLevel=1"],
+         "c2": ["-Xbatch", "-XX:-TieredCompilation", "-XX:CompileThreshold=100"]}
+common = ["-XX:+UseSerialGC", "-Xms1g", "-Xmx1g", "-XX:ActiveProcessorCount=2"]
+for name in ("outlined",):
+    for tier, flags in tiers.items():
+        subprocess.run([str(head / "bin/java"), *patches[name],
+                        "--add-exports", "java.base/jdk.internal.util=ALL-UNNAMED",
+                        "--add-opens", "java.base/jdk.internal.util=ALL-UNNAMED",
+                        *common, *flags, "-cp", str(testclasses), "SimdUTFTest"], check=True)
+
+classpath = "jmh/core.jar:jmh/generator.jar:jmh/options.jar:jmh/math.jar"
+classes, generated = output / "classes", output / "generated"
+classes.mkdir()
+generated.mkdir()
+subprocess.run([str(head / "bin/javac"), "-cp", classpath, "-processorpath", classpath,
+                "-d", str(classes), "-s", str(generated), "test/micro/org/openjdk/bench/java/lang/SimdUTF.java"], check=True)
+classpath = str(classes) + os.pathsep + classpath
+cpu = min(os.sched_getaffinity(0))
+os.sched_setaffinity(0, {cpu})
+print("GATE_METADATA", json.dumps({"arch": platform.machine(), "cpu": cpu,
+      "base": "02324e6bd026411407983df06284cd79460c33f6",
+      "head": "476da17dc22e68cd0d5b28221d662514468ddbf7",
+      "candidate_source": "module patches recorded in artifacts"}), flush=True)
+
+def options(mode):
+    java = (base if mode == "base" else head) / "bin/java"
+    extra = ["-XX:-UseSIMDUTFIntrinsics"] if mode == "off" or mode.endswith("-off") else []
+    patch = mode.removesuffix("-off")
+    if patch in patches:
+        extra += patches[patch]
+    return java, extra
+
+def measure(study, mode, tier, methods, sizes, strong=False):
+    java, extra = options(mode)
+    label = "-".join((study, mode, tier))
+    result = output / (label + ".json")
+    timing = ["-f", "2", "-wi", "3", "-i", "4", "-w", "300ms", "-r", "300ms"]
+    command = [str(java), "-cp", classpath, "org.openjdk.jmh.Main",
+               "org.openjdk.bench.java.lang.SimdUTF.(" + methods + ")$", "-p", "size=" + sizes,
+               *timing, "-t", "1", "-prof", "gc", "-jvm", str(java),
+               "-jvmArgs", " ".join([*common, *tiers[tier], *extra]),
+               "-rf", "json", "-rff", str(result)]
+    print("GATE_START", label, flush=True)
+    with (output / (label + ".log")).open("w") as log:
+        run = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT)
+    if run.returncode:
+        print((output / (label + ".log")).read_text()[-12000:], flush=True)
+        raise SystemExit(run.returncode)
+    samples = json.loads(result.read_text())
+    assert samples and all(s["primaryMetric"].get("rawData") for s in samples)
+    for sample in samples:
+        p = sample["primaryMetric"]
+        print("GATE_RESULT", json.dumps({"study": study, "mode": mode, "tier": tier,
+              "method": sample["benchmark"].rsplit(".", 1)[1], "size": int(sample["params"]["size"]),
+              "ns": p["score"], "ci": p["scoreConfidence"],
+              "bytes": sample["secondaryMetrics"]["gc.alloc.rate.norm"]["score"]}), flush=True)
+
+
+for tier in ("c1", "c2"):
+    for mode in ("base", "off", "on", "outlined", "outlined-off"):
+        measure("malformed", mode, tier, "malformedCharsetDecode|malformedCharsetEncode", "128,4096")
+        measure("ascii", mode, tier, "asciiDecode|asciiCharsetDecode", "31,4096")
+        measure("valid", mode, tier, "charsetDecodeTight", "255,4096")
+
+print("GATE_COMPLETE", flush=True)
+
+# Capture C1 inlining decisions and sampled stacks for the malformed-input path.
+for mode in ("on", "outlined"):
+    java, extra = options(mode)
+    recording = output / ("c1-profile-" + mode + ".jfr")
+    logfile = output / ("c1-profile-" + mode + ".log")
+    args = [*common, *tiers["c1"], *extra, "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+PrintInlining", "-XX:+DebugNonSafepoints",
+            "-XX:StartFlightRecording=filename=" + str(recording) + ",settings=profile,dumponexit=true"]
+    command = [str(java), "-cp", classpath, "org.openjdk.jmh.Main",
+               "org.openjdk.bench.java.lang.SimdUTF.malformedCharsetEncode$",
+               "-p", "size=4096", "-f", "1", "-wi", "3", "-i", "5",
+               "-w", "1s", "-r", "1s", "-t", "1", "-jvm", str(java),
+               "-jvmArgs", " ".join(args)]
+    with logfile.open("w") as log:
+        subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=True)
+    print("C1_INLINING", mode, json.dumps([line.strip() for line in logfile.read_text().splitlines()
+          if "StringCoding::" in line or "SimdUTF::" in line][-60:]), flush=True)
+    profile = output / ("c1-profile-" + mode + ".json")
+    with profile.open("w") as f:
+        subprocess.run([str(head / "bin/jfr"), "print", "--json", "--events",
+                        "jdk.ExecutionSample,jdk.NativeMethodSample", str(recording)], stdout=f, check=True)
+    from collections import Counter
+    leaves, ancestors = Counter(), Counter()
+    total = 0
+    for event in json.loads(profile.read_text())["recording"]["events"]:
+        frames = (event["values"].get("stackTrace") or {}).get("frames") or []
+        names = [frame["method"]["type"]["name"] + "::" + frame["method"]["name"] for frame in frames]
+        if not any("org/openjdk/bench/java/lang/SimdUTF" in name or
+                   "org.openjdk.bench.java.lang.SimdUTF" in name for name in names):
+            continue
+        total += 1
+        if names:
+            leaves[names[0]] += 1
+        ancestors.update(set(names))
+    print("C1_PROFILE", json.dumps({"mode": mode, "samples": total,
+          "leaves": leaves.most_common(12), "ancestors": ancestors.most_common(20)}), flush=True)
