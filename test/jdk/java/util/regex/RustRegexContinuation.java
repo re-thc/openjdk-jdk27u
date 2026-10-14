@@ -150,6 +150,24 @@ public class RustRegexContinuation {
             b.usePattern(reference("."));
             equal(a, b, a.find(), b.find(), true);
         }
+        // Failed fixed-count probes can advance the input position. A later
+        // pattern change must use that position from the original snapshot,
+        // even if mutable input changes before continuation is requested.
+        for (String expression : new String[]{"[0-9]{3}-[0-9]{2}-[0-9]{4}", "\\d{3}-\\d{2}-\\d{4}"}) {
+            for (int mode = 0; mode < 3; mode++) for (int lo : new int[]{0, 1}) {
+                for (boolean flags : new boolean[]{false, true}) for (String next : new String[]{".", "(?=.)"}) {
+                    StringBuilder mutable = new StringBuilder("!123-xx-6789");
+                    Matcher a = Pattern.compile(expression).matcher(mutable).region(lo, mutable.length());
+                    Matcher b = reference(expression).matcher(mutable).region(lo, mutable.length());
+                    equal(a, b, operation(a, mode), operation(b, mode), flags);
+                    mutable.setCharAt(1, 'x');
+                    mutable.setCharAt(4, '?');
+                    a.usePattern(Pattern.compile(next));
+                    b.usePattern(reference(next));
+                    equal(a, b, a.find(), b.find(), true);
+                }
+            }
+        }
         // A Java choice for a small region or a repeated early hit must not
         // permanently disable the same Pattern's long native searches.
         Field backend = Pattern.class.getDeclaredField("rustRegex");

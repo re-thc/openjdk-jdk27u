@@ -47,10 +47,12 @@ public class RustRegexState {
     @Param({"false", "true"})
     public boolean endFlags;
     private Matcher matcher;
+    private Pattern sourcePattern, continuationPattern;
 
     @Setup
-    public void setup(BenchmarkParams parameters) {
+    public void setup(BenchmarkParams parameters) throws ReflectiveOperationException {
         String expression = switch (shape) {
+            case "ssn" -> "[0-9]{3}-[0-9]{2}-[0-9]{4}";
             case "digits" -> "([0-9]+)";
             case "email" -> "(?<user>[a-z0-9_]+)@(?<domain>[a-z0-9_]+)\\.[a-z]{2,4}";
             case "alternation" -> "(?<level>error|warning|fatal)([0-9]+)";
@@ -58,6 +60,7 @@ public class RustRegexState {
             default -> "(error)([0-9]+)";
         };
         String candidate = switch (shape) {
+            case "ssn" -> "123-45-6789";
             case "digits" -> "123";
             case "email" -> "a@b.co";
             default -> "error123";
@@ -67,6 +70,7 @@ public class RustRegexState {
             case "early" -> candidate + padding.substring(candidate.length());
             case "late" -> padding.substring(candidate.length()) + candidate;
             case "full" -> switch (shape) {
+                case "ssn" -> "123-45-6789";
                 case "digits" -> "3".repeat(length);
                 case "email" -> "a".repeat(length - 5) + "@b.co";
                 case "unicode" -> "\u0100error" + "3".repeat(length - 6);
@@ -74,11 +78,22 @@ public class RustRegexState {
             };
             default -> padding;
         };
-        matcher = Pattern.compile(expression).matcher(input);
         String operation = parameters.getBenchmark();
+        boolean continuation = operation.endsWith(".continueAfterFind");
+        if (continuation && shape.equals("ssn")) {
+            String partial = "123-xx-6789";
+            input = switch (position) {
+                case "partialEarly" -> partial + padding.substring(partial.length());
+                case "partialLate" -> padding.substring(partial.length()) + partial;
+                case "overlap" -> "1".repeat(length);
+                default -> input;
+            };
+        }
+        sourcePattern = Pattern.compile(expression);
+        matcher = sourcePattern.matcher(input);
         boolean found = operation.endsWith(".matches") ? matcher.matches()
                 : operation.endsWith(".lookingAt") ? matcher.lookingAt() : matcher.find();
-        boolean expected = !position.equals("miss");
+        boolean expected = position.equals("early") || position.equals("late") || position.equals("full");
         if (operation.endsWith(".matches"))
             expected &= position.equals("full") && !shape.equals("unicode");
         else if (operation.endsWith(".lookingAt"))
@@ -87,9 +102,34 @@ public class RustRegexState {
             throw new IllegalStateException("input does not fit the benchmark scenario");
         // Validate observations during setup as well as consuming them below.
         observe(found);
+        if (continuation) {
+            Matcher reference = reference(expression).matcher(input);
+            if (observe(matcher, found) != observe(reference, reference.find()))
+                throw new IllegalStateException("initial continuation state differs from Java");
+            continuationPattern = Pattern.compile("(?=.)");
+            matcher.usePattern(continuationPattern);
+            reference.usePattern(reference("(?=.)"));
+            if (observe(matcher, matcher.find()) != observe(reference, reference.find()))
+                throw new IllegalStateException("continued position differs from Java");
+            matcher.usePattern(sourcePattern).reset();
+        }
+    }
+
+    private static Pattern reference(String expression) throws ReflectiveOperationException {
+        try {
+            var constructor = Pattern.class.getDeclaredConstructor(String.class, int.class, boolean.class);
+            constructor.setAccessible(true);
+            return constructor.newInstance(expression, 0, false);
+        } catch (NoSuchMethodException originalSources) {
+            return Pattern.compile(expression);
+        }
     }
 
     private long observe(boolean found) {
+        return observe(matcher, found);
+    }
+
+    private long observe(Matcher matcher, boolean found) {
         long result = found ? 1 : 0;
         if (found) {
             for (int group = 0; group <= matcher.groupCount(); group++)
@@ -112,5 +152,14 @@ public class RustRegexState {
     @Benchmark
     public long lookingAt() {
         return observe(matcher.reset().lookingAt());
+    }
+
+    @Benchmark
+    @Fork(value = 3, jvmArgsAppend = "--add-opens=java.base/java.util.regex=ALL-UNNAMED")
+    public long continueAfterFind() {
+        matcher.usePattern(sourcePattern).reset();
+        long result = observe(matcher.find());
+        matcher.usePattern(continuationPattern);
+        return 31 * result + observe(matcher.find());
     }
 }

@@ -125,9 +125,9 @@ public final class RustRegex {
             FastPlan fast = (flags & Pattern.CASE_INSENSITIVE) == 0 ? FastDigits.parse(subset.source, subset.groups) : null;
             if (fast == null && (flags & Pattern.CASE_INSENSITIVE) == 0)
                 fast = FastEmail.parse(subset.source, subset.groups);
-            if (fast == null && JAVA_TIER == 2 && (flags & Pattern.CASE_INSENSITIVE) == 0)
+            if (fast == null && JAVA_TIER != 0 && (flags & Pattern.CASE_INSENSITIVE) == 0)
                 fast = FastAlternationDigits.parse(subset.source, subset.groups);
-            if (fast == null && JAVA_TIER == 2 && subset.groups == 1 &&
+            if (fast == null && subset.groups == 1 &&
                     (subset.source.equals("[0-9]{3}-[0-9]{2}-[0-9]{4}") ||
                      subset.source.equals("\\d{3}-\\d{2}-\\d{4}"))) fast = FastFixedDigits.INSTANCE;
             boolean defer = fast != null || JAVA_TIER == 2 && !subset.variableLength;
@@ -169,6 +169,36 @@ public final class RustRegex {
             if (CompiledCache.ENTRIES.size() > 256)
                 CompiledCache.ENTRIES.remove(CompiledCache.ENTRIES.keySet().iterator().next());
         }
+    }
+
+    public boolean hasShortFixedWidth() { return fastPlan instanceof FastFixedDigits; }
+    // Each accepted digit in Java's fixed-count Curly atoms advances last,
+    // even if a following separator or full-region assertion later fails.
+    public static int fixedFailureLast(String input, int to, int start, int previous) {
+        int last = previous;
+        for (int i = 0; i < 11; i++) {
+            int at = start + i;
+            if (at >= to) return last;
+            char c = input.charAt(at);
+            if (i == 3 || i == 6) {
+                if (c != '-') return last;
+            } else {
+                if (c < '0' || c > '9') return last;
+                last = at + 1;
+            }
+        }
+        return last;
+    }
+
+    public static int fixedSearchFailureLast(String input, int to, int start, int previous) {
+        // Start only probes positions with room for the eleven-character
+        // minimum. The last probe that accepts a digit determines last;
+        // later nondigit probes leave it untouched.
+        for (int at = to - 11; at >= start; at--) {
+            char c = input.charAt(at);
+            if (c >= '0' && c <= '9') return fixedFailureLast(input, to, at, previous);
+        }
+        return previous;
     }
 
     public boolean hasShortPlan() { return fastPlan != null; }
@@ -220,14 +250,23 @@ public final class RustRegex {
         String tail = source.substring(end + 1);
         return tail.equals("[0-9]+") || tail.equals("\\d+");
     }
-    public boolean hasExactEndFlags() { return fastPlan instanceof FastDigits || fastPlan instanceof FastAlternationDigits; }
+    public boolean hasExactEndFlags() { return fastPlan instanceof FastDigits || fastPlan instanceof FastAlternationDigits || fastPlan instanceof FastFixedDigits; }
     public boolean hasExactSuccessEndFlags() { return fastPlan instanceof FastEmail; }
     public boolean successHitsEnd(int[] state, int to) {
         // The bounded suffix tries another letter only below its maximum.
-        return state[1] == to && (!(fastPlan instanceof FastEmail)
+        return !(fastPlan instanceof FastFixedDigits) && state[1] == to && (!(fastPlan instanceof FastEmail)
                 || state[1] - state[5] - 1 < 4);
     }
     public boolean anchoredMissHitsEnd(String input, int to, int start) {
+        if (fastPlan instanceof FastFixedDigits) {
+            for (int i = 0; i < 11; i++) {
+                if (start + i == to) return true;
+                char c = input.charAt(start + i);
+                if (i == 3 || i == 6) { if (c != '-') return false; }
+                else if (c < '0' || c > '9') return false;
+            }
+            return false;
+        }
         if (fastPlan instanceof FastAlternationDigits alternatives) {
             if (start == to) return true;
             for (String prefix : alternatives.prefixes) {
@@ -271,6 +310,11 @@ public final class RustRegex {
             char last = input.charAt(to-1);
             if (last == '\n' || last == '\r' || last == 0x85) return -1;
         }
+        long nativeHandle = handle;
+        if (nativeHandle == 0 && JAVA_TIER == 2 && mode == 0 &&
+                fastPlan instanceof FastDigits digits && !digits.prefix.isEmpty() &&
+                input.indexOf(digits.prefix.charAt(0), start, to - digits.prefix.length()) < 0)
+            return 0;
         byte[] bytes = SharedSecrets.getJavaLangAccess().getLatin1Bytes(input);
         if (bytes == null) {
             if (input.length() > MAX_LENGTH) return -1;
@@ -289,7 +333,6 @@ public final class RustRegex {
         state[base+2] = start;
         state[base+3] = mode;
         try {
-            long nativeHandle = handle;
             if (nativeHandle == 0) nativeHandle = nativeHandle();
             if (nativeHandle == 0) return -1;
             int result = match0(nativeHandle, bytes, state);
@@ -315,7 +358,8 @@ public final class RustRegex {
         @Override
         public int match(String input, int[] state, int to, int start, int mode, int length) {
             if (to - start < 11) return 0;
-            boolean scan = mode == 0 && length <= 256;
+            if (JAVA_TIER == 0) return -2;
+            boolean scan = mode == 0 && length <= (JAVA_TIER == 2 ? 256 : 16);
             int limit = scan ? to - 11 : start;
             for (int at = start; at <= limit; at++) {
                 if (digit(input.charAt(at)) && input.charAt(at + 3) == '-' &&
@@ -519,6 +563,10 @@ public final class RustRegex {
                 }
                 if (!scan) {
                     if (mode != 0) return 0;
+                    if (JAVA_TIER == 1) {
+                        state[state.length - 2] = start;
+                        return -2;
+                    }
                     int candidate = to;
                     for (String prefix : prefixes) {
                         int bound = to - prefix.length();

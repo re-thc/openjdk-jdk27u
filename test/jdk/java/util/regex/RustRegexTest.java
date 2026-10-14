@@ -45,7 +45,7 @@ import java.util.regex.*;
 import jdk.internal.util.regex.RustRegex;
 
 public class RustRegexTest {
-    private static final Field NATIVE, ROOT, MATCH_ROOT, HANDLE;
+    private static final Field NATIVE, ROOT, MATCH_ROOT, HANDLE, TIER;
     private static final Constructor<Pattern> JAVA;
     private static int comparisons;
     static {
@@ -54,8 +54,9 @@ public class RustRegexTest {
             ROOT = Pattern.class.getDeclaredField("root");
             MATCH_ROOT = Pattern.class.getDeclaredField("matchRoot");
             HANDLE = RustRegex.class.getDeclaredField("handle");
+            TIER = RustRegex.class.getDeclaredField("JAVA_TIER");
             JAVA = Pattern.class.getDeclaredConstructor(String.class, int.class, boolean.class);
-            for (Field f : new Field[]{NATIVE, ROOT, MATCH_ROOT, HANDLE}) f.setAccessible(true);
+            for (Field f : new Field[]{NATIVE, ROOT, MATCH_ROOT, HANDLE, TIER}) f.setAccessible(true);
             JAVA.setAccessible(true);
         } catch (ReflectiveOperationException e) { throw new ExceptionInInitializerError(e); }
     }
@@ -263,8 +264,13 @@ public class RustRegexTest {
             if (HANDLE.getLong(owner)!=0) throw new AssertionError("short plan allocated native storage");
             if (!p.matcher("ready123").matches() || HANDLE.getLong(owner)!=0)
                 throw new AssertionError("short first match compiled a Rust engine");
-            if (p.matcher("x".repeat(4096)).find() || HANDLE.getLong(owner)==0)
-                throw new AssertionError("first long search did not select Rust immediately");
+            if (p.matcher("x".repeat(4096)).find()) throw new AssertionError("definite long miss");
+            if (TIER.getInt(null) == 2 && HANDLE.getLong(owner) != 0)
+                throw new AssertionError("definite prefix miss compiled unused native storage");
+            nativeOnly(p);
+            // A possible first character still requires the native handoff.
+            if (p.matcher("r" + "x".repeat(4095)).find() || HANDLE.getLong(owner)==0)
+                throw new AssertionError("unresolved long search did not select Rust");
             nativeOnly(p);
         }
         // Combined grammar, capture and region cases exercise the short-search
@@ -466,6 +472,7 @@ public class RustRegexTest {
         collectedPreparation();
         resetCapturePublication();
         preparedPlans();
+        fixedCountContinuation();
         primary();
         shortAndEarlyMatches();
         digitEndFlags();
@@ -474,6 +481,37 @@ public class RustRegexTest {
         sharingAndLifetime();
         apiState();
         System.out.println("Compared "+comparisons+" native/Java results and API states; enabled="+RustRegex.ENABLED);
+    }
+
+    private static void fixedCountContinuation() throws Exception {
+        List<String> inputs = new ArrayList<>(List.of("123-45-6789!", "1123-45-6789",
+                "12X123-45-6789", "123-4X123-45-6789", "123-45-6X123-45-6789",
+                "123-45-6789!123-45-6789", "!".repeat(16)));
+        String complete = "123-45-6789";
+        for (int i = 0; i <= complete.length(); i++) inputs.add(complete.substring(0, i));
+        for (String expression : new String[]{"[0-9]{3}-[0-9]{2}-[0-9]{4}", "\\d{3}-\\d{2}-\\d{4}"}) {
+            for (int flags : new int[]{0, Pattern.CASE_INSENSITIVE, Pattern.DOTALL, Pattern.UNIX_LINES}) {
+                Pattern ref = reference(expression, flags);
+                for (String input : inputs) for (boolean endFlags : new boolean[]{false, true}) {
+                    for (int operation = 0; operation < 2; operation++) {
+                        Pattern p = Pattern.compile(expression, flags);
+                        Matcher a = p.matcher(input), b = ref.matcher(input);
+                        equal(a, b, operation == 0 ? a.matches() : a.lookingAt(),
+                                operation == 0 ? b.matches() : b.lookingAt(), endFlags);
+                        nativeOnly(p);
+                        for (int n = 0; n < 3; n++) {
+                            equal(a, b, a.find(), b.find(), endFlags);
+                            nativeOnly(p);
+                        }
+                        a.reset(); b.reset();
+                        nativeOnly(p);
+                        checkResetCaptures(a); checkResetCaptures(b);
+                        equal(a, b, a.find(), b.find(), endFlags);
+                        nativeOnly(p);
+                    }
+                }
+            }
+        }
     }
 
     private static void preparedPlans() throws Exception {

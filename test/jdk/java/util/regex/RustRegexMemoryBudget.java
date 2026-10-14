@@ -55,12 +55,19 @@ public class RustRegexMemoryBudget {
             throw new AssertionError("retained engine stopped rejecting after budget exhaustion");
         if (first.match("a".repeat(8192), state, 0, 8192, 0, 0, false, true) != 1)
             throw new AssertionError("retained engine lost a match after budget exhaustion");
-        // Exhaustion must permanently choose Java for a newly compiled Pattern.
+        // Exhaustion must permanently choose Java when a new Pattern needs
+        // native storage.
         Pattern pattern = Pattern.compile("error([0-9]+)");
         for (int i = 0; i < 12; i++) {
             var matcher = pattern.matcher("x".repeat(2048));
             if (matcher.find() || !matcher.hitEnd()) throw new AssertionError("Java miss fallback");
         }
+        // A definite prefix miss can finish without allocating native storage.
+        // Force an unresolved search so the exhausted allocation budget must
+        // select Java, while retaining the same fallback and recovery gates.
+        var unresolved = pattern.matcher("e" + "x".repeat(2047));
+        if (unresolved.find() || !unresolved.hitEnd() || unresolved.requireEnd())
+            throw new AssertionError("exhausted native allocation fallback");
         var field = Pattern.class.getDeclaredField("rustRegex");
         field.setAccessible(true);
         if (field.get(pattern) != null) throw new AssertionError("Pattern exceeded native budget");

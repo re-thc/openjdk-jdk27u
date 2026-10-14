@@ -247,6 +247,8 @@ public final class Matcher implements MatchResult {
     private int nativeEndLast, nativeEndOldLast;
     private JavaMatchChoice javaMatchChoice;
     private boolean javaOnly;
+    private boolean directSearch;
+    private static final int FIXED_FIND_CONTINUATION = 3;
     private record JavaMatchChoice(Pattern.Node root, Pattern.Node matchRoot,
             WeakReference<CharSequence> input, int from, int to, int width, int mode) { }
 
@@ -263,6 +265,7 @@ public final class Matcher implements MatchResult {
         this.parentPattern = parent;
         this.text = text;
         javaOnly = parent.rustRegex == null;
+        directSearch = javaOnly || parent.rustRegex.hasShortFixedWidth();
 
         // Allocate state storage
         groups = new int[parent.capturingGroupCount * 2 + (parent.rustRegex != null ? 4 : 0)];
@@ -439,6 +442,7 @@ public final class Matcher implements MatchResult {
         javaMatchChoice = null;
         parentPattern = newPattern;
         javaOnly = newPattern.rustRegex == null;
+        directSearch = javaOnly || newPattern.rustRegex.hasShortFixedWidth();
         namedGroups = null;
 
         // Reallocate state storage
@@ -464,6 +468,7 @@ public final class Matcher implements MatchResult {
      * @return  This matcher
      */
     public Matcher reset() {
+        if (nativeEndMode == FIXED_FIND_CONTINUATION) clearNativeEnd();
         nativePendingLast = false;
         first = -1;
         last = 0;
@@ -1773,9 +1778,30 @@ public final class Matcher implements MatchResult {
      * the end of the previous match.
      */
     boolean search(int from) {
+        return directSearch ? searchDirect(from) : searchMixed(from);
+    }
+
+    private boolean searchDirect(int from) {
         if (javaOnly) {
             clearNativeEnd();
             return searchJava(from);
+        }
+        int start = Math.max(0, from);
+        if (to - start <= 16) {
+            int limit = to - 11;
+            while (start <= limit) {
+                char c = text.charAt(start++);
+                if (c >= '0' && c <= '9') return searchMixed(from);
+            }
+            clearNativeEnd();
+            nativePendingLast = false;
+            hitEnd = true;
+            requireEnd = false;
+            acceptMode = NOANCHOR;
+            first = -1;
+            oldLast = last;
+            modCount++;
+            return false;
         }
         return searchMixed(from);
     }
@@ -1975,6 +2001,8 @@ public final class Matcher implements MatchResult {
         String input = text instanceof String s ? s : text.toString();
         int result = engine.match(input, groups, from, to, start, mode,
                 transparentBounds, anchoringBounds);
+        if (result == 0 && mode != 0 && engine.hasShortFixedWidth())
+            last = RustRegex.fixedFailureLast(input, to, start, last);
         // Java traversal can advance last even when an anchored match fails.
         // Replay on this Matcher so the next find() starts at the same position.
         if (result < 0 || (result == 0 && mode != 0 && !engine.hasExactEndFlags())) {
@@ -1986,12 +2014,12 @@ public final class Matcher implements MatchResult {
             last = groups[1];
             if (first == from && engine.prefersJavaEarlyMatch(last - first)) selectJavaMatch(true, mode);
         }
-        // These simple greedy tails preserve last on failure and have exact
-        // end flags. General backtracking expressions need Java replay.
+        // Greedy tails preserve last on failure; the fixed-count plan restores
+        // its atom progress above. Their end flags need no Java replay.
         if (engine.hasExactEndFlags() || result == 1 && engine.hasExactSuccessEndFlags()) {
             hitEnd = result == 1 ? engine.successHitsEnd(groups, to)
                     : mode == 0 || engine.anchoredMissHitsEnd(input, to, start);
-            return result;
+            if (result != 0 || mode != 0 || !engine.hasShortFixedWidth()) return result;
         }
         nativePendingLast = result == 0;
         nativeEndLast = last;
@@ -2001,7 +2029,10 @@ public final class Matcher implements MatchResult {
         nativeEndFrom = from;
         nativeEndTo = to;
         nativeEndStart = start;
-        nativeEndMode = mode;
+        // A failed fixed-count search can advance Java's digit atoms even
+        // though its end flags are exact. Recover that position only when
+        // another operation needs it, using this immutable input snapshot.
+        nativeEndMode = engine.hasShortFixedWidth() ? FIXED_FIND_CONTINUATION : mode;
         nativeEndTransparent = transparentBounds;
         nativeEndAnchoring = anchoringBounds;
         return result;
@@ -2017,6 +2048,7 @@ public final class Matcher implements MatchResult {
     private void selectJavaOnly() {
         javaStorage(parentPattern);
         javaOnly = true;
+        directSearch = true;
         javaMatchChoice = null;
         clearNativeEnd();
     }
@@ -2053,12 +2085,19 @@ public final class Matcher implements MatchResult {
     }
 
     private void ensureEndFlags() {
-        replayNative();
+        if (nativeEndPattern != null && nativeEndMode != FIXED_FIND_CONTINUATION) replayNative();
     }
 
     private void replayNative() {
         Pattern pattern = nativeEndPattern;
         if (pattern == null) return;
+        if (nativeEndMode == FIXED_FIND_CONTINUATION) {
+            last = RustRegex.fixedSearchFailureLast(nativeEndInput, nativeEndTo,
+                    nativeEndStart, nativeEndLast);
+            oldLast = last;
+            clearNativeEnd();
+            return;
+        }
         pattern.ensureJava();
         Matcher replay = pattern.matcher(nativeEndInput)
                 .region(nativeEndFrom, nativeEndTo)

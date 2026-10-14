@@ -1,5 +1,57 @@
 # Rust regex performance
 
+## Common-path preparation and continuation
+
+The narrow literal-alternation/digit plan also serves a C1-only configuration.
+It handles supported initial positives and short searches locally; unresolved
+long searches still reach Rust. The interpreter retains its native route.
+For literal/digit plans without a native handle, a definite first-character
+miss can avoid native preparation. Already prepared engines skip that guard.
+
+The recognized captureless three-two-four ASCII digit grammar has exact end
+flags and a small short-search rejection path. Failed anchored operations
+restore the progress of Java's digit atoms immediately. Failed searches save
+an immutable input snapshot and recover that progress when a subsequent
+operation needs it, including `usePattern()` after mutable input changes.
+End-flag observation does not require Java replay; reset releases the pending
+snapshot. The continuation benchmark times the pattern change and following
+search, including the deferred work, and checks its public observations against
+the original Java constructor during setup. An exhausted native allocation
+still permanently selects Java; the budget test forces an unresolved native
+handoff before checking that fallback and eventual cleanup.
+
+Release and fastdebug each pass 109 regex/Scanner/String tests and 5,989
+framework checks. Enabled RustRegexTest configurations compare 389,371 results
+and API states; disabled compares 389,369. Continuation configurations compare
+307,812 states each. Independent current-image tests compare 2,366,496 public
+states, 288 targeted continuation cases and 9,216 exact tuples across four
+controls. Fifteen separate compiler-log proofs identify actual execution tiers,
+including the continuation method and cold-lifetime facade. Native counters
+verify 6,000 intrinsic entries per enabled tier and 6,000 JNI entries with
+intrinsics disabled. Instrumentation precedes timing.
+
+Fresh-process qualification retains 4,938 records: 226 complete-image cases,
+17 equal-module cases and 69 cases under explicit VM settings. All public
+tuples agree. These settings do not identify the execution tier of first use.
+Nine alternating equal-module pairs give the following first-use medians in
+milliseconds, against the `cf8ff519` preparation and Matcher sources:
+
+| VM setting | First use | Preceding | Selected |
+| --- | --- | ---: | ---: |
+| C1 only | Alternation, 16-char early hit | 4.782 | 1.654 |
+| C1 only | Fixed count, 11-char full hit | 6.374 | 1.389 |
+| Interpreter only | Fixed count, 11-char full hit | 4.876 | 2.091 |
+| Normal tiered | Alternation, 4,096-char full hit | 2.576 | 3.350 |
+
+Startup remains mixed. Original-source module patching also affects whole
+process wall time, so it does not provide an unmodified original-HotSpot
+startup baseline. The current 72-workload GC matrix observes maxima of
+3.21 ms reaching a safepoint, 24.7 ms GC wall time and 41.1 ms steady-call time;
+these are observations, not bounds. Full warmed, lifetime, continuation and
+allocation comparisons are reported in PR #5 and its accompanying evidence.
+All losses and failed candidates are retained. The sections below describe
+earlier source revisions and their measurements.
+
 ## Prepared traversal and bounded alternation
 
 The prepared literal/digit grammar now supplies capture numbering and named
