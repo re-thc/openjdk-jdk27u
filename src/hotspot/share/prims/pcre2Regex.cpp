@@ -211,7 +211,7 @@ JNI_ENTRY(jint, RR_match16Safepoint(JNIEnv* env, jclass cls, jlong handle, jstri
       copy[i] = c;
     }
   } // No raw oop or heap address survives the native transition.
-  if (!qualified) { FREE_C_HEAP_ARRAY(copy); return -1; }
+  if (!qualified) { FREE_C_HEAP_ARRAY(copy); return -3; }
   copy_state[base] = 0;
   copy_state[base+1] = length;
   copy_state[base+2] -= from;

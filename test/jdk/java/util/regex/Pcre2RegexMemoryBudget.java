@@ -57,17 +57,24 @@ public class Pcre2RegexMemoryBudget {
         // Java when the global budget is exhausted. Never fabricate a miss.
         if (miss != 0 && miss != -1 || hit != 1 && hit != -1)
             throw new AssertionError("incorrect result after budget exhaustion");
-        // Exhaustion must permanently choose Java for a newly compiled Pattern.
-        Pattern pattern = Pattern.compile("error([0-9]+)");
+        // A deferred handle cannot allocate under pressure, but each operation
+        // remains correct on the Java sibling without excluding future peers.
+        Pattern pattern = Pattern.compile("(?=error)(error)([0-9]+)");
+        var field = Pattern.class.getDeclaredField("pcre2Regex");
+        field.setAccessible(true);
+        Object owner = field.get(pattern);
+        if (owner == null) throw new AssertionError("deferred preparation missing");
         for (int i = 0; i < 12; i++) {
             var matcher = pattern.matcher("x".repeat(2048));
             if (matcher.find() || !matcher.hitEnd()) throw new AssertionError("Java miss fallback");
         }
-        var field = Pattern.class.getDeclaredField("pcre2Regex");
-        field.setAccessible(true);
-        if (field.get(pattern) != null) throw new AssertionError("Pattern exceeded native budget");
-        var matcher = pattern.matcher("error123" + "x".repeat(2048));
-        if (!matcher.find() || !matcher.group(1).equals("123")) throw new AssertionError("Java hit fallback");
+        var matcher = pattern.matcher("error" + "3".repeat(4091));
+        for (int i = 0; i < 12; i++) {
+            if (!matcher.reset().find() || !matcher.group(1).equals("error") || matcher.end(2) != 4096)
+                throw new AssertionError("Java hit fallback");
+        }
+        if (field.get(pattern) != owner || Pcre2Regex.nativeMemoryStats()[0] > 64L * 1024 * 1024)
+            throw new AssertionError("resource failure demoted Pattern or exceeded native budget");
         Reference.reachabilityFence(retained);
         System.out.println("Budget exhausted with " + retained.size() + " retained engines; Java fallback OK");
         retained.clear();

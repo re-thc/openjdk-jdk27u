@@ -90,6 +90,7 @@ public class Pcre2RegexJit {
         }catch(Throwable ex){failure.compareAndSet(null,ex);}});workers.add(t);t.start(); }
         go.countDown();for(Thread t:workers)t.join();if(failure.get()!=null)throw new AssertionError(failure.get());
         if(backend.get(shared)!=owner)throw new AssertionError("resource exclusion demoted peers");
+        System.out.println("sharing routes="+java.util.Arrays.toString(((Pcre2Regex)owner).nativeRouteStats()));
         System.out.println("JIT mode/width boundaries, phase shifts and 32-Matcher sharing passed");
     }
 }

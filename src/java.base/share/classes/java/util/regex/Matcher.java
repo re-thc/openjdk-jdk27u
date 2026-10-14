@@ -1986,6 +1986,12 @@ public final class Matcher implements MatchResult {
         String input = text instanceof String s ? s : text.toString();
         int result = engine.match(input, groups, from, to, start, mode,
                 transparentBounds, anchoringBounds);
+        if (result == -3) {
+            // A semantic exclusion depends on immutable input/region/mode.
+            // Cache that local choice; transient native errors stay retryable.
+            selectJavaMatch(true, mode);
+            return -2;
+        }
         // Java traversal can advance last even when an anchored match fails.
         // Replay on this Matcher so the next find() starts at the same position.
         if (result < 0 || (result == 0 && mode != 0 && !engine.hasExactEndFlags())) {

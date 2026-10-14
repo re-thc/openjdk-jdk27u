@@ -138,6 +138,8 @@ public final class Pcre2Regex {
             }
             FastPlan fast = (flags & Pattern.CASE_INSENSITIVE) == 0 ? FastDigits.parse(subset.source, subset.groups) : null;
             if (fast == null && (flags & Pattern.CASE_INSENSITIVE) == 0)
+                fast = FastAssertedDigits.parse(subset.source, subset.groups);
+            if (fast == null && (flags & Pattern.CASE_INSENSITIVE) == 0)
                 fast = FastEmail.parse(subset.source, subset.groups);
             if (fast == null && JAVA_TIER == 2 && (flags & Pattern.CASE_INSENSITIVE) == 0)
                 fast = FastAlternationDigits.parse(subset.source, subset.groups);
@@ -272,18 +274,19 @@ public final class Pcre2Regex {
         if (fastPlan != null) {
             int result = fastPlan.match(input, state, to, start, mode, to - from);
             if (result != -2) return result;
-            if (fastPlan instanceof FastAlternationDigits) start = state[state.length - 2];
+            if (fastPlan instanceof FastAlternationDigits || fastPlan instanceof FastDigits)
+                start = state[state.length - 2];
         }
         return nativeMatch(input, state, from, to, start, mode, transparent, anchoring);
     }
 
     private int nativeMatch(String input, int[] state, int from, int to, int start, int mode,
                             boolean transparent, boolean anchoring) {
-        if (contextSensitive && (transparent || !anchoring)) return -1;
+        if (contextSensitive && (transparent || !anchoring)) return -3;
         if (to - from > MAX_LENGTH) return -1;
         if (finalTerminatorSensitive && to > from) {
             char last = input.charAt(to-1);
-            if (last == '\n' || last == '\r' || last == 0x85) return -1;
+            if (last == '\n' || last == '\r' || last == 0x85) return -3;
         }
         byte[] bytes = SharedSecrets.getJavaLangAccess().getLatin1Bytes(input);
         if (bytes == null) {
@@ -294,7 +297,15 @@ public final class Pcre2Regex {
             state[base+2] = start; state[base+3] = mode;
             try {
                 long wide = handle16;
-                if (wide == 0) wide = nativeHandle16();
+                if (wide == 0) {
+                    // Avoid compiling an unused width for a cold excluded
+                    // input. Reused handles qualify while copying in the VM.
+                    for (int i = from; i < to; i++) {
+                        char c = input.charAt(i);
+                        if (Character.isSurrogate(c) || c == 0x2028 || c == 0x2029) return -3;
+                    }
+                    wide = nativeHandle16();
+                }
                 return wide == 0 ? -1 : match16Safepoint0(wide, input, state);
             } finally { Reference.reachabilityFence(this); }
         }
@@ -426,7 +437,10 @@ public final class Pcre2Regex {
                     while (end < to) {
                         int c = input.charAt(end);
                         if (c < '0' || c > '9') break;
-                        if (end-digits == limit) return -2;
+                        if (end-digits == limit) {
+                            state[state.length - 2] = at;
+                            return -2;
+                        }
                         end++;
                     }
                     if (end != digits) {
@@ -443,7 +457,18 @@ public final class Pcre2Regex {
                         return 1;
                     }
                 }
-                if (!scan) return mode == 0 ? -2 : 0;
+                if (!scan) {
+                    if (mode != 0) return 0;
+                    // The literal layout has already been proved. A bounded
+                    // search can reject its absence before any native copy;
+                    // preserve the first candidate if native work is needed.
+                    if (!prefix.isEmpty()) {
+                        at = candidate(input, at + 1, to);
+                        if (at < 0) return 0;
+                    }
+                    state[state.length - 2] = at;
+                    return -2;
+                }
                 if (at == to) return 0;
                 at = candidate(input, at+1, to);
                 if (at < 0) return 0;
@@ -455,6 +480,32 @@ public final class Pcre2Regex {
         private int candidate(String input, int at, int to) {
             return to == input.length() ? input.indexOf(prefix, at)
                     : input.indexOf(prefix, at, to);
+        }
+    }
+
+    // Recognize only a leading capture-free literal assertion followed by
+    // the exact same literal/digit layout. The original assertion remains in
+    // native and Java graphs. A positive short result has the same captures;
+    // a general failed result still needs the original continuation/end replay.
+    private record FastAssertedDigits(FastDigits digits) implements FastPlan {
+        static FastAssertedDigits parse(String source, int groups) {
+            if (!source.startsWith("(?=")) return null;
+            int end = 3;
+            while (end < source.length() && FastDigits.literal(source.charAt(end))) end++;
+            if (end == 3 || end == source.length() || source.charAt(end) != ')') return null;
+            FastDigits tail = FastDigits.parse(source.substring(end + 1), groups);
+            return tail != null && tail.prefix.equals(source.substring(3, end))
+                    ? new FastAssertedDigits(tail) : null;
+        }
+
+        @Override
+        public int match(String input, int[] state, int to, int start, int mode, int length) {
+            if (mode == 0 && digits.candidate(input, start, to) < 0) return 0;
+            if (length <= 64) {
+                int result = digits.match(input, state, to, start, mode, length);
+                if (result == 1) return 1;
+            }
+            return -2;
         }
     }
 

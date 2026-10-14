@@ -274,8 +274,8 @@ public class Pcre2RegexTest {
             if (nativePrepared(owner)) throw new AssertionError("short plan allocated native storage");
             if (!p.matcher("ready123").matches() || nativePrepared(owner))
                 throw new AssertionError("short first match compiled a PCRE2 engine");
-            if (p.matcher("x".repeat(4096)).find() || !nativePrepared(owner))
-                throw new AssertionError("first long search did not select PCRE2 immediately");
+            if (p.matcher("x".repeat(4096)).find() || nativePrepared(owner))
+                throw new AssertionError("proved absent prefix prepared unused native code");
             nativeOnly(p);
         }
         // Combined grammar, capture and region cases exercise the short-search
