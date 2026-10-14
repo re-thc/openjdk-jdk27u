@@ -271,7 +271,7 @@ class sig_as_verification_types : public ResourceObj {
 // This hashtable is indexed by the Utf8 constant pool indexes pointed to
 // by constant pool (Interface)Method_refs' and Field_refs' NameAndType
 // signature entries.
-typedef HashTable<int, sig_as_verification_types*, 127>
+typedef HashTable<int, sig_as_verification_types*, 1007>
                           method_signatures_table_type;
 
 // A new instance of this class is created for each class being verified
