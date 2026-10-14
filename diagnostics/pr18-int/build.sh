@@ -8,8 +8,8 @@ mkdir -p "$root/evidence" "$root/images"
 export PATH="$root/mold/bin:$PATH"
 export CC=gcc-16 CXX=g++-16
 if [[ $kind == base ]]; then
-  git clone --filter=blob:none --no-checkout https://github.com/re-thc/openjdk-jdk27u "$source_dir"
-  git -C "$source_dir" fetch origin 6d264328aefdc3ceff659360ead6567a8e36190c
+  git clone --depth=1 --no-tags --filter=blob:none --no-checkout https://github.com/re-thc/openjdk-jdk27u "$source_dir"
+  git -C "$source_dir" fetch --depth=1 --no-tags origin 6d264328aefdc3ceff659360ead6567a8e36190c
   git -C "$source_dir" checkout --detach 6d264328aefdc3ceff659360ead6567a8e36190c
   cd "$source_dir"
   bash configure --with-conf-name=diagnostic --disable-desktop --enable-headless-only \
@@ -35,7 +35,7 @@ if [[ $kind == base ]]; then
   lscpu > "$root/evidence/hardware.txt"
 else
   cd "$source_dir"
-  git fetch origin 81ed5dfcfc5118b20857dceabe3571c37ea57827
+  git fetch --depth=1 --no-tags origin 81ed5dfcfc5118b20857dceabe3571c37ea57827
   file=src/hotspot/share/opto/vectornode.cpp
   git show 81ed5dfcfc5118b20857dceabe3571c37ea57827:"$file" > "$root/evidence/candidate-vectornode.cpp"
   echo "607366a00d75c9e67dfc4a7149622c337c45a1a2c4d14f06f6e840d685870561  $root/evidence/candidate-vectornode.cpp" | sha256sum -c
