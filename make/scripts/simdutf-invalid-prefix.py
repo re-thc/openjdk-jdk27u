@@ -48,10 +48,11 @@ assert s.count(needle) == 2
 empty = s.replace(needle, "        if (len == 0) {\n            return;\n        }\n" + needle)
 compile_patch("guard", {"java/lang/StringLatin1.java": empty})
 utf = sources["sun/nio/cs/UTF_8.java"]
-needle = "            // Keep the ASCII intrinsic and reject invalid leading bytes before bulk conversion."
+needle = "            int converted = SimdUTF.isEligible(sl - sp)\n                    && (sa[sp] & 0xff) >= 0xc2 && (sa[sp] & 0xff) <= 0xf4\n                    ? SimdUTF.decodeUTF8(sa, sp, sl - sp, da, dp, dl - dp) : -1;"
+replacement = "            int converted = -1;\n            if (SimdUTF.isEligible(sl - sp)) {\n                int b1 = sa[sp];\n                if (b1 < (byte)0xc2) {\n                    return malformed(src, sp, dst, dp, 1);\n                }\n                if (b1 <= (byte)0xf4) {\n                    converted = SimdUTF.decodeUTF8(sa, sp, sl - sp, da, dp, dl - dp);\n                }\n            }"
 assert needle in utf
 changed = {"java/lang/StringLatin1.java": empty,
-           "sun/nio/cs/UTF_8.java": utf.replace(needle, "            if (sp < sl && sa[sp] < (byte)0xc2) {\n                return malformed(src, sp, dst, dp, 1);\n            }\n\n" + needle)}
+           "sun/nio/cs/UTF_8.java": utf.replace(needle, replacement)}
 compile_patch("prefix", changed)
 testclasses = output / "tests"
 testclasses.mkdir()
