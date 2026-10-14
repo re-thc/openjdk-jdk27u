@@ -1,0 +1,105 @@
+name: SIMDUTF review measurements
+on:
+  push:
+    branches: [review/simdutf-dot-bench]
+permissions:
+  contents: read
+concurrency:
+  group: simdutf-review-measurements
+  cancel-in-progress: true
+jobs:
+  jtreg:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/build-jtreg
+  measure:
+    needs: jtreg
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-26.04
+            platform: linux-x64
+          - runner: ubuntu-26.04-arm
+            platform: linux-aarch64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 6d264328aefdc3ceff659360ead6567a8e36190c
+          path: baseline
+          persist-credentials: false
+      - uses: ./.github/actions/get-bootjdk
+        id: boot
+        with:
+          platform: ${{ matrix.platform }}
+      - uses: ./.github/actions/get-jtreg
+        id: tests
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y autoconf gcc-16 g++-16 libasound2-dev libcups2-dev libfontconfig1-dev libfreetype6-dev zip unzip
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-16 100 --slave /usr/bin/g++ g++ /usr/bin/g++-16
+          mkdir -p jmh results
+          curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar -o jmh/jmh-core.jar
+          curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/org/openjdk/jmh/jmh-generator-annprocess/1.37/jmh-generator-annprocess-1.37.jar -o jmh/jmh-annprocess.jar
+          curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/net/sf/jopt-simple/jopt-simple/5.0.4/jopt-simple-5.0.4.jar -o jmh/jopt-simple.jar
+          curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/org/apache/commons/commons-math3/3.6.1/commons-math3-3.6.1.jar -o jmh/commons-math3.jar
+          lscpu > results/cpu.txt
+          gcc --version > results/compiler.txt
+      - name: Verify backend feature masks
+        run: python3 make/scripts/simdutf-review-gates.py "$GITHUB_WORKSPACE" "$GITHUB_WORKSPACE/results"
+      - name: Restore current base image
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        id: base_cache
+        with:
+          path: baseline/build/base/images/jdk
+          key: simdutf-review-base-v1-${{ matrix.platform }}-6d26432-gcc16-system-ft
+      - name: Build current base
+        if: steps.base_cache.outputs.cache-hit != 'true'
+        env:
+          BOOT: ${{ steps.boot.outputs.path }}
+          JTREG: ${{ steps.tests.outputs.path }}
+        run: |
+          set -e
+          trap 'tail -60 results/base-build.log' ERR
+          (cd baseline && bash configure --with-conf-name=base --with-debug-level=release --with-boot-jdk="$BOOT" --with-jtreg="$JTREG" --enable-headless-only --with-freetype=system --with-native-debug-symbols=none --disable-javac-server > ../results/base-configure.log 2>&1)
+          make -C baseline CONF=base JOBS=4 images > results/base-build.log 2>&1
+      - name: Preserve current base image
+        if: steps.base_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: baseline/build/base/images/jdk
+          key: simdutf-review-base-v1-${{ matrix.platform }}-6d26432-gcc16-system-ft
+      - name: Build candidate
+        env:
+          BOOT: ${{ steps.boot.outputs.path }}
+          JTREG: ${{ steps.tests.outputs.path }}
+        run: |
+          set -e
+          trap 'tail -60 results/head-build.log' ERR
+          bash configure --with-conf-name=review --with-debug-level=release --with-boot-jdk="$BOOT" --with-jtreg="$JTREG" --enable-headless-only --with-freetype=system --with-native-debug-symbols=none --disable-javac-server > results/head-configure.log 2>&1
+          make CONF=review JOBS=4 images > results/head-build.log 2>&1
+      - name: Run focused jtreg
+        run: |
+          make CONF=review JOBS=4 test TEST='test/hotspot/jtreg/compiler/intrinsics/simdutf test/hotspot/jtreg/compiler/escapeAnalysis/TestSimdUTFLeaf.java test/jdk/java/lang/String test/jdk/sun/nio/cs test/jdk/java/util/Base64 test/jdk/java/lang/Character/Supplementary.java test/jdk/java/lang/StringBuilder/Supplementary.java test/jdk/java/lang/StringBuffer/Supplementary.java' JTREG='JOBS=2;JAVA_OPTIONS=-XX:ActiveProcessorCount=2;VM_OPTIONS=-XX:ActiveProcessorCount=2' > results/jtreg.log 2>&1 || { tail -120 results/jtreg.log; find build/review/test-support -name '*.jtr' -exec sh -c 'for file do if grep -q "test result: Failed" "$file"; then tail -100 "$file"; fi; done' sh {} +; exit 1; }
+          tail -45 results/jtreg.log
+      - name: Measure base, opt-out and default acceleration
+        run: python3 make/scripts/simdutf-review-benchmark.py "$GITHUB_WORKSPACE/baseline" "$GITHUB_WORKSPACE" "$GITHUB_WORKSPACE/results"
+      - name: Preserve measurements and test reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: simdutf-review-${{ matrix.platform }}
+          path: |
+            results
+            build/review/test-results
+            build/review/test-support
+          retention-days: 14
