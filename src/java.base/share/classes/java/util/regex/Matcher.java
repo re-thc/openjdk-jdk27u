@@ -39,7 +39,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import jdk.internal.util.regex.RustRegex;
+import jdk.internal.util.regex.Pcre2Regex;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
@@ -245,8 +245,11 @@ public final class Matcher implements MatchResult {
     private boolean nativeEndTransparent, nativeEndAnchoring;
     private boolean nativePendingLast;
     private int nativeEndLast, nativeEndOldLast;
+    private String nativeQualifiedInput;
+    private int nativeQualifiedFrom, nativeQualifiedTo;
     private JavaMatchChoice javaMatchChoice;
     private boolean javaOnly;
+    private Pattern javaExecution;
     private record JavaMatchChoice(Pattern.Node root, Pattern.Node matchRoot,
             WeakReference<CharSequence> input, int from, int to, int width, int mode) { }
 
@@ -262,10 +265,11 @@ public final class Matcher implements MatchResult {
     Matcher(Pattern parent, CharSequence text) {
         this.parentPattern = parent;
         this.text = text;
-        javaOnly = parent.rustRegex == null;
+        javaOnly = parent.pcre2Regex == null;
+        javaExecution = javaOnly ? parent : null;
 
         // Allocate state storage
-        groups = new int[parent.capturingGroupCount * 2 + (parent.rustRegex != null ? 4 : 0)];
+        groups = new int[parent.capturingGroupCount * 2 + (parent.pcre2Regex != null ? 4 : 0)];
         locals = new int[parent.localCount];
         localsPos = new IntHashSet[parent.localTCNCount];
 
@@ -438,11 +442,12 @@ public final class Matcher implements MatchResult {
         ensureContinuation();
         javaMatchChoice = null;
         parentPattern = newPattern;
-        javaOnly = newPattern.rustRegex == null;
+        javaOnly = newPattern.pcre2Regex == null;
+        javaExecution = javaOnly ? newPattern : null;
         namedGroups = null;
 
         // Reallocate state storage
-        groups = new int[newPattern.capturingGroupCount * 2 + (newPattern.rustRegex != null ? 4 : 0)];
+        groups = new int[newPattern.capturingGroupCount * 2 + (newPattern.pcre2Regex != null ? 4 : 0)];
         locals = new int[newPattern.localCount];
         for (int i = 0; i < groups.length; i++)
             groups[i] = -1;
@@ -496,6 +501,7 @@ public final class Matcher implements MatchResult {
      * @return  This matcher
      */
     public Matcher reset(CharSequence input) {
+        if (text != input) nativeQualifiedInput = null;
         text = input;
         return reset();
     }
@@ -1789,10 +1795,10 @@ public final class Matcher implements MatchResult {
         int base = parentPattern.capturingGroupCount * 2;
         acceptMode = NOANCHOR;
         Pattern.Node javaRoot;
-        RustRegex engine = null;
-        if (!RustRegex.ENABLED || javaOnly) {
+        Pcre2Regex engine = null;
+        if (!Pcre2Regex.ENABLED || javaOnly) {
             clearNativeEnd();
-            javaRoot = parentPattern.root;
+            javaRoot = javaExecution.root;
         }
         else {
             JavaMatchChoice choice = javaMatchChoice;
@@ -1806,10 +1812,10 @@ public final class Matcher implements MatchResult {
                 }
                 javaRoot = choice.root;
             } else {
-                engine = parentPattern.rustRegex;
+                engine = parentPattern.pcre2Regex;
                 if (engine == null) {
                     selectJavaOnly();
-                    javaRoot = parentPattern.root;
+                    javaRoot = javaExecution.root;
                 } else javaRoot = null;
             }
         }
@@ -1829,9 +1835,10 @@ public final class Matcher implements MatchResult {
             result = javaMatchChoice.root.match(this, from, text);
         }
         else {
-            selectJavaOnly();
+            Pattern execution = parentPattern.javaPattern();
+            javaStorage(execution);
             prepareJavaMatch(base);
-            result = parentPattern.root.match(this, from, text);
+            result = execution.root.match(this, from, text);
         }
         if (!result) first = -1;
         oldLast = last;
@@ -1864,10 +1871,10 @@ public final class Matcher implements MatchResult {
         int base = parentPattern.capturingGroupCount * 2;
         acceptMode = anchor;
         Pattern.Node javaRoot;
-        RustRegex engine = null;
-        if (!RustRegex.ENABLED || javaOnly) {
+        Pcre2Regex engine = null;
+        if (!Pcre2Regex.ENABLED || javaOnly) {
             clearNativeEnd();
-            javaRoot = parentPattern.matchRoot;
+            javaRoot = javaExecution.matchRoot;
         }
         else {
             JavaMatchChoice choice = javaMatchChoice;
@@ -1882,10 +1889,10 @@ public final class Matcher implements MatchResult {
                 }
                 javaRoot = choice.matchRoot;
             } else {
-                engine = parentPattern.rustRegex;
+                engine = parentPattern.pcre2Regex;
                 if (engine == null) {
                     selectJavaOnly();
-                    javaRoot = parentPattern.matchRoot;
+                    javaRoot = javaExecution.matchRoot;
                 } else javaRoot = null;
             }
         }
@@ -1905,9 +1912,10 @@ public final class Matcher implements MatchResult {
             result = javaMatchChoice.matchRoot.match(this, from, text);
         }
         else {
-            selectJavaOnly();
+            Pattern execution = parentPattern.javaPattern();
+            javaStorage(execution);
             prepareJavaMatch(base);
-            result = parentPattern.matchRoot.match(this, from, text);
+            result = execution.matchRoot.match(this, from, text);
         }
         if (!result) first = -1;
         oldLast = last;
@@ -1928,7 +1936,7 @@ public final class Matcher implements MatchResult {
                 localsPos[i].clear();
         }
         acceptMode = NOANCHOR;
-        boolean result = parentPattern.root.match(this, from, text);
+        boolean result = javaExecution.root.match(this, from, text);
         if (!result)
             this.first = -1;
         this.oldLast = this.last;
@@ -1949,7 +1957,7 @@ public final class Matcher implements MatchResult {
                 localsPos[i].clear();
         }
         acceptMode = anchor;
-        boolean result = parentPattern.matchRoot.match(this, from, text);
+        boolean result = javaExecution.matchRoot.match(this, from, text);
         if (!result)
             this.first = -1;
         this.oldLast = this.last;
@@ -1958,33 +1966,58 @@ public final class Matcher implements MatchResult {
     }
 
     @ForceInline
-    private int nativeMatch(RustRegex engine, int base, int start, int mode) {
+    private int nativeMatch(Pcre2Regex engine, int base, int start, int mode) {
         if (nativeEndPattern != null) {
             nativeEndPattern = null;
             nativeEndInput = null;
             nativePendingLast = false;
         }
+        // Preserve caller-controlled CharSequence access (including attempt
+        // limits) rather than replacing it with a toString snapshot.
+        if (!(text instanceof String)) {
+            selectJavaMatch(true, mode);
+            return -2;
+        }
         if (engine.prefersJava(to - from)) {
             selectJavaMatch(false, mode);
             return -2;
         }
-        if (to - from > RustRegex.MAX_LENGTH && !engine.hasShortPlan()) {
-            parentPattern.ensureJava();
-            return -1;
+        if (to - from > Pcre2Regex.MAX_LENGTH && !engine.hasShortPlan()) {
+            selectJavaMatch(true, mode);
+            return -2;
         }
         String input = text instanceof String s ? s : text.toString();
-        int result = engine.match(input, groups, from, to, start, mode,
-                transparentBounds, anchoringBounds);
+        boolean qualified = input == nativeQualifiedInput &&
+                from >= nativeQualifiedFrom && to <= nativeQualifiedTo;
+        int result = engine.matchQualified(input, groups, from, to, start, mode,
+                transparentBounds, anchoringBounds, qualified);
+        boolean nativeWide = result >= 4;
+        if (result >= 4) {
+            if (!qualified) {
+                nativeQualifiedInput = input;
+                nativeQualifiedFrom = from;
+                nativeQualifiedTo = to;
+            }
+            result -= 4;
+        }
+        if (result == -3) {
+            // A semantic exclusion depends on immutable input/region/mode.
+            // Cache that local choice; transient native errors stay retryable.
+            selectJavaMatch(true, mode);
+            return -2;
+        }
         // Java traversal can advance last even when an anchored match fails.
         // Replay on this Matcher so the next find() starts at the same position.
         if (result < 0 || (result == 0 && mode != 0 && !engine.hasExactEndFlags())) {
-            parentPattern.ensureJava();
+            // Resource exhaustion and failed-operation state are local to this
+            // invocation. Replay the original graph without demoting peers.
             return -1;
         }
         if (result == 1) {
             first = groups[0];
             last = groups[1];
-            if (first == from && engine.prefersJavaEarlyMatch(last - first)) selectJavaMatch(true, mode);
+            if (first == from && (engine.prefersJavaEarlyMatch(last - first) ||
+                    nativeWide && engine.prefersJavaWidePositive(to - from))) selectJavaMatch(true, mode);
         }
         // These simple greedy tails preserve last on failure and have exact
         // end flags. General backtracking expressions need Java replay.
@@ -2015,7 +2048,8 @@ public final class Matcher implements MatchResult {
     }
 
     private void selectJavaOnly() {
-        javaStorage(parentPattern);
+        javaExecution = parentPattern.javaPattern();
+        javaStorage(javaExecution);
         javaOnly = true;
         javaMatchChoice = null;
         clearNativeEnd();
@@ -2049,18 +2083,17 @@ public final class Matcher implements MatchResult {
     }
 
     private void ensureContinuation() {
-        if (RustRegex.ENABLED && nativePendingLast) replayNative();
+        if (Pcre2Regex.ENABLED && nativePendingLast) replayNative(false);
     }
 
     private void ensureEndFlags() {
-        replayNative();
+        replayNative(true);
     }
 
-    private void replayNative() {
+    private void replayNative(boolean observing) {
         Pattern pattern = nativeEndPattern;
         if (pattern == null) return;
-        pattern.ensureJava();
-        Matcher replay = pattern.matcher(nativeEndInput)
+        Matcher replay = pattern.javaPattern().matcher(nativeEndInput)
                 .region(nativeEndFrom, nativeEndTo)
                 .useTransparentBounds(nativeEndTransparent)
                 .useAnchoringBounds(nativeEndAnchoring);
@@ -2077,6 +2110,9 @@ public final class Matcher implements MatchResult {
         requireEnd = replay.requireEnd;
         nativeEndPattern = null;
         nativeEndInput = null;
+        // Repeated observers need the original end state on this Matcher.
+        // Other Matchers sharing the Pattern retain their native eligibility.
+        if (observing) selectJavaOnly();
     }
 
     /**

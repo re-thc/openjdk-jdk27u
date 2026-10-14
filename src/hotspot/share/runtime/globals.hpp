@@ -366,10 +366,17 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseAdler32Intrinsics, false, DIAGNOSTIC,                    \
           "use intrinsics for java.util.zip.Adler32")                       \
                                                                             \
-  product(bool, UseRustRegex, INCLUDE_RUST_REGEX != 0,                      \
-          "Use bundled Rust regex for supported patterns")                  \
+  product(bool, UsePcre2Regex, INCLUDE_PCRE2_REGEX != 0,                      \
+          "Use bundled PCRE2 regex for supported patterns")                  \
                                                                             \
-  product(bool, UseRustRegexIntrinsics, true,                               \
+  product(bool, UsePcre2RegexJIT, true,                                     \
+          "Automatically prepare PCRE2 JIT for reused native long matches") \
+                                                                            \
+  product(uintx, Pcre2RegexJITThreshold, 32,                                 \
+          "Native long matches before preparing bounded PCRE2 JIT code")   \
+          range(1, 1000000)                                                 \
+                                                                            \
+  product(bool, UsePcre2RegexIntrinsics, true,                               \
           "Use direct leaf calls for native regex matching")                \
                                                                             \
   product(bool, UseVectorizedMismatchIntrinsic, false, DIAGNOSTIC,          \

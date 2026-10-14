@@ -458,10 +458,10 @@ class methodHandle;
    do_name(     leftShift_name,                                 "shiftLeftImplWorker")                                  \
                                                                                                                         \
   do_class(jdk_internal_util_ArraysSupport, "jdk/internal/util/ArraysSupport")                                                          \
-  do_class(jdk_internal_util_regex_RustRegex, "jdk/internal/util/regex/RustRegex")                                     \
-  do_intrinsic(_rustRegexMatch, jdk_internal_util_regex_RustRegex, rustRegexMatch_name, rustRegexMatch_signature, F_SN) \
-   do_name(rustRegexMatch_name, "match0")                                                                         \
-   do_signature(rustRegexMatch_signature, "(J[B[I)I")                                                               \
+  do_class(jdk_internal_util_regex_Pcre2Regex, "jdk/internal/util/regex/Pcre2Regex")                                     \
+  do_intrinsic(_pcre2RegexMatch, jdk_internal_util_regex_Pcre2Regex, pcre2RegexMatch_name, pcre2RegexMatch_signature, F_SN) \
+   do_name(pcre2RegexMatch_name, "match0")                                                                         \
+   do_signature(pcre2RegexMatch_signature, "(J[B[I)I")                                                               \
                                                                                                                      \
   do_intrinsic(_vectorizedMismatch, jdk_internal_util_ArraysSupport, vectorizedMismatch_name, vectorizedMismatch_signature, F_S)\
    do_name(vectorizedMismatch_name, "vectorizedMismatch")                                                               \

@@ -58,7 +58,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/objectMonitor.hpp"
-#include "runtime/rustRegex.hpp"
+#include "runtime/pcre2Regex.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
@@ -627,7 +627,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_bigIntegerLeftShiftWorker:
     return inline_bigIntegerShift(false);
 
-  case vmIntrinsics::_rustRegexMatch: return inline_rustRegexMatch();
+  case vmIntrinsics::_pcre2RegexMatch: return inline_pcre2RegexMatch();
   case vmIntrinsics::_vectorizedMismatch:
     return inline_vectorizedMismatch();
 
@@ -6732,8 +6732,8 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
   return true;
 }
 
-//-------------inline_rustRegexMatch---------------------------------
-bool LibraryCallKit::inline_rustRegexMatch() {
+//-------------inline_pcre2RegexMatch---------------------------------
+bool LibraryCallKit::inline_pcre2RegexMatch() {
   Node* input = null_check(argument(2));
   Node* state = null_check(argument(3));
   if (stopped()) return true;
@@ -6750,7 +6750,7 @@ bool LibraryCallKit::inline_rustRegexMatch() {
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
   const TypeFunc* type = TypeFunc::make(domain, range);
   Node* call = make_runtime_call(RC_LEAF, type,
-      CAST_FROM_FN_PTR(address, RustRegex::match), "rustRegexMatch",
+      CAST_FROM_FN_PTR(address, Pcre2Regex::match), "pcre2RegexMatch",
       // Read all incoming memory (including String bytes), but only kill
       // int-array memory: the adapter writes captures, not Matcher fields.
       TypeAryPtr::INTS, argument(0), top(), bytes, slots);

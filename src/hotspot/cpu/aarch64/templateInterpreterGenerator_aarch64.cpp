@@ -50,7 +50,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/jniHandles.hpp"
-#include "runtime/rustRegex.hpp"
+#include "runtime/pcre2Regex.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
@@ -1028,7 +1028,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   return entry;
 }
 
-address TemplateInterpreterGenerator::generate_rustRegex_entry() {
+address TemplateInterpreterGenerator::generate_pcre2Regex_entry() {
   address entry = __ pc();
   Label slow_path;
   __ safepoint_poll(slow_path, false, false);
@@ -1041,7 +1041,7 @@ address TemplateInterpreterGenerator::generate_rustRegex_entry() {
   __ andr(sp, r19_sender_sp, -16);
   // The target is libjvm text, not a code-cache blob. Materialize the full
   // address so the jump also works with a small or distant code cache.
-  __ mov(rscratch1, CAST_FROM_FN_PTR(address, RustRegex::match));
+  __ mov(rscratch1, CAST_FROM_FN_PTR(address, Pcre2Regex::match));
   __ br(rscratch1);
   __ bind(slow_path);
   __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));

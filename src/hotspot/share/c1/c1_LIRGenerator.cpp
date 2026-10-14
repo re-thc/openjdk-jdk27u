@@ -39,7 +39,7 @@
 #include "gc/shared/c1/barrierSetC1.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/methodCounters.hpp"
-#include "runtime/rustRegex.hpp"
+#include "runtime/pcre2Regex.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
@@ -2795,7 +2795,7 @@ void LIRGenerator::do_IfOp(IfOp* x) {
   __ cmove(lir_cond(x->cond()), t_val.result(), f_val.result(), reg, as_BasicType(x->x()->type()));
 }
 
-void LIRGenerator::do_rustRegexMatch(Intrinsic* x) {
+void LIRGenerator::do_pcre2RegexMatch(Intrinsic* x) {
   LIR_Opr result = rlock_result(x);
   LIRItem handle(x->argument_at(0), this);
   LIRItem input(x->argument_at(1), this);
@@ -2816,7 +2816,7 @@ void LIRGenerator::do_rustRegexMatch(Intrinsic* x) {
   __ move(bytes, cc->at(1));
   __ move(slots, cc->at(2));
   LIR_Opr result_reg = result_register_for(x->type());
-  __ call_runtime_leaf(CAST_FROM_FN_PTR(address, RustRegex::match),
+  __ call_runtime_leaf(CAST_FROM_FN_PTR(address, Pcre2Regex::match),
                        getThreadTemp(), result_reg, cc->args());
   __ move(result_reg, result);
 }
@@ -2936,8 +2936,8 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     do_update_CRC32C(x);
     break;
 
-  case vmIntrinsics::_rustRegexMatch:
-    do_rustRegexMatch(x);
+  case vmIntrinsics::_pcre2RegexMatch:
+    do_pcre2RegexMatch(x);
     break;
   case vmIntrinsics::_vectorizedMismatch:
     do_vectorizedMismatch(x);
