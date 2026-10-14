@@ -49,6 +49,12 @@ def git(*words):
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
+def optional_text(path):
+    try:
+        return Path(path).read_text().strip()
+    except (FileNotFoundError, PermissionError):
+        return None
+
 def native_hashes(directory):
     return {str(p.relative_to(directory)): sha(p) for p in directory.rglob("*")
             if p.is_file() and (".so" in p.name or p.name == "java")}
@@ -101,7 +107,9 @@ def build():
     run(["gcc", "-O2", "-fPIC", "-shared", "-pthread", str(out / "native.c"), "-o", str(out / "libprobe.so")], "compile-native-harness")
     metadata = {"baseline": BASE, "cpu_affinity": sorted(os.sched_getaffinity(0)),
                 "cpu_model": next(s.split(":", 1)[1].strip() for s in Path("/proc/cpuinfo").read_text().splitlines() if s.startswith("model name")),
-                "cpu_max": Path("/sys/fs/cgroup/cpu.max").read_text().strip(),
+                "cpu_max": optional_text("/sys/fs/cgroup/cpu.max"),
+                "cpu_cfs_quota_us": optional_text("/sys/fs/cgroup/cpu/cpu.cfs_quota_us"),
+                "cpu_cfs_period_us": optional_text("/sys/fs/cgroup/cpu/cpu.cfs_period_us"),
                 "control_point_bounds": CONTROL_POINT, "control_interval_bounds": CONTROL_INTERVAL,
                 "sources": {p.name: sha(p) for p in out.iterdir() if p.suffix in [".java", ".c", ".py"]}}
     (out / "environment.json").write_text(json.dumps(metadata, indent=2) + "\n")
