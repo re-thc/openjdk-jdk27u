@@ -391,6 +391,14 @@ public final class SystemModuleFinders {
     }
 
     /**
+     * Returns the ImageReader of the run-time image, which is shared and must
+     * not be closed.
+     */
+    public static ImageReader systemImageReader() {
+        return SystemImage.reader();
+    }
+
+    /**
      * Holder class for the ImageReader.
      */
     private static class SystemImage {
