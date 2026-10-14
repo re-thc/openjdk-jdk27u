@@ -24,7 +24,8 @@
 /*
  * @test
  * @summary Check toString, hashCode and equals of records for all kinds of components,
- *          with getters that read the fields and with getters that do not
+ *          with getters that read the fields and with getters that do not, and that
+ *          the three methods of a record class share a generated class
  * @run main ObjectMethodsGenerated
  */
 
@@ -37,6 +38,7 @@ import java.lang.runtime.ObjectMethods;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 public class ObjectMethodsGenerated {
 
@@ -86,6 +88,22 @@ public class ObjectMethodsGenerated {
         @Override public String toString() { LOG.add("toString " + name); return name; }
     }
     record Spies(Spy a, Spy b, Spy c) { }
+
+    /** Records the generated class that calls it, rather than the classes of a string concatenation. */
+    static final class Probe {
+        static final List<Class<?>> CALLERS = new ArrayList<>();
+        static void record() {
+            CALLERS.add(StackWalker.getInstance(Set.of(StackWalker.Option.RETAIN_CLASS_REFERENCE,
+                                                       StackWalker.Option.SHOW_HIDDEN_FRAMES))
+                    .walk(s -> s.map(StackWalker.StackFrame::getDeclaringClass)
+                                .filter(c -> c.isHidden() && c.getName().contains("Specializer"))
+                                .findFirst().orElseThrow()));
+        }
+        @Override public boolean equals(Object o) { record(); return o instanceof Probe; }
+        @Override public int hashCode() { record(); return 1; }
+        @Override public String toString() { record(); return "probe"; }
+    }
+    record Probed(Probe p, int i) { }
 
     /** The getters that read the fields of the record class. */
     static MethodHandle[] fieldGetters(Class<?> record) throws ReflectiveOperationException {
@@ -262,6 +280,30 @@ public class ObjectMethodsGenerated {
             LOG.clear();
             check(true, (boolean) bootstrap(Spies.class, "equals", getters).invoke(s, new Spies(new Spy("a"), new Spy("b"), new Spy("c"))), "Spies equals");
             check(3, LOG.size(), "equals calls");
+        }
+        // equals, hashCode and toString of a record class share one generated class
+        MethodHandle[] probedGetters = fieldGetters(Probed.class);
+        Probed probed = new Probed(new Probe(), 1);
+        Probe.CALLERS.clear();
+        check(true, (boolean) bootstrap(Probed.class, "equals", probedGetters).invoke(probed, (Object) new Probed(new Probe(), 1)), "Probed equals");
+        check(31 + 1, (int) bootstrap(Probed.class, "hashCode", probedGetters).invoke(probed), "Probed hashCode");
+        check("Probed[p=probe, i=1]", (String) bootstrap(Probed.class, "toString", probedGetters).invoke(probed), "Probed toString");
+        check(3, Probe.CALLERS.size(), "Probe calls");
+        check(1, Set.copyOf(Probe.CALLERS).size(), "generated classes of Probed");
+
+        // the names are only used by toString: other names given to equals and hashCode are not used
+        MethodType probedToString = MethodType.methodType(String.class, Probed.class);
+        for (String names : new String[] { "x;y", "x", "" }) {
+            MethodType equalsType = MethodType.methodType(boolean.class, Probed.class, Object.class);
+            MethodType hashCodeType = MethodType.methodType(int.class, Probed.class);
+            ObjectMethods.bootstrap(LOOKUP, "equals", equalsType, Probed.class, names, probedGetters);
+            ObjectMethods.bootstrap(LOOKUP, "hashCode", hashCodeType, Probed.class, names, probedGetters);
+            check("Probed[p=probe, i=1]",
+                  (String) ((CallSite) ObjectMethods.bootstrap(LOOKUP, "toString", probedToString, Probed.class, "p;i", probedGetters))
+                          .dynamicInvoker().invoke(probed), "Probed toString after equals with names " + names);
+            check("Probed[a=probe, b=1]",
+                  (String) ((CallSite) ObjectMethods.bootstrap(LOOKUP, "toString", probedToString, Probed.class, "a;b", probedGetters))
+                          .dynamicInvoker().invoke(probed), "Probed toString with other names after " + names);
         }
         System.out.println("passed");
     }
