@@ -25,6 +25,7 @@
 
 package jdk.internal.access;
 
+/** Access to stateless IEEE CRC32 updates. */
 public interface JavaUtilZipAccess {
     int updateCRC32(int crc, byte[] data, int off, int len);
 }

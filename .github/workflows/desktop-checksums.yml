@@ -1,0 +1,104 @@
+name: Full desktop checksum qualification
+on:
+  push:
+    branches: [pr/zlib-ng-hidden-checksums]
+permissions:
+  contents: read
+concurrency:
+  group: hidden-desktop-${{ github.ref }}-${{ github.event.head_commit.message }}
+  cancel-in-progress: true
+jobs:
+  prepare:
+    if: contains(github.event.head_commit.message, 'desktop-checksum')
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Verify the latest upstream native sources
+        run: |
+          curl --fail --location --retry 3 \
+            https://codeload.github.com/zlib-ng/zlib-ng/tar.gz/1ab945a841245634cc770b9c3d0e0150734ad013 \
+            --output /tmp/zlib-ng-latest.tar.gz
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import tarfile
+          revision = '1ab945a841245634cc770b9c3d0e0150734ad013'
+          source = Path('/tmp/zlib-ng-latest.tar.gz')
+          print('UPSTREAM_REVISION', revision)
+          print('ARCHIVE_SHA256', hashlib.sha256(source.read_bytes()).hexdigest())
+          root = Path('src/java.base/share/native/libzip/zlib-ng')
+          count = 0
+          with tarfile.open(source) as archive:
+              for path in root.rglob('*'):
+                  if path.is_file():
+                      member = archive.getmember('zlib-ng-' + revision + '/' + path.relative_to(root).as_posix())
+                      if archive.extractfile(member).read() != path.read_bytes():
+                          raise RuntimeError('Upstream native source changed: ' + str(path))
+                      count += 1
+          print('IDENTICAL_VENDORED_FILES', count)
+          PY
+      - uses: ./.github/actions/build-jtreg
+  qualify:
+    needs: prepare
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux-x64, linux-aarch64]
+        include:
+          - platform: linux-x64
+            runner: ubuntu-26.04
+          - platform: linux-aarch64
+            runner: ubuntu-26.04-arm
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: ./.github/actions/get-bootjdk
+        id: bootjdk
+        with:
+          platform: ${{ matrix.platform }}
+      - uses: ./.github/actions/get-jtreg
+        id: jtreg
+      - name: Install the desktop build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-16 g++-16 autoconf make zip unzip \
+            libasound2-dev libcups2-dev libfontconfig-dev libfreetype-dev \
+            libx11-dev libxext-dev libxrandr-dev libxrender-dev libxtst-dev libxt-dev
+      - name: Build a complete JDK with java.desktop
+        run: |
+          mkdir -p qualification
+          bash configure --with-conf-name=desktop --with-debug-level=release \
+            --with-boot-jdk='${{ steps.bootjdk.outputs.path }}' \
+            --with-jtreg='${{ steps.jtreg.outputs.path }}' \
+            --with-toolchain-type=gcc CC=gcc-16 CXX=g++-16 \
+            --enable-headless-only --with-native-debug-symbols=none \
+            --enable-jvm-feature-serialgc --enable-jvm-feature-g1gc --enable-jvm-feature-zgc \
+            --disable-jvm-feature-parallelgc --disable-jvm-feature-shenandoahgc \
+            --disable-jvm-feature-epsilongc --with-jmod-compress=zip-1 \
+            --with-version-opt=desktop-checksum
+          make CONF=desktop images LOG=info >qualification/build.log 2>&1
+          build/desktop/images/jdk/bin/java -version
+          build/desktop/images/jdk/bin/java --list-modules | rg '^java.desktop@'
+      - name: PNG plugin and raw Kerberos CRC32 jtreg
+        run: |
+          make CONF=desktop test \
+            TEST='test/jdk/javax/imageio/plugins/png test/jdk/sun/security/krb5/RawCRC32.java' \
+            JTREG='VERBOSE=fail,error,time;JAVA_OPTIONS=-Djava.awt.headless=true' \
+            2>&1 | tee qualification/jtreg.log
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: build/desktop/images/jdk
+          key: zip-desktop-v1-${{ matrix.platform }}-${{ github.sha }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: desktop-checksum-${{ matrix.platform }}
+          path: |
+            qualification
+            build/desktop/spec.gmk
+            build/desktop/test-results
+          retention-days: 14
