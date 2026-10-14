@@ -1,0 +1,24 @@
+name: Read completed zlib level study evidence
+on:
+  push:
+    branches: [diagnostic/tiny-zlib-level-read-20261014]
+    paths:
+      - .github/scripts/level-study/read-evidence.py
+      - .github/workflows/tiny-zlib-level-read.yml
+permissions:
+  contents: read
+  actions: read
+jobs:
+  read-completed-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          sparse-checkout: .github/scripts/level-study/read-evidence.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Read and independently audit only the completed artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/level-study/read-evidence.py
