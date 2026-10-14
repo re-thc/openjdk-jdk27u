@@ -1964,6 +1964,12 @@ public final class Matcher implements MatchResult {
             nativeEndInput = null;
             nativePendingLast = false;
         }
+        // Preserve caller-controlled CharSequence access (including attempt
+        // limits) rather than replacing it with a toString snapshot.
+        if (!(text instanceof String)) {
+            parentPattern.ensureJava();
+            return -1;
+        }
         if (engine.prefersJava(to - from)) {
             selectJavaMatch(false, mode);
             return -2;

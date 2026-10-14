@@ -224,7 +224,8 @@ public class RustRegexTest {
         b.reset("other").usePattern(Pattern.compile("x+"));
         if (a.hitEnd() != b.hitEnd() || a.requireEnd() != b.requireEnd())
             throw new AssertionError("saved digit end state");
-        if (RustRegex.ENABLED) nativeOnly(p);
+        if (RustRegex.ENABLED && NATIVE.get(p) != null)
+            throw new AssertionError("opaque CharSequence did not select Java");
         for (String suffix : new String[]{"x".repeat(131072), "\u0100".repeat(131072)}) {
             Pattern large = Pattern.compile("(?<prefix>ready)(?<digits>[0-9]+)");
             Pattern java = reference(large.pattern(), 0);
@@ -420,7 +421,8 @@ public class RustRegexTest {
         Pattern mutable=Pattern.compile("error([0-9]+)");
         CharBuffer buffer=CharBuffer.wrap("x error123 y");
         if (!mutable.matcher(buffer).find()) throw new AssertionError("CharBuffer");
-        nativeOnly(mutable);
+        if (RustRegex.ENABLED && NATIVE.get(mutable) != null)
+            throw new AssertionError("CharBuffer did not preserve Java access");
     }
 
     private static void sharingAndLifetime() throws Exception {
@@ -518,7 +520,8 @@ public class RustRegexTest {
                         if (!p.matcher(input).replaceAll("[$0]").equals(ref.matcher(input).replaceAll("[$0]")))
                             throw new AssertionError("prepared replacement");
                         StringBuilder mutable = new StringBuilder(input);
-                        a = p.matcher(mutable); b = ref.matcher(mutable);
+                        Pattern mutablePattern = Pattern.compile(expression, flags);
+                        a = mutablePattern.matcher(mutable); b = ref.matcher(mutable);
                         equal(a, b, a.find(), b.find(), true);
                         mutable.setLength(0); mutable.append("fatal123 error456");
                         a.reset(); b.reset();
