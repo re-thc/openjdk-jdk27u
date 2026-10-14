@@ -323,6 +323,7 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_math_sqrt    : tty->print("java_lang_math_sqrt"    ); break;
     case java_lang_math_sqrt_strict           : tty->print("java_lang_math_sqrt_strict"); break;
     case jdk_internal_util_SimdUTF_process: tty->print("jdk_internal_util_SimdUTF_process"); break;
+    case java_lang_StringCoding_countPositives: tty->print("java_lang_StringCoding_countPositives"); break;
     case java_util_zip_CRC32_update           : tty->print("java_util_zip_CRC32_update"); break;
     case java_util_zip_CRC32_updateBytes      : tty->print("java_util_zip_CRC32_updateBytes"); break;
     case java_util_zip_CRC32_updateByteBuffer : tty->print("java_util_zip_CRC32_updateByteBuffer"); break;

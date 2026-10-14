@@ -206,6 +206,7 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_math_fmaF )
   method_entry(java_lang_math_fmaD )
   method_entry(java_lang_ref_reference_get0)
+  method_entry(java_lang_StringCoding_countPositives)
   AbstractInterpreter::initialize_method_handle_entries();
 
   method_entry(java_util_zip_CRC32C_updateBytes)
