@@ -1,0 +1,72 @@
+name: Common intrinsic native evidence
+on:
+  push:
+    branches: [pr/common-intrinsics-final-evidence]
+    paths: [.github/workflows/common-intrinsics-evidence.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  record:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: common-intrinsics-lazy-linux-x64
+          run-id: '38397336007'
+          github-token: ${{ github.token }}
+          path: download/linux-x64
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: common-intrinsics-lazy-linux-aarch64
+          run-id: '38397336007'
+          github-token: ${{ github.token }}
+          path: download/linux-aarch64
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: results-linux-aarch64-hs_tier1_runtime
+          run-id: '38385226401'
+          github-token: ${{ github.token }}
+          path: original-failure
+      - name: Preserve native evidence outside the PR
+        run: |
+          python3 - <<'PY'
+          import json, shutil, zipfile
+          from pathlib import Path
+          target = Path(".github/qualification/final-native")
+          target.mkdir(parents=True, exist_ok=True)
+          for platform in ["linux-x64", "linux-aarch64"]:
+              source = Path("download") / platform
+              destination = target / platform
+              for path in source.rglob("*"):
+                  if path.is_file() and (path.suffix == ".json" and not any(p.endswith(("-work", "-report")) for p in path.parts) or path.name == "summary.txt" or path.name in ["source-audit.log", "includes.log"]):
+                      out = destination / path.relative_to(source)
+                      out.parent.mkdir(parents=True, exist_ok=True)
+                      shutil.copyfile(path, out)
+              print(platform + " files:", [str(p.relative_to(source)) for p in source.rglob("*.json") if not any(v.endswith(("-work", "-report")) for v in p.parts)], flush=True)
+              for name in ["environment.json", "jtreg.json", "startup-balanced.json", "master-throughput/manifest.json"]:
+                  path = source / name
+                  if path.is_file():
+                      value = json.loads(path.read_text())
+                      if name == "environment.json":
+                          print(platform, name, json.dumps(value), flush=True)
+                      elif name == "jtreg.json":
+                          print(platform, name, json.dumps([dict(selection=r["selection"], exit_code=r["exit_code"], summary=r["summary"]) for r in value]), flush=True)
+                      else:
+                          print(platform, name, "schema", type(value).__name__, list(value)[:12] if isinstance(value, dict) else value[:1], flush=True)
+          # Retain the original failing jtreg record, without bulky generated classes.
+          failure = target / "original-failure"
+          failure.mkdir()
+          for archive in Path("original-failure").rglob("*.zip"):
+              with zipfile.ZipFile(archive) as bundle:
+                  for name in bundle.namelist():
+                      if "FourByteHeaderArchiveDeterminism" in name and name.endswith(".jtr"):
+                          (failure / Path(name).name).write_bytes(bundle.read(name))
+                          print("Original failing record", name, flush=True)
+          PY
+          git config user.name 'Teamoffy Pte. Ltd.'
+          git config user.email '38070640+re-thc@users.noreply.github.com'
+          git add .github/qualification/final-native
+          git commit -m 'Record final native tests and master comparisons [skip ci]'
+          git push origin HEAD:pr/common-intrinsics-final-evidence
