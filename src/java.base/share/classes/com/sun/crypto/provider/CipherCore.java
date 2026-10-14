@@ -336,13 +336,7 @@ final class CipherCore {
             iv = new byte[blockSize];
             SunJCE.getRandom().nextBytes(iv);
         }
-        if (algName.equals("RC2")) {
-            RC2Crypt rawImpl = (RC2Crypt) cipher.getEmbeddedCipher();
-            spec = new RC2ParameterSpec
-                (rawImpl.getEffectiveKeyBits(), iv);
-        } else {
-            spec = new IvParameterSpec(iv);
-        }
+        spec = new IvParameterSpec(iv);
         try {
             params = AlgorithmParameters.getInstance(algName,
                     SunJCE.getInstance());
@@ -438,13 +432,6 @@ final class CipherCore {
                                 ("Wrong IV length: must be " + blockSize +
                                         " bytes long");
                     }
-                } else if (params instanceof RC2ParameterSpec) {
-                    ivBytes = ((RC2ParameterSpec) params).getIV();
-                    if ((ivBytes != null) && (ivBytes.length != blockSize)) {
-                        throw new InvalidAlgorithmParameterException
-                                ("Wrong IV length: must be " + blockSize +
-                                        " bytes long");
-                    }
                 } else {
                     throw new InvalidAlgorithmParameterException
                             ("Unsupported parameter: " + params);
@@ -486,9 +473,6 @@ final class CipherCore {
         String paramType = null;
         if (params != null) {
             try {
-                // NOTE: RC2 parameters are always handled through
-                // init(..., AlgorithmParameterSpec,...) method, so
-                // we can assume IvParameterSpec type here.
                 paramType = "IV";
                 spec = params.getParameterSpec(IvParameterSpec.class);
             } catch (InvalidParameterSpecException ipse) {

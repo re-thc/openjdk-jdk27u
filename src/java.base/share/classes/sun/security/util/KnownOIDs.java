@@ -242,7 +242,6 @@ public enum KnownOIDs {
 
     // PKCS12 1.2.840.113549.1.12.*
     PBEWithSHA1AndDESede("1.2.840.113549.1.12.1.3"),
-    PBEWithSHA1AndRC2_40("1.2.840.113549.1.12.1.6"),
     PKCS8ShroudedKeyBag("1.2.840.113549.1.12.10.1.2"),
     CertBag("1.2.840.113549.1.12.10.1.3"),
     SecretBag("1.2.840.113549.1.12.10.1.5"),
@@ -258,7 +257,6 @@ public enum KnownOIDs {
     HmacSHA512$256("1.2.840.113549.2.13", "HmacSHA512/256"),
 
     // encryptionAlgs 1.2.840.113549.3.*
-    RC2$CBC$PKCS5Padding("1.2.840.113549.3.2", "RC2/CBC/PKCS5Padding", "RC2"),
     ARCFOUR("1.2.840.113549.3.4", "ARCFOUR", "RC4"),
     DESede$CBC$NoPadding("1.2.840.113549.3.7", "DESede/CBC/NoPadding"),
     RC5$CBC$PKCS5Padding("1.2.840.113549.3.9", "RC5/CBC/PKCS5Padding"),
