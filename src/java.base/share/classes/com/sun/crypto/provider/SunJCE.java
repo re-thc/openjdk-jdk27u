@@ -52,15 +52,13 @@ import static sun.security.util.SecurityProviderConstants.*;
  *
  * - AES
  *
- * - Blowfish
- *
  * - RC2
  *
  * - ARCFOUR (RC4 compatible)
  *
  * - ChaCha20 (Stream cipher only and in AEAD mode with Poly1305)
  *
- * - Cipher modes ECB, CBC, CFB, OFB, PCBC, CTR, and CTS for all block ciphers
+ * - Cipher modes ECB, CBC, CFB, OFB, CTR, and CTS for all block ciphers
  *   and mode GCM for AES cipher
  *
  * - Cipher padding ISO10126Padding for non-PKCS#5 block ciphers and
@@ -87,7 +85,7 @@ public final class SunJCE extends Provider {
     private static final long serialVersionUID = 6812507587804302833L;
 
     private static final String info = "SunJCE Provider " +
-    "(implements RSA, DES, Triple DES, AES, Blowfish, ARCFOUR, RC2, PBE, "
+    "(implements RSA, DES, Triple DES, AES, ARCFOUR, RC2, PBE, "
     + "Diffie-Hellman, HMAC, ChaCha20, DHKEM, ML-KEM, and HKDF)";
 
     /* Are we debugging? -- for developers */
@@ -157,7 +155,7 @@ public final class SunJCE extends Provider {
                 "com.sun.crypto.provider.RSACipher", null, attrs);
 
         // common block cipher modes, pads
-        final String BLOCK_MODES = "ECB|CBC|PCBC|CTR|CTS|CFB|OFB" +
+        final String BLOCK_MODES = "ECB|CBC|CTR|CTS|CFB|OFB" +
             "|CFB8|CFB16|CFB24|CFB32|CFB40|CFB48|CFB56|CFB64" +
             "|OFB8|OFB16|OFB24|OFB32|OFB40|OFB48|OFB56|OFB64";
         final String BLOCK_MODES128 = BLOCK_MODES +
@@ -173,9 +171,6 @@ public final class SunJCE extends Provider {
                 "com.sun.crypto.provider.DESCipher", null, attrs);
         psA("Cipher", "DESede", "com.sun.crypto.provider.DESedeCipher",
                 attrs);
-        ps("Cipher", "Blowfish",
-                "com.sun.crypto.provider.BlowfishCipher", null, attrs);
-
         ps("Cipher", "RC2",
                 "com.sun.crypto.provider.RC2Cipher", null, attrs);
 
@@ -281,13 +276,7 @@ public final class SunJCE extends Provider {
                 "com.sun.crypto.provider.GaloisCounterMode$AES256",
                 attrs);
 
-        attrs.clear();
-        attrs.put("SupportedModes", "CBC");
-        attrs.put("SupportedPaddings", "NOPADDING");
-        attrs.put("SupportedKeyFormats", "RAW");
-        ps("Cipher", "DESedeWrap",
-                "com.sun.crypto.provider.DESedeWrapCipher", null, attrs);
-
+        // used by SASL DIGEST-MD5 and Kerberos rc4-hmac
         attrs.clear();
         attrs.put("SupportedModes", "ECB");
         attrs.put("SupportedPaddings", "NOPADDING");
@@ -368,8 +357,6 @@ public final class SunJCE extends Provider {
         psA("KeyGenerator", "DESede",
                 "com.sun.crypto.provider.DESedeKeyGenerator",
                 null);
-        ps("KeyGenerator", "Blowfish",
-                "com.sun.crypto.provider.BlowfishKeyGenerator");
         psA("KeyGenerator", "AES",
                 "com.sun.crypto.provider.AESKeyGenerator",
                 null);
@@ -517,9 +504,6 @@ public final class SunJCE extends Provider {
 
         ps("AlgorithmParameters", "PBEWithHmacSHA512/256AndAES_256",
                 "com.sun.crypto.provider.PBES2Parameters$HmacSHA512_256AndAES_256");
-
-        ps("AlgorithmParameters", "Blowfish",
-                "com.sun.crypto.provider.BlowfishParameters");
 
         psA("AlgorithmParameters", "AES",
                 "com.sun.crypto.provider.AESParameters", null);

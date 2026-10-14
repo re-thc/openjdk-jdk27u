@@ -37,7 +37,7 @@ import javax.crypto.BadPaddingException;
 /**
  * This class represents the symmetric algorithms in its various modes
  * (<code>ECB</code>, <code>CFB</code>, <code>OFB</code>, <code>CBC</code>,
- * <code>PCBC</code>, <code>CTR</code>, and <code>CTS</code>) and
+ * <code>CTR</code>, and <code>CTS</code>) and
  * padding schemes (<code>PKCS5Padding</code>, <code>NoPadding</code>,
  * <code>ISO10126Padding</code>).
  *
@@ -47,7 +47,6 @@ import javax.crypto.BadPaddingException;
  * @see CipherFeedback
  * @see OutputFeedback
  * @see CipherBlockChaining
- * @see PCBC
  * @see CounterMode
  * @see CipherTextStealing
  */
@@ -120,7 +119,6 @@ final class CipherCore {
     private static final int CBC_MODE = 1;
     private static final int CFB_MODE = 2;
     private static final int OFB_MODE = 3;
-    private static final int PCBC_MODE = 4;
     private static final int CTR_MODE = 5;
     private static final int CTS_MODE = 6;
 
@@ -185,9 +183,6 @@ final class CipherCore {
             cipherMode = OFB_MODE;
             unitBytes = getNumOfUnit(mode, "OFB".length(), blockSize);
             cipher = new OutputFeedback(rawImpl, unitBytes);
-        } else if (modeUpperCase.equals("PCBC")) {
-            cipherMode = PCBC_MODE;
-            cipher = new PCBC(rawImpl);
         }
         else {
             throw new NoSuchAlgorithmException("Cipher mode: " + mode
