@@ -1,0 +1,72 @@
+name: Vector API native qualification
+
+'on':
+  push:
+    branches: [codex/vector-api-qualification]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  matched-arm:
+    name: Native AArch64 ${{ matrix.cohort }}
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        cohort: [cold, tiers, osr, signatures, wide, observer]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Get verified baseline release image
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: 38172262610
+          artifact-ids: 11714738068
+          path: baseline-bundles
+          merge-multiple: true
+      - name: Get verified PR14 release image
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: 38349570655
+          artifact-ids: 11791270117
+          path: patched-bundles
+          merge-multiple: true
+      - name: Verify native host and prepare matched images
+        env:
+          QUALIFICATION_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          test "$(uname -m)" = aarch64
+          mkdir baseline-image patched-image
+          tar -xf baseline-bundles/jdk-linux-aarch64.tar.gz -C baseline-image --strip-components=1
+          tar -xf patched-bundles/jdk-linux-aarch64.tar.gz -C patched-image --strip-components=1
+          baseline-image/bin/java -version
+          patched-image/bin/java -version
+          file baseline-image/lib/server/libjvm.so patched-image/lib/server/libjvm.so
+          mkdir -p qualification/classes qualification/whitebox
+          patched-image/bin/javac -d qualification/whitebox test/lib/jdk/test/whitebox/parser/DiagnosticCommand.java test/lib/jdk/test/whitebox/WhiteBox.java
+          patched-image/bin/javac --add-modules jdk.incubator.vector -cp qualification/whitebox -d qualification/classes qualification/src/PhaseVectorKernels.java qualification/src/PhaseVectorProbe.java
+          python3 qualification/record_native_provenance.py
+      - name: Run balanced native measurements
+        env:
+          QUALIFICATION_COHORT: ${{ matrix.cohort }}
+        run: |
+          pairs=12
+          if [[ "$QUALIFICATION_COHORT" == cold ]]; then pairs=32; fi
+          python3 qualification/run_matrix.py --base "$PWD/baseline-image" --patched "$PWD/patched-image" --classes "$PWD/qualification/classes" --whitebox "$PWD/qualification/whitebox" --out "$PWD/native-results/$QUALIFICATION_COHORT" --cohort "$QUALIFICATION_COHORT" --pairs "$pairs" --native-arm
+      - name: Unlogged startup control
+        if: matrix.cohort == 'cold'
+        run: python3 qualification/run_matrix.py --base "$PWD/baseline-image" --patched "$PWD/patched-image" --classes "$PWD/qualification/classes" --whitebox "$PWD/qualification/whitebox" --out "$PWD/native-results/cold-unlogged" --cohort cold --pairs 32 --native-arm --unlogged
+      - name: Preserve complete raw evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: vector-api-native-arm-${{ matrix.cohort }}
+          path: |
+            native-results
+            qualification/classes
+            qualification/whitebox
+          retention-days: 30
