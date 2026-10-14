@@ -2156,6 +2156,34 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
 
 #endif // !PRODUCT
 
+address TemplateInterpreterGenerator::generate_count_positives_entry() {
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
+  __ ldr(c_rarg0, Address(esp, 2 * wordSize));
+  __ ldrw(c_rarg1, Address(esp, wordSize));
+  __ ldrw(c_rarg2, Address(esp, 0));
+  __ orrw(rscratch1, c_rarg1, c_rarg2);
+  __ tbnz(rscratch1, 31, slow_path);
+  __ cbz(c_rarg0, slow_path);
+  __ ldrw(rscratch1, Address(c_rarg0, arrayOopDesc::length_offset_in_bytes()));
+  __ cmpw(c_rarg1, rscratch1);
+  __ br(Assembler::HI, slow_path);
+  __ subw(rscratch1, rscratch1, c_rarg1);
+  __ cmpw(c_rarg2, rscratch1);
+  __ br(Assembler::HI, slow_path);
+  __ cmpw(c_rarg2, 1024 * 1024);
+  __ br(Assembler::HI, slow_path);
+  __ andr(sp, r19_sender_sp, -16);
+  // Checked ranges make the result nonnegative. Tail-call the bounded leaf.
+  __ lea(r16, RuntimeAddress(CAST_FROM_FN_PTR(address, SimdUTF::count_positives)));
+  __ br(r16);
+
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}
+
 address TemplateInterpreterGenerator::generate_simdutf_entry() {
   address entry = __ pc();
   Label slow_path;

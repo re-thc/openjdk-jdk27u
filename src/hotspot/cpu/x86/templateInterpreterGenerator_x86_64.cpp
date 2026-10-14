@@ -516,6 +516,50 @@ address TemplateInterpreterGenerator::generate_currentThread() {
   return entry_point;
 }
 
+address TemplateInterpreterGenerator::generate_count_positives_entry() {
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
+  __ movptr(r10, Address(rsp, 3 * wordSize));
+  __ movl(r11, Address(rsp, 2 * wordSize));
+  __ movl(rcx, Address(rsp, wordSize));
+  __ movl(rax, r11);
+  __ orl(rax, rcx);
+  __ jcc(Assembler::negative, slow_path);
+  __ testptr(r10, r10);
+  __ jcc(Assembler::zero, slow_path);
+  __ movl(rax, Address(r10, arrayOopDesc::length_offset_in_bytes()));
+  __ cmpl(r11, rax);
+  __ jcc(Assembler::above, slow_path);
+  __ subl(rax, r11);
+  __ cmpl(rcx, rax);
+  __ jcc(Assembler::above, slow_path);
+  __ cmpl(rcx, 1024 * 1024);
+  __ jcc(Assembler::above, slow_path);
+
+  // Preserve the Java arguments for fallback and align the native leaf frame.
+  __ movptr(r10, rsp);
+  __ enter();
+  __ andptr(rsp, -16);
+#ifdef _WIN64
+  __ subptr(rsp, 32);
+#endif
+  __ movptr(c_rarg0, Address(r10, 3 * wordSize));
+  __ movl(c_rarg1, Address(r10, 2 * wordSize));
+  __ movl(c_rarg2, Address(r10, wordSize));
+  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SimdUTF::count_positives)));
+  __ leave();
+  __ testl(rax, rax);
+  __ jcc(Assembler::negative, slow_path);
+  __ pop(rdi);
+  __ mov(rsp, r13);
+  __ jmp(rdi);
+
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}
+
 address TemplateInterpreterGenerator::generate_simdutf_entry() {
   address entry = __ pc();
   Label slow_path;

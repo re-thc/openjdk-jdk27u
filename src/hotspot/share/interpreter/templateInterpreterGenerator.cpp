@@ -206,6 +206,7 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_math_fmaF )
   method_entry(java_lang_math_fmaD )
   method_entry(java_lang_ref_reference_get0)
+  method_entry(java_lang_StringCoding_countPositives)
   AbstractInterpreter::initialize_method_handle_entries();
 
   method_entry(java_util_zip_CRC32C_updateBytes)
@@ -471,6 +472,11 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
                                            : entry_point = generate_math_entry(Interpreter::java_lang_math_sqrt); break;
   case Interpreter::java_lang_ref_reference_get0
                                            : entry_point = generate_Reference_get_entry(); break;
+  case Interpreter::java_lang_StringCoding_countPositives:
+    // Preserve normal profiling so compiled VMs can use the existing C1 and C2 paths.
+    entry_point = UseCompiler ? Interpreter::entry_for_kind(Interpreter::zerolocals)
+                              : generate_count_positives_entry();
+    break;
   case Interpreter::jdk_internal_util_SimdUTF_process
                                            : entry_point = generate_simdutf_entry(); break;
   case Interpreter::java_util_zip_CRC32_update
@@ -499,5 +505,9 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
 #if !defined(AMD64) && !defined(AARCH64)
 address TemplateInterpreterGenerator::generate_simdutf_entry() {
   return nullptr; // Other ports retain the JNI entry.
+}
+
+address TemplateInterpreterGenerator::generate_count_positives_entry() {
+  return nullptr;
 }
 #endif

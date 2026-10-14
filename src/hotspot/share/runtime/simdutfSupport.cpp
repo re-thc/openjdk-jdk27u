@@ -231,6 +231,30 @@ static jint simdutf_encode_utf32_tight(const char16_t* input, jint len, char* ou
   return written;
 }
 
+static jint simdutf_count_ascii(const char* input, jint len) {
+  simdutf::result r = simdutf::validate_ascii_with_errors(input, len);
+  return r.error == simdutf::SUCCESS ? len : checked_cast<jint>(r.count);
+}
+
+JRT_LEAF(jint, SimdUTF::count_positives(oopDesc* src_raw, jint sp, jint len))
+  oop src = src_raw;
+  if (len < 0 || len > 1024 * 1024 || !simdutf_range(src, false, sp, len)) {
+    return -1;
+  }
+  const jbyte* input = reinterpret_cast<const jbyte*>(simdutf_base(src, false, sp));
+  if (len > 0 && input[0] < 0) {
+    return 0;
+  }
+  if (UseSIMDUTFIntrinsics && simdutf_implementation != nullptr && len >= SIMDUTFMinLength) {
+    return simdutf_count_ascii(reinterpret_cast<const char*>(input), len);
+  }
+  jint count = 0;
+  while (count < len && input[count] >= 0) {
+    count++;
+  }
+  return count;
+JRT_END
+
 JRT_LEAF(jint, SimdUTF::process(oopDesc* src_raw, jint sp, jint len,
                                oopDesc* dst_raw, jint dp, jint capacity, jint operation))
   if (simdutf_implementation == nullptr || len <= 0 || len > 1024 * 1024 ||
@@ -256,8 +280,7 @@ JRT_LEAF(jint, SimdUTF::process(oopDesc* src_raw, jint sp, jint len,
   }
   const char* input = reinterpret_cast<const char*>(simdutf_base(src, src16, sp));
   if (operation == COUNT_ASCII) {
-    simdutf::result r = simdutf::validate_ascii_with_errors(input, len);
-    return r.error == simdutf::SUCCESS ? len : checked_cast<jint>(r.count);
+    return simdutf_count_ascii(input, len);
   }
   const char16_t* input16 = reinterpret_cast<const char16_t*>(input);
   switch (operation) {
