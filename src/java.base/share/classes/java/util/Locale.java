@@ -1901,17 +1901,16 @@ public final class Locale implements Cloneable, Serializable {
     // Returns null for any other tag.
     private static Locale forSimpleLanguageTag(String tag) {
         int len = tag.length();
-        int pos = 0;
-        while (pos < len && isLowerAscii(tag.charAt(pos))) {
-            pos++;
+        int languageEnd = 0;
+        while (languageEnd < len && isLowerAscii(tag.charAt(languageEnd))) {
+            languageEnd++;
         }
-        if (pos < 2 || pos > 3 || (pos == 3 && tag.startsWith("und"))) {
+        if (languageEnd < 2 || languageEnd > 3 || (languageEnd == 3 && tag.startsWith("und"))) {
             return null;
         }
-        String language = tag.substring(0, pos);
-        String script = "";
-        String region = "";
-        if (len - pos == 5 || len - pos > 7) {
+        int pos = languageEnd;
+        boolean hasScript = len - pos == 5 || len - pos > 7;
+        if (hasScript) {
             // -Ssss
             if (tag.charAt(pos) != '-' || !isUpperAscii(tag.charAt(pos + 1))
                     || !isLowerAscii(tag.charAt(pos + 2))
@@ -1919,9 +1918,9 @@ public final class Locale implements Cloneable, Serializable {
                     || !isLowerAscii(tag.charAt(pos + 4))) {
                 return null;
             }
-            script = tag.substring(pos + 1, pos + 5);
             pos += 5;
         }
+        int regionStart = pos;
         if (pos < len) {
             // -CC or -NNN
             int n = len - pos - 1;
@@ -1934,8 +1933,12 @@ public final class Locale implements Cloneable, Serializable {
                     return null;
                 }
             }
-            region = tag.substring(pos + 1);
+            regionStart++;
         }
+        // Substrings only of a tag that is known to be simple
+        String language = tag.substring(0, languageEnd);
+        String script = hasScript ? tag.substring(languageEnd + 1, languageEnd + 5) : "";
+        String region = tag.substring(regionStart);
         return getInstance(BaseLocale.getInstance(language, script, region, ""), null);
     }
 
