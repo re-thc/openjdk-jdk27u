@@ -33,7 +33,8 @@ jobs:
           tar -xf "$DIAGNOSTIC_ROOT/mold.tar.gz" --strip-components=1 -C "$DIAGNOSTIC_ROOT/mold"
           python3 diagnostics/pr18-int/prepare.py
       - name: Build and freeze baseline
-        run: bash diagnostics/pr18-int/build.sh base > "$DIAGNOSTIC_ROOT/evidence/build-base.log" 2>&1
+        shell: bash
+        run: bash diagnostics/pr18-int/build.sh base 2>&1 | tee "$DIAGNOSTIC_ROOT/evidence/build-base.log"
       - name: One declared calibration and diagnostic experiment
         run: python3 diagnostics/pr18-int/run.py | tee "$DIAGNOSTIC_ROOT/evidence/experiment.log"
       - name: Retain all results, including calibration failures

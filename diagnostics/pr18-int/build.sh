@@ -48,6 +48,7 @@ else
   make CONF=diagnostic JOBS=4 BUILD_LIBJVM_handshake.cpp_CXXFLAGS=-Wno-error=nonnull hotspot
   cp -a "$root/images/base" "$root/images/candidate"
   cp build/diagnostic/support/modules_libs/java.base/server/libjvm.so "$root/images/candidate/lib/server/libjvm.so"
+  cp build/diagnostic/support/modules_libs/java.base/server/libjvm.debuginfo "$root/images/candidate/lib/server/libjvm.debuginfo"
   restore
   trap - EXIT
 fi

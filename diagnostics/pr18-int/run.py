@@ -237,7 +237,7 @@ def main():
         save('candidate-manifest-before.json', candidate_frozen)
         changed = [name for name in sorted(set(frozen) | set(candidate_frozen))
                    if frozen.get(name) != candidate_frozen.get(name)]
-        assert changed == ['lib/server/libjvm.so'], f'unexpected candidate image delta: {changed}'
+        assert changed == ['lib/server/libjvm.debuginfo', 'lib/server/libjvm.so'], f'unexpected candidate image delta: {changed}'
         pairs = []
         comparison_labels = []
         for block in range(4):
