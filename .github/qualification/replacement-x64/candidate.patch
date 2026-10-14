@@ -1,0 +1,51 @@
+diff --git a/src/hotspot/share/interpreter/templateInterpreterGenerator.cpp b/src/hotspot/share/interpreter/templateInterpreterGenerator.cpp
+index be3e8995ad9..21960b0c760 100644
+--- a/src/hotspot/share/interpreter/templateInterpreterGenerator.cpp
++++ b/src/hotspot/share/interpreter/templateInterpreterGenerator.cpp
+@@ -31,6 +31,7 @@
+ #include "interpreter/templateTable.hpp"
+ #include "oops/methodData.hpp"
+ #include "runtime/commonIntrinsics.hpp"
++#include "runtime/timerTrace.hpp"
+ 
+ #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
+ 
+@@ -240,12 +241,34 @@ void TemplateInterpreterGenerator::generate_all() {
+ 
+ #if defined(AMD64) || defined(AARCH64)
+   if (CommonIntrinsics::enabled() && InlineIntrinsics) {
++    TraceTime timer("Common intrinsic entry generation", TRACETIME_LOG(Debug, startuptime));
+     CodeletMark cm(_masm, "common intrinsic entry points");
+-    for (int i = 1; i < static_cast<int>(vmIntrinsics::ID_LIMIT); i++) {
+-      vmIntrinsics::ID id = vmIntrinsics::ID_from(i);
++    // Visit only our catalogue. Most VM intrinsics have no common entry.
++#define COMMON_ID(id, slots, result) vmIntrinsics::id,
++    static const vmIntrinsics::ID ids[] = {
++      COMMON_INTRINSICS_DO(COMMON_ID)
++      COMMON_SCALAR_INTRINSICS_DO(COMMON_ID)
++      COMMON_BINARY_SCALAR_INTRINSICS_DO(COMMON_ID)
++      vmIntrinsics::_vectorizedHashCodeLeaf
++    };
++#undef COMMON_ID
++    for (vmIntrinsics::ID id : ids) {
+       if (CommonIntrinsics::is_available_for_interpreter(id) && vmIntrinsics::is_intrinsic_available(id)) {
+-        __ align(CodeEntryAlignment);
+-        Interpreter::_common_entry_table[i] = generate_common_intrinsic_entry(id);
++        // These aliases have identical arguments, operations and guards.
++        // Check each ID's flags above even when its code can be shared.
++        vmIntrinsics::ID canonical = id;
++        switch (id) {
++          case vmIntrinsics::_min_strict: canonical = vmIntrinsics::_min; break;
++          case vmIntrinsics::_max_strict: canonical = vmIntrinsics::_max; break;
++          case vmIntrinsics::_vectorizedHashCodeLeaf: canonical = vmIntrinsics::_vectorizedHashCode; break;
++          default: break;
++        }
++        address entry = Interpreter::_common_entry_table[vmIntrinsics::as_int(canonical)];
++        if (entry == nullptr) {
++          __ align(CodeEntryAlignment);
++          entry = generate_common_intrinsic_entry(id);
++        }
++        Interpreter::_common_entry_table[vmIntrinsics::as_int(id)] = entry;
+       }
+     }
+   }

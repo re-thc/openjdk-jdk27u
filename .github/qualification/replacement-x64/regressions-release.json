@@ -1,0 +1,34 @@
+[
+  {
+    "name": "demand-release-hotspot",
+    "command": [
+      "/workspace/toolchains/jdk27/bin/java",
+      "-Xint",
+      "-XX:ActiveProcessorCount=1",
+      "-XX:+UseSerialGC",
+      "-jar",
+      "/workspace/toolchains/jtreg83/lib/jtreg.jar",
+      "-jdk:/workspace/common-intrinsics-evidence/images/demand",
+      "-othervm",
+      "-conc:1",
+      "-timeoutFactor:4",
+      "-nativepath:/workspace/openjdk-jdk27u/build/cloud-gcc16/support/test/hotspot/jtreg/native/lib",
+      "-vmoptions:-XX:ActiveProcessorCount=1 -XX:CICompilerCount=2 -XX:+UseSerialGC -Xms32m -Xmx256m -Dseed=42",
+      "-w:/workspace/common-intrinsics-evidence/fresh/demand-release-hotspot-work",
+      "-r:/workspace/common-intrinsics-evidence/fresh/demand-release-hotspot-report",
+      "test/hotspot/jtreg/compiler/codegen/aes/Test8292158.java",
+      "test/hotspot/jtreg/compiler/codegen/aes/Test8299817.java",
+      "test/hotspot/jtreg/compiler/codegen/aes/TestAESMain.java",
+      "test/hotspot/jtreg/compiler/codegen/aes/TestCipherBlockChainingEncrypt.java",
+      "test/hotspot/jtreg/compiler/intrinsics/bigInteger/MontgomeryMultiplyTest.java",
+      "test/hotspot/jtreg/compiler/intrinsics/bigInteger/TestMulAdd.java",
+      "test/hotspot/jtreg/compiler/intrinsics/bigInteger/TestMultiplyToLen.java",
+      "test/hotspot/jtreg/compiler/intrinsics/bigInteger/TestMultiplyToLenReturnProfile.java",
+      "test/hotspot/jtreg/compiler/intrinsics/bigInteger/TestSquareToLen.java",
+      "test/hotspot/jtreg/compiler/intrinsics/chacha/TestChaCha20.java",
+      "test/hotspot/jtreg/compiler/intrinsics/sha/TestDigest.java"
+    ],
+    "exit_code": 0,
+    "summary": "compiler/codegen/aes/Test8292158.java                               Passed. Execution successful\ncompiler/codegen/aes/Test8299817.java                               Passed. Execution successful\ncompiler/codegen/aes/TestAESMain.java                               Passed. Execution successful\ncompiler/codegen/aes/TestCipherBlockChainingEncrypt.java            Passed. Execution successful\ncompiler/intrinsics/bigInteger/MontgomeryMultiplyTest.java          Passed. Execution successful\ncompiler/intrinsics/bigInteger/TestMulAdd.java                      Passed. Execution successful\ncompiler/intrinsics/bigInteger/TestMultiplyToLen.java               Passed. Execution successful\ncompiler/intrinsics/bigInteger/TestMultiplyToLenReturnProfile.java  Passed. Execution successful\ncompiler/intrinsics/bigInteger/TestSquareToLen.java                 Passed. Execution successful\ncompiler/intrinsics/chacha/TestChaCha20.java                        Passed. Execution successful\ncompiler/intrinsics/sha/TestDigest.java                             Passed. Execution successful\n"
+  }
+]
