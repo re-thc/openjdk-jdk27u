@@ -8,8 +8,8 @@ logger=r'''  uint estimate = est_loop_clone_sz(2);
   // PR14 diagnostic only: observe the original policy without changing decisions.
   auto pr14_decision = [&](const char* branch, bool admitted) {
 #ifndef PRODUCT
-    if (TraceLoopOpts && phase->C->method()->holder()->name()->equals("PhaseVectorKernels") &&
-        phase->C->method()->name()->equals("conversion")) {
+    if (TraceLoopOpts && phase->C->method()->holder()->name()->get_symbol()->equals("PhaseVectorKernels") &&
+        phase->C->method()->name()->get_symbol()->equals("conversion")) {
       tty->print_cr("PR14_UNROLL compile=%d osr=%d loop=%u branch=%s raw_body=%u body_size=%u limit=%d current=%d future=%d slp=%d slp_max=%d vectorized=%d should=%d estimate=%u admitted=%d",
                     phase->C->compile_id(), phase->C->is_osr_compilation(), cl->_idx, branch,
                     _body.size(), body_size, _local_loop_unroll_limit, cl->unrolled_count(),

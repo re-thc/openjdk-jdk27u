@@ -128,7 +128,7 @@ jobs:
           cd traced-source
           CC=gcc-16 CXX=g++-16 bash bin/configure-dev --with-conf-name=native-trace --with-debug-level=fastdebug --with-boot-jdk="$PWD/../bootstrap" --with-native-debug-symbols=none --with-jobs=4 > ../trace-results-build/configure.log 2>&1
           make CONF=native-trace hotspot > ../trace-results-build/build.log 2>&1
-          cp build/native-trace/hotspot/variant-server/libjvm/libjvm.so ../trace-debug/lib/server/libjvm.so
+          cp build/native-trace/support/modules_libs/java.base/server/libjvm.so ../trace-debug/lib/server/libjvm.so
           cd ..
           trace-debug/bin/java -version
           sha256sum trace-debug/lib/server/libjvm.so > trace-results-build/traced-libjvm.sha256
