@@ -33,7 +33,9 @@ import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import javax.management.Descriptor;
@@ -139,6 +141,7 @@ public class ImmutableDescriptorConstructorsTest {
               "arguments are copied");
 
         union();
+        manyFields();
 
         if (failure != null)
             throw new AssertionError(failure);
@@ -176,6 +179,65 @@ public class ImmutableDescriptorConstructorsTest {
         expectIAE("inconsistent array values", () ->
                 ImmutableDescriptor.union(a1, new ImmutableDescriptor(
                         new String[] {"X"}, new Object[] {new int[] {2}})));
+    }
+
+    // Larger inputs are sorted differently from small ones, with the same result
+    // as adding the fields in turn to a TreeMap, including which name is reported
+    private static void manyFields() {
+        Random random = new Random(4711);
+        for (int n : new int[] {15, 16, 17, 40, 1000}) {
+            for (int round = 0; round < 60; round++) {
+                String[] names = new String[n];
+                Object[] values = new Object[n];
+                for (int i = 0; i < n; i++) {
+                    String name = "f" + random.nextInt(round % 2 == 0 ? n : 4 * n);
+                    names[i] = random.nextBoolean() ? name : name.toUpperCase(Locale.ROOT);
+                    values[i] = random.nextInt(4) == 0 ? null : i;
+                }
+                if (round % 5 == 0)
+                    names[random.nextInt(n)] = random.nextBoolean() ? null : "";
+                if (round % 3 == 0)
+                    Arrays.sort(names, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER.reversed()));
+                String expected = addInTurn(names, values, false);
+                String actual = fields(() -> new ImmutableDescriptor(names, values));
+                check(actual.equals(expected), n + " fields from arrays: " + actual
+                      + " expected " + expected);
+
+                Map<String, Object> map = new LinkedHashMap<>();
+                for (int i = 0; i < n; i++)
+                    map.put(names[i], values[i]);
+                expected = addInTurn(map.keySet().toArray(new String[0]), map.values().toArray(), true);
+                actual = fields(() -> new ImmutableDescriptor(map));
+                check(actual.equals(expected), n + " fields from a map: " + actual
+                      + " expected " + expected);
+            }
+        }
+    }
+
+    // The fields or the exception message of adding the fields to a TreeMap in turn
+    private static String addInTurn(String[] names, Object[] values, boolean fromMap) {
+        TreeMap<String, Object> map = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        for (int i = 0; i < names.length; i++) {
+            if (names[i] == null || names[i].isEmpty())
+                return "Empty or null field name";
+            if (fromMap && map.containsKey(names[i]))
+                return "Duplicate name: " + names[i];
+            if (map.put(names[i], values[i]) != null)
+                return "Duplicate field name: " + names[i];
+        }
+        return map.toString();
+    }
+
+    private static String fields(Construction c) {
+        try {
+            Descriptor d = (Descriptor) c.run();
+            TreeMap<String, Object> map = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+            for (String name : d.getFieldNames())
+                map.put(name, d.getFieldValue(name));
+            return map.toString();
+        } catch (IllegalArgumentException e) {
+            return e.getMessage();
+        }
     }
 
     private static void checkOrder(Descriptor d, String[] expected) {

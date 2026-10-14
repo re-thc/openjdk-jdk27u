@@ -77,32 +77,9 @@ public class ImmutableDescriptor implements Descriptor {
             throw new IllegalArgumentException("Null array parameter");
         if (fieldNames.length != fieldValues.length)
             throw new IllegalArgumentException("Different size arrays");
-        // The fields are kept sorted as they are added. A TreeMap does the
-        // same but costs much more, and this constructor is called often
-        // when an MBean is introspected.
-        String[] names = new String[fieldNames.length];
-        Object[] values = new Object[fieldNames.length];
-        int size = 0;
-        for (int i = 0; i < fieldNames.length; i++) {
-            String name = fieldNames[i];
-            if (name == null || name.isEmpty())
-                throw new IllegalArgumentException("Empty or null field name");
-            int index = Arrays.binarySearch(names, 0, size, name,
-                                            String.CASE_INSENSITIVE_ORDER);
-            if (index >= 0) {
-                if (values[index] != null) {
-                    throw new IllegalArgumentException(
-                            "Duplicate field name: " + name);
-                }
-                values[index] = fieldValues[i];
-            } else {
-                insert(names, values, size++, -index - 1, name, fieldValues[i]);
-            }
-        }
-        this.names = size == names.length
-                ? names : Arrays.copyOf(names, size);
-        this.values = size == values.length
-                ? values : Arrays.copyOf(values, size);
+        Fields fields = sortFields(fieldNames, fieldValues, fieldNames.length, false);
+        this.names = fields.names;
+        this.values = fields.values;
     }
 
     /**
@@ -139,38 +116,116 @@ public class ImmutableDescriptor implements Descriptor {
     public ImmutableDescriptor(Map<String, ?> fields) {
         if (fields == null)
             throw new IllegalArgumentException("Null Map");
-        // Sorted as it is filled, see the constructor with arrays. The map
-        // can change while it is read, so the arrays are grown if necessary.
+        // The map can change while it is read, so the arrays are grown if necessary.
         String[] names = new String[fields.size()];
         Object[] values = new Object[names.length];
         int size = 0;
         for (Map.Entry<String, ?> entry : fields.entrySet()) {
-            String name = entry.getKey();
-            if (name == null || name.isEmpty())
-                throw new IllegalArgumentException("Empty or null field name");
-            int index = Arrays.binarySearch(names, 0, size, name,
-                                            String.CASE_INSENSITIVE_ORDER);
-            if (index >= 0)
-                throw new IllegalArgumentException("Duplicate name: " + name);
             if (size == names.length) {
-                names = Arrays.copyOf(names, size + 4);
-                values = Arrays.copyOf(values, size + 4);
+                names = Arrays.copyOf(names, 2 * size + 1);
+                values = Arrays.copyOf(values, names.length);
             }
-            insert(names, values, size++, -index - 1, name, entry.getValue());
+            names[size] = entry.getKey();
+            values[size] = entry.getValue();
+            size++;
         }
-        this.names = size == names.length
-                ? names : Arrays.copyOf(names, size);
-        this.values = size == values.length
-                ? values : Arrays.copyOf(values, size);
+        Fields sorted = sortFields(names, values, size, true);
+        this.names = sorted.names;
+        this.values = sorted.values;
     }
 
-    // Inserts a field at the given index of the first size fields.
-    private static void insert(String[] names, Object[] values, int size,
-                               int index, String name, Object value) {
-        System.arraycopy(names, index, names, index + 1, size - index);
-        System.arraycopy(values, index, values, index + 1, size - index);
-        names[index] = name;
-        values[index] = value;
+    private record Fields(String[] names, Object[] values) { }
+
+    // Inputs up to this size are sorted by insertion, larger ones all at once.
+    private static final int MAX_INSERTION_SORT = 16;
+
+    /**
+     * Returns the first {@code n} fields sorted by name, with the result and
+     * the exception of adding them to a {@code TreeMap} ordered by
+     * {@link String#CASE_INSENSITIVE_ORDER} in turn. If {@code fromMap} is
+     * true, any repeated name is a duplicate, otherwise only a name whose
+     * value so far is not null. A TreeMap costs much more, and descriptors
+     * are made for every feature of an MBean that is introspected.
+     */
+    private static Fields sortFields(String[] names, Object[] values, int n,
+                                     boolean fromMap) {
+        if (n <= MAX_INSERTION_SORT) {
+            String[] sortedNames = new String[n];
+            Object[] sortedValues = new Object[n];
+            int size = 0;
+            for (int i = 0; i < n; i++) {
+                String name = names[i];
+                if (name == null || name.isEmpty())
+                    throw new IllegalArgumentException("Empty or null field name");
+                int index = Arrays.binarySearch(sortedNames, 0, size, name,
+                                                String.CASE_INSENSITIVE_ORDER);
+                if (index >= 0) {
+                    if (fromMap || sortedValues[index] != null)
+                        throw duplicateName(name, fromMap);
+                    sortedValues[index] = values[i];
+                } else {
+                    index = -index - 1;
+                    System.arraycopy(sortedNames, index, sortedNames, index + 1, size - index);
+                    System.arraycopy(sortedValues, index, sortedValues, index + 1, size - index);
+                    sortedNames[index] = name;
+                    sortedValues[index] = values[i];
+                    size++;
+                }
+            }
+            return trimmed(sortedNames, sortedValues, size);
+        }
+
+        // Adding in turn would fail at the first bad name, or before it at
+        // the first duplicate, which can only be among the names before it.
+        int bad = 0;
+        while (bad < n && names[bad] != null && !names[bad].isEmpty()) {
+            bad++;
+        }
+        // A stable sort keeps the fields of a name in the order they are added.
+        Integer[] order = new Integer[bad];
+        for (int i = 0; i < bad; i++) {
+            order[i] = i;
+        }
+        Arrays.sort(order, new Comparator<Integer>() {
+            @Override
+            public int compare(Integer i, Integer j) {
+                return String.CASE_INSENSITIVE_ORDER.compare(names[i], names[j]);
+            }
+        });
+        String[] sortedNames = new String[bad];
+        Object[] sortedValues = new Object[bad];
+        int size = 0;
+        int duplicate = bad;
+        for (int k = 0; k < bad; size++) {
+            int first = order[k++];
+            Object value = values[first];
+            while (k < bad && String.CASE_INSENSITIVE_ORDER.compare(names[order[k]], names[first]) == 0) {
+                int i = order[k++];
+                if (fromMap || value != null) {
+                    duplicate = Math.min(duplicate, i);
+                } else {
+                    value = values[i];
+                }
+            }
+            sortedNames[size] = names[first];
+            sortedValues[size] = value;
+        }
+        if (duplicate < bad)
+            throw duplicateName(names[duplicate], fromMap);
+        if (bad < n)
+            throw new IllegalArgumentException("Empty or null field name");
+        return trimmed(sortedNames, sortedValues, size);
+    }
+
+    private static IllegalArgumentException duplicateName(String name, boolean fromMap) {
+        return new IllegalArgumentException(
+                (fromMap ? "Duplicate name: " : "Duplicate field name: ") + name);
+    }
+
+    private static Fields trimmed(String[] names, Object[] values, int size) {
+        return size == names.length
+                ? new Fields(names, values)
+                : new Fields(Arrays.copyOf(names, size), Arrays.copyOf(values, size));
     }
 
     /**
