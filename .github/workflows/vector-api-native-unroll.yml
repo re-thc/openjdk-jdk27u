@@ -1,4 +1,4 @@
-name: Vector API release unroll causal qualification
+name: Preserve Vector API causal evidence
 'on':
   push:
     branches: [codex/vector-api-native-unroll]
@@ -6,68 +6,24 @@ permissions:
   contents: read
   actions: read
 jobs:
-  release-causal:
-    name: Native release ${{ matrix.mode }}
+  evidence:
     runs-on: ubuntu-26.04-arm
-    timeout-minutes: 35
-    strategy:
-      fail-fast: false
-      matrix:
-        mode: [timing, assembly]
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - name: Reuse matched inputs and preserve both rejected pilots
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: 38539204173
-          artifact-ids: 11881672203
-          path: saved
+          run-id: 38542568378
+          artifact-ids: 11883417851
+          path: evidence
           merge-multiple: true
-      - name: Verify unchanged images and compile cached-bean controller
-        run: |
-          test "$(uname -m)" = aarch64
-          mkdir base-release b3-release controller-classes
-          tar -xf saved/prior/baseline-bundles/jdk-linux-aarch64.tar.gz -C base-release --strip-components=1
-          tar -xf saved/prior/patched-bundles/jdk-linux-aarch64.tar.gz -C b3-release --strip-components=1
-          ln -s saved/prior/baseline-bundles baseline-bundles
-          ln -s saved/prior/patched-bundles patched-bundles
-          python3 qualification/native_unroll/record_native_host.py
-          python3 - <<'PY'
-          import pathlib,hashlib,json
-          plan=json.loads(pathlib.Path('saved/prior/release-causal/plan.json').read_text())
-          for image,directory in [('base87','base-release'),('b3','b3-release')]:
-              for name,record in plan['images'][image].items():
-                  p=pathlib.Path(directory)/name
-                  assert hashlib.file_digest(p.open('rb'),'sha256').hexdigest()==record['sha256']
-          print('MATCHED_IMAGE_HASHES_VERIFIED=true')
-          for path in ['saved/prior/release-causal/pair00-base87-eight-0-default-arithmetic.out','saved/release-causal/pair00-b3-legacy-0-4-conversion.out']:
-              print('REJECTED_PILOT_OUTPUT_JSON='+json.dumps({'file':path,'text':pathlib.Path(path).read_text()}))
-          PY
-          b3-release/bin/javac -cp saved/prior/frozen/qualification/classes:saved/prior/frozen/qualification/whitebox -d controller-classes qualification/src/FixedVectorProbe.java qualification/src/ProbeControllerPrimer.java
-      - name: Reproduce controller compilation separately from qualified timings
-        if: matrix.mode == 'assembly'
-        run: python3 qualification/native_unroll/diagnose_controller.py
-      - name: Run fixed paired workloads or separately attributed release assembly
-        env:
-          EXPERIMENT_MODE: ${{ matrix.mode }}
-        run: |
-          if [[ "$EXPERIMENT_MODE" == assembly ]]; then mode_flag=--diagnostics-only; else mode_flag=--timings-only; fi
-          python3 qualification/native_unroll/run_release_causal.py --base-jdk base-release --patched-jdk b3-release --frozen saved/prior/frozen --primer-classes controller-classes --out release-causal "$mode_flag" --execute
-      - name: Print structured final summaries and ordinary-entry assembly
-        if: always()
-        run: python3 qualification/native_unroll/report_release_causal.py
-      - name: Preserve complete experiment evidence
+      - name: Verify and export complete qualified process-level windows
+        run: python3 qualification/native_unroll/export_qualified_evidence.py
+      - name: Preserve compact evidence and validation
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: vector-api-release-causal-${{ matrix.mode }}
-          path: |
-            release-causal
-            controller-diagnostic
-            native-ir-host.json
-            controller-classes
-            qualification/native_unroll
-            qualification/src/FixedVectorProbe.java
-            qualification/src/ProbeControllerPrimer.java
+          name: vector-api-causal-process-evidence
+          path: compact-evidence
           retention-days: 30
