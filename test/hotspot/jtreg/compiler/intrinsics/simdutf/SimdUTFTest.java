@@ -122,9 +122,60 @@ public class SimdUTFTest {
         utf16Copies();
         utf8EncodeCapacity();
         tightBuffers();
+        decoderBuffers();
         codePointCounts();
         indexOf();
         System.out.println("simdutf contracts passed");
+    }
+
+
+    private static void decoderBuffers() {
+        byte[][] patterns = {
+            {'a'}, {(byte)0xc3, (byte)0xa9}, {(byte)0xe6, (byte)0xbc, (byte)0xa2},
+            {(byte)0xf0, (byte)0x9f, (byte)0x98, (byte)0x83},
+            {(byte)0x80}, {(byte)0xc1, (byte)0x80},
+            {(byte)0xe0, (byte)0x80, (byte)0x80},
+            {(byte)0xed, (byte)0xa0, (byte)0x80},
+            {(byte)0xf4, (byte)0x90, (byte)0x80, (byte)0x80},
+            {(byte)0xf5, (byte)0x80, (byte)0x80, (byte)0x80},
+            {'a', (byte)0x80}, {'a', (byte)0xe2}
+        };
+        for (int length : new int[]{0, 1, 31, 128, 255, 256, 257, 4096}) {
+            for (byte[] pattern : patterns) {
+                byte[] bytes = new byte[length + 14];
+                Arrays.fill(bytes, SENTINEL);
+                for (int i = 0; i < length; i++) bytes[7 + i] = pattern[i % pattern.length];
+                for (int capacity : new int[]{0, 1, length / 3, length, length + 1}) {
+                    for (var action : new CodingErrorAction[]{CodingErrorAction.REPORT, CodingErrorAction.REPLACE}) {
+                        for (boolean end : new boolean[]{false, true}) {
+                            char[][] output = {new char[capacity + 14], new char[capacity + 14]};
+                            int position = -1;
+                            int written = -1;
+                            String result = null;
+                            for (int mode = 0; mode < 2; mode++) {
+                                Arrays.fill(output[mode], '\u5555');
+                                ByteBuffer source = ByteBuffer.wrap(bytes).position(3).limit(7 + length).slice();
+                                source.position(4);
+                                if (mode == 0) source = source.asReadOnlyBuffer();
+                                CharBuffer target = CharBuffer.wrap(output[mode]).position(3).slice();
+                                target.position(4).limit(4 + capacity);
+                                var decoder = StandardCharsets.UTF_8.newDecoder().onMalformedInput(action);
+                                var status = decoder.decode(source, target, end);
+                                if (mode == 0) {
+                                    position = source.position();
+                                    written = target.position();
+                                    result = status.toString();
+                                } else {
+                                    check(position == source.position() && written == target.position()
+                                            && result.equals(status.toString()), "UTF8 decoder buffer positions and result");
+                                    check(Arrays.equals(output[0], output[1]), "UTF8 decoder output and guards");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private static void tightBuffers() {

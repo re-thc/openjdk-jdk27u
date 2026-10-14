@@ -11,6 +11,29 @@ output.mkdir(exist_ok=True)
 common = ["-XX:+UseSerialGC", "-Xms1g", "-Xmx1g", "-XX:ActiveProcessorCount=2"]
 tier = ["-Xbatch", "-XX:TieredStopAtLevel=1"]
 exports = ["--add-exports=java.base/jdk.internal.access=ALL-UNNAMED"]
+edits = json.loads("[[\"int converted = SimdUTF.isEligible(sl - sp)\",\"n = SimdUTF.isEligible(sl - sp)\"],[\"if (converted >= 0) {\\n                updatePositions(src, sl, dst, dp + converted);\",\"if (n >= 0) {\\n                updatePositions(src, sl, dst, dp + n);\"],[\"return malformed(src, sp, dst, dp, 1);\",\"return malformedForLength(src, sp, dst, dp, 1);\"]]")
+source = Path("src/java.base/share/classes/sun/nio/cs/UTF_8.java").read_text()
+for old, new in edits:
+    assert source.count(old) == 1, old
+    source = source.replace(old, new, 1)
+patch_source, patch_classes = output/"source-fixed", output/"patch-fixed"
+file = patch_source/"sun/nio/cs/UTF_8.java"
+file.parent.mkdir(parents=True,exist_ok=True)
+file.write_text(source)
+patch_classes.mkdir()
+subprocess.run([str(head/"bin/javac"),"--patch-module","java.base="+str(patch_source),
+    "-d",str(patch_classes),str(file)],check=True)
+tests = output/"tests"
+tests.mkdir()
+subprocess.run([str(head/"bin/javac"),"--add-exports","java.base/jdk.internal.util=ALL-UNNAMED",
+    "-d",str(tests),"test/hotspot/jtreg/compiler/intrinsics/simdutf/SimdUTFTest.java"],check=True)
+for flags in (["-Xint"],["-Xbatch","-XX:TieredStopAtLevel=1"],
+              ["-Xbatch","-XX:-TieredCompilation","-XX:CompileThreshold=100"]):
+    subprocess.run([str(head/"bin/java"),"--patch-module=java.base="+str(patch_classes),
+        "--add-exports","java.base/jdk.internal.util=ALL-UNNAMED",
+        "--add-opens","java.base/jdk.internal.util=ALL-UNNAMED",
+        *common,*flags,"-cp",str(tests),"SimdUTFTest"],check=True)
+
 classpath = "jmh/core.jar:jmh/generator.jar:jmh/options.jar:jmh/math.jar"
 classes, generated = output / "classes", output / "generated"
 classes.mkdir()
@@ -24,13 +47,15 @@ cpu = min(os.sched_getaffinity(0))
 os.sched_setaffinity(0, {cpu})
 print("API_METADATA", json.dumps({"arch":platform.machine(), "cpu":cpu,
     "base":"e206bae32b2a6cc1fa9464ad34d75f2df4b347e9",
-    "head":"2072f7ee5fd21b378b391ae3053a4321f402f469", "patches":False}), flush=True)
+    "head":"2072f7ee5fd21b378b391ae3053a4321f402f469", "patches":"fixed and fixed-off are diagnostic class patches; base/on/off are complete images"}), flush=True)
 for name, image in (("base",base), ("head",head)):
     print("IMAGE_RELEASE", name, (image/"release").read_text(), flush=True)
 
 def measure(study, mode, klass, methods, params):
     java = (base if mode == "base" else head)/"bin/java"
-    flags = common + tier + exports + (["-XX:-UseSIMDUTFIntrinsics"] if mode == "off" else [])
+    flags = common + tier + exports + (["-XX:-UseSIMDUTFIntrinsics"] if mode in ("off","fixed-off") else [])
+    if mode.startswith("fixed"):
+        flags += ["--patch-module=java.base="+str(patch_classes)]
     label = study+"-"+mode
     path = output/(label+".json")
     command = [str(java), *exports, "-cp", classpath, "org.openjdk.jmh.Main",
@@ -54,16 +79,16 @@ def measure(study, mode, klass, methods, params):
             "params":row["params"],"ns":metric["score"],"ci":metric["scoreConfidence"],
             "bytes":row["secondaryMetrics"]["gc.alloc.rate.norm"]["score"]}),flush=True)
 
-for mode in ("base","on","off"):
+for mode in ("base","on","off","fixed","fixed-off"):
     measure("c1-tight",mode,"SimdUTF","charsetDecodeTight",["size=128,255,256,4096"])
     measure("c1-ascii",mode,"SimdUTF","asciiCharsetDecode",["size=31,4096"])
     measure("c1-malformed",mode,"SimdUTF","malformedCharsetDecode",["size=128,4096"])
-    for kind, sizes in (("ascii","31,4096"),("bmp","255,4096"),("malformed","128,4096")):
+    for kind, sizes in (() if mode.startswith("fixed") else (("ascii","31,4096"),("bmp","255,4096"),("malformed","128,4096"))):
         measure("c1-prefix-"+kind,mode,"SimdUTFDecoderAPI","asciiPrefix",["size="+sizes,"kind="+kind])
 
-for mode in ("base","on","off"):
+for mode in ("base","on","fixed"):
     java = (base if mode == "base" else head)/"bin/java"
-    extra = ["-XX:-UseSIMDUTFIntrinsics"] if mode=="off" else []
+    extra = ["--patch-module=java.base="+str(patch_classes)] if mode=="fixed" else []
     name = output/("inlining-"+mode+".log")
     flags = [*common,*tier,*extra,"-XX:+UnlockDiagnosticVMOptions","-XX:+PrintInlining",
         "-XX:CompileCommand=print,sun/nio/cs/UTF_8$Decoder.decodeArrayLoop",
