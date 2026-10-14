@@ -555,7 +555,34 @@ final class StringLatin1 {
 
     // vmIntrinsics::_indexOfIL
     @IntrinsicCandidate
+    @ForceInline
     private static int indexOf0(byte[] value, int valueToIndex, byte[] str, int strToIndex, int valueFromIndex) {
+        int searchLength = valueToIndex - valueFromIndex;
+        if (searchLength >= StringZilla.MIN_BYTES) {
+            if (strToIndex == 0) {
+                return 0;
+            }
+            if (searchLength < strToIndex) {
+                return -1;
+            }
+            if (strToIndex <= 8) {
+                if (StringZilla.matches(value, valueFromIndex, str, strToIndex)) {
+                    return valueFromIndex;
+                }
+                valueFromIndex++;
+            }
+            if (StringZilla.ENABLED) {
+                int result = StringZilla.indexOfLatin1(value, valueToIndex, str, strToIndex, valueFromIndex);
+                if (result != StringZilla.FALLBACK) {
+                    return result;
+                }
+            }
+        }
+        return indexOfJava(value, valueToIndex, str, strToIndex, valueFromIndex);
+    }
+
+    @ForceInline
+    private static int indexOfJava(byte[] value, int valueToIndex, byte[] str, int strToIndex, int valueFromIndex) {
         if (strToIndex == 0) {
             return 0;
         }
@@ -563,28 +590,8 @@ final class StringLatin1 {
             return -1;
         }
         byte first = str[0];
-        int i = valueFromIndex;
-        // Complete the first scalar candidate before testing native dispatch.
-        // Reuse the original first-character load and skip the failed candidate.
-        if (strToIndex <= 8) {
-            if (value[i] == first) {
-                int j = i + 1;
-                int end = j + strToIndex - 1;
-                for (int k = 1; j < end && value[j] == str[k]; j++, k++);
-                if (j == end) {
-                    return i;
-                }
-            }
-            i++;
-        }
-        if (valueToIndex - valueFromIndex >= StringZilla.MIN_BYTES && StringZilla.ENABLED) {
-            int result = StringZilla.indexOfLatin1(value, valueToIndex, str, strToIndex, i);
-            if (result != StringZilla.FALLBACK) {
-                return result;
-            }
-        }
         int max = (valueToIndex - strToIndex);
-        for (; i <= max; i++) {
+        for (int i = valueFromIndex; i <= max; i++) {
             // Look for first character.
             if (value[i] != first) {
                 while (++i <= max && value[i] != first);

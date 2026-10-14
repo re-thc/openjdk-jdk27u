@@ -1195,7 +1195,7 @@ final class StringUTF16 {
         checkIndex(fromIndex + tgtCount - 1, src);
 
         if (tgtCount > 128 && fromIndex < 8 && StringZilla.ENABLED
-                && StringZilla.compilerTier() == StringZilla.C1) {
+                && StringZilla.compilerTier() != 0) {
             int last = tgtCount - 1;
             char lastChar = getChar(tgt, last);
             int candidateEnd = fromIndex + last;
@@ -1224,8 +1224,9 @@ final class StringUTF16 {
                     return result < 0 ? -1 : result >> 1;
                 }
             }
-            if (StringZilla.compilerTier() == StringZilla.C1) {
-                return lastIndexOfJavaC1(src, tgt, tgtCount, fromIndex);
+            if (StringZilla.compilerTier() == StringZilla.C1 ||
+                    (StringZilla.compilerTier() == StringZilla.C2 && tgtCount > 128)) {
+                return lastIndexOfJavaFiltered(src, tgt, tgtCount, fromIndex);
             }
         }
         int min = tgtCount - 1;
@@ -1253,9 +1254,9 @@ final class StringUTF16 {
         }
     }
 
-    // Filter C1 fallback candidates before comparing their interiors.
+    // Filter compiled fallback candidates before comparing their interiors.
     @DontInline
-    private static int lastIndexOfJavaC1(byte[] src, byte[] tgt, int tgtCount, int fromIndex) {
+    private static int lastIndexOfJavaFiltered(byte[] src, byte[] tgt, int tgtCount, int fromIndex) {
         int min = tgtCount - 1;
         int i = min + fromIndex;
         int strLastIndex = tgtCount - 1;
