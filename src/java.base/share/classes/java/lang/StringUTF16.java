@@ -962,11 +962,10 @@ final class StringUTF16 {
         assert strToIndex > 0;
         assert strToIndex <= length(str);
         assert (valueToIndex - valueFromIndex) >= strToIndex;
-        char first = getChar(str, 0);
         // Keep the short/scalar loop unchanged; probe only eligible windows.
-        if (valueToIndex - valueFromIndex >= (StringZilla.MIN_BYTES >> 1)) {
+        if (valueToIndex - valueFromIndex >= (StringZilla.MIN_BYTES >> 1) && StringZilla.ENABLED) {
             if (strToIndex <= 8) {
-                if (getChar(value, valueFromIndex) == first) {
+                if (getChar(value, valueFromIndex) == getChar(str, 0)) {
                     int j = valueFromIndex + 1;
                     int end = j + strToIndex - 1;
                     for (int k = 1; j < end && getChar(value, j) == getChar(str, k); j++, k++);
@@ -975,14 +974,13 @@ final class StringUTF16 {
                     }
                 }
             }
-            if (StringZilla.ENABLED) {
-                int result = StringZilla.indexOfUTF16(value, valueToIndex, str, strToIndex,
-                        valueFromIndex + (strToIndex <= 8 ? 1 : 0));
-                if (result != StringZilla.FALLBACK) {
-                    return result;
-                }
+            int result = StringZilla.indexOfUTF16(value, valueToIndex, str, strToIndex,
+                    valueFromIndex + (strToIndex <= 8 ? 1 : 0));
+            if (result != StringZilla.FALLBACK) {
+                return result;
             }
         }
+        char first = getChar(str, 0);
         int max = (valueToIndex - strToIndex);
         for (int i = valueFromIndex; i <= max; i++) {
             // Look for first character.
@@ -1192,14 +1190,8 @@ final class StringUTF16 {
         assert fromIndex >= 0;
         assert tgtCount > 0;
         assert tgtCount <= length(tgt);
-        int min = tgtCount - 1;
-        int i = min + fromIndex;
-        int strLastIndex = tgtCount - 1;
-
-        checkIndex(strLastIndex, tgt);
-        char strLastChar = getChar(tgt, strLastIndex);
-
-        checkIndex(i, src);
+        checkIndex(tgtCount - 1, tgt);
+        checkIndex(fromIndex + tgtCount - 1, src);
 
         int searchLength = fromIndex + tgtCount;
         if (searchLength >= (StringZilla.MIN_BYTES >> 1) && StringZilla.ENABLED) {
@@ -1218,7 +1210,14 @@ final class StringUTF16 {
                     return result < 0 ? -1 : result >> 1;
                 }
             }
+            if (StringZilla.compilerTier() == StringZilla.C1) {
+                return lastIndexOfJavaC1(src, tgt, tgtCount, fromIndex);
+            }
         }
+        int min = tgtCount - 1;
+        int i = min + fromIndex;
+        int strLastIndex = tgtCount - 1;
+        char strLastChar = getChar(tgt, strLastIndex);
     startSearchForLastChar:
         while (true) {
             while (i >= min && getChar(src, i) != strLastChar) {
@@ -1226,6 +1225,39 @@ final class StringUTF16 {
             }
             if (i < min) {
                 return -1;
+            }
+            int j = i - 1;
+            int start = j - strLastIndex;
+            int k = strLastIndex - 1;
+            while (j > start) {
+                if (getChar(src, j--) != getChar(tgt, k--)) {
+                    i--;
+                    continue startSearchForLastChar;
+                }
+            }
+            return start + 1;
+        }
+    }
+
+    // Filter C1 fallback candidates before comparing their interiors.
+    @DontInline
+    private static int lastIndexOfJavaC1(byte[] src, byte[] tgt, int tgtCount, int fromIndex) {
+        int min = tgtCount - 1;
+        int i = min + fromIndex;
+        int strLastIndex = tgtCount - 1;
+        char strLastChar = getChar(tgt, strLastIndex);
+        char strFirstChar = getChar(tgt, 0);
+    startSearchForLastChar:
+        while (true) {
+            while (i >= min && getChar(src, i) != strLastChar) {
+                i--;
+            }
+            if (i < min) {
+                return -1;
+            }
+            if (getChar(src, i - min) != strFirstChar) {
+                i--;
+                continue;
             }
             int j = i - 1;
             int start = j - strLastIndex;
