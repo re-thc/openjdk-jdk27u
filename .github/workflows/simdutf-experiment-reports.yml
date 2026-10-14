@@ -11,32 +11,23 @@ jobs:
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
-          name: simdutf-memory-linux-aarch64
-          run-id: 38550613051
+          name: simdutf-ascii-interpreter-linux-aarch64
+          run-id: 38553276216
           github-token: ${{ github.token }}
-          path: reports/memory
+          path: reports/arm
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
-          name: simdutf-overhead-linux-aarch64
-          run-id: 38540157649
+          name: simdutf-ascii-interpreter-linux-x64
+          run-id: 38553276216
           github-token: ${{ github.token }}
-          path: reports/overhead
-      - name: Inspect build output and count assembly
+          path: reports/x64
+      - name: Inspect jtreg errors
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          for f in Path("reports/memory").rglob("*.log"):
-              print("REPORT_FILE", f)
-              print(f.read_text()[-20000:])
-          for mode in ("base", "off", "on", "count-isolated"):
-              files = list(Path("reports/overhead").rglob("assembly-codePointCount-" + mode + ".log"))
-              if not files:
-                  continue
-              text = files[0].read_text()
-              blocks = text.split("Compiled method (c2)")[1:]
-              for block in blocks[-5:]:
-                  if "codePointCount_avgt_jmhStub" in block:
-                      print("COUNT_ASSEMBLY_BEGIN", mode)
-                      print("Compiled method (c2)" + block[:50000])
-                      print("COUNT_ASSEMBLY_END", mode)
+          for f in Path("reports").rglob("*.jtr"):
+              text = f.read_text()
+              if "test result: Error" in text or "test result: Failed" in text:
+                  print("FAILED_REPORT", f)
+                  print(text[-24000:])
           PY
