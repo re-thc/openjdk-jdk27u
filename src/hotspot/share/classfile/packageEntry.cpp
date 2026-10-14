@@ -202,7 +202,7 @@ void PackageEntry::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_qualified_exports);
 }
 
-PackageEntryTable::PackageEntryTable() { }
+PackageEntryTable::PackageEntryTable() : _table(109, 1228891) { }
 
 PackageEntryTable::~PackageEntryTable() {
   class PackageEntryTableDeleter : public StackObj {
@@ -301,6 +301,7 @@ void PackageEntryTable::locked_create_entry(Symbol* name, ModuleEntry* module) {
   PackageEntry* entry = new PackageEntry(name, module);
   bool created = _table.put(name, entry);
   assert(created, "must be");
+  _table.maybe_grow(2);
 }
 
 // Create package entry in loader's package entry table if it does not already
@@ -312,6 +313,7 @@ PackageEntry* PackageEntryTable::locked_create_entry_if_absent(Symbol* name, Mod
   PackageEntry* entry = new PackageEntry(name, module);
   PackageEntry** old_entry = _table.put_if_absent(name, entry, &created);
   if (created) {
+    _table.maybe_grow(2);
     return entry;
   } else {
     delete entry;
