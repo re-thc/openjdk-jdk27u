@@ -271,6 +271,11 @@ enum NamedGroup {
     final boolean isAvailable;
     final Provider defaultProvider;
 
+    // The XDH AlgorithmParameters, looked up on first use by
+    // getKeAlgParams().
+    private volatile AlgorithmParameters xdhAlgParams;
+    private volatile boolean xdhAlgParamsLookedUp;
+
     // performance optimization
     private static final Set<CryptoPrimitive> KEY_AGREEMENT_PRIMITIVE_SET =
         Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
@@ -319,7 +324,8 @@ enum NamedGroup {
             // The AlgorithmParameters are not supported in JDK, and looking
             // up an unsupported algorithm loads all the providers.  So check
             // the KeyAgreement impl first, and only look for the
-            // AlgorithmParameters if it is not available.
+            // AlgorithmParameters if it is not available.  If it is, they
+            // are looked up when a constraint needs them, in getKeAlgParams().
             try {
                 KeyAgreement.getInstance(name);
 
@@ -603,7 +609,38 @@ enum NamedGroup {
         return constraints.permits(KEY_AGREEMENT_PRIMITIVE_SET,
                         this.name, null) &&
                 constraints.permits(KEY_AGREEMENT_PRIMITIVE_SET,
-                        this.algorithm, this.keAlgParams);
+                        this.algorithm, getKeAlgParams(constraints));
+    }
+
+    // The XDH AlgorithmParameters are not looked up in the constructor when
+    // the KeyAgreement impl is available, as the lookup loads all the
+    // providers if none supports them.  Look them up here instead, but only
+    // for the constraints set by the application: those of the JDK don't
+    // check XDH parameters, so null makes no difference to them, while a
+    // custom provider's parameters may make one to the application's.
+    private AlgorithmParameters getKeAlgParams(
+            AlgorithmConstraints constraints) {
+        if (keAlgParams != null || !isAvailable ||
+                spec != NamedGroupSpec.NAMED_GROUP_XDH ||
+                (constraints instanceof SSLAlgorithmConstraints sslConstraints
+                        && !sslConstraints.hasUserSpecifiedConstraints())) {
+            return keAlgParams;
+        }
+
+        if (!xdhAlgParamsLookedUp) {
+            AlgorithmParameters algParams = null;
+            try {
+                algParams = AlgorithmParameters.getInstance(algorithm);
+                algParams.init(keAlgParamSpec);
+            } catch (InvalidParameterSpecException
+                    | NoSuchAlgorithmException exp) {
+                algParams = null;
+            }
+            xdhAlgParams = algParams;
+            xdhAlgParamsLookedUp = true;
+        }
+
+        return xdhAlgParams;
     }
 
     byte[] encodePossessionPublicKey(
