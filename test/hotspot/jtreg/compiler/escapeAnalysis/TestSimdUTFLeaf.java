@@ -87,6 +87,23 @@ public class TestSimdUTFLeaf {
         return SimdUTF.countCodePoints(src, 0, src.length) == 15 && src[0] == (char) value;
     }
 
+    private static boolean testCountOrdering(int value) {
+        char[] src = new char[16];
+        src[0] = (char) value;
+        int initial = SimdUTF.countCodePoints(src, 0, src.length);
+        src[0] = '\ud83d';
+        src[1] = '\ude03';
+        int paired = SimdUTF.countCodePoints(src, 0, src.length);
+        src[1] = (char) value;
+        int malformed = SimdUTF.countCodePoints(src, 0, src.length);
+        int invalid = SimdUTF.validateUTF16(src, 0, src.length, 0);
+        src[0] = (char) value;
+        int restored = SimdUTF.countCodePoints(src, 0, src.length);
+        int valid = SimdUTF.validateUTF16(src, 0, src.length, 0);
+        return initial == 16 && paired == 15 && malformed == -1 && invalid == 0
+                && restored == 16 && valid == 1;
+    }
+
     private static boolean testRejectedRange(int value) {
         byte[] src = new byte[16];
         byte[] dst = new byte[32];
@@ -98,7 +115,8 @@ public class TestSimdUTFLeaf {
 
     private static void check(int value) {
         if (!testEncodeLatin1(value) || !testEncodeUTF16(value) || !testDecodeUTF8(value)
-                || !testDecodeInPlace(value) || !testCount(value) || !testRejectedRange(value)) {
+                || !testDecodeInPlace(value) || !testCount(value) || !testCountOrdering(value)
+                || !testRejectedRange(value)) {
             throw new AssertionError("simdutf leaf lost array initialization or contents: " + value);
         }
     }

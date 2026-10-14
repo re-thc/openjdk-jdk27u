@@ -9489,8 +9489,17 @@ bool LibraryCallKit::inline_simdutf_process() {
   fields[TypeFunc::Parms] = TypeInt::INT;
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
   const TypeFunc* type = TypeFunc::make(domain, range);
+  // Read-only operations consume heap memory but do not invalidate its slices.
+  // Keep a normal leaf call so initialization stores still precede the reads.
+  const TypePtr* memory_effects = TypePtr::BOTTOM;
+  if (operation != nullptr &&
+      ((operation->_lo >= SimdUTF::VALIDATE_UTF16 && operation->_hi <= SimdUTF::ENCODED_LENGTH_LATIN1) ||
+       (operation->_lo == SimdUTF::COUNT_CODE_POINTS && operation->_hi == SimdUTF::COUNT_CODE_POINTS) ||
+       (operation->_lo >= SimdUTF::INDEX_OF_LATIN1 && operation->_hi <= SimdUTF::VALIDATE_UTF8_LATIN1))) {
+    memory_effects = nullptr;
+  }
   Node* call = make_runtime_call(RC_LEAF, type,
-      CAST_FROM_FN_PTR(address, SimdUTF::process), "simdutf_process", TypePtr::BOTTOM,
+      CAST_FROM_FN_PTR(address, SimdUTF::process), "simdutf_process", memory_effects,
       argument(0), argument(1), argument(2), argument(3),
       argument(4), argument(5), argument(6));
   Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
