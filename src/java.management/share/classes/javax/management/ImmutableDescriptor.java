@@ -182,16 +182,11 @@ public class ImmutableDescriptor implements Descriptor {
             bad++;
         }
         // A stable sort keeps the fields of a name in the order they are added.
-        Integer[] order = new Integer[bad];
+        int[] order = new int[bad];
         for (int i = 0; i < bad; i++) {
             order[i] = i;
         }
-        Arrays.sort(order, new Comparator<Integer>() {
-            @Override
-            public int compare(Integer i, Integer j) {
-                return String.CASE_INSENSITIVE_ORDER.compare(names[i], names[j]);
-            }
-        });
+        mergeSort(order.clone(), order, 0, bad, names);
         String[] sortedNames = new String[bad];
         Object[] sortedValues = new Object[bad];
         int size = 0;
@@ -199,7 +194,7 @@ public class ImmutableDescriptor implements Descriptor {
         for (int k = 0; k < bad; size++) {
             int first = order[k++];
             Object value = values[first];
-            while (k < bad && String.CASE_INSENSITIVE_ORDER.compare(names[order[k]], names[first]) == 0) {
+            while (k < bad && compare(names, order[k], first) == 0) {
                 int i = order[k++];
                 if (fromMap || value != null) {
                     duplicate = Math.min(duplicate, i);
@@ -215,6 +210,41 @@ public class ImmutableDescriptor implements Descriptor {
         if (bad < n)
             throw new IllegalArgumentException("Empty or null field name");
         return trimmed(sortedNames, sortedValues, size);
+    }
+
+    // Sorts the positions in dest[low, high) by name, stably, using src,
+    // which holds the same positions, as scratch space.
+    private static void mergeSort(int[] src, int[] dest, int low, int high,
+                                  String[] names) {
+        if (high - low < 8) {
+            for (int i = low + 1; i < high; i++) {
+                int pos = dest[i];
+                int j = i;
+                for (; j > low && compare(names, dest[j - 1], pos) > 0; j--) {
+                    dest[j] = dest[j - 1];
+                }
+                dest[j] = pos;
+            }
+            return;
+        }
+        int mid = (low + high) >>> 1;
+        mergeSort(dest, src, low, mid, names);
+        mergeSort(dest, src, mid, high, names);
+        if (compare(names, src[mid - 1], src[mid]) <= 0) {
+            System.arraycopy(src, low, dest, low, high - low);
+            return;
+        }
+        for (int i = low, p = low, q = mid; i < high; i++) {
+            if (q >= high || p < mid && compare(names, src[p], src[q]) <= 0) {
+                dest[i] = src[p++];
+            } else {
+                dest[i] = src[q++];
+            }
+        }
+    }
+
+    private static int compare(String[] names, int i, int j) {
+        return String.CASE_INSENSITIVE_ORDER.compare(names[i], names[j]);
     }
 
     private static IllegalArgumentException duplicateName(String name, boolean fromMap) {
