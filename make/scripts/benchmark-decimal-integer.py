@@ -43,6 +43,7 @@ def main():
     parser.add_argument('--tiers', default='interpreter,utf16,c1,tiered,c2')
     parser.add_argument('--sizes', default='tiny,short,wide,mixed')
     parser.add_argument('--duration', default='500ms')
+    parser.add_argument('--jtreg', type=Path, help='run focused jtreg checks before timing')
     args = parser.parse_args()
     if args.pairs < 1:
         parser.error('--pairs must be positive')
@@ -189,6 +190,26 @@ def main():
             print((output / f'checks-compact-{compact}-native-{native}.log').read_text(),
                   flush=True)
 
+    if args.jtreg:
+        tests = ['test/jdk/jdk/internal/util/DecimalDigits/TestDecimalIntegers.java',
+                 'test/jdk/jdk/internal/math/ToDecimal/TestZmij.java',
+                 'test/hotspot/jtreg/compiler/intrinsics/decimalinteger/'
+                 'TestDecimalIntegerIntrinsics.java']
+        try:
+            run([java] + common + ['-jar', str(args.jtreg.resolve() / 'lib/jtreg.jar'),
+                '-jdk:' + str(jdk), '-conc:1', '-timeoutFactor:4',
+                '-vmoption:-XX:ActiveProcessorCount=2',
+                '-vmoption:-XX:+UnlockExperimentalVMOptions',
+                '-vmoption:-XX:+UseFourByteObjectHeaders',
+                '-w:' + str(output / 'jtreg-work'), '-r:' + str(output / 'jtreg-report')]
+                + [str(root / test) for test in tests], 'focused-jtreg', 1200)
+        finally:
+            for path in sorted((output / 'jtreg-work').rglob('*.jtr')):
+                print('JDK_EVIDENCE ' + json.dumps({
+                      'name': path.relative_to(output).as_posix(),
+                      'content': path.read_text(errors='replace')}), flush=True)
+        print((output / 'focused-jtreg.log').read_text(errors='replace'), flush=True)
+
     profiles = {
         'interpreter': (['-Xint'], BENCHMARK, sizes),
         'utf16': (['-Xint', '-XX:-CompactStrings'], BENCHMARK + '.parse.*', sizes),
@@ -216,6 +237,8 @@ def main():
                 for record in json.loads((output / (name + '.json')).read_text()):
                     print('JMH_RESULT ' + json.dumps({'sample': name, 'data': record}),
                           flush=True)
+    print('JDK_EVIDENCE ' + json.dumps({'name': 'commands.json',
+          'content': (output / 'commands.json').read_text()}), flush=True)
 
 
 if __name__ == '__main__':

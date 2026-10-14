@@ -220,7 +220,7 @@ jobs:
     if: >-
       needs.prepare.outputs.macos-aarch64 == 'true' &&
       needs.prepare.outputs.dry-run != 'true' &&
-      (github.event_name == 'pull_request' || github.event.inputs.integer-benchmarks == 'true')
+      github.event.inputs.integer-benchmarks == 'true'
 
   test-windows-x64:
     name: windows-x64
@@ -248,4 +248,4 @@ jobs:
     if: >-
       needs.prepare.outputs.windows-x64 == 'true' &&
       needs.prepare.outputs.dry-run != 'true' &&
-      (github.event_name == 'pull_request' || github.event.inputs.integer-benchmarks == 'true')
+      github.event.inputs.integer-benchmarks == 'true'

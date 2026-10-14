@@ -51,22 +51,30 @@ jobs:
         with:
           platform: ${{ inputs.platform }}
 
+      - name: 'Get JTReg'
+        id: jtreg
+        uses: ./.github/actions/get-jtreg
+
       - name: 'Measure native and Java integer conversions'
         if: runner.os != 'Windows'
         env:
           JDK_IMAGE: ${{ steps.bundles.outputs.jdk-path }}
+          JTREG: ${{ steps.jtreg.outputs.path }}
         run: >-
           python3 make/scripts/benchmark-decimal-integer.py
           "$JDK_IMAGE" "$RUNNER_TEMP/integer-benchmarks"
+          --jtreg "$JTREG"
 
       - name: 'Measure native and Java integer conversions on Windows'
         if: runner.os == 'Windows'
         env:
           JDK_IMAGE: ${{ steps.bundles.outputs.jdk-path }}
+          JTREG: ${{ steps.jtreg.outputs.path }}
         run: >-
           python make/scripts/benchmark-decimal-integer.py
           "$(cygpath -w "$JDK_IMAGE")"
           "$(cygpath -w "$RUNNER_TEMP/integer-benchmarks")"
+          --jtreg "$(cygpath -w "$JTREG")"
 
       - name: 'Upload samples, commands and image hashes'
         if: ${{ !cancelled() }}

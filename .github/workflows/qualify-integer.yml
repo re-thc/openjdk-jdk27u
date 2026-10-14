@@ -1,0 +1,83 @@
+# Copyright (c) 2026, Harry Chan. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+
+name: 'Qualify native integer conversions'
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [master]
+    paths:
+      - .github/workflows/qualify-integer.yml
+      - .github/workflows/benchmark-integer.yml
+      - make/scripts/benchmark-decimal-integer.py
+      - test/micro/org/openjdk/bench/java/lang/DecimalIntegerConversion.java
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: |
+            .github
+            make/conf/github-actions.conf
+      - uses: ./.github/actions/build-jtreg
+
+  build-macos:
+    needs: prepare
+    uses: ./.github/workflows/build-macos.yml
+    with:
+      platform: macos-aarch64
+      runs-on: macos-26
+      xcode-toolset-version: '26.6'
+      debug-levels: '[ "release" ]'
+
+  build-windows:
+    needs: prepare
+    uses: ./.github/workflows/build-windows.yml
+    with:
+      platform: windows-x64
+      runs-on: windows-2025
+      architecture: 'x86.x64'
+      msvc-toolset-version: '14.44'
+      debug-levels: '[ "release" ]'
+
+  benchmark-macos:
+    needs: build-macos
+    uses: ./.github/workflows/benchmark-integer.yml
+    with:
+      platform: macos-aarch64
+      runs-on: macos-26
+
+  benchmark-windows:
+    needs: build-windows
+    uses: ./.github/workflows/benchmark-integer.yml
+    with:
+      platform: windows-x64
+      runs-on: windows-2025
