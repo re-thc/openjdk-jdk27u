@@ -30,7 +30,7 @@
  * @run main UnconfiguredProviderLoad
  */
 
-import java.lang.reflect.Method;
+import java.lang.reflect.Field;
 import java.security.Provider;
 import java.security.Security;
 import java.util.List;
@@ -63,9 +63,9 @@ public class UnconfiguredProviderLoad {
         // The table is available to a configured provider
         Class<?> c = Class.forName(
                 "sun.security.pkcs11.SunPKCS11$DescriptorRegistry");
-        Method m = c.getDeclaredMethod("descriptors");
-        m.setAccessible(true);
-        Map<?, ?> descriptors = (Map<?, ?>) m.invoke(null);
+        Field f = c.getDeclaredField("descriptors");
+        f.setAccessible(true);
+        Map<?, ?> descriptors = (Map<?, ?>) f.get(null);
         if (!(descriptors.get(CKM_SHA256) instanceof List<?> l) || l.isEmpty()) {
             throw new Exception("No descriptors for CKM_SHA256");
         }
