@@ -79,6 +79,8 @@ jobs:
           task_base_java=$(find image/base -path '*/bin/java' -print -quit)
           task_head_image=$(dirname "$(dirname "$task_head_java")")
           task_base_image=$(dirname "$(dirname "$task_base_java")")
+          mkdir -p results/native
+          gcc -shared -fPIC -I"$task_head_image/include" -I"$task_head_image/include/linux" -Isrc/java.base/share/native/libjava -Isrc/java.base/unix/native/libjava -Isrc/java.base/share/native/include -Isrc/java.base/unix/native/include test/jdk/java/lang/String/nativeEncoding/libstringPlatformChars.c -L"$task_head_image/lib" -ljava -o results/native/libstringPlatformChars.so
           for task_level in release fastdebug; do
             bash configure --with-conf-name="$task_level" --with-debug-level="$task_level" --with-boot-jdk="$BOOT" --with-jtreg="$JTREG" --disable-desktop --enable-headless-only --enable-jvm-feature-serialgc --enable-jvm-feature-g1gc --enable-jvm-feature-zgc --disable-jvm-feature-epsilongc --disable-jvm-feature-parallelgc --disable-jvm-feature-shenandoahgc --with-extra-cflags="$CPU_FLAGS" --with-extra-cxxflags="$CPU_FLAGS" --with-extra-ldflags=-fuse-ld=mold --with-zlib=system --with-native-debug-symbols=none --disable-javac-server > "results/configure-$task_level.log" 2>&1 || { tail -100 "results/configure-$task_level.log"; exit 1; }
             make CONF="$task_level" JOBS=4 hotspot > "results/build-$task_level.log" 2>&1 || { tail -100 "results/build-$task_level.log"; exit 1; }
@@ -86,7 +88,7 @@ jobs:
             task_jvm=$(find "build/$task_level" -name libjvm.so -print -quit)
             test -n "$task_jvm"
             cp "$task_jvm" "image/$task_level/lib/server/libjvm.so"
-            "$BOOT/bin/java" -jar "$JTREG/lib/jtreg.jar" -jdk:"$GITHUB_WORKSPACE/image/$task_level" -agentvm -concurrency:2 -timeoutFactor:5 -javaoptions:-XX:ActiveProcessorCount=2 -vmoptions:-XX:ActiveProcessorCount=2 -w:"results/jtreg-$task_level-work" -r:"results/jtreg-$task_level-report" test/hotspot/jtreg/compiler/intrinsics/simdutf test/hotspot/jtreg/compiler/escapeAnalysis/TestSimdUTFLeaf.java test/jdk/java/lang/String test/jdk/sun/nio/cs > "results/jtreg-$task_level.log" 2>&1 || { tail -120 "results/jtreg-$task_level.log"; exit 1; }
+            "$BOOT/bin/java" -jar "$JTREG/lib/jtreg.jar" -jdk:"$GITHUB_WORKSPACE/image/$task_level" -agentvm -nativepath:"$GITHUB_WORKSPACE/results/native" -concurrency:2 -timeoutFactor:5 -javaoptions:-XX:ActiveProcessorCount=2 -vmoptions:-XX:ActiveProcessorCount=2 -w:"results/jtreg-$task_level-work" -r:"results/jtreg-$task_level-report" test/hotspot/jtreg/compiler/intrinsics/simdutf test/hotspot/jtreg/compiler/escapeAnalysis/TestSimdUTFLeaf.java test/jdk/java/lang/String test/jdk/sun/nio/cs > "results/jtreg-$task_level.log" 2>&1 || { tail -120 "results/jtreg-$task_level.log"; exit 1; }
           done
           curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar -o jmh/core.jar
           curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/org/openjdk/jmh/jmh-generator-annprocess/1.37/jmh-generator-annprocess-1.37.jar -o jmh/generator.jar
