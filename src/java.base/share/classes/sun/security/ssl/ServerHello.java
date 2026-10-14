@@ -39,7 +39,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLProtocolException;
-import sun.security.ssl.CipherSuite.KeyExchange;
 import sun.security.ssl.ClientHello.ClientHelloMessage;
 import sun.security.ssl.SSLCipher.SSLReadCipher;
 import sun.security.ssl.SSLCipher.SSLWriteCipher;
@@ -316,8 +315,7 @@ final class ServerHello {
 
                 if ((ke != null) &&
                         (shc.sslConfig.clientAuthType !=
-                                ClientAuthType.CLIENT_AUTH_NONE) &&
-                        !shc.negotiatedCipherSuite.isAnonymous()) {
+                                ClientAuthType.CLIENT_AUTH_NONE)) {
                     for (SSLHandshake hs :
                             ke.getRelatedHandshakers(shc)) {
                         if (hs == SSLHandshake.CERTIFICATE) {
@@ -413,14 +411,6 @@ final class ServerHello {
                 if (!HandshakeContext.isNegotiable(
                         proposed, shc.negotiatedProtocol, cs)) {
                     continue;
-                }
-
-                if (shc.sslConfig.clientAuthType ==
-                        ClientAuthType.CLIENT_AUTH_REQUIRED) {
-                    if ((cs.keyExchange == KeyExchange.K_DH_ANON) ||
-                        (cs.keyExchange == KeyExchange.K_ECDH_ANON)) {
-                        continue;
-                    }
                 }
 
                 SSLKeyExchange ke = SSLKeyExchange.valueOf(

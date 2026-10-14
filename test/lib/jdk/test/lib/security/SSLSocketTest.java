@@ -48,8 +48,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Template to help speed up your client/server tests.
  *
- * Two examples that use this template:
- *    test/sun/security/ssl/ServerHandshaker/AnonCipherWithWantClientAuth.java
+ * An example that uses this template:
  *    test/sun/net/www/protocol/https/HttpsClient/ServerIdentityTest.java
  */
 public abstract class SSLSocketTest {

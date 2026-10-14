@@ -303,8 +303,6 @@ module java.base {
     exports sun.reflect.misc to
         java.desktop,
         java.management;
-    exports sun.security.internal.interfaces to
-        jdk.crypto.cryptoki;
     exports sun.security.internal.spec to
         jdk.crypto.cryptoki;
     exports sun.security.jca to

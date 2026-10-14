@@ -34,7 +34,6 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 
 import sun.security.internal.spec.*;
-import sun.security.internal.interfaces.TlsMasterSecret;
 
 import static sun.security.pkcs11.TemplateManager.*;
 import sun.security.pkcs11.wrapper.*;

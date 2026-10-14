@@ -1029,18 +1029,13 @@ public final class SunPKCS11 extends AuthProvider {
         d(SIG, "SHA3-512withRSASSA-PSS", P11PSSSignature,
                 m(CKM_SHA3_512_RSA_PKCS_PSS));
 
-        d(KG, "SunTlsRsaPremasterSecret",
-                    "sun.security.pkcs11.P11TlsRsaPremasterSecretGenerator",
-                List.of("SunTls12RsaPremasterSecret"),
-                m(CKM_SSL3_PRE_MASTER_KEY_GEN, CKM_TLS_PRE_MASTER_KEY_GEN));
         d(KG, "SunTlsMasterSecret",
                     "sun.security.pkcs11.P11TlsMasterSecretGenerator",
-                m(CKM_SSL3_MASTER_KEY_DERIVE, CKM_TLS_MASTER_KEY_DERIVE,
-                    CKM_SSL3_MASTER_KEY_DERIVE_DH,
+                m(CKM_SSL3_MASTER_KEY_DERIVE_DH,
                     CKM_TLS_MASTER_KEY_DERIVE_DH));
         d(KG, "SunTls12MasterSecret",
                 "sun.security.pkcs11.P11TlsMasterSecretGenerator",
-            m(CKM_TLS12_MASTER_KEY_DERIVE, CKM_TLS12_MASTER_KEY_DERIVE_DH));
+            m(CKM_TLS12_MASTER_KEY_DERIVE_DH));
         d(KG, "SunTlsKeyMaterial",
                     "sun.security.pkcs11.P11TlsKeyMaterialGenerator",
                 m(CKM_SSL3_KEY_AND_MAC_DERIVE, CKM_TLS_KEY_AND_MAC_DERIVE));
@@ -1459,10 +1454,7 @@ public final class SunPKCS11 extends AuthProvider {
                 return new P11SecretKeyFactory(token, algorithm);
             } else if (type == KG) {
                 // reference equality
-                if (algorithm == "SunTlsRsaPremasterSecret") {
-                    return new P11TlsRsaPremasterSecretGenerator(
-                        token, algorithm, mechanism);
-                } else if (algorithm == "SunTlsMasterSecret"
+                if (algorithm == "SunTlsMasterSecret"
                         || algorithm == "SunTls12MasterSecret") {
                     return new P11TlsMasterSecretGenerator(
                         token, algorithm, mechanism);

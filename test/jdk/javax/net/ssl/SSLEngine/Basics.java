@@ -41,8 +41,6 @@ import java.util.Arrays;
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;
 
-import jdk.test.lib.security.SecurityUtils;
-
 public class Basics {
 
     private static final String PATH_TO_STORES = "../etc";
@@ -57,12 +55,8 @@ public class Basics {
                 "/" + TRUSTSTORE_FILE;
 
     public static void main(String[] args) throws Exception {
-        // Re-enable TLSv1.1 and TLS_RSA_* since test depends on it.
-        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1.1", "TLS_RSA_*");
-
         runTest("TLSv1.3", "TLS_AES_256_GCM_SHA384");
-        runTest("TLSv1.2", "TLS_RSA_WITH_AES_256_GCM_SHA384");
-        runTest("TLSv1.1", "TLS_DHE_DSS_WITH_AES_128_CBC_SHA");
+        runTest("TLSv1.2", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384");
     }
 
     private static void runTest(String protocol, String cipherSuite) throws Exception {

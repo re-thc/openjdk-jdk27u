@@ -468,9 +468,6 @@ abstract class Authenticator {
             boolean useSSLMac = (protocolVersion.id < ProtocolVersion.TLS10.id);
             String algorithm;
             switch (macAlg) {
-                case M_MD5:
-                    algorithm = useSSLMac ? "SslMacMD5" : "HmacMD5";
-                    break;
                 case M_SHA:
                     algorithm = useSSLMac ? "SslMacSHA1" : "HmacSHA1";
                     break;

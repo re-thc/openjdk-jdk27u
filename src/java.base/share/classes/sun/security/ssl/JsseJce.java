@@ -25,9 +25,7 @@
 
 package sun.security.ssl;
 
-import java.math.BigInteger;
 import java.security.*;
-import java.security.interfaces.RSAPublicKey;
 import java.security.spec.*;
 import javax.crypto.*;
 
@@ -40,28 +38,6 @@ import javax.crypto.*;
 final class JsseJce {
     static final boolean ALLOW_ECC =
             Utilities.getBooleanProperty("com.sun.net.ssl.enableECC", true);
-
-    /**
-     * JCE transformation string for RSA with PKCS#1 v1.5 padding.
-     * Can be used for encryption, decryption, signing, verifying.
-     */
-    static final String CIPHER_RSA_PKCS1 = "RSA/ECB/PKCS1Padding";
-
-    /**
-     * JCE transformation string for the stream cipher RC4.
-     */
-    static final String CIPHER_RC4 = "RC4";
-
-    /**
-     * JCE transformation string for DES in CBC mode without padding.
-     */
-    static final String CIPHER_DES = "DES/CBC/NoPadding";
-
-    /**
-     * JCE transformation string for (3-key) Triple DES in CBC mode
-     * without padding.
-     */
-    static final String CIPHER_3DES = "DESede/CBC/NoPadding";
 
     /**
      * JCE transformation string for AES in CBC mode
@@ -129,30 +105,6 @@ final class JsseJce {
 
     static boolean isEcAvailable() {
         return EcAvailability.isAvailable;
-    }
-
-    static int getRSAKeyLength(PublicKey key) {
-        BigInteger modulus;
-        if (key instanceof RSAPublicKey) {
-            modulus = ((RSAPublicKey)key).getModulus();
-        } else {
-            RSAPublicKeySpec spec = getRSAPublicKeySpec(key);
-            modulus = spec.getModulus();
-        }
-        return modulus.bitLength();
-    }
-
-    static RSAPublicKeySpec getRSAPublicKeySpec(PublicKey key) {
-        if (key instanceof RSAPublicKey rsaKey) {
-            return new RSAPublicKeySpec(rsaKey.getModulus(),
-                                        rsaKey.getPublicExponent());
-        }
-        try {
-            KeyFactory factory = KeyFactory.getInstance("RSA");
-            return factory.getKeySpec(key, RSAPublicKeySpec.class);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     // lazy initialization holder class idiom for static default parameters

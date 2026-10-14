@@ -33,11 +33,12 @@
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.Provider;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 
 import jtreg.SkippedException;
-import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
 import sun.security.internal.spec.TlsMasterSecretParameterSpec;
 import sun.security.internal.spec.TlsKeyMaterialParameterSpec;
 
@@ -50,12 +51,7 @@ public class TestKeyMaterialChaCha20 extends PKCS11Test {
 
     @Override
     public void main(Provider provider) throws Exception {
-        KeyGenerator kg1, kg2, kg3;
-        try {
-            kg1 = KeyGenerator.getInstance("SunTlsRsaPremasterSecret", provider);
-        } catch (Exception e) {
-            throw new SkippedException("Skipping, SunTlsRsaPremasterSecret KeyGenerator not supported");
-        }
+        KeyGenerator kg2, kg3;
         try {
             kg2 = KeyGenerator.getInstance("SunTls12MasterSecret", provider);
         } catch (Exception e) {
@@ -67,8 +63,10 @@ public class TestKeyMaterialChaCha20 extends PKCS11Test {
             throw new SkippedException("Skipping, SunTls12KeyMaterial KeyGenerator not supported");
         }
 
-        kg1.init(new TlsRsaPremasterSecretParameterSpec(0x0303, 0x0303));
-        SecretKey preMasterSecret = kg1.generateKey();
+        byte[] preMasterBytes = new byte[48];
+        new SecureRandom().nextBytes(preMasterBytes);
+        SecretKey preMasterSecret =
+            new SecretKeySpec(preMasterBytes, "TlsPremasterSecret");
 
         TlsMasterSecretParameterSpec spec = new TlsMasterSecretParameterSpec(
             preMasterSecret,
@@ -83,7 +81,7 @@ public class TestKeyMaterialChaCha20 extends PKCS11Test {
             masterSecret, 3, 3,
             new byte[32],
             new byte[32],
-            "ChaCha20-Poly1305", 32, 32,
+            "ChaCha20-Poly1305", 32,
             12, 0,
             "SHA-256", 32, 64);
         kg3.init(params);

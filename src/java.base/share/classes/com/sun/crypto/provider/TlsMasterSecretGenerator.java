@@ -34,7 +34,6 @@ import java.util.Arrays;
 
 import javax.crypto.*;
 
-import sun.security.internal.interfaces.TlsMasterSecret;
 import sun.security.internal.spec.TlsMasterSecretParameterSpec;
 
 import static com.sun.crypto.provider.TlsPrfGenerator.*;
@@ -90,19 +89,7 @@ public final class TlsMasterSecretGenerator extends KeyGeneratorSpi {
             throw new IllegalStateException(
                 "TlsMasterSecretGenerator must be initialized");
         }
-        SecretKey premasterKey = spec.getPremasterSecret();
-        byte[] premaster = premasterKey.getEncoded();
-
-        int premasterMajor, premasterMinor;
-        if (premasterKey.getAlgorithm().equals("TlsRsaPremasterSecret")) {
-            // RSA
-            premasterMajor = premaster[0] & 0xff;
-            premasterMinor = premaster[1] & 0xff;
-        } else {
-            // DH, others
-            premasterMajor = -1;
-            premasterMinor = -1;
-        }
+        byte[] premaster = spec.getPremasterSecret().getEncoded();
 
         try {
             byte[] master;
@@ -149,8 +136,7 @@ public final class TlsMasterSecretGenerator extends KeyGeneratorSpi {
             }
             // master is referenced inside the TlsMasterSecretKey.
             // Do not touch it anymore.
-            return new TlsMasterSecretKey(master, premasterMajor,
-                premasterMinor);
+            return new TlsMasterSecretKey(master);
         } catch (NoSuchAlgorithmException | DigestException e) {
             throw new ProviderException(e);
         } finally {
@@ -160,26 +146,14 @@ public final class TlsMasterSecretGenerator extends KeyGeneratorSpi {
         }
     }
 
-   @SuppressWarnings("deprecation")
-   private static final class TlsMasterSecretKey implements TlsMasterSecret {
+   private static final class TlsMasterSecretKey implements SecretKey {
         @java.io.Serial
         private static final long serialVersionUID = 1019571680375368880L;
 
         private byte[] key;
-        private final int majorVersion, minorVersion;
 
-        TlsMasterSecretKey(byte[] key, int majorVersion, int minorVersion) {
+        TlsMasterSecretKey(byte[] key) {
             this.key = key;
-            this.majorVersion = majorVersion;
-            this.minorVersion = minorVersion;
-        }
-
-        public int getMajorVersion() {
-            return majorVersion;
-        }
-
-        public int getMinorVersion() {
-            return minorVersion;
         }
 
         public String getAlgorithm() {

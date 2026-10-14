@@ -798,10 +798,6 @@ public final class SunJCE extends Provider {
         ps("KeyGenerator", "SunTlsKeyMaterial",
                 "com.sun.crypto.provider.TlsKeyMaterialGenerator",
                 List.of("SunTls12KeyMaterial"), null);
-
-        ps("KeyGenerator", "SunTlsRsaPremasterSecret",
-                "com.sun.crypto.provider.TlsRsaPremasterSecretGenerator",
-                List.of("SunTls12RsaPremasterSecret"), null);
     }
 
     // Return the instance of this class or create one if needed.

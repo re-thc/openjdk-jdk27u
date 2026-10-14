@@ -49,7 +49,6 @@ import sun.security.validator.Validator;
 
 public abstract class SSLContextImpl extends SSLContextSpi {
 
-    private final EphemeralKeyManager ephemeralKeyManager;
     private final SSLSessionContextImpl clientCache;
     private final SSLSessionContextImpl serverCache;
 
@@ -80,7 +79,6 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             Cache.newSoftMemoryCache(12);
 
     SSLContextImpl() {
-        ephemeralKeyManager = new EphemeralKeyManager();
         clientCache = new SSLSessionContextImpl(false);
         serverCache = new SSLSessionContextImpl(true);
     }
@@ -225,10 +223,6 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 
     X509TrustManager getX509TrustManager() {
         return trustManager;
-    }
-
-    EphemeralKeyManager getEphemeralKeyManager() {
-        return ephemeralKeyManager;
     }
 
     Cache<CompCertCacheKey, byte[]> getCompCertCache() {

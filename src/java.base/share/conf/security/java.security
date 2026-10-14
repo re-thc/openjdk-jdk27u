@@ -737,8 +737,8 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 # Additional TLS-specific syntax supported by this property:
 #
 #   - TLS cipher suites can be disabled with this property using one or more
-#     "*" wildcard characters. For example, "TLS_RSA_*" disables all cipher
-#     suites that start with "TLS_RSA_". Only cipher suites starting with
+#     "*" wildcard characters. For example, "TLS_DHE_*" disables all cipher
+#     suites that start with "TLS_DHE_". Only cipher suites starting with
 #     "TLS_" are allowed to have wildcard characters.
 #
 #   - TLS protocol specific usage constraints are supported by this property:
@@ -765,10 +765,10 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 #
 # Example:
 #   jdk.tls.disabledAlgorithms=MD5, SSLv3, DSA, RSA keySize < 2048, \
-#       rsa_pkcs1_sha1, secp224r1, TLS_RSA_*
-jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
-    MD5withRSA, DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, \
-    ECDH, TLS_RSA_*, rsa_pkcs1_sha1 usage HandshakeSignature, \
+#       rsa_pkcs1_sha1, secp224r1, TLS_DHE_*
+jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, \
+    MD5withRSA, DH keySize < 1024, EC keySize < 224, \
+    rsa_pkcs1_sha1 usage HandshakeSignature, \
     ecdsa_sha1 usage HandshakeSignature, dsa_sha1 usage HandshakeSignature
 
 #
@@ -848,14 +848,14 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
 # or
 #       TLS_KeyExchangeAlg_WITH_CipherAlg_MacAlg
 #
-# For example, the cipher suite TLS_RSA_WITH_AES_128_CBC_SHA uses RSA as the
-# key exchange algorithm, AES_128_CBC (128 bits AES cipher algorithm in CBC
-# mode) as the cipher (encryption) algorithm, and SHA-1 as the message digest
-# algorithm for HMAC.
+# For example, the cipher suite TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA uses
+# ECDHE_RSA as the key exchange algorithm, AES_128_CBC (128 bits AES cipher
+# algorithm in CBC mode) as the cipher (encryption) algorithm, and SHA-1 as
+# the message digest algorithm for HMAC.
 #
 # The LegacyAlgorithm can be one of the following standard algorithm names:
-#     1. JSSE cipher suite name, e.g., TLS_RSA_WITH_AES_128_CBC_SHA
-#     2. JSSE key exchange algorithm name, e.g., RSA
+#     1. JSSE cipher suite name, e.g., TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
+#     2. JSSE key exchange algorithm name, e.g., ECDHE_RSA
 #     3. JSSE cipher (encryption) algorithm name, e.g., AES_128_CBC
 #     4. JSSE message digest algorithm name, e.g., SHA
 #
@@ -874,9 +874,10 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
 # same syntax in future releases.
 #
 # Example:
-#   jdk.tls.legacyAlgorithms=DH_anon, DES_CBC, SSL_RSA_WITH_RC4_128_MD5
+#   jdk.tls.legacyAlgorithms=DHE_RSA, AES_128_CBC, \
+#       TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
 #
-jdk.tls.legacyAlgorithms=NULL, anon, RC4, DES, 3DES_EDE_CBC
+jdk.tls.legacyAlgorithms=
 
 #
 # The pre-defined default finite field Diffie-Hellman ephemeral (DHE)

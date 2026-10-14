@@ -42,25 +42,21 @@
  *      FipsModeTLS
  */
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
-import java.security.SecureRandom;
 import java.security.Security;
 
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.crypto.Cipher;
 import javax.crypto.KDF;
+import javax.crypto.KeyAgreement;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -78,7 +74,6 @@ import jdk.test.lib.security.SecurityUtils;
 import jtreg.SkippedException;
 import sun.security.internal.spec.TlsMasterSecretParameterSpec;
 import sun.security.internal.spec.TlsPrfParameterSpec;
-import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
 
 public final class FipsModeTLS extends SecmodTest {
 
@@ -86,11 +81,10 @@ public final class FipsModeTLS extends SecmodTest {
 
     private static Provider sunPKCS11NSSProvider;
     private static Provider sunJCEProvider;
+    private static Provider sunECProvider;
     private static KeyStore ks;
     private static KeyStore ts;
     private static char[] passphrase = "JAHshj131@@".toCharArray();
-    private static PrivateKey privateKey;
-    private static PublicKey publicKey;
 
     public static void main(String[] args) throws Exception {
         // reduce the limit to trigger a key update later
@@ -132,8 +126,7 @@ public final class FipsModeTLS extends SecmodTest {
             } else {
                 KeyGenerator.getInstance("SunTls12MasterSecret",
                         sunPKCS11NSSProvider);
-                KeyGenerator.getInstance(
-                        "SunTls12RsaPremasterSecret", sunPKCS11NSSProvider);
+                KeyAgreement.getInstance("ECDH", sunPKCS11NSSProvider);
                 KeyGenerator.getInstance("SunTls12Prf", sunPKCS11NSSProvider);
             }
         } catch (NoSuchAlgorithmException e) {
@@ -144,39 +137,35 @@ public final class FipsModeTLS extends SecmodTest {
 
     private static void testTlsAuthenticationCodeGeneration()
             throws Exception {
-        // Generate RSA Pre-Master Secret in SunPKCS11 provider
-        SecretKey rsaPreMasterSecret = null;
-        @SuppressWarnings("deprecation")
-        TlsRsaPremasterSecretParameterSpec rsaPreMasterSecretSpec =
-                new TlsRsaPremasterSecretParameterSpec(0x0303, 0x0303);
+        // Generate ECDH Pre-Master Secret in SunPKCS11 provider and
+        // the same Pre-Master Secret in plain with SunEC
+        SecretKey preMasterSecret = null;
+        byte[] plainPreMasterSecret = null;
         {
-            KeyGenerator rsaPreMasterSecretKG = KeyGenerator.getInstance(
-                    "SunTls12RsaPremasterSecret", sunPKCS11NSSProvider);
-            rsaPreMasterSecretKG.init(rsaPreMasterSecretSpec, null);
-            rsaPreMasterSecret = rsaPreMasterSecretKG.generateKey();
-        }
+            KeyPairGenerator sunPKCS11KPG = KeyPairGenerator.getInstance(
+                    "EC", sunPKCS11NSSProvider);
+            sunPKCS11KPG.initialize(256);
+            KeyPair sunPKCS11KeyPair = sunPKCS11KPG.generateKeyPair();
+            KeyPairGenerator sunECKPG = KeyPairGenerator.getInstance(
+                    "EC", sunECProvider);
+            sunECKPG.initialize(256);
+            KeyPair sunECKeyPair = sunECKPG.generateKeyPair();
 
-        // Get RSA Pre-Master Secret in plain (from SunPKCS11 provider)
-        byte[] rsaPlainPreMasterSecret = null;
-        {
-            Cipher rsaPreMasterSecretWrapperCipher =
-                    Cipher.getInstance("RSA/ECB/PKCS1Padding",
-                            sunPKCS11NSSProvider);
-            rsaPreMasterSecretWrapperCipher.init(Cipher.WRAP_MODE, publicKey,
-                    new SecureRandom());
-            byte[] rsaEncryptedPreMasterSecret =
-                    rsaPreMasterSecretWrapperCipher.wrap(rsaPreMasterSecret);
-            Cipher rsaPreMasterSecretUnwrapperCipher =
-                    Cipher.getInstance("RSA/ECB/PKCS1Padding", sunJCEProvider);
-            rsaPreMasterSecretUnwrapperCipher.init(Cipher.UNWRAP_MODE,
-                    privateKey, rsaPreMasterSecretSpec);
-            rsaPlainPreMasterSecret = rsaPreMasterSecretUnwrapperCipher.unwrap(
-                    rsaEncryptedPreMasterSecret, "TlsRsaPremasterSecret",
-                    Cipher.SECRET_KEY).getEncoded();
+            KeyAgreement sunPKCS11KA = KeyAgreement.getInstance(
+                    "ECDH", sunPKCS11NSSProvider);
+            sunPKCS11KA.init(sunPKCS11KeyPair.getPrivate());
+            sunPKCS11KA.doPhase(sunECKeyPair.getPublic(), true);
+            preMasterSecret = sunPKCS11KA.generateSecret("TlsPremasterSecret");
+
+            KeyAgreement sunECKA = KeyAgreement.getInstance(
+                    "ECDH", sunECProvider);
+            sunECKA.init(sunECKeyPair.getPrivate());
+            sunECKA.doPhase(sunPKCS11KeyPair.getPublic(), true);
+            plainPreMasterSecret = sunECKA.generateSecret();
 
             if (enableDebug) {
-                System.out.println("rsaPlainPreMasterSecret:");
-                for (byte b : rsaPlainPreMasterSecret) {
+                System.out.println("plainPreMasterSecret:");
+                for (byte b : plainPreMasterSecret) {
                     System.out.printf("%02X, ", b);
                 }
                 System.out.println("");
@@ -194,12 +183,12 @@ public final class FipsModeTLS extends SecmodTest {
                     "SunTls12MasterSecret", sunJCEProvider);
             @SuppressWarnings("deprecation")
             TlsMasterSecretParameterSpec sunPKCS11MasterSecretSpec =
-                    new TlsMasterSecretParameterSpec(rsaPreMasterSecret, 3, 3,
+                    new TlsMasterSecretParameterSpec(preMasterSecret, 3, 3,
                             new byte[32], new byte[32], "SHA-256", 32, 64);
             @SuppressWarnings("deprecation")
             TlsMasterSecretParameterSpec jceMasterSecretSpec =
                     new TlsMasterSecretParameterSpec(
-                            new SecretKeySpec(rsaPlainPreMasterSecret,
+                            new SecretKeySpec(plainPreMasterSecret,
                                     "Generic"), 3, 3, new byte[32],
                             new byte[32], "SHA-256", 32, 64);
             sunPKCS11MasterSecretGenerator.init(sunPKCS11MasterSecretSpec,
@@ -478,26 +467,13 @@ public final class FipsModeTLS extends SecmodTest {
                 Security.addProvider(p);
             } else if (providerName.equals("SunJCE")) {
                 sunJCEProvider = p;
+            } else if (providerName.equals("SunEC")) {
+                sunECProvider = p;
             }
         }
 
         ks = KeyStore.getInstance("PKCS11", sunPKCS11NSSProvider);
         ks.load(null, "test12".toCharArray());
         ts = ks;
-
-        KeyStore ksPlain = readTestKeyStore();
-        privateKey = (PrivateKey)ksPlain.getKey("rh_rsa_sha256",
-                passphrase);
-        publicKey = (PublicKey)ksPlain.getCertificate(
-                "rh_rsa_sha256").getPublicKey();
-    }
-
-    private static KeyStore readTestKeyStore() throws Exception {
-        File file = new File(System.getProperty("test.src", "."), "keystore");
-        InputStream in = new FileInputStream(file);
-        KeyStore ks = KeyStore.getInstance("PKCS12");
-        ks.load(in, "passphrase".toCharArray());
-        in.close();
-        return ks;
     }
 }

@@ -41,27 +41,27 @@ public class TLSCipherSuiteWildCardMatchingDisablePartsOfCipherSuite extends
 
     private static final String SECURITY_PROPERTY = "jdk.tls.disabledAlgorithms";
     private static final String TEST_ALGORITHMS =
-            "TLS_RSA_*,"
-                    + " TLS_ECDH*WITH_AES_256_GCM_*,"
-                    + " TLS_*_anon_WITH_AES_*_SHA,"
+            "TLS_DHE_*,"
+                    + " TLS_ECDHE*WITH_AES_256_GCM_*,"
+                    + " TLS_*_RSA_WITH_AES_*_SHA,"
                     + " TLS_.*"; // This pattern should not disable anything
     private static final String[] CIPHER_SUITES = new String[] {
-            "TLS_RSA_WITH_AES_256_GCM_SHA384",
-            "TLS_RSA_WITH_AES_128_GCM_SHA256",
-            "TLS_RSA_WITH_AES_256_CBC_SHA256",
-            "TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384",
+            "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+            "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+            "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
+            "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
             "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-            "TLS_DH_anon_WITH_AES_128_CBC_SHA",
-            "TLS_ECDH_anon_WITH_AES_256_CBC_SHA"
+            "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+            "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"
     };
     static final List<Integer> CIPHER_SUITES_IDS = List.of(
-            0x009D,
-            0x009C,
-            0x003D,
-            0xC02E,
+            0x009F,
+            0x009E,
+            0x006B,
+            0xC030,
             0xC02C,
-            0x0034,
-            0xC018
+            0xC013,
+            0xC014
     );
 
     @BeforeTest

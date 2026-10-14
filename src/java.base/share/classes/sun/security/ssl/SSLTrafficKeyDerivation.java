@@ -230,9 +230,7 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
              * First we figure out how much keying material is needed.
              */
             int hashSize = cipherSuite.macAlg.size;
-            boolean is_exportable = cipherSuite.exportable;
             SSLCipher cipher = cipherSuite.bulkCipher;
-            int expandedKeySize = is_exportable ? cipher.expandedKeySize : 0;
 
             // Which algs/params do we need to use?
             String keyMaterialAlg;
@@ -282,7 +280,7 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
                     masterSecret, (majorVersion & 0xFF), (minorVersion & 0xFF),
                     context.clientHelloRandom.randomBytes,
                     context.serverHelloRandom.randomBytes,
-                    cipher.algorithm, cipher.keySize, expandedKeySize,
+                    cipher.algorithm, cipher.keySize, 0,
                     ivSize, hashSize,
                     hashAlg.name, hashAlg.hashLength, hashAlg.blockSize);
 

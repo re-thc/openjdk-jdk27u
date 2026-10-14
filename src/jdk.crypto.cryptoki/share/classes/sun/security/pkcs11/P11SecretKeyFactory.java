@@ -264,13 +264,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         putKeyInfo(new KeyInfo("ChaCha20-Poly1305", CKK_CHACHA20,
                 CKM_CHACHA20_KEY_GEN));
 
-        // we don't implement RC2 or IDEA, but we want to be able to generate
-        // keys for those SSL/TLS ciphersuites.
-        putKeyInfo(new KeyInfo("RC2", CKK_RC2, CKM_RC2_KEY_GEN));
-        putKeyInfo(new KeyInfo("IDEA", CKK_IDEA, CKM_IDEA_KEY_GEN));
-
         putKeyInfo(new TLSKeyInfo("TlsPremasterSecret"));
-        putKeyInfo(new TLSKeyInfo("TlsRsaPremasterSecret"));
         putKeyInfo(new TLSKeyInfo("TlsMasterSecret"));
         putKeyInfo(new TLSKeyInfo("TlsBinderKey"));
         putKeyInfo(new TLSKeyInfo("TlsClientAppTrafficSecret"));

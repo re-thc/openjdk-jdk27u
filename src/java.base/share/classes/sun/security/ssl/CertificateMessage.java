@@ -619,17 +619,8 @@ final class CertificateMessage {
 
             X509TrustManager tm = chc.sslContext.getX509TrustManager();
 
-            // Find out the key exchange algorithm used.
-            // Use "RSA" for non-ephemeral "RSA_EXPORT".
-            String keyExchangeString;
-            if (chc.negotiatedCipherSuite.keyExchange ==
-                    CipherSuite.KeyExchange.K_RSA_EXPORT ||
-                    chc.negotiatedCipherSuite.keyExchange ==
-                            CipherSuite.KeyExchange.K_DHE_RSA_EXPORT) {
-                keyExchangeString = CipherSuite.KeyExchange.K_RSA.name;
-            } else {
-                keyExchangeString = chc.negotiatedCipherSuite.keyExchange.name;
-            }
+            String keyExchangeString =
+                    chc.negotiatedCipherSuite.keyExchange.name;
 
             try {
                 if (tm instanceof X509ExtendedTrustManager) {
