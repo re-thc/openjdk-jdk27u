@@ -339,8 +339,6 @@ public enum KnownOIDs {
                                             // with modulus length as its parameter
 
     SkipIPAddress("1.3.6.1.4.1.42.2.11.2.1"),
-    JAVASOFT_JDKKeyProtector("1.3.6.1.4.1.42.2.17.1.1"),
-    JAVASOFT_JCEKeyProtector("1.3.6.1.4.1.42.2.19.1"),
     MICROSOFT_ExportApproved("1.3.6.1.4.1.311.10.3.3");
 
     private final String stdName;

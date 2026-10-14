@@ -28,7 +28,6 @@ package jdk.internal.access;
 import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 
-import javax.crypto.SealedObject;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ObjectInputFilter;
 import java.lang.invoke.MethodHandles;
@@ -103,7 +102,6 @@ public class SharedSecrets {
     @Stable private static JavaSecurityPropertiesAccess javaSecurityPropertiesAccess;
     @Stable private static JavaSecuritySignatureAccess javaSecuritySignatureAccess;
     @Stable private static JavaSecuritySpecAccess javaSecuritySpecAccess;
-    @Stable private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
     @Stable private static JavaxCryptoSpecAccess javaxCryptoSpecAccess;
     @Stable private static JavaxSecurityAccess javaxSecurityAccess;
 
@@ -469,19 +467,6 @@ public class SharedSecrets {
         if (access == null) {
             ensureClassInitialized(SecretKeySpec.class);
             access = javaxCryptoSpecAccess;
-        }
-        return access;
-    }
-
-    public static void setJavaxCryptoSealedObjectAccess(JavaxCryptoSealedObjectAccess jcsoa) {
-        javaxCryptoSealedObjectAccess = jcsoa;
-    }
-
-    public static JavaxCryptoSealedObjectAccess getJavaxCryptoSealedObjectAccess() {
-        var access = javaxCryptoSealedObjectAccess;
-        if (access == null) {
-            ensureClassInitialized(SealedObject.class);
-            access = javaxCryptoSealedObjectAccess;
         }
         return access;
     }

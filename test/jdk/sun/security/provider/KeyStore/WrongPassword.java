@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 6236533
- * @summary verify that JKS throws the correct exception if an incorrect password is specified
+ * @summary verify that PKCS12 throws the correct exception if an incorrect password is specified
  * @author Andreas Sterbenz
  */
 
@@ -39,7 +39,7 @@ public class WrongPassword {
     private final static String BASE = System.getProperty("test.src", ".");
 
     public static void main(String[] args) throws Exception {
-        File ksFile = new File(BASE, "pw.jks");
+        File ksFile = new File(BASE, "pw.p12");
         char[] pw = "test12".toCharArray();
         char[] wrongPW = "foobar".toCharArray();
         String alias = "mykey";

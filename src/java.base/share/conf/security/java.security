@@ -301,16 +301,6 @@ policy.allowSystemProperty=true
 keystore.type=pkcs12
 
 #
-# Controls compatibility mode for JKS and PKCS12 keystore types.
-#
-# When set to 'true', both JKS and PKCS12 keystore types support loading
-# keystore files in either JKS or PKCS12 format. When set to 'false' the
-# JKS keystore type supports loading only JKS keystore files and the PKCS12
-# keystore type supports loading only PKCS12 keystore files.
-#
-keystore.type.compat=true
-
-#
 # Determines whether this properties file can be appended to
 # or overridden on the command line via -Djava.security.properties
 #
@@ -1231,33 +1221,6 @@ jdk.xml.dsig.secureValidationPolicy=\
 #    java.rmi.dgc.VMID;\
 #    java.rmi.dgc.Lease;\
 #    maxdepth=5;maxarray=10000
-
-#
-# JCEKS Encrypted Key Serial Filter
-#
-# This filter, if configured, is used by the JCEKS KeyStore during the
-# deserialization of the encrypted Key object stored inside a key entry.
-# If not configured or the filter result is UNDECIDED (i.e. none of the patterns
-# matches), the filter configured by jdk.serialFilter will be consulted.
-#
-# If the system property jceks.key.serialFilter is also specified, it supersedes
-# the security property value defined here.
-#
-# The filter pattern uses the same format as jdk.serialFilter. The default
-# pattern allows java.lang.Enum, java.security.KeyRep, java.security.KeyRep$Type,
-# and javax.crypto.spec.SecretKeySpec and rejects all the others.
-jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep;\
-  java.base/java.security.KeyRep$Type;java.base/javax.crypto.spec.SecretKeySpec;!*
-
-# The iteration count used for password-based encryption (PBE) in JCEKS
-# keystores. Values in the range 10000 to 5000000 are considered valid.
-# If the value is out of this range, or is not a number, or is unspecified;
-# a default of 200000 is used.
-#
-# If the system property jdk.jceks.iterationCount is also specified, it
-# supersedes the security property value defined here.
-#
-#jdk.jceks.iterationCount = 200000
 
 #
 # PKCS12 KeyStore properties

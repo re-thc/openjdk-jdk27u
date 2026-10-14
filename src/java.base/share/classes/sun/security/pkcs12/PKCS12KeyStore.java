@@ -50,7 +50,6 @@ import javax.security.auth.x500.X500Principal;
 import jdk.internal.access.SharedSecrets;
 import sun.security.pkcs.ContentInfo;
 import sun.security.pkcs.EncryptedPrivateKeyInfo;
-import sun.security.provider.JavaKeyStore.JKS;
 import sun.security.tools.KeyStoreUtil;
 import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
@@ -87,13 +86,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private static final int DEFAULT_CERT_PBE_ITERATION_COUNT = 10000;
     private static final int DEFAULT_KEY_PBE_ITERATION_COUNT = 10000;
     private static final int DEFAULT_MAC_ITERATION_COUNT = 10000;
-
-    // special PKCS12 keystore that supports PKCS12 and JKS file formats
-    public static final class DualFormatPKCS12 extends KeyStoreDelegator {
-        public DualFormatPKCS12() {
-            super("PKCS12", PKCS12KeyStore.class, "JKS", JKS.class);
-        }
-    }
 
     private static final String PBE_WITH_MD5_AND_DES_OID =
             "1.2.840.113549.1.5.3";

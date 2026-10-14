@@ -165,7 +165,7 @@ public class DKSTest {
         empty.load(null, null);
 
         try (OutputStream outStream =
-            new FileOutputStream(new File(USER_DIR, "empty.jks"))) {
+            new FileOutputStream(new File(USER_DIR, "empty.p12"))) {
             empty.store(outStream, "passphrase".toCharArray());
         }
         config = new URI(CONFIG + "#empty");

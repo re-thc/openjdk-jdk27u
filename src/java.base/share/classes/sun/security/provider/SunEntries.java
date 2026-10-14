@@ -268,11 +268,7 @@ public final class SunEntries {
          * KeyStore
          */
         add(p, "KeyStore", "PKCS12",
-                "sun.security.pkcs12.PKCS12KeyStore$DualFormatPKCS12");
-        add(p, "KeyStore", "JKS",
-                "sun.security.provider.JavaKeyStore$DualFormatJKS", attrs);
-        add(p, "KeyStore", "CaseExactJKS",
-                "sun.security.provider.JavaKeyStore$CaseExactJKS", attrs);
+                "sun.security.pkcs12.PKCS12KeyStore");
         add(p, "KeyStore", "DKS", "sun.security.provider.DomainKeyStore$DKS",
                 attrs);
 

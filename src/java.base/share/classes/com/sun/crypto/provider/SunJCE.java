@@ -68,8 +68,6 @@ import static sun.security.util.SecurityProviderConstants.*;
  *
  * - HMAC-MD5, HMAC-SHA1, HMAC with SHA2 family and SHA3 family of digests
  *
- * - JCEKS KeyStore
- *
  * - DHKEM
  *
  * - ML-KEM
@@ -290,8 +288,6 @@ public final class SunJCE extends Provider {
                 attrs);
 
         // PBES1
-        ps("Cipher", "PBEWithMD5AndTripleDES",
-                "com.sun.crypto.provider.PBEWithMD5AndTripleDESCipher");
         psA("Cipher", "PBEWithSHA1AndDESede",
                 "com.sun.crypto.provider.PKCS12PBECipherCore$PBEWithSHA1AndDESede",
                 null);
@@ -438,9 +434,6 @@ public final class SunJCE extends Provider {
         psA("AlgorithmParameters", "DESede",
                 "com.sun.crypto.provider.DESedeParameters", null);
 
-        ps("AlgorithmParameters", "PBEWithMD5AndTripleDES",
-                "com.sun.crypto.provider.PBEParameters");
-
         psA("AlgorithmParameters", "PBEWithSHA1AndDESede",
                 "com.sun.crypto.provider.PBEParameters",
                 null);
@@ -519,15 +512,6 @@ public final class SunJCE extends Provider {
 
         psA("SecretKeyFactory", "DESede",
                 "com.sun.crypto.provider.DESedeKeyFactory", null);
-
-        /*
-         * Internal in-house crypto algorithm used for
-         * the JCEKS keystore type.  Since this was developed
-         * internally, there isn't an OID corresponding to this
-         * algorithm.
-         */
-        ps("SecretKeyFactory", "PBEWithMD5AndTripleDES",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithMD5AndTripleDES");
 
         psA("SecretKeyFactory", "PBEWithSHA1AndDESede",
                 "com.sun.crypto.provider.PBEKeyFactory$PBEWithSHA1AndDESede",
@@ -660,12 +644,6 @@ public final class SunJCE extends Provider {
                 "com.sun.crypto.provider.PBMAC1Core$HmacSHA512_224", null, attrs);
         ps("Mac", "PBEWithHmacSHA512/256",
                 "com.sun.crypto.provider.PBMAC1Core$HmacSHA512_256", null, attrs);
-
-        /*
-         * KeyStore
-         */
-        ps("KeyStore", "JCEKS",
-                "com.sun.crypto.provider.JceKeyStore");
 
         /*
          * KEMs
