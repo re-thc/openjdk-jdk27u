@@ -138,6 +138,8 @@ public class ImmutableDescriptor implements Descriptor {
 
     // Inputs up to this size are sorted by insertion, larger ones all at once.
     private static final int MAX_INSERTION_SORT = 16;
+    // Runs up to this size of a larger input are sorted by insertion.
+    private static final int INSERTION_SORT_RUN = 32;
 
     /**
      * Returns the first {@code n} fields sorted by name, with the result and
@@ -213,17 +215,26 @@ public class ImmutableDescriptor implements Descriptor {
     }
 
     // Sorts the positions in dest[low, high) by name, stably, using src,
-    // which holds the same positions, as scratch space.
+    // which holds the same positions, as scratch space. Comparing names costs
+    // more than moving positions, so runs are sorted by binary insertion and
+    // halves already in order, or in reverse order, are not merged.
     private static void mergeSort(int[] src, int[] dest, int low, int high,
                                   String[] names) {
-        if (high - low < 8) {
+        if (high - low <= INSERTION_SORT_RUN) {
             for (int i = low + 1; i < high; i++) {
                 int pos = dest[i];
-                int j = i;
-                for (; j > low && compare(names, dest[j - 1], pos) > 0; j--) {
-                    dest[j] = dest[j - 1];
+                int left = low;
+                int right = i;
+                while (left < right) {
+                    int mid = (left + right) >>> 1;
+                    if (compare(names, pos, dest[mid]) < 0) {
+                        right = mid;
+                    } else {
+                        left = mid + 1;
+                    }
                 }
-                dest[j] = pos;
+                System.arraycopy(dest, left, dest, left + 1, i - left);
+                dest[left] = pos;
             }
             return;
         }
@@ -232,13 +243,16 @@ public class ImmutableDescriptor implements Descriptor {
         mergeSort(dest, src, mid, high, names);
         if (compare(names, src[mid - 1], src[mid]) <= 0) {
             System.arraycopy(src, low, dest, low, high - low);
-            return;
-        }
-        for (int i = low, p = low, q = mid; i < high; i++) {
-            if (q >= high || p < mid && compare(names, src[p], src[q]) <= 0) {
-                dest[i] = src[p++];
-            } else {
-                dest[i] = src[q++];
+        } else if (compare(names, src[high - 1], src[low]) < 0) {
+            System.arraycopy(src, mid, dest, low, high - mid);
+            System.arraycopy(src, low, dest, low + high - mid, mid - low);
+        } else {
+            for (int i = low, p = low, q = mid; i < high; i++) {
+                if (q >= high || p < mid && compare(names, src[p], src[q]) <= 0) {
+                    dest[i] = src[p++];
+                } else {
+                    dest[i] = src[q++];
+                }
             }
         }
     }
