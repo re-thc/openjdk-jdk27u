@@ -85,9 +85,17 @@ for batch, order in enumerate((list(paths), list(reversed(paths)))):
                     '-t', '1', '-jvmArgs', ' '.join(vm_args), '-rf', 'json', '-rff', str(output),
                     *parameters]
                 commands.append(command)
-                with output.with_suffix('.log').open('w') as log:
-                    subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=True)
-                data = json.loads(output.read_text())
+                data = []
+                if output.exists():
+                    try:
+                        data = json.loads(output.read_text())
+                    except json.JSONDecodeError:
+                        pass
+                expected = 20 if case == 'checksum' else 1
+                if len(data) != expected:
+                    with output.with_suffix('.log').open('w') as log:
+                        subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=True)
+                    data = json.loads(output.read_text())
                 if not data:
                     raise RuntimeError('No JMH results in ' + str(output))
                 for row in data:

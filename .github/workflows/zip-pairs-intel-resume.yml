@@ -12,7 +12,7 @@ jobs:
   measure:
     if: startsWith(github.event.head_commit.message, 'Resume paired macos-x64 ')
     runs-on: macos-15-intel
-    timeout-minutes: 240
+    timeout-minutes: 360
     defaults:
       run:
         shell: bash
@@ -65,8 +65,25 @@ jobs:
         with:
           path: build/zip/images/jdk
           key: zip-paired-resume-v1-macos-x64-${{ github.sha }}
+      - name: Restore completed checksum measurements and control VMs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 38469155488 --repo re-thc/openjdk-jdk27u \
+            --name macos-x64-checksum-controls --dir work/control
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil
+          root = Path('work/control')
+          controls = next(root.rglob('kernels/bin/java')).parent.parent.parent
+          benchmarks = next(root.rglob('benchmarks/cpu.txt')).parent
+          shutil.copytree(controls, 'qualification/controls', dirs_exist_ok=True)
+          shutil.copytree(benchmarks, 'qualification/benchmarks', dirs_exist_ok=True)
+          PY
       - name: Measure paired ZIP calls
         run: python3 .github/scripts/measure-zip-pairs.py build/zip/images/jdk
+      - name: Complete the remaining checksum comparisons
+        run: python3 .github/scripts/measure-checksum-controls.py build/zip/images/jdk
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
