@@ -313,7 +313,6 @@ module java.base {
     exports sun.security.pkcs to
         jdk.jartool;
     exports sun.security.provider to
-        java.security.jgss,
         jdk.crypto.cryptoki,
         jdk.security.auth;
     exports sun.security.provider.certpath to
