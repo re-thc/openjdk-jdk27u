@@ -1107,6 +1107,61 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
 }
 
 template <typename CONFIG, MemTag MT>
+template <typename LOOKUP_FUNC, typename FOUND_FUNC>
+inline void ConcurrentHashTable<CONFIG, MT>::
+  get_batch(Thread* thread, LOOKUP_FUNC* lookups, size_t count,
+            FOUND_FUNC& found_f, bool* grow_hint)
+{
+  // Enough items to have many cache misses in flight, few enough that the
+  // lines they prefetch stay in the L1 cache until they are used.
+  const size_t group_size = 16;
+  Node* nodes[group_size];
+  size_t max_loops = 0;
+  ScopedCS cs(thread, this);
+  for (size_t start = 0; start < count; start += group_size) {
+    const size_t n = MIN2(group_size, count - start);
+    InternalTable* table = get_table();
+    for (size_t i = 0; i < n; i++) {
+      Prefetch::read(get_bucket_in(table, lookups[start + i].get_hash()), 0);
+    }
+    size_t walking = 0;
+    for (size_t i = 0; i < n; i++) {
+      Node* node = get_bucket(lookups[start + i].get_hash())->first();
+      if (node != nullptr) {
+        Prefetch::read(node, 0);
+        walking++;
+      }
+      nodes[i] = node;
+    }
+    for (size_t loops = 1; walking > 0; loops++) {
+      max_loops = MAX2(max_loops, loops);
+      for (size_t i = 0; i < n; i++) {
+        Node* node = nodes[i];
+        if (node == nullptr) {
+          continue;
+        }
+        if (lookups[start + i].equals(node->value())) {
+          found_f(start + i, node->value());
+          node = nullptr;
+        } else {
+          node = node->next();
+          if (node != nullptr) {
+            Prefetch::read(node, 0);
+          }
+        }
+        if (node == nullptr) {
+          walking--;
+        }
+        nodes[i] = node;
+      }
+    }
+  }
+  if (grow_hint != nullptr) {
+    *grow_hint = max_loops > _grow_hint;
+  }
+}
+
+template <typename CONFIG, MemTag MT>
 inline bool ConcurrentHashTable<CONFIG, MT>::
   unsafe_insert(const VALUE& value) {
   bool dead_hash = false;
