@@ -1,0 +1,42 @@
+name: SIMDUTF experiment report inspection
+on:
+  push:
+    branches: [review/simdutf-experiment-reports]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: simdutf-memory-linux-aarch64
+          run-id: 38550613051
+          github-token: ${{ github.token }}
+          path: reports/memory
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: simdutf-overhead-linux-aarch64
+          run-id: 38540157649
+          github-token: ${{ github.token }}
+          path: reports/overhead
+      - name: Inspect build output and count assembly
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for f in Path("reports/memory").rglob("*.log"):
+              print("REPORT_FILE", f)
+              print(f.read_text()[-20000:])
+          for mode in ("base", "off", "on", "count-isolated"):
+              files = list(Path("reports/overhead").rglob("assembly-codePointCount-" + mode + ".log"))
+              if not files:
+                  continue
+              text = files[0].read_text()
+              blocks = text.split("Compiled method (c2)")[1:]
+              for block in blocks[-5:]:
+                  if "codePointCount_avgt_jmhStub" in block:
+                      print("COUNT_ASSEMBLY_BEGIN", mode)
+                      print("Compiled method (c2)" + block[:50000])
+                      print("COUNT_ASSEMBLY_END", mode)
+          PY
