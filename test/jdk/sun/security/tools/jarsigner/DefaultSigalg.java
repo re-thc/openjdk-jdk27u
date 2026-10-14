@@ -79,7 +79,7 @@ public class DefaultSigalg {
         }
 
         // Check result
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         try (FileInputStream jks = new FileInputStream("jks");
                 JarFile jf = new JarFile("a.jar")) {
             ks.load(jks, "changeit".toCharArray());

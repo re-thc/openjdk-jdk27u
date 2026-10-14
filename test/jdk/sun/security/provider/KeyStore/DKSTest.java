@@ -161,7 +161,7 @@ public class DKSTest {
         /*
          * domain keystore: empty
          */
-        KeyStore empty = KeyStore.getInstance("JKS");
+        KeyStore empty = KeyStore.getInstance("PKCS12");
         empty.load(null, null);
 
         try (OutputStream outStream =

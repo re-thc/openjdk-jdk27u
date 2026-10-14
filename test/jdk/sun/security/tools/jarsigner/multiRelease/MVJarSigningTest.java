@@ -213,7 +213,7 @@ public class MVJarSigningTest {
             throws Throwable {
         // Get JarSigner
         try (FileInputStream fis = new FileInputStream(KEYSTORE)) {
-                KeyStore ks = KeyStore.getInstance("JKS");
+                KeyStore ks = KeyStore.getInstance("PKCS12");
                 ks.load(fis, STOREPASS.toCharArray());
                 PrivateKey pk = (PrivateKey)ks.getKey(ALIAS, KEYPASS.toCharArray());
                 Certificate cert = ks.getCertificate(ALIAS);

@@ -56,7 +56,7 @@ public class TestSignatures extends PKCS11Test {
     static KeyStore getKeyStore() throws Exception {
         KeyStore ks;
         try (InputStream in = new FileInputStream(new File(BASE, "rsakeys.ks"))) {
-            ks = KeyStore.getInstance("JKS");
+            ks = KeyStore.getInstance("PKCS12");
             ks.load(in, password);
         }
         return ks;

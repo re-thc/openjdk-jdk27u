@@ -198,7 +198,7 @@ public class ValidationTests {
         throws Exception
     {
         if (test.ks == null) {
-            KeyStore keystore = KeyStore.getInstance("JKS");
+            KeyStore keystore = KeyStore.getInstance("PKCS12");
             try (FileInputStream fis = new FileInputStream(KEYSTORE)) {
                 keystore.load(fis, "changeit".toCharArray());
                 test.ks = new X509KeySelector(keystore, false);

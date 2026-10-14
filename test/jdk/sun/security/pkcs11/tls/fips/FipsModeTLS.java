@@ -495,7 +495,7 @@ public final class FipsModeTLS extends SecmodTest {
     private static KeyStore readTestKeyStore() throws Exception {
         File file = new File(System.getProperty("test.src", "."), "keystore");
         InputStream in = new FileInputStream(file);
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(in, "passphrase".toCharArray());
         in.close();
         return ks;

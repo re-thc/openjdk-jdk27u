@@ -148,7 +148,7 @@ public class StartDateTest {
     }
 
     static Date getIssueDate(String alias) throws Exception {
-        KeyStore ks = KeyStore.getInstance("jks");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         try (FileInputStream fis = new FileInputStream("jks")) {
             ks.load(fis, "changeit".toCharArray());
         }

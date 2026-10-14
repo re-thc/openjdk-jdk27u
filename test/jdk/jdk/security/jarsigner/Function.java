@@ -74,7 +74,7 @@ public class Function {
         JarSigner.Builder jsb;
 
         try (FileInputStream fis = new FileInputStream("ks")) {
-            KeyStore ks = KeyStore.getInstance("JKS");
+            KeyStore ks = KeyStore.getInstance("PKCS12");
             ks.load(fis, "changeit".toCharArray());
             PrivateKey key = (PrivateKey)ks.getKey("r", "changeit".toCharArray());
             Certificate cert = ks.getCertificate("r");

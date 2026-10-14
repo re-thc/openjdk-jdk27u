@@ -49,13 +49,13 @@ public class WrongPassword {
         InputStream in;
         Entry entry;
 
-        ks = KeyStore.getInstance("JKS");
+        ks = KeyStore.getInstance("PKCS12");
         in = new FileInputStream(ksFile);
         ks.load(in, null);
         in.close();
         System.out.println(Collections.list(ks.aliases()));
 
-        ks = KeyStore.getInstance("JKS");
+        ks = KeyStore.getInstance("PKCS12");
         in = new FileInputStream(ksFile);
         try {
             ks.load(in, wrongPW);
@@ -68,7 +68,7 @@ public class WrongPassword {
         }
         in.close();
 
-        ks = KeyStore.getInstance("JKS");
+        ks = KeyStore.getInstance("PKCS12");
         in = new FileInputStream(ksFile);
         ks.load(in, pw);
         in.close();

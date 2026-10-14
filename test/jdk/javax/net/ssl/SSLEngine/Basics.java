@@ -68,8 +68,8 @@ public class Basics {
     private static void runTest(String protocol, String cipherSuite) throws Exception {
         System.out.printf("Testing %s with %s%n", protocol, cipherSuite);
 
-        KeyStore ks = KeyStore.getInstance("JKS");
-        KeyStore ts = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        KeyStore ts = KeyStore.getInstance("PKCS12");
         char[] passphrase = "passphrase".toCharArray();
 
         ks.load(new FileInputStream(KEYSTORE_PATH), passphrase);

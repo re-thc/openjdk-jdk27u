@@ -206,7 +206,7 @@ public class ECCurvesconstraints {
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
         // create a key store
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(null, null);
 
         // import the trused cert

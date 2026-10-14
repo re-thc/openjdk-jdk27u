@@ -298,7 +298,7 @@ public class CipherTest {
         File file = new File(PATH, name);
         KeyStore ks;
         try (InputStream in = new FileInputStream(file)) {
-            ks = KeyStore.getInstance("JKS");
+            ks = KeyStore.getInstance("PKCS12");
             ks.load(in, passwd);
         }
         return ks;

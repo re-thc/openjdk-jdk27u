@@ -47,7 +47,7 @@ public class NewSize7 {
                 FILE +
                 " -alias a -dname cn=c -storepass changeit" +
                 " -keypass changeit -keyalg rsa").split(" "));
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         try (FileInputStream fin = new FileInputStream(FILE)) {
             ks.load(fin, "changeit".toCharArray());
         }

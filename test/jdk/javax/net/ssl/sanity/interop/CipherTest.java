@@ -290,7 +290,7 @@ public class CipherTest {
     private static KeyStore readKeyStore(String name) throws Exception {
         File file = new File(PATH, name);
         InputStream in = new FileInputStream(file);
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(in, passwd);
         in.close();
         return ks;

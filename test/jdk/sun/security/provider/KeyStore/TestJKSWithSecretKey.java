@@ -41,7 +41,7 @@ public class TestJKSWithSecretKey {
     public static void main (String[] args) throws Exception {
         SecretKey key = new SecretKeySpec(new byte[8], "DES");
 
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(null, passwd);
 
         try {

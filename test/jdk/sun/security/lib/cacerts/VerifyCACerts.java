@@ -320,7 +320,7 @@ public class VerifyCACerts {
             System.err.println("Expected checksum " + CHECKSUM);
         }
 
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(new ByteArrayInputStream(data), "changeit".toCharArray());
 
         // check the count of certs inside

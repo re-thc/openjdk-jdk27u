@@ -37,7 +37,7 @@ public class CheckInputStream {
 
     public static final void main(String[] args) throws Exception {
 
-        KeyStore keystore = KeyStore.getInstance("JKS");
+        KeyStore keystore = KeyStore.getInstance("PKCS12");
         try (FileInputStream inStream = new FileInputStream(KEYSTORE)) {
             System.out.println("Loading JKS keystore: " + KEYSTORE);
             keystore.load(inStream, PASSWORD);

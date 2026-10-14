@@ -130,7 +130,7 @@ public class OutdatedKeyStoreWarning {
         }
     }
 
-    // Test case for: KeyStore.getInstance("JKS" or "JCEKS"), load(null, null), and
+    // Test case for: KeyStore.getInstance("PKCS12" or "JCEKS"), load(null, null), and
     // store it where warning should be emitted.
     private static void checkStoreAPIWarning(String type) throws Exception {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();

@@ -140,7 +140,7 @@ public class ClientAuth extends PKCS11Test {
         char[] passphrase = JKS_PWD.toCharArray();
 
         // server gets KeyStore from JKS keystore
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(new FileInputStream(new File(DIR, SERVER_KS)), passphrase);
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);

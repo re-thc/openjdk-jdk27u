@@ -197,7 +197,7 @@ public class CertReplace {
             throw new RuntimeException("Not recognised test " + args[0]);
         }
 
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         try (final FileInputStream certInputStream = new FileInputStream(args[0])) {
             ks.load(certInputStream, PASSWORD_CHAR_ARR);
         }

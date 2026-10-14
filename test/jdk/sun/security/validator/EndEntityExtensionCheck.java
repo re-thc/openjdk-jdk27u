@@ -108,7 +108,7 @@ public class EndEntityExtensionCheck {
          *  extensions in the end entity certificate, and leaves that up
          *  to EndEntityChecker, which should catch such extensions.
          */
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(null, null);
         ks.setCertificateEntry("testca", chain[chain.length - 1]);
 

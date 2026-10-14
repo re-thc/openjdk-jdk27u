@@ -498,7 +498,7 @@ public class GenerationTests {
 
         // get key & self-signed certificate from keystore
         FileInputStream fis = new FileInputStream(KEYSTORE);
-        ks = KeyStore.getInstance("JKS");
+        ks = KeyStore.getInstance("PKCS12");
         ks.load(fis, "changeit".toCharArray());
         signingKey = ks.getKey("user", "changeit".toCharArray());
         signingCert = ks.getCertificate("user");

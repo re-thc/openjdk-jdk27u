@@ -173,7 +173,7 @@ public class EmptyCertificateAuthorities {
             System.getProperty("javax.net.ssl.keyStorePassword").toCharArray();
         String keyFilename = System.getProperty("javax.net.ssl.keyStore");
 
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(new FileInputStream(keyFilename), password);
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("NewSunX509");
@@ -221,7 +221,7 @@ public class EmptyCertificateAuthorities {
                 System.getProperty("javax.net.ssl.trustStore");
 
             try {
-                KeyStore ks = KeyStore.getInstance("JKS");
+                KeyStore ks = KeyStore.getInstance("PKCS12");
                 ks.load(new FileInputStream(trustFilename), password);
 
                 TrustManagerFactory tmf =
