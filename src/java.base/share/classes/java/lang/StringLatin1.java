@@ -1070,6 +1070,9 @@ final class StringLatin1 {
     // vmIntrinsics::_inflateStringC
     @IntrinsicCandidate
     private static void inflate0(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+        if (len == 0) {
+            return;
+        }
         if (SimdUTF.isEligible(len) && SimdUTF.inflateLatin1(src, srcOff, len, dst, dstOff) >= 0) {
             return;
         }
@@ -1104,6 +1107,9 @@ final class StringLatin1 {
     // vmIntrinsics::_inflateStringB
     @IntrinsicCandidate
     private static void inflate0(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
+        if (len == 0) {
+            return;
+        }
         if (SimdUTF.isEligible(len) && SimdUTF.inflateLatin1(src, srcOff, len, dst, dstOff) >= 0) {
             return;
         }

@@ -10173,8 +10173,8 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         int endIndex = offset + count;
         int n = count;
         for (int i = offset; i < endIndex; ) {
-            if (isHighSurrogate(a[i++]) && i < endIndex &&
-                isLowSurrogate(a[i])) {
+            if (((a[i++] & 0xfc00) == 0xd800) && i < endIndex &&
+                ((a[i] & 0xfc00) == 0xdc00)) {
                 n--;
                 i++;
             }
