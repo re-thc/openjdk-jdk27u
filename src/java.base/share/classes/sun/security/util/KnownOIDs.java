@@ -186,8 +186,6 @@ public enum KnownOIDs {
     PKCS1("1.2.840.113549.1.1", "RSA", false), // RSA KeyPairGenerator and KeyFactory
     RSA("1.2.840.113549.1.1.1", "RSA", "RSA/ECB/PKCS1Padding"), // RSA encryption
 
-    MD2withRSA("1.2.840.113549.1.1.2"),
-    MD5withRSA("1.2.840.113549.1.1.4"),
     SHA1withRSA("1.2.840.113549.1.1.5"),
     OAEP("1.2.840.113549.1.1.7"),
     MGF1("1.2.840.113549.1.1.8"),
@@ -250,7 +248,6 @@ public enum KnownOIDs {
     SecretBag("1.2.840.113549.1.12.10.1.5"),
 
     // digestAlgs 1.2.840.113549.2.*
-    MD2("1.2.840.113549.2.2"),
     MD5("1.2.840.113549.2.5"),
     HmacSHA1("1.2.840.113549.2.7"),
     HmacSHA224("1.2.840.113549.2.8"),

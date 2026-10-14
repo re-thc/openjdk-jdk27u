@@ -312,8 +312,6 @@ public abstract class Signature extends SignatureSpi {
         // pre-initialize with values for our SignatureSpi implementations
         signatureInfo.put("sun.security.provider.DSA$RawDSA", true);
         signatureInfo.put("sun.security.provider.DSA$SHA1withDSA", true);
-        signatureInfo.put("sun.security.rsa.RSASignature$MD2withRSA", true);
-        signatureInfo.put("sun.security.rsa.RSASignature$MD5withRSA", true);
         signatureInfo.put("sun.security.rsa.RSASignature$SHA1withRSA", true);
         signatureInfo.put("sun.security.rsa.RSASignature$SHA256withRSA", true);
         signatureInfo.put("sun.security.rsa.RSASignature$SHA384withRSA", true);

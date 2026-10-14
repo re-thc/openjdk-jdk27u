@@ -237,8 +237,6 @@ public final class SunEntries {
         /*
          * Digest engines
          */
-        addWithAlias(p, "MessageDigest", "MD2", "sun.security.provider.MD2",
-                attrs);
         addWithAlias(p, "MessageDigest", "MD5", "sun.security.provider.MD5",
                 attrs);
         addWithAlias(p, "MessageDigest", "SHA-1", "sun.security.provider.SHA",

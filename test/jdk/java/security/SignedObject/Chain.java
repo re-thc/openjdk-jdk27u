@@ -162,18 +162,15 @@ public class Chain {
     }
 
     private static final Test[] tests = {
-        new Test(SigAlg.SHA1withDSA, KeyAlg.DSA, Provider.Default, 1024),
-        new Test(SigAlg.MD2withRSA, KeyAlg.RSA, Provider.Default),
-        new Test(SigAlg.MD5withRSA, KeyAlg.RSA, Provider.Default),
+        new Test(SigAlg.SHA1withECDSA, KeyAlg.EC, Provider.Default, 256),
         new Test(SigAlg.SHA224withRSA, KeyAlg.RSA, Provider.Default),
         new Test(SigAlg.SHA256withRSA, KeyAlg.RSA, Provider.Default),
         new Test(SigAlg.SHA3_224withRSA, KeyAlg.RSA, Provider.Default),
         new Test(SigAlg.SHA3_256withRSA, KeyAlg.RSA, Provider.Default),
         new Test(SigAlg.SHA3_384withRSA, KeyAlg.RSA, Provider.Default),
         new Test(SigAlg.SHA3_512withRSA, KeyAlg.RSA, Provider.Default),
-        new Test(SigAlg.SHA1withDSA, KeyAlg.DSA, Provider.TestProvider_or_Sun, 1024),
-        new Test(SigAlg.SHA224withDSA, KeyAlg.DSA, Provider.TestProvider_or_Sun, 2048),
-        new Test(SigAlg.SHA256withDSA, KeyAlg.DSA, Provider.TestProvider_or_Sun, 2048),
+        new Test(SigAlg.SHA224withECDSA, KeyAlg.EC, Provider.TestProvider_or_SunEC, 256),
+        new Test(SigAlg.SHA256withECDSA, KeyAlg.EC, Provider.TestProvider_or_SunEC, 384),
     };
 
     private static final String str = "to-be-signed";

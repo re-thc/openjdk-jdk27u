@@ -597,9 +597,6 @@ public class AlgorithmId implements Serializable, DerEncoder {
         return t;
     }
 
-    public static final ObjectIdentifier MD2_oid =
-            ObjectIdentifier.of(KnownOIDs.MD2);
-
     public static final ObjectIdentifier MD5_oid =
             ObjectIdentifier.of(KnownOIDs.MD5);
 
@@ -666,7 +663,6 @@ public class AlgorithmId implements Serializable, DerEncoder {
     private static final Set<String> OIDS_REQUIRING_NULL = Set.of(
             // MessageDigest algorithms usually have a NULL parameters even
             // if most RFCs suggested absent.
-            KnownOIDs.MD2.value(),
             KnownOIDs.MD5.value(),
             KnownOIDs.SHA_1.value(),
             KnownOIDs.SHA_224.value(),
@@ -689,8 +685,6 @@ public class AlgorithmId implements Serializable, DerEncoder {
             KnownOIDs.SHA512withRSA.value(),
             KnownOIDs.SHA512$224withRSA.value(),
             KnownOIDs.SHA512$256withRSA.value(),
-            KnownOIDs.MD2withRSA.value(),
-            KnownOIDs.MD5withRSA.value(),
             KnownOIDs.SHA3_224withRSA.value(),
             KnownOIDs.SHA3_256withRSA.value(),
             KnownOIDs.SHA3_384withRSA.value(),

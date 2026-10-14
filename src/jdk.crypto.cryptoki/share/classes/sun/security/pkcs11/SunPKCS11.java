@@ -563,8 +563,6 @@ public final class SunPKCS11 extends AuthProvider {
 
         // XXX register all aliases
 
-        d(MD, "MD2",            P11Digest,
-                m(CKM_MD2));
         d(MD, "MD5",            P11Digest,
                 m(CKM_MD5));
         dA(MD, "SHA-1",           P11Digest,
@@ -982,10 +980,6 @@ public final class SunPKCS11 extends AuthProvider {
 
         d(SIG, "NONEwithRSA",    "sun.security.pkcs11.RSACipherAdaptor",
                 m(CKM_RSA_PKCS));
-        dA(SIG, "MD2withRSA",    P11Signature,
-                m(CKM_MD2_RSA_PKCS, CKM_RSA_PKCS, CKM_RSA_X_509));
-        dA(SIG, "MD5withRSA",    P11Signature,
-                m(CKM_MD5_RSA_PKCS, CKM_RSA_PKCS, CKM_RSA_X_509));
         dA(SIG, "SHA1withRSA",   P11Signature,
                 m(CKM_SHA1_RSA_PKCS, CKM_RSA_PKCS, CKM_RSA_X_509));
         dA(SIG, "SHA224withRSA", P11Signature,

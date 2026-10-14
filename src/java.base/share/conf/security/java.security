@@ -500,7 +500,7 @@ sun.security.krb5.maxReferrals=5
 # Algorithm restrictions for certification path (CertPath) processing
 #
 # In some environments, certain algorithms or key lengths may be undesirable
-# for certification path building and validation.  For example, "MD2" is
+# for certification path building and validation.  For example, "MD5" is
 # generally no longer considered to be a secure hash algorithm.  This section
 # describes the mechanism for disabling algorithms based on algorithm name
 # and/or key length.  This includes algorithms used in certificates, as well
@@ -631,10 +631,10 @@ sun.security.krb5.maxReferrals=5
 # is not guaranteed to be examined and used by other implementations.
 #
 # Example:
-#   jdk.certpath.disabledAlgorithms=MD2, DSA, RSA keySize < 2048
+#   jdk.certpath.disabledAlgorithms=MD5, DSA, RSA keySize < 2048
 #
 #
-jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & usage TLSServer, \
+jdk.certpath.disabledAlgorithms=MD5, SHA1 jdkCA & usage TLSServer, \
     RSA keySize < 1024, DSA keySize < 1024, EC keySize < 224, \
     SHA1 usage SignedJAR & denyAfter 2019-01-01
 
@@ -661,7 +661,7 @@ jdk.security.legacyAlgorithms=SHA1, \
 # Algorithm restrictions for signed JAR files
 #
 # In some environments, certain algorithms or key lengths may be undesirable
-# for signed JAR validation.  For example, "MD2" is generally no longer
+# for signed JAR validation.  For example, "MD5" is generally no longer
 # considered to be a secure hash algorithm.  This section describes the
 # mechanism for disabling algorithms based on algorithm name and/or key length.
 # JARs signed with any of the disabled algorithms or key sizes will be treated
@@ -698,7 +698,7 @@ jdk.security.legacyAlgorithms=SHA1, \
 #
 # See "jdk.certpath.disabledAlgorithms" for syntax descriptions.
 #
-jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
+jdk.jar.disabledAlgorithms=MD5, RSA keySize < 1024, \
       DSA keySize < 1024, SHA1 denyAfter 2019-01-01
 
 #
@@ -766,7 +766,7 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 # Example:
 #   jdk.tls.disabledAlgorithms=MD5, TLSv1.2, DSA, RSA keySize < 2048, \
 #       rsa_pkcs1_sha1, x448, TLS_DHE_*
-jdk.tls.disabledAlgorithms=MD5withRSA, DH keySize < 1024, EC keySize < 224, \
+jdk.tls.disabledAlgorithms=DH keySize < 1024, EC keySize < 224, \
     rsa_pkcs1_sha1 usage HandshakeSignature, \
     ecdsa_sha1 usage HandshakeSignature
 
@@ -774,7 +774,7 @@ jdk.tls.disabledAlgorithms=MD5withRSA, DH keySize < 1024, EC keySize < 224, \
 # Algorithm restrictions for Java Crypto API services
 #
 # In some environments, certain algorithms may be undesirable for certain
-# cryptographic services. For example, "MD2" is generally no longer considered
+# cryptographic services. For example, "MD5" is generally no longer considered
 # to be a secure hash algorithm.  This section describes the mechanism for
 # disabling algorithms at the JCA/JCE level based on service name and algorithm
 # name.
@@ -814,7 +814,7 @@ jdk.tls.disabledAlgorithms=MD5withRSA, DH keySize < 1024, EC keySize < 224, \
 # It is not guaranteed to be examined and used by other implementations.
 #
 # Example:
-#   jdk.crypto.disabledAlgorithms=Cipher.RSA/ECB/PKCS1Padding, MessageDigest.MD2
+#   jdk.crypto.disabledAlgorithms=Cipher.RSA/ECB/PKCS1Padding, MessageDigest.MD5
 #
 #jdk.crypto.disabledAlgorithms=
 

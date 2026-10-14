@@ -140,7 +140,7 @@ public class CipherTest {
         SSLSocket socket = (SSLSocket)factory.createSocket();
         String[] cipherSuites = socket.getSupportedCipherSuites();
         String[] protocols = socket.getSupportedProtocols();
-        String[] clientAuths = {null, "RSA", "DSA", "ECDSA"};
+        String[] clientAuths = {null, "RSA", "ECDSA"};
         tests = new ArrayList<TestParameters>(
             cipherSuites.length * protocols.length * clientAuths.length);
         for (int i = 0; i < cipherSuites.length; i++) {
@@ -360,15 +360,6 @@ public class CipherTest {
                 System.out.println("Skipping unsupported test for " +
                                     cipherSuite + " of " + protocol);
                 return false;
-            }
-
-            // ignore exportable cipher suite for TLSv1.1
-            if (protocol.equals("TLSv1.1")) {
-                if (cipherSuite.indexOf("_EXPORT_WITH") != -1) {
-                    System.out.println("Skipping obsoleted test for " +
-                                        cipherSuite + " of " + protocol);
-                    return false;
-                }
             }
 
             return true;

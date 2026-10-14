@@ -53,7 +53,7 @@ class JSSEServer extends CipherTest.Server {
         serverSocket.setSoTimeout(CipherTest.TIMEOUT);
         CipherTest.serverPort = serverSocket.getLocalPort();
 
-        // JDK-8190492: Enable all supported protocols on server side to test SSLv3
+        // JDK-8190492: Enable all supported protocols on server side
         serverSocket.setEnabledProtocols(serverSocket.getSupportedProtocols());
 
         serverSocket.setEnabledCipherSuites(factory.getSupportedCipherSuites());

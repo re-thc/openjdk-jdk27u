@@ -42,8 +42,8 @@ public class StandardAlgName {
                 "-sigalg", "ShA1wItHRSA",
                 "-dname", "cn=PKCS12 Test CA, ou = Security SQE, o = JavaSoft, c = US",
                 "-validity", "3650",
-                "-keypass", "storepass", "-keystore", "keystoreCA.jceks.data",
-                "-storepass", "storepass", "-storetype", "jceKS")
+                "-keypass", "storepass", "-keystore", "keystoreCA.p12.data",
+                "-storepass", "storepass", "-storetype", "pKcS12")
                 .shouldHaveExitValue(0)
                 .shouldNotContain("RsA")
                 .shouldNotContain("ShA1wItHRSA")
@@ -53,16 +53,16 @@ public class StandardAlgName {
         // Lead
         SecurityTools.keytool("-genkey", "-v", "-alias", "pkcs12testLead",
                 "-keyalg", "rSA", "-keysize", "1024",
-                "-sigalg", "mD5withRSA",
+                "-sigalg", "sHa256withRSA",
                 "-dname", "cn=PKCS12 Test Lead, ou=Security SQE, o=JavaSoft, c=US",
                 "-validity", "3650",
-                "-keypass", "storepass", "-keystore", "keystoreLead.jceks.data",
-                "-storepass", "storepass", "-storetype", "jCeks")
+                "-keypass", "storepass", "-keystore", "keystoreLead.p12.data",
+                "-storepass", "storepass", "-storetype", "PkCs12")
                 .shouldHaveExitValue(0)
                 .shouldNotContain("rSA")
-                .shouldNotContain("mD5withRSA")
+                .shouldNotContain("sHa256withRSA")
                 .shouldContain("RSA")
-                .shouldContain("MD5withRSA");
+                .shouldContain("SHA256withRSA");
 
         // End User 1
         SecurityTools.keytool("-genkey", "-v", "-alias", "pkcs12testEndUser1",
@@ -70,8 +70,8 @@ public class StandardAlgName {
                 "-sigalg", "sHa1wIThRSA",
                 "-dname", "cn=PKCS12 Test End User 1, ou=Security SQE, o=JavaSoft, c=US",
                 "-validity", "3650",
-                "-keypass", "storepass", "-keystore", "keystoreEndUser1.jceks.data",
-                "-storepass", "storepass", "-storetype", "Jceks")
+                "-keypass", "storepass", "-keystore", "keystoreEndUser1.p12.data",
+                "-storepass", "storepass", "-storetype", "Pkcs12")
                 .shouldHaveExitValue(0)
                 .shouldNotContain("RSa")
                 .shouldNotContain("sHa1wIThRSA")
