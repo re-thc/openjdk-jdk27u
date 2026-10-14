@@ -1,4 +1,4 @@
-name: Vector API native loop diagnostic
+name: Vector API release unroll causal qualification
 'on':
   push:
     branches: [codex/vector-api-native-unroll]
@@ -6,53 +6,57 @@ permissions:
   contents: read
   actions: read
 jobs:
-  native-ir:
+  release-causal:
     runs-on: ubuntu-26.04-arm
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - name: Get pinned baseline fastdebug image
+      - name: Get pinned baseline release image
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: 38172262610
-          artifact-ids: 11714469219
+          artifact-ids: 11714738068
           path: baseline-bundles
           merge-multiple: true
-      - name: Get pinned patched fastdebug image
+      - name: Get pinned b3 release image
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: 38349570655
-          artifact-ids: 11791725073
+          artifact-ids: 11791270117
           path: patched-bundles
           merge-multiple: true
-      - name: Record native host and compile common driver
+      - name: Reuse frozen qualified classes and preserve old diagnostic evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: 38531140256
+          artifact-ids: 11878157095
+          path: frozen
+          merge-multiple: true
+      - name: Verify native images and execute fixed paired release workloads
         run: |
           test "$(uname -m)" = aarch64
-          mkdir base-debug patched-debug qualification/classes qualification/whitebox
-          tar -xf baseline-bundles/jdk-linux-aarch64-debug.tar.gz -C base-debug --strip-components=2
-          tar -xf patched-bundles/jdk-linux-aarch64-debug.tar.gz -C patched-debug --strip-components=2
+          mkdir base-release b3-release
+          tar -xf baseline-bundles/jdk-linux-aarch64.tar.gz -C base-release --strip-components=1
+          tar -xf patched-bundles/jdk-linux-aarch64.tar.gz -C b3-release --strip-components=1
           python3 qualification/native_unroll/record_native_host.py
-          patched-debug/bin/javac -d qualification/whitebox test/lib/jdk/test/whitebox/parser/DiagnosticCommand.java test/lib/jdk/test/whitebox/WhiteBox.java
-          patched-debug/bin/javac --add-modules jdk.incubator.vector -cp qualification/whitebox -d qualification/classes qualification/src/PhaseVectorKernels.java qualification/src/PhaseVectorProbe.java
-      - name: Compare four targeted C2 loop graphs
-        run: |
-          cpu=$(python3 -c 'import os; print(min(os.sched_getaffinity(0)))')
-          python3 qualification/native_unroll/run_native_unroll.py --base-jdk base-debug --patched-jdk patched-debug --classes qualification/classes --whitebox qualification/whitebox --kernel-source qualification/src/PhaseVectorKernels.java --probe-source qualification/src/PhaseVectorProbe.java --provenance qualification/native_unroll/provenance.json --out native-ir --cpu "$cpu" --measure-calls 1000 --execute
-      - name: Print structured diagnostic evidence
+          python3 qualification/native_unroll/run_release_causal.py --base-jdk base-release --patched-jdk b3-release --frozen frozen --out release-causal --execute
+      - name: Print structured final summaries and ordinary-entry assembly
         if: always()
-        run: python3 qualification/native_unroll/report_native_ir.py
-      - name: Preserve exact graphs and provenance
+        run: |
+          python3 qualification/native_unroll/report_release_causal.py
+      - name: Preserve all fixed windows, images, frozen inputs and compilation diagnostics
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: vector-api-native-loop-ir
+          name: vector-api-release-unroll-causal
           path: |
-            native-ir
+            release-causal
             native-ir-host.json
-            qualification/classes
-            qualification/whitebox
+            frozen
             qualification/native_unroll
+            baseline-bundles
+            patched-bundles
           retention-days: 30
-
