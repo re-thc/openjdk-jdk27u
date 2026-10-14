@@ -1,0 +1,45 @@
+name: Paired Windows x64 call qualification
+on:
+  push:
+    branches: [pr/zlib-ng-windows-qualification2]
+permissions:
+  contents: read
+concurrency:
+  group: windows-pairs-${{ github.ref }}-${{ github.event.head_commit.message }}
+  cancel-in-progress: true
+jobs:
+  measure:
+    if: startsWith(github.event.head_commit.message, 'Measure Windows dispatch ')
+    runs-on: windows-2025
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: build/zip/images/jdk
+          key: zip-platform-v1-windows-x64-release-3f71d03f3297f94e8c2cc34160262a880be337fc
+          fail-on-cache-miss: true
+      - name: Record VM CPU features and dispatch options
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force qualification | Out-Null
+          & build/zip/images/jdk/bin/java.exe -Xlog:os+cpu=info -version 2>&1 |
+            Tee-Object qualification/cpu-features.txt
+          & build/zip/images/jdk/bin/java.exe -XX:+UnlockDiagnosticVMOptions -XX:+PrintFlagsFinal -version 2>&1 |
+            Select-String 'UseAVX|UseCRC32Intrinsics|UseCryptoPmullForCRC32|UseAdler32Intrinsics' |
+            Tee-Object qualification/dispatch.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Compare native call paths in alternating order
+        shell: pwsh
+        run: |
+          python -m py_compile .github/scripts/measure-windows-pairs.py
+          python .github/scripts/measure-windows-pairs.py build/zip/images/jdk
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: windows-x64-paired-calls
+          path: |
+            qualification
+            build/zip/images/jdk
+          retention-days: 14
