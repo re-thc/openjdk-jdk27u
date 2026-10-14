@@ -1,0 +1,53 @@
+name: zlib-ng configured sysroot qualification
+on:
+  push:
+    branches: [pr/zlib-ng-sysroot-qualification]
+permissions:
+  contents: read
+jobs:
+  sysroot:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: ./.github/actions/get-bootjdk
+        id: bootjdk
+        with:
+          platform: linux-x64
+      - name: Create a nondefault sysroot with a unique required header
+        run: |
+          mkdir -p work/sysroot/usr/include qualification
+          cp -as /usr/include/. work/sysroot/usr/include/
+          ln -s /usr/lib work/sysroot/usr/lib
+          ln -s /lib work/sysroot/lib
+          ln -s /lib64 work/sysroot/lib64
+          printf '%s\n' '#define ZIP_NG_SYSROOT_MARKER 1' \
+            > work/sysroot/usr/include/zip-ng-sysroot-marker.h
+      - name: Configure the target sysroot
+        run: |
+          bash configure --with-conf-name=sysroot --with-debug-level=release \
+            --with-boot-jdk='${{ steps.bootjdk.outputs.path }}' \
+            --with-sysroot="$(pwd)/work/sysroot" \
+            --with-extra-cflags='-include zip-ng-sysroot-marker.h' \
+            --disable-desktop --enable-headless-only --with-native-debug-symbols=none
+      - name: Compile the private archive with the configured flags
+        run: |
+          make -C make -r -R -I common -I common/modules -I modules/java.base -f ModuleWrapper.gmk \
+            SPEC="$(pwd)/build/sysroot/spec.gmk" MODULE=java.base MAKEFILE_PREFIX=Lib \
+            "$(pwd)/build/sysroot/support/native/zlib-ng/libz.a" \
+            2>&1 | tee qualification/native-archive.log
+          test -s build/sysroot/support/native/zlib-ng/libz.a
+          rg --fixed-strings 'zip-ng-sysroot-marker.h' qualification/native-archive.log
+          rg --fixed-strings 'work/sysroot' qualification/native-archive.log
+          nm --defined-only build/sysroot/support/native/zlib-ng/libz.a \
+            | rg 'jdk_ng_(deflate|inflate|crc32|adler32)$'
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: sysroot-native-archive
+          path: |
+            qualification
+            build/sysroot/spec.gmk
+            build/sysroot/support/native/zlib-ng/configure-output.log
+            build/sysroot/support/native/zlib-ng/configure.log
+          retention-days: 14
