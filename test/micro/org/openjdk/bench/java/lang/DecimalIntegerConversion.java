@@ -37,7 +37,7 @@ import org.openjdk.jmh.infra.Blackhole;
 @Fork(3)
 public class DecimalIntegerConversion {
     private static final int N = 1024;
-    @Param({"short", "wide", "mixed"})
+    @Param({"tiny", "short", "wide", "mixed"})
     public String size;
     private int[] ints;
     private long[] longs, unsignedLongs;
@@ -57,10 +57,12 @@ public class DecimalIntegerConversion {
         latin1 = new byte[64];
         utf16 = new byte[128];
         for (int n = 0; n < N; ++n) {
-            boolean small = size.equals("short") || size.equals("mixed") && n % 4 != 0;
-            ints[n] = small ? r.nextInt(1999) - 999 : r.nextInt();
+            boolean tiny = size.equals("tiny");
+            boolean small = tiny || size.equals("short") || size.equals("mixed") && n % 4 != 0;
+            int smallLimit = tiny ? 9 : 999;
+            ints[n] = small ? r.nextInt(-smallLimit, smallLimit + 1) : r.nextInt();
             if (small) {
-                longs[n] = r.nextInt(1999) - 999;
+                longs[n] = r.nextInt(-smallLimit, smallLimit + 1);
             } else if (size.startsWith("d")) {
                 int count = Integer.parseInt(size.substring(1));
                 long low = 1;

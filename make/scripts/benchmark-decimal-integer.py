@@ -40,7 +40,7 @@ def main():
     parser.add_argument('output', type=Path)
     parser.add_argument('--pairs', type=int, default=3)
     parser.add_argument('--tiers', default='interpreter,utf16,c1,tiered,c2')
-    parser.add_argument('--sizes', default='short,wide,mixed')
+    parser.add_argument('--sizes', default='tiny,short,wide,mixed')
     parser.add_argument('--duration', default='500ms')
     args = parser.parse_args()
     if args.pairs < 1:
@@ -49,7 +49,7 @@ def main():
     sizes = args.sizes.split(',')
     if set(tiers) - {'interpreter', 'utf16', 'c1', 'tiered', 'c2'}:
         parser.error('unknown execution tier')
-    if set(sizes) - {'short', 'wide', 'mixed'}:
+    if set(sizes) - {'tiny', 'short', 'wide', 'mixed'}:
         parser.error('unknown input size')
 
     root = Path(__file__).resolve().parents[2]
