@@ -28,7 +28,6 @@ package javax.xml.stream;
 import java.util.Iterator;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
-import java.util.function.Supplier;
 import jdk.xml.internal.SecuritySupport;
 
 /**
@@ -55,10 +54,8 @@ class FactoryFinder {
         debug = val != null && !"false".equals(val);
     }
 
-    private static void dPrint(Supplier<String> msgGen) {
-        if (debug) {
-            System.err.println("JAXP: " + msgGen.get());
-        }
+    private static void dPrint(String msg) {
+        System.err.println("JAXP: " + msg);
     }
 
     /**
@@ -157,9 +154,10 @@ class FactoryFinder {
                 throw new ClassCastException(className + " cannot be cast to " + type.getName());
             }
             Object instance = providerClass.getConstructor().newInstance();
-            final ClassLoader clD = cl;
-            dPrint(()->"created new instance of " + providerClass +
-                       " using ClassLoader: " + clD);
+            if (debug) {
+                dPrint("created new instance of " + providerClass +
+                       " using ClassLoader: " + cl);
+            }
             return type.cast(instance);
         }
         catch (ClassNotFoundException x) {
@@ -214,7 +212,9 @@ class FactoryFinder {
     static <T> T find(Class<T> type, String factoryId, ClassLoader cl, String fallbackClassName)
         throws FactoryConfigurationError
     {
-        dPrint(()->"find factoryId =" + factoryId);
+        if (debug) {
+            dPrint("find factoryId =" + factoryId);
+        }
 
         // Use the system property first
         final String systemProp;
@@ -224,7 +224,9 @@ class FactoryFinder {
             systemProp = System.getProperty(factoryId);
         }
         if (systemProp != null) {
-            dPrint(()->"found system property, value=" + systemProp);
+            if (debug) {
+                dPrint("found system property, value=" + systemProp);
+            }
             return newInstance(type, systemProp, cl, true);
         }
 
@@ -251,7 +253,9 @@ class FactoryFinder {
                 "Provider for " + factoryId + " cannot be found", null);
         }
 
-        dPrint(()->"loaded from fallback value: " + fallbackClassName);
+        if (debug) {
+            dPrint("loaded from fallback value: " + fallbackClassName);
+        }
         return newInstance(type, fallbackClassName, cl, true);
     }
 

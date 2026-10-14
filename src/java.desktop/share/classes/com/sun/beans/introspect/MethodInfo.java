@@ -107,13 +107,14 @@ final class MethodInfo {
             }
 
             // Add methods inherited from interfaces
-            Deque<Class<?>> ifaceDeque = new ArrayDeque<>(List.of(type.getInterfaces()));
+            Deque<Class<?>> ifaceDeque = new ArrayDeque<>();
+            Collections.addAll(ifaceDeque, type.getInterfaces());
             while (!ifaceDeque.isEmpty()) {
                 Class<?> iface = ifaceDeque.removeLast();
                 if (IGNORABLE_INTERFACES.contains(iface)) {
                     continue;
                 }
-                ifaceDeque.addAll(List.of(iface.getInterfaces()));
+                Collections.addAll(ifaceDeque, iface.getInterfaces());
                 for (Method method : iface.getMethods()) {
                     if (!Modifier.isAbstract(method.getModifiers()) && !method.isBridge()) {
                         (list = createIfNeeded(list)).add(method);

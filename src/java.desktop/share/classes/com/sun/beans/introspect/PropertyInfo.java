@@ -33,6 +33,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -130,7 +131,8 @@ public final class PropertyInfo {
     }
 
     private boolean initialize(MethodInfo info) {
-        if (info != null) {
+        // the annotations of Object's methods are JDK-internal and costly to instantiate
+        if (info != null && info.method.getDeclaringClass() != Object.class) {
             BeanProperty annotation = info.method.getAnnotation(BeanProperty.class);
             if (annotation != null) {
                 if (!annotation.bound()) {
@@ -306,7 +308,11 @@ public final class PropertyInfo {
                 }
             }
         }
-        map.values().removeIf(propertyInfo -> !propertyInfo.initialize());
+        for (Iterator<PropertyInfo> iterator = map.values().iterator(); iterator.hasNext();) {
+            if (!iterator.next().initialize()) {
+                iterator.remove();
+            }
+        }
         return !map.isEmpty()
                 ? Collections.unmodifiableMap(map)
                 : Collections.emptyMap();

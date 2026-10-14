@@ -1108,7 +1108,7 @@ public class Introspector {
     }
 
     private static Class<?> findCustomizerClass(Class<?> type) {
-        String name = type.getName() + "Customizer";
+        String name = type.getName().concat("Customizer");
         try {
             type = ClassFinder.findClass(name, type.getClassLoader());
             // Each customizer should inherit java.awt.Component and implement java.beans.Customizer
