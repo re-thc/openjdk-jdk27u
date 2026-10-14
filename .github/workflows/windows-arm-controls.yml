@@ -46,7 +46,9 @@ jobs:
         run: |
           python3 .github/scripts/build-windows-arm-control.py \
             --jdk build/zip/images/jdk --bootjdk '${{ steps.bootjdk.outputs.path }}' \
-            --profile configure --cmake '${{ steps.cmake.outputs.path }}'
+            --profile configure --cmake '${{ steps.cmake.outputs.path }}' \
+            --bash "$(cygpath -m "$(command -v bash)")" \
+            --make "$(cygpath -m "$(command -v make)")"
       - name: Compare the existing kernel, JNI and direct native code
         run: python3 .github/scripts/measure-windows-arm-controls.py build/zip/images/jdk
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a

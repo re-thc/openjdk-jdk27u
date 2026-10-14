@@ -12,6 +12,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--jdk', type=Path, required=True)
 parser.add_argument('--bootjdk', required=True)
 parser.add_argument('--profile', required=True)
+parser.add_argument('--bash', default='bash')
+parser.add_argument('--make', default='make')
 parser.add_argument('--cmake', default='')
 parser.add_argument('--toolchain', default='')
 args = parser.parse_args()
@@ -52,7 +54,7 @@ def adler_stub(text, arm, direct):
         body = body[:begin_block] + body[end_block:]
     return text[:begin] + body + text[end:]
 
-command = ['bash', args.profile, '--with-conf-name=control', '--with-debug-level=release',
+command = [args.bash, args.profile, '--with-conf-name=control', '--with-debug-level=release',
     '--with-boot-jdk=' + args.bootjdk, '--with-native-debug-symbols=none',
     '--disable-desktop', '--enable-headless-only',
     '--enable-jvm-feature-serialgc', '--enable-jvm-feature-g1gc', '--enable-jvm-feature-zgc',
@@ -105,7 +107,7 @@ try:
         for name, content in changed.items():
             (root / name).write_text(content)
         with (results / (variant + '-build.log')).open('w') as log:
-            subprocess.run(['make', 'CONF=control', 'hotspot', 'LOG=info'], check=True,
+            subprocess.run([args.make, 'CONF=control', 'hotspot', 'LOG=info'], check=True,
                            stdout=log, stderr=subprocess.STDOUT)
         image = results / variant
         shutil.copytree(jdk, image, dirs_exist_ok=True)
