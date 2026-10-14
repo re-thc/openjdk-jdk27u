@@ -1,8 +1,8 @@
-## StringZilla v5.2.0
+## StringZilla v5.3.0
 
 ### Notice
 
-Source: https://github.com/ashvardanian/StringZilla/tree/v5.2.0
+Source: https://github.com/ashvardanian/StringZilla/tree/86d73f1021e6cce022c3cceb1f7837eb50338774
 
 Copyright (c) Ash Vardanian and contributors.
 

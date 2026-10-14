@@ -293,21 +293,45 @@ address TemplateInterpreterGenerator::generate_stringzilla_entry(AbstractInterpr
   const Register length = c_rarg1;
   const Register tgt = c_rarg2;
   const Register tgt_length = c_rarg3;
-  __ movptr(src, Address(rsp, 5 * wordSize));
-  __ movl2ptr(length, Address(rsp, 4 * wordSize));
-  __ addq(src, length);
-  __ addptr(src, arrayOopDesc::base_offset_in_bytes(T_BYTE));
-  __ movl(length, Address(rsp, 3 * wordSize));
-  __ movptr(tgt, Address(rsp, 2 * wordSize));
-  __ addptr(tgt, arrayOopDesc::base_offset_in_bytes(T_BYTE));
-  __ movl(tgt_length, Address(rsp, wordSize));
+  const bool whole_array = kind == Interpreter::stringzilla_indexOfLatin1;
+  if (whole_array) {
+    // Before native bootstrap, or beyond the leaf work limit, execute Java.
+    __ movptr(rax, ExternalAddress(StringZilla::kernels_address()));
+    __ testptr(rax, rax);
+    __ jcc(Assembler::zero, slow_path);
+    __ movptr(src, Address(rsp, 2 * wordSize));
+    __ movptr(tgt, Address(rsp, wordSize));
+    __ testptr(src, src);
+    __ jcc(Assembler::zero, slow_path);
+    __ testptr(tgt, tgt);
+    __ jcc(Assembler::zero, slow_path);
+    __ movl(length, Address(src, arrayOopDesc::length_offset_in_bytes()));
+    __ movl(tgt_length, Address(tgt, arrayOopDesc::length_offset_in_bytes()));
+    __ cmpl(length, StringZilla::max_bytes);
+    __ jcc(Assembler::above, slow_path);
+    __ movl(rax, length);
+    __ imulq(rax, tgt_length);
+    __ cmpq(rax, StringZilla::max_work);
+    __ jcc(Assembler::above, slow_path);
+    __ addptr(src, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    __ addptr(tgt, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  } else {
+    __ movptr(src, Address(rsp, 5 * wordSize));
+    __ movl2ptr(length, Address(rsp, 4 * wordSize));
+    __ addq(src, length);
+    __ addptr(src, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    __ movl(length, Address(rsp, 3 * wordSize));
+    __ movptr(tgt, Address(rsp, 2 * wordSize));
+    __ addptr(tgt, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    __ movl(tgt_length, Address(rsp, wordSize));
+  }
   __ super_call_VM_leaf(StringZilla::entry(AbstractInterpreter::method_intrinsic(kind)),
                         src, length, tgt, tgt_length);
   __ pop(rdi);
   __ mov(rsp, r13);
   __ jmp(rdi);
   __ bind(slow_path);
-  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  __ jump_to_entry(Interpreter::entry_for_kind(whole_array ? Interpreter::zerolocals : Interpreter::native));
   return entry;
 }
 

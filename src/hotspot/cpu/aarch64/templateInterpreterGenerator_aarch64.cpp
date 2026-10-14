@@ -1104,14 +1104,36 @@ address TemplateInterpreterGenerator::generate_stringzilla_entry(AbstractInterpr
   const Register length = c_rarg1;
   const Register tgt = c_rarg2;
   const Register tgt_length = c_rarg3;
-  __ ldr(src, Address(esp, 4 * wordSize));
-  __ ldrw(length, Address(esp, 3 * wordSize));
-  __ add(src, src, length);
-  __ add(src, src, arrayOopDesc::base_offset_in_bytes(T_BYTE));
-  __ ldrw(length, Address(esp, 2 * wordSize));
-  __ ldr(tgt, Address(esp, wordSize));
-  __ add(tgt, tgt, arrayOopDesc::base_offset_in_bytes(T_BYTE));
-  __ ldrw(tgt_length, Address(esp));
+  const bool whole_array = kind == Interpreter::stringzilla_indexOfLatin1;
+  if (whole_array) {
+    // Acquire the callback publication before reading its immutable table.
+    __ lea(rscratch1, ExternalAddress(StringZilla::kernels_address()));
+    __ ldar(rscratch2, rscratch1);
+    __ cbz(rscratch2, slow_path);
+    __ ldr(src, Address(esp, wordSize));
+    __ ldr(tgt, Address(esp));
+    __ cbz(src, slow_path);
+    __ cbz(tgt, slow_path);
+    __ ldrw(length, Address(src, arrayOopDesc::length_offset_in_bytes()));
+    __ ldrw(tgt_length, Address(tgt, arrayOopDesc::length_offset_in_bytes()));
+    __ cmpw(length, StringZilla::max_bytes);
+    __ br(Assembler::HI, slow_path);
+    __ mul(rscratch1, length, tgt_length);
+    __ mov(rscratch2, StringZilla::max_work);
+    __ cmp(rscratch1, rscratch2);
+    __ br(Assembler::HI, slow_path);
+    __ add(src, src, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    __ add(tgt, tgt, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  } else {
+    __ ldr(src, Address(esp, 4 * wordSize));
+    __ ldrw(length, Address(esp, 3 * wordSize));
+    __ add(src, src, length);
+    __ add(src, src, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    __ ldrw(length, Address(esp, 2 * wordSize));
+    __ ldr(tgt, Address(esp, wordSize));
+    __ add(tgt, tgt, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    __ ldrw(tgt_length, Address(esp));
+  }
   // Preserve LR across the C++ leaf call and restore the caller's Java stack.
   __ andr(sp, r19_sender_sp, -16);
   __ stp(r29, r30, Address(__ pre(sp, -2 * wordSize)));
@@ -1121,7 +1143,7 @@ address TemplateInterpreterGenerator::generate_stringzilla_entry(AbstractInterpr
   __ ldp(r29, r30, Address(__ post(sp, 2 * wordSize)));
   __ ret(lr);
   __ bind(slow_path);
-  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  __ jump_to_entry(Interpreter::entry_for_kind(whole_array ? Interpreter::zerolocals : Interpreter::native));
   return entry;
 }
 

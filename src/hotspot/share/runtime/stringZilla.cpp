@@ -31,7 +31,7 @@ Atomic<const StringZillaKernels*> published_kernels;
 
 const StringZillaKernels* kernels() {
   const StringZillaKernels* result = published_kernels.load_acquire();
-  assert(result != nullptr, "StringZilla class must initialize its kernels first");
+  assert(result != nullptr, "native bootstrap must publish StringZilla kernels first");
   return result;
 }
 
@@ -71,6 +71,10 @@ int equal_bytes(const char* src, const char* tgt, int length) {
 void StringZilla::register_kernels(const void* table) {
   assert(table != nullptr, "kernel table");
   published_kernels.release_store((const StringZillaKernels*)table);
+}
+
+address StringZilla::kernels_address() {
+  return (address)&published_kernels + Atomic<const StringZillaKernels*>::value_offset_in_bytes();
 }
 
 int StringZilla::equal_range(const char* src, int length, const char* tgt, int tgt_offset) {
@@ -120,6 +124,7 @@ address StringZilla::entry(vmIntrinsics::ID id) {
     case vmIntrinsics::_stringzillaFindUTF16Latin1: return CAST_FROM_FN_PTR(address, find_utf16_latin1);
     case vmIntrinsics::_stringzillaRfindUTF16Latin1: return CAST_FROM_FN_PTR(address, rfind_utf16_latin1);
 
+    case vmIntrinsics::_indexOfL:
     case vmIntrinsics::_stringzillaFindLatin1: return CAST_FROM_FN_PTR(address, find_latin1);
     case vmIntrinsics::_stringzillaFindUTF16: return CAST_FROM_FN_PTR(address, find_utf16);
     case vmIntrinsics::_stringzillaRfindLatin1: return CAST_FROM_FN_PTR(address, rfind_latin1);

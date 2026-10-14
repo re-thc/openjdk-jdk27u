@@ -1,6 +1,6 @@
 # StringZilla integration
 
-This fork uses StringZilla 5.2.0 for eligible string searches and interpreter/C1
+This fork uses StringZilla 5.3.0 for eligible string searches and interpreter/C1
 equality. It is enabled by default. Disable it with
 `-XX:-UseStringZillaIntrinsics`. Java string representation, range handling,
 Unicode semantics and public APIs remain unchanged.
@@ -22,13 +22,20 @@ x86 GCC/Clang builds select upstream AVX2 or AVX-512 kernels according to
 HotSpot's CPU capabilities and `UseAVX`. AArch64 uses NEON. MSVC x64, Zero and
 other ports use serial kernels. GCC/Clang use upstream portable scalar loads
 for byte arrays at arbitrary offsets. The immutable callback table is published
-with release/acquire ordering during native bootstrap and initialized idempotently
-at Java class initialization. Bootstrap equality has a VM-owned scalar fallback.
+with release/acquire ordering by `System.registerNatives`; Java class
+initialization reads the selected configuration idempotently. Bootstrap equality has a
+VM-owned scalar fallback.
 
 Search dispatch starts at 256 source bytes. Short ranges and immediate matches
-retain inexpensive Java/platform paths. Equality has separate length and prefix
-checks. C1 compiles the mixed-coder Java search loop separately from the
+retain inexpensive Java/platform paths, except the interpreter's whole-string
+Latin-1 forward intrinsic, which calls the bounded kernel at every input size.
+That entry resumes Java before native bootstrap and for ranges exceeding either
+native work limit. C1/C2 forward search retain their existing routing.
+Equality has separate length and prefix checks. C1 compiles the mixed-coder
+Java search loop separately from the
 acceleration branch, including the fallback for needles over 64 code units.
+Short UTF-16 substring reverse matches are checked before backend/tier dispatch,
+including ranges that use the Java loop.
 
 Same-coder substring reverse searches also use the selected kernel and compiling
 tier. The tier query folds to a constant in C1/C2; its Java body returns zero for
@@ -135,8 +142,8 @@ without hiding Java/leaf alternatives inside a single LIR block.
 
 ## Vendoring and updates
 
-The 28 upstream files come from StringZilla 5.2.0 at commit
-`82e15261d0a723e7bb97a03abd61641953fd45c0`, licensed under Apache-2.0.
+The 28 upstream files come from StringZilla 5.3.0 at commit
+`86d73f1021e6cce022c3cceb1f7837eb50338774`, licensed under Apache-2.0.
 One [tracked patch](../../src/java.base/share/native/libjava/stringzilla/patches/0001-preserve-reverse-search-overlaps.patch)
 preserves overlapping suffix candidates after a rejected long-needle prefix in
 reverse search and skips impossible prefixes using the upstream byte-search

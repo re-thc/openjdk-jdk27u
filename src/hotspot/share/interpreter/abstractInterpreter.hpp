@@ -93,6 +93,7 @@ class AbstractInterpreter: AllStatic {
     stringzilla_rfindCharLatin1,
     stringzilla_rfindCharUTF16,
     stringzilla_equals,
+    stringzilla_indexOfLatin1,
     stringzilla_findLatin1,
     stringzilla_findUTF16,
     stringzilla_rfindLatin1,
