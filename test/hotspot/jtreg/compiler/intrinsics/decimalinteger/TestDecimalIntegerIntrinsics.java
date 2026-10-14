@@ -29,8 +29,8 @@
  * @modules java.base/jdk.internal.util
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:TieredStopAtLevel=1 -XX:CompileCommand=dontinline,java.lang.Integer::parse* -XX:CompileCommand=dontinline,java.lang.Long::parse* -XX:CompileCommand=dontinline,jdk.internal.util.DecimalDigits::uncheckedGetChars* TestDecimalIntegerIntrinsics 1
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:-TieredCompilation -XX:CompileCommand=dontinline,java.lang.Integer::parse* -XX:CompileCommand=dontinline,java.lang.Long::parse* -XX:CompileCommand=dontinline,jdk.internal.util.DecimalDigits::uncheckedGetChars* TestDecimalIntegerIntrinsics 4
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseFastIntegerIntrinsics -XX:+UseZmijIntegerIntrinsics -Xbatch -XX:TieredStopAtLevel=1 -XX:CompileCommand=dontinline,java.lang.Integer::parse* -XX:CompileCommand=dontinline,java.lang.Long::parse* -XX:CompileCommand=dontinline,jdk.internal.util.DecimalDigits::uncheckedGetChars* TestDecimalIntegerIntrinsics 1
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseFastIntegerIntrinsics -XX:+UseZmijIntegerIntrinsics -Xbatch -XX:-TieredCompilation -XX:CompileCommand=dontinline,java.lang.Integer::parse* -XX:CompileCommand=dontinline,java.lang.Long::parse* -XX:CompileCommand=dontinline,jdk.internal.util.DecimalDigits::uncheckedGetChars* TestDecimalIntegerIntrinsics 4
  */
 
 import java.lang.reflect.Method;
@@ -40,6 +40,11 @@ import jdk.internal.util.DecimalDigits;
 public class TestDecimalIntegerIntrinsics {
     public static void main(String[] args) throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
+        for (String flag : new String[] {"UseFastIntegerIntrinsics", "UseZmijIntegerIntrinsics"}) {
+            if (!Boolean.TRUE.equals(wb.getBooleanVMFlag(flag))) {
+                throw new AssertionError(flag + " must be enabled");
+            }
+        }
         Method[] methods = {
             Integer.class.getDeclaredMethod("parseInt", String.class, int.class),
             Long.class.getDeclaredMethod("parseLong", String.class, int.class),

@@ -53,7 +53,8 @@ require explicit enablement. The IDs are
 `_parseDecimalInt`, `_parseDecimalLong`, `_parseUnsignedDecimalInt` and
 `_parseUnsignedDecimalLong`. Their controls select the original Java entry.
 Tiered VMs, counted execution and debugger events retain normal Java entries
-and profiling; C1/C2 compile the existing bodies. CharSequence and BigInteger
+and profiling; this does not accelerate ordinary tiered startup before C2.
+C1/C2 compile the existing bodies. CharSequence and BigInteger
 parsing retain Java.
 
 ## Updating and testing

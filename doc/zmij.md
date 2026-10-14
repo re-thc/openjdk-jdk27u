@@ -58,6 +58,8 @@ The signed int/long kernels serve the four DecimalDigits Latin1/UTF16 writers
 in interpreter-only execution, covering Strings, builders and concatenation.
 C1/C2 retain the existing Java bodies and profiling. Unsigned Long's separate
 decomposition remains Java.
+Ordinary tiered startup also retains Java; the native entries require
+interpreter-only execution without compiled-call counting.
 
 Vendor stores may exceed the exact Java output size. The bridge uses a
 32-byte stack scratch buffer and copies only the logical result, widening

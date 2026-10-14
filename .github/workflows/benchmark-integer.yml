@@ -30,6 +30,9 @@ on:
       runs-on:
         type: string
         default: ubuntu-26.04-arm
+      checks-only:
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -60,21 +63,27 @@ jobs:
         env:
           JDK_IMAGE: ${{ steps.bundles.outputs.jdk-path }}
           JTREG: ${{ steps.jtreg.outputs.path }}
-        run: >-
-          python3 make/scripts/benchmark-decimal-integer.py
-          "$JDK_IMAGE" "$RUNNER_TEMP/integer-benchmarks"
-          --jtreg "$JTREG"
+          CHECKS_ONLY: ${{ inputs.checks-only }}
+        run: |
+          args=()
+          if [[ "$CHECKS_ONLY" == true ]]; then args+=(--checks-only); fi
+          python3 make/scripts/benchmark-decimal-integer.py \
+          "$JDK_IMAGE" "$RUNNER_TEMP/integer-benchmarks" \
+          --jtreg "$JTREG" "${args[@]}"
 
       - name: 'Measure native and Java integer conversions on Windows'
         if: runner.os == 'Windows'
         env:
           JDK_IMAGE: ${{ steps.bundles.outputs.jdk-path }}
           JTREG: ${{ steps.jtreg.outputs.path }}
-        run: >-
-          python make/scripts/benchmark-decimal-integer.py
-          "$(cygpath -w "$JDK_IMAGE")"
-          "$(cygpath -w "$RUNNER_TEMP/integer-benchmarks")"
-          --jtreg "$(cygpath -w "$JTREG")"
+          CHECKS_ONLY: ${{ inputs.checks-only }}
+        run: |
+          args=()
+          if [[ "$CHECKS_ONLY" == true ]]; then args+=(--checks-only); fi
+          python make/scripts/benchmark-decimal-integer.py \
+          "$(cygpath -w "$JDK_IMAGE")" \
+          "$(cygpath -w "$RUNNER_TEMP/integer-benchmarks")" \
+          --jtreg "$(cygpath -w "$JTREG")" "${args[@]}"
 
       - name: 'Upload samples, commands and image hashes'
         if: ${{ !cancelled() }}

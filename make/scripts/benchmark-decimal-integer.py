@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import shlex
 import subprocess
 import threading
@@ -44,9 +45,13 @@ def main():
     parser.add_argument('--sizes', default='tiny,short,wide,mixed')
     parser.add_argument('--duration', default='500ms')
     parser.add_argument('--jtreg', type=Path, help='run focused jtreg checks before timing')
+    parser.add_argument('--checks-only', action='store_true',
+                        help='verify enabled defaults and run correctness checks without timing')
     args = parser.parse_args()
     if args.pairs < 1:
         parser.error('--pairs must be positive')
+    if args.checks_only and not args.jtreg:
+        parser.error('--checks-only requires --jtreg')
     tiers = args.tiers.split(',')
     sizes = args.sizes.split(',')
     if set(tiers) - {'interpreter', 'utf16', 'c1', 'tiered', 'c2'}:
@@ -159,7 +164,7 @@ def main():
 
     deps = output / 'dependencies'
     deps.mkdir(exist_ok=True)
-    for relative, expected in DEPENDENCIES.items():
+    for relative, expected in (DEPENDENCIES.items() if not args.checks_only else []):
         jar = deps / Path(relative).name
         if not jar.exists():
             with urllib.request.urlopen('https://repo.maven.apache.org/maven2/' + relative,
@@ -173,13 +178,25 @@ def main():
     common = ['-Xms256m', '-Xmx256m', '-Xshare:off', '-XX:ActiveProcessorCount=2',
               '-XX:+UseG1GC', '-XX:+UnlockExperimentalVMOptions',
               '-XX:+UseFourByteObjectHeaders', EXPORT]
-    run([javac, EXPORT, '-cp', classpath, '-processorpath', classpath,
-         '-processor', 'org.openjdk.jmh.generators.BenchmarkProcessor', '-d', str(classes),
-         str(inputs[0])], 'compile-benchmark', 120)
+    if not args.checks_only:
+        run([javac, EXPORT, '-cp', classpath, '-processorpath', classpath,
+             '-processor', 'org.openjdk.jmh.generators.BenchmarkProcessor', '-d', str(classes),
+             str(inputs[0])], 'compile-benchmark', 120)
     run([javac, EXPORT, '-d', str(classes),
          str(root / 'test/jdk/jdk/internal/util/DecimalDigits/TestDecimalIntegers.java')],
         'compile-checks', 120)
     for compact in [True, False]:
+        if args.checks_only:
+            flags = [] if compact else ['-XX:-CompactStrings']
+            name = f'defaults-compact-{compact}'
+            run([java] + common + ['-Xint', '-XX:+PrintFlagsFinal'] + flags
+                + ['-cp', str(classes), 'TestDecimalIntegers'], name, 180)
+            log = (output / (name + '.log')).read_text(errors='replace')
+            for flag in ['UseFastIntegerIntrinsics', 'UseZmijIntegerIntrinsics']:
+                if not re.search(r'\b' + flag + r'\s*=\s*true\b[^\n]*\{default\}', log):
+                    raise SystemExit(f'{flag} is not enabled by default in {name}')
+            print('JDK_EVIDENCE ' + json.dumps({'name': name + '.log',
+                  'content': log}), flush=True)
         for native in [False, True]:
             flags = [f'-XX:{"+" if native else "-"}UseFastIntegerIntrinsics',
                      f'-XX:{"+" if native else "-"}UseZmijIntegerIntrinsics']
@@ -209,6 +226,11 @@ def main():
                       'name': path.relative_to(output).as_posix(),
                       'content': path.read_text(errors='replace')}), flush=True)
         print((output / 'focused-jtreg.log').read_text(errors='replace'), flush=True)
+
+    if args.checks_only:
+        print('JDK_EVIDENCE ' + json.dumps({'name': 'commands.json',
+              'content': (output / 'commands.json').read_text()}), flush=True)
+        return
 
     profiles = {
         'interpreter': (['-Xint'], BENCHMARK, sizes),

@@ -23,6 +23,15 @@ name: 'Qualify native integer conversions'
 
 on:
   workflow_dispatch:
+    inputs:
+      checks-only:
+        type: boolean
+        default: true
+        description: 'Validate integer defaults and compiled Java bodies without timing'
+  pull_request:
+    branches: [master]
+    paths:
+      - test/hotspot/jtreg/compiler/intrinsics/decimalinteger/TestDecimalIntegerIntrinsics.java
 
 permissions:
   contents: read
@@ -67,6 +76,7 @@ jobs:
     with:
       platform: macos-aarch64
       runs-on: macos-26
+      checks-only: ${{ github.event_name == 'pull_request' || inputs.checks-only }}
 
   benchmark-windows:
     needs: build-windows
@@ -74,3 +84,4 @@ jobs:
     with:
       platform: windows-x64
       runs-on: windows-2025
+      checks-only: ${{ github.event_name == 'pull_request' || inputs.checks-only }}
