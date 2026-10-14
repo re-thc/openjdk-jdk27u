@@ -518,7 +518,7 @@ address TemplateInterpreterGenerator::generate_currentThread() {
 
 address TemplateInterpreterGenerator::generate_count_positives_entry() {
   address entry = __ pc();
-  Label slow_path;
+  Label slow_path, done;
   __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
   __ movptr(r10, Address(rsp, 3 * wordSize));
   __ movl(r11, Address(rsp, 2 * wordSize));
@@ -537,6 +537,12 @@ address TemplateInterpreterGenerator::generate_count_positives_entry() {
   __ cmpl(rcx, 1024 * 1024);
   __ jcc(Assembler::above, slow_path);
 
+  __ xorl(rax, rax);
+  __ testl(rcx, rcx);
+  __ jcc(Assembler::zero, done);
+  __ testb(Address(r10, r11, Address::times_1, arrayOopDesc::base_offset_in_bytes(T_BYTE)), 0x80);
+  __ jcc(Assembler::notZero, done);
+
   // Preserve the Java arguments for fallback and align the native leaf frame.
   __ movptr(r10, rsp);
   __ enter();
@@ -551,6 +557,7 @@ address TemplateInterpreterGenerator::generate_count_positives_entry() {
   __ leave();
   __ testl(rax, rax);
   __ jcc(Assembler::negative, slow_path);
+  __ bind(done);
   __ pop(rdi);
   __ mov(rsp, r13);
   __ jmp(rdi);
