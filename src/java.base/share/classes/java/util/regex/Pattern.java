@@ -46,7 +46,7 @@ import java.util.stream.StreamSupport;
 import jdk.internal.lang.CaseFolding;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.regex.Grapheme;
-import jdk.internal.util.regex.RustRegex;
+import jdk.internal.util.regex.Pcre2Regex;
 
 /**
  * A compiled representation of a regular expression.
@@ -1008,12 +1008,12 @@ public final class Pattern
      */
     transient Node root;
 
-    transient volatile RustRegex rustRegex;
+    transient volatile Pcre2Regex pcre2Regex;
     private transient volatile boolean javaCompiled;
 
     Pattern javaPattern() {
         if (javaCompiled) return this;
-        RustRegex engine = rustRegex;
+        Pcre2Regex engine = pcre2Regex;
         if (engine == null) return this;
         synchronized (engine) {
             Pattern fallback = engine.javaPattern();
@@ -1044,7 +1044,7 @@ public final class Pattern
                 localTCNCount = fallback.localTCNCount;
                 namedGroups = fallback.namedGroups;
                 javaCompiled = true;
-                rustRegex = null;
+                pcre2Regex = null;
             }
         }
     }
@@ -1601,7 +1601,7 @@ public final class Pattern
     }
 
     // Reuse validated preparation instead of parsing the same simple grammar again.
-    private Pattern(String p, int f, RustRegex engine) {
+    private Pattern(String p, int f, Pcre2Regex engine) {
         pattern = p;
         flags = flags0 = f;
         capturingGroupCount = engine.groupCount;
@@ -2049,9 +2049,9 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      * of the expression which will create the object tree.
      */
     private void compile() {
-        RustRegex nativePattern = RustRegex.compile(pattern, flags);
+        Pcre2Regex nativePattern = Pcre2Regex.compile(pattern, flags);
         if (nativePattern != null) {
-            rustRegex = nativePattern;
+            pcre2Regex = nativePattern;
             capturingGroupCount = nativePattern.groupCount;
             namedGroups = nativePattern.namedGroups;
             compiled = true;

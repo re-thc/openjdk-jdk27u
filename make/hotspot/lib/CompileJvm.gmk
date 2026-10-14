@@ -177,23 +177,42 @@ endif
 ## Build libjvm
 ################################################################################
 
-ifeq ($(RUST_REGEX_ENABLED), true)
-  include Execute.gmk
-  RUST_REGEX_SRC := $(TOPDIR)/src/hotspot/share/runtime/rustregex
-  RUST_REGEX_OUT := $(JVM_OUTPUTDIR)/rustregex
-  RUST_REGEX_LIB := $(RUST_REGEX_OUT)/$(RUST_REGEX_TARGET)/release/libjdk_rust_regex.a
-  $(eval $(call SetupExecute, BUILD_RUST_REGEX, \
-      INFO := Building bundled Rust regex, \
-      WORKING_DIR := $(RUST_REGEX_SRC), \
-      COMMAND := RUSTC="$(RUSTC)" $(CARGO) build --frozen --release --target $(RUST_REGEX_TARGET) \
-          --target-dir $(RUST_REGEX_OUT), \
-      OUTPUT_FILE := $(RUST_REGEX_LIB), \
-      DEPS := $(call FindFiles, $(RUST_REGEX_SRC)), \
+# Keep third-party C compilation outside the HotSpot C++ source scan/PCH.
+JVM_EXCLUDES += $(TOPDIR)/src/hotspot/share/runtime/pcre2regex
+ifeq ($(PCRE2_REGEX_ENABLED), true)
+  PCRE2_SRC := $(TOPDIR)/src/hotspot/share/runtime/pcre2regex
+  PCRE2_CFLAGS := $(CFLAGS_JDKLIB) -I$(PCRE2_SRC)/upstream/src \
+      -DHAVE_CONFIG_H -DSUPPORT_PCRE2_8 -DSUPPORT_PCRE2_16 \
+      -DSUPPORT_JIT -DSLJIT_WX_EXECUTABLE_ALLOCATOR=1 \
+      -DHAVE_STDLIB_H -DHAVE_STDINT_H -DHAVE_INTTYPES_H \
+      -DHAVE_STRING_H -DHAVE_MEMMOVE -DHAVE_LIMITS_H \
+      -DHAVE_UNISTD_H -DHAVE_SYS_TYPES_H -DHAVE_SYS_MMAN_H
+  $(foreach width, 8 16, \
+    $(eval $(call SetupNativeCompilation, BUILD_PCRE2_$(width), \
+        NAME := jdk_pcre2_$(width), TYPE := STATIC_LIBRARY, \
+        SRC := $(PCRE2_SRC)/upstream/src, \
+        INCLUDE_FILES := $(notdir $(wildcard $(PCRE2_SRC)/upstream/src/*.c)), \
+        OBJECT_DIR := $(JVM_OUTPUTDIR)/pcre2/$(width), \
+        OUTPUT_DIR := $(JVM_OUTPUTDIR)/pcre2, \
+        CFLAGS := $(PCRE2_CFLAGS) -DPCRE2_CODE_UNIT_WIDTH=$(width), \
+        OPTIMIZATION := HIGHEST, WARNINGS_AS_ERRORS := false, \
+    )) \
+  )
+  $(eval $(call SetupNativeCompilation, BUILD_PCRE2_ADAPTER, \
+      NAME := jdk_pcre2_adapter, TYPE := STATIC_LIBRARY, LINK_TYPE := C++, \
+      SRC := $(PCRE2_SRC), INCLUDE_FILES := adapter.cpp, \
+      OBJECT_DIR := $(JVM_OUTPUTDIR)/pcre2/adapter, \
+      OUTPUT_DIR := $(JVM_OUTPUTDIR)/pcre2, \
+      CFLAGS := $(CFLAGS_JDKLIB) -I$(PCRE2_SRC)/upstream/src, \
+      CXXFLAGS := $(CXXFLAGS_JDKLIB) -I$(PCRE2_SRC)/upstream/src, \
+      OPTIMIZATION := HIGHEST, \
   ))
-  JVM_CFLAGS += -DINCLUDE_RUST_REGEX=1
-  JVM_LIBS += $(RUST_REGEX_LIB)
+  BUILD_PCRE2_REGEX := $(BUILD_PCRE2_ADAPTER) $(BUILD_PCRE2_8) $(BUILD_PCRE2_16)
+  JVM_CFLAGS += -DINCLUDE_PCRE2_REGEX=1
+  JVM_LIBS += $(JVM_OUTPUTDIR)/pcre2/libjdk_pcre2_adapter.a \
+      $(JVM_OUTPUTDIR)/pcre2/libjdk_pcre2_8.a $(JVM_OUTPUTDIR)/pcre2/libjdk_pcre2_16.a
 else
-  JVM_CFLAGS += -DINCLUDE_RUST_REGEX=0
+  JVM_CFLAGS += -DINCLUDE_PCRE2_REGEX=0
 endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
@@ -336,7 +355,7 @@ endif
 # 1540-1090 : (I) The destructor of "..." might not be called.
 # 1540-1639 : (I) The behavior of long type bit fields has changed ...
 
-$(BUILD_LIBJVM_TARGET): $(BUILD_RUST_REGEX)
+$(BUILD_LIBJVM_TARGET): $(BUILD_PCRE2_REGEX)
 
 TARGETS += $(BUILD_LIBJVM)
 

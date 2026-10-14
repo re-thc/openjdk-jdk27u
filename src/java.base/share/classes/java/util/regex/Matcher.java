@@ -39,7 +39,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import jdk.internal.util.regex.RustRegex;
+import jdk.internal.util.regex.Pcre2Regex;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
@@ -262,10 +262,10 @@ public final class Matcher implements MatchResult {
     Matcher(Pattern parent, CharSequence text) {
         this.parentPattern = parent;
         this.text = text;
-        javaOnly = parent.rustRegex == null;
+        javaOnly = parent.pcre2Regex == null;
 
         // Allocate state storage
-        groups = new int[parent.capturingGroupCount * 2 + (parent.rustRegex != null ? 4 : 0)];
+        groups = new int[parent.capturingGroupCount * 2 + (parent.pcre2Regex != null ? 4 : 0)];
         locals = new int[parent.localCount];
         localsPos = new IntHashSet[parent.localTCNCount];
 
@@ -438,11 +438,11 @@ public final class Matcher implements MatchResult {
         ensureContinuation();
         javaMatchChoice = null;
         parentPattern = newPattern;
-        javaOnly = newPattern.rustRegex == null;
+        javaOnly = newPattern.pcre2Regex == null;
         namedGroups = null;
 
         // Reallocate state storage
-        groups = new int[newPattern.capturingGroupCount * 2 + (newPattern.rustRegex != null ? 4 : 0)];
+        groups = new int[newPattern.capturingGroupCount * 2 + (newPattern.pcre2Regex != null ? 4 : 0)];
         locals = new int[newPattern.localCount];
         for (int i = 0; i < groups.length; i++)
             groups[i] = -1;
@@ -1789,8 +1789,8 @@ public final class Matcher implements MatchResult {
         int base = parentPattern.capturingGroupCount * 2;
         acceptMode = NOANCHOR;
         Pattern.Node javaRoot;
-        RustRegex engine = null;
-        if (!RustRegex.ENABLED || javaOnly) {
+        Pcre2Regex engine = null;
+        if (!Pcre2Regex.ENABLED || javaOnly) {
             clearNativeEnd();
             javaRoot = parentPattern.root;
         }
@@ -1806,7 +1806,7 @@ public final class Matcher implements MatchResult {
                 }
                 javaRoot = choice.root;
             } else {
-                engine = parentPattern.rustRegex;
+                engine = parentPattern.pcre2Regex;
                 if (engine == null) {
                     selectJavaOnly();
                     javaRoot = parentPattern.root;
@@ -1864,8 +1864,8 @@ public final class Matcher implements MatchResult {
         int base = parentPattern.capturingGroupCount * 2;
         acceptMode = anchor;
         Pattern.Node javaRoot;
-        RustRegex engine = null;
-        if (!RustRegex.ENABLED || javaOnly) {
+        Pcre2Regex engine = null;
+        if (!Pcre2Regex.ENABLED || javaOnly) {
             clearNativeEnd();
             javaRoot = parentPattern.matchRoot;
         }
@@ -1882,7 +1882,7 @@ public final class Matcher implements MatchResult {
                 }
                 javaRoot = choice.matchRoot;
             } else {
-                engine = parentPattern.rustRegex;
+                engine = parentPattern.pcre2Regex;
                 if (engine == null) {
                     selectJavaOnly();
                     javaRoot = parentPattern.matchRoot;
@@ -1958,7 +1958,7 @@ public final class Matcher implements MatchResult {
     }
 
     @ForceInline
-    private int nativeMatch(RustRegex engine, int base, int start, int mode) {
+    private int nativeMatch(Pcre2Regex engine, int base, int start, int mode) {
         if (nativeEndPattern != null) {
             nativeEndPattern = null;
             nativeEndInput = null;
@@ -1974,7 +1974,7 @@ public final class Matcher implements MatchResult {
             selectJavaMatch(false, mode);
             return -2;
         }
-        if (to - from > RustRegex.MAX_LENGTH && !engine.hasShortPlan()) {
+        if (to - from > Pcre2Regex.MAX_LENGTH && !engine.hasShortPlan()) {
             parentPattern.ensureJava();
             return -1;
         }
@@ -2055,7 +2055,7 @@ public final class Matcher implements MatchResult {
     }
 
     private void ensureContinuation() {
-        if (RustRegex.ENABLED && nativePendingLast) replayNative();
+        if (Pcre2Regex.ENABLED && nativePendingLast) replayNative();
     }
 
     private void ensureEndFlags() {

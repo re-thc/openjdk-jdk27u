@@ -1567,10 +1567,10 @@ static bool patch_mod_javabase = false;
 
 // Check the consistency of vm_init_args
 bool Arguments::check_vm_args_consistency() {
-#if !INCLUDE_RUST_REGEX
-  if (UseRustRegex) {
-    warning("UseRustRegex is unavailable in this JDK build");
-    FLAG_SET_DEFAULT(UseRustRegex, false);
+#if !INCLUDE_PCRE2_REGEX
+  if (UsePcre2Regex) {
+    warning("UsePcre2Regex is unavailable in this JDK build");
+    FLAG_SET_DEFAULT(UsePcre2Regex, false);
   }
 #endif
   // This may modify compiler flags. Must be called before CompilerConfig::check_args_consistency()
