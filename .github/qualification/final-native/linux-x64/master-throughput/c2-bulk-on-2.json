@@ -1,0 +1,394 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.vm.compiler.CommonIntrinsics.aesCtr",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2/bin/java",
+        "jvmArgs" : [
+            "-XX:ActiveProcessorCount=1",
+            "-XX:CICompilerCount=2",
+            "-XX:+UseSerialGC",
+            "-Xms128m",
+            "-Xmx256m",
+            "-XX:-UsePerfData",
+            "-XX:+DisableAttachMechanism",
+            "-Xrs",
+            "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-re-thc-d8fc74ba01f7e6ed0a77e94f89b1a0922a79a776",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "length" : "4096"
+        },
+        "primaryMetric" : {
+            "score" : 283.37417397107436,
+            "scoreError" : 1.417322635183337,
+            "scoreConfidence" : [
+                281.95685133589103,
+                284.7914966062577
+            ],
+            "scorePercentiles" : {
+                "0.0" : 283.0901866321717,
+                "50.0" : 283.15980198552404,
+                "90.0" : 283.91951621795124,
+                "95.0" : 283.91951621795124,
+                "99.0" : 283.91951621795124,
+                "99.9" : 283.91951621795124,
+                "99.99" : 283.91951621795124,
+                "99.999" : 283.91951621795124,
+                "99.9999" : 283.91951621795124,
+                "100.0" : 283.91951621795124
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    283.15980198552404,
+                    283.91951621795124,
+                    283.59235212867287,
+                    283.1090128910521,
+                    283.0901866321717
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.vm.compiler.CommonIntrinsics.hashBytes",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2/bin/java",
+        "jvmArgs" : [
+            "-XX:ActiveProcessorCount=1",
+            "-XX:CICompilerCount=2",
+            "-XX:+UseSerialGC",
+            "-Xms128m",
+            "-Xmx256m",
+            "-XX:-UsePerfData",
+            "-XX:+DisableAttachMechanism",
+            "-Xrs",
+            "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-re-thc-d8fc74ba01f7e6ed0a77e94f89b1a0922a79a776",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "length" : "4096"
+        },
+        "primaryMetric" : {
+            "score" : 168.6216379252092,
+            "scoreError" : 0.6152416990349655,
+            "scoreConfidence" : [
+                168.00639622617425,
+                169.23687962424415
+            ],
+            "scorePercentiles" : {
+                "0.0" : 168.45757823876187,
+                "50.0" : 168.5940922578359,
+                "90.0" : 168.8676331016359,
+                "95.0" : 168.8676331016359,
+                "99.0" : 168.8676331016359,
+                "99.9" : 168.8676331016359,
+                "99.99" : 168.8676331016359,
+                "99.999" : 168.8676331016359,
+                "99.9999" : 168.8676331016359,
+                "100.0" : 168.8676331016359
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    168.8676331016359,
+                    168.45757823876187,
+                    168.67333149908404,
+                    168.5940922578359,
+                    168.5155545287283
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.vm.compiler.CommonIntrinsics.modPow",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2/bin/java",
+        "jvmArgs" : [
+            "-XX:ActiveProcessorCount=1",
+            "-XX:CICompilerCount=2",
+            "-XX:+UseSerialGC",
+            "-Xms128m",
+            "-Xmx256m",
+            "-XX:-UsePerfData",
+            "-XX:+DisableAttachMechanism",
+            "-Xrs",
+            "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-re-thc-d8fc74ba01f7e6ed0a77e94f89b1a0922a79a776",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "length" : "4096"
+        },
+        "primaryMetric" : {
+            "score" : 111108.05178804512,
+            "scoreError" : 203.49503011060236,
+            "scoreConfidence" : [
+                110904.55675793452,
+                111311.54681815572
+            ],
+            "scorePercentiles" : {
+                "0.0" : 111042.88075940935,
+                "50.0" : 111100.79497721969,
+                "90.0" : 111185.09948979592,
+                "95.0" : 111185.09948979592,
+                "99.0" : 111185.09948979592,
+                "99.9" : 111185.09948979592,
+                "99.99" : 111185.09948979592,
+                "99.999" : 111185.09948979592,
+                "99.9999" : 111185.09948979592,
+                "100.0" : 111185.09948979592
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    111127.23933333333,
+                    111185.09948979592,
+                    111100.79497721969,
+                    111084.24438046728,
+                    111042.88075940935
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.vm.compiler.CommonIntrinsics.multiply",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2/bin/java",
+        "jvmArgs" : [
+            "-XX:ActiveProcessorCount=1",
+            "-XX:CICompilerCount=2",
+            "-XX:+UseSerialGC",
+            "-Xms128m",
+            "-Xmx256m",
+            "-XX:-UsePerfData",
+            "-XX:+DisableAttachMechanism",
+            "-Xrs",
+            "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-re-thc-d8fc74ba01f7e6ed0a77e94f89b1a0922a79a776",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "length" : "4096"
+        },
+        "primaryMetric" : {
+            "score" : 4398.355414083238,
+            "scoreError" : 17.156260932174554,
+            "scoreConfidence" : [
+                4381.199153151064,
+                4415.511675015413
+            ],
+            "scorePercentiles" : {
+                "0.0" : 4394.451276846286,
+                "50.0" : 4397.767506843065,
+                "90.0" : 4405.724484267005,
+                "95.0" : 4405.724484267005,
+                "99.0" : 4405.724484267005,
+                "99.9" : 4405.724484267005,
+                "99.99" : 4405.724484267005,
+                "99.999" : 4405.724484267005,
+                "99.9999" : 4405.724484267005,
+                "100.0" : 4405.724484267005
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    4398.556038842808,
+                    4397.767506843065,
+                    4394.451276846286,
+                    4395.277763617027,
+                    4405.724484267005
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.vm.compiler.CommonIntrinsics.sha256",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2/bin/java",
+        "jvmArgs" : [
+            "-XX:ActiveProcessorCount=1",
+            "-XX:CICompilerCount=2",
+            "-XX:+UseSerialGC",
+            "-Xms128m",
+            "-Xmx256m",
+            "-XX:-UsePerfData",
+            "-XX:+DisableAttachMechanism",
+            "-Xrs",
+            "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-re-thc-d8fc74ba01f7e6ed0a77e94f89b1a0922a79a776",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "length" : "4096"
+        },
+        "primaryMetric" : {
+            "score" : 2321.3670211257217,
+            "scoreError" : 59.35873826042751,
+            "scoreConfidence" : [
+                2262.0082828652944,
+                2380.725759386149
+            ],
+            "scorePercentiles" : {
+                "0.0" : 2311.969946068901,
+                "50.0" : 2314.991351034437,
+                "90.0" : 2348.48195085297,
+                "95.0" : 2348.48195085297,
+                "99.0" : 2348.48195085297,
+                "99.9" : 2348.48195085297,
+                "99.99" : 2348.48195085297,
+                "99.999" : 2348.48195085297,
+                "99.9999" : 2348.48195085297,
+                "100.0" : 2348.48195085297
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    2348.48195085297,
+                    2319.0145683628,
+                    2314.991351034437,
+                    2311.969946068901,
+                    2312.3772893095
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.vm.compiler.CommonIntrinsics.sha3",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jdk/images/release/jdk-27.0.2/bin/java",
+        "jvmArgs" : [
+            "-XX:ActiveProcessorCount=1",
+            "-XX:CICompilerCount=2",
+            "-XX:+UseSerialGC",
+            "-Xms128m",
+            "-Xmx256m",
+            "-XX:-UsePerfData",
+            "-XX:+DisableAttachMechanism",
+            "-Xrs",
+            "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
+            "-Xbatch",
+            "-XX:-TieredCompilation"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-re-thc-d8fc74ba01f7e6ed0a77e94f89b1a0922a79a776",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "length" : "4096"
+        },
+        "primaryMetric" : {
+            "score" : 7444.739366982578,
+            "scoreError" : 65.59692606552139,
+            "scoreConfidence" : [
+                7379.142440917057,
+                7510.336293048099
+            ],
+            "scorePercentiles" : {
+                "0.0" : 7426.055858330858,
+                "50.0" : 7445.622844763408,
+                "90.0" : 7469.643424365679,
+                "95.0" : 7469.643424365679,
+                "99.0" : 7469.643424365679,
+                "99.9" : 7469.643424365679,
+                "99.99" : 7469.643424365679,
+                "99.999" : 7469.643424365679,
+                "99.9999" : 7469.643424365679,
+                "100.0" : 7469.643424365679
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    7445.622844763408,
+                    7450.284273804039,
+                    7469.643424365679,
+                    7426.055858330858,
+                    7432.090433648903
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

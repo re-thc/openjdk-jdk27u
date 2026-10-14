@@ -1,0 +1,509 @@
+#Test Results (version 2)
+#Wed Oct 14 22:35:53 UTC 2026
+#-----testdescription-----
+$file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds/FourByteHeaderArchiveDeterminism.java
+$root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg
+id=g1
+keywords=othervm driver
+library=/test/lib
+maxTimeout=480
+requires=(vm.cds & vm.gc.G1 & vm.bits \=\= "64" & (os.arch \=\= "amd64" | os.arch \=\= "aarch64")) & (vm.opt.UseFourByteObjectHeaders \=\= null | vm.opt.UseFourByteObjectHeaders \=\= true)
+run=USER_SPECIFIED build jdk.test.whitebox.WhiteBox DeterministicDump\nUSER_SPECIFIED driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox\nUSER_SPECIFIED main/othervm/timeout\=480 -Xbootclasspath/a\:. -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI FourByteHeaderArchiveDeterminism G1\n
+source=FourByteHeaderArchiveDeterminism.java
+title=Four-byte static archives are deterministic across heap and archive relocation
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds/FourByteHeaderArchiveDeterminism.java\#g1
+elapsed=23421 0\:00\:23.421
+end=Wed Oct 14 22\:35\:53 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=runnervmddqdw.itswl05v3osujfikzcwsk2dmfd.jx.internal.cloudapp.net
+javatestOS=Linux 7.0.0-1012-azure (aarch64)
+javatestVersion=6.0-ea+b24-2026-10-09-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.2.1 dev 0
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile compile build compile driver build compile main
+start=Wed Oct 14 22\:35\:29 UTC 2026
+test=runtime/cds/FourByteHeaderArchiveDeterminism.java\#g1
+testJDK=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug
+testJDK_OS=[name\:Linux,arch\:aarch64,version\:7.0.0-1012-azure,family\:linux,simple_arch\:aarch64,simple_version\:7.0,processors\:4,maxMemory\:16715505664,maxSwap\:3221221376]
+testJDK_os.arch=aarch64
+testJDK_os.name=Linux
+testJDK_os.version=7.0.0-1012-azure
+totalTime=23575
+user.name=runner
+work=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/runtime/cds
+
+#section:script_messages
+----------messages:(7/705)----------
+JDK under test: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (fastdebug build 27.0.2-internal-re-thc-d8fc74ba01f7e6ed0a77e94f89b1a0922a79a776)
+OpenJDK 64-Bit Server VM (fastdebug build 27.0.2-internal-re-thc-d8fc74ba01f7e6ed0a77e94f89b1a0922a79a776, mixed mode, sharing)
+Library /test/lib; kind: packages
+   source directory: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib
+   class directory: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib
+
+#section:build
+----------messages:(9/364)----------
+command: build jdk.test.whitebox.WhiteBox DeterministicDump
+reason: User specified action: run build jdk.test.whitebox.WhiteBox DeterministicDump 
+started: Wed Oct 14 22:35:29.758 UTC 2026
+Library /test/lib:
+  compile: jdk.test.whitebox.WhiteBox
+Test directory:
+  compile: DeterministicDump
+finished: Wed Oct 14 22:35:30.184 UTC 2026
+elapsed time (seconds): 0.426
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/314)----------
+command: compile /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib/jdk/test/whitebox/WhiteBox.java
+reason: .class file out of date or does not exist
+started: Wed Oct 14 22:35:29.759 UTC 2026
+Mode: agentvm
+Agent id: 1
+Process id: 2717
+finished: Wed Oct 14 22:35:29.855 UTC 2026
+elapsed time (seconds): 0.096
+----------configuration:(10/905)----------
+Boot Layer (javac runtime environment)
+  class path: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar 
+              /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar 
+  patch:      java.base /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/patches/java.base
+
+javac compilation environment
+  source path: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib
+  class path:  /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d
+               /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib
+
+----------rerun:(35/4516)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR= \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+LC_ALL=C \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/tests \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+_JVM_DWARF_PATH=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/symbols/jdk-27.0.2/fastdebug \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug/bin/javac \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk \\
+        -J-Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp \\
+        -J-Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk -Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp' \\
+        -J-Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk -J-Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:-CreateCoredumpOnCrash \\
+        -J-Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug \\
+        -J-Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/tests/hotspot/jtreg/native \\
+        -J-Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=runtime/cds/FourByteHeaderArchiveDeterminism.java#g1 \\
+        -J-Dtest.verbose=Verbose[p=BRIEF,f=FULL,e=FULL,t=true,m=false] \\
+        -J-Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds/FourByteHeaderArchiveDeterminism.java \\
+        -J-Dtest.main.class=FourByteHeaderArchiveDeterminism \\
+        -J-Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds \\
+        -J-Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d \\
+        -J-Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib \\
+        -J-Dtest.class.path.prefix=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib \\
+        -d /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib \\
+        -sourcepath /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -classpath /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib/jdk/test/whitebox/WhiteBox.java
+result: Passed. Compilation successful
+
+#section:compile
+----------messages:(8/327)----------
+command: compile /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds/DeterministicDump.java
+reason: .class file out of date or does not exist
+started: Wed Oct 14 22:35:29.855 UTC 2026
+Mode: agentvm
+Agent id: 1
+Process id: 2717
+finished: Wed Oct 14 22:35:30.183 UTC 2026
+elapsed time (seconds): 0.328
+----------configuration:(12/1093)----------
+Boot Layer (javac runtime environment)
+  class path: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar 
+              /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar 
+  patch:      java.base /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/patches/java.base
+
+javac compilation environment
+  source path: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds
+               /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib
+  class path:  /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds
+               /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d
+               /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib
+
+----------rerun:(35/4678)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR= \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+LC_ALL=C \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/tests \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+_JVM_DWARF_PATH=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/symbols/jdk-27.0.2/fastdebug \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug/bin/javac \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk \\
+        -J-Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp \\
+        -J-Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk -Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp' \\
+        -J-Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk -J-Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:-CreateCoredumpOnCrash \\
+        -J-Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug \\
+        -J-Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/tests/hotspot/jtreg/native \\
+        -J-Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=runtime/cds/FourByteHeaderArchiveDeterminism.java#g1 \\
+        -J-Dtest.verbose=Verbose[p=BRIEF,f=FULL,e=FULL,t=true,m=false] \\
+        -J-Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds/FourByteHeaderArchiveDeterminism.java \\
+        -J-Dtest.main.class=FourByteHeaderArchiveDeterminism \\
+        -J-Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds \\
+        -J-Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d \\
+        -J-Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib \\
+        -J-Dtest.class.path.prefix=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib \\
+        -d /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d \\
+        -sourcepath /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -classpath /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds/DeterministicDump.java
+result: Passed. Compilation successful
+
+#section:build
+----------messages:(7/279)----------
+command: build jdk.test.lib.helpers.ClassFileInstaller
+reason: Named class compiled on demand
+started: Wed Oct 14 22:35:30.184 UTC 2026
+Library /test/lib:
+  compile: jdk.test.lib.helpers.ClassFileInstaller
+finished: Wed Oct 14 22:35:30.252 UTC 2026
+elapsed time (seconds): 0.068
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/327)----------
+command: compile /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib/jdk/test/lib/helpers/ClassFileInstaller.java
+reason: .class file out of date or does not exist
+started: Wed Oct 14 22:35:30.184 UTC 2026
+Mode: agentvm
+Agent id: 1
+Process id: 2717
+finished: Wed Oct 14 22:35:30.252 UTC 2026
+elapsed time (seconds): 0.068
+----------configuration:(10/905)----------
+Boot Layer (javac runtime environment)
+  class path: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar 
+              /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar 
+  patch:      java.base /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/patches/java.base
+
+javac compilation environment
+  source path: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib
+  class path:  /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d
+               /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib
+
+----------rerun:(35/4529)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR= \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+LC_ALL=C \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/tests \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+_JVM_DWARF_PATH=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/symbols/jdk-27.0.2/fastdebug \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug/bin/javac \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk \\
+        -J-Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp \\
+        -J-Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk -Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp' \\
+        -J-Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk -J-Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:-CreateCoredumpOnCrash \\
+        -J-Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug \\
+        -J-Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/tests/hotspot/jtreg/native \\
+        -J-Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=runtime/cds/FourByteHeaderArchiveDeterminism.java#g1 \\
+        -J-Dtest.verbose=Verbose[p=BRIEF,f=FULL,e=FULL,t=true,m=false] \\
+        -J-Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds/FourByteHeaderArchiveDeterminism.java \\
+        -J-Dtest.main.class=FourByteHeaderArchiveDeterminism \\
+        -J-Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds \\
+        -J-Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d \\
+        -J-Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib \\
+        -J-Dtest.class.path.prefix=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib \\
+        -d /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib \\
+        -sourcepath /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -classpath /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib/jdk/test/lib/helpers/ClassFileInstaller.java
+result: Passed. Compilation successful
+
+#section:driver
+----------messages:(8/350)----------
+command: driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+reason: User specified action: run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox 
+started: Wed Oct 14 22:35:30.252 UTC 2026
+Mode: agentvm
+Agent id: 4
+Process id: 2801
+finished: Wed Oct 14 22:35:30.272 UTC 2026
+elapsed time (seconds): 0.02
+----------configuration:(15/1378)----------
+Boot Layer
+  class path: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar 
+              /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar 
+              /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/junit-platform-console-standalone-1.14.2.jar 
+              /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/testng-7.3.0.jar 
+              /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/guice-5.1.0.jar 
+              /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jcommander-1.82.jar 
+  patch:      java.base /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/patches/java.base
+
+Test Layer
+  class path: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d
+              /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds
+              /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib
+              /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib
+
+----------rerun:(31/4190)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR= \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+LC_ALL=C \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/tests \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+_JVM_DWARF_PATH=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/symbols/jdk-27.0.2/fastdebug \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug/bin/java \\
+        -Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk -Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp' \\
+        -Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk -J-Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:-CreateCoredumpOnCrash \\
+        -Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug \\
+        -Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/tests/hotspot/jtreg/native \\
+        -Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=runtime/cds/FourByteHeaderArchiveDeterminism.java#g1 \\
+        -Dtest.verbose=Verbose[p=BRIEF,f=FULL,e=FULL,t=true,m=false] \\
+        -Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds/FourByteHeaderArchiveDeterminism.java \\
+        -Dtest.main.class=FourByteHeaderArchiveDeterminism \\
+        -Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds \\
+        -Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d \\
+        -Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib \\
+        -Dtest.class.path.prefix=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib \\
+        -classpath /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar \\
+        jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+----------System.err:(3/35)----------
+
+JavaTest Message: Test complete.
+
+result: Passed. Execution successful
+
+#section:build
+----------messages:(7/262)----------
+command: build FourByteHeaderArchiveDeterminism
+reason: Named class compiled on demand
+started: Wed Oct 14 22:35:30.272 UTC 2026
+Test directory:
+  compile: FourByteHeaderArchiveDeterminism
+finished: Wed Oct 14 22:35:30.307 UTC 2026
+elapsed time (seconds): 0.035
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/342)----------
+command: compile /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds/FourByteHeaderArchiveDeterminism.java
+reason: .class file out of date or does not exist
+started: Wed Oct 14 22:35:30.273 UTC 2026
+Mode: agentvm
+Agent id: 1
+Process id: 2717
+finished: Wed Oct 14 22:35:30.307 UTC 2026
+elapsed time (seconds): 0.034
+----------configuration:(12/1093)----------
+Boot Layer (javac runtime environment)
+  class path: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar 
+              /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar 
+  patch:      java.base /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/patches/java.base
+
+javac compilation environment
+  source path: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds
+               /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib
+  class path:  /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds
+               /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d
+               /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib
+
+----------rerun:(35/4693)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR= \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+LC_ALL=C \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/tests \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+_JVM_DWARF_PATH=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/symbols/jdk-27.0.2/fastdebug \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug/bin/javac \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk \\
+        -J-Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp \\
+        -J-Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk -Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp' \\
+        -J-Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk -J-Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:-CreateCoredumpOnCrash \\
+        -J-Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug \\
+        -J-Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/tests/hotspot/jtreg/native \\
+        -J-Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=runtime/cds/FourByteHeaderArchiveDeterminism.java#g1 \\
+        -J-Dtest.verbose=Verbose[p=BRIEF,f=FULL,e=FULL,t=true,m=false] \\
+        -J-Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds/FourByteHeaderArchiveDeterminism.java \\
+        -J-Dtest.main.class=FourByteHeaderArchiveDeterminism \\
+        -J-Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds \\
+        -J-Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d \\
+        -J-Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib \\
+        -J-Dtest.class.path.prefix=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib \\
+        -d /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d \\
+        -sourcepath /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -classpath /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds/FourByteHeaderArchiveDeterminism.java
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(7/450)----------
+command: main -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI FourByteHeaderArchiveDeterminism G1
+reason: User specified action: run main/othervm/timeout=480 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI FourByteHeaderArchiveDeterminism G1 
+started: Wed Oct 14 22:35:30.307 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 4264
+finished: Wed Oct 14 22:35:53.177 UTC 2026
+elapsed time (seconds): 22.87
+----------configuration:(0/0)----------
+----------System.out:(62/13579)----------
+Command line: [/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug/bin/java -cp /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk -Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp -XX:-CreateCoredumpOnCrash -Xint -Xlog:cds=debug,gc=debug -Xlog:aot+map*=trace:file=SharedArchiveFile0.map:none:filesize=0 -Xshare:dump -Xlog:cds,aot+hashtables -XX:SharedArchiveFile=SharedArchiveFile0.jsa -XX:+UseG1GC -XX:+UseFourByteObjectHeaders -Xmx128M -Xms128M -Xmn120M -XX:-UseCompressedOops ]
+[2026-10-14T22:35:30.747087900Z] Gathering output for process 4290
+[ELAPSED: 3330 ms]
+[logging stdout to /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/scratch/1/runtime.cds.FourByteHeaderArchiveDeterminism.java#g1-0000-dump.stdout]
+[logging stderr to /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/scratch/1/runtime.cds.FourByteHeaderArchiveDeterminism.java#g1-0000-dump.stderr]
+[STDERR]
+
+[2026-10-14T22:35:34.073728054Z] Waiting for completion for process 4290
+[2026-10-14T22:35:34.073854815Z] Waiting for completion finished for process 4290
+Command line: [/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug/bin/java -cp /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk -Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp -XX:-CreateCoredumpOnCrash -Xint -Xlog:cds=debug,gc=debug -Xlog:aot+map*=trace:file=SharedArchiveFile1.map:none:filesize=0 -Xshare:dump -Xlog:cds,aot+hashtables -XX:SharedArchiveFile=SharedArchiveFile1.jsa -XX:+UseG1GC -XX:+UseFourByteObjectHeaders -Xmx128M -Xms128M -Xmn120M -XX:-UseCompressedOops ]
+[2026-10-14T22:35:34.113354318Z] Gathering output for process 4319
+[ELAPSED: 3346 ms]
+[logging stdout to /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/scratch/1/runtime.cds.FourByteHeaderArchiveDeterminism.java#g1-0001-dump.stdout]
+[logging stderr to /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/scratch/1/runtime.cds.FourByteHeaderArchiveDeterminism.java#g1-0001-dump.stderr]
+[STDERR]
+
+[2026-10-14T22:35:37.459310233Z] Waiting for completion for process 4319
+[2026-10-14T22:35:37.459451712Z] Waiting for completion finished for process 4319
+File contents are the same: 17104896 bytes
+Command line: [/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug/bin/java -cp /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk -Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp -XX:-CreateCoredumpOnCrash -Xint -Xlog:cds=debug,gc=debug -Xlog:aot+map*=trace:file=SharedArchiveFile2.map:none:filesize=0 -Xshare:dump -Xlog:cds,aot+hashtables -XX:SharedArchiveFile=SharedArchiveFile2.jsa -XX:+UseG1GC -XX:+UseFourByteObjectHeaders -Xmx128M -Xms128M -Xmn120M -XX:-UseCompressedOops -XX:+UnlockDiagnosticVMOptions -XX:ArchiveRelocationMode=1 ]
+[2026-10-14T22:35:37.517446694Z] Gathering output for process 4347
+[ELAPSED: 3493 ms]
+[logging stdout to /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/scratch/1/runtime.cds.FourByteHeaderArchiveDeterminism.java#g1-0002-dump.stdout]
+[logging stderr to /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/scratch/1/runtime.cds.FourByteHeaderArchiveDeterminism.java#g1-0002-dump.stderr]
+[STDERR]
+
+[2026-10-14T22:35:41.010333204Z] Waiting for completion for process 4347
+[2026-10-14T22:35:41.016952292Z] Waiting for completion finished for process 4347
+File contents are the same: 17104896 bytes
+Command line: [/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug/bin/java -cp /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk -Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp -XX:-CreateCoredumpOnCrash -Xint -Xlog:cds=debug,gc=debug -Xlog:aot+map*=trace:file=SharedArchiveFile3.map:none:filesize=0 -Xshare:dump -Xlog:cds,aot+hashtables -XX:SharedArchiveFile=SharedArchiveFile3.jsa -XX:+UseG1GC -XX:+UseFourByteObjectHeaders -Xmx128M -Xms128M -Xmn120M -XX:+UseCompressedOops ]
+[2026-10-14T22:35:41.059732798Z] Gathering output for process 4363
+[ELAPSED: 3600 ms]
+[logging stdout to /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/scratch/1/runtime.cds.FourByteHeaderArchiveDeterminism.java#g1-0003-dump.stdout]
+[logging stderr to /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/scratch/1/runtime.cds.FourByteHeaderArchiveDeterminism.java#g1-0003-dump.stderr]
+[STDERR]
+
+[2026-10-14T22:35:44.659417471Z] Waiting for completion for process 4363
+[2026-10-14T22:35:44.660245513Z] Waiting for completion finished for process 4363
+Command line: [/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug/bin/java -cp /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk -Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp -XX:-CreateCoredumpOnCrash -Xint -Xlog:cds=debug,gc=debug -Xlog:aot+map*=trace:file=SharedArchiveFile4.map:none:filesize=0 -Xshare:dump -Xlog:cds,aot+hashtables -XX:SharedArchiveFile=SharedArchiveFile4.jsa -XX:+UseG1GC -XX:+UseFourByteObjectHeaders -Xmx128M -Xms128M -Xmn120M -XX:+UseCompressedOops ]
+[2026-10-14T22:35:44.664525268Z] Gathering output for process 4418
+[ELAPSED: 3422 ms]
+[logging stdout to /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/scratch/1/runtime.cds.FourByteHeaderArchiveDeterminism.java#g1-0004-dump.stdout]
+[logging stderr to /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/scratch/1/runtime.cds.FourByteHeaderArchiveDeterminism.java#g1-0004-dump.stderr]
+[STDERR]
+
+[2026-10-14T22:35:48.086719908Z] Waiting for completion for process 4418
+[2026-10-14T22:35:48.086817030Z] Waiting for completion finished for process 4418
+File contents are the same: 16646144 bytes
+Command line: [/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug/bin/java -cp /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk -Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp -XX:-CreateCoredumpOnCrash -Xint -Xlog:cds=debug,gc=debug -Xlog:aot+map*=trace:file=SharedArchiveFile5.map:none:filesize=0 -Xshare:dump -Xlog:cds,aot+hashtables -XX:SharedArchiveFile=SharedArchiveFile5.jsa -XX:+UseG1GC -XX:+UseFourByteObjectHeaders -Xmx128M -Xms128M -Xmn120M -XX:+UseCompressedOops -XX:+UnlockDiagnosticVMOptions -XX:ArchiveRelocationMode=1 ]
+[2026-10-14T22:35:48.153973028Z] Gathering output for process 4442
+[ELAPSED: 3431 ms]
+[logging stdout to /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/scratch/1/runtime.cds.FourByteHeaderArchiveDeterminism.java#g1-0005-dump.stdout]
+[logging stderr to /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/scratch/1/runtime.cds.FourByteHeaderArchiveDeterminism.java#g1-0005-dump.stderr]
+[STDERR]
+
+[2026-10-14T22:35:51.584972168Z] Waiting for completion for process 4442
+[2026-10-14T22:35:51.585063515Z] Waiting for completion finished for process 4442
+File contents are the same: 16646144 bytes
+Command line: [/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug/bin/java -cp /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar -Xint -XX:+UseG1GC -XX:+UseFourByteObjectHeaders -Xlog:gc -XX:SharedArchiveFile=four-byte-young-gc.jsa -Xshare:dump ]
+[2026-10-14T22:35:51.621937472Z] Gathering output for process 4468
+[2026-10-14T22:35:51.623543028Z] Waiting for completion for process 4468
+[2026-10-14T22:35:53.134720605Z] Waiting for completion finished for process 4468
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(39/4878)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR= \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+LC_ALL=C \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/tests \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+_JVM_DWARF_PATH=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/symbols/jdk-27.0.2/fastdebug \\
+CLASSPATH=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug/bin/java \\
+        -Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk -Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp' \\
+        -Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk -J-Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:-CreateCoredumpOnCrash \\
+        -Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug \\
+        -Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/jdk/jdk-27.0.2/fastdebug \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/tests/hotspot/jtreg/native \\
+        -Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=runtime/cds/FourByteHeaderArchiveDeterminism.java#g1 \\
+        -Dtest.verbose=Verbose[p=BRIEF,f=FULL,e=FULL,t=true,m=false] \\
+        -Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds/FourByteHeaderArchiveDeterminism.java \\
+        -Dtest.main.class=FourByteHeaderArchiveDeterminism \\
+        -Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds \\
+        -Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d \\
+        -Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib \\
+        -Dtest.class.path.prefix=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/runtime/cds:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/classes/0/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/test/lib \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk \\
+        -Djava.io.tmpdir=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/tmp \\
+        -XX:-CreateCoredumpOnCrash \\
+        -Djava.library.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/tests/hotspot/jtreg/native \\
+        -Xbootclasspath/a:. \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        com.sun.javatest.regtest.agent.MainWrapper /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/run-test-prebuilt/test-support/jtreg_test_hotspot_jtreg_tier1_runtime/runtime/cds/FourByteHeaderArchiveDeterminism_g1.d/main.0.jta G1
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful
