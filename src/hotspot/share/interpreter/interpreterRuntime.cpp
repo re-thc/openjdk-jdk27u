@@ -623,17 +623,26 @@ JRT_ENTRY(void, InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose(Ja
   THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
 JRT_END
 
-// Same exception as LinkResolver::runtime_resolve_interface_method throws
-// when the selected method is not public.
-JRT_ENTRY(void, InterpreterRuntime::throw_IllegalAccessErrorVerbose(JavaThread* current,
-                                                                    Klass* recvKlass,
-                                                                    Method* selectedMethod))
+// Throws the error that LinkResolver::runtime_resolve_interface_method throws
+// when the method selected for an invokeinterface of a java.lang.Object method
+// is not public or is abstract.
+JRT_ENTRY(void, InterpreterRuntime::throw_IllegalAccessOrAbstractMethodError(JavaThread* current,
+                                                                            Klass* recvKlass,
+                                                                            Method* selectedMethod))
   ResourceMark rm(current);
-  stringStream ss;
-  ss.print("'");
-  Method::print_external_name(&ss, recvKlass, selectedMethod->name(), selectedMethod->signature());
-  ss.print("'");
-  THROW_MSG(vmSymbols::java_lang_IllegalAccessError(), ss.as_string());
+  if (!selectedMethod->is_public()) {
+    stringStream ss;
+    ss.print("'");
+    Method::print_external_name(&ss, recvKlass, selectedMethod->name(), selectedMethod->signature());
+    ss.print("'");
+    THROW_MSG(vmSymbols::java_lang_IllegalAccessError(), ss.as_string());
+  }
+  assert(selectedMethod->is_abstract(), "selected method must be abstract");
+  LastFrameAccessor last_frame(current);
+  int index = last_frame.get_index_u2(Bytecodes::_invokeinterface);
+  methodHandle resolved_method(current, last_frame.method()->constants()->cache()->resolved_method_entry_at(index)->method());
+  methodHandle selected_method(current, selectedMethod);
+  LinkResolver::throw_abstract_method_error(resolved_method, selected_method, recvKlass, THREAD);
 JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::throw_NullPointerException(JavaThread* current))

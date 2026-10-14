@@ -58,6 +58,10 @@ public class InterfaceObjectMethodTest {
 
     static class NotRunnable { }
 
+    static class Named implements InterfaceObjectMethodNamed {
+        @Override public String toString() { return "Named"; }
+    }
+
     interface Check {
         void run() throws Throwable;
     }
@@ -101,19 +105,34 @@ public class InterfaceObjectMethodTest {
         Supplier<String> supplier = () -> "supplier";
         Object notRunnable = new NotRunnable();
         Object badHash = Class.forName("InterfaceObjectMethodBadHash").getDeclaredConstructor().newInstance();
+        Object missingHash = Class.forName("InterfaceObjectMethodMissingHash").getDeclaredConstructor().newInstance();
+        Object named = new Named();
+        Object defaultHash = Class.forName("InterfaceObjectMethodDefaultHashImpl").getDeclaredConstructor().newInstance();
 
         String notRunnableMessage = "Class " + NotRunnable.class.getName() +
                                     " does not implement the requested interface java.lang.Runnable";
         String notSupplierMessage = "Class " + NotRunnable.class.getName() +
                                     " does not implement the requested interface java.util.function.Supplier";
+        String notNamedMessage = "Class " + NotRunnable.class.getName() +
+                                 " does not implement the requested interface InterfaceObjectMethodNamed";
+        String notDefaultHashMessage = "Class " + NotRunnable.class.getName() +
+                                       " does not implement the requested interface InterfaceObjectMethodDefaultHash";
         String notPublicMessage = "'int InterfaceObjectMethodBadHash.hashCode()'";
+        String abstractMessage = "Receiver class InterfaceObjectMethodMissingHash does not define or inherit an " +
+                                 "implementation of the resolved method 'int hashCode()' of class java.lang.Object. " +
+                                 "Selected method is 'abstract int InterfaceObjectMethodReabstracted.hashCode()'.";
+        String hashNullMessage = "Cannot invoke \"java.lang.Runnable.hashCode()\" because \"<parameter1>\" is null";
+        String typeNullMessage = "Cannot invoke \"java.lang.Runnable.getClass()\" because \"<parameter1>\" is null";
 
         Check firstHashICCE = () -> InterfaceObjectMethodSites.firstHashCodeOf(notRunnable);
         Check hashICCE = () -> InterfaceObjectMethodSites.hashCodeOf(notRunnable);
         Check stringICCE = () -> InterfaceObjectMethodSites.toStringOf(notRunnable);
         Check sameICCE = () -> InterfaceObjectMethodSites.equalsOf(notRunnable, notRunnable);
         Check typeICCE = () -> InterfaceObjectMethodSites.getClassOf(notRunnable);
+        Check namedICCE = () -> InterfaceObjectMethodSites.namedToStringOf(notRunnable);
+        Check defaultHashICCE = () -> InterfaceObjectMethodSites.defaultHashCodeOf(notRunnable);
         Check hashIAE = () -> InterfaceObjectMethodSites.hashCodeOf(badHash);
+        Check hashAME = () -> InterfaceObjectMethodSites.hashCodeOf(missingHash);
         Check hashNPE = () -> InterfaceObjectMethodSites.hashCodeOf(null);
         Check typeNPE = () -> InterfaceObjectMethodSites.getClassOf(null);
 
@@ -135,8 +154,19 @@ public class InterfaceObjectMethodTest {
             expect(IncompatibleClassChangeError.class, notRunnableMessage, sameICCE);
             expect(IncompatibleClassChangeError.class, notRunnableMessage, typeICCE);
             expect(IllegalAccessError.class, notPublicMessage, hashIAE);
-            expect(NullPointerException.class, null, hashNPE);
-            expect(NullPointerException.class, null, typeNPE);
+            expect(AbstractMethodError.class, abstractMessage, hashAME);
+            expect(NullPointerException.class, hashNullMessage, hashNPE);
+            expect(NullPointerException.class, typeNullMessage, typeNPE);
+
+            // Interfaces that redeclare a method of java.lang.Object
+            if (!InterfaceObjectMethodSites.namedToStringOf(named).equals("Named")) {
+                throw new RuntimeException("Wrong toString() for " + named.getClass());
+            }
+            expect(IncompatibleClassChangeError.class, notNamedMessage, namedICCE);
+            if (InterfaceObjectMethodSites.defaultHashCodeOf(defaultHash) != System.identityHashCode(defaultHash)) {
+                throw new RuntimeException("Wrong hashCode() for " + defaultHash.getClass());
+            }
+            expect(IncompatibleClassChangeError.class, notDefaultHashMessage, defaultHashICCE);
         }
 
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {

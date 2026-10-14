@@ -3498,10 +3498,11 @@ void TemplateTable::invokeinterface(int byte_no) {
   // get target Method & entry point
   __ lookup_virtual_method(r4, rmethod, rmethod);
 
-  // The selected method must be public
-  Label illegal_access;
+  // The selected method must be public and not abstract
+  Label bad_selected_method;
   __ ldrh(rscratch1, Address(rmethod, Method::access_flags_offset()));
-  __ tbz(rscratch1, exact_log2(JVM_ACC_PUBLIC), illegal_access);
+  __ tbz(rscratch1, exact_log2(JVM_ACC_PUBLIC), bad_selected_method);
+  __ tbnz(rscratch1, exact_log2(JVM_ACC_ABSTRACT), bad_selected_method);
 
   __ profile_arguments_type(r3, rmethod, r13, true);
   __ jump_from_interpreted(rmethod, r3);
@@ -3600,13 +3601,13 @@ void TemplateTable::invokeinterface(int byte_no) {
   // the call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
 
-  __ bind(illegal_access);
+  __ bind(bad_selected_method);
   // throw exception
   __ restore_bcp();      // bcp must be correct for exception handler   (was destroyed)
   __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
   // Pass arguments for generating a verbose error message.
   __ call_VM(noreg, CAST_FROM_FN_PTR(address,
-                   InterpreterRuntime::throw_IllegalAccessErrorVerbose), r4, rmethod);
+                   InterpreterRuntime::throw_IllegalAccessOrAbstractMethodError), r4, rmethod);
   // the call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
   return;
