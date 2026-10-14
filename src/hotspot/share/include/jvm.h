@@ -99,8 +99,8 @@ JVM_NanoTime(JNIEnv *env, jclass ignored);
 JNIEXPORT jlong JNICALL
 JVM_GetNanoTimeAdjustment(JNIEnv *env, jclass ignored, jlong offset_secs);
 
-JNIEXPORT jboolean JNICALL
-JVM_ZipIntrinsicsEnabled(void);
+JNIEXPORT jlong JNICALL
+JVM_ZipIntrinsicLimits(void);
 
 JNIEXPORT void JNICALL
 JVM_ArrayCopy(JNIEnv *env, jclass ignored, jobject src, jint src_pos,

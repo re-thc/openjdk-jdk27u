@@ -317,6 +317,10 @@ void VM_Version::initialize() {
     }
   }
 
+  if (_cpu == CPU_APPLE && FLAG_IS_DEFAULT(UseCryptoPmullForCRC32)) {
+    FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, true);
+  }
+
   if (UseCryptoPmullForCRC32 && (!supports_pmull() || !supports_sha3() || !supports_crc32())) {
     warning("UseCryptoPmullForCRC32 specified, but not supported on this CPU");
     FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, false);

@@ -14,20 +14,24 @@ selects the original JNI calls. Both paths use zlib-ng.
 Heap arrays are pinned during native processing and released before exception
 handling. Buffer positions, counters, dictionaries, flush operations, parameter
 changes and reset preserve the Java ZIP API semantics. Interpreter compression
-uses JNI. Direct-to-direct Inflater calls and x86-64 mixed-buffer Inflater calls
-use JNI. Deflater uses JNI for chunks at most 1 KiB and, on AArch64, chunks of at
+uses JNI. Direct-to-direct Inflater calls and mixed-buffer Inflater calls on
+x86-64 and Apple AArch64 use JNI. Deflater uses JNI for chunks at most 1 KiB and, on AArch64, chunks of at
 least 64 KiB. All these call paths use zlib-ng.
 
 Adler32 calls zlib-ng directly from the interpreter and C1 for scalar, heap
 array and direct-buffer updates. On x86-64, C1 uses JNI for bulk updates of at
-least 64 KiB. C2 calls zlib-ng for scalar updates and bulk
+least 64 KiB. On Apple AArch64, C1 uses JNI for direct buffers unless the compiler proves
+a constant length below 4 KiB. C2 calls zlib-ng for scalar updates and bulk
 updates of at least 1 KiB; shorter bulk updates use the HotSpot SIMD kernel.
 On x86-64 without AVX2, C2 uses zlib-ng for all bulk sizes.
 
 CRC32 bulk updates of at least 64 bytes use zlib-ng on x86-64 when the
 HotSpot AVX-512 kernel is unavailable. The interpreter, C1 and C2 use the same
-selection. Short inputs, scalar updates, AVX-512 hosts and AArch64 retain the
-HotSpot kernels. CRC32C is unchanged; zlib-ng does not implement its polynomial.
+selection. Apple AArch64 uses zlib-ng for bulk updates of at least 64 KiB;
+C1 heap updates at that size use JNI. Shorter Apple updates use the PMULL
+kernel when supported. Scalar updates, AVX-512 hosts and other AArch64 CPUs
+retain the HotSpot kernels. CRC32C is unchanged; zlib-ng does not implement
+its polynomial.
 
 Native consumers include ZIP/JAR class loading, CDS checksums, jimage
 decompression and compressed heap dumps. Java ZIP/GZIP, ZIP filesystem and jlink

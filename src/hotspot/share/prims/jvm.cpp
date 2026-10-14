@@ -240,11 +240,18 @@ JVM_ENTRY(jboolean, JVM_AOTEndRecording(JNIEnv *env))
 #endif // INCLUDE_CDS
 JVM_END
 
-JVM_LEAF(jboolean, JVM_ZipIntrinsicsEnabled())
-#if defined(AMD64) || defined(AARCH64)
-  return UseZipIntrinsics && UseCompiler;
+JVM_LEAF(jlong, JVM_ZipIntrinsicLimits())
+  if (!UseZipIntrinsics || !UseCompiler) {
+    return 0;
+  }
+#ifdef AARCH64
+  const jlong max_input = 65536;
+  const jlong mixed_buffers = VM_Version::cpu_family() != VM_Version::CPU_APPLE;
+  return (max_input << 32) | mixed_buffers;
+#elif defined(AMD64)
+  return static_cast<jlong>(max_jint) << 32;
 #else
-  return false;
+  return 0;
 #endif
 JVM_END
 

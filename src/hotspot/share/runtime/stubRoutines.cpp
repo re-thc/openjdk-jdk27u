@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,8 @@ bool StubRoutines::use_zlib_ng_crc32() {
   return !(VM_Version::supports_sse4_1() &&
            VM_Version::supports_avx512_vpclmulqdq() &&
            VM_Version::supports_avx512bw() && VM_Version::supports_avx512vl());
+#elif defined(AARCH64)
+  return VM_Version::cpu_family() == VM_Version::CPU_APPLE;
 #else
   return false;
 #endif

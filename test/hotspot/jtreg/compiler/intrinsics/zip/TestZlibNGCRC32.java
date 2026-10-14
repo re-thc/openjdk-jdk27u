@@ -83,7 +83,7 @@ public class TestZlibNGCRC32 {
         CRC32 crc = new CRC32();
         for (int off : new int[]{0, 1, 7, 31}) {
             for (int len : new int[]{0, 1, 2, 15, 16, 31, 32, 63, 64, 65,
-                                    255, 256, 1023, 1024, 65536, 1048576}) {
+                                    255, 256, 1023, 1024, 65535, 65536, 65537, 1048576}) {
                 long expected = reference(data, off, len);
                 for (int repeat = 0; repeat < 5000; repeat++) {
                     seed(crc);
