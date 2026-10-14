@@ -1,0 +1,80 @@
+name: Whole-input zlib level tradeoffs
+on:
+  push:
+    branches: [diagnostic/tiny-zlib-level-tradeoff-20261014]
+    paths:
+      - .github/scripts/level-study/**
+      - .github/workflows/tiny-zlib-level-tradeoff.yml
+permissions:
+  contents: read
+concurrency:
+  group: zlib-level-study-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  fixed-level-study:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: production
+          fetch-depth: 0
+          sparse-checkout: |
+            .github/scripts/level-study
+            src/java.base/share/native/libzip
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 9870d54525f8f5a1315da6f2f9b289fb535e26a3
+          path: corpora
+          sparse-checkout: |
+            src/java.base/share/classes/java/util
+            src/hotspot/share/runtime
+            doc
+          persist-credentials: false
+      - name: Compiler prerequisites
+        run: |
+          if ! command -v gcc-14 >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y gcc-14 make python3
+          fi
+      - name: One fixed whole-input level study
+        run: python3 production/.github/scripts/level-study/run.py --root production --corpora corpora --out validation/level-study --phase all
+      - name: Analyze all samples
+        if: always()
+        run: |
+          if test -f validation/level-study/evidence/sizes.csv; then
+            python3 production/.github/scripts/level-study/analyze.py --out validation/level-study
+            cat validation/level-study/evidence/REPORT.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Retain hashed text evidence in completed logs
+        if: always()
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64,gzip,hashlib,json
+          root=Path('validation/level-study')
+          if root.exists():
+              files={str(p.relative_to(root)):p.read_text() for p in (root/'evidence').glob('*') if p.is_file() and p.suffix in ['.json','.csv','.md','.log']}
+              if (root/'manifest.json').exists():files['manifest.json']=(root/'manifest.json').read_text()
+              raw=gzip.compress(json.dumps(files,separators=(',',':')).encode(),mtime=0);text=base64.b64encode(raw).decode()
+              print('LEVEL_STUDY_EVIDENCE_BEGIN',hashlib.sha256(raw).hexdigest(),len(raw))
+              for i in range(0,len(text),1000):print('LEVEL_STUDY_EVIDENCE_DATA',text[i:i+1000])
+              print('LEVEL_STUDY_EVIDENCE_END')
+          PY
+      - name: Report qualification status
+        if: always()
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,sys
+          p=Path('validation/level-study/evidence/timing-results.json')
+          sys.exit(0 if p.exists() and json.loads(p.read_text())['qualified'] else 2)
+          PY
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: always()
+        with:
+          name: zlib-whole-input-level-study-${{ github.run_id }}
+          path: validation/level-study
+          retention-days: 30
+          if-no-files-found: error
