@@ -1,0 +1,58 @@
+name: Vector API native loop diagnostic
+'on':
+  push:
+    branches: [codex/vector-api-native-unroll]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  native-ir:
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Get pinned baseline fastdebug image
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: 38172262610
+          artifact-ids: 11714469219
+          path: baseline-bundles
+          merge-multiple: true
+      - name: Get pinned patched fastdebug image
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: 38349570655
+          artifact-ids: 11791725073
+          path: patched-bundles
+          merge-multiple: true
+      - name: Record native host and compile common driver
+        run: |
+          test "$(uname -m)" = aarch64
+          mkdir base-debug patched-debug qualification/classes qualification/whitebox
+          tar -xf baseline-bundles/jdk-linux-aarch64-debug.tar.gz -C base-debug --strip-components=1
+          tar -xf patched-bundles/jdk-linux-aarch64-debug.tar.gz -C patched-debug --strip-components=1
+          python3 qualification/native_unroll/record_native_host.py
+          patched-debug/bin/javac -d qualification/whitebox test/lib/jdk/test/whitebox/parser/DiagnosticCommand.java test/lib/jdk/test/whitebox/WhiteBox.java
+          patched-debug/bin/javac --add-modules jdk.incubator.vector -cp qualification/whitebox -d qualification/classes qualification/src/PhaseVectorKernels.java qualification/src/PhaseVectorProbe.java
+      - name: Compare four targeted C2 loop graphs
+        run: |
+          cpu=$(python3 -c 'import os; print(min(os.sched_getaffinity(0)))')
+          python3 qualification/native_unroll/run_native_unroll.py --base-jdk base-debug --patched-jdk patched-debug --classes qualification/classes --whitebox qualification/whitebox --kernel-source qualification/src/PhaseVectorKernels.java --probe-source qualification/src/PhaseVectorProbe.java --provenance qualification/native_unroll/provenance.json --out native-ir --cpu "$cpu" --measure-calls 1000 --execute
+      - name: Print structured diagnostic evidence
+        if: always()
+        run: python3 qualification/native_unroll/report_native_ir.py
+      - name: Preserve exact graphs and provenance
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: vector-api-native-loop-ir
+          path: |
+            native-ir
+            native-ir-host.json
+            qualification/classes
+            qualification/whitebox
+            qualification/native_unroll
+          retention-days: 30
+
