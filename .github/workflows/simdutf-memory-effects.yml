@@ -86,7 +86,7 @@ jobs:
             task_jvm=$(find "build/$task_level" -name libjvm.so -print -quit)
             test -n "$task_jvm"
             cp "$task_jvm" "image/$task_level/lib/server/libjvm.so"
-            bash "$JTREG/bin/jtreg" -jdk:"$GITHUB_WORKSPACE/image/$task_level" -agentvm -concurrency:2 -timeoutFactor:5 -javaoptions:-XX:ActiveProcessorCount=2 -vmoptions:-XX:ActiveProcessorCount=2 -w:"results/jtreg-$task_level-work" -r:"results/jtreg-$task_level-report" test/hotspot/jtreg/compiler/intrinsics/simdutf test/hotspot/jtreg/compiler/escapeAnalysis/TestSimdUTFLeaf.java > "results/jtreg-$task_level.log" 2>&1 || { tail -120 "results/jtreg-$task_level.log"; exit 1; }
+            "$BOOT/bin/java" -jar "$JTREG/lib/jtreg.jar" -jdk:"$GITHUB_WORKSPACE/image/$task_level" -agentvm -concurrency:2 -timeoutFactor:5 -javaoptions:-XX:ActiveProcessorCount=2 -vmoptions:-XX:ActiveProcessorCount=2 -w:"results/jtreg-$task_level-work" -r:"results/jtreg-$task_level-report" test/hotspot/jtreg/compiler/intrinsics/simdutf test/hotspot/jtreg/compiler/escapeAnalysis/TestSimdUTFLeaf.java > "results/jtreg-$task_level.log" 2>&1 || { tail -120 "results/jtreg-$task_level.log"; exit 1; }
           done
           curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar -o jmh/core.jar
           curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/org/openjdk/jmh/jmh-generator-annprocess/1.37/jmh-generator-annprocess-1.37.jar -o jmh/generator.jar
