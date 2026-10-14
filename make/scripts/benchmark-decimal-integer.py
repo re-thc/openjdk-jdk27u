@@ -101,7 +101,7 @@ def main():
         {str(path): sha256(path) for path in inputs}, indent=2) + '\n')
     (output / 'release').write_bytes((args.jdk / 'release').read_bytes())
     for name in ['resources.json', 'sha256.json', 'release', 'startup.log',
-                 'source-revision.log']:
+                 'cpu.log', 'flags.log', 'source-revision.log']:
         print('JDK_EVIDENCE ' + json.dumps({'name': name,
               'content': (output / name).read_text()}), flush=True)
 
