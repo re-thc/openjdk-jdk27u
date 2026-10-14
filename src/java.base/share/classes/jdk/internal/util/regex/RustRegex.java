@@ -142,7 +142,17 @@ public final class RustRegex {
         }
     }
 
-    private record CacheKey(String pattern, int flags) { }
+    private record CacheKey(String pattern, int flags) {
+        // Cache lookup runs on first regex use. Avoid bootstrapping record
+        // method handles just to hash and compare this pair.
+        @Override
+        public int hashCode() { return 31 * pattern.hashCode() + flags; }
+
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof CacheKey key && flags == key.flags && pattern.equals(key.pattern);
+        }
+    }
     private record CacheEntry(boolean javaOnly, WeakReference<RustRegex> engine,
                               Subset preparedSubset, FastPlan fastPlan) { }
     private static final class CompiledCache {
