@@ -42,11 +42,23 @@ jobs:
         run: |
           mkdir -p qualification
           build/zip/images/jdk/bin/java -Xlog:os+cpu=info -version 2>&1 | tee qualification/cpu-features.txt
+      - name: Configure through the qualified MSYS2 login shell
+        shell: env /usr/bin/bash --login -eo pipefail {0}
+        env:
+          PATH: ''
+        run: |
+          bash configure --with-conf-name=control --with-debug-level=release \
+            --with-boot-jdk='${{ steps.bootjdk.outputs.path }}' \
+            --with-native-debug-symbols=none --disable-desktop --enable-headless-only \
+            --enable-jvm-feature-serialgc --enable-jvm-feature-g1gc --enable-jvm-feature-zgc \
+            --disable-jvm-feature-parallelgc --disable-jvm-feature-shenandoahgc \
+            --disable-jvm-feature-epsilongc --with-version-opt=zip-checksum-control \
+            CMAKE='${{ steps.cmake.outputs.path }}'
       - name: Build and ABI-test the direct native control
         run: |
           python3 .github/scripts/build-windows-arm-control.py \
             --jdk build/zip/images/jdk --bootjdk '${{ steps.bootjdk.outputs.path }}' \
-            --profile configure --cmake '${{ steps.cmake.outputs.path }}' \
+            --skip-configure --profile configure --cmake '${{ steps.cmake.outputs.path }}' \
             --bash "$(cygpath -m "$(command -v bash)")" \
             --make "$(cygpath -m "$(command -v make)")"
       - name: Compare the existing kernel, JNI and direct native code

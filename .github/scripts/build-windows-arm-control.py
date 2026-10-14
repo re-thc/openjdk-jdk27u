@@ -14,6 +14,7 @@ parser.add_argument('--bootjdk', required=True)
 parser.add_argument('--profile', required=True)
 parser.add_argument('--bash', default='bash')
 parser.add_argument('--make', default='make')
+parser.add_argument('--skip-configure', action='store_true')
 parser.add_argument('--cmake', default='')
 parser.add_argument('--toolchain', default='')
 args = parser.parse_args()
@@ -63,7 +64,8 @@ command = [args.bash, args.profile, '--with-conf-name=control', '--with-debug-le
 if args.cmake:
     command.append('CMAKE=' + args.cmake)
 command.extend(args.toolchain.split())
-subprocess.run(command, check=True)
+if not args.skip_configure:
+    subprocess.run(command, check=True)
 try:
     for variant in ('direct',):
         changed = dict(files)
