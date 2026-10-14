@@ -101,17 +101,17 @@ subprocess.run([str(jdk / 'bin/javac'), *patch_args, '-cp', cp, '-processorpath'
     '.github/scripts/HiddenChecksums.java'], check=True)
 cp = str(classes) + os.pathsep + cp
 tiers = {'interpreter': ['-Xint'], 'c1': ['-XX:TieredStopAtLevel=1'], 'c2': ['-XX:-TieredCompilation']}
-routes = {'selected': [], 'jni': ['-XX:+UnlockDiagnosticVMOptions', '-XX:-UseCRC32Intrinsics']}
+routes = {'selected': [], 'baseline': []}
 commands = []
 for batch, order in enumerate((list(routes), list(reversed(routes)))):
     for tier, flags in tiers.items():
         for route in order:
             for case, pattern, size in (
-                    ('bulk', 'HiddenChecksums.(pngOld|pngNew|rawOld|rawNew)', '16,32,64,1024,65536'),
-                    ('scalar', 'HiddenChecksums.(pngScalarOld|pngScalarNew)', '1')):
+                    ('raw', 'HiddenChecksums.rawNew', '1,4,8,16,32,64,1024,65536'),):
                 output = out / (str(batch) + '-' + tier + '-' + route + '-' + case + '.json')
+                runtime_patches = patch_args if route == 'selected' else [*base_args, *exports]
                 vm = ['-Xshare:off', '-Xms256m', '-Xmx256m', '-XX:+UseSerialGC',
-                      '-XX:ActiveProcessorCount=2', '-Xbatch', *patch_args, *flags, *routes[route]]
+                      '-XX:ActiveProcessorCount=2', '-Xbatch', *runtime_patches, *flags, *routes[route]]
                 command = [str(jdk / 'bin/java'), *patch_args, '-cp', cp, 'org.openjdk.jmh.Main',
                     pattern, '-p', 'size=' + size, '-f', '3', '-wi', '3', '-w', '300ms',
                     '-i', '5', '-r', '300ms', '-t', '1', '-jvmArgs', ' '.join(vm),
