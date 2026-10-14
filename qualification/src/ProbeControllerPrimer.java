@@ -10,9 +10,14 @@ public final class ProbeControllerPrimer {
         int qualifiedCalls = Integer.getInteger("measureCalls", 100000);
         System.out.println("CONTROLLER_PRIMER_BEGIN");
         System.setProperty("measureCalls", "10000");
-        PhaseVectorProbe.main(args);
+        FixedVectorProbe.main(args);
+        // Prime management getters, formatting and allocation-counter plumbing.
+        // Zero calls keep the kernel warmup history unchanged.
+        for (int i = 0; i < 1000; i++) {
+            FixedVectorProbe.window("controller_prime", 0, 0);
+        }
         System.out.println("MEASURED_PASS_BEGIN");
         System.setProperty("measureCalls", Integer.toString(qualifiedCalls));
-        PhaseVectorProbe.main(args);
+        FixedVectorProbe.main(args);
     }
 }

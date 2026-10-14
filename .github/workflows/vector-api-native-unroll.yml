@@ -7,55 +7,67 @@ permissions:
   actions: read
 jobs:
   release-causal:
+    name: Native release ${{ matrix.mode }}
     runs-on: ubuntu-26.04-arm
-    timeout-minutes: 30
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [timing, assembly]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - name: Reuse preserved matched images, frozen inputs and rejected pilot
+      - name: Reuse matched inputs and preserve both rejected pilots
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: 38538129071
-          artifact-ids: 11880558785
-          path: prior
+          run-id: 38539204173
+          artifact-ids: 11881672203
+          path: saved
           merge-multiple: true
-      - name: Verify unchanged images and compile controller-only primer
+      - name: Verify unchanged images and compile cached-bean controller
         run: |
           test "$(uname -m)" = aarch64
           mkdir base-release b3-release controller-classes
-          tar -xf prior/baseline-bundles/jdk-linux-aarch64.tar.gz -C base-release --strip-components=1
-          tar -xf prior/patched-bundles/jdk-linux-aarch64.tar.gz -C b3-release --strip-components=1
-          ln -s prior/baseline-bundles baseline-bundles
-          ln -s prior/patched-bundles patched-bundles
+          tar -xf saved/prior/baseline-bundles/jdk-linux-aarch64.tar.gz -C base-release --strip-components=1
+          tar -xf saved/prior/patched-bundles/jdk-linux-aarch64.tar.gz -C b3-release --strip-components=1
+          ln -s saved/prior/baseline-bundles baseline-bundles
+          ln -s saved/prior/patched-bundles patched-bundles
           python3 qualification/native_unroll/record_native_host.py
           python3 - <<'PY'
           import pathlib,hashlib,json
-          plan=json.loads(pathlib.Path('prior/release-causal/plan.json').read_text())
+          plan=json.loads(pathlib.Path('saved/prior/release-causal/plan.json').read_text())
           for image,directory in [('base87','base-release'),('b3','b3-release')]:
               for name,record in plan['images'][image].items():
                   p=pathlib.Path(directory)/name
                   assert hashlib.file_digest(p.open('rb'),'sha256').hexdigest()==record['sha256']
           print('MATCHED_IMAGE_HASHES_VERIFIED=true')
-          rejected=pathlib.Path('prior/release-causal/pair00-base87-eight-0-default-arithmetic.out')
-          print('REJECTED_PILOT_OUTPUT_JSON='+json.dumps(rejected.read_text()))
+          for path in ['saved/prior/release-causal/pair00-base87-eight-0-default-arithmetic.out','saved/release-causal/pair00-b3-legacy-0-4-conversion.out']:
+              print('REJECTED_PILOT_OUTPUT_JSON='+json.dumps({'file':path,'text':pathlib.Path(path).read_text()}))
           PY
-          b3-release/bin/javac -cp prior/frozen/qualification/classes:prior/frozen/qualification/whitebox -d controller-classes qualification/src/ProbeControllerPrimer.java
-      - name: Run primed fixed paired release workloads and separate assembly twins
+          b3-release/bin/javac -cp saved/prior/frozen/qualification/classes:saved/prior/frozen/qualification/whitebox -d controller-classes qualification/src/FixedVectorProbe.java qualification/src/ProbeControllerPrimer.java
+      - name: Reproduce controller compilation separately from qualified timings
+        if: matrix.mode == 'assembly'
+        run: python3 qualification/native_unroll/diagnose_controller.py
+      - name: Run fixed paired workloads or separately attributed release assembly
+        env:
+          EXPERIMENT_MODE: ${{ matrix.mode }}
         run: |
-          python3 qualification/native_unroll/run_release_causal.py --base-jdk base-release --patched-jdk b3-release --frozen prior/frozen --primer-classes controller-classes --out release-causal --execute
+          if [[ "$EXPERIMENT_MODE" == assembly ]]; then mode_flag=--diagnostics-only; else mode_flag=--timings-only; fi
+          python3 qualification/native_unroll/run_release_causal.py --base-jdk base-release --patched-jdk b3-release --frozen saved/prior/frozen --primer-classes controller-classes --out release-causal "$mode_flag" --execute
       - name: Print structured final summaries and ordinary-entry assembly
         if: always()
         run: python3 qualification/native_unroll/report_release_causal.py
-      - name: Preserve all windows, matched images, frozen inputs and compiler diagnostics
+      - name: Preserve complete experiment evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: vector-api-release-unroll-causal-primed
+          name: vector-api-release-causal-${{ matrix.mode }}
           path: |
             release-causal
+            controller-diagnostic
             native-ir-host.json
             controller-classes
             qualification/native_unroll
+            qualification/src/FixedVectorProbe.java
             qualification/src/ProbeControllerPrimer.java
-            prior
           retention-days: 30

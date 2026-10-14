@@ -33,6 +33,8 @@ def main():
     p.add_argument('--pairs', type=int, default=12)
     p.add_argument('--calls', type=int, default=100000)
     p.add_argument('--execute', action='store_true')
+    p.add_argument('--diagnostics-only', action='store_true')
+    p.add_argument('--timings-only', action='store_true')
     a = p.parse_args()
     if a.pairs < 12 or a.pairs % 2: p.error('At least twelve balanced pairs required')
     if a.calls != 100000: p.error('Frozen fixed common workload is 100000 calls/window')
@@ -53,8 +55,9 @@ def main():
     conditions += list(itertools.product(['legacy', 'four', 'eight'], ['default', '0'], ['default'], ['rawBits', 'directBits', 'arithmetic']))
     cpu = min(os.sched_getaffinity(0))
     plan = {'scope': 'Release causal diagnostic, no compiler policy changes', 'base': BASE, 'patched': B3,
-            'pairs': a.pairs, 'controller_primer': {'frozen_probe_passes': 1, 'calls_per_primer_window': 10000, 'total_primer_kernel_calls': 61001, 'class': record(primer / 'ProbeControllerPrimer.class')}, 'warmup_calls': 10000, 'calibration_calls': 1000, 'windows': 5,
+            'pairs': a.pairs, 'controller_primer': {'frozen_probe_passes': 1, 'calls_per_primer_window': 10000, 'total_primer_kernel_calls': 61001, 'zero_call_metrics_windows': 1000, 'class': record(primer / 'ProbeControllerPrimer.class')}, 'warmup_calls': 10000, 'calibration_calls': 1000, 'windows': 5,
             'calls_per_window': a.calls, 'conditions': conditions, 'cpu': cpu,
+            'controller': record(primer / 'FixedVectorProbe.class'), 'diagnostics_only': a.diagnostics_only, 'timings_only': a.timings_only,
             'classes': [record(f) for f in sorted(classes.glob('*.class'))],
             'whitebox': [record(f) for f in sorted(wb.rglob('*.class'))],
             'images': {k: {s: record(v / s) for s in ['bin/java', 'lib/server/libjvm.so', 'lib/modules', 'release']} for k,v in images.items()},
@@ -75,7 +78,7 @@ def main():
         argv = ['taskset', '-c', str(cpu), str(images[image] / 'bin/java'), '-Xms256m', '-Xmx512m',
                 '-XX:ActiveProcessorCount=2', '--add-modules=jdk.incubator.vector', '-DvectorBits=128',
                 '-DmeasureCalls=' + str(1000 if diagnostic else a.calls), '-Xbatch', '-XX:-TieredCompilation',
-                '-XX:CompileCommand=dontinline,PhaseVectorProbe::invoke',
+                '-XX:CompileCommand=dontinline,FixedVectorProbe::invoke',
                 '-XX:CompileCommand=dontinline,PhaseVectorKernels::' + kernel, *HEADER[header]]
         if sve == '0': argv += ['-XX:UseSVE=0']
         if unroll != 'default': argv += ['-XX:LoopMaxUnroll=' + unroll]
@@ -94,10 +97,25 @@ def main():
         if len(measurements) != 5: raise RuntimeError(name + ' missing fixed windows')
         if any(int(r['calls']) != (1000 if diagnostic else a.calls) for r in measurements): raise RuntimeError('Workload mismatch')
         if diagnostic and any(int(r['normal_before']) != 4 or int(r['normal_after']) != 4 for r in measurements): raise RuntimeError('Ordinary C2 missing')
-        if any(int(r['compilation_ms']) != 0 for r in measurements): raise RuntimeError('Compilation occurred in window ' + name)
+        if not diagnostic and any(int(r['compilation_ms']) != 0 for r in measurements): raise RuntimeError('Compilation occurred in window ' + name)
         return {'ns_per_op': statistics.mean(int(r['nanoseconds']) / int(r['calls']) for r in measurements),
                 'B_per_op': statistics.mean(int(r['allocated_bytes']) / int(r['calls']) for r in measurements),
                 'checksum': measurements[0]['checksum'], 'windows': measurements, 'name': name}
+
+    if a.diagnostics_only:
+        assembly = []
+        for cond in conditions[:12]:
+            for image in images:
+                name = 'assembly-' + image + '-' + '-'.join(cond)
+                launch(image, cond, name, True)
+                tree = ET.parse(out / (name + '.xml'))
+                normal = [n.attrib for n in tree.findall('.//nmethod') if n.get('method') == 'PhaseVectorKernels conversion (I)J' and n.get('compile_kind') != 'osr']
+                if not normal: raise RuntimeError('Missing ordinary-entry nmethod ' + name)
+                assembly.append({'name': name, 'condition': cond, 'image': image, 'ordinary_entry_nmethods': normal,
+                                 'assembly_output': record(out / (name + '.out'))})
+        (out / 'assembly-index.json').write_text(json.dumps(assembly, indent=2))
+        print('ASSEMBLY_INDEX_JSON=' + json.dumps(assembly), flush=True)
+        return
 
     paired = []
     rng = random.Random(8384963)
@@ -123,6 +141,7 @@ def main():
           'b3_B': statistics.mean(r['results']['b3']['B_per_op'] for r in group)}
         summaries.append(summary); print('RELEASE_PAIR_SUMMARY_JSON=' + json.dumps(summary), flush=True)
     (out / 'summary.json').write_text(json.dumps(summaries, indent=2) + '\n')
+    if a.timings_only: return
     # Assembly twins use the identical frozen kernel and compiler flags. WhiteBox checks installation.
     assembly = []
     for cond in conditions[:12]:
@@ -134,7 +153,7 @@ def main():
             if not normal: raise RuntimeError('Missing ordinary-entry nmethod ' + name)
             assembly.append({'name': name, 'condition': cond, 'image': image, 'ordinary_entry_nmethods': normal,
                              'assembly_output': record(out / (name + '.out'))})
-    (out / 'assembly-index.json').write_text(json.dumps(assembly, indent=2) + '\n')
+    (out / 'assembly-index.json').write_text(json.dumps(assembly, indent=2))
     print('ASSEMBLY_INDEX_JSON=' + json.dumps(assembly), flush=True)
 
 if __name__ == '__main__': main()
