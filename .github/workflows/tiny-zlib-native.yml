@@ -1,0 +1,67 @@
+name: Tiny zlib native diagnostic
+on:
+  push:
+    branches: [diagnostic/tiny-zlib-native-20261014]
+    paths:
+      - .github/workflows/tiny-zlib-native.yml
+      - .github/scripts/tiny-zlib/**
+permissions:
+  contents: read
+concurrency:
+  group: tiny-zlib-native-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  native:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: production
+          fetch-depth: 16
+          sparse-checkout: |
+            .github/scripts/tiny-zlib
+            .github/workflows
+            src/java.base/share/native/libzip
+            doc
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 9870d54525f8f5a1315da6f2f9b289fb535e26a3
+          path: corpora
+          sparse-checkout: |
+            src/java.base/share/classes/java/util
+            src/hotspot/share/runtime
+            doc
+          persist-credentials: false
+      - name: Compiler prerequisites
+        run: |
+          if ! command -v gcc-14 >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y gcc-14 make python3 patch
+          fi
+      - name: Identical-build calibration first
+        run: python3 production/.github/scripts/tiny-zlib/native.py --root production --corpora corpora --out validation/tiny-zlib-calibration --aa-only
+      - name: Retain first calibration before candidate work
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: tiny-zlib-calibration-${{ github.run_id }}
+          path: validation/tiny-zlib-calibration
+          retention-days: 30
+          if-no-files-found: error
+      - name: Serial correctness and gated native measurements
+        run: python3 production/.github/scripts/tiny-zlib/native.py --root production --corpora corpora --out validation/tiny-zlib-native
+      - name: Publish diagnostic summary
+        if: always()
+        run: |
+          for report in validation/tiny-zlib-calibration/report.md validation/tiny-zlib-native/report.md; do
+            if test -f "$report"; then cat "$report" >> "$GITHUB_STEP_SUMMARY"; fi
+          done
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: always()
+        with:
+          name: tiny-zlib-native-linux-x64-${{ github.run_id }}
+          path: validation
+          retention-days: 30
+          if-no-files-found: error

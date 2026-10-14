@@ -1,0 +1,107 @@
+--- a/trees.c
++++ b/trees.c
+@@ -180,17 +180,30 @@
+     uint16_t count_lo[257];            /* histogram of the low frequency byte, at offset +1 */
+     uint16_t count_hi[257];            /* histogram of the high frequency byte, at offset +1 */
+ 
+-    memset(count_lo, 0, sizeof(count_lo));
+-    memset(count_hi, 0, sizeof(count_hi));
+-    for (n = 0; n < elems; n++) {
+-        const uint16_t freq = tree[n].Freq;
+-        if (freq != 0) {
+-            leaves[nleaves++] = pq_pack(freq, n);
+-            count_lo[(freq & 0xFF) + 1]++;
+-            count_hi[(freq >> 8) + 1]++;
+-            max_code = n;
+-        } else {
+-            tree[n].Len = 0;
++    const int small_alphabet = elems <= D_CODES;
++    if (small_alphabet) {
++        for (n = 0; n < elems; n++) {
++            const uint16_t freq = tree[n].Freq;
++            if (freq != 0) {
++                leaves[nleaves++] = pq_pack(freq, n);
++                max_code = n;
++            } else {
++                tree[n].Len = 0;
++            }
++        }
++    } else {
++        memset(count_lo, 0, sizeof(count_lo));
++        memset(count_hi, 0, sizeof(count_hi));
++        for (n = 0; n < elems; n++) {
++            const uint16_t freq = tree[n].Freq;
++            if (freq != 0) {
++                leaves[nleaves++] = pq_pack(freq, n);
++                count_lo[(freq & 0xFF) + 1]++;
++                count_hi[(freq >> 8) + 1]++;
++                max_code = n;
++            } else {
++                tree[n].Len = 0;
++            }
+         }
+     }
+ 
+@@ -210,27 +223,42 @@
+     }
+     desc->max_code = max_code;
+ 
+-    /* Sort the leaves by packed entry. The scan above appended them in node order, which is
+-     * ascending in the node bits, so two stable passes over the freq bytes finish the sort.
+-     * A forced node can arrive out of node order, but then there are exactly two leaves,
+-     * so the radix path only ever sorts entries the histograms counted. */
+-    if (nleaves == 2) {
+-        if (leaves[0] > leaves[1]) {
+-            const uint32_t t = leaves[0];
+-            leaves[0] = leaves[1];
+-            leaves[1] = t;
+-        }
+-    } else if ((int)count_hi[1] == nleaves) {
+-        /* Every frequency fits in one byte, so the first pass already produces the final
+-         * order. The sorted entries then live in scratch, so the internal-node FIFO takes
+-         * over the leaves buffer instead. */
+-        pq_radix_pass(leaves, scratch, nleaves, PQ_NODE_BITS, count_lo);
+-        sorted = scratch;
+-        internals = leaves;
++    /* Distance and bit-length alphabets have at most 30 and 19 symbols.
++     * Sort their full packed values, preserving frequency/node tie order and
++     * forced-node ordering, without radix histograms or a second gather pass. */
++    if (small_alphabet) {
++        for (int i = 1; i < nleaves; i++) {
++            const uint32_t entry = leaves[i];
++            int j = i;
++            while (j > 0 && leaves[j - 1] > entry) {
++                leaves[j] = leaves[j - 1];
++                j--;
++            }
++            leaves[j] = entry;
++        }
+     } else {
+-        /* Sort by the low then high frequency byte, ending back in leaves. */
+-        pq_radix_pass(leaves, scratch, nleaves, PQ_NODE_BITS, count_lo);
+-        pq_radix_pass(scratch, leaves, nleaves, PQ_NODE_BITS + 8, count_hi);
++        /* Sort the leaves by packed entry. The scan above appended them in node order, which is
++         * ascending in the node bits, so two stable passes over the freq bytes finish the sort.
++         * A forced node can arrive out of node order, but then there are exactly two leaves,
++         * so the radix path only ever sorts entries the histograms counted. */
++        if (nleaves == 2) {
++            if (leaves[0] > leaves[1]) {
++                const uint32_t t = leaves[0];
++                leaves[0] = leaves[1];
++                leaves[1] = t;
++            }
++        } else if ((int)count_hi[1] == nleaves) {
++            /* Every frequency fits in one byte, so the first pass already produces the final
++             * order. The sorted entries then live in scratch, so the internal-node FIFO takes
++             * over the leaves buffer instead. */
++            pq_radix_pass(leaves, scratch, nleaves, PQ_NODE_BITS, count_lo);
++            sorted = scratch;
++            internals = leaves;
++        } else {
++            /* Sort by the low then high frequency byte, ending back in leaves. */
++            pq_radix_pass(leaves, scratch, nleaves, PQ_NODE_BITS, count_lo);
++            pq_radix_pass(scratch, leaves, nleaves, PQ_NODE_BITS + 8, count_hi);
++        }
+     }
+ 
+     /* Construct the Huffman tree by repeatedly combining the least two frequent nodes.
