@@ -1,0 +1,55 @@
+{
+  "status": "unmerged upstream proposal, locally adapted for diagnostic qualification only",
+  "upstream_pr": "https://github.com/openjdk/jdk/pull/33319",
+  "upstream_bug": "JDK-8392077",
+  "upstream_head": "1281953c5ca1492f214e90522190a7ba46c39811",
+  "upstream_patch": {
+    "sha256": "145332d46e9354a64b95fe3b10f86f5c182a3ab08b7a712ed5b0c735f48e7304",
+    "bytes": 7598
+  },
+  "pr14_head": "b3ce67e362c3b1678fcf3d18ee714182b2395c86",
+  "original_baseline": "87edd79d3104ff502f7befec034716b081436f49",
+  "diagnostic_parent": "37f48260a86df01add55ac9888d17182f1f09ac6",
+  "product_files": {
+    "src/hotspot/cpu/aarch64/aarch64_vector.ad": {
+      "sha256": "c769c07f96af0273e0c53f41f48a5861daaac38e5cc0e968338b71ca3b6c32dc",
+      "bytes": 314640
+    },
+    "src/hotspot/cpu/aarch64/aarch64_vector_ad.m4": {
+      "sha256": "d7c8da725d95272562affb5083d6c45aea8d419c95e882f2123c31e002335066",
+      "bytes": 219468
+    }
+  },
+  "scope": "Three non-strict NEON ADD reduction rules: float64, float128, double128; positive zero seed only; preserve strict order and double width guard",
+  "no_unroll_policy_changes": true,
+  "matched_inputs": {
+    "run": 38539204173,
+    "artifact": 11881672203,
+    "reused": "original87 and b3 release images; frozen kernel/probe classes"
+  },
+  "matched_fastdebug_modules": {
+    "run": 38349570655,
+    "artifact": 11791725073
+  },
+  "native_wide_SVE_limit": "N2 native SVE is 128 bits; wider IR guards do not execute there",
+  "initial_gate_only": "Full Vector API suites, expanded stress, allocation contracts and cold phase qualification are still required before any PR14 update",
+  "matched_release_control": {
+    "source": "b3ce67e362c3b1678fcf3d18ee714182b2395c86",
+    "same_native_job_as_candidate": true,
+    "same_compiler_linker_binary_hashes": true,
+    "identical_configure_and_make_arguments": true,
+    "identical_b3_Java_modules": true,
+    "fresh_vs_archived_drift": "legacy conversion, default SVE and UseSVE=0; separately paired"
+  },
+  "screening_margin": "2% non-inferiority margin (upper paired 95% ratio <=1.02); not literal zero regression or a user-accepted tradeoff",
+  "qualification_requires": [
+    "focused native semantics/IR",
+    "explicit addressed decoded ordinary-entry zero-add/accumulator review",
+    "toolchain drift assessment",
+    "remaining full suites/phase qualification"
+  ],
+  "decoder": {
+    "distribution": "capstone 5.0.9",
+    "arm_wheel_sha256": "41772ad0c71aa5d3e97d541e802593c2e71fb94ac7e20d4202f97ce2a3eb8ed5"
+  }
+}
