@@ -1209,6 +1209,7 @@ public final class String
         return (b & 0xc0) != 0x80;
     }
 
+    @ForceInline
     private static boolean isMalformed3(int b1, int b2, int b3) {
         return (b1 == (byte)0xe0 && (b2 & 0xe0) == 0x80) ||
                 (b2 & 0xc0) != 0x80 || (b3 & 0xc0) != 0x80;
@@ -1219,6 +1220,7 @@ public final class String
                 (b2 & 0xc0) != 0x80;
     }
 
+    @ForceInline
     private static boolean isMalformed4(int b2, int b3, int b4) {
         return (b2 & 0xc0) != 0x80 || (b3 & 0xc0) != 0x80 ||
                 (b4 & 0xc0) != 0x80;
