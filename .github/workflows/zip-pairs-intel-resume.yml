@@ -40,7 +40,7 @@ jobs:
           PY
       - name: Build the release VM
         run: |
-          bash bin/configure-dev --with-conf-name=paired --with-debug-level=release \
+          bash configure --with-conf-name=paired --with-debug-level=release \
             --with-boot-jdk='${{ steps.bootjdk.outputs.path }}' \
             --with-native-debug-symbols=none --disable-desktop --enable-headless-only \
             --enable-jvm-feature-serialgc --enable-jvm-feature-g1gc --enable-jvm-feature-zgc \
