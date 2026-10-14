@@ -615,10 +615,6 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_SHA3_384_HMAC));
         dA(MAC, "HmacSHA3-512",    P11Mac,
                 m(CKM_SHA3_512_HMAC));
-        d(MAC, "SslMacMD5",     P11Mac,
-                m(CKM_SSL3_MD5_MAC));
-        d(MAC, "SslMacSHA1",    P11Mac,
-                m(CKM_SSL3_SHA1_MAC));
 
         /*
         * PBA HMacs
@@ -1029,21 +1025,12 @@ public final class SunPKCS11 extends AuthProvider {
         d(SIG, "SHA3-512withRSASSA-PSS", P11PSSSignature,
                 m(CKM_SHA3_512_RSA_PKCS_PSS));
 
-        d(KG, "SunTlsMasterSecret",
-                    "sun.security.pkcs11.P11TlsMasterSecretGenerator",
-                m(CKM_SSL3_MASTER_KEY_DERIVE_DH,
-                    CKM_TLS_MASTER_KEY_DERIVE_DH));
         d(KG, "SunTls12MasterSecret",
                 "sun.security.pkcs11.P11TlsMasterSecretGenerator",
             m(CKM_TLS12_MASTER_KEY_DERIVE_DH));
-        d(KG, "SunTlsKeyMaterial",
-                    "sun.security.pkcs11.P11TlsKeyMaterialGenerator",
-                m(CKM_SSL3_KEY_AND_MAC_DERIVE, CKM_TLS_KEY_AND_MAC_DERIVE));
         d(KG, "SunTls12KeyMaterial",
                 "sun.security.pkcs11.P11TlsKeyMaterialGenerator",
             m(CKM_TLS12_KEY_AND_MAC_DERIVE));
-        d(KG, "SunTlsPrf", "sun.security.pkcs11.P11TlsPrfGenerator",
-                m(CKM_TLS_PRF, CKM_NSS_TLS_PRF_GENERAL));
         d(KG, "SunTls12Prf", "sun.security.pkcs11.P11TlsPrfGenerator",
                 m(CKM_TLS_MAC));
 
@@ -1454,16 +1441,13 @@ public final class SunPKCS11 extends AuthProvider {
                 return new P11SecretKeyFactory(token, algorithm);
             } else if (type == KG) {
                 // reference equality
-                if (algorithm == "SunTlsMasterSecret"
-                        || algorithm == "SunTls12MasterSecret") {
+                if (algorithm == "SunTls12MasterSecret") {
                     return new P11TlsMasterSecretGenerator(
                         token, algorithm, mechanism);
-                } else if (algorithm == "SunTlsKeyMaterial"
-                        || algorithm == "SunTls12KeyMaterial") {
+                } else if (algorithm == "SunTls12KeyMaterial") {
                     return new P11TlsKeyMaterialGenerator(
                         token, algorithm, mechanism);
-                } else if (algorithm == "SunTlsPrf"
-                        || algorithm == "SunTls12Prf") {
+                } else if (algorithm == "SunTls12Prf") {
                     return new P11TlsPrfGenerator(token, algorithm, mechanism);
                 } else {
                     return new P11KeyGenerator(token, algorithm, mechanism);

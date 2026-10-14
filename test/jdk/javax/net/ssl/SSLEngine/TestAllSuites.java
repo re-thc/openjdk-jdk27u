@@ -26,7 +26,6 @@
  * @bug 4495742
  * @library /test/lib
  *
- * @run main/othervm/timeout=180 TestAllSuites TLSv1.1
  * @run main/othervm/timeout=180 TestAllSuites TLSv1.2
  * @run main/othervm/timeout=180 TestAllSuites TLSv1.3
  *
@@ -226,7 +225,6 @@ public class TestAllSuites {
         }
 
         switch(args[0]) {
-            case "TLSv1.1" -> SecurityUtils.removeFromDisabledTlsAlgs("TLSv1.1");
             case "TLSv1.3" -> SecurityUtils.addToDisabledTlsAlgs("TLSv1.2");
         }
 

@@ -740,11 +740,6 @@ public final class SunJCE extends Provider {
         ps("Mac", "PBEWithHmacSHA512/256",
                 "com.sun.crypto.provider.PBMAC1Core$HmacSHA512_256", null, attrs);
 
-        ps("Mac", "SslMacMD5",
-                "com.sun.crypto.provider.SslMacCore$SslMacMD5", null, attrs);
-        ps("Mac", "SslMacSHA1",
-                "com.sun.crypto.provider.SslMacCore$SslMacSHA1", null, attrs);
-
         /*
          * KeyStore
          */
@@ -785,8 +780,6 @@ public final class SunJCE extends Provider {
          * because PKCS11/SunPKCS11 does not yet have TLS1.2
          * mechanisms, and it will cause calls to come here.
          */
-        ps("KeyGenerator", "SunTlsPrf",
-                "com.sun.crypto.provider.TlsPrfGenerator$V10");
         ps("KeyGenerator", "SunTls12Prf",
                 "com.sun.crypto.provider.TlsPrfGenerator$V12");
 

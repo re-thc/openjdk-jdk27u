@@ -38,11 +38,8 @@ import javax.net.ssl.SSLHandshakeException;
 import sun.security.internal.spec.TlsKeyMaterialParameterSpec;
 import sun.security.internal.spec.TlsKeyMaterialSpec;
 import sun.security.ssl.CipherSuite.HashAlg;
-import static sun.security.ssl.CipherSuite.HashAlg.H_NONE;
 
 enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
-    SSL30       ("kdf_ssl30", new S30TrafficKeyDerivationGenerator()),
-    TLS10       ("kdf_tls10", new T10TrafficKeyDerivationGenerator()),
     TLS12       ("kdf_tls12", new T12TrafficKeyDerivationGenerator()),
     TLS13       ("kdf_tls13", new T13TrafficKeyDerivationGenerator());
 
@@ -57,12 +54,6 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
 
     static SSLTrafficKeyDerivation valueOf(ProtocolVersion protocolVersion) {
         switch (protocolVersion) {
-            case SSL30:
-                return SSLTrafficKeyDerivation.SSL30;
-            case TLS10:
-            case TLS11:
-            case DTLS10:
-                return SSLTrafficKeyDerivation.TLS10;
             case TLS12:
             case DTLS12:
                 return SSLTrafficKeyDerivation.TLS12;
@@ -76,32 +67,6 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
     public SSLKeyDerivation createKeyDerivation(HandshakeContext context,
             SecretKey secretKey) throws IOException {
         return keyDerivationGenerator.createKeyDerivation(context, secretKey);
-    }
-
-    private static final class S30TrafficKeyDerivationGenerator
-            implements SSLKeyDerivationGenerator {
-        private S30TrafficKeyDerivationGenerator() {
-            // blank
-        }
-
-        @Override
-        public SSLKeyDerivation createKeyDerivation(
-            HandshakeContext context, SecretKey secretKey) throws IOException {
-            return new LegacyTrafficKeyDerivation(context, secretKey);
-        }
-    }
-
-    private static final class T10TrafficKeyDerivationGenerator
-            implements SSLKeyDerivationGenerator {
-        private T10TrafficKeyDerivationGenerator() {
-            // blank
-        }
-
-        @Override
-        public SSLKeyDerivation createKeyDerivation(
-            HandshakeContext context, SecretKey secretKey) throws IOException {
-            return new LegacyTrafficKeyDerivation(context, secretKey);
-        }
     }
 
     private static final class T12TrafficKeyDerivationGenerator
@@ -220,7 +185,6 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
                 HandshakeContext context, SecretKey masterSecret) {
 
             CipherSuite cipherSuite = context.negotiatedCipherSuite;
-            ProtocolVersion protocolVersion = context.negotiatedProtocol;
 
             /*
              * For both the read and write sides of the protocol, we use the
@@ -232,55 +196,27 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
             int hashSize = cipherSuite.macAlg.size;
             SSLCipher cipher = cipherSuite.bulkCipher;
 
-            // Which algs/params do we need to use?
-            String keyMaterialAlg;
-            HashAlg hashAlg;
+            // Which algs/params do we need to use?  DTLS uses the TLS 1.2
+            // version number for key calculation.
+            String keyMaterialAlg = "SunTls12KeyMaterial";
+            HashAlg hashAlg = cipherSuite.hashAlg;
+            byte majorVersion = ProtocolVersion.TLS12.major;
+            byte minorVersion = ProtocolVersion.TLS12.minor;
 
-            byte majorVersion = protocolVersion.major;
-            byte minorVersion = protocolVersion.minor;
-            if (protocolVersion.isDTLS) {
-                // Use TLS version number for DTLS key calculation
-                if (protocolVersion.id == ProtocolVersion.DTLS10.id) {
-                    majorVersion = ProtocolVersion.TLS11.major;
-                    minorVersion = ProtocolVersion.TLS11.minor;
-
-                    keyMaterialAlg = "SunTlsKeyMaterial";
-                    hashAlg = H_NONE;
-                } else {    // DTLS 1.2+
-                    majorVersion = ProtocolVersion.TLS12.major;
-                    minorVersion = ProtocolVersion.TLS12.minor;
-
-                    keyMaterialAlg = "SunTls12KeyMaterial";
-                    hashAlg = cipherSuite.hashAlg;
-                }
-            } else {
-                if (protocolVersion.id >= ProtocolVersion.TLS12.id) {
-                    keyMaterialAlg = "SunTls12KeyMaterial";
-                    hashAlg = cipherSuite.hashAlg;
-                } else {
-                    keyMaterialAlg = "SunTlsKeyMaterial";
-                    hashAlg = H_NONE;
-                }
-            }
-
-            // TLS v1.1+ and DTLS use an explicit IV in CBC cipher suites to
-            // protect against the CBC attacks.  AEAD/GCM cipher suites in
-            // TLS v1.2 or later use a fixed IV as the implicit part of the
-            // partially implicit nonce technique described in RFC 5116.
-            int ivSize = cipher.ivSize;
+            // CBC cipher suites use an explicit IV to protect against the
+            // CBC attacks.  AEAD/GCM cipher suites use a fixed IV as the
+            // implicit part of the partially implicit nonce technique
+            // described in RFC 5116.
+            int ivSize = 0;
             if (cipher.cipherType == CipherType.AEAD_CIPHER) {
                 ivSize = cipher.fixedIvSize;
-            } else if (
-                    cipher.cipherType == CipherType.BLOCK_CIPHER &&
-                    protocolVersion.useTLS11PlusSpec()) {
-                ivSize = 0;
             }
 
             TlsKeyMaterialParameterSpec spec = new TlsKeyMaterialParameterSpec(
                     masterSecret, (majorVersion & 0xFF), (minorVersion & 0xFF),
                     context.clientHelloRandom.randomBytes,
                     context.serverHelloRandom.randomBytes,
-                    cipher.algorithm, cipher.keySize, 0,
+                    cipher.algorithm, cipher.keySize,
                     ivSize, hashSize,
                     hashAlg.name, hashAlg.hashLength, hashAlg.blockSize);
 

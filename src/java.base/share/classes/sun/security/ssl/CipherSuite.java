@@ -170,39 +170,39 @@ enum CipherSuite {
     // AES_256(CBC) - ECDHE - Using SHA
     TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA(
             0xC00A, true, "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
-            ProtocolVersion.PROTOCOLS_TO_12,
+            ProtocolVersion.PROTOCOLS_OF_12,
             K_ECDHE_ECDSA, B_AES_256, M_SHA, H_SHA256),
     TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA(
             0xC014, true, "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
-            ProtocolVersion.PROTOCOLS_TO_12,
+            ProtocolVersion.PROTOCOLS_OF_12,
             K_ECDHE_RSA, B_AES_256, M_SHA, H_SHA256),
 
     // AES_128(CBC) - ECDHE - using SHA
     TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA(
             0xC009, true, "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
-            ProtocolVersion.PROTOCOLS_TO_12,
+            ProtocolVersion.PROTOCOLS_OF_12,
             K_ECDHE_ECDSA, B_AES_128, M_SHA, H_SHA256),
     TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA(
             0xC013, true, "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
-            ProtocolVersion.PROTOCOLS_TO_12,
+            ProtocolVersion.PROTOCOLS_OF_12,
             K_ECDHE_RSA, B_AES_128, M_SHA, H_SHA256),
 
     // AES_256(CBC) - DHE - Using SHA
     TLS_DHE_RSA_WITH_AES_256_CBC_SHA(
             0x0039, true, "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
-            ProtocolVersion.PROTOCOLS_TO_12,
+            ProtocolVersion.PROTOCOLS_OF_12,
             K_DHE_RSA, B_AES_256, M_SHA, H_SHA256),
 
     // AES_128(CBC) - DHE - using SHA
     TLS_DHE_RSA_WITH_AES_128_CBC_SHA(
             0x0033, true, "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
-            ProtocolVersion.PROTOCOLS_TO_12,
+            ProtocolVersion.PROTOCOLS_OF_12,
             K_DHE_RSA, B_AES_128, M_SHA, H_SHA256),
 
     // Renegotiation protection request Signalling Cipher Suite Value (SCSV).
     TLS_EMPTY_RENEGOTIATION_INFO_SCSV(        //  RFC 5746, TLS 1.2 and prior
             0x00FF, true, "TLS_EMPTY_RENEGOTIATION_INFO_SCSV",
-            ProtocolVersion.PROTOCOLS_TO_12,
+            ProtocolVersion.PROTOCOLS_OF_12,
             K_SCSV, B_NULL, M_NULL, H_NONE),
 
     C_NULL("SSL_NULL_WITH_NULL_NULL", 0x0000);
@@ -373,9 +373,7 @@ enum CipherSuite {
                     packetSize += 1;        // 1 byte padding length field
                     packetSize +=           // use the minimal padding
                             (blockSize - (packetSize % blockSize)) % blockSize;
-                    if (protocolVersion.useTLS11PlusSpec()) {
-                        packetSize += blockSize;        // explicit IV
-                    }
+                    packetSize += blockSize;            // explicit IV
 
                     break;
                 case AEAD_CIPHER:
@@ -397,17 +395,14 @@ enum CipherSuite {
     }
 
     // See also CipherBox.calculateFragmentSize().
-    int calculateFragSize(int packetLimit,
-            ProtocolVersion protocolVersion, boolean isDTLS) {
+    int calculateFragSize(int packetLimit, boolean isDTLS) {
         int fragSize = packetLimit -
                 (isDTLS ? DTLSRecord.headerSize : SSLRecord.headerSize);
         if (bulkCipher != null && bulkCipher != B_NULL) {
             int blockSize = bulkCipher.ivSize;
             switch (bulkCipher.cipherType) {
                 case BLOCK_CIPHER:
-                    if (protocolVersion.useTLS11PlusSpec()) {
-                        fragSize -= blockSize;          // explicit IV
-                    }
+                    fragSize -= blockSize;              // explicit IV
                     fragSize -= (fragSize % blockSize); // cannot hold a block
                     // No padding for a maximum fragment.
                     fragSize -= 1;        // 1 byte padding length field: 0x00
@@ -517,9 +512,6 @@ enum CipherSuite {
 
     /**
      * The hash algorithms used for PRF (PseudoRandom Function) or HKDF.
-     *
-     * Note that TLS 1.1- uses a single MD5/SHA1-based PRF algorithm for
-     * generating the necessary material.
      */
     enum HashAlg {
         H_NONE      ("NONE",    0,    0),

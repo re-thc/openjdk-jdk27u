@@ -54,16 +54,11 @@ public final class P11TlsMasterSecretGenerator extends KeyGeneratorSpi {
     private final String algorithm;
 
     // mechanism id
-    private long mechanism;
-
-    private int tlsVersion;
+    private final long mechanism;
 
     @SuppressWarnings("deprecation")
     private TlsMasterSecretParameterSpec spec;
     private P11Key p11Key;
-
-    // whether SSLv3 is supported
-    private final boolean supportSSLv3;
 
     P11TlsMasterSecretGenerator(Token token, String algorithm, long mechanism)
             throws PKCS11Exception {
@@ -71,11 +66,6 @@ public final class P11TlsMasterSecretGenerator extends KeyGeneratorSpi {
         this.token = token;
         this.algorithm = algorithm;
         this.mechanism = mechanism;
-
-        // Given the current lookup order specified in SunPKCS11.java, if
-        // CKM_SSL3_MASTER_KEY_DERIVE_DH is not used to construct this object,
-        // it means that this mech is disabled or unsupported.
-        supportSSLv3 = (mechanism == CKM_SSL3_MASTER_KEY_DERIVE_DH);
     }
 
     protected void engineInit(SecureRandom random) {
@@ -90,13 +80,10 @@ public final class P11TlsMasterSecretGenerator extends KeyGeneratorSpi {
         }
 
         TlsMasterSecretParameterSpec spec = (TlsMasterSecretParameterSpec)params;
-        tlsVersion = (spec.getMajorVersion() << 8) | spec.getMinorVersion();
-        if ((tlsVersion == 0x0300 && !supportSSLv3) ||
-                (tlsVersion < 0x0300) || (tlsVersion > 0x0303)) {
+        int tlsVersion = (spec.getMajorVersion() << 8) | spec.getMinorVersion();
+        if (tlsVersion != 0x0303) {
              throw new InvalidAlgorithmParameterException
-                    ("Only" + (supportSSLv3? " SSL 3.0,": "") +
-                     " TLS 1.0, TLS 1.1 and TLS 1.2 are supported (" +
-                     tlsVersion + ")");
+                    ("Only TLS 1.2 is supported (" + tlsVersion + ")");
         }
 
         SecretKey key = spec.getPremasterSecret();
@@ -106,15 +93,6 @@ public final class P11TlsMasterSecretGenerator extends KeyGeneratorSpi {
             throw new InvalidAlgorithmParameterException("init() failed", e);
         }
         this.spec = spec;
-        // The DH mechanisms apply the TLS PRF (or the SSL equivalent) to any
-        // premaster secret.
-        if (tlsVersion == 0x0300) {
-            mechanism = CKM_SSL3_MASTER_KEY_DERIVE_DH;
-        } else if (tlsVersion == 0x0301 || tlsVersion == 0x0302) {
-            mechanism = CKM_TLS_MASTER_KEY_DERIVE_DH;
-        } else if (tlsVersion == 0x0303) {
-            mechanism = CKM_TLS12_MASTER_KEY_DERIVE_DH;
-        }
     }
 
     protected void engineInit(int keysize, SecureRandom random) {
@@ -130,17 +108,11 @@ public final class P11TlsMasterSecretGenerator extends KeyGeneratorSpi {
         byte[] serverRandom = spec.getServerRandom();
         CK_SSL3_RANDOM_DATA random =
                 new CK_SSL3_RANDOM_DATA(clientRandom, serverRandom);
-        CK_MECHANISM ckMechanism = null;
-        if (tlsVersion < 0x0303) {
-            CK_SSL3_MASTER_KEY_DERIVE_PARAMS params =
-                    new CK_SSL3_MASTER_KEY_DERIVE_PARAMS(random, null);
-            ckMechanism = new CK_MECHANISM(mechanism, params);
-        } else if (tlsVersion == 0x0303) {
-            CK_TLS12_MASTER_KEY_DERIVE_PARAMS params =
-                    new CK_TLS12_MASTER_KEY_DERIVE_PARAMS(random, null,
-                            Functions.getHashMechId(spec.getPRFHashAlg()));
-            ckMechanism = new CK_MECHANISM(mechanism, params);
-        }
+        // The DH mechanism applies the TLS PRF to any premaster secret.
+        CK_TLS12_MASTER_KEY_DERIVE_PARAMS params =
+                new CK_TLS12_MASTER_KEY_DERIVE_PARAMS(random, null,
+                        Functions.getHashMechId(spec.getPRFHashAlg()));
+        CK_MECHANISM ckMechanism = new CK_MECHANISM(mechanism, params);
         Session session = null;
         long p11KeyID = p11Key.getKeyID();
         try {

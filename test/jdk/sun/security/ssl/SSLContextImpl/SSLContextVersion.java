@@ -35,15 +35,10 @@
 
 import javax.net.ssl.*;
 
-import jdk.test.lib.security.SecurityUtils;
-
 public class SSLContextVersion {
     static enum ContextVersion {
         TLS_CV_01("SSL", "TLSv1.2", "TLSv1.2"),
         TLS_CV_02("TLS", "TLSv1.2", "TLSv1.2"),
-        TLS_CV_03("SSLv3", "TLSv1", "TLSv1.2"),
-        TLS_CV_04("TLSv1", "TLSv1", "TLSv1.2"),
-        TLS_CV_05("TLSv1.1", "TLSv1.1", "TLSv1.2"),
         TLS_CV_06("TLSv1.2", "TLSv1.2", "TLSv1.2"),
         TLS_CV_07("Default", "TLSv1.2", "TLSv1.2"),
         TLS_CV_08("Default", "TLSv1.3", "TLSv1.3"),
@@ -63,9 +58,6 @@ public class SSLContextVersion {
     }
 
     public static void main(String[] args) throws Exception {
-        // Re-enable TLSv1 and TLSv1.1 since test depends on them.
-        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLSv1.1");
-
         for (ContextVersion cv : ContextVersion.values()) {
             System.out.println("Checking SSLContext of " + cv.contextVersion);
             SSLContext context = SSLContext.getInstance(cv.contextVersion);

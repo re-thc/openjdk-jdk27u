@@ -925,7 +925,7 @@ final class ServerHello {
             // clean up this consumer
             chc.handshakeConsumers.remove(SSLHandshake.SERVER_HELLO.id);
             if (!chc.handshakeConsumers.isEmpty()) {
-                // DTLS 1.0/1.2
+                // DTLS 1.2
                 chc.handshakeConsumers.remove(
                         SSLHandshake.HELLO_VERIFY_REQUEST.id);
             }

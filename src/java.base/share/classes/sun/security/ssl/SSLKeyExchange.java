@@ -170,7 +170,7 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
         }
     }
 
-    // SSL 3.0 - (D)TLS 1.2
+    // (D)TLS 1.2
     static SSLKeyExchange valueOf(
             CipherSuite.KeyExchange keyExchange,
             ProtocolVersion protocolVersion) {
@@ -180,19 +180,11 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
 
         switch (keyExchange) {
             case K_DHE_RSA:
-                if (protocolVersion.useTLS12PlusSpec()) {   // (D)TLS 1.2
-                    return SSLKeyExDHERSAOrPSS.KE;
-                } else {    // SSL 3.0, TLS 1.0/1.1
-                    return SSLKeyExDHERSA.KE;
-                }
+                return SSLKeyExDHERSAOrPSS.KE;
             case K_ECDHE_ECDSA:
                 return SSLKeyExECDHEECDSA.KE;
             case K_ECDHE_RSA:
-                if (protocolVersion.useTLS12PlusSpec()) {   // (D)TLS 1.2
-                    return SSLKeyExECDHERSAOrPSS.KE;
-                } else {    // SSL 3.0, TLS 1.0/1.1
-                    return SSLKeyExECDHERSA.KE;
-                }
+                return SSLKeyExECDHERSAOrPSS.KE;
         }
 
         return null;
@@ -208,11 +200,6 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
         return null;
     }
 
-    private static class SSLKeyExDHERSA {
-        private static final SSLKeyExchange KE = new SSLKeyExchange(
-                List.of(X509Authentication.RSA), T12KeyAgreement.DHE);
-    }
-
     private static class SSLKeyExDHERSAOrPSS {
         private static final SSLKeyExchange KE = new SSLKeyExchange(
                 List.of(X509Authentication.RSA_OR_PSS), T12KeyAgreement.DHE);
@@ -222,11 +209,6 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
         private static final SSLKeyExchange KE = new SSLKeyExchange(
                 List.of(X509Authentication.EC, X509Authentication.EDDSA),
                 T12KeyAgreement.ECDHE);
-    }
-
-    private static class SSLKeyExECDHERSA {
-        private static final SSLKeyExchange KE = new SSLKeyExchange(
-                List.of(X509Authentication.RSA), T12KeyAgreement.ECDHE);
     }
 
     private static class SSLKeyExECDHERSAOrPSS {

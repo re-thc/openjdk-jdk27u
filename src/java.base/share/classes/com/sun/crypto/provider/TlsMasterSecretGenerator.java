@@ -74,9 +74,9 @@ public final class TlsMasterSecretGenerator extends KeyGeneratorSpi {
         }
         protocolVersion = (spec.getMajorVersion() << 8)
             | spec.getMinorVersion();
-        if ((protocolVersion < 0x0300) || (protocolVersion > 0x0303)) {
+        if (protocolVersion != 0x0303) {
             throw new InvalidAlgorithmParameterException(
-                "Only SSL 3.0, TLS 1.0/1.1/1.2 supported");
+                "Only TLS 1.2 supported");
         }
     }
 
@@ -92,48 +92,22 @@ public final class TlsMasterSecretGenerator extends KeyGeneratorSpi {
         byte[] premaster = spec.getPremasterSecret().getEncoded();
 
         try {
-            byte[] master;
-            if (protocolVersion >= 0x0301) {
-                byte[] label;
-                byte[] seed;
-                byte[] extendedMasterSecretSessionHash =
-                        spec.getExtendedMasterSecretSessionHash();
-                if (extendedMasterSecretSessionHash.length != 0) {
-                    label = LABEL_EXTENDED_MASTER_SECRET;
-                    seed = extendedMasterSecretSessionHash;
-                } else {
-                    byte[] clientRandom = spec.getClientRandom();
-                    byte[] serverRandom = spec.getServerRandom();
-                    label = LABEL_MASTER_SECRET;
-                    seed = concat(clientRandom, serverRandom);
-                }
-                master = ((protocolVersion >= 0x0303) ?
-                        doTLS12PRF(premaster, label, seed, 48,
-                                spec.getPRFHashAlg(), spec.getPRFHashLength(),
-                                spec.getPRFBlockSize()) :
-                        doTLS10PRF(premaster, label, seed, 48));
+            byte[] label;
+            byte[] seed;
+            byte[] extendedMasterSecretSessionHash =
+                    spec.getExtendedMasterSecretSessionHash();
+            if (extendedMasterSecretSessionHash.length != 0) {
+                label = LABEL_EXTENDED_MASTER_SECRET;
+                seed = extendedMasterSecretSessionHash;
             } else {
-                master = new byte[48];
-                MessageDigest md5 = MessageDigest.getInstance("MD5");
-                MessageDigest sha = MessageDigest.getInstance("SHA");
-
                 byte[] clientRandom = spec.getClientRandom();
                 byte[] serverRandom = spec.getServerRandom();
-                byte[] tmp = new byte[20];
-                for (int i = 0; i < 3; i++) {
-                    sha.update(SSL3_CONST[i]);
-                    sha.update(premaster);
-                    sha.update(clientRandom);
-                    sha.update(serverRandom);
-                    sha.digest(tmp, 0, 20);
-                    sha.reset();
-
-                    md5.update(premaster);
-                    md5.update(tmp);
-                    md5.digest(master, i << 4, 16);
-                    md5.reset();
-                }
+                label = LABEL_MASTER_SECRET;
+                seed = concat(clientRandom, serverRandom);
             }
+            byte[] master = doTLS12PRF(premaster, label, seed, 48,
+                    spec.getPRFHashAlg(), spec.getPRFHashLength(),
+                    spec.getPRFBlockSize());
             // master is referenced inside the TlsMasterSecretKey.
             // Do not touch it anymore.
             return new TlsMasterSecretKey(master);

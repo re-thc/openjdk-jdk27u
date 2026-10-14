@@ -57,8 +57,7 @@ public class TlsMasterSecretParameterSpec implements AlgorithmParameterSpec {
      * Constructs a new TlsMasterSecretParameterSpec.
      *
      * <p>The <code>getAlgorithm()</code> method of <code>premasterSecret</code>
-     * should return <code>"TlsRsaPremasterSecret"</code> if the key exchange
-     * algorithm was RSA and <code>"TlsPremasterSecret"</code> otherwise.
+     * should return <code>"TlsPremasterSecret"</code>.
      *
      * @param premasterSecret the premaster secret
      * @param majorVersion the major number of the protocol version
@@ -66,11 +65,8 @@ public class TlsMasterSecretParameterSpec implements AlgorithmParameterSpec {
      * @param clientRandom the client's random value
      * @param serverRandom the server's random value
      * @param prfHashAlg the name of the TLS PRF hash algorithm to use.
-     *        Used only for TLS 1.2+.  TLS1.1 and earlier use a fixed PRF.
      * @param prfHashLength the output length of the TLS PRF hash algorithm.
-     *        Used only for TLS 1.2+.
      * @param prfBlockSize the input block size of the TLS PRF hash algorithm.
-     *        Used only for TLS 1.2+.
      *
      * @throws NullPointerException if premasterSecret, clientRandom,
      *   or serverRandom are null
@@ -91,8 +87,7 @@ public class TlsMasterSecretParameterSpec implements AlgorithmParameterSpec {
      * Constructs a new TlsMasterSecretParameterSpec.
      *
      * <p>The <code>getAlgorithm()</code> method of <code>premasterSecret</code>
-     * should return <code>"TlsRsaPremasterSecret"</code> if the key exchange
-     * algorithm was RSA and <code>"TlsPremasterSecret"</code> otherwise.
+     * should return <code>"TlsPremasterSecret"</code>.
      *
      * @param premasterSecret the premaster secret
      * @param majorVersion the major number of the protocol version
@@ -100,11 +95,8 @@ public class TlsMasterSecretParameterSpec implements AlgorithmParameterSpec {
      * @param extendedMasterSecretSessionHash the session hash for
      *        Extended Master Secret
      * @param prfHashAlg the name of the TLS PRF hash algorithm to use.
-     *        Used only for TLS 1.2+.  TLS1.1 and earlier use a fixed PRF.
      * @param prfHashLength the output length of the TLS PRF hash algorithm.
-     *        Used only for TLS 1.2+.
      * @param prfBlockSize the input block size of the TLS PRF hash algorithm.
-     *        Used only for TLS 1.2+.
      *
      * @throws NullPointerException if premasterSecret is null
      * @throws IllegalArgumentException if minorVersion or majorVersion are

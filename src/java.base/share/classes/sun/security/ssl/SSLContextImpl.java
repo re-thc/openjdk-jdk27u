@@ -534,35 +534,6 @@ public abstract class SSLContextImpl extends SSLContextSpi {
     }
 
     /*
-     * The SSLContext implementation for SSL/(D)TLS algorithm
-     *
-     * SSL/TLS protocols specify the forward compatibility and version
-     * roll-back attack protections, however, a number of SSL/TLS server
-     * vendors did not implement these aspects properly, and some current
-     * SSL/TLS servers may refuse to talk to a TLS 1.1 or later client.
-     *
-     * Considering above interoperability issues, SunJSSE will not set
-     * TLS 1.1 and TLS 1.2 as the enabled protocols for client by default.
-     *
-     * For SSL/TLS servers, there is no such interoperability issues as
-     * SSL/TLS clients. In SunJSSE, TLS 1.1 or later version will be the
-     * enabled protocols for server by default.
-     *
-     * We may change the behavior when popular TLS/SSL vendors support TLS
-     * forward compatibility properly.
-     *
-     * SSLv2Hello is no longer necessary.  This interoperability option was
-     * put in place in the late 90's when SSLv3/TLS1.0 were relatively new
-     * and there were a fair number of SSLv2-only servers deployed.  Because
-     * of the security issues in SSLv2, it is rarely (if ever) used, as
-     * deployments should now be using SSLv3 and TLSv1.
-     *
-     * Considering the issues of SSLv2Hello, we should not enable SSLv2Hello
-     * by default. Applications still can use it by enabling SSLv2Hello with
-     * the series of setEnabledProtocols APIs.
-     */
-
-    /*
      * The base abstract SSLContext implementation for the Transport Layer
      * Security (TLS) protocols.
      *
@@ -578,19 +549,13 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         static {
             supportedProtocols = Arrays.asList(
                 ProtocolVersion.TLS13,
-                ProtocolVersion.TLS12,
-                ProtocolVersion.TLS11,
-                ProtocolVersion.TLS10,
-                ProtocolVersion.SSL30,
-                ProtocolVersion.SSL20Hello
+                ProtocolVersion.TLS12
             );
 
             serverDefaultProtocols = getAvailableProtocols(
                     new ProtocolVersion[] {
                 ProtocolVersion.TLS13,
-                ProtocolVersion.TLS12,
-                ProtocolVersion.TLS11,
-                ProtocolVersion.TLS10
+                ProtocolVersion.TLS12
             });
         }
 
@@ -638,68 +603,6 @@ public abstract class SSLContextImpl extends SSLContextSpi {
     }
 
     /*
-     * The SSLContext implementation for SSLv3 and TLS10 algorithm
-     *
-     * @see SSLContext
-     */
-    public static final class TLS10Context extends AbstractTLSContext {
-        private static final List<ProtocolVersion> clientDefaultProtocols;
-        private static final List<CipherSuite> clientDefaultCipherSuites;
-
-        static {
-            clientDefaultProtocols = getAvailableProtocols(
-                    new ProtocolVersion[] {
-                ProtocolVersion.TLS10
-            });
-
-            clientDefaultCipherSuites = getApplicableEnabledCipherSuites(
-                    clientDefaultProtocols, true);
-        }
-
-        @Override
-        List<ProtocolVersion> getClientDefaultProtocolVersions() {
-            return clientDefaultProtocols;
-        }
-
-        @Override
-        List<CipherSuite> getClientDefaultCipherSuites() {
-            return clientDefaultCipherSuites;
-        }
-    }
-
-    /*
-     * The SSLContext implementation for TLS11 algorithm
-     *
-     * @see SSLContext
-     */
-    public static final class TLS11Context extends AbstractTLSContext {
-        private static final List<ProtocolVersion> clientDefaultProtocols;
-        private static final List<CipherSuite> clientDefaultCipherSuites;
-
-        static {
-            clientDefaultProtocols = getAvailableProtocols(
-                    new ProtocolVersion[] {
-                ProtocolVersion.TLS11,
-                ProtocolVersion.TLS10
-            });
-
-            clientDefaultCipherSuites = getApplicableEnabledCipherSuites(
-                    clientDefaultProtocols, true);
-
-        }
-
-        @Override
-        List<ProtocolVersion> getClientDefaultProtocolVersions() {
-            return clientDefaultProtocols;
-        }
-
-        @Override
-        List<CipherSuite> getClientDefaultCipherSuites() {
-            return clientDefaultCipherSuites;
-        }
-    }
-
-    /*
      * The SSLContext implementation for TLS12 algorithm
      *
      * @see SSLContext
@@ -711,9 +614,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         static {
             clientDefaultProtocols = getAvailableProtocols(
                     new ProtocolVersion[] {
-                ProtocolVersion.TLS12,
-                ProtocolVersion.TLS11,
-                ProtocolVersion.TLS10
+                ProtocolVersion.TLS12
             });
 
             clientDefaultCipherSuites = getApplicableEnabledCipherSuites(
@@ -744,9 +645,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             clientDefaultProtocols = getAvailableProtocols(
                     new ProtocolVersion[] {
                 ProtocolVersion.TLS13,
-                ProtocolVersion.TLS12,
-                ProtocolVersion.TLS11,
-                ProtocolVersion.TLS10
+                ProtocolVersion.TLS12
             });
 
             clientDefaultCipherSuites = getApplicableEnabledCipherSuites(
@@ -813,6 +712,14 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                     // Is it a supported protocol name?
                     ProtocolVersion pv =
                             ProtocolVersion.nameOf(protocols[i]);
+                    if (pv == null && ProtocolVersion.isRetired(protocols[i])) {
+                        if (SSLLogger.isOn() &&
+                                SSLLogger.isOn(SSLLogger.Opt.SSLCTX)) {
+                            SSLLogger.fine(propname + ": ignoring " +
+                                    protocols[i] + ", not supported");
+                        }
+                        continue;
+                    }
                     if (pv == null) {
                         reservedException = new IllegalArgumentException(
                             propname + ": " + protocols[i] +
@@ -894,9 +801,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 // Client and server use the same default protocols.
                 candidates = new ProtocolVersion[] {
                         ProtocolVersion.TLS13,
-                        ProtocolVersion.TLS12,
-                        ProtocolVersion.TLS11,
-                        ProtocolVersion.TLS10
+                        ProtocolVersion.TLS12
                     };
             } else {
                 // Use the customized TLS protocols.
@@ -1198,15 +1103,13 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 
         static {
             supportedProtocols = Arrays.asList(
-                ProtocolVersion.DTLS12,
-                ProtocolVersion.DTLS10
+                ProtocolVersion.DTLS12
             );
 
             // available protocols for server mode
             serverDefaultProtocols = getAvailableProtocols(
                     new ProtocolVersion[] {
-                ProtocolVersion.DTLS12,
-                ProtocolVersion.DTLS10
+                ProtocolVersion.DTLS12
             });
 
             supportedCipherSuites = getApplicableSupportedCipherSuites(
@@ -1271,37 +1174,6 @@ public abstract class SSLContextImpl extends SSLContextSpi {
     }
 
     /*
-     * The SSLContext implementation for DTLSv1.0 algorithm.
-     *
-     * @see SSLContext
-     */
-    public static final class DTLS10Context extends AbstractDTLSContext {
-        private static final List<ProtocolVersion> clientDefaultProtocols;
-        private static final List<CipherSuite> clientDefaultCipherSuites;
-
-        static {
-            // available protocols for client mode
-            clientDefaultProtocols = getAvailableProtocols(
-                    new ProtocolVersion[] {
-                ProtocolVersion.DTLS10
-            });
-
-            clientDefaultCipherSuites = getApplicableEnabledCipherSuites(
-                    clientDefaultProtocols, true);
-        }
-
-        @Override
-        List<ProtocolVersion> getClientDefaultProtocolVersions() {
-            return clientDefaultProtocols;
-        }
-
-        @Override
-        List<CipherSuite> getClientDefaultCipherSuites() {
-            return clientDefaultCipherSuites;
-        }
-    }
-
-    /*
      * The SSLContext implementation for DTLSv1.2 algorithm.
      *
      * @see SSLContext
@@ -1314,8 +1186,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             // available protocols for client mode
             clientDefaultProtocols = getAvailableProtocols(
                     new ProtocolVersion[] {
-                ProtocolVersion.DTLS12,
-                ProtocolVersion.DTLS10
+                ProtocolVersion.DTLS12
             });
 
             clientDefaultCipherSuites = getApplicableEnabledCipherSuites(
@@ -1389,8 +1260,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             // Use the default enabled protocols if no customization
             if (refactored.isEmpty()) {
                 candidates = new ProtocolVersion[]{
-                        ProtocolVersion.DTLS12,
-                        ProtocolVersion.DTLS10
+                        ProtocolVersion.DTLS12
                 };
             } else {
                 // Use the customized TLS protocols.

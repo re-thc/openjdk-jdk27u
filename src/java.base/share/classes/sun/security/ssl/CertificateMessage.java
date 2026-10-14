@@ -77,16 +77,7 @@ final class CertificateMessage {
      *
      *       opaque ASN.1Cert<1..2^24-1>;
      *
-     * SSL 3.0:
-     *       struct {
-     *           ASN.1Cert certificate_list<1..2^24-1>;
-     *       } Certificate;
-     * Note: For SSL 3.0 client authentication, if no suitable certificate
-     * is available, the client should send a no_certificate alert instead.
-     * This alert is only a warning; however, the server may respond with
-     * a fatal handshake failure alert if client authentication is required.
-     *
-     * TLS 1.0/1.1/1.2:
+     * TLS 1.2:
      *       struct {
      *           ASN.1Cert certificate_list<0..2^24-1>;
      *       } Certificate;
@@ -289,31 +280,18 @@ final class CertificateMessage {
                 }
             }
 
-            // Report to the server if no appropriate cert was found.  For
-            // SSL 3.0, send a no_certificate alert;  TLS 1.0/1.1/1.2 uses
-            // an empty cert chain instead.
+            // Report to the server if no appropriate cert was found, with
+            // an empty cert chain.
             if (x509Possession == null) {
-                if (chc.negotiatedProtocol.useTLS10PlusSpec()) {
-                    if (SSLLogger.isOn() &&
-                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
-                        SSLLogger.fine(
-                            "No X.509 certificate for client authentication, " +
-                            "use empty Certificate message instead");
-                    }
-
-                    x509Possession =
-                            new X509Possession(null, new X509Certificate[0]);
-                } else {
-                    if (SSLLogger.isOn() &&
-                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
-                        SSLLogger.fine(
-                            "No X.509 certificate for client authentication, " +
-                            "send a no_certificate alert");
-                    }
-
-                    chc.conContext.warning(Alert.NO_CERTIFICATE);
-                    return null;
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
+                    SSLLogger.fine(
+                        "No X.509 certificate for client authentication, " +
+                        "use empty Certificate message instead");
                 }
+
+                x509Possession =
+                        new X509Possession(null, new X509Certificate[0]);
             }
 
             chc.handshakeSession.setLocalPrivateKey(

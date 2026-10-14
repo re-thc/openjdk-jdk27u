@@ -50,8 +50,6 @@ import javax.net.ssl.*;
 
 import sun.security.ssl.CipherSuite.HashAlg;
 import sun.security.internal.spec.TlsPrfParameterSpec;
-import static sun.security.ssl.CipherSuite.HashAlg.H_NONE;
-import static sun.security.ssl.ProtocolVersion.*;
 import sun.security.util.KeyUtil;
 import sun.security.provider.X509Factory;
 import sun.security.ssl.X509Authentication.X509Possession;
@@ -1302,8 +1300,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             int fragmentSize = 0;
             if (maximumPacketSize > 0) {
                 fragmentSize = cipherSuite.calculateFragSize(
-                        maximumPacketSize, protocolVersion,
-                        protocolVersion.isDTLS);
+                        maximumPacketSize, protocolVersion.isDTLS);
             }
 
             if (negotiatedMaxFragLen > 0) {
@@ -1554,7 +1551,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 // For whatever reason, we couldn't generate.  Wrap and return.
                 throw new SSLKeyException("Couldn't generate Exporter/HKDF", e);
             }
-        } else if (protocolVersion.useTLS10PlusSpec()) {
+        } else if (protocolVersion != ProtocolVersion.NONE) {
 
             // Unlikely, but check if randoms were not captured.
             if (clientRandom == null || serverRandom == null) {
@@ -1562,8 +1559,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             }
 
             // RFC 7505 using PRF-based calcs.
-            //     TLS 1/1.1/1.2 (RFCs 2246/4346/5246) or
-            //     DTLS 1.0/1.2 (RFCs 4347/6347)
+            //     TLS 1.2 (RFC 5246) or DTLS 1.2 (RFC 6347)
 
             // Note:  In RFC 7627:
             //
@@ -1591,15 +1587,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             }
 
             // Perform RFC 5705 calculations using the internal SunJCE PRF.
-            String prfAlg;
-            HashAlg hashAlg;
-            if (protocolVersion == TLS12) {
-                prfAlg = "SunTls12Prf";
-                hashAlg = cipherSuite.hashAlg;
-            } else {  //  all other cases
-                prfAlg = "SunTlsPrf";
-                hashAlg = H_NONE;
-            }
+            String prfAlg = "SunTls12Prf";
+            HashAlg hashAlg = cipherSuite.hashAlg;
 
             // Make a seed with randoms and optional context
             // Note that if context is null, it is omitted from the calc
@@ -1649,9 +1638,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 throw new SSLKeyException("Could not generate Exporter/PRF", e);
             }
         } else {
-            // SSLv3 is vulnerable to a triple handshake attack and can't be
-            // mitigated by RFC 7627.  Don't support this or any other
-            // unknown protocol.
+            // No protocol has been negotiated.
             throw new SSLKeyException(
                     "Exporters not supported in " + protocolVersion);
         }

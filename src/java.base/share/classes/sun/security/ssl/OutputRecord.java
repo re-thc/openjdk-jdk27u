@@ -54,14 +54,6 @@ abstract class OutputRecord
     // current protocol version, sent as record version
     ProtocolVersion             protocolVersion;
 
-    // version for the ClientHello message. Only relevant if this is a
-    // client handshake record. If set to ProtocolVersion.SSL20Hello,
-    // the V3 client hello is converted to V2 format.
-    ProtocolVersion             helloVersion;
-
-    // Is it the first application record to write?
-    boolean                     isFirstAppOutputRecord = true;
-
     // packet size
     int                         packetSize;
 
@@ -73,14 +65,6 @@ abstract class OutputRecord
 
     final ReentrantLock recordLock = new ReentrantLock();
 
-    /*
-     * Mappings from V3 cipher suite encodings to their pure V2 equivalents.
-     * This is taken from the SSL V3 specification, Appendix E.
-     */
-    private static final int[] V3toV2CipherMap1 =
-        {-1, -1, -1, 0x02, 0x01, -1, 0x04, 0x05, -1, 0x06, 0x07};
-    private static final int[] V3toV2CipherMap3 =
-        {-1, -1, -1, 0x80, 0x80, -1, 0x80, 0x80, -1, 0x40, 0xC0};
     private static final byte[] HANDSHAKE_MESSAGE_KEY_UPDATE =
         {SSLHandshake.KEY_UPDATE.id, 0x00, 0x00, 0x01, 0x00};
 
@@ -98,18 +82,6 @@ abstract class OutputRecord
         recordLock.lock();
         try {
             this.protocolVersion = protocolVersion;
-        } finally {
-            recordLock.unlock();
-        }
-    }
-
-    /*
-     * Updates helloVersion of this record.
-     */
-    void setHelloVersion(ProtocolVersion helloVersion) {
-        recordLock.lock();
-        try {
-            this.helloVersion = helloVersion;
         } finally {
             recordLock.unlock();
         }
@@ -166,11 +138,6 @@ abstract class OutputRecord
         throw new UnsupportedOperationException();
     }
 
-    // apply to SSLEngine only
-    void encodeV2NoCipher() throws IOException {
-        throw new UnsupportedOperationException();
-    }
-
     // apply to SSLSocket only
     void deliver(
             byte[] source, int offset, int length) throws IOException {
@@ -210,7 +177,6 @@ abstract class OutputRecord
             disposeWriteCipher();
 
             this.writeCipher = writeCipher;
-            this.isFirstAppOutputRecord = true;
         } finally {
             recordLock.unlock();
         }
@@ -239,7 +205,6 @@ abstract class OutputRecord
             disposeWriteCipher();
 
             this.writeCipher = writeCipher;
-            this.isFirstAppOutputRecord = true;
         } finally {
             recordLock.unlock();
         }
@@ -552,103 +517,5 @@ abstract class OutputRecord
         buf[4] = (byte)(fragLen & 0xFF);
 
         return Authenticator.toLong(sequenceNumber);
-    }
-
-    static ByteBuffer encodeV2ClientHello(
-            byte[] fragment, int offset, int length) {
-        int v3SessIdLenOffset = offset + 34;      //  2: client_version
-                                                  // 32: random
-
-        int v3SessIdLen = fragment[v3SessIdLenOffset];
-        int v3CSLenOffset = v3SessIdLenOffset + 1 + v3SessIdLen;
-        int v3CSLen = ((fragment[v3CSLenOffset] & 0xff) << 8) +
-                       (fragment[v3CSLenOffset + 1] & 0xff);
-        int cipherSpecs = v3CSLen / 2;        // 2: cipher spec size
-
-        // Estimate the max V2ClientHello message length
-        //
-        // 11: header size
-        // (cipherSpecs * 6): cipher_specs
-        //    6: one cipher suite may need 6 bytes, see V3toV2CipherSuite.
-        // 3: placeholder for the TLS_EMPTY_RENEGOTIATION_INFO_SCSV
-        //    signaling cipher suite
-        // 32: challenge size
-        int v2MaxMsgLen = 11 + (cipherSpecs * 6) + 3 + 32;
-
-        // Create a ByteBuffer backed by an accessible byte array.
-        byte[] dstBytes = new byte[v2MaxMsgLen];
-        ByteBuffer dstBuf = ByteBuffer.wrap(dstBytes);
-
-        /*
-         * Copy over the cipher specs. We don't care about actually
-         * translating them for use with an actual V2 server since
-         * we only talk V3.  Therefore, just copy over the V3 cipher
-         * spec values with a leading 0.
-         */
-        int v3CSOffset = v3CSLenOffset + 2;   // skip length field
-        int v2CSLen = 0;
-
-        dstBuf.position(11);
-        boolean containsRenegoInfoSCSV = false;
-        for (int i = 0; i < cipherSpecs; i++) {
-            byte byte1, byte2;
-
-            byte1 = fragment[v3CSOffset++];
-            byte2 = fragment[v3CSOffset++];
-            v2CSLen += V3toV2CipherSuite(dstBuf, byte1, byte2);
-            if (!containsRenegoInfoSCSV &&
-                    byte1 == (byte)0x00 && byte2 == (byte)0xFF) {
-                containsRenegoInfoSCSV = true;
-            }
-        }
-
-        if (!containsRenegoInfoSCSV) {
-            v2CSLen += V3toV2CipherSuite(dstBuf, (byte)0x00, (byte)0xFF);
-        }
-
-        /*
-         * Copy in the nonce.
-         */
-        dstBuf.put(fragment, (offset + 2), 32);
-
-        /*
-         * Build the first part of the V3 record header from the V2 one
-         * that's now buffered up.  (Lengths are fixed up later).
-         */
-        int msgLen = dstBuf.position() - 2;   // Exclude the length field itself
-        dstBuf.position(0);
-        dstBuf.put((byte)(0x80 | ((msgLen >>> 8) & 0xFF)));  // pos: 0
-        dstBuf.put((byte)(msgLen & 0xFF));                   // pos: 1
-        dstBuf.put(SSLHandshake.CLIENT_HELLO.id);            // pos: 2
-        dstBuf.put(fragment[offset]);         // major version, pos: 3
-        dstBuf.put(fragment[offset + 1]);     // minor version, pos: 4
-        dstBuf.put((byte)(v2CSLen >>> 8));                   // pos: 5
-        dstBuf.put((byte)(v2CSLen & 0xFF));                  // pos: 6
-        dstBuf.put((byte)0x00);           // session_id_length, pos: 7
-        dstBuf.put((byte)0x00);                              // pos: 8
-        dstBuf.put((byte)0x00);           // challenge_length,  pos: 9
-        dstBuf.put((byte)32);                                // pos: 10
-
-        dstBuf.position(0);
-        dstBuf.limit(msgLen + 2);
-
-        return dstBuf;
-    }
-
-    private static int V3toV2CipherSuite(ByteBuffer dstBuf,
-            byte byte1, byte byte2) {
-        dstBuf.put((byte)0);
-        dstBuf.put(byte1);
-        dstBuf.put(byte2);
-
-        if (((byte2 & 0xff) > 0xA) || (V3toV2CipherMap1[byte2] == -1)) {
-            return 3;
-        }
-
-        dstBuf.put((byte)V3toV2CipherMap1[byte2]);
-        dstBuf.put((byte)0);
-        dstBuf.put((byte)V3toV2CipherMap3[byte2]);
-
-        return 6;
     }
 }

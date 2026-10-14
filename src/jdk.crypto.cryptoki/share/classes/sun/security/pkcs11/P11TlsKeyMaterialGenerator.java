@@ -59,9 +59,7 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
     private final String algorithm;
 
     // mechanism id
-    private long mechanism;
-
-    private int tlsVersion;
+    private final long mechanism;
 
     // parameter spec
     @SuppressWarnings("deprecation")
@@ -70,20 +68,12 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
     // master secret as a P11Key
     private P11Key p11Key;
 
-    // whether SSLv3 is supported
-    private final boolean supportSSLv3;
-
     P11TlsKeyMaterialGenerator(Token token, String algorithm, long mechanism)
             throws PKCS11Exception {
         super();
         this.token = token;
         this.algorithm = algorithm;
         this.mechanism = mechanism;
-
-        // Given the current lookup order specified in SunPKCS11.java,
-        // if CKM_SSL3_KEY_AND_MAC_DERIVE is not used to construct this object,
-        // it means that this mech is disabled or unsupported.
-        this.supportSSLv3 = (mechanism == CKM_SSL3_KEY_AND_MAC_DERIVE);
     }
 
     protected void engineInit(SecureRandom random) {
@@ -98,14 +88,10 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
         }
 
         TlsKeyMaterialParameterSpec spec = (TlsKeyMaterialParameterSpec)params;
-        tlsVersion = (spec.getMajorVersion() << 8) | spec.getMinorVersion();
-
-        if ((tlsVersion == 0x0300 && !supportSSLv3) ||
-                (tlsVersion < 0x0300) || (tlsVersion > 0x0303)) {
+        int tlsVersion = (spec.getMajorVersion() << 8) | spec.getMinorVersion();
+        if (tlsVersion != 0x0303) {
              throw new InvalidAlgorithmParameterException
-                    ("Only" + (supportSSLv3? " SSL 3.0,": "") +
-                     " TLS 1.0, TLS 1.1 and TLS 1.2 are supported (" +
-                     tlsVersion + ")");
+                    ("Only TLS 1.2 is supported (" + tlsVersion + ")");
         }
         try {
             p11Key = P11SecretKeyFactory.convertKey
@@ -114,13 +100,6 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
             throw new InvalidAlgorithmParameterException("init() failed", e);
         }
         this.spec = spec;
-        if (tlsVersion == 0x0300) {
-            mechanism = CKM_SSL3_KEY_AND_MAC_DERIVE;
-        } else if (tlsVersion == 0x0301 || tlsVersion == 0x0302) {
-            mechanism = CKM_TLS_KEY_AND_MAC_DERIVE;
-        } else if (tlsVersion == 0x0303) {
-            mechanism = CKM_TLS12_KEY_AND_MAC_DERIVE;
-        }
     }
 
     protected void engineInit(int keysize, SecureRandom random) {
@@ -136,30 +115,14 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
         int macBits = spec.getMacKeyLength() << 3;
         int ivBits = spec.getIvLength() << 3;
 
-        int expandedKeyBits = spec.getExpandedCipherKeyLength() << 3;
         int keyBits = spec.getCipherKeyLength() << 3;
-        boolean isExportable;
-        if (expandedKeyBits != 0) {
-            isExportable = true;
-        } else {
-            isExportable = false;
-            expandedKeyBits = keyBits;
-        }
 
         CK_SSL3_RANDOM_DATA random = new CK_SSL3_RANDOM_DATA
                             (spec.getClientRandom(), spec.getServerRandom());
-        Object params = null;
-        CK_MECHANISM ckMechanism = null;
-        if (tlsVersion < 0x0303) {
-            params = new CK_SSL3_KEY_MAT_PARAMS
-                    (macBits, keyBits, ivBits, isExportable, random);
-            ckMechanism = new CK_MECHANISM(mechanism, (CK_SSL3_KEY_MAT_PARAMS)params);
-        } else if (tlsVersion == 0x0303) {
-            params = new CK_TLS12_KEY_MAT_PARAMS
-                    (macBits, keyBits, ivBits, isExportable, random,
-                    Functions.getHashMechId(spec.getPRFHashAlg()));
-            ckMechanism = new CK_MECHANISM(mechanism, (CK_TLS12_KEY_MAT_PARAMS)params);
-        }
+        CK_TLS12_KEY_MAT_PARAMS params = new CK_TLS12_KEY_MAT_PARAMS
+                (macBits, keyBits, ivBits, false, random,
+                Functions.getHashMechId(spec.getPRFHashAlg()));
+        CK_MECHANISM ckMechanism = new CK_MECHANISM(mechanism, params);
 
         String cipherAlgorithm = spec.getCipherAlgorithm();
         long keyType = P11SecretKeyFactory.getKeyType(cipherAlgorithm);
@@ -181,7 +144,7 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
                 attributes = new CK_ATTRIBUTE[] {
                     new CK_ATTRIBUTE(CKA_CLASS, CKO_SECRET_KEY),
                     new CK_ATTRIBUTE(CKA_KEY_TYPE, keyType),
-                    new CK_ATTRIBUTE(CKA_VALUE_LEN, expandedKeyBits >> 3),
+                    new CK_ATTRIBUTE(CKA_VALUE_LEN, keyBits >> 3),
                 };
             } else {
                 // ciphersuites with NULL ciphers
@@ -198,12 +161,7 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
                 p11Key.releaseKeyID();
             }
 
-            CK_SSL3_KEY_MAT_OUT out = null;
-            if (params instanceof CK_SSL3_KEY_MAT_PARAMS) {
-                out = ((CK_SSL3_KEY_MAT_PARAMS)params).pReturnedKeyMaterial;
-            } else if (params instanceof CK_TLS12_KEY_MAT_PARAMS) {
-                out = ((CK_TLS12_KEY_MAT_PARAMS)params).pReturnedKeyMaterial;
-            }
+            CK_SSL3_KEY_MAT_OUT out = params.pReturnedKeyMaterial;
             // Note that the MAC keys do not inherit all attributes from the
             // template, but they do inherit the sensitive/extractable/token
             // flags, which is all P11Key cares about.
@@ -230,9 +188,9 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
             SecretKey clientCipherKey, serverCipherKey;
             if (keyBits != 0) {
                 clientCipherKey = P11Key.secretKey(session, out.hClientKey,
-                        cipherAlgorithm, expandedKeyBits, attributes);
+                        cipherAlgorithm, keyBits, attributes);
                 serverCipherKey = P11Key.secretKey(session, out.hServerKey,
-                        cipherAlgorithm, expandedKeyBits, attributes);
+                        cipherAlgorithm, keyBits, attributes);
             } else {
                 assert out.hClientKey == 0;
                 assert out.hServerKey == 0;

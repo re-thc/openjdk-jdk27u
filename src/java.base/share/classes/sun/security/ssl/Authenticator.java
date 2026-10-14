@@ -61,10 +61,8 @@ abstract class Authenticator {
         } else {
             if (protocolVersion.useTLS13PlusSpec()) {
                 return new TLS13Authenticator(protocolVersion);
-            } else if (protocolVersion.useTLS10PlusSpec()) {
-                return new TLS10Authenticator(protocolVersion);
             } else {
-                return new SSL30Authenticator();
+                return new TLS10Authenticator(protocolVersion);
             }
         }
     }
@@ -83,10 +81,8 @@ abstract class Authenticator {
         } else {
             if (protocolVersion.useTLS13PlusSpec()) {
                 throw new RuntimeException("No MacAlg used in TLS 1.3");
-            } else if (protocolVersion.useTLS10PlusSpec()) {
-                return (T)(new TLS10Mac(protocolVersion, macAlg, key));
             } else {
-                return (T)(new SSL30Mac(protocolVersion, macAlg, key));
+                return (T)(new TLS10Mac(protocolVersion, macAlg, key));
             }
         }
     }
@@ -203,35 +199,9 @@ abstract class Authenticator {
         }
     }
 
-    // For SSL 3.0
-    private static class SSL30Authenticator extends SSLAuthenticator {
-        // Block size of SSL v3.0:
-        //     sequence number + record type + + record length
-        private static final int BLOCK_SIZE = 11;   // 8 + 1 + 2
-
-        private SSL30Authenticator() {
-            super(new byte[BLOCK_SIZE]);
-        }
-
-        @Override
-        byte[] acquireAuthenticationBytes(
-                byte type, int length, byte[] sequence) {
-            byte[] ad = block.clone();
-
-            // Increase the implicit sequence number in the block array.
-            increaseSequenceNumber();
-
-            ad[8] = type;
-            ad[9] = (byte)(length >> 8);
-            ad[10] = (byte)(length);
-
-            return ad;
-        }
-    }
-
-    // For TLS 1.0 - 1.2
+    // For TLS 1.2
     private static class TLS10Authenticator extends SSLAuthenticator {
-        // Block size of TLS v1.0/1.1/1.2.
+        // Block size of TLS v1.2.
         //     sequence number + record type + protocol version + record length
         private static final int BLOCK_SIZE = 13;   // 8 + 1 + 2 + 2
 
@@ -337,7 +307,7 @@ abstract class Authenticator {
         }
     }
 
-    // DTLS 1.0/1.2
+    // DTLS 1.2
     private static class DTLS10Authenticator extends DTLSAuthenticator {
         // Block size of DTLS v1.0 and later:
         //     epoch + sequence number +
@@ -457,25 +427,23 @@ abstract class Authenticator {
             mac = null;
         }
 
-        private MacImpl(ProtocolVersion protocolVersion, MacAlg macAlg,
+        private MacImpl(MacAlg macAlg,
                 SecretKey key) throws NoSuchAlgorithmException,
                         InvalidKeyException {
             if (macAlg == null) {
                 throw new RuntimeException("Null MacAlg");
             }
 
-            // using SSL MAC computation?
-            boolean useSSLMac = (protocolVersion.id < ProtocolVersion.TLS10.id);
             String algorithm;
             switch (macAlg) {
                 case M_SHA:
-                    algorithm = useSSLMac ? "SslMacSHA1" : "HmacSHA1";
+                    algorithm = "HmacSHA1";
                     break;
                 case M_SHA256:
-                    algorithm = "HmacSHA256";    // TLS 1.2+
+                    algorithm = "HmacSHA256";
                     break;
                 case M_SHA384:
-                    algorithm = "HmacSHA384";    // TLS 1.2+
+                    algorithm = "HmacSHA384";
                     break;
                 default:
                     throw new RuntimeException("Unknown MacAlg " + macAlg);
@@ -533,30 +501,7 @@ abstract class Authenticator {
         }
     }
 
-    // For SSL 3.0
-    private static final
-            class SSL30Mac extends SSL30Authenticator implements MAC {
-        private final MacImpl macImpl;
-        public SSL30Mac(ProtocolVersion protocolVersion,
-                MacAlg macAlg, SecretKey key) throws NoSuchAlgorithmException,
-                        InvalidKeyException {
-            super();
-            this.macImpl = new MacImpl(protocolVersion, macAlg, key);
-        }
-
-        @Override
-        public MacAlg macAlg() {
-            return macImpl.macAlg;
-        }
-
-        @Override
-        public byte[] compute(byte type, ByteBuffer bb,
-                byte[] sequence, boolean isSimulated) {
-            return macImpl.compute(type, bb, sequence, isSimulated);
-        }
-    }
-
-    // For TLS 1.0 - 1.2
+    // For TLS 1.2
     private static final
             class TLS10Mac extends TLS10Authenticator implements MAC {
         private final MacImpl macImpl;
@@ -564,7 +509,7 @@ abstract class Authenticator {
                 MacAlg macAlg, SecretKey key) throws NoSuchAlgorithmException,
                         InvalidKeyException {
             super(protocolVersion);
-            this.macImpl = new MacImpl(protocolVersion, macAlg, key);
+            this.macImpl = new MacImpl(macAlg, key);
         }
 
         @Override
@@ -600,7 +545,7 @@ abstract class Authenticator {
         }
     }
 
-    // DTLS 1.0/1.2
+    // DTLS 1.2
     private static final class DTLS10Mac
             extends DTLS10Authenticator implements MAC {
         private final MacImpl macImpl;
@@ -608,7 +553,7 @@ abstract class Authenticator {
                 MacAlg macAlg, SecretKey key) throws NoSuchAlgorithmException,
                         InvalidKeyException {
             super(protocolVersion);
-            this.macImpl = new MacImpl(protocolVersion, macAlg, key);
+            this.macImpl = new MacImpl(macAlg, key);
         }
 
         @Override

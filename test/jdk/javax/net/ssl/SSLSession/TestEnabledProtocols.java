@@ -165,119 +165,35 @@ public class TestEnabledProtocols extends SSLSocketTemplate {
     public static void main(String[] args) throws Exception {
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
 
-        runCase(new String[] { "TLSv1" },
-                new String[] { "TLSv1" },
-                false, "TLSv1");
-        runCase(new String[] { "TLSv1" },
-                new String[] { "TLSv1", "SSLv2Hello" },
+        runCase(new String[] { "TLSv1.2" },
+                new String[] { "TLSv1.2" },
+                false, "TLSv1.2");
+        runCase(new String[] { "TLSv1.2" },
+                new String[] { "TLSv1.3" },
                 true, null);
-        runCase(new String[] { "TLSv1" },
-                new String[] { "TLSv1", "SSLv3" },
-                false, "TLSv1");
-        runCase(new String[] { "TLSv1" },
-                new String[] { "SSLv3", "SSLv2Hello" },
-                true, null);
-        runCase(new String[] { "TLSv1" },
-                new String[] { "SSLv3" },
-                true, null);
-        runCase(new String[] { "TLSv1" },
-                new String[] { "TLSv1", "SSLv3", "SSLv2Hello" },
-                true, null);
+        runCase(new String[] { "TLSv1.2" },
+                new String[] { "TLSv1.3", "TLSv1.2" },
+                false, "TLSv1.2");
 
-        runCase(new String[] { "TLSv1", "SSLv2Hello" },
-                new String[] { "TLSv1" },
-                false, "TLSv1");
-        runCase(new String[] { "TLSv1", "SSLv2Hello" },
-                new String[] { "TLSv1", "SSLv2Hello" },
-                false, "TLSv1");
-        runCase(new String[] { "TLSv1", "SSLv2Hello" },
-                new String[] { "TLSv1", "SSLv3" },
-                false, "TLSv1");
-        runCase(new String[] { "TLSv1", "SSLv2Hello" },
-                new String[] { "SSLv3", "SSLv2Hello" },
+        runCase(new String[] { "TLSv1.3" },
+                new String[] { "TLSv1.2" },
                 true, null);
-        runCase(new String[] { "TLSv1", "SSLv2Hello" },
-                new String[] { "SSLv3" },
-                true, null);
-        runCase(new String[] { "TLSv1", "SSLv2Hello" },
-                new String[] { "TLSv1", "SSLv3", "SSLv2Hello" },
-                false, "TLSv1");
+        runCase(new String[] { "TLSv1.3" },
+                new String[] { "TLSv1.3" },
+                false, "TLSv1.3");
+        runCase(new String[] { "TLSv1.3" },
+                new String[] { "TLSv1.3", "TLSv1.2" },
+                false, "TLSv1.3");
 
-        runCase(new String[] { "TLSv1", "SSLv3" },
-                new String[] { "TLSv1" },
-                false, "TLSv1");
-        runCase(new String[] { "TLSv1", "SSLv3" },
-                new String[] { "TLSv1", "SSLv2Hello" },
-                true, null);
-        runCase(new String[] { "TLSv1", "SSLv3" },
-                new String[] { "TLSv1", "SSLv3" },
-                false, "TLSv1");
-        runCase(new String[] { "TLSv1", "SSLv3" },
-                new String[] { "SSLv3", "SSLv2Hello" },
-                true, null);
-        runCase(new String[] { "TLSv1", "SSLv3" },
-                new String[] { "SSLv3" },
-                false, "SSLv3");
-        runCase(new String[] { "TLSv1", "SSLv3" },
-                new String[] { "TLSv1", "SSLv3", "SSLv2Hello" },
-                true, null);
-
-        runCase(new String[] { "SSLv3", "SSLv2Hello" },
-                new String[] { "TLSv1" },
-                true, null);
-        runCase(new String[] { "SSLv3", "SSLv2Hello" },
-                new String[] { "TLSv1", "SSLv2Hello" },
-                true, null);
-        runCase(new String[] { "SSLv3", "SSLv2Hello" },
-                new String[] { "TLSv1", "SSLv3" },
-                false, "SSLv3");
-        runCase(new String[] { "SSLv3", "SSLv2Hello" },
-                new String[] { "SSLv3", "SSLv2Hello" },
-                false, "SSLv3");
-        runCase(new String[] { "SSLv3", "SSLv2Hello" },
-                new String[] { "SSLv3" },
-                false, "SSLv3");
-        runCase(new String[] { "SSLv3", "SSLv2Hello" },
-                new String[] { "TLSv1", "SSLv3", "SSLv2Hello" },
-                false, "SSLv3");
-
-        runCase(new String[] { "SSLv3" },
-                new String[] { "TLSv1" },
-                true, null);
-        runCase(new String[] { "SSLv3" },
-                new String[] { "TLSv1", "SSLv2Hello" },
-                true, null);
-        runCase(new String[] { "SSLv3" },
-                new String[] { "TLSv1", "SSLv3" },
-                false, "SSLv3");
-        runCase(new String[] { "SSLv3" },
-                new String[] { "SSLv3", "SSLv2Hello" },
-                true, null);
-        runCase(new String[] { "SSLv3" },
-                new String[] { "SSLv3" },
-                false, "SSLv3");
-        runCase(new String[] { "SSLv3" },
-                new String[] { "TLSv1", "SSLv3", "SSLv2Hello" },
-                true, null);
-
-        runCase(new String[] { "TLSv1", "SSLv3", "SSLv2Hello" },
-                new String[] { "TLSv1" },
-                false, "TLSv1");
-        runCase(new String[] { "TLSv1", "SSLv3", "SSLv2Hello" },
-                new String[] { "TLSv1", "SSLv2Hello" },
-                false, "TLSv1");
-        runCase(new String[] { "TLSv1", "SSLv3", "SSLv2Hello" },
-                new String[] { "TLSv1", "SSLv3" },
-                false, "TLSv1");
-        runCase(new String[] { "TLSv1", "SSLv3", "SSLv2Hello" },
-                new String[] { "SSLv3", "SSLv2Hello" },
-                false, "SSLv3");
-        runCase(new String[] { "TLSv1", "SSLv3", "SSLv2Hello" },
-                new String[] { "SSLv3" },
-                false, "SSLv3");
-        runCase(new String[] { "TLSv1", "SSLv3", "SSLv2Hello" },
-                new String[] { "TLSv1", "SSLv3", "SSLv2Hello" },
-                false, "TLSv1");
+        runCase(new String[] { "TLSv1.3", "TLSv1.2" },
+                new String[] { "TLSv1.2" },
+                false, "TLSv1.2");
+        runCase(new String[] { "TLSv1.3", "TLSv1.2" },
+                new String[] { "TLSv1.3" },
+                false, "TLSv1.3");
+        runCase(new String[] { "TLSv1.3", "TLSv1.2" },
+                new String[] { "TLSv1.3", "TLSv1.2" },
+                false, "TLSv1.3");
     }
 
     private static void runCase(

@@ -56,49 +56,6 @@ final class JsseJce {
      */
     static final String CIPHER_CHACHA20_POLY1305 = "ChaCha20-Poly1305";
 
-    /**
-     * JCA identifier string for DSA, i.e. a DSA with SHA-1.
-     */
-    static final String SIGNATURE_DSA = "DSA";
-
-    /**
-     * JCA identifier string for ECDSA, i.e. a ECDSA with SHA-1.
-     */
-    static final String SIGNATURE_ECDSA = "SHA1withECDSA";
-
-    /**
-     * JCA identifier for EdDSA signatures.
-     */
-    static final String SIGNATURE_EDDSA = "EdDSA";
-
-    /**
-     * JCA identifier string for Raw DSA, i.e. a DSA signature without
-     * hashing where the application provides the SHA-1 hash of the data.
-     * Note that the standard name is "NONEwithDSA" but we use "RawDSA"
-     * for compatibility.
-     */
-    static final String SIGNATURE_RAWDSA = "RawDSA";
-
-    /**
-     * JCA identifier string for Raw ECDSA, i.e. a DSA signature without
-     * hashing where the application provides the SHA-1 hash of the data.
-     */
-    static final String SIGNATURE_RAWECDSA = "NONEwithECDSA";
-
-    /**
-     * JCA identifier string for Raw RSA, i.e. an RSA PKCS#1 v1.5 signature
-     * without hashing where the application provides the hash of the data.
-     * Used for RSA client authentication with a 36 byte hash.
-     */
-    static final String SIGNATURE_RAWRSA = "NONEwithRSA";
-
-    /**
-     * JCA identifier string for the SSL/TLS style RSA Signature. I.e.
-     * a signature using RSA with PKCS#1 v1.5 padding signing a
-     * concatenation of an MD5 and SHA-1 digest.
-     */
-    static final String SIGNATURE_SSLRSA = "MD5andSHA1withRSA";
-
     private JsseJce() {
         // no instantiation of this class
     }
@@ -117,7 +74,7 @@ final class JsseJce {
         static {
             boolean mediator = true;
             try {
-                Signature.getInstance(SIGNATURE_RAWECDSA);
+                Signature.getInstance("SHA256withECDSA");
                 KeyAgreement.getInstance("ECDH");
                 KeyFactory.getInstance("EC");
                 KeyPairGenerator.getInstance("EC");

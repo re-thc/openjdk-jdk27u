@@ -101,14 +101,8 @@ public class ClientAuth extends PKCS11Test {
     }
 
     @Test
-    public void testClientAuthTLSv1() throws Exception {
-        String[] args = { "TLSv1" };
-        runTest(args);
-    }
-
-    @Test
-    public void testClientAuthTLSv11() throws Exception {
-        String[] args = { "TLSv1.1" };
+    public void testClientAuthTLSv12() throws Exception {
+        String[] args = { "TLSv1.2" };
         runTest(args);
     }
 

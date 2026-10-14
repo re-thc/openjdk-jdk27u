@@ -310,8 +310,6 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         putKeyInfo(new HMACKeyInfo("HmacSHA3-256", CKM_SHA3_256_HMAC, 256));
         putKeyInfo(new HMACKeyInfo("HmacSHA3-384", CKM_SHA3_384_HMAC, 384));
         putKeyInfo(new HMACKeyInfo("HmacSHA3-512", CKM_SHA3_512_HMAC, 512));
-        putKeyInfo(new HMACKeyInfo("SslMacMD5", CKM_SSL3_MD5_MAC, 128));
-        putKeyInfo(new HMACKeyInfo("SslMacSHA1", CKM_SSL3_SHA1_MAC, 160));
 
         putKeyInfo(new HKDFKeyInfo("HKDF-SHA256", hmacSHA256));
         putKeyInfo(new HKDFKeyInfo("HKDF-SHA384", hmacSHA384));
