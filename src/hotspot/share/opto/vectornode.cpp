@@ -1215,11 +1215,11 @@ bool VectorNode::should_swap_inputs_to_help_global_value_numbering() {
         const bool in1_is_replicate = in(1)->Opcode() == Op_Replicate;
         const bool in2_is_replicate = in(2)->Opcode() == Op_Replicate;
         if (in1_is_replicate != in2_is_replicate) {
-          Node* broadcast = in(in1_is_replicate ? 1 : 2);
           Node* data = in(in1_is_replicate ? 2 : 1);
-          // SVE integer multiply destroys its first source. Preserve a shared
-          // broadcast, but keep the existing ordering when only the data is shared.
-          if (broadcast->outcnt() > 1 || data->outcnt() == 1) {
+          // SVE integer multiply destroys its first source. Prefer disposable
+          // data, but preserve the existing ordering for shared data: destroying
+          // it can add a copy even when the broadcast is also shared.
+          if (data->outcnt() == 1) {
             return in1_is_replicate;
           }
         }

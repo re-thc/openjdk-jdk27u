@@ -140,6 +140,18 @@ public class TestAArch64SVEMulVConstants {
     @Test
     @IR(applyIfPlatform = {"aarch64", "true"},
         applyIfAnd = {"UseSVE", "> 0", "MaxVectorSize", "> 16"},
+        counts = {"vmulI_sve", "2"}, phase = CompilePhase.MATCHING)
+    private static void testSharedBroadcastAndData(int offset, int factor) {
+        IntVector broadcast = IntVector.broadcast(SPECIES, factor);
+        IntVector a = IntVector.fromArray(SPECIES, INT_A, offset);
+        IntVector b = IntVector.fromArray(SPECIES, INT_B, offset);
+        a.mul(broadcast).lanewise(VectorOperators.XOR, a).intoArray(INT_D1, offset);
+        b.mul(broadcast).lanewise(VectorOperators.XOR, b).intoArray(INT_D2, offset);
+    }
+
+    @Test
+    @IR(applyIfPlatform = {"aarch64", "true"},
+        applyIfAnd = {"UseSVE", "> 0", "MaxVectorSize", "> 16"},
         counts = {"\\bvmla(?:_\\d+)?\\b", "1"}, phase = CompilePhase.MATCHING)
     private static void testMultiplyAdd(int offset, int factor) {
         IntVector broadcast = IntVector.broadcast(SPECIES, factor);
@@ -157,7 +169,7 @@ public class TestAArch64SVEMulVConstants {
         data.sub(data.mul(broadcast)).intoArray(INT_D1, offset);
     }
 
-    @Run(test = {"testByte", "testShort", "testInt", "testSingleUseBroadcast", "testMultiplyAdd", "testMultiplySubtract"})
+    @Run(test = {"testByte", "testShort", "testInt", "testSingleUseBroadcast", "testSharedBroadcastAndData", "testMultiplyAdd", "testMultiplySubtract"})
     private void run(RunInfo info) {
         int cases = LENGTHS.length * OFFSETS.length * FACTORS.length;
         if (info.isWarmUp()) {
@@ -169,6 +181,7 @@ public class TestAArch64SVEMulVConstants {
             testInt(0, 3000, factor);
             for (int i = 0; i < 10; i++) {
                 testSingleUseBroadcast(0, factor);
+                testSharedBroadcastAndData(0, factor);
                 testMultiplyAdd(0, factor);
                 testMultiplySubtract(0, factor);
             }
@@ -205,6 +218,11 @@ public class TestAArch64SVEMulVConstants {
         testSingleUseBroadcast(start, factor);
         for (int i = start; i < start + SPECIES.length(); i++) {
             Asserts.assertEquals(INT_D1[i], (factor * INT_A[i]) ^ INT_A[i]);
+        }
+        testSharedBroadcastAndData(start, factor);
+        for (int i = start; i < start + SPECIES.length(); i++) {
+            Asserts.assertEquals(INT_D1[i], (factor * INT_A[i]) ^ INT_A[i]);
+            Asserts.assertEquals(INT_D2[i], (factor * INT_B[i]) ^ INT_B[i]);
         }
         testMultiplyAdd(start, factor);
         for (int i = start; i < start + SPECIES.length(); i++) {
