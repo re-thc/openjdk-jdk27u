@@ -30,8 +30,11 @@ must not be substituted.
 `-XX:-UsePcre2RegexIntrinsics` tests registered JNI. Disabling
 `UsePcre2RegexJIT` provides the same-binary interpreter control. The default
 JIT threshold is 32 eligible positive native calls, changed for ablation with
-`Pcre2RegexJITThreshold`. Existing Java fast plans retain their baseline
-routing and preparation decisions.
+`Pcre2RegexJITThreshold`; recent-work admission is described below. A narrow
+asserted literal/digit plan handles proved short positives and necessary-literal
+rejections without discarding the original assertion. Tiny BMP positives in two
+flat disjoint captured runs may select Java for that input; misses retain native
+rejection. These routes are separate from native engine throughput.
 
 ## Compatibility boundary
 
@@ -50,15 +53,22 @@ copies at most 64 bytes to native stack scratch because PCRE2 match data retains
 subject pointer values after a call; Java heap addresses must not enter those
 reusable caches. PCRE2-16
 uses non-UTF code units, a separate lazily compiled handle and stable native
-copies of a Java char-array snapshot. Its route qualifies BMP strings without
-surrogates or U+2028/U+2029. Supplementary pairs, unpaired surrogates and these
-line terminators remain Java. Properties and indices are not assumed to be
-Unicode-equivalent. This conservative width qualification costs a scan and
-copies; the comparison must include those costs. Pattern syntax remains ASCII.
+copies directly from String backing. Only the opaque region is qualified for
+BMP code units without surrogates or U+2028/U+2029. Each Matcher remembers the
+qualified interval of the same immutable String; subset regions reuse that proof
+and copy once without another scan. Reset to another identity clears it; region
+expansion revalidates. No heap address survives the native-state transition.
+Supplementary pairs, unpaired surrogates and these line terminators inside the
+region remain Java. Properties and indices are not assumed Unicode-equivalent.
+The native copy and first qualification remain measured costs. Syntax is ASCII.
 
 Original Matcher continuation and end state matter. General failed anchored
 operations execute original Java traversal immediately. Other general end flags
-and failed-search continuation use the retained replay machinery. No assertion
+and failed-search continuation replay a cached original-Java sibling. Observing
+end flags may select Java for that Matcher; transient native errors select Java
+for the operation. Neither clears the shared Pattern backend. Stable unsupported
+input/bounds choices are cached only on the Matcher and reconsidered when those
+inputs change. No assertion
 is discarded: `(?=error)error[0-9]+` must retain its distinct failed-matches then
 find behavior on `error1error2`. A trailing assertion is not split away from a
 backtracking consumer: `a+(?=a)` on `aa` must return endpoint 1.
@@ -89,19 +99,38 @@ exhaustion or unsupported JIT options first retry the interpreter in native
 state. ENDANCHORED uses the interpreter. Adversarial Java fallback can remain
 expensive, as in the original API, but it runs with Java safepoints.
 
-PCRE2 allocation callbacks enforce a global 64 MiB budget. JIT admission caps compiled patterns at 4 KiB and reserves 16 MiB during
-preparation; a successful handle retains a 1 MiB executable-code reservation
-and must report at most 512 KiB of code; each stack reserves 64 KiB and grows from 32 to 64 KiB. Pools and stacks
+PCRE2 allocation callbacks enforce a global 64 MiB budget. JIT admission caps
+compiled patterns at 4 KiB and reserves 16 MiB during preparation. Each successful
+mode variant retains a 1 MiB executable-code reservation and must report at most
+512 KiB of code; each stack reserves 64 KiB and grows from 32 to 64 KiB. Pools
+and stacks
 have bounded owned lifetimes. Independent atomic memory snapshots expose native
 allocation count/bytes, freed bytes, conservative retained budget and actual
 reported JIT code bytes. These are not RSS or total allocator/mapping overhead.
 
-JIT preparation copies validated compiled PCRE2 code in native thread state,
-then publishes it atomically. Concurrent interpreter calls keep using immutable
-original code. Automatic admission requires repeated successful consumed spans
-of at least 128 code units in regions of at least 256; frequent misses and tiny
-matches do not justify preparation. Small calls remain interpreted. This is a
-heuristic to evaluate, including its compilation amortization and memory cost.
+JIT preparation runs in native thread state and publishes immutable code
+atomically. Find copies validated compiled code; lookingAt lazily compiles a
+separate variant with compile-time ANCHORED, preserving the original grammar.
+Runtime ANCHORED would exclude JIT entry. matches retains interpreter
+ANCHORED/ENDANCHORED endpoint semantics and never prepares a JIT variant.
+Concurrent interpreter calls keep using immutable original code.
+
+Admission is independent for find and lookingAt in each width. A useful result
+consumes at least 128 code units in a region of at least 256. The threshold must
+be met and at least 75% of the latest up-to-64 completed calls must be useful.
+The same condition gates dispatch after compilation: old positives cannot keep
+forcing JIT across a long miss phase. On a full 64-call positive history, dispatch
+stops after seventeen consecutive misses. Concurrent snapshots are independent
+atomics, not a transactional history. This conservative heuristic loses some
+50%/75% synthetic-hit throughput; measured costs and limits remain in the report.
+
+`nativeRouteStats()` exposes twelve per-handle counters for width 8 followed by
+twelve for width 16: interpreter entries in find/lookingAt/matches, actual JIT
+stack-callback entries in those modes, find/lookingAt preparations, pool
+saturation, errors, admission declines and rejected leaf attempts. A JIT-stack
+retry counts both engine entries. Calls over the 64-byte leaf bound go directly
+to the stable-copy path. These diagnostics distinguish preparation from actual
+execution and are independent atomic snapshots.
 
 ## Validation and comparison
 

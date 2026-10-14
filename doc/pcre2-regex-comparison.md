@@ -1,123 +1,204 @@
 # PCRE2 comparison results
 
-The frozen runtime at `5af76868efbcf444e2928c43344cd3fe390464bb` adds useful
-native lookahead throughput and substantially reduces long native capture costs.
-It also loses on some tiny and UTF-16 workloads. This remains a draft comparison;
-the evidence does not justify a universal PCRE2 or always-JIT claim.
+The reviewed runtime at `32325506c3862d974053009408ab3824d5d29621` fixes actual
+anchored JIT execution, Matcher-local replay, recent-work admission and direct
+region snapshots. PCRE2 has useful conditional gains; isolated C2 lookahead
+find is close to Java, lookingAt and matches still lose, and the conservative
+admission policy regresses synthetic medium-hit workloads. This remains a draft.
 
-Rust control: `cf8ff51954c23effb4e5e6a281ef8bf28111ca0c`. Original-Java controls
-patch the exact original regex sources into each corresponding built HotSpot
-image. They are same-binary facade controls, not separate original-HotSpot builds.
-Both native and patched-JVM measurements use the same Linux x86_64 host, GCC
-16.2, Rust 1.99, compact object headers, exact inputs and observable API work.
-Raw input hashes and both binary/module bindings agree throughout the final run.
+Frozen Rust control: `cf8ff51954c23effb4e5e6a281ef8bf28111ca0c`. Before-review
+PCRE2 runtime: `5af76868efbcf444e2928c43344cd3fe390464bb`. Original Java uses
+the exact base regex facade classes in the same reviewed HotSpot binary, not
+a separately built original-HotSpot image. The Rust task branch and PR #5 were
+not edited. The current Rust owner's later changes are outside this comparison.
 
-The final public matrix has **11,600 samples / 1,800 control-cases / 90 processes**.
-There are 180 independent first-use processes, 90 concurrency processes, 24
-native engine/adapter processes and eight activation processes. Every performance
-process returned zero. All cases and losses remain in the CSV and reproduction
-packet. Warm medians use six samples from two balanced process orders, two
-100-ms warmups and three 100-ms measurements, one pinned CPU, Serial GC and
-CDS disabled. The small process count limits statistical confidence.
+## Corrected independent-process experiment
 
-## Selected whole-JVM find work (ns/op)
+The current campaign contains **760 successful processes**.
+Each C2/C1 case has four independent fresh JVMs in two balanced forward/reverse
+orders. Selected -Xint/JNI configurations have two independent JVMs each.
+One fixture runs per process; the explicit mixed fixture is separate. Warmup is
+350 ms and measurement 600 ms, with reset(input), region, the selected operation
+and capture offsets. Capture text is checked outside timing. End flags are not
+observed before warmup. C2 means its JVM configuration; fixed-duration warmup
+does not prove every internal node is compiled, especially expensive misses.
+All successful input hashes and binary/module bindings agree across controls.
+Processes that failed startup EAGAIN and the earlier ratio-reset setup error are
+preserved and excluded. Reruns used fewer sandbox wrappers; cycle-zero C2/JNI
+reruns occurred later than their opposite-order pair. Four forks limit confidence.
 
-| Workload | Java tier | Original Java in PCRE2 image | Frozen Rust | PCRE2 interpreter | PCRE2 automatic JIT |
-| --- | --- | ---: | ---: | ---: | ---: |
-| Captured alternation, 16-byte full hit | C1 | 152.8 | 306.8 | 162.2 | 169.2 |
-| Captured alternation, 4096-byte full hit | C1 | 26,910.6 | 42,066.9 | 3,313.0 | 1,400.7 |
-| Lookahead + captures, 4096-byte full hit | C1 | 28,831.3 | 22,611.5 | 3,610.8 | 1,403.8 |
-| Captured alternation, 4096-byte full hit | C2 | 6,178.2 | 4,961.9 | 4,620.9 | 4,621.8 |
-| Lookahead + captures, 4096-byte full hit | C2 | 6,245.0 | 6,299.7 | 3,569.4 | 1,413.8 |
-| Same lookahead with end flags | C2 | 6,523.2 | 6,668.7 | 6,230.4 | 6,519.4 |
-| Captured prefix, 4096-byte miss | C2 | 25,002.6 | 132.7 | 191.9 | 199.3 |
-| BMP UTF-16 captures, 16-unit full hit | C2 | 163.3 | 150.5 | 218.3 | 212.7 |
+Linux x86_64, GCC 16.2, Rust 1.99, compact headers, one pinned allowed CPU,
+Serial GC, CDS disabled and one compiler thread were used. The packet records
+CPU/VM/native configuration, commands and image hashes. SLJIT reports x86 64-bit,
+little-endian, unaligned access. ARM/macOS are configured, not executed.
 
-C2 captured alternation completes in the retained managed Java plan in both
-forks; its 4.6-us result is not Rust or PCRE2 engine throughput. The lookahead
-native win shrinks when end flags are observed: original Java replay promotes
-the Pattern. JNI controls preserve the gains on useful long native work and
-the losses on tiny/miss/UTF-16 routing. Interpreter, C1, tiered and C2 results
-and both original-Java controls remain separately identified.
+All times below are ns/op; table values are process medians.
 
-## Native kernels, activation and memory
+| C2 configuration fixture | Operation | Original Java | Frozen Rust | Before review | After interpreter | After automatic |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Tiny asserted-digit hit | find | 85.4 | 78.7 | 172.1 | 70.7 | 70.3 |
+| Tiny asserted-digit miss | find | 101.1 | 97.4 | 70.6 | 37.2 | 36.5 |
+| Long asserted capture hit | find | 1,417.2 | 1,431.8 | 1,401.6 | 3,376.1 | 1,493.4 |
+| Long asserted capture hit | lookingAt | 1,450.2 | 1,423.2 | 3,414.8 | 3,410.7 | 2,675.1 |
+| Long asserted capture hit | matches | 1,435.5 | 1,460.5 | 3,411.4 | 3,496.5 | 3,488.7 |
+| Long absent captured prefix | find | 1,547.7 | 156.1 | 212.0 | 112.9 | 117.6 |
+| Tiny BMP capture hit | find | 90.2 | 65.2 | 201.0 | 64.3 | 67.4 |
+| Tiny genuine BMP miss | find | 1,614.3 | 1,529.4 | 135.4 | 117.0 | 117.8 |
+| Long BMP capture hit | find | 7,383.6 | 7,448.9 | 7,840.3 | 3,934.4 | 1,830.7 |
+| 12-unit region in huge String | find | 90.0 | 61.9 | 63.8 | 67.3 | 67.1 |
 
-| Exact native find fixture | Rust engine | Rust adapter | PCRE2 interpreter core | Direct cached PCRE2 JIT |
-| --- | ---: | ---: | ---: | ---: |
-| Captured alternation 4096-byte full hit | 40,940.0 ns | 40,852.2 ns | 3,368.8 ns | 1,305.4 ns |
-| Captured prefix 4096-byte miss | 94.4 ns | 112.1 ns | 47.8 ns | 169.6 ns |
-| Captured alternation 16-byte full hit | 221.5 ns | 241.4 ns | 90.4 ns | 26.6 ns |
+Long captured alternation at C2 still uses the managed Java plan. It is not
+native-engine throughput. The new tiny asserted-digit plan preserves the
+original assertion and replays its failed continuation when required; its gains
+are managed routing gains. The native-repairs-only intermediate control retains
+the old tiny/prefix routing, allowing that attribution. Proved absent prefixes
+avoid native preparation and entry; frequent false prefixes and late candidates
+are included in the raw matrix. Tiny BMP positives select Java for a narrowly
+proved bounded shape; genuine BMP misses keep native rejection.
 
-These native numbers exclude Java profiles, replay, JNI and HotSpot stable-copy
-work. A direct-JIT tiny hit is promising but does not establish a public-API
-win. Automatic admission currently stays interpreted for tiny/miss-only work;
-the miss counterexample is retained instead of recommending always-JIT.
+| C1 fixture | Original Java | Frozen Rust | Before review | After interpreter | After automatic |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Long lookahead find | 23,250.2 | 22,554.1 | 1,427.6 | 3,500.1 | 1,580.3 |
+| Long lookahead lookingAt | 22,814.1 | 22,692.5 | 3,474.3 | 3,491.7 | 2,706.9 |
+| Long BMP capture find | 42,161.0 | 41,748.2 | 15,283.4 | 3,903.1 | 1,869.8 |
 
-For the exact long captured lookahead activation probe, JIT appears on call 33.
-Median activation-call cost is 16.55 us versus 3.17 us interpreted; steady calls
-settle near 1.17 us versus 3.16 us. Cumulative preparation/matching crosses the
-interpreter median at call 43, within this fixture only. At call 64 cumulative
-cost is 163.4 versus 205.4 us. Generated code is 1,006 bytes. Its conservative
-retained reservation is about 1.1 MiB including the reusable stack/context.
-The C2 BMP route allocates 40 Java bytes/call at 16 code units and 8,200 at
-4,096 units; byte-input matching allocates zero Java bytes in these warm cases.
-The source-defined HotSpot stable copy requests one 4,096-byte native buffer
-for the long Latin-1 call and 8,192 bytes for BMP, excluding allocator overhead;
-these requests are outside the PCRE2 allocation counter.
-Final C2 mixed-fixture snapshots report about 1.20 MiB budget / 818 JIT bytes
-with automatic JIT, versus 83 KiB and zero JIT bytes interpreted. These are
-logical PCRE2 counters, not RSS or HotSpot copy allocation totals.
+The weighted mixed fixture is explicit and purposive, not a production frequency
+estimate: original Java 9,495.6,
+frozen Rust 2,881.8, before review
+1,763.9, after automatic
+1,589.8. It does not override the
+isolated lookahead finding. Per-fixture actual native route counters are retained.
 
-## Preparation, lifetimes and concurrency
+## Actual execution, observers and admission
 
-First use is mixed: the long captured alternation operation is 2.79 ms with
-automatic PCRE2 versus 2.31 ms frozen Rust and 3.87 ms original Java. Long
-lookahead is 2.00 ms versus 5.23/3.70 ms. The BMP UTF-16 first operation is
-5.19 ms versus 6.30/3.97 ms. These independent processes include preparation
-and observed public work; their total wall times are preserved separately.
-Automatic JIT has not activated on these single calls.
+The JIT stack callback proves find and lookingAt execution in widths 8/16.
+LookingAt lazily compiles an ANCHORED variant and calls it without a runtime
+option that disables JIT. matches never prepares JIT and retains full endpoint
+semantics. Interpreter/C1/C2/JNI traces show long lookingAt bypasses the rejected
+64-byte leaf attempt entirely. JIT preparation and actual entries are distinct
+counters; observed flags can select Java only for the observing Matcher.
 
-Reused-pattern and collected-backend data include Java allocations and all
-losses. Tiny same-binary shared-pattern controls sometimes differ substantially
-despite no eligible JIT work, consistent with profile/compilation effects; do
-not interpret these rows as a JIT causal gain. Collected-backend GC is outside
-the timer and Cleaner/preparation caches can overlap. No general reuse or
-collection crossover is claimed.
+A first end-flag observer after native warming costs a median
+1.384 ms, including
+lazy original-Java sibling preparation. Following observer operations cost
+6,741.3 ns in that
+profile. Observing from the beginning has a different profile and costs
+1,637.4 ns. Rare new observers
+on a shared Pattern cost 1,587.8
+ns/op versus 1,510.5 Java;
+nonobserving peers remain native-eligible. These are separate measured workloads.
 
-Shared-Pattern concurrency tests use 1/4/8 Matchers on all five available CPUs.
-The isolated monomorphic Java lookahead fixture is about 1.50 us at one worker,
-close to PCRE2 automatic at 1.55 us; this removes the large mixed-fixture Java
-gap. At eight workers aggregate lookahead cost is roughly 0.47 us Java and
-0.54 us PCRE2. BMP UTF-16 copies/scan remain expensive; at eight workers the
-PCRE2 aggregate is about 2.05 us versus 0.56 us frozen Rust. Full RSS records
-and per-process results are retained. Concurrency is not a blanket win.
+Default admission needs 32 useful results and 75% useful calls in recent history
+(up to 64). Sparse positives separated by 1,024 misses do not prepare JIT.
+The public phase probe has one validation hit before numbered calls: actual JIT
+first enters numbered call 32, the 33rd useful call. Activation costs 112–180 us
+across four JVMs. First cumulative crossings against the paired interpreter
+occur at calls 32/40/46/111 and are noisy; no universal crossover is claimed.
+After 128 hits, seventeen of the following 100 misses enter JIT, then dispatch
+stops; after hits resume it waits forty-eight useful results. This fixes stale
+success admission but is conservative at medium hit ratios:
 
-## Validation and genuine limits
+| Synthetic useful-hit share | Before review | After interpreter | After automatic |
+| --- | ---: | ---: | ---: |
+| 1% | 320.4 | 207.0 | 206.6 |
+| 5% | 353.8 | 305.2 | 308.9 |
+| 50% | 923.4 | 1,479.0 | 1,516.4 |
+| 75% | 1,242.4 | 2,073.2 | 1,611.8 |
+| 100% | 1,579.0 | 2,662.1 | 1,575.1 |
 
-All **113** relevant regex/Scanner/String/startup/array-layout tests pass on the
-corrected release image, including **5,989** framework checks. The new test
-passes eight configurations with **156,103** differential observations each.
-The ported regression compares about **386,329** native/Java API states per
-enabled mode. GC/in-flight promotion, both widths, cleanup, memory pressure,
-interrupt-flag preservation and the native W^X-map check pass. Compiler logs
-show C1/C2 native-gate intrinsics; disabling intrinsics shows a native-method
-call. A separate captured-repeat trace reached Java fallback StackOverflowError;
-that failure remains preserved and illustrates a real limit of fallback.
+The 50% and 75% losses against before-review automatic JIT are retained. Same-
+binary automatic/interpreter controls establish the policy effect in this fixture;
+they do not identify an optimal threshold for arbitrary production patterns.
 
-The caller CharSequence guard is the independent commit `48a46b1a358`.
-The exact frozen Rust image demonstrably bypasses the access limit; this image
-preserves it. Timed String fixtures are unaffected by that common change.
-The original Rust branch/PR were not modified.
+## Memory, GC and concurrency
 
-The supplied research packet download failed and was not retried. A smaller
-five-project pinned starter covers ten static/constructed seeds plus explicit
-runtime-generated configurations; **14,258** observations pass. It is purposive
-evidence, not usage frequency or 99% coverage. The broader supplied corpus and
-ARM/macOS execution remain unavailable. Pattern Unicode properties/folding,
-surrogates, lookbehind and unproved capture histories retain Java. Large work
-is safepoint-capable; limit exhaustion returns to Java and never fabricates a
-miss. Java fallback can remain expensive and has no interrupt-cancellation
-contract. See the design document for exact bounds, lifetime and JIT policy.
+Long BMP reuse now allocates **0 Java bytes/op**, versus 8,200 before review;
+tiny BMP native misses allocate zero versus 40. The reused native snapshot copies
+only the opaque region from immutable String backing, with qualification cached
+per Matcher and interval. Huge Strings with tiny regions and surrogates outside
+the region are included. Native copy allocations remain: 8,192 requested bytes
+for the 4,096-unit BMP region, independent of PCRE2's counters. JIT code/stacks
+remain bounded by the global 64-MiB budget and W^X allocator; each variant reserves
+1 MiB and each reusable stack 64 KiB. Logical counters are not RSS. Per-process
+RSS, allocation, retained budget and generated code size remain in raw data.
+The isolated long lookahead retains 1,197,252 logical native budget bytes and
+998 JIT code bytes, with median RSS 46,414 KiB (interpreter 46,254 KiB). Long BMP
+retains 1,215,745 budget bytes / 818 code bytes, RSS 46,880 KiB (interpreter
+46,602 KiB). These small RSS differences are descriptive, not confidence bounds.
+The raw 4,096-unit genuine BMP miss is retained; a targeted compilation trace
+shows a greedy Java node compiling late, so that short timed run does not
+establish a fully warmed C2 miss-speedup claim.
 
-Exact commands, source pins, raw results, prior failures and the stopped
-preliminary campaign are preserved in the accompanying reproduction packet.
+Current concurrency attempts have 20 successful processes and
+40 resource failures. Workers share a Pattern and own Matchers; all
+allowed CPUs are available, with a single compiler thread. Failures are neither
+assigned timings nor excluded silently:
+
+| Shared Pattern / workers | Original Java | Frozen Rust | Before review | After interpreter | After automatic |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| lookahead / 1 | 1,442.9 (2 forks) | 1,506.9 (2 forks) | 1,429.6 (2 forks) | 3,483.9 (2 forks) | 1,467.7 (2 forks) |
+| lookahead / 4 | resource failure | resource failure | resource failure | resource failure | resource failure |
+| lookahead / 8 | resource failure | resource failure | resource failure | resource failure | resource failure |
+| wide / 1 | 7,724.3 (2 forks) | 1,563.2 (2 forks) | 4,433.1 (2 forks) | 3,961.2 (2 forks) | 1,774.0 (2 forks) |
+| wide / 4 | resource failure | resource failure | resource failure | resource failure | resource failure |
+| wide / 8 | resource failure | resource failure | resource failure | resource failure | resource failure |
+
+The earlier 1/4/8-worker experiment is preserved separately; its BMP copies and
+global observer routing are obsolete. Thirty-two-Matcher correctness stress at
+the reviewed native stage passed, including 786 pool-saturation fallbacks in
+one no-JIT run without clearing the Pattern. Repeating that stress on the final
+Java-routing image hit EAGAIN while starting its second worker and is inconclusive.
+
+## Validation and remaining gaps
+
+The corrected relevant suite covers **117 tests** and **5,989 framework checks**
+(110 original passes, two corrected obsolete route assertions, and five named
+String test IDs). Six affected tests were rerun after qualification caching;
+the differential test passes **156,103 observations in each of eight modes**.
+The ported regression compares **386,329** API states. Final Java routing has
+five direct release-image passes for managed rejection, differential behavior,
+UTF-16, GC/safepoints and the ported regression; the 32-worker rerun is the resource
+failure described above. Reused UTF-16 allocates zero Java bytes and passes an
+additional ZGC run. Native capture/limits/sharing/BMP/cleanup checks return tracked
+allocation to zero and find no writable executable mapping.
+
+Two real full native release JVM images were built. Process exhaustion blocked
+the last Java-only make rebuild; those classes were compiled with the built javac,
+replaced in java.base.jmod and linked into a complete runnable image using jlink.
+Exact class, JMOD, native library, module hashes and commands are preserved.
+Fastdebug failed first on GCC 16's upstream handshake nonnull warning, then on
+fork/thread exhaustion after a narrow warning workaround. No fastdebug result is
+claimed. The container accumulated about 32,000 unreaped PID-1 tee zombies.
+
+The pinned five-project starter has ten static/constructed seeds plus explicit
+runtime configurations; **14,258 differential observations** pass, including the
+final image rerun. It is purposive evidence, not occurrence frequency or 99%
+coverage. The larger supplied packet remained unavailable and its failed transfer
+was not retried. ARM/macOS execution, fastdebug, a broader production corpus and
+unrestricted final concurrency stress remain review gates. Unicode properties,
+folding, embedded flags, surrogates, lookbehind and unproved capture histories
+retain Java. Resource/limit exhaustion uses operation-local Java traversal and
+never fabricates no-match; hostile Java fallback may remain expensive.
+
+The common CharSequence access guard is isolated in `48a46b1a358` for deliberate
+cherry-picking and retesting in both engines. New PCRE2-specific managed routing
+and native changes are separate commits. No hosted diagnostic workflow ran.
+
+## Historical results retained for context
+
+The version-zero packet preserves the earlier 90-process warm matrix, independent
+first-use/concurrency runs, native kernels and all failed/preliminary campaigns.
+Its six samples came from **two independent processes**, not six forks. Its
+fixed multi-fixture C2 long-lookahead row was Java 6,245 ns / PCRE2 1,414 ns;
+the earlier isolated concurrency fixture was Java 1,500 ns / PCRE2 1,547 ns.
+Both remain evidence of profile sensitivity. Its end-flag row validated flags
+before warmup, promoted the Pattern and measured Java steady state; 6,519 ns
+was not native-plus-replay latency. Its standalone native captured alternation
+was Rust engine 40,940 ns / PCRE2 interpreted 3,369 ns / direct cached JIT 1,305 ns;
+prefix miss favored interpretation 48 ns over direct JIT 170 ns. These kernels
+exclude VM integration and cannot establish whole-JDK gains. The old 16.55-us
+activation/43-call crossover does not replace the public phase costs above.
+
+The versioned reproduction packet contains exact source pins, commands, raw
+data, process/image bindings, compiler traces and excluded failures. No merge
+is requested.
