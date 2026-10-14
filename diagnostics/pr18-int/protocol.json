@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "experiment": "PR18 native intBroadcast diagnostic, one execution",
+  "baseline_source": "6d264328aefdc3ceff659360ead6567a8e36190c",
+  "candidate_source": "81ed5dfcfc5118b20857dceabe3571c37ea57827",
+  "candidate_vectornode_sha256": "607366a00d75c9e67dfc4a7149622c337c45a1a2c4d14f06f6e840d685870561",
+  "benchmark": "bench.MultiplyBench.intBroadcast",
+  "length": 17,
+  "offset": 1,
+  "cpu": 2,
+  "blocks": 4,
+  "order": ["A", "B", "B", "A"],
+  "warmup_iterations": 5,
+  "measurement_iterations": 5,
+  "iteration_seconds": 1,
+  "forks_per_invocation": 1,
+  "target_flags": ["-Xms256m", "-Xmx256m", "-XX:ActiveProcessorCount=1", "-Xbatch", "-XX:+PrintCompilation"],
+  "calibration": {
+    "metric": "paired log(B runtime/A runtime), geometric runtime change",
+    "independent_blocks": 4,
+    "pairs_reported": 8,
+    "confidence": 0.95,
+    "student_t_df3": 3.182446305284263,
+    "block_contrast": "mean(log B1/A1, log B2/A2); Student interval uses four block contrasts, not eight within-block pairs",
+    "required_entire_interval_percent": [-5, 5],
+    "pair_positions_per_block": [[0, 1], [3, 2]],
+    "additional_requirements": ["all 16 forks completed", "all input/image hashes unchanged", "zero observed measured GC collections", "no target kernel/stub compilation or invalidation after measurement begins"],
+    "failure_action": "retain all data; do not build, execute or compare candidate; do not retry or loosen criterion"
+  },
+  "diagnostic_replays": {
+    "baseline_forks": 2,
+    "candidate_forks_if_calibrated": 2,
+    "used_for_performance_qualification": false,
+    "timed_body": "bench.jmh_generated.MultiplyBench_intBroadcast_jmhTest.intBroadcast_avgt_jmhStub with unchanged inline hints",
+    "observations": ["normal and OSR C2 nmethods/entry addresses/compile IDs before and after iterations", "actual state array object/data addresses and alignment", "JMH measured operations and elapsed time", "worker thread CPU time and Linux schedstat runtime/runnable delay", "CPU affinity/last CPU", "GC and safepoint logs", "compilation/inlining XML"]
+  },
+  "retained_benchmark_zip_sha256": "10637ed6ef6812957e2b17d55884b59f4e4c9cfd1fafe36690df182a0a7e12c7",
+  "benchmark_class_sha256": "e3c5a32a2a028fc7d21780a6b9c12f45dee48c6a78559a747e6ae16beb4f05dd",
+  "timed_stub_class_sha256": "9bf41c1ecc4cd680d4ec50e7532c56e638b063d17f7ba6c78cd226d09992c159",
+  "compiler_hints_sha256": "f8b82bd7fec4bc755848c8ad25d3f3e67457e30fb27d30e65051ba99edd6262d",
+  "original_vm_image_note": "Runner-built images are frozen before A/A and fingerprinted. They are not represented as the earlier VM binaries 47f07e68/270891f0. Original benchmark bytecode, hints, target flags and affinity are preserved.",
+  "publication_scope": "diagnostic branch only; no PR18 production changes, merge, force-push or additional performance sweep"
+}

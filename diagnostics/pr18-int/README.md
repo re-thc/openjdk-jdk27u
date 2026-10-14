@@ -1,0 +1,17 @@
+# PR18 native int-loop diagnostic
+
+This branch contains one fixed diagnostic experiment. It does not alter PR18 or any production source.
+
+The retained benchmark classfiles and compiler hints are supplied unchanged in `benchmark.zip.b64`. `protocol.json` declares all inputs and the calibration rule before the workflow runs. The native Linux runner builds a baseline from `6d264328aefdc3ceff659360ead6567a8e36190c` with the matched fastdebug configuration and freezes its complete image manifest. These runner-built images are identified separately from the earlier VM images.
+
+Only `intBroadcast`, length 17 and offset 1, is measured. A/A uses the same absolute baseline executable for all sixteen fresh forks, in four ABBA blocks. Each block contributes the average of its two log runtime ratios. A 95% Student interval over the four block contrasts (three degrees of freedom) must lie entirely within −5% to +5%. This is a calibration requirement, not an allowance for a port regression. Input integrity, measured GC and compilation stability checks also apply. Every sample is retained. Failure skips candidate build/execution/comparison permanently; the workflow does not retry or adjust the criterion.
+
+Two separate baseline replays collect read-only observations outside the measured loop. They preserve the original benchmark bytecode and forced-inline hints. A diagnostic profiler reads the actual generated JMH timed stub's normal and OSR nmethods, compilation IDs and entry addresses; it also reads state array addresses/alignment, worker CPU time and Linux scheduling counters. JMH operation counts, compilation/inlining XML, GC and safepoint logs are retained. Replay timings are excluded from calibration and qualification.
+
+The replay-only agent registers JMH's handler at the start of its profiler-dispatch method, outside timing, so the profiler can read the actual worker state. It transforms only `BenchmarkHandler.startProfilers`, audits that transformation, and leaves the benchmark and generated timed-stub bytecodes unchanged. The primary A/A and A/B measurements do not load this agent or profiler.
+
+Only if A/A passes, the runner builds the candidate by replacing the single production `vectornode.cpp` file from `81ed5dfcfc5118b20857dceabe3571c37ea57827` in the same configured build. It verifies the file hash and bounded source delta, runs the same sixteen-fork ABBA comparison, and collects two candidate replays. Full image manifests are checked before and after execution.
+
+The workflow is push-triggered only by publication of its workflow file on `codex/pr18-native-int-diagnostic`. Ordinary source commits on this branch do not start another experiment. All evidence, including failed calibration and incomplete diagnostic observations, is uploaded as a workflow artifact. A successful workflow run means the declared experiment completed, not that calibration passed or PR18 is qualified. `outcome.json` is authoritative.
+
+Copyright (c) 2026, Teamoffy Pte. Ltd. Diagnostic harness code is under GPL version 2; the retained benchmark input is carried over byte-for-byte. OpenJDK source and WhiteBox notices are preserved.
