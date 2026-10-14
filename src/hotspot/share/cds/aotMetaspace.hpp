@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,6 +192,7 @@ public:
 private:
   static void read_extra_data(JavaThread* current, const char* filename) NOT_CDS_RETURN;
   static void fork_and_dump_final_static_archive(TRAPS);
+  static void create_output_mapinfo();
   static void open_output_mapinfo();
   static bool write_static_archive(ArchiveBuilder* builder,
                                    FileMapInfo* map_info,
