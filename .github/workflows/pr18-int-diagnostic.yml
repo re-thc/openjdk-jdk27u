@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 90
     env:
-      DIAGNOSTIC_ROOT: ${{ runner.temp }}/pr18-int
+      DIAGNOSTIC_ROOT: /tmp/pr18-int
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -41,5 +41,5 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: pr18-native-int-diagnostic
-          path: ${{ runner.temp }}/pr18-int/evidence
+          path: ${{ env.DIAGNOSTIC_ROOT }}/evidence
           retention-days: 90
