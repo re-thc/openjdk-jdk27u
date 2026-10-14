@@ -445,11 +445,6 @@ public final class SunPKCS11 extends AuthProvider {
         }
     }
 
-    // Map from mechanism to List of Descriptors that should be
-    // registered if the mechanism is supported
-    private static final Map<Integer,List<Descriptor>> descriptors =
-        new HashMap<Integer,List<Descriptor>>();
-
     private static int[] m(long m1) {
         return new int[] {(int)m1};
     }
@@ -498,7 +493,8 @@ public final class SunPKCS11 extends AuthProvider {
         for (int i = 0; i < d.mechanisms.length; i++) {
             int m = d.mechanisms[i];
             Integer key = Integer.valueOf(m);
-            List<Descriptor> list = descriptors.computeIfAbsent(key, k -> new ArrayList<>());
+            List<Descriptor> list = DescriptorRegistry.descriptors
+                    .computeIfAbsent(key, k -> new ArrayList<>());
             list.add(d);
         }
     }
@@ -533,12 +529,13 @@ public final class SunPKCS11 extends AuthProvider {
     // registered when one is first used, not when the unconfigured provider
     // is loaded.
     private static final class DescriptorRegistry {
+        // Map from mechanism to List of Descriptors that should be
+        // registered if the mechanism is supported
+        static final Map<Integer,List<Descriptor>> descriptors =
+            new HashMap<Integer,List<Descriptor>>();
+
         static {
             registerDescriptors();
-        }
-
-        static Map<Integer,List<Descriptor>> descriptors() {
-            return descriptors;
         }
     }
 
@@ -1300,7 +1297,7 @@ public final class SunPKCS11 extends AuthProvider {
             int mech = (int)longMech;
             Integer integerMech = Integer.valueOf(mech);
             List<Descriptor> ds =
-                    DescriptorRegistry.descriptors().get(integerMech);
+                    DescriptorRegistry.descriptors.get(integerMech);
             if (ds == null) {
                 continue;
             }
