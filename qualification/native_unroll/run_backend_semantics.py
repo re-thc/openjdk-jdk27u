@@ -9,6 +9,22 @@ import subprocess
 from run_release_causal import record
 
 
+def report_ir_failure_evidence(out, name):
+    """Keep the exact failed jtreg evidence readable without an artifact transfer."""
+    if not name.startswith('ir-sve'):
+        return
+    work = out / ('ir-work-sve' + name.removeprefix('ir-sve'))
+    reports = sorted(work.rglob('*.jtr'))
+    print('BACKEND_IR_FAILURE_EVIDENCE_JSON=' + json.dumps({
+        'name': name, 'work': str(work), 'jtr_count': len(reports),
+        'gate_failed': True,
+    }), flush=True)
+    for report in reports:
+        print('BACKEND_IR_JTR_JSON=' + json.dumps({
+            'record': record(report), 'text': report.read_text(),
+        }), flush=True)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--release-jdk', type=pathlib.Path, required=True)
@@ -51,6 +67,7 @@ def main():
         (out / 'status.json').write_text(json.dumps(records, indent=2) + '\n')
         if result.returncode:
             print(logfile.read_text()[-16000:], flush=True)
+            report_ir_failure_evidence(out, name)
             raise RuntimeError('Focused test failure: ' + name)
         print('BACKEND_TEST_STATUS_JSON=' + json.dumps(status), flush=True)
 
@@ -84,6 +101,7 @@ def main():
             run('stress-sve' + sve + '-seed' + str(seed), argv)
 
     tests = ['test/hotspot/jtreg/compiler/vectorapi/TestZeroSeedFPReductionIR.java',
+             'test/hotspot/jtreg/compiler/vectorapi/TestZeroSeedFPReductionStrictIR.java',
              'test/hotspot/jtreg/compiler/vectorapi/TestVectorAddMulReduction.java']
     for sve in ['default', '0']:
         argv = [str(a.release_jdk.resolve() / 'bin/java'), '-jar', str(a.jtreg.resolve() / 'lib/jtreg.jar'),

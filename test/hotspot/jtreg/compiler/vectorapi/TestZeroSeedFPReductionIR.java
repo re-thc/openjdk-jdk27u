@@ -41,12 +41,20 @@ public class TestZeroSeedFPReductionIR {
     }
     public static void main(String[] args) { TestFramework.runWithFlags("--add-modules=jdk.incubator.vector"); }
 
+    // SVE partial reductions receive an explicit generated mask. The narrow
+    // NEON rules only apply to unpredicated inputs: SVE disabled, or a species
+    // whose size equals the native vector size. Masked SVE retains its scalar
+    // identity seed and does not exercise the zero-seed NEON optimization.
     @Test
     @IR(counts={IRNode.ADD_REDUCTION_VF,">=1","no_strict_order",">=1"},
         failOn={"requires_strict_order"},phase=CompilePhase.PRINT_IDEAL,
         applyIfCPUFeatureOr={"asimd","true","sse2","true"},applyIf={"MaxVectorSize",">=8"})
     @IR(counts={"reduce_non_strict_order_add2F_neon",">=1"},
-        phase=CompilePhase.MATCHING,applyIfPlatform={"aarch64","true"},applyIf={"MaxVectorSize",">=8"})
+        failOn={"reduce_addFHF_masked"},phase=CompilePhase.MATCHING,
+        applyIfPlatform={"aarch64","true"},applyIfAnd={"UseSVE","0","MaxVectorSize",">=8"})
+    @IR(counts={"reduce_addFHF_masked",">=1","vmask_gen_imm",">=1"},
+        failOn={"reduce_non_strict_order_add2F_neon"},phase=CompilePhase.MATCHING,
+        applyIfPlatform={"aarch64","true"},applyIfAnd={"UseSVE",">0","MaxVectorSize",">8"})
     public static float float64() { return FloatVector.fromArray(FloatVector.SPECIES_64,F,0).reduceLanes(VectorOperators.ADD); }
 
     @Test
@@ -54,7 +62,14 @@ public class TestZeroSeedFPReductionIR {
         failOn={"requires_strict_order"},phase=CompilePhase.PRINT_IDEAL,
         applyIfCPUFeatureOr={"asimd","true","sse2","true"},applyIf={"MaxVectorSize",">=16"})
     @IR(counts={"reduce_non_strict_order_add4F_neon",">=1"},
-        phase=CompilePhase.MATCHING,applyIfPlatform={"aarch64","true"},applyIf={"MaxVectorSize",">=16"})
+        failOn={"reduce_addFHF_masked"},phase=CompilePhase.MATCHING,
+        applyIfPlatform={"aarch64","true"},applyIfAnd={"UseSVE","0","MaxVectorSize",">=16"})
+    @IR(counts={"reduce_non_strict_order_add4F_neon",">=1"},
+        failOn={"reduce_addFHF_masked"},phase=CompilePhase.MATCHING,
+        applyIfPlatform={"aarch64","true"},applyIfAnd={"UseSVE",">0","MaxVectorSize","16"})
+    @IR(counts={"reduce_addFHF_masked",">=1","vmask_gen_imm",">=1"},
+        failOn={"reduce_non_strict_order_add4F_neon"},phase=CompilePhase.MATCHING,
+        applyIfPlatform={"aarch64","true"},applyIfAnd={"UseSVE",">0","MaxVectorSize",">16"})
     public static float float128() { return FloatVector.fromArray(FloatVector.SPECIES_128,F,0).reduceLanes(VectorOperators.ADD); }
 
     @Test
@@ -62,7 +77,14 @@ public class TestZeroSeedFPReductionIR {
         failOn={"requires_strict_order"},phase=CompilePhase.PRINT_IDEAL,
         applyIfCPUFeatureOr={"asimd","true","sse2","true"},applyIf={"MaxVectorSize",">=16"})
     @IR(counts={"reduce_non_strict_order_add2D_neon",">=1"},
-        phase=CompilePhase.MATCHING,applyIfPlatform={"aarch64","true"},applyIf={"MaxVectorSize",">=16"})
+        failOn={"reduce_addD_masked"},phase=CompilePhase.MATCHING,
+        applyIfPlatform={"aarch64","true"},applyIfAnd={"UseSVE","0","MaxVectorSize",">=16"})
+    @IR(counts={"reduce_non_strict_order_add2D_neon",">=1"},
+        failOn={"reduce_addD_masked"},phase=CompilePhase.MATCHING,
+        applyIfPlatform={"aarch64","true"},applyIfAnd={"UseSVE",">0","MaxVectorSize","16"})
+    @IR(counts={"reduce_addD_masked",">=1","vmask_gen_imm",">=1"},
+        failOn={"reduce_non_strict_order_add2D_neon"},phase=CompilePhase.MATCHING,
+        applyIfPlatform={"aarch64","true"},applyIfAnd={"UseSVE",">0","MaxVectorSize",">16"})
     public static double double128() { return DoubleVector.fromArray(DoubleVector.SPECIES_128,D,0).reduceLanes(VectorOperators.ADD); }
 
     @Test
@@ -103,6 +125,9 @@ public class TestZeroSeedFPReductionIR {
     @IR(counts={IRNode.ADD_REDUCTION_VF,">=1","no_strict_order",">=1"},
         failOn={"requires_strict_order"},phase=CompilePhase.PRINT_IDEAL,
         applyIfPlatform={"aarch64","true"},applyIfAnd={"UseSVE",">0","MaxVectorSize",">=16"})
+    @IR(counts={"reduce_addFHF_masked",">=1"},
+        failOn={"reduce_non_strict_order_add4F_neon"},phase=CompilePhase.MATCHING,
+        applyIfPlatform={"aarch64","true"},applyIfAnd={"UseSVE",">0","MaxVectorSize",">=16"})
     public static float maskedFloat128(long mask) {
         return FloatVector.fromArray(FloatVector.SPECIES_128,F,0).reduceLanes(VectorOperators.ADD,VectorMask.fromLong(FloatVector.SPECIES_128,mask));
     }
@@ -110,6 +135,9 @@ public class TestZeroSeedFPReductionIR {
     @Test
     @IR(counts={IRNode.ADD_REDUCTION_VD,">=1","no_strict_order",">=1"},
         failOn={"requires_strict_order"},phase=CompilePhase.PRINT_IDEAL,
+        applyIfPlatform={"aarch64","true"},applyIfAnd={"UseSVE",">0","MaxVectorSize",">=16"})
+    @IR(counts={"reduce_addD_masked",">=1"},
+        failOn={"reduce_non_strict_order_add2D_neon"},phase=CompilePhase.MATCHING,
         applyIfPlatform={"aarch64","true"},applyIfAnd={"UseSVE",">0","MaxVectorSize",">=16"})
     public static double maskedDouble128(long mask) {
         return DoubleVector.fromArray(DoubleVector.SPECIES_128,D,0).reduceLanes(VectorOperators.ADD,VectorMask.fromLong(DoubleVector.SPECIES_128,mask));
@@ -119,30 +147,38 @@ public class TestZeroSeedFPReductionIR {
     @IR(counts={IRNode.ADD_REDUCTION_VF,">=1","no_strict_order",">=1"},
         phase=CompilePhase.PRINT_IDEAL,applyIfPlatform={"aarch64","true"},
         applyIfAnd={"UseSVE",">0","MaxVectorSize",">=32"})
-    @IR(counts={"reduce_addF_sve",">=1"},failOn={"reduce_non_strict_order_add4F_neon"},
+    @IR(counts={"reduce_addF_sve",">=1"},
+        failOn={"reduce_non_strict_order_add4F_neon","reduce_addFHF_masked"},
         phase=CompilePhase.MATCHING,applyIfPlatform={"aarch64","true"},
-        applyIfAnd={"UseSVE",">0","MaxVectorSize",">=32"})
+        applyIfAnd={"UseSVE",">0","MaxVectorSize","32"})
+    @IR(counts={"reduce_addFHF_masked",">=1","vmask_gen_imm",">=1"},
+        failOn={"reduce_non_strict_order_add4F_neon","reduce_addF_sve"},
+        phase=CompilePhase.MATCHING,applyIfPlatform={"aarch64","true"},
+        applyIfAnd={"UseSVE",">0","MaxVectorSize",">32"})
     public static float floatWide256() { return FloatVector.fromArray(FloatVector.SPECIES_256,F,0).reduceLanes(VectorOperators.ADD); }
 
     @Test
     @IR(counts={IRNode.ADD_REDUCTION_VD,">=1","no_strict_order",">=1"},
         phase=CompilePhase.PRINT_IDEAL,applyIfPlatform={"aarch64","true"},
         applyIfAnd={"UseSVE",">0","MaxVectorSize",">=32"})
-    @IR(counts={"reduce_addD_sve",">=1"},failOn={"reduce_non_strict_order_add2D_neon"},
+    @IR(counts={"reduce_addD_sve",">=1"},
+        failOn={"reduce_non_strict_order_add2D_neon","reduce_addD_masked"},
         phase=CompilePhase.MATCHING,applyIfPlatform={"aarch64","true"},
-        applyIfAnd={"UseSVE",">0","MaxVectorSize",">=32"})
+        applyIfAnd={"UseSVE",">0","MaxVectorSize","32"})
+    @IR(counts={"reduce_addD_masked",">=1","vmask_gen_imm",">=1"},
+        failOn={"reduce_non_strict_order_add2D_neon","reduce_addD_sve"},
+        phase=CompilePhase.MATCHING,applyIfPlatform={"aarch64","true"},
+        applyIfAnd={"UseSVE",">0","MaxVectorSize",">32"})
     public static double doubleWide256() { return DoubleVector.fromArray(DoubleVector.SPECIES_256,D,0).reduceLanes(VectorOperators.ADD); }
 
     @Test
-    @IR(counts={IRNode.ADD_REDUCTION_VF,">=1","requires_strict_order",">=1"},
-        failOn={"no_strict_order"},phase=CompilePhase.PRINT_IDEAL,
-        applyIfPlatform={"aarch64","true"},applyIfAnd={"UseSVE",">0","SuperWordReductions","true","UseSuperWord","true"})
+    // The default cost model may keep a bare strict sum scalar. Positive
+    // strict vector IR controls live in TestZeroSeedFPReductionStrictIR.
+    @IR(failOn={"no_strict_order"},phase=CompilePhase.PRINT_IDEAL)
     public static float strictFloat(float seed) { for(int i=0;i<F.length;i++)seed+=F[i];return seed; }
 
     @Test
-    @IR(counts={IRNode.ADD_REDUCTION_VD,">=1","requires_strict_order",">=1"},
-        failOn={"no_strict_order"},phase=CompilePhase.PRINT_IDEAL,
-        applyIfPlatform={"aarch64","true"},applyIfAnd={"UseSVE",">0","SuperWordReductions","true","UseSuperWord","true"})
+    @IR(failOn={"no_strict_order"},phase=CompilePhase.PRINT_IDEAL)
     public static double strictDouble(double seed) { for(int i=0;i<D.length;i++)seed+=D[i];return seed; }
 
     @Run(test={"float64","float128","double128","maskedFloat128","maskedDouble128",
