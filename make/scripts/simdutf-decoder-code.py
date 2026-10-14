@@ -34,7 +34,7 @@ for log in sorted(Path("download").rglob("inlining-*.log")):
         if not seen:
             print(section[:6500], flush=True)
             continue
-        versions = [bytes(data), b"".join(data[p:p+4][::-1] for p in range(0, len(data), 4))]
+        versions = [bytes(data)]
         decoded = []
         for order, binary in enumerate(versions):
             file = Path("code-" + log.stem + "-" + str(index) + "-" + str(order) + ".bin")
@@ -67,4 +67,8 @@ for log in sorted(Path("download").rglob("inlining-*.log")):
                           "stack_accesses":len(spills), "stack_instructions":spills[:40]})
         print("CODE_SUMMARY", json.dumps({"file":log.name, "heading":heading, "word_order":order,
             "main_size":end-start, "instruction_count":len(instructions), "loops":loops}), flush=True)
+        if loops:
+            first = loops[0]
+            begin, stop = int(first["begin"], 16), int(first["end"], 16)
+            print("CODE_LOOP_BODY", log.name, json.dumps([ins[3] for ins in instructions if begin <= ins[0] <= stop]), flush=True)
         print("CODE_PROLOGUE", log.name, json.dumps([ins[3] for ins in instructions[:28]]), flush=True)
