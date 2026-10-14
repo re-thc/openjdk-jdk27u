@@ -192,7 +192,7 @@ jobs:
     if: >-
       needs.prepare.outputs.linux-aarch64 == 'true' &&
       needs.prepare.outputs.dry-run != 'true' &&
-      (github.event_name == 'pull_request' || github.event.inputs.integer-benchmarks == 'true')
+      github.event.inputs.integer-benchmarks == 'true'
 
   test-macos-aarch64:
     name: macos-aarch64

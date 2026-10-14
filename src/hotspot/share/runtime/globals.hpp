@@ -372,10 +372,12 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseFastFloatIntrinsics, true,                               \
           "Use fast_float for decimal float and double parsing")            \
                                                                             \
-  product(bool, UseFastIntegerIntrinsics, LINUX_ONLY(AMD64_ONLY(true) NOT_AMD64(false)) NOT_LINUX(false), \
+  product(bool, UseFastIntegerIntrinsics,                                   \
+          LINUX_ONLY(AMD64_ONLY(true) AARCH64_ONLY(true) NOT_AMD64(NOT_AARCH64(false))) NOT_LINUX(false), \
           "Use fast_float for interpreted decimal Integer and Long parsing")             \
                                                                             \
-  product(bool, UseZmijIntegerIntrinsics, LINUX_ONLY(AMD64_ONLY(true) NOT_AMD64(false)) NOT_LINUX(false), \
+  product(bool, UseZmijIntegerIntrinsics,                                   \
+          LINUX_ONLY(AMD64_ONLY(true) AARCH64_ONLY(true) NOT_AMD64(NOT_AARCH64(false))) NOT_LINUX(false), \
           "Use Zmij for interpreted decimal Integer and Long formatting")                \
                                                                             \
   product(bool, UseVectorizedMismatchIntrinsic, false, DIAGNOSTIC,          \

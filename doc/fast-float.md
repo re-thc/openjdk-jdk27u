@@ -48,7 +48,8 @@ other radices, overflow, null handling and exceptions. A result whose bits
 equal `Long.MIN_VALUE` also uses Java because those bits encode the sentinel.
 
 `UseFastIntegerIntrinsics` is independent of floating-point parsing and defaults
-on only for Linux x86-64. AArch64 requires explicit enablement. The IDs are
+on for Linux x86-64 and AArch64. Other supported platforms require explicit
+enablement. The IDs are
 `_parseDecimalInt`, `_parseDecimalLong`, `_parseUnsignedDecimalInt` and
 `_parseUnsignedDecimalLong`. Their controls select the original Java entry.
 Tiered VMs, counted execution and debugger events retain normal Java entries

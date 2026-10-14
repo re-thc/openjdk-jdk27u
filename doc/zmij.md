@@ -65,7 +65,8 @@ UTF16 exactly. It checks the array byte length and exclusive character end
 index before copying. Null or rejected bounds return to Java.
 
 `UseZmijIntegerIntrinsics` is independent of floating-point formatting and
-defaults on only for Linux x86-64. AArch64 requires explicit enablement.
+defaults on for Linux x86-64 and AArch64. Other supported platforms require
+explicit enablement.
 `_formatDecimalIntLatin1`, `_formatDecimalIntUTF16`, `_formatDecimalLongLatin1`
 and `_formatDecimalLongUTF16` controls select Java. There is no integer JNI
 wrapper.
