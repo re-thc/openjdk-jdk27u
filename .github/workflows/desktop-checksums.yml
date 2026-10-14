@@ -82,7 +82,7 @@ jobs:
             --with-version-opt=desktop-checksum
           make CONF=desktop images LOG=info >qualification/build.log 2>&1
           build/desktop/images/jdk/bin/java -version
-          build/desktop/images/jdk/bin/java --list-modules | rg '^java.desktop@'
+          build/desktop/images/jdk/bin/java --list-modules | grep '^java.desktop@'
       - name: PNG plugin and raw Kerberos CRC32 jtreg
         run: |
           make CONF=desktop test \
