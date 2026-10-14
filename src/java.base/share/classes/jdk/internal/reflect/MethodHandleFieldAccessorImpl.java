@@ -30,6 +30,8 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
+import jdk.internal.vm.annotation.Stable;
+
 import static jdk.internal.reflect.MethodHandleAccessorFactory.LazyStaticHolder.JLIA;
 
 abstract class MethodHandleFieldAccessorImpl extends FieldAccessorImpl {
@@ -39,8 +41,14 @@ abstract class MethodHandleFieldAccessorImpl extends FieldAccessorImpl {
 
     private final int fieldFlags;
     protected final MethodHandle getter;
-    // created on first use as most fields are only ever read
-    private volatile MethodHandle setter;
+    // Created on first use as most fields are only ever read.  @Stable and not
+    // volatile, so that the JIT folds it into the code for a constant accessor like
+    // the final getter; a volatile read prevents that.  The race is benign: threads
+    // may each create a setter, which are interchangeable, and a method handle is
+    // safely published through its final fields (its LambdaForm is prepared by the
+    // constructor), as with the accessors in Field.
+    @Stable
+    private MethodHandle setter;
 
     protected MethodHandleFieldAccessorImpl(Field field, MethodHandle getter, boolean isReadOnly, boolean isStatic) {
         super(field);
