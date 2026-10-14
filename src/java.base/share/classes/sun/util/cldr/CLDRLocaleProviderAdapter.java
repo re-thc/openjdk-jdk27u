@@ -69,9 +69,6 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
         parentLocalesMap.put(Locale.US, Locale.US);
     }
 
-    public CLDRLocaleProviderAdapter() {
-    }
-
     /**
      * Returns the type of this LocaleProviderAdapter
      * @return the type of this

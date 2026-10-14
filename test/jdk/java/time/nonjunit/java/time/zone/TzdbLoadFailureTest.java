@@ -70,7 +70,8 @@ public class TzdbLoadFailureTest {
         MISSING("FileNotFoundException"),
         TRUNCATED("EOFException"),
         BAD_FORMAT("StreamCorruptedException"),
-        NEGATIVE_COUNT("NegativeArraySizeException");
+        NEGATIVE_COUNT("NegativeArraySizeException"),
+        NEGATIVE_LENGTH("NegativeArraySizeException");
 
         final String cause;
 
@@ -123,6 +124,20 @@ public class TzdbLoadFailureTest {
                     out.writeUTF("TZDB");
                     out.writeShort(1);
                     out.writeUTF("2026a");
+                    out.writeShort(-1);
+                }
+                Files.write(tzdb, bytes.toByteArray());
+            }
+            case NEGATIVE_LENGTH -> {
+                // One rule, of a negative length
+                ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                try (DataOutputStream out = new DataOutputStream(bytes)) {
+                    out.writeByte(1);
+                    out.writeUTF("TZDB");
+                    out.writeShort(1);
+                    out.writeUTF("2026a");
+                    out.writeShort(0);
+                    out.writeShort(1);
                     out.writeShort(-1);
                 }
                 Files.write(tzdb, bytes.toByteArray());

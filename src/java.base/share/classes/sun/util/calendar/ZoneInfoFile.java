@@ -375,10 +375,12 @@ public final class ZoneInfoFile {
         }
 
         byte[] readBytes(int len) throws IOException {
-            if (len < 0 || buf.length - pos < len) {
+            // A negative length fails here, as with DataInput.readFully
+            byte[] bytes = new byte[len];
+            if (buf.length - pos < len) {
                 throw new EOFException();
             }
-            byte[] bytes = Arrays.copyOfRange(buf, pos, pos + len);
+            System.arraycopy(buf, pos, bytes, 0, len);
             pos += len;
             return bytes;
         }
