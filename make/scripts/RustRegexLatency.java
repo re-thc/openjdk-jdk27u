@@ -51,17 +51,18 @@ public class RustRegexLatency {
 
     public static void main(String[] args) throws Exception {
         String operation = args.length == 0 ? "find" : args[0];
-        String[] names = {"scan", "capture", "ambiguous", "bounded", "digit-run"};
+        String[] names = {"scan", "capture", "ambiguous", "bounded", "digit-run", "alternation-run"};
         String[] expressions = {
             "error([0-9]+)", "([a-z]+)@([a-z]+)\\.[a-z]{2,4}",
             "((?:ab|a)+)([bc]+)", "\\A(?:[a-z]{1,64}|[0-9]{1,64})+\\z",
-            "error([0-9]+)"
+            "error([0-9]+)", "(?<level>error|warning|fatal)([0-9]+)"
         };
         String[] inputs = {
             "!".repeat(LENGTH),
             "a".repeat(32766) + "@" + "b".repeat(32766) + ".co",
             "a".repeat(LENGTH - 2) + "bc",
             "abc01234".repeat(LENGTH / 8),
+            "error" + "3".repeat(LENGTH - 5),
             "error" + "3".repeat(LENGTH - 5)
         };
         Field backend = Pattern.class.getDeclaredField("rustRegex");

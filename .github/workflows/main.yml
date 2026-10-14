@@ -268,7 +268,7 @@ jobs:
             curl --fail --location --retry 3 "https://repo.maven.apache.org/maven2/$path" --output "$bench/lib/${path##*/}"
           done
           processor_path="$bench/lib/jmh-generator-annprocess-1.37.jar:$bench/lib/jmh-core-1.37.jar"
-          "$JDK/bin/javac" -cp "$bench/lib/*" -processorpath "$processor_path" -processor org.openjdk.jmh.generators.BenchmarkProcessor -d "$bench/classes" -s "$bench/generated" test/micro/org/openjdk/bench/java/util/regex/RustRegexNative.java test/micro/org/openjdk/bench/java/util/regex/RustRegexLifetime.java
+          "$JDK/bin/javac" -cp "$bench/lib/*" -processorpath "$processor_path" -processor org.openjdk.jmh.generators.BenchmarkProcessor -d "$bench/classes" -s "$bench/generated" test/micro/org/openjdk/bench/java/util/regex/RustRegexNative.java test/micro/org/openjdk/bench/java/util/regex/RustRegexLifetime.java test/micro/org/openjdk/bench/java/util/regex/RustRegexState.java test/micro/org/openjdk/bench/java/util/regex/RustRegexCandidates.java
           "$JDK/bin/javac" -d "$bench/classes" make/scripts/RustRegexProbe.java make/scripts/RustRegexLatency.java test/jdk/java/util/regex/RustRegexContinuation.java
           python3 -m py_compile make/scripts/benchmark-rust-regex.py
       - name: 'Check continuation and leaf latency'

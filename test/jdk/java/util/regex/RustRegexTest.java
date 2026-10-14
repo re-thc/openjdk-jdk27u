@@ -46,7 +46,7 @@ import jdk.internal.util.regex.RustRegex;
 
 public class RustRegexTest {
     private static final Field NATIVE, ROOT, MATCH_ROOT, HANDLE;
-    private static final Method JAVA;
+    private static final Constructor<Pattern> JAVA;
     private static int comparisons;
     static {
         try {
@@ -54,16 +54,15 @@ public class RustRegexTest {
             ROOT = Pattern.class.getDeclaredField("root");
             MATCH_ROOT = Pattern.class.getDeclaredField("matchRoot");
             HANDLE = RustRegex.class.getDeclaredField("handle");
-            JAVA = Pattern.class.getDeclaredMethod("ensureJava");
+            JAVA = Pattern.class.getDeclaredConstructor(String.class, int.class, boolean.class);
             for (Field f : new Field[]{NATIVE, ROOT, MATCH_ROOT, HANDLE}) f.setAccessible(true);
             JAVA.setAccessible(true);
         } catch (ReflectiveOperationException e) { throw new ExceptionInInitializerError(e); }
     }
 
     private static Pattern reference(String expression, int flags) throws Exception {
-        Pattern p = Pattern.compile(expression, flags);
-        JAVA.invoke(p);
-        return p;
+        // Always invoke the original Java parser, independently of prepared plans.
+        return JAVA.newInstance(expression, flags, false);
     }
 
     private static void nativeOnly(Pattern p) throws Exception {
@@ -451,10 +450,11 @@ public class RustRegexTest {
         nativeOnly(restored);
         // Promotion removes the native reference; existing Matchers allocate
         // Java locals lazily and continue correctly after another Matcher promotes.
-        Matcher existing=p.matcher("error123");
-        Matcher wide=p.matcher("\u0100 " + "x ".repeat(1024) + "error456");
+        Pattern promoted=Pattern.compile("error([0-9]{1,})");
+        Matcher existing=promoted.matcher("error123");
+        Matcher wide=promoted.matcher("\u0100 " + "x ".repeat(1024) + "error456");
         if (!wide.find() || !wide.group(1).equals("456")) throw new AssertionError("wide input fallback");
-        if (NATIVE.get(p)!=null || ROOT.get(p)==null) throw new AssertionError("permanent Java promotion");
+        if (NATIVE.get(promoted)!=null || ROOT.get(promoted)==null) throw new AssertionError("permanent Java promotion");
         if (!existing.find() || !existing.group(1).equals("123")) throw new AssertionError("old Matcher promotion");
         for (int i=0;i<10;i++) { System.gc(); same.matcher("error789").find(); }
         nativeOnly(same);
@@ -465,6 +465,7 @@ public class RustRegexTest {
         emailSuccessEndFlags();
         collectedPreparation();
         resetCapturePublication();
+        preparedPlans();
         primary();
         shortAndEarlyMatches();
         digitEndFlags();
@@ -473,6 +474,60 @@ public class RustRegexTest {
         sharingAndLifetime();
         apiState();
         System.out.println("Compared "+comparisons+" native/Java results and API states; enabled="+RustRegex.ENABLED);
+    }
+
+    private static void preparedPlans() throws Exception {
+        String[] expressions = {"error[0-9]+", "Aa0_Aa0_[0-9]+",
+                "(?<level>error|warning|fatal)([0-9]+)",
+                "(?<word>error)(?<number>[0-9]+)", "(error)([0-9]+)", "(?<number>\\d+)",
+                "(?:a|bc|Def)(?<n>\\d+)", "(x|y)(?:[0-9]+)"};
+        String[] inputs = {"", "e", "error", "errorX", "error123", "warning456", "fatal789",
+                "Aa0_Aa0_123", "!error12 warning34!", "bc45 Def67 x8 y9",
+                "eeeeeeee errorX fatalX", "\uD800\u0100error123\uDC00",
+                "!".repeat(24) + "error123", "error" + "3".repeat(4091),
+                "errorX ".repeat(586) + "warning123", "\u0100error" + "3".repeat(4090)};
+        for (String expression : expressions) {
+            for (int flags : new int[]{0, Pattern.CASE_INSENSITIVE, Pattern.UNIX_LINES, Pattern.DOTALL}) {
+                Pattern ref = reference(expression, flags);
+                for (String input : inputs) {
+                    for (int lo : new int[]{0, input.length() / 2, input.length()}) {
+                        Pattern p = Pattern.compile(expression, flags);
+                        RustRegex engine = (RustRegex) NATIVE.get(p);
+                        // Long UTF-16 handoffs may promote; retained-plan checks
+                        // apply to bounded inputs and the native byte alphabet.
+                        boolean exactPlan = engine != null && engine.hasExactEndFlags()
+                                && (input.length() <= 256 || input.chars().allMatch(c -> c <= 255));
+                        Matcher a = p.matcher(input), b = ref.matcher(input);
+                        a.region(lo, input.length()); b.region(lo, input.length());
+                        for (int i = 0; i < 3; i++) {
+                            equal(a, b, a.find(), b.find(), true);
+                            if (exactPlan) nativeOnly(p);
+                        }
+                        a.reset().region(lo, input.length()); b.reset().region(lo, input.length());
+                        equal(a, b, a.lookingAt(), b.lookingAt(), true);
+                        if (exactPlan) nativeOnly(p);
+                        a.reset().region(lo, input.length()); b.reset().region(lo, input.length());
+                        equal(a, b, a.matches(), b.matches(), true);
+                        if (exactPlan) nativeOnly(p);
+                        a.usePattern(Pattern.compile("([a-z]+)([0-9]+)"));
+                        b.usePattern(reference("([a-z]+)([0-9]+)", 0));
+                        equal(a, b, a.find(), b.find(), true);
+                        a.usePattern(p).reset(input); b.usePattern(ref).reset(input);
+                        equal(a, b, a.find(), b.find(), true);
+                        if (exactPlan) nativeOnly(p);
+                        if (!p.matcher(input).replaceAll("[$0]").equals(ref.matcher(input).replaceAll("[$0]")))
+                            throw new AssertionError("prepared replacement");
+                        StringBuilder mutable = new StringBuilder(input);
+                        a = p.matcher(mutable); b = ref.matcher(mutable);
+                        equal(a, b, a.find(), b.find(), true);
+                        mutable.setLength(0); mutable.append("fatal123 error456");
+                        a.reset(); b.reset();
+                        equal(a, b, a.find(), b.find(), true);
+                        if (exactPlan) nativeOnly(p);
+                    }
+                }
+            }
+        }
     }
 
     private static void emailSuccessEndFlags() throws Exception {

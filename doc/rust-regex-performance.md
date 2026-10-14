@@ -1,5 +1,148 @@
 # Rust regex performance
 
+## Prepared traversal and bounded alternation
+
+The prepared literal/digit grammar now supplies capture numbering and named
+groups directly to Java traversal. A Java sibling or permanent UTF-16 fallback
+can build the existing Slice, digit and capture nodes without reparsing the
+source or bootstrapping an ASCII-digit lambda. Unsupported expressions and
+flags continue through the original Java parser.
+
+For uncaptured ASCII prefixes four through fifteen characters wide, reused
+regions of at most sixteen characters can select a small literal/digit node.
+The existing eight-character routing stays immediate. Wider eligible short
+regions use the compact plan first; sixteen uses of the shared preparation
+justify constructing the sibling. This is an approximate reuse hint shared
+between Patterns. Matcher caches the selected nodes, and fresh low-reuse
+Patterns avoid that additional preparation.
+
+When the VM permits C2, two through eight ASCII literal alternatives with
+distinct first characters and a mandatory greedy digit tail can use a managed
+plan. It publishes the mandatory captures and exact end flags. A full or early
+hit can complete in the plan; a definite literal miss avoids native preparation.
+An unresolved search locates the earliest possible first character. A candidate with a validated literal and first digit can finish locally in a
+tail of at most thirty-two characters; other candidates go to Rust with the
+original region bounds. The first-character search stops once it finds the
+earliest possible start. This applies to the narrow validated
+grammar, not general alternation or repeated captures. The compilation ceiling
+does not identify the current execution tier; ordinary tiered startup is also
+measured, and the implementation does not disable tiers.
+
+The regression oracle invokes the original Java constructor directly, so it
+does not compare two uses of the new prepared traversal. Coverage includes
+captures, named groups, mutable inputs, regions, reset/reuse, usePattern,
+replacement and end flags. Native-only reset/reuse cases keep end-flag replay
+on separate fresh Patterns. The original coverage gap was a test defect; it did
+not establish a production failure.
+
+The candidate-start benchmark includes repeated first characters, complete
+literal prefixes followed by a nondigit, and a late hit after those rejected
+starts. It checks the Java control's captures and requested end flags during
+setup. These cases supplement the ordinary miss, early, late and full-hit
+workloads rather than replacing them.
+
+Focused equal-module-loading comparisons use the `d78523f` preparation and
+Matcher sources as baseline, and the selected sources in the candidate. JMH
+1.37 runs on one pinned CPU with Serial GC, one active processor, `-Xshare:off`,
+two process pairs, two 200 ms warmups and three 200 ms measurements. Values
+below are medians of six samples, in ns/op. Actual compilation and native
+routes are instrumented separately from timing.
+
+| Public workload | Tier | Preceding integration | Candidate |
+| --- | --- | ---: | ---: |
+| Uncaptured prefix, 16-char miss | Interpreter | 1,437.7 | 742.8 |
+| Uncaptured prefix, 16-char miss | C1 | 50.1 | 32.9 |
+| Uncaptured prefix, 16-char full hit | C1 | 69.5 | 75.0 |
+| Captured alternation, 4,096-char full hit, no end flags | C2 | 43,274.9 | 4,674.2 |
+| Captured alternation, 4,096-char full hit, end flags | C2 | 7,115.7 | 4,819.3 |
+| Captured alternation, 4,096-char repeated first-character miss, no end flags | C2 | 374.4 | 393.2 |
+| Captured alternation, 4,096-char repeated first-character miss, end flags | C2 | 57,726.6 | 423.5 |
+
+The prefix comparison contains 864 records, including 9/16/31/32/33/64-character
+boundaries, all four hit positions, captured controls and dense rejected starts
+at interpreter, C1 and C2. The alternation comparison contains 496 records at
+C2 and JNI fallback, including ordinary and dense starts, all four ordinary
+hit positions, both end-flag settings and 16/32/64/256/4,096-character cases.
+All controls observe the same captures and requested end flags.
+
+These improvements combine managed traversal, avoiding native preparation,
+and skipping Java end-flag replay. They do not make the Rust engine universally
+faster. The preceding end-flag alternation rows had promoted to Java; the new
+plan can retain native preparation without replay. Dense short searches without
+end flags still add roughly 14–25 ns in some rows, and the C1 short full hit
+loses about 8% against the preceding integration. The wider 32-character sibling
+cutoff and scalar traversal of unvalidated short alternation candidates were
+rejected after the complete boundary/dense corpus exposed larger losses.
+
+The previously measured production-feature Rust engine and native adapter
+costs of 40.2/41.2 microseconds for a long captured-alternation full hit remain
+relevant: this revision changes Java preparation/traversal, and the native
+library and HotSpot binary are unchanged. The large new full-hit gain comes
+from the managed plan. General alternation, repeated captures, low reuse,
+unsupported syntax and AArch64 throughput remain separate qualification limits.
+
+The selected release and fastdebug images each pass 109 regex/Scanner/String
+tests and 5,989 framework checks. All eight RustRegexTest configurations pass;
+enabled configurations compare 386,331 results/API states, and disabled compares
+386,329. Separate exact-state/reuse checks compare 576 tuples per tier and
+control: 9,216 tuples across interpreter, C1, C2 and JNI with original-source,
+disabled, preceding and candidate controls. Independent compilation logs
+identify the execution tiers and the C2 cold-lifetime facade. Debugger counters
+observe 6,000 intrinsic entries each in interpreter, C1 and C2, and zero JNI;
+disabling intrinsics produces zero intrinsic-runtime entries and 6,000 JNI
+entries. These instruments are separate from timing.
+
+The refreshed GC/latency matrix passes 72 workloads: six shapes, three
+operations and four VM configurations, with four workers and 65,536-character
+regions. Observed maxima are 3.20 ms reaching a safepoint, 13.9 ms GC wall time,
+and 65.1 ms steady-call time. These qualify the selected workloads and
+scheduling conditions; they are not matching timeouts or latency upper bounds.
+
+Nine alternating fresh-process pairs per control isolate preparation with
+identical patch-module loading. First use includes compilation, Matcher
+creation, find, captures and both end flags. Captured alternation at sixteen
+characters falls from 6.36 to 1.96 ms for a miss and 7.42 to 2.03 ms for an early
+hit; a 4,096-character full hit falls from 8.71 to 3.00 ms. A 4,096-character
+Unicode prefix full hit falls from 7.13 to 3.60 ms by avoiding the second parser.
+The uncaptured sixteen-character cases remain mixed: miss 1.26 to 1.73 ms,
+early hit 1.85 to 2.55 ms, late hit 2.13 to 2.42 ms, and full hit 1.82 to 1.63 ms.
+The sixteen-use hint does not establish a universal first-use improvement.
+These are regex-use timings, separate from whole-process wall time; original
+Pattern/Matcher sources patched into the same image do not provide an
+original-HotSpot process-startup baseline.
+
+Complete-image startup curves include 206 cases across seven shapes,
+4/8/16/32/64/256/257/4,096-character inputs and every fitting hit position.
+Five alternating process pairs per control produce 3,090 records. All public
+captures, results and end flags agree; together with the equal-module comparison,
+3,396 fresh-process records are retained. Values below are first-use medians in
+milliseconds. The original-source control uses patch-module loading.
+
+| First regex use | Original sources | Disabled | Candidate |
+| --- | ---: | ---: | ---: |
+| Uncaptured prefix, 16-char miss | 5.73 | 15.21 | 1.24 |
+| Captured email, 16-char early hit | 8.06 | 23.02 | 2.03 |
+| Captured alternation, 16-char early hit | 4.07 | 16.11 | 1.86 |
+| Captured alternation, 4,096-char full hit | 7.41 | 17.34 | 2.17 |
+| Unsupported lookahead, 16-char early hit | 4.65 | 17.01 | 17.18 |
+| Unicode prefix, 257-char full hit | 8.51 | 18.05 | 2.98 |
+| Unicode prefix, 4,096-char full hit | 5.55 | 16.95 | 2.39 |
+
+Candidate first use is faster in 169/206 cases against original sources and
+174/206 against disabled. The worst candidate/disabled ratio is 1.24; original
+module loading makes its process startup incomparable to an unmodified original
+HotSpot image. Unsupported and low-reuse use remain costs; the isolated short
+losses above are preserved rather than inferred away from these complete-image
+comparisons.
+
+The complete image qualification retains original-source, disabled, preceding
+and candidate controls, cold/first-use and warmed samples, capture/end-state
+checks, actual execution-tier and native-entry proofs, GC logs and allocation
+profiles. Source hashes, image hashes, commands, individual samples and rejected
+or failed evidence are preserved in the private Library archive accompanying
+PR #5. Java allocation profiles do not measure Rust/native memory. Named runtime
+revisions in the reports below describe earlier measurements.
+
 ## Long literal and digit runs
 
 The existing literal/digit plan can finish long runs when the VM is configured

@@ -1018,7 +1018,9 @@ public final class Pattern
         synchronized (engine) {
             Pattern fallback = engine.javaPattern();
             if (fallback == null) {
-                fallback = new Pattern(pattern, flags, false);
+                String prefix = engine.literalDigitsPrefix();
+                fallback = prefix == null ? new Pattern(pattern, flags, false)
+                        : new Pattern(pattern, flags, engine);
                 assert fallback.capturingGroupCount == capturingGroupCount;
                 engine.cacheJavaPattern(fallback);
             }
@@ -1596,6 +1598,101 @@ public final class Pattern
      */
     private Pattern(String p, int f) {
         this(p, f, true);
+    }
+
+    // Reuse validated preparation instead of parsing the same simple grammar again.
+    private Pattern(String p, int f, RustRegex engine) {
+        pattern = p;
+        flags = flags0 = f;
+        capturingGroupCount = engine.groupCount;
+        namedGroups = engine.namedGroups;
+        String prefix = engine.literalDigitsPrefix();
+        int[] literal = new int[prefix.length()];
+        for (int i = 0; i < literal.length; i++) literal[i] = prefix.charAt(i);
+        if (engine.shortLiteralPrefix() != null) {
+            byte[] shifts = new byte[128];
+            Arrays.fill(shifts, (byte) literal.length);
+            for (int i = 0; i < literal.length - 1; i++)
+                shifts[literal[i] & 127] = (byte) (literal.length - 1 - i);
+            root = new LiteralDigits(literal, shifts, true);
+            matchRoot = new LiteralDigits(literal, shifts, false);
+        } else {
+            Node digits = new BmpCharPropertyGreedy(new BmpCharProperty(PreparedAsciiDigit.INSTANCE), 1);
+            digits.next = lastAccept;
+            Node node = preparedCapture(digits, engine.literalDigitsGroup());
+            if (literal.length != 0) {
+                Node slice = new Slice(literal);
+                slice.next = node;
+                node = preparedCapture(slice, engine.literalPrefixGroup());
+            }
+            matchRoot = node;
+            root = BnM.optimize(node);
+            if (root == node) root = new Start(node);
+        }
+        javaCompiled = compiled = true;
+    }
+
+    private Node preparedCapture(Node body, int group) {
+        if (group == 0) return body;
+        int local = localCount++;
+        GroupHead head = new GroupHead(local);
+        GroupTail tail = new GroupTail(local, group);
+        tail.next = body.next;
+        body.next = tail;
+        head.next = body;
+        head.tail = tail;
+        return head;
+    }
+
+    private enum PreparedAsciiDigit implements BmpCharPredicate {
+        INSTANCE;
+        public boolean is(int c) { return c >= '0' && c <= '9'; }
+    }
+
+    private static final class LiteralDigits extends Node {
+        private final int[] literal;
+        private final byte[] shifts;
+        private final boolean search;
+        LiteralDigits(int[] literal, byte[] shifts, boolean search) {
+            this.literal = literal;
+            this.shifts = shifts;
+            this.search = search;
+        }
+        @Override
+        boolean match(Matcher matcher, int at, CharSequence input) {
+            int to = matcher.to, width = literal.length;
+            if (!search) {
+                for (int i = 0; i < width; i++) {
+                    if (at + i == to) { matcher.hitEnd = true; return false; }
+                    if (input.charAt(at + i) != literal[i]) return false;
+                }
+                return digits(matcher, at, input);
+            }
+            while (at < to - width) {
+                int last = input.charAt(at + width - 1);
+                if (last == literal[width - 1]) {
+                    int i = 0;
+                    while (i < width - 1 && input.charAt(at + i) == literal[i]) i++;
+                    if (i == width - 1 && digits(matcher, at, input)) return true;
+                }
+                at += shifts[last & 127];
+            }
+            matcher.hitEnd = true;
+            return false;
+        }
+        private boolean digits(Matcher matcher, int at, CharSequence input) {
+            int end = at + literal.length, begin = end;
+            while (end < matcher.to) {
+                char c = input.charAt(end);
+                if (c < '0' || c > '9') break;
+                end++;
+            }
+            matcher.hitEnd = end == matcher.to;
+            if (end == begin || matcher.acceptMode == Matcher.ENDANCHOR && end != matcher.to) return false;
+            matcher.first = matcher.groups[0] = at;
+            matcher.last = matcher.groups[1] = end;
+            return true;
+        }
     }
 
     private Pattern(String p, int f, boolean preferNative) {

@@ -48,6 +48,8 @@ public final class RustRegex {
     private final boolean contextSensitive;
     private final boolean finalTerminatorSensitive;
     private final FastPlan fastPlan;
+    private final int javaPlanWidth;
+    private volatile int shortSearches;
     private final boolean fixedWidth, shortAlternatives;
     private volatile Pattern javaPattern;
 
@@ -64,6 +66,7 @@ public final class RustRegex {
         contextSensitive = subset.contextSensitive;
         finalTerminatorSensitive = subset.finalTerminatorSensitive;
         this.fastPlan = fastPlan;
+        javaPlanWidth = shortLiteralPrefix() == null ? 8 : 16;
         fixedWidth = !subset.variableLength;
         shortAlternatives = shortLiteralAlternatives(subset.source);
         deferred = handle == 0 ? subset : null;
@@ -122,6 +125,8 @@ public final class RustRegex {
             FastPlan fast = (flags & Pattern.CASE_INSENSITIVE) == 0 ? FastDigits.parse(subset.source, subset.groups) : null;
             if (fast == null && (flags & Pattern.CASE_INSENSITIVE) == 0)
                 fast = FastEmail.parse(subset.source, subset.groups);
+            if (fast == null && JAVA_TIER == 2 && (flags & Pattern.CASE_INSENSITIVE) == 0)
+                fast = FastAlternationDigits.parse(subset.source, subset.groups);
             if (fast == null && JAVA_TIER == 2 && subset.groups == 1 &&
                     (subset.source.equals("[0-9]{3}-[0-9]{2}-[0-9]{4}") ||
                      subset.source.equals("\\d{3}-\\d{2}-\\d{4}"))) fast = FastFixedDigits.INSTANCE;
@@ -167,11 +172,27 @@ public final class RustRegex {
     }
 
     public boolean hasShortPlan() { return fastPlan != null; }
+    // Supply the validated literal/digit layout when a Java traversal is needed.
+    public String literalDigitsPrefix() { return fastPlan instanceof FastDigits digits ? digits.prefix : null; }
+    public int literalPrefixGroup() { return ((FastDigits) fastPlan).prefixGroup; }
+    public int literalDigitsGroup() { return ((FastDigits) fastPlan).digitsGroup; }
+    public String shortLiteralPrefix() {
+        return groupCount == 1 && fastPlan instanceof FastDigits digits
+                && digits.prefix.length() >= 4 && digits.prefix.length() <= 15 ? digits.prefix : null;
+    }
     public Pattern javaPattern() { return javaPattern; }
     public void cacheJavaPattern(Pattern pattern) { javaPattern = pattern; }
     public boolean prefersJava(int length) {
-        return fastPlan instanceof FastDigits digits && !digits.prefix.isEmpty() && length <= 8
-                || JAVA_TIER == 2 && fastPlan == null && fixedWidth && length <= 16;
+        if (fastPlan instanceof FastDigits digits && !digits.prefix.isEmpty() && length <= javaPlanWidth) {
+            if (length <= 8) return true;
+            // Reuse of this preparation must justify building a Java sibling.
+            // Once selected, Matcher caches the node and bypasses this hint entirely.
+            int searches = shortSearches;
+            if (searches >= 16) return true;
+            shortSearches = searches + 1;
+            return false;
+        }
+        return JAVA_TIER == 2 && fastPlan == null && fixedWidth && length <= 16;
     }
     public boolean prefersJavaEarlyMatch(int length) {
         return length <= 64 && fastPlan == null &&
@@ -199,7 +220,7 @@ public final class RustRegex {
         String tail = source.substring(end + 1);
         return tail.equals("[0-9]+") || tail.equals("\\d+");
     }
-    public boolean hasExactEndFlags() { return fastPlan instanceof FastDigits; }
+    public boolean hasExactEndFlags() { return fastPlan instanceof FastDigits || fastPlan instanceof FastAlternationDigits; }
     public boolean hasExactSuccessEndFlags() { return fastPlan instanceof FastEmail; }
     public boolean successHitsEnd(int[] state, int to) {
         // The bounded suffix tries another letter only below its maximum.
@@ -207,6 +228,17 @@ public final class RustRegex {
                 || state[1] - state[5] - 1 < 4);
     }
     public boolean anchoredMissHitsEnd(String input, int to, int start) {
+        if (fastPlan instanceof FastAlternationDigits alternatives) {
+            if (start == to) return true;
+            for (String prefix : alternatives.prefixes) {
+                if (input.charAt(start) != prefix.charAt(0)) continue;
+                int available = to - start;
+                for (int i = 0; i < Math.min(available, prefix.length()); i++)
+                    if (input.charAt(start + i) != prefix.charAt(i)) return false;
+                return available <= prefix.length();
+            }
+            return false;
+        }
         String prefix = ((FastDigits) fastPlan).prefix;
         int available = to - start;
         for (int i = 0; i < Math.min(available, prefix.length()); i++) {
@@ -226,6 +258,7 @@ public final class RustRegex {
         if (fastPlan != null) {
             int result = fastPlan.match(input, state, to, start, mode, to - from);
             if (result != -2) return result;
+            if (fastPlan instanceof FastAlternationDigits) start = state[state.length - 2];
         }
         return nativeMatch(input, state, from, to, start, mode, transparent, anchoring);
     }
@@ -404,6 +437,125 @@ public final class RustRegex {
         private int candidate(String input, int at, int to) {
             return to == input.length() ? input.indexOf(prefix, at)
                     : input.indexOf(prefix, at, to);
+        }
+    }
+
+
+    // Distinct first characters make these literal choices unambiguous.
+    // Every capture is mandatory, and only the trailing digit run repeats.
+    private record FastAlternationDigits(String[] prefixes, int prefixGroup,
+                                         int digitsGroup, int minimumWidth) implements FastPlan {
+        static FastAlternationDigits parse(String source, int groups) {
+            if (source.isEmpty() || source.charAt(0) != '(') return null;
+            boolean prefixCapture = !source.startsWith("(?:");
+            int begin = prefixCapture ? FastDigits.groupBody(source, 0) : 3;
+            if (begin < 0) return null;
+            int end = source.indexOf(')', begin);
+            if (end < 0 || end - begin > 128) return null;
+            String[] words = new String[8];
+            int count = 0, at = begin, minimum = Integer.MAX_VALUE;
+            for (int i = begin; i <= end; i++) {
+                if (i != end && source.charAt(i) != '|') {
+                    if (!FastDigits.literal(source.charAt(i))) return null;
+                    continue;
+                }
+                if (i == at || i - at > 16 || count == words.length) return null;
+                String word = source.substring(at, i);
+                for (int j = 0; j < count; j++)
+                    if (words[j].charAt(0) == word.charAt(0)) return null;
+                words[count++] = word;
+                minimum = Math.min(minimum, word.length());
+                at = i + 1;
+            }
+            if (count < 2) return null;
+            int body = end + 1, digitsGroup = 0, prefixGroup = prefixCapture ? 1 : 0;
+            boolean wrapped = body < source.length() && source.charAt(body) == '(';
+            if (wrapped) {
+                boolean capture = !source.startsWith("(?:", body);
+                body = capture ? FastDigits.groupBody(source, body) : body + 3;
+                if (body < 0) return null;
+                if (capture) digitsGroup = prefixGroup + 1;
+            }
+            if (source.startsWith("[0-9]+", body)) body += 6;
+            else if (source.startsWith("\\d+", body)) body += 3;
+            else return null;
+            if (wrapped) {
+                if (body >= source.length() || source.charAt(body) != ')') return null;
+                body++;
+            }
+            if (body != source.length() || groups != 1 + prefixGroup + (digitsGroup == 0 ? 0 : 1)) return null;
+            return new FastAlternationDigits(java.util.Arrays.copyOf(words, count), prefixGroup, digitsGroup, minimum);
+        }
+
+        @Override
+        public int match(String input, int[] state, int to, int start, int mode, int length) {
+            boolean scan = mode == 0 && length <= 16;
+            for (int at = start; at < to - minimumWidth;) {
+                char first = input.charAt(at);
+                for (String prefix : prefixes) {
+                    if (first != prefix.charAt(0)) continue;
+                    if (prefix.length() < to - at && input.startsWith(prefix, at)) {
+                        int digits = at + prefix.length(), end = digits;
+                        while (end < to) {
+                            char c = input.charAt(end);
+                            if (c < '0' || c > '9') break;
+                            end++;
+                        }
+                        if (end > digits) {
+                            if (mode == 2 && end != to) return 0;
+                            state[0] = at; state[1] = end;
+                            if (prefixGroup != 0) {
+                                state[2 * prefixGroup] = at;
+                                state[2 * prefixGroup + 1] = digits;
+                            }
+                            if (digitsGroup != 0) {
+                                state[2 * digitsGroup] = digits;
+                                state[2 * digitsGroup + 1] = end;
+                            }
+                            return 1;
+                        }
+                    }
+                    break;
+                }
+                if (!scan) {
+                    if (mode != 0) return 0;
+                    int candidate = to;
+                    for (String prefix : prefixes) {
+                        int bound = to - prefix.length();
+                        if (start + 1 < bound) {
+                            int next = input.indexOf(prefix.charAt(0), start + 1, bound);
+                            if (next >= 0) {
+                                candidate = Math.min(candidate, next);
+                                if (candidate == start + 1) break;
+                            }
+                        }
+                    }
+                    if (candidate != to) {
+                        if (to - candidate <= 32 && validCandidate(input, candidate, to)) {
+                            at = candidate;
+                            scan = true;
+                            continue;
+                        }
+                        state[state.length - 2] = candidate;
+                        return -2;
+                    }
+                    return 0;
+                }
+                at++;
+            }
+            return 0;
+        }
+
+        private boolean validCandidate(String input, int at, int to) {
+            char first = input.charAt(at);
+            for (String prefix : prefixes) {
+                if (first != prefix.charAt(0)) continue;
+                int digits = at + prefix.length();
+                if (digits >= to || !input.startsWith(prefix, at)) return false;
+                char c = input.charAt(digits);
+                return c >= '0' && c <= '9';
+            }
+            return false;
         }
     }
 
