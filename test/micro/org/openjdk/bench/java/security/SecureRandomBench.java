@@ -72,6 +72,26 @@ public class SecureRandomBench {
         return random.nextInt();
     }
 
+    // A request now and then: each one comes after the bytes that NativePRNG
+    // buffered for an earlier one have expired, which is after 100 ms.
+
+    @State(Scope.Thread)
+    public static class Idle {
+        @Setup(Level.Invocation)
+        public void idle() throws InterruptedException {
+            Thread.sleep(110);
+        }
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.SampleTime)
+    @Warmup(iterations = 1, time = 4)
+    @Measurement(iterations = 10, time = 4)
+    public byte[] nextBytes16Sparse(Idle idle) {
+        random.nextBytes(bytes16);
+        return bytes16;
+    }
+
     // The same with all the processors the JVM can use, to measure how
     // the threads wait for each other.
 

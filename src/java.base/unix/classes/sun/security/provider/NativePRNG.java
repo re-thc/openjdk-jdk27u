@@ -28,6 +28,7 @@ package sun.security.provider;
 import java.io.*;
 import java.net.*;
 import java.security.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 import sun.security.util.Debug;
 
@@ -361,15 +362,18 @@ public final class NativePRNG extends SecureRandomSpi {
 
         // A system call per request costs more than a small request itself,
         // so small requests take their bytes from a buffer that one call
-        // refills. Threads use one of several buffers, by thread id, so that
-        // they rarely contend. As before, the bytes in a buffer are used for
-        // at most MAX_BUFFER_TIME.
+        // refills. Threads use one of several buffers, by thread id, and
+        // don't wait for a buffer that another thread is using. There are
+        // several buffers per processor, so that threads running at the same
+        // time rarely share one. As before, the bytes in a buffer are used
+        // for at most MAX_BUFFER_TIME.
         private static final int BUFFER_SIZE = 256;
         private static final int MAX_BUFFERED_REQUEST = 64;
         private static final long MAX_BUFFER_TIME = 100_000_000L; // 100 ms
-        private static final int MAX_BUFFERS = 16;
+        private static final int MAX_BUFFERS = 64;
 
-        private static final class Buffer {
+        @SuppressWarnings("serial") // never serialized
+        private static final class Buffer extends ReentrantLock {
             final byte[] bytes = new byte[BUFFER_SIZE];
             // number of unused bytes at the end of bytes, guarded by this
             int remaining;
@@ -392,7 +396,7 @@ public final class NativePRNG extends SecureRandomSpi {
             this.seedIn = seedIn;
             this.seedUrandom = seedFile.getPath().equals(NAME_URANDOM);
             this.nextUrandom = nextUrandom;
-            int n = Math.min(Runtime.getRuntime().availableProcessors(),
+            int n = Math.min(4 * Runtime.getRuntime().availableProcessors(),
                     MAX_BUFFERS);
             buffers = new Buffer[Integer.highestOneBit(2 * n - 1)];
             for (int i = 0; i < buffers.length; i++) {
@@ -489,9 +493,14 @@ public final class NativePRNG extends SecureRandomSpi {
                 getRandomBytes(data, nextUrandom);
                 return;
             }
-            Buffer b = buffers[(int) Thread.currentThread().threadId()
-                    & (buffers.length - 1)];
-            synchronized (b) {
+            // spread consecutive thread ids over the buffers
+            long h = Thread.currentThread().threadId() * 0x9E3779B97F4A7C15L;
+            Buffer b = buffers[(int) (h >>> 32) & (buffers.length - 1)];
+            if (!b.tryLock()) {
+                getRandomBytes(data, nextUrandom);
+                return;
+            }
+            try {
                 long now = System.nanoTime();
                 if (b.remaining < len || now - b.refillTime > MAX_BUFFER_TIME) {
                     b.remaining = 0;
@@ -501,6 +510,8 @@ public final class NativePRNG extends SecureRandomSpi {
                 }
                 System.arraycopy(b.bytes, BUFFER_SIZE - b.remaining, data, 0, len);
                 b.remaining -= len;
+            } finally {
+                b.unlock();
             }
         }
 
