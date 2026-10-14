@@ -161,7 +161,17 @@ public class TestAArch64SVEMulVConstants {
     private void run(RunInfo info) {
         int cases = LENGTHS.length * OFFSETS.length * FACTORS.length;
         if (info.isWarmUp()) {
-            check(iteration++ % cases);
+            // Profile a long loop for the wide-vector matching assertions.
+            // Check short lengths, offsets and all boundary factors after compilation.
+            int factor = FACTORS[iteration++ % FACTORS.length];
+            testByte(0, 3000, (byte) factor);
+            testShort(0, 3000, (short) factor);
+            testInt(0, 3000, factor);
+            for (int i = 0; i < 10; i++) {
+                testSingleUseBroadcast(0, factor);
+                testMultiplyAdd(0, factor);
+                testMultiplySubtract(0, factor);
+            }
         } else {
             for (int i = 0; i < cases; i++) {
                 check(i);
