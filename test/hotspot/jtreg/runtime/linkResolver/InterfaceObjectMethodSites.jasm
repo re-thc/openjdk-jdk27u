@@ -1,0 +1,91 @@
+/*
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+// This jasm file implements invokeinterface call sites of java.lang.Object
+// methods like the following java code. The receivers are declared as Object
+// here so that objects of classes that do not implement the interface can be
+// passed in, which javac would reject:
+//
+//     static int hashCodeOf(Runnable r)             { return r.hashCode(); }
+//     static String toStringOf(Runnable r)          { return r.toString(); }
+//     static boolean equalsOf(Runnable r, Object o) { return r.equals(o); }
+//     static Class<?> getClassOf(Runnable r)        { return r.getClass(); }
+//     static int firstHashCodeOf(Supplier<?> s)     { return s.hashCode(); }
+//
+// InterfaceObjectMethodBadHash overrides hashCode() with a method that is not
+// public, which javac would reject as well.
+
+super public class InterfaceObjectMethodSites version 60:0 {
+
+    public static Method hashCodeOf:"(Ljava/lang/Object;)I" stack 1 locals 1 {
+        aload_0;
+        invokeinterface    InterfaceMethod java/lang/Runnable.hashCode:"()I",  1;
+        ireturn;
+    }
+
+    public static Method toStringOf:"(Ljava/lang/Object;)Ljava/lang/String;" stack 1 locals 1 {
+        aload_0;
+        invokeinterface    InterfaceMethod java/lang/Runnable.toString:"()Ljava/lang/String;",  1;
+        areturn;
+    }
+
+    public static Method equalsOf:"(Ljava/lang/Object;Ljava/lang/Object;)Z" stack 2 locals 2 {
+        aload_0;
+        aload_1;
+        invokeinterface    InterfaceMethod java/lang/Runnable.equals:"(Ljava/lang/Object;)Z",  2;
+        ireturn;
+    }
+
+    public static Method getClassOf:"(Ljava/lang/Object;)Ljava/lang/Class;" stack 1 locals 1 {
+        aload_0;
+        invokeinterface    InterfaceMethod java/lang/Runnable.getClass:"()Ljava/lang/Class;",  1;
+        areturn;
+    }
+
+    public static Method firstHashCodeOf:"(Ljava/lang/Object;)I" stack 1 locals 1 {
+        aload_0;
+        invokeinterface    InterfaceMethod java/util/function/Supplier.hashCode:"()I",  1;
+        ireturn;
+    }
+
+} // end Class InterfaceObjectMethodSites
+
+
+super public class InterfaceObjectMethodBadHash implements java/lang/Runnable version 60:0 {
+
+    public Method "<init>":"()V" stack 1 locals 1 {
+        aload_0;
+        invokespecial    Method java/lang/Object."<init>":"()V";
+        return;
+    }
+
+    public Method run:"()V" stack 0 locals 1 {
+        return;
+    }
+
+    Method hashCode:"()I" stack 1 locals 1 {
+        iconst_0;
+        ireturn;
+    }
+
+} // end Class InterfaceObjectMethodBadHash

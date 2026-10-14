@@ -202,15 +202,24 @@ void ConstantPoolCache::set_direct_or_vtable_call(Bytecodes::Code invoke_code,
       // Workaround for the case where we encounter an invokeinterface, but we
       // should really have an _invokevirtual since the resolved method is a
       // virtual method in java.lang.Object. This is a corner case in the spec
-      // but is presumably legal. javac does not generate this code.
+      // but is presumably legal. javac generates this code when it invokes a
+      // method of java.lang.Object on a receiver of interface type.
       //
-      // We do not set bytecode_1() to _invokeinterface, because that is the
-      // bytecode # used by the interpreter to see if it is resolved.  In this
-      // case, the method gets reresolved with caller for each interface call
-      // because the actual selected method may not be public.
+      // The link resolver checks the receiver on every such call: its class
+      // must implement the resolved interface, and the actual selected method
+      // must be public. If the template interpreter makes these checks itself,
+      // we set bytecode_1() to _invokeinterface, because that is the bytecode #
+      // used by the interpreter to see if it is resolved. Otherwise we do not,
+      // and the method gets reresolved with caller for each interface call.
       //
       // We set bytecode_2() to _invokevirtual.
       // See also interpreterRuntime.cpp. (8/25/2000)
+      if (VM_Version::supports_fast_invokeinterface_object_checks()) {
+        // method_if_resolved() returns the method of an entry that bytecode_1()
+        // marks as resolved, and a vtable call does not store one otherwise.
+        method_entry->set_method(method());
+        method_entry->set_bytecode1(invoke_code);
+      }
     } else {
       assert(invoke_code == Bytecodes::_invokevirtual ||
              (invoke_code == Bytecodes::_invokeinterface &&

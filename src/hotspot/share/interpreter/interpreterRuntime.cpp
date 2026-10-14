@@ -623,6 +623,19 @@ JRT_ENTRY(void, InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose(Ja
   THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
 JRT_END
 
+// Same exception as LinkResolver::runtime_resolve_interface_method throws
+// when the selected method is not public.
+JRT_ENTRY(void, InterpreterRuntime::throw_IllegalAccessErrorVerbose(JavaThread* current,
+                                                                    Klass* recvKlass,
+                                                                    Method* selectedMethod))
+  ResourceMark rm(current);
+  stringStream ss;
+  ss.print("'");
+  Method::print_external_name(&ss, recvKlass, selectedMethod->name(), selectedMethod->signature());
+  ss.print("'");
+  THROW_MSG(vmSymbols::java_lang_IllegalAccessError(), ss.as_string());
+JRT_END
+
 JRT_ENTRY(void, InterpreterRuntime::throw_NullPointerException(JavaThread* current))
   THROW(vmSymbols::java_lang_NullPointerException());
 JRT_END

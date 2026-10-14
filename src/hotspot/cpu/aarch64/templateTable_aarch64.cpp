@@ -2437,7 +2437,7 @@ void TemplateTable::load_resolved_method_entry_interface(Register cache,
                                                          Register flags) {
   // setup registers
   const Register index = method_or_table_index;
-  assert_different_registers(method_or_table_index, cache, flags);
+  assert_different_registers(klass, method_or_table_index, cache, flags);
 
   // determine constant pool cache field offsets
   resolve_cache_and_index_for_method(f1_byte, cache, index);
@@ -2446,11 +2446,26 @@ void TemplateTable::load_resolved_method_entry_interface(Register cache,
   // Invokeinterface can behave in different ways:
   // If calling a method from java.lang.Object, the forced virtual flag is true so the invocation will
   // behave like an invokevirtual call. The state of the virtual final flag will determine whether a method or
-  // vtable index is placed in the register.
+  // vtable index is placed in the register. The klass register is populated with REFC.
   // Otherwise, the registers will be populated with the klass and method.
 
   Label NotVirtual; Label NotVFinal; Label Done;
   __ tbz(flags, ResolvedMethodEntry::is_forced_virtual_shift, NotVirtual);
+
+  // The receiver is checked against REFC, which is not cached in the entry. It is the class
+  // referenced by the entry's InterfaceMethodref, and is resolved if the entry is.
+  __ get_constant_pool(klass);
+  __ load_unsigned_short(rscratch2, Address(cache, in_bytes(ResolvedMethodEntry::constant_pool_index_offset())));
+  __ lea(rscratch2, Address(klass, rscratch2, Address::lsl(LogBytesPerWord)));
+  __ ldrh(rscratch2, Address(rscratch2, sizeof(ConstantPool)));
+  __ load_resolved_klass_at_offset(klass, rscratch2, klass, rscratch1);
+#ifdef ASSERT
+  Label L_refc_resolved;
+  __ cbnz(klass, L_refc_resolved);
+  __ stop("REFC of a resolved invokeinterface entry must be resolved");
+  __ bind(L_refc_resolved);
+#endif
+
   __ tbz(flags, ResolvedMethodEntry::is_vfinal_shift, NotVFinal);
   __ ldr(method_or_table_index, Address(cache, in_bytes(ResolvedMethodEntry::method_offset())));
   __ b(Done);
@@ -3449,15 +3464,49 @@ void TemplateTable::invokeinterface(int byte_no) {
   // First check for Object case, then private interface method,
   // then regular interface method.
 
+  Label no_such_interface;
+
   // Special case of invokeinterface called for virtual method of
   // java.lang.Object.  See cpCache.cpp for details.
   Label notObjectMethod;
   __ tbz(r3, ResolvedMethodEntry::is_forced_virtual_shift, notObjectMethod);
 
-  invokevirtual_helper(rmethod, r2, r3);
-  __ bind(notObjectMethod);
+  // Get receiver klass into r4 - also a null check
+  __ load_klass(r4, r2);
 
-  Label no_such_interface;
+  // Receiver subtype check against REFC.
+  Label objectSubtype;
+  __ check_klass_subtype(r4, r0, r13, objectSubtype);
+  // If we get here the typecheck failed
+  __ mov(r3, r4); // shuffle receiver class for exception use
+  __ b(no_such_interface);
+  __ bind(objectSubtype);
+
+  // Test for an invoke of a final method
+  Label objectNotFinal;
+  __ tbz(r3, ResolvedMethodEntry::is_vfinal_shift, objectNotFinal);
+
+  // do the call - rmethod is actually the method to call
+  __ profile_final_call(r0);
+  __ profile_arguments_type(r0, rmethod, r13, true);
+  __ jump_from_interpreted(rmethod, r0);
+
+  __ bind(objectNotFinal);
+
+  // profile this call
+  __ profile_virtual_call(r4, rlocals);
+  // get target Method & entry point
+  __ lookup_virtual_method(r4, rmethod, rmethod);
+
+  // The selected method must be public
+  Label illegal_access;
+  __ ldrh(rscratch1, Address(rmethod, Method::access_flags_offset()));
+  __ tbz(rscratch1, exact_log2(JVM_ACC_PUBLIC), illegal_access);
+
+  __ profile_arguments_type(r3, rmethod, r13, true);
+  __ jump_from_interpreted(rmethod, r3);
+
+  __ bind(notObjectMethod);
 
   // Check for private method invocation - indicated by vfinal
   Label notVFinal;
@@ -3548,6 +3597,16 @@ void TemplateTable::invokeinterface(int byte_no) {
   // Pass arguments for generating a verbose error message.
   __ call_VM(noreg, CAST_FROM_FN_PTR(address,
                    InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose), r3, r0);
+  // the call_VM checks for exception, so we should never return here.
+  __ should_not_reach_here();
+
+  __ bind(illegal_access);
+  // throw exception
+  __ restore_bcp();      // bcp must be correct for exception handler   (was destroyed)
+  __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
+  // Pass arguments for generating a verbose error message.
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                   InterpreterRuntime::throw_IllegalAccessErrorVerbose), r4, rmethod);
   // the call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
   return;
