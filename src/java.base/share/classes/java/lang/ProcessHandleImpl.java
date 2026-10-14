@@ -84,7 +84,9 @@ final class ProcessHandleImpl implements ProcessHandle {
     /**
      * The thread pool of "process reaper" daemon threads.
      */
-    private static final Executor processReaperExecutor = initReaper();
+    private static class ProcessReaper {
+        static final Executor EXECUTOR = initReaper();
+    }
 
     private static Executor initReaper() {
         // Initialize ThreadLocalRandom now to avoid using the smaller stack
@@ -137,7 +139,7 @@ final class ProcessHandleImpl implements ProcessHandle {
                 // newCompletion has just been installed successfully
                 completion = newCompletion;
                 // spawn a thread to wait for and deliver the exit value
-                processReaperExecutor.execute(new Runnable() {
+                ProcessReaper.EXECUTOR.execute(new Runnable() {
                     // Use inner class to avoid lambda stack overhead
                     public void run() {
                         Thread t = Thread.currentThread();

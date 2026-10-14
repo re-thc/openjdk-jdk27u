@@ -1196,11 +1196,15 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
      * Returns an action to close the given file descriptor.
      */
     private static Runnable closerFor(FileDescriptor fd) {
-        return () -> {
-            try {
-                nd.close(fd);
-            } catch (IOException ioe) {
-                throw new UncheckedIOException(ioe);
+        // Not a lambda: the first one spins a class, which is slow at startup
+        return new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    nd.close(fd);
+                } catch (IOException ioe) {
+                    throw new UncheckedIOException(ioe);
+                }
             }
         };
     }
