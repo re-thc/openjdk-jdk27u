@@ -27,8 +27,8 @@
  * @summary Read signed data in one or more PKCS7 objects from individual files,
  * verify SignerInfos and certificate chain.
  * @modules java.base/sun.security.pkcs
- * @run main/othervm PKCS7VerifyTest PKCS7TEST.DSA.base64
- * @run main/othervm PKCS7VerifyTest PKCS7TEST.DSA.base64 PKCS7TEST.SF
+ * @run main/othervm PKCS7VerifyTest PKCS7TEST.EC.base64
+ * @run main/othervm PKCS7VerifyTest PKCS7TEST.EC.base64 PKCS7TEST.SF
  */
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -69,8 +69,8 @@ public class PKCS7VerifyTest {
         PKCS7 pkcs7;
         byte[] data;
 
-        // to avoid attaching binary DSA file, the DSA file was encoded
-        // in Base64, decode encoded Base64 DSA file below
+        // to avoid attaching binary EC file, the EC file was encoded
+        // in Base64, decode encoded Base64 EC file below
         byte[] base64Bytes = Files.readAllBytes(Paths.get(FILEPATH + args[0]));
         pkcs7 = new PKCS7(new ByteArrayInputStream(
                 Base64.getMimeDecoder().decode(base64Bytes)));
