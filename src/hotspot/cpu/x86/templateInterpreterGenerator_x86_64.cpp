@@ -293,7 +293,10 @@ address TemplateInterpreterGenerator::generate_stringzilla_entry(AbstractInterpr
   const Register length = c_rarg1;
   const Register tgt = c_rarg2;
   const Register tgt_length = c_rarg3;
-  const bool whole_array = kind == Interpreter::stringzilla_indexOfLatin1;
+  const bool utf16 = kind == Interpreter::stringzilla_indexOfUTF16 ||
+                     kind == Interpreter::stringzilla_indexOfUTF16Latin1;
+  const bool mixed = kind == Interpreter::stringzilla_indexOfUTF16Latin1;
+  const bool whole_array = kind == Interpreter::stringzilla_indexOfLatin1 || utf16;
   if (whole_array) {
     // Before native bootstrap, or beyond the leaf work limit, execute Java.
     __ movptr(rax, ExternalAddress(StringZilla::kernels_address()));
@@ -307,10 +310,21 @@ address TemplateInterpreterGenerator::generate_stringzilla_entry(AbstractInterpr
     __ jcc(Assembler::zero, slow_path);
     __ movl(length, Address(src, arrayOopDesc::length_offset_in_bytes()));
     __ movl(tgt_length, Address(tgt, arrayOopDesc::length_offset_in_bytes()));
+    if (utf16) {
+      __ movl(rax, length);
+      if (!mixed) __ orl(rax, tgt_length);
+      __ testl(rax, 1);
+      __ jcc(Assembler::notZero, slow_path);
+    }
+    if (mixed) {
+      __ cmpl(tgt_length, StringZilla::max_mixed_needle);
+      __ jcc(Assembler::above, slow_path);
+    }
     __ cmpl(length, StringZilla::max_bytes);
     __ jcc(Assembler::above, slow_path);
     __ movl(rax, length);
     __ imulq(rax, tgt_length);
+    if (mixed) __ shlq(rax, 1);
     __ cmpq(rax, StringZilla::max_work);
     __ jcc(Assembler::above, slow_path);
     __ addptr(src, arrayOopDesc::base_offset_in_bytes(T_BYTE));
@@ -327,6 +341,7 @@ address TemplateInterpreterGenerator::generate_stringzilla_entry(AbstractInterpr
   }
   __ super_call_VM_leaf(StringZilla::entry(AbstractInterpreter::method_intrinsic(kind)),
                         src, length, tgt, tgt_length);
+  if (utf16) __ sarl(rax, 1);
   __ pop(rdi);
   __ mov(rsp, r13);
   __ jmp(rdi);

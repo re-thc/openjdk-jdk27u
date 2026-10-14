@@ -217,6 +217,8 @@ void TemplateInterpreterGenerator::generate_all() {
 #if defined(AMD64) || defined(AARCH64)
   method_entry(stringzilla_equals)
   method_entry(stringzilla_indexOfLatin1)
+  method_entry(stringzilla_indexOfUTF16)
+  method_entry(stringzilla_indexOfUTF16Latin1)
 #endif
 
 #undef method_entry
@@ -498,6 +500,8 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
     entry_point = generate_stringzilla_char_entry(kind); break;
   case Interpreter::stringzilla_findUTF16Latin1:
   case Interpreter::stringzilla_indexOfLatin1:
+  case Interpreter::stringzilla_indexOfUTF16:
+  case Interpreter::stringzilla_indexOfUTF16Latin1:
   case Interpreter::stringzilla_equalsRange:
   case Interpreter::stringzilla_rfindUTF16Latin1:
   case Interpreter::stringzilla_findLatin1:

@@ -1201,21 +1201,22 @@ final class StringUTF16 {
 
         checkIndex(i, src);
 
-        // Immediate short matches need no backend or compiler-tier dispatch.
-        if (tgtCount <= 8 && StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount)) {
-            return fromIndex;
-        }
         int searchLength = fromIndex + tgtCount;
-        if (searchLength >= (StringZilla.MIN_BYTES >> 1) && StringZilla.ENABLED
-                && StringZilla.useReverseUTF16(searchLength, tgtCount)) {
-            int result = StringZilla.compilerTier() == StringZilla.C1
-                    ? StringZilla.rfindUTF16C1(src, searchLength, tgt, tgtCount)
-                    : StringZilla.rfindUTF16(src, 0, searchLength << 1, tgt, tgtCount << 1);
-            if (result == StringZilla.FALLBACK) {
-                result = StringZilla.searchLarge(src, 0, searchLength << 1, tgt, tgtCount << 1, 1, true);
+        if (searchLength >= (StringZilla.MIN_BYTES >> 1) && StringZilla.ENABLED) {
+            // Probe before tier dispatch, keeping short interpreted ranges in Java.
+            if (tgtCount <= 8 && StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount)) {
+                return fromIndex;
             }
-            if (result != StringZilla.FALLBACK) {
-                return result < 0 ? -1 : result >> 1;
+            if (StringZilla.useReverseUTF16(searchLength, tgtCount)) {
+                int result = StringZilla.compilerTier() == StringZilla.C1
+                        ? StringZilla.rfindUTF16C1(src, searchLength, tgt, tgtCount)
+                        : StringZilla.rfindUTF16(src, 0, searchLength << 1, tgt, tgtCount << 1);
+                if (result == StringZilla.FALLBACK) {
+                    result = StringZilla.searchLarge(src, 0, searchLength << 1, tgt, tgtCount << 1, 1, true);
+                }
+                if (result != StringZilla.FALLBACK) {
+                    return result < 0 ? -1 : result >> 1;
+                }
             }
         }
     startSearchForLastChar:

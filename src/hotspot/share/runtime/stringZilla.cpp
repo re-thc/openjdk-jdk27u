@@ -121,11 +121,13 @@ address StringZilla::entry(vmIntrinsics::ID id) {
     case vmIntrinsics::_stringzillaRfindCharLatin1: return CAST_FROM_FN_PTR(address, rfind_char_latin1);
     case vmIntrinsics::_stringzillaRfindCharUTF16: return CAST_FROM_FN_PTR(address, rfind_char_utf16);
 
+    case vmIntrinsics::_indexOfUL:
     case vmIntrinsics::_stringzillaFindUTF16Latin1: return CAST_FROM_FN_PTR(address, find_utf16_latin1);
     case vmIntrinsics::_stringzillaRfindUTF16Latin1: return CAST_FROM_FN_PTR(address, rfind_utf16_latin1);
 
     case vmIntrinsics::_indexOfL:
     case vmIntrinsics::_stringzillaFindLatin1: return CAST_FROM_FN_PTR(address, find_latin1);
+    case vmIntrinsics::_indexOfU:
     case vmIntrinsics::_stringzillaFindUTF16: return CAST_FROM_FN_PTR(address, find_utf16);
     case vmIntrinsics::_stringzillaRfindLatin1: return CAST_FROM_FN_PTR(address, rfind_latin1);
     case vmIntrinsics::_stringzillaRfindUTF16: return CAST_FROM_FN_PTR(address, rfind_utf16);

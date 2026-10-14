@@ -136,6 +136,12 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_indexOfL:
         if (UseStringZillaIntrinsics) return stringzilla_indexOfLatin1;
         break;
+      case vmIntrinsics::_indexOfU:
+        if (UseStringZillaIntrinsics) return stringzilla_indexOfUTF16;
+        break;
+      case vmIntrinsics::_indexOfUL:
+        if (UseStringZillaIntrinsics) return stringzilla_indexOfUTF16Latin1;
+        break;
       case vmIntrinsics::_stringzillaFindLatin1: return stringzilla_findLatin1;
       case vmIntrinsics::_stringzillaFindUTF16: return stringzilla_findUTF16;
       case vmIntrinsics::_stringzillaRfindLatin1: return stringzilla_rfindLatin1;
@@ -240,6 +246,8 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case stringzilla_rfindCharUTF16: return vmIntrinsics::_stringzillaRfindCharUTF16;
   case stringzilla_equals: return vmIntrinsics::_equalsL;
   case stringzilla_indexOfLatin1: return vmIntrinsics::_indexOfL;
+  case stringzilla_indexOfUTF16: return vmIntrinsics::_indexOfU;
+  case stringzilla_indexOfUTF16Latin1: return vmIntrinsics::_indexOfUL;
   case stringzilla_findLatin1: return vmIntrinsics::_stringzillaFindLatin1;
   case stringzilla_findUTF16: return vmIntrinsics::_stringzillaFindUTF16;
   case stringzilla_rfindLatin1: return vmIntrinsics::_stringzillaRfindLatin1;
@@ -359,6 +367,8 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case stringzilla_rfindCharUTF16: tty->print("stringzilla_rfindCharUTF16"); break;
     case stringzilla_equals: tty->print("stringzilla_equals"); break;
     case stringzilla_indexOfLatin1: tty->print("stringzilla_indexOfLatin1"); break;
+    case stringzilla_indexOfUTF16: tty->print("stringzilla_indexOfUTF16"); break;
+    case stringzilla_indexOfUTF16Latin1: tty->print("stringzilla_indexOfUTF16Latin1"); break;
     case stringzilla_findLatin1: tty->print("stringzilla_findLatin1"); break;
     case stringzilla_findUTF16: tty->print("stringzilla_findUTF16"); break;
     case stringzilla_rfindLatin1: tty->print("stringzilla_rfindLatin1"); break;

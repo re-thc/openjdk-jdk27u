@@ -1104,7 +1104,10 @@ address TemplateInterpreterGenerator::generate_stringzilla_entry(AbstractInterpr
   const Register length = c_rarg1;
   const Register tgt = c_rarg2;
   const Register tgt_length = c_rarg3;
-  const bool whole_array = kind == Interpreter::stringzilla_indexOfLatin1;
+  const bool utf16 = kind == Interpreter::stringzilla_indexOfUTF16 ||
+                     kind == Interpreter::stringzilla_indexOfUTF16Latin1;
+  const bool mixed = kind == Interpreter::stringzilla_indexOfUTF16Latin1;
+  const bool whole_array = kind == Interpreter::stringzilla_indexOfLatin1 || utf16;
   if (whole_array) {
     // Acquire the callback publication before reading its immutable table.
     __ lea(rscratch1, ExternalAddress(StringZilla::kernels_address()));
@@ -1116,9 +1119,19 @@ address TemplateInterpreterGenerator::generate_stringzilla_entry(AbstractInterpr
     __ cbz(tgt, slow_path);
     __ ldrw(length, Address(src, arrayOopDesc::length_offset_in_bytes()));
     __ ldrw(tgt_length, Address(tgt, arrayOopDesc::length_offset_in_bytes()));
+    if (utf16) {
+      __ movw(rscratch1, length);
+      if (!mixed) __ orrw(rscratch1, rscratch1, tgt_length);
+      __ tbnz(rscratch1, 0, slow_path);
+    }
+    if (mixed) {
+      __ cmpw(tgt_length, StringZilla::max_mixed_needle);
+      __ br(Assembler::HI, slow_path);
+    }
     __ cmpw(length, StringZilla::max_bytes);
     __ br(Assembler::HI, slow_path);
     __ mul(rscratch1, length, tgt_length);
+    if (mixed) __ lsl(rscratch1, rscratch1, 1);
     __ mov(rscratch2, StringZilla::max_work);
     __ cmp(rscratch1, rscratch2);
     __ br(Assembler::HI, slow_path);
@@ -1141,6 +1154,7 @@ address TemplateInterpreterGenerator::generate_stringzilla_entry(AbstractInterpr
   __ super_call_VM_leaf(StringZilla::entry(AbstractInterpreter::method_intrinsic(kind)),
                         src, length, tgt, tgt_length);
   __ ldp(r29, r30, Address(__ post(sp, 2 * wordSize)));
+  if (utf16) __ asrw(r0, r0, 1);
   __ ret(lr);
   __ bind(slow_path);
   __ jump_to_entry(Interpreter::entry_for_kind(whole_array ? Interpreter::zerolocals : Interpreter::native));

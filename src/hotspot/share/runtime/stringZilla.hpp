@@ -32,6 +32,7 @@ class StringZilla : AllStatic {
  public:
   static constexpr int max_bytes = JVM_STRINGZILLA_MAX_BYTES;
   static constexpr int max_work = JVM_STRINGZILLA_MAX_WORK;
+  static constexpr int max_mixed_needle = 64;
   static address kernels_address();
   static void register_kernels(const void* table);
   static int capabilities();

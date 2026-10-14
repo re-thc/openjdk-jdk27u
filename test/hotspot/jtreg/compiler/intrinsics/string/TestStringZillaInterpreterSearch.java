@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @summary Interpreter Latin-1 forward search preserves small inputs and bounded Java fallback
+ * @summary Interpreter forward search preserves coder semantics, small inputs and bounded Java fallback
  * @requires (os.arch == "amd64" | os.arch == "x86_64" | os.arch == "aarch64")
  * @run main/othervm -Xint TestStringZillaInterpreterSearch
  * @run main/othervm -Xint -XX:-UseStringZillaIntrinsics TestStringZillaInterpreterSearch
- * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_indexOfL,_stringzillaFindLatin1 TestStringZillaInterpreterSearch
+ * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_indexOfL,_indexOfU,_indexOfUL,_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaFindUTF16Latin1 TestStringZillaInterpreterSearch
  * @run main/othervm -Xint -XX:+UnlockExperimentalVMOptions -XX:-UseFourByteObjectHeaders TestStringZillaInterpreterSearch
  * @run main/othervm -Xint -XX:+UnlockExperimentalVMOptions -XX:-UseCompactObjectHeaders TestStringZillaInterpreterSearch
  */
@@ -57,28 +57,32 @@ public class TestStringZillaInterpreterSearch {
 
     public static void main(String[] args) {
         Random random = new Random(729041);
-        for (int trial = 0; trial < 2000; trial++) {
-            char[] source = new char[random.nextInt(1025)];
-            char[] target = new char[random.nextInt(65)];
-            for (int i = 0; i < source.length; i++) source[i] = (char)random.nextInt(256);
-            for (int i = 0; i < target.length; i++) target[i] = (char)random.nextInt(256);
-            if (target.length <= source.length && random.nextBoolean()) {
-                int start = random.nextInt(source.length - target.length + 1);
-                System.arraycopy(target, 0, source, start, target.length);
-            }
-            check(source, target);
-        }
-        for (int length : new int[]{32768, 65535, 65536, 65537}) {
-            for (int count : new int[]{0, 1, 4, 64, 65, 129}) {
-                char[] source = new char[length];
-                char[] target = new char[count];
-                Arrays.fill(source, 'a');
-                Arrays.fill(target, 'a');
-                if (count > 0) target[0] = 'b';
+        for (int coder = 0; coder < 3; coder++) {
+            int sourceBase = coder == 0 ? 0 : 0x400;
+            int targetBase = coder == 1 ? 0x400 : 0;
+            for (int trial = 0; trial < 2000; trial++) {
+                char[] source = new char[random.nextInt(1025)];
+                char[] target = new char[random.nextInt(65)];
+                for (int i = 0; i < source.length; i++) source[i] = (char)(sourceBase + random.nextInt(256));
+                for (int i = 0; i < target.length; i++) target[i] = (char)(targetBase + random.nextInt(256));
+                if (target.length <= source.length && random.nextBoolean()) {
+                    int start = random.nextInt(source.length - target.length + 1);
+                    System.arraycopy(target, 0, source, start, target.length);
+                }
                 check(source, target);
-                if (count > 0) {
-                    System.arraycopy(target, 0, source, length - count, count);
+            }
+            for (int length : new int[]{32768, 65535, 65536, 65537}) {
+                for (int count : new int[]{0, 1, 4, 64, 65, 129}) {
+                    char[] source = new char[length];
+                    char[] target = new char[count];
+                    Arrays.fill(source, (char)(sourceBase + 'a'));
+                    Arrays.fill(target, (char)(targetBase + 'a'));
+                    if (count > 0) target[0] = (char)(targetBase + 'b');
                     check(source, target);
+                    if (count > 0) {
+                        System.arraycopy(target, 0, source, length - count, count);
+                        check(source, target);
+                    }
                 }
             }
         }
