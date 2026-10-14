@@ -235,6 +235,10 @@ public final class UTF_8 extends Unicode {
             sp += n;
             dp += n;
 
+            if (sp >= sl) {
+                return xflow(src, sp, sl, dst, dp, 0);
+            }
+
             // Keep the ASCII intrinsic and reject invalid leading bytes before bulk conversion.
             n = SimdUTF.isEligible(sl - sp)
                     && (long)(dl - dp) * 3 >= sl - sp
