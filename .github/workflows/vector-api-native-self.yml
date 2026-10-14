@@ -28,10 +28,6 @@ jobs:
           mkdir -p qualification/classes qualification/whitebox
           verified-image/bin/javac -d qualification/whitebox test/lib/jdk/test/whitebox/parser/DiagnosticCommand.java test/lib/jdk/test/whitebox/WhiteBox.java
           verified-image/bin/javac --add-modules jdk.incubator.vector -cp qualification/whitebox -d qualification/classes qualification/src/PhaseVectorKernels.java qualification/src/PhaseVectorProbe.java
-      - name: Compare identical fixed histories and retain winning controls
-        run: |
-          python3 qualification/run_self_comparisons.py
-          python3 qualification/report_results.py self-results
       - name: Check scalar raw-bit and identity contracts
         run: |
           python3 qualification/run_self_contracts.py

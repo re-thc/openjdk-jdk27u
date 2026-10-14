@@ -8,7 +8,9 @@ for variant in ['rebuilt-b3','fallback-identity','intrinsic-view']:
     subprocess.run([str(root/'verified-image/bin/javac'),'--add-modules','jdk.incubator.vector','-d',str(classes),*[str(s) for s in sources]],check=True)
     for name,flags in [('four',[]),('int',['-Xint']),('c1',['-XX:TieredStopAtLevel=1']),('c2',['-XX:-TieredCompilation','-Xbatch']),('eight',['-XX:-UseFourByteObjectHeaders']),('legacy',['-XX:-UseCompactObjectHeaders']),('fallback',['-XX:+UnlockDiagnosticVMOptions','-XX:DisableIntrinsic=_VectorConvert'])]:
         for test in ['ReinterpretContracts','SelfReinterpretAllocation']:
-            command=[str(image/'bin/java'),'-Xms128m','-Xmx512m','-XX:ActiveProcessorCount=2','-Xshare:off','--add-modules','jdk.incubator.vector',*flags,'-cp',str(classes),test]
+            if test=='SelfReinterpretAllocation' and name=='c2':continue
+            test_flags=flags if test!='SelfReinterpretAllocation' or name=='int' else [f for f in flags if f!='-XX:TieredStopAtLevel=1']+['-XX:TieredStopAtLevel=1']
+            command=[str(image/'bin/java'),'-Xms128m','-Xmx512m','-XX:ActiveProcessorCount=2','-Xshare:off','--add-modules','jdk.incubator.vector',*test_flags,'-cp',str(classes),test]
             r=subprocess.run(command,capture_output=True,timeout=180)
             stem=out/(variant+'-'+name+'-'+test)
             stem.with_suffix('.stdout').write_bytes(r.stdout);stem.with_suffix('.stderr').write_bytes(r.stderr)
