@@ -47,7 +47,7 @@ on:
         type: boolean
         default: false
       integer-benchmarks:
-        description: 'Measure interpreted integer conversions on native Linux AArch64'
+        description: 'Measure integer conversions on selected native platforms'
         type: boolean
         default: false
 
@@ -208,6 +208,20 @@ jobs:
       xcode-toolset-version: '26.6'
       debug-suffix: -debug
 
+  benchmark-macos-aarch64:
+    name: macos-aarch64 integer benchmarks
+    needs:
+      - prepare
+      - build-macos-aarch64
+    uses: ./.github/workflows/benchmark-integer.yml
+    with:
+      platform: macos-aarch64
+      runs-on: macos-26
+    if: >-
+      needs.prepare.outputs.macos-aarch64 == 'true' &&
+      needs.prepare.outputs.dry-run != 'true' &&
+      (github.event_name == 'pull_request' || github.event.inputs.integer-benchmarks == 'true')
+
   test-windows-x64:
     name: windows-x64
     needs:
@@ -221,3 +235,17 @@ jobs:
       runs-on: windows-2025
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       debug-suffix: -debug
+
+  benchmark-windows-x64:
+    name: windows-x64 integer benchmarks
+    needs:
+      - prepare
+      - build-windows-x64
+    uses: ./.github/workflows/benchmark-integer.yml
+    with:
+      platform: windows-x64
+      runs-on: windows-2025
+    if: >-
+      needs.prepare.outputs.windows-x64 == 'true' &&
+      needs.prepare.outputs.dry-run != 'true' &&
+      (github.event_name == 'pull_request' || github.event.inputs.integer-benchmarks == 'true')

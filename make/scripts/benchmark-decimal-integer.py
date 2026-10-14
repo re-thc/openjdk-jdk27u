@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import platform
 import shlex
 import subprocess
 import threading
@@ -55,24 +56,59 @@ def main():
     root = Path(__file__).resolve().parents[2]
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
-    java = str(args.jdk.resolve() / 'bin/java')
-    javac = str(args.jdk.resolve() / 'bin/javac')
+    jdk = args.jdk.resolve()
+    suffix = '.exe' if os.name == 'nt' else ''
+    java = str(jdk / ('bin/java' + suffix))
+    javac = str(jdk / ('bin/javac' + suffix))
     records = []
 
     def run(command, name, timeout=1800):
         print(name, shlex.join(command), flush=True)
         started = time.monotonic()
-        with (output / (name + '.log')).open('w') as log:
+        with (output / (name + '.log')).open('w', encoding='utf-8') as log:
             result = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT,
                                     timeout=timeout)
         records.append({'command': command, 'name': name, 'exit': result.returncode,
                         'seconds': time.monotonic() - started})
         (output / 'commands.json').write_text(json.dumps(records, indent=2) + '\n')
         if result.returncode:
-            print((output / (name + '.log')).read_text()[-8000:], flush=True)
+            print((output / (name + '.log')).read_text(errors='replace')[-8000:], flush=True)
             raise SystemExit(f'{name} failed: {result.returncode}')
 
-    resources = {'uname': list(os.uname()), 'affinity': sorted(os.sched_getaffinity(0))}
+    resources = {'platform': platform.platform(), 'machine': platform.machine(),
+                 'cpu_count': os.cpu_count()}
+    prefix = []
+    if hasattr(os, 'sched_getaffinity'):
+        affinity = sorted(os.sched_getaffinity(0))
+        resources['affinity'] = affinity
+        prefix = ['taskset', '-c', str(max(affinity))]
+    elif os.name == 'nt':
+        import ctypes
+        from ctypes import wintypes
+        kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+        kernel.GetCurrentProcess.restype = wintypes.HANDLE
+        kernel.GetProcessAffinityMask.argtypes = [wintypes.HANDLE,
+                                                  ctypes.POINTER(ctypes.c_size_t),
+                                                  ctypes.POINTER(ctypes.c_size_t)]
+        kernel.SetProcessAffinityMask.argtypes = [wintypes.HANDLE, ctypes.c_size_t]
+        process = kernel.GetCurrentProcess()
+        process_mask, system_mask = ctypes.c_size_t(), ctypes.c_size_t()
+        if not kernel.GetProcessAffinityMask(process, ctypes.byref(process_mask),
+                                             ctypes.byref(system_mask)):
+            raise ctypes.WinError(ctypes.get_last_error())
+        resources['affinity_mask'] = process_mask.value
+        resources['system_affinity_mask'] = system_mask.value
+        # Child JVMs inherit this process's affinity, like taskset on Linux.
+        selected_mask = 1 << (process_mask.value.bit_length() - 1)
+        if not kernel.SetProcessAffinityMask(process, selected_mask):
+            raise ctypes.WinError(ctypes.get_last_error())
+        resources['measurement_affinity_mask'] = selected_mask
+    else:
+        resources['affinity'] = 'OS does not expose CPU pinning'
+    if os.name != 'nt':
+        import resource
+        resources['process_limit'] = resource.getrlimit(resource.RLIMIT_NPROC)
+        resources['file_limit'] = resource.getrlimit(resource.RLIMIT_NOFILE)
     for name in ['cpu.max', 'memory.max', 'pids.max', 'pids.current']:
         path = Path('/sys/fs/cgroup') / name
         if path.is_file():
@@ -90,13 +126,28 @@ def main():
         for thread in threads:
             thread.join()
     run([java, '-XX:ActiveProcessorCount=2', '-XX:+UseSerialGC', '-version'], 'startup', 30)
-    run(['lscpu'], 'cpu', 30)
+    if platform.system() == 'Darwin':
+        cpu_command = ['sysctl', 'hw.model', 'hw.ncpu', 'hw.physicalcpu',
+                       'hw.logicalcpu', 'hw.memsize']
+    elif os.name == 'nt':
+        cpu_command = ['pwsh', '-NoProfile', '-Command',
+                       'Get-CimInstance Win32_Processor | '
+                       'Select-Object Name,NumberOfCores,NumberOfLogicalProcessors | '
+                       'ConvertTo-Json']
+    else:
+        cpu_command = ['lscpu']
+    run(cpu_command, 'cpu', 30)
     run([java, '-XX:ActiveProcessorCount=2', '-XX:+PrintFlagsFinal', '-version'], 'flags', 30)
     run(['git', '-C', str(root), 'rev-parse', 'HEAD'], 'source-revision', 30)
     inputs = [root / 'test/micro/org/openjdk/bench/java/lang/DecimalIntegerConversion.java',
               root / 'src/hotspot/share/runtime/globals.hpp',
               root / 'src/hotspot/cpu/aarch64/templateInterpreterGenerator_aarch64.cpp',
-              args.jdk.resolve() / 'lib/modules', args.jdk.resolve() / 'lib/server/libjvm.so']
+              root / 'src/hotspot/cpu/x86/templateInterpreterGenerator_x86_64.cpp',
+              jdk / 'lib/modules']
+    jvm_library = {'Darwin': 'lib/server/libjvm.dylib',
+                   'Windows': 'bin/server/jvm.dll'}.get(platform.system(),
+                                                       'lib/server/libjvm.so')
+    inputs.append(jdk / jvm_library)
     (output / 'sha256.json').write_text(json.dumps(
         {str(path): sha256(path) for path in inputs}, indent=2) + '\n')
     (output / 'release').write_bytes((args.jdk / 'release').read_bytes())
@@ -147,7 +198,6 @@ def main():
         'c2': (['-Xbatch', '-XX:-TieredCompilation'],
                BENCHMARK + '.(parseInt|parseLong|intString|longAppend)$', sizes[-1:]),
     }
-    cpu = str(max(os.sched_getaffinity(0)))
     for pair in range(args.pairs):
         for tier in tiers:
             tier_flags, pattern, datasets = profiles[tier]
@@ -156,7 +206,7 @@ def main():
                 flags = common + tier_flags + [
                     f'-XX:{"+" if native else "-"}UseFastIntegerIntrinsics',
                     f'-XX:{"+" if native else "-"}UseZmijIntegerIntrinsics']
-                run(['taskset', '-c', cpu, java, '-XX:ActiveProcessorCount=2',
+                run(prefix + [java, '-XX:ActiveProcessorCount=2',
                      '-cp', str(classes) + os.pathsep + classpath,
                      'org.openjdk.jmh.Main', pattern, '-p', 'size=' + ','.join(datasets),
                      '-jvm', java, '-jvmArgsAppend', shlex.join(flags), '-f', '1', '-t', '1',
