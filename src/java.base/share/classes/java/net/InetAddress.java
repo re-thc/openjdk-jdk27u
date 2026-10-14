@@ -386,6 +386,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                     }
                 }
         );
+        Exceptions.setup(); // needed for native exceptions
         init();
     }
 
@@ -879,12 +880,9 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         new ConcurrentHashMap<>();
 
     // CachedAddresses that have to expire are kept ordered in this NavigableSet
-    // which is scanned on each access. It is created by the first lookup of a
-    // name, as initializing ConcurrentSkipListMap is not cheap.
-    private static final class ExpirySet {
-        static final NavigableSet<CachedLookup> INSTANCE =
-            new ConcurrentSkipListSet<>();
-    }
+    // which is scanned on each access
+    private static final NavigableSet<CachedLookup> expirySet =
+        new ConcurrentSkipListSet<>();
 
     // common interface
     private interface Addresses {
@@ -901,7 +899,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         volatile InetAddress[] inetAddresses;
         /**
          * Time of expiry (in terms of System.nanoTime()). Can be modified only
-         * when the record is not added to the expiry set.
+         * when the record is not added to the "expirySet".
          */
         volatile long expiryTime;
         final long id = seq.incrementAndGet(); // each instance is unique
@@ -935,7 +933,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
 
         /**
          * Checks if the current cache record is expired or not. Expired records
-         * are removed from the expiry set and cache.
+         * are removed from the expirySet and cache.
          *
          * @return {@code true} if the record was removed
          */
@@ -946,7 +944,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             if ((expiryTime - now) < 0L) {
                 // ConcurrentSkipListSet uses weakly consistent iterator,
                 // so removing while iterating is OK...
-                if (ExpirySet.INSTANCE.remove(this)) {
+                if (expirySet.remove(this)) {
                     // ... remove from cache
                     cache.remove(host, this);
                 }
@@ -996,7 +994,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                     refreshTime = now + InetAddressCachePolicy.get() * 1000_000_000L;
                     // getAddressesFromNameService returns non-empty/non-null value
                     inetAddresses = getAddressesFromNameService(host);
-                    // don't update the expiry set, will do that later
+                    // don't update the "expirySet", will do that later
                     staleTime = refreshTime + InetAddressCachePolicy.getStale() * 1000_000_000L;
                 } catch (UnknownHostException ignore) {
                 } finally {
@@ -1009,10 +1007,10 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         /**
          * Overrides the parent method to skip deleting the record from the
          * cache if the stale data can still be used. Note to update the
-         * "expiryTime" field we have to remove the record from the expiry set
+         * "expiryTime" field we have to remove the record from the expirySet
          * and add it back. It is not necessary to remove/add it here, we can do
          * that in the "get()" method above, but extracting it minimizes
-         * contention on the expiry set.
+         * contention on "expirySet".
          */
         @Override
         public boolean tryRemoveExpiredAddress(long now) {
@@ -1025,9 +1023,9 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                 }
                 // ConcurrentSkipListSet uses weakly consistent iterator,
                 // so removing while iterating is OK...
-                if (ExpirySet.INSTANCE.remove(this)) {
+                if (expirySet.remove(this)) {
                     expiryTime = staleTime;
-                    ExpirySet.INSTANCE.add(this);
+                    expirySet.add(this);
                 }
             }
             return false;
@@ -1104,7 +1102,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                         if (cache.replace(host, this, cachedLookup) &&
                             cachePolicy != InetAddressCachePolicy.FOREVER) {
                             // schedule expiry
-                            ExpirySet.INSTANCE.add(cachedLookup);
+                            expirySet.add(cachedLookup);
                         }
                     }
                     if (inetAddresses == null || inetAddresses.length == 0) {
@@ -1145,8 +1143,6 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             Objects.requireNonNull(host);
             Objects.requireNonNull(policy);
             validate(host);
-            // Needed by the native code to build the message of a failed lookup
-            Exceptions.setup();
             boolean attempted = Blocker.begin();
             try {
                 return impl.lookupAllHostAddr(host, policy);
@@ -1678,10 +1674,10 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         throws UnknownHostException  {
 
         /* If it gets here it is presumed to be a hostname */
-        // remove expired addresses from cache - the expiry set keeps them ordered
+        // remove expired addresses from cache - expirySet keeps them ordered
         // by expiry time so we only need to iterate the prefix of the NavigableSet...
         long now = System.nanoTime();
-        for (CachedLookup caddrs : ExpirySet.INSTANCE) {
+        for (CachedLookup caddrs : expirySet) {
             if (!caddrs.tryRemoveExpiredAddress(now)) {
                 // we encountered 1st element that expires in future
                 break;
@@ -1696,8 +1692,8 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             addrs = cache.remove(host);
             if (addrs != null) {
                 if (addrs instanceof CachedLookup) {
-                    // try removing from the expiry set too if CachedAddresses
-                    ExpirySet.INSTANCE.remove(addrs);
+                    // try removing from expirySet too if CachedAddresses
+                    expirySet.remove(addrs);
                 }
                 addrs = null;
             }
