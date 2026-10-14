@@ -11,141 +11,51 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - name: Get pinned baseline release image
+      - name: Reuse preserved matched images, frozen inputs and rejected pilot
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: 38172262610
-          artifact-ids: 11714738068
-          path: baseline-bundles
+          run-id: 38538129071
+          artifact-ids: 11880558785
+          path: prior
           merge-multiple: true
-      - name: Get pinned b3 release image
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: 38349570655
-          artifact-ids: 11791270117
-          path: patched-bundles
-          merge-multiple: true
-      - name: Reuse frozen qualified classes and preserve old diagnostic evidence
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: 38531140256
-          artifact-ids: 11878157095
-          path: frozen
-          merge-multiple: true
-      - name: Verify native images and execute fixed paired release workloads
+      - name: Verify unchanged images and compile controller-only primer
         run: |
           test "$(uname -m)" = aarch64
-          mkdir base-release b3-release
-          tar -xf baseline-bundles/jdk-linux-aarch64.tar.gz -C base-release --strip-components=1
-          tar -xf patched-bundles/jdk-linux-aarch64.tar.gz -C b3-release --strip-components=1
+          mkdir base-release b3-release controller-classes
+          tar -xf prior/baseline-bundles/jdk-linux-aarch64.tar.gz -C base-release --strip-components=1
+          tar -xf prior/patched-bundles/jdk-linux-aarch64.tar.gz -C b3-release --strip-components=1
+          ln -s prior/baseline-bundles baseline-bundles
+          ln -s prior/patched-bundles patched-bundles
           python3 qualification/native_unroll/record_native_host.py
-          python3 qualification/native_unroll/run_release_causal.py --base-jdk base-release --patched-jdk b3-release --frozen frozen --out release-causal --execute
+          python3 - <<'PY'
+          import pathlib,hashlib,json
+          plan=json.loads(pathlib.Path('prior/release-causal/plan.json').read_text())
+          for image,directory in [('base87','base-release'),('b3','b3-release')]:
+              for name,record in plan['images'][image].items():
+                  p=pathlib.Path(directory)/name
+                  assert hashlib.file_digest(p.open('rb'),'sha256').hexdigest()==record['sha256']
+          print('MATCHED_IMAGE_HASHES_VERIFIED=true')
+          rejected=pathlib.Path('prior/release-causal/pair00-base87-eight-0-default-arithmetic.out')
+          print('REJECTED_PILOT_OUTPUT_JSON='+json.dumps(rejected.read_text()))
+          PY
+          b3-release/bin/javac -cp prior/frozen/qualification/classes:prior/frozen/qualification/whitebox -d controller-classes qualification/src/ProbeControllerPrimer.java
+      - name: Run primed fixed paired release workloads and separate assembly twins
+        run: |
+          python3 qualification/native_unroll/run_release_causal.py --base-jdk base-release --patched-jdk b3-release --frozen prior/frozen --primer-classes controller-classes --out release-causal --execute
       - name: Print structured final summaries and ordinary-entry assembly
         if: always()
-        run: |
-          python3 qualification/native_unroll/report_release_causal.py
-      - name: Preserve all fixed windows, images, frozen inputs and compilation diagnostics
+        run: python3 qualification/native_unroll/report_release_causal.py
+      - name: Preserve all windows, matched images, frozen inputs and compiler diagnostics
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: vector-api-release-unroll-causal
+          name: vector-api-release-unroll-causal-primed
           path: |
             release-causal
             native-ir-host.json
-            frozen
+            controller-classes
             qualification/native_unroll
-            baseline-bundles
-            patched-bundles
-          retention-days: 30
-
-  admission-trace:
-    runs-on: ubuntu-26.04-arm
-    timeout-minutes: 35
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - label: base87
-            source: 87edd79d3104ff502f7befec034716b081436f49
-            run: 38172262610
-            artifact: 11714469219
-          - label: b3
-            source: b3ce67e362c3b1678fcf3d18ee714182b2395c86
-            run: 38349570655
-            artifact: 11791725073
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          ref: ${{ matrix.source }}
-          path: traced-source
-          persist-credentials: false
-      - name: Get original matched fastdebug modules
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ matrix.run }}
-          artifact-ids: ${{ matrix.artifact }}
-          path: debug-bundles
-          merge-multiple: true
-      - name: Get pinned release bootstrap
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: 38349570655
-          artifact-ids: 11791270117
-          path: patched-bundles
-          merge-multiple: true
-      - name: Reuse frozen qualified classes
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: 38531140256
-          artifact-ids: 11878157095
-          path: frozen
-          merge-multiple: true
-      - name: Install pinned build tools
-        run: |
-          sudo apt update
-          sudo apt install gcc-16 g++-16 autoconf make zip unzip zlib1g-dev
-          curl --fail --location --retry 3 https://github.com/rui314/mold/releases/download/v3.0.0/mold-3.0.0-aarch64-linux.tar.gz --output "$RUNNER_TEMP/mold.tar.gz"
-          echo "52c759d3689babaea4c42af2f31062a74ab83e17ffb5a8090232534c67b70577  $RUNNER_TEMP/mold.tar.gz" | sha256sum --check
-          mkdir "$RUNNER_TEMP/mold"
-          tar -xf "$RUNNER_TEMP/mold.tar.gz" --strip-components=1 -C "$RUNNER_TEMP/mold"
-          echo "$RUNNER_TEMP/mold/bin" >> "$GITHUB_PATH"
-      - name: Build observation-only native fastdebug libjvm from exact source
-        run: |
-          test "$(uname -m)" = aarch64
-          mkdir bootstrap trace-debug trace-results-build
-          tar -xf patched-bundles/jdk-linux-aarch64.tar.gz -C bootstrap --strip-components=1
-          tar -xf debug-bundles/jdk-linux-aarch64-debug.tar.gz -C trace-debug --strip-components=2
-          sha256sum trace-debug/lib/server/libjvm.so > trace-results-build/original-libjvm.sha256
-          python3 qualification/native_unroll/instrument_admission.py
-          git -C traced-source diff > trace-results-build/observation-only.patch
-          cd traced-source
-          CC=gcc-16 CXX=g++-16 bash bin/configure-dev --with-conf-name=native-trace --with-debug-level=fastdebug --with-boot-jdk="$PWD/../bootstrap" --with-native-debug-symbols=none --with-jobs=4 > ../trace-results-build/configure.log 2>&1
-          make CONF=native-trace hotspot > ../trace-results-build/build.log 2>&1
-          cp build/native-trace/support/modules_libs/java.base/server/libjvm.so ../trace-debug/lib/server/libjvm.so
-          cd ..
-          trace-debug/bin/java -version
-          sha256sum trace-debug/lib/server/libjvm.so > trace-results-build/traced-libjvm.sha256
-      - name: Trace separately attributed ordinary-entry policy admissions
-        env:
-          TRACE_SOURCE: ${{ matrix.source }}
-        run: python3 qualification/native_unroll/run_admission.py
-      - name: Print build failures if any
-        if: failure()
-        run: tail -100 trace-results-build/configure.log trace-results-build/build.log || true
-      - name: Preserve observation-only source, build logs and native compiler trace
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: vector-api-admission-trace-${{ matrix.label }}
-          path: |
-            trace-results
-            trace-results-build
-            qualification/native_unroll
+            qualification/src/ProbeControllerPrimer.java
+            prior
           retention-days: 30

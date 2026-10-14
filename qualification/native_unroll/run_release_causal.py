@@ -19,7 +19,8 @@ def interval(log_ratios):
     return [samples[499], samples[19499]]
 
 def rows(path):
-    data = [line for line in path.read_text().splitlines() if line.startswith(('kernel,phase,', 'conversion,', 'rawBits,', 'directBits,', 'arithmetic,'))]
+    text = path.read_text().split('MEASURED_PASS_BEGIN' + chr(10))[-1]
+    data = [line for line in text.splitlines() if line.startswith(('kernel,phase,', 'conversion,', 'rawBits,', 'directBits,', 'arithmetic,'))]
     return list(csv.DictReader(data))
 
 def main():
@@ -28,6 +29,7 @@ def main():
     p.add_argument('--patched-jdk', type=pathlib.Path, required=True)
     p.add_argument('--frozen', type=pathlib.Path, required=True)
     p.add_argument('--out', type=pathlib.Path, required=True)
+    p.add_argument('--primer-classes', type=pathlib.Path, default=pathlib.Path('controller-classes'))
     p.add_argument('--pairs', type=int, default=12)
     p.add_argument('--calls', type=int, default=100000)
     p.add_argument('--execute', action='store_true')
@@ -41,6 +43,8 @@ def main():
     wb = (a.frozen / 'qualification/whitebox').resolve()
     for name, sha in EXPECTED.items():
         if record(classes / name)['sha256'] != sha: p.error('Frozen class mismatch: ' + name)
+    primer = a.primer_classes.resolve()
+    if not (primer / 'ProbeControllerPrimer.class').is_file(): p.error('Missing compiled controller primer')
     images = {'base87': a.base_jdk.resolve(), 'b3': a.patched_jdk.resolve()}
     # Primary: legacy conversion under both ISAs and default/1/2/4 unroll.
     conditions = list(itertools.product(['legacy'], ['default', '0'], ['default', '1', '2', '4'], ['conversion']))
@@ -49,7 +53,7 @@ def main():
     conditions += list(itertools.product(['legacy', 'four', 'eight'], ['default', '0'], ['default'], ['rawBits', 'directBits', 'arithmetic']))
     cpu = min(os.sched_getaffinity(0))
     plan = {'scope': 'Release causal diagnostic, no compiler policy changes', 'base': BASE, 'patched': B3,
-            'pairs': a.pairs, 'warmup_calls': 10000, 'calibration_calls': 1000, 'windows': 5,
+            'pairs': a.pairs, 'controller_primer': {'frozen_probe_passes': 1, 'calls_per_primer_window': 10000, 'total_primer_kernel_calls': 61001, 'class': record(primer / 'ProbeControllerPrimer.class')}, 'warmup_calls': 10000, 'calibration_calls': 1000, 'windows': 5,
             'calls_per_window': a.calls, 'conditions': conditions, 'cpu': cpu,
             'classes': [record(f) for f in sorted(classes.glob('*.class'))],
             'whitebox': [record(f) for f in sorted(wb.rglob('*.class'))],
@@ -79,7 +83,7 @@ def main():
             argv += ['-DobserveCompilation=true', '-XX:+UnlockDiagnosticVMOptions', '-XX:+WhiteBoxAPI',
                      '-Xbootclasspath/a:' + str(wb), '-XX:+LogCompilation', '-XX:LogFile=' + str(out / (name + '.xml')),
                      '-XX:CompileCommand=print,PhaseVectorKernels::' + kernel, '-XX:+PrintFlagsFinal']
-        argv += ['-cp', str(classes) + os.pathsep + str(wb), 'PhaseVectorProbe', kernel, 'c2']
+        argv += ['-cp', str(primer) + os.pathsep + str(classes) + os.pathsep + str(wb), 'ProbeControllerPrimer', kernel, 'c2']
         raw = out / (name + '.out')
         with raw.open('w') as f:
             r = subprocess.run(argv, stdout=f, stderr=subprocess.STDOUT, cwd=out, timeout=180)
