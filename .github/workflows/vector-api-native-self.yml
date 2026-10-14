@@ -1,0 +1,48 @@
+name: Vector API self reinterpret qualification
+'on':
+  push:
+    branches: [codex/vector-api-native-self]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  native-self:
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Get verified b3 release image
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: 38349570655
+          artifact-ids: 11791270117
+          path: bundles
+          merge-multiple: true
+      - name: Verify native host and build matched full Java images
+        run: |
+          test "$(uname -m)" = aarch64
+          mkdir verified-image
+          tar -xf bundles/jdk-linux-aarch64.tar.gz -C verified-image --strip-components=1
+          python3 qualification/build_self_images.py
+          mkdir -p qualification/classes qualification/whitebox
+          verified-image/bin/javac -d qualification/whitebox test/lib/jdk/test/whitebox/parser/DiagnosticCommand.java test/lib/jdk/test/whitebox/WhiteBox.java
+          verified-image/bin/javac --add-modules jdk.incubator.vector -cp qualification/whitebox -d qualification/classes qualification/src/PhaseVectorKernels.java qualification/src/PhaseVectorProbe.java
+      - name: Compare identical fixed histories and retain winning controls
+        run: |
+          python3 qualification/run_self_comparisons.py
+          python3 qualification/report_results.py self-results
+      - name: Check scalar raw-bit and identity contracts
+        run: |
+          python3 qualification/run_self_contracts.py
+      - name: Preserve complete evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: vector-api-native-self-evidence
+          path: |
+            self-results
+            self-images/*/source
+            qualification/classes
+            qualification/whitebox
+          retention-days: 30
