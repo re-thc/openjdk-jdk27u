@@ -30,9 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.management.ObjectName;
 import sun.management.ManagementFactoryHelper;
 import sun.management.spi.PlatformMBeanProvider;
@@ -151,14 +148,12 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<MemoryManagerMXBean>() {
             private final Set<String> garbageCollectorMXBeanInterfaceNames
-                    = Collections.unmodifiableSet(
-                            Stream.of("java.lang.management.MemoryManagerMXBean",
-                                    "java.lang.management.GarbageCollectorMXBean")
-                            .collect(Collectors.toSet()));
+                    = Set.of("java.lang.management.MemoryManagerMXBean",
+                             "java.lang.management.GarbageCollectorMXBean");
             @Override
             public Set<Class<? extends MemoryManagerMXBean>> mbeanInterfaces() {
-                return Stream.of(MemoryManagerMXBean.class,
-                        GarbageCollectorMXBean.class).collect(Collectors.toSet());
+                return Set.of(MemoryManagerMXBean.class,
+                        GarbageCollectorMXBean.class);
             }
 
             @Override
@@ -226,10 +221,16 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
             public Map<String, MemoryManagerMXBean> nameToMBeanMap() {
                 List<MemoryManagerMXBean> list
                         = ManagementFactoryHelper.getMemoryManagerMXBeans();
-                return list.stream()
-                        .filter(this::isMemoryManager)
-                        .collect(Collectors.toMap(
-                                pmo -> pmo.getObjectName().getCanonicalName(), Function.identity()));
+                Map<String, MemoryManagerMXBean> map = new HashMap<>();
+                for (MemoryManagerMXBean mgr : list) {
+                    if (isMemoryManager(mgr)) {
+                        String name = mgr.getObjectName().getCanonicalName();
+                        if (map.put(name, mgr) != null) {
+                            throw new IllegalStateException("Duplicate key " + name);
+                        }
+                    }
+                }
+                return map;
             }
 
             // ManagementFactoryHelper.getMemoryManagerMXBeans() returns all
@@ -416,7 +417,10 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
                     map = Collections.<String, BufferPoolMXBean>emptyMap();
                 } else {
                     map = new HashMap<>(list.size());
-                    list.forEach(mbean -> map.put(mbean.getObjectName().getCanonicalName(),mbean));
+                    // Not a lambda, which is costly to link the first time
+                    for (BufferPoolMXBean mbean : list) {
+                        map.put(mbean.getObjectName().getCanonicalName(), mbean);
+                    }
                 }
                 return map;
             }

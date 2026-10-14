@@ -49,7 +49,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * ManagementFactoryHelper provides static factory methods to create
@@ -338,9 +337,12 @@ public class ManagementFactoryHelper {
         if (bufferPools == null) {
             synchronized (ManagementFactoryHelper.class) {
                 if (bufferPools == null) {
-                    bufferPools = VM.getBufferPools().stream()
-                                    .map(ManagementFactoryHelper::createBufferPoolMXBean)
-                                    .collect(Collectors.toList());
+                    List<BufferPool> pools = VM.getBufferPools();
+                    List<BufferPoolMXBean> list = new ArrayList<>(pools.size());
+                    for (BufferPool pool : pools) {
+                        list.add(createBufferPoolMXBean(pool));
+                    }
+                    bufferPools = list;
                 }
             }
         }

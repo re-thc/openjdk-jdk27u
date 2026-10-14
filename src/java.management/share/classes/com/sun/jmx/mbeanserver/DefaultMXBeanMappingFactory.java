@@ -37,7 +37,6 @@ import java.lang.annotation.ElementType;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -208,32 +207,39 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             final MXBeanMapping mapping = new IdentityMapping(c, t);
             putPermanentMapping(c, mapping);
 
-            if (c.getName().startsWith("java.lang.")) {
-                try {
-                    final Field typeField = c.getField("TYPE");
-                    final Class<?> primitiveType = (Class<?>) typeField.get(null);
-                    final MXBeanMapping primitiveMapping =
-                        new IdentityMapping(primitiveType, t);
-                    putPermanentMapping(primitiveType, primitiveMapping);
-                    if (primitiveType != void.class) {
-                        final Class<?> primitiveArrayType =
-                            Array.newInstance(primitiveType, 0).getClass();
-                        final OpenType<?> primitiveArrayOpenType =
-                            ArrayType.getPrimitiveArrayType(primitiveArrayType);
-                        final MXBeanMapping primitiveArrayMapping =
-                            new IdentityMapping(primitiveArrayType,
-                                                primitiveArrayOpenType);
-                        putPermanentMapping(primitiveArrayType,
-                                            primitiveArrayMapping);
-                    }
-                } catch (NoSuchFieldException e) {
-                    // OK: must not be a primitive wrapper
-                } catch (IllegalAccessException e) {
-                    // Should not reach here
-                    assert(false);
+            final Class<?> primitiveType = primitiveType(c);
+            if (primitiveType != null) {
+                final MXBeanMapping primitiveMapping =
+                    new IdentityMapping(primitiveType, t);
+                putPermanentMapping(primitiveType, primitiveMapping);
+                if (primitiveType != void.class) {
+                    final Class<?> primitiveArrayType =
+                        primitiveType.arrayType();
+                    final OpenType<?> primitiveArrayOpenType =
+                        ArrayType.getPrimitiveArrayType(primitiveArrayType);
+                    final MXBeanMapping primitiveArrayMapping =
+                        new IdentityMapping(primitiveArrayType,
+                                            primitiveArrayOpenType);
+                    putPermanentMapping(primitiveArrayType,
+                                        primitiveArrayMapping);
                 }
             }
         }
+    }
+
+    // The value of the TYPE field of a primitive wrapper class, or null if the
+    // class is not one. Reflection would cost much when the class is loaded.
+    private static Class<?> primitiveType(Class<?> c) {
+        if (c == Boolean.class) return boolean.class;
+        if (c == Byte.class) return byte.class;
+        if (c == Character.class) return char.class;
+        if (c == Double.class) return double.class;
+        if (c == Float.class) return float.class;
+        if (c == Integer.class) return int.class;
+        if (c == Long.class) return long.class;
+        if (c == Short.class) return short.class;
+        if (c == Void.class) return void.class;
+        return null;
     }
 
     /** Get the converter for the given Java type, creating it if necessary. */

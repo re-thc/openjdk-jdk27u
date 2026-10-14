@@ -71,10 +71,17 @@ public class DcmdMBeanTest {
             int operationFailures = 0;
             for (int i = 0; i < opInfo.length; i++) {
                 operationFailures += printOperation(opInfo[i]);
+                operationFailures += checkHelp(mbsc, name, opInfo[i]);
                 System.out.println("\n@@@@@@\n");
             }
             if (operationFailures > 0) {
-                throw new RuntimeException("FAILED.  " + operationFailures + " operations found with non-standard parameter types.");
+                throw new RuntimeException("FAILED.  " + operationFailures + " operations found with non-standard parameter types or wrong dcmd.help.");
+            }
+
+            // the same for an operation descriptor read from the local MBeanServer
+            MBeanOperationInfo localOp = mbs.getMBeanInfo(name).getOperations()[0];
+            if (checkHelp(mbs, name, localOp) > 0) {
+                throw new RuntimeException("FAILED.  Wrong dcmd.help for " + localOp.getName() + " from the local MBeanServer.");
             }
         } finally {
             try {
@@ -85,6 +92,25 @@ public class DcmdMBeanTest {
         }
 
         System.out.println("Test passed");
+    }
+
+    /**
+     * Check that the "dcmd.help" field of an Operation is the output of the
+     * "help" operation for the same command.
+     * Return the number of failures, so the caller can signal to fail the test.
+     */
+    static int checkHelp(MBeanServerConnection conn, ObjectName name, MBeanOperationInfo info)
+            throws Exception {
+        Descriptor desc = info.getDescriptor();
+        String cmdName = (String) desc.getFieldValue("dcmd.name");
+        Object help = conn.invoke(name, "help", new Object[] { new String[] { cmdName } },
+                                  new String[] { String[].class.getName() });
+        if (!help.equals(desc.getFieldValue("dcmd.help"))) {
+            System.out.println("** FAILED ** dcmd.help of " + info.getName()
+                    + " differs from the output of \"help " + cmdName + "\"");
+            return 1;
+        }
+        return 0;
     }
 
     /**

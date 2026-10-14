@@ -26,6 +26,7 @@
 package com.sun.management.internal;
 
 import com.sun.management.DiagnosticCommandMBean;
+import java.io.Serial;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
@@ -255,37 +256,134 @@ public class DiagnosticCommandImpl extends NotificationEmitterSupport
         return sb.toString();
     }
 
+    private static final String[] ARGUMENT_FIELDS = {
+        "dcmd.arg.name", "dcmd.arg.type", "dcmd.arg.description",
+        "dcmd.arg.isMandatory", "dcmd.arg.isMultiple", "dcmd.arg.isOption",
+        "dcmd.arg.position"
+    };
+
     private Descriptor commandDescriptor(Wrapper w) throws IllegalArgumentException {
         HashMap<String, Object> map = new HashMap<>();
         map.put("dcmd.name", w.info.getName());
         map.put("dcmd.description", w.info.getDescription());
         map.put("dcmd.vmImpact", w.info.getImpact());
         map.put("dcmd.enabled", w.info.isEnabled());
-        StringBuilder sb = new StringBuilder();
-        sb.append("help ");
-        sb.append(w.info.getName());
-        map.put("dcmd.help", executeDiagnosticCommand(sb.toString()));
         if (w.info.getArgumentsInfo() != null && !w.info.getArgumentsInfo().isEmpty()) {
             HashMap<String, Object> allargmap = new HashMap<>();
             for (DiagnosticCommandArgumentInfo arginfo : w.info.getArgumentsInfo()) {
-                HashMap<String, Object> argmap = new HashMap<>();
-                argmap.put("dcmd.arg.name", arginfo.getName());
-                argmap.put("dcmd.arg.type", sanitiseType(arginfo.getType()));
-                argmap.put("dcmd.arg.description", arginfo.getDescription());
-                argmap.put("dcmd.arg.isMandatory", arginfo.isMandatory());
-                argmap.put("dcmd.arg.isMultiple", arginfo.isMultiple());
                 boolean isOption = arginfo.isOption();
-                argmap.put("dcmd.arg.isOption", isOption);
-                if(!isOption) {
-                    argmap.put("dcmd.arg.position", arginfo.getPosition());
-                } else {
-                    argmap.put("dcmd.arg.position", -1);
-                }
-                allargmap.put(arginfo.getName(), new ImmutableDescriptor(argmap));
+                Object[] argvalues = {
+                    arginfo.getName(),
+                    sanitiseType(arginfo.getType()),
+                    arginfo.getDescription(),
+                    arginfo.isMandatory(),
+                    arginfo.isMultiple(),
+                    isOption,
+                    isOption ? -1 : arginfo.getPosition()
+                };
+                allargmap.put(arginfo.getName(),
+                    new ImmutableDescriptor(ARGUMENT_FIELDS, argvalues));
             }
             map.put("dcmd.arguments", new ImmutableDescriptor(allargmap));
         }
-        return new ImmutableDescriptor(map);
+        return new LazyHelpDescriptor(map, this, "help " + w.info.getName());
+    }
+
+    // "dcmd.help" is computed on first use: the help is costly for some commands
+    // (e.g. JFR.start parses the predefined configurations) and the MBean server
+    // reads the MBeanInfo at registration only for the class name.
+    private static final class LazyHelpDescriptor implements Descriptor {
+        @Serial
+        private static final long serialVersionUID = 4872935126013456978L;
+
+        private final HashMap<String, Object> fields;
+        private final transient DiagnosticCommandImpl impl;
+        private final String helpCommand;
+        private volatile ImmutableDescriptor descriptor;
+
+        LazyHelpDescriptor(HashMap<String, Object> fields,
+                           DiagnosticCommandImpl impl, String helpCommand) {
+            this.fields = fields;
+            this.impl = impl;
+            this.helpCommand = helpCommand;
+        }
+
+        // Computing the help twice in a race is harmless.
+        private ImmutableDescriptor descriptor() {
+            ImmutableDescriptor d = descriptor;
+            if (d == null) {
+                HashMap<String, Object> map = new HashMap<>(fields);
+                map.put("dcmd.help", impl.executeDiagnosticCommand(helpCommand));
+                d = new ImmutableDescriptor(map);
+                descriptor = d;
+            }
+            return d;
+        }
+
+        @Serial
+        private Object writeReplace() {
+            return descriptor();
+        }
+
+        @Override
+        public Object getFieldValue(String fieldName) {
+            return descriptor().getFieldValue(fieldName);
+        }
+
+        @Override
+        public void setField(String fieldName, Object fieldValue) {
+            descriptor().setField(fieldName, fieldValue);
+        }
+
+        @Override
+        public String[] getFields() {
+            return descriptor().getFields();
+        }
+
+        @Override
+        public String[] getFieldNames() {
+            return descriptor().getFieldNames();
+        }
+
+        @Override
+        public Object[] getFieldValues(String... fieldNames) {
+            return descriptor().getFieldValues(fieldNames);
+        }
+
+        @Override
+        public void removeField(String fieldName) {
+            descriptor().removeField(fieldName);
+        }
+
+        @Override
+        public void setFields(String[] fieldNames, Object[] fieldValues) {
+            descriptor().setFields(fieldNames, fieldValues);
+        }
+
+        @Override
+        public Descriptor clone() {
+            return descriptor();
+        }
+
+        @Override
+        public boolean isValid() {
+            return descriptor().isValid();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj == this || descriptor().equals(obj);
+        }
+
+        @Override
+        public int hashCode() {
+            return descriptor().hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return descriptor().toString();
+        }
     }
 
     // Type names that will be published in dcmd.arg.type:
