@@ -229,8 +229,7 @@ public class Pcre2RegexTest {
         b.reset("other").usePattern(Pattern.compile("x+"));
         if (a.hitEnd() != b.hitEnd() || a.requireEnd() != b.requireEnd())
             throw new AssertionError("saved digit end state");
-        if (Pcre2Regex.ENABLED && NATIVE.get(p) != null)
-            throw new AssertionError("opaque CharSequence did not select Java");
+        if (Pcre2Regex.ENABLED) nativeOnly(p);
         for (String suffix : new String[]{"x".repeat(131072), "\u0100".repeat(131072)}) {
             Pattern large = Pattern.compile("(?<prefix>ready)(?<digits>[0-9]+)");
             Pattern java = reference(large.pattern(), 0);
@@ -432,8 +431,7 @@ public class Pcre2RegexTest {
         Pattern mutable=Pattern.compile("error([0-9]+)");
         CharBuffer buffer=CharBuffer.wrap("x error123 y");
         if (!mutable.matcher(buffer).find()) throw new AssertionError("CharBuffer");
-        if (Pcre2Regex.ENABLED && NATIVE.get(mutable) != null)
-            throw new AssertionError("CharBuffer did not preserve Java access");
+        if (Pcre2Regex.ENABLED) nativeOnly(mutable);
     }
 
     private static void sharingAndLifetime() throws Exception {
@@ -461,13 +459,12 @@ public class Pcre2RegexTest {
         }
         if (!restored.matcher("error123").matches()) throw new AssertionError("serialization");
         nativeOnly(restored);
-        // Promotion removes the native reference; existing Matchers allocate
-        // Java locals lazily and continue correctly after another Matcher promotes.
+        // Input-local exclusion uses the original sibling without demoting peers.
         Pattern promoted=Pattern.compile("error([0-9]{1,})");
         Matcher existing=promoted.matcher("error123");
         Matcher wide=promoted.matcher("\uD800 " + "x ".repeat(1024) + "error456");
         if (!wide.find() || !wide.group(1).equals("456")) throw new AssertionError("wide input fallback");
-        if (NATIVE.get(promoted)!=null || ROOT.get(promoted)==null) throw new AssertionError("permanent Java promotion");
+        nativeOnly(promoted);
         if (!existing.find() || !existing.group(1).equals("123")) throw new AssertionError("old Matcher promotion");
         for (int i=0;i<10;i++) { System.gc(); same.matcher("error789").find(); }
         nativeOnly(same);
@@ -617,8 +614,8 @@ public class Pcre2RegexTest {
     }
 
     private static void resetCapturePublication() throws Exception {
-        // End-flag queries can replay a match in Java and permanently promote
-        // the Pattern. Keep reuse checks independent so every reset and capture
+        // End-flag queries can route this Matcher to its original Java sibling.
+        // Keep reuse checks independent so every reset and capture
         // publication below still exercises the native Matcher state.
         for (String expression : new String[]{"(a)?b", "(?<x>a|ab)+", "([a-z0-9_]+)@([a-z0-9_]+)\\.[a-z]{2,4}"}) {
             Pattern p = Pattern.compile(expression), ref = reference(expression, 0);

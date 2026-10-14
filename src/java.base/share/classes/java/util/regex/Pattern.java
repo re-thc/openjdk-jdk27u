@@ -1028,9 +1028,8 @@ public final class Pattern
         }
     }
 
-    // Promote permanently on an unsupported input/operation. A measured Java
-    // choice may already have compiled a sibling; active native calls retain
-    // their own wrapper.
+    // Explicit permanent promotion (for graph inspection). Matching, replay
+    // and input/resource exclusions instead use the cached original sibling.
     void ensureJava() {
         if (javaCompiled) return;
         synchronized (this) {
