@@ -1,0 +1,74 @@
+name: SIMDUTF current-head verification
+on:
+  push:
+    branches: [review/simdutf-current-head]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  controls:
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-26.04
+            platform: linux-x64
+          - runner: ubuntu-26.04-arm
+            platform: linux-aarch64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: bundles-${{ matrix.platform }}
+          run-id: 38577343143
+          github-token: ${{ github.token }}
+          path: bundles/head
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: bundles-${{ matrix.platform }}
+          run-id: 38566499376
+          github-token: ${{ github.token }}
+          path: bundles/base
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: bundles-${{ matrix.platform }}-debug
+          run-id: 38577343143
+          github-token: ${{ github.token }}
+          path: bundles/debug
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: bundles-jtreg-8.2.1+1
+          run-id: 38577343143
+          github-token: ${{ github.token }}
+          path: jtreg
+      - name: Run exact-head jtreg and benchmarks
+        run: |
+          set -e
+          mkdir -p image/head image/base image/debug results jmh
+          tar -xf bundles/debug/jdk-${{ matrix.platform }}-debug.tar.gz -C image/debug
+          tar -xf bundles/head/jdk-${{ matrix.platform }}.tar.gz -C image/head
+          tar -xf bundles/base/jdk-${{ matrix.platform }}.tar.gz -C image/base
+          curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar -o jmh/core.jar
+          curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/org/openjdk/jmh/jmh-generator-annprocess/1.37/jmh-generator-annprocess-1.37.jar -o jmh/generator.jar
+          curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/net/sf/jopt-simple/jopt-simple/5.0.4/jopt-simple-5.0.4.jar -o jmh/options.jar
+          curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/org/apache/commons/commons-math3/3.6.1/commons-math3-3.6.1.jar -o jmh/math.jar
+          task_head_java=$(find image/head -path '*/bin/java' -print -quit)
+          task_base_java=$(find image/base -path '*/bin/java' -print -quit)
+          task_debug_java=$(find image/debug -path '*/bin/java' -print -quit)
+          task_jtreg_jar=$(find jtreg -name jtreg.jar -print -quit)
+          test -n "$task_jtreg_jar"
+          for task_level in head debug; do
+            task_image=$(find "image/$task_level" -path '*/bin/java' -print -quit)
+            "$task_base_java" -jar "$task_jtreg_jar" -jdk:"$GITHUB_WORKSPACE/$(dirname "$(dirname "$task_image")")" -agentvm -concurrency:2 -timeoutFactor:5 -javaoptions:-XX:ActiveProcessorCount=2 -vmoptions:-XX:ActiveProcessorCount=2 -w:"results/jtreg-$task_level-work" -r:"results/jtreg-$task_level-report" test/hotspot/jtreg/compiler/intrinsics/simdutf test/hotspot/jtreg/compiler/escapeAnalysis/TestSimdUTFLeaf.java > "results/jtreg-$task_level.log" 2>&1 || { tail -100 "results/jtreg-$task_level.log"; exit 1; }
+          done
+          python3 make/scripts/simdutf-current-head.py "$(dirname "$(dirname "$task_base_java")")" "$(dirname "$(dirname "$task_head_java")")" "$GITHUB_WORKSPACE/results"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: simdutf-current-head-${{ matrix.platform }}
+          path: results
+          retention-days: 14
