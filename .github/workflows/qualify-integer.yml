@@ -23,13 +23,6 @@ name: 'Qualify native integer conversions'
 
 on:
   workflow_dispatch:
-  pull_request:
-    branches: [master]
-    paths:
-      - .github/workflows/qualify-integer.yml
-      - .github/workflows/benchmark-integer.yml
-      - make/scripts/benchmark-decimal-integer.py
-      - test/micro/org/openjdk/bench/java/lang/DecimalIntegerConversion.java
 
 permissions:
   contents: read

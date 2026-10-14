@@ -118,6 +118,14 @@ const bool defaultUseFourByteObjectHeaders = true;
 const bool defaultUseFourByteObjectHeaders = false;
 #endif
 
+#if (defined(LINUX) && (defined(AMD64) || defined(AARCH64))) || \
+    (defined(_WINDOWS) && defined(AMD64)) || \
+    (defined(__APPLE__) && defined(AARCH64))
+const bool defaultUseDecimalIntegerIntrinsics = true;
+#else
+const bool defaultUseDecimalIntegerIntrinsics = false;
+#endif
+
 #ifdef _LP64
 #define LP64_RUNTIME_FLAGS(develop,                                         \
                            develop_pd,                                      \
@@ -373,11 +381,11 @@ const int ObjectAlignmentInBytes = 8;
           "Use fast_float for decimal float and double parsing")            \
                                                                             \
   product(bool, UseFastIntegerIntrinsics,                                   \
-          LINUX_ONLY(AMD64_ONLY(true) AARCH64_ONLY(true) NOT_AMD64(NOT_AARCH64(false))) NOT_LINUX(false), \
+          defaultUseDecimalIntegerIntrinsics,                              \
           "Use fast_float for interpreted decimal Integer and Long parsing")             \
                                                                             \
   product(bool, UseZmijIntegerIntrinsics,                                   \
-          LINUX_ONLY(AMD64_ONLY(true) AARCH64_ONLY(true) NOT_AMD64(NOT_AARCH64(false))) NOT_LINUX(false), \
+          defaultUseDecimalIntegerIntrinsics,                              \
           "Use Zmij for interpreted decimal Integer and Long formatting")                \
                                                                             \
   product(bool, UseVectorizedMismatchIntrinsic, false, DIAGNOSTIC,          \
