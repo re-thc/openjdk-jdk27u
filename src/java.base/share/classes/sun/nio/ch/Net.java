@@ -337,7 +337,7 @@ public class Net {
 
     // Initializes the jdk.net module on the first use of an option that is
     // not one of the standard options, which is not needed to bind a socket
-    private static class ExtendedOptions {
+    private static final class ExtendedOptions {
         static final ExtendedSocketOptions INSTANCE =
                 ExtendedSocketOptions.getInstance();
     }

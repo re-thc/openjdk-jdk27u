@@ -82,9 +82,9 @@ final class ProcessHandleImpl implements ProcessHandle {
     private static native void initNative();
 
     /**
-     * The thread pool of "process reaper" daemon threads.
+     * The thread pool of "process reaper" daemon threads, created on first use.
      */
-    private static class ProcessReaper {
+    private static final class ProcessReaper {
         static final Executor EXECUTOR = initReaper();
     }
 

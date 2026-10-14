@@ -42,23 +42,23 @@ public class SchedulerProperties {
         }
 
         // valid values
-        test(0, "ok", "-Djdk.virtualThreadScheduler.parallelism=1",
-                      "-Djdk.virtualThreadScheduler.maxPoolSize=2",
-                      "-Djdk.virtualThreadScheduler.minRunnable=1");
+        test("ok", "-Djdk.virtualThreadScheduler.parallelism=1",
+                   "-Djdk.virtualThreadScheduler.maxPoolSize=2",
+                   "-Djdk.virtualThreadScheduler.minRunnable=1");
 
         // invalid values fail when the first virtual thread is created
-        test(0, "java.lang.NumberFormatException", "-Djdk.virtualThreadScheduler.parallelism=abc");
-        test(0, "java.lang.NumberFormatException", "-Djdk.virtualThreadScheduler.maxPoolSize=abc");
-        test(0, "java.lang.NumberFormatException", "-Djdk.virtualThreadScheduler.minRunnable=abc");
-        test(0, "java.lang.IllegalArgumentException", "-Djdk.virtualThreadScheduler.parallelism=0");
-        test(0, "java.lang.IllegalArgumentException", "-Djdk.virtualThreadScheduler.maxPoolSize=0");
+        test("java.lang.NumberFormatException", "-Djdk.virtualThreadScheduler.parallelism=abc");
+        test("java.lang.NumberFormatException", "-Djdk.virtualThreadScheduler.maxPoolSize=abc");
+        test("java.lang.NumberFormatException", "-Djdk.virtualThreadScheduler.minRunnable=abc");
+        test("java.lang.IllegalArgumentException", "-Djdk.virtualThreadScheduler.parallelism=0");
+        test("java.lang.IllegalArgumentException", "-Djdk.virtualThreadScheduler.maxPoolSize=0");
     }
 
     /**
-     * Runs "SchedulerProperties run" with the given options, expecting the output to
-     * contain the given string and the exit value to be as expected.
+     * Runs "SchedulerProperties run" with the given options, expecting it to exit
+     * normally with the given string in the output.
      */
-    private static void test(int expectedExitValue, String expectedOutput, String... options)
+    private static void test(String expectedOutput, String... options)
             throws Exception {
         String[] command = new String[options.length + 2];
         System.arraycopy(options, 0, command, 0, options.length);
@@ -66,7 +66,7 @@ public class SchedulerProperties {
         command[options.length + 1] = "run";
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(command);
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
-        output.shouldHaveExitValue(expectedExitValue);
+        output.shouldHaveExitValue(0);
         output.shouldContain(expectedOutput);
     }
 
