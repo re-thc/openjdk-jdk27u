@@ -25,7 +25,6 @@
 
 package jdk.internal.loader;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.module.ModuleDescriptor;
@@ -177,9 +176,9 @@ public class BuiltinClassLoader
     // maps a module reference to a module reader
     private final Map<ModuleReference, ModuleReader> moduleToReader;
 
-    // cache of resource name -> list of resources.
+    // cache of resource name -> list of URLs.
     // used only for resources that are not in module packages
-    private volatile SoftReference<Map<String, List<Resource>>> resourceCache;
+    private volatile SoftReference<Map<String, List<URL>>> resourceCache;
 
     /**
      * Create a new instance.
@@ -332,9 +331,12 @@ public class BuiltinClassLoader
 
             // not in a module package but may be in module defined to this loader
             try {
-                List<Resource> resources = findMiscResource(name);
-                if (!resources.isEmpty()) {
-                    return resources.get(0).getURL();
+                List<URL> urls = findMiscResource(name);
+                if (!urls.isEmpty()) {
+                    URL url = urls.get(0);
+                    if (url != null) {
+                        return url;
+                    }
                 }
             } catch (IOException ioe) {
                 return null;
@@ -372,8 +374,10 @@ public class BuiltinClassLoader
 
         } else {
             // not in a package of a module defined to this loader
-            for (Resource resource : findMiscResource(name)) {
-                resources.add(resource.getURL());
+            for (URL url : findMiscResource(name)) {
+                if (url != null) {
+                    resources.add(url);
+                }
             }
         }
 
@@ -416,15 +420,15 @@ public class BuiltinClassLoader
     }
 
     /**
-     * Returns the list of "miscellaneous" resources of the given name in
-     * modules defined to this loader. A miscellaneous resource is not in a
-     * module package, e.g. META-INF/services/p.S.
+     * Returns the list of URLs to a "miscellaneous" resource in modules
+     * defined to this loader. A miscellaneous resource is not in a module
+     * package, e.g. META-INF/services/p.S.
      *
      * The cache used by this method avoids repeated searching of all modules.
      */
-    private List<Resource> findMiscResource(String name) throws IOException {
-        SoftReference<Map<String, List<Resource>>> ref = this.resourceCache;
-        Map<String, List<Resource>> map = (ref != null) ? ref.get() : null;
+    private List<URL> findMiscResource(String name) throws IOException {
+        SoftReference<Map<String, List<URL>>> ref = this.resourceCache;
+        Map<String, List<URL>> map = (ref != null) ? ref.get() : null;
         if (map == null) {
             // only cache resources after VM is fully initialized
             if (VM.isModuleSystemInited()) {
@@ -432,34 +436,34 @@ public class BuiltinClassLoader
                 this.resourceCache = new SoftReference<>(map);
             }
         } else {
-            List<Resource> resources = map.get(name);
-            if (resources != null)
-                return resources;
+            List<URL> urls = map.get(name);
+            if (urls != null)
+                return urls;
         }
 
         // search all modules for the resource
-        List<Resource> resources = null;
+        List<URL> urls = null;
         for (ModuleReference mref : nameToModule.values()) {
             URI u = moduleReaderFor(mref).find(name).orElse(null);
             if (u != null) {
                 try {
-                    if (resources == null)
-                        resources = new ArrayList<>();
-                    resources.add(new ModuleResource(mref, name, u.toURL()));
+                    if (urls == null)
+                        urls = new ArrayList<>();
+                    urls.add(u.toURL());
                 } catch (MalformedURLException | IllegalArgumentException e) {
                 }
             }
         }
-        if (resources == null) {
-            resources = List.of();
+        if (urls == null) {
+            urls = List.of();
         }
 
         // only cache resources after VM is fully initialized
         if (map != null) {
-            map.putIfAbsent(name, resources);
+            map.putIfAbsent(name, urls);
         }
 
-        return resources;
+        return urls;
     }
 
     /**
@@ -952,104 +956,6 @@ public class BuiltinClassLoader
             throw new InternalError("Should not get here");
         }
     };
-
-    /**
-     * A "miscellaneous" resource in a module defined to this loader, that is
-     * a resource that is not in a package of the module.
-     */
-    private final class ModuleResource extends Resource {
-        private final ModuleReference mref;
-        private final String name;
-        private final URL url;
-
-        ModuleResource(ModuleReference mref, String name, URL url) {
-            this.mref = mref;
-            this.name = name;
-            this.url = url;
-        }
-
-        @Override
-        public String getName() {
-            return name;
-        }
-
-        @Override
-        public URL getURL() {
-            return url;
-        }
-
-        @Override
-        public URL getCodeSourceURL() {
-            // not used for the resources of this type
-            return null;
-        }
-
-        @Override
-        public InputStream getInputStream() throws IOException {
-            InputStream in = moduleReaderFor(mref).open(name).orElse(null);
-            if (in == null) {
-                throw new FileNotFoundException(url.toString());
-            }
-            return in;
-        }
-
-        @Override
-        public int getContentLength() {
-            return -1;
-        }
-    }
-
-    /**
-     * Returns the resources that {@link #getResources(String) getResources}
-     * finds for the given name, in the same order, but so that their content
-     * can be read without opening their URL. For a resource on the class path
-     * this reads from the JAR file or directory that the loader already
-     * uses, instead of opening the JAR file once more.
-     *
-     * <p> The name must not be in a package of a module. This is intended for
-     * resources such as META-INF/services/p.S.
-     */
-    public Enumeration<Resource> getMiscResources(String name) throws IOException {
-        assert !packageToModule.containsKey(Resources.toPackageName(name));
-
-        // The resources of the parent come first, as for getResources. All
-        // the modules are searched now and the class paths while enumerating.
-        List<BuiltinClassLoader> loaders = new ArrayList<>(3);
-        for (BuiltinClassLoader l = this; l != null; l = l.parent) {
-            loaders.add(l);
-        }
-        List<Enumeration<Resource>> sources = new ArrayList<>(6);
-        for (int i = loaders.size() - 1; i >= 0; i--) {
-            BuiltinClassLoader l = loaders.get(i);
-            List<Resource> resources = l.findMiscResource(name);
-            if (!resources.isEmpty()) {
-                sources.add(Collections.enumeration(resources));
-            }
-            if (l.hasClassPath()) {
-                sources.add(l.ucp.getResources(name));
-            }
-        }
-        return new Enumeration<>() {
-            int index;
-            @Override
-            public boolean hasMoreElements() {
-                while (index < sources.size()) {
-                    if (sources.get(index).hasMoreElements()) {
-                        return true;
-                    }
-                    index++;
-                }
-                return false;
-            }
-            @Override
-            public Resource nextElement() {
-                if (!hasMoreElements()) {
-                    throw new NoSuchElementException();
-                }
-                return sources.get(index).nextElement();
-            }
-        };
-    }
 
     /**
      * Returns true if the given module opens the given package

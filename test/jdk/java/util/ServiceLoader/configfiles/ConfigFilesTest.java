@@ -37,8 +37,6 @@
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
@@ -47,8 +45,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceConfigurationError;
@@ -91,7 +87,6 @@ public class ConfigFilesTest {
             testDirectoryInPlaceOfFile();
             testCompareWithURLClassLoader();
             testJarNotLocked();
-            testResourcesOfClassLoader();
         }
     }
 
@@ -314,26 +309,6 @@ public class ConfigFilesTest {
         }
     }
 
-    /**
-     * What the application class loader gives for the files is what
-     * ClassLoader::getResources gives: the same URLs in the same order and
-     * the same content.
-     */
-    private static void testResourcesOfClassLoader() throws Exception {
-        Path d1 = dir("res-d1", "cfg.P1\r\n# \u00e9\n");
-        Path a = jar("res-a.jar", "cfg.P2\n");
-        Path empty = jar("res-empty.jar", "");
-        Path b = jar("res-b.jar", "cfg.P3");
-        Path d2 = dir("res-d2", "");
-        Path auto = automaticModule("res-auto.jar", "emod.Q1");
-        Path modular = modularModule("res-modular.jar", "cfg.P4\n");
-        List<String> lines = run(List.of(d1, a, empty, b, d2), List.of(auto, modular), "resources");
-        System.out.println(lines);
-        if (lines.size() != 1 || !lines.get(0).matches("resources [1-9]\\d*")) {
-            throw new AssertionError(lines);
-        }
-    }
-
     // ---- the child VM
 
     private static void child(String[] args) throws Exception {
@@ -374,7 +349,6 @@ public class ConfigFilesTest {
                 sl.reload();
                 list("5 ", sl);
             }
-            case "resources" -> resources();
             default -> throw new IllegalArgumentException(args[0]);
         }
     }
@@ -406,50 +380,6 @@ public class ConfigFilesTest {
             } catch (ServiceConfigurationError e) {
                 System.out.println(prefix + "E " + e.getMessage());
             }
-        }
-    }
-
-    private static void resources() throws Exception {
-        Class<?> bcl = Class.forName("jdk.internal.loader.BuiltinClassLoader");
-        Method find = bcl.getMethod("getMiscResources", String.class);
-        Class<?> resource = Class.forName("jdk.internal.loader.Resource");
-        Method getURL = resource.getMethod("getURL");
-        Method getInputStream = resource.getMethod("getInputStream");
-        ClassLoader loader = ClassLoader.getSystemClassLoader();
-        int checked = 0;
-        for (String name : List.of(CONFIG,
-                                   "META-INF/services/java.nio.file.spi.FileSystemProvider",
-                                   "META-INF/services/not.a.Service",
-                                   "META-INF/MANIFEST.MF")) {
-            List<URL> urls = Collections.list(loader.getResources(name));
-            Enumeration<?> found = (Enumeration<?>) find.invoke(loader, name);
-            List<URL> foundUrls = new ArrayList<>();
-            while (found.hasMoreElements()) {
-                Object r = found.nextElement();
-                URL url = (URL) getURL.invoke(r);
-                foundUrls.add(url);
-                byte[] expected = bytes(url);
-                try (InputStream in = (InputStream) getInputStream.invoke(r)) {
-                    if (!Arrays.equals(in.readAllBytes(), expected)) {
-                        System.out.println("MISMATCH content of " + url);
-                    }
-                } catch (IOException e) {
-                    System.out.println("MISMATCH " + url + " " + e);
-                }
-            }
-            if (!urls.equals(foundUrls)) {
-                System.out.println("MISMATCH " + name + " getResources " + urls + " found " + foundUrls);
-            }
-            checked += urls.size();
-        }
-        System.out.println("resources " + checked);
-    }
-
-    private static byte[] bytes(URL url) throws IOException {
-        var uc = url.openConnection();
-        uc.setUseCaches(false);
-        try (InputStream in = uc.getInputStream()) {
-            return in.readAllBytes();
         }
     }
 
@@ -568,10 +498,6 @@ public class ConfigFilesTest {
                     .collect(Collectors.joining(File.pathSeparator)));
             command.add("--add-modules");
             command.add("ALL-MODULE-PATH");
-        }
-        if (mode.length > 0 && mode[0].equals("resources")) {
-            command.add("--add-exports");
-            command.add("java.base/jdk.internal.loader=ALL-UNNAMED");
         }
         command.add("ConfigFilesTest");
         command.addAll(mode.length == 0 ? List.of("list") : Arrays.asList(mode));
