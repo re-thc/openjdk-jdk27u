@@ -27,7 +27,8 @@
  *          before and after the class path entries have missed enough
  *          lookups to be skipped, with Class-Path attributes, directories,
  *          jar: URLs, multi-release JAR files, URLs added after lookups,
- *          a closed loader and a JAR file replaced while it is open
+ *          a closed loader, a JAR file replaced while it is open and
+ *          directories with the same hash code
  * @run main ClassPathOrder
  */
 
@@ -116,6 +117,23 @@ public class ClassPathOrder {
             if (loader.getResource("p/r.txt") != null) {
                 throw new RuntimeException("Resource found after close");
             }
+        }
+
+        // "Aa" and "BB" have the same hash code, so the JAR file with one of
+        // them cannot be skipped for the other but must not find it
+        Path h1 = jar(dir.resolve("h1.jar"), null, false, "Aa/C.class", "Aa/r.txt");
+        Path h2 = jar(dir.resolve("h2.jar"), null, false, "BB/C.class", "BB/r.txt");
+        try (Loader loader = new Loader(h1.toUri().toURL(), h2.toUri().toURL())) {
+            miss(loader);
+            for (int i = 0; i < MISSES; i++) {
+                checkMissing(loader, "Aa.Missing" + i);
+                checkMissing(loader, "BB.Missing" + i);
+            }
+            checkClass(loader, "BB.C", h2);
+            checkClass(loader, "Aa.C", h1);
+            checkResources(loader, "BB/r.txt", h2);
+            checkResources(loader, "Aa/r.txt", h1);
+            checkResources(loader, "BB/C.class", h2);
         }
 
         // A JAR file replaced while it is open keeps the entries it had

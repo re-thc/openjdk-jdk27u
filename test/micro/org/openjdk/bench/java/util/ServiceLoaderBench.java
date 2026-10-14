@@ -78,8 +78,10 @@ public class ServiceLoaderBench {
     public interface Absent {
     }
 
-    /// The providers of Service in JAR files of a URLClassLoader, one in each
-    /// JAR file with its provider-configuration file.
+    /**
+     * The providers of Service in JAR files of a URLClassLoader, one in each
+     * JAR file with its provider-configuration file.
+     */
     @State(Scope.Thread)
     public static class JarProviders {
         @Param({"5", "50"})

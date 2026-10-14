@@ -251,9 +251,8 @@ class JrtFileSystem extends FileSystem {
         @Override
         public Path next() {
             String name = names.next();
-            // The name of the child node is its last element in the node
-            // name. Names with characters the path normalizes are rare, so
-            // those go the long way round.
+            // The file name is the last element of the node name. Names that
+            // the path would normalize are rare and take the general way.
             String fileName = name.substring(name.lastIndexOf('/') + 1);
             if (isPlainName(fileName)) {
                 return dir.resolveName(fileName);

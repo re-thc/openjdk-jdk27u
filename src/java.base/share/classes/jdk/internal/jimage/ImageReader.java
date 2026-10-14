@@ -347,8 +347,7 @@ public final class ImageReader implements AutoCloseable {
             IntBuffer offsets = getOffsetBuffer(pkgRoot);
             ArrayList<Node> pkgDirs = new ArrayList<>(offsets.capacity());
             // Package path to module map, sorted in reverse order so that
-            // longer child paths get processed first. Only needed in preview
-            // mode, where it is also the only user of the lambdas below.
+            // longer child paths get processed first. Only needed in preview mode.
             Map<String, List<String>> previewPackagesToModules =
                     previewMode ? new TreeMap<>(Comparator.reverseOrder()) : null;
             for (int i = 0; i < offsets.capacity(); i++) {
@@ -768,8 +767,7 @@ public final class ImageReader implements AutoCloseable {
             // the preview directory from appearing in any META-INF directories.
             boolean parentIsMetaInfDir = isMetaInf(dir);
             assert loc.getType() == MODULES_DIR || loc.getType() == MODULES_ROOT : "Invalid location type: " + loc;
-            // This is a loop rather than createChildNodes() with a lambda, to
-            // avoid linking the lambda when the first directory is completed.
+            // Not createChildNodes(), so that no lambda is linked for the first directory.
             String dirName = dir.getName();
             IntBuffer offsets = getOffsetBuffer(loc);
             int childCount = offsets.capacity();

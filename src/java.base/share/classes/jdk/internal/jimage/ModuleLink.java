@@ -66,9 +66,8 @@ public final class ModuleLink implements Comparable<ModuleLink> {
      * exit when processing preview entries (it's reversed because the default
      * order for a boolean is {@code false < true}).
      *
-     * <p>The comparator lives in a holder class because only writing an image
-     * sorts links. Readers use this class for {@link #readNameOffsets} only,
-     * and must not link the lambdas of the comparator when it is initialized.
+     * <p>The comparator is in a holder class as only writing an image sorts
+     * links, so that readers don't link its lambdas.
      */
     private static final class PreviewFirstOrder {
         static final Comparator<ModuleLink> INSTANCE =

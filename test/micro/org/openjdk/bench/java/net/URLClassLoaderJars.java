@@ -72,8 +72,10 @@ public class URLClassLoaderJars {
     // The classes that loadClasses loads, from JAR files all along the class path
     private static final int LOADED = 100;
 
-    /// The JAR files of the benchmarks. The states that extend it have
-    /// different lifetimes for the loaders.
+    /**
+     * The JAR files of the benchmarks. The states that extend it have
+     * different lifetimes for the loaders.
+     */
     @State(Scope.Thread)
     public abstract static class JarFiles {
         @Param({"10", "100", "400"})
@@ -133,7 +135,7 @@ public class URLClassLoaderJars {
         }
     }
 
-    /// A loader that the lookups use over and over, with its JAR files open.
+    /** A loader that the lookups use over and over, with its JAR files open. */
     @State(Scope.Thread)
     public static class Lookup extends JarFiles {
         URLClassLoader loader;
@@ -160,9 +162,11 @@ public class URLClassLoaderJars {
         }
     }
 
-    /// A loader for each invocation, as a class can only be loaded once. Its
-    /// JAR files are open, so that what is measured are the lookups and
-    /// defining the classes.
+    /**
+     * A loader for each invocation, as a class can only be loaded once. Its
+     * JAR files are open, so that what is measured are the lookups and
+     * defining the classes.
+     */
     @State(Scope.Thread)
     public static class FreshLoader extends JarFiles {
         URLClassLoader loader;

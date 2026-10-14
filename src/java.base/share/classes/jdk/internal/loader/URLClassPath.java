@@ -119,9 +119,10 @@ public class URLClassPath {
     private final ArrayList<Loader> loaders = new ArrayList<>();
 
     /* The number of Loaders at the start of the search path that cannot have
-     * a resource in a given directory (see directoryOf). A Loader that cannot
-     * have it will never have it, and Loaders are only added at the end. */
-    private final ConcurrentHashMap<String, Integer> skippedLoaders
+     * a resource in a directory, by the hash code of the directory (see
+     * directoryHash). A Loader that cannot have it will never have it, and
+     * Loaders are only added at the end. */
+    private final ConcurrentHashMap<Integer, Integer> skippedLoaders
             = new ConcurrentHashMap<>();
 
     /* Map of each URL opened to its corresponding Loader */
@@ -264,10 +265,10 @@ public class URLClassPath {
      * if the resource could not be found.
      */
     public URL findResource(String name) {
-        String dir = directoryOf(name);
+        int dirHash = directoryHash(name);
         Loader loader;
         for (int i = 0; (loader = getLoader(i)) != null; i++) {
-            if (!loader.mayContain(dir)) {
+            if (!loader.mayContain(dirHash)) {
                 continue;
             }
             URL url = loader.findResource(name);
@@ -286,7 +287,7 @@ public class URLClassPath {
      * @return an Enumeration of all the urls having the specified name
      */
     public Enumeration<URL> findResources(final String name) {
-        final String dir = directoryOf(name);
+        final int dirHash = directoryHash(name);
         return new Enumeration<>() {
             private int index = 0;
             private URL url = null;
@@ -297,7 +298,7 @@ public class URLClassPath {
                 } else {
                     Loader loader;
                     while ((loader = getLoader(index++)) != null) {
-                        if (!loader.mayContain(dir)) {
+                        if (!loader.mayContain(dirHash)) {
                             continue;
                         }
                         url = loader.findResource(name);
@@ -336,13 +337,13 @@ public class URLClassPath {
             System.err.println("URLClassPath.getResource(\"" + name + "\")");
         }
 
-        String dir = directoryOf(name);
-        int start = skippedLoaders.getOrDefault(dir, 0);
+        int dirHash = directoryHash(name);
+        int start = skippedLoaders.getOrDefault(dirHash, 0);
         int skip = start;
         Resource res = null;
         Loader loader;
         for (int i = start; (loader = getLoader(i)) != null; i++) {
-            if (!loader.mayContain(dir)) {
+            if (!loader.mayContain(dirHash)) {
                 if (skip == i) {
                     skip++;
                 }
@@ -354,7 +355,7 @@ public class URLClassPath {
             }
         }
         if (skip > start) {
-            skippedLoaders.put(dir, skip);
+            skippedLoaders.put(dirHash, skip);
         }
         return res;
     }
@@ -367,7 +368,7 @@ public class URLClassPath {
      * @return an Enumeration of all the resources having the specified name
      */
     public Enumeration<Resource> getResources(final String name) {
-        final String dir = directoryOf(name);
+        final int dirHash = directoryHash(name);
         return new Enumeration<>() {
             private int index = 0;
             private Resource res = null;
@@ -378,7 +379,7 @@ public class URLClassPath {
                 } else {
                     Loader loader;
                     while ((loader = getLoader(index++)) != null) {
-                        if (!loader.mayContain(dir)) {
+                        if (!loader.mayContain(dirHash)) {
                             continue;
                         }
                         res = loader.getResource(name);
@@ -406,18 +407,21 @@ public class URLClassPath {
     }
 
     /*
-     * Returns the directory of the given resource name, which is the part before
-     * the last '/' and empty for a name in the root. A trailing '/' is ignored
-     * as ZipFile finds a directory entry "dir/" with the name "dir" too.
-     * This is how ZipFile determines the directories of entries.
+     * Returns the hash code of the directory of the given resource name, which
+     * is the part before the last '/', or "" for a name in the root. A trailing
+     * '/' is ignored, as ZipFile finds a directory entry "dir/" by "dir" too.
      */
-    private static String directoryOf(String name) {
+    private static int directoryHash(String name) {
         int end = name.length();
-        if (name.endsWith("/")) {
+        if (end > 0 && name.charAt(end - 1) == '/') {
             end--;
         }
-        int i = name.lastIndexOf('/', end - 1);
-        return i < 0 ? "" : name.substring(0, i);
+        int dirEnd = name.lastIndexOf('/', end - 1);
+        int h = 0;
+        for (int i = 0; i < dirEnd; i++) {
+            h = 31 * h + name.charAt(i);
+        }
+        return h;
     }
 
     /*
@@ -565,10 +569,10 @@ public class URLClassPath {
         }
 
         /*
-         * Returns false if this loader cannot have a resource in the given
-         * directory (see directoryOf), so that it can be skipped.
+         * Returns false if this loader cannot have a resource in a directory
+         * with the given hash code (see directoryHash), so that it can be skipped.
          */
-        boolean mayContain(String dir) {
+        boolean mayContain(int dirHash) {
             return true;
         }
 
@@ -687,10 +691,11 @@ public class URLClassPath {
         private JarFile jar;
         private final URL csu;
         private boolean closed = false;
-        // The directories of the entries, to skip lookups in other directories.
-        // They are only computed once the JAR file has missed as many lookups as
-        // it has entries, so they cost about as much as the misses so far did.
-        private volatile Set<String> directories;
+        // The sorted hash codes of the directories of the entries, to skip
+        // lookups in other directories. They are only computed once the JAR file
+        // has missed as many lookups as it has entries, so they cost about as
+        // much as the misses so far did.
+        private volatile int[] directoryHashes;
         private int missesLeft;
         // Whether the URLs of entries are made by the default jar handler
         private final boolean defaultJarHandler;
@@ -779,31 +784,45 @@ public class URLClassPath {
         }
 
         /*
-         * Returns false if the JAR file has no entry in the given directory.
+         * Returns false if the JAR file has no entry in a directory with the
+         * given hash code.
          */
         @Override
-        boolean mayContain(String dir) {
-            Set<String> dirs = directories;
-            if (dirs == null) {
+        boolean mayContain(int dirHash) {
+            int[] hashes = directoryHashes;
+            if (hashes == null) {
                 // The directories are those of the ZIP file. A subclass of
                 // JarFile, such as one a JarURLConnection supplies, can find
                 // entries that the ZIP file does not have.
                 if (missesLeft > 0 || jar.getClass() != JarFile.class) {
                     return true;
                 }
-                dirs = zipAccess.entryDirectories(jar);
-                if (jar.isMultiRelease()) {
-                    // An entry of a version is found with its unversioned name
-                    for (String d : List.copyOf(dirs)) {
-                        if (d.startsWith(META_INF_VERSIONS)) {
-                            int i = d.indexOf('/', META_INF_VERSIONS.length());
-                            dirs.add(i < 0 ? "" : d.substring(i + 1));
-                        }
-                    }
-                }
-                directories = dirs;
+                directoryHashes = hashes = computeDirectoryHashes();
             }
-            return dirs.contains(dir);
+            return Arrays.binarySearch(hashes, dirHash) >= 0;
+        }
+
+        private int[] computeDirectoryHashes() {
+            Set<String> dirs = zipAccess.entryDirectories(jar);
+            boolean multiRelease = jar.isMultiRelease();
+            int[] hashes = new int[multiRelease ? 2 * dirs.size() : dirs.size()];
+            int n = 0;
+            for (String dir : dirs) {
+                hashes[n++] = dir.hashCode();
+                // An entry of a version is found with its unversioned name
+                if (multiRelease && dir.startsWith(META_INF_VERSIONS)) {
+                    int i = dir.indexOf('/', META_INF_VERSIONS.length());
+                    hashes[n++] = i < 0 ? "".hashCode() : dir.substring(i + 1).hashCode();
+                }
+            }
+            Arrays.sort(hashes, 0, n);
+            int distinct = 0;
+            for (int i = 0; i < n; i++) {
+                if (distinct == 0 || hashes[i] != hashes[distinct - 1]) {
+                    hashes[distinct++] = hashes[i];
+                }
+            }
+            return Arrays.copyOf(hashes, distinct);
         }
 
         /*

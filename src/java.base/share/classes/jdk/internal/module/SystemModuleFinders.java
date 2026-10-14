@@ -402,9 +402,8 @@ public final class SystemModuleFinders {
      * Holder class for the ImageReader.
      */
     private static class SystemImage {
-        // Not SystemImageReader.get(): its source is also compiled for the JDK 8
-        // jrt-fs.jar so it finds the default file system and the preview mode
-        // reflectively, which costs milliseconds when reflection is first used.
+        // Not SystemImageReader, which is also compiled for the JDK 8 jrt-fs.jar
+        // and so uses core reflection, which is costly to initialize.
         static final ImageReader READER = open();
         private static ImageReader open() {
             Path image = DefaultFileSystemProvider.theFileSystem()

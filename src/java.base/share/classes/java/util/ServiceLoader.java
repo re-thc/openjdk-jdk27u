@@ -1038,8 +1038,8 @@ public final class ServiceLoader<S>
             } catch (IOException x) {
                 fail(service, "Error accessing configuration file", x);
             }
-            // Not with a BufferedReader, which costs more to set up than to read
-            // the few lines of a file. Lines end with \n, \r or \r\n, as for readLine.
+            // Lines end with \n, \r or \r\n, as for BufferedReader.readLine,
+            // which costs more to set up than these few lines take to parse.
             int lc = 1;
             int len = text.length();
             for (int pos = 0; pos < len; lc++) {

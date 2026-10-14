@@ -299,10 +299,8 @@ final class JrtPath implements Path {
             sb.append('/');
         sb.append(name);
         JrtPath result = new JrtPath(jrtfs, sb.toString(), true);
-        // The result needs no resolving of "." and ".." if this path did not, and
-        // the name does not end with a dot (which also makes ".", ".." and "x.").
-        // This is known without looking at the path again, which is done for the
-        // path of every file that is looked up.
+        // The result needs no resolving of "." and ".." if this path needed none
+        // and the name does not end with a dot, which covers "." and "..".
         if (resolved == path && name.charAt(name.length() - 1) != '.') {
             result.resolved = result.path;
         }

@@ -625,7 +625,7 @@ public class ZipFile implements ZipConstants, Closeable {
      * the previous entry, as the entries of a directory are usually adjacent.
      * As in isMetaName, an ASCII-compatible encoding is assumed.
      *
-     * @return the directories, which the caller may modify
+     * @return the directories
      * @throws IllegalStateException if the ZIP file has been closed
      */
     private Set<String> entryDirectories() {
