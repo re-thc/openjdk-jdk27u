@@ -136,7 +136,7 @@ public class ImmutableDescriptor implements Descriptor {
 
     private record Fields(String[] names, Object[] values) { }
 
-    // Inputs up to this size are sorted by insertion, larger ones all at once.
+    // Inputs up to this size are sorted by insertion, larger ones by a merge sort.
     private static final int MAX_INSERTION_SORT = 32;
     // Runs up to this size of a larger input are sorted by insertion.
     private static final int INSERTION_SORT_RUN = 16;
