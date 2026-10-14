@@ -83,7 +83,7 @@ void deallocate(void* pointer, void*) {
   static void info(Code* code, uint32_t what, void* result) { pcre2_pattern_info_##W(code, what, result); } \
   static PCRE2_SIZE* offsets(Data* d) { return pcre2_get_ovector_pointer_##W(d); } \
   static Stack* stack(General* g) { return pcre2_jit_stack_create_##W(32768, 65536, g); } \
-  static void assign(Context* c, Stack* s) { pcre2_jit_stack_assign_##W(c, nullptr, s); } \
+  static void assign(Context* c, Stack* (*callback)(void*), void* data) { pcre2_jit_stack_assign_##W(c, callback, data); } \
   static void free_stack(Stack* s) { pcre2_jit_stack_free_##W(s); } \
   static Code* copy(Code* code) { return pcre2_code_copy_##W(code); } \
   static int jit(Code* code) { return pcre2_jit_compile_##W(code, PCRE2_JIT_COMPLETE); } \
@@ -104,45 +104,96 @@ template<int W> struct Handle {
     typename A::Data* data = nullptr;
     typename A::Context* context = nullptr;
     typename A::Stack* stack = nullptr;
-    bool stack_reserved = false;
+    bool stack_reserved = false, entered_jit = false;
+    int mode = 0;
+    std::atomic<uint64_t> interpreted[3]{}, entered[3]{};
+  };
+  struct Jit {
+    std::atomic<typename A::Code*> code{nullptr};
+    // 0: eligible, 1: one preparer, 2: completed/unavailable.
+    std::atomic<unsigned> state{0}, hits{0}, samples{0}, preparations{0};
+    std::atomic<uint64_t> recent{0};
+    size_t size = 0;
+    bool reserved = false;
+    bool worthwhile(unsigned threshold) const {
+      unsigned count = samples.load(std::memory_order_relaxed);
+      uint64_t bits = recent.load(std::memory_order_relaxed);
+      unsigned positives = 0;
+      while (bits) { bits &= bits - 1; positives++; }
+      return hits.load(std::memory_order_relaxed) >= threshold && count != 0 && positives * 4 >= count * 3;
+    }
+    void record(bool useful, unsigned threshold) {
+      uint64_t bits = recent.load(std::memory_order_relaxed);
+      while (!recent.compare_exchange_weak(bits, (bits << 1) | unsigned(useful), std::memory_order_relaxed)) {}
+      unsigned count = samples.load(std::memory_order_relaxed);
+      while (count < 64 && !samples.compare_exchange_weak(count, count + 1, std::memory_order_relaxed)) {}
+      count = hits.load(std::memory_order_relaxed);
+      if (useful) while (count < threshold && !hits.compare_exchange_weak(count, count + 1, std::memory_order_relaxed)) {}
+    }
   };
   typename A::General* general = nullptr;
   typename A::Code* code = nullptr;
-  std::atomic<typename A::Code*> jit_code{nullptr};
-  // 0: eligible, 1: one thread preparing, 2: attempted (including unavailable JIT).
-  std::atomic<unsigned> jit_state{0}, calls{0};
+  typename A::Unit* pattern = nullptr;
+  size_t pattern_length = 0;
+  uint32_t compile_options = 0;
+  Jit variants[2]; // find and compile-time anchored lookingAt, independently admitted
+  std::atomic<uint64_t> saturation{0}, errors{0}, declined{0}, leaf_rejects{0};
   bool allow_jit = false, leaf_eligible = false;
   unsigned threshold = 32;
   size_t groups = 0;
-  bool jit_reserved = false;
-  size_t jit_size = 0;
   Slot pool[POOL_SIZE];
   ~Handle() {
-    A::free_code(jit_code.load());
-    jit_bytes.fetch_sub(jit_size);
+    for (auto& variant : variants) {
+      A::free_code(variant.code.load());
+      jit_bytes.fetch_sub(variant.size);
+      if (variant.reserved) live_bytes.fetch_sub(JIT_RESERVATION);
+    }
     for (auto& slot : pool) { A::free_stack(slot.stack); A::free_data(slot.data); A::free_context(slot.context);
       if (slot.stack_reserved) live_bytes.fetch_sub(65536); }
-    A::free_code(code); A::free_general(general);
-    if (jit_reserved) live_bytes.fetch_sub(JIT_RESERVATION);
+    A::free_code(code); A::free_general(general); deallocate(pattern, nullptr);
   }
-  void prepare_jit(size_t length) {
-    // Compilation occurs only in native thread state, on reusable long work.
-    if (!allow_jit || length < 256 || calls.load(std::memory_order_relaxed) < threshold) return;
+  static typename A::Stack* jit_stack(void* data) {
+    auto* slot = static_cast<Slot*>(data);
+    slot->entered_jit = true;
+    slot->entered[slot->mode].fetch_add(1, std::memory_order_relaxed);
+    return slot->stack;
+  }
+  void prepare_jit(size_t length, int mode) {
+    if (!allow_jit || mode == 2 || length < 256) return;
+    auto& variant = variants[mode];
+    if (!variant.worthwhile(threshold)) return;
     unsigned eligible = 0;
-    if (!jit_state.compare_exchange_strong(eligible, 1)) return;
+    if (!variant.state.compare_exchange_strong(eligible, 1)) return;
     if (reserve(JIT_BUILD_RESERVATION)) {
-      jit_reserved = true;
-      auto* copy = A::copy(code);
+      variant.reserved = true;
+      variant.preparations.fetch_add(1, std::memory_order_relaxed);
+      int error; PCRE2_SIZE offset;
+      // Runtime ANCHORED prevents pcre2_match from entering JIT. Compile that
+      // property into the lookingAt variant, retaining the original grammar.
+      auto* copy = mode == 0 ? A::copy(code) : A::compile(pattern, pattern_length,
+          compile_options | PCRE2_ANCHORED, &error, &offset, general);
       size_t bytes = 0;
       if (copy && A::jit(copy) == 0) {
         A::info(copy, PCRE2_INFO_JITSIZE, &bytes);
-        if (bytes <= JIT_RESERVATION / 2) { jit_size = bytes; jit_bytes.fetch_add(bytes); jit_code.store(copy, std::memory_order_release); copy = nullptr; }
+        if (bytes <= JIT_RESERVATION / 2) {
+          variant.size = bytes; jit_bytes.fetch_add(bytes);
+          variant.code.store(copy, std::memory_order_release); copy = nullptr;
+        }
       }
       A::free_code(copy);
-      if (!jit_code.load()) { jit_reserved = false; live_bytes.fetch_sub(JIT_BUILD_RESERVATION); }
+      if (!variant.code.load()) { variant.reserved = false; live_bytes.fetch_sub(JIT_BUILD_RESERVATION); }
       else live_bytes.fetch_sub(JIT_BUILD_RESERVATION - JIT_RESERVATION);
     }
-    jit_state.store(2, std::memory_order_release);
+    variant.state.store(2, std::memory_order_release);
+  }
+  void stats(int64_t* values) {
+    for (int i = 0; i < 12; i++) values[i] = 0;
+    for (auto& slot : pool) for (int mode = 0; mode < 3; mode++) {
+      values[mode] += slot.interpreted[mode].load(std::memory_order_relaxed);
+      values[3 + mode] += slot.entered[mode].load(std::memory_order_relaxed);
+    }
+    values[6] = variants[0].preparations.load(); values[7] = variants[1].preparations.load();
+    values[8] = saturation.load(); values[9] = errors.load(); values[10] = declined.load(); values[11] = leaf_rejects.load();
   }
 };
 
@@ -160,12 +211,18 @@ template<int W> void* compile(const unsigned char* bytes, size_t length, unsigne
   for (size_t i = 0; i < length; i++) pattern[i] = bytes[i];
   int error; PCRE2_SIZE offset;
   // CASELESS C-locale folding is ASCII; Java Unicode flags remain unqualified.
-  handle->code = A::compile(pattern, length, (flags & 2) ? PCRE2_CASELESS : 0, &error, &offset, handle->general);
+  handle->compile_options = (flags & 2) ? PCRE2_CASELESS : 0;
+  handle->code = A::compile(pattern, length, handle->compile_options, &error, &offset, handle->general);
   uint32_t count = 0; size_t code_size = 0;
   if (handle->code) { A::info(handle->code, PCRE2_INFO_CAPTURECOUNT, &count); A::info(handle->code, PCRE2_INFO_SIZE, &code_size); }
   handle->leaf_eligible = code_size <= 4096;
   handle->allow_jit = handle->allow_jit && code_size <= 4096;
   bool valid = handle->code && count + 1 == groups && code_size <= MAX_CODE;
+  if (valid && handle->allow_jit) {
+    handle->pattern = static_cast<typename A::Unit*>(allocate(length * sizeof(typename A::Unit), nullptr));
+    valid = handle->pattern != nullptr;
+    if (valid) { std::memcpy(handle->pattern, pattern, length * sizeof(typename A::Unit)); handle->pattern_length = length; }
+  }
   if (valid) {
     auto& slot = handle->pool[0];
     slot.data = A::data(handle->code, handle->general);
@@ -191,8 +248,10 @@ template<int W> int match(Handle<W>* handle, const typename Api<W>::Unit* text,
   // PCRE2's backtracking limit alone does not bound an unanchored search: it
   // restarts for each subject position. Bound both subject length and per-start
   // match/depth/heap work on the leaf path. All larger work uses stable copies.
-  if (!safepoint && (W != 8 || !handle->leaf_eligible || to - from > int(LEAF_INPUT))) return -2;
-  if (safepoint && mode != 2) handle->prepare_jit(to - from);
+  if (!safepoint && (W != 8 || !handle->leaf_eligible || to - from > int(LEAF_INPUT))) {
+    handle->leaf_rejects.fetch_add(1, std::memory_order_relaxed); return -2;
+  }
+  if (safepoint && mode != 2) handle->prepare_jit(to - from, mode);
   typename Handle<W>::Slot* acquired = nullptr;
   for (unsigned index = 0; index < (safepoint ? POOL_SIZE : 1); index++) {
     auto& slot = handle->pool[index];
@@ -200,27 +259,33 @@ template<int W> int match(Handle<W>* handle, const typename Api<W>::Unit* text,
     if (slot.busy.compare_exchange_strong(free, true, std::memory_order_acquire)) { acquired = &slot; break; }
   }
   // No blocking or spin waiting in a leaf. Saturation hands control to Java.
-  if (!acquired) return safepoint ? -1 : -2;
+  if (!acquired) { handle->saturation.fetch_add(1, std::memory_order_relaxed); return safepoint ? -1 : -2; }
   if (!acquired->data || !acquired->context) {
     if (!acquired->data) acquired->data = A::data(handle->code, handle->general);
     if (!acquired->context) acquired->context = A::context(handle->general);
     if (!acquired->data || !acquired->context) {
       acquired->busy.store(false, std::memory_order_release);
-      return -1;
+      handle->errors.fetch_add(1, std::memory_order_relaxed); return -1;
     }
   }
+  acquired->mode = mode; acquired->entered_jit = false;
   A::limits(acquired->context, !safepoint);
   uint32_t options = mode ? PCRE2_ANCHORED : 0;
   if (mode == 2) options |= PCRE2_ENDANCHORED;
   // Small work interprets even when this pattern owns JIT code.
-  auto* code = safepoint && mode != 2 && to - from >= 256 ? handle->jit_code.load(std::memory_order_acquire) : nullptr;
+  auto* code = safepoint && mode != 2 && to - from >= 256
+      ? handle->variants[mode].code.load(std::memory_order_acquire) : nullptr;
+  if (code && !handle->variants[mode].worthwhile(handle->threshold)) {
+    handle->declined.fetch_add(1, std::memory_order_relaxed); code = nullptr;
+  }
   if (code && !acquired->stack && reserve(65536)) {
     acquired->stack = A::stack(handle->general);
     acquired->stack_reserved = acquired->stack != nullptr;
-    if (acquired->stack) A::assign(acquired->context, acquired->stack);
+    if (acquired->stack) A::assign(acquired->context, Handle<W>::jit_stack, acquired);
     else live_bytes.fetch_sub(65536);
   }
   if (!code || !acquired->stack) { code = handle->code; options |= PCRE2_NO_JIT; }
+  else options = 0; // Anchoring is a compile-time property of the selected variant.
   // PCRE2 match data/scratch retain subject pointer values after returning.
   // A leaf must not publish Java heap addresses into a reusable native cache.
   // Its tiny copy has a fixed bound and does not transcode Latin-1.
@@ -231,25 +296,24 @@ template<int W> int match(Handle<W>* handle, const typename Api<W>::Unit* text,
     subject = bounded_input;
   }
   int result = A::match(code, subject, to - from, start - from, options, acquired->data, acquired->context);
+  if (!acquired->entered_jit) acquired->interpreted[mode].fetch_add(1, std::memory_order_relaxed);
   // JIT does not implement ENDANCHORED and can exhaust its fixed internal
   // stack. Repeat in the interpreter in native state, preserving the operation.
   if (safepoint && (result == PCRE2_ERROR_JIT_STACKLIMIT || result == PCRE2_ERROR_JIT_BADOPTION)) {
     result = A::match(handle->code, text + from, to - from, start - from,
-                      options | PCRE2_NO_JIT, acquired->data, acquired->context);
+                      (mode ? PCRE2_ANCHORED : 0) | PCRE2_NO_JIT, acquired->data, acquired->context);
+    acquired->interpreted[mode].fetch_add(1, std::memory_order_relaxed);
+  }
+  if (safepoint && mode != 2 && to - from >= 256) {
+    PCRE2_SIZE* offsets = A::offsets(acquired->data);
+    handle->variants[mode].record(result > 0 && offsets[1] - offsets[0] >= 128, handle->threshold);
   }
   if (result > 0) {
     PCRE2_SIZE* offsets = A::offsets(acquired->data);
-    // A long subject or frequent miss alone does not justify JIT. Count
-    // successful long consumed spans; exact tiny-rejection counterexamples
-    // remain interpreted. This policy is an ablated, conservative heuristic.
-    if (safepoint && mode != 2 && to - from >= 256 && offsets[1] - offsets[0] >= 128) {
-      unsigned count = handle->calls.load(std::memory_order_relaxed);
-      if (count < handle->threshold) handle->calls.fetch_add(1, std::memory_order_relaxed);
-    }
     for (size_t i = 0; i < base; i++) state[i] = i >= size_t(result) * 2 || offsets[i] == PCRE2_UNSET ? -1 : int(offsets[i]) + from;
     result = 1;
   } else if (result == PCRE2_ERROR_NOMATCH) result = 0;
-  else result = safepoint ? -1 : -2; // Exhaustion/errors are never no-match.
+  else { handle->errors.fetch_add(1, std::memory_order_relaxed); result = safepoint ? -1 : -2; } // Never a fabricated miss.
   acquired->busy.store(false, std::memory_order_release);
   return result;
 }
@@ -272,6 +336,11 @@ int jdk_regex_match_safepoint(const void* p, const unsigned char* b, size_t n, i
 int jdk_regex_match16_safepoint(const void* p, const uint16_t* b, size_t n, int* s, size_t count) {
   if (!p || count != 2 * static_cast<const Handle<16>*>(p)->groups + 4 || n > MAX_SUBJECT || s[count - 3] < 0 || size_t(s[count - 3]) > n) return -1;
   return match<16>(const_cast<Handle<16>*>(static_cast<const Handle<16>*>(p)), b, s, true);
+}
+void jdk_regex_route_stats(const void* p8, const void* p16, int64_t* values) {
+  for (int i = 0; i < 24; i++) values[i] = 0;
+  if (p8) const_cast<Handle<8>*>(static_cast<const Handle<8>*>(p8))->stats(values);
+  if (p16) const_cast<Handle<16>*>(static_cast<const Handle<16>*>(p16))->stats(values + 12);
 }
 size_t jdk_regex_live_bytes() { return live_bytes.load(); }
 void jdk_regex_memory_stats(int64_t* values) {

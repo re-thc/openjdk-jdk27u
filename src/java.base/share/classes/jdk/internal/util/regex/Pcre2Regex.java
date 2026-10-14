@@ -894,6 +894,16 @@ public final class Pcre2Regex {
     /** Native budget, allocation count/bytes, freed bytes and generated JIT bytes.
      * Values are independent atomic snapshots; mappings/RSS require OS tools. */
     public static native long[] nativeMemoryStats();
+    /** Per compiled handle, twelve counters for width 8 then width 16:
+     * interpreter entries for find/lookingAt/matches, actual JIT-stack callback
+     * entries for those modes, find/lookingAt preparations, pool saturation,
+     * errors, admission declines and rejected leaf attempts. Snapshots are not
+     * transactional; a JIT stack-limit retry counts both engine entries. */
+    public long[] nativeRouteStats() {
+        try { return routeStats0(handle, handle16); }
+        finally { Reference.reachabilityFence(this); }
+    }
+    private static native long[] routeStats0(long narrow, long wide);
     private static native void registerNatives();
     private static native boolean enabled0();
     private static native int javaTier0();

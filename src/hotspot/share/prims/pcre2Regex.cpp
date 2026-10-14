@@ -37,6 +37,7 @@ extern "C" {
   void jdk_regex_free(void* handle);
   void jdk_regex_free16(void* handle);
   void jdk_regex_memory_stats(int64_t* values);
+  void jdk_regex_route_stats(const void*, const void*, int64_t*);
   int jdk_regex_match16_safepoint(const void*, const uint16_t*, size_t, int*, size_t);
   int jdk_regex_match(const void* handle, const unsigned char* bytes, int* state);
   int jdk_regex_match_safepoint(const void* handle, const unsigned char* bytes, size_t length,
@@ -245,8 +246,22 @@ JNI_ENTRY(jlongArray, RR_memoryStats(JNIEnv* env, jclass cls))
   return result;
 JNI_END
 
+JNI_ENTRY(jlongArray, RR_routeStats(JNIEnv* env, jclass cls, jlong narrow, jlong wide))
+  jlong values[24] = {};
+#if INCLUDE_PCRE2_REGEX
+  int64_t snapshot[24];
+  jdk_regex_route_stats(reinterpret_cast<void*>(static_cast<intptr_t>(narrow)),
+                       reinterpret_cast<void*>(static_cast<intptr_t>(wide)), snapshot);
+  for (int i = 0; i < 24; i++) values[i] = snapshot[i];
+#endif
+  jlongArray result = env->NewLongArray(24);
+  if (result != nullptr) env->SetLongArrayRegion(result, 0, 24, values);
+  return result;
+JNI_END
+
 extern "C" void JNICALL JVM_RegisterPcre2RegexMethods(JNIEnv* env, jclass cls) {
   static const JNINativeMethod methods[] = {
+    {const_cast<char*>("routeStats0"), const_cast<char*>("(JJ)[J"), CAST_FROM_FN_PTR(void*, RR_routeStats)},
     {const_cast<char*>("nativeMemoryStats"), const_cast<char*>("()[J"), CAST_FROM_FN_PTR(void*, RR_memoryStats)},
     {const_cast<char*>("enabled0"), const_cast<char*>("()Z"), CAST_FROM_FN_PTR(void*, RR_enabled)},
     {const_cast<char*>("javaTier0"), const_cast<char*>("()I"), CAST_FROM_FN_PTR(void*, RR_javaTier)},
