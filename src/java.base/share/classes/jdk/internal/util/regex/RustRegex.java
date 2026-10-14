@@ -367,7 +367,7 @@ public final class RustRegex {
                 }
                 if (at == to) return 0;
             }
-            int limit = to-start <= 256 ? 256 : 32;
+            int limit = to-start <= 256 ? 256 : JAVA_TIER == 2 ? Integer.MAX_VALUE : 32;
             while (at >= 0 && at <= to) {
                 int digits = at + prefix.length();
                 if (digits <= to && (prefix.isEmpty() || input.startsWith(prefix, at))) {

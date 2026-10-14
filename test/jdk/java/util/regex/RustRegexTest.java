@@ -186,7 +186,7 @@ public class RustRegexTest {
         String[] expressions = {"error[0-9]+", "(?<word>error)(?<digits>\\d+)",
                 "[0-9]+", "(1)([0-9]+)"};
         String[] inputs = {"", "e", "err", "erro", "error", "errorx", "error123",
-                "error123x", "xerror123", "errorerror123", "11", "1234", "xxxx",
+                "error123x", "xerror123", "errorerror123", "11", "1234", "3".repeat(4096), "xxxx",
                 "\u00fferror123", "\u0100error123", "error" + "3".repeat(4096),
                 "error" + "3".repeat(4096) + "x", "x".repeat(4096),
                 "!".repeat(255) + "1", "!".repeat(256) + "1",

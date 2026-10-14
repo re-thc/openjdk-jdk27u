@@ -1,5 +1,40 @@
 # Rust regex performance
 
+## Long literal and digit runs
+
+The existing literal/digit plan can finish long runs when the VM is configured
+to permit C2. It retains the 256-character limit for short regions and the
+32-digit limit for longer regions under interpreter-only or C1-only settings.
+This uses the VM's configured compilation ceiling; it does not identify the
+current execution tier. Normal startup may execute the plan before C2 compiles
+it. No compiler tier is disabled by the implementation.
+
+Equal module-loading controls isolate this change. Two alternating process
+pairs use the same captures, all four hit positions, both end-flag settings,
+16/64/256/4,096-character regions at C2 and 16/4,096 at interpreter and C1.
+At C2, 4,096-character full hits with end flags fall from 22.6 to 4.9 microseconds
+for the captured prefix and from 21.9 to 4.9 for digits. Across all tested
+configurations, median candidate/baseline ratios are 0.99 at C2, 1.01 at C1
+and 1.00 in the interpreter. These are managed-plan gains, not Rust engine
+throughput. A broader candidate that changed the short-region limit was
+rejected after short digit cases regressed.
+
+Fresh-process measurements include all four shapes, five region sizes and
+every fitting hit position. The 68 semantic tuples, including captures and
+both end flags, agree in both controls. First-use timings remain mixed;
+focused nine-pair confirmation gives prefix full hits 2.23 to 1.77 ms and
+digit full hits 1.92 to 1.49 ms, but email eight-character misses 13.21 to
+14.59 ms. All samples are retained. This does not establish a universal
+startup improvement.
+
+The full public-API matrix also exposes substantial remaining losses.
+Captured alternation on a 4,096-character full hit takes about 39 microseconds
+versus 8.3 through the original-source Java control. Matched standalone Rust
+capture-engine and adapter medians are 40.2 and 41.2 microseconds for that
+case. Adapter and dispatch overhead therefore cannot explain the whole gap.
+Email end-flag replay, short-prefix routing and low-reuse preparation remain
+separate costs; a native engine does not universally win this corpus.
+
 ## First-use preparation and verified native routes
 
 Runtime source `054933b4633`, Linux x86_64, GCC 16.2, Rust 1.99.0,
