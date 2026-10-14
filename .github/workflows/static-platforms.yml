@@ -1,0 +1,100 @@
+name: Private zlib-ng static archive and image qualification
+on:
+  push:
+    branches: [pr/zlib-ng-static-platforms]
+permissions:
+  contents: read
+jobs:
+  static:
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-x64, macos-aarch64, windows-x64, windows-aarch64]
+        include:
+          - platform: macos-x64
+            runner: macos-15-intel
+            archive: libzlibng.a
+          - platform: macos-aarch64
+            runner: macos-26
+            archive: libzlibng.a
+          - platform: windows-x64
+            runner: windows-2025
+            architecture: x86.x64
+            archive: zlibng.lib
+            toolchain: --with-toolchain-version=2026 --with-msvc-toolset-version=14.44
+          - platform: windows-aarch64
+            runner: windows-11-arm
+            architecture: ARM64
+            archive: zlibng.lib
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      CHERE_INVOKING: 1
+      MSYS2_PATH_TYPE: minimal
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Locate Windows CMake
+        id: cmake
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $cmake = (Get-Command cmake -ErrorAction Stop).Source.Replace('\', '/')
+          "path=$cmake" >> $env:GITHUB_OUTPUT
+      - uses: ./.github/actions/get-msys2
+        if: runner.os == 'Windows'
+        with:
+          architecture: ${{ matrix.architecture }}
+      - name: Install macOS build tools
+        if: runner.os == 'macOS'
+        run: |
+          brew install autoconf make
+          echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
+          if [[ '${{ matrix.platform }}' == macos-aarch64 ]]; then
+            sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
+          fi
+      - uses: ./.github/actions/get-bootjdk
+        id: bootjdk
+        with:
+          platform: ${{ matrix.platform }}
+      - name: Configure Windows target
+        if: runner.os == 'Windows'
+        shell: env /usr/bin/bash --login -eo pipefail {0}
+        env:
+          PATH: ''
+        run: |
+          bash configure --with-conf-name=static --with-debug-level=release \
+            --with-boot-jdk='${{ steps.bootjdk.outputs.path }}' \
+            --disable-desktop --enable-headless-only --with-native-debug-symbols=none \
+            CMAKE='${{ steps.cmake.outputs.path }}' ${{ matrix.toolchain }}
+      - name: Configure macOS target
+        if: runner.os == 'macOS'
+        run: |
+          bash configure --with-conf-name=static --with-debug-level=release \
+            --with-boot-jdk='${{ steps.bootjdk.outputs.path }}' \
+            --disable-desktop --enable-headless-only --with-native-debug-symbols=none
+      - name: Build and package the private static archive
+        run: |
+          mkdir -p qualification
+          make -C make -r -R -I common -I common/modules -I modules/java.base -f ModuleWrapper.gmk \
+            SPEC="$(pwd)/build/static/spec.gmk" MODULE=java.base MAKEFILE_PREFIX=Lib STATIC_LIBS=true \
+            "$(pwd)/build/static/support/native/java.base/libzlibng/static/${{ matrix.archive }}" \
+            2>&1 | tee qualification/static-archive.log
+          make -C make -r -R -I common -I common/modules -f StaticLibsImage.gmk \
+            SPEC="$(pwd)/build/static/spec.gmk" static-libs-image \
+            2>&1 | tee qualification/static-image.log
+          test -s build/static/images/static-libs/lib/${{ matrix.archive }}
+          cmp build/static/support/native/java.base/libzlibng/static/${{ matrix.archive }} \
+              build/static/images/static-libs/lib/${{ matrix.archive }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: static-${{ matrix.platform }}
+          path: |
+            qualification
+            build/static/spec.gmk
+            build/static/images/static-libs
+            build/static/support/native/zlib-ng-static/configure-output.log
+          retention-days: 14
