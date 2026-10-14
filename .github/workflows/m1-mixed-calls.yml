@@ -1,0 +1,31 @@
+name: M1 C1 mixed-buffer call comparison
+on:
+  push:
+    branches: [pr/zlib-ng-platform-qualification]
+permissions:
+  contents: read
+concurrency:
+  group: m1-mixed-calls-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  measure:
+    if: startsWith(github.event.head_commit.message, 'Compare macos-mixed-call ')
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: build/zip/images/jdk
+          key: zip-platform-v1-macos-aarch64-release-e028309c31bba1c27370190381b3998eca8ef794
+          fail-on-cache-miss: true
+      - name: Compare C1 runtime, native wrapper and original JNI
+        run: |
+          python3 -m py_compile .github/scripts/measure-mixed-calls.py
+          python3 .github/scripts/measure-mixed-calls.py build/zip/images/jdk
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: m1-mixed-calls
+          path: qualification
+          retention-days: 14
