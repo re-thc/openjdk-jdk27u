@@ -233,11 +233,11 @@ public final class UTF_8 extends Unicode {
             dp += n;
 
             // Keep the ASCII intrinsic and reject invalid leading bytes before bulk conversion.
-            int converted = SimdUTF.isEligible(sl - sp)
+            n = SimdUTF.isEligible(sl - sp)
                     && (sa[sp] & 0xff) >= 0xc2 && (sa[sp] & 0xff) <= 0xf4
                     ? SimdUTF.decodeUTF8(sa, sp, sl - sp, da, dp, dl - dp) : -1;
-            if (converted >= 0) {
-                updatePositions(src, sl, dst, dp + converted);
+            if (n >= 0) {
+                updatePositions(src, sl, dst, dp + n);
                 return CoderResult.UNDERFLOW;
             }
             while (sp < sl) {
@@ -322,7 +322,7 @@ public final class UTF_8 extends Unicode {
                     da[dp++] = Character.lowSurrogate(uc);
                     sp += 4;
                 } else
-                    return malformed(src, sp, dst, dp, 1);
+                    return malformedForLength(src, sp, dst, dp, 1);
             }
             return xflow(src, sp, sl, dst, dp, 0);
         }
