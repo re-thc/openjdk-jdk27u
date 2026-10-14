@@ -1,0 +1,77 @@
+name: Resume paired macOS Intel ZIP measurements
+on:
+  push:
+    branches: [pr/zlib-ng-platform-qualification]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: zip-pairs-intel-resume-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  measure:
+    if: startsWith(github.event.head_commit.message, 'Resume paired macos-x64 ')
+    runs-on: macos-15-intel
+    timeout-minutes: 240
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Install build tools
+        run: |
+          brew install autoconf make ccache
+          echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
+      - uses: ./.github/actions/get-bootjdk
+        id: bootjdk
+        with:
+          platform: macos-x64
+      - name: Restore the saved runtime image
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 38473507454 --repo re-thc/openjdk-jdk27u \
+            --name macos-x64-debug-zip --dir work/debug
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil
+          image = next(Path('work/debug').rglob('debug-jdk/bin/java')).parent.parent
+          shutil.copytree(image, 'build/zip/images/jdk', dirs_exist_ok=True)
+          PY
+      - name: Build the release VM
+        run: |
+          bash bin/configure-dev --with-conf-name=paired --with-debug-level=release \
+            --with-boot-jdk='${{ steps.bootjdk.outputs.path }}' \
+            --with-native-debug-symbols=none --disable-desktop --enable-headless-only \
+            --enable-jvm-feature-serialgc --enable-jvm-feature-g1gc --enable-jvm-feature-zgc \
+            --disable-jvm-feature-parallelgc --disable-jvm-feature-shenandoahgc \
+            --disable-jvm-feature-epsilongc --with-version-opt=zip-paired-resume
+          mkdir -p qualification
+          make CONF=paired hotspot LOG=info >qualification/vm-build.log 2>&1
+          cp build/paired/jdk/lib/server/libjvm.dylib build/zip/images/jdk/lib/server/
+          rm -f build/zip/images/jdk/lib/server/*.jsa
+          build/zip/images/jdk/bin/java -Xshare:dump
+          build/zip/images/jdk/bin/java -XX:-UseCompressedOops \
+            -XX:SharedArchiveFile=build/zip/images/jdk/lib/server/classes_nocoops.jsa -Xshare:dump
+          build/zip/images/jdk/bin/java -version
+          mkdir -p qualification/abi
+          build/zip/images/jdk/bin/javac -d qualification/abi \
+            test/hotspot/jtreg/compiler/intrinsics/zip/TestFpRegsABI.java
+          for mode in '-Xint' '-XX:TieredStopAtLevel=1' '-XX:-TieredCompilation'; do
+            build/zip/images/jdk/bin/java -Xshare:off -Xbatch "$mode" \
+              -cp qualification/abi compiler.intrinsics.zip.TestFpRegsABI
+          done
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: build/zip/images/jdk
+          key: zip-paired-resume-v1-macos-x64-${{ github.sha }}
+      - name: Measure paired ZIP calls
+        run: python3 .github/scripts/measure-zip-pairs.py build/zip/images/jdk
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: macos-x64-zip-pairs-resume
+          path: |
+            qualification
+            build/zip/images/jdk
+          retention-days: 14
