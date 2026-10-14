@@ -185,6 +185,9 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         String alias;
         byte[] keyId;
         Set<KeyStore.Entry.Attribute> attributes;
+        // whether the attributes used by the implementation are still to be
+        // added to the attributes, see getAttributes
+        boolean populatePending;
     }
 
     // A key entry
@@ -1277,7 +1280,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             return super.engineGetAttributes(alias);
         }
         Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
-        return Collections.unmodifiableSet(new HashSet<>(entry.attributes));
+        return Collections.unmodifiableSet(new HashSet<>(getAttributes(entry)));
     }
 
     /**
@@ -1323,7 +1326,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 }
 
                 return new KeyStore.TrustedCertificateEntry(
-                        ((CertEntry)entry).cert, entry.attributes);
+                        ((CertEntry)entry).cert, getAttributes(entry));
             } else {
                 throw new UnrecoverableKeyException
                         ("requested entry requires a password");
@@ -1344,12 +1347,12 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     Certificate[] chain = internalGetCertificateChain(entry);
 
                     return new KeyStore.PrivateKeyEntry((PrivateKey)key, chain,
-                        entry.attributes);
+                        getAttributes(entry));
 
                 } else if (key instanceof SecretKey) {
 
                     return new KeyStore.SecretKeyEntry((SecretKey)key,
-                        entry.attributes);
+                        getAttributes(entry));
                 }
             } else {
                 throw new UnsupportedOperationException
@@ -1438,9 +1441,23 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     }
 
     /*
+     * Returns the attributes of the entry. The attributes of an entry that was
+     * loaded are populated when they are first needed.
+     */
+    private static Set<KeyStore.Entry.Attribute> getAttributes(Entry entry) {
+        synchronized (entry) {
+            if (entry.populatePending) {
+                populateAttributes(entry);
+                entry.populatePending = false;
+            }
+            return entry.attributes;
+        }
+    }
+
+    /*
      * Populate the entry with additional attributes used by the implementation.
      */
-    private void populateAttributes(Entry entry) {
+    private static void populateAttributes(Entry entry) {
 
         if (entry.attributes == null) {
             entry.attributes = new HashSet<>();
@@ -1695,13 +1712,13 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     if (entry instanceof KeyEntry keyEntry) {
                         bagAttrs =
                             getBagAttributes(keyEntry.alias, keyEntry.keyId,
-                                keyEntry.attributes);
+                                getAttributes(keyEntry));
                     } else {
                         CertEntry certEntry = (CertEntry) entry;
                         bagAttrs =
                             getBagAttributes(certEntry.alias, certEntry.keyId,
                                 certEntry.trustedKeyUsage,
-                                certEntry.attributes);
+                                getAttributes(certEntry));
                     }
                 } else {
                     // Trusted root CA certs and Intermediate CA certs do not
@@ -1712,7 +1729,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     // However, IE/OpenSSL do not impose this restriction.
                     bagAttrs = getBagAttributes(
                             cert.getSubjectX500Principal().getName(), null,
-                            entry.attributes);
+                            getAttributes(entry));
                 }
                 if (bagAttrs != null) {
                     safeBag.writeBytes(bagAttrs);
@@ -1805,7 +1822,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
             // write SafeBag Attributes
             byte[] bagAttrs =
-                getBagAttributes(alias, entry.keyId, entry.attributes);
+                getBagAttributes(alias, entry.keyId, getAttributes(entry));
             safeBag.writeBytes(bagAttrs);
 
             // wrap as Sequence
@@ -2290,6 +2307,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         throws IOException, CertificateException {
         DerValue[] safeBags = stream.getSequence(2);
         int count = safeBags.length;
+        CertificateFactory cf = null;
 
         /*
          * Spin over the SafeBags.
@@ -2325,7 +2343,9 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                                         + certValues[1].tag);
                 }
                 DerValue certValue = certValues[1].data.getDerValue();
-                CertificateFactory cf = CertificateFactory.getInstance("X509");
+                if (cf == null) {
+                    cf = CertificateFactory.getInstance("X509");
+                }
                 X509Certificate cert;
                 cert = (X509Certificate)cf.generateCertificate
                         (new ByteArrayInputStream(certValue.getOctetString()));
@@ -2460,7 +2480,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                    alias = getUnfriendlyName();
                 }
                 entry.alias = alias;
-                populateAttributes(entry);
+                entry.populatePending = true;
                 entries.put(alias.toLowerCase(Locale.ENGLISH), entry);
 
             } else if (bagItem instanceof X509Certificate cert) {
@@ -2482,7 +2502,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     CertEntry certEntry =
                         new CertEntry(cert, keyId, alias, trustedKeyUsage,
                             attributes);
-                    populateAttributes(certEntry);
+                    certEntry.populatePending = true;
                     entries.put(alias.toLowerCase(Locale.ENGLISH), certEntry);
                 } else {
                     certEntries.add(new CertEntry(cert, keyId, alias));

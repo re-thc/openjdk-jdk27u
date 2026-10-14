@@ -83,22 +83,27 @@ public class CertificateExtensions implements DerEncoder {
     // Parse the encoded extension
     private void parseExtension(Extension ext) throws IOException {
         try {
-            Class<?> extClass = OIDMap.getClass(ext.getExtensionId());
-            if (extClass == null) {   // Unsupported extension
-                if (ext.isCritical()) {
-                    unsupportedCritExt = true;
+            Extension certExt = OIDMap.newExtension(ext);
+            if (certExt == null) {
+                Class<?> extClass = OIDMap.getClass(ext.getExtensionId());
+                if (extClass == null) {   // Unsupported extension
+                    if (ext.isCritical()) {
+                        unsupportedCritExt = true;
+                    }
+                    if (map.put(ext.getExtensionId().toString(), ext) == null) {
+                        return;
+                    } else {
+                        throw new IOException(
+                                "Duplicate extensions not allowed");
+                    }
                 }
-                if (map.put(ext.getExtensionId().toString(), ext) == null) {
-                    return;
-                } else {
-                    throw new IOException("Duplicate extensions not allowed");
-                }
-            }
-            Constructor<?> cons = extClass.getConstructor(PARAMS);
+                Constructor<?> cons = extClass.getConstructor(PARAMS);
 
-            Object[] passed = new Object[] {Boolean.valueOf(ext.isCritical()),
-                    ext.getExtensionValue()};
-            Extension certExt = (Extension) cons.newInstance(passed);
+                Object[] passed = new Object[] {
+                        Boolean.valueOf(ext.isCritical()),
+                        ext.getExtensionValue()};
+                certExt = (Extension) cons.newInstance(passed);
+            }
             if (map.put(certExt.getName(), certExt) != null) {
                 throw new IOException("Duplicate extensions not allowed");
             }

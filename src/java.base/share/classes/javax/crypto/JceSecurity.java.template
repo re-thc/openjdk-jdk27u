@@ -253,19 +253,8 @@ final class JceSecurity {
         return e == null;
     }
 
-    // dummy object to represent null
-    private static final URL NULL_URL;
-
-    static {
-        try {
-            @SuppressWarnings("deprecation")
-            var _unused = NULL_URL = new URL("http://null.oracle.com/");
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    // reference to a Map we use as a cache for codebases
+    // reference to a Map we use as a cache for codebases, a class without
+    // a codebase is mapped to null
     private static final Map<Class<?>, URL> codeBaseCacheRef =
             new WeakHashMap<>();
 
@@ -275,8 +264,7 @@ final class JceSecurity {
     static URL getCodeBase(final Class<?> clazz) {
         synchronized (codeBaseCacheRef) {
             URL url = codeBaseCacheRef.get(clazz);
-            if (url == null) {
-                url = NULL_URL;
+            if (url == null && !codeBaseCacheRef.containsKey(clazz)) {
                 ProtectionDomain pd = clazz.getProtectionDomain();
                 if (pd != null) {
                     CodeSource cs = pd.getCodeSource();
@@ -286,7 +274,7 @@ final class JceSecurity {
                 }
                 codeBaseCacheRef.put(clazz, url);
             }
-            return (url == NULL_URL) ? null : url;
+            return url;
         }
     }
 
@@ -344,11 +332,21 @@ final class JceSecurity {
                 cryptoPolicyProperty);
         }
 
+        // Not with a glob, which is compiled to a regular expression, and the
+        // files are read with java.io, which costs less to set up for them.
+        DirectoryStream.Filter<Path> policyFiles = new DirectoryStream.Filter<>() {
+            @Override
+            public boolean accept(Path entry) {
+                String name = entry.getFileName().toString();
+                return (name.startsWith("default_") || name.startsWith("exempt_"))
+                        && name.endsWith(".policy");
+            }
+        };
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(
-                cryptoPolicyPath, "{default,exempt}_*.policy")) {
+                cryptoPolicyPath, policyFiles)) {
             for (Path entry : stream) {
                 try (InputStream is = new BufferedInputStream(
-                        Files.newInputStream(entry))) {
+                        new FileInputStream(entry.toFile()))) {
                     String filename = entry.getFileName().toString();
 
                     CryptoPermissions tmpPerms = new CryptoPermissions();
