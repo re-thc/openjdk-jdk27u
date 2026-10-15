@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Cancel superseded diagnostic
         env:
-          GH_${{ github.token }}: TOKEN
+          GH_TOKEN: ${{ github.token }}
         run: |
           task_old_head=$(gh api repos/re-thc/openjdk-jdk27u/actions/runs/38737775765 --jq '.head_sha')
           test "$task_old_head" = 84012fdaa899053263d458fd176983b19fbb650e
