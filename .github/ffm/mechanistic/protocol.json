@@ -1,0 +1,191 @@
+{
+  "publication_or_execution_authorized": false,
+  "published": false,
+  "executed": false,
+  "publication_ready": false,
+  "implementation_status": "Local implementation; independent review pending",
+  "expected_remote_head": "b4adc3b2846d5bfb6af13dd06c399e6ad61c58c5",
+  "job_attempts": 1,
+  "timeout_minutes": 45,
+  "runner": "First assigned native Linux x86_64 ubuntu-26.04 VM; AMD/Intel recorded",
+  "capability_preflight_same_job_VM": true,
+  "probe_requires_privilege_changes": false,
+  "baseline_source": "02324e6bd026411407983df06284cd79460c33f6",
+  "images": [
+    "base"
+  ],
+  "labels": [
+    "base",
+    "control"
+  ],
+  "candidate_builds": 0,
+  "acceptance_timing_forks": 0,
+  "instrumented_C2_forks_max": 24,
+  "comparisons": "Mechanistic unchanged-image control only; no candidate or historical cross-host timing inputs",
+  "random_seed": 20261016,
+  "plan": [
+    {
+      "index": 0,
+      "block": 0,
+      "label": "control"
+    },
+    {
+      "index": 1,
+      "block": 0,
+      "label": "base"
+    },
+    {
+      "index": 2,
+      "block": 1,
+      "label": "base"
+    },
+    {
+      "index": 3,
+      "block": 1,
+      "label": "control"
+    },
+    {
+      "index": 4,
+      "block": 2,
+      "label": "base"
+    },
+    {
+      "index": 5,
+      "block": 2,
+      "label": "control"
+    },
+    {
+      "index": 6,
+      "block": 3,
+      "label": "base"
+    },
+    {
+      "index": 7,
+      "block": 3,
+      "label": "control"
+    },
+    {
+      "index": 8,
+      "block": 4,
+      "label": "control"
+    },
+    {
+      "index": 9,
+      "block": 4,
+      "label": "base"
+    },
+    {
+      "index": 10,
+      "block": 5,
+      "label": "control"
+    },
+    {
+      "index": 11,
+      "block": 5,
+      "label": "base"
+    },
+    {
+      "index": 12,
+      "block": 6,
+      "label": "control"
+    },
+    {
+      "index": 13,
+      "block": 6,
+      "label": "base"
+    },
+    {
+      "index": 14,
+      "block": 7,
+      "label": "base"
+    },
+    {
+      "index": 15,
+      "block": 7,
+      "label": "control"
+    },
+    {
+      "index": 16,
+      "block": 8,
+      "label": "control"
+    },
+    {
+      "index": 17,
+      "block": 8,
+      "label": "base"
+    },
+    {
+      "index": 18,
+      "block": 9,
+      "label": "control"
+    },
+    {
+      "index": 19,
+      "block": 9,
+      "label": "base"
+    },
+    {
+      "index": 20,
+      "block": 10,
+      "label": "control"
+    },
+    {
+      "index": 21,
+      "block": 10,
+      "label": "base"
+    },
+    {
+      "index": 22,
+      "block": 11,
+      "label": "control"
+    },
+    {
+      "index": 23,
+      "block": 11,
+      "label": "base"
+    }
+  ],
+  "tier_flags": [
+    "-XX:-TieredCompilation",
+    "-Xbatch"
+  ],
+  "cpu_affinity": 0,
+  "heap": "128m",
+  "CDS": "default",
+  "batch_calls": 1000000,
+  "warm_calls": 30,
+  "sample_windows": 10,
+  "point_gate": [
+    0.95,
+    1.05
+  ],
+  "interval_gate": [
+    0.9,
+    1.1
+  ],
+  "required_pairs": 12,
+  "mandatory": [
+    "phase/iteration clocks",
+    "original timer endpoints/checksums",
+    "compilation mapping events and XML",
+    "passive thread scheduling snapshots"
+  ],
+  "optional_independent": [
+    "software sampled IP/TID/TIME/CPU, period1ms CLOCK_MONOTONIC",
+    "pinned simultaneous cycles/instructions/ref-cycles",
+    "perf context-switch/migration counts"
+  ],
+  "unavailable_policy": "Select one mode at cohort start. No permission changes, host hunting or weaker-mode retry. Missing optional evidence is explicit; failed chosen-mode setup stops remaining forks.",
+  "PC_lifetime_limit": "Callback delivery, address reuse, later patches and sampling gaps are retained as uncertainty; state markers are not executed-code proof",
+  "reruns": 0,
+  "fork_exclusions": 0,
+  "shipping_claims": false,
+  "original_failure_preserved": 38712443061,
+  "comparison_jvm_limit": 24,
+  "extra_hosted_validation_jvms": 0,
+  "toolchain_setup": "Existing pinned build recipe only; no profiling-privilege workaround",
+  "bounded_summary_in_job_log": true,
+  "optional_perf_scheduling": "Omitted; passive RUSAGE_THREAD and boundary CPU retained",
+  "bootstrap_seed": 20261016,
+  "bootstrap_resamples": 10000
+}

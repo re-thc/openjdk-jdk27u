@@ -1,4 +1,5 @@
-name: FFM unbound code snapshot
+# LOCAL REVIEW COPY. Not installed, published, or dispatched.
+name: FFM bounded C2 phase diagnostic
 
 on:
   push:
@@ -11,18 +12,14 @@ permissions:
 jobs:
   inspect-unbound-linux-x64-release:
     runs-on: ubuntu-26.04
-    timeout-minutes: 60
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
-      - name: Record native runner CPU and verify Linux x86_64
+      - name: Same-runner ordinary-user capability preflight
         run: |
-          mkdir "$RUNNER_TEMP/ffm-evidence"
-          cp /proc/cpuinfo "$RUNNER_TEMP/ffm-evidence/runner-cpuinfo.txt"
-          grep -m1 "model name" "$RUNNER_TEMP/ffm-evidence/runner-cpuinfo.txt"
-          test "$(uname -s)" = Linux
-          test "$(uname -m)" = x86_64
+          python3 .github/ffm/mechanistic/prepare.py preflight --output "$RUNNER_TEMP/ffm-evidence"
       - name: Install configured GCC16 toolchain
         run: |
           sudo apt update
@@ -60,17 +57,16 @@ jobs:
             --with-freetype=system \
             --with-jmod-compress=zip-1 --with-native-debug-symbols=none --with-extra-ldflags=-fuse-ld=mold > "$output/configure.log" 2>&1
           cp build/ffm-diagnostic/spec.gmk "$output/spec.gmk"
-      - name: Build matched baseline and A images
-        id: build
+      - name: Build pinned baseline image only
         run: |
-          python3 .github/ffm/diagnostic.py build-a --repo "$RUNNER_TEMP/ffm-target" --output "$RUNNER_TEMP/ffm-evidence"
-      - name: Fixed unbound diagnostics with snapshots after timing
+          python3 .github/ffm/mechanistic/prepare.py build --repo "$RUNNER_TEMP/ffm-target" --output "$RUNNER_TEMP/ffm-evidence"
+      - name: Fixed 24-fork unchanged C2 mechanistic diagnostic
         run: |
-          python3 .github/ffm/code_snapshot.py --output "$RUNNER_TEMP/ffm-evidence"
+          python3 .github/ffm/mechanistic/collect.py --execute-mechanistic --output "$RUNNER_TEMP/ffm-evidence"
       - name: Summarize diagnostic status
         if: always()
         run: |
-          result="$RUNNER_TEMP/ffm-evidence/unbound-snapshot/status.json"
+          result="$RUNNER_TEMP/ffm-evidence/cohort/status.json"
           if test -f "$result"; then
             cat "$result" >> "$GITHUB_STEP_SUMMARY"
           else
@@ -80,15 +76,15 @@ jobs:
         if: always()
         run: |
           mkdir -p "$RUNNER_TEMP/ffm-evidence/payload"
-          cp -a .github/ffm/. "$RUNNER_TEMP/ffm-evidence/payload/"
-          cp .github/workflows/main.yml "$RUNNER_TEMP/ffm-evidence/payload/"
+          cp -a .github/ffm/mechanistic/. "$RUNNER_TEMP/ffm-evidence/payload/"
+          cp .github/workflows/main.yml "$RUNNER_TEMP/ffm-evidence/payload/executed-workflow.yml"
           # Hash the images, but keep the portable evidence artifact bounded.
-          tar --exclude=images --exclude=classes --exclude=native --exclude='jtreg-*-work/classes' \
+          tar --exclude=images --exclude=classes --exclude=original \
             -czf "$RUNNER_TEMP/ffm-diagnostic-evidence.tar.gz" -C "$RUNNER_TEMP/ffm-evidence" .
       - name: Upload all evidence, including rejected data
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: ffm-unbound-snapshot-linux-x64-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ffm-c2-phase-linux-x64-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/ffm-diagnostic-evidence.tar.gz
           retention-days: 30
