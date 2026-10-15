@@ -68,6 +68,7 @@ public class TestStringZillaDispatch {
                 throw new AssertionError("Tier not folded at compilation level " + level);
             }
             boolean serialC2 = backend == 0 && expectedTier == 4;
+            boolean avx2C2 = backend == 1 && expectedTier == 4;
             boolean scalarC1 = (backend == 0 || backend == 1) && expectedTier == 1;
             boolean scalarC2 = (backend == 0 || backend == 1) && expectedTier == 4;
             if ((boolean)latinFilter.invoke(null) != serialC2) {
@@ -86,8 +87,11 @@ public class TestStringZillaDispatch {
             check(latin, 260, 257, !scalarC2);
             check(latin, 261, 257, !scalarC2);
             check(latin, 271, 257, !scalarC2);
-            check(latin, 272, 257, true);
-            check(latin, 273, 257, true);
+            check(latin, 272, 257, !avx2C2);
+            check(latin, 273, 257, !avx2C2);
+            check(latin, 288, 257, !avx2C2);
+            check(latin, 289, 257, true);
+            check(latin, 290, 257, true);
             check(latin, 770, 257, true);
             check(utf16, 128, 4, !scalarC2);
             check(utf16, 255, 4, !scalarC2);
@@ -101,8 +105,9 @@ public class TestStringZillaDispatch {
             check(utf16, 136, 129, !scalarC2);
             check(utf16, 137, 129, !scalarC2);
             check(utf16, 143, 129, !scalarC2);
-            check(utf16, 144, 129, true);
+            check(utf16, 144, 129, !avx2C2);
             check(utf16, 145, 129, true);
+            check(utf16, 146, 129, true);
             check(utf16, 512, 385, true);
             check(utf16, 4096, 4, true);
             checkBoundaries(search);
@@ -141,7 +146,7 @@ public class TestStringZillaDispatch {
 
     private static void checkBoundaries(Method search) throws Exception {
         for (int length : new int[]{127, 128, 129, 255, 256, 257, 258, 259, 260, 261,
-                                  271, 272, 273, 511, 512, 513, 1023, 1024, 1025, 4096}) {
+                                  271, 272, 273, 288, 289, 290, 511, 512, 513, 1023, 1024, 1025, 4096}) {
             for (int count : new int[]{1, 2, 4, 16, 31, 32, 33, 64, 128, 129, 255, 256, 257, 258, 385}) {
                 if (count >= length) continue;
                 for (int base : new int[]{'a', 0x0401}) {
