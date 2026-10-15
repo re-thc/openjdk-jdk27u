@@ -1193,6 +1193,7 @@ public final class String
      * @return the number of bytes successfully decoded, at most len
      */
     /* package-private */
+    @ForceInline
     static int decodeASCII(byte[] sa, int sp, char[] da, int dp, int len) {
         int count = StringCoding.countPositives(sa, sp, len);
         while (count < len) {

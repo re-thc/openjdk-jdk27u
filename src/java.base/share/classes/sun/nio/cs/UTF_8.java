@@ -104,7 +104,7 @@ public final class UTF_8 extends Unicode {
                    (b2 & 0xc0) != 0x80 || (b3 & 0xc0) != 0x80;
         }
 
-        // only used when there is only one byte left in src buffer
+        // Checks the first two bytes of a three-byte sequence.
         private static boolean isMalformed3_2(int b1, int b2) {
             return (b1 == (byte)0xe0 && (b2 & 0xe0) == 0x80) ||
                    (b2 & 0xc0) != 0x80;
@@ -121,8 +121,9 @@ public final class UTF_8 extends Unicode {
                    (b4 & 0xc0) != 0x80;
         }
 
-        // only used when there is less than 4 bytes left in src buffer.
-        // both b1 and b2 should be "& 0xff" before passed in.
+        // Checks the first two bytes of a four-byte sequence.
+        // Both b1 and b2 must be unsigned.
+        @ForceInline
         private static boolean isMalformed4_2(int b1, int b2) {
             return (b1 == 0xf0 && (b2  < 0x90 || b2 > 0xbf)) ||
                    (b1 == 0xf4 && (b2 & 0xf0) != 0x80) ||
@@ -135,6 +136,26 @@ public final class UTF_8 extends Unicode {
         // after isMalformed4_2 has been invoked.
         private static boolean isMalformed4_3(int b3) {
             return (b3 & 0xc0) != 0x80;
+        }
+
+        @ForceInline
+        private static boolean isValidSequence(byte[] input, int offset, int limit) {
+            int b1 = input[offset];
+            int remaining = limit - offset;
+            if (b1 < (byte)0xc2 || b1 > (byte)0xf4) {
+                return false;
+            }
+            if (b1 < (byte)0xe0) {
+                return remaining >= 2 && !isNotContinuation(input[offset + 1]);
+            }
+            if (b1 < (byte)0xf0) {
+                return remaining >= 3
+                        && !isMalformed3(b1, input[offset + 1], input[offset + 2])
+                        && (b1 != (byte)0xed || (input[offset + 1] & 0xe0) != 0xa0);
+            }
+            return remaining >= 4
+                    && !isMalformed4_2(b1 & 0xff, input[offset + 1] & 0xff)
+                    && !isMalformed4(input[offset + 1], input[offset + 2], input[offset + 3]);
         }
 
         private static CoderResult malformedN(ByteBuffer src, int nb) {
@@ -239,10 +260,10 @@ public final class UTF_8 extends Unicode {
                 return xflow(src, sp, sl, dst, dp, 0);
             }
 
-            // Keep the ASCII intrinsic and reject invalid leading bytes before bulk conversion.
-            n = SimdUTF.isEligible(sl - sp)
-                    && (long)(dl - dp) * 3 >= sl - sp
-                    && (sa[sp] & 0xff) >= 0xc2 && (sa[sp] & 0xff) <= 0xf4
+            // A UTF-16 code unit consumes at most three UTF-8 bytes.
+            n = (long) (dl - dp) * 3 >= sl - sp
+                    && SimdUTF.isEligible(sl - sp)
+                    && isValidSequence(sa, sp, sl)
                     ? SimdUTF.decodeUTF8(sa, sp, sl - sp, da, dp, dl - dp) : -1;
             if (n >= 0) {
                 updatePositions(src, sl, dst, dp + n);
@@ -286,7 +307,7 @@ public final class UTF_8 extends Unicode {
                     int b2 = sa[sp + 1];
                     int b3 = sa[sp + 2];
                     if (isMalformed3(b1, b2, b3))
-                        return malformed(src, sp, dst, dp, 3);
+                        return malformedForLength(src, sp, dst, dp, isMalformed3_2(b1, b2) ? 1 : 2);
                     char c = (char)
                         ((b1 << 12) ^
                          (b2 <<  6) ^
@@ -324,7 +345,9 @@ public final class UTF_8 extends Unicode {
                     if (isMalformed4(b2, b3, b4) ||
                         // shortest form check
                         !Character.isSupplementaryCodePoint(uc)) {
-                        return malformed(src, sp, dst, dp, 4);
+                        return malformedForLength(src, sp, dst, dp,
+                                (b1 & 0xff) > 0xf4 || isMalformed4_2(b1 & 0xff, b2 & 0xff) ? 1 :
+                                isNotContinuation(b3) ? 2 : 3);
                     }
                     da[dp++] = Character.highSurrogate(uc);
                     da[dp++] = Character.lowSurrogate(uc);
