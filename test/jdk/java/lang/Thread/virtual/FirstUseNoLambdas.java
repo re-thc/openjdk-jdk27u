@@ -24,8 +24,8 @@
 /*
  * @test
  * @summary Test that starting the first virtual thread, submitting the first task to
- *     a virtual thread per task executor, and the first timed park don't bootstrap
- *     lambdas in the classes that implement virtual threads
+ *     a virtual thread per task executor, and the first timed park, sleep and timed
+ *     Object.wait don't bootstrap lambdas in the classes that implement virtual threads
  * @requires vm.continuations
  * @library /test/lib
  * @run main FirstUseNoLambdas
@@ -40,7 +40,7 @@ import jdk.test.lib.process.ProcessTools;
 
 public class FirstUseNoLambdas {
 
-    // classes that are used by the first virtual thread, executor and timed park
+    // classes that are used by the first virtual thread, executor, timed park and wait
     private static final String[] OWNERS = {
         "java.lang.VirtualThread",
         "java.lang.ThreadBuilders",
@@ -91,9 +91,10 @@ public class FirstUseNoLambdas {
             executor.submit(new Task()).get();
         }
 
-        // first timed park, and sleep
+        // first timed park, sleep, and timed wait
         Thread.ofVirtual().start(new TimedParkTask()).join();
         Thread.ofVirtual().start(new SleepTask()).join();
+        Thread.ofVirtual().start(new TimedWaitTask()).join();
 
         System.out.println("done");
     }
@@ -108,6 +109,20 @@ public class FirstUseNoLambdas {
         @Override
         public void run() {
             LockSupport.parkNanos(1_000_000);
+        }
+    }
+
+    private static class TimedWaitTask implements Runnable {
+        @Override
+        public void run() {
+            Object lock = new Object();
+            synchronized (lock) {
+                try {
+                    lock.wait(1);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
     }
 
