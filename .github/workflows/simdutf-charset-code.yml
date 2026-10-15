@@ -1,0 +1,46 @@
+name: Inspect SIMDUTF charset compiled code
+on:
+  push:
+    branches: [review/simdutf-charset-code]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: simdutf-dispatch-api-linux-x64
+          run-id: 38764733252
+          github-token: ${{ github.token }}
+          path: reports
+      - shell: python
+        run: |
+          import pathlib,re,subprocess,sys,json
+          subprocess.run([sys.executable,"-m","pip","-q","install","capstone==5.0.6"],check=True)
+          from capstone import Cs,CS_ARCH_X86,CS_MODE_64
+          root=pathlib.Path("reports");decoder=Cs(CS_ARCH_X86,CS_MODE_64)
+          for mode in ("base","on","combined"):
+              for method,tier in (("asciiCharsetDecode","c2"),("malformedSequenceDecode","c1")):
+                  raw=(root/(mode+"-"+method+"-compiled.log")).read_text()
+                  decisions=[l for l in raw.splitlines()if "@"in l and not l.lstrip().startswith(";")and any(k in l for k in("decodeASCII","inflate","countPositives","decodeArrayLoop","CharsetDecoder::decode","utf8DecoderPrefixThreshold","malformedForLength","updatePositions"))]
+                  print("CODE_INLINE",mode,tier,json.dumps(decisions[-90:]),flush=True)
+                  for section in raw.split("Compiled method ("+tier+")")[1:]:
+                      heading=section.splitlines()[0]
+                      if not any(n in heading for n in("UTF_8$Decoder::decodeArrayLoop","CharsetDecoder::decode")):continue
+                      match=re.search(r"main code\s+\[(0x[0-9a-f]+),\s*(0x[0-9a-f]+)\]",section)
+                      if not match:continue
+                      start,end=int(match[1],16),int(match[2],16);binary=bytearray(end-start);seen=0
+                      for line in section.splitlines():
+                          row=re.match(r"\s*(0x[0-9a-f]+):\s*([0-9a-f |]+)",line)
+                          if not row:continue
+                          address=int(row[1],16);digits=re.sub(r"[ |]","",row[2])
+                          if not digits or len(digits)%2 or not start<=address<end:continue
+                          data=bytes.fromhex(digits)[:end-address];binary[address-start:address-start+len(data)]=data;seen+=len(data)
+                      assert seen==end-start,(mode,heading,seen,end-start)
+                      instructions=list(decoder.disasm(bytes(binary),start))
+                      print("CODE_METHOD",json.dumps({"mode":mode,"tier":tier,"heading":heading,"bytes":end-start,"frame":re.findall(r"#\s*\[sp\+[^\n]+",section)[:1]}),flush=True)
+                      selected=instructions if tier=="c2" or "CharsetDecoder::decode"in heading else instructions[:100]
+                      print("CODE_ASM",mode,tier,heading,json.dumps([hex(i.address)+": "+i.mnemonic+" "+i.op_str for i in selected]),flush=True)
+          print("CODE_COMPLETE",flush=True)
