@@ -1,0 +1,103 @@
+name: SIMDUTF complete-image validation
+on:
+  push:
+    branches: [review/simdutf-final-image-4527cb80]
+permissions:
+  contents: read
+  actions: write
+jobs:
+  cleanup:
+    runs-on: macos-15
+    timeout-minutes: 5
+    steps:
+      - name: Cancel superseded SIMDUTF validation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for task_pair in '38821395558:a96ec1902f272da6e5aca6347d82920c7a5e34aa' '38820218819:b5a1781c19ec46e8d7c7f52efcf0dfb8bdbdfcc4'; do
+            task_run_id=${task_pair%%:*}
+            task_expected_sha=${task_pair#*:}
+            task_actual_sha=$(gh api repos/re-thc/openjdk-jdk27u/actions/runs/$task_run_id --jq .head_sha)
+            test "$task_actual_sha" = "$task_expected_sha"
+            task_run_status=$(gh api repos/re-thc/openjdk-jdk27u/actions/runs/$task_run_id --jq .status)
+            if test "$task_run_status" != completed; then
+              gh api --method POST repos/re-thc/openjdk-jdk27u/actions/runs/$task_run_id/cancel
+            fi
+          done
+  controls:
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux-x64
+          - runner: ubuntu-24.04-arm
+            platform: linux-aarch64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 16
+      - uses: ./.github/actions/get-bootjdk
+        with:
+          platform: ${{ matrix.platform }}
+      - uses: ./.github/actions/get-gtest
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: bundles-${{ matrix.platform }}
+          run-id: 38601904956
+          github-token: ${{ github.token }}
+          path: bundles/base
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: bundles-jtreg-8.2.1+1
+          run-id: 38601904956
+          github-token: ${{ github.token }}
+          path: bundles/jtreg
+      - name: Build and test complete current-head release and fastdebug images
+        run: |
+          git diff --exit-code 4527cb8009e2825d1d9e862de81bd40a777c17b4 -- src test bin make/autoconf make/hotspot
+          mkdir -p image/base results jmh
+          tar -xf bundles/base/jdk-${{ matrix.platform }}.tar.gz -C image/base
+          curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar -o jmh/core.jar
+          curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/org/openjdk/jmh/jmh-generator-annprocess/1.37/jmh-generator-annprocess-1.37.jar -o jmh/generator.jar
+          curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/net/sf/jopt-simple/jopt-simple/5.0.4/jopt-simple-5.0.4.jar -o jmh/options.jar
+          curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/org/apache/commons/commons-math3/3.6.1/commons-math3-3.6.1.jar -o jmh/math.jar
+          task_base_java=$(find image/base -path '*/bin/java' -print -quit)
+          env -u DOCKER_HOST -u DOCKER_CONTEXT -u DOCKER_TLS -u DOCKER_TLS_VERIFY -u DOCKER_CERT_PATH docker --host=unix:///var/run/docker.sock info
+          env -u DOCKER_HOST -u DOCKER_CONTEXT -u DOCKER_TLS -u DOCKER_TLS_VERIFY -u DOCKER_CERT_PATH docker --host=unix:///var/run/docker.sock run --rm --mount "type=bind,src=$GITHUB_WORKSPACE,dst=$GITHUB_WORKSPACE" --workdir "$GITHUB_WORKSPACE" ubuntu:26.04 /bin/bash -c 'set -euo pipefail
+          apt-get -qq update
+          DEBIAN_FRONTEND=noninteractive apt-get -qq install -y python3 binutils gcc-16 g++-16 make autoconf zip unzip file curl ca-certificates ccache libstdc++6 zlib1g-dev libasound2-dev libfontconfig1-dev libcups2-dev libx11-dev libxext-dev libxrender-dev libxrandr-dev libxtst-dev
+          case "$(uname -m)" in
+            x86_64) checksum=6c90d4a474c7c0409dfb575be03a5345878ac14fdba18de8b40fa58c60121189 ;;
+            aarch64) checksum=52c759d3689babaea4c42af2f31062a74ab83e17ffb5a8090232534c67b70577 ;;
+            *) exit 1 ;;
+          esac
+          curl -fsSL --retry 3 "https://github.com/rui314/mold/releases/download/v3.0.0/mold-3.0.0-$(uname -m)-linux.tar.gz" -o /tmp/mold.tar.gz
+          echo "$checksum  /tmp/mold.tar.gz" | sha256sum --check
+          mkdir -p /tmp/task-mold
+          tar -xf /tmp/mold.tar.gz --strip-components=1 -C /tmp/task-mold
+          export PATH=/tmp/task-mold/bin:$PATH
+          export CC=gcc-16 CXX=g++-16
+          test "$(gcc-16 -dumpversion)" = 16
+          gcc-16 --version
+          mold --version
+          for task_level in release fastdebug; do
+            bash bin/configure-dev --with-conf-name=final-$task_level --with-debug-level=$task_level --with-version-opt=ci-4527cb8009e2825d1d9e862de81bd40a777c17b4 --with-boot-jdk="$PWD/bootjdk/jdk" --with-jtreg="$PWD/bundles/jtreg" --with-gtest="$PWD/gtest" --with-zlib=system --with-jmod-compress=zip-1 --with-external-symbols-in-bundles=none --with-native-debug-symbols-level=1 --with-jobs=2 --with-memory-size=5000 >results/configure-$task_level.log 2>&1 || { tail -150 results/configure-$task_level.log; exit 1; }
+            make CONF=final-$task_level images >results/build-$task_level.log 2>&1 || { tail -200 results/build-$task_level.log; exit 1; }
+            bash .github/scripts/check-dev-profile.sh "build/final-$task_level/images/jdk" "build/final-$task_level/spec.gmk"
+            echo FULL_SOURCE_IMAGE_BUILT $task_level 4527cb8009e2825d1d9e862de81bd40a777c17b4
+          done
+          python3 make/scripts/simdutf-final-image.py "$PWD/build/final-release/images/jdk" "$1" "$PWD/build/final-fastdebug/images/jdk" "$PWD/results"
+          ' _ "$GITHUB_WORKSPACE/$(dirname "$(dirname "$task_base_java")")"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: simdutf-final-image-${{ matrix.platform }}
+          path: |
+            results
+            build/final-*/spec.gmk
+            build/final-*/images/jdk/release
+          retention-days: 14
