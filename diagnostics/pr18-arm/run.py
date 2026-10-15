@@ -32,10 +32,11 @@ def image_hashes(name):
     image = Path(manifest[name]['jdk'])
     return {str(p.relative_to(image)): {'sha256': sha(p), 'bytes': p.stat().st_size} for p in sorted(image.rglob('*')) if p.is_file()}
 def execute(cmd, folder, timeout=300):
+    cmd = list(map(str, cmd))
     folder.mkdir(parents=True, exist_ok=True)
     write(folder / 'command.json', cmd)
     with (folder / 'stdout.log').open('w') as f:
-        p = subprocess.run(list(map(str, cmd)), stdout=f, stderr=subprocess.STDOUT, timeout=timeout)
+        p = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT, timeout=timeout)
     (folder / 'exit-code.txt').write_text(str(p.returncode))
     if p.returncode: raise RuntimeError(f'{folder.name}: exit {p.returncode}; see preserved stdout.log')
     return (folder / 'stdout.log').read_text(errors='replace')
@@ -191,8 +192,9 @@ try:
             'base_ns_per_op': statistics.geometric_mean(x['score_ns_per_op'] for x in forks if x['image'] == 'base'),
             'candidate_ns_per_op': statistics.geometric_mean(x['score_ns_per_op'] for x in forks if x['image'] == 'candidate')}
         comparison['integrity_passed'] = all(x['stable_timed_c2'] for x in forks)
-        comparison['qualified'] = calibration['passed'] and comparison['integrity_passed']
-        comparison['measured_improvement'] = comparison['qualified'] and comparison['ci95_percent'][1] < 0
+        # Qualification is provisional until all controls and final image checks complete.
+        comparison['qualified'] = False
+        comparison['measured_improvement'] = False
         comparison['significant_regression_above_5_percent'] = comparison['ci95_percent'][0] > 5
         result['comparisons'].append(comparison)
         write(evidence / 'summary.json', result)
@@ -213,5 +215,11 @@ finally:
         except Exception as e:
             result[name + '_image_verification_error'] = str(e)
             result['performance_qualified'] = False
+    result['performance_qualified'] = (result['performance_qualified']
+        and result.get('completed_fixed_protocol', False) and 'error' not in result
+        and all(result.get(name + '_image_unchanged', False) for name in ['base', 'candidate']))
+    for comparison in result['comparisons']:
+        comparison['qualified'] = result['performance_qualified'] and comparison['integrity_passed']
+        comparison['measured_improvement'] = comparison['qualified'] and comparison['ci95_percent'][1] < 0
     write(evidence / 'summary.json', result)
     print('FINAL=' + json.dumps({k: v for k, v in result.items() if k not in ['comparisons', 'hardware', 'protocol', 'calibration']}), flush=True)

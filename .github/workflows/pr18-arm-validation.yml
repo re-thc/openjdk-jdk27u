@@ -24,6 +24,8 @@ jobs:
             /test/jtreg-ext/
             /test/hotspot/jtreg/
             /src/hotspot/share/opto/vectornode.cpp
+      - name: Validate driver orchestration with synthetic subprocesses
+        run: python3 diagnostics/pr18-arm/test_driver.py
       - name: Measure native CPU, HWCAP and kernel-supported SVE lengths
         id: hardware
         run: python3 diagnostics/pr18-arm/hardware.py
