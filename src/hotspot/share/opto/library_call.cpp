@@ -6892,7 +6892,9 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
 
   if (elem_bt != T_ILLEGAL && ArrayOperationPartialInlineSize > 0) {
     inline_limit = ArrayOperationPartialInlineSize / type2aelembytes(elem_bt);
-    do_partial_inline = inline_limit >= 16;
+    // Guarded native ranges contain at least 128 bytes; omit an unreachable
+    // masked path.
+    do_partial_inline = inline_limit >= 16 && (!native_access || ArrayOperationPartialInlineSize >= 128);
   }
 
   if (do_partial_inline) {
