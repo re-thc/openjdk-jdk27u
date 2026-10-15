@@ -4,8 +4,19 @@ on:
     branches: [review/simdutf-small-dispatch-cost]
 permissions:
   contents: read
-  actions: read
+  actions: write
 jobs:
+  cleanup:
+    runs-on: windows-2025
+    timeout-minutes: 5
+    steps:
+      - name: Cancel superseded dispatch diagnostic
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $task_run = gh api repos/re-thc/openjdk-jdk27u/actions/runs/38804723404 | ConvertFrom-Json
+          if ($task_run.head_sha -ne 'fddb4b12ed98f7b298dd8245a661e98301a5ca06') { throw 'Unexpected diagnostic head' }
+          if ($task_run.status -ne 'completed') { gh api --method POST repos/re-thc/openjdk-jdk27u/actions/runs/38804723404/cancel }
   controls:
     timeout-minutes: 45
     strategy:
