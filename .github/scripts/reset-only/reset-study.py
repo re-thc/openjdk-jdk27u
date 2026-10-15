@@ -1,15 +1,19 @@
-"""Prepare/check by default. Only --execute-once starts the proposed timing."""
+"""Default is pure planning. --execute-once alone builds/checks and starts one fixed run.
+Publication and execution of this prospective protocol require separate approval.
+"""
 from pathlib import Path
-import argparse,base64,csv,hashlib,importlib.util,io,json,os,platform,resource,select,shlex,shutil,subprocess,tarfile,time
+import argparse,base64,csv,hashlib,importlib.util,io,json,os,platform,re,resource,selectors,shlex,shutil,subprocess,tarfile,time
+import reset_protocol as P
 HERE=Path(__file__).resolve().parent
-PIN='3f71d03f3297f94e8c2cc34160262a880be337fc'
-FIELDS=['seq','worker','phase','block','work','kind','quartet','position','label','arm','offset']
-def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
-def dump(p,x):Path(p).write_text(json.dumps(x,indent=2)+'\n')
+PIN=P.PIN
+RUNTIME_FILES=['reset-study.c','reset-study.py','reset-score.py','reset_protocol.py','test_reset_mechanism.py','reset-invariants.c','backend-reset.patch','source-pins.json']
+sha=P.sha;dump=P.dump
 def load_score():
-    spec=importlib.util.spec_from_file_location('reset_score',HERE/'reset-score.py');m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
+    spec=importlib.util.spec_from_file_location('reset_score',HERE/'reset-score.py')
+    m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
+
 def prepare(a):
-    out=a.out.resolve();assert not out.exists() or not any(out.iterdir()),'Fresh output only; no overwrite/retry'
+    out=a.out.resolve();P.require(sorted(p.name for p in out.iterdir())==['STARTED'],'Output must contain only the owned one-attempt marker')
     for name in ['source','inputs','compressed','build','baseline','candidate','verify']:(out/name).mkdir(parents=True,exist_ok=True)
     pins=json.loads((HERE/'source-pins.json').read_text());assert pins['head']==PIN and pins['ng']=='88601f0bdd192e9f87d4bd0a50d5d2e2dc9b8cd0';assert sha(HERE/'backend-reset.patch')==pins['patch_sha256']=='db471660e1faf92aa71bca6b1f2ab178b4ca259343f5a0fc22713094f355e8c2'
     prefix='src/java.base/share/native/libzip/';raw=subprocess.check_output(['git','archive',PIN,prefix+'zlib',prefix+'zlib-ng',prefix+'Deflater.c',prefix+'zip_zlib_backend.h'],cwd=a.root)
@@ -50,32 +54,13 @@ unsigned long Z_EXPORT jdk_ng_test_head_nonzero(PREFIX3(stream)*s){if(deflateSta
     n=1048576;unit=b'alpha beta alpha gamma: the small bird crossed the garden. '
     add('long-text',(unit*((n+len(unit)-1)//len(unit)))[:n]);add('long-random',hashlib.shake_256(b'tiny-finish-v1:random:1048576').digest(n))
     assert len(inputs)==268 and inputs[265]['sha256']=='452b1eed4edb62808bafc70285a7a04101c90e1452adc57aba4e133e3efab5c9'
-    rings=[[base+groups[f][b%len(groups[f])] for b in range(32) for f in range(8)] for base in [0,132]]
-    works=[]
-    for name,section,life,banks in [('reuse32',0,0,rings[0]),('reuse64',0,0,rings[1]),('reuse0-eligible-boundary',0,0,[264]),('reuse65-full-fallback',0,0,[265]),('fresh32',0,1,rings[0]),('fresh64',0,1,rings[1]),('long-text-prefix64',0,2,[266]),('long-random-prefix64',0,2,[267]),('reset-only32',1,0,rings[0]),('reset-only64',1,0,rings[1])]:
-        long=life==2;works.append(dict(id=len(works),name=name,section=section,life=life,iterations=8 if long else 128,warm=1 if long else 8,quartets=1 if long else 2,banks=banks))
-    (out/'inputs.tsv').write_text(''.join(f"{x['id']}\t{x['path']}\n" for x in inputs));(out/'workloads.tsv').write_text(''.join('\t'.join(str(w[k]) for k in ['id','section','life','iterations','warm','quartets'])+'\t'+','.join(map(str,w['banks']))+'\n' for w in works))
-    rows=[]
-    for phase in [1,2,3]:
-        for block in range(12):
-            workers=[0,1] if (block+(phase==3))%2==0 else [1,0]
-            for worker in workers:
-                order=list(range(10));shift=block%10;order=order[shift:]+order[:shift]
-                if worker or phase==3:order.reverse()
-                for wi in order:
-                    w=works[wi];kinds=[4] if wi>=8 else ([3,4] if wi<2 else [3])
-                    if phase!=2:kinds=[(block+worker+wi+j)%3 for j in range(3)]
-                    for kind in kinds:
-                        arms=([0,0] if kind==0 else [3,3] if kind==1 and wi>=8 else [1,1] if kind==1 else [0,2] if kind==2 else [0,1] if kind==3 else [2,3])
-                        for q in range(w['quartets']):
-                            labels=[0,1,1,0] if (block+worker+q)%2==0 else [1,0,0,1];offset=(128*block+8*q)%len(w['banks'])
-                            for pos,label in enumerate(labels):rows.append(dict(zip(FIELDS,[len(rows),worker,phase,block,wi,kind,q,pos,label,arms[label],offset])))
-    assert len(rows)==12480 and [sum(r['phase']==p for r in rows) for p in [1,2,3]]==[5184,2112,5184]
-    with (out/'schedule.tsv').open('w') as f:writer=csv.DictWriter(f,fieldnames=FIELDS,delimiter='\t',lineterminator='\n');writer.writeheader();writer.writerows(rows)
-    manifest=dict(experiment='THIN_RESET_ONLY_NATIVE_PILOT',pin=PIN,ng=pins['ng'],patch_sha256=pins['patch_sha256'],physical_level=6,window=15,memLevel=8,strategy=0,inputs=inputs,workloads=works,arms={'0':'unchanged ng public reset','1':'sparse ng public reset','2':'same sparse build, wrapper forces full reset','3':'same wrapper, preserves eligibility'},controls={'0':'same-code N/N','1':'same-code S/S (wrapper U/U for reset-only)','2':'full-clear equivalence N/F; includes bookkeeping/control-call cost, no subtraction'},statistics=dict(blocks=12,short_quartets=2,long_quartets=1,calibration_critical=2.201,calibration_ns=100,simultaneous_estimates=24,benefit_ns=500,nonharm_ns=-100,fallback_upper_ratio=1.01),budget=dict(workloads=10,complete_operation_workloads=8,reset_only_workloads=2,pre_controls=60,post_controls=60,pre_rows=5184,comparison_rows=2112,post_rows=5184,max_rows=12480,empty_timer_records=24,measurement_seconds=900,retries=0),scope='Pooled equal-eight-family finite 132-bank population at32/64, native physical6 only. No per-family, stock-relative, Java, shipping or whole-PR qualification. 0B is eligible,65B/fresh/long are fallbacks. Long first64 NO_FLUSH then rest FINISH. Complete operation is FINISH+reset; fresh is init+FINISH+end. Reset-only times only reset, with finish outside each segment. Every control including long retains100ns bound.',independent_review=pins['independent_review'])
-    dump(out/'manifest.json',manifest)
-    for name in ['reset-study.c','reset-study.py','reset-score.py','reset-invariants.c','backend-reset.patch','source-pins.json']:shutil.copyfile(HERE/name,out/'source'/name)
-    workflow=HERE.parents[1]/'workflows/tiny-zlib-reset-only.yml';assert workflow.exists();shutil.copyfile(workflow,out/'source/tiny-zlib-reset-only.yml')
+    works=P.workloads(groups)
+    (out/'inputs.tsv').write_text(''.join(f"{x['id']}\t{x['path']}\n" for x in inputs))
+    (out/'workloads.tsv').write_text(''.join('\t'.join(str(w[k]) for k in ['id','section','life','iterations','warm','quartets'])+'\t'+','.join(map(str,w['banks']))+'\n' for w in works))
+    P.write_plan(out,works,inputs)
+    for name in RUNTIME_FILES:shutil.copyfile(HERE/name,out/'source'/name)
+    workflow=HERE.parents[1]/'workflows/tiny-zlib-mechanism.yml'
+    shutil.copyfile(workflow,out/'source'/workflow.name)
     dump(out/'preregistered.json',dict(manifest_sha256=sha(out/'manifest.json'),schedule_sha256=sha(out/'schedule.tsv'),files={p.name:sha(p) for p in (out/'source').iterdir()},frozen_before_measurement=True))
     commands=[]
     def command(cmd,log,cwd,env=None):
@@ -105,58 +90,209 @@ unsigned long Z_EXPORT jdk_ng_test_head_nonzero(PREFIX3(stream)*s){if(deflateSta
         env=dict(os.environ,ASAN_OPTIONS='detect_leaks=0:abort_on_error=1',UBSAN_OPTIONS='halt_on_error=1:print_stacktrace=1') if label=='asan-ubsan' else None
         command([binary,libraries[a1],libraries[a2],out/f'invariants-{label}.csv',out/f'invariants-{label}.bin',out/'regression-inputs.tsv',out/'quality.csv',out/'quality.bin','1'],out/f'invariants-{label}.log',out,env)
     basecmd=[str(driver),libraries['N'],libraries['S'],str(out/'inputs.tsv'),str(out/'workloads.tsv'),str(out/'schedule.tsv'),str(out)]
-    for worker in [0,1]:
-        tmp=out/f'untimed-{worker}';tmp.mkdir();(tmp/'compressed').mkdir();args=basecmd.copy();args[6]=str(tmp);command([*args,str(worker),'protocol-v1','--untimed-only'],out/f'untimed-{worker}.log',out)
-    for worker in [0,1]:
-        tmp=out/f'control-check-{worker}';tmp.mkdir();(tmp/'compressed').mkdir();args=basecmd.copy();args[0]=str(checkdriver);args[2]=libraries['V'];args[6]=str(tmp);command([*args,str(worker),'protocol-v1','--untimed-only'],out/f'control-check-{worker}.log',out)
+    for worker in P.WORKERS:
+        tmp=out/f'untimed-{worker}';tmp.mkdir();(tmp/'compressed').mkdir();args=basecmd.copy();args[6]=str(tmp);command([*args,str(worker),P.VERSION,'--untimed-only'],out/f'untimed-{worker}.log',out)
+    for worker in P.WORKERS:
+        tmp=out/f'control-check-{worker}';tmp.mkdir();(tmp/'compressed').mkdir();args=basecmd.copy();args[0]=str(checkdriver);args[2]=libraries['V'];args[6]=str(tmp);command([*args,str(worker),P.VERSION,'--untimed-only'],out/f'control-check-{worker}.log',out)
     dump(out/'launch.json',dict(basecmd=basecmd,libraries=libraries))
     env=dict(cpu=subprocess.check_output(['lscpu'],text=True),compiler=subprocess.check_output(['gcc-14','--version'],text=True),uname=platform.uname()._asdict(),libc=platform.libc_ver(),affinity=sorted(os.sched_getaffinity(0)),cpu_pin=max(os.sched_getaffinity(0)),allocator={k:os.environ.get(k) for k in ['GLIBC_TUNABLES','MALLOC_ARENA_MAX','MALLOC_MMAP_THRESHOLD_','MALLOC_TRIM_THRESHOLD_','MALLOC_PERTURB_']})
     for p in ['/sys/fs/cgroup/cpu.stat','/sys/fs/cgroup/cpu.max']:
         try:env[p]=Path(p).read_text()
         except OSError as e:env[p]=str(e)
     dump(out/'environment.json',env);dump(out/'identities.json',{str(p.relative_to(out)):dict(bytes=p.stat().st_size,sha256=sha(p)) for top in ['source','inputs','build'] for p in (out/top).rglob('*') if p.is_file()})
-    print('PREPARED_AND_UNTIMED_CHECKED:10 workloads,12480 maximum principal rows; no timing started',flush=True);return out
-def execute(out):
-    out=out.resolve();assert os.environ.get('GITHUB_RUN_ATTEMPT','1')=='1','No workflow retry'
-    with (out/'STARTED').open('x') as f:f.write('One fixed attempt; never remove to retry\n')
-    resource.setrlimit(resource.RLIMIT_CORE,(0,0));env=json.loads((out/'environment.json').read_text());os.sched_setaffinity(0,{env['cpu_pin']});launch=json.loads((out/'launch.json').read_text());base=launch['basecmd'];score=load_score();plans=[{k:int(v) for k,v in x.items()} for x in csv.DictReader((out/'schedule.tsv').open(),delimiter='\t')];workers=[];logs=[];events=[]
-    def event(**x):events.append(dict(monotonic_ns=time.monotonic_ns(),**x));dump(out/'coordination.json',events)
-    def ack(w,want,deadline):
-        while True:
-            left=deadline-time.monotonic();assert left>0,'Fixed deadline expired'
-            ready,_,_=select.select([workers[w].stdout],[],[],min(left,30))
-            if ready:got=workers[w].stdout.readline().strip();assert got==want,(got,want);return
-            print('WAITING',want,flush=True)
-    phases=[]
+    print('PREPARED_AND_UNTIMED_CHECKED:10 correctness profiles,12288 maximum timing rows; timing not started',flush=True);return out
+
+class DeadlineExpired(TimeoutError):pass
+class ProtocolFailure(P.InvalidData):pass
+
+def remaining(deadline,clock):
+    left=deadline-clock()
+    if left<=0:raise DeadlineExpired('Fixed deadline expired; no retry')
+    return left
+
+class PipePeer:
+    """Binary, nonblocking pipes; a partial line can never defeat the deadline."""
+    def __init__(self,argv,log,clock=time.monotonic):
+        self.clock=clock;self.buffer=bytearray();self.log=Path(log).open('wb')
+        try:self.process=subprocess.Popen(argv,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=self.log,bufsize=0)
+        except BaseException:self.log.close();raise
+        os.set_blocking(self.process.stdout.fileno(),False)
+        os.set_blocking(self.process.stdin.fileno(),False)
+    def _ready(self,file,event,deadline):
+        with selectors.DefaultSelector() as s:
+            s.register(file,event)
+            while not s.select(min(remaining(deadline,self.clock),30)):
+                print('WAITING_FOR_WORKER',flush=True)
+    def send(self,line,deadline):
+        b=line.encode('ascii')
+        while b:
+            self._ready(self.process.stdin,selectors.EVENT_WRITE,deadline)
+            try:n=os.write(self.process.stdin.fileno(),b)
+            except BlockingIOError:continue
+            except BrokenPipeError as e:raise ProtocolFailure('worker pipe closed') from e
+            if not n:raise ProtocolFailure('zero-byte worker write')
+            b=b[n:]
+        remaining(deadline,self.clock)
+    def expect(self,want,deadline):
+        while b'\n' not in self.buffer:
+            self._ready(self.process.stdout,selectors.EVENT_READ,deadline)
+            try:b=os.read(self.process.stdout.fileno(),4096)
+            except BlockingIOError:continue
+            if not b:raise ProtocolFailure('worker EOF while expecting '+want)
+            self.buffer.extend(b)
+            if len(self.buffer)>4096:raise ProtocolFailure('oversize worker response')
+        line,_,rest=self.buffer.partition(b'\n');self.buffer=bytearray(rest)
+        try:got=line.decode('ascii')
+        except UnicodeDecodeError as e:raise ProtocolFailure('non-ASCII worker response') from e
+        if got!=want:raise ProtocolFailure('unexpected worker response '+repr(got)+'; expected '+want)
+        remaining(deadline,self.clock)
+    def finish(self,deadline):
+        try:rc=self.process.wait(timeout=remaining(deadline,self.clock))
+        except subprocess.TimeoutExpired as e:raise DeadlineExpired('Worker finalization timed out') from e
+        remaining(deadline,self.clock)
+        if rc!=0:raise ProtocolFailure('worker exit='+str(rc))
+        if self.buffer or self.process.stdout.read():raise ProtocolFailure('extra worker stdout after QUIT')
+    def close(self):
+        if self.process.poll() is None:
+            self.process.kill()
+            self.process.wait(timeout=5)
+        for p in [self.process.stdin,self.process.stdout,self.log]:p.close()
+
+def coordinate(out,peer_factory,scorer,clock=time.monotonic):
+    """One fixed command schedule. Injectable peers/clock permit synthetic-only testing."""
+    out=Path(out);peers={};phases=[];completed=0;events=out/'coordination.jsonl'
+    def event(name,**kw):
+        with events.open('a') as f:f.write(json.dumps(dict(monotonic_seconds=clock(),event=name,**kw))+'\n')
+    def ask(w,cmd,want,deadline):
+        remaining(deadline,clock);event('SEND',worker=w,command=cmd.rstrip())
+        peers[w].send(cmd,deadline);peers[w].expect(want,deadline)
+        remaining(deadline,clock);event('ACK',worker=w,response=want)
+    status={}
     try:
-        for w in [0,1]:
-            f=(out/f'worker-{w}-addresses.log').open('w');logs.append(f);workers.append(subprocess.Popen([*base,str(w),'protocol-v1'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=f,text=True,bufsize=1))
-        startup=time.monotonic()+120
-        for w in [0,1]:ack(w,f'READY {w}',startup)
-        deadline=time.monotonic()+900;event(event='MEASUREMENT_START',deadline_seconds=900)
+        before=scorer.verify_artifacts(out);dump(out/'provenance-before.json',before)
+        event('PROVENANCE_BEFORE_VERIFIED',input_count=268)
+        startup=clock()+P.STARTUP_SECONDS
+        for w in P.LAUNCH_ORDER:
+            remaining(startup,clock);peers[w]=peer_factory(w);event('LAUNCH',worker=w,**{k:v for k,v in P.factors(w).items() if k!='worker'})
+        for w in P.LAUNCH_ORDER:peers[w].expect(f'READY {w}',startup)
+        remaining(startup,clock)
+        start=clock();deadline=start+P.MEASUREMENT_SECONDS;event('MEASUREMENT_START',cap_seconds=P.MEASUREMENT_SECONDS)
+        observed=set();plans=P.schedule()
         for phase in [1,2,3]:
-            prior=None
-            for r in [r for r in plans if r['phase']==phase]:
-                w=r['worker'];p=workers[w];block=(r['block'],w)
-                if phase==2 and block!=prior:p.stdin.write(f"E {r['block']}\n");p.stdin.flush();ack(w,f"EMPTY {w} {r['block']}",deadline)
-                prior=block;p.stdin.write(f"M {r['seq']}\n");p.stdin.flush();ack(w,f"DONE {r['seq']}",deadline)
-            phases.append(phase)
+            for r in plans:
+                if r['phase']!=phase:continue
+                w=r['worker'];key=w,r['block']
+                if phase==1 and key not in observed:
+                    ask(w,f"E {r['block']}\n",f"EMPTY {w} {r['block']}",deadline);observed.add(key)
+                ask(w,f"M {r['seq']}\n",f"DONE {r['seq']}",deadline);completed+=1
+            phases.append(phase);remaining(deadline,clock)
             if phase==1:
-                result=score.score(out,phases);dump(out/'pre-score.json',result);event(event='GLOBAL_PRE_GATE',passed=result['calibration_passed'],failed=result['failed_controls'])
+                result=scorer.score(out,[1],False);dump(out/'pre-score.json',result)
+                remaining(deadline,clock);event('GLOBAL_PRE_GATE',passed=result['calibration_passed'],failed=result['failed_controls'])
                 if not result['calibration_passed']:break
-        event(event='MEASUREMENT_COMPLETE',phases=phases)
-        for p in workers:p.stdin.write('Q\n');p.stdin.flush()
-        for p in workers:assert p.wait(timeout=120)==0
-        result=score.score(out,phases);dump(out/'score.json',result);score.report(out,result)
-        dump(out/'status.json',dict(status='PRE_GATE_FAILED_COMPARISON_SKIPPED' if phases==[1] else 'POST_GATE_FAILED_UNQUALIFIED' if not result['calibration_passed'] else 'NATIVE_PILOT_CRITERIA_PASSED_NOT_PR_QUALIFICATION' if result['decision']['passed'] else 'NATIVE_PILOT_CRITERIA_NOT_MET',rows=result['rows'],retries=0,phases=phases))
-    except Exception as e:dump(out/'status.json',dict(status='INCOMPLETE',error=str(e),completed_phases=phases,retries=0));raise
+        remaining(deadline,clock);elapsed=clock()-start
+        event('MEASUREMENT_COMPLETE',phases=phases,seconds=elapsed)
+        finish=clock()+P.FINISH_SECONDS
+        # Final stock-inflate/byte checks are outside the measurement cap.
+        for w in P.LAUNCH_ORDER:peers[w].send('Q\n',finish)
+        for w in P.LAUNCH_ORDER:
+            peers[w].expect(f'QUIT {w}',finish);peers[w].finish(finish)
+        after=scorer.verify_artifacts(out)
+        P.require(after==before,'artifact provenance changed during measurement/finalization')
+        dump(out/'provenance-after.json',after);event('PROVENANCE_AFTER_VERIFIED',input_count=268)
+        result=scorer.score(out,phases,True);dump(out/'score.json',result);scorer.report(out,result)
+        native=result['record_origin']=='NATIVE_MEASUREMENT'
+        status=dict(status='PRE_GATE_FAILED_COMPARISON_SKIPPED' if phases==[1] else
+            'POST_GATE_FAILED_UNQUALIFIED' if not result['calibration_passed'] else
+            'MECHANISM_CRITERIA_PASSED' if result['decision']['statistical_criteria_passed'] else 'MECHANISM_CRITERIA_NOT_MET',
+            record_origin=result['record_origin'],native_mechanism_qualified=result.get('decision',{}).get('native_mechanism_qualified',False) and native,
+            rows=completed,phases=phases,retries=0,measurement_seconds=elapsed,measurement_cap_seconds=900,
+            public_api_qualified=False,fresh_long_Java_qualified=False)
+    except DeadlineExpired as e:
+        status=dict(status='INCOMPLETE_TIMEOUT',error=str(e),rows=completed,completed_phases=phases,retries=0)
+        event('ABORT_TIMEOUT',error=str(e))
+    except (P.InvalidData,OSError,ValueError,KeyError,TypeError) as e:
+        status=dict(status='INVALID_DATA_OR_PROTOCOL',error=type(e).__name__+': '+str(e),rows=completed,completed_phases=phases,retries=0)
+        event('ABORT_INVALID',error=str(e))
     finally:
-        for p in workers:
-            if p.poll() is None:p.terminate()
-        for f in logs:f.close()
-if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--root',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--execute-once',action='store_true');a=p.parse_args()
-    if a.execute_once:assert os.environ.get('GITHUB_RUN_ATTEMPT','1')=='1','Workflow retries are not authorized'
+        for peer in peers.values():peer.close()
+        if status:dump(out/'status.json',status)
+    return status
+
+def claim_once(out,environment):
+    P.require(environment.get('GITHUB_RUN_ATTEMPT','1')=='1','Workflow retries are not authorized')
+    out=Path(out);out.mkdir(parents=True,exist_ok=True)
+    P.require(not any(out.iterdir()),'Fresh output only; no overwrite or retry')
+    with (out/'STARTED').open('x') as f:f.write('One fixed attempt; marker claimed before build. Never remove to retry.\n')
+
+ONCE_TAG='diagnostic-tiny-zlib-mechanism-20261015-once'
+def authorize_publication(environment,event,head):
+    """Operational guard: only a fresh fixed lightweight-tag creation at HEAD.
+
+    Creation of this tag at the reviewed commit requires separate authorization
+    and a just-in-time absence check. Leave the tag intact afterward. Deleting
+    and recreating it is separately unauthorized; this is not an administrator-
+    resistant global lock and requires no protected environment or secret.
+    """
+    e=environment;ref='refs/tags/'+ONCE_TAG
+    P.require(e.get('GITHUB_ACTIONS')=='true' and e.get('GITHUB_EVENT_NAME')=='push','native execution requires the approved GitHub tag push')
+    P.require(e.get('GITHUB_REPOSITORY')=='re-thc/openjdk-jdk27u' and event['repository']['full_name']=='re-thc/openjdk-jdk27u','publication repository mismatch')
+    P.require(e.get('GITHUB_RUN_ATTEMPT')=='1','Workflow retries are not authorized')
+    P.require(e.get('GITHUB_REF')==event['ref']==ref and e.get('GITHUB_REF_TYPE')=='tag','only the fixed one-time tag is authorized')
+    P.require(event.get('created') is True and event.get('deleted') is False and event.get('forced') is False and event.get('before')=='0'*40,'only first tag creation is authorized')
+    commit=e.get('GITHUB_SHA','')
+    P.require(re.fullmatch('[0-9a-f]{40}',commit) is not None and commit==head==event.get('after'),'tag event SHA does not match checked-out commit')
+    P.require(re.fullmatch('[1-9][0-9]*',e.get('GITHUB_RUN_ID','')) is not None,'missing publication run identity')
+    return dict(repository=e['GITHUB_REPOSITORY'],approved_commit=commit,tag=ONCE_TAG,run_id=e['GITHUB_RUN_ID'],attempt=1,
+        event='first lightweight tag creation',external_requirement='Separately authorize tag creation after verifying absence; leave it intact. Deletion/recreation is separately unauthorized. Operational guard, not protection against a malicious administrator.')
+
+def verify_tag_absence(returncode,stdout):
+    """Interpret git ls-remote --exit-code --refs; errors never mean absence."""
+    if returncode==0:raise P.InvalidData('One-time tag already exists; leave it intact, do not delete or recreate')
+    P.require(returncode==2 and not stdout.strip(),'Tag absence check failed or returned ambiguous data')
+    return dict(tag=ONCE_TAG,absent=True,method='git ls-remote --exit-code --refs --tags',
+        requirement='Repeat immediately before separately authorized creation; this read is not authorization.')
+
+def check_remote_tag_absent():
+    cmd=['git','ls-remote','--exit-code','--refs','--tags','https://github.com/re-thc/openjdk-jdk27u.git','refs/tags/'+ONCE_TAG]
+    r=subprocess.run(cmd,capture_output=True,text=True,timeout=30,env=dict(os.environ,GIT_TERMINAL_PROMPT='0'))
+    return verify_tag_absence(r.returncode,r.stdout)
+
+def execute(out):
+    out=Path(out).resolve()
+    P.require(os.environ.get('GITHUB_RUN_ATTEMPT','1')=='1','Workflow retry forbidden')
+    P.require((out/'STARTED').is_file(),'One-attempt marker missing')
+    P.require(not (out/'coordination.jsonl').exists(),'Coordinator already started; no retry')
     resource.setrlimit(resource.RLIMIT_CORE,(0,0))
-    out=prepare(a)
-    if a.execute_once:execute(out)
+    env=json.loads((out/'environment.json').read_text());os.sched_setaffinity(0,{env['cpu_pin']})
+    launch=json.loads((out/'launch.json').read_text())
+    return coordinate(out,lambda w:PipePeer([*launch['basecmd'],str(w),P.VERSION],out/f'worker-{w}-addresses.log'),load_score())
+
+def main():
+    p=argparse.ArgumentParser();p.add_argument('--root',type=Path);p.add_argument('--out',type=Path)
+    mode=p.add_mutually_exclusive_group();mode.add_argument('--execute-once',action='store_true');mode.add_argument('--check-tag-absent',action='store_true');a=p.parse_args()
+    if a.check_tag_absent:
+        print(json.dumps(check_remote_tag_absent(),sort_keys=True));return 0
+    P.require(a.out is not None,'--out is required for a plan or native run')
+    if not a.execute_once:
+        P.require(not a.out.exists() or not any(a.out.iterdir()),'Plan output must be fresh')
+        pins=json.loads((HERE/'source-pins.json').read_text());groups=[];offset=0
+        for family in pins['tiny_families']:
+            groups.append(list(range(offset,offset+len(family['banks']))));offset+=len(family['banks'])
+        P.write_plan(a.out,P.workloads(groups),origin='PLAN_ONLY_NOT_MEASURED')
+        print('PLAN_ONLY: no build, native execution, timing, publication or workflow dispatch')
+        return 0
+    P.require(a.root is not None,'--root is required for the separately approved native run')
+    event=json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text())
+    head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=a.root,text=True).strip()
+    publication=authorize_publication(os.environ,event,head)
+    claim_once(a.out,os.environ)
+    # prepare requires only STARTED initially; write the validated receipt after preparation.
+    try:out=prepare(a)
+    except Exception as e:
+        dump(a.out/'status.json',dict(status='PREPARATION_FAILED_NO_TIMING',error=type(e).__name__+': '+str(e),retries=0));raise
+    dump(out/'approved-publication.json',publication)
+    status=execute(out)
+    return 2 if status['status'] in ['INCOMPLETE_TIMEOUT','INVALID_DATA_OR_PROTOCOL'] else 0
+
+if __name__=='__main__':raise SystemExit(main())

@@ -1,0 +1,48 @@
+name: Fixed tiny reset mechanism diagnostic
+on:
+  push:
+    tags: [diagnostic-tiny-zlib-mechanism-20261015-once]
+permissions:
+  contents: read
+concurrency:
+  group: tiny-mechanism-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  fixed-mechanism:
+    if: github.event.created == true && github.event.deleted == false && github.event.forced == false && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: production
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+          sparse-checkout: |
+            .github/scripts/reset-only
+            .github/workflows
+          persist-credentials: false
+      - name: Native compiler prerequisites
+        run: |
+          if ! command -v gcc-14 >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y gcc-14 make python3
+          fi
+      - name: Pure synthetic protocol tests
+        run: python3 production/.github/scripts/reset-only/test_reset_mechanism.py
+      - name: Build, check invariants, then execute one fixed attempt
+        run: python3 production/.github/scripts/reset-only/reset-study.py --root production --out validation/mechanism --execute-once
+      - name: Export saved evidence only
+        if: always()
+        run: |
+          python3 production/.github/scripts/reset-only/reset-score.py --export-local validation/mechanism
+          if test -f validation/mechanism/REPORT.txt; then
+            cat validation/mechanism/REPORT.txt >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: always()
+        with:
+          name: tiny-reset-mechanism-${{ github.run_id }}
+          path: validation/mechanism
+          retention-days: 90
+          if-no-files-found: error
