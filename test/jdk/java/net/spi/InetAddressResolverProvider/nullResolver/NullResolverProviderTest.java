@@ -25,36 +25,33 @@
  * @test
  * @summary Test that the built-in resolver is used when the InetAddressResolverProvider
  *          on the class path does not provide a resolver
+ * @modules java.base/java.net:open
  * @build NullResolverProviderImpl
  * @run main/othervm NullResolverProviderTest
  */
 
+import java.lang.reflect.Field;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.spi.InetAddressResolver;
 
 public class NullResolverProviderTest {
 
     public static void main(String[] args) throws Exception {
-        // The first lookup of a host name loads the provider
-        InetAddress localhost = InetAddress.getByName("localhost");
-        System.out.println("Resolved localhost to " + localhost);
+        // The first lookup of a host name loads the provider. Its result is not
+        // checked: a lookup of "localhost" succeeds even without a resolver.
+        InetAddress.getByName("localhost");
         if (NullResolverProviderImpl.configuration == null) {
             throw new RuntimeException("InetAddressResolverProvider was not found");
         }
 
-        // A reverse lookup gives the same result as the built-in resolver
-        byte[] addr = { 127, 0, 0, 1 };
-        String expected;
-        try {
-            expected = NullResolverProviderImpl.configuration.builtinResolver()
-                    .lookupByAddress(addr);
-        } catch (UnknownHostException e) {
-            expected = "127.0.0.1";
-        }
-        String actual = InetAddress.getByAddress(addr).getHostName();
-        if (!actual.equals(expected)) {
-            throw new RuntimeException("Host name of 127.0.0.1: expected " + expected
-                    + " but got " + actual);
+        // The resolver in use is the built-in resolver offered to the provider
+        InetAddressResolver builtin = NullResolverProviderImpl.configuration.builtinResolver();
+        Field field = InetAddress.class.getDeclaredField("resolver");
+        field.setAccessible(true);
+        Object resolver = field.get(null);
+        if (resolver != builtin) {
+            throw new RuntimeException("Resolver in use: " + resolver
+                    + ", expected the built-in resolver " + builtin);
         }
     }
 }
