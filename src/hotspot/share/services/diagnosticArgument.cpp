@@ -326,9 +326,7 @@ template <> void DCmdArgument<MemorySizeArgument>::parse_value(const char* str,
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
                "Parsing error memory size value: negative values not allowed\n");
   }
-  // sscanf cannot report overflow and strtoull saturates silently, so check errno.
-  // Leading white space, an optional '+', decimal digits and one trailing
-  // character are accepted exactly as before.
+  // Check decimal conversion overflow before applying unit scaling.
   STATIC_ASSERT(sizeof(unsigned long long) == sizeof(_value._val));
   char* end = nullptr;
   errno = 0;
