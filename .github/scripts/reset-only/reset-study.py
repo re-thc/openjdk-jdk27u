@@ -12,7 +12,7 @@ def load_score():
     spec=importlib.util.spec_from_file_location('reset_score',HERE/'reset-score.py')
     m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
 
-def prepare(a):
+def prepare(a,candidate_transform=None):
     out=a.out.resolve();P.require(sorted(p.name for p in out.iterdir())==['STARTED'],'Output must contain only the owned one-attempt marker')
     for name in ['source','inputs','compressed','build','baseline','candidate','verify']:(out/name).mkdir(parents=True,exist_ok=True)
     pins=json.loads((HERE/'source-pins.json').read_text());assert pins['head']==PIN and pins['ng']=='88601f0bdd192e9f87d4bd0a50d5d2e2dc9b8cd0';assert sha(HERE/'backend-reset.patch')==pins['patch_sha256']=='db471660e1faf92aa71bca6b1f2ab178b4ca259343f5a0fc22713094f355e8c2'
@@ -27,6 +27,7 @@ def prepare(a):
     assert '#define ZLIB_VERSION "1.3.2"' in (stocksrc/'zlib.h').read_text()
     shutil.copytree(out/'baseline',out/'candidate',dirs_exist_ok=True)
     subprocess.run(['git','apply','--directory=candidate',str(HERE/'backend-reset.patch')],cwd=out,check=True,capture_output=True)
+    if candidate_transform is not None:candidate_transform(out)  # Before verifier copies and ALL candidate builds.
     csrc=out/'candidate'/prefix/'zlib-ng';shutil.copytree(out/'candidate',out/'verify',dirs_exist_ok=True);vsrc=out/'verify'/prefix/'zlib-ng'
     p=vsrc/'deflate.c';s=p.read_text();s=s.replace('static int clear_small_hash(deflate_state *s) {','unsigned long Z_EXPORT jdk_ng_test_sparse_resets = 0;\nstatic int clear_small_hash(deflate_state *s) {');mark='''        s->head[hash] = 0;
     }

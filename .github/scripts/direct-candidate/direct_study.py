@@ -5,6 +5,7 @@ sys.dont_write_bytecode=True
 import direct_protocol as P
 import direct_score as S
 import build_support
+import repair_preflight
 HERE=Path(__file__).resolve().parent
 spec=importlib.util.spec_from_file_location('legacy_preparation',HERE.parent/'reset-only/reset-study.py');L=importlib.util.module_from_spec(spec);spec.loader.exec_module(L)
 PipePeer,DeadlineExpired,remaining=L.PipePeer,L.DeadlineExpired,L.remaining
@@ -18,7 +19,7 @@ def authorize(env,event,head):
     return dict(repository=env['GITHUB_REPOSITORY'],tag=P.TAG,commit=head,run_id=env.get('GITHUB_RUN_ID'),attempt=1,guard='Verify tag absent before approved creation; leave tag intact. Never delete/recreate to retry.')
 
 def prepare(a):
-    out=L.prepare(a);past=out/'preparation';past.mkdir()
+    out=L.prepare(a,candidate_transform=repair_preflight.apply);past=out/'preparation';past.mkdir()
     for n in ['manifest.json','schedule.tsv','workloads.tsv','preregistered.json','launch.json','identities.json']:shutil.move(out/n,past/n)
     shutil.move(out/'source',out/'legacy-source');P.write_plan(out,'NATIVE_MEASUREMENT');inputs,profiles,data=P.canonical(out)
     for x,b in zip(inputs,data):
@@ -30,6 +31,7 @@ def prepare(a):
     shutil.copyfile(HERE.parents[1]/'workflows/tiny-zlib-direct-ns.yml',out/'source/tiny-zlib-direct-ns.yml')
     P.dump(out/'preregistered.json',dict(manifest=P.sha(out/'manifest.json'),before_build=True,sources={str(p.relative_to(out)):P.sha(p) for top in ['source','legacy-source'] for p in (out/top).iterdir() if p.is_file()}))
     build_support.complete(out,HERE)
+    repair_preflight.run(out)  # Outside measurement; bind rebuilt archives/libraries to corrected source.
     P.dump(out/'identities.json',{str(p.relative_to(out)):dict(bytes=p.stat().st_size,sha256=P.sha(p)) for top in ['source','legacy-source','inputs','build'] for p in (out/top).rglob('*') if p.is_file()})
     return out
 

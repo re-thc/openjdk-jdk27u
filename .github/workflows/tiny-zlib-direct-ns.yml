@@ -1,11 +1,11 @@
-name: Fixed direct public N/S comparison
+name: Fixed direct N/S with single reset validation
 on:
   push:
-    tags: [diagnostic-tiny-zlib-direct-ns-20261015-once]
+    tags: [diagnostic-tiny-zlib-direct-reset-validation-20261015-once]
 permissions:
   contents: read
 concurrency:
-  group: direct-ns-${{ github.ref }}
+  group: direct-reset-validation-${{ github.ref }}
   cancel-in-progress: false
 jobs:
   direct-ns:
@@ -25,25 +25,26 @@ jobs:
             .github/workflows
       - name: Compiler prerequisites
         run: |
-          if ! command -v gcc-14 >/dev/null; then
-            sudo apt-get update
-            sudo apt-get install -y gcc-14 make python3
-          fi
+          for tool in gcc-14 make python3 ar nm; do
+            command -v "$tool"
+          done
       - name: Synthetic and protocol fixtures only
         run: python3 production/.github/scripts/direct-candidate/test_direct.py
-      - name: One separately approved direct N/S attempt
-        run: python3 production/.github/scripts/direct-candidate/direct_study.py --root production --out validation/direct-ns --execute-once
+      - name: Source-binding negative fixtures only
+        run: python3 production/.github/scripts/direct-candidate/test_repair_preflight.py
+      - name: One separately approved corrected N/S attempt
+        run: python3 production/.github/scripts/direct-candidate/direct_study.py --root production --out validation/direct-reset-validation --execute-once
       - name: Export retained evidence only
         if: always()
         run: |
-          python3 production/.github/scripts/direct-candidate/direct_score.py --export-local validation/direct-ns
-          if test -f validation/direct-ns/REPORT.txt; then
-            cat validation/direct-ns/REPORT.txt >> "$GITHUB_STEP_SUMMARY"
+          python3 production/.github/scripts/direct-candidate/direct_score.py --export-local validation/direct-reset-validation
+          if test -f validation/direct-reset-validation/REPORT.txt; then
+            cat validation/direct-reset-validation/REPORT.txt >> "$GITHUB_STEP_SUMMARY"
           fi
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         if: always()
         with:
-          name: direct-ns-${{ github.run_id }}
-          path: validation/direct-ns
+          name: direct-reset-validation-${{ github.run_id }}
+          path: validation/direct-reset-validation
           retention-days: 90
           if-no-files-found: error

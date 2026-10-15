@@ -8,10 +8,10 @@ import reset_protocol as B
 VERSION='direct-public-ns-v1'
 PIN,NG,PATCH,PINS=B.PIN,B.NG,B.PATCH,B.PINS
 require,InvalidData,sha,dump=B.require,B.InvalidData,B.sha,B.dump
-TAG='diagnostic-tiny-zlib-direct-ns-20261015-once'
+TAG='diagnostic-tiny-zlib-direct-reset-validation-20261015-once'
 M=[0,7,3,4,5,2,6,1]
 ROWS=28160;EPISODES=7040;COMMANDS=42240;CLOCKS=21120
-SOURCES=['direct_protocol.py','direct_driver.c','direct_score.py','direct_study.py','test_direct.py','reset_proof.c','validate_local.py','synthetic_clock.c','build_support.py']
+SOURCES=['direct_protocol.py','direct_driver.c','direct_score.py','direct_study.py','test_direct.py','reset_proof.c','validate_local.py','synthetic_clock.c','build_support.py','repair_preflight.py','remove-duplicate-reset-check.patch','test_repair_preflight.py']
 EF=['episode','phase','block','worker','companion','worker_slot','profile_slot','case_slot','work','kind','order']
 RF=['seq','episode','phase','block','worker','worker_slot','profile_slot','case_slot','work','kind','order','position','label','arm']
 CF=['command','worker','opcode','episode','row']

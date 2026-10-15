@@ -1,0 +1,38 @@
+--- a/src/java.base/share/native/libzip/zlib-ng/deflate.c
++++ b/src/java.base/share/native/libzip/zlib-ng/deflate.c
+@@ -520,11 +520,9 @@
+ }
+ 
+ /* ========================================================================= */
+-int32_t Z_EXPORT PREFIX(deflateResetKeep)(PREFIX3(stream) *strm) {
++/* Both public reset entry points validate before calling this helper. */
++static int32_t deflate_reset_keep(PREFIX3(stream) *strm) {
+     deflate_state *s;
+-
+-    if (deflateStateCheck(strm))
+-        return Z_STREAM_ERROR;
+ 
+     strm->state->small_reset_safe = 0; /* ResetKeep preserves old hash history. */
+     strm->total_in = strm->total_out = 0;
+@@ -562,6 +560,12 @@
+ }
+ 
+ /* ========================================================================= */
++int32_t Z_EXPORT PREFIX(deflateResetKeep)(PREFIX3(stream) *strm) {
++    if (deflateStateCheck(strm))
++        return Z_STREAM_ERROR;
++    return deflate_reset_keep(strm);
++}
++
+ /* Only an empty head followed by <=64-byte FINISH calls is eligible.
+  * Dictionary/parameter/ResetKeep/non-FINISH histories are excluded: their
+  * earlier tail hashes need not equal hashes of the final window contents.
+@@ -592,7 +596,7 @@
+     if (deflateStateCheck(strm))
+         return Z_STREAM_ERROR;
+     int small = clear_small_hash(strm->state); /* Inspect before ResetKeep. */
+-    int ret = PREFIX(deflateResetKeep)(strm);
++    int ret = deflate_reset_keep(strm);
+     if (ret == Z_OK)
+         lm_init(strm->state, !small);
+     return ret;

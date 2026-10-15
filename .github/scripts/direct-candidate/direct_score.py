@@ -3,6 +3,7 @@ from pathlib import Path
 import argparse,base64,collections,csv,hashlib,json,lzma,math,statistics as S,subprocess,sys
 sys.dont_write_bytecode=True
 import direct_protocol as P
+import repair_preflight
 
 def read_csv(path,delimiter=','):
     with Path(path).open() as f:
@@ -170,7 +171,8 @@ def inventory(root):
     for v in ['N','S','SA']:
         symbols=(root/f'public-symbols-{v}.txt').read_text();actual_symbols=subprocess.check_output(['nm','-D',root/f'build/{v}/ng.so'],text=True)
         P.require(symbols==actual_symbols and 'jdk_ng_test_' not in symbols and 'reset_control' not in symbols,'timed public instrumentation/symbol binding')
-    return {name:P.sha(root/name) for name in ['manifest.json','preregistered.json','identities.json','launch.json','environment.json','build-commands.json','direct-build-commands.json','approved-publication.json','second-reset-proof.json','second-reset-proof-asan.json','preparation/preregistered.json','public-symbols-N.txt','public-symbols-S.txt','public-symbols-SA.txt','extended-boundaries.c','extended-boundaries.log','extended-boundaries-asan.log']}
+    extra=repair_preflight.verify(root) if m['record_origin']=='NATIVE_MEASUREMENT' else {}
+    return extra|{name:P.sha(root/name) for name in ['manifest.json','preregistered.json','identities.json','launch.json','environment.json','build-commands.json','direct-build-commands.json','approved-publication.json','second-reset-proof.json','second-reset-proof-asan.json','preparation/preregistered.json','public-symbols-N.txt','public-symbols-S.txt','public-symbols-SA.txt','extended-boundaries.c','extended-boundaries.log','extended-boundaries-asan.log']}
 
 def score(root):
     root=Path(root);proof=inventory(root);P.require(json.loads((root/'provenance-before.json').read_text())==proof==json.loads((root/'provenance-after.json').read_text()),'before/after provenance')
