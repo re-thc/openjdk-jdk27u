@@ -246,7 +246,7 @@ public class TestMismatch {
     @Test
     public void testLarge() {
         // skip if not on 64 bits
-        if (ValueLayout.ADDRESS.byteSize() > 32) {
+        if (ValueLayout.ADDRESS.byteSize() == Long.BYTES) {
             try (Arena arena = Arena.ofConfined()) {
                 var s1 = arena.allocate((long) Integer.MAX_VALUE + 10L, 8);;
                 var s2 = arena.allocate((long) Integer.MAX_VALUE + 10L, 8);;
@@ -270,9 +270,10 @@ public class TestMismatch {
             assertEquals(s3.mismatch(s4), -1);
             assertEquals(s4.mismatch(s3), -1);
             // static
-            assertEquals(MemorySegment.mismatch(s1, 0, s1.byteSize(), s1, 0, i), -1);
-            assertEquals(MemorySegment.mismatch(s2, 0, s1.byteSize(), s1, 0, i), -1);
-            assertEquals(MemorySegment.mismatch(s1, 0, s1.byteSize(), s2, 0, i), -1);
+            long expected = i == s1.byteSize() ? -1 : i;
+            assertEquals(MemorySegment.mismatch(s1, 0, s1.byteSize(), s1, 0, i), expected);
+            assertEquals(MemorySegment.mismatch(s2, 0, s1.byteSize(), s1, 0, i), expected);
+            assertEquals(MemorySegment.mismatch(s1, 0, s1.byteSize(), s2, 0, i), expected);
         }
     }
 

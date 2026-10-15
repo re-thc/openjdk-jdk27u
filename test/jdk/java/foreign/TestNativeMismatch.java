@@ -108,6 +108,21 @@ public class TestNativeMismatch {
         }
     }
 
+    private static void checkOverlap(MemorySegment backing) {
+        for (int size : new int[] {128, 129, 65535, 65536, 65537, LIMIT}) {
+            MemorySegment left = backing.asSlice(0, size);
+            MemorySegment right = backing.asSlice(1, size);
+            check(left, right, -1);
+            backing.set(ValueLayout.JAVA_BYTE, size, (byte) 1);
+            check(left, right, size - 1);
+            check(right.asReadOnly(), left.asReadOnly(), size - 1);
+            backing.set(ValueLayout.JAVA_BYTE, size, (byte) 0);
+            backing.set(ValueLayout.JAVA_BYTE, 1, (byte) 1);
+            check(left, right, 0);
+            backing.set(ValueLayout.JAVA_BYTE, 1, (byte) 0);
+        }
+    }
+
     public static void main(String[] args) {
         try (Arena confined = Arena.ofConfined(); Arena shared = Arena.ofShared()) {
             MemorySegment a = confined.allocate(LIMIT + 16);
@@ -117,6 +132,8 @@ public class TestNativeMismatch {
             checkPair(a, heap);
             checkPair(heap, b);
             checkPair(heap, MemorySegment.ofArray(new byte[LIMIT + 16]));
+            checkOverlap(a);
+            checkOverlap(heap);
         }
     }
 }
