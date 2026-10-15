@@ -37,6 +37,7 @@ import java.util.stream.StreamSupport;
 import jdk.internal.lang.CaseFolding;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -642,6 +643,9 @@ final class StringLatin1 {
     // Once a block contains the last character, resume the original reverse loop.
     @ForceInline
     private static int lastIndexOfJavaFiltered(byte[] src, byte[] tgt, int count, int from) {
+        if (count > 256) {
+            return StringZilla.lastIndexOfLatin1JavaC2(src, tgt, count, from);
+        }
         int last = count - 1;
         int end = from + count;
         while (end > last) {
@@ -668,6 +672,40 @@ final class StringLatin1 {
             }
             if (i < min) {
                 return -1;
+            }
+            int j = i - 1;
+            int start = j - strLastIndex;
+            int k = strLastIndex - 1;
+            while (j > start) {
+                if ((src[j--] & 0xff) != (tgt[k--] & 0xff)) {
+                    i--;
+                    continue startSearchForLastChar;
+                }
+            }
+            return start + 1;
+        }
+    }
+
+    // Reject long C2 fallback candidates before scanning their interiors.
+    @DontInline
+    static int lastIndexOfJavaLong(byte[] src, byte[] tgt, int tgtCount, int fromIndex) {
+        int min = tgtCount - 1;
+        int i = min + fromIndex;
+        int strLastIndex = tgtCount - 1;
+        char strLastChar = (char)(tgt[strLastIndex] & 0xff);
+        byte first = tgt[0];
+
+  startSearchForLastChar:
+        while (true) {
+            while (i >= min && (src[i] & 0xff) != strLastChar) {
+                i--;
+            }
+            if (i < min) {
+                return -1;
+            }
+            if (src[i - min] != first) {
+                i--;
+                continue;
             }
             int j = i - 1;
             int start = j - strLastIndex;

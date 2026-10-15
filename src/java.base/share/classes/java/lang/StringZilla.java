@@ -159,7 +159,8 @@ final class StringZilla {
     static int lastIndexOfLatin1JavaC2(byte[] src, byte[] tgt, int count, int from) {
         Objects.checkFromIndexSize(from, count, src.length);
         Objects.checkFromIndexSize(0, count, tgt.length);
-        return StringLatin1.lastIndexOfJava(src, tgt, count, from);
+        return count > 256 ? StringLatin1.lastIndexOfJavaLong(src, tgt, count, from)
+                           : StringLatin1.lastIndexOfJava(src, tgt, count, from);
     }
 
     @ForceInline

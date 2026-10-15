@@ -1225,7 +1225,7 @@ final class StringUTF16 {
                 }
             }
             if (StringZilla.compilerTier() == StringZilla.C1 ||
-                    (StringZilla.compilerTier() == StringZilla.C2 && tgtCount > 128)) {
+                    (StringZilla.compilerTier() == StringZilla.C2 && tgtCount >= 128)) {
                 return lastIndexOfJavaFiltered(src, tgt, tgtCount, fromIndex);
             }
         }
