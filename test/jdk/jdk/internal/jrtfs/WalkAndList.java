@@ -26,6 +26,7 @@
  * @summary Walking and listing the jrt file system gives the same tree
  *          whichever way it is done, in any order, and from many threads
  * @run main/othervm -esa WalkAndList
+ * @run main/othervm -esa WalkAndList cold
  */
 
 import java.io.IOException;
@@ -54,6 +55,13 @@ public class WalkAndList {
     private static final FileSystem FS = FileSystems.getFileSystem(URI.create("jrt:/"));
 
     public static void main(String[] args) throws Exception {
+        if (args.length > 0) {
+            // Nothing has looked at the file system yet, so the threads are
+            // the first to build and complete its directories
+            testColdThreads();
+            return;
+        }
+
         // The directories under /packages are not yet looked at by anything
         // here, as when a tool walks the package tree as the first thing it does.
         List<String> packagesWalk = walk("/packages");
@@ -212,6 +220,63 @@ public class WalkAndList {
             }
             for (Future<Boolean> result : results) {
                 check(result.get(), "a thread saw another tree");
+            }
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    /**
+     * Threads that look at the file system in different ways and orders,
+     * each as the first thing in the VM, see the tree that one thread sees
+     * afterwards.
+     */
+    private static void testColdThreads() throws Exception {
+        int threads = 6;
+        CyclicBarrier start = new CyclicBarrier(threads);
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
+        List<Future<List<List<String>>>> results = new ArrayList<>();
+        try {
+            for (int i = 0; i < threads; i++) {
+                final int n = i;
+                results.add(executor.submit(() -> {
+                    start.await();
+                    List<String> packages;
+                    List<String> modules;
+                    switch (n % 3) {
+                        case 0 -> {
+                            packages = walk("/packages");
+                            modules = walk("/modules");
+                        }
+                        case 1 -> {
+                            modules = walk("/modules");
+                            packages = new ArrayList<>();
+                            listRecursively(FS.getPath("/packages"), packages);
+                        }
+                        default -> {
+                            // a package directory and a link before their parent
+                            check(Files.isDirectory(FS.getPath("/packages/java.util")),
+                                  "no /packages/java.util");
+                            check(Files.isSymbolicLink(FS.getPath("/packages/java.lang/java.base")),
+                                  "no /packages/java.lang/java.base link");
+                            packages = walk("/packages");
+                            modules = new ArrayList<>();
+                            listRecursively(FS.getPath("/modules"), modules);
+                        }
+                    }
+                    return List.of(packages, modules);
+                }));
+            }
+            List<List<List<String>>> trees = new ArrayList<>();
+            for (Future<List<List<String>>> result : results) {
+                trees.add(result.get());
+            }
+            List<String> packages = walk("/packages");
+            List<String> modules = walk("/modules");
+            check(packages.contains("/packages/java.lang/java.base"), "no java.lang link in the walk");
+            for (List<List<String>> tree : trees) {
+                check(tree.get(0).equals(packages), "a thread saw another /packages tree");
+                check(tree.get(1).equals(modules), "a thread saw another /modules tree");
             }
         } finally {
             executor.shutdown();

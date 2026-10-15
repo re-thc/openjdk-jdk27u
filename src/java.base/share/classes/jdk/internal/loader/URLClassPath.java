@@ -121,9 +121,12 @@ public class URLClassPath {
     /* The number of Loaders at the start of the search path that cannot have
      * a resource in a directory, by the hash code of the directory (see
      * directoryHash). A Loader that cannot have it will never have it, and
-     * Loaders are only added at the end. */
+     * Loaders are only added at the end. Directories are only added up to
+     * MAX_SKIPPED_DIRECTORIES, as lookups in ever new directories that the
+     * class path doesn't have would add them without limit. */
     private final ConcurrentHashMap<Integer, Integer> skippedLoaders
             = new ConcurrentHashMap<>();
+    private static final int MAX_SKIPPED_DIRECTORIES = 4096;
 
     /* Map of each URL opened to its corresponding Loader */
     private final HashMap<String, Loader> lmap = new HashMap<>();
@@ -354,7 +357,8 @@ public class URLClassPath {
                 break;
             }
         }
-        if (skip > start) {
+        if (skip > start
+                && (start > 0 || skippedLoaders.size() < MAX_SKIPPED_DIRECTORIES)) {
             skippedLoaders.put(dirHash, skip);
         }
         return res;
@@ -697,7 +701,8 @@ public class URLClassPath {
         // much as the misses so far did.
         private volatile int[] directoryHashes;
         private int missesLeft;
-        // Whether the URLs of entries are made by the default jar handler
+        // Whether the URLs of entries are made by the default jar handler,
+        // and not by a subclass, which can reject URLs that it doesn't
         private final boolean defaultJarHandler;
         private static final JavaUtilZipFileAccess zipAccess =
                 SharedSecrets.getJavaUtilZipFileAccess();
@@ -712,7 +717,8 @@ public class URLClassPath {
         {
             super(newURL("jar", "", -1, url + "!/", jarHandler));
             csu = url;
-            defaultJarHandler = isDefaultJarHandler(getBaseURL());
+            defaultJarHandler = JNUA.getHandler(getBaseURL()).getClass()
+                    == sun.net.www.protocol.jar.Handler.class;
             ensureOpen();
             missesLeft = jar.size();
         }

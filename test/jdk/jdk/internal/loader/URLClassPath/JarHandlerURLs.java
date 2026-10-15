@@ -24,7 +24,9 @@
 /*
  * @test
  * @summary Test that a resource of a JAR file is not found if the jar
- *          handler of the class loader cannot make its URL
+ *          handler of the class loader cannot make its URL, also with a
+ *          subclass of the built-in jar handler
+ * @modules java.base/sun.net.www.protocol.jar
  * @run main JarHandlerURLs
  */
 
@@ -60,6 +62,18 @@ public class JarHandlerURLs {
         }
     }
 
+    // A subclass of the built-in jar handler that cannot make URLs for names with "Bad"
+    private static class BuiltinHandler extends sun.net.www.protocol.jar.Handler {
+        @Override
+        protected void parseURL(URL u, String spec, int start, int limit) {
+            String name = spec.substring(start, limit);
+            if (name.contains("Bad")) {
+                throw new IllegalArgumentException("Bad name: " + name);
+            }
+            super.parseURL(u, spec, start, limit);
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         Path jar = Path.of("handler.jar");
         try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(jar))) {
@@ -70,7 +84,11 @@ public class JarHandlerURLs {
             }
         }
 
-        URLStreamHandler handler = new Handler();
+        test(jar, new Handler());
+        test(jar, new BuiltinHandler());
+    }
+
+    private static void test(Path jar, URLStreamHandler handler) throws Exception {
         URLStreamHandlerFactory factory = p -> "jar".equals(p) ? handler : null;
         URL[] urls = { jar.toUri().toURL() };
         try (URLClassLoader loader = new URLClassLoader(urls, null, factory)) {

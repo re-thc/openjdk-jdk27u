@@ -199,14 +199,15 @@ public final class ImageReader implements AutoCloseable {
     }
 
     /**
-     * Returns whether a directory exists in the given module.
+     * Returns whether the jimage file has a directory with the given path in
+     * the given module. This will not create or cache new nodes.
      *
-     * <p>This is equivalent to checking that:
-     * <pre>{@code
-     * findNode("/modules/" + moduleName + "/" + dirPath)
-     * }</pre>
-     * is a directory, but more performant, and will not create or cache new
-     * nodes.
+     * <p>Unlike {@link #findNode}, this looks at the directories of the jimage
+     * file only, as if preview mode were disabled. So a directory that only a
+     * preview version of the module has is not found, and the directories of
+     * preview versions ({@code META-INF/preview/...}) are found if the file
+     * has them. A {@code META-INF} directory is found whenever the module has
+     * resources in {@code META-INF}, in any mode.
      *
      * @param moduleName The module name of the directory being tested for.
      * @param dirPath Trailing module-relative directory path, not starting
