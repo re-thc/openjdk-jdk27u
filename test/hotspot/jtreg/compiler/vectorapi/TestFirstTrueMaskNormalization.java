@@ -38,6 +38,9 @@ import jdk.test.lib.Asserts;
 public class TestFirstTrueMaskNormalization {
     private static final String FUSED = "\\bvstoremask_firsttrueB_neon\\b";
     private static final String UNFUSED = "\\b(?:vstoremaskB_neon|vstoremask_narrow_neon|vmask_firsttrue_neon)\\b";
+    private static final String NARROW = "\\bvstoremask_narrow_neon\\b";
+    private static final String NORMALIZE_BYTE = "\\bvstoremaskB_neon\\b";
+    private static final String FIRST_TRUE = "\\bvmask_firsttrue_neon\\b";
     private static final byte[] BA = new byte[16], BB = new byte[16];
     private static final short[] SA = new short[8], SB = new short[8];
     private static final int[] IA = new int[4], IB = new int[4];
@@ -72,7 +75,9 @@ public class TestFirstTrueMaskNormalization {
     }
 
     @Test(compLevel = CompLevel.C2)
-    @IR(phase = CompilePhase.MATCHING, failOn = {FUSED})
+    @IR(phase = CompilePhase.BEFORE_MATCHING,
+        counts = {IRNode.VECTOR_MASK_FIRST_TRUE, "1", IRNode.VECTOR_STORE_MASK, "1"})
+    @IR(phase = CompilePhase.MATCHING, counts = {NARROW, "1", FIRST_TRUE, "1"}, failOn = {FUSED})
     public static int short64() {
         return ShortVector.fromArray(ShortVector.SPECIES_64, SA, 0)
                 .compare(VectorOperators.NE, ShortVector.fromArray(ShortVector.SPECIES_64, SB, 0))
@@ -80,7 +85,9 @@ public class TestFirstTrueMaskNormalization {
     }
 
     @Test(compLevel = CompLevel.C2)
-    @IR(phase = CompilePhase.MATCHING, failOn = {FUSED})
+    @IR(phase = CompilePhase.BEFORE_MATCHING,
+        counts = {IRNode.VECTOR_MASK_FIRST_TRUE, "1", IRNode.VECTOR_STORE_MASK, "1"})
+    @IR(phase = CompilePhase.MATCHING, counts = {NARROW, "1", FIRST_TRUE, "1"}, failOn = {FUSED})
     public static int short128() {
         return ShortVector.fromArray(ShortVector.SPECIES_128, SA, 0)
                 .compare(VectorOperators.NE, ShortVector.fromArray(ShortVector.SPECIES_128, SB, 0))
@@ -88,7 +95,9 @@ public class TestFirstTrueMaskNormalization {
     }
 
     @Test(compLevel = CompLevel.C2)
-    @IR(phase = CompilePhase.MATCHING, failOn = {FUSED})
+    @IR(phase = CompilePhase.BEFORE_MATCHING,
+        counts = {IRNode.VECTOR_MASK_FIRST_TRUE, "1", IRNode.VECTOR_STORE_MASK, "1"})
+    @IR(phase = CompilePhase.MATCHING, counts = {NARROW, "1", FIRST_TRUE, "1"}, failOn = {FUSED})
     public static int int64() {
         return IntVector.fromArray(IntVector.SPECIES_64, IA, 0)
                 .compare(VectorOperators.NE, IntVector.fromArray(IntVector.SPECIES_64, IB, 0))
@@ -96,7 +105,9 @@ public class TestFirstTrueMaskNormalization {
     }
 
     @Test(compLevel = CompLevel.C2)
-    @IR(phase = CompilePhase.MATCHING, failOn = {FUSED})
+    @IR(phase = CompilePhase.BEFORE_MATCHING,
+        counts = {IRNode.VECTOR_MASK_FIRST_TRUE, "1", IRNode.VECTOR_STORE_MASK, "1"})
+    @IR(phase = CompilePhase.MATCHING, counts = {NARROW, "1", FIRST_TRUE, "1"}, failOn = {FUSED})
     public static int int128() {
         return IntVector.fromArray(IntVector.SPECIES_128, IA, 0)
                 .compare(VectorOperators.NE, IntVector.fromArray(IntVector.SPECIES_128, IB, 0))
@@ -104,7 +115,9 @@ public class TestFirstTrueMaskNormalization {
     }
 
     @Test(compLevel = CompLevel.C2)
-    @IR(phase = CompilePhase.MATCHING, failOn = {FUSED})
+    @IR(phase = CompilePhase.BEFORE_MATCHING,
+        counts = {IRNode.VECTOR_MASK_FIRST_TRUE, "1", IRNode.VECTOR_STORE_MASK, "1"})
+    @IR(phase = CompilePhase.MATCHING, counts = {NARROW, "1", FIRST_TRUE, "1"}, failOn = {FUSED})
     public static int long128() {
         return LongVector.fromArray(LongVector.SPECIES_128, LA, 0)
                 .compare(VectorOperators.NE, LongVector.fromArray(LongVector.SPECIES_128, LB, 0))
@@ -112,7 +125,9 @@ public class TestFirstTrueMaskNormalization {
     }
 
     @Test(compLevel = CompLevel.C2)
-    @IR(phase = CompilePhase.MATCHING, failOn = {FUSED})
+    @IR(phase = CompilePhase.BEFORE_MATCHING,
+        counts = {IRNode.VECTOR_MASK_FIRST_TRUE, "1", IRNode.VECTOR_STORE_MASK, "1"})
+    @IR(phase = CompilePhase.MATCHING, counts = {NARROW, "1", FIRST_TRUE, "1"}, failOn = {FUSED})
     public static int float64() {
         return FloatVector.fromArray(FloatVector.SPECIES_64, FA, 0)
                 .compare(VectorOperators.NE, FloatVector.fromArray(FloatVector.SPECIES_64, FB, 0))
@@ -120,7 +135,9 @@ public class TestFirstTrueMaskNormalization {
     }
 
     @Test(compLevel = CompLevel.C2)
-    @IR(phase = CompilePhase.MATCHING, failOn = {FUSED})
+    @IR(phase = CompilePhase.BEFORE_MATCHING,
+        counts = {IRNode.VECTOR_MASK_FIRST_TRUE, "1", IRNode.VECTOR_STORE_MASK, "1"})
+    @IR(phase = CompilePhase.MATCHING, counts = {NARROW, "1", FIRST_TRUE, "1"}, failOn = {FUSED})
     public static int float128() {
         return FloatVector.fromArray(FloatVector.SPECIES_128, FA, 0)
                 .compare(VectorOperators.NE, FloatVector.fromArray(FloatVector.SPECIES_128, FB, 0))
@@ -128,7 +145,9 @@ public class TestFirstTrueMaskNormalization {
     }
 
     @Test(compLevel = CompLevel.C2)
-    @IR(phase = CompilePhase.MATCHING, failOn = {FUSED})
+    @IR(phase = CompilePhase.BEFORE_MATCHING,
+        counts = {IRNode.VECTOR_MASK_FIRST_TRUE, "1", IRNode.VECTOR_STORE_MASK, "1"})
+    @IR(phase = CompilePhase.MATCHING, counts = {NARROW, "1", FIRST_TRUE, "1"}, failOn = {FUSED})
     public static int double128() {
         return DoubleVector.fromArray(DoubleVector.SPECIES_128, DA, 0)
                 .compare(VectorOperators.NE, DoubleVector.fromArray(DoubleVector.SPECIES_128, DB, 0))
@@ -137,11 +156,14 @@ public class TestFirstTrueMaskNormalization {
 
     // Shared normalization must remain available for another consumer.
     @Test(compLevel = CompLevel.C2)
+    @IR(phase = CompilePhase.BEFORE_MATCHING,
+        counts = {IRNode.VECTOR_MASK_FIRST_TRUE, "1", IRNode.VECTOR_STORE_MASK, "1"})
+    @IR(phase = CompilePhase.MATCHING, counts = {NORMALIZE_BYTE, "1", FIRST_TRUE, "1"}, failOn = {FUSED})
     public static int shared() {
         var mask = ByteVector.fromArray(ByteVector.SPECIES_128, BA, 0)
                 .compare(VectorOperators.NE, ByteVector.fromArray(ByteVector.SPECIES_128, BB, 0));
         mask.intoArray(STORED, 0);
-        return mask.anyTrue() ? mask.firstTrue() : 16;
+        return mask.firstTrue();
     }
 
     @Run(test = {"byte64", "byte128", "short64", "short128", "int64", "int128", "long128", "float64", "float128", "double128", "shared"})
@@ -149,7 +171,8 @@ public class TestFirstTrueMaskNormalization {
         check(iteration++ & 65535);
         if (!info.isWarmUp()) {
             for (String name : new String[] {"byte64", "byte128", "short64", "short128", "int64", "int128", "long128", "float64", "float128", "double128", "shared"}) {
-                Asserts.assertTrue(info.isTestC2Compiled(name), name + " must be C2 compiled");
+                // Honor framework modes that intentionally exclude compilation.
+                TestFramework.assertCompiledByC2(info.getTest(name));
             }
             for (int mask = 0; mask <= 65535; mask++) check(mask);
             checkFloatingPointEdges();

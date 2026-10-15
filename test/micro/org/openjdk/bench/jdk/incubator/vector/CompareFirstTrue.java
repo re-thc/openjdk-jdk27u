@@ -40,17 +40,20 @@ public class CompareFirstTrue {
     @Param({"early", "late", "empty", "uniform"})
     public String distribution;
 
-    private byte[] bytesA, bytesB;
+    private byte[] bytes64A, bytes64B, bytesA, bytesB;
     private int[] intsA, intsB;
     private long[] longsA, longsB;
 
     @Setup
     public void setup() {
+        bytes64A = new byte[VECTORS * 8]; bytes64B = new byte[VECTORS * 8];
         bytesA = new byte[VECTORS * 16]; bytesB = new byte[VECTORS * 16];
         intsA = new int[VECTORS * 4]; intsB = new int[VECTORS * 4];
         longsA = new long[VECTORS * 2]; longsB = new long[VECTORS * 2];
         Random random = new Random(27);
         for (int i = 0; i < VECTORS; i++) {
+            int b64 = firstLane(random, 8);
+            if (b64 < 8) bytes64B[i * 8 + b64] = 1;
             int b = firstLane(random, 16), n = firstLane(random, 4), l = firstLane(random, 2);
             if (b < 16) bytesB[i * 16 + b] = 1;
             if (n < 4) intsB[i * 4 + n] = 1;
@@ -66,6 +69,18 @@ public class CompareFirstTrue {
             case "uniform" -> random.nextInt(lanes + 1);
             default -> throw new IllegalArgumentException(distribution);
         };
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(VECTORS)
+    public int compareByte64() {
+        int sum = 0;
+        for (int i = 0; i < bytes64A.length; i += 8) {
+            sum += ByteVector.fromArray(ByteVector.SPECIES_64, bytes64A, i)
+                    .compare(VectorOperators.NE, ByteVector.fromArray(ByteVector.SPECIES_64, bytes64B, i))
+                    .firstTrue();
+        }
+        return sum;
     }
 
     @Benchmark
