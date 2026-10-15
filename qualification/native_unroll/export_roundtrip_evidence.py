@@ -19,13 +19,16 @@ def main():
 
     def read_json(path):
         if path not in cached:
+            text = None
             try:
-                cached[path] = json.loads(path.read_text())
+                text = path.read_text()
+                cached[path] = json.loads(text)
             except (ValueError, OSError) as error:
                 cached[path] = None
                 invalid.append(str(path))
-                print('ROUNDTRIP_INVALID_JSON=' + json.dumps(dict(file=record(path),
-                    error=str(error), text=path.read_text())), flush=True)
+                file = dict(path=str(path)) if isinstance(error, OSError) else record(path)
+                print('ROUNDTRIP_INVALID_JSON=' + json.dumps(dict(file=file,
+                    error=str(error), text=text)), flush=True)
         return cached[path]
     for name in ['preflight-gate.json', 'chain-compilation-results.json', 'commands-status.json',
                  'full-result.json', 'status.json', 'plan.json', 'summary.json', 'initial-gate.json',
