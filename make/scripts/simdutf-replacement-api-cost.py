@@ -21,7 +21,7 @@ for mode in("base","on",*variants):
  java=(base if mode=="base"else head)/"bin/java";extra=["--patch-module=java.base="+str(patches[mode])]if mode in patches else[]
  for study,pattern,params,expected in [("api","org.openjdk.bench.java.lang.SimdUTFAPI.*",["-p","size=1,128,4096"],15),("bad","org.openjdk.bench.java.lang.SimdUTF.malformedSequenceDecode$",["-p","size=128,4096","-p","kind=continuation,surrogate","-p","action=REPORT,REPLACE"],8)]:
   path=out/(mode+"-"+study+".json")
-  cmd=[str(java),"-cp",cp,"org.openjdk.jmh.Main",pattern,*params,"-f","2","-wi","3","-i","4","-w","300ms","-r","300ms","-t","1","-prof","gc","-jvm",str(java),"-jvmArgs"," ".join([*common,*extra]),"-rf","json","-rff",str(path)]
+  cmd=[str(java),"-cp",cp,"org.openjdk.jmh.Main",pattern,*params,"-bm","avgt","-tu","ns","-f","2","-wi","3","-i","4","-w","300ms","-r","300ms","-t","1","-prof","gc","-jvm",str(java),"-jvmArgs"," ".join([*common,*extra]),"-rf","json","-rff",str(path)]
   with path.with_suffix(".log").open("w")as stream:subprocess.run(cmd,stdout=stream,stderr=subprocess.STDOUT,check=True)
   rows=json.loads(path.read_text());assert len(rows)==expected
   for r in rows:print("COPY_RESULT",json.dumps({"mode":mode,"study":study,"method":r["benchmark"].rsplit(".",1)[1],"params":r["params"],"ns":r["primaryMetric"]["score"],"ci":r["primaryMetric"]["scoreConfidence"],"bytes":r["secondaryMetrics"]["gc.alloc.rate.norm"]["score"]}),flush=True)
