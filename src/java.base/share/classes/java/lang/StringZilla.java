@@ -143,7 +143,9 @@ final class StringZilla {
             return count <= 256 || reverseWork(length, count) >= 1024;
         }
         if (count > 256) {
-            return reverseWork(length, count) >= 4096;
+            // AVX2 scans 32 candidate bytes before falling through to serial.
+            return (BACKEND != HASWELL || length - count >= 32)
+                    && reverseWork(length, count) >= 4096;
         }
         return BACKEND == SERIAL ? count >= 32 && length >= 1024
                                  : count <= 128 || reverseWork(length, count) >= 1024;
@@ -172,8 +174,11 @@ final class StringZilla {
         if ((BACKEND == SERIAL || BACKEND == HASWELL) && tier == C1) {
             return count <= 128 || reverseWork(length, count) >= 1024;
         }
+        // A UTF-16 span of 16 code units supplies one AVX2 candidate vector.
         return tier != C2 || (BACKEND != SERIAL && BACKEND != HASWELL)
-                || (count > 128 ? reverseWork(length, count) >= 2048 : length >= 512);
+                || (count > 128 ? (BACKEND != HASWELL || length - count >= 16)
+                                 && reverseWork(length, count) >= 2048
+                                : length >= 512);
     }
 
     @ForceInline
