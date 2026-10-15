@@ -25,10 +25,11 @@
  * @summary The curves of CurveDB are found by OID, name, alias, field size
  *          and parameters, and each of them is made once, also when threads
  *          ask for it at the same time
- * @modules java.base/sun.security.util
+ * @modules java.base/sun.security.util:+open
  * @run main/othervm CurveDBLookup
  */
 
+import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.security.AlgorithmParameters;
 import java.security.spec.ECFieldFp;
@@ -37,6 +38,8 @@ import java.security.spec.ECPoint;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -47,6 +50,44 @@ import sun.security.util.NamedCurve;
 
 public class CurveDBLookup {
 
+    // The curves of CurveDB, listed here so that the race below is the
+    // first lookup of them
+    private static final List<KnownOIDs> CURVES = List.of(
+            KnownOIDs.c2tnb191v1, KnownOIDs.c2tnb191v2, KnownOIDs.c2tnb191v3,
+            KnownOIDs.c2tnb239v1, KnownOIDs.c2tnb239v2, KnownOIDs.c2tnb239v3,
+            KnownOIDs.c2tnb359v1, KnownOIDs.c2tnb431r1, KnownOIDs.secp192r1,
+            KnownOIDs.prime192v2, KnownOIDs.prime192v3, KnownOIDs.prime239v1,
+            KnownOIDs.prime239v2, KnownOIDs.prime239v3, KnownOIDs.secp256r1,
+            KnownOIDs.brainpoolP160r1, KnownOIDs.brainpoolP192r1,
+            KnownOIDs.brainpoolP224r1, KnownOIDs.brainpoolP256r1,
+            KnownOIDs.brainpoolP320r1, KnownOIDs.brainpoolP384r1,
+            KnownOIDs.brainpoolP512r1, KnownOIDs.sect163k1,
+            KnownOIDs.sect163r1, KnownOIDs.sect239k1, KnownOIDs.sect113r1,
+            KnownOIDs.sect113r2, KnownOIDs.secp112r1, KnownOIDs.secp112r2,
+            KnownOIDs.secp160r1, KnownOIDs.secp160k1, KnownOIDs.secp256k1,
+            KnownOIDs.sect163r2, KnownOIDs.sect283k1, KnownOIDs.sect283r1,
+            KnownOIDs.sect131r1, KnownOIDs.sect131r2, KnownOIDs.sect193r1,
+            KnownOIDs.sect193r2, KnownOIDs.sect233k1, KnownOIDs.sect233r1,
+            KnownOIDs.secp128r1, KnownOIDs.secp128r2, KnownOIDs.secp160r2,
+            KnownOIDs.secp192k1, KnownOIDs.secp224k1, KnownOIDs.secp224r1,
+            KnownOIDs.secp384r1, KnownOIDs.secp521r1, KnownOIDs.sect409k1,
+            KnownOIDs.sect409r1, KnownOIDs.sect571k1, KnownOIDs.sect571r1);
+
+    // Made when CurveDB is initialized
+    private static final Set<KnownOIDs> BUILT_AT_INIT = Set.of(
+            KnownOIDs.secp256r1, KnownOIDs.secp384r1, KnownOIDs.secp521r1);
+
+    // Whether the NamedCurve of the curve has been made, which initializes
+    // CurveDB but makes no curve
+    private static boolean isMade(KnownOIDs ko) throws Exception {
+        Field oidMap = CurveDB.class.getDeclaredField("oidMap");
+        oidMap.setAccessible(true);
+        Object spec = ((Map<?, ?>) oidMap.get(null)).get(ko.value());
+        Field curve = spec.getClass().getDeclaredField("curve");
+        curve.setAccessible(true);
+        return curve.get(spec) != null;
+    }
+
     private static void check(boolean ok, String message) {
         if (!ok) {
             throw new RuntimeException(message);
@@ -54,15 +95,24 @@ public class CurveDBLookup {
     }
 
     public static void main(String[] args) throws Exception {
+        // Only the curves that CurveDB makes when it is initialized are made
+        // before the race
+        for (KnownOIDs ko : CURVES) {
+            check(isMade(ko) == BUILT_AT_INIT.contains(ko),
+                    ko + " made before the race: " + isMade(ko));
+        }
+
+        raceForTheCurves(CURVES);
+
+        // The list has every curve of CurveDB
         List<KnownOIDs> curves = new ArrayList<>();
         for (KnownOIDs ko : KnownOIDs.values()) {
             if (CurveDB.lookup(ko.value()) != null) {
                 curves.add(ko);
             }
         }
-        check(curves.size() > 3, "Too few curves: " + curves);
-
-        raceForTheCurves(curves);
+        check(Set.copyOf(curves).equals(Set.copyOf(CURVES)),
+                "The curves of CurveDB are " + curves);
 
         for (KnownOIDs ko : curves) {
             NamedCurve c = CurveDB.lookup(ko.value());
@@ -124,7 +174,7 @@ public class CurveDBLookup {
     }
 
     // Many threads that look for every curve for the first time get the
-    // same object for each of them.
+    // same object for each of them, and each curve is made.
     private static void raceForTheCurves(List<KnownOIDs> curves)
             throws Exception {
         int threads = 8;
@@ -160,6 +210,7 @@ public class CurveDBLookup {
             throw new RuntimeException(failure.get());
         }
         for (int i = 0; i < curves.size(); i++) {
+            check(isMade(curves.get(i)), curves.get(i) + " not made");
             for (int t = 1; t < threads; t++) {
                 check(found[t][i] != null && found[t][i] == found[0][i],
                         "Different objects for " + curves.get(i));
