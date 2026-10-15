@@ -1,0 +1,26 @@
+name: Cancel superseded SIMDUTF validation
+on:
+  push:
+    branches: [review/simdutf-cancel-stale-validation]
+permissions:
+  contents: read
+  actions: write
+jobs:
+  cancel:
+    runs-on: windows-2025
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Cancel only the superseded validation run
+        shell: pwsh
+        run: |
+          $oldRun = 38719964295
+          $oldHead = gh api repos/re-thc/openjdk-jdk27u/actions/runs/$oldRun --jq .head_sha
+          if ($LASTEXITCODE -ne 0 -or $oldHead -ne "24a320af848b971dd85e49a9661ea8ca6b4187c6") { throw "Unexpected validation run" }
+          $status = gh api repos/re-thc/openjdk-jdk27u/actions/runs/$oldRun --jq .status
+          if ($LASTEXITCODE -ne 0) { throw "Cannot read validation status" }
+          if ($status -ne "completed") {
+            gh api --method POST repos/re-thc/openjdk-jdk27u/actions/runs/$oldRun/cancel
+            if ($LASTEXITCODE -ne 0) { throw "Cannot cancel superseded validation" }
+          }
