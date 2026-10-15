@@ -1,0 +1,38 @@
+{
+  "source": "e41d7823bf6de77c4bfba52e896bf325221488cb",
+  "status": "partial-performance-interpreter-tier-complete",
+  "created_utc": "2026-10-15T21:18:00.081409+00:00",
+  "jmh_invocations": 144,
+  "parameter_forks": 240,
+  "planned_fresh_pairs": 4,
+  "planned_workloads": 15,
+  "hash_followup": {
+    "completed_invocations": 50,
+    "planned_invocations": 50,
+    "complete": true,
+    "scope": "Separate fixed10round5variant hash follow-up; previous0fb is a control, not current-source qualification."
+  },
+  "core_evidence": {
+    "source": "e41d7823bf6de77c4bfba52e896bf325221488cb",
+    "commit": "b941718fd1fe04af8d9931559a9ad4a9c7c339f6",
+    "qualification_path": ".github/qualification/chain-checkpoint/layout-stage-02-core/qualification.json",
+    "core_assessment_sha256": "ce1f3b2d4c3148a85ae0a6670652db505f2ffc27fa5269a17e4405bd1fd97012",
+    "archive": {
+      "name": "validation.zip",
+      "bytes": 1091034,
+      "sha256": "62d3eefc6fc362a17096d7a923c06b9ae2219d500e250154c169a258a1456cf4"
+    },
+    "scope": "Actual e41d clean-image executions only. This does not qualify full tier2, performance, native ARM CDS/performance or Windows native/AVX512 execution."
+  },
+  "archive": {
+    "name": "interpreter-warm.zip",
+    "bytes": 3666489,
+    "sha256": "bc7e9003cbd34987fcd7b1ff92ef73c8703b921685f1962292cc482640fadc10"
+  },
+  "candidate_patch": {
+    "base": "c04d1ba1e96b2176ce8a8e56eacae73c2d356d2b",
+    "path": "candidate.patch",
+    "sha256": "00aa01825ae603501ed1623e9b48b3a0273a2e5fb88fb4795fd7e54fabb749a9"
+  },
+  "scope": "Only completed forks from the first, prospectively selected interpreter warm tier. An in-progress snapshot does not qualify that tier. This does not qualify remaining warm tiers, cold/startup, C2 controls, full tier2, native ARM/Windows, or PR readiness."
+}
