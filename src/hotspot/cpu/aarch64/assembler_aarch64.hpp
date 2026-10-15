@@ -3169,6 +3169,16 @@ public:
     f(0b100001001010, 21, 10), rf(Vn, 5), rf(Vd, 0);
   }
 
+  void shrn(FloatRegister Vd, SIMD_Arrangement Tb, FloatRegister Vn, SIMD_Arrangement Ta, int shift) {
+    starti;
+    assert((Tb == T8B && Ta == T8H) || (Tb == T4H && Ta == T4S) ||
+           (Tb == T2S && Ta == T2D), "Invalid size specifiers");
+    int bits = 8 << ((int)Tb >> 1);
+    assert(shift >= 1 && shift <= bits, "Invalid shift value");
+    f(0b000011110, 31, 23), f(2 * bits - shift, 22, 16);
+    f(0b100001, 15, 10), rf(Vn, 5), rf(Vd, 0);
+  }
+
   void dup(FloatRegister Vd, SIMD_Arrangement T, Register Xs)
   {
     starti;
