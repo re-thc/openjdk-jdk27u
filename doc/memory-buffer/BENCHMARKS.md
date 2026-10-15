@@ -155,5 +155,5 @@ exercise opt-out, ISA limits, header sizes and GC configurations. Ordinary direc
 buffers are tested under concurrent GC; arena-backed buffers cover confinement
 and closed-session precedence. Mapped truncation tests intentionally touch
 inaccessible pages and require `InternalError`, including C1's existing stub,
-C2's bounded stub and partial inline code. Boundary tests use unequal sentinels
+C2's bounded stub and inlined word accesses. Boundary tests use unequal sentinels
 outside logical regions to catch overreads affecting results.

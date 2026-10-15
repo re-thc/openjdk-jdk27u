@@ -32,7 +32,7 @@
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000
  *                  -XX:+UnlockDiagnosticVMOptions -XX:AVX3Threshold=0 TestMappedNativeMismatch
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000
- *                  -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=128
+ *                  -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=64
  *                  -XX:AVX3Threshold=0 TestMappedNativeMismatch
  */
 
