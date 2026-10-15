@@ -64,7 +64,7 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
 
     /**
      * Test checks following situation: <br/>
-     * UseAES flag is set to true, TestAESMain is executed <br/>
+     * UseAES flag is set to true, AESWorkload is executed <br/>
      * Expected result: UseAESIntrinsics flag is set to true <br/>
      * If vm type is server then output should contain intrinsics usage <br/>
      *
@@ -93,7 +93,7 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
      * Test checks following situation: <br/>
      * UseAES flag is set to true, UseSSE flag is set to 2,
      * Platform should support UseSSE (x86 or x64) <br/>
-     * TestAESMain is executed <br/>
+     * AESWorkload is executed <br/>
      * Expected result: UseAESIntrinsics flag is set to false <br/>
      * Output shouldn't contain intrinsics usage <br/>
      *
@@ -121,7 +121,7 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
      * Test checks following situation: <br/>
      * UseAES flag is set to false, UseSSE flag is set to 2,
      * Platform should support UseSSE (x86 or x64) <br/>
-     * TestAESMain is executed <br/>
+     * AESWorkload is executed <br/>
      * Expected result: UseAESIntrinsics flag is set to false <br/>
      * Output shouldn't contain intrinsics usage <br/>
      *
@@ -147,7 +147,7 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
 
     /**
      * Test checks following situation: <br/>
-     * UseAES flag is set to false, TestAESMain is executed <br/>
+     * UseAES flag is set to false, AESWorkload is executed <br/>
      * Expected result: UseAESIntrinsics flag is set to false <br/>
      * Output shouldn't contain intrinsics usage <br/>
      *
@@ -168,7 +168,7 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
 
     /**
      * Test checks following situation: <br/>
-     * UseAESIntrinsics flag is set to false, TestAESMain is executed <br/>
+     * UseAESIntrinsics flag is set to false, AESWorkload is executed <br/>
      * Expected result: UseAES flag is set to true <br/>
      * Output shouldn't contain intrinsics usage <br/>
      *

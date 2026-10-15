@@ -63,7 +63,7 @@ public abstract class AESIntrinsicsBase {
      * Intrinsics flags are of diagnostic type
      * and must be preceded by UnlockDiagnosticVMOptions.
      * @param args flags that must be added to command
-     * @return command for TestAESMain execution
+     * @return command for AESWorkload execution
      */
     public static String[] prepareArguments(String... args) {
         String[] command = Arrays.copyOf(USE_DIAGNOSTIC_CMD, args.length
