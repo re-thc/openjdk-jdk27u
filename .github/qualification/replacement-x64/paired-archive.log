@@ -1,0 +1,758 @@
+﻿2026-10-14T22:38:25.6432912Z Current runner version: '2.337.0'
+2026-10-14T22:38:25.6464945Z ##[group]Runner Image Provisioner
+2026-10-14T22:38:25.6466235Z Hosted Compute Agent
+2026-10-14T22:38:25.6466877Z Version: 20261012.601
+2026-10-14T22:38:25.6468508Z Commit: f3dc54e1fb89da6852db922499a0233137369e1d
+2026-10-14T22:38:25.6469338Z Build Date: 2026-10-12T17:48:21Z
+2026-10-14T22:38:25.6470079Z Worker ID: {ebf67558-5236-4565-84eb-9cc2b6d117a2}
+2026-10-14T22:38:25.6470869Z Region: westus3
+2026-10-14T22:38:25.6471508Z Cloud: Azure
+2026-10-14T22:38:25.6472246Z ##[endgroup]
+2026-10-14T22:38:25.6474430Z ##[group]Operating System
+2026-10-14T22:38:25.6475170Z Ubuntu
+2026-10-14T22:38:25.6475891Z 26.04.1
+2026-10-14T22:38:25.6476436Z LTS
+2026-10-14T22:38:25.6477075Z ##[endgroup]
+2026-10-14T22:38:25.6478131Z ##[group]Runner Image
+2026-10-14T22:38:25.6478818Z Image: ubuntu-26.04-arm
+2026-10-14T22:38:25.6479545Z Version: 20261012.150.1
+2026-10-14T22:38:25.6481001Z Included Software: https://github.com/actions/runner-images/blob/ubuntu26-arm64/20261012.150/images/ubuntu/Ubuntu2604-Arm64-Readme.md
+2026-10-14T22:38:25.6482764Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu26-arm64%2F20261012.150
+2026-10-14T22:38:25.6483789Z ##[endgroup]
+2026-10-14T22:38:25.6485243Z ##[group]GITHUB_TOKEN Permissions
+2026-10-14T22:38:25.6488985Z Actions: read
+2026-10-14T22:38:25.6489767Z Contents: read
+2026-10-14T22:38:25.6490354Z Metadata: read
+2026-10-14T22:38:25.6491030Z ##[endgroup]
+2026-10-14T22:38:25.6494804Z Secret source: Actions
+2026-10-14T22:38:25.6495848Z Cache mode: write
+2026-10-14T22:38:25.6496988Z Prepare workflow directory
+2026-10-14T22:38:25.6902824Z Prepare all required actions
+2026-10-14T22:38:25.6959178Z Getting action download info
+2026-10-14T22:38:25.9941049Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-10-14T22:38:26.0970155Z Download action repository 'actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c' (SHA:3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c)
+2026-10-14T22:38:26.7196449Z Download action repository 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+2026-10-14T22:38:26.9019781Z Complete job name: compare
+2026-10-14T22:38:26.9992079Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-10-14T22:38:26.9993997Z with:
+2026-10-14T22:38:26.9994793Z   ref: 87edd79d3104ff502f7befec034716b081436f49
+2026-10-14T22:38:26.9995622Z   path: baseline
+2026-10-14T22:38:26.9996395Z   repository: re-thc/openjdk-jdk27u
+2026-10-14T22:38:27.0001066Z   token: ***
+2026-10-14T22:38:27.0001875Z   ssh-strict: true
+2026-10-14T22:38:27.0002544Z   ssh-user: git
+2026-10-14T22:38:27.0003196Z   persist-credentials: true
+2026-10-14T22:38:27.0003965Z   clean: true
+2026-10-14T22:38:27.0004661Z   sparse-checkout-cone-mode: true
+2026-10-14T22:38:27.0005556Z   fetch-depth: 1
+2026-10-14T22:38:27.0006234Z   fetch-tags: false
+2026-10-14T22:38:27.0006892Z   show-progress: true
+2026-10-14T22:38:27.0007906Z   lfs: false
+2026-10-14T22:38:27.0008560Z   submodules: false
+2026-10-14T22:38:27.0009329Z   set-safe-directory: true
+2026-10-14T22:38:27.0010195Z   allow-unsafe-pr-checkout: false
+2026-10-14T22:38:27.0011490Z ##[endgroup]
+2026-10-14T22:38:27.0897131Z Syncing repository: re-thc/openjdk-jdk27u
+2026-10-14T22:38:27.0900364Z ##[group]Getting Git version info
+2026-10-14T22:38:27.0901564Z Working directory is '/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/baseline'
+2026-10-14T22:38:27.0903246Z [command]/usr/bin/git version
+2026-10-14T22:38:27.0904010Z git version 2.55.0
+2026-10-14T22:38:27.0911623Z ##[endgroup]
+2026-10-14T22:38:27.0930248Z Temporarily overriding HOME='/home/runner/work/_temp/7a57674b-478a-45cd-a1c9-6bb22654045b' before making global git config changes
+2026-10-14T22:38:27.0932147Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-14T22:38:27.0938977Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/baseline
+2026-10-14T22:38:27.0977785Z ##[group]Determining repository object format
+2026-10-14T22:38:27.0980337Z ##[endgroup]
+2026-10-14T22:38:27.0981802Z ##[group]Initializing the repository
+2026-10-14T22:38:27.0989307Z [command]/usr/bin/git init /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/baseline
+2026-10-14T22:38:27.1090186Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-14T22:38:27.1093867Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-14T22:38:27.1095882Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-14T22:38:27.1097608Z hint: call:
+2026-10-14T22:38:27.1099481Z hint:
+2026-10-14T22:38:27.1100422Z hint: 	git config --global init.defaultBranch <name>
+2026-10-14T22:38:27.1101321Z hint:
+2026-10-14T22:38:27.1102230Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-14T22:38:27.1103451Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-14T22:38:27.1104499Z hint:
+2026-10-14T22:38:27.1105258Z hint: 	git branch -m <name>
+2026-10-14T22:38:27.1106008Z hint:
+2026-10-14T22:38:27.1106997Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-14T22:38:27.1108713Z Initialized empty Git repository in /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/baseline/.git/
+2026-10-14T22:38:27.1111540Z [command]/usr/bin/git remote add origin https://github.com/re-thc/openjdk-jdk27u
+2026-10-14T22:38:27.1147673Z ##[endgroup]
+2026-10-14T22:38:27.1148920Z ##[group]Disabling automatic garbage collection
+2026-10-14T22:38:27.1149958Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-14T22:38:27.1172306Z ##[endgroup]
+2026-10-14T22:38:27.1173845Z ##[group]Setting up auth
+2026-10-14T22:38:27.1175101Z Removing SSH command configuration
+2026-10-14T22:38:27.1178347Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-14T22:38:27.1218065Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-14T22:38:27.1587821Z Removing HTTP extra header
+2026-10-14T22:38:27.1591280Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-14T22:38:27.1621990Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-14T22:38:27.1901232Z Removing includeIf entries pointing to credentials config files
+2026-10-14T22:38:27.1902638Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-14T22:38:27.1932679Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-14T22:38:27.2212175Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-e571d135-9cf8-4b42-88a8-35a146398b77.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-14T22:38:27.2259892Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/baseline/.git.path /home/runner/work/_temp/git-credentials-e571d135-9cf8-4b42-88a8-35a146398b77.config
+2026-10-14T22:38:27.2291752Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/baseline/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-e571d135-9cf8-4b42-88a8-35a146398b77.config
+2026-10-14T22:38:27.2325225Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/baseline/.git.path /github/runner_temp/git-credentials-e571d135-9cf8-4b42-88a8-35a146398b77.config
+2026-10-14T22:38:27.2373240Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/baseline/.git/worktrees/*.path /github/runner_temp/git-credentials-e571d135-9cf8-4b42-88a8-35a146398b77.config
+2026-10-14T22:38:27.2404932Z ##[endgroup]
+2026-10-14T22:38:27.2406339Z ##[group]Fetching the repository
+2026-10-14T22:38:27.2411003Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 87edd79d3104ff502f7befec034716b081436f49
+2026-10-14T22:38:54.3690072Z From https://github.com/re-thc/openjdk-jdk27u
+2026-10-14T22:38:54.3691366Z  * branch                87edd79d3104ff502f7befec034716b081436f49 -> FETCH_HEAD
+2026-10-14T22:38:54.3698837Z [command]/usr/bin/git rev-parse --verify --quiet 87edd79d3104ff502f7befec034716b081436f49^{object}
+2026-10-14T22:38:54.3724801Z 87edd79d3104ff502f7befec034716b081436f49
+2026-10-14T22:38:54.3728641Z ##[endgroup]
+2026-10-14T22:38:54.3729587Z ##[group]Determining the checkout info
+2026-10-14T22:38:54.3730507Z ##[endgroup]
+2026-10-14T22:38:54.3732963Z [command]/usr/bin/git sparse-checkout disable
+2026-10-14T22:38:54.3773244Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-14T22:38:54.3801380Z ##[group]Checking out the ref
+2026-10-14T22:38:54.3803776Z [command]/usr/bin/git checkout --progress --force 87edd79d3104ff502f7befec034716b081436f49
+2026-10-14T22:38:55.4482446Z Updating files:  23% (16718/70773)
+2026-10-14T22:38:55.4807905Z Updating files:  24% (16986/70773)
+2026-10-14T22:38:55.5112290Z Updating files:  25% (17694/70773)
+2026-10-14T22:38:55.5449617Z Updating files:  26% (18401/70773)
+2026-10-14T22:38:55.5759828Z Updating files:  27% (19109/70773)
+2026-10-14T22:38:55.6264104Z Updating files:  28% (19817/70773)
+2026-10-14T22:38:55.6530968Z Updating files:  29% (20525/70773)
+2026-10-14T22:38:55.6984442Z Updating files:  30% (21232/70773)
+2026-10-14T22:38:55.7512894Z Updating files:  31% (21940/70773)
+2026-10-14T22:38:55.7810044Z Updating files:  32% (22648/70773)
+2026-10-14T22:38:55.8096357Z Updating files:  33% (23356/70773)
+2026-10-14T22:38:55.8424316Z Updating files:  34% (24063/70773)
+2026-10-14T22:38:55.8708583Z Updating files:  35% (24771/70773)
+2026-10-14T22:38:55.8967331Z Updating files:  36% (25479/70773)
+2026-10-14T22:38:55.9243735Z Updating files:  37% (26187/70773)
+2026-10-14T22:38:55.9491500Z Updating files:  38% (26894/70773)
+2026-10-14T22:38:55.9774328Z Updating files:  39% (27602/70773)
+2026-10-14T22:38:56.0695270Z Updating files:  40% (28310/70773)
+2026-10-14T22:38:56.0933810Z Updating files:  41% (29017/70773)
+2026-10-14T22:38:56.1149099Z Updating files:  42% (29725/70773)
+2026-10-14T22:38:56.1433672Z Updating files:  43% (30433/70773)
+2026-10-14T22:38:56.1694713Z Updating files:  44% (31141/70773)
+2026-10-14T22:38:56.1968705Z Updating files:  45% (31848/70773)
+2026-10-14T22:38:56.2233102Z Updating files:  46% (32556/70773)
+2026-10-14T22:38:56.2465777Z Updating files:  47% (33264/70773)
+2026-10-14T22:38:56.2707576Z Updating files:  48% (33972/70773)
+2026-10-14T22:38:56.2958793Z Updating files:  49% (34679/70773)
+2026-10-14T22:38:56.3202449Z Updating files:  50% (35387/70773)
+2026-10-14T22:38:56.3422230Z Updating files:  51% (36095/70773)
+2026-10-14T22:38:56.3619442Z Updating files:  52% (36802/70773)
+2026-10-14T22:38:56.3822549Z Updating files:  53% (37510/70773)
+2026-10-14T22:38:56.5716734Z Updating files:  54% (38218/70773)
+2026-10-14T22:38:56.5827794Z Updating files:  54% (38610/70773)
+2026-10-14T22:38:56.6070797Z Updating files:  55% (38926/70773)
+2026-10-14T22:38:56.6333549Z Updating files:  56% (39633/70773)
+2026-10-14T22:38:56.6526244Z Updating files:  57% (40341/70773)
+2026-10-14T22:38:56.6744499Z Updating files:  58% (41049/70773)
+2026-10-14T22:38:56.7016393Z Updating files:  59% (41757/70773)
+2026-10-14T22:38:56.7292366Z Updating files:  60% (42464/70773)
+2026-10-14T22:38:56.7510063Z Updating files:  61% (43172/70773)
+2026-10-14T22:38:56.7780102Z Updating files:  62% (43880/70773)
+2026-10-14T22:38:56.8021514Z Updating files:  63% (44587/70773)
+2026-10-14T22:38:56.8370891Z Updating files:  64% (45295/70773)
+2026-10-14T22:38:56.8637004Z Updating files:  65% (46003/70773)
+2026-10-14T22:38:56.8918261Z Updating files:  66% (46711/70773)
+2026-10-14T22:38:56.9212981Z Updating files:  67% (47418/70773)
+2026-10-14T22:38:56.9510849Z Updating files:  68% (48126/70773)
+2026-10-14T22:38:56.9789007Z Updating files:  69% (48834/70773)
+2026-10-14T22:38:57.0047702Z Updating files:  70% (49542/70773)
+2026-10-14T22:38:57.0428849Z Updating files:  71% (50249/70773)
+2026-10-14T22:38:57.0679236Z Updating files:  72% (50957/70773)
+2026-10-14T22:38:57.0978862Z Updating files:  73% (51665/70773)
+2026-10-14T22:38:57.1288589Z Updating files:  74% (52373/70773)
+2026-10-14T22:38:57.3911250Z Updating files:  75% (53080/70773)
+2026-10-14T22:38:57.4141933Z Updating files:  76% (53788/70773)
+2026-10-14T22:38:57.4356616Z Updating files:  77% (54496/70773)
+2026-10-14T22:38:57.4399470Z Updating files:  77% (55072/70773)
+2026-10-14T22:38:57.4655089Z Updating files:  78% (55203/70773)
+2026-10-14T22:38:57.4953037Z Updating files:  79% (55911/70773)
+2026-10-14T22:38:57.5185749Z Updating files:  80% (56619/70773)
+2026-10-14T22:38:57.5490679Z Updating files:  81% (57327/70773)
+2026-10-14T22:38:57.6111842Z Updating files:  82% (58034/70773)
+2026-10-14T22:38:57.6387539Z Updating files:  83% (58742/70773)
+2026-10-14T22:38:57.6641654Z Updating files:  84% (59450/70773)
+2026-10-14T22:38:57.6935922Z Updating files:  85% (60158/70773)
+2026-10-14T22:38:57.7171845Z Updating files:  86% (60865/70773)
+2026-10-14T22:38:57.7388168Z Updating files:  87% (61573/70773)
+2026-10-14T22:38:57.7572715Z Updating files:  88% (62281/70773)
+2026-10-14T22:38:57.7764580Z Updating files:  89% (62988/70773)
+2026-10-14T22:38:57.7943729Z Updating files:  90% (63696/70773)
+2026-10-14T22:38:57.8128157Z Updating files:  91% (64404/70773)
+2026-10-14T22:38:57.8313288Z Updating files:  92% (65112/70773)
+2026-10-14T22:38:57.8477754Z Updating files:  93% (65819/70773)
+2026-10-14T22:38:57.8643688Z Updating files:  94% (66527/70773)
+2026-10-14T22:38:58.1035380Z Updating files:  95% (67235/70773)
+2026-10-14T22:38:58.1233419Z Updating files:  96% (67943/70773)
+2026-10-14T22:38:58.1419954Z Updating files:  97% (68650/70773)
+2026-10-14T22:38:58.1666711Z Updating files:  98% (69358/70773)
+2026-10-14T22:38:58.1880296Z Updating files:  99% (70066/70773)
+2026-10-14T22:38:58.1880779Z Updating files: 100% (70773/70773)
+2026-10-14T22:38:58.1881321Z Updating files: 100% (70773/70773), done.
+2026-10-14T22:38:58.2712988Z Note: switching to '87edd79d3104ff502f7befec034716b081436f49'.
+2026-10-14T22:38:58.2713442Z 
+2026-10-14T22:38:58.2713695Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-14T22:38:58.2714513Z changes and commit them, and you can discard any commits you make in this
+2026-10-14T22:38:58.2714994Z state without impacting any branches by switching back to a branch.
+2026-10-14T22:38:58.2715273Z 
+2026-10-14T22:38:58.2715501Z If you want to create a new branch to retain commits you create, you may
+2026-10-14T22:38:58.2716021Z do so (now or later) by using -c with the switch command. Example:
+2026-10-14T22:38:58.2716462Z 
+2026-10-14T22:38:58.2716634Z   git switch -c <new-branch-name>
+2026-10-14T22:38:58.2716881Z 
+2026-10-14T22:38:58.2717082Z Or undo this operation with:
+2026-10-14T22:38:58.2717447Z 
+2026-10-14T22:38:58.2717540Z   git switch -
+2026-10-14T22:38:58.2717671Z 
+2026-10-14T22:38:58.2717943Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-14T22:38:58.2718271Z 
+2026-10-14T22:38:58.2718541Z HEAD is now at 87edd79d3 Default to four-byte object headers in JDK 27u with Serial, G1 and ZGC (#3)
+2026-10-14T22:38:58.2757111Z ##[endgroup]
+2026-10-14T22:38:58.2796665Z [command]/usr/bin/git log -1 --format=%H
+2026-10-14T22:38:58.2828632Z 87edd79d3104ff502f7befec034716b081436f49
+2026-10-14T22:38:58.3114213Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-10-14T22:38:58.3114770Z with:
+2026-10-14T22:38:58.3115037Z   ref: 8bf01e9ed8a3df53fd8836d61216ed511ad3e591
+2026-10-14T22:38:58.3115492Z   path: pr
+2026-10-14T22:38:58.3115744Z   repository: re-thc/openjdk-jdk27u
+2026-10-14T22:38:58.3118775Z   token: ***
+2026-10-14T22:38:58.3119100Z   ssh-strict: true
+2026-10-14T22:38:58.3119656Z   ssh-user: git
+2026-10-14T22:38:58.3120011Z   persist-credentials: true
+2026-10-14T22:38:58.3120281Z   clean: true
+2026-10-14T22:38:58.3120574Z   sparse-checkout-cone-mode: true
+2026-10-14T22:38:58.3120916Z   fetch-depth: 1
+2026-10-14T22:38:58.3121148Z   fetch-tags: false
+2026-10-14T22:38:58.3121469Z   show-progress: true
+2026-10-14T22:38:58.3121833Z   lfs: false
+2026-10-14T22:38:58.3122111Z   submodules: false
+2026-10-14T22:38:58.3122398Z   set-safe-directory: true
+2026-10-14T22:38:58.3122674Z   allow-unsafe-pr-checkout: false
+2026-10-14T22:38:58.3123003Z ##[endgroup]
+2026-10-14T22:38:58.3806438Z Syncing repository: re-thc/openjdk-jdk27u
+2026-10-14T22:38:58.3828528Z ##[group]Getting Git version info
+2026-10-14T22:38:58.3829014Z Working directory is '/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pr'
+2026-10-14T22:38:58.3882189Z [command]/usr/bin/git version
+2026-10-14T22:38:58.3927346Z git version 2.55.0
+2026-10-14T22:38:58.3944990Z ##[endgroup]
+2026-10-14T22:38:58.3957796Z Temporarily overriding HOME='/home/runner/work/_temp/2b5f78ba-b9eb-481e-b8ab-553733c43688' before making global git config changes
+2026-10-14T22:38:58.3959098Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-14T22:38:58.3961047Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pr
+2026-10-14T22:38:58.3990688Z ##[group]Determining repository object format
+2026-10-14T22:38:58.3992372Z ##[endgroup]
+2026-10-14T22:38:58.3993067Z ##[group]Initializing the repository
+2026-10-14T22:38:58.3997099Z [command]/usr/bin/git init /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pr
+2026-10-14T22:38:58.4044856Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-14T22:38:58.4053101Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-14T22:38:58.4054049Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-14T22:38:58.4054596Z hint: call:
+2026-10-14T22:38:58.4055082Z hint:
+2026-10-14T22:38:58.4055515Z hint: 	git config --global init.defaultBranch <name>
+2026-10-14T22:38:58.4056040Z hint:
+2026-10-14T22:38:58.4056615Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-14T22:38:58.4057463Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-14T22:38:58.4060607Z hint:
+2026-10-14T22:38:58.4061145Z hint: 	git branch -m <name>
+2026-10-14T22:38:58.4061663Z hint:
+2026-10-14T22:38:58.4062231Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-14T22:38:58.4063070Z Initialized empty Git repository in /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pr/.git/
+2026-10-14T22:38:58.4064887Z [command]/usr/bin/git remote add origin https://github.com/re-thc/openjdk-jdk27u
+2026-10-14T22:38:58.4079456Z ##[endgroup]
+2026-10-14T22:38:58.4080262Z ##[group]Disabling automatic garbage collection
+2026-10-14T22:38:58.4080834Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-14T22:38:58.4108710Z ##[endgroup]
+2026-10-14T22:38:58.4109923Z ##[group]Setting up auth
+2026-10-14T22:38:58.4110251Z Removing SSH command configuration
+2026-10-14T22:38:58.4112371Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-14T22:38:58.4142618Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-14T22:38:58.4398237Z Removing HTTP extra header
+2026-10-14T22:38:58.4403350Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-14T22:38:58.4437023Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-14T22:38:58.4683467Z Removing includeIf entries pointing to credentials config files
+2026-10-14T22:38:58.4688179Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-14T22:38:58.4716972Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-14T22:38:58.4966022Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-ca2c6be2-3dae-4774-b472-204c9810d8a4.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-14T22:38:58.5006616Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pr/.git.path /home/runner/work/_temp/git-credentials-ca2c6be2-3dae-4774-b472-204c9810d8a4.config
+2026-10-14T22:38:58.5035018Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pr/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-ca2c6be2-3dae-4774-b472-204c9810d8a4.config
+2026-10-14T22:38:58.5063514Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/pr/.git.path /github/runner_temp/git-credentials-ca2c6be2-3dae-4774-b472-204c9810d8a4.config
+2026-10-14T22:38:58.5091427Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/pr/.git/worktrees/*.path /github/runner_temp/git-credentials-ca2c6be2-3dae-4774-b472-204c9810d8a4.config
+2026-10-14T22:38:58.5139871Z ##[endgroup]
+2026-10-14T22:38:58.5140419Z ##[group]Fetching the repository
+2026-10-14T22:38:58.5141124Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 8bf01e9ed8a3df53fd8836d61216ed511ad3e591
+2026-10-14T22:39:24.8059144Z From https://github.com/re-thc/openjdk-jdk27u
+2026-10-14T22:39:24.8059998Z  * branch                8bf01e9ed8a3df53fd8836d61216ed511ad3e591 -> FETCH_HEAD
+2026-10-14T22:39:24.8070062Z [command]/usr/bin/git rev-parse --verify --quiet 8bf01e9ed8a3df53fd8836d61216ed511ad3e591^{object}
+2026-10-14T22:39:24.8094246Z 8bf01e9ed8a3df53fd8836d61216ed511ad3e591
+2026-10-14T22:39:24.8097569Z ##[endgroup]
+2026-10-14T22:39:24.8098057Z ##[group]Determining the checkout info
+2026-10-14T22:39:24.8098942Z ##[endgroup]
+2026-10-14T22:39:24.8102594Z [command]/usr/bin/git sparse-checkout disable
+2026-10-14T22:39:24.8141130Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-14T22:39:24.8172964Z ##[group]Checking out the ref
+2026-10-14T22:39:24.8176207Z [command]/usr/bin/git checkout --progress --force 8bf01e9ed8a3df53fd8836d61216ed511ad3e591
+2026-10-14T22:39:25.8918305Z Updating files:  23% (16625/70806)
+2026-10-14T22:39:25.9245575Z Updating files:  24% (16994/70806)
+2026-10-14T22:39:25.9548532Z Updating files:  25% (17702/70806)
+2026-10-14T22:39:25.9891504Z Updating files:  26% (18410/70806)
+2026-10-14T22:39:26.0205396Z Updating files:  27% (19118/70806)
+2026-10-14T22:39:26.0708752Z Updating files:  28% (19826/70806)
+2026-10-14T22:39:26.0982566Z Updating files:  29% (20534/70806)
+2026-10-14T22:39:26.1433621Z Updating files:  30% (21242/70806)
+2026-10-14T22:39:26.1964753Z Updating files:  31% (21950/70806)
+2026-10-14T22:39:26.2262495Z Updating files:  32% (22658/70806)
+2026-10-14T22:39:26.2550023Z Updating files:  33% (23366/70806)
+2026-10-14T22:39:26.2868998Z Updating files:  34% (24075/70806)
+2026-10-14T22:39:26.3151651Z Updating files:  35% (24783/70806)
+2026-10-14T22:39:26.3407728Z Updating files:  36% (25491/70806)
+2026-10-14T22:39:26.3682045Z Updating files:  37% (26199/70806)
+2026-10-14T22:39:26.3920682Z Updating files:  38% (26907/70806)
+2026-10-14T22:39:26.4194771Z Updating files:  39% (27615/70806)
+2026-10-14T22:39:26.5042389Z Updating files:  40% (28323/70806)
+2026-10-14T22:39:26.5278674Z Updating files:  41% (29031/70806)
+2026-10-14T22:39:26.5493239Z Updating files:  42% (29739/70806)
+2026-10-14T22:39:26.5761644Z Updating files:  43% (30447/70806)
+2026-10-14T22:39:26.6024892Z Updating files:  44% (31155/70806)
+2026-10-14T22:39:26.6289858Z Updating files:  45% (31863/70806)
+2026-10-14T22:39:26.6544939Z Updating files:  46% (32571/70806)
+2026-10-14T22:39:26.6771062Z Updating files:  47% (33279/70806)
+2026-10-14T22:39:26.7002755Z Updating files:  48% (33987/70806)
+2026-10-14T22:39:26.7241569Z Updating files:  49% (34695/70806)
+2026-10-14T22:39:26.7479835Z Updating files:  50% (35403/70806)
+2026-10-14T22:39:26.7696194Z Updating files:  51% (36112/70806)
+2026-10-14T22:39:26.7886299Z Updating files:  52% (36820/70806)
+2026-10-14T22:39:26.8085940Z Updating files:  53% (37528/70806)
+2026-10-14T22:39:26.9458461Z Updating files:  54% (38236/70806)
+2026-10-14T22:39:26.9565450Z Updating files:  54% (38647/70806)
+2026-10-14T22:39:26.9808791Z Updating files:  55% (38944/70806)
+2026-10-14T22:39:27.0070372Z Updating files:  56% (39652/70806)
+2026-10-14T22:39:27.0261915Z Updating files:  57% (40360/70806)
+2026-10-14T22:39:27.0483374Z Updating files:  58% (41068/70806)
+2026-10-14T22:39:27.0749187Z Updating files:  59% (41776/70806)
+2026-10-14T22:39:27.1026682Z Updating files:  60% (42484/70806)
+2026-10-14T22:39:27.1243883Z Updating files:  61% (43192/70806)
+2026-10-14T22:39:27.1514744Z Updating files:  62% (43900/70806)
+2026-10-14T22:39:27.1755232Z Updating files:  63% (44608/70806)
+2026-10-14T22:39:27.2118693Z Updating files:  64% (45316/70806)
+2026-10-14T22:39:27.2382669Z Updating files:  65% (46024/70806)
+2026-10-14T22:39:27.2663987Z Updating files:  66% (46732/70806)
+2026-10-14T22:39:27.2956121Z Updating files:  67% (47441/70806)
+2026-10-14T22:39:27.3249319Z Updating files:  68% (48149/70806)
+2026-10-14T22:39:27.3524869Z Updating files:  69% (48857/70806)
+2026-10-14T22:39:27.3771613Z Updating files:  70% (49565/70806)
+2026-10-14T22:39:27.4147904Z Updating files:  71% (50273/70806)
+2026-10-14T22:39:27.4395721Z Updating files:  72% (50981/70806)
+2026-10-14T22:39:27.4692542Z Updating files:  73% (51689/70806)
+2026-10-14T22:39:27.4993200Z Updating files:  74% (52397/70806)
+2026-10-14T22:39:27.8476595Z Updating files:  75% (53105/70806)
+2026-10-14T22:39:27.8708083Z Updating files:  76% (53813/70806)
+2026-10-14T22:39:27.8738190Z Updating files:  77% (54521/70806)
+2026-10-14T22:39:27.8959367Z Updating files:  77% (54604/70806)
+2026-10-14T22:39:27.9212462Z Updating files:  78% (55229/70806)
+2026-10-14T22:39:27.9507144Z Updating files:  79% (55937/70806)
+2026-10-14T22:39:27.9739099Z Updating files:  80% (56645/70806)
+2026-10-14T22:39:28.0041402Z Updating files:  81% (57353/70806)
+2026-10-14T22:39:28.0669316Z Updating files:  82% (58061/70806)
+2026-10-14T22:39:28.0942302Z Updating files:  83% (58769/70806)
+2026-10-14T22:39:28.1193967Z Updating files:  84% (59478/70806)
+2026-10-14T22:39:28.1476786Z Updating files:  85% (60186/70806)
+2026-10-14T22:39:28.1714443Z Updating files:  86% (60894/70806)
+2026-10-14T22:39:28.1932501Z Updating files:  87% (61602/70806)
+2026-10-14T22:39:28.2121142Z Updating files:  88% (62310/70806)
+2026-10-14T22:39:28.2308978Z Updating files:  89% (63018/70806)
+2026-10-14T22:39:28.2484639Z Updating files:  90% (63726/70806)
+2026-10-14T22:39:28.2665074Z Updating files:  91% (64434/70806)
+2026-10-14T22:39:28.2845307Z Updating files:  92% (65142/70806)
+2026-10-14T22:39:28.3010290Z Updating files:  93% (65850/70806)
+2026-10-14T22:39:28.3173629Z Updating files:  94% (66558/70806)
+2026-10-14T22:39:28.5836929Z Updating files:  95% (67266/70806)
+2026-10-14T22:39:28.6037942Z Updating files:  96% (67974/70806)
+2026-10-14T22:39:28.6224252Z Updating files:  97% (68682/70806)
+2026-10-14T22:39:28.6473187Z Updating files:  98% (69390/70806)
+2026-10-14T22:39:28.6686204Z Updating files:  99% (70098/70806)
+2026-10-14T22:39:28.6686810Z Updating files: 100% (70806/70806)
+2026-10-14T22:39:28.6687565Z Updating files: 100% (70806/70806), done.
+2026-10-14T22:39:28.7533521Z Note: switching to '8bf01e9ed8a3df53fd8836d61216ed511ad3e591'.
+2026-10-14T22:39:28.7534306Z 
+2026-10-14T22:39:28.7535241Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-14T22:39:28.7536153Z changes and commit them, and you can discard any commits you make in this
+2026-10-14T22:39:28.7536686Z state without impacting any branches by switching back to a branch.
+2026-10-14T22:39:28.7536954Z 
+2026-10-14T22:39:28.7537427Z If you want to create a new branch to retain commits you create, you may
+2026-10-14T22:39:28.7538240Z do so (now or later) by using -c with the switch command. Example:
+2026-10-14T22:39:28.7538498Z 
+2026-10-14T22:39:28.7538617Z   git switch -c <new-branch-name>
+2026-10-14T22:39:28.7538927Z 
+2026-10-14T22:39:28.7539033Z Or undo this operation with:
+2026-10-14T22:39:28.7539214Z 
+2026-10-14T22:39:28.7539301Z   git switch -
+2026-10-14T22:39:28.7539431Z 
+2026-10-14T22:39:28.7539684Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-14T22:39:28.7540018Z 
+2026-10-14T22:39:28.7540266Z HEAD is now at 8bf01e9ed Keep interpreter entry lookup inline for ordinary methods
+2026-10-14T22:39:28.7578796Z ##[endgroup]
+2026-10-14T22:39:28.7615781Z [command]/usr/bin/git log -1 --format=%H
+2026-10-14T22:39:28.7639114Z 8bf01e9ed8a3df53fd8836d61216ed511ad3e591
+2026-10-14T22:39:28.7804263Z ##[group]Run actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+2026-10-14T22:39:28.7804798Z with:
+2026-10-14T22:39:28.7805102Z   name: bundles-linux-aarch64-debug
+2026-10-14T22:39:28.7805529Z   run-id: 38172262610
+2026-10-14T22:39:28.7808851Z   github-token: ***
+2026-10-14T22:39:28.7809255Z   path: bundles/baseline
+2026-10-14T22:39:28.7809534Z   merge-multiple: false
+2026-10-14T22:39:28.7809829Z   repository: re-thc/openjdk-jdk27u
+2026-10-14T22:39:28.7810192Z   skip-decompress: false
+2026-10-14T22:39:28.7810451Z   digest-mismatch: error
+2026-10-14T22:39:28.7810738Z ##[endgroup]
+2026-10-14T22:39:28.8878699Z Downloading single artifact
+2026-10-14T22:39:29.2223020Z Preparing to download the following artifacts:
+2026-10-14T22:39:29.2224406Z - bundles-linux-aarch64-debug (ID: 11714469219, Size: 337988649, Expected Digest: sha256:b64b78ec2fcf8aa858fa9ad024bf2bc4a330b675c8f0813114dd25b414eac14d)
+2026-10-14T22:39:29.2245412Z Downloading artifact '11714469219' from 're-thc/openjdk-jdk27u'
+2026-10-14T22:39:29.4704046Z Redirecting to blob download url: https://productionresultssa15.blob.core.windows.net/actions-results/6c88d029-2d44-8dcf-bdfb-f107f249c983/workflow-job-run-efba134a-b348-58a7-a2db-3da67eb16056/artifacts/9304843a4d46e9a17af46e8927785d9bf80cbe96abed391b7126c4bde7e8e958.zip
+2026-10-14T22:39:29.4705787Z Starting download of artifact to: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/baseline
+2026-10-14T22:39:29.7104551Z (node:2529) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-10-14T22:39:29.7105988Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-14T22:39:35.9069658Z SHA256 digest of downloaded artifact is b64b78ec2fcf8aa858fa9ad024bf2bc4a330b675c8f0813114dd25b414eac14d
+2026-10-14T22:39:35.9070586Z Artifact download completed successfully.
+2026-10-14T22:39:35.9070958Z Total of 1 artifact(s) downloaded
+2026-10-14T22:39:35.9076412Z Download artifact has finished successfully
+2026-10-14T22:39:35.9215119Z ##[group]Run actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+2026-10-14T22:39:35.9215753Z with:
+2026-10-14T22:39:35.9216069Z   name: bundles-linux-aarch64-debug
+2026-10-14T22:39:35.9216361Z   run-id: 38385226401
+2026-10-14T22:39:35.9219699Z   github-token: ***
+2026-10-14T22:39:35.9219983Z   path: bundles/pr
+2026-10-14T22:39:35.9220323Z   merge-multiple: false
+2026-10-14T22:39:35.9220633Z   repository: re-thc/openjdk-jdk27u
+2026-10-14T22:39:35.9220920Z   skip-decompress: false
+2026-10-14T22:39:35.9221219Z   digest-mismatch: error
+2026-10-14T22:39:35.9221474Z ##[endgroup]
+2026-10-14T22:39:36.0295385Z Downloading single artifact
+2026-10-14T22:39:36.3572380Z Preparing to download the following artifacts:
+2026-10-14T22:39:36.3573479Z - bundles-linux-aarch64-debug (ID: 11810790285, Size: 338274441, Expected Digest: sha256:656758d9f444f5f3b2adb61ff14c96839fa3123c743da29ddee612349fa4dee9)
+2026-10-14T22:39:36.3583252Z Downloading artifact '11810790285' from 're-thc/openjdk-jdk27u'
+2026-10-14T22:39:36.5516058Z Redirecting to blob download url: https://productionresultssa2.blob.core.windows.net/actions-results/dc45cace-c2a7-88f8-a0e5-1e094910961c/workflow-job-run-4dfad6bf-324c-5fca-90c1-8beadb4eb69c/artifacts/9304843a4d46e9a17af46e8927785d9bf80cbe96abed391b7126c4bde7e8e958.zip
+2026-10-14T22:39:36.5518526Z Starting download of artifact to: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bundles/pr
+2026-10-14T22:39:36.8109612Z (node:2542) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-10-14T22:39:36.8110700Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-14T22:39:49.7226035Z SHA256 digest of downloaded artifact is 656758d9f444f5f3b2adb61ff14c96839fa3123c743da29ddee612349fa4dee9
+2026-10-14T22:39:49.7226694Z Artifact download completed successfully.
+2026-10-14T22:39:49.7227020Z Total of 1 artifact(s) downloaded
+2026-10-14T22:39:49.7233000Z Download artifact has finished successfully
+2026-10-14T22:39:49.7373116Z ##[group]Run actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+2026-10-14T22:39:49.7373664Z with:
+2026-10-14T22:39:49.7373906Z   pattern: bundles-jtreg-*
+2026-10-14T22:39:49.7374303Z   merge-multiple: true
+2026-10-14T22:39:49.7374552Z   run-id: 38385226401
+2026-10-14T22:39:49.7377134Z   github-token: ***
+2026-10-14T22:39:49.7377781Z   path: jtreg
+2026-10-14T22:39:49.7378020Z   repository: re-thc/openjdk-jdk27u
+2026-10-14T22:39:49.7378396Z   skip-decompress: false
+2026-10-14T22:39:49.7378652Z   digest-mismatch: error
+2026-10-14T22:39:49.7378897Z ##[endgroup]
+2026-10-14T22:39:49.8463478Z Fetching artifact list for workflow run 38385226401 in repository re-thc/openjdk-jdk27u
+2026-10-14T22:39:50.1582935Z Found 29 artifact(s)
+2026-10-14T22:39:50.1584664Z Filtering artifacts by pattern 'bundles-jtreg-*'
+2026-10-14T22:39:50.1602767Z Preparing to download the following artifacts:
+2026-10-14T22:39:50.1603831Z - bundles-jtreg-8.2.1+1 (ID: 11806300979, Size: 10159213, Expected Digest: sha256:db9d9562aca973d1b132280a83f60b67bd54bc1549e0068cca7573d13afb71a0)
+2026-10-14T22:39:50.1615010Z Downloading artifact '11806300979' from 're-thc/openjdk-jdk27u'
+2026-10-14T22:39:50.3734574Z Redirecting to blob download url: https://productionresultssa2.blob.core.windows.net/actions-results/dc45cace-c2a7-88f8-a0e5-1e094910961c/workflow-job-run-3723c1cc-1b55-541c-b5c3-8ab394d3df32/artifacts/f2dcb9bde8d688fdc208847ed496027ad55fadd6539f60f43bec5608c1a461fb.zip
+2026-10-14T22:39:50.3736322Z Starting download of artifact to: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg
+2026-10-14T22:39:50.6345073Z (node:2557) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-10-14T22:39:50.6346076Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-14T22:39:51.5372558Z SHA256 digest of downloaded artifact is db9d9562aca973d1b132280a83f60b67bd54bc1549e0068cca7573d13afb71a0
+2026-10-14T22:39:51.5373368Z Artifact download completed successfully.
+2026-10-14T22:39:51.5373980Z Total of 1 artifact(s) downloaded
+2026-10-14T22:39:51.5378868Z Download artifact has finished successfully
+2026-10-14T22:39:51.5500169Z ##[group]Run python3 - <<'PY'
+2026-10-14T22:39:51.5500994Z [36;1mpython3 - <<'PY'[0m
+2026-10-14T22:39:51.5501491Z [36;1mimport hashlib, itertools, json, os, platform, re, shutil, subprocess, tarfile, time[0m
+2026-10-14T22:39:51.5502040Z [36;1mfrom pathlib import Path[0m
+2026-10-14T22:39:51.5502310Z [36;1m[0m
+2026-10-14T22:39:51.5502574Z [36;1mroot = Path.cwd()[0m
+2026-10-14T22:39:51.5502891Z [36;1mout = root / "archive-results"[0m
+2026-10-14T22:39:51.5503177Z [36;1mout.mkdir()[0m
+2026-10-14T22:39:51.5503449Z [36;1mimages = {}[0m
+2026-10-14T22:39:51.5503708Z [36;1mfor name in ["baseline", "pr"]:[0m
+2026-10-14T22:39:51.5504008Z [36;1m    target = root / "images" / name[0m
+2026-10-14T22:39:51.5504416Z [36;1m    target.mkdir(parents=True)[0m
+2026-10-14T22:39:51.5505153Z [36;1m    archives = list((root / "bundles" / name).glob("jdk-linux-aarch64-debug.tar.gz"))[0m
+2026-10-14T22:39:51.5505668Z [36;1m    assert len(archives) == 1, archives[0m
+2026-10-14T22:39:51.5506101Z [36;1m    with tarfile.open(archives[0]) as archive:[0m
+2026-10-14T22:39:51.5506551Z [36;1m        archive.extractall(target, filter="data")[0m
+2026-10-14T22:39:51.5506935Z [36;1m    candidates = list(target.rglob("bin/java"))[0m
+2026-10-14T22:39:51.5507997Z [36;1m    assert len(candidates) == 1, candidates[0m
+2026-10-14T22:39:51.5508477Z [36;1m    images[name] = candidates[0].parent.parent[0m
+2026-10-14T22:39:51.5508861Z [36;1mjtreg = root / "jtreg/lib/jtreg.jar"[0m
+2026-10-14T22:39:51.5509283Z [36;1massert jtreg.is_file(), jtreg[0m
+2026-10-14T22:39:51.5509722Z [36;1mtest = "test/hotspot/jtreg/runtime/cds/FourByteHeaderArchiveDeterminism.java"[0m
+2026-10-14T22:39:51.5510171Z [36;1msources = {}[0m
+2026-10-14T22:39:51.5510481Z [36;1mfor name in ["baseline", "pr"]:[0m
+2026-10-14T22:39:51.5510786Z [36;1m    path = root / name / test[0m
+2026-10-14T22:39:51.5511224Z [36;1m    sources[name] = hashlib.sha256(path.read_bytes()).hexdigest()[0m
+2026-10-14T22:39:51.5511686Z [36;1massert sources["baseline"] == sources["pr"], sources[0m
+2026-10-14T22:39:51.5512031Z [36;1midentity = {}[0m
+2026-10-14T22:39:51.5512356Z [36;1mfor name, image in images.items():[0m
+2026-10-14T22:39:51.5512739Z [36;1m    vm = image / "lib/server/libjvm.so"[0m
+2026-10-14T22:39:51.5513165Z [36;1m    identity[name] = dict(java=str(image / "bin/java"),[0m
+2026-10-14T22:39:51.5513781Z [36;1m                         version=subprocess.check_output([str(image / "bin/java"), "-version"], stderr=subprocess.STDOUT, text=True),[0m
+2026-10-14T22:39:51.5514467Z [36;1m                         vm_sha256=hashlib.file_digest(vm.open("rb"), "sha256").hexdigest())[0m
+2026-10-14T22:39:51.5515076Z [36;1menvironment = dict(baseline_revision="87edd79d3104ff502f7befec034716b081436f49",[0m
+2026-10-14T22:39:51.5515631Z [36;1m                   pr_revision="8bf01e9ed8a3df53fd8836d61216ed511ad3e591",[0m
+2026-10-14T22:39:51.5516147Z [36;1m                   baseline_build_run=38172262610, pr_build_run=38385226401,[0m
+2026-10-14T22:39:51.5516659Z [36;1m                   run=int(os.environ["GITHUB_RUN_ID"]), machine=platform.machine(),[0m
+2026-10-14T22:39:51.5517499Z [36;1m                   cpu=subprocess.check_output(["lscpu"], text=True), images=identity, test_hashes=sources)[0m
+2026-10-14T22:39:51.5518188Z [36;1m(out / "environment.json").write_text(json.dumps(environment, indent=2) + "\n")[0m
+2026-10-14T22:39:51.5518658Z [36;1mvariants = {"baseline": ("baseline", []),[0m
+2026-10-14T22:39:51.5519117Z [36;1m            "pr-off": ("pr", ["-XX:-UseCommonIntrinsics"]),[0m
+2026-10-14T22:39:51.5519531Z [36;1m            "pr-on": ("pr", ["-XX:+UseCommonIntrinsics"])}[0m
+2026-10-14T22:39:51.5519960Z [36;1mresults = [][0m
+2026-10-14T22:39:51.5520276Z [36;1mfor block in range(20):[0m
+2026-10-14T22:39:51.5520643Z [36;1m    order = list(itertools.permutations(variants))[block % 6][0m
+2026-10-14T22:39:51.5521047Z [36;1m    for variant in order:[0m
+2026-10-14T22:39:51.5521698Z [36;1m        name, options = variants[variant][0m
+2026-10-14T22:39:51.5522077Z [36;1m        case = out / f"{block:02}-{variant}"[0m
+2026-10-14T22:39:51.5522574Z [36;1m        case.mkdir()[0m
+2026-10-14T22:39:51.5522981Z [36;1m        command = [str(images["baseline"] / "bin/java"), "-jar", str(jtreg),[0m
+2026-10-14T22:39:51.5523493Z [36;1m                   "-jdk:" + str(images[name]), "-othervm", "-conc:1", "-timeoutFactor:4",[0m
+2026-10-14T22:39:51.5524015Z [36;1m                   "-retain:all", "-verbose:fail,error,time",[0m
+2026-10-14T22:39:51.5524463Z [36;1m                   "-vmoptions:" + " ".join(["-XX:MaxRAMPercentage=12.5"] + options),[0m
+2026-10-14T22:39:51.5524952Z [36;1m                   "-javaoptions:-XX:-CreateCoredumpOnCrash",[0m
+2026-10-14T22:39:51.5525432Z [36;1m                   "-w:" + str(case / "work"), "-r:" + str(case / "report"),[0m
+2026-10-14T22:39:51.5525982Z [36;1m                   str(root / name / test) + "#z"][0m
+2026-10-14T22:39:51.5526359Z [36;1m        start = time.time()[0m
+2026-10-14T22:39:51.5526684Z [36;1m        with (case / "jtreg.log").open("w") as log:[0m
+2026-10-14T22:39:51.5527577Z [36;1m            code = subprocess.run(command, cwd=root / name, stdout=log, stderr=subprocess.STDOUT).returncode[0m
+2026-10-14T22:39:51.5528203Z [36;1m        jtrs = list((case / "work").rglob("*.jtr"))[0m
+2026-10-14T22:39:51.5528617Z [36;1m        text = "\n".join(p.read_text(errors="replace") for p in jtrs)[0m
+2026-10-14T22:39:51.5529380Z [36;1m        mismatch = re.findall(r"File content different at byte #(\d+), b0 = (-?\d+), b1 = (-?\d+)", text)[0m
+2026-10-14T22:39:51.5530073Z [36;1m        record = dict(block=block, variant=variant, exit_code=code, seconds=time.time()-start,[0m
+2026-10-14T22:39:51.5530654Z [36;1m                      mismatches=sorted(set(mismatch)), command=command,[0m
+2026-10-14T22:39:51.5531345Z [36;1m                      summary=(case / "report/text/summary.txt").read_text() if (case / "report/text/summary.txt").exists() else "")[0m
+2026-10-14T22:39:51.5531895Z [36;1m        results.append(record)[0m
+2026-10-14T22:39:51.5532341Z [36;1m        (out / "results.json").write_text(json.dumps(results, indent=2) + "\n")[0m
+2026-10-14T22:39:51.5533015Z [36;1m        print(json.dumps({k: record[k] for k in ["block", "variant", "exit_code", "seconds", "mismatches", "summary"]}), flush=True)[0m
+2026-10-14T22:39:51.5533596Z [36;1m        if code == 0:[0m
+2026-10-14T22:39:51.5533908Z [36;1m            for p in jtrs:[0m
+2026-10-14T22:39:51.5534219Z [36;1m                shutil.copyfile(p, case / p.name)[0m
+2026-10-14T22:39:51.5534619Z [36;1m            shutil.rmtree(case / "work")[0m
+2026-10-14T22:39:51.5534921Z [36;1m        else:[0m
+2026-10-14T22:39:51.5535232Z [36;1m            for p in (case / "work").rglob("*.class"):[0m
+2026-10-14T22:39:51.5535614Z [36;1m                p.unlink()[0m
+2026-10-14T22:39:51.5536050Z [36;1m    baseline_failed = any(r["variant"] == "baseline" and r["mismatches"] for r in results)[0m
+2026-10-14T22:39:51.5536718Z [36;1m    pr_failed = any(r["variant"].startswith("pr-") and r["mismatches"] for r in results)[0m
+2026-10-14T22:39:51.5537414Z [36;1m    if block >= 9 and baseline_failed and pr_failed:[0m
+2026-10-14T22:39:51.5537862Z [36;1m        break[0m
+2026-10-14T22:39:51.5538114Z [36;1m[0m
+2026-10-14T22:39:51.5538380Z [36;1m# Run all collector variants once as controls.[0m
+2026-10-14T22:39:51.5538809Z [36;1mfor variant, (name, options) in variants.items():[0m
+2026-10-14T22:39:51.5539181Z [36;1m    case = out / ("collectors-" + variant)[0m
+2026-10-14T22:39:51.5539484Z [36;1m    case.mkdir()[0m
+2026-10-14T22:39:51.5539931Z [36;1m    command = [str(images["baseline"] / "bin/java"), "-jar", str(jtreg),[0m
+2026-10-14T22:39:51.5540445Z [36;1m               "-jdk:" + str(images[name]), "-othervm", "-conc:1", "-timeoutFactor:4",[0m
+2026-10-14T22:39:51.5541029Z [36;1m               "-verbose:fail,error,time", "-vmoptions:" + " ".join(options),[0m
+2026-10-14T22:39:51.5541776Z [36;1m               "-w:" + str(case / "work"), "-r:" + str(case / "report"),[0m
+2026-10-14T22:39:51.5542450Z [36;1m               str(root / name / test)][0m
+2026-10-14T22:39:51.5542855Z [36;1m    with (case / "jtreg.log").open("w") as log:[0m
+2026-10-14T22:39:51.5543382Z [36;1m        code = subprocess.run(command, cwd=root / name, stdout=log, stderr=subprocess.STDOUT).returncode[0m
+2026-10-14T22:39:51.5544119Z [36;1m    results.append(dict(variant=variant, selection="all-collectors", exit_code=code, command=command,[0m
+2026-10-14T22:39:51.5544908Z [36;1m                        summary=(case / "report/text/summary.txt").read_text() if (case / "report/text/summary.txt").exists() else ""))[0m
+2026-10-14T22:39:51.5545587Z [36;1m    (out / "results.json").write_text(json.dumps(results, indent=2) + "\n")[0m
+2026-10-14T22:39:51.5546229Z [36;1m    for p in (case / "work").rglob("*.jtr"):[0m
+2026-10-14T22:39:51.5546577Z [36;1m        shutil.copyfile(p, case / p.name)[0m
+2026-10-14T22:39:51.5546922Z [36;1m    if code == 0:[0m
+2026-10-14T22:39:51.5547407Z [36;1m        shutil.rmtree(case / "work")[0m
+2026-10-14T22:39:51.5547946Z [36;1munexpected = [r for r in results if "block" in r and r["exit_code"] != 0 and not r["mismatches"]][0m
+2026-10-14T22:39:51.5548475Z [36;1mif unexpected:[0m
+2026-10-14T22:39:51.5548831Z [36;1m    raise SystemExit("Unexpected test failures; inspect artifacts")[0m
+2026-10-14T22:39:51.5549264Z [36;1mPY[0m
+2026-10-14T22:39:51.5601649Z shell: /usr/bin/bash -e {0}
+2026-10-14T22:39:51.5602233Z ##[endgroup]
+2026-10-14T22:40:47.8493451Z {"block": 0, "variant": "baseline", "exit_code": 0, "seconds": 53.69141507148743, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T22:41:41.1886966Z {"block": 0, "variant": "pr-off", "exit_code": 0, "seconds": 53.249695777893066, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T22:42:34.5438042Z {"block": 0, "variant": "pr-on", "exit_code": 0, "seconds": 53.27364158630371, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T22:43:28.1178728Z {"block": 1, "variant": "baseline", "exit_code": 0, "seconds": 53.48589730262756, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T22:44:17.0510241Z {"block": 1, "variant": "pr-on", "exit_code": 2, "seconds": 48.81942105293274, "mismatches": [["1784920", "-64", "0"]], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Failed. Execution failed: `main' threw exception: java.lang.RuntimeException: File content different at byte #1784920, b0 = -64, b1 = 0\n"}
+2026-10-14T22:45:10.2838878Z {"block": 1, "variant": "pr-off", "exit_code": 0, "seconds": 53.22804403305054, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T22:46:03.8641169Z {"block": 2, "variant": "pr-off", "exit_code": 0, "seconds": 53.48853635787964, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T22:46:57.1652939Z {"block": 2, "variant": "baseline", "exit_code": 0, "seconds": 53.21012568473816, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T22:47:36.2670156Z {"block": 2, "variant": "pr-on", "exit_code": 2, "seconds": 39.01179552078247, "mismatches": [["1784920", "0", "-64"]], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Failed. Execution failed: `main' threw exception: java.lang.RuntimeException: File content different at byte #1784920, b0 = 0, b1 = -64\n"}
+2026-10-14T22:48:29.4872425Z {"block": 3, "variant": "pr-off", "exit_code": 0, "seconds": 53.217777252197266, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T22:49:08.8110547Z {"block": 3, "variant": "pr-on", "exit_code": 2, "seconds": 39.234155893325806, "mismatches": [["1784920", "-64", "0"]], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Failed. Execution failed: `main' threw exception: java.lang.RuntimeException: File content different at byte #1784920, b0 = -64, b1 = 0\n"}
+2026-10-14T22:50:02.3630361Z {"block": 3, "variant": "baseline", "exit_code": 0, "seconds": 53.549530267715454, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T22:50:56.7095749Z {"block": 4, "variant": "pr-on", "exit_code": 0, "seconds": 54.25878024101257, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T22:51:51.7151205Z {"block": 4, "variant": "baseline", "exit_code": 0, "seconds": 54.91211223602295, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T22:52:45.5938294Z {"block": 4, "variant": "pr-off", "exit_code": 0, "seconds": 53.788068532943726, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T22:53:40.4434764Z {"block": 5, "variant": "pr-on", "exit_code": 0, "seconds": 54.75885200500488, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T22:54:34.5046473Z {"block": 5, "variant": "pr-off", "exit_code": 0, "seconds": 53.96903681755066, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T22:55:27.9149508Z {"block": 5, "variant": "baseline", "exit_code": 0, "seconds": 53.320043325424194, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T22:56:23.3334354Z {"block": 6, "variant": "baseline", "exit_code": 0, "seconds": 55.328685998916626, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T22:57:18.2829297Z {"block": 6, "variant": "pr-off", "exit_code": 0, "seconds": 54.857354402542114, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T22:58:12.4671895Z {"block": 6, "variant": "pr-on", "exit_code": 0, "seconds": 54.094441175460815, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T22:59:07.0464796Z {"block": 7, "variant": "baseline", "exit_code": 0, "seconds": 54.485379219055176, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:00:01.9632199Z {"block": 7, "variant": "pr-on", "exit_code": 0, "seconds": 54.82708120346069, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:00:56.2570546Z {"block": 7, "variant": "pr-off", "exit_code": 0, "seconds": 54.203649282455444, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:01:49.9267311Z {"block": 8, "variant": "pr-off", "exit_code": 0, "seconds": 53.580209255218506, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:02:44.4531394Z {"block": 8, "variant": "baseline", "exit_code": 0, "seconds": 54.43652582168579, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:03:38.5106774Z {"block": 8, "variant": "pr-on", "exit_code": 0, "seconds": 53.96798133850098, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:04:32.7318740Z {"block": 9, "variant": "pr-off", "exit_code": 0, "seconds": 54.128992795944214, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:05:28.1115171Z {"block": 9, "variant": "pr-on", "exit_code": 0, "seconds": 55.288585901260376, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:06:23.3445217Z {"block": 9, "variant": "baseline", "exit_code": 0, "seconds": 55.140793323516846, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:07:17.6969612Z {"block": 10, "variant": "pr-on", "exit_code": 0, "seconds": 54.26136898994446, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:08:12.1702178Z {"block": 10, "variant": "baseline", "exit_code": 0, "seconds": 54.38347554206848, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:09:06.5189040Z {"block": 10, "variant": "pr-off", "exit_code": 0, "seconds": 54.255598068237305, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:10:00.8107358Z {"block": 11, "variant": "pr-on", "exit_code": 0, "seconds": 54.19685101509094, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:10:55.4980371Z {"block": 11, "variant": "pr-off", "exit_code": 0, "seconds": 54.59489345550537, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:11:51.7519507Z {"block": 11, "variant": "baseline", "exit_code": 0, "seconds": 56.162479400634766, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:12:46.5134392Z {"block": 12, "variant": "baseline", "exit_code": 0, "seconds": 54.67106628417969, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:13:40.9174142Z {"block": 12, "variant": "pr-off", "exit_code": 0, "seconds": 54.313979387283325, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:14:36.0308365Z {"block": 12, "variant": "pr-on", "exit_code": 0, "seconds": 55.02267336845398, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:15:31.4412783Z {"block": 13, "variant": "baseline", "exit_code": 0, "seconds": 55.319658279418945, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:16:25.2323569Z {"block": 13, "variant": "pr-on", "exit_code": 0, "seconds": 53.70191740989685, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:17:19.2146464Z {"block": 13, "variant": "pr-off", "exit_code": 0, "seconds": 53.88734483718872, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:18:12.9253033Z {"block": 14, "variant": "pr-off", "exit_code": 0, "seconds": 53.61954879760742, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:19:06.3738031Z {"block": 14, "variant": "baseline", "exit_code": 0, "seconds": 53.35678744316101, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:19:45.7484326Z {"block": 14, "variant": "pr-on", "exit_code": 2, "seconds": 39.285447120666504, "mismatches": [["92542", "7", "100"]], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Failed. Execution failed: `main' threw exception: java.lang.RuntimeException: File content different at byte #92542, b0 = 7, b1 = 100\n"}
+2026-10-14T23:20:40.8436176Z {"block": 15, "variant": "pr-off", "exit_code": 0, "seconds": 55.090216398239136, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:21:35.4354630Z {"block": 15, "variant": "pr-on", "exit_code": 0, "seconds": 54.49873352050781, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:22:29.4248520Z {"block": 15, "variant": "baseline", "exit_code": 0, "seconds": 53.89847660064697, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:23:24.3925197Z {"block": 16, "variant": "pr-on", "exit_code": 0, "seconds": 54.876760721206665, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:24:18.7259335Z {"block": 16, "variant": "baseline", "exit_code": 0, "seconds": 54.243372201919556, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:25:12.5530067Z {"block": 16, "variant": "pr-off", "exit_code": 0, "seconds": 53.73690915107727, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:26:06.9043232Z {"block": 17, "variant": "pr-on", "exit_code": 0, "seconds": 54.26175093650818, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:27:02.2979217Z {"block": 17, "variant": "pr-off", "exit_code": 0, "seconds": 55.300825119018555, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:27:57.7264520Z {"block": 17, "variant": "baseline", "exit_code": 0, "seconds": 55.33661150932312, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:28:53.2592927Z {"block": 18, "variant": "baseline", "exit_code": 0, "seconds": 55.43810534477234, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:29:47.9854640Z {"block": 18, "variant": "pr-off", "exit_code": 0, "seconds": 54.63439917564392, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:30:42.0436337Z {"block": 18, "variant": "pr-on", "exit_code": 0, "seconds": 53.96526265144348, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:31:36.1847065Z {"block": 19, "variant": "baseline", "exit_code": 0, "seconds": 54.048810958862305, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:32:30.8216201Z {"block": 19, "variant": "pr-on", "exit_code": 0, "seconds": 54.54584002494812, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:33:25.3081336Z {"block": 19, "variant": "pr-off", "exit_code": 0, "seconds": 54.373509883880615, "mismatches": [], "summary": "runtime/cds/FourByteHeaderArchiveDeterminism.java#z  Passed. Execution successful\n"}
+2026-10-14T23:39:40.1859256Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-10-14T23:39:40.1859653Z with:
+2026-10-14T23:39:40.1859861Z   name: aarch64-archive-baseline-qualification
+2026-10-14T23:39:40.1860132Z   path: archive-results
+2026-10-14T23:39:40.1860329Z   compression-level: 9
+2026-10-14T23:39:40.1860527Z   if-no-files-found: warn
+2026-10-14T23:39:40.1860723Z   overwrite: false
+2026-10-14T23:39:40.1860911Z   include-hidden-files: false
+2026-10-14T23:39:40.1861143Z   archive: true
+2026-10-14T23:39:40.1861309Z ##[endgroup]
+2026-10-14T23:39:40.6464575Z With the provided path, there will be 2505 files uploaded
+2026-10-14T23:39:40.6465051Z Artifact name is valid!
+2026-10-14T23:39:40.6465266Z Root directory input is valid!
+2026-10-14T23:39:41.0174847Z Uploading artifact: aarch64-archive-baseline-qualification.zip
+2026-10-14T23:39:41.0209328Z Beginning upload of artifact content to blob storage
+2026-10-14T23:39:47.1724799Z Uploaded bytes 8388608
+2026-10-14T23:39:53.4769344Z Uploaded bytes 16777216
+2026-10-14T23:39:58.7006994Z Uploaded bytes 25165824
+2026-10-14T23:40:05.0743507Z Uploaded bytes 33554432
+2026-10-14T23:40:10.1758543Z Uploaded bytes 41943040
+2026-10-14T23:40:16.5561453Z Uploaded bytes 50331648
+2026-10-14T23:40:21.4119793Z Uploaded bytes 58720256
+2026-10-14T23:40:27.6711260Z Uploaded bytes 67108864
+2026-10-14T23:40:32.4318365Z Uploaded bytes 75497472
+2026-10-14T23:40:38.7201249Z Uploaded bytes 83886080
+2026-10-14T23:40:44.0865760Z Uploaded bytes 92274688
+2026-10-14T23:40:49.7602560Z Uploaded bytes 100663296
+2026-10-14T23:40:55.4696391Z Uploaded bytes 109051904
+2026-10-14T23:41:00.7230624Z Uploaded bytes 117440512
+2026-10-14T23:41:06.9224981Z Uploaded bytes 125829120
+2026-10-14T23:41:11.7629014Z Uploaded bytes 134217728
+2026-10-14T23:41:18.1048151Z Uploaded bytes 142606336
+2026-10-14T23:41:23.3168711Z Uploaded bytes 150994944
+2026-10-14T23:41:29.8192472Z Uploaded bytes 159383552
+2026-10-14T23:41:35.0952353Z Uploaded bytes 167772160
+2026-10-14T23:41:41.4412067Z Uploaded bytes 176160768
+2026-10-14T23:41:46.2133485Z Uploaded bytes 184549376
+2026-10-14T23:41:52.5741125Z Uploaded bytes 192937984
+2026-10-14T23:41:57.2286231Z Uploaded bytes 201326592
+2026-10-14T23:42:03.2132122Z Uploaded bytes 209715200
+2026-10-14T23:42:08.6723893Z Uploaded bytes 218103808
+2026-10-14T23:42:14.2087748Z Uploaded bytes 226492416
+2026-10-14T23:42:19.9728645Z Uploaded bytes 234881024
+2026-10-14T23:42:25.2663608Z Uploaded bytes 243269632
+2026-10-14T23:42:31.4734793Z Uploaded bytes 251658240
+2026-10-14T23:42:36.2585778Z Uploaded bytes 260046848
+2026-10-14T23:42:42.7268802Z Uploaded bytes 268435456
+2026-10-14T23:42:47.8933409Z Uploaded bytes 276824064
+2026-10-14T23:42:54.3610699Z Uploaded bytes 285212672
+2026-10-14T23:42:59.5346910Z Uploaded bytes 293601280
+2026-10-14T23:43:05.8582487Z Uploaded bytes 301989888
+2026-10-14T23:43:06.4718580Z Uploaded bytes 304891454
+2026-10-14T23:43:06.5332876Z Finished uploading artifact content to blob storage!
+2026-10-14T23:43:06.5333840Z SHA256 digest of uploaded artifact is 28a60ba07f6798b1237363d37232381a826cb727d250e93fdb0290d5b17f0344
+2026-10-14T23:43:06.5336036Z Finalizing artifact upload
+2026-10-14T23:43:06.9805183Z Artifact aarch64-archive-baseline-qualification successfully finalized. Artifact ID 11936109812
+2026-10-14T23:43:06.9806036Z Artifact aarch64-archive-baseline-qualification has been successfully uploaded! Final size is 304891454 bytes. Artifact ID is 11936109812
+2026-10-14T23:43:06.9811624Z Artifact download URL: https://github.com/re-thc/openjdk-jdk27u/actions/runs/38640541680/artifacts/11936109812
+2026-10-14T23:43:07.0049294Z Post job cleanup.
+2026-10-14T23:43:07.0764456Z [command]/usr/bin/git version
+2026-10-14T23:43:07.0802705Z git version 2.55.0
+2026-10-14T23:43:07.0845415Z Temporarily overriding HOME='/home/runner/work/_temp/a4383ec2-c97d-4201-9a1e-f3da9676092c' before making global git config changes
+2026-10-14T23:43:07.0847395Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-14T23:43:07.0851059Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pr
+2026-10-14T23:43:07.0884326Z Removing SSH command configuration
+2026-10-14T23:43:07.0891004Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-14T23:43:07.0928060Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-14T23:43:07.1255908Z Removing HTTP extra header
+2026-10-14T23:43:07.1261598Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-14T23:43:07.1298062Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-14T23:43:07.1649705Z Removing includeIf entries pointing to credentials config files
+2026-10-14T23:43:07.1653832Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-14T23:43:07.1680921Z includeif.gitdir:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pr/.git.path
+2026-10-14T23:43:07.1681666Z includeif.gitdir:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pr/.git/worktrees/*.path
+2026-10-14T23:43:07.1682354Z includeif.gitdir:/github/workspace/pr/.git.path
+2026-10-14T23:43:07.1683092Z includeif.gitdir:/github/workspace/pr/.git/worktrees/*.path
+2026-10-14T23:43:07.1689790Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pr/.git.path
+2026-10-14T23:43:07.1713362Z /home/runner/work/_temp/git-credentials-ca2c6be2-3dae-4774-b472-204c9810d8a4.config
+2026-10-14T23:43:07.1722961Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pr/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-ca2c6be2\-3dae\-4774\-b472\-204c9810d8a4\.config
+2026-10-14T23:43:07.1761006Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pr/.git/worktrees/*.path
+2026-10-14T23:43:07.1783708Z /home/runner/work/_temp/git-credentials-ca2c6be2-3dae-4774-b472-204c9810d8a4.config
+2026-10-14T23:43:07.1792202Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pr/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-ca2c6be2\-3dae\-4774\-b472\-204c9810d8a4\.config
+2026-10-14T23:43:07.1833606Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/pr/.git.path
+2026-10-14T23:43:07.1856472Z /github/runner_temp/git-credentials-ca2c6be2-3dae-4774-b472-204c9810d8a4.config
+2026-10-14T23:43:07.1863646Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/pr/.git.path \/github\/runner_temp\/git\-credentials\-ca2c6be2\-3dae\-4774\-b472\-204c9810d8a4\.config
+2026-10-14T23:43:07.1897260Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/pr/.git/worktrees/*.path
+2026-10-14T23:43:07.1919235Z /github/runner_temp/git-credentials-ca2c6be2-3dae-4774-b472-204c9810d8a4.config
+2026-10-14T23:43:07.1926685Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/pr/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-ca2c6be2\-3dae\-4774\-b472\-204c9810d8a4\.config
+2026-10-14T23:43:07.1963720Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-14T23:43:07.2288228Z Removing credentials config '/home/runner/work/_temp/git-credentials-ca2c6be2-3dae-4774-b472-204c9810d8a4.config'
+2026-10-14T23:43:07.2439527Z Post job cleanup.
+2026-10-14T23:43:07.3147104Z [command]/usr/bin/git version
+2026-10-14T23:43:07.3185043Z git version 2.55.0
+2026-10-14T23:43:07.3230995Z Temporarily overriding HOME='/home/runner/work/_temp/08149332-0c93-4abe-bc5c-c85dd4d88996' before making global git config changes
+2026-10-14T23:43:07.3240274Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-14T23:43:07.3267704Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/baseline
+2026-10-14T23:43:07.3268658Z Removing SSH command configuration
+2026-10-14T23:43:07.3271596Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-14T23:43:07.3309976Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-14T23:43:07.3678103Z Removing HTTP extra header
+2026-10-14T23:43:07.3678796Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-14T23:43:07.3718922Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-14T23:43:07.4049388Z Removing includeIf entries pointing to credentials config files
+2026-10-14T23:43:07.4053756Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-14T23:43:07.4078760Z includeif.gitdir:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/baseline/.git.path
+2026-10-14T23:43:07.4088319Z includeif.gitdir:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/baseline/.git/worktrees/*.path
+2026-10-14T23:43:07.4089647Z includeif.gitdir:/github/workspace/baseline/.git.path
+2026-10-14T23:43:07.4090042Z includeif.gitdir:/github/workspace/baseline/.git/worktrees/*.path
+2026-10-14T23:43:07.4091054Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/baseline/.git.path
+2026-10-14T23:43:07.4119893Z /home/runner/work/_temp/git-credentials-e571d135-9cf8-4b42-88a8-35a146398b77.config
+2026-10-14T23:43:07.4126118Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/baseline/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-e571d135\-9cf8\-4b42\-88a8\-35a146398b77\.config
+2026-10-14T23:43:07.4155013Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/baseline/.git/worktrees/*.path
+2026-10-14T23:43:07.4177627Z /home/runner/work/_temp/git-credentials-e571d135-9cf8-4b42-88a8-35a146398b77.config
+2026-10-14T23:43:07.4186052Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/baseline/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-e571d135\-9cf8\-4b42\-88a8\-35a146398b77\.config
+2026-10-14T23:43:07.4222362Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/baseline/.git.path
+2026-10-14T23:43:07.4252195Z /github/runner_temp/git-credentials-e571d135-9cf8-4b42-88a8-35a146398b77.config
+2026-10-14T23:43:07.4259383Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/baseline/.git.path \/github\/runner_temp\/git\-credentials\-e571d135\-9cf8\-4b42\-88a8\-35a146398b77\.config
+2026-10-14T23:43:07.4293597Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/baseline/.git/worktrees/*.path
+2026-10-14T23:43:07.4316231Z /github/runner_temp/git-credentials-e571d135-9cf8-4b42-88a8-35a146398b77.config
+2026-10-14T23:43:07.4323764Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/baseline/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-e571d135\-9cf8\-4b42\-88a8\-35a146398b77\.config
+2026-10-14T23:43:07.4359244Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-14T23:43:07.4690414Z Removing credentials config '/home/runner/work/_temp/git-credentials-e571d135-9cf8-4b42-88a8-35a146398b77.config'
+2026-10-14T23:43:07.4833539Z Cleaning up orphan processes
+

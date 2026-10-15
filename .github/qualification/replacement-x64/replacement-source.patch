@@ -1,0 +1,453 @@
+From 71e7b1a9f3ab8aa589221bd4dff548068b2660c5 Mon Sep 17 00:00:00 2001
+From: "Teamoffy Pte. Ltd." <38070640+re-thc@users.noreply.github.com>
+Date: Wed, 14 Oct 2026 23:27:01 +0000
+Subject: [PATCH 1/2] Defer BigInteger stub setup until arithmetic or C1 demand
+
+---
+ .../share/interpreter/interpreterRuntime.cpp  | 13 +++-
+ .../share/interpreter/interpreterRuntime.hpp  |  2 +-
+ .../templateInterpreterGenerator.cpp          | 31 +++++++--
+ src/hotspot/share/oops/cpCache.cpp            | 10 +--
+ src/hotspot/share/oops/cpCache.hpp            |  6 +-
+ src/hotspot/share/oops/method.cpp             |  3 +-
+ src/hotspot/share/prims/methodHandles.cpp     |  4 ++
+ .../share/runtime/commonIntrinsics.cpp        | 65 ++++++++++++++++++-
+ .../share/runtime/commonIntrinsics.hpp        |  2 +
+ src/hotspot/share/runtime/javaCalls.cpp       |  8 +++
+ .../TestCommonIntrinsicInitialization.java    | 30 ++++++++-
+ 11 files changed, 156 insertions(+), 18 deletions(-)
+
+diff --git a/src/hotspot/share/interpreter/interpreterRuntime.cpp b/src/hotspot/share/interpreter/interpreterRuntime.cpp
+index a8f3d501083..93edc35ad54 100644
+--- a/src/hotspot/share/interpreter/interpreterRuntime.cpp
++++ b/src/hotspot/share/interpreter/interpreterRuntime.cpp
+@@ -56,6 +56,7 @@
+ #include "prims/jvmtiExport.hpp"
+ #include "prims/methodHandles.hpp"
+ #include "prims/nativeLookup.hpp"
++#include "runtime/commonIntrinsics.hpp"
+ #include "runtime/continuation.hpp"
+ #include "runtime/deoptimization.hpp"
+ #include "runtime/fieldDescriptor.inline.hpp"
+@@ -821,13 +822,19 @@ void InterpreterRuntime::resolve_invoke(Bytecodes::Code bytecode, TRAPS) {
+     resolved_method = methodHandle(current, info.resolved_method());
+   } // end JvmtiHideSingleStepping
+ 
+-  update_invoke_cp_cache_entry(info, bytecode, resolved_method, pool, method_index);
++  bool cache_call = true;
++  if (bytecode == Bytecodes::_invokestatic && resolved_method->intrinsic_id() != vmIntrinsics::_none) {
++    LastFrameAccessor call_frame(current);
++    cache_call = CommonIntrinsics::cache_interpreter_call(resolved_method->intrinsic_id(),
++        call_frame.get_frame().interpreter_frame_tos_at(0));
++  }
++  update_invoke_cp_cache_entry(info, bytecode, resolved_method, pool, method_index, cache_call);
+ }
+ 
+ void InterpreterRuntime::update_invoke_cp_cache_entry(CallInfo& info, Bytecodes::Code bytecode,
+                                                       methodHandle& resolved_method,
+                                                       constantPoolHandle& pool,
+-                                                      int method_index) {
++                                                      int method_index, bool cache_call) {
+   // Don't allow safepoints until the method is cached.
+   NoSafepointVerifier nsv;
+ 
+@@ -867,7 +874,7 @@ void InterpreterRuntime::update_invoke_cp_cache_entry(CallInfo& info, Bytecodes:
+ 
+   switch (info.call_kind()) {
+   case CallInfo::direct_call:
+-    cache->set_direct_call(bytecode, method_index, resolved_method, sender->is_interface());
++    cache->set_direct_call(bytecode, method_index, resolved_method, sender->is_interface(), cache_call);
+     break;
+   case CallInfo::vtable_call:
+     cache->set_vtable_call(bytecode, method_index, resolved_method, info.vtable_index());
+diff --git a/src/hotspot/share/interpreter/interpreterRuntime.hpp b/src/hotspot/share/interpreter/interpreterRuntime.hpp
+index 3228027fa93..a7927f4b91b 100644
+--- a/src/hotspot/share/interpreter/interpreterRuntime.hpp
++++ b/src/hotspot/share/interpreter/interpreterRuntime.hpp
+@@ -112,7 +112,7 @@ class InterpreterRuntime: AllStatic {
+ 
+   static void update_invoke_cp_cache_entry(CallInfo& info, Bytecodes::Code bytecode,
+                                            methodHandle& resolved_method,
+-                                           constantPoolHandle& pool, int method_index);
++                                           constantPoolHandle& pool, int method_index, bool cache_call = true);
+  public:
+   // Synchronization
+   static void    monitorenter(JavaThread* current, BasicObjectLock* elem);
+diff --git a/src/hotspot/share/interpreter/templateInterpreterGenerator.cpp b/src/hotspot/share/interpreter/templateInterpreterGenerator.cpp
+index be3e8995ad9..21960b0c760 100644
+--- a/src/hotspot/share/interpreter/templateInterpreterGenerator.cpp
++++ b/src/hotspot/share/interpreter/templateInterpreterGenerator.cpp
+@@ -31,6 +31,7 @@
+ #include "interpreter/templateTable.hpp"
+ #include "oops/methodData.hpp"
+ #include "runtime/commonIntrinsics.hpp"
++#include "runtime/timerTrace.hpp"
+ 
+ #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
+ 
+@@ -240,12 +241,34 @@ void TemplateInterpreterGenerator::generate_all() {
+ 
+ #if defined(AMD64) || defined(AARCH64)
+   if (CommonIntrinsics::enabled() && InlineIntrinsics) {
++    TraceTime timer("Common intrinsic entry generation", TRACETIME_LOG(Debug, startuptime));
+     CodeletMark cm(_masm, "common intrinsic entry points");
+-    for (int i = 1; i < static_cast<int>(vmIntrinsics::ID_LIMIT); i++) {
+-      vmIntrinsics::ID id = vmIntrinsics::ID_from(i);
++    // Visit only our catalogue. Most VM intrinsics have no common entry.
++#define COMMON_ID(id, slots, result) vmIntrinsics::id,
++    static const vmIntrinsics::ID ids[] = {
++      COMMON_INTRINSICS_DO(COMMON_ID)
++      COMMON_SCALAR_INTRINSICS_DO(COMMON_ID)
++      COMMON_BINARY_SCALAR_INTRINSICS_DO(COMMON_ID)
++      vmIntrinsics::_vectorizedHashCodeLeaf
++    };
++#undef COMMON_ID
++    for (vmIntrinsics::ID id : ids) {
+       if (CommonIntrinsics::is_available_for_interpreter(id) && vmIntrinsics::is_intrinsic_available(id)) {
+-        __ align(CodeEntryAlignment);
+-        Interpreter::_common_entry_table[i] = generate_common_intrinsic_entry(id);
++        // These aliases have identical arguments, operations and guards.
++        // Check each ID's flags above even when its code can be shared.
++        vmIntrinsics::ID canonical = id;
++        switch (id) {
++          case vmIntrinsics::_min_strict: canonical = vmIntrinsics::_min; break;
++          case vmIntrinsics::_max_strict: canonical = vmIntrinsics::_max; break;
++          case vmIntrinsics::_vectorizedHashCodeLeaf: canonical = vmIntrinsics::_vectorizedHashCode; break;
++          default: break;
++        }
++        address entry = Interpreter::_common_entry_table[vmIntrinsics::as_int(canonical)];
++        if (entry == nullptr) {
++          __ align(CodeEntryAlignment);
++          entry = generate_common_intrinsic_entry(id);
++        }
++        Interpreter::_common_entry_table[vmIntrinsics::as_int(id)] = entry;
+       }
+     }
+   }
+diff --git a/src/hotspot/share/oops/cpCache.cpp b/src/hotspot/share/oops/cpCache.cpp
+index edb5f6714c0..3ecef47f8b9 100644
+--- a/src/hotspot/share/oops/cpCache.cpp
++++ b/src/hotspot/share/oops/cpCache.cpp
+@@ -79,7 +79,9 @@ void ConstantPoolCache::set_direct_or_vtable_call(Bytecodes::Code invoke_code,
+                                                        int method_index,
+                                                        const methodHandle& method,
+                                                        int vtable_index,
+-                                                       bool sender_is_interface) {
++                                                       bool sender_is_interface,
++                                                       bool cache_call) {
++  assert(cache_call || invoke_code == Bytecodes::_invokestatic, "only static calls defer caching");
+   bool is_vtable_call = (vtable_index >= 0);  // FIXME: split this method on this boolean
+   assert(method->interpreter_entry() != nullptr, "should have been set at this point");
+   assert(!method->is_obsolete(),  "attempt to write obsolete method to cpCache");
+@@ -165,7 +167,7 @@ void ConstantPoolCache::set_direct_or_vtable_call(Bytecodes::Code invoke_code,
+   if (byte_no == 1) {
+     assert(invoke_code != Bytecodes::_invokevirtual &&
+            invoke_code != Bytecodes::_invokeinterface, "");
+-    bool do_resolve = true;
++    bool do_resolve = cache_call;
+     // Don't mark invokespecial to method as resolved if sender is an interface.  The receiver
+     // has to be checked that it is a subclass of the current class every time this bytecode
+     // is executed.
+@@ -233,10 +235,10 @@ void ConstantPoolCache::set_direct_or_vtable_call(Bytecodes::Code invoke_code,
+ }
+ 
+ void ConstantPoolCache::set_direct_call(Bytecodes::Code invoke_code, int method_index, const methodHandle& method,
+-                                        bool sender_is_interface) {
++                                        bool sender_is_interface, bool cache_call) {
+   int index = Method::nonvirtual_vtable_index;
+   // index < 0; FIXME: inline and customize set_direct_or_vtable_call
+-  set_direct_or_vtable_call(invoke_code, method_index, method, index, sender_is_interface);
++  set_direct_or_vtable_call(invoke_code, method_index, method, index, sender_is_interface, cache_call);
+ }
+ 
+ void ConstantPoolCache::set_vtable_call(Bytecodes::Code invoke_code, int method_index, const methodHandle& method, int index) {
+diff --git a/src/hotspot/share/oops/cpCache.hpp b/src/hotspot/share/oops/cpCache.hpp
+index f698f50d3a8..ec774770e33 100644
+--- a/src/hotspot/share/oops/cpCache.hpp
++++ b/src/hotspot/share/oops/cpCache.hpp
+@@ -124,7 +124,8 @@ class ConstantPoolCache: public MetaspaceObj {
+     int method_index,                            // Index into the resolved method entry array
+     const methodHandle& method,                  // the method/prototype if any (null, otherwise)
+     int             vtable_index,                // the vtable index if any, else negative
+-    bool            sender_is_interface
++    bool            sender_is_interface,
++    bool            cache_call = true
+   );
+ 
+  public:
+@@ -132,7 +133,8 @@ class ConstantPoolCache: public MetaspaceObj {
+     Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
+     int method_index,                            // Index into the resolved method entry array
+     const methodHandle& method,                  // the method to call
+-    bool            sender_is_interface
++    bool            sender_is_interface,
++    bool            cache_call = true
+   );
+ 
+   void set_vtable_call(                          // sets entry to vtable index
+diff --git a/src/hotspot/share/oops/method.cpp b/src/hotspot/share/oops/method.cpp
+index bea03302d32..c188b20b463 100644
+--- a/src/hotspot/share/oops/method.cpp
++++ b/src/hotspot/share/oops/method.cpp
+@@ -1257,7 +1257,8 @@ void Method::remove_unshareable_flags() {
+ // Called when the method_holder is getting linked. Setup entrypoints so the method
+ // is ready to be called from interpreter, compiler, and vtables.
+ void Method::link_method(const methodHandle& h_method, TRAPS) {
+-  if (h_method->intrinsic_id() != vmIntrinsics::_none) {
++  if (h_method->intrinsic_id() != vmIntrinsics::_none &&
++      !CommonIntrinsics::is_big_integer(h_method->intrinsic_id())) {
+     CommonIntrinsics::prepare(h_method->intrinsic_id());
+   }
+   if (log_is_enabled(Info, perf, class, link)) {
+diff --git a/src/hotspot/share/prims/methodHandles.cpp b/src/hotspot/share/prims/methodHandles.cpp
+index 99a58b09e75..b274b81fd92 100644
+--- a/src/hotspot/share/prims/methodHandles.cpp
++++ b/src/hotspot/share/prims/methodHandles.cpp
+@@ -47,6 +47,7 @@
+ #include "oops/typeArrayOop.inline.hpp"
+ #include "prims/methodHandles.hpp"
+ #include "runtime/deoptimization.hpp"
++#include "runtime/commonIntrinsics.hpp"
+ #include "runtime/fieldDescriptor.inline.hpp"
+ #include "runtime/handles.inline.hpp"
+ #include "runtime/interfaceSupport.inline.hpp"
+@@ -249,6 +250,9 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
+   assert(info.resolved_appendix().is_null(), "only normal methods here");
+   methodHandle m(Thread::current(), info.resolved_method());
+   assert(m.not_null(), "null method handle");
++  if (CommonIntrinsics::is_big_integer(m->intrinsic_id())) {
++    CommonIntrinsics::prepare(m->intrinsic_id());
++  }
+   InstanceKlass* m_klass = m->method_holder();
+   assert(m_klass != nullptr, "null holder for method handle");
+   int flags = (m->access_flags().as_method_flags());
+diff --git a/src/hotspot/share/runtime/commonIntrinsics.cpp b/src/hotspot/share/runtime/commonIntrinsics.cpp
+index 0d7c9f0fafc..14dbdda08db 100644
+--- a/src/hotspot/share/runtime/commonIntrinsics.cpp
++++ b/src/hotspot/share/runtime/commonIntrinsics.cpp
+@@ -43,6 +43,13 @@ constexpr jint max_quadratic_limbs = 2048;
+ constexpr jint max_montgomery_limbs = 512;
+ constexpr jint max_hash_elements = 65536;
+ 
++#if defined(COMPILER2) && (defined(AMD64) || defined(AARCH64))
++// Let cold, small BigInteger operations use Java before paying for the whole
++// compiler blob. Accumulate arithmetic work across unresolved static calls.
++constexpr jlong big_integer_warmup_work = 16384;
++volatile jlong big_integer_work = 0;
++#endif
++
+ bool all_digest_intrinsics_enabled() {
+   return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_md5_implCompress) &&
+          vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha_implCompress) &&
+@@ -934,12 +941,62 @@ bool CommonIntrinsics::needs_compiler_stubs(vmIntrinsics::ID id) {
+ void CommonIntrinsics::prepare(vmIntrinsics::ID id) {
+   // Linking can allocate and block; the interpreter and C1 leaf adapters cannot.
+   // Bootstrap calls retain the Java fallback until the stubs are published.
+-  if (is_init_completed() && needs_compiler_stubs(id) &&
++  if ((UseCompiler || InlineIntrinsics) && is_init_completed() && needs_compiler_stubs(id) &&
+       is_available_for_interpreter(id) && vmIntrinsics::is_intrinsic_available(id)) {
+     StubRoutines::ensure_compiler_stubs_initialized();
+   }
+ }
+ 
++bool CommonIntrinsics::is_big_integer(vmIntrinsics::ID id) {
++  switch (id) {
++    case vmIntrinsics::_multiplyToLen:
++    case vmIntrinsics::_squareToLen:
++    case vmIntrinsics::_mulAdd:
++    case vmIntrinsics::_montgomeryMultiply:
++    case vmIntrinsics::_montgomerySquare:
++    case vmIntrinsics::_bigIntegerRightShiftWorker:
++    case vmIntrinsics::_bigIntegerLeftShiftWorker:
++      return true;
++    default: return false;
++  }
++}
++
++bool CommonIntrinsics::cache_interpreter_call(vmIntrinsics::ID id, const intptr_t* args) {
++#if defined(COMPILER2) && (defined(AMD64) || defined(AARCH64))
++  if ((!UseCompiler && !InlineIntrinsics) || !is_init_completed() ||
++      !is_big_integer(id) || !needs_compiler_stubs(id) ||
++      StubRoutines::compiler_stubs_initialized() ||
++      !is_available_for_interpreter(id) || !vmIntrinsics::is_intrinsic_available(id)) {
++    return true;
++  }
++  // Only read integer arguments; no raw oop is retained across prepare().
++  // Slots are in the same expression-stack order used by the leaf adapters.
++  jlong work = 0;
++  auto limbs = [](intptr_t value) -> jlong {
++    jint n = static_cast<jint>(value);
++    return n > 0 ? MIN2(n, max_quadratic_limbs) : 0;
++  };
++  switch (id) {
++    case vmIntrinsics::_multiplyToLen: work = limbs(args[3]) * limbs(args[1]); break;
++    case vmIntrinsics::_squareToLen: work = limbs(args[2]) * limbs(args[2]) / 2; break;
++    case vmIntrinsics::_montgomeryMultiply: work = limbs(args[3]) * limbs(args[3]); break;
++    case vmIntrinsics::_montgomerySquare: work = limbs(args[3]) * limbs(args[3]); break;
++    case vmIntrinsics::_mulAdd: work = limbs(args[1]); break;
++    case vmIntrinsics::_bigIntegerRightShiftWorker:
++    case vmIntrinsics::_bigIntegerLeftShiftWorker: work = limbs(args[0]); break;
++    default: ShouldNotReachHere();
++  }
++  work = MAX2(static_cast<jlong>(1), MIN2(work, big_integer_warmup_work));
++  if (AtomicAccess::add(&big_integer_work, work) < big_integer_warmup_work) {
++    // The entry still contains the resolved method and its signature. Leaving
++    // its bytecode unset makes a later invocation revisit this safe VM frame.
++    return false;
++  }
++  prepare(id);
++#endif
++  return true;
++}
++
+ bool CommonIntrinsics::is_scalar(vmIntrinsics::ID id) {
+   switch (id) {
+ #define COMMON_SCALAR(id, slots, result) case vmIntrinsics::id: return true;
+@@ -1049,7 +1106,11 @@ bool CommonIntrinsics::is_available_for_interpreter(vmIntrinsics::ID id) {
+ // Acquire the completed stub publication before inspecting backend slots.
+ bool CommonIntrinsics::is_available_for_c1(vmIntrinsics::ID id) {
+   if (needs_compiler_stubs(id) && !StubRoutines::compiler_stubs_initialized()) {
+-    return false;
++    // A lowering request has live ci handles and may prepare outside the leaf.
++    prepare(id);
++    if (!StubRoutines::compiler_stubs_initialized()) {
++      return false;
++    }
+   }
+   if (!is_supported(id)) {
+     return false;
+diff --git a/src/hotspot/share/runtime/commonIntrinsics.hpp b/src/hotspot/share/runtime/commonIntrinsics.hpp
+index a4c78a5025c..b9281d16b19 100644
+--- a/src/hotspot/share/runtime/commonIntrinsics.hpp
++++ b/src/hotspot/share/runtime/commonIntrinsics.hpp
+@@ -132,6 +132,8 @@ class CommonIntrinsics : AllStatic {
+   static constexpr jlong fallback = min_jlong;
+   static bool enabled();
+   static bool needs_compiler_stubs(vmIntrinsics::ID id);
++  static bool is_big_integer(vmIntrinsics::ID id);
++  static bool cache_interpreter_call(vmIntrinsics::ID id, const intptr_t* args);
+   static void prepare(vmIntrinsics::ID id);
+   static bool is_scalar(vmIntrinsics::ID id);
+   static bool is_binary_scalar(vmIntrinsics::ID id);
+diff --git a/src/hotspot/share/runtime/javaCalls.cpp b/src/hotspot/share/runtime/javaCalls.cpp
+index 291be708d25..23f4cddf6dc 100644
+--- a/src/hotspot/share/runtime/javaCalls.cpp
++++ b/src/hotspot/share/runtime/javaCalls.cpp
+@@ -34,6 +34,7 @@
+ #include "oops/oop.inline.hpp"
+ #include "prims/jniCheck.hpp"
+ #include "prims/jvmtiExport.hpp"
++#include "runtime/commonIntrinsics.hpp"
+ #include "runtime/handles.inline.hpp"
+ #include "runtime/interfaceSupport.inline.hpp"
+ #include "runtime/javaCalls.hpp"
+@@ -370,6 +371,13 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
+     os::map_stack_shadow_pages(sp);
+   }
+ 
++  // Native callers select their target directly, without a bytecode resolver.
++  // Prepare before parameters() converts the rooted handles to raw oops.
++  if (method->intrinsic_id() != vmIntrinsics::_none &&
++      CommonIntrinsics::is_big_integer(method->intrinsic_id())) {
++    CommonIntrinsics::prepare(method->intrinsic_id());
++  }
++
+   // do call
+   { JavaCallWrapper link(method, receiver, result, CHECK);
+     { HandleMark hm(thread);  // HandleMark used by HandleMarkCleaner
+diff --git a/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicInitialization.java b/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicInitialization.java
+index 12bf8417f46..3416d971f62 100644
+--- a/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicInitialization.java
++++ b/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicInitialization.java
+@@ -47,13 +47,27 @@ public class TestCommonIntrinsicInitialization {
+ 
+     public static void main(String[] args) throws Exception {
+         if (args.length != 0) {
+-            exercise();
++            if (args[0].startsWith("bigint-")) {
++                exerciseBigInteger(args[0].equals("bigint-warm"));
++            } else {
++                exercise();
++            }
+             return;
+         }
+         for (String mode : new String[] {"-Xint", "-XX:TieredStopAtLevel=1"}) {
+             ProcessTools.executeTestJava("-XX:+UseCommonIntrinsics", mode,
+                     "-Xlog:startuptime", "-version")
+                     .shouldHaveExitValue(0).shouldNotContain(GENERATION);
++            ProcessTools.executeTestJava("-XX:+UseCommonIntrinsics", mode,
++                    "-Xlog:startuptime", TestCommonIntrinsicInitialization.class.getName(), "bigint-cold")
++                    .shouldHaveExitValue(0).shouldNotContain(GENERATION);
++            String warm = ProcessTools.executeTestJava("-XX:+UseCommonIntrinsics", mode,
++                    "-Xlog:startuptime", TestCommonIntrinsicInitialization.class.getName(), "bigint-warm")
++                    .shouldHaveExitValue(0).getOutput();
++            int first = warm.indexOf(GENERATION);
++            if (first < 0 || warm.indexOf(GENERATION, first + GENERATION.length()) >= 0) {
++                throw new AssertionError("Expected one BigInteger compiler-stub generation: " + warm);
++            }
+         }
+         for (String mode : new String[] {"-Xint", "-XX:TieredStopAtLevel=1", "-XX:-TieredCompilation"}) {
+             String output = ProcessTools.executeTestJava("-XX:+UseCommonIntrinsics", mode,
+@@ -66,6 +80,20 @@ public static void main(String[] args) throws Exception {
+         }
+     }
+ 
++    private static void exerciseBigInteger(boolean warm) {
++        byte[] input = new byte[64];
++        input[0] = 1;
++        input[input.length - 1] = 3;
++        BigInteger value = new BigInteger(1, input);
++        for (int i = 0; i < (warm ? 1000 : 1); i++) {
++            BigInteger result = value.multiply(value);
++            if (result.bitLength() != 1009 || result.bitCount() != 5 || result.intValue() != 9 ||
++                !result.testBit(1008) || !result.testBit(505) || !result.testBit(506)) {
++                throw new AssertionError("BigInteger square");
++            }
++        }
++    }
++
+     private static void exercise() throws Exception {
+         CountDownLatch ready = new CountDownLatch(8);
+         CountDownLatch start = new CountDownLatch(1);
+-- 
+2.52.0
+
+
+From c6c18c12d2d6cf35f7da36fb64e5ed484cab7a1e Mon Sep 17 00:00:00 2001
+From: "Teamoffy Pte. Ltd." <38070640+re-thc@users.noreply.github.com>
+Date: Wed, 14 Oct 2026 23:59:14 +0000
+Subject: [PATCH 2/2] Prepare Montgomery stubs at first modular arithmetic use
+
+---
+ src/hotspot/share/runtime/commonIntrinsics.cpp | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/src/hotspot/share/runtime/commonIntrinsics.cpp b/src/hotspot/share/runtime/commonIntrinsics.cpp
+index 14dbdda08db..d464baa0537 100644
+--- a/src/hotspot/share/runtime/commonIntrinsics.cpp
++++ b/src/hotspot/share/runtime/commonIntrinsics.cpp
+@@ -969,6 +969,12 @@ bool CommonIntrinsics::cache_interpreter_call(vmIntrinsics::ID id, const intptr_
+       !is_available_for_interpreter(id) || !vmIntrinsics::is_intrinsic_available(id)) {
+     return true;
+   }
++  // Modular exponentiation chains Montgomery calls. Delaying their setup
++  // prolongs the first modPow operation instead of avoiding unused work.
++  if (id == vmIntrinsics::_montgomeryMultiply || id == vmIntrinsics::_montgomerySquare) {
++    prepare(id);
++    return true;
++  }
+   // Only read integer arguments; no raw oop is retained across prepare().
+   // Slots are in the same expression-stack order used by the leaf adapters.
+   jlong work = 0;
+@@ -979,8 +985,6 @@ bool CommonIntrinsics::cache_interpreter_call(vmIntrinsics::ID id, const intptr_
+   switch (id) {
+     case vmIntrinsics::_multiplyToLen: work = limbs(args[3]) * limbs(args[1]); break;
+     case vmIntrinsics::_squareToLen: work = limbs(args[2]) * limbs(args[2]) / 2; break;
+-    case vmIntrinsics::_montgomeryMultiply: work = limbs(args[3]) * limbs(args[3]); break;
+-    case vmIntrinsics::_montgomerySquare: work = limbs(args[3]) * limbs(args[3]); break;
+     case vmIntrinsics::_mulAdd: work = limbs(args[1]); break;
+     case vmIntrinsics::_bigIntegerRightShiftWorker:
+     case vmIntrinsics::_bigIntegerLeftShiftWorker: work = limbs(args[0]); break;
+-- 
+2.52.0
+
