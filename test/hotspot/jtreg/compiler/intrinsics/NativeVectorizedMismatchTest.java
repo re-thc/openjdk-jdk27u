@@ -86,6 +86,24 @@ public class NativeVectorizedMismatchTest {
     }
 
     @Test
+    @IR(counts = {"CallLeaf.*vectorizedMismatch", "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    public static int nativeChars(long a, long b) {
+        return ArraysSupport.vectorizedMismatch(null, a, null, b, 64, 1);
+    }
+
+    @Test
+    @IR(counts = {"CallLeaf.*vectorizedMismatch", "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    public static int nativeInts(long a, long b) {
+        return ArraysSupport.vectorizedMismatch(null, a, null, b, 32, 2);
+    }
+
+    @Test
+    @IR(counts = {"CallLeaf.*vectorizedMismatch", "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    public static int nativeLongs(long a, long b) {
+        return ArraysSupport.vectorizedMismatch(null, a, null, b, 16, 3);
+    }
+
+    @Test
     @IR(failOn = {"CallLeaf.*vectorizedMismatch"}, phase = CompilePhase.BEFORE_MATCHING)
     public static int nativeSmallInts(long a, long b) {
         return ArraysSupport.vectorizedMismatch(null, a, null, b, 2, 2);
@@ -122,7 +140,8 @@ public class NativeVectorizedMismatchTest {
     }
 
     @Run(test = {"nativeRange", "nativeAtLimit", "nativeAboveLimit", "mixedRange",
-                 "nativeZero", "nativeShort", "nativeAtMinimum", "nativeSmallInts", "scopedRange", "heapSegmentRange"})
+                 "nativeZero", "nativeShort", "nativeAtMinimum", "nativeSmallInts", "scopedRange", "heapSegmentRange",
+                 "nativeChars", "nativeInts", "nativeLongs"})
     public static void run() {
         long a = A.address() + 1, b = B.address() + 3;
         B.set(ValueLayout.JAVA_BYTE, 3, (byte) 1);
@@ -163,6 +182,20 @@ public class NativeVectorizedMismatchTest {
         check(nativeAtLimit(a, b), LIMIT, -1);
         check(nativeShort(a, b), 64, -1);
         check(nativeAtMinimum(a, b), 128, -1);
+        if (nativeChars(a, b) != -1 || nativeInts(a, b) != -1 || nativeLongs(a, b) != -1) {
+            throw new AssertionError("Equal first words for all element scales");
+        }
+        for (int position = 0; position < Long.BYTES; position++) {
+            B.set(ValueLayout.JAVA_BYTE, position + 3, (byte) 1);
+            check(nativeAtMinimum(a, b), 128, position);
+            check(nativeAtLimit(a, b), LIMIT, position);
+            check(mixedRange(HEAP, b, 128), 128, position);
+            if (nativeChars(a, b) != position / 2 || nativeInts(a, b) != position / 4 ||
+                    nativeLongs(a, b) != position / 8) {
+                throw new AssertionError("First-word element index at byte " + position);
+            }
+            B.set(ValueLayout.JAVA_BYTE, position + 3, (byte) 0);
+        }
         B.set(ValueLayout.JAVA_BYTE, 32 + 3, (byte) 1);
         check(nativeShort(a, b), 64, 32);
         B.set(ValueLayout.JAVA_BYTE, 32 + 3, (byte) 0);

@@ -200,7 +200,8 @@ public class BufferMismatchBoundaryTest {
                         right.limit(right.capacity());
                         kind.put(right, 2 + size, 42);
                         right.limit(2 + size);
-                        for (int pos : new int[] {0, size / 2, size - 1}) {
+                        for (int pos : new int[] {0, Math.min(1, size - 1),
+                                Math.min(7 / kind.byteWidth, size - 1), size / 2, size - 1}) {
                             if (size == 0) continue;
                             kind.put(right, 2 + pos, 43);
                             kind.check(left, right, pos);

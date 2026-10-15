@@ -28,7 +28,6 @@ package jdk.internal.foreign;
 
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.util.Architecture;
-import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
@@ -267,7 +266,7 @@ public final class SegmentBulkOperations {
                     SCOPED_MEMORY_ACCESS.getByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset)) {
                 return 0;
             }
-            i = vectorizedMismatchLargeForBytes(src.sessionImpl(), dst.sessionImpl(),
+            i = SCOPED_MEMORY_ACCESS.vectorizedMismatchLargeForBytes(src.sessionImpl(), dst.sessionImpl(),
                     src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset,
                     dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset,
                     length);
@@ -344,41 +343,6 @@ public final class SegmentBulkOperations {
     @ForceInline
     private static int mismatch(short first, short second) {
         return ((0xff & first) == (0xff & second)) ? 1 : 0;
-    }
-
-    /**
-     * Mismatch over long lengths.
-     */
-    @ForceInline
-    private static long vectorizedMismatchLargeForBytes(MemorySessionImpl aSession, MemorySessionImpl bSession,
-                                                        Object a, long aOffset,
-                                                        Object b, long bOffset,
-                                                        long length) {
-        long off = 0;
-        long remaining = length;
-        int i, size;
-        boolean lastSubRange = false;
-        while (remaining > 7 && !lastSubRange) {
-            // Inlining exposes heap bases to C2 as well as native bases.
-            // Bound both kinds of newly accelerated leaf calls.
-            if (remaining > 65536) {
-                size = 65536;
-            } else {
-                size = (int) remaining;
-                lastSubRange = true;
-            }
-            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(aSession, bSession,
-                    a, aOffset + off,
-                    b, bOffset + off,
-                    size, ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
-            if (i >= 0)
-                return off + i;
-
-            i = size - ~i;
-            off += i;
-            remaining -= i;
-        }
-        return ~remaining;
     }
 
     static final String PROPERTY_PATH = "java.lang.foreign.native.threshold.power.";

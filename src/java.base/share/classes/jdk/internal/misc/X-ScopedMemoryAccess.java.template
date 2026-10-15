@@ -267,6 +267,50 @@ public final class ScopedMemoryAccess {
         return result >= 0 ? offset + result : result;
     }
 
+    // Long byte ranges use one scoped boundary for the whole scan. Its Java
+    // backedge polls between bounded leaf calls without rechecking sessions
+    // for every chunk. Keep this boundary even when both bases are heap arrays.
+    @ForceInline
+    public long vectorizedMismatchLargeForBytes(MemorySessionImpl aSession, MemorySessionImpl bSession,
+                                               Object a, long aOffset, Object b, long bOffset, long length) {
+        try {
+            return vectorizedMismatchLargeForBytesInternal(aSession, bSession,
+                    a, aOffset, b, bOffset, length);
+        } catch (ScopedAccessError ex) {
+            throw ex.newRuntimeException();
+        }
+    }
+
+    @ForceInline @Scoped
+    private long vectorizedMismatchLargeForBytesInternal(MemorySessionImpl aSession, MemorySessionImpl bSession,
+                                                        Object a, long aOffset, Object b, long bOffset, long length) {
+        try {
+            if (aSession != null) {
+                aSession.checkValidStateRaw();
+            }
+            if (bSession != null) {
+                bSession.checkValidStateRaw();
+            }
+            long offset = 0;
+            long remaining = length;
+            while (remaining > 7) {
+                int size = (int) Math.min(remaining, 65536);
+                int result = ArraysSupport.vectorizedMismatch(a, aOffset + offset,
+                        b, bOffset + offset, size, ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
+                if (result >= 0) {
+                    return offset + result;
+                }
+                int scanned = size - ~result;
+                offset += scanned;
+                remaining -= scanned;
+            }
+            return ~remaining;
+        } finally {
+            Reference.reachabilityFence(aSession);
+            Reference.reachabilityFence(bSession);
+        }
+    }
+
     @ForceInline
     public boolean isLoaded(MemorySessionImpl session, MappedMemoryUtilsProxy mappedUtils, long address, boolean isSync, long size) {
         try {

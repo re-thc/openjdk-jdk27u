@@ -69,7 +69,7 @@ public class MemoryBufferOperations {
     @Param({"0", "1", "7"})
     public int alignment;
 
-    @Param({"MATCH", "FIRST", "MIDDLE", "LAST"})
+    @Param({"MATCH", "FIRST", "SECOND", "PREFIX_LAST", "MIDDLE", "LAST"})
     public String difference;
 
     private Arena arena;
@@ -141,6 +141,8 @@ public class MemoryBufferOperations {
         int index = size == 0 ? -1 : switch (difference) {
             case "MATCH" -> -1;
             case "FIRST" -> 0;
+            case "SECOND" -> Math.min(1, size - 1);
+            case "PREFIX_LAST" -> Math.min(7, size - 1);
             case "MIDDLE" -> size / 2;
             case "LAST" -> size - 1;
             default -> throw new IllegalArgumentException(difference);

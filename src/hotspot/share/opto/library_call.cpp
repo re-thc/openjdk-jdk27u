@@ -6810,7 +6810,8 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   enum { inline_path = 1,  // input is small enough to process it all at once
          stub_path   = 2,  // input is too large; call into the VM
          java_path   = 3,  // off-heap work exceeds the leaf bound
-         PATH_LIMIT  = 4
+         first_word_path = 4, // a native input differs in its first word
+         PATH_LIMIT  = 5
   };
 
   Node* exit_block = new RegionNode(native_access ? PATH_LIMIT : java_path);
@@ -6839,6 +6840,34 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
       memory_phi->init_req(java_path, reset_memory());
       io_phi->init_req(java_path, i_o());
       result_phi->init_req(java_path, slow_result);
+    }
+  }
+
+  if (native_access) {
+    // The guarded native range contains at least 128 bytes. An unaligned
+    // first-word comparison avoids entering the vector stub for early exits.
+    // Pin unsafe loads after the range/session guards, as for Unsafe accesses.
+    Node* a_word = make_load(control(), obja_adr, TypeLong::LONG, T_LONG, MemNode::unordered,
+                             LoadNode::Pinned, false, true, true, true);
+    Node* b_word = make_load(control(), objb_adr, TypeLong::LONG, T_LONG, MemNode::unordered,
+                             LoadNode::Pinned, false, true, true, true);
+    Node* diff = _gvn.transform(new XorLNode(a_word, b_word));
+    Node* cmp = _gvn.transform(new CmpLNode(diff, longcon(0)));
+    Node* different = _gvn.transform(new BoolNode(cmp, BoolTest::ne));
+    Node* mismatch_control = generate_guard(different, nullptr, PROB_FAIR);
+    if (mismatch_control != nullptr) {
+      PreserveJVMState pjvms(this);
+      set_control(mismatch_control);
+#ifdef VM_LITTLE_ENDIAN
+      Node* zeros = _gvn.transform(new CountTrailingZerosLNode(diff));
+#else
+      Node* zeros = _gvn.transform(new CountLeadingZerosLNode(diff));
+#endif
+      Node* index = _gvn.transform(new RShiftINode(zeros, intcon(3 + _gvn.type(scale)->is_int()->get_con())));
+      exit_block->init_req(first_word_path, control());
+      memory_phi->init_req(first_word_path, map()->memory());
+      io_phi->init_req(first_word_path, i_o());
+      result_phi->init_req(first_word_path, index);
     }
   }
 
