@@ -107,7 +107,7 @@ public class TestLongBitfieldExtract {
         failOn = {IRNode.AND_I})
     @IR(applyIfPlatform = {"aarch64", "true"}, phase = CompilePhase.MATCHING,
         failOn = {EXTRACT})
-    public static int extractAllBits(long x) { return (int)(x >>> 40) & -1; }
+    public static int extractAllBits(long x) { return (int)(x >>> 13) & -1; }
 
     @Test(compLevel = CompLevel.C2)
     @IR(applyIfPlatform = {"aarch64", "true"}, phase = CompilePhase.BEFORE_MATCHING,
@@ -185,7 +185,7 @@ public class TestLongBitfieldExtract {
                         extract31(x), extractNoncontiguous(x), extractVariable(x, shift),
                         extractZeroMask(x), extractAllBits(x), extract64(x),
                         extract48(x), extract63(x), extractBoundary(x), extractCrossBoundary(x)};
-        int[] shifts = {32, 40, -24, 33, 31, 40, shift, 40, 40, 64, 48, 63, 34, 60};
+        int[] shifts = {32, 40, -24, 33, 31, 40, shift, 40, 13, 64, 48, 63, 34, 60};
         int[] masks = {255, 255, 255, 0x3fffffff, 0x7fffffff, 0x55, 255, 0, -1, 255, 65535, 255, 0x3fffffff, 255};
         for (int i = 0; i < actual.length; i++) {
             int expected = expected(x, shifts[i], masks[i]);
