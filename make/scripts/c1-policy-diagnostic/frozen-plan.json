@@ -1,0 +1,393 @@
+{
+  "status": "FROZEN BEFORE TIMING; execution authorized by independent review, no promotion",
+  "purpose": "Recover the original C1 opt-out regression versus original-before and current-unmodified images, with enabled C1/interpreter/C2/tiered safety controls. One bounded comparison, no tuning/retry-until-pass.",
+  "base": "fc06b7bf0599d23ef644bf5657ddab36e8d96a3d",
+  "production_patch_sha256": "271a20c50b5bb46e8302ff1bcb1ed9182d9ae7d9a682ff42c052d6b70047980b",
+  "images": {
+    "before": "/workspace/pr3-overhead-review/images/before",
+    "current": "/workspace/pr3-overhead-review/images/final",
+    "repair": "/workspace/pr3-c1-policy/candidate-image",
+    "calibration": "/workspace/pr3-overhead-review/images/final"
+  },
+  "calibration_identity": "Current and calibration are independent fresh forks of the exact same image path and bytes; labels only, no patch module or different build.",
+  "inputs": {
+    "ordinary": {
+      "benchmark": "org.openjdk.bench.recovery.SplitFallbackBench.bigDecimalValueOf",
+      "params": {
+        "dataset": "ordinary"
+      },
+      "description": "Existing1024-value seeded mixed ordinary positive input set, original regression target."
+    },
+    "short": {
+      "benchmark": "org.openjdk.bench.java.lang.ZmijFormatting.bigDecimalShortInteger",
+      "params": {},
+      "description": "Existing1024 seeded integer-valued doubles in[0,999]; variable short inputs, includes zero. No new distribution."
+    },
+    "full-range": {
+      "benchmark": "org.openjdk.bench.java.lang.ZmijFormatting.bigDecimalValueOf",
+      "params": {},
+      "description": "Existing1024 seeded finite raw-bit doubles, both signs and full exponent range, including large magnitudes. Not a large-only population."
+    }
+  },
+  "long_protocol": {
+    "warmup": "5x1s",
+    "measurement": "5x2s",
+    "threads": 1,
+    "forks_per_invocation": 1,
+    "profiler": "gc only; no WhiteBox/phase profiler/assembly/compilation logging in timed forks",
+    "CPU": 4,
+    "heap": "256MiB G1",
+    "CDS": "off",
+    "four_byte_object_headers": true,
+    "ActiveProcessorCount": 2
+  },
+  "phases": [
+    {
+      "name": "A-long-calibration-and-primary",
+      "case": "long-c1-optout-ordinary",
+      "mode": "c1",
+      "route": "optout",
+      "input": "ordinary",
+      "orders": [
+        [
+          "before",
+          "current",
+          "repair",
+          "calibration"
+        ],
+        [
+          "current",
+          "calibration",
+          "before",
+          "repair"
+        ],
+        [
+          "calibration",
+          "repair",
+          "current",
+          "before"
+        ],
+        [
+          "repair",
+          "before",
+          "calibration",
+          "current"
+        ],
+        [
+          "before",
+          "current",
+          "repair",
+          "calibration"
+        ],
+        [
+          "current",
+          "calibration",
+          "before",
+          "repair"
+        ],
+        [
+          "calibration",
+          "repair",
+          "current",
+          "before"
+        ],
+        [
+          "repair",
+          "before",
+          "calibration",
+          "current"
+        ]
+      ],
+      "forks": 32,
+      "gate_after": "Analyze only calibration/current equivalence. If it fails, stop all further runtime qualification, retain all32 forks and report repair contrasts descriptively. No retries."
+    },
+    {
+      "name": "B-short-and-full-range-primary",
+      "cases": [
+        "long-c1-optout-short",
+        "long-c1-optout-full-range"
+      ],
+      "orders_each": [
+        [
+          "before",
+          "current",
+          "repair"
+        ],
+        [
+          "current",
+          "repair",
+          "before"
+        ],
+        [
+          "repair",
+          "before",
+          "current"
+        ],
+        [
+          "before",
+          "repair",
+          "current"
+        ],
+        [
+          "repair",
+          "current",
+          "before"
+        ],
+        [
+          "current",
+          "before",
+          "repair"
+        ]
+      ],
+      "forks": 36
+    },
+    {
+      "name": "C-enabled-and-unchanged-code-controls",
+      "cases": [
+        {
+          "case": "c1-native-ordinary",
+          "mode": "c1",
+          "route": "native",
+          "input": "ordinary"
+        },
+        {
+          "case": "c1-native-short",
+          "mode": "c1",
+          "route": "native",
+          "input": "short"
+        },
+        {
+          "case": "c1-native-full-range",
+          "mode": "c1",
+          "route": "native",
+          "input": "full-range"
+        },
+        {
+          "case": "interpreter-optout-ordinary",
+          "mode": "interpreter",
+          "route": "optout",
+          "input": "ordinary"
+        },
+        {
+          "case": "interpreter-native-ordinary",
+          "mode": "interpreter",
+          "route": "native",
+          "input": "ordinary"
+        },
+        {
+          "case": "c2-optout-ordinary",
+          "mode": "c2",
+          "route": "optout",
+          "input": "ordinary"
+        },
+        {
+          "case": "c2-native-ordinary",
+          "mode": "c2",
+          "route": "native",
+          "input": "ordinary"
+        },
+        {
+          "case": "tiered-optout-ordinary",
+          "mode": "tiered",
+          "route": "optout",
+          "input": "ordinary"
+        }
+      ],
+      "orders_each": [
+        [
+          "current",
+          "repair"
+        ],
+        [
+          "repair",
+          "current"
+        ],
+        [
+          "current",
+          "repair"
+        ],
+        [
+          "repair",
+          "current"
+        ],
+        [
+          "current",
+          "repair"
+        ],
+        [
+          "repair",
+          "current"
+        ]
+      ],
+      "forks": 96
+    },
+    {
+      "name": "D-exact-historical-short-protocol",
+      "case": "historical-c1-optout-ordinary",
+      "mode": "c1",
+      "route": "optout",
+      "input": "ordinary",
+      "warmup": "3x500ms",
+      "measurement": "3x500ms",
+      "orders": [
+        [
+          "before",
+          "current",
+          "repair",
+          "calibration"
+        ],
+        [
+          "current",
+          "calibration",
+          "before",
+          "repair"
+        ],
+        [
+          "calibration",
+          "repair",
+          "current",
+          "before"
+        ],
+        [
+          "repair",
+          "before",
+          "calibration",
+          "current"
+        ],
+        [
+          "before",
+          "current",
+          "repair",
+          "calibration"
+        ],
+        [
+          "current",
+          "calibration",
+          "before",
+          "repair"
+        ],
+        [
+          "calibration",
+          "repair",
+          "current",
+          "before"
+        ],
+        [
+          "repair",
+          "before",
+          "calibration",
+          "current"
+        ]
+      ],
+      "forks": 32,
+      "reason": "Separate supporting replication of the exact original short endpoint; does not replace adequate long primary batches. Its own recovery/control gates must pass."
+    }
+  ],
+  "maximum_fixed_timing_forks": 196,
+  "primary_endpoints": [
+    {
+      "case": "long-c1-optout-ordinary",
+      "ratio": "repair/current",
+      "upper_percent_below": 0
+    },
+    {
+      "case": "long-c1-optout-ordinary",
+      "ratio": "repair/before",
+      "upper_percent_below": 0
+    },
+    {
+      "case": "long-c1-optout-short",
+      "ratio": "repair/current",
+      "upper_percent_below": 1
+    },
+    {
+      "case": "long-c1-optout-short",
+      "ratio": "repair/before",
+      "upper_percent_below": 1
+    },
+    {
+      "case": "long-c1-optout-full-range",
+      "ratio": "repair/current",
+      "upper_percent_below": 1
+    },
+    {
+      "case": "long-c1-optout-full-range",
+      "ratio": "repair/before",
+      "upper_percent_below": 1
+    },
+    {
+      "case": "c1-native-ordinary",
+      "ratio": "repair/current",
+      "upper_percent_below": 1
+    },
+    {
+      "case": "c1-native-short",
+      "ratio": "repair/current",
+      "upper_percent_below": 1
+    },
+    {
+      "case": "c1-native-full-range",
+      "ratio": "repair/current",
+      "upper_percent_below": 1
+    },
+    {
+      "case": "interpreter-optout-ordinary",
+      "ratio": "repair/current",
+      "upper_percent_below": 1
+    },
+    {
+      "case": "interpreter-native-ordinary",
+      "ratio": "repair/current",
+      "upper_percent_below": 1
+    },
+    {
+      "case": "c2-optout-ordinary",
+      "ratio": "repair/current",
+      "upper_percent_below": 1
+    },
+    {
+      "case": "c2-native-ordinary",
+      "ratio": "repair/current",
+      "upper_percent_below": 1
+    },
+    {
+      "case": "tiered-optout-ordinary",
+      "ratio": "repair/current",
+      "upper_percent_below": 1
+    },
+    {
+      "case": "historical-c1-optout-ordinary",
+      "ratio": "repair/current",
+      "upper_percent_below": 0
+    },
+    {
+      "case": "historical-c1-optout-ordinary",
+      "ratio": "repair/before",
+      "upper_percent_below": 0
+    }
+  ],
+  "statistics": "Whole-fork paired log ratios.16fixed one-sided95% familywise t upper bounds at p=1-.05/16, df=n-1. Report nominal paired two-sided95% intervals, all individual forks and every measured iteration. No short/long pooling, selected-iteration substitution or outlier deletion.",
+  "regression_guards": "Every repair/current or repair/before comparison: nominal paired95% interval wholly above0 is failure; positive geometric point with more than half pairs slower is HOLD; exact one-sided slowdown sign-test p<=.05 is failure, exact ties excluded. Report every positive point/slower count. The1% safety bound never accepts established/consistent loss.",
+  "calibration_gates": "Long and historical cohorts separately: calibration/current paired two-sided95% interval must fit[-1,+1]% AND contain0; exact two-sided sign-test p<=.05 blocks qualification. Long gate is evaluated after phaseA, without inspecting repair/before performance. Failed calibration cannot excuse candidate losses. Historical gate is evaluated only after the fixed remaining observations.",
+  "allocation_gates": "All12 repair/current cells and four repair/before cohorts: whole-fork paired arithmetic B/op delta one-sided95% upper must be<0.1B/op. Preserve all per-fork/per-iteration allocation samples. No allocation saving inferred from code size or older candidates.",
+  "compiler_evidence": {
+    "timed": "Uninstrumented compiler behavior apart from standard JMH GC profiling; retain actual JMH VM flags, version/blackhole mode and all iterations. No timed inline-tree assertion is inferred.",
+    "separate_fixed_probes": 15,
+    "protocol": "After all timing observations, only if phaseA calibration passed: fixed4096 calls to the same existing benchmark methods, WhiteBox-enqueue the benchmark root at level1 or4, verify actual installed level, fixed512 postcalls. No clocks/performance scores. LogCompilation/PrintInlining/targeted code only in these separate processes. C1optout three inputs xbefore/current/repair=9; C1nativeordinary,C2optoutordinary,C2nativeordinary xcurrent/repair=6. No source tuning or diagnostic retries."
+  },
+  "runtime_budget": {
+    "hard_total_seconds": 3000,
+    "per_timing_invocation_seconds": 60,
+    "per_diagnostic_seconds": 40,
+    "scope": "Readiness/hash verification, up to196 fixed timing forks and15 fixed untimed compiler probes; offline analysis/preservation after runtime stops. One owned process group at a time.",
+    "abort": "Resource failure, timeout or interruption: retain partial output, HOLD, no restart/extension. Long calibration failure stops remaining runtime phases. After it passes, execute every remaining observation once without interim score-based stop or expansion."
+  },
+  "qualification": "ACCEPT only if every primary, regression, calibration, allocation and input/compile-evidence gate passes. Any failed, incomplete or inconclusive gate is HOLD. No hosted run, new install, public upload/push or PR3 promotion.",
+  "limits": [
+    "Linuxx86-64 frozen Java images with repaired freshly built HotSpot overlay, not a fresh full JDK image pair or latest upstream-base qualification.",
+    "Same GCC16.2 release target/configuration apart from source-root/build-version metadata; existing current and repaired JVM binaries differ in layout. Whole-image effects are measured, not uniquely attributed to one source line.",
+    "C1timing is level1. Levels2/3 retain prior structural/correctness qualification, not new timing. Native-tiered timing and interpreter/C2 short/full-range cross-products omitted; no broad safety/portability claim.",
+    "Full-range input includes large/small values and signs; it is not a large-only dataset. Tiny subnormal-specific performance and constants are not newly qualified.",
+    "Original historical3x500ms cohort remains separate; no replacing its outcome with a favorable longer protocol."
+  ]
+}
