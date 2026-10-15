@@ -31,6 +31,9 @@
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 TestMappedNativeMismatch
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000
  *                  -XX:+UnlockDiagnosticVMOptions -XX:AVX3Threshold=0 TestMappedNativeMismatch
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000
+ *                  -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=128
+ *                  -XX:AVX3Threshold=0 TestMappedNativeMismatch
  */
 
 import java.lang.foreign.Arena;
@@ -130,6 +133,8 @@ public class TestMappedNativeMismatch {
                     test(source, heap, 0, 65536, kind, 4096);
                     test(source, heap, 4094, 4096, kind, 4096);
                     test(source, heap, 4094, 16, kind, 4096);
+                    test(source, heap, 4094, 128, kind, 4096);
+                    test(source, heap, 4088, 128, kind, 4096);
                     test(source, heap, 0, 65536, kind, 61440);
                 }
             }

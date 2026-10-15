@@ -29,6 +29,8 @@
  * @run main/othervm/timeout=480 -Xmx256m TestLongMismatch
  * @run main/othervm/timeout=480 -Xmx256m -Xbatch -XX:TieredStopAtLevel=1 TestLongMismatch
  * @run main/othervm/timeout=480 -Xmx256m -Xbatch -XX:-TieredCompilation TestLongMismatch
+ * @run main/othervm/timeout=480 -Xmx256m -Xbatch -XX:-TieredCompilation
+ *                  -XX:+UnlockDiagnosticVMOptions -XX:-UseVectorizedMismatchIntrinsic TestLongMismatch
  */
 
 import java.lang.foreign.Arena;
