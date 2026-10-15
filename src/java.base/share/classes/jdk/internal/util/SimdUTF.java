@@ -89,6 +89,13 @@ public final class SimdUTF {
 
     private static native int registerNatives();
 
+    // C1 substitutes its bulk ASCII crossover; other tiers retain their prefix scan.
+    @ForceInline
+    @IntrinsicCandidate
+    public static int utf8DecoderPrefixThreshold() {
+        return 0;
+    }
+
     @ForceInline
     public static boolean isEligible(int len) {
         int threshold = minLength;

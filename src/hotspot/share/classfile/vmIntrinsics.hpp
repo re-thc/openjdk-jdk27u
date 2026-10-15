@@ -416,6 +416,8 @@ class methodHandle;
    do_signature(Preconditions_checkLongIndex_signature,          "(JJLjava/util/function/BiFunction;)J")                \
                                                                                                                         \
   do_class(jdk_internal_util_SimdUTF, "jdk/internal/util/SimdUTF")                                                      \
+  do_intrinsic(_simdutf_utf8PrefixThreshold, jdk_internal_util_SimdUTF, simdutf_utf8prefix_name, void_int_signature, F_S)  \
+   do_name(simdutf_utf8prefix_name, "utf8DecoderPrefixThreshold")                                                           \
   do_intrinsic(_simdutf_process, jdk_internal_util_SimdUTF, simdutf_process_name, simdutf_process_signature, F_SN)      \
    do_name(simdutf_process_name, "process0")                                                                             \
    do_signature(simdutf_process_signature, "(Ljava/lang/Object;IILjava/lang/Object;III)I")                              \

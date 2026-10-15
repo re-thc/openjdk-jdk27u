@@ -264,8 +264,9 @@ public final class UTF_8 extends Unicode {
             int dp = doff + dst.position();
             int dl = doff + dst.limit();
 
+            int prefixThreshold = SimdUTF.utf8DecoderPrefixThreshold();
             int n = Math.min(sl - sp, dl - dp);
-            if (n > 0 && sa[sp] >= 0) {
+            if (prefixThreshold == 0 || (n > 0 && sl - sp >= prefixThreshold && sa[sp] >= 0)) {
                 n = JLA.decodeASCII(sa, sp, da, dp, n);
                 sp += n;
                 dp += n;
@@ -275,9 +276,11 @@ public final class UTF_8 extends Unicode {
                 return xflow(src, sp, sl, dst, dp, 0);
             }
 
-            int first = sa[sp];
-            if (first < (byte)0xc2 || (first < 0 && first > (byte)0xf4)) {
-                return malformedForLength(src, sp, dst, dp, 1);
+            if (prefixThreshold != 0) {
+                int first = sa[sp];
+                if (first < (byte)0xc2 || (first < 0 && first > (byte)0xf4)) {
+                    return malformedForLength(src, sp, dst, dp, 1);
+                }
             }
 
             // A UTF-16 code unit consumes at most three UTF-8 bytes.
