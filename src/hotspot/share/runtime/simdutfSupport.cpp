@@ -174,26 +174,50 @@ static jint simdutf_decode_latin1(const char* input, jint len, char* output, jin
   return written;
 }
 
-// Stage mutable input and convert into worst-case-sized stack storage. Only
-// the checked result is copied to a destination with less than worst-case room.
-static jint simdutf_decode_utf8_tight(const char* input, jint len, char16_t* output, jint capacity) {
-  char utf8[1024];
-  char16_t utf16[1024];
+// Snapshot mutable input before conversion. Use stack output when the
+// destination lacks worst-case room, then copy only a result that fits.
+static jint simdutf_decode_utf8_bounded(const char* input, jint len, char16_t* output, jint capacity) {
+#ifdef AARCH64
+  const size_t block_size = 4096;
+#else
+  const size_t block_size = 1024;
+#endif
+  char utf8[block_size];
+  char16_t utf16[block_size];
   jint written = 0;
   for (jint off = 0; off < len;) {
-    size_t size = MIN2(size_t(1024), size_t(len - off));
+    size_t size = MIN2(block_size, size_t(len - off));
     memcpy(utf8, input + off, size);
     if (off + size < size_t(len)) {
       size = simdutf::trim_partial_utf8(utf8, size);
     }
     if (size == 0) {
-      return -1;
+      return -off - 1;
     }
-    size_t count = simdutf::convert_utf8_to_utf16(utf8, size, utf16);
+    char16_t* target = utf16;
+#ifdef AARCH64
+    simdutf::result validation = simdutf::validate_utf8_with_errors(utf8, size);
+    if (validation.error != simdutf::SUCCESS) {
+      return -checked_cast<jint>(size_t(off) + validation.count) - 1;
+    }
+    if (size <= size_t(capacity - written)) {
+      target = output + written;
+    }
+    // The validated snapshot cannot change before the unchecked conversion.
+    size_t count = simdutf::convert_valid_utf8_to_utf16(utf8, size, target);
+#else
+    size_t count = simdutf::convert_utf8_to_utf16(utf8, size, target);
+    if (count == 0) {
+      simdutf::result validation = simdutf::validate_utf8_with_errors(utf8, size);
+      return -checked_cast<jint>(size_t(off) + validation.count) - 1;
+    }
+#endif
     if (count == 0 || count > size_t(capacity - written)) {
       return -1;
     }
-    memcpy(output + written, utf16, count * sizeof(char16_t));
+    if (target != output + written) {
+      memcpy(output + written, target, count * sizeof(char16_t));
+    }
     written += checked_cast<jint>(count);
     off += checked_cast<jint>(size);
   }
@@ -470,17 +494,16 @@ JRT_LEAF(jint, SimdUTF::process(oopDesc* src_raw, jint sp, jint len,
       break;
     }
     case DECODE_UTF8: {
-      // Convert directly with worst-case room; stage tighter outputs before copying.
+      bool bounded = capacity < len;
+#ifdef AARCH64
+      bounded |= input[0] < 0;
+#endif
+      if (bounded) {
+        return simdutf_decode_utf8_bounded(input, len, reinterpret_cast<char16_t*>(output), capacity);
+      }
       simdutf::result validation = simdutf::validate_utf8_with_errors(input, len);
       if (validation.error != simdutf::SUCCESS) {
-        // Keep the input error offset for Java's prefix recovery.
         return -checked_cast<jint>(validation.count) - 1;
-      }
-      if (capacity < len) {
-        if (simdutf::utf16_length_from_utf8(input, len) > size_t(capacity)) {
-          return -1;
-        }
-        return simdutf_decode_utf8_tight(input, len, reinterpret_cast<char16_t*>(output), capacity);
       }
       simdutf::result r = simdutf::convert_utf8_to_utf16_with_errors(input, len, reinterpret_cast<char16_t*>(output));
       if (r.error != simdutf::SUCCESS) {

@@ -132,7 +132,8 @@ public class SimdUTFTest {
     }
 
     private static void decoderBuffers() {
-        for (int length : new int[]{0, 1, 2, 3, 4, 31, 128, 255, 256, 257, 4096}) {
+        for (int length : new int[]{0, 1, 2, 3, 4, 31, 128, 255, 256, 257,
+                                   511, 512, 513, 1023, 1024, 1025, 4096}) {
             byte[] trailing = new byte[Math.max(1, length)];
             Arrays.fill(trailing, (byte)'a');
             for (int i = 0; i + 3 < length; i += 3) {
@@ -442,7 +443,7 @@ public class SimdUTFTest {
         char[] decoded = new char[expected.length + 17];
         Arrays.fill(decoded, '\u5555');
         written = SimdUTF.decodeUTF8(padded, 7, expected.length, decoded, 5, expected.length);
-        if (accelerationAvailable && SimdUTF.isEligible(expected.length) && expected.length >= 256)
+        if (accelerationAvailable && SimdUTF.isEligible(expected.length) && expected.length >= 512)
             check(written >= 0, "decoding acceleration not taken");
         if (written >= 0) {
             check(text.equals(new String(decoded, 5, written)), "native decode contents");

@@ -9464,11 +9464,30 @@ bool LibraryCallKit::inline_simdutf_process() {
   }
   Node* small_control = nullptr;
   Node* small_memory = nullptr;
-  // C2's Java count loop wins on short input; retain lower gates in other tiers.
-  if (FLAG_IS_DEFAULT(SIMDUTFMinLength) && operation != nullptr &&
-      operation->_lo == SimdUTF::COUNT_CODE_POINTS && operation->_hi == SimdUTF::COUNT_CODE_POINTS) {
-    Node* cmp = _gvn.transform(new CmpINode(argument(2), intcon(1024)));
+  int minimum_length = 0;
+  if (FLAG_IS_DEFAULT(SIMDUTFMinLength) && operation != nullptr && operation->_lo == operation->_hi) {
+    if (operation->_lo == SimdUTF::COUNT_CODE_POINTS) {
+      minimum_length = 1024;
+    }
+#ifdef AARCH64
+    if (operation->_lo == SimdUTF::DECODE_UTF8) {
+      minimum_length = 512;
+    }
+#endif
+  }
+  // Retain lower gates in tiers where their Java loops are more expensive.
+  if (minimum_length != 0) {
+    Node* cmp = _gvn.transform(new CmpINode(argument(2), intcon(minimum_length)));
     Node* test = _gvn.transform(new BoolNode(cmp, BoolTest::lt));
+#ifdef AARCH64
+    if (operation->_lo == SimdUTF::DECODE_UTF8) {
+      Node* room_cmp = _gvn.transform(new CmpINode(argument(5), argument(2)));
+      Node* room = _gvn.transform(new BoolNode(room_cmp, BoolTest::ge));
+      Node* both = _gvn.transform(new AndINode(test, room));
+      Node* nonzero = _gvn.transform(new CmpINode(both, intcon(0)));
+      test = _gvn.transform(new BoolNode(nonzero, BoolTest::ne));
+    }
+#endif
     small_control = generate_guard(test, nullptr, PROB_FAIR);
     if (small_control != nullptr) {
       if (stopped()) {

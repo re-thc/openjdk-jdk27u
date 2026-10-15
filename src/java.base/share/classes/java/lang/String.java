@@ -56,7 +56,6 @@ import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.Preconditions;
 import jdk.internal.util.SimdUTF;
-import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -654,8 +653,7 @@ public final class String
         }
     }
 
-    // Isolate tier-dependent dispatch from compilation of the scalar UTF-8 loop.
-    @DontInline
+    @ForceInline
     private static byte[] decodeUTF8Latin1(byte[] src, int sp, int len, byte[] dst, int dp) {
         if ((src[sp] & 0xfe) == 0xc2 && SimdUTF.isEligible(len)) {
             int converted = SimdUTF.decodeLatin1(src, sp, len, dst, dp, dst.length - dp);

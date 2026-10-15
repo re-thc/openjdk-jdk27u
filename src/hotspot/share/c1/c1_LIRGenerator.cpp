@@ -39,7 +39,6 @@
 #include "gc/shared/c1/barrierSetC1.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/methodCounters.hpp"
-#include "runtime/globals_extension.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/simdutfSupport.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -2812,21 +2811,7 @@ void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
 
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   switch (x->id()) {
-  case vmIntrinsics::_simdutf_decodeLatin1:
-    // Decline before the Java chunking path can affect the scalar decoder.
-    __ move(LIR_OprFact::intConst(-1), rlock_result(x));
-    break;
   case vmIntrinsics::_simdutf_process: {
-#ifdef AARCH64
-    IntConstant* operation = x->argument_at(6)->type()->as_IntConstant();
-    if (FLAG_IS_DEFAULT(SIMDUTFMinLength) && operation != nullptr &&
-        (operation->value() == SimdUTF::DECODE_LATIN1 ||
-         operation->value() == SimdUTF::VALIDATE_UTF8_LATIN1)) {
-      // The original Java decoder is faster than staging on compiled AArch64.
-      __ move(LIR_OprFact::intConst(-1), rlock_result(x));
-      break;
-    }
-#endif
     BasicTypeList signature;
     LIR_OprList* arguments = new LIR_OprList(7);
     for (int i = 0; i < 7; i++) {

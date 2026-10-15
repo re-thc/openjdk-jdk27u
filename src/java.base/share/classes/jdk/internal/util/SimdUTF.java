@@ -210,9 +210,10 @@ public final class SimdUTF {
         if (size == remaining) {
             return size;
         }
-        if (operation == COUNT_CODE_POINTS && remaining - size < 1024) {
-            // Keep the final leaf above C2's short-input counting gate.
-            size = remaining - 1024;
+        // Keep the final leaf above C2's short-input gates.
+        int minimumTail = operation == COUNT_CODE_POINTS ? 1024 : operation == DECODE_UTF8 ? 512 : 0;
+        if (remaining - size < minimumTail) {
+            size = remaining - minimumTail;
         }
         switch (operation) {
             case DECODE_UTF8, DECODE_LATIN1, VALIDATE_UTF8_LATIN1 -> {
@@ -287,7 +288,8 @@ public final class SimdUTF {
         return switch (operation) {
             case DECODE_UTF8 -> 256;
             case ENCODE_UTF16, DECODE_BASE64, DECODE_BASE64_URL,
-                 DECODE_LATIN1, COUNT_CODE_POINTS -> 128;
+                 COUNT_CODE_POINTS -> 128;
+            case DECODE_LATIN1 -> 1024;
             case VALIDATE_ASCII, VALIDATE_LATIN1, ENCODED_LENGTH_UTF16,
                  ENCODED_LENGTH_LATIN1, DECODE_UTF32_BE, DECODE_UTF32_LE,
                  INDEX_OF_LATIN1, INDEX_OF_UTF16 -> 64;

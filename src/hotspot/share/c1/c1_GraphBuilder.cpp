@@ -40,7 +40,9 @@
 #include "interpreter/bytecode.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/simdutfSupport.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
@@ -3637,6 +3639,23 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   ValueStack* state_before = copy_state_for_exception();
 
   Values* args = state()->pop_arguments(callee->arg_size());
+
+#ifdef AARCH64
+  bool decline_simdutf = id == vmIntrinsics::_simdutf_decodeLatin1;
+  if (id == vmIntrinsics::_simdutf_process && FLAG_IS_DEFAULT(SIMDUTFMinLength)) {
+    IntConstant* operation = args->at(6)->type()->as_IntConstant();
+    decline_simdutf = operation != nullptr &&
+        (operation->value() == SimdUTF::DECODE_LATIN1 ||
+         operation->value() == SimdUTF::VALIDATE_UTF8_LATIN1);
+  }
+  if (decline_simdutf) {
+    // Fold the fallback before parsing its success path or allocating registers.
+    if (!ignore_return) {
+      ipush(append(new Constant(new IntConstant(-1))));
+    }
+    return;
+  }
+#endif
 
   if (is_profiling()) {
     // Don't profile in the special case where the root method
