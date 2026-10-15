@@ -1,0 +1,38 @@
+name: Inspect SIMDUTF replacement copy call path
+on:
+  push:
+    branches: [review/simdutf-copy-call-path]
+permissions:
+  contents: read
+  actions: write
+jobs:
+  inspect:
+    runs-on: macos-15
+    steps:
+      - name: Cancel superseded measurement
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          task_run_sha=$(gh api repos/re-thc/openjdk-jdk27u/actions/runs/38772675839 --jq .head_sha)
+          test "$task_run_sha" = 0c6160e935d2148348f184ffd86a064f1da2d6d7
+          task_run_status=$(gh api repos/re-thc/openjdk-jdk27u/actions/runs/38772675839 --jq .status)
+          if test "$task_run_status" != completed; then
+            gh api --method POST repos/re-thc/openjdk-jdk27u/actions/runs/38772675839/cancel
+          fi
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: simdutf-dispatch-api-linux-x64
+          run-id: 38764733252
+          github-token: ${{ github.token }}
+          path: reports
+      - shell: python
+        run: |
+          import pathlib,re,json
+          root=pathlib.Path("reports")
+          for mode in ("base","on"):
+              raw=(root/(mode+"-malformedSequenceDecode-compiled.log")).read_text()
+              lines=raw.splitlines()
+              for i,l in enumerate(lines):
+                  if "@"in l and not l.lstrip().startswith(";") and any(n in l for n in("StringUTF16::getChars0","StringUTF16::getChars (","String::getChars (","HeapCharBuffer::put (","CharBuffer::put (")):
+                      print("COPY_CONTEXT",mode,json.dumps(lines[max(0,i-2):i+5]),flush=True)
+          print("COPY_REPORT_COMPLETE",flush=True)
