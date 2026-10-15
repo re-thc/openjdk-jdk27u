@@ -1,0 +1,340 @@
+diff --git a/doc/common-intrinsics/README.md b/doc/common-intrinsics/README.md
+index 9d091eb6980..448952e87df 100644
+--- a/doc/common-intrinsics/README.md
++++ b/doc/common-intrinsics/README.md
+@@ -63,7 +63,12 @@ ## Fallback and availability
+ intrinsic is linked after bootstrap, including in `-Xint`. BigInteger defers
+ this work until arithmetic demand: small multiplication and squaring accumulate
+ work in the bytecode resolver, while Montgomery operations prepare on their
+-first call. C1 lowering and direct native or method-handle targets prepare
++first call. Nontrivial modular exponentiation and Karatsuba squares prepare
++before their initial recursive products; isolated smaller products retain
++deferral. Recursive multiplication prepares at 104-by-104 limbs in the
++interpreter and 120-by-120 limbs with a compiler; smaller first products retain
++their measured Java advantage. These are first-use preparation guards, not leaf
++size limits. C1 lowering and direct native or method-handle targets prepare
+ separately in safe VM frames. Publication is serialized with C2 initialization.
+ Early interpreter calls use Java until the stubs are ready; leaf adapters never
+ initialize them. Unused Base64 stubs and
+diff --git a/src/hotspot/share/interpreter/interpreterRuntime.cpp b/src/hotspot/share/interpreter/interpreterRuntime.cpp
+index 7b314f53a4b..0701ca55203 100644
+--- a/src/hotspot/share/interpreter/interpreterRuntime.cpp
++++ b/src/hotspot/share/interpreter/interpreterRuntime.cpp
+@@ -823,9 +823,10 @@ void InterpreterRuntime::resolve_invoke(Bytecodes::Code bytecode, TRAPS) {
+   } // end JvmtiHideSingleStepping
+ 
+   bool cache_call = true;
+-  if (bytecode == Bytecodes::_invokestatic && resolved_method->intrinsic_id() != vmIntrinsics::_none) {
++  if ((bytecode == Bytecodes::_invokestatic && resolved_method->intrinsic_id() != vmIntrinsics::_none) ||
++      resolved_method->method_holder()->name() == vmSymbols::java_math_BigInteger()) {
+     LastFrameAccessor call_frame(current);
+-    cache_call = CommonIntrinsics::cache_interpreter_call(resolved_method->intrinsic_id(),
++    cache_call = CommonIntrinsics::cache_interpreter_call(resolved_method(),
+         call_frame.get_frame().interpreter_frame_tos_at(0));
+   }
+   update_invoke_cp_cache_entry(info, bytecode, resolved_method, pool, method_index, cache_call);
+diff --git a/src/hotspot/share/prims/methodHandles.cpp b/src/hotspot/share/prims/methodHandles.cpp
+index 19346885377..7bec7f6bb1a 100644
+--- a/src/hotspot/share/prims/methodHandles.cpp
++++ b/src/hotspot/share/prims/methodHandles.cpp
+@@ -250,9 +250,7 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
+   assert(info.resolved_appendix().is_null(), "only normal methods here");
+   methodHandle m(Thread::current(), info.resolved_method());
+   assert(m.not_null(), "null method handle");
+-  if (CommonIntrinsics::is_big_integer(m->intrinsic_id())) {
+-    CommonIntrinsics::prepare(m->intrinsic_id());
+-  }
++  CommonIntrinsics::prepare_for_java_call(m());
+   // Preparation may block while redefinition replaces the target. Derive and
+   // publish the MemberName from the current method without another safepoint.
+   NoSafepointVerifier nsv;
+diff --git a/src/hotspot/share/runtime/commonIntrinsics.cpp b/src/hotspot/share/runtime/commonIntrinsics.cpp
+index d464baa0537..c4bc4ebb464 100644
+--- a/src/hotspot/share/runtime/commonIntrinsics.cpp
++++ b/src/hotspot/share/runtime/commonIntrinsics.cpp
+@@ -24,6 +24,7 @@
+ #include "classfile/classLoaderData.hpp"
+ #include "oops/fieldInfo.inline.hpp"
+ #include "oops/instanceKlass.inline.hpp"
++#include "oops/method.inline.hpp"
+ #include "oops/typeArrayKlass.hpp"
+ #include "oops/typeArrayOop.inline.hpp"
+ #include "runtime/atomicAccess.hpp"
+@@ -167,6 +168,44 @@ KnownField sha256_state("sun/security/provider/SHA2", "state", "[I");
+ KnownField sha512_state("sun/security/provider/SHA5", "state", "[J");
+ KnownField sha3_state("sun/security/provider/SHA3", "state", "[J");
+ 
++KnownField big_integer_mag("java/math/BigInteger", "mag", "[I");
++
++vmIntrinsics::ID big_integer_workload(const Method* method, const intptr_t* args = nullptr) {
++  if (!CommonIntrinsics::enabled() || StubRoutines::compiler_stubs_initialized() ||
++      method->method_holder()->name() != vmSymbols::java_math_BigInteger()) {
++    return vmIntrinsics::_none;
++  }
++  // These Java computations use several kernels. Waiting for a later kernel
++  // leaves their initial products in Java; preparing on product size alone
++  // also charges isolated medium-sized products for the entire compiler blob.
++  Symbol* name = method->name();
++  Symbol* signature = method->signature();
++  if (name->equals("oddModPow") && signature->equals(
++          "(Ljava/math/BigInteger;Ljava/math/BigInteger;)Ljava/math/BigInteger;")) {
++    return vmIntrinsics::_montgomerySquare;
++  }
++  if (name->equals("squareKaratsuba") && signature->equals("()Ljava/math/BigInteger;")) {
++    return vmIntrinsics::_squareToLen;
++  }
++  if (args != nullptr && name->equals("multiplyKaratsuba") && signature->equals(
++          "(Ljava/math/BigInteger;Ljava/math/BigInteger;)Ljava/math/BigInteger;")) {
++    // Cold recursive products break even later with C1. Retain deferral for
++    // the smaller products that still finish faster in Java on their own.
++    const jint first_product_limbs = UseCompiler ? 120 : 104;
++    // Drop these raw oops before returning the ID to the blocking preparer.
++    NoSafepointVerifier nsv;
++    Arguments values(args, 2);
++    oop x = big_integer_mag.object(values.object());
++    oop y = big_integer_mag.object(values.object());
++    if (array_range(x, T_INT, 0, 0) && array_range(y, T_INT, 0, 0) &&
++        static_cast<jlong>(typeArrayOop(x)->length()) * typeArrayOop(y)->length() >=
++            first_product_limbs * first_product_limbs) {
++      return vmIntrinsics::_multiplyToLen;
++    }
++  }
++  return vmIntrinsics::_none;
++}
++
+ bool aes_key(oop key) {
+   return array_range(key, T_INT, 0, 0) &&
+          (typeArrayOop(key)->length() == 44 || typeArrayOop(key)->length() == 52 ||
+@@ -961,8 +1000,24 @@ bool CommonIntrinsics::is_big_integer(vmIntrinsics::ID id) {
+   }
+ }
+ 
+-bool CommonIntrinsics::cache_interpreter_call(vmIntrinsics::ID id, const intptr_t* args) {
++void CommonIntrinsics::prepare_for_java_call(const Method* method) {
++  if (!enabled() || !is_init_completed() || StubRoutines::compiler_stubs_initialized()) {
++    return;
++  }
++  vmIntrinsics::ID id = method->intrinsic_id();
++  prepare(is_big_integer(id) ? id : big_integer_workload(method));
++}
++
++bool CommonIntrinsics::cache_interpreter_call(const Method* method, const intptr_t* args) {
+ #if defined(COMPILER2) && (defined(AMD64) || defined(AARCH64))
++  if (!enabled() || !is_init_completed() || StubRoutines::compiler_stubs_initialized()) {
++    return true;
++  }
++  vmIntrinsics::ID id = method->intrinsic_id();
++  if (id == vmIntrinsics::_none) {
++    prepare(big_integer_workload(method, args));
++    return true;
++  }
+   if ((!UseCompiler && !InlineIntrinsics) || !is_init_completed() ||
+       !is_big_integer(id) || !needs_compiler_stubs(id) ||
+       StubRoutines::compiler_stubs_initialized() ||
+diff --git a/src/hotspot/share/runtime/commonIntrinsics.hpp b/src/hotspot/share/runtime/commonIntrinsics.hpp
+index b9281d16b19..eed0d447a3f 100644
+--- a/src/hotspot/share/runtime/commonIntrinsics.hpp
++++ b/src/hotspot/share/runtime/commonIntrinsics.hpp
+@@ -28,6 +28,8 @@
+ #include "memory/allStatic.hpp"
+ #include "utilities/globalDefinitions.hpp"
+ 
++class Method;
++
+ // Intrinsic ID, Java parameter slots (including the receiver), result type.
+ // Keep the interpreter and C1 entry points in one catalogue. Existing
+ // interpreter/C1 intrinsics deliberately do not appear here.
+@@ -133,7 +135,8 @@ class CommonIntrinsics : AllStatic {
+   static bool enabled();
+   static bool needs_compiler_stubs(vmIntrinsics::ID id);
+   static bool is_big_integer(vmIntrinsics::ID id);
+-  static bool cache_interpreter_call(vmIntrinsics::ID id, const intptr_t* args);
++  static bool cache_interpreter_call(const Method* method, const intptr_t* args);
++  static void prepare_for_java_call(const Method* method);
+   static void prepare(vmIntrinsics::ID id);
+   static bool is_scalar(vmIntrinsics::ID id);
+   static bool is_binary_scalar(vmIntrinsics::ID id);
+diff --git a/src/hotspot/share/runtime/javaCalls.cpp b/src/hotspot/share/runtime/javaCalls.cpp
+index 23f4cddf6dc..27c724c599e 100644
+--- a/src/hotspot/share/runtime/javaCalls.cpp
++++ b/src/hotspot/share/runtime/javaCalls.cpp
+@@ -373,10 +373,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
+ 
+   // Native callers select their target directly, without a bytecode resolver.
+   // Prepare before parameters() converts the rooted handles to raw oops.
+-  if (method->intrinsic_id() != vmIntrinsics::_none &&
+-      CommonIntrinsics::is_big_integer(method->intrinsic_id())) {
+-    CommonIntrinsics::prepare(method->intrinsic_id());
+-  }
++  CommonIntrinsics::prepare_for_java_call(method());
+ 
+   // do call
+   { JavaCallWrapper link(method, receiver, result, CHECK);
+diff --git a/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicInitialization.java b/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicInitialization.java
+index 1336ce376db..646004309ac 100644
+--- a/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicInitialization.java
++++ b/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicInitialization.java
+@@ -47,10 +47,17 @@ public class TestCommonIntrinsicInitialization {
+ 
+     public static void main(String[] args) throws Exception {
+         if (args.length != 0) {
+-            if (args[0].equals("bigint-modpow")) {
+-                exerciseModPow();
++            if (args[0].startsWith("bigint-modpow")) {
++                exerciseModPow(args[0].endsWith("large") ? 512 : 64);
++            } else if (args[0].startsWith("bigint-product")) {
++                exerciseProduct(args[0].endsWith("large") ? 512 : 320);
+             } else if (args[0].startsWith("bigint-")) {
+-                exerciseBigInteger(args[0].equals("bigint-warm"));
++                int bytes = switch (args[0]) {
++                    case "bigint-medium" -> 256;
++                    case "bigint-large" -> 512;
++                    default -> 64;
++                };
++                exerciseBigInteger(args[0].equals("bigint-warm"), bytes);
+             } else {
+                 exercise();
+             }
+@@ -63,6 +70,30 @@ public static void main(String[] args) throws Exception {
+             ProcessTools.executeTestJava("-XX:+UseCommonIntrinsics", mode,
+                     "-Xlog:startuptime", TestCommonIntrinsicInitialization.class.getName(), "bigint-cold")
+                     .shouldHaveExitValue(0).shouldNotContain(GENERATION);
++            ProcessTools.executeTestJava("-XX:+UseCommonIntrinsics", mode,
++                    "-Xlog:startuptime", TestCommonIntrinsicInitialization.class.getName(), "bigint-medium")
++                    .shouldHaveExitValue(0).shouldNotContain(GENERATION);
++            ProcessTools.executeTestJava("-XX:+UseCommonIntrinsics", mode,
++                    "-Xlog:startuptime", TestCommonIntrinsicInitialization.class.getName(), "bigint-product-medium")
++                    .shouldHaveExitValue(0).shouldNotContain(GENERATION);
++            String large = ProcessTools.executeTestJava("-XX:+UseCommonIntrinsics", mode,
++                    "-Xlog:startuptime", TestCommonIntrinsicInitialization.class.getName(), "bigint-large")
++                    .shouldHaveExitValue(0).getOutput();
++            int generation = large.indexOf(GENERATION);
++            int multiply = large.indexOf("before-multiply");
++            if (multiply < 0 || generation < multiply ||
++                    large.indexOf(GENERATION, generation + GENERATION.length()) >= 0) {
++                throw new AssertionError("Expected one compiler-stub generation at first large square: " + large);
++            }
++            String product = ProcessTools.executeTestJava("-XX:+UseCommonIntrinsics", mode,
++                    "-Xlog:startuptime", TestCommonIntrinsicInitialization.class.getName(), "bigint-product-large")
++                    .shouldHaveExitValue(0).getOutput();
++            generation = product.indexOf(GENERATION);
++            multiply = product.indexOf("before-multiply");
++            if (multiply < 0 || generation < multiply ||
++                    product.indexOf(GENERATION, generation + GENERATION.length()) >= 0) {
++                throw new AssertionError("Expected one compiler-stub generation at first large product: " + product);
++            }
+             String warm = ProcessTools.executeTestJava("-XX:+UseCommonIntrinsics", mode,
+                     "-Xlog:startuptime", TestCommonIntrinsicInitialization.class.getName(), "bigint-warm")
+                     .shouldHaveExitValue(0).getOutput();
+@@ -70,13 +101,15 @@ public static void main(String[] args) throws Exception {
+             if (first < 0 || warm.indexOf(GENERATION, first + GENERATION.length()) >= 0) {
+                 throw new AssertionError("Expected one BigInteger compiler-stub generation: " + warm);
+             }
+-            String modPow = ProcessTools.executeTestJava("-XX:+UseCommonIntrinsics", mode,
+-                    "-Xlog:startuptime", TestCommonIntrinsicInitialization.class.getName(), "bigint-modpow")
+-                    .shouldHaveExitValue(0).getOutput();
+-            first = modPow.indexOf(GENERATION);
+-            int call = modPow.indexOf("before-modpow");
+-            if (call < 0 || first < call || modPow.indexOf(GENERATION, first + GENERATION.length()) >= 0) {
+-                throw new AssertionError("Expected one compiler-stub generation at first modPow use: " + modPow);
++            for (String operation : new String[] {"bigint-modpow", "bigint-modpow-large"}) {
++                String modPow = ProcessTools.executeTestJava("-XX:+UseCommonIntrinsics", mode,
++                        "-Xlog:startuptime", TestCommonIntrinsicInitialization.class.getName(), operation)
++                        .shouldHaveExitValue(0).getOutput();
++                first = modPow.indexOf(GENERATION);
++                int call = modPow.indexOf("before-modpow");
++                if (call < 0 || first < call || modPow.indexOf(GENERATION, first + GENERATION.length()) >= 0) {
++                    throw new AssertionError("Expected one compiler-stub generation at first modPow use: " + modPow);
++                }
+             }
+         }
+         for (String mode : new String[] {"-Xint", "-XX:TieredStopAtLevel=1", "-XX:-TieredCompilation"}) {
+@@ -90,33 +123,63 @@ public static void main(String[] args) throws Exception {
+         }
+     }
+ 
+-    private static void exerciseBigInteger(boolean warm) {
+-        byte[] input = new byte[64];
++    private static void exerciseBigInteger(boolean warm, int bytes) {
++        byte[] input = new byte[bytes];
+         input[0] = 1;
+         input[input.length - 1] = 3;
+         BigInteger value = new BigInteger(1, input);
++        int top = (bytes - 1) * 8;
++        System.out.println("before-multiply");
+         for (int i = 0; i < (warm ? 1000 : 1); i++) {
+             BigInteger result = value.multiply(value);
+-            if (result.bitLength() != 1009 || result.bitCount() != 5 || result.intValue() != 9 ||
+-                !result.testBit(1008) || !result.testBit(505) || !result.testBit(506)) {
++            if (result.bitLength() != top * 2 + 1 || result.bitCount() != 5 || result.intValue() != 9 ||
++                !result.testBit(top * 2) || !result.testBit(top + 1) || !result.testBit(top + 2)) {
+                 throw new AssertionError("BigInteger square");
+             }
+         }
+     }
+ 
+-    private static void exerciseModPow() {
+-        byte[] input = new byte[64];
++    private static void exerciseProduct(int bytes) {
++        byte[] input = new byte[bytes];
++        input[0] = 1;
++        input[input.length - 1] = 3;
++        BigInteger x = new BigInteger(1, input);
++        input[input.length - 1] = 5;
++        BigInteger y = new BigInteger(1, input);
++        int top = (bytes - 1) * 8;
++        System.out.println("before-multiply");
++        BigInteger result = x.multiply(y);
++        if (result.bitLength() != top * 2 + 1 || result.bitCount() != 6 || result.intValue() != 15 ||
++                !result.testBit(top * 2) || !result.testBit(top + 3)) {
++            throw new AssertionError("BigInteger first product");
++        }
++    }
++
++    private static void exerciseModPow(int bytes) {
++        byte[] input = new byte[bytes];
+         input[0] = 1;
+         input[input.length - 1] = 3;
+         BigInteger value = new BigInteger(1, input);
+-        byte[] modulusBytes = new byte[64];
++        byte[] modulusBytes = new byte[bytes];
+         Arrays.fill(modulusBytes, (byte) 0xff);
+         BigInteger modulus = new BigInteger(1, modulusBytes);
+         BigInteger exponent = BigInteger.valueOf(65537);
+-        // Independently computed modular exponentiation of (2^504 + 3).
+-        BigInteger expected = new BigInteger(
+-                "6f98e2a7637caeedd66c498239e1f2b6be9ccc196df314f9d25cbe55f6982ab9b"
+-                + "0a0f0c937970e1a0f00fadcdd8e956e53d9b023c8a47b171e39e7c61897c5e2", 16);
++        // Independently computed modular exponentiation of (2^((bytes-1)*8) + 3).
++        String expectedHex = bytes == 64
++                ? "6f98e2a7637caeedd66c498239e1f2b6be9ccc196df314f9d25cbe55f6982ab9b"
++                + "0a0f0c937970e1a0f00fadcdd8e956e53d9b023c8a47b171e39e7c61897c5e2"
++                : "90264a30deba58ba971d08f2e9a90a284daeb9c6a63e17a8a56587454a0a3a10f7266cd524337b400a77ef6a706b213b"
++                + "a5f780e80d2a6a8a59674e1a57c19c798720101e86fa805de9db2aa344787a5fc51a73bb7062f2880d44e0622c125a1b"
++                + "8fa988744a6f4e0fd7c10a75b2ed99f18ed1b66820ff2fcf2e2f43677d08a296c95c2921657372e98d2580964e7f2583"
++                + "b831df8c2e339e7781ce98e95ab7b94f72a0a3adf338afa1018ce93fc49bc46920fe8e3e45e91da0ab5bda2d5b9aca51"
++                + "f6b09bcfac45b2b83cf90aaa013c6e4bbdcdac4e614ddffdd500d1f0ee01bb575059b3af390ce4f808f6ee567f5a432e"
++                + "701d25beae4b67c3c6fa8e9fcb923c9a9b93555a440bad834e998c64c185e068088d94850da798636e662940aaa2bd28"
++                + "dde5dd42762398a10d597f9f51c70964f1e40756c2d058b5af5a35d21ca018c901dbd5c8199df3f8d8b324c3d5412d0b"
++                + "45ce5b620a67a3ff65364ee1045e83439824e0c2db095d6e87466543d5dac2a3b9c7675fb13c1f88710a988d170bd1d7"
++                + "a35941cb881a8d89a34b3dd05fcff42d6eb971b8aa8b571d6cb072b5b58d7ed3536a29f0752e7b479860d825b06502c7"
++                + "fc37e8eecba0e4df7e0cd12e12f7c3f8577d5679064a812dc0bd9bb2c56dd8be78beb11d0535f8d3889600fcd33362a6"
++                + "9d61bc2cd6533ed9f5436c5d9e3903d8e6116d316698fe3b85db4de9d5fcd14c";
++        BigInteger expected = new BigInteger(expectedHex, 16);
+         System.out.println("before-modpow");
+         if (!value.modPow(exponent, modulus).equals(expected)) {
+             throw new AssertionError("BigInteger first modPow");
+diff --git a/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicRedefinition.java b/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicRedefinition.java
+index 4a46958f007..338abad2b1e 100644
+--- a/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicRedefinition.java
++++ b/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicRedefinition.java
+@@ -51,7 +51,8 @@
+ public class TestCommonIntrinsicRedefinition {
+     private static final String GENERATION = "StubRoutines generation compiler stubs";
+     private static final Set<String> TARGETS = Set.of("implMultiplyToLen", "implSquareToLen", "implMulAdd",
+-            "implMontgomeryMultiply", "implMontgomerySquare");
++            "implMontgomeryMultiply", "implMontgomerySquare", "oddModPow",
++            "squareKaratsuba", "multiplyKaratsuba");
+ 
+     public static void main(String[] args) throws Throwable {
+         if (args.length != 0) {
