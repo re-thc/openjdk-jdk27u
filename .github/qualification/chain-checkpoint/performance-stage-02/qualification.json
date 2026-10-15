@@ -1,0 +1,60 @@
+{
+  "source": "0fb3e86a762be2cd3ed9ec35f327e1e7c64682bc",
+  "created_utc": "2026-10-15T17:18:31.814956+00:00",
+  "status": "measuring",
+  "phases": [
+    {
+      "name": "first-legacy",
+      "command": [
+        "python3",
+        "/workspace/pr9-validation/run_reaped.py",
+        "/workspace/pr9-validation/final-first-legacy.log",
+        "python3",
+        "/workspace/pr9-validation/cold_matrix.py",
+        "first",
+        "--blocks",
+        "120",
+        "--sizes",
+        "512,2048,4096",
+        "--operations",
+        "multiply,product,modpow",
+        "--output",
+        "final-first-legacy.json"
+      ],
+      "exit_code": 0,
+      "seconds": 1056.0243742465973,
+      "output_sha256": "0ae8d8ef9b6851ca681712da66df6ad57349b651f3ab232883938b503ec69d62"
+    },
+    {
+      "name": "first-exact",
+      "command": [
+        "python3",
+        "/workspace/pr9-validation/run_reaped.py",
+        "/workspace/pr9-validation/final-first-exact.log",
+        "python3",
+        "/workspace/pr9-validation/cold_matrix.py",
+        "first",
+        "--blocks",
+        "120",
+        "--sizes",
+        "512,4096",
+        "--operations",
+        "multiply,product,modpow",
+        "--fixture",
+        "FirstBigIntegerExact",
+        "--output",
+        "final-first-exact.json"
+      ],
+      "exit_code": 0,
+      "seconds": 681.7061810493469,
+      "output_sha256": "ec5bcfe87fc861b600e87a25bf5a4282239d74a2e8c9465ae00eeaf7ebfc0832"
+    }
+  ],
+  "file_count": 57,
+  "archive": {
+    "name": "performance.zip",
+    "bytes": 3966879,
+    "sha256": "d6b1f4db4339330a3d2a5e9f751373de20c4bd2f07b6ad725d571987262849e5"
+  },
+  "scope": "Linux x64 measurements. Phase completion is not regression review or PR approval."
+}
