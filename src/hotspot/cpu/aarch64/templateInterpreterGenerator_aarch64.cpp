@@ -2156,6 +2156,15 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
 
 #endif // !PRODUCT
 
+address TemplateInterpreterGenerator::generate_simdutf_zero_entry() {
+  address entry = __ pc();
+  // Static, non-allocating policy hints return their Java result when interpreted.
+  __ mov(r0, zr);
+  __ mov(sp, r19_sender_sp);
+  __ ret(lr);
+  return entry;
+}
+
 address TemplateInterpreterGenerator::generate_count_positives_entry() {
   address entry = __ pc();
   Label slow_path, return_zero;

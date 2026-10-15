@@ -96,6 +96,13 @@ public final class SimdUTF {
         return 0;
     }
 
+    // C2 supplies the supplementary String crossover; zero keeps normal dispatch.
+    @ForceInline
+    @IntrinsicCandidate
+    public static int utf8StringSupplementaryThreshold() {
+        return 0;
+    }
+
     @ForceInline
     public static boolean isEligible(int len) {
         int threshold = minLength;

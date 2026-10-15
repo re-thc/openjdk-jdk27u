@@ -582,6 +582,10 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     // Remove the chunking path before it can inhibit the original Java loop.
     set_result(intcon(-1));
     return true;
+  case vmIntrinsics::_simdutf_utf8StringSupplementaryThreshold:
+    // Preserve the faster scalar AArch64 loop for four-byte UTF-8 Strings.
+    set_result(intcon(max_jint));
+    return true;
   case vmIntrinsics::_simdutf_process:          return inline_simdutf_process();
 
   case vmIntrinsics::_Class_cast:               return inline_Class_cast();

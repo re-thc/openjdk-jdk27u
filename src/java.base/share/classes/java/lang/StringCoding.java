@@ -115,7 +115,8 @@ class StringCoding {
                 off, len,
                 ba.length,      // Implicit null check on `ba`
                 Preconditions.AIOOBE_FORMATTER);
-        if (len > 0 && ba[off] < 0) {
+        // C2 already uses its vector counter; keep the scalar lead check in C1.
+        if (SimdUTF.utf8DecoderPrefixThreshold() != 0 && len > 0 && ba[off] < 0) {
             return 0;
         }
         return countPositives0(ba, off, len);

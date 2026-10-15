@@ -237,6 +237,12 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_simdutf_decodeLatin1:
     return FLAG_IS_DEFAULT(SIMDUTFMinLength);
+  case vmIntrinsics::_simdutf_utf8StringSupplementaryThreshold:
+#ifdef AARCH64
+    return FLAG_IS_DEFAULT(SIMDUTFMinLength);
+#else
+    return false;
+#endif
   case vmIntrinsics::_getObjectSize:
     // Four-byte objects may grow when GC preserves their identity hash.
     // Use JVMTI's mark-aware size calculation instead of a fixed layout.

@@ -516,6 +516,16 @@ address TemplateInterpreterGenerator::generate_currentThread() {
   return entry_point;
 }
 
+address TemplateInterpreterGenerator::generate_simdutf_zero_entry() {
+  address entry = __ pc();
+  // Static, non-allocating policy hints return their Java result when interpreted.
+  __ xorl(rax, rax);
+  __ pop(rcx);
+  __ mov(rsp, r13);
+  __ jmp(rcx);
+  return entry;
+}
+
 address TemplateInterpreterGenerator::generate_count_positives_entry() {
   address entry = __ pc();
   Label slow_path, done;

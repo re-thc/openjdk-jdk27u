@@ -68,6 +68,7 @@ inline bool match_F_SN(u2 flags) {
 bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
+  case vmIntrinsics::_simdutf_utf8StringSupplementaryThreshold:
   case vmIntrinsics::_simdutf_utf8PrefixThreshold:
   case vmIntrinsics::_simdutf_decodeLatin1:
 #ifdef JFR_HAVE_INTRINSICS
@@ -124,6 +125,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
 bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
+  case vmIntrinsics::_simdutf_utf8StringSupplementaryThreshold:
   case vmIntrinsics::_simdutf_utf8PrefixThreshold:
   case vmIntrinsics::_simdutf_decodeLatin1:
   case vmIntrinsics::_simdutf_process:
@@ -216,8 +218,9 @@ int vmIntrinsics::predicates_needed(vmIntrinsics::ID id) {
 }
 
 bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
-  if ((id == vmIntrinsics::_simdutf_process || id == vmIntrinsics::_simdutf_decodeLatin1 ||
-       id == vmIntrinsics::_simdutf_utf8PrefixThreshold) && !UseSIMDUTFIntrinsics) {
+  // Compiler policy hints also preserve Java paths when native calls are disabled.
+  if ((id == vmIntrinsics::_simdutf_process || id == vmIntrinsics::_simdutf_decodeLatin1) &&
+      !UseSIMDUTFIntrinsics) {
     return true;
   }
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");

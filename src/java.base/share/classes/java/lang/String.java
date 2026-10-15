@@ -608,7 +608,8 @@ public final class String
             // Decode with a stable copy, to be the result if the decoded length is the same
             byte[] latin1 = Arrays.copyOfRange(bytes, offset, offset + length);
             int sp = dp;            // first dp bytes are already in the copy
-            byte[] compact = decodeUTF8Latin1(latin1, sp, length - sp, latin1, dp);
+            byte[] compact = (latin1[sp] & 0xfe) == 0xc2 && SimdUTF.isEligible(length - sp)
+                    ? decodeUTF8Latin1(latin1, sp, length - sp, latin1, dp) : null;
             if (compact != null) {
                 return new String(compact, LATIN1);
             }
@@ -654,16 +655,11 @@ public final class String
         }
     }
 
-    // Compile separately so tiers that decline native decoding profile the Java loop.
+    // Keep the caller's Latin-1 loop profiled when a compiler declines native decoding.
     @DontInline
     private static byte[] decodeUTF8Latin1(byte[] src, int sp, int len, byte[] dst, int dp) {
-        if ((src[sp] & 0xfe) == 0xc2 && SimdUTF.isEligible(len)) {
-            int converted = SimdUTF.decodeLatin1(src, sp, len, dst, dp, dst.length - dp);
-            if (converted >= 0) {
-                return Arrays.copyOf(dst, dp + converted);
-            }
-        }
-        return null;
+        int converted = SimdUTF.decodeLatin1(src, sp, len, dst, dp, dst.length - dp);
+        return converted >= 0 ? Arrays.copyOf(dst, dp + converted) : null;
     }
 
     private static String iso88591(byte[] bytes, int offset, int length) {
@@ -772,7 +768,8 @@ public final class String
             dst = new byte[length];
             System.arraycopy(bytes, offset, dst, 0, dp);
             offset += dp;
-            byte[] compact = decodeUTF8Latin1(bytes, offset, sl - offset, dst, dp);
+            byte[] compact = (bytes[offset] & 0xfe) == 0xc2 && SimdUTF.isEligible(sl - offset)
+                    ? decodeUTF8Latin1(bytes, offset, sl - offset, dst, dp) : null;
             if (compact != null) {
                 return new String(compact, LATIN1);
             }
@@ -1283,7 +1280,10 @@ public final class String
     private static <E extends Exception> int decodeUTF8_UTF16(
             byte[] src, int sp, int sl, byte[] dst, int dp, Class <E> exClass)
             throws E {
+        int supplementaryThreshold = SimdUTF.utf8StringSupplementaryThreshold();
         int converted = SimdUTF.isEligible(sl - sp)
+                && (supplementaryThreshold == 0 || sl - sp >= supplementaryThreshold
+                    || src[sp] < (byte)0xf0)
                 ? SimdUTF.decodeUTF8(src, sp, sl - sp, dst, dp, (dst.length >> 1) - dp) : -1;
         if (converted >= 0) {
             return dp + converted;
