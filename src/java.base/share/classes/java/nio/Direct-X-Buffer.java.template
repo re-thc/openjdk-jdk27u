@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -431,7 +432,61 @@ class Direct$Type$Buffer$RW$$BO$
 
 #if[rw] 
     private static final int APPEND_BUF_SIZE = 1024;
+
+    // Shorter strings are put char by char: staging them for the bulk copy
+    // costs an allocation and, for swapped byte order, a native call.
+#if[boU]
+    private static final int PUT_STRING_BULK_MINIMUM = 32;
+#end[boU]
+#if[boS]
+    private static final int PUT_STRING_BULK_MINIMUM = 64;
+#end[boS]
+
+    // Copies csq[start, end) to this buffer from index onwards, staging
+    // through a bounded array for the bulk native copy.
+    private void putChars(int index, CharSequence csq, int start, int end) {
+        char[] buf = new char[Math.min(APPEND_BUF_SIZE, end - start)];
+        while (start < end) {
+            int count = end - start;
+            if (count > buf.length)
+                count = buf.length;
+
+            csq.getChars(start, start + count, buf, 0);
+
+            putArray(index, buf, 0, count);
+
+            start += count;
+            index += count;
+        }
+    }
 #end[rw]
+
+    @Override
+    public $Type$Buffer put(String src, int start, int end) {
+        Objects.checkFromIndexSize(start, end - start, src.length());
+#if[rw]
+        int pos = position();
+        int lim = limit();
+        int rem = (pos <= lim) ? lim - pos : 0;
+        int length = end - start;
+        if (length > rem)
+            throw new BufferOverflowException();
+
+        if (length < PUT_STRING_BULK_MINIMUM) {
+            for (int i = start; i < end; i++)
+                put(src.charAt(i));
+            return this;
+        }
+
+        putChars(pos, src, start, end);
+
+        position(pos + length);
+
+        return this;
+#else[rw]
+        throw new ReadOnlyBufferException();
+#end[rw]
+    }
 
     public $Type$Buffer append(CharSequence csq, int start, int end) {
 #if[rw]
@@ -447,20 +502,7 @@ class Direct$Type$Buffer$RW$$BO$
         if (length > rem)
             throw new BufferOverflowException();
 
-        char[] buf = new char[Math.min(APPEND_BUF_SIZE, length)];
-        int index = pos;
-        while (start < end) {
-            int count = end - start;
-            if (count > buf.length)
-                count = buf.length;
-
-            csq.getChars(start, start + count, buf, 0);
-
-            putArray(index, buf, 0, count);
-
-            start += count;
-            index += count;
-        }
+        putChars(pos, csq, start, end);
 
         position(pos + length);
 
