@@ -87,7 +87,7 @@ source %{
 
   // Match only a single-use F2I -> I2F -> unordered four-float reduction.
   // The AddF is kept separate in Ideal IR: its loop-carried order is strict.
-  static const Node* float_roundtrip_reduction_input(const Node* n) {
+  static Node* float_roundtrip_reduction_input(const Node* n) {
     if (n->Opcode() != Op_AddF) {
       return nullptr;
     }
@@ -123,50 +123,104 @@ source %{
     return nullptr;
   }
 
-  bool is_float_roundtrip_reduction_accumulation(const Node* n) {
-    if (Compile::current()->is_osr_compilation() ||
+  void Matcher::collect_float_roundtrip_add(Node* n) {
+    if (C->is_osr_compilation() ||
         (UseSVE > 0 && MaxVectorSize != 16) ||
-        !VM_Version::use_neon_for_vector(16) || n->Opcode() != Op_AddF) {
-      return false;
+        !VM_Version::use_neon_for_vector(16)) {
+      return;
     }
-    // Bound graph walks by the graph size, not by a chosen unroll factor.
-    const uint node_count = Compile::current()->live_nodes();
-    const Node* cursor = n;
-    for (uint steps = 0; steps < node_count && !cursor->is_Phi(); steps++) {
-      cursor = float_roundtrip_reduction_input(cursor);
-      if (cursor == nullptr) {
-        return false;
+    if (_float_roundtrip_adds == nullptr) {
+      _float_roundtrip_adds = new (C->comp_arena()) Node_List(C->comp_arena());
+    }
+    _float_roundtrip_adds->push(n);
+  }
+
+  // Called once after find_shared, before the arena swap and node-index reset.
+  // Each AddF is resolved once; a valid cycle is marked once. Rejected paths
+  // (including cycles without a Phi) are memoized too. Loop uses are scanned
+  // once per counted loop, so total work is linear in nodes and graph edges.
+  void Matcher::prepare_float_roundtrip_accumulations() {
+    if (_float_roundtrip_adds == nullptr) {
+      return;
+    }
+    assert(_float_roundtrip_accumulations == nullptr, "prepare once");
+    ResourceMark rm;
+    Node_Array terminal;
+    Node_List path;
+    VectorSet resolved;
+    VectorSet checked_phis;
+    VectorSet checked_loops;
+    VectorSet single_float_phi_loops;
+
+    for (uint i = 0; i < _float_roundtrip_adds->size(); i++) {
+      Node* cursor = _float_roundtrip_adds->at(i);
+      assert(path.size() == 0, "previous path resolved");
+      while (cursor != nullptr && cursor->Opcode() == Op_AddF && !resolved.test(cursor->_idx)) {
+        // A repeated node in the current path has a null terminal: a non-Phi
+        // cycle cannot describe the required counted-loop recurrence.
+        resolved.set(cursor->_idx);
+        path.push(cursor);
+        cursor = float_roundtrip_reduction_input(cursor);
+      }
+      Node* phi = nullptr;
+      if (cursor != nullptr) {
+        phi = cursor->is_Phi() ? cursor : terminal[cursor->_idx];
+      }
+      while (path.size() != 0) {
+        Node* node = path.pop();
+        if (phi != nullptr) {
+          terminal.map(node->_idx, phi);
+        }
       }
     }
-    if (!cursor->is_Phi() || cursor->req() != 3 ||
-        !cursor->in(0)->is_CountedLoop()) {
-      return false;
-    }
-    const Node* phi = cursor;
-    const Node* loop = phi->in(0);
-    uint float_phis = 0;
-    for (DUIterator_Fast imax, i = loop->fast_outs(imax); i < imax; i++) {
-      const Node* out = loop->fast_out(i);
-      if (out->is_Phi() && out->in(0) == loop &&
-          out->bottom_type()->basic_type() == T_FLOAT) {
-        float_phis++;
+
+    for (uint i = 0; i < _float_roundtrip_adds->size(); i++) {
+      Node* phi = terminal[_float_roundtrip_adds->at(i)->_idx];
+      if (phi == nullptr || checked_phis.test_set(phi->_idx)) {
+        continue;
+      }
+      if (phi->req() != 3 || phi->in(0) == nullptr || !phi->in(0)->is_CountedLoop() ||
+          phi->in(2) == nullptr || terminal[phi->in(2)->_idx] != phi) {
+        continue;
+      }
+      Node* loop = phi->in(0);
+      if (!checked_loops.test_set(loop->_idx)) {
+        uint float_phis = 0;
+        for (DUIterator_Fast imax, j = loop->fast_outs(imax); j < imax; j++) {
+          Node* out = loop->fast_out(j);
+          if (out->is_Phi() && out->in(0) == loop &&
+              out->bottom_type()->basic_type() == T_FLOAT) {
+            float_phis++;
+          }
+        }
+        if (float_phis == 1) {
+          single_float_phi_loops.set(loop->_idx);
+        }
+      }
+      // Independent accumulators can exploit ILP; keep their rules unchanged.
+      if (!single_float_phi_loops.test(loop->_idx)) {
+        continue;
+      }
+      if (_float_roundtrip_accumulations == nullptr) {
+        _float_roundtrip_accumulations = new (C->comp_arena()) Node_Array(C->comp_arena());
+      }
+      // Distinct valid Phi cycles are disjoint: every node has one terminal.
+      for (Node* cursor = phi->in(2); cursor != phi; cursor = float_roundtrip_reduction_input(cursor)) {
+        assert(cursor != nullptr && terminal[cursor->_idx] == phi, "resolved cycle");
+        _float_roundtrip_accumulations->map(cursor->_idx, cursor);
       }
     }
-    // Independent accumulators can exploit ILP; leave their rules unchanged.
-    if (float_phis != 1) {
-      return false;
-    }
-    cursor = phi->in(2);
-    for (uint steps = 0; steps < node_count; steps++) {
-      if (cursor == n) {
-        return true;
-      }
-      cursor = float_roundtrip_reduction_input(cursor);
-      if (cursor == nullptr) {
-        return false;
-      }
-    }
-    return false;
+  }
+
+  bool Matcher::is_float_roundtrip_reduction_accumulation(const Node* n) const {
+    // New Mach indices start at zero: compare exact old-node identity. The
+    // cache is immutable during selection and disabled before old storage dies.
+    return _float_roundtrip_accumulations != nullptr &&
+           (*_float_roundtrip_accumulations)[n->_idx] == n;
+  }
+
+  bool is_float_roundtrip_reduction_accumulation(const Node* n) {
+    return Compile::current()->matcher()->is_float_roundtrip_reduction_accumulation(n);
   }
 
   typedef void (C2_MacroAssembler::* sve_mem_insn_predicate)(FloatRegister Rt, Assembler::SIMD_RegVariant T,
