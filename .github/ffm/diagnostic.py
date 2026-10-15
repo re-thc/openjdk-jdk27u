@@ -16,7 +16,7 @@ CONTROL_POINT = (0.95, 1.05)
 CONTROL_INTERVAL = (0.90, 1.10)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("phase", choices=["build", "build-a", "measure", "tests", "diagnostics"])
+parser.add_argument("phase", choices=["build", "build-a", "build-quiet", "measure", "tests", "diagnostics"])
 parser.add_argument("--repo", required=True)
 parser.add_argument("--output", required=True)
 parser.add_argument("--jtreg")
@@ -73,12 +73,15 @@ def build():
     images.mkdir()
     shutil.copytree(image, images / "base", symlinks=True)
     native = native_hashes(image)
+    listing = subprocess.check_output([str(image / "bin/jimage"), "list", str(image / "lib/modules")], text=True)
+    if "DowncallLinker$SimpleDowncall.class" in listing:
+        raise RuntimeError("Stale A class in baseline")
     if len(native) != 39:
         raise RuntimeError(f"Expected the reviewed full desktop profile's 39 native files, got {len(native)}")
     records = {"base": {"source_ref": BASE, "native_hashes": native, "modules_sha256": sha(image / "lib/modules")}}
     (out / "images.json").write_text(json.dumps(records, indent=2) + "\n")
     try:
-        for variant in (["a"] if args.phase == "build-a" else ["a", "b2"]):
+        for variant in (["a"] if args.phase in ("build-a", "build-quiet") else ["a", "b2"]):
             restore_sources()
             run(["git", "apply", "--check", "--include=" + PREFIX + "*", str(payload / (variant + ".patch"))], "check-" + variant, repo)
             run(["git", "apply", "--include=" + PREFIX + "*", str(payload / (variant + ".patch"))], "apply-" + variant, repo)
@@ -101,7 +104,7 @@ def build():
         restore_sources()
     # Compile the portable harness before opening the quiet measurement window.
     for name in ["Probe.java", "Steady.java", "native.c", "run_target.py", "analyze_target.py", "inlining_report.py"]:
-        shutil.copy2(payload / name, out / name)
+        shutil.copy2(payload / "quiet72" / name if args.phase == "build-quiet" and name == "Steady.java" else payload / name, out / name)
     (out / "classes").mkdir()
     run([str(images / "base/bin/javac"), "-d", str(out / "classes"), str(out / "Probe.java"), str(out / "Steady.java"), *([str(payload / "NativeCodeDump.java")] if args.phase == "build-a" else [])], "compile-harness")
     run(["gcc", "-O2", "-fPIC", "-shared", "-pthread", str(out / "native.c"), "-o", str(out / "libprobe.so")], "compile-native-harness")
@@ -166,7 +169,7 @@ def measure():
 def tests():
     if not args.jtreg:
         raise RuntimeError("JTReg path required")
-    for variant in (["a"] if args.phase == "build-a" else ["a", "b2"]):
+    for variant in (["a"] if args.phase in ("build-a", "build-quiet") else ["a", "b2"]):
         run(["git", "apply", "--include=test/*", str(payload / (variant + ".patch"))], "install-tests-" + variant, repo)
     native = out / "native"
     native.mkdir()
@@ -199,4 +202,4 @@ def diagnostics():
         run([str(images / variant / "bin/java"), "--enable-native-access=ALL-UNNAMED", "-Xlog:class+load=info",
              "-cp", str(out / "classes"), "Probe", "i", str(out / "libprobe.so")], "class-load-" + variant)
 
-{"build": build, "build-a": build, "measure": measure, "tests": tests, "diagnostics": diagnostics}[args.phase]()
+{"build": build, "build-a": build, "build-quiet": build, "measure": measure, "tests": tests, "diagnostics": diagnostics}[args.phase]()
