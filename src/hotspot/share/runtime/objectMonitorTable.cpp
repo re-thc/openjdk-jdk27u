@@ -521,7 +521,12 @@ void ObjectMonitorTable::create() {
 }
 
 ObjectMonitor* ObjectMonitorTable::monitor_get(oop obj) {
-  const markWord mark = obj->mark();
+  // An inflating thread inserts the monitor before it sets the has-monitor
+  // bits, so a caller that has seen those bits must find the monitor. The
+  // table loads below need not depend on the mark: an object that has not
+  // moved since it was hashed gets its four-byte header hash from its
+  // address. Acquire the mark so those loads cannot be satisfied first.
+  const markWord mark = obj->mark_acquire();
   if (UseFourByteObjectHeaders &&
       ((mark.value() & markWord::lock_mask_in_place) == markWord::marked_value || !mark.is_hashed())) {
     return nullptr;
