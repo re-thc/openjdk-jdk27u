@@ -1,0 +1,31 @@
+name: Inspect SIMDUTF fastdebug failures
+on:
+  push:
+    branches: [review/simdutf-fastdebug-failure]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: simdutf-final-image-linux-aarch64
+          run-id: 38720715781
+          github-token: ${{ github.token }}
+          path: failure
+      - name: Show failing jtreg reports and VM assertions
+        shell: python
+        run: |
+          from pathlib import Path
+          root=Path("failure")
+          for p in sorted(root.rglob("*.jtr")):
+              text=p.read_text(errors="replace")
+              if "test result: Passed." not in text:
+                  print("FAILED_JTR",p,flush=True)
+                  print(text[-24000:],flush=True)
+          for p in sorted(root.rglob("hs_err_pid*.log"))[:8]:
+              print("VM_CRASH",p,flush=True)
+              print(p.read_text(errors="replace")[:16000],flush=True)
