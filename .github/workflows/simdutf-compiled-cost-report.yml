@@ -1,0 +1,39 @@
+name: Inspect SIMDUTF compiled decoder costs
+on:
+  push:
+    branches: [review/simdutf-compiled-cost-report]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: simdutf-remaining-api-linux-x64
+          run-id: 38732227564
+          github-token: ${{ github.token }}
+          path: reports
+      - shell: python
+        run: |
+          import pathlib,re
+          root=pathlib.Path("reports")
+          for mode in ("base","on","off","outlined"):
+              path=root/("c2-trace-"+mode+".log")
+              assert path.is_file(),path
+              text=path.read_text()
+              print("REPORT_MODE",mode,flush=True)
+              lines=text.splitlines()
+              for i,line in enumerate(lines):
+                  if "String::utf8 (" in line and "@" in line and "failed to inline" not in line:
+                      print("INLINE_CONTEXT", "\n".join(lines[max(0,i-3):i+100]),flush=True)
+                  if any(x in line for x in ("String::decode2","String::decodeUTF8Latin1","SimdUTF::decodeLatin1")):
+                      print("CALL_DECISION",line,flush=True)
+              sections=text.split("Compiled method (c2)")
+              targets=[s for s in sections[1:] if "String::utf8" in s.splitlines()[0] and "%" not in s.splitlines()[0]]
+              if targets:
+                  body=targets[-1]
+                  for i,line in enumerate(body.splitlines()):
+                      if any(x in line for x in ("static_call","runtime_call","optimized virtual_call","invoke")):
+                          print("COMPILED_CALL", "\n".join(body.splitlines()[max(0,i-3):i+7]),flush=True)
