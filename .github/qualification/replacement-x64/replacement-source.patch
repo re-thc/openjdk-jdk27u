@@ -1,22 +1,3 @@
-From 71e7b1a9f3ab8aa589221bd4dff548068b2660c5 Mon Sep 17 00:00:00 2001
-From: "Teamoffy Pte. Ltd." <38070640+re-thc@users.noreply.github.com>
-Date: Wed, 14 Oct 2026 23:27:01 +0000
-Subject: [PATCH 1/2] Defer BigInteger stub setup until arithmetic or C1 demand
-
----
- .../share/interpreter/interpreterRuntime.cpp  | 13 +++-
- .../share/interpreter/interpreterRuntime.hpp  |  2 +-
- .../templateInterpreterGenerator.cpp          | 31 +++++++--
- src/hotspot/share/oops/cpCache.cpp            | 10 +--
- src/hotspot/share/oops/cpCache.hpp            |  6 +-
- src/hotspot/share/oops/method.cpp             |  3 +-
- src/hotspot/share/prims/methodHandles.cpp     |  4 ++
- .../share/runtime/commonIntrinsics.cpp        | 65 ++++++++++++++++++-
- .../share/runtime/commonIntrinsics.hpp        |  2 +
- src/hotspot/share/runtime/javaCalls.cpp       |  8 +++
- .../TestCommonIntrinsicInitialization.java    | 30 ++++++++-
- 11 files changed, 156 insertions(+), 18 deletions(-)
-
 diff --git a/src/hotspot/share/interpreter/interpreterRuntime.cpp b/src/hotspot/share/interpreter/interpreterRuntime.cpp
 index a8f3d501083..93edc35ad54 100644
 --- a/src/hotspot/share/interpreter/interpreterRuntime.cpp
@@ -200,17 +181,17 @@ index bea03302d32..c188b20b463 100644
    }
    if (log_is_enabled(Info, perf, class, link)) {
 diff --git a/src/hotspot/share/prims/methodHandles.cpp b/src/hotspot/share/prims/methodHandles.cpp
-index 99a58b09e75..b274b81fd92 100644
+index 99a58b09e75..39f6016d118 100644
 --- a/src/hotspot/share/prims/methodHandles.cpp
 +++ b/src/hotspot/share/prims/methodHandles.cpp
-@@ -47,6 +47,7 @@
+@@ -46,6 +46,7 @@
+ #include "oops/oop.inline.hpp"
  #include "oops/typeArrayOop.inline.hpp"
  #include "prims/methodHandles.hpp"
- #include "runtime/deoptimization.hpp"
 +#include "runtime/commonIntrinsics.hpp"
+ #include "runtime/deoptimization.hpp"
  #include "runtime/fieldDescriptor.inline.hpp"
  #include "runtime/handles.inline.hpp"
- #include "runtime/interfaceSupport.inline.hpp"
 @@ -249,6 +250,9 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
    assert(info.resolved_appendix().is_null(), "only normal methods here");
    methodHandle m(Thread::current(), info.resolved_method());
@@ -222,7 +203,7 @@ index 99a58b09e75..b274b81fd92 100644
    assert(m_klass != nullptr, "null holder for method handle");
    int flags = (m->access_flags().as_method_flags());
 diff --git a/src/hotspot/share/runtime/commonIntrinsics.cpp b/src/hotspot/share/runtime/commonIntrinsics.cpp
-index 0d7c9f0fafc..14dbdda08db 100644
+index 0d7c9f0fafc..d464baa0537 100644
 --- a/src/hotspot/share/runtime/commonIntrinsics.cpp
 +++ b/src/hotspot/share/runtime/commonIntrinsics.cpp
 @@ -43,6 +43,13 @@ constexpr jint max_quadratic_limbs = 2048;
@@ -239,7 +220,7 @@ index 0d7c9f0fafc..14dbdda08db 100644
  bool all_digest_intrinsics_enabled() {
    return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_md5_implCompress) &&
           vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha_implCompress) &&
-@@ -934,12 +941,62 @@ bool CommonIntrinsics::needs_compiler_stubs(vmIntrinsics::ID id) {
+@@ -934,12 +941,66 @@ bool CommonIntrinsics::needs_compiler_stubs(vmIntrinsics::ID id) {
  void CommonIntrinsics::prepare(vmIntrinsics::ID id) {
    // Linking can allocate and block; the interpreter and C1 leaf adapters cannot.
    // Bootstrap calls retain the Java fallback until the stubs are published.
@@ -272,6 +253,12 @@ index 0d7c9f0fafc..14dbdda08db 100644
 +      !is_available_for_interpreter(id) || !vmIntrinsics::is_intrinsic_available(id)) {
 +    return true;
 +  }
++  // Modular exponentiation chains Montgomery calls. Delaying their setup
++  // prolongs the first modPow operation instead of avoiding unused work.
++  if (id == vmIntrinsics::_montgomeryMultiply || id == vmIntrinsics::_montgomerySquare) {
++    prepare(id);
++    return true;
++  }
 +  // Only read integer arguments; no raw oop is retained across prepare().
 +  // Slots are in the same expression-stack order used by the leaf adapters.
 +  jlong work = 0;
@@ -282,8 +269,6 @@ index 0d7c9f0fafc..14dbdda08db 100644
 +  switch (id) {
 +    case vmIntrinsics::_multiplyToLen: work = limbs(args[3]) * limbs(args[1]); break;
 +    case vmIntrinsics::_squareToLen: work = limbs(args[2]) * limbs(args[2]) / 2; break;
-+    case vmIntrinsics::_montgomeryMultiply: work = limbs(args[3]) * limbs(args[3]); break;
-+    case vmIntrinsics::_montgomerySquare: work = limbs(args[3]) * limbs(args[3]); break;
 +    case vmIntrinsics::_mulAdd: work = limbs(args[1]); break;
 +    case vmIntrinsics::_bigIntegerRightShiftWorker:
 +    case vmIntrinsics::_bigIntegerLeftShiftWorker: work = limbs(args[0]); break;
@@ -303,7 +288,7 @@ index 0d7c9f0fafc..14dbdda08db 100644
  bool CommonIntrinsics::is_scalar(vmIntrinsics::ID id) {
    switch (id) {
  #define COMMON_SCALAR(id, slots, result) case vmIntrinsics::id: return true;
-@@ -1049,7 +1106,11 @@ bool CommonIntrinsics::is_available_for_interpreter(vmIntrinsics::ID id) {
+@@ -1049,7 +1110,11 @@ bool CommonIntrinsics::is_available_for_interpreter(vmIntrinsics::ID id) {
  // Acquire the completed stub publication before inspecting backend slots.
  bool CommonIntrinsics::is_available_for_c1(vmIntrinsics::ID id) {
    if (needs_compiler_stubs(id) && !StubRoutines::compiler_stubs_initialized()) {
@@ -409,45 +394,3 @@ index 12bf8417f46..3416d971f62 100644
      private static void exercise() throws Exception {
          CountDownLatch ready = new CountDownLatch(8);
          CountDownLatch start = new CountDownLatch(1);
--- 
-2.52.0
-
-
-From c6c18c12d2d6cf35f7da36fb64e5ed484cab7a1e Mon Sep 17 00:00:00 2001
-From: "Teamoffy Pte. Ltd." <38070640+re-thc@users.noreply.github.com>
-Date: Wed, 14 Oct 2026 23:59:14 +0000
-Subject: [PATCH 2/2] Prepare Montgomery stubs at first modular arithmetic use
-
----
- src/hotspot/share/runtime/commonIntrinsics.cpp | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
-
-diff --git a/src/hotspot/share/runtime/commonIntrinsics.cpp b/src/hotspot/share/runtime/commonIntrinsics.cpp
-index 14dbdda08db..d464baa0537 100644
---- a/src/hotspot/share/runtime/commonIntrinsics.cpp
-+++ b/src/hotspot/share/runtime/commonIntrinsics.cpp
-@@ -969,6 +969,12 @@ bool CommonIntrinsics::cache_interpreter_call(vmIntrinsics::ID id, const intptr_
-       !is_available_for_interpreter(id) || !vmIntrinsics::is_intrinsic_available(id)) {
-     return true;
-   }
-+  // Modular exponentiation chains Montgomery calls. Delaying their setup
-+  // prolongs the first modPow operation instead of avoiding unused work.
-+  if (id == vmIntrinsics::_montgomeryMultiply || id == vmIntrinsics::_montgomerySquare) {
-+    prepare(id);
-+    return true;
-+  }
-   // Only read integer arguments; no raw oop is retained across prepare().
-   // Slots are in the same expression-stack order used by the leaf adapters.
-   jlong work = 0;
-@@ -979,8 +985,6 @@ bool CommonIntrinsics::cache_interpreter_call(vmIntrinsics::ID id, const intptr_
-   switch (id) {
-     case vmIntrinsics::_multiplyToLen: work = limbs(args[3]) * limbs(args[1]); break;
-     case vmIntrinsics::_squareToLen: work = limbs(args[2]) * limbs(args[2]) / 2; break;
--    case vmIntrinsics::_montgomeryMultiply: work = limbs(args[3]) * limbs(args[3]); break;
--    case vmIntrinsics::_montgomerySquare: work = limbs(args[3]) * limbs(args[3]); break;
-     case vmIntrinsics::_mulAdd: work = limbs(args[1]); break;
-     case vmIntrinsics::_bigIntegerRightShiftWorker:
-     case vmIntrinsics::_bigIntegerLeftShiftWorker: work = limbs(args[0]); break;
--- 
-2.52.0
-

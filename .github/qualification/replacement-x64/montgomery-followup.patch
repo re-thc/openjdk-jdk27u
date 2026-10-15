@@ -1,5 +1,19 @@
+diff --git a/src/hotspot/share/prims/methodHandles.cpp b/src/hotspot/share/prims/methodHandles.cpp
+index b274b81fd92..39f6016d118 100644
+--- a/src/hotspot/share/prims/methodHandles.cpp
++++ b/src/hotspot/share/prims/methodHandles.cpp
+@@ -46,8 +46,8 @@
+ #include "oops/oop.inline.hpp"
+ #include "oops/typeArrayOop.inline.hpp"
+ #include "prims/methodHandles.hpp"
+-#include "runtime/deoptimization.hpp"
+ #include "runtime/commonIntrinsics.hpp"
++#include "runtime/deoptimization.hpp"
+ #include "runtime/fieldDescriptor.inline.hpp"
+ #include "runtime/handles.inline.hpp"
+ #include "runtime/interfaceSupport.inline.hpp"
 diff --git a/src/hotspot/share/runtime/commonIntrinsics.cpp b/src/hotspot/share/runtime/commonIntrinsics.cpp
-index 14dbdda08db..120e6f2e063 100644
+index 14dbdda08db..d464baa0537 100644
 --- a/src/hotspot/share/runtime/commonIntrinsics.cpp
 +++ b/src/hotspot/share/runtime/commonIntrinsics.cpp
 @@ -969,6 +969,12 @@ bool CommonIntrinsics::cache_interpreter_call(vmIntrinsics::ID id, const intptr_
@@ -15,3 +29,12 @@ index 14dbdda08db..120e6f2e063 100644
    // Only read integer arguments; no raw oop is retained across prepare().
    // Slots are in the same expression-stack order used by the leaf adapters.
    jlong work = 0;
+@@ -979,8 +985,6 @@ bool CommonIntrinsics::cache_interpreter_call(vmIntrinsics::ID id, const intptr_
+   switch (id) {
+     case vmIntrinsics::_multiplyToLen: work = limbs(args[3]) * limbs(args[1]); break;
+     case vmIntrinsics::_squareToLen: work = limbs(args[2]) * limbs(args[2]) / 2; break;
+-    case vmIntrinsics::_montgomeryMultiply: work = limbs(args[3]) * limbs(args[3]); break;
+-    case vmIntrinsics::_montgomerySquare: work = limbs(args[3]) * limbs(args[3]); break;
+     case vmIntrinsics::_mulAdd: work = limbs(args[1]); break;
+     case vmIntrinsics::_bigIntegerRightShiftWorker:
+     case vmIntrinsics::_bigIntegerLeftShiftWorker: work = limbs(args[0]); break;

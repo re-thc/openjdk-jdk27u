@@ -99,7 +99,7 @@
   "artifact_download": "HTTP 403, fresh URL also rejected; accessible original job log saved; do not retry",
   "candidate_base": "c04d1ba1e96b2176ce8a8e56eacae73c2d356d2b",
   "candidate_patch_sha256": "768cc4890dbba0c8da72a54b20c9a0c2515c19a3f7f56c2828c634e66903e1ba",
-  "status": "INCOMPLETE. Source saved locally and recoverable from evidence. PR head unchanged. Release 111 records passed for 71e7b1a9f3a. Partial first-use multiplication improved; modPow regressed and has an unvalidated source followup. Fastdebug, remaining timings, tier2 and final native qualification blocked/pending. No hosted campaign launched.",
+  "status": "INCOMPLETE. PR head unchanged. Latest local source unbuilt/untested. Release 111 records passed for 71e7b1a. First multiply improved, first modPow regressed and prompted an unvalidated followup. Paired AArch64 flag-on archive failure reproduced 4/20, cause unresolved. Process exhaustion blocks validation. No new hosted campaign.",
   "versions": {
     "master": "openjdk version \"27.0.2-internal\" 2027-01-19\nOpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.common-intrinsics-baseline)\nOpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.common-intrinsics-baseline, mixed mode, sharing)\n",
     "before": "openjdk version \"27.0.2-internal\" 2027-01-19\nOpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.openjdk-jdk27u)\nOpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.openjdk-jdk27u, mixed mode, sharing)\n",
@@ -142,7 +142,7 @@
     }
   },
   "demand_source_revision": "71e7b1a9f3ab8aa589221bd4dff548068b2660c5",
-  "local_head": "c6c18c12d2d6cf35f7da36fb64e5ed484cab7a1e",
+  "local_head": "25bff7b9d9c33fac3e62af27b4405ff60c00e583",
   "validated_source_revision": "71e7b1a9f3ab8aa589221bd4dff548068b2660c5",
   "unvalidated_followup": "Montgomery first-use preparation; compilation blocked by unreaped zombie processes",
   "release_regressions": [
@@ -323,13 +323,14 @@
     }
   ],
   "environment_blocker": {
-    "zombies": 32395,
+    "zombies": 32398,
     "parent_pid": 1,
     "parent_command": "tail",
     "reaper_handler": false,
     "build_errors": "fork EAGAIN; unable to create native thread",
     "fastdebug_build_attempts": 2,
-    "benchmark_failed_control": "unchanged before image with flag off, interpreter multiplication 4096 bits"
+    "benchmark_failed_control": "unchanged before image with flag off, interpreter multiplication 4096 bits",
+    "release_final_build": "one-job images failed before compilation: fork EAGAIN; child subreaper enabled"
   },
   "paired_archive_run": 38640541680,
   "paired_artifact": 11936109812,
@@ -402,6 +403,14 @@
   "missing_archive_data": [
     "archive-results/results.json",
     "archive-results/environment.json",
-    "all-collector control JTR files from artifact 11936109812"
-  ]
+    "all-collector control JTRs",
+    "failed PR-on blocks 01/02/03/14 JTR/SharedArchiveFile*.jsa/*.map from artifact 11936109812"
+  ],
+  "sanity_run_latest": {
+    "id": 38385226401,
+    "attempt": 2,
+    "status": "queued",
+    "runtime_retry": "passed",
+    "checked_utc": "2026-10-15"
+  }
 }
