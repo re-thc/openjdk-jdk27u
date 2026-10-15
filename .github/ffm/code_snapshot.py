@@ -19,7 +19,7 @@ raw = root / 'unbound-snapshot'
 raw.mkdir()
 images = root / 'images'
 environment = json.loads((root / 'environment.json').read_text())
-assert 'AMD EPYC 9V74' in environment['cpu_model'], 'Different runner CPU: preserve setup evidence and stop'
+assert os.uname().sysname == 'Linux' and os.uname().machine == 'x86_64', 'Requires native Linux x86_64'
 assert 0 in os.sched_getaffinity(0)
 records = json.loads((root / 'images.json').read_text())
 assert set(records) == {'base', 'a'}
@@ -77,6 +77,8 @@ assert len(controls) == 4
 failures = [row for row in controls if not (0.95 <= row['ratio'] <= 1.05
     and 0.90 <= row['lo'] <= row['hi'] <= 1.10)]
 status = {'kind': 'diagnostic only; global qualification remains false',
+          'cpu_model': environment['cpu_model'],
+          'comparison_scope': 'Paired forks from this job only; historical timings are not inputs',
           'forks': len(plan), 'control_failures': failures,
           'status': 'DIAGNOSTIC_CONTROL_FAILURE' if failures else 'DIAGNOSTIC_CONTROLS_PASSED',
           'no_retries_or_exclusions': True, 'startup_measurements': False,

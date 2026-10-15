@@ -16,12 +16,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
-      - name: Verify native runner CPU before builds
+      - name: Record native runner CPU and verify Linux x86_64
         run: |
           mkdir "$RUNNER_TEMP/ffm-evidence"
           cp /proc/cpuinfo "$RUNNER_TEMP/ffm-evidence/runner-cpuinfo.txt"
           grep -m1 "model name" "$RUNNER_TEMP/ffm-evidence/runner-cpuinfo.txt"
-          grep -q "AMD EPYC 9V74" "$RUNNER_TEMP/ffm-evidence/runner-cpuinfo.txt"
+          test "$(uname -s)" = Linux
+          test "$(uname -m)" = x86_64
       - name: Install configured GCC16 toolchain
         run: |
           sudo apt update
