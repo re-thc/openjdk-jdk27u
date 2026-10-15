@@ -4,6 +4,7 @@ on:
     branches: [review/simdutf930-native]
 permissions:
   contents: read
+  actions: write
 jobs:
   compare:
     timeout-minutes: 60
@@ -13,6 +14,15 @@ jobs:
         runner: [ubuntu-24.04, ubuntu-24.04-arm]
     runs-on: ${{ matrix.runner }}
     steps:
+      - name: Cancel superseded native diagnostic
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          task_sha=$(gh api repos/re-thc/openjdk-jdk27u/actions/runs/38812933364 --jq .head_sha)
+          test "$task_sha" = b3bf0b54613a658dd80176b1e7827977da65bd65
+          task_status=$(gh api repos/re-thc/openjdk-jdk27u/actions/runs/38812933364 --jq .status)
+          if test "$task_status" != completed; then gh api --method POST repos/re-thc/openjdk-jdk27u/actions/runs/38812933364/cancel; fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false

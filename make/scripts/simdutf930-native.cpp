@@ -188,7 +188,7 @@ static void measure(const char* method, const char* kind, size_t size, Function 
 int main() {
   auto impl=select_backend();
   simdutf::get_active_implementation()=impl;
-  std::printf("NATIVE_META %s %s\n",SIMDUTF_VERSION,impl->name().c_str());
+  std::printf("NATIVE_META %s %s\n",SIMDUTF_VERSION,std::string(impl->name()).c_str());
   correctness();
   for (size_t size : {31,32,33,63,64,65,127,128,129,255,256,258,4095,4096}) {
     for (int kind : {0,2,3,4}) {
