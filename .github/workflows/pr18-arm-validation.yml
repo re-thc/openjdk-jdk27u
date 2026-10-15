@@ -1,5 +1,5 @@
 name: PR18 one native ARM validation
-run-name: PR18 native ARM validation with corrected jtreg invocation
+run-name: PR18 native ARM validation with complete HotSpot test metadata
 
 on:
   push:
@@ -22,10 +22,7 @@ jobs:
             /diagnostics/pr18-arm/
             /test/lib/
             /test/jtreg-ext/
-            /test/hotspot/jtreg/compiler/
-            /test/hotspot/jtreg/TEST.ROOT
-            /test/hotspot/jtreg/TEST.groups
-            /test/hotspot/jtreg/TEST.quick-groups
+            /test/hotspot/jtreg/
             /src/hotspot/share/opto/vectornode.cpp
       - name: Measure native CPU, HWCAP and kernel-supported SVE lengths
         id: hardware
