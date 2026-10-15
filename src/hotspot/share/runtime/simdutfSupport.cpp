@@ -496,7 +496,7 @@ JRT_LEAF(jint, SimdUTF::process(oopDesc* src_raw, jint sp, jint len,
     case DECODE_UTF8: {
       bool bounded = capacity < len;
 #ifdef AARCH64
-      bounded |= input[0] < 0;
+      bounded |= static_cast<unsigned char>(input[0]) >= 0x80;
 #endif
       if (bounded) {
         return simdutf_decode_utf8_bounded(input, len, reinterpret_cast<char16_t*>(output), capacity);
