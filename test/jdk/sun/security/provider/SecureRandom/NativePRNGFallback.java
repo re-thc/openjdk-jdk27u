@@ -37,6 +37,7 @@
  * @run main/othervm/native NativePRNGFallback no-random
  * @run main/othervm/native NativePRNGFallback no-random-egd-urandom
  * @run main/othervm/native NativePRNGFallback no-urandom
+ * @run main/othervm/native NativePRNGFallback no-devices
  */
 
 import java.nio.file.Path;
@@ -69,7 +70,7 @@ public class NativePRNGFallback {
             "NativePRNGNonBlocking", "NativePRNGBlocking");
 
     // Runs a command in a user and mount namespace where /dev holds only
-    // null, zero and the device named by the first argument.
+    // null, zero and the device named by the first argument, if any.
     private static final String HIDE_DEVICES = """
             set -e
             keep=$1; shift
@@ -96,6 +97,8 @@ public class NativePRNGFallback {
                         List.of("NativePRNG", "NativePRNGNonBlocking"));
             case "no-urandom" ->
                 runHidden("random", List.of(), List.of("NativePRNGBlocking"));
+            case "no-devices" ->
+                runHidden("", List.of(), List.of());
             case "child" -> child(List.of(args).subList(1, args.length));
             default -> blocked(args[0]);
         }
