@@ -608,10 +608,11 @@ public final class String
             // Decode with a stable copy, to be the result if the decoded length is the same
             byte[] latin1 = Arrays.copyOfRange(bytes, offset, offset + length);
             int sp = dp;            // first dp bytes are already in the copy
-            byte[] compact = (latin1[sp] & 0xfe) == 0xc2 && SimdUTF.isEligibleLatin1Decoding(length - sp)
-                    ? decodeUTF8Latin1(latin1, sp, length - sp, latin1, dp) : null;
-            if (compact != null) {
-                return new String(compact, LATIN1);
+            if ((latin1[sp] & 0xfe) == 0xc2 && SimdUTF.isEligibleLatin1Decoding(length - sp)) {
+                String compact = decodeUTF8Latin1(latin1, sp, length - sp, latin1, dp);
+                if (compact != null) {
+                    return compact;
+                }
             }
             while (sp < length) {
                 int b1 = latin1[sp++];
@@ -657,9 +658,10 @@ public final class String
 
     // Keep the caller's Latin-1 loop profiled when a compiler declines native decoding.
     @DontInline
-    private static byte[] decodeUTF8Latin1(byte[] src, int sp, int len, byte[] dst, int dp) {
+    private static String decodeUTF8Latin1(byte[] src, int sp, int len, byte[] dst, int dp) {
         int converted = SimdUTF.decodeLatin1(src, sp, len, dst, dp, dst.length - dp);
-        return converted >= 0 ? Arrays.copyOf(dst, dp + converted) : null;
+        return converted >= 0
+                ? new String(Arrays.copyOf(dst, dp + converted), LATIN1) : null;
     }
 
     private static String iso88591(byte[] bytes, int offset, int length) {
@@ -768,10 +770,11 @@ public final class String
             dst = new byte[length];
             System.arraycopy(bytes, offset, dst, 0, dp);
             offset += dp;
-            byte[] compact = (bytes[offset] & 0xfe) == 0xc2 && SimdUTF.isEligibleLatin1Decoding(sl - offset)
-                    ? decodeUTF8Latin1(bytes, offset, sl - offset, dst, dp) : null;
-            if (compact != null) {
-                return new String(compact, LATIN1);
+            if ((bytes[offset] & 0xfe) == 0xc2 && SimdUTF.isEligibleLatin1Decoding(sl - offset)) {
+                String compact = decodeUTF8Latin1(bytes, offset, sl - offset, dst, dp);
+                if (compact != null) {
+                    return compact;
+                }
             }
             while (offset < sl) {
                 int b1 = bytes[offset++];

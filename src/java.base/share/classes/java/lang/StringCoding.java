@@ -110,6 +110,7 @@ class StringCoding {
      * @throws ArrayIndexOutOfBoundsException if the provided sub-range is
      *         {@linkplain Preconditions#checkFromIndexSize(int, int, int, BiFunction) out of bounds}
      */
+    @ForceInline
     static int countPositives(byte[] ba, int off, int len) {
         Preconditions.checkFromIndexSize(
                 off, len,
