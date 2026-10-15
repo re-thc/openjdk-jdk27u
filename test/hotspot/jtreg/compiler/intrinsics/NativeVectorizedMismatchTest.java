@@ -80,7 +80,8 @@ public class NativeVectorizedMismatchTest {
     }
 
     @Test
-    @IR(counts = {"CallLeaf.*vectorizedMismatch", "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(counts = {"CallLeaf.*vectorizedMismatch", "1", "CountTrailingZerosL", "1"},
+        phase = CompilePhase.BEFORE_MATCHING)
     public static int nativeAtMinimum(long a, long b) {
         return ArraysSupport.vectorizedMismatch(null, a, null, b, 128, 0);
     }
