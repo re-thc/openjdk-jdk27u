@@ -623,9 +623,8 @@ JRT_ENTRY(void, InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose(Ja
   THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
 JRT_END
 
-// Throws the error that LinkResolver::runtime_resolve_interface_method throws
-// when the method selected for an invokeinterface of a java.lang.Object method
-// is not public or is abstract.
+// Match LinkResolver::runtime_resolve_interface_method's errors for forced-virtual
+// invokeinterface calls, including the access check before the abstractness check.
 JRT_ENTRY(void, InterpreterRuntime::throw_IllegalAccessOrAbstractMethodError(JavaThread* current,
                                                                             Klass* recvKlass,
                                                                             Method* selectedMethod))

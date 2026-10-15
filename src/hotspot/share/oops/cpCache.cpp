@@ -197,26 +197,14 @@ void ConstantPoolCache::set_direct_or_vtable_call(Bytecodes::Code invoke_code,
   } else if (byte_no == 2)  {
     if (change_to_virtual) {
       assert(invoke_code == Bytecodes::_invokeinterface, "");
-      // NOTE: THIS IS A HACK - BE VERY CAREFUL!!!
-      //
-      // Workaround for the case where we encounter an invokeinterface, but we
-      // should really have an _invokevirtual since the resolved method is a
-      // virtual method in java.lang.Object. This is a corner case in the spec
-      // but is presumably legal. javac generates this code when it invokes a
-      // method of java.lang.Object on a receiver of interface type.
-      //
-      // The link resolver checks the receiver on every such call: its class
-      // must implement the resolved interface, and the actual selected method
-      // must be public. If the template interpreter makes these checks itself,
-      // we set bytecode_1() to _invokeinterface, because that is the bytecode #
-      // used by the interpreter to see if it is resolved. Otherwise we do not,
-      // and the method gets reresolved with caller for each interface call.
-      //
-      // We set bytecode_2() to _invokevirtual.
-      // See also interpreterRuntime.cpp. (8/25/2000)
+      // javac emits invokeinterface for Object methods on interface-typed receivers.
+      // Mark the entry resolved only if the interpreter checks that the receiver
+      // implements REFC and the selected method is public and non-abstract.
+      // Otherwise, leave bytecode_1 unresolved so the link resolver checks each call.
+      // bytecode_2 is set to _invokevirtual below for the forced-virtual dispatch.
       if (VM_Version::supports_fast_invokeinterface_object_checks()) {
-        // method_if_resolved() returns the method of an entry that bytecode_1()
-        // marks as resolved, and a vtable call does not store one otherwise.
+        // Store the resolved method before publishing bytecode_1 for
+        // method_if_resolved() and AbstractMethodError reporting.
         method_entry->set_method(method());
         method_entry->set_bytecode1(invoke_code);
       }

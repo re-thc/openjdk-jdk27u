@@ -2443,17 +2443,15 @@ void TemplateTable::load_resolved_method_entry_interface(Register cache,
   resolve_cache_and_index_for_method(f1_byte, cache, index);
   __ load_unsigned_byte(flags, Address(cache, in_bytes(ResolvedMethodEntry::flags_offset())));
 
-  // Invokeinterface can behave in different ways:
-  // If calling a method from java.lang.Object, the forced virtual flag is true so the invocation will
-  // behave like an invokevirtual call. The state of the virtual final flag will determine whether a method or
-  // vtable index is placed in the register. The klass register is populated with REFC.
-  // Otherwise, the registers will be populated with the klass and method.
+  // Forced-virtual Object calls load REFC into klass and a Method* (vfinal)
+  // or vtable index into method_or_table_index. Other interface calls load
+  // the cached interface klass and Method*.
 
   Label NotVirtual; Label NotVFinal; Label Done;
   __ tbz(flags, ResolvedMethodEntry::is_forced_virtual_shift, NotVirtual);
 
-  // The receiver is checked against REFC, which is not cached in the entry. It is the class
-  // referenced by the entry's InterfaceMethodref, and is resolved if the entry is.
+  // Forced-virtual entries do not cache REFC. Load it from the InterfaceMethodref;
+  // resolution of the entry guarantees that REFC is already resolved.
   __ get_constant_pool(klass);
   __ load_unsigned_short(rscratch2, Address(cache, in_bytes(ResolvedMethodEntry::constant_pool_index_offset())));
   __ lea(rscratch2, Address(klass, rscratch2, Address::lsl(LogBytesPerWord)));
@@ -3471,34 +3469,28 @@ void TemplateTable::invokeinterface(int byte_no) {
   Label notObjectMethod;
   __ tbz(r3, ResolvedMethodEntry::is_forced_virtual_shift, notObjectMethod);
 
-  // Get receiver klass into r4 - also a null check
+  // Implicit null check before checking the receiver against REFC.
   __ load_klass(r4, r2);
 
-  // Receiver subtype check against REFC.
   Label objectSubtype;
   __ check_klass_subtype(r4, r0, r13, objectSubtype);
-  // If we get here the typecheck failed
-  __ mov(r3, r4); // shuffle receiver class for exception use
+  __ mov(r3, r4); // receiver klass for ICCE
   __ b(no_such_interface);
   __ bind(objectSubtype);
 
-  // Test for an invoke of a final method
   Label objectNotFinal;
   __ tbz(r3, ResolvedMethodEntry::is_vfinal_shift, objectNotFinal);
 
-  // do the call - rmethod is actually the method to call
   __ profile_final_call(r0);
   __ profile_arguments_type(r0, rmethod, r13, true);
   __ jump_from_interpreted(rmethod, r0);
 
   __ bind(objectNotFinal);
 
-  // profile this call
   __ profile_virtual_call(r4, rlocals);
-  // get target Method & entry point
   __ lookup_virtual_method(r4, rmethod, rmethod);
 
-  // The selected method must be public and not abstract
+  // invokeinterface requires a public, non-abstract selected method.
   Label bad_selected_method;
   __ ldrh(rscratch1, Address(rmethod, Method::access_flags_offset()));
   __ tbz(rscratch1, exact_log2(JVM_ACC_PUBLIC), bad_selected_method);
@@ -3602,13 +3594,11 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ should_not_reach_here();
 
   __ bind(bad_selected_method);
-  // throw exception
-  __ restore_bcp();      // bcp must be correct for exception handler   (was destroyed)
-  __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
-  // Pass arguments for generating a verbose error message.
+  // Restore interpreter state; profiling may clobber rlocals.
+  __ restore_bcp();
+  __ restore_locals();
   __ call_VM(noreg, CAST_FROM_FN_PTR(address,
                    InterpreterRuntime::throw_IllegalAccessOrAbstractMethodError), r4, rmethod);
-  // the call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
   return;
 }

@@ -1606,9 +1606,8 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
   }
 }
 
-// Scales a resolved entry index by entry_size and returns the left shift to address the
-// entry with. Sizes of 3 * 2^k, such as the 24-byte entries of product builds, avoid mul.
-// Clobbers tmp only if entry_size is neither 2^k nor 3 * 2^k.
+// Scale index and return the remaining address shift. Avoid mul for
+// sizes 2^k and 3 * 2^k (including 24-byte entries); otherwise clobber tmp.
 int InterpreterMacroAssembler::scale_resolved_entry_index(Register index, Register tmp, int entry_size) {
   int pow2_size = entry_size;
   if (entry_size % 3 == 0 && is_power_of_2(entry_size / 3)) {
@@ -1636,7 +1635,6 @@ void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Registe
 void InterpreterMacroAssembler::load_field_entry(Register cache, Register index, int bcp_offset) {
   // Get index out of bytecode pointer
   get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
-  // Scale the index to be the entry index * sizeof(ResolvedFieldEntry)
   int shift = scale_resolved_entry_index(index, cache, sizeof(ResolvedFieldEntry));
   // Get address of field entries array
   ldr(cache, Address(rcpool, ConstantPoolCache::field_entries_offset()));
@@ -1649,7 +1647,6 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
 void InterpreterMacroAssembler::load_method_entry(Register cache, Register index, int bcp_offset) {
   // Get index out of bytecode pointer
   get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
-  // Scale the index to be the entry index * sizeof(ResolvedMethodEntry)
   int shift = scale_resolved_entry_index(index, cache, sizeof(ResolvedMethodEntry));
 
   // Get address of field entries array

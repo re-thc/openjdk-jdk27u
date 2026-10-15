@@ -37,7 +37,7 @@ import java.util.function.Supplier;
 
 public class InterfaceObjectMethodTest {
 
-    // Few enough calls of each site that they all run in the interpreter.
+    // Check errors before warming the call sites.
     private static final int CHECKED_ITERATIONS = 10;
     private static final int WARMUP_ITERATIONS = 20_000;
 
@@ -79,7 +79,6 @@ public class InterfaceObjectMethodTest {
         }
     }
 
-    // The results of the call sites must be those of the receiver's methods.
     static void verify(Object[] receivers) {
         for (int i = 0; i < receivers.length; i++) {
             Object a = receivers[i];
@@ -136,13 +135,11 @@ public class InterfaceObjectMethodTest {
         Check hashNPE = () -> InterfaceObjectMethodSites.hashCodeOf(null);
         Check typeNPE = () -> InterfaceObjectMethodSites.getClassOf(null);
 
-        // The first call of this call site has a receiver that does not
-        // implement the interface.
+        // Exercise a bad receiver before the call site has resolved.
         expect(IncompatibleClassChangeError.class, notSupplierMessage, firstHashICCE);
 
         for (int i = 0; i < CHECKED_ITERATIONS; i++) {
-            // The call sites are resolved by the first good receiver, and the
-            // later calls with bad receivers must still throw the same errors.
+            // Resolve with good receivers, then verify errors on cached entries.
             if (InterfaceObjectMethodSites.firstHashCodeOf(supplier) != supplier.hashCode()) {
                 throw new RuntimeException("Wrong hashCode() for " + supplier.getClass());
             }

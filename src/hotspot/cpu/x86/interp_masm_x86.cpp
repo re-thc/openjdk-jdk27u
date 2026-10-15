@@ -1639,8 +1639,8 @@ void InterpreterMacroAssembler::notify_method_exit(
   }
 }
 
-// Scales a resolved entry index by entry_size and returns the scale factor to address the
-// entry with. Sizes of 3 * 2^k, such as the 24-byte entries of product builds, avoid imul.
+// Scale index and return the remaining address scale. Avoid imul
+// for sizes 2^k and 3 * 2^k, including 24-byte entries.
 Address::ScaleFactor InterpreterMacroAssembler::scale_resolved_entry_index(Register index, int entry_size) {
   int pow2_size = entry_size;
   if (entry_size % 3 == 0 && is_power_of_2(entry_size / 3)) {
@@ -1677,7 +1677,6 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
   get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
 
   movptr(cache, Address(cache, ConstantPoolCache::field_entries_offset()));
-  // Scale the index to be the entry index * sizeof(ResolvedFieldEntry)
   Address::ScaleFactor scale = scale_resolved_entry_index(index, sizeof(ResolvedFieldEntry));
   lea(cache, Address(cache, index, scale, Array<ResolvedFieldEntry>::base_offset_in_bytes()));
 }
@@ -1688,7 +1687,6 @@ void InterpreterMacroAssembler::load_method_entry(Register cache, Register index
   get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
 
   movptr(cache, Address(cache, ConstantPoolCache::method_entries_offset()));
-  // Scale the index to be the entry index * sizeof(ResolvedMethodEntry)
   Address::ScaleFactor scale = scale_resolved_entry_index(index, sizeof(ResolvedMethodEntry));
   lea(cache, Address(cache, index, scale, Array<ResolvedMethodEntry>::base_offset_in_bytes()));
 }

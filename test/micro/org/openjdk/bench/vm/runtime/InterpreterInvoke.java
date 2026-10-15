@@ -37,25 +37,9 @@ import org.openjdk.jmh.annotations.Warmup;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Measures the time of invokes and field accesses in the bytecode interpreter,
- * which is the only code that runs in the first moments of every program.
- * The benchmarks run in forks with -Xint, so that nothing is compiled.
- *
- * <ul>
- * <li>{@code objectMethodsViaInterface}: calls of the methods of
- * {@code java.lang.Object} on a receiver of an interface type, which javac
- * compiles to {@code invokeinterface}. The entry of such a call site in the
- * constant pool cache has to be resolved just once, but used to be resolved
- * again by every execution.</li>
- * <li>{@code interfaceMethod}: a call of a method that the interface
- * declares, as a control. It is looked up in the itable of the receiver.</li>
- * <li>{@code invokeStatic}, {@code invokeVirtual}, {@code getField},
- * {@code putField}: the cost of the scaling of a cache index to the address of
- * its entry, which every invoke and field access pays.</li>
- * </ul>
- *
- * The time per call includes the loop around it, with a few bytecodes for
- * the increment, the comparison with the limit, and for choosing a receiver.
+ * Interpreter invocation and field-access costs with {@code -Xint}, including
+ * {@code invokeinterface} calls to Object methods. Results include loop and
+ * receiver-selection overhead.
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
