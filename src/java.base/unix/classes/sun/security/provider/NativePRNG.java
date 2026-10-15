@@ -48,7 +48,10 @@ import sun.security.util.Debug;
  * without flags). The bytes for nextBytes() and for the seed of
  * the SHA1PRNG behave like /dev/urandom, except in the blocking algorithm,
  * where they behave like /dev/random. The seed for generateSeed() behaves like
- * the seed file, which is /dev/random by default.
+ * the seed file, which is /dev/random by default. Where the getrandom() system
+ * call is not available, for example because a seccomp filter blocks it, the
+ * native code reads /dev/urandom or /dev/random instead, and this
+ * implementation is not available if it cannot read them.
  * <p>
  * setSeed() attempts to write to the seed file. However, this file may only be
  * writable by root in many configurations. Because we cannot just ignore bytes
@@ -87,6 +90,10 @@ public final class NativePRNG extends SecureRandomSpi {
     // /dev/random
     private static native void getRandomBytes(byte[] b, boolean urandom)
             throws IOException;
+
+    // returns whether the OS provides random bytes like /dev/urandom, if
+    // urandom is true, or like /dev/random, without blocking
+    private static native boolean isAvailable0(boolean urandom);
 
     // which kind of RandomIO object are we creating?
     private enum Variant {
@@ -194,9 +201,13 @@ public final class NativePRNG extends SecureRandomSpi {
         return new RandomIO(seedFile, seedIn, nextUrandom);
     }
 
+    // whether the OS provides the bytes like /dev/urandom, which all
+    // variants but the blocking one use
+    private static final boolean AVAILABLE = isAvailable0(true);
+
     // return whether the NativePRNG is available
     static boolean isAvailable() {
-        return true;
+        return AVAILABLE;
     }
 
     // the implementation of the SecureRandom service with the algorithm name
@@ -259,7 +270,7 @@ public final class NativePRNG extends SecureRandomSpi {
 
         // return whether this is available
         static boolean isAvailable() {
-            return true;
+            return AVAILABLE && isAvailable0(false);
         }
 
         // constructor, called by the JCA framework
@@ -307,7 +318,7 @@ public final class NativePRNG extends SecureRandomSpi {
 
         // return whether this is available
         static boolean isAvailable() {
-            return true;
+            return AVAILABLE;
         }
 
         // constructor, called by the JCA framework
@@ -380,6 +391,10 @@ public final class NativePRNG extends SecureRandomSpi {
 
         // the buffers, a power of two of them
         private final Buffer[] buffers;
+
+        // the most bytes of the OS that are XORed at once with the output of
+        // the mixing SHA1PRNG
+        private static final int MAX_MIX_CHUNK = 4096;
 
         // mutex lock for generateSeed()
         private final Object LOCK_GET_SEED = new Object();
@@ -516,11 +531,16 @@ public final class NativePRNG extends SecureRandomSpi {
                     nextRandomBytes(data);
                     return;
                 }
-                byte[] random = new byte[data.length];
-                nextRandomBytes(random);
                 mix.engineNextBytes(data);
-                for (int i = 0; i < data.length; i++) {
-                    data[i] ^= random[i];
+                // XOR in chunks, so that a large request needs no second
+                // array as large
+                byte[] random = new byte[Math.min(data.length, MAX_MIX_CHUNK)];
+                for (int off = 0; off < data.length; off += random.length) {
+                    nextRandomBytes(random);
+                    int n = Math.min(random.length, data.length - off);
+                    for (int i = 0; i < n; i++) {
+                        data[off + i] ^= random[i];
+                    }
                 }
             } catch (IOException e) {
                 throw new ProviderException("nextBytes() failed", e);
