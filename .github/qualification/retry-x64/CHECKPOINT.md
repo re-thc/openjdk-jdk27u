@@ -27,15 +27,38 @@ verification of the original ARM archive bytes or proof of their exact trigger.
 The rebuilt release image at 8c833417 passes 20 common records (including new
 first-modPow setup coverage), six archive records, two flagless CDS records,
 11 related HotSpot records, 74 JDK records and three C1 level-1 arithmetic
-records. A functional AOT training/assembly/replay probe succeeds across eight
+records. The remaining three C1 level-3 arithmetic records and ten AOT/CDS/code-cache records also passed: 129 release jtreg records in total. A functional AOT training/assembly/replay probe succeeds across eight
 interpreter/C1/C2 and flag variants with matching modPow checksums. Training
 generates common entries; assembly uses ordinary entries. Probe timings ran
 alongside compilation and are **not performance evidence**. The clean baseline
 release at `87edd79d3104ff502f7befec034716b081436f49` also built successfully.
 
-Clean fastdebug build, remaining AOT/flag/GC checks, full paired cold/warm
-performance, tier2 and final native qualification are still pending. No current
-speedup or independent-review readiness is claimed. The approved sanity run
+The clean fastdebug build completed successfully in 1,437.02 seconds and reaped
+13,240 children. Its 20 common records passed with CheckUnhandledOops and
+VerifyOops, as did all six archive records and both flagless CDS records.
+The underlying jtreg commands exited 0; two outer wrappers exited 120 after
+environment tool reattachment. Both statuses were preserved, and terminal
+printing was hardened. This gives 157 passing final-implementation jtreg records
+across release and fastdebug; the remaining fastdebug AOT selection had not
+finished when last observed. The official SortIncludes.java checker passed.
+
+The flag/GC public API probe had completed release Serial/G1/Z/Parallel/
+Shenandoah and fastdebug Serial/G1/Z/Parallel across interpreter, C1 levels 1/3
+and C2 with both flag settings: 504 matching result checks. These were functional
+probes during builds, not timing evidence. Completion of fastdebug Shenandoah,
+the published-head control build and native gtest build is unverified.
+
+Execution is currently blocked: a status-read exec_command request and a
+minimal `printf 'executor-probe-ok'` request did not return through the executor.
+Their waiting cells were terminated; no service error code or command output
+was returned. Earlier reattachment reported ready and a simple shell probe did
+succeed on the original host, so this is a later executor responsiveness blocker,
+not a claim that startup failed. GitHub connector reads and writes still work.
+The full local fastdebug/probe logs have not been uploaded after this blocker.
+
+Cold/warm performance and tier2 have not started. Exact final native ARM and
+Windows AVX-512 qualification remain open. No speedup or independent-review
+readiness is claimed. The approved sanity run
 38385226401 was still queued on attempt 2 when checked; do not update the PR
 branch while doing so would cancel that run.
 
