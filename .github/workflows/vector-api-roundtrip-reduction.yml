@@ -1,0 +1,398 @@
+name: Vector API cumulative roundtrip prototype staged review gate
+'on':
+  push:
+    branches:
+    - codex/vector-api-roundtrip-reduction
+permissions:
+  contents: read
+  actions: read
+jobs:
+  candidate-build:
+    name: Build cumulative candidate and matched b3 (${{ matrix.level }})
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        level:
+        - release
+        - fastdebug
+      max-parallel: 1
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Checkout exact unpatched b3 production for matched release control
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        ref: b3ce67e362c3b1678fcf3d18ee714182b2395c86
+        path: control-source
+        persist-credentials: false
+    - name: Reuse hash-verified b3 release modules and frozen evidence
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: 38539204173
+        artifact-ids: 11881672203
+        path: saved
+        merge-multiple: true
+    - name: Get matched b3 fastdebug modules
+      if: matrix.level == 'fastdebug'
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: 38349570655
+        artifact-ids: 11791725073
+        path: debug-bundles
+        merge-multiple: true
+    - name: Install native build tools
+      run: 'sudo apt update
+
+        sudo apt install gcc-16 g++-16 autoconf make zip unzip zlib1g-dev
+
+        curl --fail --location --retry 3 https://github.com/rui314/mold/releases/download/v3.0.0/mold-3.0.0-aarch64-linux.tar.gz --output "$RUNNER_TEMP/mold.tar.gz"
+
+        echo "52c759d3689babaea4c42af2f31062a74ab83e17ffb5a8090232534c67b70577  $RUNNER_TEMP/mold.tar.gz" | sha256sum --check
+
+        mkdir "$RUNNER_TEMP/mold"
+
+        tar -xf "$RUNNER_TEMP/mold.tar.gz" --strip-components=1 -C "$RUNNER_TEMP/mold"
+
+        echo "$RUNNER_TEMP/mold/bin" >> "$GITHUB_PATH"
+
+        '
+    - name: Build candidate and exact-b3 control with identical native tools and configure arguments
+      env:
+        BUILD_LEVEL: ${{ matrix.level }}
+      run: "test \"$(uname -m)\" = aarch64\nmkdir b3-release template-jdk\ntar -xf saved/prior/patched-bundles/jdk-linux-aarch64.tar.gz -C b3-release\
+        \ --strip-components=1\npython3 - <<'PYHASH'\nimport pathlib,hashlib,json\nplan=json.loads(pathlib.Path('saved/prior/release-causal/plan.json').read_text())\n\
+        for name,record in plan['images']['b3'].items():\n    p=pathlib.Path('b3-release')/name\n    assert hashlib.file_digest(p.open('rb'),'sha256').hexdigest()==record['sha256']\n\
+        print('B3_RELEASE_HASHES_VERIFIED=true')\nPYHASH\ncontrol_options=(--control-source \"$PWD/control-source\")\nif [[ \"$BUILD_LEVEL\" ==\
+        \ fastdebug ]]; then\n  tar -xf debug-bundles/jdk-linux-aarch64-debug.tar.gz -C template-jdk --strip-components=2\nelse\n  cp -a b3-release/.\
+        \ template-jdk/\n\nfi\npython3 qualification/native_unroll/build_roundtrip_images.py --candidate-source \"$PWD\" \"${control_options[@]}\"\
+        \ --template-jdk template-jdk --boot-jdk b3-release --out backend-build --level \"$BUILD_LEVEL\" --execute\n"
+    - name: Show build failure
+      if: failure()
+      run: tail -100 backend-build/*/configure.log backend-build/*/build.log || true
+    - name: Preserve image and complete build provenance
+      if: always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: vector-api-roundtrip-candidate-${{ matrix.level }}
+        path: 'backend-build/*.tar.gz
+
+          backend-build/*.json
+
+          backend-build/*.txt
+
+          backend-build/candidate
+
+          backend-build/rebuilt_b3'
+        retention-days: 30
+  preflight:
+    name: Mandatory native matching correctness and installed assembly
+    needs: candidate-build
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 120
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: 38539204173
+        artifact-ids: 11881672203
+        path: saved
+        merge-multiple: true
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        name: vector-api-roundtrip-candidate-release
+        path: built
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        name: vector-api-roundtrip-candidate-fastdebug
+        path: debug-built
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: 38349570655
+        artifact-ids: 11790243299
+        path: jtreg
+        merge-multiple: true
+    - name: Extract and verify exact images
+      run: "test \"$(uname -m)\" = aarch64\nmkdir base-release b3-release controller-classes\ntar -xf saved/prior/baseline-bundles/jdk-linux-aarch64.tar.gz\
+        \ -C base-release --strip-components=1\ntar -xf saved/prior/patched-bundles/jdk-linux-aarch64.tar.gz -C b3-release --strip-components=1\n\
+        tar -xf built/candidate-jdk.tar.gz\ntar -xf built/rebuilt-b3-jdk.tar.gz\npython3 qualification/native_unroll/verify_roundtrip_images.py\
+        \ --built built --candidate candidate-jdk --control rebuilt-b3-jdk\npython3 - <<'PYHASH'\nimport pathlib,json,hashlib\np=json.loads(pathlib.Path('saved/prior/release-causal/plan.json').read_text())\n\
+        for image,directory in [('base87','base-release'),('b3','b3-release')]:\n for name,record in p['images'][image].items():\n  assert hashlib.file_digest(pathlib.Path(directory,name).open('rb'),'sha256').hexdigest()==record['sha256']\n\
+        PYHASH\nb3-release/bin/javac -cp saved/prior/frozen/qualification/classes:saved/prior/frozen/qualification/whitebox -d controller-classes\
+        \ qualification/src/FixedVectorProbe.java qualification/src/ProbeControllerPrimer.java\npython3 qualification/native_unroll/record_native_host.py\n\
+        mkdir candidate-debug control-debug\ntar -xf debug-built/candidate-jdk.tar.gz -C candidate-debug --strip-components=1\ntar -xf debug-built/rebuilt-b3-jdk.tar.gz\
+        \ -C control-debug --strip-components=1\npython3 qualification/native_unroll/verify_roundtrip_images.py --built debug-built --candidate\
+        \ candidate-debug --control control-debug\npython3 - <<'PYHOST'\nimport pathlib,json\nhost=json.loads(pathlib.Path('native-ir-host.json').read_text())\n\
+        assert 'Neoverse-N2' in host['lscpu'], 'Qualification requires the observed Neoverse-N2 host class'\nPYHOST\n"
+    - name: Require actual native matching, scalar results, OSR exclusion and bounded compilation
+      run: python3 qualification/native_unroll/run_roundtrip_preflight.py --release-jdk candidate-jdk --debug-jdk candidate-debug --control-jdk
+        rebuilt-b3-jdk --control-debug-jdk control-debug --jtreg jtreg --frozen saved/prior/frozen --out preflight --execute
+    - name: Install pinned ARM decoder separately from timed processes
+      run: 'mkdir -p decoder-provenance
+
+        cat > decoder-provenance/requirements.txt <<''PIPREQUIREMENTS''
+
+        capstone==5.0.9 --hash=sha256:41772ad0c71aa5d3e97d541e802593c2e71fb94ac7e20d4202f97ce2a3eb8ed5
+
+        PIPREQUIREMENTS
+
+        python3 -m pip download --require-hashes --only-binary=:all: --no-deps -r decoder-provenance/requirements.txt --dest decoder-provenance/wheel
+
+        python3 -m pip install --require-hashes --no-deps --no-index --find-links decoder-provenance/wheel --target "$RUNNER_TEMP/decoder" -r
+        decoder-provenance/requirements.txt
+
+        sha256sum decoder-provenance/wheel/*.whl > decoder-provenance/wheel.sha256
+
+        '
+    - name: Capture36separate ordinary release entries before any timing
+      run: python3 qualification/native_unroll/run_roundtrip_candidate.py --base-jdk base-release --b3-jdk b3-release --rebuilt-b3-jdk rebuilt-b3-jdk
+        --candidate-jdk candidate-jdk --frozen saved/prior/frozen --controller controller-classes --out observed-assembly --stage assembly --mode
+        assembly --execute
+    - name: Fail on missing installed sequence, altered recurrence or raw-loop control
+      run: python3 qualification/native_unroll/check_roundtrip_assembly.py observed-assembly
+      env:
+        PYTHONPATH: ${{ runner.temp }}/decoder
+    - name: Export all observed ordinary entry bytes and incomplete diagnostics
+      if: always()
+      run: python3 qualification/native_unroll/report_backend_candidate.py observed-assembly
+      env:
+        PYTHONPATH: ${{ runner.temp }}/decoder
+    - name: Preserve readable matching, tiers, compile costs and failed JTR evidence
+      if: always()
+      run: 'python3 qualification/native_unroll/export_roundtrip_evidence.py preflight
+
+        python3 qualification/native_unroll/export_roundtrip_evidence.py observed-assembly'
+    - name: Preserve complete success or failure evidence
+      if: always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: vector-api-roundtrip-preflight
+        path: 'preflight
+
+          observed-assembly
+
+          native-ir-host.json
+
+          decoder-provenance
+
+          qualification/native_unroll
+
+          test/hotspot/jtreg/compiler/vectorapi/TestFloatRoundTrip*.java'
+        retention-days: 30
+  recovery:
+    name: Fixed96-JVM legacy recovery screen
+    needs: preflight
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 120
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: 38539204173
+        artifact-ids: 11881672203
+        path: saved
+        merge-multiple: true
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        name: vector-api-roundtrip-candidate-release
+        path: built
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        name: vector-api-roundtrip-preflight
+        path: previous
+    - name: Verify prior mandatory gate
+      run: 'python3 - <<''PY''
+
+        import json,pathlib
+
+        p=pathlib.Path(''previous'')
+
+        assert json.loads((p/''preflight/preflight-gate.json'').read_text())[''passed'']
+
+        assert json.loads((p/''observed-assembly/installed-assembly-gate.json'').read_text())[''passed'']
+
+        PY'
+    - name: Verify exact images and frozen controller
+      run: "test \"$(uname -m)\" = aarch64\nmkdir base-release b3-release controller-classes\ntar -xf saved/prior/baseline-bundles/jdk-linux-aarch64.tar.gz\
+        \ -C base-release --strip-components=1\ntar -xf saved/prior/patched-bundles/jdk-linux-aarch64.tar.gz -C b3-release --strip-components=1\n\
+        tar -xf built/candidate-jdk.tar.gz\ntar -xf built/rebuilt-b3-jdk.tar.gz\npython3 qualification/native_unroll/verify_roundtrip_images.py\
+        \ --built built --candidate candidate-jdk --control rebuilt-b3-jdk\npython3 - <<'PYHASH'\nimport pathlib,json,hashlib\np=json.loads(pathlib.Path('saved/prior/release-causal/plan.json').read_text())\n\
+        for image,directory in [('base87','base-release'),('b3','b3-release')]:\n for name,record in p['images'][image].items():\n  assert hashlib.file_digest(pathlib.Path(directory,name).open('rb'),'sha256').hexdigest()==record['sha256']\n\
+        PYHASH\nb3-release/bin/javac -cp saved/prior/frozen/qualification/classes:saved/prior/frozen/qualification/whitebox -d controller-classes\
+        \ qualification/src/FixedVectorProbe.java qualification/src/ProbeControllerPrimer.java\npython3 qualification/native_unroll/record_native_host.py\n\
+        python3 - <<'PYHOST'\nimport pathlib,json\nhost=json.loads(pathlib.Path('native-ir-host.json').read_text())\nassert 'Neoverse-N2' in host['lscpu'],\
+        \ 'Qualification requires the observed Neoverse-N2 host class'\nPYHOST\n"
+    - name: Run unchanged fixed paired processes; no graph or WB diagnostics
+      run: python3 qualification/native_unroll/run_roundtrip_candidate.py --base-jdk base-release --b3-jdk b3-release --rebuilt-b3-jdk rebuilt-b3-jdk
+        --candidate-jdk candidate-jdk --frozen saved/prior/frozen --controller controller-classes --out timing-recovery --stage recovery --mode
+        timing --execute
+    - name: Export all rows including failed screens
+      if: always()
+      run: python3 qualification/native_unroll/report_backend_candidate.py timing-recovery
+    - name: Preserve complete success or failure evidence
+      if: always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: vector-api-roundtrip-recovery
+        path: 'timing-recovery
+
+          native-ir-host.json
+
+          built/matched-build-plan.json
+
+          built/matched-build-results.json'
+        retention-days: 30
+  retention:
+    name: Remaining672-JVM cumulative qualification contrasts
+    needs: recovery
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 120
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: 38539204173
+        artifact-ids: 11881672203
+        path: saved
+        merge-multiple: true
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        name: vector-api-roundtrip-candidate-release
+        path: built
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        name: vector-api-roundtrip-recovery
+        path: previous
+    - name: Verify prior mandatory gate
+      run: 'python3 - <<''PY''
+
+        import json,pathlib
+
+        p=pathlib.Path(''previous'')
+
+        assert json.loads((p/''timing-recovery/initial-gate.json'').read_text())[''passes'']
+
+        assert len(json.loads((p/''timing-recovery/summary.json'').read_text()))==4
+
+        PY'
+    - name: Verify exact images and frozen controller
+      run: "test \"$(uname -m)\" = aarch64\nmkdir base-release b3-release controller-classes\ntar -xf saved/prior/baseline-bundles/jdk-linux-aarch64.tar.gz\
+        \ -C base-release --strip-components=1\ntar -xf saved/prior/patched-bundles/jdk-linux-aarch64.tar.gz -C b3-release --strip-components=1\n\
+        tar -xf built/candidate-jdk.tar.gz\ntar -xf built/rebuilt-b3-jdk.tar.gz\npython3 qualification/native_unroll/verify_roundtrip_images.py\
+        \ --built built --candidate candidate-jdk --control rebuilt-b3-jdk\npython3 - <<'PYHASH'\nimport pathlib,json,hashlib\np=json.loads(pathlib.Path('saved/prior/release-causal/plan.json').read_text())\n\
+        for image,directory in [('base87','base-release'),('b3','b3-release')]:\n for name,record in p['images'][image].items():\n  assert hashlib.file_digest(pathlib.Path(directory,name).open('rb'),'sha256').hexdigest()==record['sha256']\n\
+        PYHASH\nb3-release/bin/javac -cp saved/prior/frozen/qualification/classes:saved/prior/frozen/qualification/whitebox -d controller-classes\
+        \ qualification/src/FixedVectorProbe.java qualification/src/ProbeControllerPrimer.java\npython3 qualification/native_unroll/record_native_host.py\n\
+        python3 - <<'PYHOST'\nimport pathlib,json\nhost=json.loads(pathlib.Path('native-ir-host.json').read_text())\nassert 'Neoverse-N2' in host['lscpu'],\
+        \ 'Qualification requires the observed Neoverse-N2 host class'\nPYHOST\n"
+    - name: Run unchanged fixed paired processes; no graph or WB diagnostics
+      run: python3 qualification/native_unroll/run_roundtrip_candidate.py --base-jdk base-release --b3-jdk b3-release --rebuilt-b3-jdk rebuilt-b3-jdk
+        --candidate-jdk candidate-jdk --frozen saved/prior/frozen --controller controller-classes --out timing-retention --stage retention --mode
+        timing --execute
+    - name: Export all rows including failed screens
+      if: always()
+      run: python3 qualification/native_unroll/report_backend_candidate.py timing-retention
+    - name: Preserve complete success or failure evidence
+      if: always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: vector-api-roundtrip-retention
+        path: 'timing-retention
+
+          native-ir-host.json
+
+          built/matched-build-plan.json
+
+          built/matched-build-results.json'
+        retention-days: 30
+  full-validation:
+    name: Full release fastdebug suites and separately observed phase/gap controls
+    needs: retention
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 360
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: 38539204173
+        artifact-ids: 11881672203
+        path: saved
+        merge-multiple: true
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        name: vector-api-roundtrip-candidate-release
+        path: built
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        name: vector-api-roundtrip-candidate-fastdebug
+        path: debug-built
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: 38349570655
+        artifact-ids: 11790243299
+        path: jtreg
+        merge-multiple: true
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        name: vector-api-roundtrip-retention
+        path: previous
+    - name: Require cumulative retention screen
+      run: 'python3 - <<''PY''
+
+        import pathlib,json
+
+        p=pathlib.Path(''previous/timing-retention'')
+
+        assert json.loads((p/''initial-gate.json'').read_text())[''passes'']
+
+        assert len(json.loads((p/''summary.json'').read_text()))==28
+
+        PY'
+    - name: Extract and verify exact images
+      run: "test \"$(uname -m)\" = aarch64\nmkdir base-release b3-release controller-classes\ntar -xf saved/prior/baseline-bundles/jdk-linux-aarch64.tar.gz\
+        \ -C base-release --strip-components=1\ntar -xf saved/prior/patched-bundles/jdk-linux-aarch64.tar.gz -C b3-release --strip-components=1\n\
+        tar -xf built/candidate-jdk.tar.gz\ntar -xf built/rebuilt-b3-jdk.tar.gz\npython3 qualification/native_unroll/verify_roundtrip_images.py\
+        \ --built built --candidate candidate-jdk --control rebuilt-b3-jdk\npython3 - <<'PYHASH'\nimport pathlib,json,hashlib\np=json.loads(pathlib.Path('saved/prior/release-causal/plan.json').read_text())\n\
+        for image,directory in [('base87','base-release'),('b3','b3-release')]:\n for name,record in p['images'][image].items():\n  assert hashlib.file_digest(pathlib.Path(directory,name).open('rb'),'sha256').hexdigest()==record['sha256']\n\
+        PYHASH\nb3-release/bin/javac -cp saved/prior/frozen/qualification/classes:saved/prior/frozen/qualification/whitebox -d controller-classes\
+        \ qualification/src/FixedVectorProbe.java qualification/src/ProbeControllerPrimer.java\npython3 qualification/native_unroll/record_native_host.py\n\
+        mkdir candidate-debug control-debug\ntar -xf debug-built/candidate-jdk.tar.gz -C candidate-debug --strip-components=1\ntar -xf debug-built/rebuilt-b3-jdk.tar.gz\
+        \ -C control-debug --strip-components=1\npython3 qualification/native_unroll/verify_roundtrip_images.py --built debug-built --candidate\
+        \ candidate-debug --control control-debug\npython3 - <<'PYHOST'\nimport pathlib,json\nhost=json.loads(pathlib.Path('native-ir-host.json').read_text())\n\
+        assert 'Neoverse-N2' in host['lscpu'], 'Qualification requires the observed Neoverse-N2 host class'\nPYHOST\n"
+    - name: Full suites and actual interpreter C1 cold controls; retain distinct gaps
+      run: python3 qualification/native_unroll/run_roundtrip_full.py --release-jdk candidate-jdk --debug-jdk candidate-debug --jtreg jtreg --frozen
+        saved/prior/frozen --out full-validation --execute
+    - name: Export suite summaries, per-test status and all phase/gap rows
+      if: always()
+      run: python3 qualification/native_unroll/export_roundtrip_evidence.py full-validation --full
+    - name: Preserve complete success or failure evidence
+      if: always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: vector-api-roundtrip-full-validation
+        path: 'full-validation
+
+          native-ir-host.json
+
+          qualification/native_unroll'
+        retention-days: 30
