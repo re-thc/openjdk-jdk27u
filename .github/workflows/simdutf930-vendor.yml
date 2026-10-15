@@ -1,0 +1,53 @@
+name: Prepare simdutf 9.3.0 vendor update
+on:
+  push:
+    branches: [review/simdutf930-vendor]
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Regenerate and verify the pinned release
+        run: |
+          set -euo pipefail
+          task_upstream="$RUNNER_TEMP/simdutf930-upstream"
+          git clone --depth 1 --branch v9.3.0 https://github.com/simdutf/simdutf.git "$task_upstream"
+          test "$(git -C "$task_upstream" rev-parse HEAD)" = bb77e7bb98fe0c2296e7cf9f324c56fcd704885a
+          python3 make/scripts/update-simdutf.py "$task_upstream"
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          paths=["src/utils/simdutf/simdutf.h","src/utils/simdutf/simdutf.cpp",
+                 "src/utils/simdutf/UPSTREAM","src/java.base/share/legal/simdutf.md"]
+          pathlib.Path("/tmp/simdutf930-hashes.json").write_text(json.dumps({
+              p:hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest() for p in paths}))
+          PY
+          AMALGAMATE_SOURCE_PATH=/invalid-source AMALGAMATE_INCLUDE_PATH=/invalid-include AMALGAMATE_OUTPUT_PATH=/invalid-output python3 make/scripts/update-simdutf.py "$task_upstream"
+          python3 - <<'PY'
+          import hashlib,json,pathlib,subprocess
+          expected=json.loads(pathlib.Path("/tmp/simdutf930-hashes.json").read_text())
+          for path,digest in expected.items():
+              assert hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()==digest,path
+          changed=set(subprocess.check_output(["git","diff","--name-only"],text=True).splitlines())
+          assert changed==set(expected),(changed,set(expected))
+          print("VENDOR_REPRODUCIBLE",json.dumps(expected),flush=True)
+          print(pathlib.Path("src/utils/simdutf/UPSTREAM").read_text(),flush=True)
+          PY
+          git diff --stat
+      - name: Publish generated vendor objects on the temporary branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh auth setup-git
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- src/utils/simdutf/simdutf.h src/utils/simdutf/simdutf.cpp src/utils/simdutf/UPSTREAM src/java.base/share/legal/simdutf.md
+          git commit -m 'Regenerate simdutf 9.3.0 from the pinned release'
+          git push origin HEAD:refs/heads/review/simdutf930-vendor
+          git show --format=fuller --stat HEAD
