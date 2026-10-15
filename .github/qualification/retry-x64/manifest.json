@@ -31,11 +31,12 @@
     "id": 38385226401,
     "status": "queued",
     "attempt": 2,
-    "head": "8bf01e9ed8a3df53fd8836d61216ed511ad3e591"
+    "conclusion": null,
+    "head_sha": "8bf01e9ed8a3df53fd8836d61216ed511ad3e591"
   },
   "changes_published": false,
   "new_hosted_runs": [],
-  "status": "Final release common 20, archive 6, flagless 2, related HotSpot 11 and JDK 74 passed. Clean fastdebug build, AOT tests and C1 arithmetic checks in progress; performance and tier2 pending; original native ARM failure not qualified. No PR branch push or hosted campaign.",
+  "status": "INCOMPLETE. Restored exact source25 and implemented static-assembly CDS guard and cold Montgomery tests; release and clean fastdebug built, final code tree 85f88dbe unchanged through author-only rewrite. 157 final implementation JTReg records passed and 504 functional GC/flag checks observed. Later executor requests did not return, preventing remaining reads/runs. Performance and tier2 unstarted; original ARM evidence transfer and native ARM/Windows AVX512 qualification remain blocked. PR unchanged, no hosted campaign.",
   "builds": {
     "source25-release": {
       "source": "25bff7b9d9c33fac3e62af27b4405ff60c00e583",
@@ -58,6 +59,15 @@
       "seconds": 694.2596793174744,
       "type": "clean release",
       "fingerprints": "master-release.sha256"
+    },
+    "final-fastdebug": {
+      "source": "7454b15f85f20d7ed6688256b52c126603e3ff06",
+      "implementation_tree": "85f88dbe68d8c68d66f9bec99639bcf52844f735",
+      "exit_code": 0,
+      "seconds": 1437.0184831619263,
+      "children_reaped": 13240,
+      "type": "clean fastdebug",
+      "fingerprints": "Local final-fastdebug.sha256 not uploaded after executor responsiveness blocker"
     }
   },
   "local_head": "7454b15f85f20d7ed6688256b52c126603e3ff06",
@@ -121,6 +131,50 @@
       "passed": 11,
       "failed": 0,
       "record": "final-release-hotspot.result.json"
+    },
+    "final-release-aot": {
+      "runtime_source": "8c833417e01964ad0fb3ad912ce0bd9d27117ba8",
+      "exit_code": 0,
+      "passed": 10,
+      "failed": 0,
+      "record": "Observed completed command receipt; full local result not uploaded"
+    },
+    "final-release-c1-math-l3": {
+      "runtime_source": "8c833417e01964ad0fb3ad912ce0bd9d27117ba8",
+      "exit_code": 0,
+      "passed": 3,
+      "failed": 0,
+      "record": "Observed completed command receipt; full local result not uploaded"
+    },
+    "final-fastdebug-common": {
+      "runtime_source": "7454b15f85f20d7ed6688256b52c126603e3ff06",
+      "jtreg_exit_code": 0,
+      "wrapper_exit_code": 120,
+      "passed": 20,
+      "failed": 0,
+      "seconds": 526.4,
+      "transport_note": "Outer wrapper exited 120 following tool reattachment; actual JTReg command result was 0",
+      "record": "Observed complete command result and summaries; full local files not uploaded"
+    },
+    "final-fastdebug-archives": {
+      "runtime_source": "7454b15f85f20d7ed6688256b52c126603e3ff06",
+      "jtreg_exit_code": 0,
+      "wrapper_exit_code": 120,
+      "passed": 6,
+      "failed": 0,
+      "seconds": 533.14,
+      "transport_note": "Outer wrapper exited 120 following tool reattachment; actual JTReg command result was 0",
+      "record": "Observed complete command result and summaries; full local files not uploaded"
+    },
+    "final-fastdebug-flagless": {
+      "runtime_source": "7454b15f85f20d7ed6688256b52c126603e3ff06",
+      "jtreg_exit_code": 0,
+      "wrapper_exit_code": 0,
+      "passed": 2,
+      "failed": 0,
+      "seconds": null,
+      "transport_note": null,
+      "record": "Observed complete command result and summaries; full local files not uploaded"
     }
   },
   "aot_probe": {
@@ -141,5 +195,31 @@
     "unchanged_tree": "85f88dbe68d8c68d66f9bec99639bcf52844f735",
     "reason": "Use verified public noreply identity after GH007 privacy rejection"
   },
-  "source_bundle_sha256": "5f64d6b3add3b51ebffb6ae7a4967c951c08317b93319950073587eec09ea0cb"
+  "source_bundle_sha256": "5f64d6b3add3b51ebffb6ae7a4967c951c08317b93319950073587eec09ea0cb",
+  "latest_verified_counts": {
+    "final_implementation_jtreg_passed": 157,
+    "release": 129,
+    "fastdebug": 28,
+    "functional_gc_flag_checks_completed": 504,
+    "functional_gc_flag_checks_planned": 560,
+    "performance_runs_started": 0,
+    "tier2_runs_started": 0
+  },
+  "include_order_check": {
+    "tool": "test/hotspot/jtreg/sources/SortIncludes.java",
+    "exit_code": 0
+  },
+  "executor_blocker": {
+    "initial_provisioning": "ready and shell probe succeeded",
+    "reattachment": "ready; shell probe succeeded on same host 6861002e9944",
+    "latest": "Status exec_command and minimal printf exec_command did not return; waiting cells terminated",
+    "explicit_service_error": null,
+    "last_observed_time_utc": "2026-10-15 01:37:09",
+    "in_flight_unverified": [
+      "Published c04d1ba1 control build",
+      "Native gtest build",
+      "Fastdebug AOT suite",
+      "Remaining fastdebug Shenandoah functional probe"
+    ]
+  }
 }
