@@ -117,6 +117,13 @@ public final class SimdUTF {
     }
 
     @ForceInline
+    public static boolean isEligibleLatin1Decoding(int len) {
+        int threshold = minLength;
+        return threshold > 0 && len >= threshold
+                && (!automatic || len >= operationMinimumLength(DECODE_LATIN1));
+    }
+
+    @ForceInline
     public static boolean isEligibleUTF16Encoding(int len) {
         int threshold = minLength;
         return threshold > 0 && len >= (automatic
