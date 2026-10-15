@@ -1,0 +1,36 @@
+{
+  "source": "0fb3e86a762be2cd3ed9ec35f327e1e7c64682bc",
+  "created_utc": "2026-10-15T17:06:43.175839+00:00",
+  "status": "measuring",
+  "phases": [
+    {
+      "name": "first-legacy",
+      "command": [
+        "python3",
+        "/workspace/pr9-validation/run_reaped.py",
+        "/workspace/pr9-validation/final-first-legacy.log",
+        "python3",
+        "/workspace/pr9-validation/cold_matrix.py",
+        "first",
+        "--blocks",
+        "120",
+        "--sizes",
+        "512,2048,4096",
+        "--operations",
+        "multiply,product,modpow",
+        "--output",
+        "final-first-legacy.json"
+      ],
+      "exit_code": 0,
+      "seconds": 1056.0243742465973,
+      "output_sha256": "0ae8d8ef9b6851ca681712da66df6ad57349b651f3ab232883938b503ec69d62"
+    }
+  ],
+  "file_count": 54,
+  "archive": {
+    "name": "performance.zip",
+    "bytes": 3511728,
+    "sha256": "b8564dcc8b2e3894f2d942b4c5b8868eb9c60edae34972d10d2751adf11247fe"
+  },
+  "scope": "Linux x64 measurements. Phase completion is not regression review or PR approval."
+}
