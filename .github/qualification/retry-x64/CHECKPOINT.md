@@ -1,5 +1,10 @@
 # PR 9 execution checkpoint
 
+Recovery succeeded after this checkpoint. See [RECOVERY.md](RECOVERY.md) and
+[recovery-manifest.json](recovery-manifest.json) for the bounded health check,
+source identity, full recovered logs and latest verified counts. No further
+build, test, measurement or Library retry was started during recovery.
+
 The replacement environment provisioned and ran a shell startup probe. The
 exact clean source `25bff7b9d9c33fac3e62af27b4405ff60c00e583` was restored from
 checkpoint `6276dd1b9cc1be5010a5491402fb96fcbfe376c9`; the recovery bundle's

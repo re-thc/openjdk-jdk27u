@@ -36,7 +36,7 @@
   },
   "changes_published": false,
   "new_hosted_runs": [],
-  "status": "INCOMPLETE. Restored exact source25 and implemented static-assembly CDS guard and cold Montgomery tests; release and clean fastdebug built, final code tree 85f88dbe unchanged through author-only rewrite. 157 final implementation JTReg records passed and 504 functional GC/flag checks observed. Later executor requests did not return, preventing remaining reads/runs. Performance and tier2 unstarted; original ARM evidence transfer and native ARM/Windows AVX512 qualification remain blocked. PR unchanged, no hosted campaign.",
+  "status": "INCOMPLETE; recovery-only completed. Health command succeeded, clean source7454b15f/tree85f88dbe and saved runtime fingerprints verified. 162 final-code JTReg records passed (129 release, 33 fastdebug), 560 functional GC/flag checks passed. Published-head control and native gtest builds completed with exit 0; native gtests not run. Performance/tier2 unstarted; original ARM transfer retries exhausted and native ARM/Windows AVX512 gaps remain. No new execution beyond health/preservation and no PR update.",
   "builds": {
     "source25-release": {
       "source": "25bff7b9d9c33fac3e62af27b4405ff60c00e583",
@@ -175,6 +175,15 @@
       "seconds": null,
       "transport_note": null,
       "record": "Observed complete command result and summaries; full local files not uploaded"
+    },
+    "final-fastdebug-aot": {
+      "runtime_source": "8c833417e01964ad0fb3ad912ce0bd9d27117ba8",
+      "code_equivalent_to": "7454b15f85f20d7ed6688256b52c126603e3ff06",
+      "jtreg_exit_code": 0,
+      "passed": 5,
+      "platform_skipped": 5,
+      "skip_reason": "AOTCodeTest collector records require VerifyOops null/false; selected VerifyOops=true",
+      "record": "latest-fastdebug-probe-logs.zip"
     }
   },
   "aot_probe": {
@@ -197,10 +206,10 @@
   },
   "source_bundle_sha256": "5f64d6b3add3b51ebffb6ae7a4967c951c08317b93319950073587eec09ea0cb",
   "latest_verified_counts": {
-    "final_implementation_jtreg_passed": 157,
+    "final_implementation_jtreg_passed": 162,
     "release": 129,
-    "fastdebug": 28,
-    "functional_gc_flag_checks_completed": 504,
+    "fastdebug": 33,
+    "functional_gc_flag_checks_completed": 560,
     "functional_gc_flag_checks_planned": 560,
     "performance_runs_started": 0,
     "tier2_runs_started": 0
@@ -220,6 +229,10 @@
       "Native gtest build",
       "Fastdebug AOT suite",
       "Remaining fastdebug Shenandoah functional probe"
-    ]
-  }
+    ],
+    "recovered": true,
+    "recovery_probe_output": "recovery-health-ok",
+    "recovery_probe_exit_code": 0
+  },
+  "recovery": "RECOVERY.md and recovery-manifest.json; one read-only health check succeeded at source7454b15f/tree85f88dbe; original image SOURCE=8c833417 with identical tree."
 }

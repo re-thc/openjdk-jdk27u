@@ -1,0 +1,337 @@
+{
+  "head": "7454b15f85f20d7ed6688256b52c126603e3ff06",
+  "tree": "85f88dbe68d8c68d66f9bec99639bcf52844f735",
+  "runtime_sources": {
+    "final-release": {
+      "release_source_lines": [
+        "JAVA_VERSION=\"27.0.2\"",
+        "OS_ARCH=\"x86_64\"",
+        "SOURCE=\".:git:8c833417e019\""
+      ],
+      "fingerprints": {
+        "lib/server/libjvm.so": {
+          "bytes": 30471640,
+          "sha256": "3c710fef71782741217bc3cb65b26075ee2c705094aa81c82bf82c67750420f5"
+        },
+        "lib/modules": {
+          "bytes": 147322108,
+          "sha256": "ee34fc8ae4d9e6832d4db8697d0fef0f48b1574ab27dce1117fe54a4e8a9e24b"
+        },
+        "release": {
+          "bytes": 1150,
+          "sha256": "d70db8940af93e6027bdde04ce31b0084c48a64e97551238c8078338f41b960b"
+        }
+      }
+    },
+    "final-fastdebug": {
+      "release_source_lines": [
+        "JAVA_VERSION=\"27.0.2\"",
+        "OS_ARCH=\"x86_64\"",
+        "SOURCE=\".:git:8c833417e019\""
+      ],
+      "fingerprints": {
+        "lib/server/libjvm.so": {
+          "bytes": 48442176,
+          "sha256": "1adf1afa50561cf30e647745531cfa115648cfc2ae81739c0688aa1aaf9e6119"
+        },
+        "lib/modules": {
+          "bytes": 150025019,
+          "sha256": "51275df5247fe5fba8c0a3c42b6f91c697eabafac1ac0de9cb01a0edb195de04"
+        },
+        "release": {
+          "bytes": 1150,
+          "sha256": "d70db8940af93e6027bdde04ce31b0084c48a64e97551238c8078338f41b960b"
+        }
+      }
+    }
+  },
+  "completed": {
+    "final-fastdebug-common": {
+      "command": [
+        "/workspace/toolchains/jdk27/bin/java",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xmx512m",
+        "-jar",
+        "/workspace/toolchains/jtreg83/lib/jtreg.jar",
+        "-jdk:/workspace/pr9-validation/images/final-fastdebug",
+        "-othervm",
+        "-conc:1",
+        "-timeoutFactor:4",
+        "-nativepath:/workspace/openjdk-jdk27u/build/pr9-fastdebug/images/test/hotspot/jtreg/native",
+        "-vmoptions:-XX:ActiveProcessorCount=2 -XX:CICompilerCount=2 -Xmx512m -Dseed=42 -XX:+UnlockDiagnosticVMOptions -XX:+CheckUnhandledOops -XX:+VerifyOops",
+        "-w:/workspace/pr9-validation/final-fastdebug-common-work",
+        "-r:/workspace/pr9-validation/final-fastdebug-common-report",
+        "test/hotspot/jtreg/compiler/intrinsics/common"
+      ],
+      "exit_code": 0,
+      "seconds": 526.3961834907532,
+      "children_reaped": 1,
+      "outer": {
+        "name": "final-fastdebug-common",
+        "command": [
+          "/workspace/toolchains/jdk27/bin/java",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xmx512m",
+          "-jar",
+          "/workspace/toolchains/jtreg83/lib/jtreg.jar",
+          "-jdk:/workspace/pr9-validation/images/final-fastdebug",
+          "-othervm",
+          "-conc:1",
+          "-timeoutFactor:4",
+          "-nativepath:/workspace/openjdk-jdk27u/build/pr9-fastdebug/images/test/hotspot/jtreg/native",
+          "-vmoptions:-XX:ActiveProcessorCount=2 -XX:CICompilerCount=2 -Xmx512m -Dseed=42 -XX:+UnlockDiagnosticVMOptions -XX:+CheckUnhandledOops -XX:+VerifyOops",
+          "-w:/workspace/pr9-validation/final-fastdebug-common-work",
+          "-r:/workspace/pr9-validation/final-fastdebug-common-report",
+          "test/hotspot/jtreg/compiler/intrinsics/common"
+        ],
+        "exit_code": 120,
+        "summary": "compiler/intrinsics/common/TestCommonAVX512Intrinsics.java                Passed. Execution successful\ncompiler/intrinsics/common/TestCommonArithmeticIntrinsics.java            Passed. Execution successful\ncompiler/intrinsics/common/TestCommonBigIntegerShifts.java                Passed. Execution successful\ncompiler/intrinsics/common/TestCommonDigestStreaming.java                 Passed. Execution successful\ncompiler/intrinsics/common/TestCommonEvaluationOrder.java                 Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntPolyAssign.java                   Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicAvailability.java           Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicBreakpoints.java            Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicEvents.java                 Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicFallback.java               Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicGuardIsolation.java#level1  Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicGuardIsolation.java#level3  Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicInitialization.java         Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicRecompilation.java          Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsics.java                      Passed. Execution successful\ncompiler/intrinsics/common/TestCommonMethodHandles.java#level1            Passed. Execution successful\ncompiler/intrinsics/common/TestCommonMethodHandles.java#level3            Passed. Execution successful\ncompiler/intrinsics/common/TestCommonMulAdd.java                          Passed. Execution successful\ncompiler/intrinsics/common/TestCommonScalarFlags.java                     Passed. Execution successful\ncompiler/intrinsics/common/TestCommonScalarIntrinsics.java                Passed. Execution successful\n",
+        "source_checkout_at_start": "7454b15f85f20d7ed6688256b52c126603e3ff06",
+        "wrapper_exit_code": 120,
+        "jtreg_exit_code": 0,
+        "transport_note": "Wrapper exited 120 after environment tool reattachment; JTReg command exited 0 and all records passed."
+      }
+    },
+    "final-fastdebug-archives": {
+      "command": [
+        "/workspace/toolchains/jdk27/bin/java",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xmx512m",
+        "-jar",
+        "/workspace/toolchains/jtreg83/lib/jtreg.jar",
+        "-jdk:/workspace/pr9-validation/images/final-fastdebug",
+        "-othervm",
+        "-conc:1",
+        "-timeoutFactor:4",
+        "-nativepath:/workspace/openjdk-jdk27u/build/pr9-fastdebug/images/test/hotspot/jtreg/native",
+        "-vmoptions:-XX:ActiveProcessorCount=2 -XX:CICompilerCount=2 -XX:+UnlockDiagnosticVMOptions -XX:+CheckUnhandledOops -XX:+VerifyOops",
+        "-w:/workspace/pr9-validation/final-fastdebug-archives-work",
+        "-r:/workspace/pr9-validation/final-fastdebug-archives-report",
+        "test/hotspot/jtreg/runtime/cds/CommonIntrinsicArchiveDeterminism.java",
+        "test/hotspot/jtreg/runtime/cds/FourByteHeaderArchiveDeterminism.java"
+      ],
+      "exit_code": 0,
+      "seconds": 533.1376898288727,
+      "children_reaped": 1,
+      "outer": {
+        "name": "final-fastdebug-archives",
+        "command": [
+          "/workspace/toolchains/jdk27/bin/java",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xmx512m",
+          "-jar",
+          "/workspace/toolchains/jtreg83/lib/jtreg.jar",
+          "-jdk:/workspace/pr9-validation/images/final-fastdebug",
+          "-othervm",
+          "-conc:1",
+          "-timeoutFactor:4",
+          "-nativepath:/workspace/openjdk-jdk27u/build/pr9-fastdebug/images/test/hotspot/jtreg/native",
+          "-vmoptions:-XX:ActiveProcessorCount=2 -XX:CICompilerCount=2 -XX:+UnlockDiagnosticVMOptions -XX:+CheckUnhandledOops -XX:+VerifyOops",
+          "-w:/workspace/pr9-validation/final-fastdebug-archives-work",
+          "-r:/workspace/pr9-validation/final-fastdebug-archives-report",
+          "test/hotspot/jtreg/runtime/cds/CommonIntrinsicArchiveDeterminism.java",
+          "test/hotspot/jtreg/runtime/cds/FourByteHeaderArchiveDeterminism.java"
+        ],
+        "exit_code": 120,
+        "summary": "runtime/cds/CommonIntrinsicArchiveDeterminism.java#g1      Passed. Execution successful\nruntime/cds/CommonIntrinsicArchiveDeterminism.java#serial  Passed. Execution successful\nruntime/cds/CommonIntrinsicArchiveDeterminism.java#z       Passed. Execution successful\nruntime/cds/FourByteHeaderArchiveDeterminism.java#g1       Passed. Execution successful\nruntime/cds/FourByteHeaderArchiveDeterminism.java#serial   Passed. Execution successful\nruntime/cds/FourByteHeaderArchiveDeterminism.java#z        Passed. Execution successful\n",
+        "source_checkout_at_start": "7454b15f85f20d7ed6688256b52c126603e3ff06",
+        "wrapper_exit_code": 120,
+        "jtreg_exit_code": 0,
+        "transport_note": "Wrapper exited 120 after environment tool reattachment; JTReg command exited 0 and all records passed."
+      }
+    },
+    "final-fastdebug-flagless": {
+      "command": [
+        "/workspace/toolchains/jdk27/bin/java",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xmx512m",
+        "-jar",
+        "/workspace/toolchains/jtreg83/lib/jtreg.jar",
+        "-jdk:/workspace/pr9-validation/images/final-fastdebug",
+        "-othervm",
+        "-conc:1",
+        "-timeoutFactor:4",
+        "-v:summary",
+        "-exclude:/workspace/openjdk-jdk27u/test/hotspot/jtreg/ProblemList.txt",
+        "-nativepath:/workspace/openjdk-jdk27u/build/pr9-fastdebug/images/test/hotspot/jtreg/native",
+        "-vmoptions:",
+        "-w:/workspace/pr9-validation/final-fastdebug-flagless-work",
+        "-r:/workspace/pr9-validation/final-fastdebug-flagless-report",
+        "test/hotspot/jtreg/runtime/cds/DeterministicDump.java",
+        "test/hotspot/jtreg/runtime/cds/MetaspaceAllocGaps.java"
+      ],
+      "exit_code": 0,
+      "seconds": 105.61649942398071,
+      "children_reaped": 1,
+      "outer": {
+        "name": "final-fastdebug-flagless",
+        "command": [
+          "/workspace/toolchains/jdk27/bin/java",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xmx512m",
+          "-jar",
+          "/workspace/toolchains/jtreg83/lib/jtreg.jar",
+          "-jdk:/workspace/pr9-validation/images/final-fastdebug",
+          "-othervm",
+          "-conc:1",
+          "-timeoutFactor:4",
+          "-v:summary",
+          "-exclude:/workspace/openjdk-jdk27u/test/hotspot/jtreg/ProblemList.txt",
+          "-nativepath:/workspace/openjdk-jdk27u/build/pr9-fastdebug/images/test/hotspot/jtreg/native",
+          "-vmoptions:",
+          "-w:/workspace/pr9-validation/final-fastdebug-flagless-work",
+          "-r:/workspace/pr9-validation/final-fastdebug-flagless-report",
+          "test/hotspot/jtreg/runtime/cds/DeterministicDump.java",
+          "test/hotspot/jtreg/runtime/cds/MetaspaceAllocGaps.java"
+        ],
+        "exit_code": 0,
+        "summary": "runtime/cds/DeterministicDump.java   Passed. Execution successful\nruntime/cds/MetaspaceAllocGaps.java  Passed. Execution successful\n",
+        "source_checkout_at_start": "7454b15f85f20d7ed6688256b52c126603e3ff06"
+      }
+    },
+    "final-fastdebug-aot": {
+      "command": [
+        "/workspace/toolchains/jdk27/bin/java",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xmx512m",
+        "-jar",
+        "/workspace/toolchains/jtreg83/lib/jtreg.jar",
+        "-jdk:/workspace/pr9-validation/images/final-fastdebug",
+        "-othervm",
+        "-conc:1",
+        "-timeoutFactor:4",
+        "-v:summary",
+        "-exclude:/workspace/openjdk-jdk27u/test/hotspot/jtreg/ProblemList.txt",
+        "-nativepath:/workspace/openjdk-jdk27u/build/pr9-fastdebug/images/test/hotspot/jtreg/native",
+        "-vmoptions:-XX:ActiveProcessorCount=2 -XX:CICompilerCount=2 -XX:+UnlockDiagnosticVMOptions -XX:+CheckUnhandledOops -XX:+VerifyOops",
+        "-w:/workspace/pr9-validation/final-fastdebug-aot-work",
+        "-r:/workspace/pr9-validation/final-fastdebug-aot-report",
+        "test/hotspot/jtreg/runtime/cds/appcds/aotCache/HelloAOTCache.java",
+        "test/hotspot/jtreg/runtime/cds/appcds/aotCode/AOTCodeCPUFeatureIncompatibilityTest.java",
+        "test/hotspot/jtreg/runtime/cds/appcds/aotCode/AOTCodeCompressedOopsTest.java",
+        "test/hotspot/jtreg/runtime/cds/appcds/aotCode/AOTCodeTest.java",
+        "test/hotspot/jtreg/compiler/codecache/OverflowCodeCacheTest.java"
+      ],
+      "exit_code": 0,
+      "seconds": 203.24848175048828,
+      "children_reaped": 1,
+      "outer": {
+        "name": "final-fastdebug-aot",
+        "command": [
+          "/workspace/toolchains/jdk27/bin/java",
+          "-XX:TieredStopAtLevel=1",
+          "-XX:ActiveProcessorCount=1",
+          "-XX:+UseSerialGC",
+          "-Xmx512m",
+          "-jar",
+          "/workspace/toolchains/jtreg83/lib/jtreg.jar",
+          "-jdk:/workspace/pr9-validation/images/final-fastdebug",
+          "-othervm",
+          "-conc:1",
+          "-timeoutFactor:4",
+          "-v:summary",
+          "-exclude:/workspace/openjdk-jdk27u/test/hotspot/jtreg/ProblemList.txt",
+          "-nativepath:/workspace/openjdk-jdk27u/build/pr9-fastdebug/images/test/hotspot/jtreg/native",
+          "-vmoptions:-XX:ActiveProcessorCount=2 -XX:CICompilerCount=2 -XX:+UnlockDiagnosticVMOptions -XX:+CheckUnhandledOops -XX:+VerifyOops",
+          "-w:/workspace/pr9-validation/final-fastdebug-aot-work",
+          "-r:/workspace/pr9-validation/final-fastdebug-aot-report",
+          "test/hotspot/jtreg/runtime/cds/appcds/aotCache/HelloAOTCache.java",
+          "test/hotspot/jtreg/runtime/cds/appcds/aotCode/AOTCodeCPUFeatureIncompatibilityTest.java",
+          "test/hotspot/jtreg/runtime/cds/appcds/aotCode/AOTCodeCompressedOopsTest.java",
+          "test/hotspot/jtreg/runtime/cds/appcds/aotCode/AOTCodeTest.java",
+          "test/hotspot/jtreg/compiler/codecache/OverflowCodeCacheTest.java"
+        ],
+        "exit_code": 0,
+        "summary": "compiler/codecache/OverflowCodeCacheTest.java#id0                     Passed. Execution successful\ncompiler/codecache/OverflowCodeCacheTest.java#id1                     Passed. Execution successful\nruntime/cds/appcds/aotCache/HelloAOTCache.java                        Passed. Execution successful\nruntime/cds/appcds/aotCode/AOTCodeCPUFeatureIncompatibilityTest.java  Passed. Execution successful\nruntime/cds/appcds/aotCode/AOTCodeCompressedOopsTest.java             Passed. Execution successful\n",
+        "source_checkout_at_start": "7454b15f85f20d7ed6688256b52c126603e3ff06"
+      }
+    },
+    "gc-flags-probe": {
+      "command": [
+        "python3",
+        "/workspace/pr9-validation/gc_flags_probe.py"
+      ],
+      "exit_code": 0,
+      "seconds": 142.10983848571777,
+      "children_reaped": 1
+    },
+    "build-before": {
+      "command": [
+        "bash",
+        "-c",
+        "source /workspace/toolchains/activate.sh && make CONF=pr9-before JOBS=4 images"
+      ],
+      "exit_code": 0,
+      "seconds": 1129.8309798240662,
+      "children_reaped": 8411
+    },
+    "build-final-gtest-image": {
+      "command": [
+        "bash",
+        "-c",
+        "source /workspace/toolchains/activate.sh && make CONF=pr9-fastdebug JOBS=1 GTEST_FRAMEWORK_SRC=/workspace/pr9-validation/googletest test-image-hotspot-gtest"
+      ],
+      "exit_code": 0,
+      "seconds": 861.827449798584,
+      "children_reaped": 463
+    },
+    "build-final-fastdebug": {
+      "command": [
+        "bash",
+        "-c",
+        "source /workspace/toolchains/activate.sh && make CONF=pr9-fastdebug JOBS=4 images test-image"
+      ],
+      "exit_code": 0,
+      "seconds": 1437.0184831619263,
+      "children_reaped": 13240
+    }
+  },
+  "gc_flag_rows": 560,
+  "gc_flag_failures": 0,
+  "packet": {
+    "path": "/workspace/pr9-recovery/latest-fastdebug-probe-logs.zip",
+    "bytes": 152105,
+    "sha256": "55208876371fb1d31ca8035b45bacd3cd8237d7e782ce4db09b8ac4606db57c1",
+    "files": 132
+  },
+  "runtime_source_identity": {
+    "release_metadata_source": "8c833417e019",
+    "code_tree_at_8c833417": "85f88dbe68d8c68d66f9bec99639bcf52844f735",
+    "current_commit": "7454b15f85f20d7ed6688256b52c126603e3ff06",
+    "current_tree": "85f88dbe68d8c68d66f9bec99639bcf52844f735",
+    "relationship": "author-only rewrite; identical complete source tree"
+  },
+  "health_check": {
+    "output": "recovery-health-ok",
+    "exit_code": 0,
+    "read_only": true
+  },
+  "qualification": {
+    "release_jtreg_passed": 129,
+    "fastdebug_jtreg_passed": 33,
+    "total_final_implementation_jtreg_passed": 162,
+    "fastdebug_aot_passed": 5,
+    "fastdebug_aot_platform_skipped": 5,
+    "gc_flag_checks_passed": 560,
+    "gtest_build_exit_code": 0,
+    "gtest_execution": "not run",
+    "published_head_control_build_exit_code": 0,
+    "performance_runs_started": 0,
+    "tier2_runs_started": 0,
+    "fastdebug_aot_skip_reason": "AOTCodeTest five collector records require VerifyOops null/false; qualification flags selected VerifyOops=true."
+  }
+}
