@@ -42,6 +42,7 @@
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
@@ -73,6 +74,7 @@ public class SimdUTFLargeTest {
         latin1();
         base64();
         malformed();
+        trailingMalformed();
     }
 
     private static void surrogateBoundary() {
@@ -175,7 +177,7 @@ public class SimdUTFLargeTest {
         byte[] bytes = new byte[LIMIT + 1];
         Arrays.fill(bytes, (byte)0x80);
         var decoder = StandardCharsets.UTF_8.newDecoder()
-                .onMalformedInput(java.nio.charset.CodingErrorAction.REPLACE);
+                .onMalformedInput(CodingErrorAction.REPLACE);
         CharBuffer output = CharBuffer.allocate(bytes.length);
         var result = decoder.decode(ByteBuffer.wrap(bytes), output, true);
         check(result.isUnderflow() && !output.hasRemaining(), "large malformed decode positions");
@@ -183,11 +185,55 @@ public class SimdUTFLargeTest {
         char[] chars = new char[LIMIT + 1];
         Arrays.fill(chars, '\udc00');
         var encoder = StandardCharsets.UTF_8.newEncoder()
-                .onMalformedInput(java.nio.charset.CodingErrorAction.REPLACE);
+                .onMalformedInput(CodingErrorAction.REPLACE);
         ByteBuffer encoded = ByteBuffer.allocate(chars.length);
         result = encoder.encode(CharBuffer.wrap(chars), encoded, true);
         check(result.isUnderflow() && !encoded.hasRemaining(), "large malformed encode positions");
         for (byte b : encoded.array()) check(b == '?', "large malformed encode replacement");
+    }
+
+    private static void trailingMalformed() {
+        for (int length : new int[]{LIMIT - 1, LIMIT + 1, 2 * LIMIT + 1}) {
+            String text = "漢".repeat(length / 3) + "a".repeat(length % 3);
+            byte[] prefix = text.getBytes(StandardCharsets.UTF_8);
+            byte[] bytes = Arrays.copyOf(prefix, prefix.length + 1);
+            for (byte last : new byte[]{(byte)0x80, (byte)0xe2}) {
+                bytes[prefix.length] = last;
+                int n = SimdUTF.decodeUTF8(bytes, 0, bytes.length,
+                        new char[text.length() + 1], 0, text.length() + 1);
+                if (SimdUTF.isEligible(bytes.length)) {
+                    check(n < 0 && -(n + 1) == prefix.length, "large UTF8 failure offset");
+                }
+                for (var action : new CodingErrorAction[]{CodingErrorAction.REPORT,
+                        CodingErrorAction.REPLACE, CodingErrorAction.IGNORE}) {
+                    for (boolean end : new boolean[]{false, true}) {
+                        for (int capacity : new int[]{text.length() - 1, text.length() + 1}) {
+                            char[][] output = new char[2][capacity + 8];
+                            int position = -1;
+                            int written = -1;
+                            String result = null;
+                            for (int mode = 0; mode < 2; mode++) {
+                                Arrays.fill(output[mode], '\u5555');
+                                ByteBuffer input = ByteBuffer.wrap(bytes);
+                                if (mode == 0) input = input.asReadOnlyBuffer();
+                                CharBuffer target = CharBuffer.wrap(output[mode], 3, capacity);
+                                var decoder = StandardCharsets.UTF_8.newDecoder().onMalformedInput(action);
+                                var status = decoder.decode(input, target, end);
+                                if (mode == 0) {
+                                    position = input.position();
+                                    written = target.position();
+                                    result = status.toString();
+                                } else {
+                                    check(position == input.position() && written == target.position()
+                                            && result.equals(status.toString()), "large UTF8 error positions");
+                                    check(Arrays.equals(output[0], output[1]), "large UTF8 error output and guards");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private static void check(boolean condition, String message) {

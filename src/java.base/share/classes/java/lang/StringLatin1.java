@@ -37,6 +37,7 @@ import java.util.stream.StreamSupport;
 import jdk.internal.lang.CaseFolding;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.SimdUTF;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.String.LATIN1;
@@ -1061,6 +1062,7 @@ final class StringLatin1 {
      * @throws NullPointerException if {@code src} or {@code dst} is null
      * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
      */
+    @ForceInline
     static void inflate(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
         String.checkBoundsOffCount(srcOff, len, src.length);    // Implicit null check on `src`
         String.checkBoundsOffCount(dstOff, len, dst.length);    // Implicit null check on `dst`
@@ -1068,6 +1070,7 @@ final class StringLatin1 {
     }
 
     // vmIntrinsics::_inflateStringC
+    @ForceInline
     @IntrinsicCandidate
     private static void inflate0(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
         if (len == 0) {

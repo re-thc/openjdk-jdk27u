@@ -296,4 +296,53 @@ public class SimdUTF {
         malformedEncoder.encode(malformedChars, malformedBytes, true);
         return malformedBytes.position();
     }
+
+    @Benchmark public CoderResult malformedSequenceDecode(MalformedSequence state) {
+        state.decoder.reset();
+        state.input.clear();
+        state.output.clear();
+        return state.decoder.decode(state.input, state.output, true);
+    }
+
+    @State(Scope.Thread)
+    public static class MalformedSequence {
+        @Param({"overlong", "surrogate", "range", "continuation", "tail"})
+        public String kind;
+
+        @Param({"REPORT", "REPLACE"})
+        public String action;
+
+        private CharsetDecoder decoder;
+        private ByteBuffer input;
+        private CharBuffer output;
+
+        @Setup
+        public void setup(SimdUTF benchmark) {
+            byte[] pattern = switch (kind) {
+                case "overlong" -> new byte[]{(byte)0xe0, (byte)0x80, (byte)0x80};
+                case "surrogate" -> new byte[]{(byte)0xed, (byte)0xa0, (byte)0x80};
+                case "range" -> new byte[]{(byte)0xf4, (byte)0x90, (byte)0x80, (byte)0x80};
+                case "continuation" -> new byte[]{(byte)0xe6, 0x20, (byte)0x80};
+                case "tail" -> new byte[]{(byte)0xe6, (byte)0xbc, (byte)0xa2};
+                default -> throw new IllegalArgumentException(kind);
+            };
+            byte[] bytes = new byte[benchmark.size];
+            for (int i = 0; i < bytes.length; i++) {
+                bytes[i] = pattern[i % pattern.length];
+            }
+            if (kind.equals("tail")) {
+                int end = (bytes.length - 1) / 3 * 3;
+                Arrays.fill(bytes, end, bytes.length, (byte)'a');
+                bytes[bytes.length - 1] = (byte)0x80;
+            }
+            CodingErrorAction errorAction = switch (action) {
+                case "REPORT" -> CodingErrorAction.REPORT;
+                case "REPLACE" -> CodingErrorAction.REPLACE;
+                default -> throw new IllegalArgumentException(action);
+            };
+            decoder = StandardCharsets.UTF_8.newDecoder().onMalformedInput(errorAction);
+            input = ByteBuffer.wrap(bytes);
+            output = CharBuffer.allocate(bytes.length);
+        }
+    }
 }

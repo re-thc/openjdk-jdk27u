@@ -28,6 +28,7 @@ package java.lang;
 
 import jdk.internal.util.Preconditions;
 import jdk.internal.util.SimdUTF;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.util.function.BiFunction;
@@ -117,6 +118,7 @@ class StringCoding {
         return countPositives0(ba, off, len);
     }
 
+    @ForceInline
     @IntrinsicCandidate
     private static int countPositives0(byte[] ba, int off, int len) {
         if (len > 0 && ba[off] < 0) {

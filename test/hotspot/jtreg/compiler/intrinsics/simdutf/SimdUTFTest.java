@@ -129,17 +129,27 @@ public class SimdUTFTest {
     }
 
     private static void decoderBuffers() {
-        byte[][] patterns = {
-            {'a'}, {(byte)0xc3, (byte)0xa9}, {(byte)0xe6, (byte)0xbc, (byte)0xa2},
-            {(byte)0xf0, (byte)0x9f, (byte)0x98, (byte)0x83},
-            {(byte)0x80}, {(byte)0xc1, (byte)0x80},
-            {(byte)0xe0, (byte)0x80, (byte)0x80},
-            {(byte)0xed, (byte)0xa0, (byte)0x80},
-            {(byte)0xf4, (byte)0x90, (byte)0x80, (byte)0x80},
-            {(byte)0xf5, (byte)0x80, (byte)0x80, (byte)0x80},
-            {'a', (byte)0x80}, {'a', (byte)0xe2}
-        };
         for (int length : new int[]{0, 1, 31, 128, 255, 256, 257, 4096}) {
+            byte[] trailing = new byte[Math.max(1, length)];
+            Arrays.fill(trailing, (byte)'a');
+            for (int i = 0; i + 3 < length; i += 3) {
+                trailing[i] = (byte)0xe6;
+                trailing[i + 1] = (byte)0xbc;
+                trailing[i + 2] = (byte)0xa2;
+            }
+            trailing[Math.max(0, length - 1)] = (byte)0x80;
+            byte[] truncated = trailing.clone();
+            truncated[Math.max(0, length - 1)] = (byte)0xe2;
+            byte[][] patterns = {
+                {'a'}, {(byte)0xc3, (byte)0xa9}, {(byte)0xe6, (byte)0xbc, (byte)0xa2},
+                {(byte)0xf0, (byte)0x9f, (byte)0x98, (byte)0x83},
+                {(byte)0x80}, {(byte)0xc1, (byte)0x80},
+                {(byte)0xe0, (byte)0x80, (byte)0x80},
+                {(byte)0xed, (byte)0xa0, (byte)0x80},
+                {(byte)0xf4, (byte)0x90, (byte)0x80, (byte)0x80},
+                {(byte)0xf5, (byte)0x80, (byte)0x80, (byte)0x80},
+                {'a', (byte)0x80}, {'a', (byte)0xe2}, trailing, truncated
+            };
             for (byte[] pattern : patterns) {
                 byte[] bytes = new byte[length + 14];
                 Arrays.fill(bytes, SENTINEL);

@@ -153,7 +153,7 @@ public final class SimdUTF {
             int result = processChunk(src, sp + consumed, size, dst,
                     readOnly ? dp : dp + written, readOnly ? capacity : capacity - written, operation);
             if (result < 0) {
-                return -1;
+                return operation == DECODE_UTF8 ? result - consumed : -1;
             }
             switch (operation) {
                 case VALIDATE_UTF16, VALIDATE_ASCII, VALIDATE_LATIN1, VALIDATE_UTF8_LATIN1 -> {
@@ -363,6 +363,11 @@ public final class SimdUTF {
         return process(src, sp, len, src, 0, 0, COUNT_ASCII);
     }
 
+    /**
+     * Returns the UTF-16 units written, or a negative result on failure.
+     * A negative result encodes the input bytes preceding failure as
+     * {@code -(result + 1)}. The caller may retry that prefix before falling back.
+     */
     @ForceInline
     public static int decodeUTF8(byte[] src, int sp, int len,
                                  Object dst, int dp, int capacity) {

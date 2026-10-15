@@ -471,8 +471,10 @@ JRT_LEAF(jint, SimdUTF::process(oopDesc* src_raw, jint sp, jint len,
     }
     case DECODE_UTF8: {
       // Convert directly with worst-case room; stage tighter outputs before copying.
-      if (simdutf::validate_utf8_with_errors(input, len).error != simdutf::SUCCESS) {
-        return -1;
+      simdutf::result validation = simdutf::validate_utf8_with_errors(input, len);
+      if (validation.error != simdutf::SUCCESS) {
+        // Keep the input error offset for Java's prefix recovery.
+        return -checked_cast<jint>(validation.count) - 1;
       }
       if (capacity < len) {
         if (simdutf::utf16_length_from_utf8(input, len) > size_t(capacity)) {
