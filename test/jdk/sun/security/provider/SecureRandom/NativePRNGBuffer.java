@@ -21,6 +21,7 @@
  * questions.
  */
 
+
 /*
  * @test
  * @summary NativePRNG serves small requests from buffers that threads share,
@@ -34,39 +35,56 @@
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HexFormat;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class NativePRNGBuffer {
 
-    // more threads than buffers, so that threads share them
-    private static final int THREADS = 2 * Runtime.getRuntime().availableProcessors() + 2;
-    private static final int REQUESTS = 20_000;
+    // the requests of all threads together, so that the memory the test
+    // keeps does not grow with the number of processors
+    private static final int TOTAL_REQUESTS = 128_000;
+    // enough requests per thread to refill its buffer many times
+    private static final int MIN_REQUESTS_PER_THREAD = 1_000;
     // sizes below, at and above the largest buffered request
     private static final int[] SIZES = { 1, 7, 16, 63, 64, 65, 300 };
+    // the bytes of each request that are compared
+    private static final int KEY_BYTES = 7;
+
+    // the number of buffers of NativePRNG: 4 per processor, at most 64,
+    // rounded up to a power of two
+    static int buffers(int cpus) {
+        int n = Math.min(4 * cpus, 64);
+        return Integer.highestOneBit(2 * n - 1);
+    }
+
+    // twice as many threads as buffers, so that threads share them
+    static int threads(int cpus) {
+        return 2 * buffers(cpus);
+    }
 
     public static void main(String[] args) throws Exception {
+        for (int cpus : new int[] { 1, 2, 3, 4, 16, 64, 128, 1024, 1 << 20 }) {
+            checkPlan(cpus);
+        }
+
         SecureRandom random = SecureRandom.getInstance(args[0]);
-        Set<String> seen = ConcurrentHashMap.newKeySet();
+        int nThreads = threads(Runtime.getRuntime().availableProcessors());
+        int perThread = TOTAL_REQUESTS / nThreads;
+        long[][] keys = new long[nThreads][];
         List<Thread> threads = new ArrayList<>();
         List<Throwable> failures = new ArrayList<>();
-        for (int t = 0; t < THREADS; t++) {
-            int first = t;
+        for (int t = 0; t < nThreads; t++) {
+            int index = t;
             Thread thread = new Thread(() -> {
-                for (int i = 0; i < REQUESTS; i++) {
-                    byte[] b = new byte[SIZES[(first + i) % SIZES.length]];
+                long[] k = new long[perThread];
+                int n = 0;
+                for (int i = 0; i < perThread; i++) {
+                    byte[] b = new byte[SIZES[(index + i) % SIZES.length]];
                     random.nextBytes(b);
-                    // Bytes handed out twice would repeat a value. Values of
-                    // 7 bytes or more repeat by chance with a negligible
-                    // probability, so they are checked.
-                    if (b.length >= 7
-                            && !seen.add(HexFormat.of().formatHex(b))) {
-                        throw new RuntimeException("Repeated bytes: "
-                                + HexFormat.of().formatHex(b));
+                    if (b.length >= KEY_BYTES) {
+                        k[n++] = key(b);
                     }
                 }
+                keys[index] = Arrays.copyOf(k, n);
             });
             thread.setUncaughtExceptionHandler((th, e) -> {
                 synchronized (failures) {
@@ -83,6 +101,18 @@ public class NativePRNGBuffer {
             throw new RuntimeException(failures.get(0));
         }
 
+        // Bytes handed out twice would repeat the first bytes of a request.
+        // Of 128,000 random keys of 56 bits, two are equal by chance with a
+        // probability of less than 10^-6.
+        long[] all = Arrays.stream(keys).flatMapToLong(Arrays::stream).toArray();
+        Arrays.sort(all);
+        for (int i = 1; i < all.length; i++) {
+            if (all[i] == all[i - 1]) {
+                throw new RuntimeException("Repeated bytes: "
+                        + Long.toHexString(all[i]));
+            }
+        }
+
         // Consecutive small requests of one thread get different bytes.
         byte[] a = new byte[8];
         byte[] b = new byte[8];
@@ -93,5 +123,31 @@ public class NativePRNGBuffer {
                 throw new RuntimeException("Consecutive requests are equal");
             }
         }
+    }
+
+    // checks that with this number of processors, the threads share the
+    // buffers, each makes enough requests, and the requests of all stay
+    // within the budget
+    private static void checkPlan(int cpus) {
+        int buffers = buffers(cpus);
+        int threads = threads(cpus);
+        int perThread = TOTAL_REQUESTS / threads;
+        if (buffers < 1 || buffers > 64 || Integer.bitCount(buffers) != 1
+                || threads <= buffers
+                || perThread < MIN_REQUESTS_PER_THREAD
+                || (long) threads * perThread > TOTAL_REQUESTS) {
+            throw new RuntimeException("Bad plan for " + cpus
+                    + " processors: " + buffers + " buffers, " + threads
+                    + " threads, " + perThread + " requests per thread");
+        }
+    }
+
+    // the first KEY_BYTES bytes of b
+    private static long key(byte[] b) {
+        long k = 0;
+        for (int i = 0; i < KEY_BYTES; i++) {
+            k = (k << 8) | (b[i] & 0xff);
+        }
+        return k;
     }
 }
