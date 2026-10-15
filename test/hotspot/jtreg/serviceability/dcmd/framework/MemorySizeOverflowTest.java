@@ -42,6 +42,7 @@ import jdk.test.lib.process.ProcessTools;
 
 public class MemorySizeOverflowTest {
     private static final String ERROR = "Parsing error memory size value: value is too large";
+    private static final String MAX_CHUNK_SIZE_ERROR = "Max chunk size must be at least 1048576";
     private static final String[] JFR_OPTIONS = {
         "globalbuffersize", "thread_buffer_size", "memorysize", "maxchunksize"
     };
@@ -108,7 +109,9 @@ public class MemorySizeOverflowTest {
                 OutputAnalyzer output = ProcessTools.executeTestJava(
                     "-XX:FlightRecorderOptions=" + startupOption(option) + "=" + size, "-version");
                 output.shouldNotHaveExitValue(0).shouldNotContain("Parsing error memory size value");
-                if (!option.equals("maxchunksize")) {
+                if (option.equals("maxchunksize")) {
+                    output.shouldContain(MAX_CHUNK_SIZE_ERROR);
+                } else {
                     output.shouldMatch("This value is (lower|higher) than the (minimum|maximum) size");
                 }
             }
@@ -120,11 +123,8 @@ public class MemorySizeOverflowTest {
     private static void testJfrConfigureMaximum(JMXExecutor executor) throws Exception {
         for (String size : new String[] {MAX.toString(), MAX + "b", MAX + "B"}) {
             String command = "JFR.configure maxchunksize=" + size;
-            try {
-                executor.execute(command).shouldNotContain(ERROR);
-            } catch (RuntimeMBeanException e) {
-                Asserts.assertFalse(String.valueOf(e.getCause()).contains(ERROR), "Parser rejected the maximum: " + command);
-            }
+            executor.execute(command).shouldContain(MAX_CHUNK_SIZE_ERROR)
+                .shouldNotContain("Parsing error memory size value");
         }
     }
 
