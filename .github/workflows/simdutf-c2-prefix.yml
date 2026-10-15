@@ -4,7 +4,7 @@ on:
     branches: [review/simdutf-c2-prefix-cost]
 permissions:
   contents: read
-  actions: read
+  actions: write
 jobs:
   controls:
     timeout-minutes: 45
@@ -16,6 +16,13 @@ jobs:
             platform: linux-x64
     runs-on: ${{ matrix.runner }}
     steps:
+      - name: Cancel superseded diagnostic
+        env:
+          GH_${{ github.token }}: TOKEN
+        run: |
+          task_old_head=$(gh api repos/re-thc/openjdk-jdk27u/actions/runs/38737775765 --jq '.head_sha')
+          test "$task_old_head" = 84012fdaa899053263d458fd176983b19fbb650e
+          gh api --method POST repos/re-thc/openjdk-jdk27u/actions/runs/38737775765/cancel || true
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false

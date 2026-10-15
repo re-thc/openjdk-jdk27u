@@ -9,19 +9,23 @@ assert utf.count(old)==1
 jla=utf.replace(old,"            int n = JLA.decodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));\n            sp += n;\n            dp += n;")
 bad="            int first = sa[sp];\n            if (first < (byte)0xc2 || (first < 0 && first > (byte)0xf4)) {\n                return malformedForLength(src, sp, dst, dp, 1);\n            }\n\n"
 assert jla.count(bad)==1
-variants={"jla":jla,"jlaNoEarly":jla.replace(bad,"")}
+variants={"on":utf,"jla":jla,"jlaNoEarly":jla.replace(bad,"")}
 patches={}
 for mode,decoder in variants.items():
-    source=out/(mode+"-source");p=source/"sun/nio/cs/UTF_8.java";p.parent.mkdir(parents=True);p.write_text(decoder)
+    source=out/(mode+"-source")
+    for name,content in (("sun/nio/cs/UTF_8.java",decoder),
+                         ("java/lang/String.java",(root/"java/lang/String.java").read_text()),
+                         ("java/lang/StringCoding.java",(root/"java/lang/StringCoding.java").read_text())):
+        p=source/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(content)
     target=out/(mode+"-patch");target.mkdir()
-    subprocess.run([str(head/"bin/javac"),"--patch-module","java.base="+str(source),"-d",str(target),str(p)],check=True)
+    subprocess.run([str(head/"bin/javac"),"--patch-module","java.base="+str(source),"-d",str(target),*[str(p)for p in source.rglob("*.java")]],check=True)
     patches[mode]=target
 cp="jmh/core.jar:jmh/generator.jar:jmh/options.jar:jmh/math.jar"
 classes=out/"classes";classes.mkdir()
 subprocess.run([str(head/"bin/javac"),"-cp",cp,"-processorpath",cp,"-d",str(classes),"test/micro/org/openjdk/bench/java/lang/SimdUTF.java"],check=True)
 cp=str(classes)+":"+cp
 os.sched_setaffinity(0,{min(os.sched_getaffinity(0))})
-for mode in ("base","on",*variants):
+for mode in ("base",*variants):
     java=(base if mode=="base"else head)/"bin/java"
     extra=["--patch-module=java.base="+str(patches[mode])]if mode in patches else[]
     for study,method,params,expected in(("valid","charsetDecodeTight",["-p","size=31,64,128,255"],4),
