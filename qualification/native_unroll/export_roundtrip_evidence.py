@@ -14,11 +14,27 @@ def main():
     if not a.root.exists():
         print('ROUNDTRIP_EVIDENCE_ABSENT=' + str(a.root))
         return
+    invalid = []
+    cached = {}
+
+    def read_json(path):
+        if path not in cached:
+            try:
+                cached[path] = json.loads(path.read_text())
+            except (ValueError, OSError) as error:
+                cached[path] = None
+                invalid.append(str(path))
+                print('ROUNDTRIP_INVALID_JSON=' + json.dumps(dict(file=record(path),
+                    error=str(error), text=path.read_text())), flush=True)
+        return cached[path]
     for name in ['preflight-gate.json', 'chain-compilation-results.json', 'commands-status.json',
-                 'full-result.json', 'status.json']:
+                 'full-result.json', 'status.json', 'plan.json', 'summary.json', 'initial-gate.json',
+                 'assembly-index.json', 'assembly-run-status.json', 'installed-assembly-gate.json']:
         path = a.root / name
         if path.exists():
-            print('ROUNDTRIP_RESULT_JSON=' + json.dumps(dict(file=record(path), value=json.loads(path.read_text()))), flush=True)
+            value = read_json(path)
+            if value is not None:
+                print('ROUNDTRIP_RESULT_JSON=' + json.dumps(dict(file=record(path), value=value)), flush=True)
     for path in sorted(a.root.rglob('*.jtr')):
         text = path.read_text()
         if a.full:
@@ -43,20 +59,31 @@ def main():
                 'ROUNDTRIP_', 'EDGE_TIER')))
         if selected:
             print('ROUNDTRIP_PROCESS_TEXT_JSON=' + json.dumps(dict(file=record(path), text=selected)), flush=True)
+    # A process can exit0 but fail workload/compilation/checksum validation before
+    # a pair is recorded. Preserve these raw windows as well as nonzero exits.
+    for path in sorted(a.root.glob('*.out')):
+        print('ROUNDTRIP_RAW_PROCESS_TEXT_JSON=' + json.dumps(dict(file=record(path), text=path.read_text())), flush=True)
     for filename in ['status.json', 'commands-status.json']:
         state = a.root / filename
         if state.exists():
-            for item in json.loads(state.read_text()):
+            values = read_json(state)
+            if values is None:
+                continue
+            for item in values:
                 raw = a.root / (item['name'] + '.log')
                 if item.get('exit_status') and raw.exists():
                     print('ROUNDTRIP_FAILED_PROCESS_JSON=' + json.dumps(dict(file=record(raw), text=raw.read_text())), flush=True)
     for path in sorted(a.root.glob('*.status.json')):
-        status = json.loads(path.read_text())
+        status = read_json(path)
+        if status is None:
+            continue
         raw = a.root / (path.name.removesuffix('.status.json') + '.out')
         if status.get('exit_status') and raw.exists():
             print('ROUNDTRIP_FAILED_PROCESS_JSON=' + json.dumps(dict(file=record(raw), text=raw.read_text())), flush=True)
     for path in sorted(a.root.rglob('text/summary.txt')):
         print('ROUNDTRIP_SUITE_SUMMARY_JSON=' + json.dumps(dict(file=record(path), text=path.read_text())), flush=True)
+    if invalid:
+        raise SystemExit(2)
 
 
 if __name__ == '__main__':
