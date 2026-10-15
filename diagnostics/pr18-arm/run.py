@@ -133,9 +133,12 @@ try:
     for name in ['base', 'candidate']:
         folder = evidence / (name + '-jtreg')
         args = [java(name), '-Xmx512m', '-jar', manifest['jtreg']['jar'], '-jdk:' + manifest[name]['jdk'], '-a', '-v:summary',
-            '-w:' + str(folder / 'work'), '-r:' + str(folder / 'report'), '-va', '-timeoutFactor:3',
+            '-w:' + str(folder / 'work'), '-r:' + str(folder / 'report'), '-timeoutFactor:3',
             '-javaoptions:-DScenarios=' + ','.join(map(str, scenarios)) + ' -DWarmup=2000' + (' -DVerifyIR=false' if name == 'base' else ''),
             *[str(repo / 'test/hotspot/jtreg' / x) for x in tests]]
+        harness_options = args.index('-jar') + 2
+        execute([*args[:harness_options], '-listTests', *args[harness_options:]],
+                evidence / (name + '-jtreg-preflight'), 120)
         execute(args, folder, 1200)
         result['correctness'].append({'image': name, 'tests': tests, 'scenarios': scenarios, 'passed': True,
                                      'ir': 'Product build; see test logs for IR availability. Machine code separately retained.'})
