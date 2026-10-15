@@ -4,7 +4,7 @@ on:
     branches: [review/simdutf-final-image-130d7e3b]
 permissions:
   contents: read
-  actions: read
+  actions: write
 jobs:
   controls:
     timeout-minutes: 240
@@ -18,9 +18,22 @@ jobs:
             platform: linux-aarch64
     runs-on: ${{ matrix.runner }}
     steps:
+      - name: Cancel superseded validator
+        if: matrix.platform == 'linux-x64'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          task_old_head=$(gh api repos/re-thc/openjdk-jdk27u/actions/runs/38745318673 --jq .head_sha)
+          test "$task_old_head" = a22b1adb29a4af0c6ec0373bace7bee10b1c920c
+          task_old_status=$(gh api repos/re-thc/openjdk-jdk27u/actions/runs/38745318673 --jq .status)
+          if test "$task_old_status" != completed; then
+            gh api --method POST repos/re-thc/openjdk-jdk27u/actions/runs/38745318673/cancel
+          fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
+          fetch-depth: 16
       - uses: ./.github/actions/get-bootjdk
         with:
           platform: ${{ matrix.platform }}
