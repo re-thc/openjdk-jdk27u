@@ -1,0 +1,31 @@
+{
+  "source": "e41d7823bf6de77c4bfba52e896bf325221488cb",
+  "status": "completed-focused-linux-x64-qualification",
+  "focused_counts": {
+    "Passed": 171
+  },
+  "functional_flag_gc_passes": 864,
+  "concurrent_cold_gc_passes": 80,
+  "actual_gc_cycles": 2571,
+  "fastdebug_native_gtests": {
+    "passed": 1399,
+    "disabled": 15
+  },
+  "dynamic_cds_checks": 8,
+  "ordinary_interpreter_bytecodes": 239,
+  "on_off_bytecode_layout_differences": 0,
+  "unselected_planned_cases": [
+    {
+      "test": "test/hotspot/jtreg/serviceability/jvmti/RedefineClasses/RedefinePreviousVersions.java",
+      "reason": "Its vm.flagless requirement excludes the focused redefinition command with diagnostic VM flags.",
+      "scope": "Unexecuted selection, never counted as a pass; a separate flagless run remains possible."
+    }
+  ],
+  "scope": "Actual e41d clean-image executions only. This does not qualify full tier2, performance, native ARM CDS/performance or Windows native/AVX512 execution.",
+  "created_utc": "2026-10-15T20:30:24.824538+00:00",
+  "archive": {
+    "name": "validation.zip",
+    "bytes": 1091034,
+    "sha256": "62d3eefc6fc362a17096d7a923c06b9ae2219d500e250154c169a258a1456cf4"
+  }
+}
