@@ -29,6 +29,17 @@ def classification(x):
         'interval_entirely_outside_100ns' if lo>100 or hi < -100 else
         'point_outside_100ns_with_uncertainty' if abs(m)>100 else
         'uncertainty_crosses_100ns')
+def describe_control(x):
+    """Reporting only: distinguish pooled classification from the actual gate."""
+    pooled=classification(x['wall'])
+    orders={name:classification(value) for name,value in x['order'].items()}
+    gate=('equivalence_established_all_required_strata' if x['passed'] else
+          'equivalence_not_established_by_order_bound' if x['pooled_gate_passed'] else
+          'equivalence_not_established_by_pooled_bound')
+    return dict(pooled_classification=pooled,order_classifications=orders,
+                gate_classification=gate,
+                classification=pooled if x['passed'] or not x['pooled_gate_passed'] else 'order_equivalence_not_established')
+
 def read_csv(path,delimiter=','):
     with Path(path).open() as f:
         reader=csv.DictReader(f,delimiter=delimiter);result=[]
@@ -127,7 +138,7 @@ def score_records(manifest,rows,clocks,metadata,checks,refs,phases,finalized,pro
         if phase!=2:
             x['pooled_gate_passed']=x['wall']['absolute_bound']<=100
             x['order_veto_passed']=all(v['absolute_bound']<=100 for v in x['order'].values())
-            x['passed']=x['pooled_gate_passed'] and x['order_veto_passed'];x['classification']=classification(x['wall']);controls.append(x)
+            x['passed']=x['pooled_gate_passed'] and x['order_veto_passed'];x.update(describe_control(x));controls.append(x)
         else:
             x['equivalence95']=interval(ds);x['reference_equivalent']=x['equivalence95']['absolute_bound']<=100 if kind==3 else None
             x['classification']=classification(x['equivalence95']);treatments.append(x)
@@ -238,6 +249,12 @@ def report(root,result):
         f"Rows={result['rows']}; null cells={result['controls']}; failed={result['failed_controls']} (pooled={result['pooled_failed_controls']}, order veto={result['order_veto_failed_controls']}).",
         'All rows retained.100ns bound unchanged; prospective order veto additionally applies. No clock offsets or CPU substitution.',
         'N/F is an attribution response, not a null. F/U is same image/wrapper/stream. Fresh/long/Java/public API qualification is always false.']
+    for x in result['control_results']:
+        if x['passed']:continue
+        description=describe_control(x)
+        lines.append(f"FAILED control worker{x['worker']} work{x['work']} {x['name']}: {description['gate_classification']}; pooled={description['pooled_classification']} bound={x['wall']['absolute_bound']:.6f}ns")
+        for order,value in x['order'].items():
+            lines.append(f"  {order}: mean={value['mean']:.6f}ns CI={value['ci']} bound={value['absolute_bound']:.6f}ns classification={description['order_classifications'][order]}")
     for x in result['treatments']:lines.append(f"worker{x['worker']} work{x['work']} {x['name']} delta_ns={x['wall']['mean']:.6f} CI={x['wall']['ci']} reference_equivalent={x['reference_equivalent']}")
     if decision:lines.append('Decision='+json.dumps(decision,sort_keys=True))
     (root/'REPORT.txt').write_text('\n'.join(lines)+'\n')

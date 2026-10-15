@@ -1,0 +1,49 @@
+name: Fixed null-only conditioning diagnosis
+on:
+  push:
+    tags: [diagnostic-tiny-zlib-conditioning-20261015-once]
+permissions:
+  contents: read
+concurrency:
+  group: conditioning-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  conditioning-null:
+    if: github.event.created == true && github.event.deleted == false && github.event.forced == false && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: production
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          sparse-checkout: |
+            .github/scripts/reset-only
+            .github/scripts/conditioning
+            .github/workflows
+      - name: Compiler prerequisites
+        run: |
+          if ! command -v gcc-14 >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y gcc-14 make python3
+          fi
+      - name: Synthetic and protocol fixtures only
+        run: python3 production/.github/scripts/conditioning/test_conditioning.py
+      - name: One separately approved null-only attempt
+        run: python3 production/.github/scripts/conditioning/conditioning_study.py --root production --out validation/conditioning --execute-once
+      - name: Export retained evidence only
+        if: always()
+        run: |
+          python3 production/.github/scripts/conditioning/conditioning_score.py --export-local validation/conditioning
+          if test -f validation/conditioning/REPORT.txt; then
+            cat validation/conditioning/REPORT.txt >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: always()
+        with:
+          name: conditioning-null-${{ github.run_id }}
+          path: validation/conditioning
+          retention-days: 90
+          if-no-files-found: error
