@@ -1,0 +1,32 @@
+name: SIMDUTF 9.3 native comparison
+on:
+  push:
+    branches: [review/simdutf930-native]
+permissions:
+  contents: read
+jobs:
+  compare:
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Compare pinned libraries and bounded decoding
+        run: |
+          mkdir -p results
+          env -u DOCKER_HOST -u DOCKER_CONTEXT -u DOCKER_TLS -u DOCKER_TLS_VERIFY -u DOCKER_CERT_PATH docker --host=unix:///var/run/docker.sock info
+          env -u DOCKER_HOST -u DOCKER_CONTEXT -u DOCKER_TLS -u DOCKER_TLS_VERIFY -u DOCKER_CERT_PATH docker --host=unix:///var/run/docker.sock run --rm --mount "type=bind,src=$GITHUB_WORKSPACE,dst=$GITHUB_WORKSPACE" --workdir "$GITHUB_WORKSPACE" ubuntu:26.04 /bin/bash -c 'set -euo pipefail
+          apt-get -qq update
+          DEBIAN_FRONTEND=noninteractive apt-get -qq install -y python3 git ca-certificates g++-16
+          python3 make/scripts/simdutf930-native.py'
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: simdutf930-native-${{ matrix.runner }}
+          path: results
+          retention-days: 14
