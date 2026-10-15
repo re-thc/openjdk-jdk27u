@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,6 +370,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_montgomerySquare();
   bool inline_bigIntegerShift(bool isRightShift);
   bool inline_vectorizedMismatch();
+  Node* inline_vectorizedMismatch_predicate();
   bool inline_fma(vmIntrinsics::ID id);
   bool inline_character_compare(vmIntrinsics::ID id);
   bool inline_galoisCounterMode_AESCrypt();

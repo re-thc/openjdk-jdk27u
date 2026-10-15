@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +37,8 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -117,6 +120,28 @@ public class TestScopedOperations {
         ScopedOperation.ofSegment(s -> s.copyFrom(s), "MemorySegment::copyFrom");
         ScopedOperation.ofSegment(s -> s.mismatch(s), "MemorySegment::mismatch");
         ScopedOperation.ofSegment(s -> s.fill((byte) 0), "MemorySegment::fill");
+        // Buffer views retain the segment session, including bulk and typed paths.
+        for (int size : new int[] {8, 63, 64, 65, 4096, 65536, 65537, 1 << 20}) {
+            String prefix = "ByteBuffer/" + size + "/";
+            Function<Arena, ByteBuffer> buffer = a -> a.allocate(size).asByteBuffer();
+            ScopedOperation.of(buffer, b -> b.mismatch(ByteBuffer.allocate(size)), prefix + "mismatch/source");
+            ScopedOperation.of(buffer, b -> ByteBuffer.allocate(size).mismatch(b), prefix + "mismatch/destination");
+            ScopedOperation.of(buffer, b -> b.equals(ByteBuffer.allocate(size)), prefix + "equals");
+            ScopedOperation.of(buffer, b -> b.compareTo(ByteBuffer.allocate(size)), prefix + "compareTo");
+            ScopedOperation.of(buffer, b -> b.get(0, new byte[size]), prefix + "bulkGet");
+            ScopedOperation.of(buffer, b -> b.put(0, new byte[size]), prefix + "bulkPut");
+            ScopedOperation.of(buffer, b -> b.put(0, ByteBuffer.allocate(size), 0, size), prefix + "copy/destination");
+            ScopedOperation.of(buffer, b -> ByteBuffer.allocate(size).put(0, b, 0, size), prefix + "copy/source");
+            ScopedOperation.of(buffer, b -> b.position(1).compact(), prefix + "compact");
+            ScopedOperation.of(buffer, b -> b.asReadOnlyBuffer().mismatch(ByteBuffer.allocate(size)),
+                    prefix + "readOnlyMismatch");
+            ScopedOperation.of(buffer, b -> b.order(ByteOrder.nativeOrder()).asIntBuffer()
+                    .mismatch(ByteBuffer.allocate(size).order(ByteOrder.nativeOrder()).asIntBuffer()),
+                    prefix + "intMismatch");
+            ScopedOperation.of(buffer, b -> b.order(ByteOrder.BIG_ENDIAN).asIntBuffer()
+                    .put(0, ByteBuffer.allocate(size).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer(), 0, size / 4),
+                    prefix + "swappedCopy");
+        }
         // allocator operations
         ScopedOperation.ofScope(a -> a.allocate(1), "Arena::allocate/size");
         ScopedOperation.ofScope(a -> a.allocate(1, 1), "Arena::allocate/size/align");
