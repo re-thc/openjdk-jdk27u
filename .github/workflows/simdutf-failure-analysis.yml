@@ -7,8 +7,10 @@ permissions:
   actions: read
 jobs:
   inspect:
-    runs-on: ubuntu-24.04
+    runs-on: windows-2025
     timeout-minutes: 10
+    env:
+      PYTHONIOENCODING: utf-8
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
