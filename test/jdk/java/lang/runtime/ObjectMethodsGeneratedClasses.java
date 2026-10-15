@@ -53,7 +53,6 @@ import jdk.test.lib.util.ForceGC;
 public class ObjectMethodsGeneratedClasses {
 
     static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-    static final MethodType HASH_CODE = MethodType.methodType(int.class, Rec.class);
 
     /** The generated class of the last call of a Probe method on this thread. */
     static final ThreadLocal<Class<?>> CALLER = new ThreadLocal<>();
@@ -70,24 +69,28 @@ public class ObjectMethodsGeneratedClasses {
     }
 
     record Rec(Probe p, int i) { }
+    // only bootstrapped by the racing threads, so that they race to generate its class
+    record Raced(Probe p, int i) { }
 
     static final Rec REC = new Rec(new Probe(), 2);
+    static final Raced RACED = new Raced(new Probe(), 2);
 
     /** Getters created anew on each call, as different bootstraps may. */
-    static MethodHandle[] getters() throws ReflectiveOperationException {
-        return new MethodHandle[] { LOOKUP.findGetter(Rec.class, "p", Probe.class),
-                                    LOOKUP.findGetter(Rec.class, "i", int.class) };
+    static MethodHandle[] getters(Class<?> recordClass) throws ReflectiveOperationException {
+        return new MethodHandle[] { LOOKUP.findGetter(recordClass, "p", Probe.class),
+                                    LOOKUP.findGetter(recordClass, "i", int.class) };
     }
 
-    static MethodHandle hashCodeHandle() throws Throwable {
-        return ((CallSite) ObjectMethods.bootstrap(LOOKUP, "hashCode", HASH_CODE, Rec.class, "p;i", getters()))
+    static MethodHandle hashCodeHandle(Class<?> recordClass) throws Throwable {
+        MethodType type = MethodType.methodType(int.class, recordClass);
+        return ((CallSite) ObjectMethods.bootstrap(LOOKUP, "hashCode", type, recordClass, "p;i", getters(recordClass)))
                 .dynamicInvoker();
     }
 
-    /** Returns the generated class that the method handle calls. */
-    static Class<?> generatedClass(MethodHandle hashCode) throws Throwable {
+    /** Returns the generated class that the method handle calls with the given record. */
+    static Class<?> generatedClass(MethodHandle hashCode, Object record) throws Throwable {
         CALLER.remove();
-        check(31 + 2, (int) hashCode.invokeExact(REC), "hashCode");
+        check(31 + 2, (int) hashCode.invoke(record), "hashCode");
         Class<?> c = CALLER.get();
         CALLER.remove();
         if (c == null) {
@@ -107,9 +110,9 @@ public class ObjectMethodsGeneratedClasses {
         List<MethodHandle> handles = new ArrayList<>();
         Set<Class<?>> classes = new HashSet<>();
         for (int i = 0; i < 100; i++) {
-            MethodHandle mh = hashCodeHandle();
+            MethodHandle mh = hashCodeHandle(Rec.class);
             handles.add(mh);
-            classes.add(generatedClass(mh));
+            classes.add(generatedClass(mh, REC));
         }
         check(1, classes.size(), "generated classes of 100 bootstraps");
 
@@ -120,9 +123,9 @@ public class ObjectMethodsGeneratedClasses {
         if (!ForceGC.wait(() -> ref.refersTo(null))) {
             throw new AssertionError("the generated class was not unloaded");
         }
-        check(true, generatedClass(hashCodeHandle()) != null, "generated again");
+        check(true, generatedClass(hashCodeHandle(Rec.class), REC) != null, "generated again");
 
-        // bootstraps that race for the same fields generate one class
+        // bootstraps that race to generate the class for the same fields of a record class generate one
         int threads = 16;
         CountDownLatch start = new CountDownLatch(1);
         List<Callable<MethodHandle>> tasks = new ArrayList<>();
@@ -130,7 +133,7 @@ public class ObjectMethodsGeneratedClasses {
             tasks.add(() -> {
                 start.await();
                 try {
-                    return hashCodeHandle();
+                    return hashCodeHandle(Raced.class);
                 } catch (Throwable t) {
                     throw new Exception(t);
                 }
@@ -145,7 +148,7 @@ public class ObjectMethodsGeneratedClasses {
             start.countDown();
             Set<Class<?>> raced = new HashSet<>();
             for (Future<MethodHandle> f : futures) {
-                raced.add(generatedClass(f.get()));
+                raced.add(generatedClass(f.get(), RACED));
             }
             check(1, raced.size(), "generated classes of " + threads + " racing bootstraps");
         } finally {
@@ -153,13 +156,14 @@ public class ObjectMethodsGeneratedClasses {
         }
 
         // more getters than a record can have use the combinators, whose methods have no size limit
+        MethodType hashCodeType = MethodType.methodType(int.class, Rec.class);
         MethodHandle i = LOOKUP.findGetter(Rec.class, "i", int.class);
         MethodHandle[] many = Collections.nCopies(6_000, i).toArray(new MethodHandle[0]);
         int expected = 0;
         for (int k = 0; k < many.length; k++) {
             expected = expected * 31 + 2;
         }
-        check(expected, (int) ((CallSite) ObjectMethods.bootstrap(LOOKUP, "hashCode", HASH_CODE, Rec.class, "", many))
+        check(expected, (int) ((CallSite) ObjectMethods.bootstrap(LOOKUP, "hashCode", hashCodeType, Rec.class, "", many))
                 .dynamicInvoker().invokeExact(REC), "hashCode of 6,000 getters");
         System.out.println("passed");
     }
