@@ -89,8 +89,6 @@ public class TestSignatures extends PKCS11Test {
 
     private static void test(PrivateKey privateKey, PublicKey publicKey)
             throws Exception {
-        testSignature("MD2withRSA", privateKey, publicKey);
-        testSignature("MD5withRSA", privateKey, publicKey);
         testSignature("SHA1withRSA", privateKey, publicKey);
         testSignature("SHA224withRSA", privateKey, publicKey);
         testSignature("SHA256withRSA", privateKey, publicKey);

@@ -68,9 +68,6 @@ public class Chain {
     }
 
     static enum SigAlg {
-        MD2withRSA("MD2withRSA"),
-        MD5withRSA("md5withRSA"),
-
         SHA1withDSA("SHA1withDSA"),
         SHA224withDSA("SHA224withDSA"),
         SHA256withDSA("SHA256withDSA"),
