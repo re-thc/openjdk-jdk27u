@@ -28,6 +28,7 @@
  * @modules java.base/jdk.internal.util:+open
  *          jdk.management
  * @run main/othervm -Xint SimdUTFTest
+ * @run main/othervm -Xint -XX:SIMDUTFMinLength=1 SimdUTFTest
  * @run main/othervm -Xint -XX:ReservedCodeCacheSize=48M SimdUTFTest
  * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_simdutf_process -XX:SIMDUTFMinLength=64 SimdUTFTest
  * @run main/othervm -XX:-UseSIMDUTFIntrinsics SimdUTFTest false
@@ -40,8 +41,10 @@
  * @modules java.base/jdk.internal.util:+open
  *          jdk.management
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 SimdUTFTest
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:SIMDUTFMinLength=1 SimdUTFTest
  * @run main/othervm -Xbatch -XX:ReservedCodeCacheSize=48M SimdUTFTest
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 SimdUTFTest
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:SIMDUTFMinLength=1 SimdUTFTest
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:-UseBASE64Intrinsics SimdUTFTest
  * @run main/othervm -Xbatch -XX:SIMDUTFMinLength=64 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_simdutf_process SimdUTFTest
  */
@@ -129,7 +132,7 @@ public class SimdUTFTest {
     }
 
     private static void decoderBuffers() {
-        for (int length : new int[]{0, 1, 31, 128, 255, 256, 257, 4096}) {
+        for (int length : new int[]{0, 1, 2, 3, 4, 31, 128, 255, 256, 257, 4096}) {
             byte[] trailing = new byte[Math.max(1, length)];
             Arrays.fill(trailing, (byte)'a');
             for (int i = 0; i + 3 < length; i += 3) {
@@ -148,6 +151,9 @@ public class SimdUTFTest {
                 {(byte)0xed, (byte)0xa0, (byte)0x80},
                 {(byte)0xf4, (byte)0x90, (byte)0x80, (byte)0x80},
                 {(byte)0xf5, (byte)0x80, (byte)0x80, (byte)0x80},
+                {(byte)0xc3, 'x'}, {(byte)0xe2, 'x'}, {(byte)0xe2, (byte)0x82, 'x'},
+                {(byte)0xf0, 'x'}, {(byte)0xf0, (byte)0x90, 'x'},
+                {(byte)0xf0, (byte)0x90, (byte)0x80, 'x'},
                 {'a', (byte)0x80}, {'a', (byte)0xe2}, trailing, truncated
             };
             for (byte[] pattern : patterns) {

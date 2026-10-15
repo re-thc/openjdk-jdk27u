@@ -105,6 +105,7 @@ public final class UTF_8 extends Unicode {
         }
 
         // Checks the first two bytes of a three-byte sequence.
+        @ForceInline
         private static boolean isMalformed3_2(int b1, int b2) {
             return (b1 == (byte)0xe0 && (b2 & 0xe0) == 0x80) ||
                    (b2 & 0xc0) != 0x80;
@@ -138,24 +139,35 @@ public final class UTF_8 extends Unicode {
             return (b3 & 0xc0) != 0x80;
         }
 
+        // Positive for a malformed leading sequence, zero if valid, or -1 if incomplete.
         @ForceInline
-        private static boolean isValidLeadingSequence(byte[] input, int offset, int limit) {
+        private static int malformedLeadingSequenceLength(byte[] input, int offset, int limit) {
             int b1 = input[offset];
             int remaining = limit - offset;
-            if (b1 < (byte)0xc2 || b1 > (byte)0xf4) {
-                return false;
+            if (b1 >= 0) {
+                return 0;
             }
-            if (b1 < (byte)0xe0) {
-                return remaining >= 2 && !isNotContinuation(input[offset + 1]);
+            if ((b1 >> 5) == -2 && (b1 & 0x1e) != 0) {
+                return remaining < 2 ? -1 : isNotContinuation(input[offset + 1]) ? 1 : 0;
             }
-            if (b1 < (byte)0xf0) {
-                return remaining >= 3
-                        && !isMalformed3(b1, input[offset + 1], input[offset + 2])
-                        && (b1 != (byte)0xed || (input[offset + 1] & 0xe0) != 0xa0);
+            if ((b1 >> 4) == -2) {
+                if (remaining < 2) return -1;
+                int b2 = input[offset + 1];
+                if (isMalformed3_2(b1, b2)) return 1;
+                if (remaining < 3) return -1;
+                if (isNotContinuation(input[offset + 2])) return 2;
+                return b1 == (byte)0xed && (b2 & 0xe0) == 0xa0 ? 3 : 0;
             }
-            return remaining >= 4
-                    && !isMalformed4_2(b1 & 0xff, input[offset + 1] & 0xff)
-                    && !isMalformed4(input[offset + 1], input[offset + 2], input[offset + 3]);
+            if ((b1 >> 3) == -2) {
+                if ((b1 & 0xff) > 0xf4) return 1;
+                if (remaining < 2) return -1;
+                if (isMalformed4_2(b1 & 0xff, input[offset + 1] & 0xff)) return 1;
+                if (remaining < 3) return -1;
+                if (isNotContinuation(input[offset + 2])) return 2;
+                if (remaining < 4) return -1;
+                return isNotContinuation(input[offset + 3]) ? 3 : 0;
+            }
+            return 1;
         }
 
         private static CoderResult malformedN(ByteBuffer src, int nb) {
@@ -261,20 +273,25 @@ public final class UTF_8 extends Unicode {
             }
 
             // A UTF-16 code unit consumes at most three UTF-8 bytes.
-            n = (long) (dl - dp) * 3 >= sl - sp
-                    && SimdUTF.isEligible(sl - sp)
-                    && isValidLeadingSequence(sa, sp, sl)
-                    ? SimdUTF.decodeUTF8(sa, sp, sl - sp, da, dp, dl - dp) : -1;
-            if (n >= 0) {
-                updatePositions(src, sl, dst, dp + n);
-                return CoderResult.UNDERFLOW;
-            }
-            if (n < -1) {
-                int prefix = -(n + 1);
-                n = SimdUTF.decodeUTF8(sa, sp, prefix, da, dp, dl - dp);
-                if (n >= 0) {
-                    sp += prefix;
-                    dp += n;
+            if ((long) (dl - dp) * 3 >= sl - sp && SimdUTF.isEligibleUTF8Decoding(sl - sp)) {
+                int malformedLength = malformedLeadingSequenceLength(sa, sp, sl);
+                if (malformedLength > 0) {
+                    return malformedForLength(src, sp, dst, dp, malformedLength);
+                }
+                if (malformedLength == 0) {
+                    n = SimdUTF.decodeUTF8(sa, sp, sl - sp, da, dp, dl - dp);
+                    if (n >= 0) {
+                        updatePositions(src, sl, dst, dp + n);
+                        return CoderResult.UNDERFLOW;
+                    }
+                    if (n < -1) {
+                        int prefix = -(n + 1);
+                        n = SimdUTF.decodeUTF8(sa, sp, prefix, da, dp, dl - dp);
+                        if (n >= 0) {
+                            sp += prefix;
+                            dp += n;
+                        }
+                    }
                 }
             }
             while (sp < sl) {
