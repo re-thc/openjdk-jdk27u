@@ -29,7 +29,9 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.io.*;
 import java.time.Clock;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 import static jdk.internal.logger.SurrogateLogger.isFilteredFrame;
 
 /**
@@ -753,19 +755,22 @@ public class LogRecord implements java.io.Serializable {
         needToInferCaller = false;
         // Skip all frames until we have found the first logger frame.
         Optional<StackWalker.StackFrame> frame = new CallerFinder().get();
-        frame.ifPresent(f -> {
-            setSourceClassName(f.getClassName());
-            setSourceMethodName(f.getMethodName());
-        });
+        if (frame.isPresent()) {
+            setSourceClassName(frame.get().getClassName());
+            setSourceMethodName(frame.get().getMethodName());
+        }
 
         // We haven't found a suitable frame, so just punt.  This is
         // OK as we are only committed to making a "best effort" here.
     }
 
     /*
-     * CallerFinder is a stateful predicate.
+     * CallerFinder is a stateful predicate. It is also the function that
+     * walks the stack, as a lambda for that would be linked and spun when
+     * the first record is logged.
      */
-    static final class CallerFinder implements Predicate<StackWalker.StackFrame> {
+    static final class CallerFinder implements Predicate<StackWalker.StackFrame>,
+            Function<Stream<StackWalker.StackFrame>, Optional<StackWalker.StackFrame>> {
         private static final StackWalker WALKER =
                 StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
 
@@ -775,7 +780,12 @@ public class LogRecord implements java.io.Serializable {
          * @return StackFrame of the caller's frame.
          */
         Optional<StackWalker.StackFrame> get() {
-            return WALKER.walk((s) -> s.filter(this).findFirst());
+            return WALKER.walk(this);
+        }
+
+        @Override
+        public Optional<StackWalker.StackFrame> apply(Stream<StackWalker.StackFrame> s) {
+            return s.filter(this).findFirst();
         }
 
         private boolean lookingForLogger = true;

@@ -1877,6 +1877,10 @@ public final class Locale implements Cloneable, Serializable {
      * @since 1.7
      */
     public static Locale forLanguageTag(String languageTag) {
+        Locale simple = forSimpleLanguageTag(languageTag);
+        if (simple != null) {
+            return simple;
+        }
         LanguageTag tag = LanguageTag.parse(
                 languageTag, new ParsePosition(0), true);
         InternalLocaleBuilder bldr = new InternalLocaleBuilder();
@@ -1888,6 +1892,62 @@ public final class Locale implements Cloneable, Serializable {
                                               base.getRegion(), base.getVariant());
         }
         return getInstance(base, exts);
+    }
+
+    // The locale of a tag in canonical case that is ll, ll-Ssss, ll-CC or ll-Ssss-CC,
+    // with ll a 2 or 3 letter language but "und". These are the tags of most locales,
+    // such as those of the providers. They have no extension, variant or legacy form,
+    // so the parser and the builder would give the same locale at a much higher cost.
+    // Returns null for any other tag.
+    private static Locale forSimpleLanguageTag(String tag) {
+        int len = tag.length();
+        int languageEnd = 0;
+        while (languageEnd < len && isLowerAscii(tag.charAt(languageEnd))) {
+            languageEnd++;
+        }
+        if (languageEnd < 2 || languageEnd > 3 || (languageEnd == 3 && tag.startsWith("und"))) {
+            return null;
+        }
+        int pos = languageEnd;
+        boolean hasScript = len - pos == 5 || len - pos > 7;
+        if (hasScript) {
+            // -Ssss
+            if (tag.charAt(pos) != '-' || !isUpperAscii(tag.charAt(pos + 1))
+                    || !isLowerAscii(tag.charAt(pos + 2))
+                    || !isLowerAscii(tag.charAt(pos + 3))
+                    || !isLowerAscii(tag.charAt(pos + 4))) {
+                return null;
+            }
+            pos += 5;
+        }
+        int regionStart = pos;
+        if (pos < len) {
+            // -CC or -NNN
+            int n = len - pos - 1;
+            if (n != 2 && n != 3 || tag.charAt(pos) != '-') {
+                return null;
+            }
+            for (int i = pos + 1; i < len; i++) {
+                char c = tag.charAt(i);
+                if (n == 2 ? !isUpperAscii(c) : c < '0' || c > '9') {
+                    return null;
+                }
+            }
+            regionStart++;
+        }
+        // Substrings only of a tag that is known to be simple
+        String language = tag.substring(0, languageEnd);
+        String script = hasScript ? tag.substring(languageEnd + 1, languageEnd + 5) : "";
+        String region = tag.substring(regionStart);
+        return getInstance(BaseLocale.getInstance(language, script, region, ""), null);
+    }
+
+    private static boolean isLowerAscii(char c) {
+        return c >= 'a' && c <= 'z';
+    }
+
+    private static boolean isUpperAscii(char c) {
+        return c >= 'A' && c <= 'Z';
     }
 
     /**

@@ -112,22 +112,25 @@ public class LocaleResources {
     // null singleton cache value
     private static final Object NULLOBJECT = new Object();
 
-    // RegEx pattern for skeleton validity checking
-    private static final Pattern VALID_SKELETON_PATTERN = Pattern.compile(
-        "(?<date>" +
-        "G{0,5}" +        // Era
-        "y*" +            // Year
-        "Q{0,5}" +        // Quarter
-        "M{0,5}" +        // Month
-        "w*" +            // Week of Week Based Year
-        "E{0,5}" +        // Day of Week
-        "d{0,2})" +       // Day of Month
-        "(?<time>" +
-        "B{0,5}" +        // Period/AmPm of Day
-        "[hHjC]{0,2}" +   // Hour of Day/AmPm
-        "m{0,2}" +        // Minute of Hour
-        "s{0,2}" +        // Second of Minute
-        "[vz]{0,4})");    // Zone
+    // RegEx pattern for skeleton validity checking. Compiled when first used,
+    // as most locales never need it.
+    private static final class ValidSkeleton {
+        static final Pattern PATTERN = Pattern.compile(
+            "(?<date>" +
+            "G{0,5}" +        // Era
+            "y*" +            // Year
+            "Q{0,5}" +        // Quarter
+            "M{0,5}" +        // Month
+            "w*" +            // Week of Week Based Year
+            "E{0,5}" +        // Day of Week
+            "d{0,2})" +       // Day of Month
+            "(?<time>" +
+            "B{0,5}" +        // Period/AmPm of Day
+            "[hHjC]{0,2}" +   // Hour of Day/AmPm
+            "m{0,2}" +        // Minute of Hour
+            "s{0,2}" +        // Second of Minute
+            "[vz]{0,4})");    // Zone
+    }
 
     // Input Skeleton map for "preferred" and "allowed"
     // Map<"preferred"/"allowed", Map<"region", "skeleton">>
@@ -612,7 +615,7 @@ public class LocaleResources {
         var skeleton = substituteInputSkeletons(requestedTemplate);
 
         // validity check
-        var matcher = VALID_SKELETON_PATTERN.matcher(skeleton);
+        var matcher = ValidSkeleton.PATTERN.matcher(skeleton);
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Requested template \"%s\" is invalid".formatted(requestedTemplate) +
                     (requestedTemplate.equals(skeleton) ? "." : ", which translated into \"%s\"".formatted(skeleton) +

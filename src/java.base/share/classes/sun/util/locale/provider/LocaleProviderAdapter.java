@@ -35,6 +35,7 @@ import java.text.spi.DecimalFormatSymbolsProvider;
 import java.text.spi.NumberFormatProvider;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -106,6 +107,14 @@ public abstract class LocaleProviderAdapter {
      * LocaleProviderAdapter instances
      */
     private static final Map<Type, LocaleProviderAdapter> adapterInstances = new ConcurrentHashMap<>();
+
+    /**
+     * The locales that toLocaleArray() returned for each set of language tags.
+     * The sets are those that the adapters cache and share between their
+     * providers, so they are looked up by identity.
+     */
+    private static final Map<Set<String>, Locale[]> localeArrays =
+        Collections.synchronizedMap(new IdentityHashMap<>());
 
     /**
      * Adapter lookup cache.
@@ -300,16 +309,44 @@ public abstract class LocaleProviderAdapter {
         return false;
     }
 
+    /**
+     * {@return a new array of the locales of the language tags}
+     * Converting the tags is slow, and the providers of an adapter all have
+     * the same ones.
+     */
     public static Locale[] toLocaleArray(Set<String> tags) {
-        return tags.stream()
-            .map(t -> switch (t) {
-                case "ja-JP-JP" -> JRELocaleConstants.JA_JP_JP;
-                case "no-NO-NY" -> JRELocaleConstants.NO_NO_NY;
-                case "th-TH-TH" -> JRELocaleConstants.TH_TH_TH;
-                default -> Locale.forLanguageTag(t);
-            })
-            .distinct()
-            .toArray(Locale[]::new);
+        Locale[] locales = localeArrays.get(tags);
+        if (locales == null) {
+            locales = tags.stream()
+                .map(LocaleProviderAdapter::toLocale)
+                .distinct()
+                .toArray(Locale[]::new);
+            Locale[] cached = localeArrays.putIfAbsent(tags, locales);
+            if (cached != null) {
+                locales = cached;
+            }
+        }
+        return locales.clone();
+    }
+
+    private static Locale toLocale(String tag) {
+        return switch (tag) {
+            case "ja-JP-JP" -> JRELocaleConstants.JA_JP_JP;
+            case "no-NO-NY" -> JRELocaleConstants.NO_NO_NY;
+            case "th-TH-TH" -> JRELocaleConstants.TH_TH_TH;
+            default -> Locale.forLanguageTag(tag);
+        };
+    }
+
+    /**
+     * Returns true if the locale matches, ignoring extensions, one of the locales
+     * that {@link #toLocaleArray(Set)} returns for the tags. A false result does
+     * not mean it is not among them: that takes creating all of them to find out.
+     */
+    public static boolean isAvailableLocale(Locale locale, Set<String> tags) {
+        locale = locale.stripExtensions();
+        String tag = locale.toLanguageTag();
+        return tags.contains(tag) && locale.equals(toLocale(tag).stripExtensions());
     }
 
     /**
