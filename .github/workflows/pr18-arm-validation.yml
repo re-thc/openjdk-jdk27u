@@ -1,0 +1,69 @@
+name: PR18 one native ARM validation
+
+on:
+  push:
+    branches: [codex/pr18-native-arm-validation]
+    paths: [.github/workflows/pr18-arm-validation.yml]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  validation:
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /diagnostics/pr18-arm/
+            /test/lib/
+            /test/jtreg-ext/
+            /test/hotspot/jtreg/compiler/
+            /test/hotspot/jtreg/TEST.ROOT
+            /test/hotspot/jtreg/TEST.groups
+            /test/hotspot/jtreg/TEST.quick-groups
+            /src/hotspot/share/opto/vectornode.cpp
+      - name: Measure native CPU, HWCAP and kernel-supported SVE lengths
+        id: hardware
+        run: python3 diagnostics/pr18-arm/hardware.py
+      - name: Publish immediate hardware evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr18-arm-hardware-cpu-${{ steps.hardware.outputs.cpu }}-sve${{ steps.hardware.outputs.sve }}-vl${{ steps.hardware.outputs.max_vl }}-native${{ steps.hardware.outputs.native }}
+          path: ${{ env.ARM_ROOT }}/evidence/hardware.json
+          retention-days: 90
+      - name: Fetch and verify existing matched native release images and tools
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 diagnostics/pr18-arm/prepare.py
+      - name: One fixed correctness, calibration and comparison protocol
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 diagnostics/pr18-arm/run.py 2>&1 | tee "$ARM_ROOT/evidence/experiment.log"
+      - name: Preserve all observations, including failed calibration
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr18-native-arm-validation
+          path: ${{ env.ARM_ROOT }}/evidence
+          retention-days: 90
+      - name: Preserve an independent console copy
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, os, pathlib, zipfile
+          root = pathlib.Path(os.environ['ARM_ROOT'])
+          archive = root / 'console-evidence.zip'
+          with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+              for p in sorted((root / 'evidence').rglob('*')):
+                  if p.is_file(): z.write(p, str(p.relative_to(root / 'evidence')))
+          print('PR18_ARM_EVIDENCE_SHA256=' + hashlib.sha256(archive.read_bytes()).hexdigest())
+          print('PR18_ARM_EVIDENCE_BASE64_BEGIN')
+          print(base64.encodebytes(archive.read_bytes()).decode().rstrip())
+          print('PR18_ARM_EVIDENCE_BASE64_END')
+          PY

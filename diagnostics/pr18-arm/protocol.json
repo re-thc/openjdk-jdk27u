@@ -1,0 +1,192 @@
+{
+  "baseline_source": "e206bae32b2a6cc1fa9464ad34d75f2df4b347e9",
+  "candidate_source": "d4d14e0c03e6fd7aeee05341759050b494afc190",
+  "candidate_ci_merge": "7316d8a89f33370052182a36a7fe6772c6985bf6",
+  "production_diff": [
+    "src/hotspot/share/opto/vectornode.cpp"
+  ],
+  "candidate_vectornode_blob": "4f75f7e5e7023fa7a053676fedf2d396a9e28fd1",
+  "artifacts": {
+    "base": {
+      "id": 11915154522,
+      "sha256": "69bf6363a0ff44485376f369a85dfc272b88fd37380f695af4881c5fa001caf2",
+      "run": 38601904956
+    },
+    "candidate": {
+      "id": 11939520552,
+      "sha256": "f4dbd6e5fe7d4087d4e0cc01f70233e5c18f1560bd084320cbd444a12e66baf7",
+      "run": 38650363971
+    },
+    "jtreg": {
+      "id": 11937352975,
+      "sha256": "b77346c3ad4cc0745b9bb6f59043b372c8dd8cf2685e9f80324eb71f622aecc1",
+      "run": 38650363971
+    }
+  },
+  "build": {
+    "level": "release",
+    "gcc": "16.0.1 20260322 (experimental) trunk r16-8246-g569ace1fa50",
+    "mold": "3.0.0",
+    "boot_jdk": "26+35-2893",
+    "cpu_flags": "-march=armv8.2-a -mtune=generic",
+    "normalization": "Build configure arguments match after excluding only --with-version-opt source-identity tag."
+  },
+  "benchmark_zip_sha256": "10637ed6ef6812957e2b17d55884b59f4e4c9cfd1fafe36690df182a0a7e12c7",
+  "warmup_iterations": 5,
+  "measurement_iterations": 5,
+  "iteration_seconds": 1,
+  "calibration": {
+    "blocks": 4,
+    "order": "ABBA",
+    "case": [
+      "fourLongs",
+      1024,
+      1,
+      "default"
+    ],
+    "same_frozen_binary": true,
+    "required_entire_95_interval_percent": [
+      -5,
+      5
+    ],
+    "student_t_df3": 3.182446305284263,
+    "failure_action": "No retry. Fixed A/B observations still execute as diagnostic-only; performance_qualified stays false."
+  },
+  "comparison": {
+    "pairs": 4,
+    "order": [
+      "AB",
+      "BA",
+      "AB",
+      "BA"
+    ],
+    "cases_always": [
+      [
+        "fourLongs",
+        17,
+        1,
+        "default"
+      ],
+      [
+        "fourLongs",
+        65,
+        0,
+        "default"
+      ],
+      [
+        "fourLongs",
+        1024,
+        1,
+        "default"
+      ],
+      [
+        "fourLongs",
+        4099,
+        0,
+        "default"
+      ],
+      [
+        "differentLongs",
+        1024,
+        1,
+        "default"
+      ],
+      [
+        "differentLongs",
+        4099,
+        0,
+        "default"
+      ],
+      [
+        "fourLongs",
+        65,
+        1,
+        "neon"
+      ],
+      [
+        "fourLongs",
+        1024,
+        0,
+        "neon"
+      ],
+      [
+        "fourLongs",
+        1024,
+        1,
+        "scalar"
+      ]
+    ],
+    "fallback_if_no_sve256": [
+      [
+        "intBroadcast",
+        1024,
+        1,
+        "default"
+      ],
+      [
+        "byteBroadcast",
+        65,
+        1,
+        "neon"
+      ],
+      [
+        "shortBroadcast",
+        1024,
+        0,
+        "neon"
+      ]
+    ],
+    "additional_if_sve256": [
+      [
+        "byteBroadcast",
+        65,
+        1,
+        "sve256"
+      ],
+      [
+        "byteBroadcast",
+        1024,
+        0,
+        "sve256"
+      ],
+      [
+        "shortBroadcast",
+        65,
+        1,
+        "sve256"
+      ],
+      [
+        "shortBroadcast",
+        1024,
+        0,
+        "sve256"
+      ],
+      [
+        "intBroadcast",
+        65,
+        1,
+        "sve256"
+      ],
+      [
+        "intBroadcast",
+        1024,
+        0,
+        "sve256"
+      ],
+      [
+        "intBroadcast",
+        1024,
+        1,
+        "neon"
+      ],
+      [
+        "intBroadcast",
+        1024,
+        1,
+        "sve128"
+      ]
+    ]
+  },
+  "qualification": "Separate long-multiply and SVE-only results. Require correctness, compiled C2 path, no measured GC or target compilation/invalidation, stable measured nmethod, calibration inside +/-5%, no significant >5% slowdown in unchanged controls. A benefit is bounded to cases whose paired 95% interval excludes zero in the improving direction. Unsupported SVE widths are untested, never passed.",
+  "publication_scope": "One diagnostic-only native ARM job, no rebuild, production edits, merge, force-push, retry campaign or account changes."
+}
