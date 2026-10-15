@@ -43,7 +43,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.TreeSet;
-import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Phaser;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jdk.test.lib.Asserts;
 
@@ -127,8 +128,11 @@ public class BatchedInterning {
     // round has names that no class of earlier rounds used, and classes of
     // earlier rounds become unreachable, so that their names die.
     static void testConcurrentNames() throws Exception {
-        CyclicBarrier barrier = new CyclicBarrier(THREADS);
-        List<Throwable> failures = Collections.synchronizedList(new ArrayList<>());
+        // A Phaser rather than a CyclicBarrier: when a worker fails, terminating
+        // it releases the others at once, while a reset barrier would wait for
+        // the failed worker forever.
+        Phaser phaser = new Phaser(THREADS);
+        AtomicReference<Throwable> failure = new AtomicReference<>();
         List<Thread> threads = new ArrayList<>();
         for (int t = 0; t < THREADS; t++) {
             final int thread = t;
@@ -143,7 +147,9 @@ public class BatchedInterning {
                         Collections.shuffle(names, random);
                         String className = "Generated" + thread;
                         byte[] bytes = generate(className, names);
-                        barrier.await();
+                        if (phaser.arriveAndAwaitAdvance() < 0) {
+                            return;  // another worker failed
+                        }
                         Class<?> c = new Loader().define(className, bytes);
                         TreeSet<String> declared = new TreeSet<>();
                         for (Method m : c.getDeclaredMethods()) {
@@ -156,8 +162,12 @@ public class BatchedInterning {
                         }
                     }
                 } catch (Throwable e) {
-                    failures.add(e);
-                    barrier.reset();
+                    // Keep the first failure, the others are often its consequences.
+                    if (!failure.compareAndSet(null, e)) {
+                        failure.get().addSuppressed(e);
+                    }
+                    phaser.forceTermination();
+                    threads.forEach(Thread::interrupt);
                 }
             }));
         }
@@ -165,8 +175,8 @@ public class BatchedInterning {
         for (Thread t : threads) {
             t.join();
         }
-        if (!failures.isEmpty()) {
-            throw new RuntimeException(failures.get(0));
+        if (failure.get() != null) {
+            throw new RuntimeException("A worker failed", failure.get());
         }
     }
 }
