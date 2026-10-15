@@ -23,12 +23,15 @@
  *
  */
 
+#include "cppstdlib/cstdlib.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/javaThread.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include <errno.h>
 
 StringArrayArgument::StringArrayArgument() {
   _array = new (mtServiceability) GrowableArray<char *>(32, mtServiceability);
@@ -323,8 +326,24 @@ template <> void DCmdArgument<MemorySizeArgument>::parse_value(const char* str,
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
                "Parsing error memory size value: negative values not allowed\n");
   }
-  int res = sscanf(str, UINT64_FORMAT "%c", &_value._val, &_value._multiplier);
-  if (res == 2) {
+  // sscanf cannot report overflow and strtoull saturates silently, so check errno.
+  // Leading white space, an optional '+', decimal digits and one trailing
+  // character are accepted exactly as before.
+  STATIC_ASSERT(sizeof(unsigned long long) == sizeof(_value._val));
+  char* end = nullptr;
+  errno = 0;
+  const unsigned long long val = strtoull(str, &end, 10);
+  if (end == str) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+              "Parsing error memory size value: invalid value\n");
+  }
+  if (errno == ERANGE) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+              "Parsing error memory size value: value is too large\n");
+  }
+  _value._val = val;
+  if (*end != '\0') {
+    _value._multiplier = *end;
     uint shift = 0;
     switch (_value._multiplier) {
       case 'k': case 'K':
@@ -346,11 +365,8 @@ template <> void DCmdArgument<MemorySizeArgument>::parse_value(const char* str,
                 "Parsing error memory size value: value is too large\n");
     }
     _value._size = _value._val << shift;
-  } else if (res == 1) {
-    _value._size = _value._val;
   } else {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "Parsing error memory size value: invalid value\n");
+    _value._size = _value._val;
   }
 }
 
