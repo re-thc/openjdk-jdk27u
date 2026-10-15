@@ -25,7 +25,8 @@
  * @test
  * @summary Check toString, hashCode and equals of records for all kinds of components,
  *          with getters that read the fields and with getters that do not, and that
- *          the three methods of a record class share a generated class
+ *          the three methods of a record class share a generated class, also when
+ *          equals and hashCode are given names that toString can't use
  * @run main ObjectMethodsGenerated
  */
 
@@ -97,7 +98,7 @@ public class ObjectMethodsGenerated {
                                                        StackWalker.Option.SHOW_HIDDEN_FRAMES))
                     .walk(s -> s.map(StackWalker.StackFrame::getDeclaringClass)
                                 .filter(c -> c.isHidden() && c.getName().contains("Specializer"))
-                                .findFirst().orElseThrow()));
+                                .findFirst().orElse(null))); // null if called by combinators
         }
         @Override public boolean equals(Object o) { record(); return o instanceof Probe; }
         @Override public int hashCode() { record(); return 1; }
@@ -304,6 +305,28 @@ public class ObjectMethodsGenerated {
             check("Probed[a=probe, b=1]",
                   (String) ((CallSite) ObjectMethods.bootstrap(LOOKUP, "toString", probedToString, Probed.class, "a;b", probedGetters))
                           .dynamicInvoker().invoke(probed), "Probed toString with other names after " + names);
+        }
+        // names given to equals and hashCode whose toString recipe can't be a class file constant
+        // don't break them, and toString then uses the combinators: names of 80,000 ASCII chars,
+        // and names of 30,000 chars that are 90,000 bytes in (modified) UTF-8
+        for (String name : new String[] { "x".repeat(40_000), "\u0800".repeat(15_000) }) {
+            String names = name + ";" + name;
+            Probed different = new Probed(new Probe(), 2);
+            MethodType equalsType = MethodType.methodType(boolean.class, Probed.class, Object.class);
+            MethodType hashCodeType = MethodType.methodType(int.class, Probed.class);
+            check(true, (boolean) ((CallSite) ObjectMethods.bootstrap(LOOKUP, "equals", equalsType, Probed.class, names, probedGetters))
+                    .dynamicInvoker().invoke(probed, (Object) new Probed(new Probe(), 1)), "Probed equals with long names");
+            check(false, (boolean) ((CallSite) ObjectMethods.bootstrap(LOOKUP, "equals", equalsType, Probed.class, names, probedGetters))
+                    .dynamicInvoker().invoke(probed, (Object) different), "Probed equals with long names");
+            check(31 + 1, (int) ((CallSite) ObjectMethods.bootstrap(LOOKUP, "hashCode", hashCodeType, Probed.class, names, probedGetters))
+                    .dynamicInvoker().invoke(probed), "Probed hashCode with long names");
+            check("Probed[" + name + "=probe, " + name + "=1]",
+                  (String) ((CallSite) ObjectMethods.bootstrap(LOOKUP, "toString", probedToString, Probed.class, names, probedGetters))
+                          .dynamicInvoker().invoke(probed), "Probed toString with long names");
+            // and the generated class is used again for names that fit
+            check("Probed[p=probe, i=1]",
+                  (String) ((CallSite) ObjectMethods.bootstrap(LOOKUP, "toString", probedToString, Probed.class, "p;i", probedGetters))
+                          .dynamicInvoker().invoke(probed), "Probed toString after long names");
         }
         System.out.println("passed");
     }
