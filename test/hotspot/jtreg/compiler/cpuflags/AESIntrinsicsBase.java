@@ -29,7 +29,8 @@ import java.util.Arrays;
 public abstract class AESIntrinsicsBase {
     public static final String CIPHER_INTRINSIC = "com\\.sun\\.crypto\\"
             + ".provider\\.CipherBlockChaining::"
-            + "(implEncrypt|implDecrypt) \\([0-9]+ bytes\\)\\s+\\(intrinsic[,\\)]";
+            + "(implEncrypt|implDecrypt) \\([0-9]+ bytes\\)\\s+(inline \\([a-z ]+\\)\\s+)?"
+            + "\\(intrinsic[,\\)]";
     public static final String AES_INTRINSIC = "com\\.sun\\.crypto\\"
             + ".provider\\.AES_Crypt::(implEncryptBlock|implDecryptBlock) \\([0-9]+ "
             + "bytes\\)\\s+\\(intrinsic[,\\)]";
@@ -37,7 +38,8 @@ public abstract class AESIntrinsicsBase {
     public static final String USE_AES_INTRINSICS = "UseAESIntrinsics";
     public static final String USE_SSE = "UseSSE";
     public static final String[] USE_DIAGNOSTIC_CMD
-            = {"-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintIntrinsics"};
+            = {"-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintIntrinsics",
+            "-Xbootclasspath/a:.", "-XX:+WhiteBoxAPI"};
     public static final String[] TEST_AES_CMD
             = {"-XX:+IgnoreUnrecognizedVMOptions", "-XX:+PrintFlagsFinal",
             "-Xbatch", "-XX:CompileThresholdScaling=0.01", "-DcheckOutput=true", "-Dmode=CBC",
