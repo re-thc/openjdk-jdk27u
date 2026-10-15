@@ -1,0 +1,57 @@
+name: Vector API method-only unroll diagnostic
+on:
+  push:
+    branches: [codex/vector-api-method-only-unroll]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  observed-codegen:
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with: {fetch-depth: 0, persist-credentials: false}
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: 38539204173
+          artifact-ids: 11881672203
+          path: saved
+          merge-multiple: true
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: 38630168389
+          artifact-ids: 11929935335
+          path: built
+          merge-multiple: true
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: 38630168389
+          artifact-ids: 11938206840
+          path: original-timing
+          merge-multiple: true
+      - name: Extract pinned native images and compile new observed wrapper
+        run: |
+          test "$(uname -m)" = aarch64
+          mkdir base-release controller-classes
+          tar -xf saved/prior/baseline-bundles/jdk-linux-aarch64.tar.gz -C base-release --strip-components=1
+          tar -xf built/rebuilt-b3-jdk.tar.gz
+          tar -xf built/candidate-jdk.tar.gz
+          candidate-jdk/bin/javac -cp saved/prior/frozen/qualification/classes:saved/prior/frozen/qualification/whitebox -d controller-classes qualification/src/FixedVectorProbe.java qualification/src/ProbeControllerPrimer.java qualification/src/MethodOnlyUnrollDiagnostic.java
+          python3 qualification/native_unroll/record_native_host.py
+      - name: Capture actual observed kernel and caller code in twelve JVMs
+        run: python3 qualification/native_unroll/run_method_only_unroll.py --base-jdk base-release --rebuilt-b3-jdk rebuilt-b3-jdk --candidate-jdk candidate-jdk --frozen saved/prior/frozen --classes controller-classes --timing-root original-timing --out method-only --execute
+      - name: Preserve all code bytes, windows and image provenance
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: vector-api-method-only-unroll
+          path: |
+            method-only
+            native-ir-host.json
+            built/matched-build-plan.json
+            built/matched-build-results.json
+          retention-days: 30
