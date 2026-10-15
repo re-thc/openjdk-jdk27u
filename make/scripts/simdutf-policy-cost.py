@@ -16,6 +16,6 @@ for mode in("base","on","off","noHint"):
         path=out/(mode+"-"+study+".json")
         command=[str(java),"-cp",cp,"org.openjdk.jmh.Main","org.openjdk.bench.java.lang.SimdUTF."+method+"$","-p","size="+sizes,*params,"-f","2","-wi","3","-i","4","-w","300ms","-r","300ms","-t","1","-prof","gc","-jvm",str(java),"-jvmArgs"," ".join(["-XX:+UseSerialGC","-Xms1g","-Xmx1g","-XX:ActiveProcessorCount=2",*tiers,*extra]),"-rf","json","-rff",str(path)]
         with path.with_suffix(".log").open("w")as stream:subprocess.run(command,stdout=stream,stderr=subprocess.STDOUT,check=True)
-        rows=json.loads(path.read_text());assert len(rows)==(5 if study=="large"else4)
+        rows=json.loads(path.read_text());assert len(rows)==(5 if study=="large"else 4)
         for r in rows:print("POLICY_RESULT",json.dumps({"mode":mode,"study":study,"params":r["params"],"ns":r["primaryMetric"]["score"],"ci":r["primaryMetric"]["scoreConfidence"],"bytes":r["secondaryMetrics"]["gc.alloc.rate.norm"]["score"]}),flush=True)
 print("POLICY_COMPLETE",flush=True)
