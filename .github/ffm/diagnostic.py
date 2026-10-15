@@ -16,7 +16,7 @@ CONTROL_POINT = (0.95, 1.05)
 CONTROL_INTERVAL = (0.90, 1.10)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("phase", choices=["build", "measure", "tests", "diagnostics"])
+parser.add_argument("phase", choices=["build", "build-a", "measure", "tests", "diagnostics"])
 parser.add_argument("--repo", required=True)
 parser.add_argument("--output", required=True)
 parser.add_argument("--jtreg")
@@ -78,7 +78,7 @@ def build():
     records = {"base": {"source_ref": BASE, "native_hashes": native, "modules_sha256": sha(image / "lib/modules")}}
     (out / "images.json").write_text(json.dumps(records, indent=2) + "\n")
     try:
-        for variant in ["a", "b2"]:
+        for variant in (["a"] if args.phase == "build-a" else ["a", "b2"]):
             restore_sources()
             run(["git", "apply", "--check", "--include=" + PREFIX + "*", str(payload / (variant + ".patch"))], "check-" + variant, repo)
             run(["git", "apply", "--include=" + PREFIX + "*", str(payload / (variant + ".patch"))], "apply-" + variant, repo)
@@ -103,8 +103,13 @@ def build():
     for name in ["Probe.java", "Steady.java", "native.c", "run_target.py", "analyze_target.py", "inlining_report.py"]:
         shutil.copy2(payload / name, out / name)
     (out / "classes").mkdir()
-    run([str(images / "base/bin/javac"), "-d", str(out / "classes"), str(out / "Probe.java"), str(out / "Steady.java")], "compile-harness")
+    run([str(images / "base/bin/javac"), "-d", str(out / "classes"), str(out / "Probe.java"), str(out / "Steady.java"), *([str(payload / "NativeCodeDump.java")] if args.phase == "build-a" else [])], "compile-harness")
     run(["gcc", "-O2", "-fPIC", "-shared", "-pthread", str(out / "native.c"), "-o", str(out / "libprobe.so")], "compile-native-harness")
+    if args.phase == "build-a":
+        shutil.copy2(payload / "analyze_retained_snapshot.py", out / "analyze_retained_snapshot.py")
+        run(["gcc", "-O2", "-Wall", "-Wextra", "-Werror", "-fPIC", "-shared",
+             "-I" + str(images / "base/include"), "-I" + str(images / "base/include/linux"),
+             str(payload / "native_code_dump.c"), "-o", str(out / "libnative_code_dump.so")], "compile-post-timing-snapshot")
     metadata = {"baseline": BASE, "cpu_affinity": sorted(os.sched_getaffinity(0)),
                 "cpu_model": next(s.split(":", 1)[1].strip() for s in Path("/proc/cpuinfo").read_text().splitlines() if s.startswith("model name")),
                 "cpu_max": optional_text("/sys/fs/cgroup/cpu.max"),
@@ -161,7 +166,7 @@ def measure():
 def tests():
     if not args.jtreg:
         raise RuntimeError("JTReg path required")
-    for variant in ["a", "b2"]:
+    for variant in (["a"] if args.phase == "build-a" else ["a", "b2"]):
         run(["git", "apply", "--include=test/*", str(payload / (variant + ".patch"))], "install-tests-" + variant, repo)
     native = out / "native"
     native.mkdir()
@@ -194,4 +199,4 @@ def diagnostics():
         run([str(images / variant / "bin/java"), "--enable-native-access=ALL-UNNAMED", "-Xlog:class+load=info",
              "-cp", str(out / "classes"), "Probe", "i", str(out / "libprobe.so")], "class-load-" + variant)
 
-{"build": build, "measure": measure, "tests": tests, "diagnostics": diagnostics}[args.phase]()
+{"build": build, "build-a": build, "measure": measure, "tests": tests, "diagnostics": diagnostics}[args.phase]()

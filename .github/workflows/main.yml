@@ -1,4 +1,4 @@
-name: FFM startup diagnostic
+name: FFM unbound code snapshot
 
 on:
   push:
@@ -9,13 +9,19 @@ permissions:
   actions: read
 
 jobs:
-  compare-linux-x64-release:
+  inspect-unbound-linux-x64-release:
     runs-on: ubuntu-26.04
-    timeout-minutes: 240
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
+      - name: Verify native runner CPU before builds
+        run: |
+          mkdir "$RUNNER_TEMP/ffm-evidence"
+          cp /proc/cpuinfo "$RUNNER_TEMP/ffm-evidence/runner-cpuinfo.txt"
+          grep -m1 "model name" "$RUNNER_TEMP/ffm-evidence/runner-cpuinfo.txt"
+          grep -q "AMD EPYC 9V74" "$RUNNER_TEMP/ffm-evidence/runner-cpuinfo.txt"
       - name: Install configured GCC16 toolchain
         run: |
           sudo apt update
@@ -37,8 +43,6 @@ jobs:
         uses: ./.github/actions/get-bootjdk
         with:
           platform: linux-x64
-      - name: Build configured JTReg
-        uses: ./.github/actions/build-jtreg
       - name: Configure isolated pinned baseline
         env:
           BOOTJDK_PATH: ${{ steps.bootjdk.outputs.path }}
@@ -47,38 +51,29 @@ jobs:
           target="$RUNNER_TEMP/ffm-target"
           output="$RUNNER_TEMP/ffm-evidence"
           git worktree add --detach "$target" "$baseline"
-          mkdir "$output"
+          test -d "$output"
           export SOURCE_DATE_EPOCH="$(git -C "$target" show -s --format=%ct "$baseline")"
           cd "$target"
           bash configure --with-conf-name=ffm-diagnostic --with-debug-level=release \
             --with-version-opt=ffm-diagnostic --with-boot-jdk="$BOOTJDK_PATH" \
-            --with-jtreg="$GITHUB_WORKSPACE/jtreg/installed" --with-freetype=system \
+            --with-freetype=system \
             --with-jmod-compress=zip-1 --with-native-debug-symbols=none --with-extra-ldflags=-fuse-ld=mold > "$output/configure.log" 2>&1
           cp build/ffm-diagnostic/spec.gmk "$output/spec.gmk"
-      - name: Build matched baseline, A and B2 images
+      - name: Build matched baseline and A images
         id: build
         run: |
-          python3 .github/ffm/diagnostic.py build --repo "$RUNNER_TEMP/ffm-target" --output "$RUNNER_TEMP/ffm-evidence"
-      - name: Fixed quiet comparisons and unchanged-control gates
-        id: measure
+          python3 .github/ffm/diagnostic.py build-a --repo "$RUNNER_TEMP/ffm-target" --output "$RUNNER_TEMP/ffm-evidence"
+      - name: Fixed unbound diagnostics with snapshots after timing
         run: |
-          python3 .github/ffm/diagnostic.py measure --repo "$RUNNER_TEMP/ffm-target" --output "$RUNNER_TEMP/ffm-evidence"
-      - name: Separate compiler and class-load diagnostics
-        if: success()
-        run: |
-          python3 .github/ffm/diagnostic.py diagnostics --repo "$RUNNER_TEMP/ffm-target" --output "$RUNNER_TEMP/ffm-evidence"
-      - name: Correctness tests after measurements
-        if: always() && steps.build.outcome == 'success'
-        run: |
-          python3 .github/ffm/diagnostic.py tests --repo "$RUNNER_TEMP/ffm-target" --output "$RUNNER_TEMP/ffm-evidence" --jtreg "$GITHUB_WORKSPACE/jtreg/installed"
-      - name: Summarize gate status
+          python3 .github/ffm/code_snapshot.py --output "$RUNNER_TEMP/ffm-evidence"
+      - name: Summarize diagnostic status
         if: always()
         run: |
-          result="$RUNNER_TEMP/ffm-evidence/qualification.json"
+          result="$RUNNER_TEMP/ffm-evidence/unbound-snapshot/status.json"
           if test -f "$result"; then
             cat "$result" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo 'Qualification did not run; inspect build/setup failure artifacts.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Diagnostic stopped before completion; inspect preserved setup/fork evidence.' >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Preserve payload and every result
         if: always()
@@ -93,6 +88,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: ffm-startup-linux-x64-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ffm-unbound-snapshot-linux-x64-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/ffm-diagnostic-evidence.tar.gz
           retention-days: 30

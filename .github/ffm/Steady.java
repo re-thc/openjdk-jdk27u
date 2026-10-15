@@ -77,5 +77,6 @@ public class Steady {
             if(value!=expected) throw new AssertionError(value+" != "+expected);
         }
         System.out.println("{\"mode\":\""+MODE+"\",\"count\":"+n+",\"warm\":"+warm+",\"wall_ns\":"+java.util.Arrays.toString(walls)+",\"cpu_ns\":"+java.util.Arrays.toString(cpus)+",\"sink\":"+sink+"}");
+        NativeCodeDump.dump(System.getProperty("steady.dump.prefix"));
     }
 }
