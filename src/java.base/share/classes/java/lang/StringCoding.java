@@ -115,15 +115,14 @@ class StringCoding {
                 off, len,
                 ba.length,      // Implicit null check on `ba`
                 Preconditions.AIOOBE_FORMATTER);
-        return countPositives0(ba, off, len);
-    }
-
-    @ForceInline
-    @IntrinsicCandidate
-    private static int countPositives0(byte[] ba, int off, int len) {
         if (len > 0 && ba[off] < 0) {
             return 0;
         }
+        return countPositives0(ba, off, len);
+    }
+
+    @IntrinsicCandidate
+    private static int countPositives0(byte[] ba, int off, int len) {
         int count = SimdUTF.isEligible(len) ? SimdUTF.countAscii(ba, off, len) : -1;
         if (count >= 0) {
             return count;
