@@ -1,0 +1,125 @@
+--- a/src/java.base/share/native/libzip/zlib-ng/deflate.c
++++ b/src/java.base/share/native/libzip/zlib-ng/deflate.c
+@@ -86,7 +86,7 @@
+ Z_INTERNAL block_state deflate_rle   (deflate_state *s, int flush);
+ Z_INTERNAL block_state deflate_huff  (deflate_state *s, int flush);
+ static void lm_set_level         (deflate_state *s, int level);
+-static void lm_init              (deflate_state *s);
++static void lm_init              (deflate_state *s, int clear_head);
+ 
+ /* ===========================================================================
+  * Local data
+@@ -394,6 +394,7 @@
+     s->strategy = strategy;
+     s->block_open = 0;
+     s->reproducible = 0;
++    s->small_reset_safe = 0;
+ 
+     return PREFIX(deflateReset)(strm);
+ }
+@@ -444,6 +445,7 @@
+     if (deflateStateCheck(strm) || dictionary == NULL)
+         return Z_STREAM_ERROR;
+     s = strm->state;
++    s->small_reset_safe = 0;
+     wrap = s->wrap;
+     if (wrap == 2 || (wrap == 1 && s->status != INIT_STATE) || s->lookahead)
+         return Z_STREAM_ERROR;
+@@ -524,6 +526,7 @@
+     if (deflateStateCheck(strm))
+         return Z_STREAM_ERROR;
+ 
++    strm->state->small_reset_safe = 0; /* ResetKeep preserves old hash history. */
+     strm->total_in = strm->total_out = 0;
+     strm->msg = NULL; /* use zfree if we ever allocate msg dynamically */
+     strm->data_type = Z_UNKNOWN;
+@@ -559,10 +562,39 @@
+ }
+ 
+ /* ========================================================================= */
++/* Only an empty head followed by <=64-byte FINISH calls is eligible.
++ * Dictionary/parameter/ResetKeep/non-FINISH histories are excluded: their
++ * earlier tail hashes need not equal hashes of the final window contents.
++ */
++static int clear_small_hash(deflate_state *s) {
++    if (!s->small_reset_safe)
++        return 0;
++    PREFIX3(stream) *strm = s->strm;
++    uint32_t n = (uint32_t)strm->total_in;
++    if (MIN_ROLL_LEVEL <= 6 || s->level != 6 ||
++        s->strategy != Z_DEFAULT_STRATEGY || s->status != FINISH_STATE ||
++        s->last_flush != Z_FINISH || s->pending || strm->avail_in ||
++        strm->total_in > 64 || s->strstart != n || s->lookahead ||
++        (s->wrap != 0 && s->wrap != -1) || W_BITS(s) != MAX_WBITS ||
++        s->lit_bufsize != (1 << (8 + 6)) ||
++        (n != 0 && s->high_water < n + 3))
++        return 0;
++    for (uint32_t pos = 0; pos < n; pos++) {
++        uint32_t value = Z_U32_FROM_LE(zng_memread_4(s->window + pos));
++        uint32_t hash;
++        UPDATE_HASH_KNUTH(hash, value);
++        s->head[hash] = 0;
++    }
++    return 1;
++}
++
+ int32_t Z_EXPORT PREFIX(deflateReset)(PREFIX3(stream) *strm) {
++    if (deflateStateCheck(strm))
++        return Z_STREAM_ERROR;
++    int small = clear_small_hash(strm->state); /* Inspect before ResetKeep. */
+     int ret = PREFIX(deflateResetKeep)(strm);
+     if (ret == Z_OK)
+-        lm_init(strm->state);
++        lm_init(strm->state, !small);
+     return ret;
+ }
+ 
+@@ -639,6 +671,7 @@
+     if (deflateStateCheck(strm))
+         return Z_STREAM_ERROR;
+     s = strm->state;
++    s->small_reset_safe = 0;
+ 
+     if (level == Z_DEFAULT_COMPRESSION)
+         level = 6;
+@@ -994,6 +1027,9 @@
+     if (deflateStateCheck(strm) || flush > Z_BLOCK || flush < 0)
+         return Z_STREAM_ERROR;
+     s = strm->state;
++    if (flush != Z_FINISH || strm->total_in > 64 ||
++        strm->avail_in > 64 - strm->total_in)
++        s->small_reset_safe = 0;
+ 
+     if (strm->next_out == NULL || (strm->avail_in != 0 && strm->next_in == NULL)
+         || (s->status == FINISH_STATE && flush != Z_FINISH)) {
+@@ -1217,12 +1253,16 @@
+ /* ===========================================================================
+  * Initialize the "longest match" routines for a new zlib stream
+  */
+-static void lm_init(deflate_state *s) {
++static void lm_init(deflate_state *s, int clear_head) {
+     s->window_size = 2 * s->w_size;
+ 
+-    if (!HASHLESS(s->level, s->strategy)) {
++    if (clear_head && !HASHLESS(s->level, s->strategy)) {
+         CLEAR_HASH(s);
+     }
++    s->small_reset_safe = 0;
++#ifndef HAVE_ARCH_DEFLATE_STATE
++    s->small_reset_safe = s->level == 6 && s->strategy == Z_DEFAULT_STRATEGY;
++#endif
+ 
+     /* Set the default configuration parameters:
+      */
+--- a/src/java.base/share/native/libzip/zlib-ng/deflate.h
++++ b/src/java.base/share/native/libzip/zlib-ng/deflate.h
+@@ -344,7 +344,8 @@
+     insert_batch_func insert_batch;
+ 
+     /* Reserved for future use and alignment purposes */
+-    int32_t reserved[20];
++    int32_t small_reset_safe; /* Empty head followed only by bounded FINISH calls. */
++    int32_t reserved[19];
+ };
+ 
+ typedef enum {
