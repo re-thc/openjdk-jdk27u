@@ -997,13 +997,14 @@ public final class ServiceLoader<S>
         LazyClassPathLookupIterator() { }
 
         /**
-         * Parse a single line from the given configuration file, adding the
-         * name on the line to the names if not already seen.
+         * Parse the name on a line of the given configuration file, adding
+         * it to the names if not already seen. The line has no comment and
+         * no leading characters that trim would remove.
          */
-        private void parseLine(URL u, String ln, int lc, List<String> names) {
-            int ci = ln.indexOf('#');
-            if (ci >= 0) ln = ln.substring(0, ci);
-            ln = ln.trim();
+        private void parseLine(URL u, byte[] line, int len, int lc, List<String> names) {
+            if (len == 0)
+                return;
+            String ln = new String(line, 0, len, UTF_8.INSTANCE).trim();
             int n = ln.length();
             if (n != 0) {
                 if ((ln.indexOf(' ') >= 0) || (ln.indexOf('\t') >= 0))
@@ -1028,33 +1029,70 @@ public final class ServiceLoader<S>
          */
         private Iterator<String> parse(URL u) {
             List<String> names = new ArrayList<>();
-            String text = null;
             try {
                 URLConnection uc = u.openConnection();
                 uc.setUseCaches(false);
                 try (InputStream in = uc.getInputStream()) {
-                    text = new String(in.readAllBytes(), UTF_8.INSTANCE);
+                    parse(u, in, names);
                 }
             } catch (IOException x) {
                 fail(service, "Error accessing configuration file", x);
             }
-            // Lines end with \n, \r or \r\n, as for BufferedReader.readLine,
-            // which costs more to set up than these few lines take to parse.
+            return names.iterator();
+        }
+
+        /**
+         * Parse a provider-configuration file as it is read, without the cost of
+         * setting up a BufferedReader. Lines end with \n, \r or \r\n, as for
+         * readLine. Only the part of a line that can be a name is kept, so that
+         * comments and blank lines take no memory however long they are. In
+         * UTF-8, '#', '\n', '\r' and the characters that trim removes are single
+         * bytes that are not part of other characters.
+         */
+        private void parse(URL u, InputStream in, List<String> names) throws IOException {
+            byte[] buf = new byte[512];
+            byte[] line = buf;      // replaced by an array of its own when used
+            int len = 0;            // the bytes of the line kept so far
+            boolean comment = false;
+            boolean blank = false;  // a space or tab follows the kept bytes
+            boolean cr = false;     // the last byte ended a line with \r
             int lc = 1;
-            int len = text.length();
-            for (int pos = 0; pos < len; lc++) {
-                int end = pos;
-                char c = 0;
-                while (end < len && (c = text.charAt(end)) != '\n' && c != '\r') {
-                    end++;
-                }
-                parseLine(u, text.substring(pos, end), lc, names);
-                pos = end + 1;
-                if (c == '\r' && pos < len && text.charAt(pos) == '\n') {
-                    pos++;
+            int n;
+            while ((n = in.read(buf)) >= 0) {
+                for (int i = 0; i < n; i++) {
+                    byte b = buf[i];
+                    if (b == '\n' && cr) {
+                        cr = false;
+                    } else if (b == '\n' || b == '\r') {
+                        parseLine(u, line, len, lc++, names);
+                        len = 0;
+                        comment = blank = false;
+                        cr = (b == '\r');
+                    } else {
+                        cr = false;
+                        if (comment) {
+                            continue;
+                        } else if (b == '#') {
+                            comment = true;
+                        } else if (len == 0 && (b & 0xff) <= ' ') {
+                            // leading characters that trim removes
+                        } else if (b == ' ' || b == '\t') {
+                            blank = true;
+                        } else if (blank && (b & 0xff) > ' ') {
+                            // the name would contain the space or tab
+                            fail(service, u, lc, "Illegal configuration-file syntax");
+                        } else {
+                            if (line == buf) {
+                                line = new byte[64];
+                            } else if (len == line.length) {
+                                line = Arrays.copyOf(line, 2 * len);
+                            }
+                            line[len++] = b;
+                        }
+                    }
                 }
             }
-            return names.iterator();
+            parseLine(u, line, len, lc, names);
         }
 
         /**
