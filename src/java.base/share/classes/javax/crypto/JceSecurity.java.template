@@ -61,6 +61,7 @@ import java.security.*;
 
 import java.security.Provider.Service;
 
+import jdk.internal.util.OperatingSystem;
 import jdk.internal.util.StaticProperty;
 
 import sun.security.jca.*;
@@ -332,14 +333,14 @@ final class JceSecurity {
                 cryptoPolicyProperty);
         }
 
-        // Not with a glob, which is compiled to a regular expression, and the
-        // files are read with java.io, which costs less to set up for them.
+        // The files are read with java.io, which costs less to set up for
+        // them.
+        boolean ignoreCase = OperatingSystem.isWindows();
         DirectoryStream.Filter<Path> policyFiles = new DirectoryStream.Filter<>() {
             @Override
             public boolean accept(Path entry) {
-                String name = entry.getFileName().toString();
-                return (name.startsWith("default_") || name.startsWith("exempt_"))
-                        && name.endsWith(".policy");
+                return isPolicyFileName(entry.getFileName().toString(),
+                        ignoreCase);
             }
         };
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(
@@ -392,6 +393,18 @@ final class JceSecurity {
         if ((exemptPolicy != null) && exemptPolicy.isEmpty()) {
             exemptPolicy = null;
         }
+    }
+
+    /*
+     * Returns whether the glob "{default,exempt}_*.policy" matches the name,
+     * ignoring case as the glob does on Windows. The glob is not used, as it
+     * is compiled to a regular expression.
+     */
+    static boolean isPolicyFileName(String name, boolean ignoreCase) {
+        return (name.regionMatches(ignoreCase, 0, "default_", 0, 8)
+                || name.regionMatches(ignoreCase, 0, "exempt_", 0, 7))
+                && name.regionMatches(ignoreCase, name.length() - 7,
+                        ".policy", 0, 7);
     }
 
     static CryptoPermissions getDefaultPolicy() {
