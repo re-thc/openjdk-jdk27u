@@ -1,0 +1,7 @@
+{"command": ["/workspace/toolchains/jdk27/bin/java", "-XX:TieredStopAtLevel=1", "-XX:ActiveProcessorCount=1", "-XX:+UseSerialGC", "-Xmx512m", "-jar", "/workspace/toolchains/jtreg83/lib/jtreg.jar", "-jdk:/workspace/pr9-validation/images/final-fastdebug", "-othervm", "-conc:1", "-timeoutFactor:4", "-v:summary", "-exclude:/workspace/openjdk-jdk27u/test/hotspot/jtreg/ProblemList.txt", "-nativepath:/workspace/openjdk-jdk27u/build/pr9-fastdebug/images/test/hotspot/jtreg/native", "-vmoptions:-XX:ActiveProcessorCount=2 -XX:CICompilerCount=2 -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+CheckUnhandledOops -XX:+VerifyOops", "-w:/workspace/pr9-validation/pre-safety-redefinition-work", "-r:/workspace/pr9-validation/pre-safety-redefinition-report", "test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicRedefinition.java"], "cwd": "/workspace/openjdk-jdk27u", "start": 1792031794.1540008}
+Directory "/workspace/pr9-validation/pre-safety-redefinition-work" not found: creating
+Directory "/workspace/pr9-validation/pre-safety-redefinition-report" not found: creating
+Passed: compiler/intrinsics/common/TestCommonIntrinsicRedefinition.java
+Test results: passed: 1
+Report written to /workspace/pr9-validation/pre-safety-redefinition-report/html/report.html
+Results written to /workspace/pr9-validation/pre-safety-redefinition-work

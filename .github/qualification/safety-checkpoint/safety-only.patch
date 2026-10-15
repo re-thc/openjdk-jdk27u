@@ -1,0 +1,225 @@
+diff --git a/src/hotspot/share/interpreter/interpreterRuntime.cpp b/src/hotspot/share/interpreter/interpreterRuntime.cpp
+index 93edc35ad54..7b314f53a4b 100644
+--- a/src/hotspot/share/interpreter/interpreterRuntime.cpp
++++ b/src/hotspot/share/interpreter/interpreterRuntime.cpp
+@@ -838,6 +838,11 @@ void InterpreterRuntime::update_invoke_cp_cache_entry(CallInfo& info, Bytecodes:
+   // Don't allow safepoints until the method is cached.
+   NoSafepointVerifier nsv;
+ 
++  // Common-intrinsic preparation may have blocked after resolution. CallInfo
++  // keeps the old method alive and follows redefinition to the current version.
++  // Refresh under this verifier so publication cannot cache an obsolete method.
++  resolved_method = methodHandle(Thread::current(), info.resolved_method());
++
+   // check if link resolution caused cpCache to be updated
+   ConstantPoolCache* cache = pool->cache();
+   if (cache->resolved_method_entry_at(method_index)->is_resolved(bytecode)) return;
+diff --git a/src/hotspot/share/prims/methodHandles.cpp b/src/hotspot/share/prims/methodHandles.cpp
+index 39f6016d118..19346885377 100644
+--- a/src/hotspot/share/prims/methodHandles.cpp
++++ b/src/hotspot/share/prims/methodHandles.cpp
+@@ -253,6 +253,10 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
+   if (CommonIntrinsics::is_big_integer(m->intrinsic_id())) {
+     CommonIntrinsics::prepare(m->intrinsic_id());
+   }
++  // Preparation may block while redefinition replaces the target. Derive and
++  // publish the MemberName from the current method without another safepoint.
++  NoSafepointVerifier nsv;
++  m = methodHandle(Thread::current(), info.resolved_method());
+   InstanceKlass* m_klass = m->method_holder();
+   assert(m_klass != nullptr, "null holder for method handle");
+   int flags = (m->access_flags().as_method_flags());
+diff --git a/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicRedefinition.java b/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicRedefinition.java
+new file mode 100644
+index 00000000000..4a46958f007
+--- /dev/null
++++ b/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicRedefinition.java
+@@ -0,0 +1,188 @@
++/*
++ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
++ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
++ *
++ * This code is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 only, as
++ * published by the Free Software Foundation.
++ *
++ * This code is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ * version 2 for more details (a copy is included in the LICENSE file that
++ * accompanied this code).
++ *
++ * You should have received a copy of the GNU General Public License version
++ * 2 along with this work; if not, write to the Free Software Foundation,
++ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
++ *
++ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
++ * or visit www.oracle.com if you need additional information or have any
++ * questions.
++ */
++
++/*
++ * @test
++ * @summary Redefinition during first BigInteger stub preparation keeps resolved targets current
++ * @requires vm.jvmti & vm.compiler2.enabled
++ * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
++ * @library /test/lib
++ * @modules java.instrument
++ * @run main RedefineClassHelper
++ * @run driver TestCommonIntrinsicRedefinition
++ */
++
++import java.io.InputStream;
++import java.lang.classfile.ClassFile;
++import java.lang.classfile.ClassTransform;
++import java.lang.classfile.CodeBuilder;
++import java.lang.classfile.CodeElement;
++import java.lang.classfile.CodeTransform;
++import java.lang.invoke.MethodHandle;
++import java.lang.invoke.MethodHandles;
++import java.lang.invoke.MethodType;
++import java.math.BigInteger;
++import java.util.Arrays;
++import java.util.Set;
++import java.util.concurrent.CountDownLatch;
++import java.util.concurrent.atomic.AtomicReference;
++import jdk.test.lib.process.ProcessTools;
++
++public class TestCommonIntrinsicRedefinition {
++    private static final String GENERATION = "StubRoutines generation compiler stubs";
++    private static final Set<String> TARGETS = Set.of("implMultiplyToLen", "implSquareToLen", "implMulAdd",
++            "implMontgomeryMultiply", "implMontgomerySquare");
++
++    public static void main(String[] args) throws Throwable {
++        if (args.length != 0) {
++            race(args[0]);
++            return;
++        }
++        for (String mode : new String[] { "-Xint", "-XX:TieredStopAtLevel=1", "-XX:TieredStopAtLevel=3" }) {
++            for (String operation : new String[] { "multiply", "modpow", "handle" }) {
++                // Each JVM has a fresh compiler-stub publication and independent
++                // resolver/MemberName first-use windows.
++                for (int repetition = 0; repetition < 2; repetition++) {
++                    String output = ProcessTools.executeTestJava("-javaagent:redefineagent.jar", mode,
++                            "--add-opens=java.base/java.math=ALL-UNNAMED", "-XX:+UseCommonIntrinsics",
++                            "-XX:+UnlockDiagnosticVMOptions", "-XX:+SafepointALot",
++                            "-XX:GuaranteedSafepointInterval=1", "-Xlog:startuptime",
++                            TestCommonIntrinsicRedefinition.class.getName(), operation)
++                            .shouldHaveExitValue(0).shouldContain("redefinition-race-passed").getOutput();
++                    int first = output.indexOf(GENERATION);
++                    int start = output.indexOf("before-first-use");
++                    if (start < 0 || first < start || output.indexOf(GENERATION, first + GENERATION.length()) >= 0) {
++                        throw new AssertionError("Expected one compiler-stub generation during first use: " + output);
++                    }
++                }
++            }
++        }
++    }
++
++    private static byte[] addNop(byte[] original) {
++        return ClassFile.of().transformClass(ClassFile.of().parse(original),
++                ClassTransform.transformingMethodBodies(m -> TARGETS.contains(m.methodName().stringValue()),
++                        new CodeTransform() {
++                            @Override
++                            public void atStart(CodeBuilder builder) {
++                                // Different bytecodes make the replaced target obsolete;
++                                // identical-bytecode redefinition only marks it old.
++                                builder.nop();
++                            }
++
++                            @Override
++                            public void accept(CodeBuilder builder, CodeElement element) {
++                                builder.with(element);
++                            }
++                        }));
++    }
++
++    private static void race(String operation) throws Throwable {
++        byte[] original;
++        try (InputStream input = BigInteger.class.getResourceAsStream("BigInteger.class")) {
++            original = input.readAllBytes();
++        }
++        byte[] changed = addNop(original);
++        byte[] leftBytes = new byte[512];
++        byte[] rightBytes = new byte[512];
++        leftBytes[0] = rightBytes[0] = (byte) 0x80;
++        leftBytes[511] = 3;
++        rightBytes[511] = 5;
++        BigInteger left = new BigInteger(1, leftBytes);
++        BigInteger right = new BigInteger(1, rightBytes);
++        BigInteger product = BigInteger.ONE.shiftLeft(8190).setBit(4098).add(BigInteger.valueOf(15));
++        byte[] small = new byte[64];
++        small[0] = 1;
++        small[63] = 3;
++        BigInteger value = new BigInteger(1, small);
++        Arrays.fill(small, (byte) 0xff);
++        BigInteger modulus = new BigInteger(1, small);
++        BigInteger exponent = BigInteger.valueOf(65537);
++        BigInteger power = new BigInteger(
++                "6f98e2a7637caeedd66c498239e1f2b6be9ccc196df314f9d25cbe55f6982ab9b"
++                + "0a0f0c937970e1a0f00fadcdd8e956e53d9b023c8a47b171e39e7c61897c5e2", 16);
++        int[] x = new int[128];
++        int[] y = new int[128];
++        x[0] = y[0] = 0x80000000;
++        x[127] = 3;
++        y[127] = 5;
++        int[] expected = new int[256];
++        expected[0] = 0x40000000;
++        expected[127] = 4;
++        expected[255] = 15;
++
++        int workers = 12;
++        CountDownLatch ready = new CountDownLatch(workers + 1);
++        CountDownLatch start = new CountDownLatch(1);
++        AtomicReference<Throwable> failure = new AtomicReference<>();
++        Thread[] threads = new Thread[workers + 1];
++        threads[0] = new Thread(() -> {
++            ready.countDown();
++            try {
++                start.await();
++                for (int i = 0; i < 48; i++) {
++                    RedefineClassHelper.redefineClass(BigInteger.class, (i & 1) == 0 ? changed : original);
++                }
++            } catch (Throwable t) {
++                failure.compareAndSet(null, t);
++            }
++        }, "redefine-BigInteger");
++        for (int i = 1; i < threads.length; i++) {
++            threads[i] = new Thread(() -> {
++                ready.countDown();
++                try {
++                    start.await();
++                    MethodHandles.Lookup lookup = operation.equals("handle")
++                            ? MethodHandles.privateLookupIn(BigInteger.class, MethodHandles.lookup()) : null;
++                    for (int call = 0; call < 32; call++) {
++                        switch (operation) {
++                            case "multiply" -> {
++                                if (!left.multiply(right).equals(product)) throw new AssertionError("multiply");
++                            }
++                            case "modpow" -> {
++                                if (!value.modPow(exponent, modulus).equals(power)) throw new AssertionError("modPow");
++                            }
++                            case "handle" -> {
++                                MethodHandle handle = lookup.findStatic(BigInteger.class, "implMultiplyToLen",
++                                        MethodType.methodType(int[].class, int[].class, int.class,
++                                                int[].class, int.class, int[].class));
++                                int[] actual = (int[]) handle.invokeExact(x, 128, y, 128, new int[256]);
++                                if (!Arrays.equals(actual, expected)) throw new AssertionError("method handle multiply");
++                            }
++                            default -> throw new AssertionError(operation);
++                        }
++                    }
++                } catch (Throwable t) {
++                    failure.compareAndSet(null, t);
++                }
++            }, "first-use-" + i);
++        }
++        for (Thread thread : threads) thread.start();
++        ready.await();
++        System.out.println("before-first-use");
++        start.countDown();
++        for (Thread thread : threads) thread.join();
++        if (failure.get() != null) throw new AssertionError("Redefinition/first-use race", failure.get());
++        System.out.println("redefinition-race-passed");
++    }
++}

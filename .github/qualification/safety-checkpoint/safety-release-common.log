@@ -1,0 +1,27 @@
+{"command": ["/workspace/toolchains/jdk27/bin/java", "-XX:TieredStopAtLevel=1", "-XX:ActiveProcessorCount=1", "-XX:+UseSerialGC", "-Xmx512m", "-jar", "/workspace/toolchains/jtreg83/lib/jtreg.jar", "-jdk:/workspace/pr9-validation/images/safety-release", "-othervm", "-conc:1", "-timeoutFactor:4", "-v:summary", "-exclude:/workspace/openjdk-jdk27u/test/hotspot/jtreg/ProblemList.txt", "-nativepath:/workspace/openjdk-jdk27u/build/pr9-release/images/test/hotspot/jtreg/native", "-vmoptions:-XX:ActiveProcessorCount=2 -XX:CICompilerCount=2 -Xmx512m -Dseed=42", "-w:/workspace/pr9-validation/safety-release-common-work", "-r:/workspace/pr9-validation/safety-release-common-report", "test/hotspot/jtreg/compiler/intrinsics/common"], "cwd": "/workspace/openjdk-jdk27u", "start": 1792031928.8143728}
+Directory "/workspace/pr9-validation/safety-release-common-work" not found: creating
+Directory "/workspace/pr9-validation/safety-release-common-report" not found: creating
+Passed: compiler/intrinsics/common/TestCommonArithmeticIntrinsics.java
+Passed: compiler/intrinsics/common/TestCommonAVX512Intrinsics.java
+Passed: compiler/intrinsics/common/TestCommonBigIntegerShifts.java
+Passed: compiler/intrinsics/common/TestCommonDigestStreaming.java
+Passed: compiler/intrinsics/common/TestCommonEvaluationOrder.java
+Passed: compiler/intrinsics/common/TestCommonIntPolyAssign.java
+Passed: compiler/intrinsics/common/TestCommonIntrinsicAvailability.java
+Passed: compiler/intrinsics/common/TestCommonIntrinsicBreakpoints.java
+Passed: compiler/intrinsics/common/TestCommonIntrinsicEvents.java
+Passed: compiler/intrinsics/common/TestCommonIntrinsicFallback.java
+Passed: compiler/intrinsics/common/TestCommonIntrinsicGuardIsolation.java#level1
+Passed: compiler/intrinsics/common/TestCommonIntrinsicGuardIsolation.java#level3
+Passed: compiler/intrinsics/common/TestCommonIntrinsicInitialization.java
+Passed: compiler/intrinsics/common/TestCommonIntrinsicRecompilation.java
+Passed: compiler/intrinsics/common/TestCommonIntrinsicRedefinition.java
+Passed: compiler/intrinsics/common/TestCommonIntrinsics.java
+Passed: compiler/intrinsics/common/TestCommonMethodHandles.java#level1
+Passed: compiler/intrinsics/common/TestCommonMethodHandles.java#level3
+Passed: compiler/intrinsics/common/TestCommonMulAdd.java
+Passed: compiler/intrinsics/common/TestCommonScalarFlags.java
+Passed: compiler/intrinsics/common/TestCommonScalarIntrinsics.java
+Test results: passed: 21
+Report written to /workspace/pr9-validation/safety-release-common-report/html/report.html
+Results written to /workspace/pr9-validation/safety-release-common-work

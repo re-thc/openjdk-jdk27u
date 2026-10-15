@@ -1,0 +1,26 @@
+{
+  "name": "safety-release-common",
+  "command": [
+    "/workspace/toolchains/jdk27/bin/java",
+    "-XX:TieredStopAtLevel=1",
+    "-XX:ActiveProcessorCount=1",
+    "-XX:+UseSerialGC",
+    "-Xmx512m",
+    "-jar",
+    "/workspace/toolchains/jtreg83/lib/jtreg.jar",
+    "-jdk:/workspace/pr9-validation/images/safety-release",
+    "-othervm",
+    "-conc:1",
+    "-timeoutFactor:4",
+    "-v:summary",
+    "-exclude:/workspace/openjdk-jdk27u/test/hotspot/jtreg/ProblemList.txt",
+    "-nativepath:/workspace/openjdk-jdk27u/build/pr9-release/images/test/hotspot/jtreg/native",
+    "-vmoptions:-XX:ActiveProcessorCount=2 -XX:CICompilerCount=2 -Xmx512m -Dseed=42",
+    "-w:/workspace/pr9-validation/safety-release-common-work",
+    "-r:/workspace/pr9-validation/safety-release-common-report",
+    "test/hotspot/jtreg/compiler/intrinsics/common"
+  ],
+  "exit_code": 0,
+  "summary": "compiler/intrinsics/common/TestCommonAVX512Intrinsics.java                Passed. Execution successful\ncompiler/intrinsics/common/TestCommonArithmeticIntrinsics.java            Passed. Execution successful\ncompiler/intrinsics/common/TestCommonBigIntegerShifts.java                Passed. Execution successful\ncompiler/intrinsics/common/TestCommonDigestStreaming.java                 Passed. Execution successful\ncompiler/intrinsics/common/TestCommonEvaluationOrder.java                 Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntPolyAssign.java                   Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicAvailability.java           Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicBreakpoints.java            Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicEvents.java                 Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicFallback.java               Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicGuardIsolation.java#level1  Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicGuardIsolation.java#level3  Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicInitialization.java         Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicRecompilation.java          Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsicRedefinition.java           Passed. Execution successful\ncompiler/intrinsics/common/TestCommonIntrinsics.java                      Passed. Execution successful\ncompiler/intrinsics/common/TestCommonMethodHandles.java#level1            Passed. Execution successful\ncompiler/intrinsics/common/TestCommonMethodHandles.java#level3            Passed. Execution successful\ncompiler/intrinsics/common/TestCommonMulAdd.java                          Passed. Execution successful\ncompiler/intrinsics/common/TestCommonScalarFlags.java                     Passed. Execution successful\ncompiler/intrinsics/common/TestCommonScalarIntrinsics.java                Passed. Execution successful\n",
+  "source_checkout_at_start": "0af2b4bcb53962ebce26bed0f67bd82d81cee87c"
+}

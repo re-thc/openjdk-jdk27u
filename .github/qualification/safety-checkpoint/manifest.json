@@ -1,0 +1,78 @@
+{
+  "head": "0af2b4bcb53962ebce26bed0f67bd82d81cee87c",
+  "tree": "44d482c5b36d17981a5c88dde92cbf6307fefd40",
+  "pr_head": "c04d1ba1e96b2176ce8a8e56eacae73c2d356d2b",
+  "status": "Safety repair built; source-aligned focused tests running. Performance and tier2 unstarted. Original ARM attribution open.",
+  "results": {
+    "build-safety-release": {
+      "command": [
+        "bash",
+        "-c",
+        "source /workspace/toolchains/activate.sh && make CONF=pr9-release JOBS=2 images"
+      ],
+      "exit_code": 0,
+      "seconds": 46.5823540687561,
+      "children_reaped": 200
+    },
+    "build-safety-fastdebug": {
+      "command": [
+        "bash",
+        "-c",
+        "source /workspace/toolchains/activate.sh && make CONF=pr9-fastdebug JOBS=2 images"
+      ],
+      "exit_code": 0,
+      "seconds": 68.95633792877197,
+      "children_reaped": 200
+    },
+    "pre-safety-redefinition": {
+      "command": [
+        "/workspace/toolchains/jdk27/bin/java",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xmx512m",
+        "-jar",
+        "/workspace/toolchains/jtreg83/lib/jtreg.jar",
+        "-jdk:/workspace/pr9-validation/images/final-fastdebug",
+        "-othervm",
+        "-conc:1",
+        "-timeoutFactor:4",
+        "-v:summary",
+        "-exclude:/workspace/openjdk-jdk27u/test/hotspot/jtreg/ProblemList.txt",
+        "-nativepath:/workspace/openjdk-jdk27u/build/pr9-fastdebug/images/test/hotspot/jtreg/native",
+        "-vmoptions:-XX:ActiveProcessorCount=2 -XX:CICompilerCount=2 -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+CheckUnhandledOops -XX:+VerifyOops",
+        "-w:/workspace/pr9-validation/pre-safety-redefinition-work",
+        "-r:/workspace/pr9-validation/pre-safety-redefinition-report",
+        "test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicRedefinition.java"
+      ],
+      "exit_code": 0,
+      "seconds": 61.59161186218262,
+      "children_reaped": 1
+    },
+    "safety-release-common": {
+      "command": [
+        "/workspace/toolchains/jdk27/bin/java",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xmx512m",
+        "-jar",
+        "/workspace/toolchains/jtreg83/lib/jtreg.jar",
+        "-jdk:/workspace/pr9-validation/images/safety-release",
+        "-othervm",
+        "-conc:1",
+        "-timeoutFactor:4",
+        "-v:summary",
+        "-exclude:/workspace/openjdk-jdk27u/test/hotspot/jtreg/ProblemList.txt",
+        "-nativepath:/workspace/openjdk-jdk27u/build/pr9-release/images/test/hotspot/jtreg/native",
+        "-vmoptions:-XX:ActiveProcessorCount=2 -XX:CICompilerCount=2 -Xmx512m -Dseed=42",
+        "-w:/workspace/pr9-validation/safety-release-common-work",
+        "-r:/workspace/pr9-validation/safety-release-common-report",
+        "test/hotspot/jtreg/compiler/intrinsics/common"
+      ],
+      "exit_code": 0,
+      "seconds": 68.03343462944031,
+      "children_reaped": 1
+    }
+  }
+}
