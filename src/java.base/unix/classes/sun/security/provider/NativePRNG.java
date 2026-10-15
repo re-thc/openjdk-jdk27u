@@ -50,8 +50,8 @@ import sun.security.util.Debug;
  * where they behave like /dev/random. The seed for generateSeed() behaves like
  * the seed file, which is /dev/random by default. Where the getrandom() system
  * call is not available, for example because a seccomp filter blocks it, the
- * native code reads /dev/urandom or /dev/random instead, and this
- * implementation is not available if it cannot read them.
+ * native code reads /dev/urandom or /dev/random instead. Each algorithm is
+ * available only if it can get its random bytes and its seed.
  * <p>
  * setSeed() attempts to write to the seed file. However, this file may only be
  * writable by root in many configurations. Because we cannot just ignore bytes
@@ -201,9 +201,8 @@ public final class NativePRNG extends SecureRandomSpi {
         return new RandomIO(seedFile, seedIn, nextUrandom);
     }
 
-    // whether the OS provides the bytes like /dev/urandom, which all
-    // variants but the blocking one use
-    private static final boolean AVAILABLE = isAvailable0(true);
+    // whether the OS provides the random bytes and the seed
+    private static final boolean AVAILABLE = INSTANCE.isAvailable();
 
     // return whether the NativePRNG is available
     static boolean isAvailable() {
@@ -270,7 +269,7 @@ public final class NativePRNG extends SecureRandomSpi {
 
         // return whether this is available
         static boolean isAvailable() {
-            return AVAILABLE && isAvailable0(false);
+            return INSTANCE.isAvailable();
         }
 
         // constructor, called by the JCA framework
@@ -318,7 +317,7 @@ public final class NativePRNG extends SecureRandomSpi {
 
         // return whether this is available
         static boolean isAvailable() {
-            return AVAILABLE;
+            return INSTANCE.isAvailable();
         }
 
         // constructor, called by the JCA framework
@@ -389,8 +388,8 @@ public final class NativePRNG extends SecureRandomSpi {
             long refillTime;
         }
 
-        // the buffers, a power of two of them
-        private final Buffer[] buffers;
+        // the buffers, a power of two of them, created on first use
+        private volatile Buffer[] buffers;
 
         // the most bytes of the OS that are XORed at once with the output of
         // the mixing SHA1PRNG
@@ -408,12 +407,32 @@ public final class NativePRNG extends SecureRandomSpi {
             this.seedIn = seedIn;
             this.seedUrandom = seedFile.getPath().equals(NAME_URANDOM);
             this.nextUrandom = nextUrandom;
-            int n = Math.min(4 * Runtime.getRuntime().availableProcessors(),
-                    MAX_BUFFERS);
-            buffers = new Buffer[Integer.highestOneBit(2 * n - 1)];
-            for (int i = 0; i < buffers.length; i++) {
-                buffers[i] = new Buffer();
+        }
+
+        // whether the OS provides the random bytes, and the OS or the seed
+        // file the seed
+        private boolean isAvailable() {
+            return isAvailable0(nextUrandom)
+                    && (seedIn != null || isAvailable0(seedUrandom));
+        }
+
+        private Buffer[] buffers() {
+            Buffer[] bs = buffers;
+            if (bs == null) {
+                synchronized (this) {
+                    bs = buffers;
+                    if (bs == null) {
+                        int n = Math.min(4 * Runtime.getRuntime().availableProcessors(),
+                                MAX_BUFFERS);
+                        bs = new Buffer[Integer.highestOneBit(2 * n - 1)];
+                        for (int i = 0; i < bs.length; i++) {
+                            bs[i] = new Buffer();
+                        }
+                        buffers = bs;
+                    }
+                }
             }
+            return bs;
         }
 
         // get the SHA1PRNG for mixing
@@ -507,7 +526,8 @@ public final class NativePRNG extends SecureRandomSpi {
             }
             // spread consecutive thread ids over the buffers
             long h = Thread.currentThread().threadId() * 0x9E3779B97F4A7C15L;
-            Buffer b = buffers[(int) (h >>> 32) & (buffers.length - 1)];
+            Buffer[] bs = buffers();
+            Buffer b = bs[(int) (h >>> 32) & (bs.length - 1)];
             synchronized (b) {
                 long now = System.nanoTime();
                 if (b.remaining < len || now - b.refillTime > MAX_BUFFER_TIME) {
@@ -535,12 +555,14 @@ public final class NativePRNG extends SecureRandomSpi {
                 // XOR in chunks, so that a large request needs no second
                 // array as large
                 byte[] random = new byte[Math.min(data.length, MAX_MIX_CHUNK)];
-                for (int off = 0; off < data.length; off += random.length) {
+                int off = 0;
+                while (off < data.length) {
                     nextRandomBytes(random);
                     int n = Math.min(random.length, data.length - off);
                     for (int i = 0; i < n; i++) {
                         data[off + i] ^= random[i];
                     }
+                    off += n;
                 }
             } catch (IOException e) {
                 throw new ProviderException("nextBytes() failed", e);

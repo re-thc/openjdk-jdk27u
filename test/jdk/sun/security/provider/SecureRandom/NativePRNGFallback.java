@@ -24,18 +24,24 @@
 /*
  * @test
  * @summary NativePRNG gets its bytes from /dev/urandom or /dev/random where
- *          getrandom() is blocked, and handles kernels before Linux 5.6 that
- *          reject GRND_INSECURE, also before their random number generator
- *          is initialized
+ *          getrandom() is blocked, and is available only where it can read
+ *          what it needs. It handles kernels before Linux 5.6 that reject
+ *          GRND_INSECURE, also before their random number generator is
+ *          initialized
  * @requires os.family == "linux"
  * @library /test/lib
  * @run main/othervm/native NativePRNGFallback enosys
  * @run main/othervm/native NativePRNGFallback eperm
  * @run main/othervm/native NativePRNGFallback old-kernel
  * @run main/othervm/native NativePRNGFallback uninitialized
+ * @run main/othervm/native NativePRNGFallback no-random
+ * @run main/othervm/native NativePRNGFallback no-random-egd-urandom
+ * @run main/othervm/native NativePRNGFallback no-urandom
  */
 
+import java.nio.file.Path;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HexFormat;
@@ -59,39 +65,129 @@ public class NativePRNGFallback {
     private static final int REQUESTS = 2_000;
     private static final int[] SIZES = { 16, 64, 100, 5_000, 20_000 };
 
+    private static final List<String> ALGORITHMS = List.of("NativePRNG",
+            "NativePRNGNonBlocking", "NativePRNGBlocking");
+
+    // Runs a command in a user and mount namespace where /dev holds only
+    // null, zero and the device named by the first argument.
+    private static final String HIDE_DEVICES = """
+            set -e
+            keep=$1; shift
+            d=$(mktemp -d)
+            for f in null zero urandom random; do
+                touch $d/$f; mount --bind /dev/$f $d/$f
+            done
+            mount -t tmpfs tmpfs /dev
+            for f in null zero $keep; do
+                touch /dev/$f; mount --bind $d/$f /dev/$f
+            done
+            exec "$@"
+            """;
+
     private static native int install(int mode, int err);
     private static native int getrandom(int flags);
 
     public static void main(String[] args) throws Exception {
+        switch (args[0]) {
+            case "no-random" ->
+                runHidden("urandom", List.of(), List.of("NativePRNGNonBlocking"));
+            case "no-random-egd-urandom" ->
+                runHidden("urandom", List.of("-Djava.security.egd=file:/dev/urandom"),
+                        List.of("NativePRNG", "NativePRNGNonBlocking"));
+            case "no-urandom" ->
+                runHidden("random", List.of(), List.of("NativePRNGBlocking"));
+            case "child" -> child(List.of(args).subList(1, args.length));
+            default -> blocked(args[0]);
+        }
+    }
+
+    // runs child() in a JVM whose /dev has only the device keep, and checks
+    // that only the algorithms expected are available
+    private static void runHidden(String keep, List<String> options,
+            List<String> expected) throws Exception {
+        List<String> unshare = List.of("unshare", "-Urm", "sh", "-c",
+                HIDE_DEVICES, "sh", keep);
+        Process p = new ProcessBuilder(concat(unshare, List.of("true")))
+                .inheritIO().start();
+        if (p.waitFor() != 0) {
+            throw new SkippedException("Cannot hide /dev/random or /dev/urandom");
+        }
+        List<String> java = concat(List.of(
+                Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "--enable-native-access=ALL-UNNAMED",
+                "-Djava.library.path=" + System.getProperty("java.library.path"),
+                "-cp", System.getProperty("java.class.path")), options);
+        java = concat(java, concat(List.of("NativePRNGFallback", "child"), expected));
+        p = new ProcessBuilder(concat(unshare, java)).inheritIO().start();
+        int exit = p.waitFor();
+        if (exit != 0) {
+            throw new RuntimeException("Child failed: " + exit);
+        }
+    }
+
+    private static List<String> concat(List<String> a, List<String> b) {
+        List<String> l = new ArrayList<>(a);
+        l.addAll(b);
+        return l;
+    }
+
+    // with getrandom() blocked, checks that exactly the algorithms expected
+    // are available and that they work
+    private static void child(List<String> expected) throws Exception {
+        System.loadLibrary("NativePRNGFallback");
+        if (install(0, ENOSYS) != 0) {
+            throw new RuntimeException("Cannot install a seccomp filter");
+        }
+        if (getrandom(0) != ENOSYS) {
+            throw new RuntimeException("getrandom() is not blocked");
+        }
+        for (String alg : ALGORITHMS) {
+            boolean available = Security.getProvider("SUN")
+                    .getService("SecureRandom", alg) != null;
+            if (available != expected.contains(alg)) {
+                throw new RuntimeException(alg + " available: " + available);
+            }
+            if (available) {
+                check(SecureRandom.getInstance(alg));
+            }
+        }
+        String def = new SecureRandom().getAlgorithm();
+        if (!def.equals(expected.contains("NativePRNG") ? "NativePRNG" : "DRBG")) {
+            throw new RuntimeException("Default: " + def);
+        }
+    }
+
+    // with getrandom() failing as mode says, checks that all algorithms
+    // are available and work
+    private static void blocked(String mode) throws Exception {
         System.loadLibrary("NativePRNGFallback");
 
         // The filter must be in place before the SUN provider checks
         // whether NativePRNG is available.
-        int mode, err;
-        switch (args[0]) {
-            case "enosys" -> { mode = 0; err = ENOSYS; }
-            case "eperm" -> { mode = 0; err = EPERM; }
-            case "old-kernel" -> { mode = 1; err = EINVAL; }
-            case "uninitialized" -> { mode = 2; err = EINVAL; }
-            default -> throw new IllegalArgumentException(args[0]);
+        int filter, err;
+        switch (mode) {
+            case "enosys" -> { filter = 0; err = ENOSYS; }
+            case "eperm" -> { filter = 0; err = EPERM; }
+            case "old-kernel" -> { filter = 1; err = EINVAL; }
+            case "uninitialized" -> { filter = 2; err = EINVAL; }
+            default -> throw new IllegalArgumentException(mode);
         }
-        int e = install(mode, err);
+        int e = install(filter, err);
         if (e != 0) {
             throw new SkippedException("Cannot install a seccomp filter: " + e);
         }
         expect(GRND_INSECURE, err);
-        if (mode == 0) {
+        if (filter == 0) {
             expect(0, err);
         } else {
             expect(0, 0);
-            expect(GRND_NONBLOCK, mode == 2 ? EAGAIN : 0);
+            expect(GRND_NONBLOCK, filter == 2 ? EAGAIN : 0);
         }
 
         if (!new SecureRandom().getAlgorithm().equals("NativePRNG")) {
             throw new RuntimeException("NativePRNG is not the default");
         }
-        for (String alg : List.of("NativePRNG", "NativePRNGNonBlocking",
-                "NativePRNGBlocking")) {
+        for (String alg : ALGORITHMS) {
             check(SecureRandom.getInstance(alg));
         }
     }
