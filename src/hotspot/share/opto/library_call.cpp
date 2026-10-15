@@ -44,6 +44,7 @@
 #include "opto/idealKit.hpp"
 #include "opto/library_call.hpp"
 #include "opto/mathexactnode.hpp"
+#include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/opaquenode.hpp"
@@ -9477,17 +9478,16 @@ bool LibraryCallKit::inline_simdutf_process() {
   }
   // Retain lower gates in tiers where their Java loops are more expensive.
   if (minimum_length != 0) {
-    Node* cmp = _gvn.transform(new CmpINode(argument(2), intcon(minimum_length)));
-    Node* test = _gvn.transform(new BoolNode(cmp, BoolTest::lt));
+    Node* limit = intcon(minimum_length);
 #ifdef AARCH64
     if (operation->_lo == SimdUTF::DECODE_UTF8) {
       Node* room_cmp = _gvn.transform(new CmpINode(argument(5), argument(2)));
       Node* room = _gvn.transform(new BoolNode(room_cmp, BoolTest::ge));
-      Node* both = _gvn.transform(new AndINode(test, room));
-      Node* nonzero = _gvn.transform(new CmpINode(both, intcon(0)));
-      test = _gvn.transform(new BoolNode(nonzero, BoolTest::ne));
+      limit = _gvn.transform(new CMoveINode(room, intcon(0), limit, TypeInt::INT));
     }
 #endif
+    Node* cmp = _gvn.transform(new CmpINode(argument(2), limit));
+    Node* test = _gvn.transform(new BoolNode(cmp, BoolTest::lt));
     small_control = generate_guard(test, nullptr, PROB_FAIR);
     if (small_control != nullptr) {
       if (stopped()) {
