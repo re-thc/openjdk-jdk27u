@@ -1,0 +1,25 @@
+{
+  "name": "final-release-flagless",
+  "command": [
+    "/workspace/toolchains/jdk27/bin/java",
+    "-XX:TieredStopAtLevel=1",
+    "-XX:ActiveProcessorCount=1",
+    "-XX:+UseSerialGC",
+    "-Xmx512m",
+    "-jar",
+    "/workspace/toolchains/jtreg83/lib/jtreg.jar",
+    "-jdk:/workspace/pr9-validation/images/final-release",
+    "-othervm",
+    "-conc:1",
+    "-timeoutFactor:4",
+    "-nativepath:/workspace/openjdk-jdk27u/build/pr9-release/images/test/hotspot/jtreg/native",
+    "-vmoptions:",
+    "-w:/workspace/pr9-validation/final-release-flagless-work",
+    "-r:/workspace/pr9-validation/final-release-flagless-report",
+    "test/hotspot/jtreg/runtime/cds/DeterministicDump.java",
+    "test/hotspot/jtreg/runtime/cds/MetaspaceAllocGaps.java"
+  ],
+  "exit_code": 0,
+  "summary": "runtime/cds/DeterministicDump.java   Passed. Execution successful\nruntime/cds/MetaspaceAllocGaps.java  Passed. Execution successful\n",
+  "source_checkout_at_start": "8c833417e01964ad0fb3ad912ce0bd9d27117ba8"
+}

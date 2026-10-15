@@ -1,0 +1,25 @@
+{
+  "command": [
+    "/workspace/toolchains/jdk27/bin/java",
+    "-XX:TieredStopAtLevel=1",
+    "-XX:ActiveProcessorCount=1",
+    "-XX:+UseSerialGC",
+    "-Xmx512m",
+    "-jar",
+    "/workspace/toolchains/jtreg83/lib/jtreg.jar",
+    "-jdk:/workspace/pr9-validation/images/final-release",
+    "-othervm",
+    "-conc:1",
+    "-timeoutFactor:4",
+    "-nativepath:/workspace/openjdk-jdk27u/build/pr9-release/images/test/hotspot/jtreg/native",
+    "-vmoptions:-XX:ActiveProcessorCount=2 -XX:CICompilerCount=2",
+    "-w:/workspace/pr9-validation/final-release-archives-work",
+    "-r:/workspace/pr9-validation/final-release-archives-report",
+    "test/hotspot/jtreg/runtime/cds/CommonIntrinsicArchiveDeterminism.java",
+    "test/hotspot/jtreg/runtime/cds/FourByteHeaderArchiveDeterminism.java",
+    "test/hotspot/jtreg/runtime/cds/DeterministicDump.java"
+  ],
+  "exit_code": 0,
+  "seconds": 112.22219204902649,
+  "children_reaped": 1
+}

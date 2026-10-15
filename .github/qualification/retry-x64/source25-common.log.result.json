@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/workspace/toolchains/jdk27/bin/java",
+    "-Xint",
+    "-XX:ActiveProcessorCount=1",
+    "-XX:+UseSerialGC",
+    "-Xmx512m",
+    "-jar",
+    "/workspace/toolchains/jtreg83/lib/jtreg.jar",
+    "-jdk:/workspace/pr9-validation/images/source25-release",
+    "-othervm",
+    "-conc:1",
+    "-timeoutFactor:4",
+    "-nativepath:/workspace/openjdk-jdk27u/build/pr9-release/images/test/hotspot/jtreg/native",
+    "-vmoptions:-XX:ActiveProcessorCount=2 -XX:CICompilerCount=2 -Xmx512m -Dseed=42",
+    "-w:/workspace/pr9-validation/source25-common-work",
+    "-r:/workspace/pr9-validation/source25-common-report",
+    "test/hotspot/jtreg/compiler/intrinsics/common"
+  ],
+  "exit_code": 0,
+  "seconds": 174.8124897480011,
+  "children_reaped": 1
+}

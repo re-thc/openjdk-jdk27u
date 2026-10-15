@@ -1,0 +1,24 @@
+{
+  "name": "source25-archive-regression",
+  "command": [
+    "/workspace/toolchains/jdk27/bin/java",
+    "-Xint",
+    "-XX:ActiveProcessorCount=1",
+    "-XX:+UseSerialGC",
+    "-Xmx512m",
+    "-jar",
+    "/workspace/toolchains/jtreg83/lib/jtreg.jar",
+    "-jdk:/workspace/pr9-validation/images/source25-release",
+    "-othervm",
+    "-conc:1",
+    "-timeoutFactor:4",
+    "-nativepath:/workspace/openjdk-jdk27u/build/pr9-release/images/test/hotspot/jtreg/native",
+    "-vmoptions:-XX:ActiveProcessorCount=2 -XX:CICompilerCount=2",
+    "-w:/workspace/pr9-validation/source25-archive-regression-work",
+    "-r:/workspace/pr9-validation/source25-archive-regression-report",
+    "test/hotspot/jtreg/runtime/cds/CommonIntrinsicArchiveDeterminism.java"
+  ],
+  "exit_code": 2,
+  "summary": "runtime/cds/CommonIntrinsicArchiveDeterminism.java#g1      Failed. Execution failed: `main' threw exception: java.lang.RuntimeException: File content different at byte #28382, b0 = 7, b1 = 100\nruntime/cds/CommonIntrinsicArchiveDeterminism.java#serial  Failed. Execution failed: `main' threw exception: java.lang.RuntimeException: File content different at byte #28382, b0 = 7, b1 = 100\nruntime/cds/CommonIntrinsicArchiveDeterminism.java#z       Failed. Execution failed: `main' threw exception: java.lang.RuntimeException: File content different at byte #28382, b0 = 7, b1 = 100\n",
+  "source_checkout": "25bff7b9d9c33fac3e62af27b4405ff60c00e583"
+}

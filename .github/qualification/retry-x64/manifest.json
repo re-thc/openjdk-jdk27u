@@ -1,0 +1,145 @@
+{
+  "source": "25bff7b9d9c33fac3e62af27b4405ff60c00e583",
+  "published": "c04d1ba1e96b2176ce8a8e56eacae73c2d356d2b",
+  "checkpoint": "6276dd1b9cc1be5010a5491402fb96fcbfe376c9",
+  "bundle_sha256": "c053b2d7ff413e31f61e6e53d27ef009fd0ad4beb1b04dda17d2be437837e1e5",
+  "baseline": "87edd79d3104ff502f7befec034716b081436f49",
+  "environment": "Linux-6.18.44-x86_64-with-glibc2.41",
+  "library": {
+    "libfile_4d4f71fd4b1c8191ad9aa68ef0196c5a": {
+      "version": 1,
+      "filename": "pr9-arm-failure-handoff-final.zip",
+      "expected_sha256": "69a57e80023c236206e04ff40c731f3da301f8bbd57dcf005b2ece16da1734eb",
+      "bytes": 89746,
+      "materialization": "download failed, first attempt and one explicitly local retry"
+    },
+    "libfile_718d697427f48191aa005ce1f1f711d3": {
+      "version": 0,
+      "filename": "pr9-arm-failed-blocks-raw-final.zip",
+      "expected_sha256": "52876822899a009a1a3ee9ea4ad7f722ebc562062cbe746f7a8612952b0b1c82",
+      "bytes": 237823509,
+      "materialization": "download failed, first attempt and one explicitly local retry"
+    }
+  },
+  "pr": {
+    "number": 9,
+    "draft": false,
+    "state": "open",
+    "head": "c04d1ba1e96b2176ce8a8e56eacae73c2d356d2b"
+  },
+  "sanity_run": {
+    "id": 38385226401,
+    "status": "queued",
+    "attempt": 2,
+    "head": "8bf01e9ed8a3df53fd8836d61216ed511ad3e591"
+  },
+  "changes_published": false,
+  "new_hosted_runs": [],
+  "status": "Final release common 20, archive 6, flagless 2, related HotSpot 11 and JDK 74 passed. Clean fastdebug build, AOT tests and C1 arithmetic checks in progress; performance and tier2 pending; original native ARM failure not qualified. No PR branch push or hosted campaign.",
+  "builds": {
+    "source25-release": {
+      "source": "25bff7b9d9c33fac3e62af27b4405ff60c00e583",
+      "exit_code": 0,
+      "seconds": 827.3730792999268,
+      "jdk": "/workspace/pr9-validation/images/source25-release",
+      "fingerprints": "source25-release.sha256",
+      "native_tests_built": true
+    },
+    "final-release": {
+      "source": "8c833417e01964ad0fb3ad912ce0bd9d27117ba8",
+      "exit_code": 0,
+      "seconds": 37.19817638397217,
+      "type": "incremental rebuild of the clean source25 release",
+      "fingerprints": "final-release.sha256"
+    },
+    "master-release": {
+      "source": "87edd79d3104ff502f7befec034716b081436f49",
+      "exit_code": 0,
+      "seconds": 694.2596793174744,
+      "type": "clean release",
+      "fingerprints": "master-release.sha256"
+    }
+  },
+  "local_head": "7454b15f85f20d7ed6688256b52c126603e3ff06",
+  "tests": {
+    "source25-common": {
+      "runtime_source": "25bff7b9d9c33fac3e62af27b4405ff60c00e583",
+      "passed": 20,
+      "exit_code": 0
+    },
+    "source25-archive-regression": {
+      "runtime_source": "25bff7b9d9c33fac3e62af27b4405ff60c00e583",
+      "failed": 3,
+      "exit_code": 2,
+      "first_diff": 28382,
+      "owner": "Long CP tag #18 (Integer): off=7, on=100"
+    },
+    "source25-archive-safepoints": {
+      "runtime_source": "25bff7b9d9c33fac3e62af27b4405ff60c00e583",
+      "failed": 1,
+      "exit_code": 2,
+      "on_vs_stressed_on_differences": 0
+    },
+    "final-release-flagless": {
+      "runtime_source": "8c833417e01964ad0fb3ad912ce0bd9d27117ba8",
+      "exit_code": 0,
+      "passed": 2,
+      "failed": 0,
+      "record": "final-release-flagless.result.json"
+    },
+    "final-release-c1-math-l1": {
+      "runtime_source": "8c833417e01964ad0fb3ad912ce0bd9d27117ba8",
+      "exit_code": 0,
+      "passed": 3,
+      "failed": 0,
+      "record": "final-release-c1-math-l1.result.json"
+    },
+    "final-release-archives": {
+      "runtime_source": "8c833417e01964ad0fb3ad912ce0bd9d27117ba8",
+      "exit_code": 0,
+      "passed": 6,
+      "failed": 0,
+      "record": "final-release-archives.result.json"
+    },
+    "final-release-jdk": {
+      "runtime_source": "8c833417e01964ad0fb3ad912ce0bd9d27117ba8",
+      "exit_code": 0,
+      "passed": 74,
+      "failed": 0,
+      "record": "final-release-jdk.result.json"
+    },
+    "final-release-common": {
+      "runtime_source": "8c833417e01964ad0fb3ad912ce0bd9d27117ba8",
+      "exit_code": 0,
+      "passed": 20,
+      "failed": 0,
+      "record": "final-release-common.result.json"
+    },
+    "final-release-hotspot": {
+      "runtime_source": "8c833417e01964ad0fb3ad912ce0bd9d27117ba8",
+      "exit_code": 0,
+      "passed": 11,
+      "failed": 0,
+      "record": "final-release-hotspot.result.json"
+    }
+  },
+  "aot_probe": {
+    "training_exit_code": 0,
+    "assembly_exit_code": 0,
+    "replay_variants": 8,
+    "checksums": [
+      -94768422
+    ],
+    "common_entries_during_training": true,
+    "common_entries_during_assembly": false,
+    "stub_generation_before_replay_application": true,
+    "timings": "functional probe under concurrent build, not performance evidence"
+  },
+  "author_only_rewrite": {
+    "original": "8c833417e01964ad0fb3ad912ce0bd9d27117ba8",
+    "current": "7454b15f85f20d7ed6688256b52c126603e3ff06",
+    "unchanged_tree": "85f88dbe68d8c68d66f9bec99639bcf52844f735",
+    "reason": "Use verified public noreply identity after GH007 privacy rejection"
+  },
+  "source_bundle_sha256": "5f64d6b3add3b51ebffb6ae7a4967c951c08317b93319950073587eec09ea0cb"
+}

@@ -1,0 +1,226 @@
+[
+  {
+    "mode": "int",
+    "enabled": false,
+    "command": [
+      "/workspace/pr9-validation/images/final-release/bin/java",
+      "-XX:ActiveProcessorCount=1",
+      "-XX:CICompilerCount=2",
+      "-XX:+UseSerialGC",
+      "-XX:-UseCommonIntrinsics",
+      "-Xint",
+      "-XX:AOTMode=on",
+      "-XX:AOTCache=/workspace/pr9-validation/common-training.aotcache",
+      "-Xlog:startuptime=debug",
+      "-cp",
+      "/workspace/pr9-validation/first-use.jar",
+      "FirstBigInteger",
+      "modpow",
+      "512"
+    ],
+    "exit_code": 0,
+    "compiler_stub_generations": 1,
+    "common_entries": 0,
+    "output": [
+      "[0.040s][info][startuptime] Create VM, 0.0396809 secs",
+      "693800 -94768422"
+    ],
+    "stderr": ""
+  },
+  {
+    "mode": "int",
+    "enabled": true,
+    "command": [
+      "/workspace/pr9-validation/images/final-release/bin/java",
+      "-XX:ActiveProcessorCount=1",
+      "-XX:CICompilerCount=2",
+      "-XX:+UseSerialGC",
+      "-XX:+UseCommonIntrinsics",
+      "-Xint",
+      "-XX:AOTMode=on",
+      "-XX:AOTCache=/workspace/pr9-validation/common-training.aotcache",
+      "-Xlog:startuptime=debug",
+      "-cp",
+      "/workspace/pr9-validation/first-use.jar",
+      "FirstBigInteger",
+      "modpow",
+      "512"
+    ],
+    "exit_code": 0,
+    "compiler_stub_generations": 1,
+    "common_entries": 1,
+    "output": [
+      "[0.035s][info ][startuptime] Create VM, 0.0339856 secs",
+      "182056 -94768422"
+    ],
+    "stderr": ""
+  },
+  {
+    "mode": "c1-l1",
+    "enabled": false,
+    "command": [
+      "/workspace/pr9-validation/images/final-release/bin/java",
+      "-XX:ActiveProcessorCount=1",
+      "-XX:CICompilerCount=2",
+      "-XX:+UseSerialGC",
+      "-XX:-UseCommonIntrinsics",
+      "-XX:TieredStopAtLevel=1",
+      "-XX:AOTMode=on",
+      "-XX:AOTCache=/workspace/pr9-validation/common-training.aotcache",
+      "-Xlog:startuptime=debug",
+      "-cp",
+      "/workspace/pr9-validation/first-use.jar",
+      "FirstBigInteger",
+      "modpow",
+      "512"
+    ],
+    "exit_code": 0,
+    "compiler_stub_generations": 1,
+    "common_entries": 0,
+    "output": [
+      "[0.047s][info][startuptime] Create VM, 0.0460081 secs",
+      "678756 -94768422"
+    ],
+    "stderr": ""
+  },
+  {
+    "mode": "c1-l1",
+    "enabled": true,
+    "command": [
+      "/workspace/pr9-validation/images/final-release/bin/java",
+      "-XX:ActiveProcessorCount=1",
+      "-XX:CICompilerCount=2",
+      "-XX:+UseSerialGC",
+      "-XX:+UseCommonIntrinsics",
+      "-XX:TieredStopAtLevel=1",
+      "-XX:AOTMode=on",
+      "-XX:AOTCache=/workspace/pr9-validation/common-training.aotcache",
+      "-Xlog:startuptime=debug",
+      "-cp",
+      "/workspace/pr9-validation/first-use.jar",
+      "FirstBigInteger",
+      "modpow",
+      "512"
+    ],
+    "exit_code": 0,
+    "compiler_stub_generations": 1,
+    "common_entries": 1,
+    "output": [
+      "[0.035s][info ][startuptime] Create VM, 0.0348628 secs",
+      "140672 -94768422"
+    ],
+    "stderr": ""
+  },
+  {
+    "mode": "c1-l3",
+    "enabled": false,
+    "command": [
+      "/workspace/pr9-validation/images/final-release/bin/java",
+      "-XX:ActiveProcessorCount=1",
+      "-XX:CICompilerCount=2",
+      "-XX:+UseSerialGC",
+      "-XX:-UseCommonIntrinsics",
+      "-XX:TieredStopAtLevel=3",
+      "-XX:AOTMode=on",
+      "-XX:AOTCache=/workspace/pr9-validation/common-training.aotcache",
+      "-Xlog:startuptime=debug",
+      "-cp",
+      "/workspace/pr9-validation/first-use.jar",
+      "FirstBigInteger",
+      "modpow",
+      "512"
+    ],
+    "exit_code": 0,
+    "compiler_stub_generations": 1,
+    "common_entries": 0,
+    "output": [
+      "[0.032s][info][startuptime] Create VM, 0.0319119 secs",
+      "821562 -94768422"
+    ],
+    "stderr": ""
+  },
+  {
+    "mode": "c1-l3",
+    "enabled": true,
+    "command": [
+      "/workspace/pr9-validation/images/final-release/bin/java",
+      "-XX:ActiveProcessorCount=1",
+      "-XX:CICompilerCount=2",
+      "-XX:+UseSerialGC",
+      "-XX:+UseCommonIntrinsics",
+      "-XX:TieredStopAtLevel=3",
+      "-XX:AOTMode=on",
+      "-XX:AOTCache=/workspace/pr9-validation/common-training.aotcache",
+      "-Xlog:startuptime=debug",
+      "-cp",
+      "/workspace/pr9-validation/first-use.jar",
+      "FirstBigInteger",
+      "modpow",
+      "512"
+    ],
+    "exit_code": 0,
+    "compiler_stub_generations": 1,
+    "common_entries": 1,
+    "output": [
+      "[0.053s][info ][startuptime] Create VM, 0.0527503 secs",
+      "183447 -94768422"
+    ],
+    "stderr": ""
+  },
+  {
+    "mode": "c2",
+    "enabled": false,
+    "command": [
+      "/workspace/pr9-validation/images/final-release/bin/java",
+      "-XX:ActiveProcessorCount=1",
+      "-XX:CICompilerCount=2",
+      "-XX:+UseSerialGC",
+      "-XX:-UseCommonIntrinsics",
+      "-XX:-TieredCompilation",
+      "-XX:AOTMode=on",
+      "-XX:AOTCache=/workspace/pr9-validation/common-training.aotcache",
+      "-Xlog:startuptime=debug",
+      "-cp",
+      "/workspace/pr9-validation/first-use.jar",
+      "FirstBigInteger",
+      "modpow",
+      "512"
+    ],
+    "exit_code": 0,
+    "compiler_stub_generations": 1,
+    "common_entries": 0,
+    "output": [
+      "[0.031s][info][startuptime] Create VM, 0.0306680 secs",
+      "748903 -94768422"
+    ],
+    "stderr": ""
+  },
+  {
+    "mode": "c2",
+    "enabled": true,
+    "command": [
+      "/workspace/pr9-validation/images/final-release/bin/java",
+      "-XX:ActiveProcessorCount=1",
+      "-XX:CICompilerCount=2",
+      "-XX:+UseSerialGC",
+      "-XX:+UseCommonIntrinsics",
+      "-XX:-TieredCompilation",
+      "-XX:AOTMode=on",
+      "-XX:AOTCache=/workspace/pr9-validation/common-training.aotcache",
+      "-Xlog:startuptime=debug",
+      "-cp",
+      "/workspace/pr9-validation/first-use.jar",
+      "FirstBigInteger",
+      "modpow",
+      "512"
+    ],
+    "exit_code": 0,
+    "compiler_stub_generations": 1,
+    "common_entries": 1,
+    "output": [
+      "[0.042s][info ][startuptime] Create VM, 0.0416750 secs",
+      "159581 -94768422"
+    ],
+    "stderr": ""
+  }
+]
