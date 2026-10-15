@@ -44,11 +44,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Measures the construction of an ImmutableDescriptor, which keeps its fields
- * sorted by name: one is made for every feature of an MBean that is
- * introspected, usually with a few fields, but with thousands of them in some
- * applications. The order that the fields are given in matters for an
- * implementation that inserts them one by one.
+ * Measures descriptor construction across field counts and input orders.
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -66,7 +62,6 @@ public class ImmutableDescriptorBench {
 
     private String[] names;
     private Object[] values;
-    // Iterates in the order of the arrays, as a HashMap would not
     private Map<String, Object> map;
 
     @Setup
@@ -83,6 +78,7 @@ public class ImmutableDescriptorBench {
         }
         names = list.toArray(new String[0]);
         values = new Object[size];
+        // Match the array order for both constructor benchmarks.
         map = new LinkedHashMap<>();
         for (int i = 0; i < size; i++) {
             values[i] = "value" + i;

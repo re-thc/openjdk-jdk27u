@@ -44,7 +44,6 @@ import javax.management.ImmutableDescriptor;
 public class ImmutableDescriptorConstructorsTest {
 
     public static void main(String[] args) {
-        // Same fields in a different order, with different cases
         String[] names = {"zeta", "Alpha", "beta", "ALPHA2", "Gamma"};
         Object[] values = {1, "a", new int[] {3}, 4L, null};
         String[] expectedNames = {"Alpha", "ALPHA2", "beta", "Gamma", "zeta"};
@@ -82,7 +81,7 @@ public class ImmutableDescriptorConstructorsTest {
         check(new ImmutableDescriptor(Map.of()).getFieldNames().length == 0,
               "no fields in map");
 
-        // A Map whose size() lies: the fields must still all be added
+        // Iteration can yield more entries than size() reports.
         Map<String, Object> lying = new AbstractMap<>() {
             public Set<Map.Entry<String, Object>> entrySet() { return map.entrySet(); }
             public int size() { return 1; }
@@ -94,7 +93,6 @@ public class ImmutableDescriptorConstructorsTest {
         };
         checkOrder(new ImmutableDescriptor(noSize), expectedNames);
 
-        // Duplicate names are the same names ignoring case
         expectIAE("duplicate in arrays", () ->
                 new ImmutableDescriptor(new String[] {"a", "b", "A"}, new Object[] {1, 2, 3}));
         expectIAE("duplicate in strings", () ->
@@ -104,7 +102,6 @@ public class ImmutableDescriptorConstructorsTest {
                         new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER) {{
                             put("x", 1); }}) {{ put("X", 2); }}));
 
-        // Illegal names and arguments
         expectIAE("null name in arrays", () ->
                 new ImmutableDescriptor(new String[] {"a", null}, new Object[] {1, 2}));
         expectIAE("empty name in arrays", () ->
@@ -131,7 +128,6 @@ public class ImmutableDescriptorConstructorsTest {
         expectIAE("null strings", () -> new ImmutableDescriptor((String[]) null));
         expectIAE("null map", () -> new ImmutableDescriptor((Map<String, ?>) null));
 
-        // The constructors copy their arguments
         String[] n = {"b", "a"};
         Object[] v = {1, 2};
         Descriptor copy = new ImmutableDescriptor(n, v);
@@ -161,13 +157,12 @@ public class ImmutableDescriptorConstructorsTest {
               "union with the empty descriptor");
         check(ImmutableDescriptor.union(d1, d1).equals(d1), "union with itself");
 
-        // Equal values, also for arrays and null values
         Descriptor a1 = new ImmutableDescriptor(new String[] {"x", "y", "z"},
                 new Object[] {new int[] {1}, new String[] {"s"}, null});
         Descriptor a2 = new ImmutableDescriptor(new String[] {"X", "Y", "Z", "w"},
                 new Object[] {new int[] {1}, new String[] {"s"}, null, 5});
         Descriptor au = ImmutableDescriptor.union(a1, a2);
-        // The spelling of the names is that of one of the descriptors
+        // Descriptor equality ignores field-name case.
         check(au.equals(new ImmutableDescriptor(
                       new String[] {"w", "x", "y", "z"},
                       new Object[] {5, new int[] {1}, new String[] {"s"}, null})),
@@ -181,8 +176,8 @@ public class ImmutableDescriptorConstructorsTest {
                         new String[] {"X"}, new Object[] {new int[] {2}})));
     }
 
-    // Larger inputs are sorted differently from small ones, with the same result
-    // as adding the fields in turn to a TreeMap, including which name is reported
+    // Compare both sorting paths with sequential TreeMap insertion,
+    // including which validation error is reported.
     private static void manyFields() {
         Random random = new Random(4711);
         for (int n : new int[] {31, 32, 33, 40, 1000}) {
@@ -214,7 +209,7 @@ public class ImmutableDescriptorConstructorsTest {
         }
     }
 
-    // The fields or the exception message of adding the fields to a TreeMap in turn
+    // Reference result and exception message from sequential TreeMap insertion.
     private static String addInTurn(String[] names, Object[] values, boolean fromMap) {
         TreeMap<String, Object> map = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         for (int i = 0; i < names.length; i++) {

@@ -47,8 +47,7 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     private ContainerCpuTicks systemLoadTicks = new SystemCpuTicks();
     private ContainerCpuTicks processLoadTicks = new ProcessCpuTicks();
 
-    // The container metrics are looked up on first use, as that reads the cgroup
-    // configuration. A holder class is used because the metrics can be null.
+    // Read cgroup configuration on first use. The holder also caches null.
     private static class ContainerMetricsHolder {
         static final Metrics METRICS = jdk.internal.platform.Container.metrics();
     }

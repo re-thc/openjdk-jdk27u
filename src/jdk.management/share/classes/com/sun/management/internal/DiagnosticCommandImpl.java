@@ -289,9 +289,8 @@ public class DiagnosticCommandImpl extends NotificationEmitterSupport
         return new LazyHelpDescriptor(map, this, "help " + w.info.getName());
     }
 
-    // "dcmd.help" is computed on first use: the help is costly for some commands
-    // (e.g. JFR.start parses the predefined configurations) and the MBean server
-    // reads the MBeanInfo at registration only for the class name.
+    // Defer costly help generation (e.g. JFR configuration parsing) until the
+    // descriptor is used; registration only needs the MBeanInfo class name.
     private static final class LazyHelpDescriptor implements Descriptor {
         @Serial
         private static final long serialVersionUID = 4872935126013456978L;

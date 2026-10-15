@@ -417,7 +417,6 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
                     map = Collections.<String, BufferPoolMXBean>emptyMap();
                 } else {
                     map = new HashMap<>(list.size());
-                    // Not a lambda, which is costly to link the first time
                     for (BufferPoolMXBean mbean : list) {
                         map.put(mbean.getObjectName().getCanonicalName(), mbean);
                     }

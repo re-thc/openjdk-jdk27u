@@ -57,7 +57,6 @@ public class SingleMXBeanNoLambdas {
                     || thread.getThreadCount() < 1 || os.getAvailableProcessors() < 1) {
                 throw new AssertionError("Unexpected MXBean values");
             }
-            // The same objects are returned by the plural lookup
             if (ManagementFactory.getPlatformMXBeans(RuntimeMXBean.class).get(0) != runtime
                     || ManagementFactory.getPlatformMXBean(MemoryMXBean.class) != memory) {
                 throw new AssertionError("MXBeans differ");

@@ -116,7 +116,7 @@ public class ImmutableDescriptor implements Descriptor {
     public ImmutableDescriptor(Map<String, ?> fields) {
         if (fields == null)
             throw new IllegalArgumentException("Null Map");
-        // The map can change while it is read, so the arrays are grown if necessary.
+        // Iteration may yield more entries than size() reported.
         String[] names = new String[fields.size()];
         Object[] values = new Object[names.length];
         int size = 0;
@@ -136,18 +136,14 @@ public class ImmutableDescriptor implements Descriptor {
 
     private record Fields(String[] names, Object[] values) { }
 
-    // Inputs up to this size are sorted by insertion, larger ones by a merge sort.
     private static final int MAX_INSERTION_SORT = 32;
-    // Runs up to this size of a larger input are sorted by insertion.
     private static final int INSERTION_SORT_RUN = 16;
 
     /**
-     * Returns the first {@code n} fields sorted by name, with the result and
-     * the exception of adding them to a {@code TreeMap} ordered by
-     * {@link String#CASE_INSENSITIVE_ORDER} in turn. If {@code fromMap} is
-     * true, any repeated name is a duplicate, otherwise only a name whose
-     * value so far is not null. A TreeMap costs much more, and descriptors
-     * are made for every feature of an MBean that is introspected.
+     * Returns the first {@code n} fields in {@link String#CASE_INSENSITIVE_ORDER},
+     * preserving the result and validation order of sequential TreeMap insertion.
+     * Map inputs reject every duplicate; array inputs reject a duplicate only
+     * when its previous value is non-null.
      */
     private static Fields sortFields(String[] names, Object[] values, int n,
                                      boolean fromMap) {
@@ -177,8 +173,8 @@ public class ImmutableDescriptor implements Descriptor {
             return trimmed(sortedNames, sortedValues, size);
         }
 
-        // Adding in turn would fail at the first bad name, or before it at
-        // the first duplicate, which can only be among the names before it.
+        // Check the prefix before the first invalid name so an earlier
+        // duplicate retains precedence.
         int bad = 0;
         while (bad < n && names[bad] != null && !names[bad].isEmpty()) {
             bad++;
@@ -214,10 +210,8 @@ public class ImmutableDescriptor implements Descriptor {
         return trimmed(sortedNames, sortedValues, size);
     }
 
-    // Sorts the positions in dest[low, high) by name, stably, using src,
-    // which holds the same positions, as scratch space. Comparing names costs
-    // more than moving positions, so runs are sorted by binary insertion and
-    // halves already in order, or in reverse order, are not merged.
+    // Stably sorts dest[low, high) by name, using src as scratch space.
+    // Both arrays must initially contain the same positions.
     private static void mergeSort(int[] src, int[] dest, int low, int high,
                                   String[] names) {
         if (high - low <= INSERTION_SORT_RUN) {
@@ -321,7 +315,7 @@ public class ImmutableDescriptor implements Descriptor {
                                                    field);
             }
             fieldNames[i] = field.substring(0, eq);
-            // the constructor will catch the case where the name is empty
+            // The array constructor rejects empty names.
             fieldValues[i] = field.substring(eq + 1);
         }
         return new String[][] {fieldNames, fieldValues};

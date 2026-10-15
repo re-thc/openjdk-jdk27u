@@ -78,7 +78,7 @@ public class DcmdMBeanTest {
                 throw new RuntimeException("FAILED.  " + operationFailures + " operations found with non-standard parameter types or wrong dcmd.help.");
             }
 
-            // the same for an operation descriptor read from the local MBeanServer
+            // Also exercise local descriptor access, without serialization.
             MBeanOperationInfo localOp = mbs.getMBeanInfo(name).getOperations()[0];
             if (checkHelp(mbs, name, localOp) > 0) {
                 throw new RuntimeException("FAILED.  Wrong dcmd.help for " + localOp.getName() + " from the local MBeanServer.");
@@ -94,11 +94,7 @@ public class DcmdMBeanTest {
         System.out.println("Test passed");
     }
 
-    /**
-     * Check that the "dcmd.help" field of an Operation is the output of the
-     * "help" operation for the same command.
-     * Return the number of failures, so the caller can signal to fail the test.
-     */
+    /** Returns the number of mismatches between dcmd.help and the help operation. */
     static int checkHelp(MBeanServerConnection conn, ObjectName name, MBeanOperationInfo info)
             throws Exception {
         Descriptor desc = info.getDescriptor();

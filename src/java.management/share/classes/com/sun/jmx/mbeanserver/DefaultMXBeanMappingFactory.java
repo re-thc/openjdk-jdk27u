@@ -227,8 +227,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
         }
     }
 
-    // The value of the TYPE field of a primitive wrapper class, or null if the
-    // class is not one. Reflection would cost much when the class is loaded.
+    // Returns a wrapper's TYPE without reflection, or null for other classes.
     private static Class<?> primitiveType(Class<?> c) {
         if (c == Boolean.class) return boolean.class;
         if (c == Byte.class) return byte.class;
