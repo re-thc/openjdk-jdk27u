@@ -30,9 +30,12 @@
  * @run junit TzdbLoadFailureTest
  */
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.ZoneId;
@@ -65,18 +68,29 @@ public class TzdbLoadFailureTest {
     private static Path image;
     private static Path tzdb;
     private static byte[] original;
+    private static Layout layout;
 
     private enum Damage {
-        MISSING("FileNotFoundException"),
-        TRUNCATED("EOFException"),
-        BAD_FORMAT("StreamCorruptedException"),
-        NEGATIVE_COUNT("NegativeArraySizeException"),
-        NEGATIVE_LENGTH("NegativeArraySizeException");
+        MISSING("FileNotFoundException", "FileNotFoundException"),
+        TRUNCATED("EOFException", "EOFException"),
+        BAD_FORMAT("StreamCorruptedException", "StreamCorruptedException"),
+        NEGATIVE_COUNT("NegativeArraySizeException", "NegativeArraySizeException"),
+        NEGATIVE_LENGTH("NegativeArraySizeException", "NegativeArraySizeException"),
+        // java.util.TimeZone finds a rule index out of range only when the
+        // time zone is used, and works for the other time zones
+        BAD_RULE_INDEX("ArrayIndexOutOfBoundsException", null),
+        // The aliases follow the rules of java.time, which shares the data
+        // that java.util.TimeZone parses, so java.time fails as well
+        TRUNCATED_ALIASES("EOFException", "EOFException");
 
+        // The cause of the failure of java.time
         final String cause;
+        // The cause of the failure of java.util.TimeZone, null if it works
+        final String timeZoneCause;
 
-        Damage(String cause) {
+        Damage(String cause, String timeZoneCause) {
             this.cause = cause;
+            this.timeZoneCause = timeZoneCause;
         }
 
         // The initialization of ZoneRulesProvider, which java.time needs, fails.
@@ -86,7 +100,33 @@ public class TzdbLoadFailureTest {
 
         // The initialization of ZoneInfoFile, which java.util.TimeZone needs, fails.
         String zoneInfoFileFailure() {
-            return "Error <- " + cause;
+            return "Error <- " + timeZoneCause;
+        }
+    }
+
+    // Where the sections of tzdb.dat are, as written by TzdbZoneRulesCompiler
+    private record Layout(String[] regions, int ruleCount, int linksStart, int aliasesStart) {
+        static Layout of(byte[] bytes) throws IOException {
+            ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+            DataInputStream dis = new DataInputStream(in);
+            assertEquals(1, dis.readByte());
+            assertEquals("TZDB", dis.readUTF());
+            assertEquals(1, dis.readShort(), "versions");
+            dis.readUTF();
+            String[] regions = new String[dis.readShort()];
+            for (int i = 0; i < regions.length; i++) {
+                regions[i] = dis.readUTF();
+            }
+            int ruleCount = dis.readShort();
+            for (int i = 0; i < ruleCount; i++) {
+                dis.skipNBytes(dis.readShort());
+            }
+            int linksStart = bytes.length - in.available();
+            int linkCount = dis.readShort();
+            dis.skipNBytes(4L * linkCount);
+            int aliasesStart = bytes.length - in.available();
+            assertTrue(dis.readShort() > 0, "aliases");
+            return new Layout(regions, ruleCount, linksStart, aliasesStart);
         }
     }
 
@@ -99,6 +139,7 @@ public class TzdbLoadFailureTest {
         assertEquals(0, rc, "jlink failed");
         tzdb = image.resolve("lib", "tzdb.dat");
         original = Files.readAllBytes(tzdb);
+        layout = Layout.of(original);
     }
 
     @AfterAll
@@ -142,6 +183,22 @@ public class TzdbLoadFailureTest {
                 }
                 Files.write(tzdb, bytes.toByteArray());
             }
+            case BAD_RULE_INDEX -> {
+                // The rules of Asia/Tokyo are past the last rule
+                ByteBuffer bytes = ByteBuffer.wrap(original.clone());
+                int tokyo = Arrays.asList(layout.regions()).indexOf("Asia/Tokyo");
+                assertTrue(tokyo >= 0);
+                int link = layout.linksStart() + 2;
+                while (bytes.getShort(link) != tokyo) {
+                    link += 4;
+                }
+                bytes.putShort(link + 2, (short) layout.ruleCount());
+                Files.write(tzdb, bytes.array());
+            }
+            case TRUNCATED_ALIASES -> {
+                // The file ends within the first alias
+                Files.write(tzdb, Arrays.copyOf(original, layout.aliasesStart() + 4));
+            }
         }
     }
 
@@ -153,6 +210,7 @@ public class TzdbLoadFailureTest {
         List<String> command = new ArrayList<>();
         command.add(image.resolve("bin", "java").toString());
         command.addAll(Arrays.asList(Utils.prependTestJavaOpts(
+                "-Duser.timezone=Europe/Paris",
                 "-cp", System.getProperty("test.classes"),
                 Child.class.getName())));
         command.addAll(Arrays.asList(ops));
@@ -169,7 +227,7 @@ public class TzdbLoadFailureTest {
     }
 
     // java.time is the first to need tzdb.dat. Its time-zone rules provider
-    // fails to initialize with the exception it has always failed with.
+    // fails to initialize with a ZoneRulesException.
     @ParameterizedTest
     @EnumSource(Damage.class)
     void javaTimeFirst(Damage damage) throws Exception {
@@ -177,9 +235,13 @@ public class TzdbLoadFailureTest {
         List<String> outcomes = run("zid", "ids", "tz", "tzdef");
         assertEquals("zid: " + damage.zoneRulesProviderFailure(), outcomes.get(0));
         assertEquals("ids: " + AGAIN, outcomes.get(1));
-        // java.util.TimeZone fails too, as the provider shares its data.
-        assertTrue(outcomes.get(2).matches("tz: (Error|NoClassDefFoundError).*"), outcomes.get(2));
-        assertTrue(outcomes.get(3).matches("tzdef: (Error|NoClassDefFoundError).*"), outcomes.get(3));
+        if (damage.timeZoneCause == null) {
+            assertEquals(List.of("tz: ok", "tzdef: ok"), outcomes.subList(2, 4));
+        } else {
+            // java.util.TimeZone fails too, as the provider shares its data.
+            assertTrue(outcomes.get(2).matches("tz: (Error|NoClassDefFoundError).*"), outcomes.get(2));
+            assertTrue(outcomes.get(3).matches("tzdef: (Error|NoClassDefFoundError).*"), outcomes.get(3));
+        }
     }
 
     // java.util.TimeZone is the first to need tzdb.dat. The provider of
@@ -188,9 +250,12 @@ public class TzdbLoadFailureTest {
     @EnumSource(Damage.class)
     void timeZoneFirst(Damage damage) throws Exception {
         damageTzdb(damage);
+        List<String> timeZone = damage.timeZoneCause == null
+                ? List.of("tz: ok", "tzdef: ok")
+                : List.of("tz: " + damage.zoneInfoFileFailure(), "tzdef: " + AGAIN);
         assertEquals(List.of(
-                "tz: " + damage.zoneInfoFileFailure(),
-                "tzdef: " + AGAIN,
+                timeZone.get(0),
+                timeZone.get(1),
                 "zid: " + damage.zoneRulesProviderFailure(),
                 "ids: " + AGAIN),
                 run("tz", "tzdef", "zid", "ids"));
@@ -200,10 +265,9 @@ public class TzdbLoadFailureTest {
     @EnumSource(Damage.class)
     void timeZoneOnly(Damage damage) throws Exception {
         damageTzdb(damage);
-        assertEquals(List.of(
-                "tz: " + damage.zoneInfoFileFailure(),
-                "tzdef: " + AGAIN,
-                "tz: " + AGAIN),
+        assertEquals(damage.timeZoneCause == null
+                ? List.of("tz: ok", "tzdef: ok", "tz: ok")
+                : List.of("tz: " + damage.zoneInfoFileFailure(), "tzdef: " + AGAIN, "tz: " + AGAIN),
                 run("tz", "tzdef", "tz"));
     }
 
