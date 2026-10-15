@@ -167,6 +167,11 @@ public class SimdUTF {
     @Benchmark public String latin1Decode() { return new String(latin1Bytes, StandardCharsets.UTF_8); }
     @Benchmark public int latin1EncodedLength() { return latin1.encodedLength(StandardCharsets.UTF_8); }
     @Benchmark public char[] utf16ToChars() { return bmp.toCharArray(); }
+    @Benchmark public char[] utf16GetChars() {
+        bmp.getChars(0, bmp.length(), targetChars, 0);
+        return targetChars;
+    }
+    @Benchmark public String utf16FromChars() { return new String(chars); }
     @Benchmark public char[] latin1ToChars() { return latin1.toCharArray(); }
     @Benchmark public String charArrayString() { return new String(chars); }
     @Benchmark public String supplementaryDecode() { return new String(supplementaryBytes, StandardCharsets.UTF_8); }
