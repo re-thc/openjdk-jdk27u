@@ -1,0 +1,27 @@
+name: PR18 completed-run evidence review
+on:
+  push:
+    branches: [codex/pr18-arm-results-review]
+    paths: [.github/workflows/pr18-arm-results-review.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  extract:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          sparse-checkout: diagnostics/pr18-arm-results-review
+      - name: Extract existing measurements and saved machine code
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 diagnostics/pr18-arm-results-review/extract.py
+      - name: Preserve extracted review files
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr18-native-arm-review-files
+          path: ${{ env.REVIEW_ROOT }}/review
+          retention-days: 90
