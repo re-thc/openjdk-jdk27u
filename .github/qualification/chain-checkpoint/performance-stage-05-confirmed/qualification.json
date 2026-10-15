@@ -1,0 +1,154 @@
+{
+  "source": "0fb3e86a762be2cd3ed9ec35f327e1e7c64682bc",
+  "created_utc": "2026-10-15T18:50:15.798270+00:00",
+  "status": "measurement-failed",
+  "phases": [
+    {
+      "name": "first-legacy",
+      "command": [
+        "python3",
+        "/workspace/pr9-validation/run_reaped.py",
+        "/workspace/pr9-validation/final-first-legacy.log",
+        "python3",
+        "/workspace/pr9-validation/cold_matrix.py",
+        "first",
+        "--blocks",
+        "120",
+        "--sizes",
+        "512,2048,4096",
+        "--operations",
+        "multiply,product,modpow",
+        "--output",
+        "final-first-legacy.json"
+      ],
+      "exit_code": 0,
+      "seconds": 1056.0243742465973,
+      "output_sha256": "0ae8d8ef9b6851ca681712da66df6ad57349b651f3ab232883938b503ec69d62"
+    },
+    {
+      "name": "first-exact",
+      "command": [
+        "python3",
+        "/workspace/pr9-validation/run_reaped.py",
+        "/workspace/pr9-validation/final-first-exact.log",
+        "python3",
+        "/workspace/pr9-validation/cold_matrix.py",
+        "first",
+        "--blocks",
+        "120",
+        "--sizes",
+        "512,4096",
+        "--operations",
+        "multiply,product,modpow",
+        "--fixture",
+        "FirstBigIntegerExact",
+        "--output",
+        "final-first-exact.json"
+      ],
+      "exit_code": 0,
+      "seconds": 681.7061810493469,
+      "output_sha256": "ec5bcfe87fc861b600e87a25bf5a4282239d74a2e8c9465ae00eeaf7ebfc0832"
+    },
+    {
+      "name": "first-boundaries",
+      "command": [
+        "python3",
+        "/workspace/pr9-validation/run_reaped.py",
+        "/workspace/pr9-validation/final-first-boundaries.log",
+        "python3",
+        "/workspace/pr9-validation/cold_matrix.py",
+        "first",
+        "--blocks",
+        "120",
+        "--sizes",
+        "2560,3072,3328,3584,3840",
+        "--operations",
+        "product",
+        "--output",
+        "final-first-boundaries.json"
+      ],
+      "exit_code": 0,
+      "seconds": 550.3060405254364,
+      "output_sha256": "b794184d18676977db954cdd7d52df3232a31966ddb88333a7003a8656389f0f"
+    },
+    {
+      "name": "first-other",
+      "command": [
+        "python3",
+        "/workspace/pr9-validation/run_reaped.py",
+        "/workspace/pr9-validation/final-first-other.log",
+        "python3",
+        "/workspace/pr9-validation/cold_matrix.py",
+        "first",
+        "--blocks",
+        "120",
+        "--sizes",
+        "64",
+        "--operations",
+        "scalar,hash,sha256",
+        "--fixture",
+        "FirstUse",
+        "--output",
+        "final-first-other.json"
+      ],
+      "exit_code": 0,
+      "seconds": 413.22887110710144,
+      "output_sha256": "c7632c8a9e91c6d46c7b8486fede8e0a5c53ba32b664d46d71cb0dc301127196"
+    },
+    {
+      "name": "startup",
+      "command": [
+        "python3",
+        "/workspace/pr9-validation/run_reaped.py",
+        "/workspace/pr9-validation/final-startup.log",
+        "python3",
+        "/workspace/pr9-validation/cold_matrix.py",
+        "startup",
+        "--blocks",
+        "600",
+        "--output",
+        "final-startup.json"
+      ],
+      "exit_code": 0,
+      "seconds": 337.1524305343628,
+      "output_sha256": "626f035816f659f1e244a46b63c0d754d26a3ff23b630892be2f10bccbde576d"
+    },
+    {
+      "name": "warm",
+      "command": [
+        "python3",
+        "/workspace/pr9-validation/run_reaped.py",
+        "/workspace/pr9-validation/final-warm.log",
+        "python3",
+        "/workspace/pr9-validation/warm_matrix.py",
+        "--pairs",
+        "4",
+        "--output",
+        "final-warm"
+      ],
+      "exit_code": 241,
+      "seconds": 3118.9565041065216
+    }
+  ],
+  "file_count": 600,
+  "warm_snapshots": [
+    {
+      "folder": "final-warm",
+      "completed_invocations": 216,
+      "parameter_forks": 360,
+      "failed_invocations": 0
+    },
+    {
+      "folder": "final-confirm-warm-hash-int",
+      "completed_invocations": 32,
+      "parameter_forks": 32,
+      "failed_invocations": 0
+    }
+  ],
+  "archive": {
+    "name": "performance.zip",
+    "bytes": 7227279,
+    "sha256": "696b56069dfa2cfee99564d9b8426100ce5df38f764a2f35d52bbebf3563df86"
+  },
+  "scope": "Linux x64 measurements. Phase completion is not regression review or PR approval."
+}
