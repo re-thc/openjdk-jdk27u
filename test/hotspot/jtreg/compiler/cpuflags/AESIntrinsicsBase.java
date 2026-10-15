@@ -23,8 +23,9 @@
 
 package compiler.cpuflags;
 
-import compiler.codegen.aes.TestAESMain;
 import java.util.Arrays;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public abstract class AESIntrinsicsBase {
     public static final String CIPHER_INTRINSIC = "com\\.sun\\.crypto\\"
@@ -38,15 +39,27 @@ public abstract class AESIntrinsicsBase {
     public static final String USE_AES_INTRINSICS = "UseAESIntrinsics";
     public static final String USE_SSE = "UseSSE";
     public static final String[] USE_DIAGNOSTIC_CMD
-            = {"-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintIntrinsics",
-            "-Xbootclasspath/a:.", "-XX:+WhiteBoxAPI"};
+            = {"-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintIntrinsics"};
     public static final String[] TEST_AES_CMD
             = {"-XX:+IgnoreUnrecognizedVMOptions", "-XX:+PrintFlagsFinal",
             "-Xbatch", "-XX:CompileThresholdScaling=0.01", "-DcheckOutput=true", "-Dmode=CBC",
-            TestAESMain.class.getName(), "100", "1000"};
+            AESWorkload.class.getName(), "100", "1000"};
 
     /**
-     * Prepares command for TestAESMain execution.
+     * Runs AESWorkload with the given flags. The workload must succeed even
+     * when the AES intrinsics are disabled, so a failing child JVM is
+     * reported here instead of passing the checks for absent output.
+     * @param args flags that must be added to command
+     * @return output of the successful AESWorkload execution
+     */
+    public static OutputAnalyzer runWorkload(String... args) throws Throwable {
+        OutputAnalyzer output = ProcessTools.executeTestJava(prepareArguments(args));
+        output.shouldHaveExitValue(0);
+        return output;
+    }
+
+    /**
+     * Prepares command for AESWorkload execution.
      * Intrinsics flags are of diagnostic type
      * and must be preceded by UnlockDiagnosticVMOptions.
      * @param args flags that must be added to command
