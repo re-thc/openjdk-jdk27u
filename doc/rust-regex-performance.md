@@ -1,5 +1,11 @@
 # Rust regex performance
 
+## Matcher publication and Java fallback
+
+The captureless three-two-four ASCII digit plan rejects an impossible first character before entering its engine. Successful String anchors retain the engine route and publish fixed captures directly. A bounded traversal recovers failed digit-atom progress and end flags together; mutable inputs use that traversal for the complete anchored operation.
+
+The measurements below describe preceding source revisions. Their standalone source-overlay controls used different code-generation flags from the JDK build, so their timing ratios are provisional. Qualification must use JDK build flags for every source control and require selected class bytes to equal the actual build. These preceding figures do not qualify this Matcher repair.
+
 ## Common-path preparation and continuation
 
 The narrow literal-alternation/digit plan also serves a C1-only configuration.

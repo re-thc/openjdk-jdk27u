@@ -1877,7 +1877,85 @@ public final class Matcher implements MatchResult {
             clearNativeEnd();
             return matchJava(from, anchor);
         }
+        if (directSearch) return matchFixed(from, anchor);
         return matchMixed(from, anchor);
+    }
+
+    private boolean matchFixed(int from, int anchor) {
+        ensureContinuation();
+        clearNativeEnd();
+        nativePendingLast = false;
+        hitEnd = false;
+        requireEnd = false;
+        from = Math.max(0, from);
+        first = from;
+        oldLast = oldLast < 0 ? from : oldLast;
+        groups[0] = groups[1] = -1;
+        acceptMode = anchor;
+        if (from == to) {
+            hitEnd = true;
+            first = -1;
+            oldLast = last;
+            modCount++;
+            return false;
+        }
+        char initial = text.charAt(from);
+        if (initial < '0' || initial > '9') {
+            first = -1;
+            oldLast = last;
+            modCount++;
+            return false;
+        }
+        boolean knownMiss = false;
+        if (text instanceof String input) {
+            RustRegex engine = parentPattern.rustRegex;
+            if (engine == null) {
+                selectJavaOnly();
+                return matchJava(from, anchor);
+            }
+            int outcome = engine.match(input, groups, this.from, to, from,
+                    anchor == ENDANCHOR ? 2 : 1, transparentBounds, anchoringBounds);
+            if (outcome == 1) {
+                first = groups[0];
+                last = groups[1];
+                oldLast = last;
+                modCount++;
+                return true;
+            }
+            if (outcome < 0) {
+                parentPattern.ensureJava();
+                selectJavaOnly();
+                return matchJava(from, anchor);
+            }
+            knownMiss = true;
+        }
+        // Recover failed atom progress and end flags together. Mutable inputs
+        // use the same bounded traversal for the complete anchored operation.
+        last = from + 1;
+        boolean result = !knownMiss;
+        for (int i = 1; i < 11; i++) {
+            int at = from + i;
+            if (at == to) {
+                hitEnd = true;
+                result = false;
+                break;
+            }
+            char c = text.charAt(at);
+            if (i == 3 || i == 6) {
+                if (c != '-') { result = false; break; }
+            } else {
+                if (c < '0' || c > '9') { result = false; break; }
+                last = at + 1;
+            }
+        }
+        if (result && anchor == ENDANCHOR && from + 11 != to) result = false;
+        if (result) {
+            groups[0] = first;
+            groups[1] = last;
+        } else first = -1;
+        oldLast = last;
+        modCount++;
+        return result;
     }
 
     private boolean matchMixed(int from, int anchor) {

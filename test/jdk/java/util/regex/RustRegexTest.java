@@ -492,10 +492,12 @@ public class RustRegexTest {
         for (String expression : new String[]{"[0-9]{3}-[0-9]{2}-[0-9]{4}", "\\d{3}-\\d{2}-\\d{4}"}) {
             for (int flags : new int[]{0, Pattern.CASE_INSENSITIVE, Pattern.DOTALL, Pattern.UNIX_LINES}) {
                 Pattern ref = reference(expression, flags);
-                for (String input : inputs) for (boolean endFlags : new boolean[]{false, true}) {
+                for (String input : inputs) for (boolean endFlags : new boolean[]{false, true})
+                        for (CharSequence text : new CharSequence[]{
+                                input, new StringBuilder(input), CharBuffer.wrap(input)}) {
                     for (int operation = 0; operation < 2; operation++) {
                         Pattern p = Pattern.compile(expression, flags);
-                        Matcher a = p.matcher(input), b = ref.matcher(input);
+                        Matcher a = p.matcher(text), b = ref.matcher(text);
                         equal(a, b, operation == 0 ? a.matches() : a.lookingAt(),
                                 operation == 0 ? b.matches() : b.lookingAt(), endFlags);
                         nativeOnly(p);

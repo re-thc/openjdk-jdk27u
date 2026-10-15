@@ -78,6 +78,11 @@ public class RustRegexState {
             };
             default -> padding;
         };
+        if (shape.equals("ssn") && position.equals("partial")) {
+            String partial = "123-xx-6789";
+            int width = Math.min(length, partial.length());
+            input = partial.substring(0, width) + padding.substring(width);
+        }
         String operation = parameters.getBenchmark();
         boolean continuation = operation.endsWith(".continueAfterFind");
         if (continuation && shape.equals("ssn")) {
