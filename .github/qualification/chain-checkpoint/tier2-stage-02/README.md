@@ -1,0 +1,3 @@
+Source 0fb3e86a clean-image tier2 checkpoint.
+
+Tier2 is incomplete. Original failed JTRs are retained. Six release CDS records show a cross-collector UseFourByteObjectHeaders archive mismatch; two SA records cannot read /proc/sys/kernel/core_pattern. Both pristine87edd and publishedc04d reproduce all eight failures. With explicit four-byte headers off, the six CDS records pass on both current clean release and fastdebug. This classifies the named failures only; additional failures require investigation. The bounded supervision check reaped one parent plus sixteen deliberately orphaned real tee helpers; all outputs matched and zombie count remained44. No source-readiness or performance conclusion is made.
