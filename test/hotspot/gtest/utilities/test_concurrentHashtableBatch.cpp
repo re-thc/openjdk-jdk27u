@@ -22,6 +22,7 @@
  */
 
 
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
@@ -129,10 +130,101 @@ static void cht_get_batch_grow_hint(Thread* thr) {
   delete cht;
 }
 
+// One thread grows and shrinks the table, and inserts and removes values,
+// while the others look up values in batches: those that stay in the table
+// must always be found, those never inserted never, and the others found only
+// with their own value. A batch walks chains across bucket redirects and
+// table switches, and must not see freed nodes.
+static void cht_get_batch_while_resizing(Thread* thr) {
+  const size_t log2_size = 2;
+  const size_t log2_grow_to = 10;   // reached after 8 grows per round
+  const uintptr_t stable = 1000;    // odd values 1, 3, ...
+  const uintptr_t churn = 512;      // values 4, 8, ...
+  const size_t count = 64;
+  const int readers = 3;
+  const int rounds = 10;
+  BatchTestTable* cht = new BatchTestTable(log2_size, log2_grow_to + 2, (size_t)-1);
+  for (uintptr_t v = 0; v < stable; v++) {
+    BatchLookup l;
+    l._val = 2 * v + 1;
+    EXPECT_TRUE(cht->insert(thr, l, l._val));
+  }
+
+  size_t min_log2 = SIZE_MAX;
+  size_t max_log2 = 0;
+  volatile int done = 0;
+  volatile size_t errors = 0;
+  volatile size_t batches = 0;
+  auto worker = [&](Thread* current, int id) {
+    if (id == 0) {
+      for (int round = 0; round < rounds; round++) {
+        for (uintptr_t v = 1; v <= churn; v++) {
+          BatchLookup l;
+          l._val = 4 * v;
+          cht->insert(current, l, l._val);
+          if (v % 64 == 0) {
+            cht->grow(current, log2_grow_to);
+            max_log2 = MAX2(max_log2, cht->get_size_log2(current));
+          }
+        }
+        for (uintptr_t v = 1; v <= churn; v++) {
+          BatchLookup l;
+          l._val = 4 * v;
+          cht->remove(current, l);
+          if (v % 64 == 0) {
+            cht->shrink(current);
+            min_log2 = MIN2(min_log2, cht->get_size_log2(current));
+          }
+        }
+      }
+      AtomicAccess::release_store(&done, 1);
+      return;
+    }
+    BatchLookup lookups[count];
+    uintptr_t found[count];
+    uint64_t seed = (uint64_t)id;
+    while (AtomicAccess::load_acquire(&done) == 0) {
+      for (size_t i = 0; i < count; i++) {
+        seed = seed * 6364136223846793005ULL + 1442695040888963407ULL;
+        uintptr_t r = (uintptr_t)(seed >> 33);
+        switch (i % 3) {
+          case 0:  lookups[i]._val = 2 * (r % stable) + 1; break;   // always present
+          case 1:  lookups[i]._val = 4 * (r % churn + 1); break;    // coming and going
+          default: lookups[i]._val = 4 * (r % churn + 1) + 2; break; // never inserted
+        }
+        found[i] = 0;
+      }
+      BatchFound bf(found);
+      cht->get_batch(current, lookups, count, bf);
+      for (size_t i = 0; i < count; i++) {
+        bool bad = (i % 3 == 0) ? found[i] != lookups[i]._val
+                                : (found[i] != 0 && found[i] != lookups[i]._val) || (i % 3 == 2 && found[i] != 0);
+        if (bad) {
+          AtomicAccess::inc(&errors);
+        }
+      }
+      AtomicAccess::inc(&batches);
+    }
+  };
+  TestThreadGroup<decltype(worker)> ttg(worker, readers + 1);
+  ttg.doit();
+  ttg.join();
+
+  EXPECT_EQ(errors, (size_t)0) << "batches found wrong values while the table was resized";
+  EXPECT_GT(batches, (size_t)0);
+  EXPECT_EQ(max_log2, log2_grow_to) << "the table grew while it was read";
+  EXPECT_EQ(min_log2, log2_size) << "the table shrank while it was read";
+  delete cht;
+}
+
 TEST_VM(ConcurrentHashTable, get_batch) {
   nomt_test_doer(cht_get_batch);
 }
 
 TEST_VM(ConcurrentHashTable, get_batch_grow_hint) {
   nomt_test_doer(cht_get_batch_grow_hint);
+}
+
+TEST_VM(ConcurrentHashTable, get_batch_while_resizing) {
+  cht_get_batch_while_resizing(Thread::current());
 }
