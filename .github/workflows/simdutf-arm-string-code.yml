@@ -1,0 +1,31 @@
+name: SIMDUTF ARM String compiled loop
+on:
+  push:
+    branches: [review/simdutf-arm-string-code]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  decode:
+    runs-on: windows-2025
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: simdutf-final-image-linux-aarch64
+          run-id: 38789169295
+          github-token: ${{ github.token }}
+          path: input
+      - name: Decode recorded ARM C1 machine code
+        run: |
+          python -m pip install --disable-pip-version-check capstone==5.0.7
+          python make/scripts/simdutf-arm-string-code.py
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: simdutf-arm-string-compiled-code
+          path: decoded
+          retention-days: 14
