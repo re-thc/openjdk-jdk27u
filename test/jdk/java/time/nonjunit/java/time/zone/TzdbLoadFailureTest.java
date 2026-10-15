@@ -79,9 +79,15 @@ public class TzdbLoadFailureTest {
         // java.util.TimeZone finds a rule index out of range only when the
         // time zone is used, and works for the other time zones
         BAD_RULE_INDEX("ArrayIndexOutOfBoundsException", null),
+        // Only the last version is used, but java.time rejects a bad rule
+        // index of any version
+        BAD_RULE_INDEX_OF_OLD_VERSION("ArrayIndexOutOfBoundsException", null),
         // The aliases follow the rules of java.time, which shares the data
         // that java.util.TimeZone parses, so java.time fails as well
-        TRUNCATED_ALIASES("EOFException", "EOFException");
+        TRUNCATED_ALIASES("EOFException", "EOFException"),
+        // java.util.TimeZone fails, and so does java.time, which accepted
+        // the count as no rules for any region before it shared the data
+        NEGATIVE_LINK_COUNT("NegativeArraySizeException", "NegativeArraySizeException");
 
         // The cause of the failure of java.time
         final String cause;
@@ -105,7 +111,8 @@ public class TzdbLoadFailureTest {
     }
 
     // Where the sections of tzdb.dat are, as written by TzdbZoneRulesCompiler
-    private record Layout(String[] regions, int ruleCount, int linksStart, int aliasesStart) {
+    private record Layout(int regionsStart, String[] regions, int ruleCount,
+                          int linksStart, int aliasesStart) {
         static Layout of(byte[] bytes) throws IOException {
             ByteArrayInputStream in = new ByteArrayInputStream(bytes);
             DataInputStream dis = new DataInputStream(in);
@@ -113,6 +120,7 @@ public class TzdbLoadFailureTest {
             assertEquals("TZDB", dis.readUTF());
             assertEquals(1, dis.readShort(), "versions");
             dis.readUTF();
+            int regionsStart = bytes.length - in.available();
             String[] regions = new String[dis.readShort()];
             for (int i = 0; i < regions.length; i++) {
                 regions[i] = dis.readUTF();
@@ -126,7 +134,7 @@ public class TzdbLoadFailureTest {
             dis.skipNBytes(4L * linkCount);
             int aliasesStart = bytes.length - in.available();
             assertTrue(dis.readShort() > 0, "aliases");
-            return new Layout(regions, ruleCount, linksStart, aliasesStart);
+            return new Layout(regionsStart, regions, ruleCount, linksStart, aliasesStart);
         }
     }
 
@@ -184,15 +192,31 @@ public class TzdbLoadFailureTest {
                 Files.write(tzdb, bytes.toByteArray());
             }
             case BAD_RULE_INDEX -> {
-                // The rules of Asia/Tokyo are past the last rule
-                ByteBuffer bytes = ByteBuffer.wrap(original.clone());
-                int tokyo = Arrays.asList(layout.regions()).indexOf("Asia/Tokyo");
-                assertTrue(tokyo >= 0);
-                int link = layout.linksStart() + 2;
-                while (bytes.getShort(link) != tokyo) {
-                    link += 4;
+                byte[] bytes = original.clone();
+                System.arraycopy(badLinks(), 0, bytes, layout.linksStart(),
+                        layout.aliasesStart() - layout.linksStart());
+                Files.write(tzdb, bytes);
+            }
+            case BAD_RULE_INDEX_OF_OLD_VERSION -> {
+                // Two versions, of which the first has the bad rule index
+                ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                try (DataOutputStream out = new DataOutputStream(bytes)) {
+                    out.writeByte(1);
+                    out.writeUTF("TZDB");
+                    out.writeShort(2);
+                    out.writeUTF("2026old");
+                    out.writeUTF("2026new");
+                    out.write(original, layout.regionsStart(), layout.linksStart() - layout.regionsStart());
+                    out.write(badLinks());
+                    out.write(original, layout.linksStart(), layout.aliasesStart() - layout.linksStart());
+                    out.write(original, layout.aliasesStart(), original.length - layout.aliasesStart());
+                    out.write(original, layout.aliasesStart(), original.length - layout.aliasesStart());
                 }
-                bytes.putShort(link + 2, (short) layout.ruleCount());
+                Files.write(tzdb, bytes.toByteArray());
+            }
+            case NEGATIVE_LINK_COUNT -> {
+                ByteBuffer bytes = ByteBuffer.wrap(original.clone());
+                bytes.putShort(layout.linksStart(), (short) -1);
                 Files.write(tzdb, bytes.array());
             }
             case TRUNCATED_ALIASES -> {
@@ -200,6 +224,21 @@ public class TzdbLoadFailureTest {
                 Files.write(tzdb, Arrays.copyOf(original, layout.aliasesStart() + 4));
             }
         }
+    }
+
+    // The links of the regions to their rules, with the rules of Asia/Tokyo
+    // past the last rule
+    private static byte[] badLinks() {
+        ByteBuffer links = ByteBuffer.wrap(Arrays.copyOfRange(original,
+                layout.linksStart(), layout.aliasesStart()));
+        int tokyo = Arrays.asList(layout.regions()).indexOf("Asia/Tokyo");
+        assertTrue(tokyo >= 0);
+        int link = 2;
+        while (links.getShort(link) != tokyo) {
+            link += 4;
+        }
+        links.putShort(link + 2, (short) layout.ruleCount());
+        return links.array();
     }
 
     /**

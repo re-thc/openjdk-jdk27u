@@ -184,6 +184,12 @@ public final class ZoneInfoFile {
      * @param regionToRules the map to add to
      */
     public static void putRules(Map<String, ? super byte[]> regionToRules) {
+        // java.time rejects tzdb.dat if any version has a rule index out of
+        // range, which java.util.TimeZone only finds when the zone is used
+        if (badRuleIndex >= 0) {
+            throw new ArrayIndexOutOfBoundsException("Index " + badRuleIndex
+                    + " out of bounds for length " + ruleArray.length);
+        }
         for (int i = 0; i < regions.length; i++) {
             regionToRules.put(regions[i], ruleArray[indices[i]]);
         }
@@ -244,6 +250,8 @@ public final class ZoneInfoFile {
     private static byte[][] ruleArray;
     private static String[] regions;
     private static int[] indices;
+    // The first rule index of any version that is out of range, -1 if none
+    private static int badRuleIndex = -1;
 
     static {
         loadTZDB();
@@ -325,6 +333,9 @@ public final class ZoneInfoFile {
             for (int j = 0; j < regionCount; j++) {
                 regions[j] = regionArray[in.readShort()];
                 indices[j] = in.readUnsignedShort();
+                if (indices[j] >= ruleCount && badRuleIndex < 0) {
+                    badRuleIndex = indices[j];
+                }
             }
         }
         // remove the following ids from the map, they
