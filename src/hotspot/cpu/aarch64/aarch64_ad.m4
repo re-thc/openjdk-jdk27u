@@ -247,7 +247,6 @@ BFX_INSN(L, URShift, ubfx,  63, long, _long)
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-// Extract from a long and truncate to int without a separate shift and mask.
 instruct ubfxLConvL2I(iRegINoSp dst, iRegL src, immI rshift, immI_bitmask mask)
 %{
   match(Set dst (AndI (ConvL2I (URShiftL src rshift)) mask));
