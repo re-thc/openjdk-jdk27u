@@ -7,11 +7,11 @@ utf=(root/"sun/nio/cs/UTF_8.java").read_text()
 util=(root/"jdk/internal/util/SimdUTF.java").read_text()
 old="            int n = JLA.decodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));\n            sp += n;\n            dp += n;"
 assert utf.count(old)==1
-op=util.replace("    private static int operationMinimumLength(int operation) {","    @ForceInline\n    private static int operationMinimumLength(int operation) {")
+leaf=util.replace("    @ForceInline\n    public static int decodeUTF8(","    @DontInline\n    public static int decodeUTF8(")
 empty="            int n = Math.min(sl - sp, dl - dp);\n            if (n > 0) {\n                n = JLA.decodeASCII(sa, sp, da, dp, n);\n                sp += n;\n                dp += n;\n            }"
 skip=empty.replace("if (n > 0)","if (n > 0 && sa[sp] >= 0)")
 patches={}
-for mode,source,helper in (("op",utf,op),("empty",utf.replace(old,empty),op),("skip",utf.replace(old,skip),op)):
+for mode,source,helper in (("empty",utf.replace(old,empty),util),("skip",utf.replace(old,skip),util),("leaf",utf,leaf),("skipLeaf",utf.replace(old,skip),leaf)):
     source_root=output/(mode+"-source")
     for name,value in (("sun/nio/cs/UTF_8.java",source),("jdk/internal/util/SimdUTF.java",helper)):
         path=source_root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text(value)
@@ -30,7 +30,7 @@ subprocess.run([str(head/"bin/javac"),"-cp",cp,"-processorpath",cp,"-d",str(clas
     "test/micro/org/openjdk/bench/java/lang/SimdUTF.java"],check=True)
 cp=str(classes)+":"+cp
 tiers={"c1":["-Xbatch","-XX:TieredStopAtLevel=1"],"c2":["-Xbatch","-XX:-TieredCompilation","-XX:CompileThreshold=100"]}
-for mode in ("base","on","op","empty","skip"):
+for mode in ("base","on","empty","skip","leaf","skipLeaf"):
     java=(base if mode=="base" else head)/"bin/java"
     extra=["--patch-module=java.base="+str(patches[mode])] if mode in patches else []
     for study,tier,methods,sizes,params in (
