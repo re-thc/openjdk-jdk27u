@@ -72,7 +72,7 @@ public class TestFloatRoundTripReduction {
             semanticCases();
             int after = WhiteBox.getWhiteBox().getMethodCompilationLevel(method, false);
             if (after != required) throw new AssertionError("final ordinary level " + after + " expected " + required);
-            System.out.println("ROUNDTRIP_REDUCTION_PASS mode=" + args[0] + " required=" + required + " actual=" + actual + " after=" + after + " checks=" + checks);
+            System.out.println("ROUNDTRIP_REDUCTION_PASS mode=" + args[0] + " checked_method=carried128 required=" + required + " actual=" + actual + " after=" + after + " aggregate_semantic_checks=" + checks);
         } else {
             TestFramework.runWithFlags("--add-modules=jdk.incubator.vector", "-XX:ActiveProcessorCount=2");
         }
@@ -89,6 +89,8 @@ public class TestFloatRoundTripReduction {
         applyIfPlatform={"aarch64","true"}, applyIfAnd={"UseSVE","0","MaxVectorSize",">=16"})
     @IR(counts={"convF2I2F_reduce_acc4F_neon",">=1"}, phase=CompilePhase.MATCHING,
         applyIfPlatform={"aarch64","true"}, applyIfAnd={"UseSVE",">0","MaxVectorSize","16"})
+    @IR(failOn={"convF2I2F_reduce_acc4F_neon"}, phase=CompilePhase.MATCHING,
+        applyIfPlatform={"aarch64","true"}, applyIfAnd={"UseSVE",">0","MaxVectorSize",">16"})
     public static float carried128(float[] a, int length, float sum) {
         int i = 0;
         for (; i < F4.loopBound(length); i += F4.length()) {

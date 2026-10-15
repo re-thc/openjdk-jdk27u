@@ -135,6 +135,7 @@ source %{
 
   bool is_float_roundtrip_reduction_accumulation(const Node* n) {
     if (Compile::current()->is_osr_compilation() ||
+        (UseSVE > 0 && MaxVectorSize != 16) ||
         !VM_Version::use_neon_for_vector(16) || n->Opcode() != Op_AddF) {
       return false;
     }
