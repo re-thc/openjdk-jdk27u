@@ -261,7 +261,7 @@ public class ClientAuth extends PKCS11Test {
 
         System.setProperty("javax.net.ssl.trustStore",
                                         new File(DIR, TS).toString());
-        System.setProperty("javax.net.ssl.trustStoreType", "JKS");
+        System.setProperty("javax.net.ssl.trustStoreType", "PKCS12");
         System.setProperty("javax.net.ssl.trustStoreProvider", "SUN");
         System.setProperty("javax.net.ssl.trustStorePassword", JKS_PWD);
 

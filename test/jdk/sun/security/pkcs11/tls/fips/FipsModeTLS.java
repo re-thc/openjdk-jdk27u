@@ -146,22 +146,30 @@ public final class FipsModeTLS extends SecmodTest {
                     "EC", sunPKCS11NSSProvider);
             sunPKCS11KPG.initialize(256);
             KeyPair sunPKCS11KeyPair = sunPKCS11KPG.generateKeyPair();
-            KeyPairGenerator sunECKPG = KeyPairGenerator.getInstance(
-                    "EC", sunECProvider);
-            sunECKPG.initialize(256);
-            KeyPair sunECKeyPair = sunECKPG.generateKeyPair();
+            // SunEC keys look up the SunEC provider by name, so install
+            // it while computing the plain secret
+            Security.addProvider(sunECProvider);
+            try {
+                KeyPairGenerator sunECKPG = KeyPairGenerator.getInstance(
+                        "EC", sunECProvider);
+                sunECKPG.initialize(256);
+                KeyPair sunECKeyPair = sunECKPG.generateKeyPair();
 
-            KeyAgreement sunPKCS11KA = KeyAgreement.getInstance(
-                    "ECDH", sunPKCS11NSSProvider);
-            sunPKCS11KA.init(sunPKCS11KeyPair.getPrivate());
-            sunPKCS11KA.doPhase(sunECKeyPair.getPublic(), true);
-            preMasterSecret = sunPKCS11KA.generateSecret("TlsPremasterSecret");
+                KeyAgreement sunPKCS11KA = KeyAgreement.getInstance(
+                        "ECDH", sunPKCS11NSSProvider);
+                sunPKCS11KA.init(sunPKCS11KeyPair.getPrivate());
+                sunPKCS11KA.doPhase(sunECKeyPair.getPublic(), true);
+                preMasterSecret = sunPKCS11KA.generateSecret(
+                        "TlsPremasterSecret");
 
-            KeyAgreement sunECKA = KeyAgreement.getInstance(
-                    "ECDH", sunECProvider);
-            sunECKA.init(sunECKeyPair.getPrivate());
-            sunECKA.doPhase(sunPKCS11KeyPair.getPublic(), true);
-            plainPreMasterSecret = sunECKA.generateSecret();
+                KeyAgreement sunECKA = KeyAgreement.getInstance(
+                        "ECDH", sunECProvider);
+                sunECKA.init(sunECKeyPair.getPrivate());
+                sunECKA.doPhase(sunPKCS11KeyPair.getPublic(), true);
+                plainPreMasterSecret = sunECKA.generateSecret();
+            } finally {
+                Security.removeProvider(sunECProvider.getName());
+            }
 
             if (enableDebug) {
                 System.out.println("plainPreMasterSecret:");
