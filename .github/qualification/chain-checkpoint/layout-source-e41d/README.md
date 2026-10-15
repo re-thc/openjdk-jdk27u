@@ -1,0 +1,1 @@
+Candidate e41d moves optionalcommonentries afterordinarybytecodes whilekeepingdeoptlast. Newsource UNBUILT/UNTESTED atthischeckpoint. Fullsourcebundle isverified with prerequisitec04d. Developmentpacket retains oldVMcounterexample andlayoutdiagnostics, including correctedsetup/logissues. Source0fb qualification/performance isseparate anddoesnotcoverthiscandidate.

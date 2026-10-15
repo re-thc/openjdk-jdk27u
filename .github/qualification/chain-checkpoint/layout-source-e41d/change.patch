@@ -1,0 +1,145 @@
+diff --git a/src/hotspot/share/interpreter/templateInterpreterGenerator.cpp b/src/hotspot/share/interpreter/templateInterpreterGenerator.cpp
+index b00471f1ae9..bdfd17016ac 100644
+--- a/src/hotspot/share/interpreter/templateInterpreterGenerator.cpp
++++ b/src/hotspot/share/interpreter/templateInterpreterGenerator.cpp
+@@ -240,6 +240,15 @@ void TemplateInterpreterGenerator::generate_all() {
+ 
+ #undef native_method_entry
+ 
++  // Bytecodes
++  set_entry_points_for_all_bytes();
++
++  // installation of code in other places in the runtime
++  set_safepoints_for_all_bytes();
++
++  // Keep the ordinary bytecode layout independent of optional intrinsic
++  // entries. Changes to intrinsic flags or alias sharing must not reposition
++  // hot Java fallback handlers. Deoptimization entries remain last.
+ #if defined(AMD64) || defined(AARCH64)
+   // A safepoint can select the Java fallback of an intrinsic entry. During a
+   // static archive assembly that would make archived constant-pool resolution
+@@ -280,12 +289,6 @@ void TemplateInterpreterGenerator::generate_all() {
+   }
+ #endif
+ 
+-  // Bytecodes
+-  set_entry_points_for_all_bytes();
+-
+-  // installation of code in other places in the runtime
+-  set_safepoints_for_all_bytes();
+-
+   { CodeletMark cm(_masm, "deoptimization entry points");
+     Interpreter::_deopt_entry[0] = EntryPoint();
+     Interpreter::_deopt_entry[0].set_entry(vtos, generate_deopt_entry_for(vtos, 0));
+diff --git a/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicInterpreterLayout.java b/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicInterpreterLayout.java
+new file mode 100644
+index 00000000000..02a10f69118
+--- /dev/null
++++ b/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicInterpreterLayout.java
+@@ -0,0 +1,106 @@
++/*
++ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
++ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
++ *
++ * This code is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 only, as
++ * published by the Free Software Foundation.
++ *
++ * This code is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ * version 2 for more details (a copy is included in the LICENSE file that
++ * accompanied this code).
++ *
++ * You should have received a copy of the GNU General Public License version
++ * 2 along with this work; if not, write to the Free Software Foundation,
++ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
++ *
++ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
++ * or visit www.oracle.com if you need additional information or have any
++ * questions.
++ */
++
++/*
++ * @test
++ * @summary Optional common entries preserve the ordinary interpreter dispatch prefix
++ * @requires vm.flavor == "server" & vm.gc.Serial
++ * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
++ * @library /test/lib
++ * @run driver compiler.intrinsics.common.TestCommonIntrinsicInterpreterLayout
++ */
++
++package compiler.intrinsics.common;
++
++import java.util.HashMap;
++import java.util.Map;
++import java.util.regex.Matcher;
++import java.util.regex.Pattern;
++import jdk.test.lib.process.ProcessTools;
++
++public class TestCommonIntrinsicInterpreterLayout {
++    private static final Pattern HEADER = Pattern.compile(
++            "(?m)^(.+?)\\s+\\[(0x[0-9a-fA-F]+),\\s*(0x[0-9a-fA-F]+)\\]\\s+([0-9]+) bytes$");
++
++    private record Segment(String name, long start, long end) { }
++    private record Layout(Map<Integer, Segment> bytecodes, Segment common, Segment deopt) { }
++
++    public static void main(String[] args) throws Exception {
++        Layout off = layout(false);
++        Layout on = layout(true);
++        if (off.common() != null || on.common() == null) {
++            throw new AssertionError("Expected common entries only in the enabled interpreter");
++        }
++        if (!off.bytecodes().keySet().equals(on.bytecodes().keySet())) {
++            throw new AssertionError("Intrinsic flags changed the set of bytecode handlers");
++        }
++        // Inspect the generated layout rather than asserting a timing threshold.
++        // A catalogue or alias change must not insert code ahead of Java fallbacks.
++        for (Segment bytecode : on.bytecodes().values()) {
++            if (Long.compareUnsigned(bytecode.end(), on.common().start()) > 0) {
++                throw new AssertionError("Common entries precede ordinary bytecode " + bytecode.name()
++                        + ": bytecode end=" + Long.toHexString(bytecode.end())
++                        + ", common start=" + Long.toHexString(on.common().start()));
++            }
++        }
++        if (on.deopt() == null || Long.compareUnsigned(on.common().end(), on.deopt().start()) > 0) {
++            throw new AssertionError("Deoptimization entries must remain after common entries");
++        }
++        System.out.println("Common entries follow " + on.bytecodes().size() + " ordinary bytecode handlers");
++    }
++
++    private static Layout layout(boolean enabled) throws Exception {
++        // Fixed children isolate the entry-generation flag from ambient VM modes.
++        String output = ProcessTools.executeProcess(ProcessTools.createLimitedTestJavaProcessBuilder(
++                "-Xint", "-Xshare:off", "-XX:ActiveProcessorCount=1", "-XX:CICompilerCount=2",
++                "-XX:+UseSerialGC", "-Xms64m", "-Xmx64m", "-XX:+UnlockDiagnosticVMOptions",
++                "-XX:+PrintInterpreter", "-XX:" + (enabled ? "+" : "-") + "UseCommonIntrinsics",
++                "-version")).shouldHaveExitValue(0).getOutput();
++        Map<Integer, Segment> bytecodes = new HashMap<>();
++        Segment common = null;
++        Segment deopt = null;
++        Matcher matcher = HEADER.matcher(output);
++        while (matcher.find()) {
++            String name = matcher.group(1).trim();
++            Segment segment = new Segment(name,
++                    Long.parseUnsignedLong(matcher.group(2).substring(2), 16),
++                    Long.parseUnsignedLong(matcher.group(3).substring(2), 16));
++            if (name.equals("common intrinsic entry points")) {
++                common = segment;
++            } else if (name.equals("deoptimization entry points")) {
++                deopt = segment;
++            }
++            String[] fields = name.split("\\s+");
++            if (fields.length >= 2 && fields[fields.length - 2].matches("[0-9]+")) {
++                int code = Integer.parseInt(fields[fields.length - 2]);
++                if (bytecodes.put(code, segment) != null) {
++                    throw new AssertionError("Duplicate bytecode header: " + name);
++                }
++            }
++        }
++        if (bytecodes.size() < 150 || !bytecodes.containsKey(51) || !bytecodes.containsKey(104)) {
++            throw new AssertionError("Missing ordinary interpreter codelet headers: " + bytecodes.size());
++        }
++        return new Layout(bytecodes, common, deopt);
++    }
++}
