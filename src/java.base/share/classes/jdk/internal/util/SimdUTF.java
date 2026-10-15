@@ -89,11 +89,12 @@ public final class SimdUTF {
 
     private static native int registerNatives();
 
-    // C1 substitutes its bulk ASCII crossover; other tiers retain their prefix scan.
+    // C1 supplies its bulk ASCII crossover; C2 retains its vector counter with zero.
+    // Interpretation and other ports keep the Java prefix scan and scalar lead check.
     @ForceInline
     @IntrinsicCandidate
     public static int utf8DecoderPrefixThreshold() {
-        return 0;
+        return -1;
     }
 
     // C2 supplies the supplementary String crossover; zero keeps normal dispatch.
@@ -333,7 +334,8 @@ public final class SimdUTF {
         return process(src, sp, len, src, 0, 0, COUNT_CODE_POINTS);
     }
 
-    @ForceInline
+    // Keep native dispatch out of C1 scalar-copy loops.
+    @DontInline
     public static int copyUTF16(Object src, int sp, int len, Object dst, int dp) {
         return process(src, sp, len, dst, dp, len, COPY_UTF16);
     }

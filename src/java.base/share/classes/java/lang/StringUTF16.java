@@ -230,6 +230,7 @@ final class StringUTF16 {
     }
 
     // vmIntrinsics::_toBytesStringU
+    @ForceInline
     @IntrinsicCandidate
     private static byte[] toBytes0(char[] value, int off, int len) {
         byte[] val = newBytesFor(len);
@@ -583,6 +584,7 @@ final class StringUTF16 {
     }
 
     // vmIntrinsics::_getCharsStringU
+    @ForceInline
     @IntrinsicCandidate
     private static void getChars0(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         int len = srcEnd - srcBegin;

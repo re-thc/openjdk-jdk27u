@@ -115,7 +115,7 @@ class StringCoding {
                 off, len,
                 ba.length,      // Implicit null check on `ba`
                 Preconditions.AIOOBE_FORMATTER);
-        // C2 already uses its vector counter; keep the scalar lead check in C1.
+        // C2 already uses its vector counter; other tiers retain the scalar lead check.
         if (SimdUTF.utf8DecoderPrefixThreshold() != 0 && len > 0 && ba[off] < 0) {
             return 0;
         }

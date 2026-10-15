@@ -2156,10 +2156,10 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
 
 #endif // !PRODUCT
 
-address TemplateInterpreterGenerator::generate_simdutf_zero_entry() {
+address TemplateInterpreterGenerator::generate_simdutf_int_entry(int value) {
   address entry = __ pc();
   // Static, non-allocating policy hints return their Java result when interpreted.
-  __ mov(r0, zr);
+  __ movw(r0, static_cast<uint32_t>(value));
   __ mov(sp, r19_sender_sp);
   __ ret(lr);
   return entry;

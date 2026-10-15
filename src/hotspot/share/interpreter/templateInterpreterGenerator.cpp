@@ -480,8 +480,10 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
                               : generate_count_positives_entry();
     break;
   case Interpreter::jdk_internal_util_SimdUTF_utf8PrefixThreshold:
+    entry_point = generate_simdutf_int_entry(-1);
+    break;
   case Interpreter::jdk_internal_util_SimdUTF_utf8StringSupplementaryThreshold:
-    entry_point = generate_simdutf_zero_entry();
+    entry_point = generate_simdutf_int_entry(0);
     break;
   case Interpreter::jdk_internal_util_SimdUTF_process
                                            : entry_point = generate_simdutf_entry(); break;
@@ -509,7 +511,7 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
 }
 
 #if !defined(AMD64) && !defined(AARCH64)
-address TemplateInterpreterGenerator::generate_simdutf_zero_entry() {
+address TemplateInterpreterGenerator::generate_simdutf_int_entry(int) {
   return nullptr;
 }
 

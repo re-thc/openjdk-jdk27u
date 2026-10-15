@@ -237,6 +237,12 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_simdutf_decodeLatin1:
     return FLAG_IS_DEFAULT(SIMDUTFMinLength);
+  case vmIntrinsics::_simdutf_utf8PrefixThreshold:
+#if defined(AMD64) || defined(AARCH64)
+    return true;
+#else
+    return false;
+#endif
   case vmIntrinsics::_simdutf_utf8StringSupplementaryThreshold:
 #ifdef AARCH64
     return FLAG_IS_DEFAULT(SIMDUTFMinLength);
