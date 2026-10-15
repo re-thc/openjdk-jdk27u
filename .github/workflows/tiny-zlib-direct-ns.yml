@@ -1,0 +1,49 @@
+name: Fixed direct public N/S comparison
+on:
+  push:
+    tags: [diagnostic-tiny-zlib-direct-ns-20261015-once]
+permissions:
+  contents: read
+concurrency:
+  group: direct-ns-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  direct-ns:
+    if: github.event.created == true && github.event.deleted == false && github.event.forced == false && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: production
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          sparse-checkout: |
+            .github/scripts/reset-only
+            .github/scripts/direct-candidate
+            .github/workflows
+      - name: Compiler prerequisites
+        run: |
+          if ! command -v gcc-14 >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y gcc-14 make python3
+          fi
+      - name: Synthetic and protocol fixtures only
+        run: python3 production/.github/scripts/direct-candidate/test_direct.py
+      - name: One separately approved direct N/S attempt
+        run: python3 production/.github/scripts/direct-candidate/direct_study.py --root production --out validation/direct-ns --execute-once
+      - name: Export retained evidence only
+        if: always()
+        run: |
+          python3 production/.github/scripts/direct-candidate/direct_score.py --export-local validation/direct-ns
+          if test -f validation/direct-ns/REPORT.txt; then
+            cat validation/direct-ns/REPORT.txt >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: always()
+        with:
+          name: direct-ns-${{ github.run_id }}
+          path: validation/direct-ns
+          retention-days: 90
+          if-no-files-found: error
