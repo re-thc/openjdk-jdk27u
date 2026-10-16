@@ -733,11 +733,14 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     private static class CleanableResource implements Runnable {
+        private static final Object CLOSED = new Object();
+
         // The outstanding inputstreams that need to be closed
         final Set<InputStream> istreams;
 
-        // List of cached Inflater objects for decompression
-        List<Inflater> inflaterCache;
+        // Guarded by this: null (empty), one Inflater, an ArrayList<Inflater>,
+        // or CLOSED. Once promoted, retain the list even when it is empty.
+        private Object inflaterCache;
 
         final Cleanable cleanable;
 
@@ -747,7 +750,6 @@ public class ZipFile implements ZipConstants, Closeable {
             assert zipCoder != null : "null ZipCoder";
             this.cleanable = CleanerFactory.cleaner().register(zf, this);
             this.istreams = Collections.newSetFromMap(new WeakHashMap<>());
-            this.inflaterCache = new ArrayList<>();
             this.zsrc = Source.get(file, (mode & OPEN_DELETE) != 0, zipCoder);
         }
 
@@ -756,53 +758,67 @@ public class ZipFile implements ZipConstants, Closeable {
         }
 
         /*
-         * Gets an inflater from the list of available inflaters or allocates
+         * Gets an inflater from the available cached inflaters or allocates
          * a new one.
          */
         Inflater getInflater() {
-            synchronized (inflaterCache) {
-                if (!inflaterCache.isEmpty()) {
+            synchronized (this) {
+                if (inflaterCache instanceof Inflater inf) {
+                    inflaterCache = null;
+                    return inf;
+                }
+                if (inflaterCache instanceof ArrayList<?> inflaters && !inflaters.isEmpty()) {
                     // return the most recently used Inflater from the cache of not-in-use Inflaters
-                    return inflaterCache.removeLast();
+                    return (Inflater) inflaters.removeLast();
                 }
             }
             return new Inflater(true);
         }
 
         /*
-         * Releases the specified inflater to the list of available inflaters.
+         * Releases the specified inflater to the cache.
          */
+        @SuppressWarnings("unchecked") // the promoted cache contains only Inflaters
         void releaseInflater(Inflater inf) {
-            List<Inflater> inflaters = this.inflaterCache;
-            if (inflaters != null) {
-                synchronized (inflaters) {
-                    // double checked!
-                    if (inflaters == this.inflaterCache) {
+            boolean cached = false;
+            try {
+                synchronized (this) {
+                    Object cache = inflaterCache;
+                    if (cache != CLOSED) {
                         inf.reset();
-                        inflaters.add(inf);
-                        return;
+                        if (cache == null) {
+                            inflaterCache = inf;
+                        } else if (cache instanceof Inflater first) {
+                            var inflaters = new ArrayList<Inflater>();
+                            inflaters.add(first);
+                            inflaters.add(inf);
+                            inflaterCache = inflaters;
+                        } else {
+                            ((ArrayList<Inflater>) cache).add(inf);
+                        }
+                        cached = true;
                     }
                 }
+            } finally {
+                // Closed cache or failed admission: release outside the lock.
+                if (!cached) inf.end();
             }
-            // inflaters cache already closed - just end it.
-            inf.end();
         }
 
         public void run() {
             IOException ioe = null;
 
             // Release cached inflaters and close the cache first
-            List<Inflater> inflaters = this.inflaterCache;
-            if (inflaters != null) {
-                synchronized (inflaters) {
-                    // no need to double-check as only one thread gets a
-                    // chance to execute run() (Cleaner guarantee)...
-                    for (Inflater inf : inflaters) {
-                        inf.end();
+            synchronized (this) {
+                if (inflaterCache instanceof Inflater inf) {
+                    inf.end();
+                } else if (inflaterCache instanceof ArrayList<?> inflaters) {
+                    for (Object inf : inflaters) {
+                        ((Inflater) inf).end();
                     }
-                    // close inflaters cache
-                    this.inflaterCache = null;
                 }
+                // Also close an empty cache before active streams return.
+                inflaterCache = CLOSED;
             }
 
             // Close streams, release their inflaters
