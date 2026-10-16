@@ -1,6 +1,9 @@
 name: PR9 exact-source native builds
 on:
   workflow_dispatch:
+  push:
+    branches: [pr/common-intrinsics-final-evidence]
+    paths: [.github/qualification/chain-checkpoint/layout-native-activation/launch.json]
 permissions:
   contents: read
 concurrency:
