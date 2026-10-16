@@ -1,4 +1,7 @@
-# Complete final dispatch performance coverage
+# Dispatch performance at ae6ea74
+
+This historical dataset measures code revision `ae6ea74495f4fdaaad08d3cf5ae2c32b82e92762`.
+See [the current results](FINAL_BENCHMARKS.md) for the merged implementation.
 
 This report includes all 93 distinct workloads in [dispatch-cases.tsv](../dispatch-cases.tsv).
 AVX2 covers 90 workloads; serial covers 57 and AVX-512 covers 41.

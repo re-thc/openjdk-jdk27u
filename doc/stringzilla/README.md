@@ -28,14 +28,18 @@ VM-owned scalar fallback.
 
 Search dispatch starts at 256 source bytes. Short ranges and immediate matches
 retain inexpensive Java/platform paths, except the interpreter's whole-string
-Latin-1 forward intrinsic, which calls the bounded kernel at every input size.
-That entry resumes Java before native bootstrap and for ranges exceeding either
-native work limit. C1/C2 forward search retain their existing routing.
+forward intrinsics, which call the bounded kernels at every input size.
+Those entries resume Java before native bootstrap, for malformed UTF-16 arrays,
+for mixed needles over 64 code units and for ranges exceeding either native work limit. Compiled forward search retains its eligibility. The Latin-1 dispatcher and
+original scalar fallback are forced inline so short searches avoid extra calls.
+It probes immediate matches only after the source-size gate, before reading the
+enable flag or setting up native arguments.
 Equality has separate length and prefix checks. C1 compiles the mixed-coder
 Java search loop separately from the
 acceleration branch, including the fallback for needles over 64 code units.
-Short UTF-16 substring reverse matches are checked before backend/tier dispatch,
-including ranges that use the Java loop.
+Eligible short UTF-16 substring reverse matches are checked after the common
+source-size gate and before backend/tier dispatch, including C2 ranges that use
+the Java loop. Smaller ranges retain the original scalar path.
 
 Same-coder substring reverse searches also use the selected kernel and compiling
 tier. The tier query folds to a constant in C1/C2; its Java body returns zero for
@@ -48,10 +52,15 @@ prefix (`fromIndex + needleCount`), in code units, after API range normalization
 | --- | --- |
 | Serial or AVX2 C1, Latin-1 | Needle up to 256 code units, or comparison work at least 1024 |
 | Serial C2, Latin-1 | Needle 32–256 code units with prefix at least 1024, or longer needle with comparison work at least 4096 |
-| AVX2 C2, Latin-1 | Needle up to 128 code units; needle 129–256 with comparison work at least 1024; longer needle with comparison work at least 4096 |
+| AVX2 C2, Latin-1 | Needle up to 128 code units; needle 129–256 with comparison work at least 1024; longer needle with comparison work at least 4096 and span at least 32 code units |
 | Serial or AVX2 C1, UTF-16 | Needle up to 128 code units, or comparison work at least 1024 |
-| Serial or AVX2 C2, UTF-16 | Needle up to 128 code units with prefix at least 512, or longer needle with comparison work at least 2048 |
+| Serial C2, UTF-16 | Needle up to 128 code units with prefix at least 512, or longer needle with comparison work at least 2048 |
+| AVX2 C2, UTF-16 | Same as serial C2, plus a span of at least 16 code units for longer needles |
 | Interpreter, other backend/tier combinations, mixed-coder searches | Existing eligibility |
+
+Span is `prefix - needleCount`. AVX2 requires at least 32 candidate bytes
+before its vector loop can run; the long-needle C2 guards avoid calling its
+serial tail for shorter spans. Interpreter and C1 retain their eligibility.
 
 Comparison work is `(prefix - needleCount + 1) * needleCount`, in code units,
 computed with 64-bit arithmetic. It selects native verification only when a long
@@ -59,9 +68,16 @@ needle has enough candidate positions to amortize setup. This dispatch estimate
 is independent of the native maximum-work safety guard. The interpreter retains
 its existing eligibility, including minimal overlapping matches.
 
-Ineligible UTF-16, C1 Latin-1 and AVX2 C2 Latin-1 ranges use the existing Java
-reverse loop. AVX2 C2 uses a Java helper with explicit range checks, so scalar
-verification can retain array bounds optimizations. Serial C2 Latin-1
+Ineligible C1 UTF-16 ranges and C2 ranges with needles of at least 128 code
+units use a separately compiled Java reverse loop that rejects first-character
+mismatches before comparing interiors. Smaller ranges retain the original
+in-method loop. Compiled UTF-16 searches with needles longer than 128 code
+units and fewer than eight candidate positions first scan the trailing
+characters; a complete rejection returns before backend/work dispatch. The
+shared UTF-16 reverse helper is forced inline to preserve C2 optimization
+when the integration increases its bytecode size. Ineligible C1 Latin-1 ranges retain the original Java reverse loop. C2 Latin-1
+uses a Java helper with explicit range checks; needles longer than 256 code
+units also reject first-character mismatches before checking interiors. Serial C2 Latin-1
 uses the existing character-search intrinsic to skip 256-byte blocks without
 the needle's last character, then resumes the original reverse loop. Forward
 search, character search and equality retain their dispatch rules. Serial UTF-16 bulk reverse
@@ -144,6 +160,11 @@ without hiding Java/leaf alternatives inside a single LIR block.
 
 The 28 upstream files come from StringZilla 5.3.0 at commit
 `86d73f1021e6cce022c3cceb1f7837eb50338774`, licensed under Apache-2.0.
+The [5.3.0 release notes](https://github.com/ashvardanian/StringZilla/releases/tag/v5.3.0)
+list short reverse-search improvements, but those kernels were already present
+in the previous 5.2.0 pin. The search and comparison headers are unchanged;
+within the vendored dependency closure, only `types.h` changes, adding alignment
+sanitizer annotations. The upgrade alone does not change search performance.
 One [tracked patch](../../src/java.base/share/native/libjava/stringzilla/patches/0001-preserve-reverse-search-overlaps.patch)
 preserves overlapping suffix candidates after a rejected long-needle prefix in
 reverse search and skips impossible prefixes using the upstream byte-search
@@ -170,11 +191,11 @@ functional and tier-specific performance checks before changing dispatch gates.
 
 ## Validation and benchmarks
 
-Local release jtreg validation passed **189 tests, zero failures/errors**:
-String (96), StringBuilder (16), StringBuffer (25), HotSpot string intrinsics (25),
+Local release jtreg validation passed **190 tests, zero failures/errors**:
+String (96), StringBuilder (16), StringBuffer (25), HotSpot string intrinsics (26),
 and LoggerFinder (27). Two other HotSpot tests retain platform exclusions. Clean
 GCC 14 release/CDS
-and fastdebug builds use the fork development profile. Eleven targeted fastdebug
+and fastdebug builds use the fork development profile. Twelve targeted fastdebug
 tests passed. Nine search/kernel tests passed with final GCC 16 kernels and AVX2;
 dispatch and availability tests also passed with serial, AVX2 and AVX-512
 dispatch. AArch64 cross checks cover HotSpot and java.base native libraries.
