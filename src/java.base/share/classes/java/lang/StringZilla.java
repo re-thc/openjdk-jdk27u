@@ -88,6 +88,21 @@ final class StringZilla {
         return true;
     }
 
+    @ForceInline
+    static boolean probeMixedImmediate() {
+        return BACKEND == SERIAL && compilerTier() != 0;
+    }
+
+    @ForceInline
+    static boolean matchesUTF16Latin1Reverse(byte[] src, int offset, byte[] tgt, int count) {
+        for (int i = count - 1; i >= 0; i--) {
+            if (StringUTF16.getChar(src, offset + i) != (tgt[i] & 0xff)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // The caller has checked the last character. Verify the remaining suffix
     // in reverse order before widening the bounded prefix.
     @DontInline

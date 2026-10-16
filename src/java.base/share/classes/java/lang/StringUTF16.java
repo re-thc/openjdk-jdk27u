@@ -2179,6 +2179,10 @@ final class StringUTF16 {
                 if (tgtCount <= 8 && StringZilla.matchesUTF16Latin1(src, fromIndex, tgt, tgtCount)) {
                     return fromIndex;
                 }
+                if (tgtCount > 8 && StringZilla.probeMixedImmediate()
+                        && StringZilla.matchesUTF16Latin1Reverse(src, fromIndex, tgt, tgtCount)) {
+                    return fromIndex;
+                }
                 return lastIndexOfLatin1Native(src, searchLength, tgt, tgtCount);
             } else {
                 int tier = StringZilla.compilerTier();
