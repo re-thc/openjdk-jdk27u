@@ -20,6 +20,16 @@ AC_DEFUN_ONCE([LIB_SETUP_INSTANT_SPEEDATE],
     esac
     UTIL_REQUIRE_PROGS(CARGO, cargo)
     UTIL_REQUIRE_PROGS(RUSTC, rustc)
+    # Configure probes need the wrapped commands. Cargo itself needs a single
+    # compiler executable, and make applies FIXPATH exactly once to its call.
+    UTIL_GET_EXECUTABLE(CARGO)
+    if test "x$fixpath_stripped" != "x$CARGO_EXECUTABLE"; then
+      AC_MSG_ERROR([instant-speedate CARGO must name an executable without command arguments])
+    fi
+    UTIL_GET_EXECUTABLE(RUSTC)
+    if test "x$fixpath_stripped" != "x$RUSTC_EXECUTABLE"; then
+      AC_MSG_ERROR([instant-speedate RUSTC must name an executable without command arguments])
+    fi
     rust_version=`$RUSTC --version | $CUT -d ' ' -f 2`
     rust_major=`$ECHO "$rust_version" | $CUT -d . -f 1`
     rust_minor=`$ECHO "$rust_version" | $CUT -d . -f 2`
@@ -42,6 +52,8 @@ AC_DEFUN_ONCE([LIB_SETUP_INSTANT_SPEEDATE],
   AC_SUBST(ENABLE_INSTANT_SPEEDATE)
   AC_SUBST(CARGO)
   AC_SUBST(RUSTC)
+  AC_SUBST(CARGO_EXECUTABLE)
+  AC_SUBST(RUSTC_EXECUTABLE)
   AC_SUBST(SPEEDATE_RUST_TARGET)
   AC_SUBST(SPEEDATE_RUST_CPU)
   AC_SUBST(SPEEDATE_RUST_LICENSE)

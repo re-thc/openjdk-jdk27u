@@ -458,7 +458,8 @@ function exec_command_line() {
   for arg in "$@" ; do
     if [[ $command == "" ]]; then
       # We have not yet located the command to run
-      if [[ $arg =~ ^(.*)=(.*)$ ]]; then
+      # Values can themselves contain '=' (for example compiler flags).
+      if [[ $arg =~ ^([^=]*)=(.*)$ ]]; then
         # It's a leading env variable assignment (FOO=bar)
         key="${BASH_REMATCH[1]}"
         arg="${BASH_REMATCH[2]}"
