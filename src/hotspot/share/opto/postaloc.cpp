@@ -723,7 +723,8 @@ public:
         lrg.num_regs() != (reg == Op_RegP ? 2 : 1) ||
         (reg == Op_RegP && (n->bottom_type()->isa_oopptr() == nullptr ||
                            n->bottom_type()->is_ptr()->offset() != 0)) ||
-        ((reg == Op_RegP || reg == Op_RegN) && !lrg._is_oop) ||
+        (reg == Op_RegP && !lrg._is_oop) ||
+        (reg == Op_RegN && n->bottom_type()->isa_narrowoop() == nullptr) ||
         lrg._is_oop != _ra.lrgs(source_lid)._is_oop ||
         !OptoReg::is_stack(_ra.lrgs(source_lid).reg())) {
       return false;
@@ -879,8 +880,8 @@ void PhaseChaitin::retain_spill_copies() {
     assert(OptoReg::is_stack(lrgs(_lrg_map.live_range_id(best->in(1))).reg()), "keep stack home");
     NOT_PRODUCT(if (trace_spilling()) {
       ttyLocker ttyl;
-      tty->print_cr("RetainSpillCopies seed %u source %u candidates %u old %s new %s",
-                    best->_idx, best->in(1)->_idx, best_benefit,
+      tty->print_cr("RetainSpillCopies compile_id %d change %u seed %u source %u candidates %u old %s new %s",
+                    C->compile_id(), change, best->_idx, best->in(1)->_idx, best_benefit,
                     OptoReg::regname(lrg.reg()), OptoReg::regname(reg));
     })
     lrg.clear();
@@ -893,6 +894,8 @@ void PhaseChaitin::retain_spill_copies() {
     // another seed. Its extended uses must be visible to the next liveness
     // computation; recoloring several short seeds from stale facts is unsafe.
     post_allocate_copy_removal();
+    // Keep each materialized allocation available to diagnostic graph review.
+    C->print_method(PHASE_POST_ALLOCATION_COPY_REMOVAL, 4);
   }
 #endif // AMD64
 }
