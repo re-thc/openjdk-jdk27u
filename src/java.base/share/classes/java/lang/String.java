@@ -2029,8 +2029,10 @@ public final class String
         checkBoundsOffCount(dstBegin, srcEnd - srcBegin, dst.length);
         if (isLatin1()) {
             StringLatin1.getChars(value, srcBegin, srcEnd, dst, dstBegin);
+        } else if (srcEnd - srcBegin == 1) {
+            dst[dstBegin] = StringUTF16.getChar(value, srcBegin);
         } else {
-            StringUTF16.getChars(value, srcBegin, srcEnd, dst, dstBegin);
+            StringUTF16.getChars0(value, srcBegin, srcEnd, dst, dstBegin);
         }
     }
 

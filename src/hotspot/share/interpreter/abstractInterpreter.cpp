@@ -124,6 +124,10 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
 #ifndef ZERO
       case vmIntrinsics::_simdutf_process: return jdk_internal_util_SimdUTF_process;
 #if defined(AMD64) || defined(AARCH64)
+      case vmIntrinsics::_simdutf_utf16CopyThreshold:
+        return jdk_internal_util_SimdUTF_utf16CopyThreshold;
+      case vmIntrinsics::_simdutf_base64EncoderThreshold:
+        return jdk_internal_util_SimdUTF_base64EncoderThreshold;
       case vmIntrinsics::_simdutf_useLatin1Decoding:
         return jdk_internal_util_SimdUTF_useLatin1Decoding;
       case vmIntrinsics::_simdutf_utf8PrefixThreshold:
@@ -223,6 +227,8 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case java_lang_math_fmaF        : return vmIntrinsics::_fmaF;
   case java_lang_ref_reference_get0: return vmIntrinsics::_Reference_get0;
   case jdk_internal_util_SimdUTF_process: return vmIntrinsics::_simdutf_process;
+  case jdk_internal_util_SimdUTF_utf16CopyThreshold: return vmIntrinsics::_simdutf_utf16CopyThreshold;
+  case jdk_internal_util_SimdUTF_base64EncoderThreshold: return vmIntrinsics::_simdutf_base64EncoderThreshold;
   case jdk_internal_util_SimdUTF_useLatin1Decoding: return vmIntrinsics::_simdutf_useLatin1Decoding;
   case jdk_internal_util_SimdUTF_utf8PrefixThreshold: return vmIntrinsics::_simdutf_utf8PrefixThreshold;
   case jdk_internal_util_SimdUTF_utf8StringSupplementaryThreshold:
@@ -335,6 +341,10 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_math_sqrt    : tty->print("java_lang_math_sqrt"    ); break;
     case java_lang_math_sqrt_strict           : tty->print("java_lang_math_sqrt_strict"); break;
     case jdk_internal_util_SimdUTF_process: tty->print("jdk_internal_util_SimdUTF_process"); break;
+    case jdk_internal_util_SimdUTF_utf16CopyThreshold:
+      tty->print("jdk_internal_util_SimdUTF_utf16CopyThreshold"); break;
+    case jdk_internal_util_SimdUTF_base64EncoderThreshold:
+      tty->print("jdk_internal_util_SimdUTF_base64EncoderThreshold"); break;
     case jdk_internal_util_SimdUTF_useLatin1Decoding:
       tty->print("jdk_internal_util_SimdUTF_useLatin1Decoding"); break;
     case jdk_internal_util_SimdUTF_utf8PrefixThreshold:

@@ -89,6 +89,27 @@ public final class SimdUTF {
 
     private static native int registerNatives();
 
+    @ForceInline
+    public static boolean isEnabled() {
+        return minLength > 0;
+    }
+
+    @ForceInline
+    @IntrinsicCandidate
+    public static int utf16CopyThreshold() {
+        int threshold = minLength;
+        return threshold > 0 ? threshold : Integer.MAX_VALUE;
+    }
+
+    // The x64/AArch64 interpreter and C1 supply their encoder crossover directly.
+    // C2 keeps its existing stubs; other ports use the common minimum.
+    @ForceInline
+    @IntrinsicCandidate
+    public static int base64EncoderThreshold() {
+        int threshold = minLength;
+        return threshold > 0 ? threshold : Integer.MAX_VALUE;
+    }
+
     // C1 supplies its bulk ASCII crossover; C2 retains its vector counter with zero.
     // Interpretation and other ports keep the Java prefix scan and scalar lead check.
     @ForceInline
@@ -345,7 +366,11 @@ public final class SimdUTF {
     // Keep native dispatch out of C1 scalar-copy loops.
     @DontInline
     public static int copyUTF16(Object src, int sp, int len, Object dst, int dp) {
-        return process(src, sp, len, dst, dp, len, COPY_UTF16);
+        if (minLength <= 0 || len < utf16CopyThreshold()) {
+            return -1;
+        }
+        return len <= MAX_CHUNK ? process0(src, sp, len, dst, dp, len, COPY_UTF16)
+                               : processChunks(src, sp, len, dst, dp, len, COPY_UTF16);
     }
 
     // Return a relative index, len when absent, or a negative value to decline.
@@ -449,7 +474,18 @@ public final class SimdUTF {
     @ForceInline
     public static int encodeBase64(byte[] src, int sp, int len,
                                    byte[] dst, int dp, boolean url) {
-        return process(src, sp, len, dst, dp, dst.length - dp, url ? ENCODE_BASE64_URL : ENCODE_BASE64);
+        int capacity = dst.length - dp;
+        if (minLength <= 0 || len < base64EncoderThreshold()) {
+            return -1;
+        }
+        if (len > MAX_CHUNK) {
+            return processChunks(src, sp, len, dst, dp, capacity,
+                    url ? ENCODE_BASE64_URL : ENCODE_BASE64);
+        }
+        if (url) {
+            return process0(src, sp, len, dst, dp, capacity, ENCODE_BASE64_URL);
+        }
+        return process0(src, sp, len, dst, dp, capacity, ENCODE_BASE64);
     }
 
     @ForceInline

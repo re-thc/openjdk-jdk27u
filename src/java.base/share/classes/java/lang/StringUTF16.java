@@ -210,7 +210,11 @@ final class StringUTF16 {
             return new char[] { getChar(value, 0) };
         }
         char[] dst = new char[value.length >> 1];
-        getChars(value, 0, dst.length, dst, 0);
+        if (SimdUTF.isEnabled()) {
+            getChars0(value, 0, dst.length, dst, 0);
+        } else {
+            getChars(value, 0, dst.length, dst, 0);
+        }
         return dst;
     }
 
@@ -238,7 +242,7 @@ final class StringUTF16 {
     @IntrinsicCandidate
     private static byte[] toBytes0(char[] value, int off, int len) {
         byte[] val = newBytesFor(len);
-        if (SimdUTF.isEligible(len) && SimdUTF.copyUTF16(value, off, len, val, 0) >= 0) {
+        if (len >= SimdUTF.utf16CopyThreshold() && SimdUTF.copyUTF16(value, off, len, val, 0) >= 0) {
             return val;
         }
         for (int i = 0; i < len; i++) {
@@ -587,12 +591,12 @@ final class StringUTF16 {
         getChars0(value, srcBegin, srcEnd, dst, dstBegin);
     }
 
-    // vmIntrinsics::_getCharsStringU
+    // vmIntrinsics::_getCharsStringU; callers validate both ranges.
     @ForceInline
     @IntrinsicCandidate
-    private static void getChars0(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {
+    static void getChars0(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         int len = srcEnd - srcBegin;
-        if (SimdUTF.isEligible(len) && SimdUTF.copyUTF16(value, srcBegin, len, dst, dstBegin) >= 0) {
+        if (len >= SimdUTF.utf16CopyThreshold() && SimdUTF.copyUTF16(value, srcBegin, len, dst, dstBegin) >= 0) {
             return;
         }
         for (int i = srcBegin; i < srcEnd; i++) {

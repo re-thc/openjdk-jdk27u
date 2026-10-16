@@ -68,6 +68,8 @@ class SimdUTF : AllStatic {
   };
 
   static jint initialize();
+  static jint base64_encoder_threshold(bool interpreted);
+  static jint utf16_copy_threshold();
   static jint count_positives(oopDesc* src, jint sp, jint len);
   // Generated code passes raw pointers. In fastdebug, oop is a non-trivial
   // C++ wrapper whose calling convention is unsuitable for this C ABI entry.

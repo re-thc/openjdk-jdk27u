@@ -30,6 +30,7 @@
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "oops/methodData.hpp"
+#include "runtime/simdutfSupport.hpp"
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
@@ -207,6 +208,8 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_math_fmaD )
   method_entry(java_lang_ref_reference_get0)
   method_entry(java_lang_StringCoding_countPositives)
+  method_entry(jdk_internal_util_SimdUTF_utf16CopyThreshold)
+  method_entry(jdk_internal_util_SimdUTF_base64EncoderThreshold)
   method_entry(jdk_internal_util_SimdUTF_useLatin1Decoding)
   method_entry(jdk_internal_util_SimdUTF_utf8PrefixThreshold)
   method_entry(jdk_internal_util_SimdUTF_utf8StringSupplementaryThreshold)
@@ -479,6 +482,12 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
     // Preserve normal profiling so compiled VMs can use the existing C1 and C2 paths.
     entry_point = UseCompiler ? Interpreter::entry_for_kind(Interpreter::zerolocals)
                               : generate_count_positives_entry();
+    break;
+  case Interpreter::jdk_internal_util_SimdUTF_utf16CopyThreshold:
+    entry_point = generate_simdutf_int_entry(SimdUTF::utf16_copy_threshold());
+    break;
+  case Interpreter::jdk_internal_util_SimdUTF_base64EncoderThreshold:
+    entry_point = generate_simdutf_int_entry(SimdUTF::base64_encoder_threshold(true));
     break;
   case Interpreter::jdk_internal_util_SimdUTF_useLatin1Decoding:
     entry_point = generate_simdutf_int_entry(UseSIMDUTFIntrinsics ? 1 : 0);

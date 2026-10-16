@@ -36,6 +36,7 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.Preconditions;
 import jdk.internal.util.SimdUTF;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -425,9 +426,10 @@ public final class Base64 {
             return new Encoder(isURL, newline, linemax, false);
         }
 
+        @ForceInline
         @IntrinsicCandidate
         private void encodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL) {
-            if (SimdUTF.isEligible(sl - sp) && SimdUTF.encodeBase64(src, sp, sl - sp, dst, dp, isURL) >= 0) {
+            if (sl - sp >= SimdUTF.base64EncoderThreshold() && SimdUTF.encodeBase64(src, sp, sl - sp, dst, dp, isURL) >= 0) {
                 return;
             }
             char[] base64 = isURL ? toBase64URL : toBase64;

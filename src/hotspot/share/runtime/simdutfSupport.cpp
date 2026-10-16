@@ -34,6 +34,33 @@
 
 static const simdutf::implementation* simdutf_implementation = nullptr;
 
+jint SimdUTF::base64_encoder_threshold(bool interpreted) {
+  if (!UseSIMDUTFIntrinsics || SIMDUTFMinLength == 0) {
+    return max_jint;
+  }
+  if (FLAG_IS_DEFAULT(SIMDUTFMinLength)) {
+    if (interpreted) {
+      return 12;
+    }
+#ifdef AARCH64
+    return 24;
+#endif
+  }
+  return checked_cast<jint>(SIMDUTFMinLength);
+}
+
+jint SimdUTF::utf16_copy_threshold() {
+  if (!UseSIMDUTFIntrinsics || SIMDUTFMinLength == 0) {
+    return max_jint;
+  }
+#ifdef AARCH64
+  if (FLAG_IS_DEFAULT(SIMDUTFMinLength)) {
+    return 32;
+  }
+#endif
+  return checked_cast<jint>(SIMDUTFMinLength);
+}
+
 jint SimdUTF::initialize() {
   if (!UseSIMDUTFIntrinsics) {
     return -1;

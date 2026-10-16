@@ -3640,6 +3640,20 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
 
   Values* args = state()->pop_arguments(callee->arg_size());
 
+  if (id == vmIntrinsics::_simdutf_utf16CopyThreshold) {
+    if (!ignore_return) {
+      ipush(append(new Constant(new IntConstant(SimdUTF::utf16_copy_threshold()))));
+    }
+    return;
+  }
+
+  if (id == vmIntrinsics::_simdutf_base64EncoderThreshold) {
+    if (!ignore_return) {
+      ipush(append(new Constant(new IntConstant(SimdUTF::base64_encoder_threshold(false)))));
+    }
+    return;
+  }
+
   if (id == vmIntrinsics::_simdutf_useLatin1Decoding) {
     bool use = UseSIMDUTFIntrinsics;
 #ifdef AARCH64

@@ -69,6 +69,8 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
   case vmIntrinsics::_simdutf_utf8StringSupplementaryThreshold:
+  case vmIntrinsics::_simdutf_utf16CopyThreshold:
+  case vmIntrinsics::_simdutf_base64EncoderThreshold:
   case vmIntrinsics::_simdutf_useLatin1Decoding:
   case vmIntrinsics::_simdutf_utf8PrefixThreshold:
   case vmIntrinsics::_simdutf_decodeLatin1:
@@ -127,6 +129,8 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
   case vmIntrinsics::_simdutf_utf8StringSupplementaryThreshold:
+  case vmIntrinsics::_simdutf_utf16CopyThreshold:
+  case vmIntrinsics::_simdutf_base64EncoderThreshold:
   case vmIntrinsics::_simdutf_useLatin1Decoding:
   case vmIntrinsics::_simdutf_utf8PrefixThreshold:
   case vmIntrinsics::_simdutf_decodeLatin1:
