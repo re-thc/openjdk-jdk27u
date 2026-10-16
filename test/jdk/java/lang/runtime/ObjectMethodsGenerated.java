@@ -25,7 +25,7 @@
  * @test
  * @summary Check toString, hashCode and equals of records for all kinds of components,
  *          with getters that read the fields and with getters that do not, and that
- *          the three methods of a record class share a generated class, also when
+ *          hashCode and toString of a record class share a generated class, also when
  *          equals and hashCode are given names that toString can't use
  * @run main ObjectMethodsGenerated
  */
@@ -282,15 +282,15 @@ public class ObjectMethodsGenerated {
             check(true, (boolean) bootstrap(Spies.class, "equals", getters).invoke(s, new Spies(new Spy("a"), new Spy("b"), new Spy("c"))), "Spies equals");
             check(3, LOG.size(), "equals calls");
         }
-        // equals, hashCode and toString of a record class share one generated class
+        // hashCode and toString of a record class share one generated class
         MethodHandle[] probedGetters = fieldGetters(Probed.class);
         Probed probed = new Probed(new Probe(), 1);
         Probe.CALLERS.clear();
-        check(true, (boolean) bootstrap(Probed.class, "equals", probedGetters).invoke(probed, (Object) new Probed(new Probe(), 1)), "Probed equals");
         check(31 + 1, (int) bootstrap(Probed.class, "hashCode", probedGetters).invoke(probed), "Probed hashCode");
         check("Probed[p=probe, i=1]", (String) bootstrap(Probed.class, "toString", probedGetters).invoke(probed), "Probed toString");
-        check(3, Probe.CALLERS.size(), "Probe calls");
+        check(2, Probe.CALLERS.size(), "Probe calls");
         check(1, Set.copyOf(Probe.CALLERS).size(), "generated classes of Probed");
+        check(true, Probe.CALLERS.get(0) != null, "generated class of Probed");
 
         // the names are only used by toString: other names given to equals and hashCode are not used
         MethodType probedToString = MethodType.methodType(String.class, Probed.class);

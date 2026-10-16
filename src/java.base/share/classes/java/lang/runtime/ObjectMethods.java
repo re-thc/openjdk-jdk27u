@@ -592,9 +592,9 @@ public final class ObjectMethods {
     }
 
     /**
-     * The hidden classes generated for each record class.  The bootstraps of equals,
-     * hashCode and toString usually read the same fields, and get the same names, so
-     * they share one class.  A list is locked while a class is generated for it, so that
+     * The hidden classes generated for each record class.  The bootstraps of hashCode
+     * and toString usually read the same fields, and get the same names, so they share
+     * one class.  A list is locked while a class is generated for it, so that
      * bootstraps that race for the same fields generate one class.
      */
     private static final ClassValue<ArrayList<GeneratedMethods>> GENERATED_METHODS = new ClassValue<>() {
@@ -605,14 +605,16 @@ public final class ObjectMethods {
     };
 
     /**
-     * Returns a method handle for {@code equals}, {@code hashCode} or {@code toString}
-     * that is a static method of a hidden class that reads the fields of the record
-     * class.  Unlike a tree of method handle combinators, this does not spin
-     * LambdaForms for each shape of record.  The hidden class has all three methods,
-     * except toString if {@link #toStringRecipe} gives no recipe, and is shared by
-     * the bootstraps of the record class that read the same fields.  The names are only
-     * used for toString: names that equals or hashCode is given but toString can't use
-     * leave it out.
+     * Returns a method handle for {@code hashCode} or {@code toString} that is a static
+     * method of a hidden class that reads the fields of the record class.  Unlike a tree
+     * of method handle combinators, this does not spin LambdaForms for each shape of
+     * record.  The hidden class has both methods, except toString if
+     * {@link #toStringRecipe} gives no recipe, and is shared by the bootstraps of the
+     * record class that read the same fields.  The names are only used for toString:
+     * names that hashCode is given but toString can't use leave it out.
+     * <p>
+     * equals is left to the combinators: a generated equals was slower than them in
+     * warmed benchmarks, although C2 compiled both to much the same code.
      */
     private static MethodHandle makeStraightLine(MethodHandles.Lookup lookup, Class<?> receiverClass,
                                                  String methodName, String[] fields, List<String> names,
@@ -638,11 +640,9 @@ public final class ObjectMethods {
                 cache.add(new GeneratedMethods(fields, types, recipe != null ? names : null, generated));
             }
         }
-        MethodType type = switch (methodName) {
-            case "equals"   -> MethodType.methodType(boolean.class, receiverClass, Object.class);
-            case "hashCode" -> MethodType.methodType(int.class, receiverClass);
-            default         -> MethodType.methodType(String.class, receiverClass);
-        };
+        MethodType type = methodName.equals("hashCode")
+                ? MethodType.methodType(int.class, receiverClass)
+                : MethodType.methodType(String.class, receiverClass);
         // the generated class is a nestmate in the package of the lookup class
         return lookup.findStatic(generated, methodName, type);
     }
@@ -655,8 +655,6 @@ public final class ObjectMethods {
                 new Consumer<ClassBuilder>() {
                     @Override
                     public void accept(ClassBuilder clb) {
-                        clb.withMethodBody("equals", MethodTypeDescImpl.ofValidated(CD_boolean, receiverDesc, CD_Object),
-                                           ACC_STATIC, new Body("equals", receiverClass, fields, null, types));
                         clb.withMethodBody("hashCode", MethodTypeDescImpl.ofValidated(CD_int, receiverDesc),
                                            ACC_STATIC, new Body("hashCode", receiverClass, fields, null, types));
                         if (recipe != null) {
@@ -694,16 +692,16 @@ public final class ObjectMethods {
 
         @Override
         public void accept(CodeBuilder cob) {
-            switch (methodName) {
-                case "equals"   -> equals(cob);
-                case "hashCode" -> hashCode(cob);
-                default         -> toString(cob);
+            if (methodName.equals("hashCode")) {
+                hashCode(cob);
+            } else {
+                toString(cob);
             }
         }
 
-        /** Pushes the value of the field of the record in the given local variable. */
-        private void getField(CodeBuilder cob, int slot, int i) {
-            cob.aload(slot)
+        /** Pushes the value of a field of the record. */
+        private void getField(CodeBuilder cob, int i) {
+            cob.aload(0)
                .getfield(owner, fields[i], descs[i]);
         }
 
@@ -711,76 +709,13 @@ public final class ObjectMethods {
             return type.isInterface() ? Opcode.INVOKEINTERFACE : Opcode.INVOKEVIRTUAL;
         }
 
-        // The components are compared from the last to the first, like the combinator based version does
-        private void equals(CodeBuilder cob) {
-            Label notSame = cob.newLabel();
-            Label isInstance = cob.newLabel();
-            Label notEqual = cob.newLabel();
-            cob.aload(0)
-               .aload(1)
-               .if_acmpne(notSame)
-               .iconst_1()
-               .ireturn()
-               .labelBinding(notSame)
-               .aload(1)
-               .instanceOf(owner)
-               .ifne(isInstance)
-               .iconst_0()
-               .ireturn()
-               .labelBinding(isInstance)
-               .aload(1)
-               .checkcast(owner)
-               .astore(2);
-            for (int i = fields.length - 1; i >= 0; i--) {
-                Class<?> type = types[i];
-                getField(cob, 0, i);
-                if (type == long.class) {
-                    getField(cob, 2, i);
-                    cob.lcmp()
-                       .ifne(notEqual);
-                } else if (type == float.class || type == double.class) {
-                    // Float.compare and Double.compare: NaN equals NaN, but 0.0 differs from -0.0
-                    getField(cob, 2, i);
-                    cob.invokestatic(ConstantUtils.classDesc(Wrapper.forPrimitiveType(type).wrapperType()), "compare",
-                                     MethodTypeDescImpl.ofValidated(CD_int, descs[i], descs[i]))
-                       .ifne(notEqual);
-                } else if (type.isPrimitive()) {
-                    getField(cob, 2, i);
-                    cob.if_icmpne(notEqual);
-                } else {
-                    // null is only equal to null, otherwise a.equals(b).  The call is made in
-                    // the generated code, not in a shared helper, to have its own type profile.
-                    Label aIsNull = cob.newLabel();
-                    Label next = cob.newLabel();
-                    cob.dup()
-                       .ifnull(aIsNull);
-                    getField(cob, 2, i);
-                    cob.invoke(invokeOpcode(type), descs[i], "equals", MTD_OBJECT_BOOLEAN, type.isInterface())
-                       .ifeq(notEqual)
-                       .goto_(next)
-                       .labelBinding(aIsNull)
-                       .pop();
-                    getField(cob, 2, i);
-                    cob.ifnonnull(notEqual)
-                       .labelBinding(next);
-                }
-            }
-            cob.iconst_1()
-               .ireturn()
-               .labelBinding(notEqual)
-               .iconst_0()
-               .ireturn();
-        }
-
-        // hash = 31 * hash + hash(component), starting with 0
+        // hash = 31 * hash + hash(component), starting with 0.  As in the combinators, the
+        // hash of a component is computed before the hash so far is multiplied, which C2
+        // compiles to faster code than multiplying first.  The hash so far is in local 1.
         private void hashCode(CodeBuilder cob) {
             for (int i = 0; i < fields.length; i++) {
                 Class<?> type = types[i];
-                if (i > 0) {
-                    cob.bipush(31)
-                       .imul();
-                }
-                getField(cob, 0, i);
+                getField(cob, i);
                 if (type.isPrimitive()) {
                     // for byte, short, char and int the hash code is the value
                     if (type != int.class && type != byte.class && type != short.class && type != char.class) {
@@ -802,7 +737,14 @@ public final class ObjectMethods {
                        .labelBinding(done);
                 }
                 if (i > 0) {
-                    cob.iadd();
+                    cob.iload(1)
+                       .bipush(31)
+                       .imul()
+                       .swap()
+                       .iadd();
+                }
+                if (i < fields.length - 1) {
+                    cob.istore(1);
                 }
             }
             cob.ireturn();
@@ -811,7 +753,7 @@ public final class ObjectMethods {
         // The same concatenation, with the same recipe, as in makeToString
         private void toString(CodeBuilder cob) {
             for (int i = 0; i < fields.length; i++) {
-                getField(cob, 0, i);
+                getField(cob, i);
             }
             DirectMethodHandleDesc bootstrap = MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.STATIC,
                     ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/StringConcatFactory;"), "makeConcatWithConstants",
@@ -891,9 +833,7 @@ public final class ObjectMethods {
             case "equals"   -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(boolean.class, recordClass, Object.class)))
                     throw new IllegalArgumentException("Bad method type: " + methodType);
-                String[] fields = fieldNames(lookup, recordClass, getterList);
-                yield fields != null ? makeStraightLine(lookup, recordClass, methodName, fields, nameList(names), getterList)
-                                     : makeEquals(lookup, recordClass, getterList);
+                yield makeEquals(lookup, recordClass, getterList);
             }
             case "hashCode" -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(int.class, recordClass)))
