@@ -2195,7 +2195,12 @@ final class StringUTF16 {
                     } else if (tier == StringZilla.C2) {
                         return lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex);
                     }
-                } else if (tier != StringZilla.C2 && tgtCount <= 2 * StringZilla.MAX_MIXED_NEEDLE) {
+                } else if (tgtCount <= 2 * StringZilla.MAX_MIXED_NEEDLE) {
+                    if (tier == StringZilla.C2) {
+                        // The range contains only the rightmost candidate.
+                        int result = indexOfLatin1_0(src, searchLength, tgt, tgtCount, fromIndex);
+                        return result >= 0 ? result : lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex - 1);
+                    }
                     if (StringZilla.matchesLongUTF16Latin1(src, fromIndex, tgt, tgtCount)) {
                         return fromIndex;
                     }
