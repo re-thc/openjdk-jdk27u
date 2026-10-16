@@ -26,6 +26,7 @@
 
 #include "nmt/mallocHeader.inline.hpp"
 #include "nmt/memTracker.hpp"
+#include "sanitizers/address.hpp"
 
 template <typename T>
 static void check_c_heap_array(int length, T value) {
@@ -34,8 +35,14 @@ static void check_c_heap_array(int length, T value) {
 
   // Check the actual requested allocation, not just Array's size calculation.
   const MallocHeader* header = MallocHeader::resolve_checked(array);
-  EXPECT_EQ(header->size(), size_t(Array<T>::size(length)) * BytesPerWord);
-  EXPECT_EQ(header->mem_tag(), mtClassShared);
+  // NMT poisons live allocation headers under ASan. Read only the header,
+  // then restore its protection before any assertions or array accesses.
+  ASAN_UNPOISON_MEMORY_REGION(header, sizeof(MallocHeader));
+  const size_t requested_size = header->size();
+  const MemTag allocation_tag = header->mem_tag();
+  ASAN_POISON_MEMORY_REGION(header, sizeof(MallocHeader));
+  EXPECT_EQ(requested_size, size_t(Array<T>::size(length)) * BytesPerWord);
+  EXPECT_EQ(allocation_tag, mtClassShared);
   EXPECT_EQ(array->length(), length);
 
   for (int i = 0; i < length; i++) {

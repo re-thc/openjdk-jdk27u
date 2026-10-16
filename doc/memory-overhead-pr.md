@@ -32,7 +32,9 @@ with zero skips or failures. Array verifies actual NMT requested sizes for twelv
 type/length combinations. Its separately compiled baseline-header control fails
 exactly those twelve size assertions while tag, initialization and access checks
 pass. GoogleTest/GoogleMock v1.14.0 came from the repository's documented pinned
-source workflow; no system installation was needed. Historical
+source workflow; no system installation was needed. Header reads restore ASan
+poisoning before assertions. ASan-instrumented test compilation passes; no
+ASan-enabled JVM image is available for runtime verification. Historical
 memory results remain tied to their original images. Source review confirms
 upstream ancestry and no path overlap with the 15 open fork PRs, including PR44.
 [Current validation](memory-overhead-validation.md) records image identities,

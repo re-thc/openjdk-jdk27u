@@ -88,11 +88,29 @@ with `--with-gtest`, and built using `make CONF=memory-review JOBS=4
 test-image-hotspot-gtest`. No unmanaged tools or system packages were installed.
 The original compiler/configuration/source date were retained; PCH is disabled.
 
-Two test-only repairs were necessary: use standard `ASSERT_NE(nullptr, value)`
+Test-only repairs were necessary: use standard `ASSERT_NE(nullptr, value)`
 in place of an unavailable assertion macro, and remove the obsolete
 `INCLUDE_NMT` guard that silently compiled Array's test out. The initial empty
 Array selection is an unsuccessful check, not a pass; its receipts are retained.
 No product repair was needed.
+
+A subsequent review identified that `resolve_checked` does not unpoison live
+NMT headers under ASan. The Array test now uses the existing
+`ASAN_UNPOISON_MEMORY_REGION`/`ASAN_POISON_MEMORY_REGION` conventions to expose
+only `sizeof(MallocHeader)`, copy size/tag to local values, and restore poisoning
+before assertions, array access or freeing. Footer protection stays intact.
+The table below records the repeated focused release checks on this repaired
+source, including a freshly compiled old-header control. The original thirteen
+jtreg results and prior native receipts remain preserved.
+
+The same repaired test translation unit also compiled successfully with the
+installed GCC 16.2.0, `-DADDRESS_SANITIZER -fsanitize=address`, and otherwise the
+recorded test compiler flags. Its object references both ASan header
+poison/unpoison hooks and instrumented loads. **No ASan runtime test was run**:
+no ASan-enabled JVM image is installed (`ASAN_ENABLED=false` in the available
+integration configuration). This object-only check is not an ASan execution
+pass. No new JVM build, dependency installation or benchmark was performed for
+that check.
 
 | Exact filter | Executed | Skipped | Failed assertions | Exit |
 | --- | ---: | ---: | ---: | ---: |
@@ -141,10 +159,10 @@ Artifact SHA256:
 
 | Artifact | SHA256 |
 | --- | --- |
-| Fixed gtest libjvm | `9fe1502931445dffe07d00420b8c9840f2a0d2fda8cc8f1f645019d455bb1dc9` |
-| Old-header gtest libjvm | `1ae3277271f846ac8125c5859b651d802cfbae8cd563a517770edd51ae5db860` |
+| Fixed gtest libjvm | `3ba573932c8e1155860164ae2e34cfa58e0ea77c6a7d1f5300505a455978d995` |
+| Old-header gtest libjvm | `d660d18a505c84b69347ca19e1408e3f9cd8ad9523cfc2d7a2901752a603eb7c` |
 | Identical gtest launchers | `d807aa99761c8fe3df61b1d45766969fdba3d879ab0083b5d2a1faffa8784551` |
-| Old-header test object | `9395c977a4ea19b7c5d3bd32bcd514f44eccfc1dd20e426664bc130cbaf7b49f` |
+| Old-header test object | `657f492149a455d61b049d8db261b99b8690a000fe242f6346dd534ab346cd18` |
 
 The gtest libjvm is a separate artifact linked from the existing product objects
 and current tests. It is not the product libjvm previously used by jtreg.
