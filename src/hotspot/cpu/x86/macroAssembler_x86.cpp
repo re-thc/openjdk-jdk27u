@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -7123,6 +7124,10 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
   //falling through if less than 4 bytes left
 
   bind(BYTES_TAIL);
+  // Only an empty range arrives here with no bytes left; the loop below
+  // compares a byte before it tests the count.
+  testq(length, length);
+  jcc(Assembler::zero, SAME_TILL_END);
   bind(BYTES_LOOP);
   load_unsigned_byte(tmp1, Address(obja, result));
   load_unsigned_byte(tmp2, Address(objb, result));
