@@ -202,7 +202,7 @@ void PackageEntry::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_qualified_exports);
 }
 
-PackageEntryTable::PackageEntryTable() { }
+PackageEntryTable::PackageEntryTable() : _table(109, 1228891) { }
 
 PackageEntryTable::~PackageEntryTable() {
   class PackageEntryTableDeleter : public StackObj {
@@ -283,12 +283,14 @@ Array<PackageEntry*>* PackageEntryTable::build_aot_table(ClassLoaderData* loader
 
 void PackageEntryTable::load_archived_entries(Array<PackageEntry*>* archived_packages) {
   assert(CDSConfig::is_using_archive(), "runtime only");
+  assert(Module_lock->owned_by_self(), "should have the Module_lock");
 
   for (int i = 0; i < archived_packages->length(); i++) {
     PackageEntry* archived_entry = archived_packages->at(i);
     archived_entry->load_from_archive();
     _table.put(archived_entry->name(), archived_entry);
   }
+  _table.maybe_grow(2);
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP
@@ -301,6 +303,7 @@ void PackageEntryTable::locked_create_entry(Symbol* name, ModuleEntry* module) {
   PackageEntry* entry = new PackageEntry(name, module);
   bool created = _table.put(name, entry);
   assert(created, "must be");
+  _table.maybe_grow(2);
 }
 
 // Create package entry in loader's package entry table if it does not already
@@ -312,6 +315,7 @@ PackageEntry* PackageEntryTable::locked_create_entry_if_absent(Symbol* name, Mod
   PackageEntry* entry = new PackageEntry(name, module);
   PackageEntry** old_entry = _table.put_if_absent(name, entry, &created);
   if (created) {
+    _table.maybe_grow(2);
     return entry;
   } else {
     delete entry;
