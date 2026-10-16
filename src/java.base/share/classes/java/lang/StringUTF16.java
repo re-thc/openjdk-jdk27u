@@ -2155,8 +2155,9 @@ final class StringUTF16 {
     @ForceInline
     static int lastIndexOfLatin1(byte[] src, int srcCount,
                                         byte[] tgt, int tgtCount, int fromIndex) {
-        int searchLength = fromIndex + tgtCount;
-        if (searchLength >= (StringZilla.MIN_BYTES >> 1) && StringZilla.ENABLED) {
+        if (fromIndex > 0 && fromIndex + tgtCount >= (StringZilla.MIN_BYTES >> 1)
+                && StringZilla.ENABLED) {
+            int searchLength = fromIndex + tgtCount;
             if (tgtCount <= StringZilla.MAX_MIXED_NEEDLE) {
                 if (tgtCount <= 8 && StringZilla.matchesUTF16Latin1(src, fromIndex, tgt, tgtCount)) {
                     return fromIndex;
@@ -2174,7 +2175,7 @@ final class StringUTF16 {
                     if (fromIndex < 0) {
                         return -1;
                     }
-                } else {
+                } else if (StringZilla.compilerTier() == StringZilla.C2) {
                     return lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex);
                 }
             }
@@ -2212,7 +2213,7 @@ final class StringUTF16 {
     }
 
 
-    // Keep the compiled loop's profile independent of interpreter-only filtering.
+    // Keep C2's loop profile independent of interpreter-only filtering.
     @DontInline
     private static int lastIndexOfLatin1Java(byte[] src, byte[] tgt, int tgtCount, int fromIndex) {
         assert fromIndex >= 0;
