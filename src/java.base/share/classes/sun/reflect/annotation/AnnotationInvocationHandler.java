@@ -56,6 +56,31 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         this.memberValues = memberValues;
     }
 
+    /**
+     * Returns whether a member value of the given annotation, or of an annotation
+     * nested in it, is an ExceptionProxy: a value that could not be resolved when
+     * the annotation was parsed, and that throws when it is read.
+     */
+    static boolean hasExceptionProxy(Annotation annotation) {
+        if (Proxy.isProxyClass(annotation.getClass())
+                && Proxy.getInvocationHandler(annotation) instanceof AnnotationInvocationHandler handler) {
+            for (Object value : handler.memberValues.values()) {
+                if (value instanceof ExceptionProxy
+                        || value instanceof Annotation nested && hasExceptionProxy(nested)) {
+                    return true;
+                }
+                if (value instanceof Annotation[] nestedArray) {
+                    for (Annotation nested : nestedArray) {
+                        if (hasExceptionProxy(nested)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     public Object invoke(Object proxy, Method method, Object[] args) {
         String member = method.getName();
         int parameterCount = method.getParameterCount();

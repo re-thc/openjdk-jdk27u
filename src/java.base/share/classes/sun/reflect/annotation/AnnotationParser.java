@@ -162,6 +162,22 @@ public class AnnotationParser {
         }
     }
 
+    /**
+     * Returns whether a member value of one of the given annotations, or of an
+     * annotation nested in one, could not be resolved when it was parsed, such as
+     * a constant of an enum class whose initialization is in progress.
+     */
+    public static boolean hasExceptionProxy(Annotation[][] annotations) {
+        for (Annotation[] parameterAnnotations : annotations) {
+            for (Annotation annotation : parameterAnnotations) {
+                if (AnnotationInvocationHandler.hasExceptionProxy(annotation)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private static Annotation[][] parseParameterAnnotations2(
                     byte[] rawAnnotations,
                     ConstantPool constPool,

@@ -608,21 +608,32 @@ public abstract sealed class Executable extends AccessibleObject
         return result;
     }
 
+    // Cached in the root only
     private transient volatile Annotation[][] declaredParameterAnnotations;
 
     private Annotation[][] declaredParameterAnnotations(Class<?>[] parameterTypes,
                                                         byte[] parameterAnnotations) {
-        Annotation[][] result;
-        if ((result = declaredParameterAnnotations) == null) {
-            synchronized (this) {
-                if ((result = declaredParameterAnnotations) == null) {
-                    Executable root = (Executable)getRoot();
-                    if (root != null) {
-                        result = root.declaredParameterAnnotations(parameterTypes, parameterAnnotations);
+        Executable root = (Executable)getRoot();
+        if (root != null) {
+            return root.declaredParameterAnnotations(parameterTypes, parameterAnnotations);
+        }
+        Annotation[][] result = declaredParameterAnnotations;
+        if (result == null) {
+            // Parsed without a lock held: parsing an enum value initializes the enum
+            // class, and its initializer may read these annotations, on another thread
+            // or on this one.
+            result = parseDeclaredParameterAnnotations(parameterTypes, parameterAnnotations);
+            // A value that could not be resolved, such as a constant of an enum whose
+            // initialization this thread has not finished, is not cached: the next
+            // call parses the annotations again.
+            if (!AnnotationParser.hasExceptionProxy(result)) {
+                synchronized (this) {
+                    // Publish, or use the annotations that another call published first
+                    if (declaredParameterAnnotations == null) {
+                        declaredParameterAnnotations = result;
                     } else {
-                        result = parseDeclaredParameterAnnotations(parameterTypes, parameterAnnotations);
+                        result = declaredParameterAnnotations;
                     }
-                    declaredParameterAnnotations = result;
                 }
             }
         }
