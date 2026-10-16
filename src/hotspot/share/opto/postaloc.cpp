@@ -718,11 +718,13 @@ public:
     const LRG& lrg = _ra.lrgs(lid);
     uint reg = n->ideal_reg();
     if (!lrg.alive() || lrg._def != n || lrg.is_bound() || lrg._fat_proj ||
-        lrg._is_vector || lrg._is_float || !OptoReg::is_reg(lrg.reg()) ||
+        lrg._is_vector || lrg._is_float || !OptoReg::is_reg(lrg.reg()) || !_gp.member(lrg.reg()) ||
         (reg != Op_RegP && reg != Op_RegN && reg != Op_RegI) ||
         lrg.num_regs() != (reg == Op_RegP ? 2 : 1) ||
         (reg == Op_RegP && (n->bottom_type()->isa_oopptr() == nullptr ||
                            n->bottom_type()->is_ptr()->offset() != 0)) ||
+        ((reg == Op_RegP || reg == Op_RegN) && !lrg._is_oop) ||
+        lrg._is_oop != _ra.lrgs(source_lid)._is_oop ||
         !OptoReg::is_stack(_ra.lrgs(source_lid).reg())) {
       return false;
     }
