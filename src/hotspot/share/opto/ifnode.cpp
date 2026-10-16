@@ -2316,6 +2316,71 @@ static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff) {
   return iff;
 }
 
+// Prove an array range check from nearby signed guards without adding CastII
+// nodes to the parser's map. Only walk a straight chain of ordinary Ifs: in
+// particular, do not carry a path-local fact across a merge or loop header.
+static bool fold_range_check_from_signed_guards(RangeCheckNode* check, PhaseIterGVN* igvn) {
+  IfTrueNode* success = check->true_proj_or_null();
+  if (success == nullptr || check->outcnt() != 2 ||
+      check->assertion_predicate_type() != AssertionPredicateType::None) {
+    return false;
+  }
+  Node* bol = check->in(1);
+  if (!bol->is_Bool() || bol->as_Bool()->_test._test != BoolTest::lt) {
+    return false;
+  }
+  Node* cmp = bol->in(1);
+  if (cmp == nullptr || cmp->Opcode() != Op_CmpU || cmp->in(1) == nullptr ||
+      cmp->in(2) == nullptr || cmp->in(2)->Opcode() != Op_ConI) {
+    return false;
+  }
+  const TypeInt* bound = igvn->type(cmp->in(2))->isa_int();
+  const TypeInt* narrowed = igvn->type(cmp->in(1))->isa_int();
+  if (bound == nullptr || !bound->is_con() || bound->get_con() <= 0 || narrowed == nullptr) {
+    return false;
+  }
+
+  Node* index = cmp->in(1);
+  Node* control = check->in(0);
+  const uint max_control_steps = 8;
+  for (uint step = 0; step < max_control_steps && control != nullptr && control != check; step++) {
+    if (control->Opcode() == Op_IfTrue || control->Opcode() == Op_IfFalse) {
+      Node* guard = control->in(0);
+      if (guard == nullptr || guard->Opcode() != Op_If ||
+          guard->as_If()->assertion_predicate_type() != AssertionPredicateType::None) {
+        break;
+      }
+      Node* guard_bol = guard->in(1);
+      if (guard_bol != nullptr && guard_bol->is_Bool()) {
+        Node* guard_cmp = guard_bol->in(1);
+        if (guard_cmp != nullptr && guard_cmp->Opcode() == Op_CmpI &&
+            guard_cmp->in(1) == index && guard_cmp->in(2) != nullptr &&
+            guard_cmp->in(2)->Opcode() == Op_ConI) {
+          const TypeInt* guard_type = IfNode::filtered_int_type(igvn, index, control);
+          if (guard_type != nullptr) {
+            narrowed = narrowed->join(guard_type)->isa_int();
+            if (narrowed == nullptr) {
+              return false;
+            }
+            if (narrowed->_lo >= 0 && narrowed->_hi < bound->get_con()) {
+              // This proof can depend on more than one guard. Prevent an array
+              // load or range-check cast from floating above either guard when
+              // the constant condition and its projections are removed.
+              success->pin_dependent_nodes(igvn);
+              check->set_req_X(1, igvn->intcon(1), igvn);
+              return true;
+            }
+          }
+        }
+      }
+    } else if (control->Opcode() != Op_If) {
+      break;
+    }
+    control = control->in(0);
+  }
+  return false;
+}
+
 Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* res = Ideal_common(phase, can_reshape);
   if (res != NodeSentinel) {
@@ -2323,6 +2388,9 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   PhaseIterGVN *igvn = phase->is_IterGVN();
+  if (fold_range_check_from_signed_guards(this, igvn)) {
+    return this;
+  }
   // Setup to scan up the CFG looking for a dominating test
   Node* prev_dom = this;
 
