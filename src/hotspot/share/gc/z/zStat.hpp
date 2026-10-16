@@ -98,7 +98,8 @@ private:
   static uint32_t _count;
   static T*       _first;
 
-  T* _next;
+  // ZStatIterableValue objects are commonly declared const, but sort() relinks _next
+  mutable T* _next;
 
   T* insert() const;
 
