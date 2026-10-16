@@ -25,6 +25,7 @@ package scannerprovider;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -41,6 +42,7 @@ public class State {
     public static final List<String> events = new ArrayList<>();
     public static final List<String> requests = new ArrayList<>();
     public static DecimalFormat numberFormat;
+    public static NumberFormat numberFormatOverride;
     public static DecimalFormatSymbols symbols;
     public static boolean symbolsOnly;
     public static String failAt;
@@ -51,6 +53,7 @@ public class State {
         symbolsOnly = onlySymbols;
         failAt = null;
         numberCallback = null;
+        numberFormatOverride = null;
         numberFormat = new RecordedFormat();
         numberFormat.setPositivePrefix("pos[");
         numberFormat.setNegativePrefix("neg(");
