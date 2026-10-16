@@ -64,13 +64,15 @@
       "DEFAULT_TESTNG_LICENSE_VERSION": "7.3.0",
       "DEFAULT_TESTNG_LICENSE_CHECKSUM": "c646d2cd1433560a4b43cb98e7273b59aac4563c"
     },
-    "dependency_endpoints": {
-      "code_tools": "https://github.com/openjdk",
-      "maven": "https://repo1.maven.org/maven2",
-      "ant": "https://archive.apache.org/dist/ant/binaries"
-    },
-    "endpoint_change": "Explicit proposed GitHub official source-archive endpoint for JT Harness/AsmTools; retain unchanged upstream archive checksums, fail on mismatch/denial, no fallback. Requires approval before execution.",
-    "delivery": "Build once in preflight runner; use same bytes for all candidate/control tests; do not upload harness binaries or sources."
+    "delivery": "UNRESOLVED. No executable delivery or harness-build route is selected.",
+    "route": {
+      "status": "unresolved",
+      "admitted": false,
+      "denied_source_uri": "https://git.openjdk.org/jtharness/archive/jt6.0-b24.zip",
+      "denial": "Proxy tunnel Forbidden in both bounded attempts. No new endpoint access or substitution authorized.",
+      "decision_required": "Authorize and verify the official default source dependency route on the intended runner, or establish an authorized unchanged8.3 delivery route. Build choice alone is not a compatibility requirement.",
+      "substitute_endpoint_executable": false
+    }
   },
   "preserved_experiment": {
     "pin_file": "classifier-provenance.json",
@@ -81,5 +83,36 @@
     "old_workflow": "vector-api-classifier-preflight.yml",
     "product_head": "5e2a1a63d4451b54069a365ac1d69dfcd208ee9d"
   },
-  "qualified": false
+  "qualified": false,
+  "optional_local_debug_image": {
+    "path": "/workspace/pr14-pure-b3-jdk",
+    "spec": "/workspace/pr14-traced-b3/build/pr14-trace-x86/spec.gmk",
+    "host_isa": "x86_64",
+    "elf_machine": 62,
+    "debug_level_from_spec": "fastdebug",
+    "spec_libjvm_matches_overlay": true,
+    "files": {
+      "bin/java": {
+        "bytes": 9672,
+        "sha256": "da27db86744c0de52b9b7a802ab920f642d3e3e2a5b20a3baefb37bf074c0aff"
+      },
+      "bin/javac": {
+        "bytes": 9992,
+        "sha256": "fcdda7ca418543a5e2b1f85a7f9373fb4cfa3fc85011e93be78000af3aa05ae5"
+      },
+      "lib/modules": {
+        "bytes": 116054530,
+        "sha256": "182946bfb002f5886adf3d81ca628068a3fb7283b8bd33396ee8d47279d95e18"
+      },
+      "lib/server/libjvm.so": {
+        "bytes": 48036512,
+        "sha256": "d6a004d37e4b5559fb874ad36ed18a4f25af87855a34f1c44272c8e3f086b3a4"
+      },
+      "release": {
+        "bytes": 1022,
+        "sha256": "946af8ba7b5466037dbe2f08303b1a59e89c7bc04ddaa7e9fa67886ddc87f4a0"
+      }
+    },
+    "role": "Generic harness compatibility only; not current classifier qualification. Optional acceleration; reproducible source-build path documented."
+  }
 }

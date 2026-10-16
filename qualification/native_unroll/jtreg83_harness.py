@@ -1,13 +1,15 @@
-"""Separate jtreg83 experiment; planning and byte verification never start a JVM."""
+"""jtreg83 byte admission and generic compatibility smoke; execution is opt-in."""
 import argparse
 import json
 import os
 from pathlib import Path
-import shutil
+import platform
+import re
+import struct
 import subprocess
 import zipfile
 
-from classifier_images import canonical, git, record, require
+from classifier_images import record, require
 
 EXPERIMENT = 'pr14-classifier-jtreg83-v1'
 SOURCE = '551e17adac0579859012c4c46318b8fa3cf2ff37'
@@ -27,9 +29,8 @@ def inventory(image):
     actual = {p.relative_to(image).as_posix(): record(p) for p in jars}
     require(set(actual) == set(pins()['installed']['consumer_jars']), 'Seven-JAR inventory differs')
     with zipfile.ZipFile(image / 'lib/jtreg.jar') as z:
-        manifest = z.read('META-INF/MANIFEST.MF').decode()
-    require('jtreg-VersionString: ' + VERSION + '\r\n' in manifest.replace('\r\n', '\n').replace('\n', '\r\n'),
-            'Harness version differs')
+        lines = z.read('META-INF/MANIFEST.MF').decode().splitlines()
+    require('jtreg-VersionString: ' + VERSION in lines, 'Harness version differs')
     return actual
 
 
@@ -39,130 +40,154 @@ def verify_installed(image):
     return actual
 
 
-def ci_identity():
-    keys = ('GITHUB_SHA', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT')
-    require(all(os.environ.get(k) for k in keys), 'Missing CI identity')
-    require(os.environ['GITHUB_RUN_ATTEMPT'] == '1', 'Only first CI attempt is admitted')
-    return {k: os.environ[k] for k in keys}
+def admit():
+    route = pins()['ci']['route']
+    require(route['status'] == 'verified-authorized' and route['admitted'] is True,
+            'Harness route unresolved: no source retrieval, delivery or native compute admitted')
+    # No admission producer is implemented until the access/delivery decision is resolved.
+    raise RuntimeError('No reviewed route admission producer exists; workflow must remain disabled')
 
 
 def verify_ci(image, receipt):
-    receipt = json.loads(Path(receipt).read_text())
-    require(receipt['experiment'] == EXPERIMENT and receipt['source_commit'] == SOURCE and
-            receipt['ci'] == ci_identity() and receipt['status'] == 'completed', 'CI harness provenance differs')
-    require(receipt['source_clean'] is True and receipt['dependency_endpoints'] == pins()['ci']['dependency_endpoints'],
-            'CI source/endpoint provenance differs')
-    require(receipt['recipe_version_numbers'] == pins()['ci']['recipe_version_numbers'], 'CI dependency versions differ')
-    actual = inventory(image)
-    require(actual == receipt['consumer_jars'], 'CI harness changed since producer verification')
-    return receipt
+    admit()  # Always fail closed while the route has no authorized, verified implementation.
 
 
-def smoke(image, jdk, out, execute=False):
-    image, jdk, out = map(lambda p: Path(p).resolve(), (image, jdk, out))
-    commands = [
-        [str(jdk / 'bin/java'), '-jar', str(image / 'lib/jtreg.jar'), '-version'],
-        [str(jdk / 'bin/java'), '-jar', str(image / 'lib/jtreg.jar'), '-jdk:' + str(jdk),
-         '-othervm', '-concurrency:1', '-timeoutFactor:2', '-verbose:summary',
-         '-w:' + str(out / 'work'), '-r:' + str(out / 'report'), str(out / 'suite/HarnessSmoke.java')]]
-    plan = dict(experiment=EXPERIMENT, commands=commands, maximum_seconds=180,
-                required_minimum='8.2.1+1', executes=execute)
+def debug_assessment(image, spec):
+    if image is None or spec is None:
+        return dict(available=False, reason='Provide an existing matching-ISA fastdebug image and its build spec; source-build instructions are committed')
+    image, spec = Path(image).resolve(), Path(spec).resolve()
+    try:
+        required = ('bin/java','bin/javac','lib/modules','lib/server/libjvm.so','release')
+        require(all((image / n).is_file() for n in required) and spec.is_file(), 'Incomplete debug image/spec')
+        text = spec.read_text()
+        require(re.search(r'^DEBUG_LEVEL\s*:=\s*fastdebug\s*$', text, re.M), 'Spec is not fastdebug')
+        host = platform.machine()
+        cpu, machine = {'x86_64':('x86_64',62),'aarch64':('aarch64',183)}[host]
+        require(re.search(r'^OPENJDK_TARGET_CPU\s*:=\s*' + cpu + r'\s*$', text, re.M), 'Spec ISA differs from host')
+        for name in ('bin/java','lib/server/libjvm.so'):
+            with (image / name).open('rb') as f:
+                header=f.read(20)
+            require(header[:4] == b'\x7fELF' and header[5] == 1 and
+                    struct.unpack('<H',header[18:20])[0] == machine, 'Image ISA differs from host')
+        require(record(image / 'lib/server/libjvm.so') == record(spec.parent / 'jdk/lib/server/libjvm.so'),
+                'Image VM differs from fastdebug build output')
+        return dict(available=True, image=str(image), spec=str(spec), host_isa=host,
+                    files={n:record(image/n) for n in required}, spec_record=record(spec),
+                    runtime_verified=False, role='generic harness compatibility; no classifier attribution')
+    except (RuntimeError, KeyError, OSError) as error:
+        return dict(available=False, reason=str(error), runtime_verified=False)
+
+
+def smoke_sources(repo, suite):
+    require(not any(c.isspace() for c in str(repo)), 'Smoke library root must not contain whitespace')
+    return {
+        'TEST.ROOT': 'requiredVersion=8.2.1+1\nexternal.lib.roots = ' + os.path.relpath(repo,suite) + '\n',
+        'HarnessMinimum.java': '''/* @test
+ * @run main/othervm HarnessMinimum
+ */
+public class HarnessMinimum { public static void main(String[] a) { System.out.println("HARNESS_MINIMUM_SMOKE_OK"); } }
+''',
+        'WhiteBoxOthervmSmoke.java': '''/* @test
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. WhiteBoxOthervmSmoke
+ */
+import jdk.test.whitebox.WhiteBox;
+public class WhiteBoxOthervmSmoke {
+    public static void main(String[] a) {
+        if (!Boolean.TRUE.equals(WhiteBox.getWhiteBox().getBooleanVMFlag("WhiteBoxAPI"))) throw new AssertionError("WhiteBox unavailable");
+        System.out.println("HARNESS_WHITEBOX_OTHERVM_OK");
+    }
+}
+''',
+        'HarnessIRSmoke.java': '''/* @test
+ * @library /test/lib /test/hotspot/jtreg
+ * @run driver HarnessIRSmoke
+ */
+import compiler.lib.ir_framework.*;
+import jdk.test.whitebox.WhiteBox;
+public class HarnessIRSmoke {
+    static boolean printed;
+    public static void main(String[] a) {
+        System.setProperty("Verbose", "true");
+        TestFramework.run();
+        System.out.println("HARNESS_IR_ASSERTION_PASSED");
+    }
+    @Test(compLevel=CompLevel.C2)
+    @IR(counts={IRNode.ADD_I, ">=1"}, phase=CompilePhase.PRINT_IDEAL)
+    public static int add(int x, int y) { return x + y; }
+    @Run(test="add")
+    public static void exercise() {
+        if (!Boolean.TRUE.equals(WhiteBox.getWhiteBox().getBooleanVMFlag("WhiteBoxAPI"))) throw new AssertionError("WhiteBox unavailable in Test VM");
+        if (!Boolean.getBoolean("ShouldDoIRVerification")) throw new AssertionError("IR verification inactive");
+        if (add(17,25) != 42) throw new AssertionError("wrong result");
+        if (!printed) { System.out.println("HARNESS_IR_ENABLED=true WHITEBOX_API_READY=true"); printed=true; }
+    }
+}
+'''}
+
+
+def verify_smoke_reports(work):
+    expected = {'HarnessMinimum':'HARNESS_MINIMUM_SMOKE_OK',
+                'WhiteBoxOthervmSmoke':'HARNESS_WHITEBOX_OTHERVM_OK',
+                'HarnessIRSmoke':'HARNESS_IR_ASSERTION_PASSED'}
+    reports = {p.stem:p for p in Path(work).rglob('*.jtr')}
+    require(set(reports) == set(expected), 'Missing/extra compatibility report')
+    for name, marker in expected.items():
+        text = reports[name].read_text()
+        require('test result: Passed.' in text and marker in text, 'Compatibility action did not execute/pass: '+name)
+    text=reports['HarnessIRSmoke'].read_text()
+    require('HARNESS_IR_ENABLED=true WHITEBOX_API_READY=true' in text, 'IR/WhiteBox evidence missing')
+    require('IR verification disabled' not in text and 'Disabling IR matching' not in text, 'IR assertion skipped/disabled')
+    return {n:record(p) for n,p in reports.items()}
+
+
+def smoke(image, jdk, out, debug_jdk=None, debug_spec=None, execute=False):
+    image, jdk, out = map(lambda p:Path(p).resolve(), (image,jdk,out))
+    repo=Path(__file__).resolve().parents[2]
+    assessment=debug_assessment(debug_jdk,debug_spec)
+    testjdk=str(Path(debug_jdk).resolve()) if debug_jdk else '<fastdebug-image-required>'
+    commands = [[str(jdk/'bin/java'),'-jar',str(image/'lib/jtreg.jar'),'-version'],
+        [str(jdk/'bin/java'),'-jar',str(image/'lib/jtreg.jar'),'-jdk:'+testjdk,'-othervm',
+         '-concurrency:1','-timeoutFactor:2','-verbose:summary','-w:'+str(out/'work'),'-r:'+str(out/'report'),
+         str(out/'suite')]]
+    plan=dict(experiment=EXPERIMENT,commands=commands,maximum_seconds=390,executes=execute,
+        required_minimum='8.2.1+1',debug_assessment=assessment,
+        compatibility_status='planned-not-executed' if assessment['available'] else 'deferred-unavailable-debug-image',
+        required_checks=['minimum-version','driver/ClassFileInstaller','WhiteBox native API in othervm',
+                         'fastdebug C2 ADD_I IR assertion with positive enabled evidence'],qualified=False)
     if not execute:
         return plan
-    require(not any(os.environ.get(k) for k in ('JAVA_TOOL_OPTIONS', 'JDK_JAVA_OPTIONS', '_JAVA_OPTIONS')),
-            'Inherited JVM options not admitted')
-    out.mkdir(parents=True, exist_ok=False)
-    (out / 'suite').mkdir()
-    (out / 'suite/TEST.ROOT').write_text('requiredVersion=8.2.1+1\n')
-    (out / 'suite/HarnessSmoke.java').write_text(
-        '/* @test\n * @run main/othervm HarnessSmoke\n */\n'
-        'public class HarnessSmoke { public static void main(String[] a) { '
-        'System.out.println("HARNESS_MINIMUM_SMOKE_OK"); } }\n')
-    for i, cmd in enumerate(commands):
-        with (out / (str(i) + '.log')).open('w') as stream:
-            status = subprocess.run(cmd, stdout=stream, stderr=subprocess.STDOUT, timeout=90)
-        require(status.returncode == 0, 'Harness smoke command failed')
-    require(VERSION in (out / '0.log').read_text(), 'Runtime harness version differs')
-    reports = list((out / 'work').rglob('HarnessSmoke.jtr'))
-    require(len(reports) == 1 and 'test result: Passed.' in reports[0].read_text() and
-            'HARNESS_MINIMUM_SMOKE_OK' in reports[0].read_text(), 'Minimum smoke did not execute/pass')
-    plan['passed'] = True
-    (out / 'result.json').write_text(json.dumps(plan, indent=2) + '\n')
+    require(assessment['available'], 'Complete compatibility smoke unavailable: '+assessment.get('reason',''))
+    require(not any(os.environ.get(k) for k in ('JAVA_TOOL_OPTIONS','JDK_JAVA_OPTIONS','_JAVA_OPTIONS')), 'Inherited JVM options not admitted')
+    before=inventory(image)
+    out.mkdir(parents=True,exist_ok=False)
+    (out/'suite').mkdir()
+    for name,text in smoke_sources(repo,out/'suite').items():(out/'suite'/name).write_text(text)
+    for i,cmd in enumerate(commands):
+        with (out/(str(i)+'.log')).open('w') as f:
+            status=subprocess.run(cmd,stdout=f,stderr=subprocess.STDOUT,timeout=90 if i==0 else 300)
+        require(status.returncode==0,'Compatibility command failed')
+    require(VERSION in (out/'0.log').read_text(),'Runtime harness version differs')
+    plan['reports']=verify_smoke_reports(out/'work')
+    require(inventory(image)==before,'Harness changed during compatibility smoke')
+    plan.update(passed=True,compatibility_status='complete-smoke-passed',consumer_jars=before)
+    (out/'result.json').write_text(json.dumps(plan,indent=2)+'\n')
     return plan
 
 
-def build_ci(source, jdk, receipt, execute=False):
-    source, jdk, receipt = map(lambda p: Path(p).resolve(), (source, jdk, receipt))
-    pin = pins()['ci']
-    plan = dict(experiment=EXPERIMENT, source_commit=SOURCE, maximum_seconds=1200,
-                command=['bash', 'make/build.sh', '--jdk', str(jdk)],
-                dependency_endpoints=pin['dependency_endpoints'], executes=execute)
-    if not execute:
-        return plan
-    require(git(source, 'rev-parse', 'HEAD') == SOURCE and not git(source, 'status', '--porcelain'),
-            'Unreviewed/dirty jtreg83 source')
-    require(not (source / 'build').exists(), 'Fresh CI harness build required')
-    versions = {}
-    for line in (source / 'make/build-support/version-numbers').read_text().splitlines():
-        if '=' in line and not line.startswith('#'):
-            k, v = line.split('=', 1)
-            versions[k] = v
-    require(versions == pin['recipe_version_numbers'], 'Tagged dependency recipe differs')
-    env = {k:v for k,v in os.environ.items() if k in ('PATH','HOME','LANG','TMPDIR','HTTPS_PROXY','HTTP_PROXY',
-        'ALL_PROXY','NO_PROXY','https_proxy','http_proxy','all_proxy','no_proxy')}
-    env.update(JAVA_HOME=str(jdk), JTREG_BUILD_MILESTONE='dev', JTREG_BUILD_NUMBER='1', MAKE_ARGS='-j2',
-               CODE_TOOLS_URL_BASE=pin['dependency_endpoints']['code_tools'],
-               MAVEN_REPO_URL_BASE=pin['dependency_endpoints']['maven'],
-               ANT_ARCHIVE_URL_BASE=pin['dependency_endpoints']['ant'],
-               WGET='/usr/bin/wget', WGET_OPTIONS='--tries=1 --timeout=45 --max-redirect=10',
-               CURL='/usr/bin/curl', CURL_OPTIONS='--fail --location --retry 0 --connect-timeout 20 --max-time 60')
-    receipt.parent.mkdir(parents=True, exist_ok=True)
-    identity = ci_identity()
-    tools = {name:record(Path(shutil.which(name))) for name in ('bash','make','wget','curl')}
-    before = {str(p.relative_to(source)): record(p) for p in sorted((source / 'make').rglob('*')) if p.is_file()}
-    with receipt.with_suffix('.log').open('w') as stream:
-        result = subprocess.run(plan['command'], cwd=source, env=env, stdout=stream,
-                                stderr=subprocess.STDOUT, timeout=1100)
-    require(result.returncode == 0, 'jtreg83 source build failed; no fallback or retry')
-    image = source / 'build/images/jtreg'
-    actual = inventory(image)
-    require(git(source, 'rev-parse', 'HEAD') == SOURCE and
-            git(source, 'status', '--porcelain', '--untracked-files=no') == '', 'Build changed tracked harness source')
-    require(tools == {name:record(Path(shutil.which(name))) for name in tools}, 'Build tools changed during harness build')
-    archives = {str(p.relative_to(source)): record(p) for p in sorted((source / 'build/deps').rglob('*'))
-                if p.is_file() and p.suffix in ('.zip', '.jar', '.gz')}
-    licenses = {str(p.relative_to(image)): record(p) for p in sorted(image.rglob('*'))
-                if p.is_file() and (p.name in ('LICENSE','COPYRIGHT') or 'legal' in p.parts)}
-    value = dict(experiment=EXPERIMENT, status='completed', source_commit=SOURCE, source_clean=True,
-        ci=identity, recipe_version_numbers=versions, dependency_endpoints=pin['dependency_endpoints'],
-        recipe_files=before, dependency_archives=archives, installed_notices=licenses, build_tools=tools,
-        build_jdk={name:record(jdk / name) for name in ('bin/java','bin/javac','release')},
-        consumer_jars=actual, consumer_inventory_sha256=canonical(actual),
-        installed_distribution_byte_equivalence=False, binary_publication=False)
-    receipt.write_text(json.dumps(value, indent=2) + '\n')
-    return value
-
-
 def main():
-    p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('operation', choices=['verify-installed','verify-ci','smoke','build-ci'])
-    p.add_argument('--image', type=Path)
-    p.add_argument('--jdk', type=Path)
-    p.add_argument('--source', type=Path)
-    p.add_argument('--receipt', type=Path)
-    p.add_argument('--out', type=Path)
-    p.add_argument('--execute', action='store_true')
-    a = p.parse_args()
-    if a.operation == 'verify-installed':
-        value = verify_installed(a.image)
-    elif a.operation == 'verify-ci':
-        value = verify_ci(a.image, a.receipt)
-    elif a.operation == 'smoke':
-        value = smoke(a.image, a.jdk, a.out, a.execute)
-    else:
-        value = build_ci(a.source, a.jdk, a.receipt, a.execute)
-    print('JTREG83_RESULT=' + json.dumps(value, sort_keys=True))
+    p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument('operation',choices=['verify-installed','verify-ci','smoke','admit'])
+    for name in ['image','jdk','receipt','out','debug-jdk','debug-spec']:p.add_argument('--'+name,type=Path)
+    p.add_argument('--execute',action='store_true')
+    a=p.parse_args()
+    if a.operation=='admit':value=admit()
+    elif a.operation=='verify-installed':value=verify_installed(a.image)
+    elif a.operation=='verify-ci':value=verify_ci(a.image,a.receipt)
+    else:value=smoke(a.image,a.jdk,a.out,a.debug_jdk,a.debug_spec,a.execute)
+    print('JTREG83_RESULT='+json.dumps(value,sort_keys=True))
 
 
-if __name__ == '__main__':
-    main()
+if __name__=='__main__':main()

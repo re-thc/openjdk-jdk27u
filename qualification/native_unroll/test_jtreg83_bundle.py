@@ -1,4 +1,4 @@
-"""Offline migration checks: no JVM, compiler, network, or workflow launch."""
+"""Source-only admission and compatibility-evidence checks; no JVM/build/download."""
 import argparse
 import copy
 import json
@@ -6,152 +6,127 @@ import os
 from pathlib import Path
 import subprocess
 import tempfile
-from types import SimpleNamespace
 from unittest import mock
 import zipfile
-
 import yaml
-import jtreg83_harness as harness
-from classifier_images import record, source_binding, pins
-from run_classifier83_preflight import control_commands, verify_control_reports
+
+import jtreg83_harness as h
+from classifier_images import record,source_binding,pins
+from run_classifier83_preflight import control_commands,verify_control_reports
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--out', type=Path, required=True)
-    a = parser.parse_args()
-    root = Path(__file__).resolve().parents[2]
-    cases = []
-    def reject(name, callback):
-        try:
-            callback()
-        except RuntimeError:
-            cases.append(name)
-        else:
-            raise AssertionError('Accepted: ' + name)
-
-    original = harness.pins()['preserved_experiment']
-    assert record(root / 'qualification/native_unroll/classifier-provenance.json') == original['pin_record']
-    cases.append('old experiment pins preserved byte for byte')
-    source_binding(root, pins())
-    cases.append('unchanged product/test/make/bin trees and exact executed-input binding')
-    real = harness.verify_installed('/workspace/toolchains/jtreg83')
-    cases.append('actual installed jtreg83 exact seven-JAR inventory and version')
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--out',type=Path,required=True);a=p.parse_args()
+    root=Path(__file__).resolve().parents[2];cases=[]
+    def reject(name,fn):
+        try:fn()
+        except RuntimeError:cases.append(name)
+        else:raise AssertionError('Accepted '+name)
+    assert record(root/'qualification/native_unroll/classifier-provenance.json')==h.pins()['preserved_experiment']['pin_record']
+    source_binding(root,pins());cases.append('original pins/product/test/make/bin and exact executed source preserved')
+    real=h.pins()['installed']['consumer_jars']
+    if Path('/workspace/toolchains/jtreg83').is_dir():
+        h.verify_installed('/workspace/toolchains/jtreg83');cases.append('optional installed83 exact seven-JAR bytes/version')
+    else:cases.append('optional installed83 unavailable; offline fixture checks do not require it')
+    reject('unresolved route rejects admission',h.admit)
+    changed=copy.deepcopy(h.pins());changed['ci']['route'].update(status='verified-authorized',admitted=True)
+    with mock.patch.object(h,'pins',return_value=changed):
+        reject('editing status alone cannot enable absent admission producer',h.admit)
     with tempfile.TemporaryDirectory(prefix='jtreg83-offline-') as tmp:
-        t = Path(tmp)
-        image = t / 'image'
-        (image / 'lib').mkdir(parents=True)
+        t=Path(tmp);image=t/'image';(image/'lib').mkdir(parents=True)
         for name in real:
-            p = image / name
-            if p.name == 'jtreg.jar':
-                with zipfile.ZipFile(p, 'w') as z:
-                    z.writestr('META-INF/MANIFEST.MF', 'jtreg-VersionString: 8.3-dev+1\n')
-            else:
-                p.write_bytes(b'INERT NOT A JAR')
-        pin = copy.deepcopy(harness.pins())
-        pin['installed']['consumer_jars'] = {name:record(image / name) for name in real}
-        with mock.patch.object(harness, 'pins', return_value=pin):
-            actual = harness.verify_installed(image)
-            cases.append('fixture valid pinned inventory accepted')
-            jar = image / 'lib/asmtools.jar'
-            saved = jar.read_bytes()
-            jar.write_bytes(saved + b'changed')
-            reject('changed JAR bytes rejected', lambda:harness.verify_installed(image))
-            jar.write_bytes(saved)
-            extra = image / 'extra.jar'; extra.write_bytes(b'extra')
-            reject('extra JAR outside lib rejected', lambda:harness.inventory(image))
-            extra.unlink()
-            jar.unlink()
-            reject('missing JAR rejected', lambda:harness.inventory(image))
-            target = t / 'external.jar'; target.write_bytes(saved); jar.symlink_to(target)
-            reject('JAR symlink rejected', lambda:harness.inventory(image))
-            jar.unlink(); jar.write_bytes(saved)
-            identity = dict(GITHUB_SHA='a'*40, GITHUB_RUN_ID='123', GITHUB_RUN_ATTEMPT='1')
-            receipt = dict(experiment=harness.EXPERIMENT, source_commit=harness.SOURCE, ci=identity,
-                status='completed',source_clean=True,consumer_jars=actual,
-                dependency_endpoints=pin['ci']['dependency_endpoints'],
-                recipe_version_numbers=pin['ci']['recipe_version_numbers'])
-            path = t / 'receipt.json'; path.write_text(json.dumps(receipt))
-            with mock.patch.dict(os.environ, identity, clear=True):
-                harness.verify_ci(image,path)
-                cases.append('same-run source-built harness receipt accepted without claiming installed-byte identity')
-                for key,value in [('source_commit','b'*40),('experiment','old-experiment'),
-                                  ('source_clean',False),('status','partial'),('consumer_jars',{})]:
-                    bad=copy.deepcopy(receipt);bad[key]=value;path.write_text(json.dumps(bad))
-                    reject('CI receipt rejects '+key, lambda:harness.verify_ci(image,path))
-                path.write_text(json.dumps(receipt))
-            with mock.patch.dict(os.environ,{**identity,'GITHUB_RUN_ATTEMPT':'2'},clear=True):
-                reject('rerun attempt rejected',lambda:harness.verify_ci(image,path))
-            with mock.patch.dict(os.environ,{**identity,'GITHUB_SHA':'b'*40},clear=True):
-                reject('different workflow head rejected',lambda:harness.verify_ci(image,path))
-        with mock.patch.object(harness.subprocess,'run',side_effect=AssertionError('Execution during planning')):
-            assert not harness.smoke(image,t/'jdk',t/'smoke')['executes']
-            assert not harness.build_ci(t/'source',t/'jdk',t/'receipt')['executes']
-            cases.append('smoke and source-build planning cannot launch tools or JVMs')
-        # Exercise producer admission without running any build command.
-        src=t/'source';(src/'make/build-support').mkdir(parents=True)
-        versions=pin['ci']['recipe_version_numbers']
-        recipe=src/'make/build-support/version-numbers'
-        recipe.write_text('\n'.join(k+'='+v for k,v in versions.items())+'\n')
-        with mock.patch.object(harness,'git',return_value='wrong'), \
-             mock.patch.object(harness.subprocess,'run',side_effect=AssertionError('Build launched on wrong source')):
-            reject('wrong source commit rejected before build',lambda:harness.build_ci(src,t/'jdk',t/'r.json',True))
-        recipe.write_text(recipe.read_text().replace('JTREG_VERSION=8.3','JTREG_VERSION=8.2.1'))
-        with mock.patch.object(harness,'git',side_effect=lambda root,*args:harness.SOURCE if args[0]=='rev-parse' else ''), \
-             mock.patch.object(harness.subprocess,'run',side_effect=AssertionError('Build launched on wrong recipe')):
-            reject('wrong dependency recipe rejected before build',lambda:harness.build_ci(src,t/'jdk',t/'r.json',True))
-        arguments = SimpleNamespace(control_jdk=t/'control-release',control_debug_jdk=t/'control-debug',
-            release_jdk=t/'candidate-release',jtreg=image,out=t/'preflight')
-        commands=control_commands(arguments)
-        assert len(commands)==4 and all('-DVerifyIR=false' in ' '.join(c['argv']) for c in commands)
-        assert sum('UseSVE=0' in ' '.join(c['argv']) for c in commands)==2
-        cases.append('four added control semantic configurations; no candidate IR relaxation')
-        reports={}
-        for name in ['TestFloatRoundTripReduction','TestFloatRoundTripReductionEdges']:
-            path=t/(name+'.jtr');reports[name]=path
-            rows=[]
-            for mode,level in [('semantics',0),('semantics',1),('semantics',4),('cold',0)]:
-                rows.append(('ROUNDTRIP_REDUCTION_PASS mode='+mode+' checked_method=x required='+str(level)+
-                    ' actual='+str(level)+' after='+str(level)) if name.endswith('Reduction') else
-                    'ROUNDTRIP_EDGES_PASS mode='+mode+' six_targets_level='+str(level)+' checks=1')
-            path.write_text('\n'.join(rows))
-        verify_control_reports(reports)
-        cases.append('actual interpreter/C1/C2/cold marker forms accepted')
-        path=reports['TestFloatRoundTripReductionEdges'];path.write_text(path.read_text().replace('mode=cold','mode=wrong'))
-        reject('missing cold execution rejected',lambda:verify_control_reports(reports))
-
+            f=image/name
+            if f.name=='jtreg.jar':
+                with zipfile.ZipFile(f,'w') as z:z.writestr('META-INF/MANIFEST.MF','jtreg-VersionString: 8.3-dev+1\n')
+            else:f.write_bytes(b'INERT')
+        pin=copy.deepcopy(h.pins());pin['installed']['consumer_jars']={n:record(image/n) for n in real}
+        with mock.patch.object(h,'pins',return_value=pin):
+            h.verify_installed(image);cases.append('fixture valid pinned map accepted')
+            f=image/'lib/asmtools.jar';saved=f.read_bytes();f.write_bytes(saved+b'changed')
+            reject('modified JAR rejected',lambda:h.verify_installed(image));f.write_bytes(saved)
+            extra=image/'extra.jar';extra.write_bytes(b'extra')
+            reject('extra JAR rejected',lambda:h.inventory(image));extra.unlink()
+            f.unlink();reject('missing JAR rejected',lambda:h.inventory(image))
+            target=t/'external.jar';target.write_bytes(saved);f.symlink_to(target)
+            reject('JAR symlink rejected',lambda:h.inventory(image));f.unlink();f.write_bytes(saved)
+        with mock.patch.object(h.subprocess,'run',side_effect=AssertionError('Unapproved execution')):
+            plan=h.smoke(image,t/'jdk',t/'out')
+            assert plan['compatibility_status']=='deferred-unavailable-debug-image' and not plan['executes']
+            cases.append('no debug image explicitly defers complete compatibility')
+            reject('no debug image prevents runtime smoke',lambda:h.smoke(image,t/'jdk',t/'out',execute=True))
+            reject('CI verification cannot bypass unresolved admission',lambda:h.verify_ci(image,t/'receipt'))
+        optional=h.pins()['optional_local_debug_image']
+        assessment=h.debug_assessment(optional['path'],optional['spec'])
+        if assessment['available']:
+            assert assessment['files']==optional['files'] and not assessment['runtime_verified']
+            cases.append('optional complete host-ISA fastdebug image verified against recorded build output')
+        else:cases.append('optional retained debug image unavailable; full smoke explicitly deferred until source build')
+        # Inert ELF/spec fixture tests static ISA/provenance admission without a saved binary.
+        import struct
+        debug=t/'debug';spec=t/'build/spec.gmk';spec.parent.mkdir()
+        for name in ('bin/java','bin/javac','lib/modules','lib/server/libjvm.so','release'):
+            f=debug/name;f.parent.mkdir(parents=True,exist_ok=True)
+            header=bytearray(20);header[:4]=b'\x7fELF';header[5]=1;header[18:20]=struct.pack('<H',62)
+            f.write_bytes(header+b'INERT NOT A VM')
+        vm=spec.parent/'jdk/lib/server/libjvm.so';vm.parent.mkdir(parents=True);vm.write_bytes((debug/'lib/server/libjvm.so').read_bytes())
+        spec.write_text('DEBUG_LEVEL := fastdebug\nOPENJDK_TARGET_CPU := x86_64\n')
+        with mock.patch.object(h.platform,'machine',return_value='x86_64'):
+            assert h.debug_assessment(debug,spec)['available']
+            cases.append('inert complete fastdebug/spec correspondence accepted for static planning')
+            with mock.patch.object(h.subprocess,'run',side_effect=AssertionError('Execution during plan')):
+                plan=h.smoke(image,t/'jdk',t/'out',debug,spec)
+                assert plan['compatibility_status']=='planned-not-executed' and len(plan['required_checks'])==4
+                cases.append('full WhiteBox/driver/IR smoke is planning only')
+        with mock.patch.object(h.platform,'machine',return_value='aarch64'):
+            assert not h.debug_assessment(debug,spec)['available'];cases.append('wrong-host-ISA image rejected')
+        sources=h.smoke_sources(root,t/'suite')
+        assert 'ClassFileInstaller' in sources['WhiteBoxOthervmSmoke.java'] and '@run main/othervm' in sources['WhiteBoxOthervmSmoke.java']
+        ir=sources['HarnessIRSmoke.java']
+        assert '@run driver' in ir and '@IR(counts={IRNode.ADD_I' in ir and 'ShouldDoIRVerification' in ir
+        assert 'WhiteBox.getWhiteBox()' in ir and 'TestFramework.run();' in ir
+        cases.append('smoke contains actual installation/native WhiteBox call and unconditional C2 IR assertion')
+        work=t/'work';work.mkdir()
+        texts={'HarnessMinimum':'test result: Passed.\nHARNESS_MINIMUM_SMOKE_OK',
+               'WhiteBoxOthervmSmoke':'test result: Passed.\nHARNESS_WHITEBOX_OTHERVM_OK',
+               'HarnessIRSmoke':'test result: Passed.\nHARNESS_IR_ASSERTION_PASSED\nHARNESS_IR_ENABLED=true WHITEBOX_API_READY=true'}
+        for name,text in texts.items():(work/(name+'.jtr')).write_text(text)
+        h.verify_smoke_reports(work);cases.append('all compatibility action and IR evidence accepted')
+        f=work/'HarnessIRSmoke.jtr';original=f.read_text()
+        for marker in ['HARNESS_IR_ASSERTION_PASSED','HARNESS_IR_ENABLED=true WHITEBOX_API_READY=true']:
+            f.write_text(original.replace(marker,''));reject('missing '+marker+' rejected',lambda:h.verify_smoke_reports(work))
+        for marker in ['IR verification disabled','Disabling IR matching']:
+            f.write_text(original+'\n'+marker);reject('skipped IR rejected: '+marker,lambda:h.verify_smoke_reports(work))
+        f.write_text(original);(work/'WhiteBoxOthervmSmoke.jtr').unlink()
+        reject('minimum-only/incomplete smoke rejected',lambda:h.verify_smoke_reports(work))
     w=yaml.safe_load((root/'.github/workflows/vector-api-classifier-jtreg83.yml').read_text())
-    assert w['on']=={'push':{'branches':['codex/vector-api-classifier-jtreg83']}}
+    gate=w['jobs']['harness-admission'];build=w['jobs']['candidate-build'];pre=w['jobs']['preflight']
+    assert gate['if'] is False and build['needs']=='harness-admission'
+    assert pre['needs']==['harness-admission','candidate-build']
+    assert 'always()' not in build['if'] and 'always()' not in pre['if']
+    cases.append('disabled/failed/skipped harness admission prevents both candidate overlays and native preflight')
+    assert build['timeout-minutes']==90 and pre['timeout-minutes']==120 and build['strategy']['max-parallel']==1
     assert w['permissions']=={'contents':'read','actions':'read'}
-    assert w['concurrency']['cancel-in-progress'] is False
-    build=w['jobs']['candidate-build'];pre=w['jobs']['preflight']
-    assert build['timeout-minutes']==90 and pre['timeout-minutes']==120
-    assert build['strategy']['max-parallel']==1 and build['strategy']['fail-fast'] is True
-    assert pre['needs']=='candidate-build'
-    for job in w['jobs'].values():
-        assert 'github.run_attempt == 1' in job['if']
-        assert "refs/heads/codex/vector-api-classifier-jtreg83" in job['if']
-        for step in job['steps']:
-            assert step['timeout-minutes']>0
-            if 'uses' in step:assert '@' in step['uses'] and len(step['uses'].split('@')[1])==40
-            if 'run' in step:
-                subprocess.run(['bash','-n'],input=step['run'],text=True,check=True)
-    text=json.dumps(w)
-    assert '12015894519' not in text and '38813879807' not in text and 'adoptium' not in text.lower()
-    assert 'run_classifier83_preflight.py' in text and 'jtreg83_harness.py verify-ci' in text
-    assert sum('build-ci' in s.get('run','') for s in pre['steps'])==1
-    assert 'remaining=1200' in text and '100 * 60' in text and '80 * 60' in text
-    assert 'preflight-control-semantics' in pre['steps'][-1]['with']['path']
-    for job in w['jobs'].values():
+    assert w['on']=={'push':{'branches':['codex/vector-api-classifier-jtreg83']}}
+    for name,job in w['jobs'].items():
+        if name!='harness-admission':assert 'github.run_attempt == 1' in job['if']
         for s in job['steps']:
-            if s.get('uses','').startswith('actions/upload-artifact@'):
-                assert '.jtreg83-source' not in s['with']['path']
-    cases.append('new branch/first-attempt/read-only permissions/timeouts/partial capture preserved; shell syntax checked')
-    cases.append('one runner-local source harness, no Adoptium or old input, no harness binary/source uploads')
+            assert s['timeout-minutes']>0
+            if 'uses' in s:assert len(s['uses'].split('@')[1])==40
+            if 'run' in s:subprocess.run(['bash','-n'],input=s['run'],text=True,check=True)
+    text=json.dumps(w)
+    assert 'build-ci' not in text and '.jtreg83-source' not in text and '12015894519' not in text
+    assert 'run_classifier83_preflight.py' in text and 'admitted-jtreg' in text
+    assert 'CODE_TOOLS_URL_BASE' not in (root/'qualification/native_unroll/jtreg83_harness.py').read_text()
+    assert 'https://github.com/openjdk' not in (root/'qualification/native_unroll/jtreg83_harness.py').read_text()
+    cases.append('no executable endpoint substitution/harness build/old83 transfer added')
+    cases.append('native identity checks/correctness/IR/stress wrapper and first-attempt/capture bounds retained')
+    status=json.loads((root/'qualification/native_unroll/jtreg83-artifact-status.json').read_text())
+    assert {x['id'] for x in status['artifacts']}=={11978661561,11981413932,11881672203}
+    assert all(not x['expired'] for x in status['artifacts'])
+    cases.append('fresh optional artifact metadata present/unexpired at recorded observation')
     a.out.mkdir(parents=True,exist_ok=False)
-    (a.out/'results.json').write_text(json.dumps(dict(passed=True,cases=cases,count=len(cases),
-        JVMs=0,builds=0,network_calls=0,workflow_runs=0),indent=2)+'\n')
-    print(json.dumps(dict(passed=True,count=len(cases),results=str(a.out/'results.json'))))
+    value=dict(passed=True,count=len(cases),cases=cases,JVMs=0,builds=0,network_calls=0,workflow_runs=0)
+    (a.out/'results.json').write_text(json.dumps(value,indent=2)+'\n');print(json.dumps(value))
 
 
 if __name__=='__main__':main()

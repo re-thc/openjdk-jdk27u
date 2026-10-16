@@ -12,6 +12,16 @@ concurrency:
 env:
   PYTHONDONTWRITEBYTECODE: '1'
 jobs:
+  harness-admission:
+    if: false
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 1
+    steps:
+    - name: Route unresolved; never launch candidate builds
+      run: |-
+        echo "BLOCKED: authorize and verify a harness source/delivery route and compatibility smoke before enabling this workflow"
+        exit 1
+      timeout-minutes: 1
   candidate-build:
     if: github.ref == 'refs/heads/codex/vector-api-classifier-jtreg83' && github.run_attempt == 1
     runs-on: ubuntu-26.04-arm
@@ -109,9 +119,12 @@ jobs:
           backend-build/input-metadata
         retention-days: 30
       timeout-minutes: 5
+    needs: harness-admission
   preflight:
     if: github.ref == 'refs/heads/codex/vector-api-classifier-jtreg83' && github.run_attempt == 1
-    needs: candidate-build
+    needs:
+    - harness-admission
+    - candidate-build
     runs-on: ubuntu-26.04-arm
     timeout-minutes: 120
     steps:
@@ -167,27 +180,6 @@ jobs:
       with:
         name: classifier-jtreg83-candidate-fastdebug
         path: candidate-fastdebug
-    - name: Checkout exact official jtreg83 source without a binary cache
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      timeout-minutes: 5
-      with:
-        repository: openjdk/jtreg
-        ref: 551e17adac0579859012c4c46318b8fa3cf2ff37
-        path: .jtreg83-source
-        persist-credentials: false
-    - name: Build one jtreg83 harness locally on this runner; no binary redistribution
-      timeout-minutes: 21
-      run: |-
-        remaining=$(( CLASSIFIER_CAPTURE_DEADLINE - $(date +%s) ))
-        test "$remaining" -gt 0
-        if (( remaining > 1200 )); then remaining=1200; fi
-        timeout --signal=TERM --kill-after=30s "${remaining}s" bash -euo pipefail <<'JTREG83_BOUND'
-        mkdir -p bindings
-        python3 qualification/native_unroll/classifier_inputs.py extract historical-release/rebuilt-b3-jdk.tar.gz jtreg83-boot
-        python3 qualification/native_unroll/jtreg83_harness.py build-ci --source .jtreg83-source --jdk jtreg83-boot/rebuilt-b3-jdk --receipt bindings/jtreg83-ci.json --execute
-        python3 qualification/native_unroll/jtreg83_harness.py verify-ci --image .jtreg83-source/build/images/jtreg --receipt bindings/jtreg83-ci.json
-        python3 qualification/native_unroll/jtreg83_harness.py smoke --image .jtreg83-source/build/images/jtreg --jdk jtreg83-boot/rebuilt-b3-jdk --out bindings/harness-smoke --execute
-        JTREG83_BOUND
     - name: Verify independent candidate/control provenance and consumer bytes
       run: |-
         remaining=$(( CLASSIFIER_CAPTURE_DEADLINE - $(date +%s) ))
@@ -195,7 +187,7 @@ jobs:
         timeout --signal=TERM --kill-after=30s "${remaining}s" bash -euo pipefail <<'CLASSIFIER_CAPTURE_BOUND'
         test "$(uname -m)" = aarch64
         mkdir -p bindings
-        python3 qualification/native_unroll/jtreg83_harness.py verify-ci --image .jtreg83-source/build/images/jtreg --receipt bindings/jtreg83-ci.json
+        python3 qualification/native_unroll/jtreg83_harness.py verify-ci --image admitted-jtreg --receipt bindings/jtreg83-admission.json
         python3 qualification/native_unroll/classifier_inputs.py frozen saved/prior/frozen
         for level in release fastdebug; do
           python3 qualification/native_unroll/classifier_inputs.py extract "historical-$level/rebuilt-b3-jdk.tar.gz" "control-$level"
@@ -214,7 +206,7 @@ jobs:
         remaining=$(( CLASSIFIER_CAPTURE_DEADLINE - $(date +%s) ))
         test "$remaining" -gt 0
         set +e
-        timeout --signal=TERM --kill-after=30s "${remaining}s" python3 qualification/native_unroll/run_classifier83_preflight.py --release-jdk image-release/classifier-jdk --debug-jdk image-fastdebug/classifier-jdk --control-jdk control-release/rebuilt-b3-jdk --control-debug-jdk control-fastdebug/rebuilt-b3-jdk --jtreg .jtreg83-source/build/images/jtreg --frozen saved/prior/frozen --out preflight --historical-control --execute
+        timeout --signal=TERM --kill-after=30s "${remaining}s" python3 qualification/native_unroll/run_classifier83_preflight.py --release-jdk image-release/classifier-jdk --debug-jdk image-fastdebug/classifier-jdk --control-jdk control-release/rebuilt-b3-jdk --control-debug-jdk control-fastdebug/rebuilt-b3-jdk --jtreg admitted-jtreg --frozen saved/prior/frozen --out preflight --historical-control --execute
         status=$?
         mkdir -p preflight
         printf '{"exit_status":%s,"job_retry":false}\n' "$status" > preflight/preflight-status.json
@@ -222,10 +214,9 @@ jobs:
         CLASSIFIER_CAPTURE_BOUND
       timeout-minutes: 101
     - name: Recheck the common harness after candidate/control work
-      if: always() && hashFiles('bindings/jtreg83-ci.json') != ''
+      if: always() && hashFiles('bindings/jtreg83-admission.json') != ''
       timeout-minutes: 2
-      run: python3 qualification/native_unroll/jtreg83_harness.py verify-ci --image .jtreg83-source/build/images/jtreg --receipt
-        bindings/jtreg83-ci.json
+      run: python3 qualification/native_unroll/jtreg83_harness.py verify-ci --image admitted-jtreg --receipt bindings/jtreg83-admission.json
     - name: Export readable success/failure evidence
       if: always()
       run: python3 qualification/native_unroll/export_roundtrip_evidence.py preflight
