@@ -51,8 +51,11 @@ public class CharBufferPutString {
     @Param({"1", "8", "32", "128", "1024", "32768"})
     public int length;
 
-    /** HEAP, DIRECT (native order) or DIRECT_SWAPPED (opposite byte order). */
-    @Param({"HEAP", "DIRECT", "DIRECT_SWAPPED"})
+    /**
+     * HEAP (a char array), or a char view of a direct (DIRECT) or heap (VIEW) byte
+     * buffer in native or, with _SWAPPED, the opposite byte order.
+     */
+    @Param({"HEAP", "DIRECT", "DIRECT_SWAPPED", "VIEW", "VIEW_SWAPPED"})
     public String kind;
 
     @Param({"LATIN1", "UTF16"})
@@ -69,11 +72,16 @@ public class CharBufferPutString {
         }
         text = sb.toString();
         ByteOrder order = ByteOrder.nativeOrder();
-        if (kind.equals("DIRECT_SWAPPED")) {
+        if (kind.endsWith("_SWAPPED")) {
             order = order == ByteOrder.BIG_ENDIAN ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN;
         }
-        buffer = kind.equals("HEAP") ? CharBuffer.allocate(length)
-                : ByteBuffer.allocateDirect(2 * length).order(order).asCharBuffer();
+        if (kind.equals("HEAP")) {
+            buffer = CharBuffer.allocate(length);
+        } else {
+            ByteBuffer bytes = kind.startsWith("DIRECT") ? ByteBuffer.allocateDirect(2 * length)
+                                                         : ByteBuffer.allocate(2 * length);
+            buffer = bytes.order(order).asCharBuffer();
+        }
     }
 
     @Benchmark
