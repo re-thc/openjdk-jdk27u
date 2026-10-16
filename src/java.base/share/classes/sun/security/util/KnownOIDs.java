@@ -339,7 +339,10 @@ public enum KnownOIDs {
                                             // with modulus length as its parameter
 
     SkipIPAddress("1.3.6.1.4.1.42.2.11.2.1"),
-    MICROSOFT_ExportApproved("1.3.6.1.4.1.311.10.3.3");
+    MICROSOFT_ExportApproved("1.3.6.1.4.1.311.10.3.3"),
+
+    // SunPKCS11 Blowfish keys in PKCS12 key stores
+    Blowfish("1.3.6.1.4.1.3029.1.1.2");
 
     private final String stdName;
     private final String oid;
