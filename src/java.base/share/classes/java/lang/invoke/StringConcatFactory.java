@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -480,7 +480,8 @@ public final class StringConcatFactory {
                         " are passed");
     }
 
-    private static MethodHandle makeSimpleConcat(MethodType mt, String[] constants) {
+    private static MethodHandle makeSimpleConcat(MethodType mt, String[] constants)
+            throws ReflectiveOperationException {
         int paramCount = mt.parameterCount();
         String suffix = constants[paramCount];
 
@@ -500,7 +501,14 @@ public final class StringConcatFactory {
             } else if (suffix.isEmpty() && !mt.hasPrimitives()) {
                 // Non-primitive argument
                 return MethodHandles.insertArguments(simpleConcat(), 0, prefix);
-            } // fall-through if there's both a prefix and suffix
+            }
+
+            // Use the built-in unary concatenator without initializing the hidden class generator.
+            Lookup lookup = StringLookupHolder.LOOKUP;
+            MethodType concatArgs = erasedArgs(mt);
+            Object concat1 = JLA.uncheckedStringConcat1(constants);
+            MethodHandle handle = lookup.findVirtual(concat1.getClass(), "concat", concatArgs);
+            return handle.bindTo(concat1);
         } else if (paramCount == 2 && !mt.hasPrimitives() && suffix.isEmpty()
                 && constants[0].isEmpty() && constants[1].isEmpty()) {
             // Two reference arguments, no surrounding constants
@@ -622,6 +630,35 @@ public final class StringConcatFactory {
         // no instantiation
     }
 
+    // Shared by built-in and generated concatenators without initializing the generator.
+    private static final class StringLookupHolder {
+        static final Lookup LOOKUP = new Lookup(String.class);
+    }
+
+    /**
+     * The parameter types are normalized into 7 types: int,long,boolean,char,float,double,Object
+     */
+    private static MethodType erasedArgs(MethodType args) {
+        int parameterCount = args.parameterCount();
+        var paramTypes = new Class<?>[parameterCount];
+        boolean changed = false;
+        for (int i = 0; i < parameterCount; i++) {
+            Class<?> cl = args.parameterType(i);
+            // Use int as the logical type for subword integral types
+            // (byte and short). char and boolean require special
+            // handling so don't change the logical type of those
+            if (cl == byte.class || cl == short.class) {
+                cl = int.class;
+                changed = true;
+            } else if (cl != Object.class && !cl.isPrimitive()) {
+                cl = Object.class;
+                changed = true;
+            }
+            paramTypes[i] = cl;
+        }
+        return changed ? MethodType.methodType(args.returnType(), paramTypes, true) : args;
+    }
+
     /**
      * Implement efficient hidden class strategy for String concatenation
      *
@@ -639,7 +676,7 @@ public final class StringConcatFactory {
 
         static final ClassFileDumper DUMPER =
                 ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
-        static final MethodHandles.Lookup STR_LOOKUP = new MethodHandles.Lookup(String.class);
+        static final MethodHandles.Lookup STR_LOOKUP = StringLookupHolder.LOOKUP;
 
         static final ClassDesc CD_CONCAT             = ConstantUtils.binaryNameToDesc(CLASS_NAME);
         static final ClassDesc CD_StringConcatHelper = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/StringConcatHelper;");
@@ -701,30 +738,6 @@ public final class StringConcatFactory {
         }
 
         private record MethodHandlePair(MethodHandle constructor, MethodHandle concatenator) { };
-
-        /**
-         * The parameter types are normalized into 7 types: int,long,boolean,char,float,double,Object
-         */
-        private static MethodType erasedArgs(MethodType args) {
-            int parameterCount = args.parameterCount();
-            var paramTypes = new Class<?>[parameterCount];
-            boolean changed = false;
-            for (int i = 0; i < parameterCount; i++) {
-                Class<?> cl = args.parameterType(i);
-                // Use int as the logical type for subword integral types
-                // (byte and short). char and boolean require special
-                // handling so don't change the logical type of those
-                if (cl == byte.class || cl == short.class) {
-                    cl = int.class;
-                    changed = true;
-                } else if (cl != Object.class && !cl.isPrimitive()) {
-                    cl = Object.class;
-                    changed = true;
-                }
-                paramTypes[i] = cl;
-            }
-            return changed ? MethodType.methodType(args.returnType(), paramTypes, true) : args;
-        }
 
         /**
          * Construct the MethodType of the prepend method, The parameters only support 5 types:
@@ -807,13 +820,6 @@ public final class StringConcatFactory {
         private static MethodHandle generate(Lookup lookup, MethodType args, String[] constants) throws Exception {
             lookup = STR_LOOKUP;
             final MethodType concatArgs = erasedArgs(args);
-
-            // 1 argument use built-in method
-            if (args.parameterCount() == 1) {
-                Object concat1 = JLA.uncheckedStringConcat1(constants);
-                var handle = lookup.findVirtual(concat1.getClass(), METHOD_NAME, concatArgs);
-                return handle.bindTo(concat1);
-            }
 
             boolean forceInline  = concatArgs.parameterCount() <  FORCE_INLINE_THRESHOLD;
             boolean staticConcat = concatArgs.parameterCount() >= CACHE_THRESHOLD;
