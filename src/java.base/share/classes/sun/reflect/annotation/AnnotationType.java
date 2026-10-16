@@ -82,9 +82,7 @@ public class AnnotationType {
         AnnotationType result = jla.getAnnotationType(annotationClass); // volatile read
         if (result == null) {
             result = new AnnotationType(annotationClass);
-            // don't cache it if a default has a constant of an enum class that this
-            // thread is initializing, which could not be found before the constants
-            // exist: the next call parses the defaults again, and finds it
+            // Retry defaults with constants unresolved during enum initialization.
             for (Object defaultValue : result.memberDefaults.values()) {
                 if (AnnotationInvocationHandler.hasUnresolvedEnumConstant(defaultValue)) {
                     return result;
@@ -131,10 +129,9 @@ public class AnnotationType {
                 memberTypes.put(name, invocationHandlerReturnType(type));
                 members.put(name, method);
 
-                // A constant of an enum class that this thread is initializing, which
-                // could not be found before the constants exist, is kept as a value that
-                // throws when it is read, and getInstance doesn't cache this instance.
-                // Other values that could not be resolved throw, as Method.getDefaultValue does.
+                // Keep temporarily unresolved enum defaults as proxies for member
+                // access. getInstance leaves them uncached. Preserve other errors
+                // from getDefaultValue.
                 Object defaultValue =
                     SharedSecrets.getJavaLangReflectAccess().parseDefaultValue(method);
                 if (defaultValue instanceof ExceptionProxy

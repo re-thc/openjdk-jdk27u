@@ -748,7 +748,6 @@ public class AnnotationParser {
                 buf, '@', constPool, container);
     }
 
-    // Not a lambda per element kind: a lambda is costly to link the first time
     @SuppressWarnings("unchecked")
     private static Object parseArrayElement(Class<?> componentType, int tag,
                                             ByteBuffer buf,

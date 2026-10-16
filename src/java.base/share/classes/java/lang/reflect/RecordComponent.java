@@ -196,9 +196,8 @@ public final class RecordComponent implements AnnotatedElement {
                     declaredAnnotations = declAnnos;
                 }
             } else {
-                // Parsed with no lock held, and published with a CAS unless a constant
-                // of an enum class this thread is initializing was not found, as for
-                // the annotations of an Executable
+                // As in Executable, parse outside locks and publish only if no
+                // enum constant is unresolved during its initialization.
                 declAnnos = AnnotationParser.parseAnnotations(
                         annotations,
                         SharedSecrets.getJavaLangAccess()

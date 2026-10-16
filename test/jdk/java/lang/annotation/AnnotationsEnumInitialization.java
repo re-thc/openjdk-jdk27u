@@ -142,10 +142,6 @@ public class AnnotationsEnumInitialization {
         return method(method).getParameterAnnotations()[0][0];
     }
 
-    static Annotation parameterObject(String method) {
-        return method(method).getParameters()[0].getDeclaredAnnotations()[0];
-    }
-
     static Annotation field(String name) {
         try {
             return AnnotationsEnumInitialization.class.getDeclaredField(name).getDeclaredAnnotations()[0];
@@ -356,8 +352,9 @@ public class AnnotationsEnumInitialization {
         RecordComponent rcComponent = component(RCRecord.class);
         tooEarly("annotations of a shared record component", () -> RC.X.name(), () -> RC.X,
                  () -> rcComponent.getDeclaredAnnotations()[0], () -> rcComponent.getAnnotation(OnRC.class));
-        tooEarly("annotations of a Parameter", () -> RQ.X.name(), () -> RQ.X,
-                 () -> parameterObject("rq"), () -> parameter("rq"));
+        Parameter rqParameter = method("rq").getParameters()[0];
+        tooEarly("annotations of a shared Parameter", () -> RQ.X.name(), () -> RQ.X,
+                 () -> rqParameter.getAnnotation(OnRQ.class), () -> parameter("rq"));
         tooEarly("annotations of a class", () -> RK.X.name(), () -> RK.X,
                  () -> RKClass.class.getDeclaredAnnotations()[0], () -> RKClass.class.getAnnotation(OnRK.class));
         tooEarly("an annotation in the default of a member", () -> RT.X.name(), () -> RT.X,

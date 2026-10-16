@@ -118,7 +118,6 @@ public abstract sealed class Executable extends AccessibleObject
      */
     abstract void specificToStringHeader(StringBuilder sb);
 
-    // Not a stream: the display string of a method is built on common error paths
     private static String joinTypeNames(Type[] types, String delimiter,
                                         String prefix, String suffix) {
         StringJoiner sj = new StringJoiner(delimiter, prefix, suffix);
@@ -708,15 +707,11 @@ public abstract sealed class Executable extends AccessibleObject
     }
 
     /*
-     * The annotations of the root are parsed with no lock held: parsing an enum
-     * value initializes the enum class, and its initializer may read the same
-     * annotations, on another thread, which a lock held here would block, or on
-     * this thread.  The parsed annotations are then published with a CAS, or the
-     * annotations that another thread published first are used, so that callers
-     * share one set of annotation instances.  Annotations with a constant of an
-     * enum class that this thread is initializing, which could not be found before
-     * the constants exist, are not published, and are parsed again next time.
-     * A copy caches the annotations of its root once the root has published them.
+     * Parse outside locks: an enum initializer may read the same annotations
+     * on this or another thread. CAS publication makes racing readers share the
+     * winning annotation instances. Leave annotations with constants unresolved
+     * during enum initialization uncached, so a later read parses them again.
+     * Copies cache only the annotations their root has published.
      */
     @SuppressWarnings("unchecked")
     private <T> T publish(long offset, T annotations) {

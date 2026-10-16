@@ -67,7 +67,6 @@ abstract class MethodHandleFieldAccessorImpl extends FieldAccessorImpl {
     protected final MethodHandle setter() {
         MethodHandle mh = setter;
         if (mh == null) {
-            // racing threads may each create a setter, which are interchangeable
             setter = mh = newSetter();
         }
         return mh;

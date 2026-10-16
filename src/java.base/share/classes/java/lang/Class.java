@@ -3262,7 +3262,6 @@ public final class Class<T> implements java.io.Serializable,
      * Helper method to get the method name from arguments.
      */
     private String methodToString(String name, Class<?>[] argTypes) {
-        // Not a stream: a failed lookup is a common, performance-relevant path
         StringBuilder sb = new StringBuilder(getName()).append('.').append(name);
         if (argTypes == null || argTypes.length == 0) {
             return sb.append("()").toString();
@@ -3662,9 +3661,8 @@ public final class Class<T> implements java.io.Serializable,
             }
             // null or stale annotationData -> optimistically create new instance
             AnnotationData newAnnotationData = createAnnotationData(classRedefinedCount);
-            // don't install it if it has a constant of an enum class that this thread
-            // is initializing, which could not be found before the constants exist:
-            // the next call parses the annotations again, and finds it
+            // Retry on the next read if this thread parsed an enum constant
+            // before the enum's initialization created it.
             if (AnnotationParser.hasUnresolvedEnumConstant(newAnnotationData.annotations.values())) {
                 return newAnnotationData;
             }
