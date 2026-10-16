@@ -33,20 +33,22 @@
  */
 package gc.z;
 
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestZAllocationSpikeTolerance {
     public static void main(String[] args) throws Exception {
-        testInvalidValue();
-        testValidValue();
+        testInvalidValue("-1");
+        testInvalidValue("2147483648");
+        testValidValue("0");
+        testValidValue("1");
+        testValidValue("2147483647");
     }
 
-    private static void testInvalidValue() throws Exception {
+    private static void testInvalidValue(String value) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UseZGC",
-            "-XX:ZAllocationSpikeTolerance=-1", // invalid range
+            "-XX:ZAllocationSpikeTolerance=" + value,
             "-version"
         );
 
@@ -64,10 +66,10 @@ public class TestZAllocationSpikeTolerance {
         output.shouldHaveExitValue(1);
     }
 
-    private static void testValidValue() throws Exception {
+    private static void testValidValue(String value) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UseZGC",
-            "-XX:ZAllocationSpikeTolerance=1", // valid range
+            "-XX:ZAllocationSpikeTolerance=" + value,
             "-version"
         );
 
