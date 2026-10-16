@@ -1,9 +1,10 @@
-Source e41d7823bf6de77c4bfba52e896bf325221488cb clean-image tier2 checkpoint.
+Local selected coverage is complete on e41d7823, with explicit retained failures and environment gaps. Release and fastdebug each finished 11 main groups. The assessment has 11,681 actual passing records and no pending selection, unknown failure, unreviewed skip, unexplained batch error or unmet setup case. This does not certify clean tier2, native ARM, performance or PR readiness.
 
-Local tier2 selections are complete with explicit limitations. The 47 completed groups report 11681 executed passing records, 28 explicit skipped records, and 23 failures and 558 harness error outcomes. Original statuses, commands, image fingerprints and failed JTRs remain intact. Finished JTRs and logs from active groups are snapshots only and do not certify those groups complete.
+- [Complete local report](LOCAL_FOLLOWUP.md)
+- [Unapplied diagnostic patch](identity-diagnostics.patch)
+- [Assessment summary](tier2-assessment-summary.json)
+- [Exact 558-case follow-up assessment](setup-followup-final-assessment.json)
+- [Isolated ReadXBytes resource finding](readxbytes-resource-assessment.json)
+- [Full source-aligned logs, JTRs, traces, source hashes and metadata](tier2.zip)
 
-The observed failure inventory is {"baseline-cross-collector-header-mismatch": 12, "environment-core-pattern-unavailable": 4, "baseline-reproduced-filestore-failure": 2, "harness-scratch-directory-setup-error": 558, "baseline-reproduced-native-gss-failure": 2, "environment-external-dns-unavailable": 2, "resource-suspected-exit137-with-isolated-pass": 1}. Named failures are checked against their exact messages and control-image evidence. Cleaners native GSS controls additionally retain child stderr; the original parent-only JTR limitation is explicit in its analysis. This does not certify tier2 clean or classify later failures automatically.
-
-New batches use Make's automatic/ignore-quiet/failure-retention options. Preexisting commands/results remain intact; locks and exact-command/source checks prevent duplicate groups. Current executions use the owned subreaper; PID1 was untouched. Historical baseline controls are retained separately with their original source identity and hashes, and never counted as current passes.
-
-Final performance, original native ARM ZGC reproduction, and current-source native ARM/Windows builds/tests remain pending. No approval, source-readiness or speedup conclusion is made.
+No PR/source/draft-state change, native JDK build, hosted run or stopped-stress route occurred in this follow-up. Native ARM archive correctness/performance and Windows AVX512 remain unqualified. Remaining performance stays held.

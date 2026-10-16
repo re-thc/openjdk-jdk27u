@@ -1,0 +1,50 @@
+{
+  "source": "e41d7823bf6de77c4bfba52e896bf325221488cb",
+  "created_utc": "2026-10-16T08:05:53.196865+00:00",
+  "status": "local-selections-complete-with-retained-failures-performance-held",
+  "local_selection_coverage_complete": true,
+  "local_timing_eligible": false,
+  "tier2_clean": false,
+  "main_orchestrators": {
+    "release": {
+      "status": "has-failures",
+      "groups": 11
+    },
+    "fastdebug": {
+      "status": "has-failures",
+      "groups": 11
+    }
+  },
+  "executed_passing_records": 11681,
+  "executed_distinct_kind_test_pairs": 11681,
+  "failure_classifications": {
+    "baseline-cross-collector-header-mismatch": 12,
+    "environment-core-pattern-unavailable": 4,
+    "baseline-reproduced-filestore-failure": 2,
+    "harness-scratch-directory-setup-error": 558,
+    "baseline-reproduced-native-gss-failure": 2,
+    "environment-external-dns-unavailable": 2,
+    "resource-suspected-exit137-with-isolated-pass": 1
+  },
+  "skip_classifications": {
+    "environment-unsupported-filesystem": 2,
+    "environment-external-dns-coverage-gap": 2,
+    "fulfilled-by-executed-case": 2,
+    "dependency-filled-provider-conditional-coverage-gap": 20,
+    "environment-hardcoded-expect-path-unavailable": 2
+  },
+  "pending": [],
+  "unknown_failures": [],
+  "unmet_setup_cases": [],
+  "unreviewed_skips": [],
+  "unresolved_batch_errors": [],
+  "qualification_hold": {
+    "source": "e41d7823bf6de77c4bfba52e896bf325221488cb",
+    "status": "local-selections-complete-remaining-performance-held",
+    "reason": "All requested local unmet cases are accounted for, including isolated ReadXBytes. Retain explicit baseline/environment gaps and the original failures. The current delegated scope ends with bounded tests; no remaining performance phase starts automatically.",
+    "security_constraint": "No security-stopped four-byte-header stress work may be rerouted or restarted.",
+    "native_constraint": "Prepare diagnostic-only workflow repair; do not dispatch, rerun, or duplicate builds without approval.",
+    "clearance": "Parent can continue the remaining performance phase after reviewing this completed local assessment. Reuse exact completed measurements; do not replay groups. Native build/hosted run and stopped-stress constraints remain unchanged.",
+    "ordinary_followup_authorization": "Parent requested collection, diagnosis, demonstrated harness readiness repair and only unmet bounded ordinary tests. No native build or hosted run is approved."
+  }
+}
