@@ -608,7 +608,8 @@ public final class String
             // Decode with a stable copy, to be the result if the decoded length is the same
             byte[] latin1 = Arrays.copyOfRange(bytes, offset, offset + length);
             int sp = dp;            // first dp bytes are already in the copy
-            if ((latin1[sp] & 0xfe) == 0xc2 && SimdUTF.isEligibleLatin1Decoding(length - sp)) {
+            if (SimdUTF.useLatin1Decoding() && (latin1[sp] & 0xfe) == 0xc2
+                    && SimdUTF.isEligibleLatin1Decoding(length - sp)) {
                 String compact = decodeUTF8Latin1(latin1, sp, length - sp, latin1, dp);
                 if (compact != null) {
                     return compact;
@@ -770,7 +771,8 @@ public final class String
             dst = new byte[length];
             System.arraycopy(bytes, offset, dst, 0, dp);
             offset += dp;
-            if ((bytes[offset] & 0xfe) == 0xc2 && SimdUTF.isEligibleLatin1Decoding(sl - offset)) {
+            if (SimdUTF.useLatin1Decoding() && (bytes[offset] & 0xfe) == 0xc2
+                    && SimdUTF.isEligibleLatin1Decoding(sl - offset)) {
                 String compact = decodeUTF8Latin1(bytes, offset, sl - offset, dst, dp);
                 if (compact != null) {
                     return compact;

@@ -86,6 +86,7 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_fmaD,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_ref_reference_get0,                               // implementation of java.lang.ref.Reference.get()
     jdk_internal_util_SimdUTF_process,
+    jdk_internal_util_SimdUTF_useLatin1Decoding,
     jdk_internal_util_SimdUTF_utf8PrefixThreshold,
     jdk_internal_util_SimdUTF_utf8StringSupplementaryThreshold,
     java_lang_StringCoding_countPositives,

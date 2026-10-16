@@ -418,6 +418,8 @@ class methodHandle;
   do_class(jdk_internal_util_SimdUTF, "jdk/internal/util/SimdUTF")                                                      \
   do_intrinsic(_simdutf_utf8StringSupplementaryThreshold, jdk_internal_util_SimdUTF, simdutf_utf8_string_threshold_name, void_int_signature, F_S) \
    do_name(simdutf_utf8_string_threshold_name, "utf8StringSupplementaryThreshold")                                                            \
+  do_intrinsic(_simdutf_useLatin1Decoding, jdk_internal_util_SimdUTF, simdutf_use_latin1_name, void_boolean_signature, F_S) \
+   do_name(simdutf_use_latin1_name, "useLatin1Decoding")                                                                 \
   do_intrinsic(_simdutf_utf8PrefixThreshold, jdk_internal_util_SimdUTF, simdutf_utf8prefix_name, void_int_signature, F_S)  \
    do_name(simdutf_utf8prefix_name, "utf8DecoderPrefixThreshold")                                                           \
   do_intrinsic(_simdutf_process, jdk_internal_util_SimdUTF, simdutf_process_name, simdutf_process_signature, F_SN)      \

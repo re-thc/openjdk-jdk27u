@@ -110,6 +110,7 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 
 bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   switch (id) {
+  case vmIntrinsics::_simdutf_useLatin1Decoding:
   case vmIntrinsics::_simdutf_utf8PrefixThreshold:
 #if defined(AMD64) || defined(AARCH64)
     return true;

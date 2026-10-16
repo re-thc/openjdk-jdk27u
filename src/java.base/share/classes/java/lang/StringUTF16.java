@@ -204,7 +204,11 @@ final class StringUTF16 {
         return codePointCount(value, beginIndex, endIndex, false /* unchecked */);
     }
 
+    @ForceInline
     static char[] toChars(byte[] value) {
+        if (value.length == 2) {
+            return new char[] { getChar(value, 0) };
+        }
         char[] dst = new char[value.length >> 1];
         getChars(value, 0, dst.length, dst, 0);
         return dst;

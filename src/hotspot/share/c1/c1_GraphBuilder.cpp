@@ -3640,6 +3640,18 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
 
   Values* args = state()->pop_arguments(callee->arg_size());
 
+  if (id == vmIntrinsics::_simdutf_useLatin1Decoding) {
+    bool use = UseSIMDUTFIntrinsics;
+#ifdef AARCH64
+    // Keep the faster scalar loop unless the threshold was explicitly selected.
+    use = use && !FLAG_IS_DEFAULT(SIMDUTFMinLength);
+#endif
+    if (!ignore_return) {
+      ipush(append(new Constant(new IntConstant(use ? 1 : 0))));
+    }
+    return;
+  }
+
   if (id == vmIntrinsics::_simdutf_utf8PrefixThreshold) {
     int threshold = FLAG_IS_DEFAULT(SIMDUTFMinLength) ? checked_cast<int>(SIMDUTFMinLength) : 0;
     if (!ignore_return) {

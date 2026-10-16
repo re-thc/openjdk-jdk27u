@@ -207,6 +207,7 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_math_fmaD )
   method_entry(java_lang_ref_reference_get0)
   method_entry(java_lang_StringCoding_countPositives)
+  method_entry(jdk_internal_util_SimdUTF_useLatin1Decoding)
   method_entry(jdk_internal_util_SimdUTF_utf8PrefixThreshold)
   method_entry(jdk_internal_util_SimdUTF_utf8StringSupplementaryThreshold)
   AbstractInterpreter::initialize_method_handle_entries();
@@ -478,6 +479,9 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
     // Preserve normal profiling so compiled VMs can use the existing C1 and C2 paths.
     entry_point = UseCompiler ? Interpreter::entry_for_kind(Interpreter::zerolocals)
                               : generate_count_positives_entry();
+    break;
+  case Interpreter::jdk_internal_util_SimdUTF_useLatin1Decoding:
+    entry_point = generate_simdutf_int_entry(UseSIMDUTFIntrinsics ? 1 : 0);
     break;
   case Interpreter::jdk_internal_util_SimdUTF_utf8PrefixThreshold:
     entry_point = generate_simdutf_int_entry(-1);

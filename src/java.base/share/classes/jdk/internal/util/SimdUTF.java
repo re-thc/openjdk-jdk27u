@@ -97,6 +97,14 @@ public final class SimdUTF {
         return -1;
     }
 
+    // C1 can discard an unprofitable native path before reading its first byte.
+    // Other tiers retain the normal dispatch and their existing operation gates.
+    @ForceInline
+    @IntrinsicCandidate
+    public static boolean useLatin1Decoding() {
+        return true;
+    }
+
     // C2 supplies the supplementary String crossover; zero keeps normal dispatch.
     @ForceInline
     @IntrinsicCandidate
