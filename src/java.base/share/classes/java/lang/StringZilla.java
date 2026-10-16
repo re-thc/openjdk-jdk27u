@@ -88,6 +88,29 @@ final class StringZilla {
         return true;
     }
 
+    // The caller has checked the last character. Verify the remaining suffix
+    // in reverse order before widening the bounded prefix.
+    @DontInline
+    static boolean matchesLongUTF16Latin1(byte[] src, int offset, byte[] tgt, int count) {
+        Objects.checkFromIndexSize(offset, count, src.length >> 1);
+        for (int i = count - 2; i >= MAX_MIXED_NEEDLE; i--) {
+            if (StringUTF16.getChar(src, offset + i) != (tgt[i] & 0xff)) {
+                return false;
+            }
+        }
+        int result = rfindUTF16Latin1(src, offset << 1, MAX_MIXED_NEEDLE << 1,
+                tgt, MAX_MIXED_NEEDLE);
+        if (result != FALLBACK) {
+            return result == 0;
+        }
+        for (int i = MAX_MIXED_NEEDLE - 1; i >= 0; i--) {
+            if (StringUTF16.getChar(src, offset + i) != (tgt[i] & 0xff)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // Skip impossible positions before Java verifies a long mixed needle.
     static int lastMixedCandidate(byte[] src, byte[] tgt, int count, int fromIndex) {
         int last = count - 1;
