@@ -133,8 +133,9 @@ static void cht_get_batch_grow_hint(Thread* thr) {
 // One thread grows and shrinks the table, and inserts and removes values,
 // while the others look up values in batches: those that stay in the table
 // must always be found, those never inserted never, and the others found only
-// with their own value. A batch walks chains across bucket redirects and
-// table switches, and must not see freed nodes.
+// with their own value. Batches that run during a resize walk redirected
+// buckets and must not see freed nodes; the interleaving is up to the
+// scheduler, so this is likely but not certain on each run.
 static void cht_get_batch_while_resizing(Thread* thr) {
   const size_t log2_size = 2;
   const size_t log2_grow_to = 10;   // reached after 8 grows per round
@@ -158,7 +159,9 @@ static void cht_get_batch_while_resizing(Thread* thr) {
   volatile int readers_started = 0;
   auto worker = [&](Thread* current, int id) {
     if (id == 0) {
-      // Start once every reader is looking up, so that all resizing overlaps reads.
+      // Start once every reader has completed a batch. Readers keep looking up
+      // until the writer is done, but nothing makes a lookup coincide with any
+      // given resize.
       while (AtomicAccess::load_acquire(&readers_started) < readers) {
         os::naked_yield();
       }

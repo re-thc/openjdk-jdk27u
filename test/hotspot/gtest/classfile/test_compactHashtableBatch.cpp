@@ -161,7 +161,8 @@ TEST_VM(CompactHashtable, lookup_batch) {
   const int n = (int)(sizeof(queries) / sizeof(queries[0]));
   check_batch(table, builder, queries, n);
 
-  // More keys than are looked up side by side, in groups of uneven size.
+  // Batches of 0, 33, 66 and 99 keys, after the 17 above: more keys than are
+  // looked up side by side, and groups of uneven size.
   TestQuery many[100];
   for (int i = 0; i < 100; i++) {
     many[i] = queries[(i * 7) % n];
