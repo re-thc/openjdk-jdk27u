@@ -2224,6 +2224,16 @@ final class StringUTF16 {
 
         checkIndex(i, src);
 
+        if (StringZilla.compilerTier() == StringZilla.C2) {
+            while (i - min >= 32 && getChar(src, i) != strLastChar) {
+                int start = Math.max(min, i - 127);
+                if (indexOfChar0(src, strLastChar, start, i + 1) >= 0) {
+                    break;
+                }
+                i = start - 1;
+            }
+        }
+
     startSearchForLastChar:
         while (true) {
             while (i >= min && getChar(src, i) != strLastChar) {
