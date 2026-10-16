@@ -10,7 +10,54 @@ import tarfile
 import time
 
 from classifier_images import (TOOLS, FILES, configure_arguments, historical_binding,
-    pins, record, require, source_binding)
+    payload_manifest, pins, record, require, source_binding, verify_overlay)
+
+
+def cleanup_group(child, grace=1.0):
+    """Finish the whole group even if its leader has already exited/reaped."""
+    previous = signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    killed = False
+    try:
+        try:
+            os.killpg(child.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            return dict(pgid=child.pid, kill_required=False, live_members_after_cleanup=0)
+        deadline = time.monotonic() + grace
+        while time.monotonic() < deadline:
+            child.poll()  # Reap the leader, but never use it as the group-liveness test.
+            try:
+                os.killpg(child.pid, 0)
+            except ProcessLookupError:
+                break
+            time.sleep(0.02)
+        try:
+            os.killpg(child.pid, signal.SIGKILL)
+            killed = True
+        except ProcessLookupError:
+            pass
+        child.wait(timeout=10)
+        deadline = time.monotonic() + 1.0
+        while True:
+            live = []
+            for path in Path('/proc').iterdir():
+                if not path.name.isdecimal():
+                    continue
+                try:
+                    fields = (path / 'stat').read_text().rsplit(')', 1)[1].split()
+                except (FileNotFoundError, ProcessLookupError):
+                    continue
+                if int(fields[2]) == child.pid and fields[0] not in ('Z', 'X', 'x'):
+                    live.append(int(path.name))
+            if not live:
+                break
+            require(time.monotonic() < deadline, 'Live command group members after SIGKILL: ' + str(live))
+            time.sleep(0.02)
+        return dict(pgid=child.pid, kill_required=killed, live_members_after_cleanup=0)
+    finally:
+        try:
+            child.wait(timeout=10)
+        finally:
+            signal.signal(signal.SIGTERM, previous)
 
 
 def run_logged(argv, cwd, env, logfile, timeout):
@@ -20,17 +67,9 @@ def run_logged(argv, cwd, env, logfile, timeout):
                                  stderr=subprocess.STDOUT, start_new_session=True)
         try:
             require(child.wait(timeout=timeout) == 0, 'Command failed: ' + str(argv[0]))
-        except BaseException:
-            try:
-                os.killpg(child.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-            try:
-                child.wait(timeout=10)
-            except subprocess.TimeoutExpired:
-                os.killpg(child.pid, signal.SIGKILL)
-                child.wait()
-            raise
+        finally:
+            cleanup = cleanup_group(child)
+            stream.write('CLASSIFIER_PROCESS_GROUP_CLEANUP=' + json.dumps(cleanup) + '\n')
 
 
 def toolchain():
@@ -104,6 +143,8 @@ def main():
         run_logged([str(image / 'bin/java'), '-version'], source, env, logs / 'java-version.txt',
                    min(60, max(1, deadline - time.monotonic())))
         actual = {name: record(image / name) for name in FILES}
+        payload = payload_manifest(image)
+        verify_overlay(result['historical_control']['payload'], payload)
         for name in ['bin/java', 'lib/modules', 'release']:
             require(actual[name] == result['historical_control']['image'][name], 'Java template changed')
         require(actual['lib/server/libjvm.so'] != result['historical_control']['image']['lib/server/libjvm.so'],
@@ -111,7 +152,7 @@ def main():
         after = {name: record(path) for name, path in paths.items()}
         require(before == after, 'Toolchain changed during candidate build')
         require((logs / 'spec.gmk').is_file(), 'Configure spec not captured')
-        result.update(image=actual, tools_after=after,
+        result.update(image=actual, candidate_payload=payload, tools_after=after,
             evidence={path.relative_to(out).as_posix():record(path) for path in sorted(logs.iterdir())},
             status='completed')
         save()

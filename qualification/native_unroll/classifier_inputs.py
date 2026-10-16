@@ -6,7 +6,7 @@ from pathlib import Path
 import tarfile
 import zipfile
 
-from classifier_images import pins, record, require
+from classifier_images import frozen_binding, pins, record, require
 
 
 def main():
@@ -20,6 +20,8 @@ def main():
     extract.add_argument('destination', type=Path)
     jtreg = sub.add_parser('jtreg')
     jtreg.add_argument('directory', type=Path)
+    frozen = sub.add_parser('frozen')
+    frozen.add_argument('directory', type=Path)
     a = p.parse_args()
     pin = pins()
     if a.operation == 'metadata':
@@ -36,6 +38,8 @@ def main():
         a.destination.mkdir(parents=True)
         with tarfile.open(a.archive) as archive:
             archive.extractall(a.destination, filter='data')
+    elif a.operation == 'frozen':
+        frozen_binding(a.directory, pin)
     else:
         expected = pin['jtreg_consumer_jars']
         actual = {path.relative_to(a.directory).as_posix():record(path)

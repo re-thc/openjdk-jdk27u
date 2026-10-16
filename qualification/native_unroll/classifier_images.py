@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import stat
 import subprocess
 
 FILES = ('bin/java', 'lib/server/libjvm.so', 'lib/modules', 'release')
@@ -36,6 +37,83 @@ def git(root, *args):
     return subprocess.check_output(['git', '-C', str(root), *args], text=True).strip()
 
 
+def payload_manifest(root):
+    """Hash every entry without following symlinks; include directories and modes."""
+    root = Path(root)
+    manifest = {}
+    def visit(path):
+        info = path.lstat()
+        entry = dict(mode=stat.S_IMODE(info.st_mode))
+        if stat.S_ISLNK(info.st_mode):
+            entry.update(type='symlink', target=os.readlink(path))
+        elif stat.S_ISREG(info.st_mode):
+            entry.update(type='file', **record(path))
+        elif stat.S_ISDIR(info.st_mode):
+            entry.update(type='directory')
+        else:
+            raise RuntimeError('Unsupported payload entry: ' + str(path))
+        manifest[path.relative_to(root).as_posix()] = entry
+        if entry['type'] == 'directory':
+            for child in sorted(path.iterdir()):
+                visit(child)
+    require(root.is_dir() and not root.is_symlink(), 'Payload root must be a real directory')
+    visit(root)
+    return manifest
+
+
+def verify_overlay(template, candidate):
+    intended = 'lib/server/libjvm.so'
+    require(set(template) == set(candidate), 'Overlay entry set differs')
+    require(template[intended]['type'] == candidate[intended]['type'] == 'file' and
+            template[intended]['mode'] == candidate[intended]['mode'], 'Overlay libjvm type/mode differs')
+    require({k:v for k,v in template.items() if k != intended} ==
+            {k:v for k,v in candidate.items() if k != intended}, 'Unexpected overlay payload delta')
+    require(template[intended] != candidate[intended], 'Candidate still contains the historical control VM')
+
+
+def frozen_binding(root, pin):
+    actual = {name:payload_manifest(Path(root) / name) for name in pin['frozen_payloads']}
+    # Retained native records pin class bytes, not original archive permissions.
+    # Record all consumer modes, but do not invent historical mode fingerprints.
+    content = {name:{path:{k:v for k,v in entry.items() if k != 'mode'}
+                    for path,entry in payload.items()} for name,payload in actual.items()}
+    require(content == pin['frozen_payloads'], 'Frozen WhiteBox/classes payload differs')
+    return actual
+
+
+def executed_binding(root):
+    """Bind checked-out workflow/qualification bytes to this exact Git HEAD."""
+    paths = ('.github/workflows', 'qualification')
+    require(not git(root, 'status', '--porcelain', '--untracked-files=all', '--', *paths),
+            'Uncommitted executed workflow/harness input')
+    require(not git(root, 'ls-files', '--others', '--', *paths),
+            'Untracked or ignored executed workflow/harness input')
+    rows = subprocess.check_output(['git', '-C', str(root), 'ls-tree', '-rz', 'HEAD', '--', *paths])
+    manifest = {}
+    for row in rows.split(b'\0'):
+        if not row:
+            continue
+        metadata, name = row.split(b'\t', 1)
+        mode, kind, oid = metadata.decode().split()
+        name = name.decode(); path = Path(root) / name
+        require(kind == 'blob', 'Unexpected executed input kind')
+        info = path.lstat()
+        if mode == '120000':
+            require(stat.S_ISLNK(info.st_mode), 'Executed input symlink changed: ' + name)
+            data = os.readlink(path).encode()
+        else:
+            require(mode in ('100644', '100755') and stat.S_ISREG(info.st_mode) and
+                    bool(info.st_mode & stat.S_IXUSR) == (mode == '100755'),
+                    'Executed input type/mode changed: ' + name)
+            data = path.read_bytes()
+        digest = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+        require(digest == oid, 'Executed input bytes differ from HEAD: ' + name)
+        manifest[name] = dict(git_mode=mode, worktree_mode=stat.S_IMODE(info.st_mode),
+            blob=oid, bytes=len(data), sha256=hashlib.sha256(data).hexdigest())
+    return dict(trees={name:git(root, 'rev-parse', 'HEAD:' + name) for name in paths},
+                manifest=manifest)
+
+
 def source_binding(root, pin):
     head = git(root, 'rev-parse', 'HEAD')
     require(not os.environ.get('GITHUB_SHA') or os.environ['GITHUB_SHA'] == head,
@@ -54,7 +132,7 @@ def source_binding(root, pin):
     require(hashlib.sha256(patch).hexdigest() == pin['product_patch_sha256'], 'Product patch differs')
     require(record(Path(root) / 'bin/configure-dev') == pin['configure_profile'], 'Configure profile differs')
     return dict(workflow_head=head, product_head=pin['product_head'], trees=trees,
-                product_patch_sha256=pin['product_patch_sha256'])
+                product_patch_sha256=pin['product_patch_sha256'], executed_inputs=executed_binding(root))
 
 
 def verify_image(directory, expected):
@@ -83,7 +161,8 @@ def historical_binding(built, image, level, pin):
     return dict(level=level, head=pin['control_head'], src_tree=expected['control_src_tree'],
         build_head=expected['build_head'], run_id=expected['run_id'], artifact_id=expected['artifact_id'],
         plan_canonical_sha256=expected['plan_canonical_sha256'],
-        results_canonical_sha256=expected['results_canonical_sha256'], image=expected['image'])
+        results_canonical_sha256=expected['results_canonical_sha256'], image=expected['image'],
+        payload=payload_manifest(image))
 
 
 def configure_arguments(level, boot):
@@ -118,6 +197,9 @@ def verify_candidate(built, image, level, source, control, boot, pin):
         require(actual[name] == control['image'][name], 'Java template/module changed')
     require(actual['lib/server/libjvm.so'] != control['image']['lib/server/libjvm.so'],
             'Candidate still contains the historical control VM')
+    payload = payload_manifest(image)
+    require(payload == result['candidate_payload'], 'Candidate full payload manifest differs')
+    verify_overlay(control['payload'], payload)
     evidence = result['evidence']
     require(all(name in evidence for name in ('candidate/configure.log', 'candidate/build.log',
         'candidate/java-version.txt', 'candidate/spec.gmk')), 'Required build/link/smoke evidence missing')
@@ -126,4 +208,5 @@ def verify_candidate(built, image, level, source, control, boot, pin):
         require(path.resolve().is_relative_to(built.resolve()), 'Evidence path escapes build output')
         require(record(path) == expected, 'Build evidence bytes differ: ' + name)
     return dict(candidate_source=source, historical_control=control, level=level,
-        candidate_image=actual, same_toolchain_performance_pair=False, qualified=False)
+        candidate_image=actual, candidate_payload=payload,
+        same_toolchain_performance_pair=False, qualified=False)

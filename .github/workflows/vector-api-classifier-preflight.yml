@@ -26,10 +26,12 @@ jobs:
     steps:
     - name: Set capture deadline before the job timeout
       run: echo "CLASSIFIER_CAPTURE_DEADLINE=$(( $(date +%s) + 80 * 60 ))" >> "$GITHUB_ENV"
+      timeout-minutes: 1
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
         fetch-depth: 0
         persist-credentials: false
+      timeout-minutes: 5
     - name: Check pinned authorized input metadata before compute
       timeout-minutes: 5
       env:
@@ -67,6 +69,7 @@ jobs:
         merge-multiple: true
     - name: Verify retained jtreg consumer bytes before either native build
       run: python3 qualification/native_unroll/classifier_inputs.py jtreg jtreg
+      timeout-minutes: 2
     - name: Install native tools without retrying the job
       timeout-minutes: 18
       run: |-
@@ -98,11 +101,13 @@ jobs:
         printf '{"exit_status":%s,"job_retry":false}\n' "$status" > backend-build/producer-status.json
         exit "$status"
         CLASSIFIER_CAPTURE_BOUND
+      timeout-minutes: 81
     - name: Capture available input metadata after producer exit
       if: always()
       run: |-
         mkdir -p backend-build
         if [[ -d input-metadata ]]; then cp -a input-metadata backend-build/input-metadata; fi
+      timeout-minutes: 2
     - name: Preserve completed or partial producer evidence before the90-minute cap
       if: always()
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -114,6 +119,7 @@ jobs:
           backend-build/candidate
           backend-build/input-metadata
         retention-days: 30
+      timeout-minutes: 5
   preflight:
     if: github.ref == 'refs/heads/codex/vector-api-classifier-preflight' && github.run_attempt == 1
     needs: candidate-build
@@ -122,10 +128,12 @@ jobs:
     steps:
     - name: Set capture deadline before the job timeout
       run: echo "CLASSIFIER_CAPTURE_DEADLINE=$(( $(date +%s) + 100 * 60 ))" >> "$GITHUB_ENV"
+      timeout-minutes: 1
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
         fetch-depth: 0
         persist-credentials: false
+      timeout-minutes: 5
     - name: Check pinned authorized input metadata before compute
       timeout-minutes: 5
       env:
@@ -186,6 +194,7 @@ jobs:
         test "$(uname -m)" = aarch64
         mkdir bindings
         python3 qualification/native_unroll/classifier_inputs.py jtreg jtreg
+        python3 qualification/native_unroll/classifier_inputs.py frozen saved/prior/frozen
         for level in release fastdebug; do
           python3 qualification/native_unroll/classifier_inputs.py extract "historical-$level/rebuilt-b3-jdk.tar.gz" "control-$level"
           python3 qualification/native_unroll/classifier_inputs.py extract "candidate-$level/classifier-jdk.tar.gz" "image-$level"
@@ -194,6 +203,7 @@ jobs:
           python3 qualification/native_unroll/verify_classifier_images.py --candidate-built "candidate-$level" --candidate "image-$level/classifier-jdk" --historical-built "historical-$level" --control "control-$level/rebuilt-b3-jdk" --boot-built historical-release --boot-jdk control-release/rebuilt-b3-jdk --level "$level" > "bindings/$level.log" 2>&1
         done
         CLASSIFIER_CAPTURE_BOUND
+      timeout-minutes: 101
     - name: Correctness and IR only; keep20minutes for capture
       run: |-
         remaining=$(( CLASSIFIER_CAPTURE_DEADLINE - $(date +%s) ))
@@ -208,9 +218,11 @@ jobs:
         printf '{"exit_status":%s,"job_retry":false}\n' "$status" > preflight/preflight-status.json
         exit "$status"
         CLASSIFIER_CAPTURE_BOUND
+      timeout-minutes: 101
     - name: Export readable success/failure evidence
       if: always()
       run: python3 qualification/native_unroll/export_roundtrip_evidence.py preflight
+      timeout-minutes: 3
     - name: Preserve preflight evidence before the120-minute cap
       if: always()
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -222,3 +234,4 @@ jobs:
           input-metadata
           qualification/native_unroll/classifier-provenance.json
         retention-days: 30
+      timeout-minutes: 5

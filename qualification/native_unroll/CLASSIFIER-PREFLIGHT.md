@@ -26,17 +26,31 @@ at 80/80/100 minutes. Long build, unpack and verification/test steps are bounded
 by the remaining soft deadline; partial logs and failure records are uploaded
 with always(), leaving capture margins before the job caps. The producer also
 records failed status and terminates its command process group on interruption
-or command failure. Setup/download steps have separate finite limits. There
-are no automatic build/test retries or runtime measurement cohorts.
+or command failure. Both checkouts have five-minute limits; clock setup has
+one minute, metadata checks five, downloads ten each, jtreg verification two,
+and native tool setup eighteen. After the soft deadline, metadata capture has
+two minutes, textual export three, and uploads five. Every step is bounded.
+There are no automatic build/test retries or runtime measurement cohorts.
 
 classifier-provenance.json pins the reviewed source/test/make/bin trees,
 configure profile, five-file product delta and exact product-patch hash. It
-separately pins the historical build plan/results as canonical JSON values,
+also binds every tracked workflow and qualification input to the executing
+Git HEAD: bytes, Git blob/type/executable mode and actual working-tree mode
+are recorded. Dirty, untracked and ignored inputs are rejected. The complete
+input binding must agree between producer and consumer; no fixed checkout
+umask is assumed. The provenance separately pins the historical build
+plan/results as canonical JSON values,
 their source heads and the four control image file hashes and lengths. The
 producer verifies these controls and its release boot image before building
 one candidate HotSpot overlay. It records source identity, tools before/after,
 commands, compiler environment, configure/spec/build/version evidence and
-image bytes. Only lib/server/libjvm.so changes in the template. The consumer
+image bytes. Complete template and candidate manifests cover every file,
+directory, symlink target and permission mode. Their entry sets and all
+contents/modes must agree except for lib/server/libjvm.so content; its type
+and mode must still agree. The consumer independently manifests its saved
+historical template and candidate and compares them with producer records.
+Thus the four historical file fingerprints remain provenance anchors rather
+than being presented as a complete image comparison. The consumer
 requires completed new-candidate provenance, exact current workflow/source
 binding and an independently verified historical control/boot binding. It
 rejects stale control VMs, altered evidence, incomplete builds, wrong levels,
@@ -59,6 +73,12 @@ fixtures. Metadata is checked through GitHub's authorized API, artifacts use
 the pinned download action, and needed consumer bytes are checked independently.
 Blocked local image/retention transfers are not retried or bypassed.
 
+Frozen WhiteBox and class directories have complete entry/type/content pins.
+All five class hashes match retained native input records. Historical records
+did not retain their permission modes, so those consumer modes are recorded
+without inventing archive-mode pins. The preflight verifies these payloads
+and the executed-input source binding before its first JVM invocation.
+
 The initial preflight has 70 top-level commands: four flag probes, four clean
 jtreg drivers, javac/javap, 48 finite compiler-task processes, eight separate
 matching probes, two actual isolated OSR-negative probes and two stress drivers.
@@ -74,7 +94,11 @@ inert tool/JDK files and intercepted native actions, packs the actual workflow
 upload selection, unpacks its candidate and calls the production consumer.
 It checks source/artifact/evidence corruption, incomplete outputs, control
 substitution, failure stops, trigger isolation, caps and a real bounded Python
-child timeout. It executes no compiler or JVM. Native build/link and full
+child timeout. Grandchild fixtures cover both successful and failing leaders
+whose descendants ignore SIGTERM. Cleanup polls group liveness independently
+of leader exit, escalates to SIGKILL and verifies that no live members remain;
+zombies awaiting the enclosing subreaper cannot execute. It executes no
+compiler or JVM. Native build/link and full
 consumer artifact verification still require the separately approved run.
 
 The earlier five non-inferiority misses, unexplained timing bands and caller/

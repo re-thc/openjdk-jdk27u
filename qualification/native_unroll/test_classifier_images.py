@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import stat
 import subprocess
 import sys
 import tarfile
@@ -27,6 +28,7 @@ def main():
     p.add_argument('--native-metadata', type=Path)
     p.add_argument('--jtreg', type=Path)
     p.add_argument('--artifact-metadata', type=Path)
+    p.add_argument('--frozen', type=Path)
     a = p.parse_args()
     root = a.out.resolve()
     root.mkdir(parents=True, exist_ok=False)
@@ -48,6 +50,37 @@ def main():
 
     source = binding.source_binding(repo, real_pin)
     passed('real reviewed source and explicit five-file product delta')
+    for name in ['qualification/native_unroll/run_roundtrip_preflight.py',
+                 'qualification/src/FixedVectorProbe.java',
+                 '.github/workflows/vector-api-classifier-preflight.yml']:
+        path=repo/name; saved=path.read_bytes()
+        try:
+            path.write_bytes(saved+b'\nfixture working-tree mutation\n')
+            rejected('rejects dirty executed input: '+name,
+                     lambda:binding.source_binding(repo,real_pin),'Uncommitted executed')
+        finally:
+            path.write_bytes(saved)
+    path=repo/'qualification/native_unroll/run_roundtrip_preflight.py'; saved_mode=stat.S_IMODE(path.stat().st_mode)
+    try:
+        path.chmod(saved_mode | 0o100)
+        rejected('rejects executed-input Git executable-bit change',
+                 lambda:binding.source_binding(repo,real_pin),'Uncommitted executed')
+    finally:
+        path.chmod(saved_mode)
+    try:
+        path.chmod(saved_mode ^ 0o040)
+        assert binding.source_binding(repo,real_pin)!=source
+        passed('complete source permission mode is part of producer/consumer binding')
+    finally:
+        path.chmod(saved_mode)
+    path=repo/'qualification/native_unroll/untracked-input-fixture.py'
+    assert not path.exists()
+    try:
+        path.write_text('# untracked fixture\n')
+        rejected('rejects untracked executed harness input',lambda:binding.source_binding(repo,real_pin),
+                 'Uncommitted executed')
+    finally:
+        path.unlink()
     for key, wrong in [('trees', {**real_pin['trees'], 'test':'0' * 40}),
             ('product_delta', []), ('product_patch_sha256', '0' * 64),
             ('configure_profile', dict(bytes=0, sha256='0' * 64))]:
@@ -84,6 +117,16 @@ def main():
         bad = root / 'bad-jtreg/lib'; bad.mkdir(parents=True); (bad/'jtreg.jar').write_text('wrong bytes')
         with mock.patch.object(sys, 'argv', ['classifier_inputs.py','jtreg',str(bad.parent)]):
             rejected('rejects corrupted or incomplete jtreg JAR payload',inputs.main,'JAR bytes')
+    if a.frozen:
+        binding.frozen_binding(a.frozen,real_pin)
+        passed('actual preserved frozen WhiteBox and classes full manifests')
+        frozen=root/'frozen-mutation';shutil.copytree(a.frozen,frozen)
+        for name in ['qualification/whitebox/jdk/test/whitebox/WhiteBox.class',
+                     'qualification/classes/PhaseVectorKernels.class']:
+            path=frozen/name;saved=path.read_bytes();path.write_bytes(saved+b'wrong class bytes')
+            rejected('rejects frozen harness class mutation: '+name,
+                     lambda:binding.frozen_binding(frozen,real_pin),'Frozen WhiteBox/classes')
+            path.write_bytes(saved)
 
     pin = copy.deepcopy(real_pin)
     controls, histories = {}, {}
@@ -93,6 +136,10 @@ def main():
         for name in binding.FILES:
             path = image / name; path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text('INERT NOT-A-JDK ' + level + ' ' + name + '\n')
+        for name in ['lib/libjava.so','conf/review.properties']:
+            path=image/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text('INERT '+name)
+        (image/'lib/review-link').symlink_to('../conf/review.properties')
+        (image/'bin/java').chmod(0o755)
         expected = pin['historical'][level]
         expected['image'] = {name:binding.record(image / name) for name in binding.FILES}
         plan = dict(level=level, execution='completed', toolchain_unchanged_after_each_build=True,
@@ -147,12 +194,29 @@ def main():
     for job in workflow['jobs'].values():
         assert 'github.run_attempt == 1' in job['if']
         for step in job['steps']:
+            assert 0 < step['timeout-minutes'] < job['timeout-minutes']
             if 'run' in step:
                 subprocess.run(['bash', '-n', '-c', step['run']], check=True)
                 assert '--retry' not in step['run']
         assert any(step.get('if') == 'always()' and step.get('uses', '').startswith('actions/upload-artifact@')
                    for step in job['steps'])
     assert '80 * 60' in build_job['steps'][0]['run'] and '100 * 60' in preflight['steps'][0]['run']
+    assert all(step['timeout-minutes']==5 for job in workflow['jobs'].values() for step in job['steps']
+               if step.get('uses','').startswith('actions/checkout@'))
+    assert all(step['timeout-minutes']==5 for job in workflow['jobs'].values() for step in job['steps']
+               if step.get('uses','').startswith('actions/upload-artifact@'))
+    passed('all checkout/setup/capture/export/upload steps have finite budget caps')
+    for job,soft in [(build_job,80),(preflight,100)]:
+        capture=sum(step['timeout-minutes'] for step in job['steps'] if step.get('if')=='always()')
+        # One minute for initial clock setup and thirty seconds for TERM/KILL.
+        assert 1+soft+.5+capture <= job['timeout-minutes']
+        for step in job['steps']:
+            if step.get('name') in ['Build one new candidate overlay only',
+                    'Verify independent candidate/control provenance and consumer bytes',
+                    'Correctness and IR only; keep20minutes for capture']:
+                assert 'CLASSIFIER_CAPTURE_DEADLINE - $(date +%s)' in step['run']
+                assert 'timeout --signal=TERM --kill-after=30s' in step['run']
+    passed('absolute work deadlines plus all always-capture caps fit90/90/120 budgets')
     for old in ['vector-api-roundtrip-reduction.yml', 'vector-api-roundtrip-resume.yml',
                 'vector-api-native-unroll.yml', 'vector-api-qualification.yml']:
         old_flow = yaml.safe_load((repo / '.github/workflows' / old).read_text())
@@ -241,6 +305,30 @@ def main():
                  lambda: binding.historical_binding(histories[level],controls[level],level,pin),'Image bytes')
         lib.write_bytes(saved)
         assert verify()['same_toolchain_performance_pair'] is False
+        for name in ['lib/libjava.so','conf/review.properties']:
+            path=image/name;saved=path.read_bytes();path.write_bytes(saved+b'corrupt')
+            rejected(level+': rejects full payload mutation '+name,verify,'full payload manifest')
+            path.write_bytes(saved)
+        path=image/'lib/review-link';saved=os.readlink(path);path.unlink();path.symlink_to('other-target')
+        rejected(level+': rejects symlink target mutation',verify,'full payload manifest')
+        path.unlink();path.symlink_to(saved)
+        path=image/'conf/review.properties';saved_mode=stat.S_IMODE(path.stat().st_mode);path.chmod(saved_mode ^ 0o040)
+        rejected(level+': rejects payload mode mutation',verify,'full payload manifest');path.chmod(saved_mode)
+        path=image/'unexpected-file';path.write_text('extra')
+        rejected(level+': rejects extra payload entry',verify,'full payload manifest');path.unlink()
+        path=controls[level]/'lib/libjava.so';saved=path.read_bytes();path.write_bytes(saved+b'corrupt')
+        rejected(level+': independently detects changed complete historical template',
+            lambda:binding.verify_candidate(consumer,image,level,source,
+                binding.historical_binding(histories[level],controls[level],level,pin),boot,pin),
+            'control/template/boot binding')
+        path.write_bytes(saved)
+        # Even consistently rewriting the candidate's own manifest cannot admit
+        # an extra template delta: the independent control comparison rejects it.
+        path=image/'lib/libjava.so';saved=path.read_bytes();path.write_bytes(saved+b'corrupt')
+        altered=copy.deepcopy(original);altered['candidate_payload']=binding.payload_manifest(image)
+        document.write_text(json.dumps(altered))
+        rejected(level+': overlay rejects a self-consistent extra libjava delta',verify,'overlay payload delta')
+        path.write_bytes(saved);document.write_text(json.dumps(original))
 
     active.update(level='release', failure=True)
     fail = root / 'failed-producer'
@@ -265,6 +353,33 @@ def main():
     else:
         raise AssertionError('Deadline did not fire')
     assert 'fixture' in (root / 'timeout.log').read_text()
+    leader = root/'grandchild-leader.py'
+    leader.write_text('''import os,subprocess,sys,time
+from pathlib import Path
+code="import os,signal,sys,time; from pathlib import Path; signal.signal(signal.SIGTERM,signal.SIG_IGN); Path(sys.argv[1]).write_text(str(os.getpid())); time.sleep(30)"
+subprocess.Popen([sys.executable,'-c',code,sys.argv[1]])
+deadline=time.monotonic()+5
+while not Path(sys.argv[1]).exists():
+ if time.monotonic()>deadline: raise RuntimeError('grandchild not ready')
+ time.sleep(.01)
+sys.exit(int(sys.argv[2]))
+''')
+    for exit_code in [0,7]:
+        pidfile=root/('grandchild-'+str(exit_code)+'.pid');log=root/('grandchild-'+str(exit_code)+'.log')
+        operation=lambda:producer.run_logged([sys.executable,str(leader),str(pidfile),str(exit_code)],
+            root,dict(os.environ),log,10)
+        if exit_code:
+            rejected('nonzero exited leader still cleans SIGTERM-ignoring grandchild',operation,'Command failed')
+        else:
+            operation();passed('successful exited leader still cleans SIGTERM-ignoring grandchild')
+        proc=Path('/proc')/pidfile.read_text()/'stat'
+        try:
+            state=proc.read_text().rsplit(')',1)[1].split()[0]
+        except FileNotFoundError:
+            state=None
+        assert state in (None,'Z','X','x')
+        assert '"kill_required": true' in log.read_text()
+        assert '"live_members_after_cleanup": 0' in log.read_text()
     result = dict(passed=True, cases=cases, count=len(cases), native_CPP_builds=0, native_JVMs=0,
         compiler_or_JVM_processes_executed=0, producer_native_actions='Intercepted; inert files only',
         actual_retained_metadata_pins_checked=bool(a.native_metadata),

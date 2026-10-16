@@ -34,6 +34,11 @@ def main():
     wb = (a.frozen / 'qualification/whitebox').resolve()
     classes = out / 'classes'
     classes.mkdir()
+    if a.execute and a.historical_control:
+        from classifier_images import frozen_binding, pins, source_binding
+        pin = pins()
+        binding = dict(source=source_binding(root, pin), frozen=frozen_binding(a.frozen, pin))
+        (out / 'classifier-input-binding.json').write_text(json.dumps(binding, indent=2) + '\n')
     records = []
 
     def run(name, argv, timeout=1200):
