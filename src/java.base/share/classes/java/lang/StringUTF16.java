@@ -2152,6 +2152,7 @@ final class StringUTF16 {
     }
 
     // srcCoder == UTF16 && tgtCoder == LATIN1
+    @ForceInline
     static int lastIndexOfLatin1(byte[] src, int srcCount,
                                         byte[] tgt, int tgtCount, int fromIndex) {
         int searchLength = fromIndex + tgtCount;
@@ -2172,8 +2173,46 @@ final class StringUTF16 {
                 if (fromIndex < 0) {
                     return -1;
                 }
+            } else {
+                return lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex);
             }
         }
+        assert fromIndex >= 0;
+        assert tgtCount > 0;
+        assert tgtCount <= tgt.length;
+        int min = tgtCount - 1;
+        int i = min + fromIndex;
+        int strLastIndex = tgtCount - 1;
+
+        char strLastChar = (char)(tgt[strLastIndex] & 0xff);
+
+        checkIndex(i, src);
+
+    startSearchForLastChar:
+        while (true) {
+            while (i >= min && getChar(src, i) != strLastChar) {
+                i--;
+            }
+            if (i < min) {
+                return -1;
+            }
+            int j = i - 1;
+            int start = j - strLastIndex;
+            int k = strLastIndex - 1;
+            while (j > start) {
+                if (getChar(src, j--) != (tgt[k--] & 0xff)) {
+                    i--;
+                    continue startSearchForLastChar;
+                }
+            }
+            return start + 1;
+        }
+    }
+
+
+    // Keep the compiled loop's profile independent of interpreter-only filtering.
+    @DontInline
+    private static int lastIndexOfLatin1Java(byte[] src, byte[] tgt, int tgtCount, int fromIndex) {
         assert fromIndex >= 0;
         assert tgtCount > 0;
         assert tgtCount <= tgt.length;

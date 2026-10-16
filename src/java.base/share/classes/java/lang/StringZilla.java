@@ -90,8 +90,12 @@ final class StringZilla {
 
     // Skip impossible positions before Java verifies a long mixed needle.
     static int lastMixedCandidate(byte[] src, byte[] tgt, int count, int fromIndex) {
-        int result = rfindCharUTF16(src, (count - 1) << 1,
-                (fromIndex + 1) << 1, tgt[count - 1] & 0xff);
+        int last = count - 1;
+        int ch = tgt[last] & 0xff;
+        if (StringUTF16.getChar(src, fromIndex + last) == ch) {
+            return fromIndex;
+        }
+        int result = rfindCharUTF16(src, last << 1, (fromIndex + 1) << 1, ch);
         if (result == FALLBACK) {
             return fromIndex;
         }
