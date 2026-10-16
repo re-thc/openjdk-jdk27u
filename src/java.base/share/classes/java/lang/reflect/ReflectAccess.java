@@ -73,6 +73,10 @@ final class ReflectAccess implements JavaLangReflectAccess {
         return f.isTrustedFinal();
     }
 
+    public Object parseDefaultValue(Method m) {
+        return m.parseDefaultValue();
+    }
+
     public <T> T newInstance(Constructor<T> ctor, Object[] args, Class<?> caller)
         throws IllegalAccessException, InstantiationException, InvocationTargetException
     {

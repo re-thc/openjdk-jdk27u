@@ -94,6 +94,7 @@ public class AnnotationsEnumInitialization {
     enum RQ { X; RQ() { fromConstructor(); } }    // annotations of a Parameter
     enum RK { X; RK() { fromConstructor(); } }    // annotations of a class
     enum RT { X; RT() { fromConstructor(); } }    // an annotation in the default of a member
+    enum RE { X; RE() { fromConstructor(); } }    // the default of a member
 
     @Retention(RetentionPolicy.RUNTIME) @interface OnRP { RP value(); }
     @Retention(RetentionPolicy.RUNTIME) @interface OnRI { RI value(); }
@@ -105,6 +106,7 @@ public class AnnotationsEnumInitialization {
     @Retention(RetentionPolicy.RUNTIME) @interface OnRK { RK value(); }
     @Retention(RetentionPolicy.RUNTIME) @interface OnRT { RT value(); }
     @Retention(RetentionPolicy.RUNTIME) @interface WithDefault { OnRT inner() default @OnRT(RT.X); }
+    @Retention(RetentionPolicy.RUNTIME) @interface OnRE { RE value() default RE.X; }
 
     static void rp(@OnRP(RP.X) int p) { }
     static void ri(@OnRI(RI.X) int p) { }
@@ -115,6 +117,7 @@ public class AnnotationsEnumInitialization {
     static void rq(@OnRQ(RQ.X) int p) { }
     @OnRK(RK.X) static class RKClass { }
     @WithDefault static void rt() { }
+    @OnRE static void re() { }
 
     // A constant that doesn't exist in an initialized enum: the annotations are cached
     enum Gone { A }
@@ -359,6 +362,8 @@ public class AnnotationsEnumInitialization {
                  () -> RKClass.class.getDeclaredAnnotations()[0], () -> RKClass.class.getAnnotation(OnRK.class));
         tooEarly("an annotation in the default of a member", () -> RT.X.name(), () -> RT.X,
                  () -> declared("rt"), () -> method("rt").getAnnotation(WithDefault.class));
+        tooEarly("the default of a member", () -> RE.X.name(), () -> RE.X,
+                 () -> declared("re"), () -> method("re").getAnnotation(OnRE.class));
 
         permanentlyUnresolved();
     }

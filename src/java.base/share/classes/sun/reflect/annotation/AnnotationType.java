@@ -131,7 +131,16 @@ public class AnnotationType {
                 memberTypes.put(name, invocationHandlerReturnType(type));
                 members.put(name, method);
 
-                Object defaultValue = method.getDefaultValue();
+                // A constant of an enum class that this thread is initializing, which
+                // could not be found before the constants exist, is kept as a value that
+                // throws when it is read, and getInstance doesn't cache this instance.
+                // Other values that could not be resolved throw, as Method.getDefaultValue does.
+                Object defaultValue =
+                    SharedSecrets.getJavaLangReflectAccess().parseDefaultValue(method);
+                if (defaultValue instanceof ExceptionProxy
+                        && !AnnotationInvocationHandler.hasUnresolvedEnumConstant(defaultValue)) {
+                    defaultValue = method.getDefaultValue();
+                }
                 if (defaultValue != null) {
                     memberDefaults.put(name, defaultValue);
                 }
