@@ -10,19 +10,29 @@ Five integrated upstream donors retain their authorship and legal headers;
 source provenance and build/test instructions are in
 [the integration notes](memory-overhead.md). The observer is separate.
 
-Historical matched Linux x64 release results show49,152code-heap used bytes
-reusable one GC earlier,256fewer NMT requested bytes per ParkEvent, and zero
-retained fixture allocations after the tested NIO replacements versus2,224,128
+Historical matched Linux x64 release results show 49,152 code-heap used bytes
+reusable one GC earlier, 256 fewer NMT requested bytes per ParkEvent, and zero
+retained fixture allocations after the tested NIO replacements versus 2,224,128
 baseline bytes. These are bounded used-capacity/requested-allocation results,
 not RSS/PSS or uncommit claims. The metadata-array correction removes an exact
 source-level factor-of-eight over-allocation on LP64 for that allocation only;
-the C2scratch benefit has no local quantified result.
+the C2 scratch benefit has no local quantified result.
 
-The original core passed18selected jtreg IDs. Separate NIO validation completed
-a fresh default pair plus16cases, including four jtreg runs. This rebased combined
-branch and the added Array/ParkEvent/C2/carrier regressions have not been built
-or executed. Source review confirms current upstream ancestry, the full donor
-changes and no path overlap with the15currently open fork PRs, including PR44.
+The Linux x64 release integration builds and passes **13 focused jtreg IDs,
+zero failures/errors/skips**: four collector unloading cases, G1 concurrent-mark
+unloading, two C2 tests, three NIO tests and two sleep/join tests, plus G1 AOT
+record/create/replay with training-data verification. The source is
+`770f5cd0ef89bceae11a5f66c014815bfa3b4b73`; later changes are documentation only.
+The C2 regression requires regular level 4 compilation; the new carrier test
+executes both platform and virtual modes with exact content/checksum checks.
+
+Array and ParkEvent gtests remain blocked because GoogleTest/GoogleMock source
+is absent; they are not counted as passed or skipped. The AOT functional result
+does not establish the exact per-allocation NMT size assertion. Historical
+memory results remain tied to their original images. Source review confirms
+upstream ancestry and no path overlap with the 15 open fork PRs, including PR44.
+[Current validation](memory-overhead-validation.md) records image identities,
+commands and limits.
 
 Performance qualification remains open. Noisy unchanged-code controls establish
 no no-regression bound; some slower estimates and worse pause samples remain
