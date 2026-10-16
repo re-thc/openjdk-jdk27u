@@ -19,6 +19,7 @@ CONTROLLER = {
 }
 PROPOSAL = 'Cumulative unqualified6d zero-seed lowering plus narrow grouping; not isolated grouping attribution'
 SELECTED_STAGE = 'all'
+SOURCE_PAIR = False
 SPECS = [{'subject': 'candidate', 'reference': 'base87', 'condition': ['legacy', 'default', 'default', 'conversion'], 'stage': 'recovery'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['legacy', 'default', 'default', 'conversion'], 'stage': 'recovery'}, {'subject': 'candidate', 'reference': 'base87', 'condition': ['legacy', '0', 'default', 'conversion'], 'stage': 'recovery'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['legacy', '0', 'default', 'conversion'], 'stage': 'recovery'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['legacy', 'default', 'default', 'rawBits'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['legacy', 'default', 'default', 'directBits'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['legacy', 'default', 'default', 'arithmetic'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['legacy', '0', 'default', 'rawBits'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['legacy', '0', 'default', 'directBits'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['legacy', '0', 'default', 'arithmetic'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['four', 'default', 'default', 'conversion'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['four', 'default', 'default', 'rawBits'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['four', 'default', 'default', 'directBits'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['four', 'default', 'default', 'arithmetic'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['four', '0', 'default', 'conversion'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['four', '0', 'default', 'rawBits'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['four', '0', 'default', 'directBits'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['four', '0', 'default', 'arithmetic'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['eight', 'default', 'default', 'conversion'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['eight', 'default', 'default', 'rawBits'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['eight', 'default', 'default', 'directBits'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['eight', 'default', 'default', 'arithmetic'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['eight', '0', 'default', 'conversion'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['eight', '0', 'default', 'rawBits'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['eight', '0', 'default', 'directBits'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'rebuilt_b3', 'condition': ['eight', '0', 'default', 'arithmetic'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'base87', 'condition': ['four', 'default', 'default', 'conversion'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'base87', 'condition': ['four', '0', 'default', 'conversion'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'base87', 'condition': ['eight', 'default', 'default', 'conversion'], 'stage': 'retention'}, {'subject': 'candidate', 'reference': 'base87', 'condition': ['eight', '0', 'default', 'conversion'], 'stage': 'retention'}, {'subject': 'rebuilt_b3', 'reference': 'b3', 'condition': ['legacy', 'default', 'default', 'conversion'], 'stage': 'retention'}, {'subject': 'rebuilt_b3', 'reference': 'b3', 'condition': ['legacy', '0', 'default', 'conversion'], 'stage': 'retention'}]
 
 
@@ -44,7 +45,7 @@ def finish_timing_gate(out, paired, specs):
                    'passes_initial_gate': (ci[1] <= 1.02 and allocation <= 0.01 and
                        (ci[1] < 1.0 if reference == 'base87' and condition[0] in ['four', 'eight'] else True)) if primary else None,
                    'comparison_role': 'toolchain drift observation' if subject == 'rebuilt_b3'
-                       else 'same-toolchain cumulative patch contrast (zero-seed plus grouping)' if reference == 'rebuilt_b3' else 'archived-image contrast'}
+                       else 'same-toolchain cumulative patch contrast (zero-seed plus grouping)' if reference == 'rebuilt_b3' else 'fresh original-baseline source contrast' if SOURCE_PAIR else 'archived-image contrast'}
         summaries.append(summary)
         print('BACKEND_PAIR_SUMMARY_JSON=' + json.dumps(summary), flush=True)
     (out / 'summary.json').write_text(json.dumps(summaries, indent=2) + '\n')
@@ -73,9 +74,21 @@ def main():
     p.add_argument('--stage', choices=['recovery', 'retention', 'assembly'], required=True)
     p.add_argument('--mode', choices=['timing', 'assembly'], required=True)
     p.add_argument('--pairs', type=int, default=12)
+    p.add_argument('--source-input-manifest', type=pathlib.Path)
+    p.add_argument('--platform', choices=['linux','mac'], default='linux')
     p.add_argument('--execute', action='store_true')
     a = p.parse_args()
-    global SELECTED_STAGE
+    global SELECTED_STAGE, SPECS, SOURCE_PAIR, PROPOSAL
+    expected_kernels, expected_controllers = EXPECTED, CONTROLLER
+    if a.source_input_manifest:
+        from source_inputs import verify
+        binding = verify(a.source_input_manifest, a.frozen, a.controller, a.source)
+        require_source_scope = binding.get('scope','complete')
+        if require_source_scope != 'complete': p.error('Correctness-only inputs cannot enter timings')
+        SOURCE_PAIR = True
+        PROPOSAL = 'Source-built classifier ' + binding['source_head']
+        expected_kernels, expected_controllers = binding['kernel_classes'], binding['controller_classes']
+        SPECS = [x for x in SPECS if x['subject'] == 'candidate' and (a.platform!='mac' or x['condition'][1]=='0')]
     SELECTED_STAGE = 'all' if a.stage == 'assembly' else a.stage
     if (a.mode == 'assembly') != (a.stage == 'assembly'):
         p.error('Assembly stage and mode must agree')
@@ -88,7 +101,7 @@ def main():
     classes = (a.frozen / 'qualification/classes').resolve()
     wb = (a.frozen / 'qualification/whitebox').resolve()
     controller = a.controller.resolve()
-    for directory, expected in [(classes, EXPECTED), (controller, CONTROLLER)]:
+    for directory, expected in [(classes, expected_kernels), (controller, expected_controllers)]:
         for name, sha in expected.items():
             if record(directory / name)['sha256'] != sha:
                 p.error('Byte-identical input required: ' + name)
@@ -99,7 +112,10 @@ def main():
     product_files = ['src/hotspot/cpu/aarch64/aarch64.ad',
                      'src/hotspot/cpu/aarch64/aarch64_vector.ad',
                      'src/hotspot/cpu/aarch64/aarch64_vector_ad.m4']
-    cpu = min(os.sched_getaffinity(0))
+    if a.source_input_manifest:
+        product_files = binding['product_files']
+    if a.platform=='mac' and not a.source_input_manifest: p.error('Mac requires a separate source-built experiment')
+    cpu = min(os.sched_getaffinity(0)) if a.platform=='linux' else None
     plan = {
         'scope': 'Cumulative zero-seed plus grouping screen; no isolated grouping effect claim; no PR14 publication',
         'original_baseline': BASE, 'pr14': B3, 'proposal_head': PROPOSAL,
@@ -111,8 +127,9 @@ def main():
         'qualified_history': {'warmup_calls': 10000, 'calibration_calls': 1000,
                               'windows': 5, 'calls_per_window': 100000},
         'classes': [record(f) for f in sorted(classes.glob('*.class'))],
-        'controllers': [record(controller / f) for f in CONTROLLER],
-        'images': {k: {s: record(v / s) for s in ['bin/java', 'lib/server/libjvm.so', 'lib/modules', 'release']}
+        'controllers': [record(controller / f) for f in expected_controllers],
+        'source_input_manifest': record(a.source_input_manifest) if a.source_input_manifest else None,
+        'images': {k: {s: record(v / s) for s in ['bin/java', 'lib/server/libjvm.dylib' if a.platform=='mac' else 'lib/server/libjvm.so', 'lib/modules', 'release']}
                    for k, v in images.items()},
         'diagnostic_criteria_before_results': {
             'margin_label': '2% non-inferiority margin; not literal zero regression or a user-accepted tradeoff',
@@ -124,6 +141,7 @@ def main():
             'uncertainty_unit': 'adjacent JVM process pair; geometric ratio; 20000 pair bootstraps',
             'no_pooling_headers_ISAs_kernels': True,
             'diagnostic_unroll_controls_do_not_substitute_for_default': True},
+        'platform': a.platform, 'historical_linux_recovery_claim': False if a.platform=='mac' else None,
         'mode': a.mode, 'stage': a.stage, 'bootstrap_seed': 8392004, 'shuffle_seed': 8392077,
         'timings': 'No graph/assembly/compilation logs or WhiteBox observations; zero compilation_ms required',
         'assembly': 'Separate fresh observed processes; timing values excluded',
@@ -135,8 +153,9 @@ def main():
     print('BACKEND_PLAN_JSON=' + json.dumps(plan), flush=True)
     if not a.execute:
         return
-    if os.uname().machine != 'aarch64':
+    if os.uname().machine not in (('arm64','aarch64') if a.platform=='mac' else ('aarch64',)):
         p.error('Native AArch64 required')
+    if os.uname().sysname != ('Darwin' if a.platform=='mac' else 'Linux'): p.error('OS does not match experiment platform')
     if any(os.environ.get(name) for name in ['JAVA_TOOL_OPTIONS', 'JDK_JAVA_OPTIONS', '_JAVA_OPTIONS']):
         p.error('Unplanned inherited JVM options')
     if os.environ.get('GITHUB_SHA') and plan['candidate_commit'] != os.environ['GITHUB_SHA']:
@@ -145,7 +164,7 @@ def main():
     def launch(image, condition, name, diagnostic=False):
         header, sve, unroll, kernel = condition
         calls = 1000 if diagnostic else 100000
-        argv = ['taskset', '-c', str(cpu), str(images[image] / 'bin/java'), '-Xms256m', '-Xmx512m',
+        argv = ([] if a.platform=='mac' else ['taskset','-c',str(cpu)]) + [str(images[image] / 'bin/java'), '-Xms256m', '-Xmx512m',
                 '-XX:ActiveProcessorCount=2', '--add-modules=jdk.incubator.vector', '-DvectorBits=128',
                 '-DmeasureCalls=' + str(calls), '-Xbatch', '-XX:-TieredCompilation',
                 '-XX:CompileCommand=dontinline,FixedVectorProbe::invoke',
@@ -181,15 +200,15 @@ def main():
 
     if a.mode == 'assembly':
         observed = []
-        for header, sve in itertools.product(['legacy', 'four', 'eight'], ['default', '0']):
+        for header, sve in itertools.product(['legacy','four','eight'], ['0'] if a.platform=='mac' else ['default','0']):
             for image in ['base87', 'rebuilt_b3', 'candidate']:
                 observed.append(([header, sve, 'default', 'conversion'], image))
             for image in ['rebuilt_b3', 'candidate']:
                 observed.append(([header, sve, 'default', 'rawBits'], image))
-        for sve, image in itertools.product(['default', '0'], ['base87', 'rebuilt_b3', 'candidate']):
+        for sve, image in itertools.product(['0'] if a.platform=='mac' else ['default','0'], ['base87','rebuilt_b3','candidate']):
             observed.append((['legacy', sve, '1', 'conversion'], image))
         index = []
-        expected = 36
+        expected = 18 if a.platform=='mac' else 36
         status_path = out / 'assembly-run-status.json'
         status_path.write_text(json.dumps({'expected_methods': expected, 'completed_methods': 0, 'complete': False}) + '\n')
         for condition, image in observed:

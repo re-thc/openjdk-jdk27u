@@ -20,6 +20,15 @@ def pins():
     return json.loads(Path(__file__).with_name('jtreg83-provenance.json').read_text())
 
 
+
+def harness_version(image):
+    with zipfile.ZipFile(Path(image)/'lib/jtreg.jar') as archive:
+        lines=archive.read('META-INF/MANIFEST.MF').decode().splitlines()
+    versions=[line.split(': ',1)[1] for line in lines if line.startswith('jtreg-VersionString: ')]
+    require(len(versions)==1 and re.fullmatch(r'8\.3(?:\.0)?(?:-[A-Za-z0-9.]+)?\+[1-9][0-9]*',versions[0]),
+            'Compatible jtreg8.3 build1or later required')
+    return versions[0]
+
 def inventory(image):
     image = Path(image)
     require(image.is_dir() and not image.is_symlink(), 'Harness directory must be real')
@@ -28,9 +37,7 @@ def inventory(image):
             'Harness JAR symlink/escape')
     actual = {p.relative_to(image).as_posix(): record(p) for p in jars}
     require(set(actual) == set(pins()['installed']['consumer_jars']), 'Seven-JAR inventory differs')
-    with zipfile.ZipFile(image / 'lib/jtreg.jar') as z:
-        lines = z.read('META-INF/MANIFEST.MF').decode().splitlines()
-    require('jtreg-VersionString: ' + VERSION in lines, 'Harness version differs')
+    harness_version(image)
     return actual
 
 
@@ -57,19 +64,23 @@ def debug_assessment(image, spec):
         return dict(available=False, reason='Provide an existing matching-ISA fastdebug image and its build spec; source-build instructions are committed')
     image, spec = Path(image).resolve(), Path(spec).resolve()
     try:
-        required = ('bin/java','bin/javac','lib/modules','lib/server/libjvm.so','release')
+        vm='lib/server/libjvm.dylib' if platform.system()=='Darwin' else 'lib/server/libjvm.so'
+        required = ('bin/java','bin/javac','lib/modules',vm,'release')
         require(all((image / n).is_file() for n in required) and spec.is_file(), 'Incomplete debug image/spec')
         text = spec.read_text()
         require(re.search(r'^DEBUG_LEVEL\s*:=\s*fastdebug\s*$', text, re.M), 'Spec is not fastdebug')
         host = platform.machine()
-        cpu, machine = {'x86_64':('x86_64',62),'aarch64':('aarch64',183)}[host]
+        cpu, machine = {'x86_64':('x86_64',62),'aarch64':('aarch64',183),'arm64':('aarch64',183)}[host]
         require(re.search(r'^OPENJDK_TARGET_CPU\s*:=\s*' + cpu + r'\s*$', text, re.M), 'Spec ISA differs from host')
-        for name in ('bin/java','lib/server/libjvm.so'):
+        for name in ('bin/java',vm):
             with (image / name).open('rb') as f:
                 header=f.read(20)
-            require(header[:4] == b'\x7fELF' and header[5] == 1 and
-                    struct.unpack('<H',header[18:20])[0] == machine, 'Image ISA differs from host')
-        require(record(image / 'lib/server/libjvm.so') == record(spec.parent / 'jdk/lib/server/libjvm.so'),
+            if platform.system()=='Darwin':
+                require(header[:4]==b'\xcf\xfa\xed\xfe' and struct.unpack('<I',header[4:8])[0]==0x0100000c, 'Mach-O image is not native arm64')
+            else:
+                require(header[:4] == b'\x7fELF' and header[5] == 1 and
+                        struct.unpack('<H',header[18:20])[0] == machine, 'Image ISA differs from host')
+        require(record(image / vm) == record(spec.parent / ('jdk/'+vm)),
                 'Image VM differs from fastdebug build output')
         return dict(available=True, image=str(image), spec=str(spec), host_isa=host,
                     files={n:record(image/n) for n in required}, spec_record=record(spec),
@@ -162,6 +173,7 @@ def smoke(image, jdk, out, debug_jdk=None, debug_spec=None, execute=False):
     require(assessment['available'], 'Complete compatibility smoke unavailable: '+assessment.get('reason',''))
     require(not any(os.environ.get(k) for k in ('JAVA_TOOL_OPTIONS','JDK_JAVA_OPTIONS','_JAVA_OPTIONS')), 'Inherited JVM options not admitted')
     before=inventory(image)
+    selected_version=harness_version(image)
     out.mkdir(parents=True,exist_ok=False)
     (out/'suite').mkdir()
     for name,text in smoke_sources(repo,out/'suite').items():(out/'suite'/name).write_text(text)
@@ -169,10 +181,10 @@ def smoke(image, jdk, out, debug_jdk=None, debug_spec=None, execute=False):
         with (out/(str(i)+'.log')).open('w') as f:
             status=subprocess.run(cmd,stdout=f,stderr=subprocess.STDOUT,timeout=90 if i==0 else 300)
         require(status.returncode==0,'Compatibility command failed')
-    require(VERSION in (out/'0.log').read_text(),'Runtime harness version differs')
+    require(selected_version in (out/'0.log').read_text(),'Runtime harness version differs')
     plan['reports']=verify_smoke_reports(out/'work')
     require(inventory(image)==before,'Harness changed during compatibility smoke')
-    plan.update(passed=True,compatibility_status='complete-smoke-passed',consumer_jars=before)
+    plan.update(passed=True,selected_harness_version=selected_version,compatibility_status='complete-smoke-passed',consumer_jars=before)
     (out/'result.json').write_text(json.dumps(plan,indent=2)+'\n')
     return plan
 

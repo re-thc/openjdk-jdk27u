@@ -8,7 +8,6 @@ import subprocess
 import tempfile
 from unittest import mock
 import zipfile
-import yaml
 
 import jtreg83_harness as h
 from classifier_images import record,source_binding,pins
@@ -70,14 +69,14 @@ def main():
             f.write_bytes(header+b'INERT NOT A VM')
         vm=spec.parent/'jdk/lib/server/libjvm.so';vm.parent.mkdir(parents=True);vm.write_bytes((debug/'lib/server/libjvm.so').read_bytes())
         spec.write_text('DEBUG_LEVEL := fastdebug\nOPENJDK_TARGET_CPU := x86_64\n')
-        with mock.patch.object(h.platform,'machine',return_value='x86_64'):
+        with mock.patch.object(h.platform,'machine',return_value='x86_64'), mock.patch.object(h.platform,'system',return_value='Linux'):
             assert h.debug_assessment(debug,spec)['available']
             cases.append('inert complete fastdebug/spec correspondence accepted for static planning')
             with mock.patch.object(h.subprocess,'run',side_effect=AssertionError('Execution during plan')):
                 plan=h.smoke(image,t/'jdk',t/'out',debug,spec)
                 assert plan['compatibility_status']=='planned-not-executed' and len(plan['required_checks'])==4
                 cases.append('full WhiteBox/driver/IR smoke is planning only')
-        with mock.patch.object(h.platform,'machine',return_value='aarch64'):
+        with mock.patch.object(h.platform,'machine',return_value='aarch64'), mock.patch.object(h.platform,'system',return_value='Linux'):
             assert not h.debug_assessment(debug,spec)['available'];cases.append('wrong-host-ISA image rejected')
         sources=h.smoke_sources(root,t/'suite')
         assert 'ClassFileInstaller' in sources['WhiteBoxOthervmSmoke.java'] and '@run main/othervm' in sources['WhiteBoxOthervmSmoke.java']
@@ -98,28 +97,8 @@ def main():
             f.write_text(original+'\n'+marker);reject('skipped IR rejected: '+marker,lambda:h.verify_smoke_reports(work))
         f.write_text(original);(work/'WhiteBoxOthervmSmoke.jtr').unlink()
         reject('minimum-only/incomplete smoke rejected',lambda:h.verify_smoke_reports(work))
-    w=yaml.safe_load((root/'.github/workflows/vector-api-classifier-jtreg83.yml').read_text())
-    gate=w['jobs']['harness-admission'];build=w['jobs']['candidate-build'];pre=w['jobs']['preflight']
-    assert gate['if'] is False and build['needs']=='harness-admission'
-    assert pre['needs']==['harness-admission','candidate-build']
-    assert 'always()' not in build['if'] and 'always()' not in pre['if']
-    cases.append('disabled/failed/skipped harness admission prevents both candidate overlays and native preflight')
-    assert build['timeout-minutes']==90 and pre['timeout-minutes']==120 and build['strategy']['max-parallel']==1
-    assert w['permissions']=={'contents':'read','actions':'read'}
-    assert w['on']=={'push':{'branches':['codex/vector-api-classifier-jtreg83']}}
-    for name,job in w['jobs'].items():
-        if name!='harness-admission':assert 'github.run_attempt == 1' in job['if']
-        for s in job['steps']:
-            assert s['timeout-minutes']>0
-            if 'uses' in s:assert len(s['uses'].split('@')[1])==40
-            if 'run' in s:subprocess.run(['bash','-n'],input=s['run'],text=True,check=True)
-    text=json.dumps(w)
-    assert 'build-ci' not in text and '.jtreg83-source' not in text and '12015894519' not in text
-    assert 'run_classifier83_preflight.py' in text and 'admitted-jtreg' in text
-    assert 'CODE_TOOLS_URL_BASE' not in (root/'qualification/native_unroll/jtreg83_harness.py').read_text()
-    assert 'https://github.com/openjdk' not in (root/'qualification/native_unroll/jtreg83_harness.py').read_text()
-    cases.append('no executable endpoint substitution/harness build/old83 transfer added')
-    cases.append('native identity checks/correctness/IR/stress wrapper and first-attempt/capture bounds retained')
+    assert not (root/'.github/workflows/vector-api-classifier-jtreg83.yml').exists()
+    cases.append('artifact-bound native workflow retired; new source runner starts only explicitly')
     status=json.loads((root/'qualification/native_unroll/jtreg83-artifact-status.json').read_text())
     assert {x['id'] for x in status['artifacts']}=={11978661561,11981413932,11881672203}
     assert all(not x['expired'] for x in status['artifacts'])

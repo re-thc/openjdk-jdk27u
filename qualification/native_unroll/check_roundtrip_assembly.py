@@ -1,4 +1,5 @@
 """Fail closed on missing installed native idiom; separate diagnostic processes only."""
+import argparse
 import json
 import pathlib
 import re
@@ -66,9 +67,12 @@ def check_conversion_loop(bodies, name):
 
 
 def main():
-    root = pathlib.Path(sys.argv[1])
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('root',type=pathlib.Path)
+    parser.add_argument('--platform',choices=['linux','mac'],default='linux')
+    args=parser.parse_args();root=args.root
     index = json.loads((root / 'assembly-index.json').read_text())
-    if len(index) != 36:
+    if len(index) != (18 if args.platform=='mac' else 36):
         raise RuntimeError('Incomplete assembly cohort')
     evidence = []
     raw = {}
@@ -94,13 +98,13 @@ def main():
         evidence.append(dict(name=name, ordinary=method, decoded=code, selected_loop=body,
                               positive_required=bool(entry['image'] == 'candidate' and kernel == 'conversion' and applicable)))
     for header in ['legacy', 'four', 'eight']:
-        for sve in ['default', '0']:
+        for sve in (['0'] if args.platform=='mac' else ['default','0']):
             if raw[(header, sve, 'candidate')] != raw[(header, sve, 'rebuilt_b3')]:
                 raise RuntimeError('Raw control loop changed; review required before timing')
-    result = dict(passed=True, qualified=False, methods=evidence,
+    result = dict(passed=True, qualified=False, platform=args.platform, methods=evidence,
                   scope='Installed release code from separate observed JVMs; never substituted for code from timed JVMs. Clean native fastdebug positive matching is independently mandatory.')
     (root / 'installed-assembly-gate.json').write_text(json.dumps(result, indent=2) + '\n')
-    print('ROUNDTRIP_INSTALLED_ASSEMBLY_GATE_JSON=' + json.dumps(dict(passed=True, ordinary_methods=36)), flush=True)
+    print('ROUNDTRIP_INSTALLED_ASSEMBLY_GATE_JSON=' + json.dumps(dict(passed=True, ordinary_methods=len(index))), flush=True)
 
 
 if __name__ == '__main__':

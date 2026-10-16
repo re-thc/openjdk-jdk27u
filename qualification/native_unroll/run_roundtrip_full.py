@@ -10,25 +10,50 @@ import subprocess
 from run_release_causal import EXPECTED, HEADER, record, rows
 
 
+
+def suite_counts(work):
+    counts = {'Passed':0,'Not run':0,'Failed':0,'Error':0}
+    details = []
+    for path in sorted(pathlib.Path(work).rglob('*.jtr')):
+        match = re.search(r'test result:\s*([^\n]+)', path.read_text())
+        if not match:
+            raise RuntimeError('Suite report has no terminal status: ' + str(path))
+        status = match.group(1).split('.',1)[0]
+        if status not in counts:
+            raise RuntimeError('Unknown suite status: ' + status)
+        counts[status] += 1
+        details.append(dict(path=str(path),status=match.group(1)))
+    if counts['Passed'] == 0 or counts['Failed'] or counts['Error']:
+        raise RuntimeError('Suite did not execute successful tests exclusively: ' + str(counts))
+    return dict(counts=counts,reports=details)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     for name in ['release-jdk', 'debug-jdk', 'jtreg', 'frozen', 'out']:
         p.add_argument('--' + name, type=pathlib.Path, required=True)
+    p.add_argument('--source-input-manifest', type=pathlib.Path)
+    p.add_argument('--platform', choices=['linux','mac'], default='linux')
     p.add_argument('--execute', action='store_true')
     a = p.parse_args()
     out = a.out.resolve()
     if out.exists() and any(out.iterdir()):
         p.error('Output must be empty')
     out.mkdir(parents=True, exist_ok=True)
-    if a.execute and os.uname().machine != 'aarch64':
+    if a.execute and os.uname().machine not in (('arm64','aarch64') if a.platform=='mac' else ('aarch64',)):
         p.error('Native AArch64 required')
+    if a.execute and os.uname().sysname != ('Darwin' if a.platform=='mac' else 'Linux'): p.error('OS does not match experiment platform')
     if a.execute and any(os.environ.get(n) for n in ['JAVA_TOOL_OPTIONS', 'JDK_JAVA_OPTIONS', '_JAVA_OPTIONS']):
         p.error('Unplanned inherited JVM options')
     root = pathlib.Path('.').resolve()
     classes = (a.frozen / 'qualification/classes').resolve()
     wb = (a.frozen / 'qualification/whitebox').resolve()
+    expected_kernels = EXPECTED
+    if a.source_input_manifest:
+        from source_inputs import verify
+        expected_kernels = verify(a.source_input_manifest, a.frozen)['kernel_classes']
     if a.execute:
-        for name, sha in EXPECTED.items():
+        for name, sha in expected_kernels.items():
             if record(classes / name)['sha256'] != sha:
                 p.error('Frozen input mismatch')
     records = []
@@ -47,8 +72,9 @@ def main():
             raise RuntimeError('Full qualification failed: ' + name)
         return log
 
+    suite_evidence = {}
     for label, jdk in [('release', a.release_jdk), ('fastdebug', a.debug_jdk)]:
-        for sve in ['default', '0']:
+        for sve in (['0'] if a.platform=='mac' else ['default','0']):
             flags = [] if sve == 'default' else ['-XX:UseSVE=0']
             for suite, path in [('compiler', 'test/hotspot/jtreg/compiler/vectorapi'),
                                 ('jdk', 'test/jdk/jdk/incubator/vector')]:
@@ -59,6 +85,9 @@ def main():
                 if flags:
                     argv += ['-javaoptions:' + ' '.join(flags)]
                 run(name, argv + [root / path], timeout=9000)
+                if a.execute:
+                    suite_evidence[name] = suite_counts(out / (name + '-work'))
+                    (out / 'suite-counts.json').write_text(json.dumps(suite_evidence, indent=2) + '\n')
             for header, kernel, mode in itertools.product(HEADER,
                     ['conversion', 'rawBits', 'directBits', 'arithmetic'], ['int', 'c1', 'cold']):
                 name = label + '-sve' + sve + '-' + header + '-' + kernel + '-' + mode
@@ -84,7 +113,7 @@ def main():
         '-cp', str(classes) + os.pathsep + str(wb), '-d', gapclasses,
         root / 'qualification/src/ProfiledOsrDiagnostic.java', root / 'qualification/src/VectorInsertAllocationProbe.java'])
     for label, jdk in [('release', a.release_jdk), ('fastdebug', a.debug_jdk)]:
-        for sve in ['default', '0']:
+        for sve in (['0'] if a.platform=='mac' else ['default','0']):
             flags = [] if sve == 'default' else ['-XX:UseSVE=0']
             common = [jdk / 'bin/java', '--add-modules=jdk.incubator.vector', *flags,
                       '-XX:ActiveProcessorCount=2', '-Xms128m', '-Xmx512m',
@@ -107,8 +136,8 @@ def main():
                     '-cp', cp, 'ProfiledOsrDiagnostic'], timeout=300)
                 if a.execute and len(re.findall(r'OSR entry @ pc:.*PhaseVectorKernels::osrAccumulator', log.read_text())) != 8:
                     raise RuntimeError('Mixed-heap OSR trace missing')
-    (out / 'full-result.json').write_text(json.dumps(dict(passed=a.execute,
-        suites=8, phase_processes=144, gap_processes=14,
+    (out / 'full-result.json').write_text(json.dumps(dict(passed=a.execute,platform=a.platform,
+        suites=4 if a.platform=='mac' else 8, phase_processes=72 if a.platform=='mac' else 144, gap_processes=7 if a.platform=='mac' else 14,
         candidate_qualified=False,
         scope='Review all compile-cost, code and confidence results before any qualification/PR change. Individual95%intervals do not establish simultaneous zero regressions. Wider OSR/call/fallback gaps remain separate.'), indent=2) + '\n')
 

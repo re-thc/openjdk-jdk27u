@@ -27,7 +27,7 @@ def control_commands(a):
     commands = []
     root = Path.cwd()
     for level, image in [('release', a.control_jdk), ('fastdebug', a.control_debug_jdk)]:
-        for sve in ['default', '0']:
+        for sve in (['0'] if getattr(a,'platform','linux')=='mac' else ['default','0']):
             label = level + '-sve' + sve
             # Historical VMs cannot satisfy the candidate's new compound-pattern IR assertion.
             # Disable that assertion only for these extra control semantics runs.
@@ -49,6 +49,8 @@ def main():
     for name in ['release-jdk','debug-jdk','control-jdk','control-debug-jdk','jtreg','frozen','out']:
         p.add_argument('--' + name, type=Path, required=True)
     p.add_argument('--historical-control', action='store_true')
+    p.add_argument('--source-input-manifest', type=Path)
+    p.add_argument('--platform', choices=['linux','mac'], default='linux')
     p.add_argument('--execute', action='store_true')
     a = p.parse_args()
     commands = control_commands(a)
@@ -56,8 +58,13 @@ def main():
         print(json.dumps(dict(experiment=EXPERIMENT, control_commands=commands,
             candidate_runner='run_roundtrip_preflight.py unchanged', executes=False), indent=2))
         return
-    require(os.uname().machine == 'aarch64', 'Native AArch64 required')
-    require(a.historical_control, 'Historical control attribution required')
+    require(os.uname().machine in (('arm64','aarch64') if a.platform=='mac' else ('aarch64',)), 'Native AArch64 required')
+    require(os.uname().sysname==('Darwin' if a.platform=='mac' else 'Linux'),'OS does not match experiment platform')
+    require(a.historical_control or a.source_input_manifest, 'Control source attribution required')
+    if a.source_input_manifest:
+        from source_inputs import verify
+        verify(a.source_input_manifest, a.frozen)
+        require(not a.historical_control, 'Fresh source-built pair cannot be labeled historical')
     require(not any(os.environ.get(k) for k in ('JAVA_TOOL_OPTIONS','JDK_JAVA_OPTIONS','_JAVA_OPTIONS')),
             'Inherited JVM options not admitted')
     before = inventory(a.jtreg)
@@ -78,7 +85,17 @@ def main():
                 'Historical-control report did not pass')
         verify_control_reports(reports)
     # Preserve every candidate IR/semantics/stress/OSR/chain gate and its original arguments.
-    run_roundtrip_preflight.main()
+    original_argv = sys.argv[:]
+    try:
+        sys.argv = [original_argv[0]]
+        for name in ['release-jdk','debug-jdk','control-jdk','control-debug-jdk','jtreg','frozen','out']:
+            sys.argv += ['--'+name,str(getattr(a,name.replace('-','_')))]
+        sys.argv += ['--platform',a.platform]
+        if a.execute:sys.argv += ['--execute']
+        if a.historical_control:sys.argv += ['--historical-control']
+        run_roundtrip_preflight.main()
+    finally:
+        sys.argv = original_argv
     require(inventory(a.jtreg) == before, 'Common harness mutated during candidate/control checks')
     (a.out / 'jtreg83-gate.json').write_text(json.dumps(dict(experiment=EXPERIMENT, passed=True,
         qualified=False, same_harness_consumer_jars=before, historical_control_ir_claim=False,

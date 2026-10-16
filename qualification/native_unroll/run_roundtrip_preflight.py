@@ -18,6 +18,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     for name in ['release-jdk', 'debug-jdk', 'control-jdk', 'control-debug-jdk', 'jtreg', 'frozen', 'out']:
         p.add_argument('--' + name, type=pathlib.Path, required=True)
+    p.add_argument('--platform', choices=['linux','mac'], default='linux')
     p.add_argument('--execute', action='store_true')
     p.add_argument('--historical-control', action='store_true',
                    help='Label reused controls as compiler diagnostics, without matched-toolchain attribution')
@@ -26,8 +27,9 @@ def main():
     if out.exists() and any(out.iterdir()):
         p.error('Output must be empty')
     out.mkdir(parents=True, exist_ok=True)
-    if a.execute and os.uname().machine != 'aarch64':
+    if a.execute and os.uname().machine not in (('arm64','aarch64') if a.platform=='mac' else ('aarch64',)):
         p.error('Native AArch64 required')
+    if a.execute and os.uname().sysname != ('Darwin' if a.platform=='mac' else 'Linux'): p.error('OS does not match experiment platform')
     if a.execute and any(os.environ.get(n) for n in ['JAVA_TOOL_OPTIONS', 'JDK_JAVA_OPTIONS', '_JAVA_OPTIONS']):
         p.error('Unplanned inherited JVM options')
     root = pathlib.Path('.').resolve()
@@ -58,7 +60,7 @@ def main():
     tests = ['TestFloatRoundTripReduction', 'TestFloatRoundTripReductionEdges',
              'TestZeroSeedFPReduction', 'TestZeroSeedFPReductionIR', 'TestZeroSeedFPReductionStrictIR']
     for label, jdk in [('release', a.release_jdk), ('debug', a.debug_jdk)]:
-        for sve in ['default', '0']:
+        for sve in (['0'] if a.platform=='mac' else ['default','0']):
             flags = [] if sve == 'default' else ['-XX:UseSVE=0']
             flag_text = run(label + '-flags-sve' + sve,
                             [jdk / 'bin/java', *flags, '-XX:+PrintFlagsFinal', '-version'])
@@ -103,7 +105,7 @@ def main():
         if not re.search(r'\bgoto\s+2\b', method):
             raise RuntimeError('OSR loop BCI changed')
     chain_records = []
-    for sve in ['default', '0']:
+    for sve in (['0'] if a.platform=='mac' else ['default','0']):
         flags = [] if sve == 'default' else ['-XX:UseSVE=0']
         for count in [1, 8, 32, 64]:
             for sample in range(3):
@@ -180,7 +182,7 @@ def main():
                 raise RuntimeError('OSR compound exclusion not established')
     scaling = []
     if a.execute:
-        for sve in ['default', '0']:
+        for sve in (['0'] if a.platform=='mac' else ['default','0']):
             for count in [1, 8, 32, 64]:
                 medians = {}
                 for image in ['candidate', 'control']:
@@ -195,7 +197,7 @@ def main():
         review_required=('Historical controls are correctness controls. Compiler-task values are diagnostic and do not establish matched-toolchain performance or linear wall-time complexity.'
             if a.historical_control else 'The predicate can do quadratic recurrence walks. These bounded measurements do not prove linear complexity or isolated grouping cost.')), indent=2) + '\n')
     # Stress has separate flags and cannot substitute for clean IR assertions.
-    for sve in ['default', '0']:
+    for sve in (['0'] if a.platform=='mac' else ['default','0']):
         flags = [] if sve == 'default' else ['-XX:UseSVE=0']
         run('stress-sve' + sve, [a.release_jdk / 'bin/java', '-jar', a.jtreg / 'lib/jtreg.jar',
             '-jdk:' + str(a.debug_jdk.resolve()), '-concurrency:1', '-timeoutFactor:2',
