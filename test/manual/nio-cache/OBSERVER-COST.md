@@ -27,9 +27,10 @@ revalidation likewise reads only the owned PID rather than rescanning the table.
 
 ## Collection design
 
-Admission discovers coordinator children and the unique named worker once,
-checks PID/TID starttimes, executable and isolated group/session, and performs
-a full owned-descendant audit. Then the identities are immutable. Collection
+Admission now consumes a nonce-checked trial-setup native identity handshake,
+checks PID/TID starttimes, executable, actual ForkedMain command line and isolated
+group/session, and performs a full owned-descendant audit. The superseded
+child-list/name discovery path failed on this environment; see `BINDING-REPAIR.md`. Then the identities are immutable. Collection
 holds seven descriptors and performs exactly eight bounded reads per tick,
 including two worker identity reads around the scheduling counters. Each read
 is limited to16KiB; acquisition bounds include the context counters. There is
@@ -45,7 +46,7 @@ preexisting outside processes. Recycled PID/TID identities cannot be accepted
 or deliberately signaled using stale identity evidence.
 
 The collection loop intentionally cannot detect a short-lived unexpected child
-or duplicate worker name that appears and vanishes between audits. Expected
+that appears and vanishes between audits. Expected
 process creation is constrained by the one-fork JMH command and disabled helper
 probes; full process-event accounting would need a different facility. Receipts
 state this limitation instead of claiming that bound identities prove the
@@ -63,12 +64,13 @@ python3 test/manual/nio-cache/replay_observer.py
 
 The replay opens synthetic procfs-shaped files with representative scheduling
 and CPU-context text sizes. It performs600samples, JSON encoding/buffered output,
-six fixed-path output-size checks per tick, and stage instrumentation. There
+seven fixed-path output-size checks per tick, and stage instrumentation. There
 are no sleeps: CPU cost is divided by the nominal12seconds that600ticks occupy
-at50Hz. One measured replay used44.794ms total CPU (0.3733% of one CPU), comprising
-19.154ms bound reads,10.380ms encoding/writes,10.917ms size checks, and the
-remaining instrumentation/loop costs. The2% budget corresponds to240ms over
-that nominal span, approximately5.36times the observed synthetic cost.
+at50Hz. After the handshake repair, one measured replay used25.392ms total CPU
+(0.2116% of one CPU), comprising11.426ms bound reads,6.007ms encoding/writes,
+5.809ms size checks, and remaining instrumentation/loop costs. The2% budget
+corresponds to240ms over that nominal span, approximately9.45times the observed
+synthetic cost.
 
 This is a feasibility estimate, not live-runtime qualification. Synthetic files
 do not reproduce procfs kernel generation, timer wakeups, contention, actual

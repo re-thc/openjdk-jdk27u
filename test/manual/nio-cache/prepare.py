@@ -3,8 +3,10 @@
 import argparse
 import json
 import os
+import secrets
 from pathlib import Path
 from diagnostic import ROOT, digest, save
+from admission import verify_fixture_protocol, visibility
 
 
 def prepare(jdk, classes, jars):
@@ -20,12 +22,15 @@ def prepare(jdk, classes, jars):
     jar_paths = [jars / name for name in jar_names]
     if not all(p.is_file() for p in jar_paths):
         raise ValueError('repository recipe JMH 1.37 jars required')
+    verify_fixture_protocol(classes)
+    readiness = visibility()
     # -jvmArgs is split by JMH; reject paths whose quoting would be ambiguous.
     if any(any(c.isspace() for c in str(p)) for p in (ROOT, jdk, classes, jars)):
         raise ValueError('use paths without whitespace')
     if (ROOT / 'run').exists() or (ROOT / 'freeze.json').exists():
         raise ValueError('use a fresh checkout for each approved observation')
     out = ROOT / 'run'
+    nonce = secrets.token_hex(16)
     common = ['-Xms32m', '-Xmx256m', '-Xss512k', '-XX:ActiveProcessorCount=4',
               '-XX:CICompilerCount=2', '-XX:ParallelGCThreads=2', '-XX:ConcGCThreads=1',
               '-XX:+UseG1GC', '-Xshare:off', '--add-exports=java.base/sun.nio.ch=ALL-UNNAMED',
@@ -33,7 +38,9 @@ def prepare(jdk, classes, jars):
               '-XX:+LogCompilation', '-XX:LogFile=' + str(out / 'hotspot_%p.xml'),
               '-Xlog:gc*=info,safepoint=info:file=' + str(out / 'gc_%p.log') + ':uptimemillis,tags,level:filecount=0',
               '-Djmh.blackhole.autoDetect=false', '-Djmh.compilerhints.mode=FORCE_ON',
-              '--sun-misc-unsafe-memory-access=allow']
+              '--sun-misc-unsafe-memory-access=allow',
+              '-Dnio.observer.binding=' + str(out / 'binding.txt'),
+              '-Dnio.observer.nonce=' + nonce]
     command = ['taskset', '-c', '0,1,2,3', str(java), '--sun-misc-unsafe-memory-access=allow',
                '-Xmx128m', '-XX:ActiveProcessorCount=1', '-Djava.home=' + str(jdk),
                '-Djmh.blackhole.autoDetect=false', '-Djmh.compilerhints.mode=FORCE_ON',
@@ -43,13 +50,15 @@ def prepare(jdk, classes, jars):
                '-bs', '1', '-bm', 'avgt', '-tu', 'ns', '-foe', 'true', '-rf', 'json',
                '-rff', str(out / 'result.json'), '-jvm', str(java), '-jvmArgs', ' '.join(common)]
     save(ROOT / 'command.json', command)
+    save(ROOT / 'readiness.json', readiness)
     directories = [str(jdk), str(classes), str(jars)]
     paths = [p for directory in directories for p in Path(directory).rglob('*') if p.is_file()]
-    paths += [p for p in ROOT.iterdir() if p.suffix in ('.java', '.py', '.md') or p.name == 'command.json']
+    paths += [p for p in ROOT.iterdir() if p.suffix in ('.java', '.py', '.md') or p.name in ('command.json', 'readiness.json')]
     files = {str(p): digest(p) for p in paths}
     save(ROOT / 'freeze.json', {'files': files, 'directories': directories,
          'environment': {'PATH': os.environ.get('PATH', os.defpath), 'LANG': 'C', 'LC_ALL': 'C'},
          'cpu_max': Path('/sys/fs/cgroup/cpu.max').read_text(),
+         'binding_nonce': nonce, 'fixture_classes': str(classes),
          'benchmark_source_sha256': digest(ROOT / 'NioCachePaths.java')})
 
 

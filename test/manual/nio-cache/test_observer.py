@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
-from observer import BoundSampler, Costs, children, worker
+from observer import BoundSampler, Costs
 from process_cleanup import LinuxProcesses, ChildScope, cleanup_errors
 
 
@@ -109,18 +109,6 @@ class ObserverTests(unittest.TestCase):
                     sampler.sample()
             finally:
                 sampler.close()
-
-    def test_admission_only_children_and_worker(self):
-        with tempfile.TemporaryDirectory() as directory:
-            proc, cg, co, fo, th = fixture(Path(directory))
-            self.assertEqual(children(10, co, proc), {20})
-            self.assertEqual(worker(20, fo, proc)[0], 21)
-            extra = proc / '20/task/22'
-            extra.mkdir()
-            (extra / 'comm').write_text('org.ope..rker-1\n')
-            (extra / 'stat').write_text(stat(22, 10))
-            with self.assertRaisesRegex(ValueError, 'ambiguous'):
-                worker(20, fo, proc)
 
     def test_cost_attribution_on_failure(self):
         costs = Costs()

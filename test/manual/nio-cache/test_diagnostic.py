@@ -1,6 +1,6 @@
 # Copyright (c) 2026, Harry Chan. SPDX-License-Identifier: GPL-2.0-only
 import unittest
-from diagnostic import WORKER, log_pid, stat_identity, window_bounds, analyze
+from diagnostic import log_pid, stat_identity, window_bounds, analyze
 
 
 def sample(t, cpu=None, wait=None):
@@ -66,10 +66,6 @@ class BoundsTests(unittest.TestCase):
             analyze('\n'.join(rows[:-1]), samples)
         with self.assertRaises(ValueError):
             analyze('\n'.join(rows), samples[:500])
-
-    def test_linux_worker_name(self):
-        name = 'org.openjdk.bench.nioqual.NioCachePaths.ordinaryHit-jmh-worker-1'
-        self.assertEqual(name[:7] + '..' + name[-6:], WORKER)
 
     def test_stat_with_parentheses(self):
         fields = ['S'] + ['0'] * 36

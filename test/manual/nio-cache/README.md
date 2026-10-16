@@ -102,8 +102,14 @@ python3 -m unittest discover -s "$Q" -v
 python3 "$Q/prepare.py" --jdk "$BASELINE_JDK" --classes "$Q/classes" --jars "$JARS"
 ```
 
-`prepare.py` only hashes local inputs and writes a local command/freeze; it
-launches no processes. The explicit colon-separated processor path avoids wildcard ambiguity.
+The updated trial-setup handshake requires recompiling `NioCachePaths.java`;
+the older saved classes cannot bind and are explicitly rejected. A constant-pool
+protocol check catches those stale classes before launch. This is an artifact
+version guard, not a substitute for javac/JVM verification or a source-to-bytecode
+proof. Compilation must be separately authorized when runtime restrictions apply.
+
+`prepare.py` hashes local inputs, performs a single read-only procfs visibility
+check and writes local command/freeze/readiness files. It launches no processes. The explicit colon-separated processor path avoids wildcard ambiguity.
 Do not omit annotation processing: BenchmarkList,
 CompilerHints and generated timed-loop classes are required. JMH 1.37 and all
 four exact recipe jars are required. No downloaded or locally built outputs
@@ -133,22 +139,32 @@ observer affinity4: both share the cgroup quota. No perf/pidstat/PMU dependency.
 CLOCK_MONOTONIC must be shared by Python and HotSpot. Sampling target20ms;
 reject gaps over30ms or acquisition brackets over5ms within final two warmups
 and all measured windows. Observer CPU above2% of one CPU makes collection
-inconclusive. Admission (capped at8seconds) reads the coordinator's task child lists and the
-fork's task names, each capped at64tasks. It binds the coordinator/fork PID
-starttimes, isolated process group/session, executable and unique worker TID
-starttime, then performs a full owned-descendant audit. No process/task discovery
-occurs in the timed sampling loop. Seven retained descriptors supply eight
-bounded reads per tick: coordinator stat, fork stat, worker stat twice, worker
-schedstat/sched, cgroup cpu.stat and global proc stat. PID/TID starttimes are
-checked on every sample. Disappearance ends collection without rebinding;
-missing measured-window boundaries remain inconclusive.
+inconclusive. Admission (capped at8seconds) uses an explicit `nio-bind-v1` trial-setup
+handshake. On the actual platform JMH worker, the fixture reads
+`/proc/thread-self/stat` and writes its native PID/TID/starttime plus a fresh
+frozen nonce and benchmark identity to `run/binding.txt`. This is outside every
+warmup/measurement window; benchmark bodies and generated timed loops are
+unchanged. File creation is exclusive. Partial writes are waited for; malformed,
+duplicate, stale-nonce and wrong-benchmark records are rejected.
 
+The controller validates that PID's executable, actual ForkedMain command line,
+parent/group/session and both PID/TID starttimes against procfs, followed by a
+full owned-descendant audit. No thread name, Java thread ID, `children` file or
+thread-list scan is used. The admission receipt retains poll count and last
+observed state, including missing/partial handshakes. The current environment
+lacks live-thread `children` files; that limitation no longer becomes a silent
+empty child list. See `BINDING-REPAIR.md` for diagnosis and readiness evidence.
+
+Seven retained descriptors still supply eight bounded reads per collection tick:
+coordinator stat, fork stat, worker stat twice, worker schedstat/sched, cgroup
+cpu.stat and global proc stat. Starttimes are checked on every sample.
+Disappearance ends collection without rebinding; missing measured-window
+boundaries remain inconclusive. No discovery occurs in the timed sampling loop.
 Full ownership audits run before launch, at admission and after collection.
 The subreaper and identity-checked isolated-group kill plus individual escaped-
 descendant cleanup remain active. A live leftover or unknown adopted child is
 inconclusive even if cleanup succeeds. The collection loop does not observe
-short-lived extra processes or duplicate worker names that appear and disappear
-between audits. Consequently it records the two bound JVM identities and audit
+short-lived extra processes that appear and disappear between audits. Consequently it records the two bound JVM identities and audit
 results, not a claim of complete process-event accounting. No kernel process
 trace is available. This detection limit is explicit in each receipt.
 

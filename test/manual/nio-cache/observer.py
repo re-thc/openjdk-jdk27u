@@ -5,67 +5,26 @@ from pathlib import Path
 import re
 import time
 
-WORKER = 'org.ope..rker-1'
 COUNTERS = ('se.nr_migrations', 'nr_switches', 'nr_voluntary_switches', 'nr_involuntary_switches')
 PATTERNS = {key: re.compile(r'^' + re.escape(key) + r'\s*:\s*(\d+)\s*$', re.M) for key in COUNTERS}
 
 
 def identity(raw):
     fields = raw[raw.rfind(')') + 2:].split()
-    return {'start': int(fields[19]), 'cpu': int(fields[36]), 'state': fields[0],
+    return {'id': int(raw.split(' ', 1)[0]), 'start': int(fields[19]), 'cpu': int(fields[36]), 'state': fields[0],
             'ppid': int(fields[1]), 'pgrp': int(fields[2]), 'session': int(fields[3])}
 
 
 def read_identity(pid, proc_root=Path('/proc')):
-    return identity((proc_root / str(pid) / 'stat').read_text())
+    row = identity((proc_root / str(pid) / 'stat').read_text())
+    if row['id'] != pid:
+        raise ValueError('procfs path/PID mismatch')
+    return row
 
 
 def same_identity(actual, expected):
     if actual['start'] != expected['start']:
         raise ValueError('PID/TID identity reused')
-
-
-def children(pid, expected, proc_root=Path('/proc')):
-    """Admission only: inspect at most 64 known-coordinator task child lists."""
-    same_identity(read_identity(pid, proc_root), expected)
-    tasks = list((proc_root / str(pid) / 'task').iterdir())
-    if len(tasks) > 64:
-        raise ValueError('coordinator exceeds 64-task admission cap')
-    found = set()
-    for task in tasks:
-        try:
-            data = (task / 'children').read_text()
-        except FileNotFoundError:
-            continue  # Thread exit; later ownership audit must still match.
-        if len(data) > 4096:
-            raise ValueError('admission children file cap')
-        found.update(map(int, data.split()))
-    same_identity(read_identity(pid, proc_root), expected)
-    return found
-
-
-def worker(pid, expected, proc_root=Path('/proc')):
-    """Admission only: bind the one worker TID; never rediscover during sampling."""
-    same_identity(read_identity(pid, proc_root), expected)
-    tasks = list((proc_root / str(pid) / 'task').iterdir())
-    if len(tasks) > 64:
-        raise ValueError('fork exceeds 64-task admission cap')
-    matches = []
-    for task in tasks:
-        try:
-            before = identity((task / 'stat').read_text())
-            if (task / 'comm').read_text().strip() == WORKER:
-                after = identity((task / 'stat').read_text())
-                same_identity(after, before)
-                if (task / 'comm').read_text().strip() != WORKER:
-                    raise ValueError('worker name changed during admission')
-                matches.append((int(task.name), after))
-        except FileNotFoundError:
-            continue
-    if len(matches) > 1:
-        raise ValueError('ambiguous worker identity')
-    same_identity(read_identity(pid, proc_root), expected)
-    return matches[0] if matches else None
 
 
 class Costs:

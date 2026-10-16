@@ -11,10 +11,10 @@ import signal
 import subprocess
 import time
 from process_cleanup import ChildScope, cleanup_errors, enable_subreaper, require_no_children
-from observer import BoundSampler, Costs, children, read_identity, worker
+from observer import BoundSampler, Costs, read_identity
+from admission import read_binding, verify_binding, verify_fixture_protocol, visibility
 
 ROOT = Path(__file__).resolve().parent
-WORKER = 'org.ope..rker-1'  # HotSpot first seven + '..' + final six bytes.
 PERIOD_NS = 20_000_000
 
 
@@ -121,34 +121,20 @@ def close_receipt(path, receipt, started, end):
         return False
 
 
-def admit_processes(proc, java, deadline):
+def admit_processes(proc, java, deadline, binding_path, nonce, details):
     coordinator = {'pid': proc.pid, **read_identity(proc.pid)}
     if coordinator['pgrp'] != proc.pid or coordinator['session'] != proc.pid:
         raise ValueError('coordinator is not isolated process-group/session leader')
-    fork = None
     while proc.poll() is None:
         if time.monotonic() >= deadline:
-            raise TimeoutError('8-second fork/worker admission cap')
-        found = children(proc.pid, coordinator)
-        if len(found) > 1:
-            raise ValueError('unexpected coordinator children')
-        if found:
-            pid = next(iter(found))
-            row = read_identity(pid)
-            if row['ppid'] != proc.pid or row['pgrp'] != proc.pid or row['session'] != proc.pid:
-                raise ValueError('fork outside owned coordinator group/session')
-            if fork is not None and (pid, row['start']) != (fork['pid'], fork['start']):
-                raise ValueError('fork identity changed during admission')
-            fork = {'pid': pid, **row}
-            # taskset execs the coordinator; JMH starts the identified java executable.
-            if (Path('/proc') / str(pid) / 'exe').resolve() != Path(java).resolve():
-                raise ValueError('unexpected fork executable')
-            bound = worker(pid, fork)
-            if bound:
-                tid, thread = bound
-                return coordinator, fork, {'tid': tid, **thread}
+            raise TimeoutError('8-second admission cap; ' + details.get('last_state', 'no binding observation'))
+        record = read_binding(binding_path, nonce, details)
+        if record is not None:
+            fork, thread = verify_binding(record, coordinator, java, binding_path, nonce)
+            details['last_state'] = 'binding verified; ownership audit pending'
+            return coordinator, fork, thread
         time.sleep(.02)
-    raise ValueError('coordinator exited before worker admission')
+    raise ValueError('coordinator exited before trial-setup handshake')
 
 
 def audit_owned(scope, identities):
@@ -176,7 +162,7 @@ def run(reference):
     sampler = None
     costs = Costs()
     receipt = {'approval_reference': reference, 'status': 'inconclusive', 'performance_qualified': False,
-               'ownership_detection': 'One bound coordinator/fork; full admission/exit/cleanup audits. Sampling does not enumerate processes or threads and cannot detect transient extra children or duplicate worker names during collection.'}
+               'ownership_detection': 'One bound coordinator/fork; full admission/exit/cleanup audits. Sampling does not enumerate processes or threads and cannot detect transient extra children during collection. Worker binding uses a nonce-checked trial-setup native identity handshake, never names.'}
     out = ROOT / 'run'
     out.mkdir(exist_ok=False)  # One execution; never overwrite or resume.
     def expired(*unused):
@@ -199,6 +185,9 @@ def run(reference):
             raise ValueError('required CPUs unavailable')
         os.sched_setaffinity(0, {4})
         command = json.loads((ROOT / 'command.json').read_text())
+        # Check visibility and reject pre-handshake classes before any child launch.
+        receipt['visibility'] = costs.measure('visibility', visibility)
+        verify_fixture_protocol(Path(frozen['fixture_classes']))
         env = frozen['environment']
         enable_subreaper()
         costs.measure('prelaunch_ownership_audit', require_no_children)
@@ -210,7 +199,8 @@ def run(reference):
             proc = subprocess.Popen(command, env=env, cwd=out, stdout=so, stderr=se, start_new_session=True)
             admission_end = min(started + 60, time.monotonic() + 8)
             coordinator, bound_fork, thread = costs.measure(
-                'admission_discovery', admit_processes, proc, command[3], admission_end)
+                'admission_handshake', admit_processes, proc, command[3], admission_end,
+                out / 'binding.txt', frozen['binding_nonce'], receipt.setdefault('admission', {}))
             fork = bound_fork['pid']
             seen = {proc.pid: coordinator['start'], fork: bound_fork['start']}
             costs.measure('admission_ownership_audit', audit_owned, scope, seen)
@@ -219,7 +209,7 @@ def run(reference):
             receipt['bound_identities'] = {'coordinator': coordinator, 'fork': bound_fork, 'worker': thread}
             sampler = BoundSampler(coordinator, bound_fork, thread)
             capped = [out / name for name in ('stdout', 'stderr', 'samples.jsonl', 'result.json',
-                      'hotspot_pid' + str(fork) + '.xml', 'gc_' + str(fork) + '.log')]
+                      'hotspot_pid' + str(fork) + '.xml', 'gc_' + str(fork) + '.log', 'binding.txt')]
             cpu_start = time.process_time_ns()
             sampling_start = time.monotonic_ns()
             while proc.poll() is None:

@@ -20,7 +20,7 @@ def replay(count=600):
         sampler = BoundSampler(coordinator, fork, thread, proc, cg)
         # Disk writes match the controller (buffered); no per-tick fsync.
         path = root / 'samples.jsonl'
-        capped = [path] + [root / name for name in ('stdout', 'stderr', 'result.json', 'hotspot_pid20.xml', 'gc_20.log')]
+        capped = [path] + [root / name for name in ('stdout', 'stderr', 'result.json', 'hotspot_pid20.xml', 'gc_20.log', 'binding.txt')]
         for file in capped[1:]:
             file.write_text('synthetic output')
         costs = Costs()

@@ -1,6 +1,11 @@
 /* Copyright (c) 2026, Harry Chan. SPDX-License-Identifier: GPL-2.0-only */
 package org.openjdk.bench.nioqual;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.lang.management.CompilationMXBean;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
@@ -24,6 +29,7 @@ import sun.nio.ch.Util;
 @Threads(1)
 public class NioCachePaths {
     static final int SIZE = 65536;
+    static final String OBSERVER_BIND_PROTOCOL = "nio-bind-v1";
     static volatile long exitSink;
     final AtomicReference<Throwable> failure = new AtomicReference<>();
     final long[][] windows = new long[12][8];
@@ -46,6 +52,7 @@ public class NioCachePaths {
         collectors = ManagementFactory.getGarbageCollectorMXBeans();
         if (compiler == null || !compiler.isCompilationTimeMonitoringSupported())
             throw new AssertionError("compilation readiness unavailable");
+        reportObserverBinding();
         // Prime observer calls before JMH warmup. They never occur per operation.
         runtime.getUptime(); compiler.getTotalCompilationTime(); collections();
         if (benchmark.endsWith(".alignedHit")) {
@@ -53,6 +60,41 @@ public class NioCachePaths {
             boolean aligned = (((DirectBuffer) seed).address() & 7) == 0;
             Util.releaseTemporaryDirectBuffer(seed);
             if (!aligned) throw new AssertionError("natural alignment unavailable");
+        }
+    }
+
+    // Optional Linux-only admission handshake, once in trial setup. No thread
+    // names, Java thread IDs, JNI helper, or per-operation I/O are involved.
+    private void reportObserverBinding() {
+        String path = System.getProperty("nio.observer.binding");
+        String nonce = System.getProperty("nio.observer.nonce");
+        if (path == null && nonce == null) return;
+        if (path == null || nonce == null || !nonce.matches("[0-9a-f]{32}")
+                || Thread.currentThread().isVirtual()) {
+            throw new AssertionError("invalid observer binding configuration");
+        }
+        try {
+            byte[] bytes;
+            try (FileInputStream input = new FileInputStream("/proc/thread-self/stat")) {
+                bytes = input.readNBytes(4097);
+            }
+            if (bytes.length == 0 || bytes.length > 4096)
+                throw new AssertionError("native thread stat size");
+            String stat = new String(bytes, StandardCharsets.US_ASCII);
+            long tid = Long.parseLong(stat.substring(0, stat.indexOf(' ')));
+            String[] fields = stat.substring(stat.lastIndexOf(')') + 2).trim().split("\\s+");
+            long start = Long.parseLong(fields[19]);
+            if (tid <= 0 || start <= 0) throw new AssertionError("native thread identity");
+            String line = "NIO_BIND protocol=" + OBSERVER_BIND_PROTOCOL + " nonce=" + nonce
+                    + " pid=" + ProcessHandle.current().pid() + " tid=" + tid + " start=" + start
+                    + " benchmark=" + benchmark + "\n";
+            File target = new File(path);
+            if (!target.createNewFile()) throw new AssertionError("binding file already exists");
+            try (FileOutputStream output = new FileOutputStream(target)) {
+                output.write(line.getBytes(StandardCharsets.US_ASCII));
+            }
+        } catch (IOException | RuntimeException failure) {
+            throw new AssertionError("observer native-thread handshake failed", failure);
         }
     }
 
