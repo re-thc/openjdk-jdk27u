@@ -130,7 +130,7 @@ public class FourByteHeaderZGCMediumRemset {
         private static final Unsafe U = Unsafe.getUnsafe();
         private static final GarbageCollectorMXBean MAJOR = bean("ZGC Major Cycles");
         private static final GarbageCollectorMXBean MINOR = bean("ZGC Minor Cycles");
-        private static final int BASE = U.arrayBaseOffset(Object[].class);
+        private static final int BASE = Math.toIntExact(U.arrayBaseOffset(Object[].class));
         private static final int SCALE = U.arrayIndexScale(Object[].class);
         private static final int LENGTH = (SOURCE_SIZE - BASE) / SCALE;
 
