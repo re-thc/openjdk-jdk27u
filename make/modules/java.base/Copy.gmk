@@ -176,11 +176,24 @@ ifneq ($(TOOLCHAIN_TYPE), gcc)
   LEGAL_EXCLUDES += gcc.md
 endif
 
+ifneq ($(ENABLE_INSTANT_SPEEDATE), true)
+  LEGAL_EXCLUDES += speedate.md
+endif
+
 $(eval $(call SetupCopyLegalFiles, COPY_LEGAL, \
     EXCLUDES := $(LEGAL_EXCLUDES), \
 ))
 
 TARGETS += $(COPY_LEGAL)
+
+ifeq ($(ENABLE_INSTANT_SPEEDATE), true)
+  $(eval $(call SetupCopyFiles, COPY_SPEEDATE_RUST_LICENSE, \
+      SRC := $(dir $(SPEEDATE_RUST_LICENSE)), \
+      DEST := $(LEGAL_DST_DIR), \
+      FILES := $(SPEEDATE_RUST_LICENSE), \
+  ))
+  TARGETS += $(COPY_SPEEDATE_RUST_LICENSE)
+endif
 
 ################################################################################
 # Optionally copy libffi.so.? into the image
