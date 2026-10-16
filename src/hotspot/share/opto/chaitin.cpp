@@ -654,6 +654,9 @@ void PhaseChaitin::Register_Allocate() {
   _allocator_successes += 1;
 
   // Peephole remove copies
+  if (RetainSpillCopies) {
+    retain_spill_copies();
+  }
   post_allocate_copy_removal();
 
   C->print_method(PHASE_POST_ALLOCATION_COPY_REMOVAL, 4);

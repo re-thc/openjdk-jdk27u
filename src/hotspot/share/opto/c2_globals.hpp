@@ -279,6 +279,9 @@
   develop(bool, OptoCoalesce, true,                                         \
           "Use Conservative Copy Coalescing in the Register Allocator")     \
                                                                             \
+  develop(bool, RetainSpillCopies, false,                                   \
+          "Retain invariant spill reloads in available x86 registers")     \
+                                                                            \
   product(uint, IFGEdgesLimit, 10000000, DIAGNOSTIC,                        \
           "Maximum allowed edges in the interference graphs")               \
           range(0, max_juint)                                               \

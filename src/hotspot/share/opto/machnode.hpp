@@ -619,6 +619,7 @@ public:
     add_req(n);
   }
   virtual uint size_of() const { return sizeof(*this); }
+  SpillType spill_type() const { return _spill_type; }
   void set_out_RegMask(const RegMask &out) { _out = &out; }
   void set_in_RegMask(const RegMask &in) { _in = &in; }
   virtual const RegMask &out_RegMask() const { return *_out; }
