@@ -55,6 +55,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import jdk.internal.vm.annotation.DontInline;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.ResourceBundleBasedAdapter;
 
@@ -400,6 +401,9 @@ public final class Scanner implements Iterator<String>, Closeable {
     // The locale used by this scanner
     private Locale locale = null;
 
+    // True if numeric symbols for the current locale have not been captured.
+    private boolean needLocaleData;
+
     // A cache of the last few recently used Patterns
     private final PatternLRUCache patternCache = new PatternLRUCache(7);
 
@@ -476,6 +480,7 @@ public final class Scanner implements Iterator<String>, Closeable {
             negativeInteger + ")";
     }
     private Pattern integerPattern() {
+        ensureLocaleData();
         if (integerPattern == null) {
             integerPattern = patternCache.forName(buildIntegerPatternString());
         }
@@ -543,12 +548,14 @@ public final class Scanner implements Iterator<String>, Closeable {
         decimalPattern = Pattern.compile(decimal);
     }
     private Pattern floatPattern() {
+        ensureLocaleData();
         if (floatPattern == null) {
             buildFloatAndDecimalPattern();
         }
         return floatPattern;
     }
     private Pattern decimalPattern() {
+        ensureLocaleData();
         if (decimalPattern == null) {
             buildFloatAndDecimalPattern();
         }
@@ -1304,6 +1311,35 @@ public final class Scanner implements Iterator<String>, Closeable {
         modCount++;
         this.locale = locale;
 
+        // SPI providers can expose mutable state or observable callbacks, and
+        // HOST can capture changing operating system settings. Preserve eager
+        // initialization whenever either is configured, even after CLDR.
+        List<LocaleProviderAdapter.Type> adapters = LocaleProviderAdapter.getAdapterPreference();
+        if (adapters.contains(LocaleProviderAdapter.Type.SPI)
+                || adapters.contains(LocaleProviderAdapter.Type.HOST)) {
+            initializeLocaleData(locale);
+        } else {
+            needLocaleData = true;
+        }
+
+        // Force rebuilding and recompilation of locale dependent
+        // primitive patterns
+        integerPattern = null;
+        floatPattern = null;
+
+        return this;
+    }
+
+    private void ensureLocaleData() {
+        if (needLocaleData) {
+            initializeLocaleData(locale);
+            needLocaleData = false;
+        }
+    }
+
+    // Keep locale setup out of numeric parsing callers to preserve their inlining budget.
+    @DontInline
+    private void initializeLocaleData(Locale locale) {
         DecimalFormat df = null;
         NumberFormat nf = NumberFormat.getNumberInstance(locale);
         DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance(locale);
@@ -1346,13 +1382,6 @@ public final class Scanner implements Iterator<String>, Closeable {
         negativeSuffix = df.getNegativeSuffix();
         if (!negativeSuffix.isEmpty())
             negativeSuffix = Pattern.quote(negativeSuffix);
-
-        // Force rebuilding and recompilation of locale dependent
-        // primitive patterns
-        integerPattern = null;
-        floatPattern = null;
-
-        return this;
     }
 
     /**
@@ -1445,6 +1474,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      * @return  The string representation of this scanner
      */
     public String toString() {
+        ensureLocaleData();
         StringBuilder sb = new StringBuilder();
         sb.append("java.util.Scanner");
         sb.append("[delimiters=" + delimPattern + "]");
