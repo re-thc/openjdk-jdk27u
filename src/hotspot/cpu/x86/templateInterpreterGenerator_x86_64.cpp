@@ -342,7 +342,7 @@ address TemplateInterpreterGenerator::generate_vectorizedMismatch_entry() {
 
   // We don't generate a local frame because we call stub code and there is
   // no safepoint on this path. The vanilla entry handles everything else.
-  Label slow_path, checked, bounded;
+  Label slow_path;
 
   // JVMTI events and breakpoints need the bytecodes.
   if (JvmtiExport::can_post_interpreter_events()) {
@@ -366,7 +366,7 @@ address TemplateInterpreterGenerator::generate_vectorizedMismatch_entry() {
     __ jcc(Assembler::notEqual, slow_path);
   }
 
-  const Register scale  = rcx;  // shift count for the native bound
+  const Register scale  = rcx;  // shift count for the byte bound
   const Register length = rax;
   const Register obja   = r10;
   const Register objb   = r11;
@@ -379,20 +379,14 @@ address TemplateInterpreterGenerator::generate_vectorizedMismatch_entry() {
   __ jcc(Assembler::above, slow_path);
   __ testl(length, length);
   __ jcc(Assembler::lessEqual, slow_path);
-  __ movptr(objb, Address(rsp, 5 * wordSize)); // Object b
-  __ movptr(obja, Address(rsp, 8 * wordSize)); // Object a
-  // Compiled code bounds off-heap leaf calls to 64 KiB. Longer native ranges
-  // keep the Java loop and its safepoint polls.
-  __ testptr(obja, obja);
-  __ jccb(Assembler::zero, bounded);
-  __ testptr(objb, objb);
-  __ jccb(Assembler::notZero, checked);
-  __ bind(bounded);
+  // A leaf call compares at most 64 KiB, as in C2's native path. Longer
+  // ranges keep the Java loop and its safepoint polls.
   __ shlq(length);  // byte length; at most 2^34 for an int length and scale 3
   __ cmpq(length, 64 * K);
   __ jcc(Assembler::above, slow_path);
+  __ movptr(objb, Address(rsp, 5 * wordSize)); // Object b
+  __ movptr(obja, Address(rsp, 8 * wordSize)); // Object a
 
-  __ bind(checked);
   // The stub is generated after the interpreter, so check its entry when called.
   __ movptr(rdx, (intptr_t) StubRoutines::vectorizedMismatch_addr());
   __ cmpptr(Address(rdx, 0), NULL_WORD);

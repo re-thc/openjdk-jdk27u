@@ -348,7 +348,7 @@ address TemplateInterpreterGenerator::generate_vectorizedMismatch_entry() {
 
   // We don't generate a local frame because we jump to stub code and there
   // is no safepoint on this path. The vanilla entry handles everything else.
-  Label slow_path, checked, bounded;
+  Label slow_path;
 
   // JVMTI events and breakpoints need the bytecodes.
   if (JvmtiExport::can_post_interpreter_events()) {
@@ -386,19 +386,15 @@ address TemplateInterpreterGenerator::generate_vectorizedMismatch_entry() {
   __ br(Assembler::HI, slow_path);
   __ cmpw(length, 0u);
   __ br(Assembler::LE, slow_path);
-  __ ldr(objb, Address(esp, 4 * wordSize));    // Object b
-  __ ldr(obja, Address(esp, 7 * wordSize));    // Object a
-  // Compiled code bounds off-heap leaf calls to 64 KiB. Longer native ranges
-  // keep the Java loop and its safepoint polls.
-  __ cbz(obja, bounded);
-  __ cbnz(objb, checked);
-  __ bind(bounded);
+  // A leaf call compares at most 64 KiB, as in C2's native path. Longer
+  // ranges keep the Java loop and its safepoint polls.
   __ lslv(tmp, length, scale);  // byte length; at most 2^34 for an int length and scale 3
   __ mov(rscratch1, 64 * K);
   __ cmp(tmp, rscratch1);
   __ br(Assembler::HI, slow_path);
+  __ ldr(objb, Address(esp, 4 * wordSize));    // Object b
+  __ ldr(obja, Address(esp, 7 * wordSize));    // Object a
 
-  __ bind(checked);
   // The stub is generated after the interpreter, so check its entry when called.
   __ lea(stub, ExternalAddress((address) StubRoutines::vectorizedMismatch_addr()));
   __ ldr(stub, Address(stub));
