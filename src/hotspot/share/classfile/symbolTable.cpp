@@ -44,7 +44,6 @@
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "utilities/utf8.hpp"
 
-// We prefer short chains of avg 2
 const double PREF_AVG_LIST_LEN = 2.0;
 // 2^24 is max size, like StringTable.
 const size_t END_SIZE = 24;
@@ -543,8 +542,7 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
     mark_has_items_to_clean();
     check_concurrent_work();
   } else if (inserted && should_grow()) {
-    // Without a clean hint nothing else looks at the load factor on insert,
-    // so check it here to let the table grow as it fills up.
+    // Live symbols can require growth even without a cleanup hint.
     trigger_cleanup();
   }
 

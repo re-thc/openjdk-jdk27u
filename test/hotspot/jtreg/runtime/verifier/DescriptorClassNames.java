@@ -43,7 +43,6 @@ public class DescriptorClassNames {
 
     static final int NAMES = 150;
 
-    // Defines the empty classes that the classes under test refer to on demand.
     static class Loader extends ClassLoader {
         @Override
         protected Class<?> findClass(String name) throws ClassNotFoundException {
@@ -67,8 +66,7 @@ public class DescriptorClassNames {
         return ClassDesc.of("p.T" + i);
     }
 
-    // Methods f_i(a, b) that call g_i(b, a), where a and b are two of many
-    // classes, and use a static field of type a.
+    // Repeated field and method descriptors exercise cache reuse.
     static byte[] manyNames() {
         ClassDesc main = ClassDesc.of("ManyNames");
         return ClassFile.of().build(main, cb -> {
@@ -98,7 +96,6 @@ public class DescriptorClassNames {
         });
     }
 
-    // bad(a) calls take(b), which takes a class unrelated to a.
     static byte[] wrongName(ClassDesc a, ClassDesc b) {
         ClassDesc main = ClassDesc.of("WrongName");
         return ClassFile.of().build(main, cb -> cb
@@ -108,8 +105,7 @@ public class DescriptorClassNames {
                 .aload(0).invokestatic(main, "take", sig(b)).return_()));
     }
 
-    // Two classes with names that only differ in the first characters, passed
-    // to a method that expects them in the other order.
+    // These names collide in the suffix-based name cache.
     static byte[] similarNames(String name, boolean swap) {
         ClassDesc main = ClassDesc.of(name);
         ClassDesc a = ClassDesc.of("a.pkg.Foo");

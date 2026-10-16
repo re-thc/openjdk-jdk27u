@@ -54,9 +54,7 @@ public class ExceptionHandlerLocals {
         }
     }
 
-    // Builds a class with the static method
-    //   void test(int, Object) { try { <body> } catch (Throwable) { } }
-    // where the handler's frame expects local 1 to be of type handlerLocal1.
+    // The handler's frame requires local 1 to have type handlerLocal1.
     static byte[] build(String name, ClassDesc handlerLocal1, Consumer<CodeBuilder> body) {
         return ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS)
             .build(ClassDesc.of(name), cb -> cb.withMethodBody("test",
@@ -110,8 +108,7 @@ public class ExceptionHandlerLocals {
         // The type of local 1 stays the same.
         test(true, CD_int, cob -> cob.nop().iconst_1().istore(1).nop().iload(1).pop().nop());
 
-        // Local 1 turns into a reference in the middle of the try block, after
-        // the exception handler was matched several times.
+        // Invalidate a cached handler match when local 1 becomes a reference.
         test(false, CD_int, cob -> cob.nop().nop().iconst_1().istore(1).nop().aconst_null().astore(1).nop());
         test(false, CD_int, cob -> cob.nop().nop().aconst_null().astore(1).nop().nop());
         test(false, CD_int, cob -> cob.nop().ldc("s").astore(1).nop());

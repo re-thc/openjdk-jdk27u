@@ -53,19 +53,13 @@ import static java.lang.constant.ConstantDescs.CD_int;
 import static java.lang.constant.ConstantDescs.CD_void;
 
 /**
- * Measures how fast a class loader defines the classes of an application that
- * have not been loaded before, and links them, which verifies their methods.
- * Every class has names and descriptors of its own, as the classes of an
- * application do, so that the symbols of its constant pool are new to the
- * SymbolTable. The generated classes have a few methods with loops, branches,
- * an exception handler, calls and field accesses, so that they have stack map
- * frames to check.
+ * Measures definition, verification and initialization of fresh classes.
+ * Each invocation defines 100 classes in a new loader; generation runs outside
+ * the timed region. Unique names and descriptors force new SymbolTable entries.
  *
- * <p>An invocation defines 100 new classes in a new class loader. The classes
- * are generated before it, with names that no class of an earlier invocation
- * has. {@code residentClasses} is the number of other classes of other names
- * that have been defined and stay loaded, to have a SymbolTable of the size
- * of a large application.
+ * <p>{@code residentClasses} controls the retained class population and table
+ * size. Generated methods include branches, loops, handlers and field accesses
+ * to exercise stack-map verification.
  */
 @BenchmarkMode(Mode.SingleShotTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
@@ -81,7 +75,6 @@ public class DefineGeneratedClasses {
     private static final ClassDesc CD_RuntimeException = ClassDesc.of("java.lang.RuntimeException");
     private static final ClassDesc CD_StringBuilder = ClassDesc.of("java.lang.StringBuilder");
 
-    // the methods with code of a generated class, each with the same code
     private static final int METHODS = 6;
 
     @Param({"0", "25000"})
@@ -92,7 +85,7 @@ public class DefineGeneratedClasses {
     private String[] names;
     private byte[][] classes;
 
-    // the loader of the resident classes, which keeps them loaded
+    // Retain the loader to prevent resident classes from unloading.
     private Loader residentLoader;
 
     private static final class Loader extends ClassLoader {
@@ -141,7 +134,6 @@ public class DefineGeneratedClasses {
         }
     }
 
-    /** Defines the classes: parses them, and enters their symbols in the SymbolTable. */
     @Benchmark
     @OperationsPerInvocation(CLASSES)
     public void define(Blackhole bh) {
@@ -172,8 +164,7 @@ public class DefineGeneratedClasses {
                     .invokespecial(CD_Object, ConstantDescs.INIT_NAME, ConstantDescs.MTD_void)
                     .return_());
             for (int m = 0; m < METHODS; m++) {
-                // distinct names and descriptors with the names of classes
-                // of the application, that are not loaded
+                // Use unique descriptor names without loading the referenced classes.
                 clb.withMethod("native" + m, MethodTypeDesc.of(CD_void, ClassDesc.of(name + "$Arg" + m)),
                         ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC | ClassFile.ACC_NATIVE, mb -> { });
                 clb.withMethodBody("run" + m, MethodTypeDesc.of(CD_Object, CD_String, CD_List, self),

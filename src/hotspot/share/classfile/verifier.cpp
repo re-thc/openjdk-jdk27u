@@ -2007,8 +2007,7 @@ void ClassVerifier::verify_exception_handler_targets(int bci, bool this_uninit,
     if(bci >= start_pc && bci < end_pc) {
       u1 flags = current_frame->flags();
       if (this_uninit) {  flags |= FLAG_THIS_UNINIT; }
-      // The outcome depends on nothing but the locals and flags, so the check
-      // can be skipped if they are the same as when it last succeeded.
+      // Reuse this handler's successful match until the locals or flags change.
       uint64_t state = ((uint64_t)current_frame->locals_version() << 8) | flags;
       if (_handler_states[i] == state) {
         continue;
@@ -2606,7 +2605,6 @@ void ClassVerifier::verify_invoke_instructions(
   // Get method name and signature
   int name_and_type_index = cp->uncached_name_and_type_ref_index_at(index);
   Symbol* method_name = cp->symbol_at(cp->name_ref_index_at(name_and_type_index));
-  // Get the UTF8 index for this signature.
   int sig_index = cp->signature_ref_index_at(name_and_type_index);
   Symbol* method_sig = cp->symbol_at(sig_index);
 
@@ -2962,8 +2960,7 @@ void ClassVerifier::verify_return_value(
   }
 }
 
-// Fills the cache with the names of the classes in the constant pool. Their
-// symbols are kept alive by the constant pool.
+// The constant pool keeps these cached symbols alive.
 void ClassVerifier::init_name_cache() {
   ConstantPool* cp = _klass->constants();
   unsigned size = 64;
@@ -3007,8 +3004,7 @@ Symbol* ClassVerifier::create_temporary_symbol(SignatureStream* sig_stream) {
   if (*cached != nullptr && (*cached)->equals(name, length)) {
     return *cached;
   }
-  // The signature stream unreferences the symbol it looks up when it is
-  // destroyed, so keep another reference.
+  // Keep a reference after the signature stream releases its own.
   Symbol* sym = sig_stream->as_symbol();
   if (!sym->is_permanent()) {
     sym->increment_refcount();

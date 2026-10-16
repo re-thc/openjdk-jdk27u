@@ -609,8 +609,6 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
     return;
   }
 
-  // Names and signatures are used by many entries and members, remember which
-  // ones passed their format checks to check each only once.
   _checked_utf8 = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, u1, cp->length());
   memset(_checked_utf8, 0, cp->length());
 

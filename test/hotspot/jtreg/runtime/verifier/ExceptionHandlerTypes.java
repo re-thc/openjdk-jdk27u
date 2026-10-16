@@ -54,19 +54,9 @@ import static java.lang.constant.ConstantDescs.CD_int;
 import static java.lang.constant.ConstantDescs.CD_void;
 
 /**
- * The classes under test have a static method test(int) with the code
- *
- *   int x = 0;                 // local 1
- *   [a] nop
- *   [b] x = "text";            // only if the locals change
- *   [c] nop
- *   [d] return
- *
- * and two exception handlers, one for RuntimeException and one for Error,
- * which cover the instructions from one of the labels a, b, c to another, and
- * have their own stackmap frames. The verifier remembers per handler that its
- * frame matched the locals; a handler must still be checked when another one
- * matched the same locals.
+ * Two handlers cover identical, overlapping or disjoint ranges. Each handler
+ * must validate its own frame, even when the other handler has already matched
+ * the same locals.
  */
 public class ExceptionHandlerTypes {
 
@@ -78,8 +68,7 @@ public class ExceptionHandlerTypes {
 
     enum At { A, C, D }
 
-    // An exception handler: the instructions it covers, its catch type and the
-    // type of local 1 in its frame.
+    // local is the expected type of local 1 in the handler frame.
     record Handler(At start, At end, ClassDesc catchType, VerificationTypeInfo local) { }
 
     static class Loader extends ClassLoader {
@@ -128,7 +117,6 @@ public class ExceptionHandlerTypes {
         };
     }
 
-    // The bytecode index of the second exception handler of test().
     static int secondHandlerPc(byte[] bytes) {
         ClassModel cm = ClassFile.of().parse(bytes);
         for (MethodModel mm : cm.methods()) {
@@ -141,7 +129,6 @@ public class ExceptionHandlerTypes {
         throw new RuntimeException("no test method");
     }
 
-    // The class must verify, and test(0) must run.
     static void accepted(boolean changeLocals, Handler first, Handler second) throws Exception {
         String name = "Test" + counter++;
         byte[] bytes = generate(name, changeLocals, first, second);
@@ -149,8 +136,6 @@ public class ExceptionHandlerTypes {
         c.getMethod("test", int.class).invoke(null, 0);
     }
 
-    // The class must fail to verify because the frame of the second handler
-    // does not match the locals.
     static void rejected(boolean changeLocals, Handler first, Handler second) throws Exception {
         String name = "Test" + counter++;
         byte[] bytes = generate(name, changeLocals, first, second);
@@ -169,8 +154,7 @@ public class ExceptionHandlerTypes {
     }
 
     public static void main(String[] args) throws Exception {
-        // Both handlers cover the same instructions. The frame of the first
-        // matches, the frame of the second doesn't.
+        // Identical protected ranges.
         accepted(false, new Handler(At.A, At.D, CD_RuntimeException, INT),
                         new Handler(At.A, At.D, CD_Error, INT));
         accepted(false, new Handler(At.A, At.D, CD_RuntimeException, INT),
@@ -180,21 +164,19 @@ public class ExceptionHandlerTypes {
         rejected(false, new Handler(At.A, At.D, CD_RuntimeException, TOP),
                         new Handler(At.A, At.D, CD_Error, STRING));
 
-        // The handlers cover disjoint instructions with the same locals.
+        // Disjoint ranges with unchanged locals.
         accepted(false, new Handler(At.A, At.C, CD_RuntimeException, INT),
                         new Handler(At.C, At.D, CD_Error, INT));
         rejected(false, new Handler(At.A, At.C, CD_RuntimeException, INT),
                         new Handler(At.C, At.D, CD_Error, STRING));
 
-        // The second handler starts after the locals changed, which the frame
-        // of the first one accepts.
+        // The second handler starts after local 1 changes from int to String.
         accepted(true, new Handler(At.A, At.D, CD_RuntimeException, TOP),
                        new Handler(At.C, At.D, CD_Error, STRING));
         rejected(true, new Handler(At.A, At.D, CD_RuntimeException, TOP),
                        new Handler(At.C, At.D, CD_Error, INT));
 
-        // Both cover the change of the locals; the frame of the second one
-        // matches only before it.
+        // Both handlers span the change in local 1.
         accepted(true, new Handler(At.A, At.D, CD_RuntimeException, TOP),
                        new Handler(At.A, At.D, CD_Error, TOP));
         rejected(true, new Handler(At.A, At.D, CD_RuntimeException, TOP),

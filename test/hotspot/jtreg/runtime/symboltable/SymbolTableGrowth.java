@@ -57,15 +57,13 @@ public class SymbolTableGrowth {
     }
 
     static class DefineClasses {
-        // Each class adds its name and its field names as new symbols, enough to
-        // exceed two symbols per bucket of the default 32768 bucket table.
+        // Exceed two live symbols per bucket of the default 32768-bucket table.
         static final int CLASSES = 1500;
         static final int FIELDS_PER_CLASS = 64;
 
         private static final Pattern BUCKETS = Pattern.compile("Number of buckets\\s*:\\s*(\\d+)");
 
-        // The number of buckets of the SymbolTable, from the first table of
-        // the VM.symboltable diagnostic command, before the shared tables.
+        // The SymbolTable precedes the shared tables in VM.symboltable output.
         static long buckets() throws Exception {
             String out = (String) ManagementFactory.getPlatformMBeanServer().invoke(
                 new ObjectName("com.sun.management:type=DiagnosticCommand"),
