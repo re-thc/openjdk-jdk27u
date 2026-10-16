@@ -36,8 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.management.DynamicMBean;
 import jdk.management.HotSpotAOTCacheMXBean;
 import jdk.management.VirtualThreadSchedulerMXBean;
@@ -73,18 +71,15 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<MemoryManagerMXBean>() {
             private final Set<String> garbageCollectorMXBeanInterfaceNames
-                    = Collections.unmodifiableSet(
-                            Stream.of("java.lang.management.MemoryManagerMXBean",
-                                    "java.lang.management.GarbageCollectorMXBean",
-                                    "com.sun.management.GarbageCollectorMXBean")
-                            .collect(Collectors.toSet()));
+                    = Set.of("java.lang.management.MemoryManagerMXBean",
+                             "java.lang.management.GarbageCollectorMXBean",
+                             "com.sun.management.GarbageCollectorMXBean");
 
             @Override
             public Set<Class<? extends MemoryManagerMXBean>> mbeanInterfaces() {
-                return Stream.of(MemoryManagerMXBean.class,
+                return Set.of(MemoryManagerMXBean.class,
                         java.lang.management.GarbageCollectorMXBean.class,
-                        com.sun.management.GarbageCollectorMXBean.class)
-                        .collect(Collectors.toSet());
+                        com.sun.management.GarbageCollectorMXBean.class);
             }
 
             @Override
@@ -126,17 +121,14 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<java.lang.management.ThreadMXBean>() {
             private final Set<String> threadMXBeanInterfaceNames
-                    = Collections.unmodifiableSet(
-                            Stream.of("java.lang.management.ThreadMXBean",
-                                    "com.sun.management.ThreadMXBean")
-                            .collect(Collectors.toSet()));
+                    = Set.of("java.lang.management.ThreadMXBean",
+                             "com.sun.management.ThreadMXBean");
             private ThreadMXBean threadMBean = null;
 
             @Override
             public Set<Class<? extends java.lang.management.ThreadMXBean>> mbeanInterfaces() {
-                return Stream.of(java.lang.management.ThreadMXBean.class,
-                        com.sun.management.ThreadMXBean.class)
-                        .collect(Collectors.toSet());
+                return Set.of(java.lang.management.ThreadMXBean.class,
+                        com.sun.management.ThreadMXBean.class);
             }
 
             @Override
@@ -235,18 +227,15 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<OperatingSystemMXBean>() {
             private final Set<String> operatingSystemMXBeanInterfaceNames
-                    = Collections.unmodifiableSet(
-                            Stream.of("java.lang.management.OperatingSystemMXBean",
-                                    "com.sun.management.OperatingSystemMXBean",
-                                    "com.sun.management.UnixOperatingSystemMXBean")
-                            .collect(Collectors.toSet()));
+                    = Set.of("java.lang.management.OperatingSystemMXBean",
+                             "com.sun.management.OperatingSystemMXBean",
+                             "com.sun.management.UnixOperatingSystemMXBean");
 
             @Override
             public Set<Class<? extends OperatingSystemMXBean>> mbeanInterfaces() {
-                return Stream.of(java.lang.management.OperatingSystemMXBean.class,
+                return Set.of(java.lang.management.OperatingSystemMXBean.class,
                         com.sun.management.OperatingSystemMXBean.class,
-                        com.sun.management.UnixOperatingSystemMXBean.class)
-                        .collect(Collectors.toSet());
+                        com.sun.management.UnixOperatingSystemMXBean.class);
             }
 
             @Override

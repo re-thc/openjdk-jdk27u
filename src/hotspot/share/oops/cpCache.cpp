@@ -197,20 +197,17 @@ void ConstantPoolCache::set_direct_or_vtable_call(Bytecodes::Code invoke_code,
   } else if (byte_no == 2)  {
     if (change_to_virtual) {
       assert(invoke_code == Bytecodes::_invokeinterface, "");
-      // NOTE: THIS IS A HACK - BE VERY CAREFUL!!!
-      //
-      // Workaround for the case where we encounter an invokeinterface, but we
-      // should really have an _invokevirtual since the resolved method is a
-      // virtual method in java.lang.Object. This is a corner case in the spec
-      // but is presumably legal. javac does not generate this code.
-      //
-      // We do not set bytecode_1() to _invokeinterface, because that is the
-      // bytecode # used by the interpreter to see if it is resolved.  In this
-      // case, the method gets reresolved with caller for each interface call
-      // because the actual selected method may not be public.
-      //
-      // We set bytecode_2() to _invokevirtual.
-      // See also interpreterRuntime.cpp. (8/25/2000)
+      // javac emits invokeinterface for Object methods on interface-typed receivers.
+      // Mark the entry resolved only if the interpreter checks that the receiver
+      // implements REFC and the selected method is public and non-abstract.
+      // Otherwise, leave bytecode_1 unresolved so the link resolver checks each call.
+      // bytecode_2 is set to _invokevirtual below for the forced-virtual dispatch.
+      if (VM_Version::supports_fast_invokeinterface_object_checks()) {
+        // Store the resolved method before publishing bytecode_1 for
+        // method_if_resolved() and AbstractMethodError reporting.
+        method_entry->set_method(method());
+        method_entry->set_bytecode1(invoke_code);
+      }
     } else {
       assert(invoke_code == Bytecodes::_invokevirtual ||
              (invoke_code == Bytecodes::_invokeinterface &&

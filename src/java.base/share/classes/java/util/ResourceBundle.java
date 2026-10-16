@@ -1511,11 +1511,16 @@ public abstract class ResourceBundle {
 
     private static class ResourceBundleControlProviderHolder {
 
-        private static final List<ResourceBundleControlProvider> CONTROL_PROVIDERS =
-                ServiceLoader.load(ResourceBundleControlProvider.class,
-                                ClassLoader.getSystemClassLoader()).stream()
-                        .map(ServiceLoader.Provider::get)
-                        .toList();
+        private static final List<ResourceBundleControlProvider> CONTROL_PROVIDERS = loadProviders();
+
+        private static List<ResourceBundleControlProvider> loadProviders() {
+            List<ResourceBundleControlProvider> providers = new ArrayList<>();
+            for (ResourceBundleControlProvider provider : ServiceLoader.load(
+                    ResourceBundleControlProvider.class, ClassLoader.getSystemClassLoader())) {
+                providers.add(provider);
+            }
+            return Collections.unmodifiableList(providers);
+        }
 
         private static Control getControl(String baseName) {
             return CONTROL_PROVIDERS.isEmpty() ?

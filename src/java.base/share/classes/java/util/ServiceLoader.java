@@ -25,10 +25,8 @@
 
 package java.util;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -999,19 +997,14 @@ public final class ServiceLoader<S>
         LazyClassPathLookupIterator() { }
 
         /**
-         * Parse a single line from the given configuration file, adding the
-         * name on the line to set of names if not already seen.
+         * Parse the name on a line of the given configuration file, adding
+         * it to the names if not already seen. The line has no comment and
+         * no leading characters that trim would remove.
          */
-        private int parseLine(URL u, BufferedReader r, int lc, Set<String> names)
-            throws IOException
-        {
-            String ln = r.readLine();
-            if (ln == null) {
-                return -1;
-            }
-            int ci = ln.indexOf('#');
-            if (ci >= 0) ln = ln.substring(0, ci);
-            ln = ln.trim();
+        private void parseLine(URL u, byte[] line, int len, int lc, List<String> names) {
+            if (len == 0)
+                return;
+            String ln = new String(line, 0, len, UTF_8.INSTANCE).trim();
             int n = ln.length();
             if (n != 0) {
                 if ((ln.indexOf(' ') >= 0) || (ln.indexOf('\t') >= 0))
@@ -1029,28 +1022,75 @@ public final class ServiceLoader<S>
                     names.add(ln);
                 }
             }
-            return lc + 1;
         }
 
         /**
          * Parse the content of the given URL as a provider-configuration file.
          */
         private Iterator<String> parse(URL u) {
-            Set<String> names = new LinkedHashSet<>(); // preserve insertion order
+            List<String> names = new ArrayList<>();
             try {
                 URLConnection uc = u.openConnection();
                 uc.setUseCaches(false);
-                try (InputStream in = uc.getInputStream();
-                     BufferedReader r
-                         = new BufferedReader(new InputStreamReader(in, UTF_8.INSTANCE)))
-                {
-                    int lc = 1;
-                    while ((lc = parseLine(u, r, lc, names)) >= 0);
+                try (InputStream in = uc.getInputStream()) {
+                    parse(u, in, names);
                 }
             } catch (IOException x) {
                 fail(service, "Error accessing configuration file", x);
             }
             return names.iterator();
+        }
+
+        /**
+         * Parse incrementally, retaining only possible provider names so long
+         * comments and blank lines do not require proportional memory.
+         * Lines end with \n, \r or \r\n. In UTF-8, '#', line terminators and
+         * characters removed by trim are single bytes, never part of another
+         * character.
+         */
+        private void parse(URL u, InputStream in, List<String> names) throws IOException {
+            byte[] buf = new byte[512];
+            byte[] line = buf;      // replaced by an array of its own when used
+            int len = 0;
+            boolean comment = false;
+            boolean blank = false;  // a space or tab follows the kept bytes
+            boolean cr = false;     // the last byte ended a line with \r
+            int lc = 1;
+            int n;
+            while ((n = in.read(buf)) >= 0) {
+                for (int i = 0; i < n; i++) {
+                    byte b = buf[i];
+                    if (b == '\n' && cr) {
+                        cr = false;
+                    } else if (b == '\n' || b == '\r') {
+                        parseLine(u, line, len, lc++, names);
+                        len = 0;
+                        comment = blank = false;
+                        cr = (b == '\r');
+                    } else {
+                        cr = false;
+                        if (comment) {
+                            continue;
+                        } else if (b == '#') {
+                            comment = true;
+                        } else if (len == 0 && (b & 0xff) <= ' ') {
+                            // leading characters that trim removes
+                        } else if (b == ' ' || b == '\t') {
+                            blank = true;
+                        } else if (blank && (b & 0xff) > ' ') {
+                            fail(service, u, lc, "Illegal configuration-file syntax");
+                        } else {
+                            if (line == buf) {
+                                line = new byte[64];
+                            } else if (len == line.length) {
+                                line = Arrays.copyOf(line, 2 * len);
+                            }
+                            line[len++] = b;
+                        }
+                    }
+                }
+            }
+            parseLine(u, line, len, lc, names);
         }
 
         /**
