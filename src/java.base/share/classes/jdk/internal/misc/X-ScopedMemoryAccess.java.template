@@ -244,26 +244,32 @@ public final class ScopedMemoryAccess {
         }
     }
 
+    // Compares in chunks of at most 64 KiB. The loop advances by the elements
+    // each chunk compared, as reported by its result, so its stride is not a
+    // constant: C2 compiles a non-counted loop, which keeps a safepoint poll on
+    // every iteration whatever the GC and loop strip-mining settings.
     @ForceInline
     private int vectorizedMismatchLarge(Object a, long aOffset, Object b, long bOffset,
                                        int length, int log2ArrayIndexScale) {
         int chunk = 65536 >> log2ArrayIndexScale;
         int offset = 0;
-        while (length > chunk) {
+        int remaining = length;
+        while (remaining > chunk) {
             long byteOffset = (long) offset << log2ArrayIndexScale;
             int result = ArraysSupport.vectorizedMismatch(a, aOffset + byteOffset,
                     b, bOffset + byteOffset, chunk, log2ArrayIndexScale);
             if (result >= 0) {
                 return offset + result;
             }
-            // A full chunk is a multiple of the word width and has no tail.
-            assert result == -1;
-            offset += chunk;
-            length -= chunk;
+            // A chunk is a multiple of the word width, so its tail ~result is
+            // empty; any tail would be compared again by the next chunk.
+            int compared = chunk - ~result;
+            offset += compared;
+            remaining -= compared;
         }
         long byteOffset = (long) offset << log2ArrayIndexScale;
         int result = ArraysSupport.vectorizedMismatch(a, aOffset + byteOffset,
-                b, bOffset + byteOffset, length, log2ArrayIndexScale);
+                b, bOffset + byteOffset, remaining, log2ArrayIndexScale);
         return result >= 0 ? offset + result : result;
     }
 

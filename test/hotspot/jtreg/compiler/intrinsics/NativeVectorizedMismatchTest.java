@@ -32,9 +32,20 @@
  */
 
 /*
+ * @test id=ir-serial
+ * @summary Chunked native, scoped, segment and NIO scans keep their polls when counted loops
+ *          have none, as with SerialGC's default loop settings
+ * @requires vm.compiler2.enabled & vm.opt.final.UseVectorizedMismatchIntrinsic == true & vm.gc.Serial
+ * @library /test/lib /
+ * @modules java.base/jdk.internal.misc java.base/jdk.internal.util
+ * @run driver compiler.intrinsics.NativeVectorizedMismatchTest serial
+ */
+
+/*
  * @test id=ideal
  * @summary The bounded native mismatch leaf is dominated by its length guard and first-word check,
- *          and the Java fallback is either the named call or an inlined polling loop
+ *          the Java fallback is either the named call or an inlined polling loop, and every
+ *          iteration of a chunked scan polls under the default GC and under SerialGC
  * @requires vm.debug == true & vm.compiler2.enabled & vm.opt.final.UseVectorizedMismatchIntrinsic == true
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.base/jdk.internal.util
@@ -57,6 +68,7 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,6 +78,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.IntConsumer;
+import java.util.stream.Collectors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import jdk.internal.misc.ScopedMemoryAccess;
@@ -86,6 +99,9 @@ public class NativeVectorizedMismatchTest {
     // Misaligned native inputs. Only B (at NB) is modified; A and the heap arrays stay zero.
     private static final long NA = A.address() + 1;
     private static final long NB = B.address() + 3;
+    // Ordinary direct buffers have no segment session, so NIO fences them itself.
+    private static final ByteBuffer DA = ByteBuffer.allocateDirect(2 * LIMIT + 16);
+    private static final ByteBuffer DB = ByteBuffer.allocateDirect(2 * LIMIT + 16);
 
     private static final String LEAF = "CallLeaf.*vectorizedMismatch";
 
@@ -298,6 +314,31 @@ public class NativeVectorizedMismatchTest {
                 MemorySegment.ofArray(b), 0, length);
     }
 
+    @Test
+    @IR(counts = {LEAF, ">= 1", IRNode.SAFEPOINT, ">= 1"}, phase = CompilePhase.BEFORE_MATCHING)
+    public static int nioRange(ByteBuffer a, ByteBuffer b) {
+        return a.mismatch(b);
+    }
+
+    @Test
+    @IR(counts = {LEAF, ">= 1", IRNode.SAFEPOINT, ">= 1"}, phase = CompilePhase.BEFORE_MATCHING)
+    public static int nioMixedRange(ByteBuffer heap, ByteBuffer direct) {
+        return heap.mismatch(direct);
+    }
+
+    // Views of the first length bytes; the direct ones share the static buffers' memory.
+    private static ByteBuffer directA(int length) {
+        return DA.slice(0, length);
+    }
+
+    private static ByteBuffer directB(int length) {
+        return DB.slice(0, length);
+    }
+
+    private static ByteBuffer heapA(int length) {
+        return ByteBuffer.wrap(HEAP, 0, length).slice();
+    }
+
     @Run(test = {"nativeRange", "nativeCharsRange", "nativeIntsRange", "nativeLongsRange",
                  "mixedRange", "mixedReverseRange", "nativeAtLimit", "nativeAboveLimit",
                  "nativeZero", "nativeShort", "nativeBelowMinimum", "nativeAtMinimum",
@@ -307,7 +348,7 @@ public class NativeVectorizedMismatchTest {
                  "nativeCharsAboveLimit", "nativeIntsAboveLimit", "nativeLongsAboveLimit",
                  "mixedBelowMinimum", "mixedAtMinimum", "mixedAtLimit", "mixedAboveLimit",
                  "mixedReverseAtLimit", "mixedIntsAtLimit", "mixedIntsAboveLimit",
-                 "scopedRange", "heapSegmentRange"})
+                 "scopedRange", "heapSegmentRange", "nioRange", "nioMixedRange"})
     // Enough calls for interpreter profiles, so that the scoped and segment
     // call chains inline and expose their bounded leaf and chunk polls.
     @Warmup(10000)
@@ -331,8 +372,12 @@ public class NativeVectorizedMismatchTest {
         nativeLongsRange(a, b, length >> 3);
         mixedRange(HEAP, b, length);
         mixedReverseRange(b, HEAP, length);
-        scopedRange(a, b, length);
-        heapSegmentRange(HEAP, OTHER_HEAP, length);
+        // Chunked scans also see two-chunk ranges, so the profile keeps their loop.
+        int chunked = i % 50 == 0 ? 2 * LIMIT : length;
+        scopedRange(a, b, chunked);
+        heapSegmentRange(HEAP, OTHER_HEAP, chunked);
+        nioRange(directA(chunked), directB(chunked));
+        nioMixedRange(heapA(chunked), directB(chunked));
         nativeAtLimit(a, b);
         nativeAboveLimit(a, b);
         nativeZero(a, b);
@@ -400,6 +445,25 @@ public class NativeVectorizedMismatchTest {
                     throw new AssertionError("Heap segment difference: " + length + " at " + position);
                 }
                 OTHER_HEAP[position] = 0;
+            }
+        }
+
+        // NIO comparisons above 64 KiB run in chunks; differences on either side of the boundary.
+        for (int length : new int[] {MINIMUM - 1, MINIMUM, LIMIT, LIMIT + 1, 2 * LIMIT}) {
+            for (int position : new int[] {0, 7, length / 2, LIMIT - 1, LIMIT, length - 1}) {
+                if (position >= length) {
+                    continue;
+                }
+                if (nioRange(directA(length), directB(length)) != -1 ||
+                        nioMixedRange(heapA(length), directB(length)) != -1) {
+                    throw new AssertionError("Equal NIO buffers: " + length);
+                }
+                DB.put(position, (byte) 1);
+                if (nioRange(directA(length), directB(length)) != position ||
+                        nioMixedRange(heapA(length), directB(length)) != position) {
+                    throw new AssertionError("NIO difference: " + length + " at " + position);
+                }
+                DB.put(position, (byte) 0);
             }
         }
 
@@ -524,7 +588,8 @@ public class NativeVectorizedMismatchTest {
         VARIABLE,   // guarded leaf with a Java fallback
         IN_RANGE,   // constant in range: leaf only
         ABOVE,      // constant above the bound: polling Java fallback only
-        SHORT       // constant below the minimum: bounded Java fallback only
+        SHORT,      // constant below the minimum: bounded Java fallback only
+        CHUNKED     // a Java loop over bounded leaves
     }
 
     private enum Fallback {
@@ -533,8 +598,13 @@ public class NativeVectorizedMismatchTest {
 
     private record IdealCase(String method, Kind kind, int scale, IntConsumer warm) {
         // Interpreted 64 KiB comparisons are slow; constant sizes need no length profile.
+        // Chunked scans need enough calls for their call chains to inline, as in run().
         int warmups() {
-            return kind == Kind.VARIABLE ? 2000 : 20;
+            return switch (kind) {
+                case VARIABLE -> 2000;
+                case CHUNKED -> 8000;
+                default -> 20;
+            };
         }
     }
 
@@ -573,12 +643,31 @@ public class NativeVectorizedMismatchTest {
                 new IdealCase("mixedBelowMinimum", Kind.SHORT, 0, i -> mixedBelowMinimum(HEAP, NB)));
     }
 
+    // Scans longer than one leaf; every 50th warmup compares two chunks, so that the
+    // profile keeps the loop.
+    private static List<IdealCase> chunkCases() {
+        IntConsumer scoped = i -> scopedRange(NA, NB, i % 50 == 0 ? 2 * LIMIT : 4096);
+        IntConsumer segment = i -> heapSegmentRange(HEAP, OTHER_HEAP, i % 50 == 0 ? 2 * LIMIT : 4096);
+        IntConsumer nio = i -> {
+            int length = i % 50 == 0 ? 2 * LIMIT : 4096;
+            nioRange(directA(length), directB(length));
+        };
+        IntConsumer mixed = i -> {
+            int length = i % 50 == 0 ? 2 * LIMIT : 4096;
+            nioMixedRange(heapA(length), directB(length));
+        };
+        return List.of(new IdealCase("scopedRange", Kind.CHUNKED, 0, scoped),
+                       new IdealCase("heapSegmentRange", Kind.CHUNKED, 0, segment),
+                       new IdealCase("nioRange", Kind.CHUNKED, 0, nio),
+                       new IdealCase("nioMixedRange", Kind.CHUNKED, 0, mixed));
+    }
+
     private static final String MARKER = "@@ideal-case ";
 
     // Child VM: profile each case in the interpreter, then compile it once with C2.
-    private static void idealChild() throws Exception {
+    private static void idealChild(List<IdealCase> cases) throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
-        for (IdealCase c : idealCases()) {
+        for (IdealCase c : cases) {
             Method m = Arrays.stream(NativeVectorizedMismatchTest.class.getDeclaredMethods())
                     .filter(x -> x.getName().equals(c.method())).findFirst().orElseThrow();
             for (int i = 0; i < c.warmups(); i++) {
@@ -603,7 +692,9 @@ public class NativeVectorizedMismatchTest {
                         "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                         "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
                         "-XX:-TieredCompilation", "-XX:-BackgroundCompilation",
-                        // Counted-loop polls in the Java fallback do not depend on the selected GC.
+                        // The fallback checks identify an inlined Java loop by its poll, so give
+                        // counted loops polls whatever GC is selected. Chunked scans run below
+                        // without these flags.
                         "-XX:+UseCountedLoopSafepoints", "-XX:LoopStripMiningIter=1000",
                         "-XX:CompileCommand=quiet"));
                 for (IdealCase c : idealCases()) {
@@ -623,12 +714,42 @@ public class NativeVectorizedMismatchTest {
                 OutputAnalyzer output = ProcessTools.executeProcess(ProcessTools.createLimitedTestJavaProcessBuilder(flags));
                 output.shouldHaveExitValue(0);
                 String config = (partial == null ? "default partial inlining" : partial) + ", fallback " + expected;
-                verifyIdeal(output.getStdout().lines().toList(), expected, config);
+                verifyIdeal(output.getStdout().lines().toList(), idealCases(), expected, config);
             }
+        }
+        // Chunked scans with the loop settings each GC selects: the default GC strip-mines
+        // counted loops, SerialGC leaves them without polls.
+        for (String gc : new String[] {null, "-XX:+UseSerialGC"}) {
+            if (gc != null && ProcessTools.executeProcess(
+                    ProcessTools.createLimitedTestJavaProcessBuilder(gc, "-version")).getExitValue() != 0) {
+                System.out.println("Skipping " + gc + ": not available");
+                continue;
+            }
+            List<String> flags = new ArrayList<>(List.of(
+                    "-Xbootclasspath/a:.", "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
+                    "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
+                    "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
+                    "-XX:-TieredCompilation", "-XX:-BackgroundCompilation", "-XX:CompileCommand=quiet",
+                    // Keep the longer warmup below the compile threshold (10000 invocations
+                    // with this scaling); the child compiles explicitly.
+                    "-XX:CompileThresholdScaling=2"));
+            if (gc != null) {
+                flags.add(gc);
+            }
+            for (IdealCase c : chunkCases()) {
+                flags.add("-XX:CompileCommand=compileonly," + test + "::" + c.method());
+                flags.add("-XX:CompileCommand=PrintIdealPhase," + test + "::" + c.method() + ",BEFORE_MATCHING");
+            }
+            flags.add(test);
+            flags.add("chunk-child");
+            OutputAnalyzer output = ProcessTools.executeProcess(ProcessTools.createLimitedTestJavaProcessBuilder(flags));
+            output.shouldHaveExitValue(0);
+            verifyIdeal(output.getStdout().lines().toList(), chunkCases(), Fallback.EITHER,
+                        gc == null ? "default GC" : gc);
         }
     }
 
-    private static void verifyIdeal(List<String> lines, Fallback expected, String config) {
+    private static void verifyIdeal(List<String> lines, List<IdealCase> cases, Fallback expected, String config) {
         Map<String, List<String>> dumps = new HashMap<>();
         String current = null;
         List<String> dump = null;
@@ -646,7 +767,7 @@ public class NativeVectorizedMismatchTest {
                 dump.add(line);
             }
         }
-        for (IdealCase c : idealCases()) {
+        for (IdealCase c : cases) {
             List<String> graph = dumps.get(c.method());
             if (graph == null) {
                 throw new AssertionError(config + ": no BEFORE_MATCHING graph for " + c.method());
@@ -753,6 +874,11 @@ public class NativeVectorizedMismatchTest {
 
         // True if n is reachable from itself along control edges.
         private boolean inLoop(N n) {
+            return inLoopAvoiding(n, Set.of());
+        }
+
+        // True if n is reachable from itself along control edges that avoid the given nodes.
+        private boolean inLoopAvoiding(N n, Set<Integer> avoid) {
             ArrayDeque<Integer> work = new ArrayDeque<>(controlInputs(n));
             Set<Integer> seen = new HashSet<>();
             while (!work.isEmpty()) {
@@ -761,11 +887,30 @@ public class NativeVectorizedMismatchTest {
                     return true;
                 }
                 N c = node(idx);
-                if (seen.add(idx) && !c.name().equals("Start")) {
+                if (!avoid.contains(idx) && seen.add(idx) && !c.name().equals("Start")) {
                     work.addAll(controlInputs(c));
                 }
             }
             return false;
+        }
+
+        // Each repetition of a leaf in a chunk loop passes a safepoint poll: no control cycle
+        // through the leaf avoids every SafePoint. A strip-mined counted loop fails this, since
+        // its inner loop repeats the leaf and only the outer loop polls.
+        void verifyChunked() {
+            List<N> leaves = nodes.values().stream()
+                    .filter(n -> n.name().equals("CallLeaf") && n.spec().contains("# vectorizedMismatch"))
+                    .toList();
+            Set<Integer> polls = named("SafePoint").stream().map(N::idx).collect(Collectors.toSet());
+            List<N> repeated = leaves.stream().filter(this::inLoop).toList();
+            if (repeated.isEmpty()) {
+                throw new AssertionError("no leaf in a chunk loop: leaves=" + leaves);
+            }
+            for (N leaf : repeated) {
+                if (inLoopAvoiding(leaf, polls)) {
+                    throw new AssertionError("a chunk loop repeats " + leaf + " without passing a poll; polls=" + polls);
+                }
+            }
         }
 
         private Integer intCon(N n) {
@@ -866,6 +1011,10 @@ public class NativeVectorizedMismatchTest {
         }
 
         void verify(Kind kind, int scale, Fallback expected) {
+            if (kind == Kind.CHUNKED) {
+                verifyChunked();
+                return;
+            }
             List<N> leaves = new ArrayList<>(), namedCalls = new ArrayList<>(), traps = new ArrayList<>();
             for (N n : nodes.values()) {
                 if (n.name().equals("CallLeaf") && n.spec().contains("# vectorizedMismatch")) {
@@ -950,16 +1099,18 @@ public class NativeVectorizedMismatchTest {
         String mode = args.length == 0 ? "" : args[0];
         switch (mode) {
             case "ideal" -> idealDriver();
-            case "ideal-child" -> idealChild();
+            case "ideal-child" -> idealChild(idealCases());
+            case "chunk-child" -> idealChild(chunkCases());
             default -> {
+                // Default loop settings: chunked scans must poll without counted-loop safepoints.
                 List<String> flags = new ArrayList<>(List.of(
                         "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                         "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
-                        "-XX:-TieredCompilation",
-                        // Counted-loop polls in chunked scans do not depend on the selected GC.
-                        "-XX:+UseCountedLoopSafepoints", "-XX:LoopStripMiningIter=1000"));
+                        "-XX:-TieredCompilation"));
                 if (mode.equals("disable-partial")) {
                     flags.addAll(List.of("-XX:+UnlockDiagnosticVMOptions", "-XX:ArrayOperationPartialInlineSize=0"));
+                } else if (mode.equals("serial")) {
+                    flags.add("-XX:+UseSerialGC");
                 }
                 TestFramework.runWithFlags(flags.toArray(String[]::new));
             }
