@@ -309,34 +309,33 @@ public abstract class NumberFormat extends Format  {
     public StringBuffer format(Object number,
                                StringBuffer toAppendTo,
                                FieldPosition pos) {
-        return switch (number) {
-            case Long l -> format(l.longValue(), toAppendTo, pos);
-            case Integer i -> format(i.longValue(), toAppendTo, pos);
-            case Short s -> format(s.longValue(), toAppendTo, pos);
-            case Byte b -> format(b.longValue(), toAppendTo, pos);
-            case AtomicInteger ai -> format(ai.longValue(), toAppendTo, pos);
-            case AtomicLong al -> format(al.longValue(), toAppendTo, pos);
-            case BigInteger bi when bi.bitLength() < 64 -> format(bi.longValue(), toAppendTo, pos);
-            case Number n -> format(n.doubleValue(), toAppendTo, pos);
-            case null, default -> throw new IllegalArgumentException("Cannot format given Object as a Number");
-        };
+        // Not a pattern switch, whose bootstrap is slow on first use
+        if (isLongValue(number)) {
+            return format(((Number) number).longValue(), toAppendTo, pos);
+        } else if (number instanceof Number n) {
+            return format(n.doubleValue(), toAppendTo, pos);
+        }
+        throw new IllegalArgumentException("Cannot format given Object as a Number");
     }
 
     @Override
     StringBuf format(Object number,
                      StringBuf toAppendTo,
                      FieldPosition pos) {
-        return switch (number) {
-            case Long l -> format(l.longValue(), toAppendTo, pos);
-            case Integer i -> format(i.longValue(), toAppendTo, pos);
-            case Short s -> format(s.longValue(), toAppendTo, pos);
-            case Byte b -> format(b.longValue(), toAppendTo, pos);
-            case AtomicInteger ai -> format(ai.longValue(), toAppendTo, pos);
-            case AtomicLong al -> format(al.longValue(), toAppendTo, pos);
-            case BigInteger bi when bi.bitLength() < 64 -> format(bi.longValue(), toAppendTo, pos);
-            case Number n -> format(n.doubleValue(), toAppendTo, pos);
-            case null, default -> throw new IllegalArgumentException("Cannot format given Object as a Number");
-        };
+        if (isLongValue(number)) {
+            return format(((Number) number).longValue(), toAppendTo, pos);
+        } else if (number instanceof Number n) {
+            return format(n.doubleValue(), toAppendTo, pos);
+        }
+        throw new IllegalArgumentException("Cannot format given Object as a Number");
+    }
+
+    // Whether the number is formatted as a long, without losing precision
+    static boolean isLongValue(Object number) {
+        return number instanceof Long || number instanceof Integer
+                || number instanceof Short || number instanceof Byte
+                || number instanceof AtomicInteger || number instanceof AtomicLong
+                || number instanceof BigInteger bi && bi.bitLength() < 64;
     }
 
     /**

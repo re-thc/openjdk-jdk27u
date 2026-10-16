@@ -47,102 +47,30 @@ package compiler.c2;
 
 import jdk.test.whitebox.WhiteBox;
 
-public class Test8004741 extends Thread {
+public class Test8004741 {
 
   static int passed = 0;
 
   /**
-   * Loop forever allocating 2-d arrays.
-   * Catches and rethrows all exceptions; in the case of ThreadDeath, increments passed.
+   * Allocates a 2-d array.
+   * Catches and rethrows OutOfMemoryError, incrementing passed.
    * Note that passed is incremented here because this is the exception handler with
-   * the smallest scope; we only want to declare success in the case where it is highly
-   * likely that the test condition
-   * (exception in 2-d array alloc interrupted by ThreadDeath)
-   * actually occurs.
+   * the smallest scope; we only want to declare success in the case where the
+   * exception was thrown from within the 2-d array allocation.
    */
   static int[][] test(int a, int b) throws Exception {
     int[][] ar;
     try {
       ar = new int[a][b];
-    } catch (ThreadDeath e) {
-      System.out.println("test got ThreadDeath");
+    } catch (OutOfMemoryError e) {
       passed++;
       throw e;
     }
     return ar;
   }
 
-  /* Cookbook wait-notify to track progress of test thread. */
-  Object progressLock = new Object();
-  private static final int NOT_STARTED = 0;
-  private static final int RUNNING = 1;
-  private static final int STOPPING = 2;
-
-  int progressState = NOT_STARTED;
-
-  void toState(int state) {
-    synchronized (progressLock) {
-      progressState = state;
-      progressLock.notify();
-    }
-  }
-
-  void waitFor(int state) {
-    synchronized (progressLock) {
-      while (progressState < state) {
-        try {
-          progressLock.wait();
-        } catch (InterruptedException e) {
-          throw new Error("unexpected InterruptedException", e);
-        }
-      }
-      if (progressState > state) {
-        throw new Error("unexpected test state change, state = " + state + ", progressState = " + progressState);
-      }
-    }
-  }
-
-  /**
-   * Loops running test until some sort of an exception or error,
-   * expects to see ThreadDeath.
-   */
-  public void run() {
-    try {
-      // Print before state change, so that other thread is most likely
-      // to see this thread executing calls to test() in a loop.
-      System.out.println("thread running");
-      toState(RUNNING);
-      while (true) {
-        // (2,2) (2,10) (2,100) were observed to tickle the bug;
-        test(2, 100);
-      }
-    } catch (ThreadDeath e) {
-      // nothing to say, passing was incremented by the test.
-    } catch (Throwable e) {
-      throw new Error("unexpected Throwable " + e, e);
-    }
-    toState(STOPPING);
-  }
-
-  /**
-   * Runs a single trial of the test in a thread.
-   * No single trial is definitive, since the ThreadDeath
-   * exception might not land in the tested region of code.
-   */
-  public static void threadTest() throws InterruptedException {
-    Test8004741 t = new Test8004741();
-    t.start();
-    t.waitFor(RUNNING);
-    Thread.sleep(100);
-    System.out.println("stopping thread");
-    t.stop();
-    t.waitFor(STOPPING);
-    t.join();
-  }
-
   public static void main(String[] args) throws Exception {
     // Warm up "test"
-    // t will never be started.
     for (int n = 0; n < 11000; n++) {
       test(2, 100);
     }
@@ -166,14 +94,21 @@ public class Test8004741 extends Thread {
       System.out.println("Saw expected NegativeArraySizeException #2");
     }
 
-    /* Test repetitions.  If the test succeeds-mostly, it succeeds,
-     * as long as it does not crash (the outcome if the exception range
-     * table entry for the array allocation is missing).
-     */
     passed = 0;
-    int limit = 6;
-    while (passed != limit) {
-      threadTest();
+    /* A missing exception range table entry for the array allocation
+     * shows up as a crash or as an exception that bypasses the handler.
+     */
+    // Thread.stop() is gone, so exhaust the heap in the middle of the allocation instead.
+    for (int n = 0; n < 6; n++) {
+      try {
+        test(1 << 16, 1 << 16);
+        throw new AssertionError("Missing OutOfMemoryError");
+      } catch (OutOfMemoryError e) {
+        System.out.println("Saw expected OutOfMemoryError #" + (n + 1));
+      }
+    }
+    if (passed != 6) {
+      throw new AssertionError("OutOfMemoryError not seen by handler, passed = " + passed);
     }
   }
 }

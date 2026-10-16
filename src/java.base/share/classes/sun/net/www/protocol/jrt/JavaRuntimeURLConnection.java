@@ -34,7 +34,7 @@ import java.net.URL;
 
 import jdk.internal.jimage.ImageReader;
 import jdk.internal.jimage.ImageReader.Node;
-import jdk.internal.jimage.SystemImageReader;
+import jdk.internal.module.SystemModuleFinders;
 
 import sun.net.www.ParseUtil;
 import sun.net.www.URLConnection;
@@ -48,7 +48,7 @@ import sun.net.www.URLConnection;
 public class JavaRuntimeURLConnection extends URLConnection {
 
     // ImageReader to access resources in jimage.
-    private static final ImageReader READER = SystemImageReader.get();
+    private static final ImageReader READER = SystemModuleFinders.systemImageReader();
 
     // The module and resource name in the URL (i.e. "jrt:/[$MODULE[/$PATH]]").
     //
