@@ -1,0 +1,79 @@
+name: SIMDUTF d9d1ba65 platform validation
+on:
+  push:
+    branches: [review/simdutf-platforms-d9d1ba65]
+permissions:
+  contents: read
+  actions: write
+jobs:
+  prepare:
+    runs-on: windows-2025
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Verify unchanged PR runtime, build and test sources
+        run: git diff --exit-code d9d1ba65087da4fdc54d7fa12a7689717a05a0a0 HEAD -- src test bin make .github/actions .github/scripts .github/workflows/build-macos.yml .github/workflows/build-windows.yml .github/workflows/test.yml
+      - name: Cancel superseded validation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          task_sha=$(gh api repos/re-thc/openjdk-jdk27u/actions/runs/38874154482 --jq .head_sha)
+          test "$task_sha" = 2235e0204a4d1dd96385078f15c065d8997b4fff
+          task_status=$(gh api repos/re-thc/openjdk-jdk27u/actions/runs/38874154482 --jq .status)
+          if test "$task_status" != completed; then
+            gh api --method POST repos/re-thc/openjdk-jdk27u/actions/runs/38874154482/cancel
+          fi
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: bundles-jtreg-8.2.1+1
+          run-id: 38601904956
+          github-token: ${{ github.token }}
+          path: jtreg
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: bundles-jtreg-8.2.1+1
+          path: jtreg
+          retention-days: 14
+  build-macos:
+    name: macos-aarch64
+    needs: prepare
+    uses: ./.github/workflows/build-macos.yml
+    with:
+      platform: macos-aarch64
+      runs-on: macos-26
+      xcode-toolset-version: '26.6'
+  build-windows:
+    name: windows-x64
+    needs: prepare
+    uses: ./.github/workflows/build-windows.yml
+    with:
+      platform: windows-x64
+      runs-on: windows-2025
+      architecture: x86.x64
+      msvc-toolset-version: '14.44'
+  test-macos:
+    name: macos-aarch64
+    needs: [prepare, build-macos]
+    uses: ./.github/workflows/test.yml
+    with:
+      platform: macos-aarch64
+      bootjdk-platform: macos-aarch64
+      runs-on: macos-26
+      xcode-toolset-version: '26.6'
+      debug-suffix: -debug
+  test-windows:
+    name: windows-x64
+    needs: [prepare, build-windows]
+    uses: ./.github/workflows/test.yml
+    with:
+      platform: windows-x64
+      bootjdk-platform: windows-x64
+      architecture: x86.x64
+      runs-on: windows-2025
+      debug-suffix: -debug
