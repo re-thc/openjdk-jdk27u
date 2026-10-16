@@ -42,7 +42,8 @@ public class NumberProvider extends NumberFormatProvider {
         if (callback != null) {
             callback.accept(locale);
         }
-        return State.numberFormat;
+        return State.numberFormatOverride != null
+                ? State.numberFormatOverride : State.numberFormat;
     }
 
     @Override
