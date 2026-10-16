@@ -27,3 +27,6 @@ never presented as runtime path evidence.
 The parser test runs with jtreg using its default `test.src` data location. Its
 main method also accepts an explicit path to this directory for standalone
 offline validation. It does not invoke the runtime fixture or create child JVMs.
+
+A runnable native build, focused test commands and the observed Linux x64
+fastdebug results are in [Source qualification](source-qualification.md).
