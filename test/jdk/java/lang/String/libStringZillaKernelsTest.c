@@ -88,6 +88,42 @@ static jint check_kernels(void) {
         CHECK(published == kernels);
         if (!can_execute(kernels->capabilities)) continue;
 
+        // A single candidate compares the complete range, including unaligned bytes.
+        const jint single_counts[] = {1, 2, 31, 32, 63, 64, 65, 127, 128};
+        char single_source[264];
+        char single_latin[128];
+        jchar single_utf16[128];
+        for (jint i = 0; i < 128; i++) {
+            single_latin[i] = (char)(32 + i % 80);
+            single_utf16[i] = (unsigned char)single_latin[i];
+        }
+        for (unsigned int c = 0; c < sizeof(single_counts) / sizeof(single_counts[0]); c++) {
+            jint count = single_counts[c];
+            for (jint offset = 0; offset < 8; offset++) {
+                char* bytes = single_source + offset;
+                memcpy(bytes, single_latin, count);
+                CHECK(kernels->findLatin1(bytes, count, single_latin, count) == 0);
+                CHECK(kernels->rfindLatin1(bytes, count, single_latin, count) == 0);
+                bytes[count - 1] ^= 1;
+                CHECK(kernels->findLatin1(bytes, count, single_latin, count) == -1);
+                CHECK(kernels->rfindLatin1(bytes, count, single_latin, count) == -1);
+                memcpy(bytes, single_utf16, count * sizeof(jchar));
+                CHECK(kernels->findUTF16(bytes, count * 2, (const char*)single_utf16, count * 2) == 0);
+                CHECK(kernels->rfindUTF16(bytes, count * 2, (const char*)single_utf16, count * 2) == 0);
+                bytes[count * 2 - 1] ^= 1;
+                CHECK(kernels->findUTF16(bytes, count * 2, (const char*)single_utf16, count * 2) == -1);
+                CHECK(kernels->rfindUTF16(bytes, count * 2, (const char*)single_utf16, count * 2) == -1);
+                if (count <= 64) {
+                    bytes[count * 2 - 1] ^= 1;
+                    CHECK(kernels->findUTF16Latin1(bytes, count * 2, single_latin, count) == 0);
+                    CHECK(kernels->rfindUTF16Latin1(bytes, count * 2, single_latin, count) == 0);
+                    bytes[0] ^= 1;
+                    CHECK(kernels->findUTF16Latin1(bytes, count * 2, single_latin, count) == -1);
+                    CHECK(kernels->rfindUTF16Latin1(bytes, count * 2, single_latin, count) == -1);
+                }
+            }
+        }
+
         // Aligned short-needle filtering must verify interiors and batch edges.
         const jint short_counts[] = {1, 2, 4, 16, 31, 32, 33, 63, 64, 65, 127, 128, 129};
         jchar aligned_source[512];

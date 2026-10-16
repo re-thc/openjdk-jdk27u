@@ -40,7 +40,6 @@ final class StringZilla {
     private static final int BACKEND = CONFIGURATION & BACKEND_MASK;
     private static final int SERIAL = 0;
     private static final int HASWELL = 1;
-    private static final int SKYLAKE = 2;
     static final int C1 = 1;
     static final int C2 = 4;
     // Keep small inputs on the existing Java / platform intrinsic paths.
@@ -87,11 +86,6 @@ final class StringZilla {
             }
         }
         return true;
-    }
-
-    @ForceInline
-    static boolean useMixedPrefix(int tier) {
-        return tier == 0 || (tier == C1 && BACKEND == SKYLAKE);
     }
 
     // The caller has checked the last character. Verify the remaining suffix

@@ -122,7 +122,8 @@ static int search_utf16_haswell(const jchar* src, int length, const jchar* tgt,
 #endif
 
 static jint search_impl(const char* src, jint length, const char* tgt, jint tgt_length,
-                        jint encoding, jboolean reverse, search_fn fn, aligned_fn aligned) {
+                        jint encoding, jboolean reverse, search_fn fn, aligned_fn aligned,
+                        sz_equal_t equality) {
     // Validate the mixed cap before reading the needle or computing byte size.
     jchar widened[64];
     if (encoding == 2 && (unsigned int)tgt_length > sizeof(widened) / sizeof(widened[0])) {
@@ -150,6 +151,10 @@ static jint search_impl(const char* src, jint length, const char* tgt, jint tgt_
         }
         tgt = (const char*)widened;
     }
+    // A single candidate needs equality, not search preprocessing.
+    if (length == needle_bytes && equality != NULL) {
+        return equality(src, tgt, (sz_size_t)length) ? 0 : -1;
+    }
     const char* match = fn(src, (sz_size_t)length, tgt, (sz_size_t)needle_bytes);
     if (match == NULL) {
         return -1;
@@ -172,7 +177,7 @@ static jint search_char_impl(const char* src, jint length, jint ch, jboolean utf
                              jboolean reverse, search_fn fn, aligned_fn aligned) {
     if (!utf16) {
         char needle = (char)ch;
-        return search_impl(src, length, &needle, 1, 0, reverse, fn, aligned);
+        return search_impl(src, length, &needle, 1, 0, reverse, fn, aligned, NULL);
     }
     jchar needle[2];
     int needle_length = 2;
@@ -183,7 +188,7 @@ static jint search_char_impl(const char* src, jint length, jint ch, jboolean utf
         needle[1] = (jchar)(0xdc00 + ((ch - 0x10000) & 0x3ff));
         needle_length = 4;
     }
-    return search_impl(src, length, (const char*)needle, needle_length, 1, reverse, fn, aligned);
+    return search_impl(src, length, (const char*)needle, needle_length, 1, reverse, fn, aligned, NULL);
 }
 
 // Short UTF-16 needles make serial byte-search shifts ineffective. Reuse the
@@ -214,22 +219,22 @@ static sz_cptr_t rfind_utf16_haswell(sz_cptr_t src, sz_size_t src_bytes,
 /* Every published table is immutable; repeated initialization is harmless. */
 #define DEFINE_KERNELS(tag, forward, backward, backward_utf16, equality, aligned, caps) \
 static jint tag##_find_latin1(const char* s, jint n, const char* t, jint m) { \
-    return search_impl(s, n, t, m, 0, JNI_FALSE, forward, aligned); \
+    return search_impl(s, n, t, m, 0, JNI_FALSE, forward, aligned, equality); \
 } \
 static jint tag##_find_utf16(const char* s, jint n, const char* t, jint m) { \
-    return search_impl(s, n, t, m, 1, JNI_FALSE, forward, aligned); \
+    return search_impl(s, n, t, m, 1, JNI_FALSE, forward, aligned, equality); \
 } \
 static jint tag##_find_mixed(const char* s, jint n, const char* t, jint m) { \
-    return search_impl(s, n, t, m, 2, JNI_FALSE, forward, aligned); \
+    return search_impl(s, n, t, m, 2, JNI_FALSE, forward, aligned, equality); \
 } \
 static jint tag##_rfind_latin1(const char* s, jint n, const char* t, jint m) { \
-    return search_impl(s, n, t, m, 0, JNI_TRUE, backward, aligned); \
+    return search_impl(s, n, t, m, 0, JNI_TRUE, backward, aligned, equality); \
 } \
 static jint tag##_rfind_utf16(const char* s, jint n, const char* t, jint m) { \
-    return search_impl(s, n, t, m, 1, JNI_TRUE, backward_utf16, aligned); \
+    return search_impl(s, n, t, m, 1, JNI_TRUE, backward_utf16, aligned, equality); \
 } \
 static jint tag##_rfind_mixed(const char* s, jint n, const char* t, jint m) { \
-    return search_impl(s, n, t, m, 2, JNI_TRUE, backward, aligned); \
+    return search_impl(s, n, t, m, 2, JNI_TRUE, backward, aligned, equality); \
 } \
 static jint tag##_find_char_latin1(const char* s, jint n, jint c) { \
     return search_char_impl(s, n, c, JNI_FALSE, JNI_FALSE, forward, aligned); \
