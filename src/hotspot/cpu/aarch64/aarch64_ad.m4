@@ -358,6 +358,24 @@ instruct ubfizIConvI2LAndI(iRegLNoSp dst, iRegI src, immI_bitmask msk)
 %}
 
 
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+// A logical shift of at least 32 already clears the upper half of the result.
+instruct urShiftLConvL2I(iRegINoSp dst, iRegL src, immI rshift)
+%{
+  match(Set dst (ConvL2I (URShiftL src rshift)));
+  predicate((n->in(1)->in(2)->get_int() & 63) >= 32);
+
+  ins_cost(INSN_COST);
+  format %{ "lsr $dst, $src, $rshift\t# truncated long" %}
+  ins_encode %{
+    __ lsr(as_Register($dst$$reg), as_Register($src$$reg),
+           $rshift$$constant & 63);
+  %}
+  ins_pipe(ialu_reg_shift);
+%}
+
+
 // Rotations
 define(`EXTRACT_INSN',`
 // This pattern is automatically generated from aarch64_ad.m4
