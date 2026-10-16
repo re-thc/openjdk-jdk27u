@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -946,6 +947,7 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
 // Not supported
 address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_vectorizedMismatch_entry() { return nullptr; }
 
 void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // See more discussion in stackOverflow.hpp.

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,6 +214,8 @@ void TemplateInterpreterGenerator::generate_all() {
 
   method_entry(java_lang_Float_float16ToFloat);
   method_entry(java_lang_Float_floatToFloat16);
+
+  method_entry(jdk_internal_util_ArraysSupport_vectorizedMismatch)
 
 #undef method_entry
 
@@ -486,6 +489,8 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
                                            : entry_point = generate_Float_float16ToFloat_entry(); break;
   case Interpreter::java_lang_Float_floatToFloat16
                                            : entry_point = generate_Float_floatToFloat16_entry(); break;
+  case Interpreter::jdk_internal_util_ArraysSupport_vectorizedMismatch
+                                           : entry_point = generate_vectorizedMismatch_entry(); break;
   default:
     fatal("unexpected intrinsic method kind: %d", kind);
     break;

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +29,8 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
+#include "oops/methodCounters.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -321,6 +324,128 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
   __ mov(rsp, r13);           // set sp to sender sp
   __ jmp(rdi);
 
+  return entry;
+}
+
+/**
+ * Method entry for static (non-native) method:
+ *   int jdk.internal.util.ArraysSupport.vectorizedMismatch(Object a, long aOffset,
+ *                                                          Object b, long bOffset,
+ *                                                          int length, int log2ArrayIndexScale)
+ */
+address TemplateInterpreterGenerator::generate_vectorizedMismatch_entry() {
+  assert(UseVectorizedMismatchIntrinsic, "this intrinsic is not supported");
+  address entry = __ pc();
+
+  // rbx: Method*
+  // r13: senderSP must be preserved for the slow path, set SP to it on fast path
+
+  // We don't generate a local frame because we call stub code and there is
+  // no safepoint on this path. The vanilla entry handles everything else.
+  Label slow_path, checked, bounded;
+
+  // JVMTI events and breakpoints need the bytecodes.
+  if (JvmtiExport::can_post_interpreter_events()) {
+    __ cmpl(Address(r15_thread, JavaThread::interp_only_mode_offset()), 0);
+    __ jcc(Assembler::notEqual, slow_path);
+  }
+#if INCLUDE_JVMTI
+  Label no_counters;
+  __ movptr(rax, Address(rbx, Method::method_counters_offset()));
+  __ testptr(rax, rax);
+  __ jccb(Assembler::zero, no_counters);
+  __ cmpw(Address(rax, in_bytes(MethodCounters::number_of_breakpoints_offset())), 0);
+  __ jcc(Assembler::notEqual, slow_path);
+  __ bind(no_counters);
+#endif
+  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
+  if ((UseCompiler || CountCompiledCalls) && ProfileInterpreter) {
+    // A MethodData means the interpreter now profiles the Java body for C2,
+    // which still compiles that body for short native and untyped inputs.
+    __ cmpptr(Address(rbx, Method::method_data_offset()), NULL_WORD);
+    __ jcc(Assembler::notEqual, slow_path);
+  }
+
+  const Register scale  = rcx;  // shift count for the native bound
+  const Register length = rax;
+  const Register obja   = r10;
+  const Register objb   = r11;
+
+  // Arguments are reversed on the Java expression stack; each long takes two slots.
+  __ movl(scale, Address(rsp, wordSize));      // log2ArrayIndexScale
+  __ movl(length, Address(rsp, 2 * wordSize)); // length
+  // The stub needs a positive length and an element scale from 0 to 3.
+  __ cmpl(scale, 3);
+  __ jcc(Assembler::above, slow_path);
+  __ testl(length, length);
+  __ jcc(Assembler::lessEqual, slow_path);
+  __ movptr(objb, Address(rsp, 5 * wordSize)); // Object b
+  __ movptr(obja, Address(rsp, 8 * wordSize)); // Object a
+  // Compiled code bounds off-heap leaf calls to 64 KiB. Longer native ranges
+  // keep the Java loop and its safepoint polls.
+  __ testptr(obja, obja);
+  __ jccb(Assembler::zero, bounded);
+  __ testptr(objb, objb);
+  __ jccb(Assembler::notZero, checked);
+  __ bind(bounded);
+  __ shlq(length);  // byte length; at most 2^34 for an int length and scale 3
+  __ cmpq(length, 64 * K);
+  __ jcc(Assembler::above, slow_path);
+
+  __ bind(checked);
+  // The stub is generated after the interpreter, so check its entry when called.
+  __ movptr(rdx, (intptr_t) StubRoutines::vectorizedMismatch_addr());
+  __ cmpptr(Address(rdx, 0), NULL_WORD);
+  __ jcc(Assembler::equal, slow_path);
+
+  // Count the invocation as the vanilla entry does, so compilation policy and
+  // inlining heuristics see it. This follows every other check: an invocation
+  // that takes the vanilla entry is counted there and only there, including
+  // when counters are missing or the count would notify the policy.
+  if (UseCompiler || CountCompiledCalls) {
+    __ movptr(rax, Address(rbx, Method::method_counters_offset()));
+    __ testptr(rax, rax);
+    __ jcc(Assembler::zero, slow_path);
+    __ movl(rcx, Address(rax, MethodCounters::invocation_counter_offset() +
+                              InvocationCounter::counter_offset()));
+    __ incrementl(rcx, InvocationCounter::count_increment);
+    __ movl(rdx, rcx);
+    __ andl(rdx, Address(rax, in_bytes(MethodCounters::invoke_mask_offset())));
+    __ jcc(Assembler::zero, slow_path);
+    __ movl(Address(rax, MethodCounters::invocation_counter_offset() +
+                         InvocationCounter::counter_offset()), rcx);
+  }
+
+  // Reload what the checks and the counter clobbered. A null base leaves the
+  // offset as an absolute address.
+  __ movl(scale, Address(rsp, wordSize));
+  __ movl(length, Address(rsp, 2 * wordSize));
+  __ addptr(obja, Address(rsp, 6 * wordSize)); // + aOffset
+  __ addptr(objb, Address(rsp, 3 * wordSize)); // + bOffset
+  // Move the arguments without overwriting a source on either calling convention.
+  __ mov(c_rarg3, scale);
+  __ mov(c_rarg2, length);
+  __ mov(c_rarg1, objb);
+  __ mov(c_rarg0, obja);
+  __ movptr(rax, (intptr_t) StubRoutines::vectorizedMismatch_addr());
+  __ movptr(rax, Address(rax, 0));
+  // rbx and r13 are callee-saved: keep the return address in rbx and restore
+  // the sender's SP from r13, which allows the stack to be aligned freely.
+  __ movptr(rbx, Address(rsp, 0));
+  __ andptr(rsp, -StackAlignmentInBytes);
+#ifdef _WIN64
+  __ subptr(rsp, frame::arg_reg_save_area_bytes);
+#endif
+  __ call(rax);
+  // result in rax
+
+  // _ireturn
+  __ mov(rsp, r13);           // set sp to sender sp
+  __ jmp(rbx);
+
+  // generate a vanilla interpreter entry as the slow path
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
   return entry;
 }
 

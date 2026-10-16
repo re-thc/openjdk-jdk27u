@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -329,6 +330,8 @@ address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() {
   __ br(lr);
   return entry_point;
 }
+
+address TemplateInterpreterGenerator::generate_vectorizedMismatch_entry() { return nullptr; }
 
 // Abstract method entry
 // Attempt to execute abstract method. Throw exception

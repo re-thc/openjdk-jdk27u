@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,6 +145,12 @@ class MethodCounters : public Metadata {
   static ByteSize backedge_mask_offset() {
     return byte_offset_of(MethodCounters, _backedge_mask);
   }
+
+#if INCLUDE_JVMTI
+  static ByteSize number_of_breakpoints_offset() {
+    return byte_offset_of(MethodCounters, _number_of_breakpoints);
+  }
+#endif
 
   virtual const char* internal_name() const { return "{method counters}"; }
 

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2103,6 +2104,7 @@ address TemplateInterpreterGenerator::generate_currentThread() {
 // Not supported
 address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_vectorizedMismatch_entry() { return nullptr; }
 
 void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Quick & dirty stack overflow checking: bang the stack & handle trap.
