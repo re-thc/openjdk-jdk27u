@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.Objects;
+import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.annotation.AnnotationSupport;
 
 /**
@@ -372,15 +373,24 @@ public final class Parameter implements AnnotatedElement {
         return getDeclaredAnnotations();
     }
 
-    private transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
+    private transient volatile Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
 
-    private synchronized Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
-        if(null == declaredAnnotations) {
-            declaredAnnotations = new HashMap<>();
+    private Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
+        Map<Class<? extends Annotation>, Annotation> declAnnos = declaredAnnotations;
+        if (declAnnos == null) {
+            // Built with no lock held, as the parameter annotations of the executable
+            // may be parsed, which can initialize an enum class whose initializer reads
+            // them.  Racing threads build maps of the same annotation instances, which
+            // the executable caches.  A map with a constant of an enum class that this
+            // thread is initializing, which could not be found, is not cached.
+            declAnnos = new HashMap<>();
             for (Annotation a : getDeclaredAnnotations())
-                declaredAnnotations.put(a.annotationType(), a);
+                declAnnos.put(a.annotationType(), a);
+            if (!AnnotationParser.hasUnresolvedEnumConstant(declAnnos.values())) {
+                declaredAnnotations = declAnnos;
+            }
         }
-        return declaredAnnotations;
-   }
+        return declAnnos;
+    }
 
 }

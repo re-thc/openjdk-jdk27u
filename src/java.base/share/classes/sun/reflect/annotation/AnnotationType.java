@@ -82,6 +82,14 @@ public class AnnotationType {
         AnnotationType result = jla.getAnnotationType(annotationClass); // volatile read
         if (result == null) {
             result = new AnnotationType(annotationClass);
+            // don't cache it if a default has a constant of an enum class that this
+            // thread is initializing, which could not be found before the constants
+            // exist: the next call parses the defaults again, and finds it
+            for (Object defaultValue : result.memberDefaults.values()) {
+                if (AnnotationInvocationHandler.hasUnresolvedEnumConstant(defaultValue)) {
+                    return result;
+                }
+            }
             // try to CAS the AnnotationType: null -> result
             if (!jla.casAnnotationType(annotationClass, null, result)) {
                 // somebody was quicker -> read it's result

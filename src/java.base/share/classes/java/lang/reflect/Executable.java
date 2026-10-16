@@ -32,6 +32,7 @@ import java.util.Objects;
 import java.util.StringJoiner;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
 import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.annotation.AnnotationSupport;
@@ -608,32 +609,22 @@ public abstract sealed class Executable extends AccessibleObject
         return result;
     }
 
-    // Cached in the root only
     private transient volatile Annotation[][] declaredParameterAnnotations;
 
     private Annotation[][] declaredParameterAnnotations(Class<?>[] parameterTypes,
                                                         byte[] parameterAnnotations) {
-        Executable root = (Executable)getRoot();
-        if (root != null) {
-            return root.declaredParameterAnnotations(parameterTypes, parameterAnnotations);
-        }
-        Annotation[][] result = declaredParameterAnnotations;
-        if (result == null) {
-            // Parsed without a lock held: parsing an enum value initializes the enum
-            // class, and its initializer may read these annotations, on another thread
-            // or on this one.
-            result = parseDeclaredParameterAnnotations(parameterTypes, parameterAnnotations);
-            // A value that could not be resolved, such as a constant of an enum whose
-            // initialization this thread has not finished, is not cached: the next
-            // call parses the annotations again.
-            if (!AnnotationParser.hasExceptionProxy(result)) {
-                synchronized (this) {
-                    // Publish, or use the annotations that another call published first
-                    if (declaredParameterAnnotations == null) {
-                        declaredParameterAnnotations = result;
-                    } else {
-                        result = declaredParameterAnnotations;
-                    }
+        Annotation[][] result;
+        if ((result = declaredParameterAnnotations) == null) {
+            Executable root = (Executable)getRoot();
+            if (root != null) {
+                result = root.declaredParameterAnnotations(parameterTypes, parameterAnnotations);
+                if (result == root.declaredParameterAnnotations) {
+                    declaredParameterAnnotations = result;
+                }
+            } else {
+                result = parseDeclaredParameterAnnotations(parameterTypes, parameterAnnotations);
+                if (!AnnotationParser.hasUnresolvedEnumConstant(result)) {
+                    result = publish(Offsets.DECLARED_PARAMETER_ANNOTATIONS, result);
                 }
             }
         }
@@ -695,24 +686,53 @@ public abstract sealed class Executable extends AccessibleObject
     private Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
         Map<Class<? extends Annotation>, Annotation> declAnnos;
         if ((declAnnos = declaredAnnotations) == null) {
-            synchronized (this) {
-                if ((declAnnos = declaredAnnotations) == null) {
-                    Executable root = (Executable)getRoot();
-                    if (root != null) {
-                        declAnnos = root.declaredAnnotations();
-                    } else {
-                        declAnnos = AnnotationParser.parseAnnotations(
-                                getAnnotationBytes(),
-                                SharedSecrets.getJavaLangAccess().
-                                        getConstantPool(getDeclaringClass()),
-                                getDeclaringClass()
-                        );
-                    }
+            Executable root = (Executable)getRoot();
+            if (root != null) {
+                declAnnos = root.declaredAnnotations();
+                if (declAnnos == root.declaredAnnotations) {
                     declaredAnnotations = declAnnos;
+                }
+            } else {
+                declAnnos = AnnotationParser.parseAnnotations(
+                        getAnnotationBytes(),
+                        SharedSecrets.getJavaLangAccess().
+                                getConstantPool(getDeclaringClass()),
+                        getDeclaringClass()
+                );
+                if (!AnnotationParser.hasUnresolvedEnumConstant(declAnnos.values())) {
+                    declAnnos = publish(Offsets.DECLARED_ANNOTATIONS, declAnnos);
                 }
             }
         }
         return declAnnos;
+    }
+
+    /*
+     * The annotations of the root are parsed with no lock held: parsing an enum
+     * value initializes the enum class, and its initializer may read the same
+     * annotations, on another thread, which a lock held here would block, or on
+     * this thread.  The parsed annotations are then published with a CAS, or the
+     * annotations that another thread published first are used, so that callers
+     * share one set of annotation instances.  Annotations with a constant of an
+     * enum class that this thread is initializing, which could not be found before
+     * the constants exist, are not published, and are parsed again next time.
+     * A copy caches the annotations of its root once the root has published them.
+     */
+    @SuppressWarnings("unchecked")
+    private <T> T publish(long offset, T annotations) {
+        Unsafe unsafe = Offsets.UNSAFE;
+        return unsafe.compareAndSetReference(this, offset, null, annotations)
+                ? annotations
+                : (T)unsafe.getReferenceVolatile(this, offset);
+    }
+
+    // Initialized when an executable first publishes annotations, not with this class
+    private static final class Offsets {
+        static final Unsafe UNSAFE = Unsafe.getUnsafe();
+        static final long DECLARED_ANNOTATIONS
+                = UNSAFE.objectFieldOffset(Executable.class, "declaredAnnotations");
+        static final long DECLARED_PARAMETER_ANNOTATIONS
+                = UNSAFE.objectFieldOffset(Executable.class, "declaredParameterAnnotations");
     }
 
     /**

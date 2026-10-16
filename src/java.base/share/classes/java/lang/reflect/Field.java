@@ -34,6 +34,7 @@ import java.util.Objects;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.event.FinalFieldMutationEvent;
 import jdk.internal.loader.ClassLoaders;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.Modules;
@@ -1404,23 +1405,38 @@ class Field extends AccessibleObject implements Member {
     private Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
         Map<Class<? extends Annotation>, Annotation> declAnnos;
         if ((declAnnos = declaredAnnotations) == null) {
-            synchronized (this) {
-                if ((declAnnos = declaredAnnotations) == null) {
-                    Field root = this.root;
-                    if (root != null) {
-                        declAnnos = root.declaredAnnotations();
-                    } else {
-                        declAnnos = AnnotationParser.parseAnnotations(
-                                annotations,
-                                SharedSecrets.getJavaLangAccess()
-                                        .getConstantPool(getDeclaringClass()),
-                                getDeclaringClass());
-                    }
+            Field root = this.root;
+            if (root != null) {
+                declAnnos = root.declaredAnnotations();
+                if (declAnnos == root.declaredAnnotations) {
                     declaredAnnotations = declAnnos;
+                }
+            } else {
+                // Parsed with no lock held, and published with a CAS unless a constant
+                // of an enum class this thread is initializing was not found, as for
+                // the annotations of an Executable
+                declAnnos = AnnotationParser.parseAnnotations(
+                        annotations,
+                        SharedSecrets.getJavaLangAccess()
+                                .getConstantPool(getDeclaringClass()),
+                        getDeclaringClass());
+                if (!AnnotationParser.hasUnresolvedEnumConstant(declAnnos.values())) {
+                    Unsafe unsafe = Offsets.UNSAFE;
+                    if (!unsafe.compareAndSetReference(this, Offsets.DECLARED_ANNOTATIONS,
+                                                       null, declAnnos)) {
+                        declAnnos = declaredAnnotations;
+                    }
                 }
             }
         }
         return declAnnos;
+    }
+
+    // Initialized when a field first publishes annotations, not with this class
+    private static final class Offsets {
+        static final Unsafe UNSAFE = Unsafe.getUnsafe();
+        static final long DECLARED_ANNOTATIONS
+                = UNSAFE.objectFieldOffset(Field.class, "declaredAnnotations");
     }
 
     private native byte[] getTypeAnnotationBytes0();

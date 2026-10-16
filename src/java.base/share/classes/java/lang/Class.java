@@ -3662,6 +3662,12 @@ public final class Class<T> implements java.io.Serializable,
             }
             // null or stale annotationData -> optimistically create new instance
             AnnotationData newAnnotationData = createAnnotationData(classRedefinedCount);
+            // don't install it if it has a constant of an enum class that this thread
+            // is initializing, which could not be found before the constants exist:
+            // the next call parses the annotations again, and finds it
+            if (AnnotationParser.hasUnresolvedEnumConstant(newAnnotationData.annotations.values())) {
+                return newAnnotationData;
+            }
             // try to install it
             if (Atomic.casAnnotationData(this, annotationData, newAnnotationData)) {
                 // successfully installed new AnnotationData

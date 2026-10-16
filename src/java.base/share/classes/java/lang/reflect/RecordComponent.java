@@ -26,6 +26,7 @@
 package java.lang.reflect;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.Unsafe;
 import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.annotation.TypeAnnotation;
 import sun.reflect.annotation.TypeAnnotationParser;
@@ -188,23 +189,38 @@ public final class RecordComponent implements AnnotatedElement {
     private Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
         Map<Class<? extends Annotation>, Annotation> declAnnos;
         if ((declAnnos = declaredAnnotations) == null) {
-            synchronized (this) {
-                if ((declAnnos = declaredAnnotations) == null) {
-                    RecordComponent root = this.root;
-                    if (root != null) {
-                        declAnnos = root.declaredAnnotations();
-                    } else {
-                        declAnnos = AnnotationParser.parseAnnotations(
-                                annotations,
-                                SharedSecrets.getJavaLangAccess()
-                                        .getConstantPool(getDeclaringRecord()),
-                                getDeclaringRecord());
-                    }
+            RecordComponent root = this.root;
+            if (root != null) {
+                declAnnos = root.declaredAnnotations();
+                if (declAnnos == root.declaredAnnotations) {
                     declaredAnnotations = declAnnos;
+                }
+            } else {
+                // Parsed with no lock held, and published with a CAS unless a constant
+                // of an enum class this thread is initializing was not found, as for
+                // the annotations of an Executable
+                declAnnos = AnnotationParser.parseAnnotations(
+                        annotations,
+                        SharedSecrets.getJavaLangAccess()
+                                .getConstantPool(getDeclaringRecord()),
+                        getDeclaringRecord());
+                if (!AnnotationParser.hasUnresolvedEnumConstant(declAnnos.values())) {
+                    Unsafe unsafe = Offsets.UNSAFE;
+                    if (!unsafe.compareAndSetReference(this, Offsets.DECLARED_ANNOTATIONS,
+                                                       null, declAnnos)) {
+                        declAnnos = declaredAnnotations;
+                    }
                 }
             }
         }
         return declAnnos;
+    }
+
+    // Initialized when a record component first publishes annotations, not with this class
+    private static final class Offsets {
+        static final Unsafe UNSAFE = Unsafe.getUnsafe();
+        static final long DECLARED_ANNOTATIONS
+                = UNSAFE.objectFieldOffset(RecordComponent.class, "declaredAnnotations");
     }
 
     /**

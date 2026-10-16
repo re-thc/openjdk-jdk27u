@@ -32,6 +32,8 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.stream.*;
 
+import jdk.internal.misc.Unsafe;
+
 /**
  * InvocationHandler for dynamic proxy implementation of Annotation.
  *
@@ -57,24 +59,30 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
     }
 
     /**
-     * Returns whether a member value of the given annotation, or of an annotation
-     * nested in it, is an ExceptionProxy: a value that could not be resolved when
-     * the annotation was parsed, and that throws when it is read.
+     * Returns whether the member value, or a member value of an annotation in it,
+     * is a constant of an enum class that could not be found because the enum
+     * class is not initialized yet.  That happens to a value parsed by the thread
+     * that initializes the enum class, before its constants exist; any other
+     * thread waits for the initialization to finish.  Unlike other values that
+     * could not be resolved, such a value is found if it is parsed again later.
      */
-    static boolean hasExceptionProxy(Annotation annotation) {
-        if (Proxy.isProxyClass(annotation.getClass())
-                && Proxy.getInvocationHandler(annotation) instanceof AnnotationInvocationHandler handler) {
-            for (Object value : handler.memberValues.values()) {
-                if (value instanceof ExceptionProxy
-                        || value instanceof Annotation nested && hasExceptionProxy(nested)) {
-                    return true;
-                }
-                if (value instanceof Annotation[] nestedArray) {
-                    for (Annotation nested : nestedArray) {
-                        if (hasExceptionProxy(nested)) {
-                            return true;
-                        }
+    static boolean hasUnresolvedEnumConstant(Object memberValue) {
+        if (memberValue instanceof EnumConstantNotPresentExceptionProxy proxy) {
+            return Unsafe.getUnsafe().shouldBeInitialized(proxy.enumType);
+        }
+        if (memberValue instanceof Annotation annotation) {
+            if (Proxy.isProxyClass(annotation.getClass())
+                    && Proxy.getInvocationHandler(annotation) instanceof AnnotationInvocationHandler handler) {
+                for (Object value : handler.memberValues.values()) {
+                    if (hasUnresolvedEnumConstant(value)) {
+                        return true;
                     }
+                }
+            }
+        } else if (memberValue instanceof Annotation[] annotations) {
+            for (Annotation annotation : annotations) {
+                if (hasUnresolvedEnumConstant(annotation)) {
+                    return true;
                 }
             }
         }

@@ -164,13 +164,33 @@ public class AnnotationParser {
 
     /**
      * Returns whether a member value of one of the given annotations, or of an
-     * annotation nested in one, could not be resolved when it was parsed, such as
-     * a constant of an enum class whose initialization is in progress.
+     * annotation nested in one, is a constant of an enum class that could not be
+     * found because the enum class is not initialized yet: the annotations were
+     * parsed by the thread that initializes it, before its constants exist.  Such
+     * annotations must not be cached, so that the constant is found when they are
+     * parsed again.  Other values that could not be resolved are cached, as they
+     * would not be resolved later either.
      */
-    public static boolean hasExceptionProxy(Annotation[][] annotations) {
+    public static boolean hasUnresolvedEnumConstant(Collection<? extends Annotation> annotations) {
+        for (Annotation annotation : annotations) {
+            if (AnnotationInvocationHandler.hasUnresolvedEnumConstant(annotation)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns whether a member value of one of the given parameter annotations,
+     * or of an annotation nested in one, is a constant of an enum class that could
+     * not be found because the enum class is not initialized yet.
+     *
+     * @see #hasUnresolvedEnumConstant(Collection)
+     */
+    public static boolean hasUnresolvedEnumConstant(Annotation[][] annotations) {
         for (Annotation[] parameterAnnotations : annotations) {
             for (Annotation annotation : parameterAnnotations) {
-                if (AnnotationInvocationHandler.hasExceptionProxy(annotation)) {
+                if (AnnotationInvocationHandler.hasUnresolvedEnumConstant(annotation)) {
                     return true;
                 }
             }
