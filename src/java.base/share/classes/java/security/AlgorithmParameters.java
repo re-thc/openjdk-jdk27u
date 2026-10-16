@@ -29,6 +29,7 @@ import java.io.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.util.Objects;
+import sun.security.jca.GetInstance;
 
 /**
  * This class is used as an opaque representation of cryptographic parameters.
@@ -172,6 +173,19 @@ public class AlgorithmParameters {
         } catch(NoSuchProviderException e) {
             throw new NoSuchAlgorithmException(algorithm + " not found");
         }
+    }
+
+    // Internal optional lookup. Keep ordinary JCA discovery and construct the
+    // same concrete class as the public factory, without an exception for an
+    // unadvertised algorithm. Do not retain services, SPI instances or misses.
+    static AlgorithmParameters getInstanceOrNull(String algorithm)
+            throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
+        GetInstance.Instance instance =
+                Security.getImplOrNull(algorithm, "AlgorithmParameters");
+        return instance == null ? null : new AlgorithmParameters(
+                (AlgorithmParametersSpi) instance.impl, instance.provider,
+                algorithm);
     }
 
     /**

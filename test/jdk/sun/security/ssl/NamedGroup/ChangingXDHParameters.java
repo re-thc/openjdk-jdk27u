@@ -29,6 +29,8 @@
  * @build CustomXDHParameters
  * @run main/othervm ChangingXDHParameters changes
  * @run main/othervm ChangingXDHParameters errors
+ * @run main/othervm -Djdk.tls.client.protocols=TLSv1.3
+ *      -Djdk.tls.namedGroups=x25519,x448 ChangingXDHParameters dynamic-service
  * @run main/othervm ChangingXDHParameters configured
  * @run main/othervm ChangingXDHParameters preferred
  * @run main/othervm ChangingXDHParameters concurrent-absent
@@ -65,6 +67,7 @@ public class ChangingXDHParameters {
         switch (args[0]) {
             case "changes" -> changes();
             case "errors" -> errors();
+            case "dynamic-service" -> dynamicService();
             case "callback-update" -> callbackUpdate();
             case "configured" -> {
                 configure(ConfigurableProvider.class.getName() + " argument");
@@ -108,9 +111,27 @@ public class ChangingXDHParameters {
         Security.setProperty("security.provider." + n, entry);
     }
 
+    private static void dynamicService() throws Exception {
+        DynamicProvider provider = new DynamicProvider();
+        Security.addProvider(provider);
+        check(null);
+        provider.visible = true;
+        check("DynamicXDH");
+        provider.visible = false;
+        check(null);
+        // A virtual service may also appear during an earlier callback in
+        // the same ClientHello, without any provider or service registration.
+        callbackUpdate(() -> provider.visible = true);
+    }
+
     // Even a miss retained only for one ClientHello can hide a provider
     // installed by an earlier constraint callback in the same operation.
     private static void callbackUpdate() throws Exception {
+        callbackUpdate(() -> Security.addProvider(
+                new ParametersProvider("DuringCallback", SPI)));
+    }
+
+    private static void callbackUpdate(Runnable update) throws Exception {
         boolean[] updated = {false};
         boolean[] observedX448 = {false};
         AlgorithmConstraints constraints = new AlgorithmConstraints() {
@@ -120,7 +141,7 @@ public class ChangingXDHParameters {
                 if (!algorithm.equals("XDH")) return true;
                 if (parameters == null) {
                     if (!updated[0]) {
-                        Security.addProvider(new ParametersProvider("DuringCallback", SPI));
+                        update.run();
                         updated[0] = true;
                     }
                     return true;
@@ -310,6 +331,27 @@ public class ChangingXDHParameters {
             super(name, "1.0", "XDH parameters for constraint checks");
             put("AlgorithmParameters.CustomXDH", spi);
             put("Alg.Alias.AlgorithmParameters.XDH", "CustomXDH");
+        }
+    }
+
+    public static class DynamicProvider extends Provider {
+        volatile boolean visible;
+        private final Service parameters = new Service(this,
+                "AlgorithmParameters", "XDH", SPI, null, null) {
+            @Override
+            public Object newInstance(Object unused) {
+                return new CustomXDHParameters.XDHParameters();
+            }
+        };
+
+        public DynamicProvider() {
+            super("DynamicXDH", "1.0", "Virtual XDH service");
+        }
+
+        @Override
+        public Service getService(String type, String algorithm) {
+            return visible && type.equals("AlgorithmParameters") &&
+                    algorithm.equalsIgnoreCase("XDH") ? parameters : null;
         }
     }
 

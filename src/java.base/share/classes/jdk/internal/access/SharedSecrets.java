@@ -100,6 +100,7 @@ public class SharedSecrets {
     @Stable private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     @Stable private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
     @Stable private static JavaSecurityPropertiesAccess javaSecurityPropertiesAccess;
+    @Stable private static JavaSecurityAlgorithmParametersAccess javaSecurityAlgorithmParametersAccess;
     @Stable private static JavaSecuritySignatureAccess javaSecuritySignatureAccess;
     @Stable private static JavaSecuritySpecAccess javaSecuritySpecAccess;
     @Stable private static JavaxCryptoSpecAccess javaxCryptoSpecAccess;
@@ -317,6 +318,21 @@ public class SharedSecrets {
         if (access == null) {
             ensureClassInitialized(Security.class);
             access = javaSecurityPropertiesAccess;
+        }
+        return access;
+    }
+
+    public static void setJavaSecurityAlgorithmParametersAccess(
+            JavaSecurityAlgorithmParametersAccess access) {
+        javaSecurityAlgorithmParametersAccess = access;
+    }
+
+    public static JavaSecurityAlgorithmParametersAccess
+            getJavaSecurityAlgorithmParametersAccess() {
+        var access = javaSecurityAlgorithmParametersAccess;
+        if (access == null) {
+            ensureClassInitialized(Security.class);
+            access = javaSecurityAlgorithmParametersAccess;
         }
         return access;
     }

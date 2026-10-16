@@ -1,8 +1,15 @@
 # TLS XDH constraint qualification
 
+This branch now includes an **unbuilt, untested source prototype** described in
+[OPTIONAL-LOOKUP.md](OPTIONAL-LOOKUP.md). Every recorded result below belongs to
+parent commit `75f8e417e2d998ccf3e00a409900bfcf26d0e000` and its qualified
+production/test tree `168bc21b7beb48774d49ee52ea506cc849f0f3f4`. The new internal
+lookup and added tests have no runtime qualification. Use a newly built image
+from the candidate sources for any future validation.
+
 The TLS implementation uses ordinary JCA discovery for each application constraint check of an available XDH group. It initializes fresh parameters for that group. This preserves provider configuration, ordering, aliases, mutable services, fallback, exceptions and initial class instrumentation. Default JDK constraints retain the fast path that avoids an unsupported XDH parameter lookup.
 
-The production and regression-test sources are the reviewed reconstruction of public parents `fe381d6f56c2cd2e7f02dd572ffa74116ba6293b` and `de359971a1972f74866e963fb4f750359aecc145`, plus the eight-file follow-up. Before adding these reproduction assets, that complete source tree is `168bc21b7beb48774d49ee52ea506cc849f0f3f4`. This review branch consolidates those sources in a linear commit; it does not merge either PR.
+The parent production and regression-test sources are the reviewed reconstruction of public parents `fe381d6f56c2cd2e7f02dd572ffa74116ba6293b` and `de359971a1972f74866e963fb4f750359aecc145`, plus the eight-file follow-up. Before adding these reproduction assets, that complete source tree is `168bc21b7beb48774d49ee52ea506cc849f0f3f4`. The parent review commit consolidates those sources in a linear commit; it does not merge either PR.
 
 Live lookup has a cost. With application constraints, an absent XDH AlgorithmParameters service can cause normal JCA discovery to load otherwise unused providers. Subsequent checks also query services and initialize fresh parameters. A cache based on provider-list identity misses service and alias changes; a per-ClientHello miss cache hides a provider installed by an earlier callback. Passing correctness tests does not establish startup latency equivalence or resolve this integration tradeoff. The manual probe sources live outside the jtreg test root so their historical annotations do not add new suite selections. The probes below collect functional markers and class definitions, with timing output disabled. Class loading is not a latency measurement or proof that a provider constructor succeeded.
 

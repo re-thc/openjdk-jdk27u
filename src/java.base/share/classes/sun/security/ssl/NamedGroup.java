@@ -39,6 +39,7 @@ import java.util.Objects;
 import java.util.Set;
 import javax.crypto.KeyAgreement;
 import javax.crypto.spec.DHParameterSpec;
+import jdk.internal.access.SharedSecrets;
 import sun.security.ssl.ECDHKeyExchange.ECDHEPossession;
 import sun.security.util.CurveDB;
 
@@ -500,8 +501,11 @@ enum NamedGroup {
         // provider selection. Each caller initializes its own parameters.
         try {
             AlgorithmParameters algParams =
-                    AlgorithmParameters.getInstance(algorithm);
-            algParams.init(keAlgParamSpec);
+                    SharedSecrets.getJavaSecurityAlgorithmParametersAccess()
+                            .getInstanceOrNull(algorithm);
+            if (algParams != null) {
+                algParams.init(keAlgParamSpec);
+            }
             return algParams;
         } catch (InvalidParameterSpecException
                 | NoSuchAlgorithmException exp) {
