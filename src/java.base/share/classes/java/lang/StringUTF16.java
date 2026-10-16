@@ -2169,14 +2169,18 @@ final class StringUTF16 {
                 if (result != StringZilla.FALLBACK) {
                     return result < 0 ? -1 : result >> 1;
                 }
-            } else if (getChar(src, fromIndex + tgtCount - 1) != (tgt[tgtCount - 1] & 0xff)) {
-                if (StringZilla.compilerTier() == 0) {
-                    fromIndex = StringZilla.lastMixedCandidate(src, tgt, tgtCount, fromIndex);
-                    if (fromIndex < 0) {
-                        return -1;
+            } else {
+                int tier = StringZilla.compilerTier();
+                if (tier != StringZilla.C1
+                        && getChar(src, fromIndex + tgtCount - 1) != (tgt[tgtCount - 1] & 0xff)) {
+                    if (tier == 0) {
+                        fromIndex = StringZilla.lastMixedCandidate(src, tgt, tgtCount, fromIndex);
+                        if (fromIndex < 0) {
+                            return -1;
+                        }
+                    } else if (tier == StringZilla.C2) {
+                        return lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex);
                     }
-                } else if (StringZilla.compilerTier() == StringZilla.C2) {
-                    return lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex);
                 }
             }
         }
