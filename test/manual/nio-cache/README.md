@@ -73,19 +73,33 @@ replacement path.
 
 ## Optional one-baseline scheduling diagnostic
 
+Select the unchanged **baseline** image explicitly; do not inherit `JDK` from
+above, which points to the candidate. The pre-donor current-master baseline is
+`89885a6288e7aaabd01678a704a586272c0f96e3`. For diagnosis of that baseline,
+use its image built in a separate checkout. An already identified historical
+image is also sufficient to diagnose scheduling noise observed with that same
+image: record its exact source commit and image identity, and do not relabel
+that result as qualification of the rebased branch. A new branch build is needed
+only to qualify this branch's correctness or performance. This diagnostic does
+not itself require such a build.
+
 Dependency setup uses the repository recipe (normal managed dependency setup,
 not part of this task's executed work):
 
 ```sh
+# Supply the existing image selected for this unchanged-baseline diagnosis.
+BASELINE_JDK="/absolute/path/to/baseline/images/jdk"
+# For a new pre-donor baseline build, its source commit must be
+# 89885a6288e7aaabd01678a704a586272c0f96e3; record other image commits explicitly.
 bash make/devkit/createJMHBundle.sh
 JARS="$PWD/build/jmh/jars"
 CP="$JARS/commons-math3-3.6.1.jar:$JARS/jopt-simple-5.0.4.jar:$JARS/jmh-core-1.37.jar:$JARS/jmh-generator-annprocess-1.37.jar"
-"$JDK/bin/javac" --add-exports java.base/sun.nio.ch=ALL-UNNAMED \
+"$BASELINE_JDK/bin/javac" --add-exports java.base/sun.nio.ch=ALL-UNNAMED \
   -cp "$CP" -processorpath "$CP" \
   -processor org.openjdk.jmh.generators.BenchmarkProcessor \
   -s "$Q/generated" -d "$Q/classes" "$Q/NioCachePaths.java"
 python3 -m unittest discover -s "$Q" -v
-python3 "$Q/prepare.py" --jdk "$JDK" --classes "$Q/classes" --jars "$JARS"
+python3 "$Q/prepare.py" --jdk "$BASELINE_JDK" --classes "$Q/classes" --jars "$JARS"
 ```
 
 `prepare.py` only hashes local inputs and writes a local command/freeze; it
@@ -104,7 +118,8 @@ python3 "$Q/diagnostic.py" --execute-approved --approval-reference NEW_APPROVAL
 One Python observer, one JDK coordinator, one baseline fork; no compiler,
 candidate, jcmd, helper probes, retries or CI job. Five one-second warmups and
 seven one-second measurements of `ordinaryHit`, one worker and 1024 operations
-per invocation. Global cap 90 seconds; preflight 30 seconds; invocation deadline
+per invocation. Global cap 90 seconds, including the final receipt write and post-write deadline
+check; any closure crossing invalidates success. Preflight 30 seconds; invocation deadline
 60 seconds from controller start; cleanup reserve two seconds. Output cap 48 MiB
 while running. An existing run directory prevents reuse. The compatibility flag
 `--sun-misc-unsafe-memory-access=allow` applies to both JVMs; stderr must remain

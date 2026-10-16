@@ -138,6 +138,26 @@ def analyze(stdout, samples):
     return windows
 
 
+def close_receipt(path, receipt, started, end):
+    """A successful write must finish before the deadline, including closure I/O."""
+    try:
+        receipt['elapsed_s'] = time.monotonic() - started
+        if time.monotonic() >= end:
+            raise TimeoutError('global cap reached before receipt closure')
+        save(path, receipt)
+        if time.monotonic() >= end:
+            raise TimeoutError('global cap reached during receipt closure')
+        return True
+    except BaseException as exc:
+        # Invalidate the successful file before attempting any further write.
+        receipt['status'] = 'inconclusive; receipt closure failed'
+        receipt['closure_error'] = repr(exc)
+        receipt['elapsed_s'] = time.monotonic() - started
+        path.unlink(missing_ok=True)
+        save(path, receipt)
+        return False
+
+
 def run(reference):
     started = time.monotonic()
     end = started + 90
@@ -251,11 +271,8 @@ def run(reference):
         signal.setitimer(signal.ITIMER_REAL, 0)
         if scope is not None and 'cleanup' not in receipt:
             receipt['cleanup'] = scope.close(proc, min(end, time.monotonic() + 2))
-        receipt['elapsed_s'] = time.monotonic() - started
-        if receipt['elapsed_s'] >= 90:
-            receipt['status'] = 'inconclusive; global cap exceeded'
-        save(out / 'receipt.json', receipt)
-    return 0 if receipt['status'].startswith('diagnostic data only') else 1
+        closed = close_receipt(out / 'receipt.json', receipt, started, end)
+    return 0 if closed and receipt['status'].startswith('diagnostic data only') else 1
 
 
 if __name__ == '__main__':
