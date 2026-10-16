@@ -1,0 +1,56 @@
+{
+  "status": "native-build-phase-approved-run38829832202-queued",
+  "source": "e41d7823bf6de77c4bfba52e896bf325221488cb",
+  "source_checkpoint": "c158ea6ba18667c2e71127e9b1bb8b9b760f3fbd",
+  "bundle_path": ".github/qualification/chain-checkpoint/layout-source-e41d/layout-source.bundle",
+  "bundle_sha256": "79f0619e2fe9cf1b26b9526c615ce56c1d5b60082aa389c511098c9354ff1ed9",
+  "bundle_prerequisite": "c04d1ba1e96b2176ce8a8e56eacae73c2d356d2b",
+  "local_core_evidence": "b941718fd1fe04af8d9931559a9ad4a9c7c339f6",
+  "required_approval": "Parent approval is required before any new hosted campaign or PR source push that triggers one. No init changes, merges, force pushes, competing PRs or tasks.",
+  "identity_requirements": [
+    "Record orchestration/workflow SHA separately from checked-out test source and actual built JVM SOURCE/version.",
+    "Verify clean candidate HEAD equals e41d before building and retain VM/modules/archive/native-test payload fingerprints.",
+    "Never relabel previous d8fc/8bf/c04d or 0fb tests as e41d qualification."
+  ],
+  "linux_aarch64": {
+    "builds": [
+      "candidate clean release",
+      "candidate clean fastdebug"
+    ],
+    "cds": [
+      "Run current-source CommonIntrinsicArchiveDeterminism and FourByteHeaderArchiveDeterminism under Serial/G1/Z with both compressed-oop settings.",
+      "Run at least20 prospectively fixed repetitions per baseline/flag-off/flag-on ZGC variant; keep original failed results even if subsequent repetitions pass.",
+      "Use the actual dump-difference offsets for map ownership. Retain archive/map bytes, all JTRs, commands, source/VM identities, per-file hashes, and a compact offset/owner/raw-byte diagnostic packet.",
+      "Exercise static archive generation plus the separate AOT-preimage and dynamic-CDS paths; do not globally disable common intrinsics."
+    ],
+    "semantics": [
+      "Focused common/crypto/BigInteger/redefinition checks, on/off and compiler-mode coverage, collector checks, moving-GC cold concurrency, native gtests."
+    ],
+    "performance": [
+      "Public API first-call, startup and warm measurements in interpreter/C1 level1/C1 level3/C2.",
+      "Use healthy pinned baseline87edd and published-c04d controls and feature-off/on controls; report intervals and measured size boundaries.",
+      "Current104/120-word thresholds were chosen on x64; native ARM behavior remains unmeasured."
+    ]
+  },
+  "windows_x64": {
+    "builds": [
+      "candidate clean release",
+      "candidate clean fastdebug"
+    ],
+    "checks": [
+      "Actual candidate-JVM polynomial/generic-length/alias/public-two-limb API tests; a Linux Microsoft-ABI assembly probe is insufficient.",
+      "Focused common intrinsic checks and native payload identity; execute native AVX512 tests only with confirmed hardware capability and record whether the native path ran.",
+      "Public API cold/warm/compiler-tier comparisons and selected CDS/AOT/native checks."
+    ],
+    "hardware_gap": "If native Windows AVX512 hardware is absent, report an unresolved execution gap instead of counting a skipped or emulated test as a pass."
+  },
+  "success_reporting": "Preserve original failures and skips. A green workflow that tolerates failed tests is not clean qualification. This proposal is a test requirement manifest, not an approved workflow or completed evidence.",
+  "approved_build_phase": {
+    "run_id": 38829832202,
+    "run_url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/38829832202",
+    "scope": "Four candidate release/fastdebug builds, Linux ARM and Windows x64; no PR source push.",
+    "workflow_revision": "12fb0c876b9ec3b23ce59f003badc086e2b0f368",
+    "actual_built_jvm_source": "Not available: runner not assigned; source assertion is pending execution."
+  },
+  "remaining_test_performance_scope": "Original native test/performance requirements remain unexecuted; this build-only approval does not authorize a separate test campaign."
+}
