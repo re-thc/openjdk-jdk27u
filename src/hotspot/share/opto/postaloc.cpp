@@ -823,7 +823,8 @@ public:
     allowed.and_with(*Matcher::idealreg2regmask[seed->ideal_reg()]);
     allowed.and_with(seed->out_RegMask());
     RegMask live(_live_out[block->_pre_order]);
-    for (uint j = block->number_of_nodes(); j-- > block->find_node(seed);) {
+    const uint seed_index = block->find_node(seed);
+    for (uint j = block->number_of_nodes(); j-- > seed_index;) {
       if (!step(block->get_node(j), live)) {
         return 0;
       }
@@ -899,6 +900,11 @@ void PhaseChaitin::retain_spill_copies() {
     // allocation. In nested loops a Phi can become self+entry after one cleanup.
     SpillCopyRetention retention(*this, _cfg, work_left, entries, entry_arena);
     if (!retention.compute()) {
+      NOT_PRODUCT(if (trace_spilling()) {
+        ttyLocker ttyl;
+        tty->print_cr("RetainSpillCopiesState compile_id %d iteration %u analysis unavailable work_left %u",
+                      C->compile_id(), change, work_left);
+      })
       return;
     }
     Node* best = nullptr;
@@ -936,6 +942,11 @@ void PhaseChaitin::retain_spill_copies() {
         }
       }
     }
+    NOT_PRODUCT(if (trace_spilling()) {
+      ttyLocker ttyl;
+      tty->print_cr("RetainSpillCopiesState compile_id %d iteration %u trials %u best_benefit %u work_left %u",
+                    C->compile_id(), change, trials, best_benefit, work_left);
+    })
     if (best == nullptr) {
       return;
     }
