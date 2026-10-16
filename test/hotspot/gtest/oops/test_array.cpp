@@ -24,14 +24,13 @@
 #include "memory/metadataFactory.hpp"
 #include "unittest.hpp"
 
-#if INCLUDE_NMT
 #include "nmt/mallocHeader.inline.hpp"
 #include "nmt/memTracker.hpp"
 
 template <typename T>
 static void check_c_heap_array(int length, T value) {
   Array<T>* array = MetadataFactory::new_array_from_c_heap<T>(length, mtClassShared);
-  ASSERT_NOT_NULL(array);
+  ASSERT_NE(nullptr, array);
 
   // Check the actual requested allocation, not just Array's size calculation.
   const MallocHeader* header = MallocHeader::resolve_checked(array);
@@ -65,4 +64,3 @@ TEST_VM(Array, c_heap_allocation_size) {
     check_c_heap_array<void*>(length, &pointee);
   }
 }
-#endif // INCLUDE_NMT

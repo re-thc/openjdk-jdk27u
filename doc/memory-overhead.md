@@ -24,7 +24,7 @@ latter native image. GCC/G++ 16.2.0, boot/fixture JDK 27+35-2325, resulting JDK
 four-CPU quota and fixed 0–3 affinity were used. Those image identities are not
 rewritten to this new integration. The historical core candidate passed 18 selected
 jtreg IDs; NIO passed a fresh default pair plus 16 cases, including four jtreg runs.
-The integration at source 770f5cd0ef89bceae11a5f66c014815bfa3b4b73 now builds and passes 13 focused jtreg IDs on Linux x64 release; see `memory-overhead-validation.md`. The new gtests remain blocked by missing GoogleTest/GoogleMock source. Historical requested-byte measurements remain historical, rather than being relabeled as measurements of this image.
+The integration at source 770f5cd0ef89bceae11a5f66c014815bfa3b4b73 now builds and passes 13 focused jtreg IDs on Linux x64 release; see `memory-overhead-validation.md`. The two focused gtests now pass, and a separately compiled old-header Array control fails exactly the twelve requested-size assertions. Historical requested-byte measurements remain historical, rather than being relabeled as measurements of this image.
 
 No RSS/PSS, startup, representative throughput or pause-tail improvement is
 established. Original balanced timing controls were noisy; some slower point
@@ -108,7 +108,7 @@ old allocation. Expect only the 12 size assertions to fail. Also run
 `runtime/cds/appcds/aotCode/AOTCodeTest.java#g1` using normal jtreg dependencies
 and actual AOT training/compile/replay, with `AOTVerifyTrainingData` enabled;
 unsupported or unexercised routes leave AOT qualification pending. That functional
-route passed here; it does not replace the blocked exact-byte gtest.
+route passed here; it complements the now-passing exact-byte gtest.
 
 For the manual aligned-buffer accounting fixture, compile
 `test/manual/jvm-memory/NioAlignedCacheLifecycleFixture.java` once with

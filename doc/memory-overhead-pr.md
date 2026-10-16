@@ -22,13 +22,17 @@ The Linux x64 release integration builds and passes **13 focused jtreg IDs,
 zero failures/errors/skips**: four collector unloading cases, G1 concurrent-mark
 unloading, two C2 tests, three NIO tests and two sleep/join tests, plus G1 AOT
 record/create/replay with training-data verification. The source is
-`770f5cd0ef89bceae11a5f66c014815bfa3b4b73`; later changes are documentation only.
+`770f5cd0ef89bceae11a5f66c014815bfa3b4b73`; subsequent changes repair only
+the two new native tests and update documentation. Production code is unchanged.
 The C2 regression requires regular level 4 compilation; the new carrier test
 executes both platform and virtual modes with exact content/checksum checks.
 
-Array and ParkEvent gtests remain blocked because GoogleTest/GoogleMock source
-is absent; they are not counted as passed or skipped. The AOT functional result
-does not establish the exact per-allocation NMT size assertion. Historical
+The focused Array and ParkEvent native tests also pass, one executed case each,
+with zero skips or failures. Array verifies actual NMT requested sizes for twelve
+type/length combinations. Its separately compiled baseline-header control fails
+exactly those twelve size assertions while tag, initialization and access checks
+pass. GoogleTest/GoogleMock v1.14.0 came from the repository's documented pinned
+source workflow; no system installation was needed. Historical
 memory results remain tied to their original images. Source review confirms
 upstream ancestry and no path overlap with the 15 open fork PRs, including PR44.
 [Current validation](memory-overhead-validation.md) records image identities,

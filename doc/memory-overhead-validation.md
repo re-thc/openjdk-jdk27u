@@ -1,9 +1,9 @@
 # Current integration validation
 
 The release/server JDK and test image built successfully from source
-`770f5cd0ef89bceae11a5f66c014815bfa3b4b73`. The subsequent test-selector correction
-and validation notes change documentation only. Production and test sources
-remain byte-identical to that commit.
+`770f5cd0ef89bceae11a5f66c014815bfa3b4b73`. The 13 jtreg results below retain that source and image identity. Subsequent
+changes repair only the two new native test sources and update documentation;
+production sources remain byte-identical to that commit.
 
 Environment: Linux x86-64, Intel Xeon Platinum 8573C, four-CPU cgroup quota,
 GCC/G++ 16.2.0, boot JDK 27+35-2325, Make 4.4.1, autoconf 2.72, mold and installed
@@ -78,14 +78,78 @@ Thirteen JTRs and hashes for 479 test class files were retained privately, toget
 with complete image manifests and build/test receipts; none is a required build
 input or substitutes for an executed test.
 
-GoogleTest and GoogleMock source headers are absent; `GTEST_FRAMEWORK_SRC` is
-empty. Consequently **Array.c_heap_allocation_size_vm** and
-**ParkEvent.natural_alignment_and_recycled_events_vm** could not be built/run.
-They are blocked, not passes/skips. Centrally supplying a normal framework
-source tree (version 1.14 or later, both googletest and googlemock), configuring
-`--with-gtest` and building the gtest artifact removes this dependency blocker.
-No dependency was installed for this task. The old-header negative Array control
-also remains pending; inline allocator code requires its own compiled artifact.
+## Focused native correctness checks
+
+The documented managed-source route in `doc/building.md` and the repository's
+`GTEST_VERSION=1.14.0` pin supplied both GoogleTest and GoogleMock. The official
+`v1.14.0` checkout resolves to `f8d7d77c06936315286eb55f8de22cd23c188571`.
+Sources were fetched into ignored `build/dependencies/googletest`, configured
+with `--with-gtest`, and built using `make CONF=memory-review JOBS=4
+test-image-hotspot-gtest`. No unmanaged tools or system packages were installed.
+The original compiler/configuration/source date were retained; PCH is disabled.
+
+Two test-only repairs were necessary: use standard `ASSERT_NE(nullptr, value)`
+in place of an unavailable assertion macro, and remove the obsolete
+`INCLUDE_NMT` guard that silently compiled Array's test out. The initial empty
+Array selection is an unsuccessful check, not a pass; its receipts are retained.
+No product repair was needed.
+
+| Exact filter | Executed | Skipped | Failed assertions | Exit |
+| --- | ---: | ---: | ---: | ---: |
+| `Array.c_heap_allocation_size_vm`, fixed header | 1 | 0 | 0 | 0 |
+| `ParkEvent.natural_alignment_and_recycled_events_vm` | 1 | 0 | 0 | 0 |
+| `Array.c_heap_allocation_size_vm`, separately compiled old header | 1 | 0 | 12, all requested-size assertions | 2 (expected) |
+
+Each invocation used CPUs 0–3, `-XX:NativeMemoryTracking=summary -Xmx256m
+-XX:ActiveProcessorCount=4`, the preserved jtreg-tested JDK via `-jdk`, XML output,
+and a 60-second bound. The two positive cases have empty stderr. The negative
+case reports only the launcher's expected `RUN_ALL_TESTS() failed. Error 1` on
+stderr. Tag, length, zero initialization and element access assertions pass
+in both Array artifacts. ParkEvent exercises eight concurrently held events
+across sixteen recycling rounds, including pending permits; it does not block
+or delete immortal events.
+
+The old header is the exact `oops/array.inline.hpp` from baseline
+`89885a6288e7aaabd01678a704a586272c0f96e3` (SHA256
+`1deb4794bf0809680b8a602770145fd4641293550044bbf3fbe751b8a697843e`).
+To reproduce this control after building the fixed tests:
+
+1. Export that header into a separate `headers/oops` directory. Parse the actual
+   `gtest/objs/test_array.o.cmdline` compiler recipe as an argument vector,
+   remove dependency-output options, prepend `-I` for the separate headers, and
+   compile the same current test source to a separate object. Preserve all other
+   compiler flags and disable PCH. Never overwrite the fixed object.
+2. Preprocess both translation units using those same include paths and flags.
+   Confirm fixed `AllocateHeap(size, flags)` versus old
+   `AllocateHeap(size * BytesPerWord, flags)` in the MemTag allocator.
+3. Copy the response-file contents referenced by
+   `gtest/objs/BUILD_GTEST_LIBJVM_run_ld.cmdline`, replacing exactly the one
+   `test_array.o` path. Link to a separate `libjvm.so` using the same recipe,
+   unchanged production/test objects and libgtest. Copy the identical launcher
+   alongside it. The executed control verified hashes of all 1,456 shared
+   response-file inputs remained unchanged.
+4. Run the exact Array filter with the same image and flags. Require one executed
+   case, zero skips, and exactly twelve failures, each at the requested-size
+   equality. A crash, empty selection or additional failure is inconclusive.
+
+The fixed requested sizes are 8–8,008 bytes across the twelve type/length
+combinations; the old artifact requests eight times each size. For example,
+length-zero `u1` requests 64 bytes instead of 8. These are actual NMT requested
+allocation sizes, not RSS/PSS or allocator-rounded physical bytes.
+
+Artifact SHA256:
+
+| Artifact | SHA256 |
+| --- | --- |
+| Fixed gtest libjvm | `9fe1502931445dffe07d00420b8c9840f2a0d2fda8cc8f1f645019d455bb1dc9` |
+| Old-header gtest libjvm | `1ae3277271f846ac8125c5859b651d802cfbae8cd563a517770edd51ae5db860` |
+| Identical gtest launchers | `d807aa99761c8fe3df61b1d45766969fdba3d879ab0083b5d2a1faffa8784551` |
+| Old-header test object | `9395c977a4ea19b7c5d3bd32bcd514f44eccfc1dd20e426664bc130cbaf7b49f` |
+
+The gtest libjvm is a separate artifact linked from the existing product objects
+and current tests. It is not the product libjvm previously used by jtreg.
+The preserved JDK's launcher/modules/product-libjvm hashes still match the table
+above. All thirteen original jtreg results remain preserved without rerunning.
 
 No fastdebug/full-tier or other-platform result is established. No local
 per-helper C2 entry/peak-memory measurement, fresh matched NMT memory comparison,
