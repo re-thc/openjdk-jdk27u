@@ -2,6 +2,7 @@
 # Copyright (c) 2026, re-thc. GPLv2, as described in the repository LICENSE.
 # Standard public build dependencies only. No qualification or CI execution.
 set -euo pipefail
+here=$(cd "$(dirname "$0")" && pwd)
 if [[ $(uname -s) != Darwin || $(uname -m) != arm64 ]]; then
   echo 'Requires a native macOS arm64 shell, not Linux/Intel/Rosetta.' >&2; exit 2
 fi
@@ -25,19 +26,33 @@ boot=$(find "$deps/bootjdk" -path '*/Contents/Home/bin/java' -type f | head -1)
 boot=${boot%/bin/java}
 if [[ ! -d "$deps/gtest/.git" ]]; then git clone --no-checkout https://github.com/google/googletest.git "$deps/gtest"; fi
 git -C "$deps/gtest" checkout --detach f8d7d77c06936315286eb55f8de22cd23c188571
-if [[ ! -d "$deps/jtreg/.git" ]]; then git clone --no-checkout https://github.com/openjdk/jtreg.git "$deps/jtreg"; fi
-git -C "$deps/jtreg" checkout --detach 5afa26a21f06e3f231982f0d0abc50c33d68167c
-# Scope GNU make to this dependency build; do not change system tools.
-mkdir -p "$deps/tools"
-if [[ ! -e "$deps/tools/make" ]]; then ln -s "$(command -v gmake)" "$deps/tools/make"; fi
-export PATH="$deps/tools:$PATH"
-if [[ ! -f "$deps/jtreg/build/images/jtreg/lib/jtreg.jar" ]]; then
+selection=0
+python3 "$here/jtreg.py" select --java "$boot/bin/java" \
+  --cached-home "$deps/jtreg/build/images/jtreg" --output "$deps/jtreg-identity.json" || selection=$?
+if [[ $selection == 3 ]]; then
+  # Only hosts without a compatible local harness need this public source build.
+  if [[ ! -d "$deps/jtreg/.git" ]]; then git clone --no-checkout https://github.com/openjdk/jtreg.git "$deps/jtreg"; fi
+  git -C "$deps/jtreg" diff --quiet || { echo 'Tracked edits in fallback jtreg checkout; stop.' >&2; exit 2; }
+  if ! git -C "$deps/jtreg" cat-file -e '551e17adac0579859012c4c46318b8fa3cf2ff37^{commit}'; then
+    git -C "$deps/jtreg" fetch --no-tags origin 551e17adac0579859012c4c46318b8fa3cf2ff37
+  fi
+  git -C "$deps/jtreg" checkout --detach 551e17adac0579859012c4c46318b8fa3cf2ff37 # jtreg-8.3+1
+  # Scope GNU make to this dependency build; do not change system tools.
+  mkdir -p "$deps/tools"
+  if [[ ! -e "$deps/tools/make" ]]; then ln -s "$(command -v gmake)" "$deps/tools/make"; fi
+  export PATH="$deps/tools:$PATH"
   (cd "$deps/jtreg" && bash make/build.sh --jdk "$boot")
+  python3 "$here/jtreg.py" inspect --java "$boot/bin/java" --home "$deps/jtreg/build/images/jtreg" \
+    --output "$deps/jtreg-identity.json"
+elif [[ $selection != 0 ]]; then
+  exit "$selection"
 fi
 python3 - "$deps" "$boot" <<'PY'
 import json,sys
 from pathlib import Path
-deps=Path(sys.argv[1]); data={'boot_jdk':sys.argv[2],'jtreg':str(deps/'jtreg/build/images/jtreg'),'gtest':str(deps/'gtest')}
+deps=Path(sys.argv[1]); identity=json.loads((deps/'jtreg-identity.json').read_text())
+if identity['origin']=='source fallback':identity['source_commit']='551e17adac0579859012c4c46318b8fa3cf2ff37'
+data={'boot_jdk':sys.argv[2],'jtreg':identity['home'],'jtreg_identity':identity,'gtest':str(deps/'gtest')}
 (deps/'dependencies.json').write_text(json.dumps(data,indent=2)+'\n')
 print('Ready:',deps/'dependencies.json')
 PY

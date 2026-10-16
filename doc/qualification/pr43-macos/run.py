@@ -5,6 +5,7 @@ import argparse,hashlib,json,os,platform,re,shutil,subprocess,sys,time
 from pathlib import Path
 import xml.etree.ElementTree as ET
 from audit import applicability,baseline
+from jtreg import inspect_home,unchanged
 HERE=Path(__file__).resolve().parent
 MANIFEST=json.loads((HERE/'manifest.json').read_text())
 REPO=Path(subprocess.check_output(['git','-C',str(HERE),'rev-parse','--show-toplevel'],text=True).strip())
@@ -82,7 +83,10 @@ def image_probe(jdk,expected,level,log):
 def build(work,side,commit,level,deps,jobs):
     tree=checkout(work,'source-'+side,commit);conf='pr43-'+level;out=tree/'build'/conf
     jdk=out/'images/jdk';receipt=work/'builds'/(side+'-'+level+'.json')
-    fingerprint={'commit':commit,'level':level,'deps':deps,'compiler':command(['xcrun','clang','--version'])[1],'SDK':command(['xcrun','--sdk','macosx','--show-sdk-path'])[1]}
+    # The actual jar hash already fingerprints the harness; descriptive metadata
+    # must not invalidate existing builds made with those same dependency bytes.
+    build_deps={k:v for k,v in deps.items() if k!='jtreg_identity'}
+    fingerprint={'commit':commit,'level':level,'deps':build_deps,'compiler':command(['xcrun','clang','--version'])[1],'SDK':command(['xcrun','--sdk','macosx','--show-sdk-path'])[1]}
     prior=json.loads(receipt.read_text()) if receipt.exists() else {}
     cached=prior.get('fingerprint')==fingerprint and (jdk/'bin/java').exists()
     if cached:
@@ -111,13 +115,15 @@ def phase_inventory(workdir,fqcn):
                 if a and b and a.group(1) in ids:phases.setdefault(ids[a.group(1)],set()).add(b.group(1))
     return {'logs':logs,'phases':{k:sorted(v) for k,v in phases.items()},'C2_methods':sorted(compiled)}
 
-def run_test(work,tests,vm,spec,side,level,jtreg):
+def run_test(work,tests,vm,spec,side,level,harness):
     name=Path(spec['path']).stem;dest=work/'tests'/(side+'-'+level+'-'+name);dest.mkdir(parents=True,exist_ok=True)
     file=tests/spec['path'];fqcn='.'.join(Path(spec['path']).parts[3:-1])+'.'+name
     # parts begin test/hotspot/jtreg; package begins compiler.
     opts=['-DReportStdout=true','-DVerbose=true','-DPrintApplicableIRRules=true','-DPrintRuleMatchingTime=true','-DVerifyIR=true','-XX:+UnlockDiagnosticVMOptions','-XX:+LogCompilation','-XX:UseSVE=0']
-    args=[Path(vm['jdk'])/'bin/java','-jar',Path(jtreg)/'lib/jtreg.jar','-jdk:'+vm['jdk'],'-conc:1','-retain:all','-verbose:all','-w:'+str(dest/'work'),'-r:'+str(dest/'report')]+['-javaoption:'+o for o in opts]+[file]
+    args=[Path(vm['jdk'])/'bin/java','-jar',Path(harness['home'])/'lib/jtreg.jar','-jdk:'+vm['jdk'],'-conc:1','-retain:all','-verbose:all','-w:'+str(dest/'work'),'-r:'+str(dest/'report')]+['-javaoption:'+o for o in opts]+[file]
+    unchanged(harness)
     rc,_=command(args,cwd=dest,log=dest/'launcher.log',accept=True,timeout=600)
+    unchanged(harness)
     jtrs=list((dest/'work').rglob(name+'.jtr'))
     text='\n'.join(p.read_text(errors='replace') for p in jtrs);errors=[]
     expected_negative=side=='baseline' and level=='fastdebug' and spec['label']!='C1'
@@ -144,7 +150,7 @@ def run_test(work,tests,vm,spec,side,level,jtreg):
                 m=re.search(r'public static \w+ (\w+)\(',block)
                 if m and 'CompilePhase.BEFORE_MATCHING' in block and 'Before Matching' not in inventory['phases'].get(m.group(1),[]):errors.append('Missing BEFORE_MATCHING phase for '+m.group(1))
     # Explicit amended-test assertions remain authoritative; retain compiled method inventory too.
-    result={'side':side,'level':level,'test':spec['path'],'returncode':rc,'intended_negative':expected_negative,'errors':errors,'accepted':not errors,'libjvm_sha256':vm['libjvm_sha256'],'test_source_sha256':sha(file),'JTR':[{'path':str(p),'sha256':sha(p)} for p in jtrs],**inventory}
+    result={'side':side,'level':level,'test':spec['path'],'returncode':rc,'intended_negative':expected_negative,'errors':errors,'accepted':not errors,'libjvm_sha256':vm['libjvm_sha256'],'jtreg_sha256':harness['jar_sha256'],'jtreg_version':harness['version'],'test_source_sha256':sha(file),'JTR':[{'path':str(p),'sha256':sha(p)} for p in jtrs],**inventory}
     write(dest/'result.json',result);return result
 
 def assembler(work,vm,side,level):
@@ -160,12 +166,14 @@ def assembler(work,vm,side,level):
         if any(c.find('failure') is not None or c.find('skipped') is not None for c in cases):errors.append('Failed/skipped assembler case')
     result={'side':side,'level':level,'libjvm_sha256':vm['libjvm_sha256'],'tests':names,'errors':errors,'accepted':not errors};write(dest/'result.json',result);return result
 
-def instructions(work,tests,vm,side,jtreg):
+def instructions(work,tests,vm,side,harness):
     target=tests/'test/hotspot/jtreg/compiler/c2/aarch64/PR43InstructionCapture.java'
     shutil.copy2(HERE/'PR43InstructionCapture.java',target)
     dest=work/'instructions'/side;dest.mkdir(parents=True,exist_ok=True)
-    rc,_=command([Path(vm['jdk'])/'bin/java','-jar',Path(jtreg)/'lib/jtreg.jar','-jdk:'+vm['jdk'],'-conc:1','-retain:all','-verbose:all','-javaoption:-DReportStdout=true','-w:'+str(dest/'work'),'-r:'+str(dest/'report'),target],cwd=dest,log=dest/'launcher.log',accept=True,timeout=900)
-    result={'side':side,'libjvm_sha256':vm['libjvm_sha256'],'driver_sha256':sha(HERE/'PR43InstructionCapture.java'),'returncode':rc,'logs':str(dest),'semantic_capture_passed':rc==0,'installed_instruction_review':'REQUIRED: inspect actual nmethod bytes/decoded instructions, not matcher-format strings or timing','performance_credit':False};write(dest/'result.json',result);return result
+    unchanged(harness)
+    rc,_=command([Path(vm['jdk'])/'bin/java','-jar',Path(harness['home'])/'lib/jtreg.jar','-jdk:'+vm['jdk'],'-conc:1','-retain:all','-verbose:all','-javaoption:-DReportStdout=true','-w:'+str(dest/'work'),'-r:'+str(dest/'report'),target],cwd=dest,log=dest/'launcher.log',accept=True,timeout=900)
+    unchanged(harness)
+    result={'side':side,'libjvm_sha256':vm['libjvm_sha256'],'jtreg_sha256':harness['jar_sha256'],'jtreg_version':harness['version'],'driver_sha256':sha(HERE/'PR43InstructionCapture.java'),'returncode':rc,'logs':str(dest),'semantic_capture_passed':rc==0,'installed_instruction_review':'REQUIRED: inspect actual nmethod bytes/decoded instructions, not matcher-format strings or timing','performance_credit':False};write(dest/'result.json',result);return result
 
 def main():
     ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('phase',choices=['probe','build','test','instructions','all']);ap.add_argument('--deps',type=Path,help='setup.sh output dependencies.json');ap.add_argument('--work',type=Path,default=REPO.parent/'pr43-macos-work');ap.add_argument('--jobs',type=int,default=2)
@@ -181,8 +189,10 @@ def main():
     if 'Mach-O' not in boot_kind or 'arm64' not in boot_kind:raise RuntimeError('Boot JDK must be macOS arm64, never a Linux binary')
     boot_version=command([Path(deps['boot_jdk'])/'bin/java','-version'])[1]
     if not re.search(r'version "(?:26|27)(?:[.+"-])',boot_version):raise RuntimeError('Boot JDK must be 26 or 27')
-    deps['hashes']={'boot_java':sha(Path(deps['boot_jdk'])/'bin/java'),'boot_javac':sha(Path(deps['boot_jdk'])/'bin/javac'),'jtreg_jar':sha(Path(deps['jtreg'])/'lib/jtreg.jar'),'gtest_HEAD':command(['git','-C',deps['gtest'],'rev-parse','HEAD'])[1].strip()}
-    write(work/'identities.json',{'manifest':MANIFEST,'host':host,'dependencies':deps,'boot_version':boot_version,'runner_sha256':sha(__file__),'audit_sha256':sha(HERE/'audit.py')})
+    harness=inspect_home(deps['jtreg'],Path(deps['boot_jdk'])/'bin/java')
+    deps['jtreg_identity']=harness
+    deps['hashes']={'boot_java':sha(Path(deps['boot_jdk'])/'bin/java'),'boot_javac':sha(Path(deps['boot_jdk'])/'bin/javac'),'jtreg_jar':harness['jar_sha256'],'gtest_HEAD':command(['git','-C',deps['gtest'],'rev-parse','HEAD'])[1].strip()}
+    write(work/'identities.json',{'manifest':MANIFEST,'host':host,'dependencies':deps,'boot_version':boot_version,'runner_sha256':sha(__file__),'audit_sha256':sha(HERE/'audit.py'),'jtreg_selector_sha256':sha(HERE/'jtreg.py')})
     images={}
     for side,commit in [('baseline',MANIFEST['baseline_with_C1']),('candidate',MANIFEST['candidate'])]:
         for level in ('fastdebug','release'):
@@ -192,6 +202,7 @@ def main():
                 path=work/'builds'/(key+'.json')
                 if not path.exists():raise RuntimeError('Missing exact local build; run phase build/all: '+key)
                 images[key]=json.loads(path.read_text());image_probe(images[key]['jdk'],commit,level,work/'builds'/(key+'-reprobe.log'))
+    unchanged(harness)
     if a.phase=='build':return
     tests=checkout(work,'test-source',MANIFEST['test_source_commit'])
     for spec in MANIFEST['tests']:
@@ -201,23 +212,24 @@ def main():
         for side in ('candidate','baseline'):
             for level in ('fastdebug','release'):
                 vm=images[side+'-'+level]
-                for spec in MANIFEST['tests']:results.append(run_test(work,tests,vm,spec,side,level,deps['jtreg']))
+                for spec in MANIFEST['tests']:results.append(run_test(work,tests,vm,spec,side,level,harness))
                 results.append(assembler(work,vm,side,level))
     captures=[]
     if a.phase in ('all','instructions'):
-        for side in ('candidate','baseline'):captures.append(instructions(work,tests,images[side+'-release'],side,deps['jtreg']))
+        for side in ('candidate','baseline'):captures.append(instructions(work,tests,images[side+'-release'],side,harness))
     # Resume only identity-matching receipts; never pool results from changed binaries.
     if not results:
         for group in ('tests','assembler'):
             for path in (work/group).glob('*/result.json'):
                 r=json.loads(path.read_text());key=r['side']+'-'+r['level']
-                if key in images and r.get('libjvm_sha256')==images[key]['libjvm_sha256']:results.append(r)
+                if key in images and r.get('libjvm_sha256')==images[key]['libjvm_sha256'] and (group=='assembler' or r.get('jtreg_sha256')==harness['jar_sha256']):results.append(r)
     if not captures:
         for path in (work/'instructions').glob('*/result.json'):
             r=json.loads(path.read_text());key=r['side']+'-release'
-            if r.get('libjvm_sha256')==images[key]['libjvm_sha256'] and r.get('driver_sha256')==sha(HERE/'PR43InstructionCapture.java'):captures.append(r)
+            if r.get('libjvm_sha256')==images[key]['libjvm_sha256'] and r.get('driver_sha256')==sha(HERE/'PR43InstructionCapture.java') and r.get('jtreg_sha256')==harness['jar_sha256']:captures.append(r)
+    unchanged(harness)
     matrix_complete=len(results)==24 # 20 class runs and four assembler groups
-    summary={'source':MANIFEST['candidate'],'baseline_with_C1':MANIFEST['baseline_with_C1'],'results':results,'instruction_captures':captures,'matrix_complete':matrix_complete,'semantic_IR_assembler_accepted':matrix_complete and all(r.get('accepted',False) for r in results),'installed_instruction_review':'PENDING until local agent inspects captured code','SVE':'NOT COVERED by this macOS port; not a prerequisite for scalar/NEON qualification','stress':'NOT RUN; optional separately reviewed scope','performance':'NOT MEASURED; no old pooled timing or codec claim','PR_changes_or_CI_actions':False}
+    summary={'source':MANIFEST['candidate'],'baseline_with_C1':MANIFEST['baseline_with_C1'],'jtreg_identity':harness,'results':results,'instruction_captures':captures,'matrix_complete':matrix_complete,'semantic_IR_assembler_accepted':matrix_complete and all(r.get('accepted',False) for r in results),'installed_instruction_review':'PENDING until local agent inspects captured code','SVE':'NOT COVERED by this macOS port; not a prerequisite for scalar/NEON qualification','stress':'NOT RUN; optional separately reviewed scope','performance':'NOT MEASURED; no old pooled timing or codec claim','PR_changes_or_CI_actions':False}
     write(work/'summary.json',summary)
     print('Evidence:',work/'summary.json')
     if any(r.get('errors') for r in results) or any(c['returncode'] for c in captures):raise RuntimeError('Qualification evidence includes failures; inspect result.json/logs. Do not report a blanket pass.')

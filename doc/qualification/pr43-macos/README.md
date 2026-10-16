@@ -16,11 +16,13 @@ product source or merge it.
   directory normally. Configuration reports unsupported toolchain/SDK versions.
 - Git, Python 3.9+, Bash, curl, tar, zip/unzip, `shasum`, **autoconf and GNU make**.
   With an existing Homebrew installation: `brew install autoconf make`.
-- A native macOS arm64 **JDK 26 or 27** to bootstrap JDK 27, JTReg 8.2.1+1,
-  and GoogleTest 1.14.0 sources. `setup.sh` obtains these standard dependencies
-  from public upstream sources, with the Boot JDK SHA256 and Git commits pinned.
-  JTReg's upstream build obtains its normal checksum-verified dependencies.
-  Existing equivalent installations may instead be supplied in `dependencies.json`.
+- A native macOS arm64 **JDK 26 or 27** to bootstrap JDK 27, **jtreg 8.2.1+1
+  or newer** (including installed 8.3/current releases), and GoogleTest 1.14.0
+  sources. `TEST.ROOT` sets a minimum harness version, not an exact version.
+  `setup.sh` prefers a compatible installed jtreg, and obtains missing standard
+  dependencies from public upstream sources. Boot JDK SHA256 and fallback source
+  commits are pinned. Existing installations may instead be supplied in
+  `dependencies.json`.
 - Sufficient free disk/memory for four JDK builds; allow roughly 40 GB free and
   start with two build jobs. Actual free disk is reported. No system packages
   or security settings are changed by the runner.
@@ -41,6 +43,27 @@ python3 doc/qualification/pr43-macos/run.py all \
   --work ../pr43-macos-work --jobs 2
 ```
 
+If jtreg is already installed, expose its launcher on `PATH`, or select its home
+explicitly (the directory containing `lib/jtreg.jar`):
+
+```sh
+JTREG_HOME=/your/installed/jtreg bash doc/qualification/pr43-macos/setup.sh ../pr43-macos-deps
+```
+
+Selection order is `JTREG_HOME` (or `JT_HOME`), the `PATH` launcher, standard
+Homebrew jtreg homes, then a previously built compatible local fallback. A
+compatible installed 8.3 harness is reused without checking out or building an
+older version. An invalid explicit home stops setup with its error. Unsupported
+automatically discovered harnesses are reported and skipped.
+
+Only if no compatible installed harness is found, setup builds the public
+[`jtreg-8.3+1` sources](https://github.com/openjdk/jtreg/tree/551e17adac0579859012c4c46318b8fa3cf2ff37)
+at `551e17adac0579859012c4c46318b8fa3cf2ff37` under the dependency directory,
+using upstream `bash make/build.sh --jdk <boot-jdk>`. That build fetches its normal
+checksum-verified dependencies and may therefore need additional network access.
+A denied dependency fetch is a blocker; stop and retain its error. This fallback
+is a supported setup option, not an exact harness requirement for the comparison.
+
 The dependency setup is resumable. The runner reuses its exact completed local
 builds when source/dependency/compiler/SDK fingerprints still match; otherwise it
 configures and builds the pinned sources. A phase can be resumed using `build`,
@@ -53,6 +76,16 @@ For already installed standard dependencies, replace setup with a JSON file:
 ```json
 {"boot_jdk":"/your/native/jdk-26/Contents/Home","jtreg":"/your/jtreg","gtest":"/your/googletest"}
 ```
+
+Setup and the runner inspect the actual harness version with `java -jar
+<jtreg>/lib/jtreg.jar -version`. Receipts record its resolved home, reported
+version and JAR SHA256. Both candidate and baseline use that same selected
+harness for all four images. A JAR change during a paired run stops execution;
+resumed test/capture receipts must match its hash. Keep an in-progress run on
+its current checkout and harness. For a later harness upgrade, use a fresh
+`--work` directory and retain earlier evidence. Existing JDK builds with the
+same dependency bytes remain reusable. Source commits and the test matrix below
+do not depend on which compatible jtreg release is selected.
 
 These are ordinary local tool paths, not handoff packets. The default requires
 no prebuilt candidate/baseline images. Existing exact Mac CI images are optional
