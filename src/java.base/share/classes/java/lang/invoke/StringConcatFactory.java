@@ -28,6 +28,7 @@ package java.lang.invoke;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.classfile.impl.DirectCodeBuilder;
 import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
@@ -721,6 +722,7 @@ public final class StringConcatFactory {
                   .aload(constantsSlot)
                   .invokespecial(CD_StringConcatBase, INIT_NAME, MTD_INIT, false)
                   .return_();
+                DirectCodeBuilder.withMaxs(cb, 2, 2);
             }
         };
 
@@ -732,6 +734,9 @@ public final class StringConcatFactory {
                                 return new ConcurrentHashMap<>(64);
                             }
                         });
+
+        // All generated methods are straight-line, with explicit stack and local limits.
+        static final ClassFile CLASSFILE = ClassFile.of(StackMapsOption.DROP_STACK_MAPS);
 
         private InlineHiddenClassStrategy() {
             // no instantiation
@@ -843,7 +848,7 @@ public final class StringConcatFactory {
                            coderArgs   = coderArgsIfMaybeUTF16(concatArgs),
                            prependArgs = prependArgs(concatArgs, staticConcat);
 
-            byte[] classBytes = ClassFile.of().build(CD_CONCAT,
+            byte[] classBytes = CLASSFILE.build(CD_CONCAT,
                     new Consumer<ClassBuilder>() {
                         @Override
                         public void accept(ClassBuilder clb) {
@@ -1013,6 +1018,8 @@ public final class StringConcatFactory {
                         bufSlot       = cb.allocateLocal(TypeKind.REFERENCE),
                         constantsSlot = cb.allocateLocal(TypeKind.REFERENCE),
                         suffixSlot    = cb.allocateLocal(TypeKind.REFERENCE);
+                    // Static concatenators do not use the constants and suffix locals.
+                    int maxLocals = staticConcat ? bufSlot + 1 : suffixSlot + 1;
 
                     /*
                      * Types other than int/long/char/boolean require local variables to store the result of stringOf.
@@ -1037,6 +1044,7 @@ public final class StringConcatFactory {
                                 methodTypeDesc = MTD_String_Object;
                             }
                             stringSlots[i] = cb.allocateLocal(TypeKind.REFERENCE);
+                            maxLocals = stringSlots[i] + 1;
                             cb.loadLocal(TypeKind.from(cl), cb.parameterSlot(i))
                               .invokestatic(CD_StringConcatHelper, "stringOf", methodTypeDesc)
                               .astore(stringSlots[i]);
@@ -1150,6 +1158,7 @@ public final class StringConcatFactory {
                     if (!staticConcat) {
                         cb.aload(constantsSlot);
                     }
+                    int maxStack = staticConcat ? 3 : 4;
                     for (int i = 0; i < paramCount; i++) {
                         var cl = concatArgs.parameterType(i);
                         int paramSlot = cb.parameterSlot(i);
@@ -1159,6 +1168,7 @@ public final class StringConcatFactory {
                             kind = TypeKind.REFERENCE;
                         }
                         cb.loadLocal(kind, paramSlot);
+                        maxStack += kind.slotSize();
                     }
                     cb.invokestatic(concatClass, "prepend", prependArgs);
 
@@ -1169,6 +1179,9 @@ public final class StringConcatFactory {
                       .iload(coderSlot)
                       .invokespecial(CD_String, INIT_NAME, MTD_STRING_INIT)
                       .areturn();
+                    // The prepend arguments dominate every other stack peak, including the
+                    // five slots for String construction above (prepend's int is still present).
+                    DirectCodeBuilder.withMaxs(cb, maxStack, maxLocals);
                 }
             };
         }
@@ -1192,6 +1205,7 @@ public final class StringConcatFactory {
                 @Override
                 public void accept(CodeBuilder cb) {
                     int lengthSlot = cb.parameterSlot(0);
+                    int maxStack = 2;
                     cb.iload(lengthSlot);
                     for (int i = 1; i < lengthArgs.parameterCount(); i++) {
                         var cl = lengthArgs.parameterType(i);
@@ -1202,6 +1216,7 @@ public final class StringConcatFactory {
                             methodTypeDesc = MTD_int_int_int;
                         } else if (cl == CD_long) {
                             methodTypeDesc = MTD_int_int_long;
+                            maxStack = 3;
                         } else if (cl == CD_boolean) {
                             methodTypeDesc = MTD_int_int_boolean;
                         } else {
@@ -1211,6 +1226,7 @@ public final class StringConcatFactory {
                           .invokestatic(CD_StringConcatHelper, "stringSize", methodTypeDesc);
                     }
                     cb.ireturn();
+                    DirectCodeBuilder.withMaxs(cb, maxStack, ((DirectCodeBuilder) cb).curTopLocal());
                 }
             };
         }
@@ -1248,6 +1264,7 @@ public final class StringConcatFactory {
                         cb.ior();
                     }
                     cb.ireturn();
+                    DirectCodeBuilder.withMaxs(cb, 2, ((DirectCodeBuilder) cb).curTopLocal());
                 }
             };
         }
@@ -1285,6 +1302,8 @@ public final class StringConcatFactory {
                         coderSlot     = cb.parameterSlot(1),
                         bufSlot       = cb.parameterSlot(2),
                         constantsSlot = cb.parameterSlot(3);
+                    // The instance form also pushes an array index before loading a constant.
+                    int maxStack = staticConcat ? 5 : 6;
                     /*
                      * // StringConcatHelper.prepend
                      * return prepend(prepend(prepend(prepend(
@@ -1305,6 +1324,7 @@ public final class StringConcatFactory {
                             methodTypeDesc = PREPEND_int;
                         } else if (cl == CD_long) {
                             methodTypeDesc = PREPEND_long;
+                            maxStack = staticConcat ? 6 : 7;
                         } else if (cl == CD_boolean) {
                             methodTypeDesc = PREPEND_boolean;
                         } else if (cl == CD_char) {
@@ -1329,6 +1349,7 @@ public final class StringConcatFactory {
                         cb.invokestatic(CD_StringConcatHelper, "prepend", methodTypeDesc);
                     }
                     cb.ireturn();
+                    DirectCodeBuilder.withMaxs(cb, maxStack, ((DirectCodeBuilder) cb).curTopLocal());
                 }
             };
         }
