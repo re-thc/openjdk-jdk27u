@@ -2155,6 +2155,13 @@ final class StringUTF16 {
     @ForceInline
     static int lastIndexOfLatin1(byte[] src, int srcCount,
                                         byte[] tgt, int tgtCount, int fromIndex) {
+        if (fromIndex == 0 && tgtCount <= StringZilla.MAX_MIXED_NEEDLE
+                && StringZilla.ENABLED && StringZilla.compilerTier() == 0) {
+            int result = StringZilla.rfindUTF16Latin1(src, 0, tgtCount << 1, tgt, tgtCount);
+            if (result != StringZilla.FALLBACK) {
+                return result < 0 ? -1 : 0;
+            }
+        }
         if (fromIndex > 0 && fromIndex + tgtCount >= (StringZilla.MIN_BYTES >> 1)
                 && StringZilla.ENABLED) {
             int searchLength = fromIndex + tgtCount;
