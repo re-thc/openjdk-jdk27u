@@ -301,6 +301,8 @@ void PackageEntryTable::locked_create_entry(Symbol* name, ModuleEntry* module) {
   PackageEntry* entry = new PackageEntry(name, module);
   bool created = _table.put(name, entry);
   assert(created, "must be");
+  // maybe_grow divides entries by buckets in integers, so this grows at an
+  // average chain of 3.
   _table.maybe_grow(2);
 }
 
