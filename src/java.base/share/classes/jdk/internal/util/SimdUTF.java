@@ -36,6 +36,8 @@ import jdk.internal.vm.annotation.Stable;
  * Bulk UTF and Base64 operations. A negative result requests the Java
  * implementation, including its malformed-input and buffer-position semantics.
  * The VM validates array types, ranges and output capacity on every entry.
+ * Object operands containing UTF-16 use char[] or native-order byte[] storage;
+ * their offsets and capacities count UTF-16 code units.
  */
 public final class SimdUTF {
     private SimdUTF() { }
@@ -395,14 +397,20 @@ public final class SimdUTF {
     }
 
     @ForceInline
-    public static int encodeUTF16Bytes(char[] src, int sp, int len,
+    public static int encodeUTF16Bytes(Object src, int sp, int len,
                                        byte[] dst, int dp, int capacity, boolean bigEndian) {
+        if ((dp & 1) != 0 || (long)capacity < (long)len * 2) {
+            return -1;
+        }
         return process(src, sp, len, dst, dp, capacity, bigEndian ? ENCODE_UTF16_BE : ENCODE_UTF16_LE);
     }
 
     @ForceInline
     public static int decodeUTF16Bytes(byte[] src, int sp, int len,
-                                       char[] dst, int dp, int capacity, boolean bigEndian) {
+                                       Object dst, int dp, int capacity, boolean bigEndian) {
+        if (((sp | len) & 1) != 0 || capacity < len / 2) {
+            return -1;
+        }
         return process(src, sp, len, dst, dp, capacity, bigEndian ? DECODE_UTF16_BE : DECODE_UTF16_LE);
     }
 
@@ -412,14 +420,20 @@ public final class SimdUTF {
     }
 
     @ForceInline
-    public static int encodeUTF32Bytes(char[] src, int sp, int len,
+    public static int encodeUTF32Bytes(Object src, int sp, int len,
                                        byte[] dst, int dp, int capacity, boolean bigEndian) {
+        if ((dp & 3) != 0) {
+            return -1;
+        }
         return process(src, sp, len, dst, dp, capacity, bigEndian ? ENCODE_UTF32_BE : ENCODE_UTF32_LE);
     }
 
     @ForceInline
     public static int decodeUTF32Bytes(byte[] src, int sp, int len,
-                                       char[] dst, int dp, int capacity, boolean bigEndian) {
+                                       Object dst, int dp, int capacity, boolean bigEndian) {
+        if (((sp | len) & 3) != 0 || capacity < len / 4) {
+            return -1;
+        }
         return process(src, sp, len, dst, dp, capacity, bigEndian ? DECODE_UTF32_BE : DECODE_UTF32_LE);
     }
 
@@ -449,6 +463,10 @@ public final class SimdUTF {
     @ForceInline
     public static int encodeLatin1(byte[] src, int sp, int len,
                                    byte[] dst, int dp, int capacity) {
+        // Large calls reserve output per chunk.
+        if (len <= MAX_CHUNK && (long)capacity < (long)len * 2) {
+            return -1;
+        }
         return process(src, sp, len, dst, dp, capacity, ENCODE_LATIN1);
     }
 

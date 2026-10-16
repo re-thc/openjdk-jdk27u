@@ -53,6 +53,7 @@ public class SimdUTF {
     private String latin1Near, utf16Near;
     private byte[] asciiBytes, latin1Bytes, utf8Bytes, supplementaryBytes, binary, base64, encoded, decoded;
     private char[] chars, targetChars;
+    private char[] malformedCountChars;
     private char[] supplementaryChars;
     private StringBuilder supplementaryBuilder;
     private StringBuffer supplementaryBuffer;
@@ -110,6 +111,8 @@ public class SimdUTF {
         encoded = new byte[base64.length];
         decoded = new byte[binary.length];
         chars = bmp.toCharArray();
+        malformedCountChars = chars.clone();
+        malformedCountChars[size - 1] = '\udc00';
         targetChars = new char[utf8Bytes.length];
         charsetBytes = ByteBuffer.allocate(size * 3);
         charsetInput = ByteBuffer.wrap(utf8Bytes);
@@ -196,6 +199,15 @@ public class SimdUTF {
     }
     @Benchmark public int charArrayCodePointCount() {
         return Character.codePointCount(supplementaryChars, 0, supplementaryChars.length);
+    }
+    @Benchmark public int bmpCodePointCount() {
+        return bmp.codePointCount(0, bmp.length());
+    }
+    @Benchmark public int bmpCharArrayCodePointCount() {
+        return Character.codePointCount(chars, 0, chars.length);
+    }
+    @Benchmark public int lateMalformedCharArrayCodePointCount() {
+        return Character.codePointCount(malformedCountChars, 0, malformedCountChars.length);
     }
     @Benchmark public int builderCodePointCount() {
         return Character.codePointCount(supplementaryBuilder, 0, supplementaryBuilder.length());

@@ -662,6 +662,16 @@ public interface JavaLangAccess {
     boolean bytesCompatible(String string, Charset charset, int srcIndex, int numChars);
 
     /**
+     * Try a wide decode, returning null for fallback. The caller validates the
+     * source range and holds its memory session throughout the conversion.
+     */
+    String newStringFromSegment(MemorySegment segment, long offset, int length, Charset charset);
+
+    /** Try a wide encode, returning -1 before any writes if fallback is needed. */
+    int encodeToSegment(String string, MemorySegment segment, long offset,
+                        Charset charset, int srcIndex, int numChars);
+
+    /**
      * Finish initialization of the StackTraceElement objects in a stack trace.
      */
     void finishInit(StackTraceElement[] stackTrace);

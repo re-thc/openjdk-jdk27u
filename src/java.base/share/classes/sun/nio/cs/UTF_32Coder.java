@@ -99,6 +99,13 @@ class UTF_32Coder {
                         return CoderResult.UNDERFLOW;
                     }
                 }
+                if (SimdUTF.isEligible(src.remaining()) && (!src.hasArray() || !dst.hasArray())) {
+                    try {
+                        SimdUTFBufferSupport.decode(src, dst, currentBO == BIG, true);
+                    } finally {
+                        mark = src.position();
+                    }
+                }
                 while (src.remaining() >= 4) {
                     cp = getCP(src);
                     if (Character.isBmpCodePoint(cp)) {
@@ -156,13 +163,17 @@ class UTF_32Coder {
         }
 
         protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
-            if (SimdUTF.isEligible(src.remaining()) && src.hasArray() && dst.hasArray()) {
+            if (SimdUTF.isEligible(src.remaining())) {
                 if (!doneBOM && src.hasRemaining()) {
                     if (dst.remaining() < 4) {
                         return CoderResult.OVERFLOW;
                     }
                     put(BOM_BIG, dst);
                     doneBOM = true;
+                }
+                if (!src.hasArray() || !dst.hasArray()) {
+                    SimdUTFBufferSupport.encode(src, dst, byteOrder == BIG, true);
+                    return encodeLoopScalar(src, dst);
                 }
                 int length = src.remaining();
                 int written = SimdUTF.encodeUTF32Bytes(src.array(), src.arrayOffset() + src.position(),

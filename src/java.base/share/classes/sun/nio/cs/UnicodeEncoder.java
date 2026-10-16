@@ -88,6 +88,13 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
                     return CoderResult.UNDERFLOW;
                 }
             }
+            if (SimdUTF.isEligible(src.remaining()) && (!src.hasArray() || !dst.hasArray())) {
+                try {
+                    SimdUTFBufferSupport.encode(src, dst, byteOrder == BIG, false);
+                } finally {
+                    mark = src.position();
+                }
+            }
             while (src.hasRemaining()) {
                 char c = src.get();
                 if (!Character.isSurrogate(c)) {

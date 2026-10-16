@@ -3667,7 +3667,8 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   }
 
   if (id == vmIntrinsics::_simdutf_utf8PrefixThreshold) {
-    int threshold = FLAG_IS_DEFAULT(SIMDUTFMinLength) ? checked_cast<int>(SIMDUTFMinLength) : 0;
+    int threshold = UseSIMDUTFIntrinsics && FLAG_IS_DEFAULT(SIMDUTFMinLength)
+        ? checked_cast<int>(SIMDUTFMinLength) : 0;
     if (!ignore_return) {
       ipush(append(new Constant(new IntConstant(threshold))));
     }
