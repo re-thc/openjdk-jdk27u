@@ -609,6 +609,9 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
     return;
   }
 
+  _checked_utf8 = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, u1, cp->length());
+  memset(_checked_utf8, 0, cp->length());
+
   // second verification pass - checks the strings are of the right format.
   // but not yet to the other entries
   for (index = 1; index < length; index++) {
@@ -635,12 +638,12 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
 
           if (Signature::is_method(sig)) {
             // Format check method name and signature
-            verify_legal_method_name(name, CHECK);
-            verify_legal_method_signature(name, sig, CHECK);
+            verify_legal_method_name(name_index, CHECK);
+            verify_legal_method_signature(name, sig_index, CHECK);
           } else {
             // Format check field name and signature
-            verify_legal_field_name(name, CHECK);
-            verify_legal_field_signature(name, sig, CHECK);
+            verify_legal_field_name(name_index, CHECK);
+            verify_legal_field_signature(name, sig_index, CHECK);
           }
         }
         break;
@@ -1413,14 +1416,13 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
       "Invalid constant pool index %u for field name in class file %s",
       name_index, CHECK);
     const Symbol* const name = cp->symbol_at(name_index);
-    verify_legal_field_name(name, CHECK);
+    verify_legal_field_name(name_index, CHECK);
 
     const u2 signature_index = cfs->get_u2_fast();
     guarantee_property(valid_symbol_at(signature_index),
       "Invalid constant pool index %u for field signature in class file %s",
       signature_index, CHECK);
-    const Symbol* const sig = cp->symbol_at(signature_index);
-    verify_legal_field_signature(name, sig, CHECK);
+    verify_legal_field_signature(name, signature_index, CHECK);
 
     u2 constantvalue_index = 0;
     bool is_synthetic = false;
@@ -1725,10 +1727,10 @@ const ClassFileParser::unsafe_u2* ClassFileParser::parse_localvariable_table(con
 
       const Symbol* const name = cp->symbol_at(name_index);
       const Symbol* const sig = cp->symbol_at(descriptor_index);
-      verify_legal_field_name(name, CHECK_NULL);
+      verify_legal_field_name(name_index, CHECK_NULL);
       u2 extra_slot = 0;
       if (!isLVTT) {
-        verify_legal_field_signature(name, sig, CHECK_NULL);
+        verify_legal_field_signature(name, descriptor_index, CHECK_NULL);
 
         // 4894874: check special cases for double and long local variables
         if (sig == vmSymbols::type_signature(T_DOUBLE) ||
@@ -2167,7 +2169,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
     "Illegal constant pool index %u for method name in class file %s",
     name_index, CHECK_NULL);
   const Symbol* const name = cp->symbol_at(name_index);
-  verify_legal_method_name(name, CHECK_NULL);
+  verify_legal_method_name(name_index, CHECK_NULL);
 
   const u2 signature_index = cfs->get_u2_fast();
   guarantee_property(
@@ -4927,6 +4929,42 @@ int ClassFileParser::verify_legal_method_signature(const Symbol* name,
   return 0;
 }
 
+void ClassFileParser::verify_legal_field_name(int name_index, TRAPS) {
+  if (!_need_verify || (_checked_utf8[name_index] & CheckedFieldName) != 0) {
+    return;
+  }
+  verify_legal_field_name(_cp->symbol_at(name_index), CHECK);
+  _checked_utf8[name_index] |= CheckedFieldName;
+}
+
+void ClassFileParser::verify_legal_method_name(int name_index, TRAPS) {
+  if (!_need_verify || (_checked_utf8[name_index] & CheckedMethodName) != 0) {
+    return;
+  }
+  verify_legal_method_name(_cp->symbol_at(name_index), CHECK);
+  _checked_utf8[name_index] |= CheckedMethodName;
+}
+
+void ClassFileParser::verify_legal_field_signature(const Symbol* fieldname,
+                                                   int signature_index,
+                                                   TRAPS) {
+  if (!_need_verify || (_checked_utf8[signature_index] & CheckedFieldSignature) != 0) {
+    return;
+  }
+  verify_legal_field_signature(fieldname, _cp->symbol_at(signature_index), CHECK);
+  _checked_utf8[signature_index] |= CheckedFieldSignature;
+}
+
+void ClassFileParser::verify_legal_method_signature(const Symbol* methodname,
+                                                    int signature_index,
+                                                    TRAPS) {
+  if (!_need_verify || (_checked_utf8[signature_index] & CheckedMethodSignature) != 0) {
+    return;
+  }
+  verify_legal_method_signature(methodname, _cp->symbol_at(signature_index), CHECK);
+  _checked_utf8[signature_index] |= CheckedMethodSignature;
+}
+
 int ClassFileParser::static_field_size() const {
   assert(_field_info != nullptr, "invariant");
   return _field_info->_static_field_size;
@@ -5371,6 +5409,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _itfs_len(0),
   _java_fields_count(0),
   _need_verify(false),
+  _checked_utf8(nullptr),
   _has_nonstatic_concrete_methods(false),
   _declares_nonstatic_concrete_methods(false),
   _has_localvariable_table(false),

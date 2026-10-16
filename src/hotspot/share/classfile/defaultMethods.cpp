@@ -621,6 +621,19 @@ static bool already_in_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots, Meth
   return found;
 }
 
+// A hierarchy walk can produce a default method or overpass only from a
+// non-static, non-private, non-overpass interface declaration.
+static bool has_interface_candidate(InstanceKlass* klass, Method* m) {
+  Array<InstanceKlass*>* interfaces = klass->transitive_interfaces();
+  for (int i = 0; i < interfaces->length(); ++i) {
+    Method* im = interfaces->at(i)->find_method(m->name(), m->signature());
+    if (im != nullptr && !im->is_static() && !im->is_overpass() && !im->is_private()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
     InstanceKlass* klass, const GrowableArray<Method*>* mirandas) {
 
@@ -645,7 +658,7 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
         // default method processing that occurred on behalf of our superclass,
         // so it's a method we want to re-examine in this new context.  That is,
         // unless we have a real implementation of it in the current class.
-        if (!already_in_vtable_slots(slots, m)) {
+        if (has_interface_candidate(klass, m) && !already_in_vtable_slots(slots, m)) {
           Method *impl = klass->lookup_method(m->name(), m->signature());
           if (impl == nullptr || impl->is_overpass() || impl->is_static()) {
             slots->append(new EmptyVtableSlot(m));
