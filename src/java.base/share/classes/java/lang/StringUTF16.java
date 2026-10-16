@@ -2155,10 +2155,6 @@ final class StringUTF16 {
     @ForceInline
     static int lastIndexOfLatin1(byte[] src, int srcCount,
                                         byte[] tgt, int tgtCount, int fromIndex) {
-        if (StringZilla.ENABLED && tgtCount > StringZilla.MAX_MIXED_NEEDLE
-                && StringZilla.compilerTier() == StringZilla.C1) {
-            return lastIndexOfLatin1Scalar(src, tgt, tgtCount, fromIndex);
-        }
         if (fromIndex > 0 && fromIndex + tgtCount >= (StringZilla.MIN_BYTES >> 1)
                 && StringZilla.ENABLED) {
             int searchLength = fromIndex + tgtCount;
@@ -2178,9 +2174,8 @@ final class StringUTF16 {
                 }
             } else {
                 int tier = StringZilla.compilerTier();
-                if (tier != StringZilla.C1
-                        && getChar(src, fromIndex + tgtCount - 1) != (tgt[tgtCount - 1] & 0xff)) {
-                    if (tier == 0) {
+                if (getChar(src, fromIndex + tgtCount - 1) != (tgt[tgtCount - 1] & 0xff)) {
+                    if (tier == 0 || tier == StringZilla.C1) {
                         fromIndex = StringZilla.lastMixedCandidate(src, tgt, tgtCount, fromIndex);
                         if (fromIndex < 0) {
                             return -1;
@@ -2191,11 +2186,6 @@ final class StringUTF16 {
                 }
             }
         }
-        return lastIndexOfLatin1Scalar(src, tgt, tgtCount, fromIndex);
-    }
-
-    @ForceInline
-    private static int lastIndexOfLatin1Scalar(byte[] src, byte[] tgt, int tgtCount, int fromIndex) {
         assert fromIndex >= 0;
         assert tgtCount > 0;
         assert tgtCount <= tgt.length;
