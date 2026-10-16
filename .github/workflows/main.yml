@@ -1,4 +1,4 @@
-name: C1 policy existing-image diagnostic
+name: C1 policy existing-image readiness
 'on':
   workflow_dispatch:
     inputs:
@@ -20,7 +20,7 @@ env:
 jobs:
   diagnostic:
     runs-on: ubuntu-26.04
-    timeout-minutes: 75
+    timeout-minutes: 25
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
@@ -91,7 +91,7 @@ jobs:
       run: |
         set -euo pipefail
         sudo apt-get update
-        sudo apt-get install --yes python3-scipy binutils
+        sudo apt-get install --yes python3-scipy binutils strace
     - name: Unpack the exact build artifact
       env:
         ARCHIVE_SHA: f0f67bc86173ad344190bab52355f768ac759837bb886ce87e2ce6afd642de51
@@ -105,11 +105,11 @@ jobs:
           --archive-sha256 "$ARCHIVE_SHA" --manifest-sha256 "$MANIFEST_SHA" \
           --destination "$RUNNER_TEMP/c1-native-payload" \
           2>&1 | tee "$RUNNER_TEMP/c1-native-preflight/staging.log"
-    - name: Run the frozen 196-fork / 50-minute protocol
+    - name: Run bounded readiness only
       shell: bash
       run: |
         set -euo pipefail
-        /usr/bin/python3 make/scripts/c1-policy-diagnostic/run.py \
+        /usr/bin/python3 make/scripts/c1-policy-diagnostic/run.py --readiness-only \
           --payload "$RUNNER_TEMP/c1-native-payload" \
           --output "$RUNNER_TEMP/c1-native-results"
     - name: Analyze without extending runtime or restarting measurements

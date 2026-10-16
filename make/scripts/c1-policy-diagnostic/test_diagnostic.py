@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shlex
 import shutil
 import subprocess
 import tarfile
@@ -17,6 +18,8 @@ import common
 import preflight
 import run as runner
 import stats
+import blackhole
+import image_views
 
 
 class ElfLoaderTests(unittest.TestCase):
@@ -101,6 +104,108 @@ class ElfLoaderTests(unittest.TestCase):
 
 
 class DiagnosticTests(unittest.TestCase):
+    def test_derived_images_only_omit_reviewed_archives(self):
+        self.assertEqual({'lib/server/classes.jsa', 'lib/server/classes_fourbyte.jsa',
+                          'lib/server/classes_nocoh.jsa', 'lib/server/classes_nocoops.jsa',
+                          'lib/server/classes_nocoops_fourbyte.jsa',
+                          'lib/server/classes_nocoops_nocoh.jsa'}, image_views.ARCHIVES)
+        for fault in [None, 'archive', 'copy']:
+            with self.subTest(fault=fault), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                payload = root / 'payload'
+                for arm in ['before', 'current', 'repair']:
+                    image = payload / 'images' / arm
+                    (image / 'lib/server').mkdir(parents=True)
+                    (image / 'lib/server/libjvm.so').write_text(arm)
+                    (image / 'lib/modules').write_text('unchanged modules')
+                    for name in image_views.ARCHIVES:
+                        (image / name).write_text('archive ' + arm + name)
+                (payload / 'native-manifest.json').write_text('{}')
+                if fault == 'archive':
+                    (payload / 'images/before/lib/server/extra.jsa').write_text('unexpected')
+                before = common.snapshot(payload)
+                destination = root / 'runtime'
+                copytree = shutil.copytree
+                def corrupt(source, target, *args, **kwargs):
+                    result = copytree(source, target, *args, **kwargs)
+                    vm = Path(target) / 'lib/server/libjvm.so'
+                    if vm.exists():
+                        vm.write_text('corruption')
+                    return result
+                if fault:
+                    with patch.object(image_views.shutil, 'copytree', side_effect=corrupt if fault == 'copy' else copytree):
+                        with self.assertRaises(ValueError):
+                            image_views.prepare_images(payload, destination)
+                else:
+                    images = image_views.prepare_images(payload, destination, root / 'evidence.json')
+                    record = json.loads((root / 'evidence.json').read_text())
+                    for arm in ['before', 'current', 'repair']:
+                        self.assertEqual(image_views.ARCHIVES, set(record['images'][arm]['omitted']))
+                        self.assertFalse(list((images / arm).rglob('*.jsa')))
+                        original = common.snapshot(payload / 'images' / arm)
+                        self.assertEqual({k: v for k, v in original.items() if k not in image_views.ARCHIVES},
+                                         common.snapshot(images / arm))
+                self.assertEqual(before, common.snapshot(payload))
+
+    def test_blackhole_errors_and_fallback_modes_are_rejected(self):
+        accepted = 'CompileCommand: blackhole some/fake/Class.method bool blackhole = true\n'
+        blackhole.validate_probe('openjdk version fixture\n', True)
+        blackhole.validate_probe(accepted, False)
+        for text, quiet in [('Mark mismatch while restoring from shared file\n' + accepted, False),
+                            ('Error occurred during initialization of VM', True),
+                            (accepted, True), ('', False),
+                            ('CompileCommand: error\n' + accepted, False)]:
+            with self.subTest(text=text, quiet=quiet), self.assertRaises(ValueError):
+                blackhole.validate_probe(text, quiet)
+        valid = ('# Blackhole mode: compiler (auto-detected, fixture)\nHINTS_SHA256=' + 'a' * 64 +
+                 '\nBLACKHOLE_READINESS_PASS_AUTO_COMPILER\n')
+        blackhole.validate_selection(valid)
+        for text in [valid.replace('compiler (auto-detected,', 'compiler (forced,'),
+                     valid.replace('compiler (auto-detected,', 'full + dont-inline hint ('),
+                     'Mark mismatch while restoring from shared file\n' + valid,
+                     valid + '# Blackhole mode: compiler (auto-detected, duplicate)\n']:
+            with self.subTest(text=text), self.assertRaises(ValueError):
+                blackhole.validate_selection(text)
+        expected = 'compiler (auto-detected, fixture)'
+        blackhole.validate_timing_mode('# Blackhole mode: ' + expected + '\n', expected)
+        for text in ['', '# Blackhole mode: full + dont-inline hint\n',
+                     '# Blackhole mode: ' + expected + '\n# Blackhole mode: duplicate\n']:
+            with self.subTest(text=text), self.assertRaises(ValueError):
+                blackhole.validate_timing_mode(text, expected)
+
+    def test_derived_image_paths_preserve_all_other_timing_arguments(self):
+        for row in common.schedule():
+            original = common.timing_command(row, Path('/payload'), Path('/output'), 7)
+            derived = common.timing_command(row, Path('/payload'), Path('/output'), 7, Path('/runtime/images'))
+            self.assertEqual(str(common.image('/payload', row['arm'], '/runtime/images') / 'bin/java'), derived[3])
+            derived[3] = original[3]
+            derived[derived.index('-jvm') + 1] = original[original.index('-jvm') + 1]
+            self.assertEqual(original, derived)
+
+    def test_actual_blackhole_probe_trace_requires_exact_commands_and_zero_exits(self):
+        for fault in [None, 'nonzero', 'missing', 'extra-option', 'wrong-image']:
+            with self.subTest(fault=fault), tempfile.TemporaryDirectory() as directory:
+                prefix = Path(directory) / 'process'
+                java = '/runtime/images/repair/bin/java'
+                for index, quiet in enumerate([True, False]):
+                    if fault == 'missing' and not quiet:
+                        continue
+                    command = [java] + blackhole.probe_arguments(quiet)
+                    if fault == 'extra-option' and quiet:
+                        command.insert(1, '-Djmh.blackhole.mode=COMPILER')
+                    code = '1' if fault == 'nonzero' and not quiet else '0'
+                    executable = '/wrong/image/bin/java' if fault == 'wrong-image' and quiet else java
+                    Path(str(prefix) + '.' + str(100 + index)).write_text(
+                        'execve("' + executable + '", ' + json.dumps(command) + ', 0x123 /* env */) = 0\n'
+                        'exit_group(' + code + ') = ?\n+++ exited with ' + code + ' +++\n')
+                if fault:
+                    with self.assertRaises(ValueError):
+                        blackhole.validate_trace(prefix, java)
+                else:
+                    probes = blackhole.validate_trace(prefix, java)
+                    self.assertEqual(2, len(probes))
+                    self.assertTrue(all(probe['exit'] == 0 for probe in probes))
+
     def test_fixed_protocol_matches_recorded_rows_and_commands(self):
         reference = os.environ.get('REFERENCE_SCHEDULE')
         rows = common.schedule()
@@ -114,11 +219,87 @@ class DiagnosticTests(unittest.TestCase):
                 self.assertEqual(row, {k: prior[k] for k in row})
                 command = common.timing_command(row, Path('/payload'), Path('/output'), 7)
                 expected = prior['command']
+                self.assertEqual('-Xshare:off', command.pop(4))
+                index = command.index('-jvmArgs')
+                self.assertEqual(['-jvmArgs', '-XX:ActiveProcessorCount=2'], command[index:index + 2])
+                del command[index:index + 2]
                 for key in ['-cp', '-jvm', '-rff']:
                     command[command.index(key) + 1] = expected[expected.index(key) + 1]
                 command[2] = expected[2]
                 command[3] = expected[3]
                 self.assertEqual(command, expected)
+
+    def test_outer_cds_fix_preserves_all_measured_fork_arguments(self):
+        for row in common.schedule():
+            command = common.timing_command(row, Path('/payload'), Path('/output'), 7)
+            self.assertEqual(['-Xshare:off', '-XX:ActiveProcessorCount=2'], command[4:6])
+            inherited = shlex.split(command[command.index('-jvmArgs') + 1])
+            appended = shlex.split(command[command.index('-jvmArgsAppend') + 1])
+            self.assertEqual(['-XX:ActiveProcessorCount=2'], inherited)
+            self.assertEqual(['-XX:ActiveProcessorCount=2'] + shlex.split(common.flags(row['mode'], row['route'])),
+                             inherited + appended)
+            self.assertEqual(1, (inherited + appended).count('-Xshare:off'))
+
+    def test_actual_launcher_readiness_covers_every_arm_and_fails_before_timing(self):
+        benchmark = common.plan()['inputs']['ordinary']['benchmark']
+        for missing_arm, readiness_only in [(None, False), ('repair', False), ('blackhole', False), (None, True)]:
+            with self.subTest(missing_arm=missing_arm, readiness_only=readiness_only), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                output = root / 'results'
+                calls = []
+                def invoke(driver, command, log, limit, **metadata):
+                    calls.append((command, metadata))
+                    self.assertEqual('readiness', metadata['phase'])
+                    if command[-1] == 'ThreadProbe':
+                        return 'FOUR_THREADS_PASS'
+                    self.assertEqual('-l', command[-1])
+                    self.assertEqual('JMH-list', metadata['kind'])
+                    self.assertEqual(20, limit)
+                    self.assertEqual(['-Xshare:off', '-XX:ActiveProcessorCount=2'], command[4:6])
+                    self.assertEqual('-XX:ActiveProcessorCount=2', command[command.index('-jvmArgs') + 1])
+                    return 'Benchmarks:\n' + ('' if metadata['arm'] == missing_arm else benchmark)
+                argv = ['run.py', '--payload', str(root / 'payload'), '--output', str(output)]
+                if readiness_only:
+                    argv += ['--readiness-only']
+                with patch('sys.argv', argv), \
+                     patch.object(runner.ctypes, 'CDLL') as libc, \
+                     patch.object(runner.signal, 'signal'), \
+                     patch.object(runner, 'verify_native', return_value={'fixture': True}), \
+                     patch.object(runner, 'prepare_images', return_value=root / 'payload/images'), \
+                     patch.object(runner, 'check_blackholes',
+                                  side_effect=ValueError('fixture blackhole failure') if missing_arm == 'blackhole' else None) as check_bh, \
+                     patch.object(runner, 'host_metadata', return_value={'affinity': [0, 1]}), \
+                     patch.object(runner, 'require_host'), patch.object(runner, 'check_elf'), \
+                     patch.object(runner.Driver, 'invoke', new=invoke), \
+                     patch.object(runner, 'execute_protocol', side_effect=RuntimeError('fixture stops after readiness')) as protocol:
+                    libc.return_value.prctl.return_value = 0
+                    if readiness_only:
+                        runner.main()
+                    else:
+                        with self.assertRaisesRegex((ValueError, RuntimeError),
+                                                    'Missing benchmark|fixture blackhole failure|fixture stops after readiness'):
+                            runner.main()
+                    if missing_arm:
+                        protocol.assert_not_called()
+                        self.assertFalse((output / 'preflight/PASS.json').exists())
+                    else:
+                        if readiness_only:
+                            protocol.assert_not_called()
+                        else:
+                            protocol.assert_called_once()
+                        self.assertIn('three_actual_JMH_launcher_checks',
+                                      json.loads((output / 'preflight/PASS.json').read_text()))
+                    if missing_arm == 'repair':
+                        check_bh.assert_not_called()
+                    else:
+                        check_bh.assert_called_once()
+                self.assertEqual(['before', 'current', 'repair'],
+                                 [m['arm'] for c, m in calls if c[-1] == '-l'])
+                completion = json.loads((output / 'completion.json').read_text())
+                self.assertEqual((0, 0), (completion['timing_forks'], completion['diagnostic_processes']))
+                if readiness_only:
+                    self.assertEqual('READINESS_ONLY_PASS; NO TIMING OR QUALIFICATION', completion['status'])
+                    self.assertEqual((0, 180), (completion['maximum'], completion['cap_seconds']))
 
     def test_calibration_failure_stops_exactly_at_32(self):
         events = []
@@ -324,7 +505,7 @@ class DiagnosticTests(unittest.TestCase):
         self.assertEqual({'contents': 'read', 'actions': 'read'}, workflow['permissions'])
         job = workflow['jobs']['diagnostic']
         self.assertEqual("github.ref == 'refs/heads/diagnose-c1-policy-20261016'", job['if'])
-        self.assertEqual('75', job['timeout-minutes'])
+        self.assertEqual('25', job['timeout-minutes'])
         actions = [s['uses'] for s in job['steps'] if 'uses' in s]
         self.assertEqual([
             'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
@@ -404,6 +585,7 @@ class DiagnosticTests(unittest.TestCase):
                      patch.object(runner.ctypes, 'CDLL') as libc, \
                      patch.object(runner.signal, 'signal'), \
                      patch.object(runner, 'verify_native', return_value={'fixture': True}), \
+                     patch.object(runner, 'prepare_images', return_value=root / 'payload/images'), \
                      patch.object(runner, 'host_metadata', return_value={'affinity': [0, 1]}), \
                      patch.object(runner, 'require_host'), \
                      patch.object(runner.subprocess, 'Popen', side_effect=start), \
@@ -427,30 +609,32 @@ class DiagnosticTests(unittest.TestCase):
 
     def test_workflow_cli_loads_exact_staged_driver_and_frozen_definitions(self):
         expected = {
-            'common.py': '5ea1be1880a4780d11ae16a20787942feeef555375159184f89062ef9a266cd8',
-            'run.py': 'e1afc353cb0c8c6c5cba4e7a315146a0b9df100094d08274f9a2760b39303f0c',
+            'common.py': '2acd5b8c1698bd843696d52e67fd850b8959122f1a0201e2092ade0e6b037f9f',
+            'run.py': 'ae5b5869cc4646a5a2229b5be8f0701219c0699f551bd1f2217b123e08767c31',
             'analyze.py': '7930da7976be92f6d810f28c131655e94d926659e6b81f78316da05c92548971',
             'stats.py': '7d13c1e252e422b9db1f3583cadf6e45338721b40178f0abdfef61e7eb7ba602',
             'frozen-plan.json': common.PLAN_SHA,
         }
         for name, digest in expected.items():
             self.assertEqual(digest, common.sha(common.HERE / name))
-        for module in [common, runner, stats, preflight]:
+        for module in [common, runner, stats, preflight, blackhole, image_views]:
             self.assertEqual(common.HERE, Path(module.__file__).resolve().parent)
         self.assertIs(runner.plan, common.plan)
         self.assertIs(runner.execute_protocol, common.execute_protocol)
         self.assertIs(runner.calibration, stats.calibration)
         self.assertIs(runner.check_elf, preflight.check_elf)
+        self.assertIs(runner.prepare_images, image_views.prepare_images)
+        self.assertIs(runner.check_blackholes, blackhole.check_blackholes)
         workflow = yaml.load((common.HERE.parents[2] / '.github/workflows/main.yml').read_text(),
                              Loader=yaml.BaseLoader)
         step = next(s for s in workflow['jobs']['diagnostic']['steps']
-                    if s.get('name') == 'Run the frozen 196-fork / 50-minute protocol')
+                    if s.get('name') == 'Run bounded readiness only')
         self.assertIn('/usr/bin/python3 make/scripts/c1-policy-diagnostic/run.py', step['run'])
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             payload = root / 'c1-native-payload'
             payload.mkdir()
-            for name in ['common.py', 'stats.py', 'preflight.py']:
+            for name in ['common.py', 'stats.py', 'preflight.py', 'blackhole.py', 'image_views.py']:
                 (payload / name).write_text("raise AssertionError('PAYLOAD_SHADOW_IMPORTED')\n")
             output = root / 'c1-native-results'
             done = subprocess.run(['bash', '-c', step['run']], cwd=common.HERE.parents[2],
@@ -460,13 +644,14 @@ class DiagnosticTests(unittest.TestCase):
             self.assertNotEqual(0, done.returncode)
             self.assertNotIn('PAYLOAD_SHADOW_IMPORTED', done.stderr)
             self.assertIn('native-manifest.json', done.stderr)
-            for name in ['common.py', 'stats.py', 'preflight.py']:
+            for name in ['common.py', 'stats.py', 'preflight.py', 'blackhole.py', 'image_views.py']:
                 self.assertIn(str(common.HERE / name), done.stderr)
             self.assertEqual(common.PLAN_SHA, common.sha(output / 'frozen-plan.json'))
             self.assertEqual(common.schedule(), json.loads((output / 'fixed-schedule.json').read_text()))
             budget = json.loads((output / 'execution-budget.json').read_text())
             self.assertEqual(expected['run.py'], budget['runner_sha256'])
-            self.assertEqual((3000, 196, 15), (budget['seconds'], budget['max_timing_forks'], budget['max_compiler_probes']))
+            self.assertEqual((180, 0, 0), (budget['seconds'], budget['max_timing_forks'], budget['max_compiler_probes']))
+            self.assertTrue(budget['readiness_only'])
             completion = json.loads((output / 'completion.json').read_text())
             self.assertEqual((0, 0), (completion['timing_forks'], completion['diagnostic_processes']))
             analysis = next(s for s in workflow['jobs']['diagnostic']['steps']
@@ -484,6 +669,15 @@ class DiagnosticTests(unittest.TestCase):
             self.assertEqual(196, len(result['missing_fixed_forks']))
             self.assertEqual(16, len(result['primary_endpoints']))
             self.assertTrue(all(not endpoint['pass_gate'] for endpoint in result['primary_endpoints']))
+            full_output = root / 'full-mode-invalid-input'
+            full = subprocess.run(['/usr/bin/python3', str(common.HERE / 'run.py'), '--payload', str(payload),
+                                   '--output', str(full_output)], cwd=common.HERE.parents[2],
+                                  env=dict(os.environ, **workflow['env']), text=True, capture_output=True, timeout=20)
+            self.assertNotEqual(0, full.returncode)
+            full_budget = json.loads((full_output / 'execution-budget.json').read_text())
+            self.assertEqual((3000, 196, 15),
+                             (full_budget['seconds'], full_budget['max_timing_forks'], full_budget['max_compiler_probes']))
+            self.assertFalse(full_budget['readiness_only'])
 
     def test_python_syntax_and_no_embedded_transfer_credentials(self):
         for path in common.HERE.glob('*.py'):

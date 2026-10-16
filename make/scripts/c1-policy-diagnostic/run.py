@@ -13,6 +13,8 @@ from common import (HERE, PLAN_SHA, classpath, execute_protocol, flags, image,
                     plan, save, schedule, sha, timing_command)
 from preflight import check_elf, host_metadata, require_host, verify_native
 from stats import calibration
+from blackhole import check_blackholes, validate_timing_mode
+from image_views import prepare_images
 
 
 class Driver:
@@ -26,7 +28,7 @@ class Driver:
     def invoke(self, command, log, limit, **metadata):
         remaining = self.deadline - time.monotonic()
         if remaining <= 0:
-            raise TimeoutError('50-minute execution budget exhausted')
+            raise TimeoutError('Execution budget exhausted')
         record = dict(metadata, command=command, started_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
                       budget_remaining_start_s=remaining, log=str(log))
         self.records.append(record)
@@ -67,16 +69,20 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--payload', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--readiness-only', action='store_true', help='Stop before all timings and compiler probes')
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
     for name in ['timing', 'diagnostics', 'preflight']:
         (args.output / name).mkdir()
-    driver = Driver(args.output)
+    budget = 180 if args.readiness_only else 3000
+    driver = Driver(args.output, seconds=budget)
     (args.output / 'frozen-plan.json').write_bytes((HERE / 'frozen-plan.json').read_bytes())
     rows = schedule()
     save(args.output / 'fixed-schedule.json', rows)
-    save(args.output / 'execution-budget.json', {'seconds': 3000, 'max_timing_forks': 196,
-         'max_compiler_probes': 15, 'plan_sha256': PLAN_SHA, 'no_retry_or_extension': True,
+    save(args.output / 'execution-budget.json', {'seconds': budget,
+         'max_timing_forks': 0 if args.readiness_only else 196,
+         'max_compiler_probes': 0 if args.readiness_only else 15,
+         'readiness_only': args.readiness_only, 'plan_sha256': PLAN_SHA, 'no_retry_or_extension': True,
          'experiment': 'matched-native-rebuild-v1', 'runner_sha256': sha(HERE / 'run.py')})
     completed = 0
     diagnostic_count = 0
@@ -104,15 +110,19 @@ def main():
         cpu = metadata['affinity'][-1]  # Fixed before any score; no CPU selection by results.
         save(args.output / 'cpu-binding.json', {'CPU': cpu, 'ActiveProcessorCount': 2,
              'mapping': 'Highest allowed CPU, selected before scores; not an isolation claim'})
+        images = prepare_images(args.payload, args.output.with_name(args.output.name + '-runtime-image-view'),
+                                args.output / 'preflight/runtime-image-derivation.json')
+        if time.monotonic() > driver.deadline:
+            raise TimeoutError('Execution budget exhausted preparing runtime images')
         counter = 0
         def capture(command, timeout):
             nonlocal counter
             counter += 1
             return driver.invoke(command, args.output / 'preflight' / f'elf-{counter:04}.log', timeout,
                                  phase='readiness', kind='ELF')
-        check_elf(args.payload, args.output / 'preflight', capture)
+        check_elf(images.parent, args.output / 'preflight', capture)
         for arm in ['before', 'current', 'repair']:
-            command = ['taskset', '-c', str(cpu), str(image(args.payload, arm) / 'bin/java'),
+            command = ['taskset', '-c', str(cpu), str(image(args.payload, arm, images) / 'bin/java'),
                        '-Xshare:off', '-Xmx64m', '-XX:ActiveProcessorCount=2', '-XX:+UseG1GC',
                        '-XX:+UnlockExperimentalVMOptions', '-XX:+UseFourByteObjectHeaders', '-cp',
                        str(args.payload / 'readiness'), 'ThreadProbe']
@@ -120,13 +130,29 @@ def main():
                                  phase='readiness', arm=arm)
             if 'FOUR_THREADS_PASS' not in text:
                 raise ValueError('Missing four-thread JVM readiness proof')
+            # Start the actual JMH launcher without executing a benchmark.
+            row = dict(rows[0], arm=arm, tag='launcher-' + arm)
+            text = driver.invoke(timing_command(row, args.payload, args.output, cpu, images) + ['-l'],
+                                 args.output / 'preflight' / (arm + '-launcher.log'), 20,
+                                 phase='readiness', kind='JMH-list', arm=arm)
+            if plan()['inputs']['ordinary']['benchmark'] not in text.splitlines():
+                raise ValueError('Missing benchmark in JMH launcher readiness: ' + arm)
+            if (args.output / 'timing' / (row['tag'] + '.json')).exists():
+                raise ValueError('JMH listing unexpectedly produced timing data: ' + arm)
+        blackholes = check_blackholes(args.payload, images, args.output / 'preflight', cpu, driver.invoke)
         save(args.output / 'preflight/PASS.json', {'exact_payload_verified': True,
-             'ELF_resolution': 'PASS', 'three_JVM_four_thread_checks': 'PASS'})
+             'ELF_resolution': 'PASS', 'three_JVM_four_thread_checks': 'PASS',
+             'three_actual_JMH_launcher_checks': 'PASS: listing only, no forks',
+             'three_actual_blackhole_selections': 'PASS: auto compiler, identical hints'})
+        if args.readiness_only:
+            summary['status'] = 'READINESS_ONLY_PASS; NO TIMING OR QUALIFICATION'
+            return
 
         def timing(row):
             nonlocal completed
-            command = timing_command(row, args.payload, args.output, cpu)
-            driver.invoke(command, args.output / 'timing' / (row['tag'] + '.log'), 60, **row)
+            command = timing_command(row, args.payload, args.output, cpu, images)
+            text = driver.invoke(command, args.output / 'timing' / (row['tag'] + '.log'), 60, **row)
+            validate_timing_mode(text, blackholes['images']['current']['mode'])
             data = json.loads((args.output / 'timing' / (row['tag'] + '.json')).read_text())
             expected = plan()['inputs'][row['input']]
             assert len(data) == 1
@@ -166,7 +192,7 @@ def main():
                 '-XX:CompileCommand=print,' + holder + '::' + method,
                 '-XX:CompileCommand=print,java.math.BigDecimal::valueOf',
                 '-XX:CompileCommand=print,jdk.internal.math.FormattedFPDecimal::valueForDoubleToString']
-            command = ['taskset', '-c', str(cpu), str(image(args.payload, arm) / 'bin/java')] + options
+            command = ['taskset', '-c', str(cpu), str(image(args.payload, arm, images) / 'bin/java')] + options
             command += ['-cp', str(support / 'probe-classes') + ':' + str(support / 'whitebox') + ':' + classpath(args.payload),
                         'CodeInputsProbe', input_name, '1' if mode == 'c1' else '4']
             text = driver.invoke(command, destination / 'output.log', 40, phase='diagnostic', tag=tag)
@@ -183,8 +209,9 @@ def main():
         summary['error'] = repr(error)
         raise
     finally:
-        summary.update(timing_forks=completed, maximum=196, diagnostic_processes=diagnostic_count,
-                       elapsed_execution_s=time.monotonic() - driver.started, cap_seconds=3000,
+        summary.update(timing_forks=completed, maximum=0 if args.readiness_only else 196,
+                       diagnostic_processes=diagnostic_count,
+                       elapsed_execution_s=time.monotonic() - driver.started, cap_seconds=budget,
                        unexecuted_fixed_forks=196 - completed, no_retry_or_extension=True)
         save(args.output / 'completion.json', summary)
 

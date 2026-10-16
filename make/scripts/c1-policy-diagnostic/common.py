@@ -140,8 +140,9 @@ def flags(mode, route):
     return common + ' ' + modes[mode] + ' -XX:' + ('+' if route == 'native' else '-') + 'UseZmijIntrinsics'
 
 
-def image(payload, arm):
-    return Path(payload) / 'images' / ('current' if arm == 'calibration' else arm)
+def image(payload, arm, images=None):
+    root = Path(images) if images is not None else Path(payload) / 'images'
+    return root / ('current' if arm == 'calibration' else arm)
 
 
 def classpath(payload):
@@ -149,15 +150,17 @@ def classpath(payload):
     return ':'.join([str(root / 'classes')] + [str(p) for p in sorted(root.glob('*.jar'))])
 
 
-def timing_command(row, payload, output, cpu):
-    java = str(image(payload, row['arm']) / 'bin/java')
+def timing_command(row, payload, output, cpu, images=None):
+    java = str(image(payload, row['arm'], images) / 'bin/java')
     data = plan()['inputs'][row['input']]
-    cmd = ['taskset', '-c', str(cpu), java, '-XX:ActiveProcessorCount=2', '-cp',
+    cmd = ['taskset', '-c', str(cpu), java, '-Xshare:off', '-XX:ActiveProcessorCount=2', '-cp',
            classpath(payload), 'org.openjdk.jmh.Main', data['benchmark'] + '$']
     for key, value in data['params'].items():
         cmd += ['-p', key + '=' + value]
     short = row['historical']
-    return cmd + ['-jvm', java, '-jvmArgsAppend', flags(row['mode'], row['route']),
+    # Preserve the original inherited fork arguments when disabling outer CDS.
+    return cmd + ['-jvm', java, '-jvmArgs', '-XX:ActiveProcessorCount=2',
+                  '-jvmArgsAppend', flags(row['mode'], row['route']),
                   '-f', '1', '-t', '1', '-wi', '3' if short else '5', '-w', '500ms' if short else '1s',
                   '-i', '3' if short else '5', '-r', '500ms' if short else '2s',
                   '-prof', 'gc', '-foe', 'true', '-rf', 'json', '-rff',
