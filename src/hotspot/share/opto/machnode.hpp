@@ -625,6 +625,7 @@ public:
   virtual const RegMask &in_RegMask(uint) const { return *_in; }
   virtual const class Type *bottom_type() const { return _type; }
   virtual uint ideal_reg() const { return _type->ideal_reg(); }
+  bool is_memory_to_register() const { return _spill_type == MemToReg; }
   virtual uint oper_input_base() const { return 1; }
   uint implementation( C2_MacroAssembler *masm, PhaseRegAlloc *ra_, bool do_size, outputStream* st ) const;
 
