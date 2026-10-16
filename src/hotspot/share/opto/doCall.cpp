@@ -155,9 +155,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
       if (needs_predicate && callee->intrinsic_id() == vmIntrinsics::_vectorizedMismatch) {
         // Keep the existing array expansion and its inlining decisions.
         // Native addresses alone need size selection against the Java body.
-        GraphKit kit(jvms);
-        needs_predicate = kit.gvn().type(kit.argument(0)) == TypePtr::NULL_PTR ||
-                          kit.gvn().type(kit.argument(3)) == TypePtr::NULL_PTR;
+        SafePointNode* map = jvms->map();
+        needs_predicate = initial_gvn()->type(map->argument(jvms, 0)) == TypePtr::NULL_PTR ||
+                          initial_gvn()->type(map->argument(jvms, 3)) == TypePtr::NULL_PTR;
       }
       if (needs_predicate) {
         // Code without intrinsic but, hopefully, inlined.
