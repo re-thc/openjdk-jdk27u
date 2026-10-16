@@ -1,14 +1,15 @@
 # Dispatch performance at ae6ea74
 
 This historical dataset measures code revision `ae6ea74495f4fdaaad08d3cf5ae2c32b82e92762`.
-See [the current results](FINAL_BENCHMARKS.md) for the merged implementation.
+See [the current report](../BENCHMARKS.md) for complete source-built controls.
+These earlier measurements use patched-class original controls.
 
-This report includes all 93 distinct workloads in [dispatch-cases.tsv](../dispatch-cases.tsv).
+This report includes all 93 distinct workloads in [the historical manifest](https://github.com/re-thc/openjdk-jdk27u/blob/ae6ea74495f4fdaaad08d3cf5ae2c32b82e92762/doc/stringzilla/dispatch-cases.tsv).
 AVX2 covers 90 workloads; serial covers 57 and AVX-512 covers 41.
 Each backend/workload uses interpreter, C1 and C2 with enabled, disabled and
 original-Java controls: 564 control triplets and 1692 two-fork measurements.
 
-See [the method and interpretation](../BENCHMARKS.md) and
+See [the method and interpretation](https://github.com/re-thc/openjdk-jdk27u/blob/bcfb0fbcd2947494c2732be33b1c7700602e41fa/doc/stringzilla/BENCHMARKS.md#method) and
 [raw samples and artifact hashes](dispatch-results.json). Means and JMH 99.9%
 confidence half-widths are in ns/op. Ratios are control / enabled; a ratio
 below 1 means the enabled mean was slower. Interval labels compare enabled

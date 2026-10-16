@@ -1,0 +1,115 @@
+{
+  "production_source_revision": "90e763c6758c08b2cb8981beb8a038cf86c279e8",
+  "production_src_tree_sha1": "b05a56817141586ed2f44605367529d16db50bd4",
+  "test_source_revision": "90e763c6758c08b2cb8981beb8a038cf86c279e8",
+  "completed_at_utc": "2026-10-16T18:41:38.676104+00:00",
+  "feature_jtreg": {
+    "total": 192,
+    "passed": 190,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 2,
+    "command": [
+      "make",
+      "CONF=cloud",
+      "JOBS=2",
+      "test",
+      "TEST=jtreg:test/jdk/java/lang/String jtreg:test/jdk/java/lang/StringBuilder jtreg:test/jdk/java/lang/StringBuffer jtreg:test/hotspot/jtreg/compiler/intrinsics/string jtreg:test/jdk/java/lang/System/LoggerFinder",
+      "JTREG=JOBS=1;TIMEOUT_FACTOR=4"
+    ],
+    "environment": {
+      "JAVA_TOOL_OPTIONS": "-XX:ActiveProcessorCount=1"
+    }
+  },
+  "feature_jtreg_groups": {
+    "String": [
+      96,
+      96,
+      0,
+      0,
+      0
+    ],
+    "StringBuilder": [
+      16,
+      16,
+      0,
+      0,
+      0
+    ],
+    "StringBuffer": [
+      25,
+      25,
+      0,
+      0,
+      0
+    ],
+    "HotSpot string intrinsics": [
+      28,
+      26,
+      0,
+      0,
+      2
+    ],
+    "LoggerFinder": [
+      27,
+      27,
+      0,
+      0,
+      0
+    ]
+  },
+  "original_jtreg": {
+    "total": 91,
+    "passed": 91,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "fixtures": {
+    "primary_workloads": 99,
+    "supplemental_workloads": 13,
+    "configurations_each": 27,
+    "passed": true
+  },
+  "jni_forced": {
+    "intrinsics_disabled": [
+      "_stringzillaEqualsRange",
+      "_stringzillaRfindCharUTF16",
+      "_stringzillaRfindUTF16Latin1"
+    ],
+    "UseAVX": [
+      0,
+      2,
+      3
+    ],
+    "passed": true
+  },
+  "native_sanitizers": {
+    "compiler": "GCC 16",
+    "checks": [
+      "AddressSanitizer",
+      "UndefinedBehaviorSanitizer including alignment"
+    ],
+    "passed": true,
+    "tested_revision": "920f3ee7c88705a26b97d74937efef76b5063dec",
+    "source_matches_production_revision": true
+  },
+  "logs_sha256": {
+    "original-jtreg.log": "166225c0e70cc9b054096123f572cca053333ffa1323fbaa790067c88c2173a5",
+    "jdkmatch-build.log": "d67b7b675378d10fab71d582db70ca656acfd8d0dc8e29871cb88308c32af268",
+    "jdkmatch-configure.log": "507167dc184380ba698f27cb28adfca680f411c5517e610716059d4483902da2",
+    "jdkmatch-fixtures.log": "b9a579bb9a3c0f2d1900a950b5282a0faacb9ecd304411f052895445c04065b2",
+    "jdkmatch-jtreg.log": "2fbdfe733a535bdee81ea88bff96c4503d77ecfc52c0b465743be5bcadcbd838",
+    "jdkmatch-validation.log": "c2dd23e2c7984cae587d28d2a7219cd159cdb3838f7fabb415c920bab31f38c2",
+    "equal-native-sanitizer.log": "b26b394b56446591ff62e1a8a9ae7c8d1fdefc4f46796edf444c067435e6f689",
+    "check-equal-sanitizers.sh": "71a99321e13cf92c89dd5d0568774534524816d76c801a3d61512fca303a258a"
+  },
+  "qualification_gaps": [
+    "Native ARM performance",
+    "Native MSVC performance",
+    "Local MSVC build",
+    "Full local tier1/tier2",
+    "Whole-JDK sanitizers"
+  ],
+  "scope": "Local cloud checks on the recorded production source; GitHub Actions status is separate."
+}

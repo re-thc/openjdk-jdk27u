@@ -4,6 +4,29 @@ These files preserve measured inputs, JVM arguments, artifact/source hashes,
 confidence intervals and raw samples. Each dataset describes its own tested
 revision; its validation metadata is a snapshot, not the current CI status.
 
+## Complete-image qualification
+
+The [current report](../BENCHMARKS.md) uses production revision `90e763c6758`
+and complete source-built original/enabled/disabled JDK images. Enabled and
+disabled use byte-identical distributions. Every dataset records image and
+harness hashes, compiler settings, JVM arguments and raw JMH samples.
+
+| Dataset | Coverage |
+| --- | --- |
+| [complete-image-results.json](complete-image-results.json) | 99 workloads, 1,818 measurements and 606 matched triplets; [all comparisons](COMPLETE_IMAGE_BENCHMARKS.md) |
+| [mixed-fallback-results.json](mixed-fallback-results.json) | Five tiny/threshold/long mixed-coder inputs, 135 measurements and 45 triplets; [all comparisons](MIXED_FALLBACK_BENCHMARKS.md) |
+| [mixed-prefix-results.json](mixed-prefix-results.json) | Five mixed immediate-match inputs at needle lengths 64/66/127/128/129, 135 measurements and 45 triplets; [all comparisons](MIXED_PREFIX_BENCHMARKS.md); the fallback dataset covers length 65 |
+| [native-batch-results.json](native-batch-results.json) | Three AVX2 aligned-filter boundaries, 27 measurements and nine triplets; [all comparisons](NATIVE_BATCH_BENCHMARKS.md) |
+| [complete-image-ci.json](complete-image-ci.json) | All 57 CI jobs passed on the measured production source, including release/debug builds and tier1 tests on all four platforms; native ARM/MSVC performance remains unmeasured |
+| [complete-image-validation.json](complete-image-validation.json) | Final-source jtreg, fixture, forced-JNI and native sanitizer validation, with explicit qualification gaps |
+| [Qualification candidates](complete-image-candidates/README.md) | Superseded complete-image snapshots, preserving every collected candidate loss |
+
+## Historical measurements
+
+These datasets retain their original controls and source revisions. In particular,
+`final-results.json` and `dispatch-results.json` use patched-class original controls;
+they are separate from the complete-image campaign above.
+
 | Dataset | Comparison |
 | --- | --- |
 | [final-diagnostics.json](final-diagnostics.json) | Nine three-fork immediate-hit repeats, six final C2 equality traces with generated code, and nine rejected-probe candidate measurements; [method and results](FINAL_DIAGNOSTICS.md); primary losses retained |
@@ -29,7 +52,7 @@ revision; its validation metadata is a snapshot, not the current CI status.
 | [c1-validated-results.json](c1-validated-results.json) | 21 measurements with the original argument layout and checks; remaining losses retained |
 | [c1-filtered-results.json](c1-filtered-results.json) | 21 measurements of the C1 first-character filter candidate and forward control flow, with original/enabled/disabled controls |
 | [pre-flow-results.json](pre-flow-results.json) | Partial matrix at `0915193`: all 577 complete measurements retained, including the C1 Java-fallback and short UTF-16 forward losses that motivated the final control-flow adjustment |
-| [final-results.json](final-results.json) | Final code: 99 workloads, 1,818 measurements across 606 matched triplets; AVX2 96, serial 63, AVX-512 43; [complete tables](FINAL_BENCHMARKS.md) |
+| [final-results.json](final-results.json) | Historical `a7607aa9`, patched-class original control: 99 workloads, 1,818 measurements across 606 matched triplets; AVX2 96, serial 63, AVX-512 43; [complete tables](FINAL_BENCHMARKS.md) |
 | [final-preflight.json](final-preflight.json) | Pre-merge candidate `ff05d12`: 117 focused measurements across three tiers and three controls, including fixed immediate-match and tiny-input paths |
 | [probe-c88-results.json](probe-c88-results.json) | Interrupted candidate `c88cf20`: all 92 completed measurements retained, including the tiny UTF-16 reverse-search loss from the ungated immediate-match probe |
 | [probe-ungated-results.json](probe-ungated-results.json) | Intermediate uncommitted candidate based on `c88cf20`: all 59 completed measurements retained; the probe was still ungated. Source/runtime hashes were not captured for this partial run |
@@ -43,4 +66,5 @@ revision; its validation metadata is a snapshot, not the current CI status.
 | [original-results.json](original-results.json) | 259 feature off/on pairs for the earlier implementation, plus original-Java and longer/layout controls; [rendered tables](ORIGINAL_BENCHMARKS.md) |
 
 Machine-local paths in the records identify the measured artifacts. Reproduction
-commands use `TEST_JDK`, `JMH_CLASSPATH` and the equivalent source revisions.
+commands in the current report use `ORIGINAL_JDK`, `FORK_JDK` and `JMH_CLASSPATH`.
+Historical methods describe their own artifacts and source revisions.

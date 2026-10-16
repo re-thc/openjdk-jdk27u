@@ -30,16 +30,23 @@ Search dispatch starts at 256 source bytes. Short ranges and immediate matches
 retain inexpensive Java/platform paths, except the interpreter's whole-string
 forward intrinsics, which call the bounded kernels at every input size.
 Those entries resume Java before native bootstrap, for malformed UTF-16 arrays,
-for mixed needles over 64 code units and for ranges exceeding either native work limit. Compiled forward search retains its eligibility. The Latin-1 dispatcher and
-original scalar fallback are forced inline so short searches avoid extra calls.
+for mixed needles over 64 code units and for ranges exceeding either native work limit.
+Interpreted mixed reverse searches with a single candidate and a needle of at
+most 64 code units also call the bounded kernel below the usual size gate.
+Compiled forward search retains its eligibility. The Latin-1 forward dispatcher
+and its scalar fallback are forced inline so short searches avoid extra calls.
 It probes immediate matches only after the source-size gate, before reading the
 enable flag or setting up native arguments.
-Equality has separate length and prefix checks. C1 compiles the mixed-coder
-Java search loop separately from the
-acceleration branch, including the fallback for needles over 64 code units.
+Equality has separate length and prefix checks. A separate mixed-search helper
+owns native argument setup and fallback, keeping them out of the inline scalar
+caller. Single-candidate mixed searches use a small backward verifier in compiled
+code. Its explicit range check remains intrinsic even when interpreter native
+returns leave the Java fallback unprofiled.
 Eligible short UTF-16 substring reverse matches are checked after the common
 source-size gate and before backend/tier dispatch, including C2 ranges that use
-the Java loop. Smaller ranges retain the original scalar path.
+the Java loop. The interpreter uses the existing bounded range-equality entry
+for this probe; compiled callers retain the inline code-unit comparison.
+Smaller ranges retain the original scalar path.
 
 Same-coder substring reverse searches also use the selected kernel and compiling
 tier. The tier query folds to a constant in C1/C2; its Java body returns zero for
@@ -83,7 +90,33 @@ the needle's last character, then resumes the original reverse loop. Forward
 search, character search and equality retain their dispatch rules. Serial UTF-16 bulk reverse
 searches with needles up to 128 code units reuse the existing aligned batch filter
 directly, avoiding ineffective byte-search shifts. Longer needles keep upstream
-byte search and its overlap-preserving prefix filter.
+byte search and its overlap-preserving prefix filter, except AVX2 UTF-16 windows
+with at most 32 candidate positions, which reuse the aligned filter to avoid
+long-needle preprocessing. This does not change the tier-specific eligibility
+gates or bulk dispatch.
+
+For mixed reverse needles of 9–64 code units, compiled serial callers first
+verify the rightmost candidate backward in Java. A match returns immediately;
+a rejected candidate retains the native bulk search. Interpreter and vector
+backends keep their dispatch. Needles up to eight code units retain the shared
+short immediate-match probe.
+
+For mixed needles longer than 64 code units, the interpreter and C1 use bounded
+UTF-16 character search to locate the last possible trailing character, then
+Java verifies that candidate and any earlier candidates. An oversized native
+window resumes the original Java search. A single possible start bypasses
+that filter. For 65–128-code-unit immediate candidates, these tiers compare
+the remaining suffix backward in Java, then verify the 64-code-unit prefix with
+the bounded mixed kernel. A rejection resumes the character filter at the
+preceding start.
+
+C2 uses the existing JDK character-search intrinsic to skip empty
+128-code-unit blocks in a separately compiled Java loop. For 65–128-code-unit
+immediate candidates, it reuses the existing mixed-coder forward-search
+intrinsic over a range containing exactly that one candidate. A rejection
+resumes reverse search at the preceding start. This verification reads at most
+256 source bytes. Immediate candidates longer than 128 code units retain the
+original Java loop in every tier. The native widening cap stays at 64.
 
 Individual intrinsics can be disabled with
 `-XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=...`: search bridges use
@@ -106,10 +139,14 @@ four-byte headers and the compact/legacy opt-outs in each execution tier.
 | Substring work proxy | Source byte length multiplied by needle byte length: at most 4,194,304 |
 | Mixed UTF-16/Latin-1 needle | At most 64 code units widened into a fixed stack buffer |
 
+When a native range has exactly one candidate, the adapter calls the selected
+upstream equality kernel directly, after applying the same byte/work guards.
+This avoids search preprocessing for bounded mixed-prefix verification.
+
 Native byte/work guards run before reading array contents. Excessive work returns
 `-2` to resume Java; `-1` denotes a miss. Mixed-coder kernels independently reject
-invalid or oversized needle counts before widening. Java routes longer mixed
-needles through its existing algorithm.
+invalid or oversized needle counts before widening. Longer mixed needles use
+Java verification, with bounded trailing-character filters in the interpreter and C1.
 
 Large searches use overlapping windows in search order; each overlap is the
 needle length minus one code unit. Needles occupying more than half the allowed
@@ -193,12 +230,12 @@ functional and tier-specific performance checks before changing dispatch gates.
 
 Local release jtreg validation passed **190 tests, zero failures/errors**:
 String (96), StringBuilder (16), StringBuffer (25), HotSpot string intrinsics (26),
-and LoggerFinder (27). Two other HotSpot tests retain platform exclusions. Clean
-GCC 14 release/CDS
-and fastdebug builds use the fork development profile. Twelve targeted fastdebug
-tests passed. Nine search/kernel tests passed with final GCC 16 kernels and AVX2;
-dispatch and availability tests also passed with serial, AVX2 and AVX-512
-dispatch. AArch64 cross checks cover HotSpot and java.base native libraries.
+and LoggerFinder (27). Two other HotSpot tests retain platform exclusions. The
+complete original and fork release/CDS images use GCC/G++ 16 and matching fork
+development profiles. The original image passed 91 String tests. All 99 primary and 13 supplemental benchmark
+fixtures passed independent checks across 27 backend/tier/control configurations. Additional
+forced-JNI range-equality and character-filter checks passed with serial, AVX2
+and AVX-512 dispatch.
 
 The tests cover all three execution tiers, JNI fallback, explicit opt-out,
 threshold/window edges, long needles, coder combinations, surrogate pairs,
@@ -207,19 +244,23 @@ through C1/C2 and checks equality/helper caller state and method handles.
 Native tests check every capability mask, executable backend, invalid input,
 work limit, unaligned long-needle search and repeated-suffix overlaps
 independently of Java gates.
-AArch64/QEMU covers executable serial/NEON backends and repeated-suffix
-overlaps in the interpreter, C1, C2, JNI fallback and opt-out paths.
-The full bounded-search suite also passed under AArch64 C1 after outlining the
-mixed-coder scalar loop. Compiler-folded dispatch and intrinsic availability
-checks passed on AArch64, with boundary matches tested in both C1 and C2.
-Native ASan/UBSan passed with alignment checks enabled. GCC 16 kernels also
-passed the string-search, literal-replacement and logger tests.
+Earlier AArch64/QEMU checks covered serial/NEON searches in the interpreter,
+C1, C2, JNI fallback and opt-out paths, including bounded searches, compiler-folded
+dispatch and intrinsic availability. Twelve targeted fastdebug tests passed on
+earlier revisions. GCC 16 native ASan/UBSan checks passed with alignment checks
+enabled. The [local validation record](measurements/complete-image-validation.json)
+identifies the measured source and checks; native ARM and MSVC performance remain
+unmeasured.
 
 ```sh
-make CONF=cloud test \
-  'TEST=jtreg:test/jdk/java/lang/String jtreg:test/jdk/java/lang/StringBuilder jtreg:test/jdk/java/lang/StringBuffer jtreg:test/hotspot/jtreg/compiler/intrinsics/string' \
-  'JTREG=JOBS=2;TIMEOUT_FACTOR=4'
+make CONF=cloud JOBS=2 test \
+  'TEST=jtreg:test/jdk/java/lang/String jtreg:test/jdk/java/lang/StringBuilder jtreg:test/jdk/java/lang/StringBuffer jtreg:test/hotspot/jtreg/compiler/intrinsics/string jtreg:test/jdk/java/lang/System/LoggerFinder' \
+  'JTREG=JOBS=1;TIMEOUT_FACTOR=4'
 ```
+
+The [CI record](measurements/complete-image-ci.json) records all 57 jobs passing
+on the measured production source across Linux x64/AArch64, macOS AArch64 and
+Windows x64, including release/debug builds and tier1 tests.
 
 See [BENCHMARKS.md](BENCHMARKS.md) for measured performance, complete controls,
 confidence intervals and reproduction. CI results are reported by the PR checks;
