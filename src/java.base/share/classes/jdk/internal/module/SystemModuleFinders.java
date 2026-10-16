@@ -402,8 +402,7 @@ public final class SystemModuleFinders {
      * Holder class for the ImageReader.
      */
     private static class SystemImage {
-        // Not SystemImageReader, which is also compiled for the JDK 8 jrt-fs.jar
-        // and so uses core reflection, which is costly to initialize.
+        // Avoid SystemImageReader's reflection path, retained for the JDK 8 jrt-fs.jar.
         static final ImageReader READER = open();
         private static ImageReader open() {
             Path image = DefaultFileSystemProvider.theFileSystem()
@@ -437,9 +436,8 @@ public final class SystemModuleFinders {
         }
 
         /**
-         * Returns {@code true} if the module has a META-INF directory. Resources
-         * in META-INF, such as META-INF/services/p.S, are looked up in every
-         * module but only a few modules have any.
+         * Cache META-INF presence: service lookups visit every module,
+         * but few contain provider-configuration files.
          */
         private boolean hasMetaInf(ImageReader imageReader) throws IOException {
             int v = metaInf;

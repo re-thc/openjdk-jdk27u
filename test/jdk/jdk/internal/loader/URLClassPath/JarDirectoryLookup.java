@@ -43,7 +43,6 @@ import java.util.jar.Manifest;
 
 public class JarDirectoryLookup {
 
-    // Names that are not in any JAR file, to make the loaders miss
     private static final int MISSES = 100;
 
     public static void main(String[] args) throws Exception {
@@ -75,7 +74,6 @@ public class JarDirectoryLookup {
                 find(loader, "onlydir/", "dirs.jar!/onlydir/");
                 find(loader, "x/y", "dirs.jar!/x/y");
                 find(loader, "x/y/", "dirs.jar!/x/y/");
-                // there are no entries for these, some even in a directory that exists
                 find(loader, "dir/sub", null);
                 find(loader, "p", null);
                 find(loader, "x", null);
@@ -92,7 +90,6 @@ public class JarDirectoryLookup {
                 find(loader, "n/o", null);
                 find(loader, "META-INF/versions/9/m/Ver.txt",
                      "mr.jar!/META-INF/versions/9/m/Ver.txt");
-                // all JAR files with the name, in class path order
                 findAll(loader, "dup/same.txt", "plain.jar!/dup/same.txt", "mr.jar!/dup/same.txt");
                 findAll(loader, "m/Base.txt", "mr.jar!/META-INF/versions/9/m/Base.txt");
                 findAll(loader, "dir", "plain.jar!/dir");
@@ -106,8 +103,6 @@ public class JarDirectoryLookup {
         }
     }
 
-    // Checks that the resource is found with a URL that ends with the expected string, or not
-    // found if it is null
     private static void find(URLClassLoader loader, String name, String expected) {
         URL url = loader.findResource(name);
         String found = url == null ? null : url.toString();

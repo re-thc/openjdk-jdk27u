@@ -902,7 +902,6 @@ public class BuiltinClassLoader
     private boolean isSealed(String pn, Manifest man) {
         Attributes attr;
         String sealed = null;
-        // Only look up the entry of the package if the manifest has entries
         if (!man.getEntries().isEmpty()) {
             attr = SharedSecrets.javaUtilJarAccess()
                     .getTrustedAttributes(man, pn.replace('.', '/').concat("/"));

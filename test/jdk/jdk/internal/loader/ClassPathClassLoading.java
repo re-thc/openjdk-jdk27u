@@ -95,7 +95,6 @@ public class ClassPathClassLoading {
                 "-Xlog:class+load=info:stdout:none", "-cp", cp, "ClassPathClassLoading", "test"))
             .shouldHaveExitValue(0);
 
-        // the VM logs the source of each class
         Pattern source = Pattern.compile("(\\S+) source: (\\S+)");
         List<String> logged = new ArrayList<>();
         for (String line : output.asLines()) {
@@ -117,9 +116,7 @@ public class ClassPathClassLoading {
         }
     }
 
-    // Creates a JAR file with the classes. A package is sealed with the main
-    // attribute if sealed is not null, and with an entry of the manifest for
-    // the directory if entry is not null, as true if sealed is null or else false.
+    // The package entry, if present, overrides the main sealing attribute.
     private static void createJar(String name, String sealed, String entry, String... classes)
             throws IOException {
         Manifest man = new Manifest();

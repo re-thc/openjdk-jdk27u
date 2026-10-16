@@ -1042,17 +1042,16 @@ public final class ServiceLoader<S>
         }
 
         /**
-         * Parse a provider-configuration file as it is read, without the cost of
-         * setting up a BufferedReader. Lines end with \n, \r or \r\n, as for
-         * readLine. Only the part of a line that can be a name is kept, so that
-         * comments and blank lines take no memory however long they are. In
-         * UTF-8, '#', '\n', '\r' and the characters that trim removes are single
-         * bytes that are not part of other characters.
+         * Parse incrementally, retaining only possible provider names so long
+         * comments and blank lines do not require proportional memory.
+         * Lines end with \n, \r or \r\n. In UTF-8, '#', line terminators and
+         * characters removed by trim are single bytes, never part of another
+         * character.
          */
         private void parse(URL u, InputStream in, List<String> names) throws IOException {
             byte[] buf = new byte[512];
             byte[] line = buf;      // replaced by an array of its own when used
-            int len = 0;            // the bytes of the line kept so far
+            int len = 0;
             boolean comment = false;
             boolean blank = false;  // a space or tab follows the kept bytes
             boolean cr = false;     // the last byte ended a line with \r
@@ -1079,7 +1078,6 @@ public final class ServiceLoader<S>
                         } else if (b == ' ' || b == '\t') {
                             blank = true;
                         } else if (blank && (b & 0xff) > ' ') {
-                            // the name would contain the space or tab
                             fail(service, u, lc, "Illegal configuration-file syntax");
                         } else {
                             if (line == buf) {

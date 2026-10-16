@@ -56,12 +56,8 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 
 /**
- * Measures looking up the providers of a service, which the JDK and
- * frameworks do every time that they need one, for services with providers
- * in JAR files on a class path, in system modules, and without providers.
- *
- * <p>The cold benchmarks make the first lookup in a JVM, in a new fork each
- * time, as most programs only look up the providers of a service once.
+ * Service lookups with JAR providers, module providers, and no providers.
+ * Cold benchmarks measure the first lookup in a fresh JVM.
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
@@ -70,17 +66,14 @@ import java.util.stream.Stream;
 @Fork(value = 3)
 public class ServiceLoaderBench {
 
-    /** A service that has providers in JAR files */
     public interface Service {
     }
 
-    /** A service that has no providers anywhere */
     public interface Absent {
     }
 
     /**
-     * The providers of Service in JAR files of a URLClassLoader, one in each
-     * JAR file with its provider-configuration file.
+     * One provider and configuration file per JAR.
      */
     @State(Scope.Thread)
     public static class JarProviders {
@@ -133,7 +126,6 @@ public class ServiceLoaderBench {
         }
     }
 
-    /** Finds and creates the providers in the JAR files. */
     @Benchmark
     public void jarProviders(JarProviders state, Blackhole bh) {
         for (Service service : ServiceLoader.load(Service.class, state.loader)) {
@@ -141,10 +133,6 @@ public class ServiceLoaderBench {
         }
     }
 
-    /**
-     * Finds and creates the providers of ToolProvider, which are in system
-     * modules, with the system class loader.
-     */
     @Benchmark
     public void systemModuleProviders(Blackhole bh) {
         for (ToolProvider provider : ServiceLoader.load(ToolProvider.class,
@@ -154,8 +142,7 @@ public class ServiceLoaderBench {
     }
 
     /**
-     * Finds and creates the providers of FileSystemProvider, which are in
-     * system modules, and in a provider-configuration file of java.base.
+     * Covers module providers and java.base's provider-configuration file.
      */
     @Benchmark
     public void fileSystemProviders(Blackhole bh) {
@@ -165,7 +152,6 @@ public class ServiceLoaderBench {
         }
     }
 
-    /** Looks for the providers of a service that has none, with the system class loader. */
     @Benchmark
     public boolean noProviders() {
         return ServiceLoader.load(Absent.class, ClassLoader.getSystemClassLoader())

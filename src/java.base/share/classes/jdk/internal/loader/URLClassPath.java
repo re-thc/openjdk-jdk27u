@@ -118,12 +118,10 @@ public class URLClassPath {
     /* The resulting search path of Loaders */
     private final ArrayList<Loader> loaders = new ArrayList<>();
 
-    /* The number of Loaders at the start of the search path that cannot have
-     * a resource in a directory, by the hash code of the directory (see
-     * directoryHash). A Loader that cannot have it will never have it, and
-     * Loaders are only added at the end. Directories are only added up to
-     * MAX_SKIPPED_DIRECTORIES, as lookups in ever new directories that the
-     * class path doesn't have would add them without limit. */
+    /* Leading loaders that cannot contain a directory, keyed by directoryHash.
+     * Such exclusions are permanent, and loaders are only appended.
+     * Limit new keys to MAX_SKIPPED_DIRECTORIES to bound retention from misses
+     * in arbitrarily many directories. */
     private final ConcurrentHashMap<Integer, Integer> skippedLoaders
             = new ConcurrentHashMap<>();
     private static final int MAX_SKIPPED_DIRECTORIES = 4096;
@@ -695,14 +693,11 @@ public class URLClassPath {
         private JarFile jar;
         private final URL csu;
         private boolean closed = false;
-        // The sorted hash codes of the directories of the entries, to skip
-        // lookups in other directories. They are only computed once the JAR file
-        // has missed as many lookups as it has entries, so they cost about as
-        // much as the misses so far did.
+        // Sorted directory hashes, built after one miss per JAR entry
+        // to amortize indexing over unsuccessful lookups.
         private volatile int[] directoryHashes;
         private int missesLeft;
-        // Whether the URLs of entries are made by the default jar handler,
-        // and not by a subclass, which can reject URLs that it doesn't
+        // Exact built-in handler class; subclasses may reject additional URLs.
         private final boolean defaultJarHandler;
         private static final JavaUtilZipFileAccess zipAccess =
                 SharedSecrets.getJavaUtilZipFileAccess();
@@ -789,10 +784,6 @@ public class URLClassPath {
             return checkJar(jarFile);
         }
 
-        /*
-         * Returns false if the JAR file has no entry in a directory with the
-         * given hash code.
-         */
         @Override
         boolean mayContain(int dirHash) {
             int[] hashes = directoryHashes;
@@ -887,8 +878,7 @@ public class URLClassPath {
                     { return entry.getCertificates(); };
                 public CodeSigner[] getCodeSigners()
                     { return entry.getCodeSigners(); };
-                // The CRC is only checked when asked for, as it is only of
-                // interest when defining the class failed
+                // CRC diagnostics are needed only after class definition fails.
                 public Exception getDataError() {
                     if (bytes != null) {
                         CRC32 crc32 = new CRC32();

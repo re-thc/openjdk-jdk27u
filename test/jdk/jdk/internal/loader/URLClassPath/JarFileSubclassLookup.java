@@ -54,7 +54,6 @@ import java.util.zip.ZipEntry;
 
 public class JarFileSubclassLookup {
 
-    // Names that are not in the JAR file, to make the loader miss
     private static final int MISSES = 100;
 
     // Entries of the JarFile subclass, in directories the ZIP file has no entries in
@@ -63,7 +62,6 @@ public class JarFileSubclassLookup {
     private static final String EARLY_CLASS = "synthetic.Early";
     private static final String LATE_CLASS = "synthetic.Late";
 
-    // A JarFile with entries in addition to the ones of its ZIP file
     private static class SyntheticJarFile extends JarFile {
         private final Map<String, byte[]> synthetic;
 
@@ -101,7 +99,6 @@ public class JarFileSubclassLookup {
         }
     }
 
-    // A connection that supplies the JarFile subclass
     private static class SyntheticConnection extends JarURLConnection {
         private final JarFile jarFile;
 
@@ -141,15 +138,13 @@ public class JarFileSubclassLookup {
         URLStreamHandlerFactory factory = protocol -> "jar".equals(protocol) ? handler : null;
 
         try (var loader = new URLClassLoader(new URL[] { url }, null, factory)) {
-            // before the JAR file has missed any lookup
             checkFound(loader, ROOT_RESOURCE);
             checkFound(loader, DIR_RESOURCE);
             checkFound(loader, "real/Real.class");
             loader.loadClass(EARLY_CLASS);
             loader.loadClass("real.Real");
 
-            // more lookups than the JAR file has entries, so that it
-            // would be looked up by the directories of its ZIP file
+            // Exceed the indexing threshold; synthetic entries must remain visible.
             for (int i = 0; i < MISSES; i++) {
                 checkMissing(loader, "missing/" + i + "/Missing.class");
                 checkMissing(loader, "real/Missing" + i + ".class");
@@ -169,7 +164,6 @@ public class JarFileSubclassLookup {
         }
     }
 
-    // Checks that the resource is found by all the ways to look it up
     private static void checkFound(URLClassLoader loader, String name) throws IOException {
         URL url = loader.findResource(name);
         if (url == null || !url.toString().endsWith("real.jar!/" + name)) {

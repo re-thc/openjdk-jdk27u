@@ -79,10 +79,8 @@ public class ClassPathOrder {
         file(d, "q/E.class");
         Path b = jar(dir.resolve("b.jar"), null, true,
                      "META-INF/versions/9/v/V.class", "p/r.txt");
-        // added with a jar: URL
         Path e = jar(dir.resolve("e.jar"), null, false,
                      "w/W.class", "q/D.class", "p/r.txt");
-        // added after the lookups
         Path f = jar(dir.resolve("f.jar"), null, false,
                      "z/Z.class", "p/r.txt");
 
@@ -119,8 +117,7 @@ public class ClassPathOrder {
             }
         }
 
-        // "Aa" and "BB" have the same hash code, so the JAR file with one of
-        // them cannot be skipped for the other but must not find it
+        // Hash collisions must not change lookup results.
         Path h1 = jar(dir.resolve("h1.jar"), null, false, "Aa/C.class", "Aa/r.txt");
         Path h2 = jar(dir.resolve("h2.jar"), null, false, "BB/C.class", "BB/r.txt");
         try (Loader loader = new Loader(h1.toUri().toURL(), h2.toUri().toURL())) {
@@ -186,7 +183,6 @@ public class ClassPathOrder {
         }
     }
 
-    // Checks that the resource is found in the given entries, in this order
     private static void checkResources(Loader loader, String name, Path... expected)
             throws IOException {
         List<URL> urls = Collections.list(loader.getResources(name));

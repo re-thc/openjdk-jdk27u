@@ -56,14 +56,12 @@ public class WalkAndList {
 
     public static void main(String[] args) throws Exception {
         if (args.length > 0) {
-            // Nothing has looked at the file system yet, so the threads are
-            // the first to build and complete its directories
+            // Race the first construction and completion of directories.
             testColdThreads();
             return;
         }
 
-        // The directories under /packages are not yet looked at by anything
-        // here, as when a tool walks the package tree as the first thing it does.
+        // Walk /packages before any other operation populates it.
         List<String> packagesWalk = walk("/packages");
         check(packagesWalk.contains("/packages/java.lang/java.base"), "no java.lang link in the walk");
 
@@ -107,7 +105,6 @@ public class WalkAndList {
                 check(link.toRealPath(LinkOption.NOFOLLOW_LINKS).equals(link), "real path of " + link + " without links");
                 check(Files.isDirectory(link) && Files.isSymbolicLink(link), link.toString());
 
-                // The module has a directory for the package.
                 Path dir = target.resolve(pkgDir.getFileName().toString().replace('.', '/'));
                 check(Files.isDirectory(dir), "no " + dir + " for " + link);
             }
@@ -120,7 +117,6 @@ public class WalkAndList {
         check(Files.exists(FS.getPath("/packages/java.lang/java.base/java/lang/Object.class")), "Object.class");
     }
 
-    /** All ways to list a directory agree, for the different forms of paths of it. */
     private static void testListings() throws IOException {
         String[] dirs = {
             "/", "/packages", "/modules", "/modules/java.base", "/modules/java.base/java/lang",
@@ -162,7 +158,6 @@ public class WalkAndList {
             check(listed.stream().filter(s -> s.length() % 2 == 0).collect(Collectors.toList()).equals(half),
                     "filtered listing: " + dir);
 
-            // Children are named like the directory is.
             for (String child : listed) {
                 check(child.startsWith(path.toString().isEmpty() || path.toString().endsWith("/")
                         ? path.toString() : path + "/"), child + " is not in " + dir);
@@ -197,7 +192,6 @@ public class WalkAndList {
         check(walked.equals(visited), "walk and file tree walk differ in " + root);
     }
 
-    /** The file system is shared, so the same tree is seen from threads that look at it in any order. */
     private static void testThreads() throws Exception {
         List<String> packages = walk("/packages");
         List<String> modules = walk("/modules");
@@ -227,9 +221,7 @@ public class WalkAndList {
     }
 
     /**
-     * Threads that look at the file system in different ways and orders,
-     * each as the first thing in the VM, see the tree that one thread sees
-     * afterwards.
+     * Concurrent first lookups must agree with a subsequent single-threaded walk.
      */
     private static void testColdThreads() throws Exception {
         int threads = 6;

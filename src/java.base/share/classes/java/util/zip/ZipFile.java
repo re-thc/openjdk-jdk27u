@@ -617,12 +617,9 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     /*
-     * Returns the directories of the entries in this ZIP file, which are their
-     * names up to the last '/', or "" if there is none. A trailing '/' of a
-     * directory entry is ignored, so the directory of "a/b/" is "a".
-     *
-     * The directory of an entry is only decoded if it differs from the one of
-     * the previous entry, as the entries of a directory are usually adjacent.
+     * Returns entry names up to the last '/', or "" for root entries.
+     * A trailing '/' is ignored, so the directory of "a/b/" is "a".
+     * Adjacent entries with the same directory share its decoding.
      * As in isMetaName, an ASCII-compatible encoding is assumed.
      *
      * @return the directories

@@ -63,7 +63,6 @@ public class SkippedDirectories {
             for (int i = 0; i < 4; i++) {
                 missing(loader, "a.Missing" + i);
             }
-            // misses in many directories that no JAR file has
             for (int i = 0; i < 2 * LIMIT + 1; i++) {
                 missing(loader, "m" + i + ".X");
             }

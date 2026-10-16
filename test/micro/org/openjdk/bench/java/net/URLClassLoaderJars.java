@@ -54,10 +54,7 @@ import java.util.jar.JarOutputStream;
 import java.util.stream.Stream;
 
 /**
- * Measures finding resources and loading classes with a URLClassLoader over
- * many JAR files, as a Spring Boot or application server class path is. Each
- * JAR file has the classes of a package of its own, and the lookup of a name
- * has to find the right one, or to see that none has it.
+ * Class and resource lookups across a class path with one package per JAR.
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -66,16 +63,11 @@ import java.util.stream.Stream;
 @Fork(value = 3)
 public class URLClassLoaderJars {
 
-    // The classes of each JAR file
     private static final int CLASSES = 50;
 
     // The classes that loadClasses loads, from JAR files all along the class path
     private static final int LOADED = 100;
 
-    /**
-     * The JAR files of the benchmarks. The states that extend it have
-     * different lifetimes for the loaders.
-     */
     @State(Scope.Thread)
     public abstract static class JarFiles {
         @Param({"10", "100", "400"})
@@ -83,7 +75,6 @@ public class URLClassLoaderJars {
 
         Path dir;
         URL[] urls;
-        // the name of a class file of each JAR file, and of one that it doesn't have
         String[] resourceNames;
         String[] missingNames;
 
@@ -114,7 +105,6 @@ public class URLClassLoaderJars {
             }
         }
 
-        // opens the JAR files of the loader
         void openJars(URLClassLoader loader) {
             for (String name : resourceNames) {
                 if (loader.findResource(name) == null) {
@@ -135,7 +125,7 @@ public class URLClassLoaderJars {
         }
     }
 
-    /** A loader that the lookups use over and over, with its JAR files open. */
+    /** Reuses a loader with its JAR files already open. */
     @State(Scope.Thread)
     public static class Lookup extends JarFiles {
         URLClassLoader loader;
@@ -163,9 +153,8 @@ public class URLClassLoaderJars {
     }
 
     /**
-     * A loader for each invocation, as a class can only be loaded once. Its
-     * JAR files are open, so that what is measured are the lookups and
-     * defining the classes.
+     * Uses a fresh loader per invocation to avoid cached classes.
+     * Opening its JAR files is excluded from timing.
      */
     @State(Scope.Thread)
     public static class FreshLoader extends JarFiles {
@@ -193,28 +182,24 @@ public class URLClassLoaderJars {
         }
     }
 
-    /** Finds a resource in one of the JAR files after the other, in turn. */
     @Benchmark
     public URL findResourceHit(Lookup state) {
         return state.loader.findResource(state.resourceNames[state.nextJar()]);
     }
 
-    /** Looks for a resource that no JAR file has, which tries them all. */
     @Benchmark
     public URL findResourceMiss(Lookup state) {
         return state.loader.findResource("other/Missing.class");
     }
 
-    /** Looks for a resource that is not in the directory of one of the JAR files, in turn. */
+    /** Looks for a missing resource in an existing package. */
     @Benchmark
     public URL findResourceMissInPackage(Lookup state) {
         return state.loader.findResource(state.missingNames[state.nextJar()]);
     }
 
     /**
-     * Loads classes from JAR files all along the class path, in the order
-     * of the class path. This measures a single invocation, which loads
-     * the classes with the lookups, defining and sharing the code source.
+     * Loads classes from JAR files distributed across the class path.
      */
     @Benchmark
     @BenchmarkMode(Mode.SingleShotTime)

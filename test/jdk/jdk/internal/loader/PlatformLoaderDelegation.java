@@ -43,7 +43,6 @@ public class PlatformLoaderDelegation {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            // a class in the boot class path that is appended to
             Path boot = Path.of("boot");
             Files.createDirectories(boot.resolve("bootpkg"));
             Files.write(boot.resolve("bootpkg/B.class"), classBytes("bootpkg.B"));

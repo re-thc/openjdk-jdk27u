@@ -54,20 +54,17 @@ public class LargeConfigFiles {
     private static final String P2 = P2.class.getName();
     private static final String P3 = P3.class.getName();
 
-    // Writes the content of a configuration file
     private interface Content {
         void write(OutputStream out) throws IOException;
     }
 
     public static void main(String[] args) throws Exception {
-        // many comment lines
         check("comments", out -> {
             line(out, P1);
             repeat(out, "# a comment that is repeated to fill the file\n");
             line(out, P2);
         }, P1, P2);
 
-        // one comment line, after a name and on a line of its own
         check("long comment", out -> {
             write(out, P1 + " #");
             repeat(out, "x");
@@ -76,13 +73,11 @@ public class LargeConfigFiles {
             write(out, "\r\n" + P2);
         }, P1, P2);
 
-        // many blank lines with all line terminators
         check("blank lines", out -> {
             repeat(out, " \t\n\r\n\r");
             line(out, P1);
         }, P1);
 
-        // one blank line, before and after a name
         check("long blank line", out -> {
             repeat(out, " ");
             write(out, P1);
@@ -90,7 +85,6 @@ public class LargeConfigFiles {
             write(out, "\n" + P2);
         }, P1, P2);
 
-        // a space in a name is found after a long blank
         Path file = write("long blank in name", out -> {
             write(out, P1);
             repeat(out, " ");
@@ -98,7 +92,6 @@ public class LargeConfigFiles {
         });
         expectError(file, ":1: Illegal configuration-file syntax");
 
-        // normal files
         check("names", out -> {
             write(out, "# providers\n" + P1 + "\n\n  " + P2 + "  # second\r\n"
                        + P1 + "\r" + P3);
@@ -116,7 +109,6 @@ public class LargeConfigFiles {
                     ":2: Illegal provider-class name: �a");
     }
 
-    // Checks that the providers in the file are found in this order
     private static void check(String name, Content content, String... expected)
             throws Exception {
         Path file = write(name, content);
@@ -134,7 +126,6 @@ public class LargeConfigFiles {
         System.out.println(name + ": " + found);
     }
 
-    // Checks that the file fails with a message that ends as expected
     private static void expectError(Path file, String expected) throws Exception {
         try (URLClassLoader loader = loader(file)) {
             ServiceLoader.load(Service.class, loader).stream().count();
@@ -148,7 +139,6 @@ public class LargeConfigFiles {
         Files.delete(file);
     }
 
-    // A class loader with the file as its provider-configuration file
     private static URLClassLoader loader(Path file) throws IOException {
         URL dir = file.getParent().getParent().getParent().toUri().toURL();
         return new URLClassLoader(new URL[] { dir }, LargeConfigFiles.class.getClassLoader());
@@ -172,7 +162,6 @@ public class LargeConfigFiles {
         write(out, s + "\n");
     }
 
-    // Writes the string over and over, for SIZE bytes in all
     private static void repeat(OutputStream out, String s) throws IOException {
         byte[] b = s.repeat(Math.max(1, 8192 / s.length())).getBytes(StandardCharsets.UTF_8);
         for (long n = 0; n < SIZE; n += b.length) {

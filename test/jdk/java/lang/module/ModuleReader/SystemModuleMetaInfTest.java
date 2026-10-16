@@ -50,7 +50,6 @@ public class SystemModuleMetaInfTest {
 
     private static final String FSP = "META-INF/services/java.nio.file.spi.FileSystemProvider";
 
-    // names to look for, in a module that has them or not
     private static final List<String> NAMES = List.of(
             FSP,
             "META-INF/services/not.a.Service",
@@ -76,12 +75,11 @@ public class SystemModuleMetaInfTest {
             if (hasMetaInf) {
                 withMetaInf++;
             }
-            // looking up the names twice, the first lookup may find out about the directory
+            // Repeat to exercise the cached META-INF result.
             try (ModuleReader reader = mref.open()) {
                 for (int round = 0; round < 2; round++) {
                     for (String resource : NAMES) {
                         Optional<URI> found = reader.find(resource);
-                        // a resource in the file system is a file, and the directories are not resources
                         boolean expected = !resource.endsWith("/")
                                 && Files.isRegularFile(root.resolve(resource));
                         if (found.isPresent() != expected) {
@@ -93,7 +91,6 @@ public class SystemModuleMetaInfTest {
                         }
                     }
                 }
-                // every file in META-INF, if there is a directory
                 if (hasMetaInf) {
                     List<Path> files = new ArrayList<>();
                     try (Stream<Path> walk = Files.walk(root.resolve("META-INF"))) {
@@ -122,13 +119,12 @@ public class SystemModuleMetaInfTest {
         if (!javaBase) {
             throw new AssertionError("java.base has no " + FSP);
         }
-        // not all of the modules have a META-INF directory, or a test for it is not needed
+        // Ensure the image exercises the negative lookup path.
         if (withMetaInf == modules.size()) {
             throw new AssertionError("all " + withMetaInf + " modules have META-INF");
         }
         System.out.println(withMetaInf + " of " + modules.size() + " system modules have META-INF");
 
-        // the class loaders find the file that the module has, once more when asked again
         for (int i = 0; i < 2; i++) {
             List<URL> urls = Collections.list(ClassLoader.getSystemResources(FSP));
             if (urls.size() != 1 || !urls.get(0).toString().equals("jrt:/java.base/" + FSP)) {

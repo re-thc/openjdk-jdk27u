@@ -225,7 +225,7 @@ class JrtFileSystem extends FileSystem {
         if (!node.isDirectory()) {
             throw new NotDirectoryException(path.getName());
         }
-        // No stream: setting it up and linking its lambdas costs more than the listing.
+        // Avoid linking stream lambdas on the first listing.
         Iterator<String> names = node.getChildNameIterator();
         if (filter == null) {
             return new ChildPaths(path, names);
@@ -233,7 +233,6 @@ class JrtFileSystem extends FileSystem {
         return new FilteredChildPaths(new ChildPaths(path, names), filter);
     }
 
-    // Child paths of a directory, resolved against the path of the directory.
     private final class ChildPaths implements Iterator<Path> {
         private final JrtPath dir;
         private final Iterator<String> names;
@@ -251,8 +250,7 @@ class JrtFileSystem extends FileSystem {
         @Override
         public Path next() {
             String name = names.next();
-            // The file name is the last element of the node name. Names that
-            // the path would normalize are rare and take the general way.
+            // Names requiring normalization use the general resolution path.
             String fileName = name.substring(name.lastIndexOf('/') + 1);
             if (isPlainName(fileName)) {
                 return dir.resolveName(fileName);
@@ -261,7 +259,6 @@ class JrtFileSystem extends FileSystem {
         }
     }
 
-    // Child paths that are accepted by a filter.
     private static final class FilteredChildPaths implements Iterator<Path> {
         private final Iterator<Path> paths;
         private final DirectoryStream.Filter<? super Path> filter;

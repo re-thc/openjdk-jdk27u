@@ -44,15 +44,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 /**
- * Measures listing and walking the directories of the jrt file system with
- * the public API: {@code /modules} has a directory for each module of the
- * runtime image with all its classes and resources, and {@code /packages}
- * has a directory for each package with a link to each module that has it.
- * Frameworks such as JBoss Modules walk /packages to find the packages of the JDK.
- *
- * <p>The walks of the first group repeat on a runtime image whose nodes have
- * been read already. The cold ones are the first use in a new JVM, and
- * measure one walk in each of many forks.
+ * Lists and walks jrt module and package directories.
+ * Warm benchmarks reuse image nodes; cold benchmarks walk once in a fresh JVM.
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
@@ -95,13 +88,11 @@ public class JrtFileSystemWalk {
         return list("/modules");
     }
 
-    /** All the packages, each with the links to its modules */
     @Benchmark
     public long walkPackages() throws IOException {
         return walk("/packages", Integer.MAX_VALUE);
     }
 
-    /** The modules, and the top directories of their classes */
     @Benchmark
     public long walkModules() throws IOException {
         return walk("/modules", 2);

@@ -75,9 +75,8 @@ public class BasicImageReader implements AutoCloseable {
     private final ByteOrder byteOrder;
     private final String name;
     private final ByteBuffer memoryMap;
-    // For reading integers at absolute positions of the memory map, which
-    // (unlike memoryMap) is never positioned or limited. Null if the image
-    // content is not all mapped.
+    // Never repositioned or limited, for absolute integer reads.
+    // Null unless the entire image is mapped.
     private final ByteBuffer memoryInts;
     private final FileChannel channel;
     private final ImageHeader header;
@@ -507,9 +506,8 @@ public class BasicImageReader implements AutoCloseable {
     }
 
     /**
-     * Returns the content of an uncompressed location read as integers, or null
-     * if that is not possible without the general way of reading the content.
-     * This is faster for directories, which are small and read often.
+     * Reads uncompressed, fully mapped content as integers, or returns null
+     * when the general resource-reading path is required.
      */
     IntBuffer getContentInts(ImageLocation loc) {
         if (memoryInts == null || loc.getCompressedSize() != 0) {

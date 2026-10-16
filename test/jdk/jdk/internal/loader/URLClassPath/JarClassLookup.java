@@ -48,7 +48,6 @@ public class JarClassLookup {
     // each round of loading, as a loader only looks up a class once
     private static final int ROUNDS = 3;
 
-    // Names that are not in any JAR file, to make the loaders miss
     private static final int MISSES = 20;
 
     private static class Loader extends URLClassLoader {
@@ -102,14 +101,12 @@ public class JarClassLookup {
                 load(loader, "a.b.B", round, one);
                 load(loader, "b.A", round, two);
                 load(loader, "c.C", round, three);
-                // the first JAR file with the class has it
                 load(loader, "same.S", round, one);
                 load(loader, "same.T", round, two);
                 load(loader, "p.Q", round, one);
                 load(loader, "p.R", round, three);
                 load(loader, "q.R", round, two);
                 load(loader, "r.S", round, three);
-                // there are no such classes, some even in a package that exists
                 for (String name : new String[] { "a.B", "a.b.A", "b.B", "c.A", "same.A",
                                                   "p.A", "q.Q", "r.R", "s.A", "A" }) {
                     missing(loader, name);
@@ -144,7 +141,6 @@ public class JarClassLookup {
         }
     }
 
-    // Checks that the class of the round is loaded from the JAR file
     private static void load(Loader loader, String name, int round, Path jar) throws Exception {
         Class<?> c = loader.loadClass(name + round);
         String location = c.getProtectionDomain().getCodeSource().getLocation().toString();

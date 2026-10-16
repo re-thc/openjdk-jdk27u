@@ -66,8 +66,8 @@ public final class ModuleLink implements Comparable<ModuleLink> {
      * exit when processing preview entries (it's reversed because the default
      * order for a boolean is {@code false < true}).
      *
-     * <p>The comparator is in a holder class as only writing an image sorts
-     * links, so that readers don't link its lambdas.
+     * <p>Only image writers sort links; the holder avoids linking these
+     * lambdas when reading an image.
      */
     private static final class PreviewFirstOrder {
         static final Comparator<ModuleLink> INSTANCE =
@@ -227,7 +227,6 @@ public final class ModuleLink implements Comparable<ModuleLink> {
         return new NameOffsetIterator(buffer, bufferSize, includeMask, includeNormal);
     }
 
-    /** Iterates the module name offsets of a package subdirectory. */
     static final class NameOffsetIterator implements Iterator<Integer> {
         private final IntBuffer buffer;
         private final int bufferSize;
@@ -264,7 +263,6 @@ public final class ModuleLink implements Comparable<ModuleLink> {
             return idx < bufferSize;
         }
 
-        /** Returns the next name offset, like {@link #next()}. */
         int nextOffset() {
             if (idx < bufferSize) {
                 int nameOffset = buffer.get(idx + 1);

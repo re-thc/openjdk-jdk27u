@@ -51,7 +51,6 @@ public class GetBytes {
         for (int size : SIZES) {
             byte[] data = data(size);
             for (int chunk : new int[] { Integer.MAX_VALUE, 1, 100, 1000 }) {
-                // the length is right
                 expect(data, size, chunk, data);
                 // the length is unknown
                 expect(data, -1, chunk, data);
@@ -62,10 +61,9 @@ public class GetBytes {
                 if (size > 1) {
                     expect(data, 1, chunk, Arrays.copyOf(data, 1));
                 }
-                // the length is more than the data
                 expectEOF(data, size + 1, chunk);
                 expectEOF(data, size + 100_000, chunk);
-                // the length is far more than the data, which is not allocated up front
+                // An untrusted length must not cause a large initial allocation.
                 expectEOF(data, Integer.MAX_VALUE - 8, chunk);
                 expectEOF(data, Integer.MAX_VALUE - 1, chunk);
             }

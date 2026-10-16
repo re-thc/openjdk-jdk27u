@@ -45,7 +45,6 @@ import java.util.jar.JarOutputStream;
 
 public class JarHandlerURLs {
 
-    // A jar handler that cannot make URLs for names with "Bad"
     private static class Handler extends URLStreamHandler {
         @Override
         protected URLConnection openConnection(URL u) throws IOException {
@@ -62,7 +61,6 @@ public class JarHandlerURLs {
         }
     }
 
-    // A subclass of the built-in jar handler that cannot make URLs for names with "Bad"
     private static class BuiltinHandler extends sun.net.www.protocol.jar.Handler {
         @Override
         protected void parseURL(URL u, String spec, int start, int limit) {

@@ -76,7 +76,6 @@ public abstract class Resource {
         return new CodeSource(getCodeSourceURL(), getCodeSigners());
     }
 
-    // The largest size of the array for the data that is allocated up front
     private static final int MAX_INITIAL_SIZE = 64 * 1024;
 
     private InputStream cis;
@@ -99,8 +98,7 @@ public abstract class Resource {
         InputStream in = cachedInputStream();
         try {
             int len = getContentLength();
-            // The content length is not trusted to be right, so a larger
-            // array is only allocated as the data is read
+            // Bound the initial allocation because the content length is untrusted.
             b = new byte[len > 0 ? Math.min(len, MAX_INITIAL_SIZE) : 0];
             if (len == -1) len = Integer.MAX_VALUE;
             int pos = 0;
