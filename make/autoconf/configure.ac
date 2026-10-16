@@ -59,6 +59,7 @@ m4_include([jdk-options.m4])
 m4_include([jdk-version.m4])
 m4_include([jvm-features.m4])
 m4_include([libraries.m4])
+m4_include([lib-rust-regex.m4])
 m4_include([platform.m4])
 m4_include([source-dirs.m4])
 m4_include([toolchain.m4])
@@ -236,6 +237,7 @@ JDKOPT_SETUP_FALLBACK_LINKER
 
 LIB_DETERMINE_DEPENDENCIES
 LIB_SETUP_LIBRARIES
+LIB_SETUP_RUST_REGEX
 
 ################################################################################
 #

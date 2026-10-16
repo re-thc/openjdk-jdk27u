@@ -105,9 +105,15 @@ jobs:
           debug-level: ${{ matrix.debug-level }}
           toolchain: xcode-${{ inputs.xcode-toolset-version }}
 
+      - name: 'Get Rust regex toolchain'
+        id: rust-regex
+        uses: ./.github/actions/get-rust-regex
+
       - name: 'Configure'
+        env:
+          CONFIGURED_RUSTC: ${{ steps.rust-regex.outputs.rustc }}
         run: >
-          bash bin/configure-dev
+          bash bin/configure-dev RUSTC="$CONFIGURED_RUSTC"
           --with-conf-name=${{ inputs.platform }}
           ${{ matrix.flags }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
@@ -130,6 +136,13 @@ jobs:
           make-target: '${{ inputs.make-target }} ${{ inputs.make-arguments }}'
           platform: ${{ inputs.platform }}
           debug-suffix: '${{ matrix.suffix }}'
+        if: ${{ inputs.dry-run == false }}
+
+      - name: 'Check configured Rust compiler'
+        run: |
+          if grep -q '^RUST_REGEX_ENABLED := true$' "build/${{ inputs.platform }}/spec.gmk"; then
+            test -f "${{ steps.rust-regex.outputs.rustc }}.used"
+          fi
         if: ${{ inputs.dry-run == false }}
 
       - name: 'Check development profile'

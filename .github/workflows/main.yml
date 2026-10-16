@@ -206,3 +206,160 @@ jobs:
       runs-on: windows-2025
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       debug-suffix: -debug
+
+  regex-reference:
+    name: 'Rust regex previous-image probe'
+    needs: prepare
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+      actions: read
+    if: needs.prepare.outputs.linux-x64 == 'true' && github.event_name == 'pull_request' && github.event.before != ''
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: 'Probe the previous successful image'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+          baseline=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?branch=$BASE_BRANCH&event=pull_request&status=success" --jq '.workflow_runs[0] // empty | [.id, .head_sha] | @tsv')
+          if [[ -z $baseline ]]; then
+            echo 'No previous successful image is available.'
+            exit 0
+          fi
+          read -r run BASE_SHA <<< "$baseline"
+          if ! gh run download "$run" --name bundles-linux-x64 --dir "$RUNNER_TEMP/regex-reference"; then
+            echo 'Previous image artifacts have expired.'
+            exit 0
+          fi
+          mkdir "$RUNNER_TEMP/regex-reference/jdk"
+          tar -xf "$RUNNER_TEMP/regex-reference/jdk-linux-x64.tar.gz" -C "$RUNNER_TEMP/regex-reference/jdk" --strip-components=1
+          jdk="$RUNNER_TEMP/regex-reference/jdk"
+          mkdir "$RUNNER_TEMP/regex-probe"
+          "$jdk/bin/javac" -d "$RUNNER_TEMP/regex-probe" make/scripts/RustRegexProbe.java
+          "$jdk/bin/java" -version
+          for mode in '-Xint' '-XX:TieredStopAtLevel=1' '-XX:-TieredCompilation' '-XX:-UseRustRegexIntrinsics'; do
+            echo "Previous source $BASE_SHA; mode $mode"
+            "$jdk/bin/java" "$mode" -Xbatch -XX:CompileThreshold=1000 --add-opens=java.base/java.util.regex=ALL-UNNAMED -cp "$RUNNER_TEMP/regex-probe" RustRegexProbe --report
+          done
+
+  qualify-rust-regex:
+    name: 'Rust regex performance and latency'
+    needs: [prepare, build-linux-x64]
+    runs-on: ubuntu-26.04
+    timeout-minutes: 120
+    if: needs.prepare.outputs.linux-x64 == 'true' && needs.prepare.outputs.dry-run != 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: 'Get release bundles'
+        id: bundles
+        uses: ./.github/actions/get-bundles
+        with:
+          platform: linux-x64
+      - name: 'Prepare focused benchmarks'
+        timeout-minutes: 10
+        env:
+          JDK: ${{ steps.bundles.outputs.jdk-path }}
+        run: |
+          set -euo pipefail
+          bench="$RUNNER_TEMP/regex-jmh"
+          mkdir -p "$bench/lib" "$bench/classes" "$bench/generated"
+          while read -r checksum path; do
+            archive="$bench/lib/${path##*/}"
+            downloaded=false
+            for repository_url in https://repo.maven.apache.org/maven2 https://repo1.maven.org/maven2; do
+              rm -f "$archive.part"
+              if curl --fail --location --silent --show-error \
+                  --proto '=https' --proto-redir '=https' \
+                  --retry 2 --retry-all-errors --retry-delay 1 --retry-max-time 30 \
+                  --connect-timeout 10 --max-time 20 \
+                  "$repository_url/$path" --output "$archive.part"; then
+                if ! printf '%s  %s\n' "$checksum" "$archive.part" | sha256sum --check; then
+                  rm -f "$archive.part"
+                  echo "::error::Checksum mismatch for benchmark dependency $path"
+                  exit 1
+                fi
+                mv "$archive.part" "$archive"
+                downloaded=true
+                break
+              fi
+            done
+            if [[ $downloaded != true ]]; then
+              rm -f "$archive.part"
+              echo "::error::Unable to download verified benchmark dependency $path"
+              exit 1
+            fi
+          done <<'DEPENDENCIES'
+          dc0eaf2bbf0036a70b60798c785d6e03a9daf06b68b8edb0f1ba9eb3421baeb3 org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar
+          6a5604b5b804e0daca1145df1077609321687734a8b49387e49f10557c186c77 org/openjdk/jmh/jmh-generator-annprocess/1.37/jmh-generator-annprocess-1.37.jar
+          df26cc58f235f477db07f753ba5a3ab243ebe5789d9f89ecf68dd62ea9a66c28 net/sf/jopt-simple/jopt-simple/5.0.4/jopt-simple-5.0.4.jar
+          1e56d7b058d28b65abd256b8458e3885b674c1d588fa43cd7d1cbb9c7ef2b308 org/apache/commons/commons-math3/3.6.1/commons-math3-3.6.1.jar
+          DEPENDENCIES
+          processor_path="$bench/lib/jmh-generator-annprocess-1.37.jar:$bench/lib/jmh-core-1.37.jar"
+          "$JDK/bin/javac" -cp "$bench/lib/*" -processorpath "$processor_path" -processor org.openjdk.jmh.generators.BenchmarkProcessor -d "$bench/classes" -s "$bench/generated" test/micro/org/openjdk/bench/java/util/regex/RustRegexNative.java test/micro/org/openjdk/bench/java/util/regex/RustRegexLifetime.java test/micro/org/openjdk/bench/java/util/regex/RustRegexState.java test/micro/org/openjdk/bench/java/util/regex/RustRegexCandidates.java
+          "$JDK/bin/javac" -d "$bench/classes" make/scripts/RustRegexProbe.java make/scripts/RustRegexLatency.java test/jdk/java/util/regex/RustRegexContinuation.java
+          python3 -m py_compile make/scripts/benchmark-rust-regex.py
+      - name: 'Check continuation and leaf latency'
+        env:
+          JDK: ${{ steps.bundles.outputs.jdk-path }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/regex-results"
+          for label in int c1 c2 jni; do
+            case "$label" in
+              int) mode_flags=(-Xint) ;;
+              c1) mode_flags=(-XX:TieredStopAtLevel=1) ;;
+              c2) mode_flags=(-XX:-TieredCompilation) ;;
+              jni) mode_flags=(-XX:-UseRustRegexIntrinsics) ;;
+            esac
+            "$JDK/bin/java" "${mode_flags[@]}" -Xbatch -XX:CompileThreshold=100 --add-opens=java.base/java.util.regex=ALL-UNNAMED -cp "$RUNNER_TEMP/regex-jmh/classes" RustRegexProbe
+            "$JDK/bin/java" "${mode_flags[@]}" -Xbatch -XX:CompileThreshold=100 --add-opens=java.base/java.util.regex=ALL-UNNAMED -cp "$RUNNER_TEMP/regex-jmh/classes" RustRegexContinuation
+            "$JDK/bin/java" "${mode_flags[@]}" -Xbatch -XX:CompileThreshold=100 -XX:+UseG1GC -Xms128m -Xmx128m --add-opens=java.base/java.util.regex=ALL-UNNAMED "-Xlog:safepoint=info,gc=info:file=$RUNNER_TEMP/regex-results/latency-$label.log" -cp "$RUNNER_TEMP/regex-jmh/classes" RustRegexLatency | tee "$RUNNER_TEMP/regex-results/latency-$label.jsonl"
+          done
+      - name: 'Measure complete lifetimes and short routing'
+        env:
+          JDK: ${{ steps.bundles.outputs.jdk-path }}
+        run: |
+          python3 make/scripts/benchmark-rust-regex.py --java "$JDK/bin/java" --classpath "$RUNNER_TEMP/regex-jmh/classes:$RUNNER_TEMP/regex-jmh/lib/*" --output "$RUNNER_TEMP/regex-results/benchmarks" --suite review --pairs 2
+      - name: 'Print paired summaries'
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import collections
+          import json
+          import os
+          from pathlib import Path
+          import statistics
+
+          root = Path(os.environ['RUNNER_TEMP']) / 'regex-results' / 'benchmarks'
+          if not (root / 'results.jsonl').exists():
+              raise SystemExit(0)
+          print(json.dumps({'record': 'runtime', 'metadata': json.loads((root / 'metadata.json').read_text())}))
+          cases = collections.defaultdict(lambda: collections.defaultdict(list))
+          for line in (root / 'results.jsonl').read_text().splitlines():
+              row = json.loads(line)
+              result = row['result']
+              key = (row['suite'], row['tier'], tuple(sorted(result['params'].items())))
+              cases[key][row['enabled']].append({
+                  'pair': row['pair'], 'score': result['primaryMetric']['score'],
+                  'samples': result['primaryMetric']['rawData'],
+                  'unit': result['primaryMetric']['scoreUnit']})
+          for (suite, tier, params), sides in sorted(cases.items()):
+              if not sides[False] or not sides[True]:
+                  continue
+              java = statistics.mean(row['score'] for row in sides[False])
+              default = statistics.mean(row['score'] for row in sides[True])
+              print(json.dumps({'record': 'paired-summary', 'suite': suite, 'tier': tier,
+                                'params': dict(params), 'java': java, 'default': default,
+                                'speedup': java / default, 'java_processes': sides[False],
+                                'default_processes': sides[True]}))
+          PY
+
+      - name: 'Upload qualification results'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: rust-regex-qualification
+          path: ${{ runner.temp }}/regex-results
+          retention-days: 30
+        if: always()
