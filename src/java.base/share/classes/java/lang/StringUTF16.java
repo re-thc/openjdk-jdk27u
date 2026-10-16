@@ -2162,6 +2162,9 @@ final class StringUTF16 {
                 if (tgtCount <= 8 && StringZilla.matchesUTF16Latin1(src, fromIndex, tgt, tgtCount)) {
                     return fromIndex;
                 }
+                if (StringZilla.compilerTier() == StringZilla.C1) {
+                    return lastIndexOfLatin1NativeC1(src, searchLength, tgt, tgtCount);
+                }
                 int result = StringZilla.rfindUTF16Latin1(src, 0, searchLength << 1, tgt, tgtCount);
                 if (result == StringZilla.FALLBACK) {
                     result = StringZilla.searchLarge(src, 0, searchLength << 1, tgt, tgtCount, 2, true);
@@ -2171,13 +2174,8 @@ final class StringUTF16 {
                 }
             } else {
                 int tier = StringZilla.compilerTier();
-                boolean candidate = getChar(src, fromIndex + tgtCount - 1) == (tgt[tgtCount - 1] & 0xff);
-                if (tier == StringZilla.C1 && candidate) {
-                    if (matchesLatin1Reverse(src, tgt, tgtCount, fromIndex)) {
-                        return fromIndex;
-                    }
-                    fromIndex--;
-                } else if (!candidate) {
+                if (tier != StringZilla.C1
+                        && getChar(src, fromIndex + tgtCount - 1) != (tgt[tgtCount - 1] & 0xff)) {
                     if (tier == 0) {
                         fromIndex = StringZilla.lastMixedCandidate(src, tgt, tgtCount, fromIndex);
                         if (fromIndex < 0) {
@@ -2221,15 +2219,17 @@ final class StringUTF16 {
         }
     }
 
-    // The trailing character was checked before entering this probe.
-    @ForceInline
-    private static boolean matchesLatin1Reverse(byte[] src, byte[] tgt, int count, int fromIndex) {
-        for (int i = count - 2; i >= 0; i--) {
-            if (getChar(src, fromIndex + i) != (tgt[i] & 0xff)) {
-                return false;
-            }
+    // Isolate native argument setup from C1's scalar fallback.
+    @DontInline
+    private static int lastIndexOfLatin1NativeC1(byte[] src, int length, byte[] tgt, int count) {
+        int result = StringZilla.rfindUTF16Latin1(src, 0, length << 1, tgt, count);
+        if (result == StringZilla.FALLBACK) {
+            result = StringZilla.searchLarge(src, 0, length << 1, tgt, count, 2, true);
         }
-        return true;
+        if (result != StringZilla.FALLBACK) {
+            return result < 0 ? -1 : result >> 1;
+        }
+        return lastIndexOfLatin1Java(src, tgt, count, length - count);
     }
 
     // Keep C2's loop profile independent of interpreter-only filtering.
