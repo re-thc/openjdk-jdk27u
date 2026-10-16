@@ -231,11 +231,19 @@ public final class ScopedMemoryAccess {
             if (bSession != null) {
                 bSession.checkValidStateRaw();
             }
-            // Bound native-address mismatch calls, including C1's existing
-            // intrinsic. The loop between chunks provides safepoint polls.
-            if (length > (65536 >> log2ArrayIndexScale) && (a == null || b == null) &&
-                    log2ArrayIndexScale >= 0 && log2ArrayIndexScale <= 3) {
-                return vectorizedMismatchLarge(a, aOffset, b, bOffset, length, log2ArrayIndexScale);
+            if ((a == null || b == null) && log2ArrayIndexScale >= 0 && log2ArrayIndexScale <= 3) {
+                int minimum = 128 >> log2ArrayIndexScale;
+                if (length >= 0 && length < minimum) {
+                    // C2 calls the stub from 128 bytes. A length it can bound
+                    // below that compiles to the Java loop without the stub path.
+                    return ArraysSupport.vectorizedMismatch(a, aOffset, b, bOffset, length & (minimum - 1),
+                            log2ArrayIndexScale);
+                }
+                // Bound native-address mismatch calls, including C1's existing
+                // intrinsic. The loop between chunks provides safepoint polls.
+                if (length > (65536 >> log2ArrayIndexScale)) {
+                    return vectorizedMismatchLarge(a, aOffset, b, bOffset, length, log2ArrayIndexScale);
+                }
             }
             return ArraysSupport.vectorizedMismatch(a, aOffset, b, bOffset, length, log2ArrayIndexScale);
         } finally {
@@ -296,6 +304,11 @@ public final class ScopedMemoryAccess {
             }
             if (bSession != null) {
                 bSession.checkValidStateRaw();
+            }
+            if (length >= 0 && length < 128 && (a == null || b == null)) {
+                // As in vectorizedMismatchInternal.
+                return ArraysSupport.vectorizedMismatch(a, aOffset, b, bOffset, (int) length & 127,
+                        ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
             }
             long offset = 0;
             long remaining = length;
