@@ -38,10 +38,10 @@ public class NativePRNGLargeRequest {
     public static void main(String[] args) throws Exception {
         SecureRandom random = SecureRandom.getInstance(args[0]);
         random.setSeed(new byte[] { 1, 2, 3 });
-        // more than half the heap
+        // Exceed half the heap to detect a second request-sized allocation.
         byte[] b = new byte[40 << 20];
         random.nextBytes(b);
-        // all bytes were filled, with about 1/256 zeros
+        // Detect unfilled regions; random output has about 1/256 zero bytes.
         int zeros = 0;
         for (byte x : b) {
             if (x == 0) {

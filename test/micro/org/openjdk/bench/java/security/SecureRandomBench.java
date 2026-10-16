@@ -37,8 +37,7 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 public class SecureRandomBench {
 
-    // The default algorithm on Linux and macOS is NativePRNG. Each thread has
-    // a SecureRandom of its own, but they share the state of the NativePRNG.
+    // Per-thread instances share NativePRNG state on Linux and macOS.
     private SecureRandom random;
     private byte[] bytes16;
     private byte[] bytes1024;
@@ -72,10 +71,8 @@ public class SecureRandomBench {
         return random.nextInt();
     }
 
-    // A request now and then: each one comes after the bytes that NativePRNG
-    // buffered for an earlier one have expired, which is after 100 ms. The
-    // thread keeps the processor busy meanwhile, so that waking it up from
-    // idle is not measured.
+    // Expire NativePRNG's 100 ms buffers before each request.
+    // Spin between requests to exclude CPU wake-up latency.
 
     @State(Scope.Thread)
     public static class Idle {
@@ -96,9 +93,6 @@ public class SecureRandomBench {
         random.nextBytes(bytes16);
         return bytes16;
     }
-
-    // The same with all the processors the JVM can use, to measure how
-    // the threads wait for each other.
 
     @Benchmark
     @Threads(Threads.MAX)

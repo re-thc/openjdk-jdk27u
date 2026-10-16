@@ -69,8 +69,7 @@ public class NativePRNGFallback {
     private static final List<String> ALGORITHMS = List.of("NativePRNG",
             "NativePRNGNonBlocking", "NativePRNGBlocking");
 
-    // Runs a command in a user and mount namespace where /dev holds only
-    // null, zero and the device named by the first argument, if any.
+    // Run in namespaces exposing only null, zero, and the selected RNG device.
     private static final String HIDE_DEVICES = """
             set -e
             keep=$1; shift
@@ -104,8 +103,6 @@ public class NativePRNGFallback {
         }
     }
 
-    // runs child() in a JVM whose /dev has only the device keep, and checks
-    // that only the algorithms expected are available
     private static void runHidden(String keep, List<String> options,
             List<String> expected) throws Exception {
         List<String> unshare = List.of("unshare", "-Urm", "sh", "-c",
@@ -134,8 +131,6 @@ public class NativePRNGFallback {
         return l;
     }
 
-    // with getrandom() blocked, checks that exactly the algorithms expected
-    // are available and that they work
     private static void child(List<String> expected) throws Exception {
         System.loadLibrary("NativePRNGFallback");
         if (install(0, ENOSYS) != 0) {
@@ -160,8 +155,6 @@ public class NativePRNGFallback {
         }
     }
 
-    // with getrandom() failing as mode says, checks that all algorithms
-    // are available and work
     private static void blocked(String mode) throws Exception {
         System.loadLibrary("NativePRNGFallback");
 
@@ -195,13 +188,10 @@ public class NativePRNGFallback {
         }
     }
 
-    // checks that getrandom() with these flags fails with this errno, or
-    // succeeds if it is 0
     private static void expect(int flags, int errno) {
         int e = getrandom(flags);
         if (e == 0 && errno != 0) {
-            // getrandom() did not make the system call, which the vDSO of
-            // glibc 2.41 and later may do
+            // A vDSO result can bypass the syscall filter.
             throw new SkippedException("getrandom() does not fail");
         }
         if (e != errno) {
@@ -210,8 +200,6 @@ public class NativePRNGFallback {
         }
     }
 
-    // gets random bytes concurrently, checks that they don't repeat, and
-    // that seeds and mixing after setSeed work
     private static void check(SecureRandom random) throws Exception {
         Set<String> seen = ConcurrentHashMap.newKeySet();
         List<Thread> threads = new ArrayList<>();

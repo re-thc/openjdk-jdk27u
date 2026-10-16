@@ -34,14 +34,11 @@ package sun.security.provider;
  */
 public final class NativePRNG {
 
-    // return whether the NativePRNG is available
     static boolean isAvailable() {
         return false;
     }
 
-    // the implementation of the SecureRandom service with the algorithm name
-    // of the SUN provider, or null if it is not one of this class, for
-    // SunEntries.SecureRandomService
+    // NativePRNG services are unavailable on Windows.
     static java.security.SecureRandomSpi newInstance(String algorithm) {
         return null;
     }

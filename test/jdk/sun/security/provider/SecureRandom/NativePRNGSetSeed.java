@@ -59,7 +59,6 @@ public class NativePRNGSetSeed {
         SecureRandom sr = SecureRandom.getInstance(alg);
         Object io = randomIO(alg);
 
-        // generating bytes and seeds doesn't create the mixing SHA1PRNG
         for (int len : new int[] {0, 1, 16, 17, 255, 256, 257, 1000, 70000}) {
             byte[] b = new byte[len];
             sr.nextBytes(b);
@@ -77,7 +76,6 @@ public class NativePRNGSetSeed {
             throw new Exception("Same bytes twice");
         }
 
-        // setSeed supplements the state of the mixing SHA1PRNG
         byte[] seed1 = {1, 2, 3, 4, 5};
         sr.setSeed(seed1);
         checkMix(io, true);
@@ -113,7 +111,6 @@ public class NativePRNGSetSeed {
         concurrent(sr);
     }
 
-    // new SecureRandom(byte[]) seeds the default generator
     private static void testDefault() throws Exception {
         SecureRandom sr = new SecureRandom();
         if (!sr.getAlgorithm().equals("NativePRNG")) {
@@ -128,7 +125,6 @@ public class NativePRNGSetSeed {
         seeded.nextBytes(new byte[16]);
     }
 
-    // Threads draw bytes while others set seeds; all the bytes must differ.
     private static void concurrent(SecureRandom sr) throws Exception {
         int readers = 4;
         int draws = 50_000;

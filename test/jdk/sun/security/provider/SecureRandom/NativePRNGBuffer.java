@@ -39,24 +39,19 @@ import java.util.List;
 
 public class NativePRNGBuffer {
 
-    // the requests of all threads together, so that the memory the test
-    // keeps does not grow with the number of processors
+    // Bound retained samples independently of processor count.
     private static final int TOTAL_REQUESTS = 128_000;
-    // enough requests per thread to refill its buffer many times
     private static final int MIN_REQUESTS_PER_THREAD = 1_000;
-    // sizes below, at and above the largest buffered request
+    // Exercise the buffered-request boundary.
     private static final int[] SIZES = { 1, 7, 16, 63, 64, 65, 300 };
-    // the bytes of each request that are compared
     private static final int KEY_BYTES = 7;
 
-    // the number of buffers of NativePRNG: 4 per processor, at most 64,
-    // rounded up to a power of two
+    // Mirror production buffer sizing to force sharing at every CPU count.
     static int buffers(int cpus) {
         int n = Math.min(4 * cpus, 64);
         return Integer.highestOneBit(2 * n - 1);
     }
 
-    // twice as many threads as buffers, so that threads share them
     static int threads(int cpus) {
         return 2 * buffers(cpus);
     }
@@ -113,7 +108,6 @@ public class NativePRNGBuffer {
             }
         }
 
-        // Consecutive small requests of one thread get different bytes.
         byte[] a = new byte[8];
         byte[] b = new byte[8];
         for (int i = 0; i < 1000; i++) {
@@ -125,9 +119,6 @@ public class NativePRNGBuffer {
         }
     }
 
-    // checks that with this number of processors, the threads share the
-    // buffers, each makes enough requests, and the requests of all stay
-    // within the budget
     private static void checkPlan(int cpus) {
         int buffers = buffers(cpus);
         int threads = threads(cpus);
@@ -142,7 +133,6 @@ public class NativePRNGBuffer {
         }
     }
 
-    // the first KEY_BYTES bytes of b
     private static long key(byte[] b) {
         long k = 0;
         for (int i = 0; i < KEY_BYTES; i++) {

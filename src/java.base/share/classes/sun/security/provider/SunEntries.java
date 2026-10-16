@@ -344,16 +344,10 @@ public final class SunEntries {
         services.add(new SecureRandomService(p, algo, cn, attrs));
     }
 
-    /*
-     * A SecureRandom service that makes its implementation without core
-     * reflection if no parameter is passed, the usual case. The first
-     * reflective call of a constructor with an argument spins method handle
-     * forms, which is a good part of the time of the first
-     * "new SecureRandom()".
-     */
+    // Avoid reflective constructor linkage for parameterless SecureRandom services.
     private static final class SecureRandomService extends Provider.Service {
 
-        // whether the provider is known to have this service, as in Service
+        // Cache the registration check required by Provider.Service.newInstance.
         private boolean registered;
 
         SecureRandomService(Provider p, String algo, String cn,
@@ -377,7 +371,7 @@ public final class SunEntries {
                         return spi;
                     }
                 } catch (RuntimeException e) {
-                    // the generic code below reports the failure as always
+                    // Preserve Provider.Service's exception reporting.
                 }
             }
             return super.newInstance(ctrParamObj);

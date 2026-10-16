@@ -47,7 +47,7 @@ public class NativePRNGSource {
         "NativePRNG", "NativePRNGNonBlocking", "NativePRNGBlocking"
     };
 
-    // the native code fills the arrays in chunks of this size
+    // Match the native stack-buffer size to exercise chunk boundaries.
     private static final int CHUNK = 8192;
 
     private static final int[] LENGTHS = IntStream.concat(
@@ -101,8 +101,7 @@ public class NativePRNGSource {
         }
     }
 
-    // NativePRNG reads the seed from the file, while the bytes and the seeds
-    // of the other algorithms still come from the OS
+    // Only the mixed variant honors a custom seed file.
     private static void checkFile(byte[] content) throws Exception {
         SecureRandom sr = SecureRandom.getInstance("NativePRNG");
         byte[] first = sr.generateSeed(100);
@@ -125,7 +124,6 @@ public class NativePRNGSource {
             }
         }
 
-        // the rest of the file is read, then it is exhausted
         sr.generateSeed(FILE_SIZE - 200);
         try {
             sr.generateSeed(1);
@@ -134,9 +132,7 @@ public class NativePRNGSource {
         }
     }
 
-    // No 8 bytes in a row are all zero (a probability of 2^-64 for random
-    // bytes), so the whole array was filled, and no chunk repeats the
-    // previous one.
+    // An all-zero 8-byte window has probability 2^-64 for random output.
     private static void checkRandom(byte[] b, String what) {
         for (int i = 0; i + 8 <= b.length; i += 8) {
             if (isZero(b, i, i + 8)) {

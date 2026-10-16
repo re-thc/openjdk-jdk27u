@@ -40,7 +40,6 @@ import java.lang.reflect.Field;
 public class NativePRNGDevice {
 
     public static void main(String[] args) throws Exception {
-        // whether the seed of the default algorithm behaves like /dev/urandom
         boolean seedUrandom = false;
         switch (args[0]) {
             case "default" -> { }
@@ -50,7 +49,6 @@ public class NativePRNGDevice {
             default -> throw new IllegalArgumentException(args[0]);
         }
 
-        // the bytes of the default algorithm behave like /dev/urandom
         check("sun.security.provider.NativePRNG", seedUrandom, true);
         check("sun.security.provider.NativePRNG$NonBlocking", true, true);
         check("sun.security.provider.NativePRNG$Blocking", false, false);

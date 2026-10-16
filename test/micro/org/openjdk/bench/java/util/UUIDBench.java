@@ -88,8 +88,7 @@ public class UUIDBench {
         return UUID.randomUUID();
     }
 
-    // The threads share the SecureRandom of UUID.randomUUID, which is
-    // a NativePRNG by default.
+    // UUID.randomUUID() shares one SecureRandom across threads.
     @Benchmark
     @Threads(Threads.MAX)
     public UUID randomUUIDParallel() {

@@ -51,7 +51,6 @@ public class SunSecureRandomServices {
             String algorithm = s.getAlgorithm();
             System.out.println(algorithm + " " + s.getClassName());
 
-            // the registered class, a new instance each time
             Object spi = s.newInstance(null);
             if (!spi.getClass().getName().equals(s.getClassName())) {
                 throw new RuntimeException(algorithm + ": " + spi.getClass());
@@ -67,7 +66,6 @@ public class SunSecureRandomServices {
             }
             random.nextBytes(new byte[16]);
 
-            // not a SecureRandomParameters
             try {
                 s.newInstance("parameter");
                 throw new RuntimeException(algorithm + ": no exception");
@@ -78,7 +76,6 @@ public class SunSecureRandomServices {
                 System.out.println("  " + e.getCause().getMessage());
             }
 
-            // a SecureRandomParameters that none of them supports
             try {
                 s.newInstance(new SecureRandomParameters() { });
                 throw new RuntimeException(algorithm + ": no exception");
@@ -96,7 +93,6 @@ public class SunSecureRandomServices {
             }
         }
 
-        // the parameter that DRBG uses
         SecureRandomParameters params = DrbgParameters.instantiation(
                 128, DrbgParameters.Capability.NONE, null);
         Object drbg = sun.getService("SecureRandom", "DRBG").newInstance(params);

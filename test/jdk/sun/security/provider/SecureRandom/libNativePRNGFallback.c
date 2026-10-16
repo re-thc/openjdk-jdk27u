@@ -23,7 +23,6 @@
 
 #include "jni.h"
 
-/* The test runs on Linux only. */
 #if defined(__linux__)
 
 #include <errno.h>

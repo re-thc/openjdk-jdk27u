@@ -45,7 +45,6 @@
 #error "No random number generator for this platform"
 #endif
 
-/* The size of the stack buffer the random bytes are generated into. */
 #define BUF_SIZE 8192
 
 #if defined(__linux__)
@@ -63,10 +62,7 @@ isGetrandomBlocked(int err)
     return err == ENOSYS || err == EPERM;
 }
 
-/*
- * Reads len bytes from /dev/urandom or /dev/random, as NativePRNG did before
- * it used getrandom(). Returns 0 on success, or -1 with errno set.
- */
+/* Returns 0 on success, or -1 with errno set. */
 static int
 readDevice(char *buf, size_t len, jboolean urandom)
 {
@@ -141,11 +137,7 @@ getRandomBytes(char *buf, size_t len, jboolean urandom)
     return 0;
 }
 
-/*
- * Returns whether the operating system provides random bytes, like
- * /dev/urandom if urandom is true and like /dev/random otherwise.
- * This does not block.
- */
+/* Probe the selected RNG policy without waiting for initialization. */
 JNIEXPORT jboolean JNICALL
 Java_sun_security_provider_NativePRNG_isAvailable0(JNIEnv *env, jclass cls,
                                                    jboolean urandom)
