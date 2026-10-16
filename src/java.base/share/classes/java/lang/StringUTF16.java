@@ -2171,8 +2171,13 @@ final class StringUTF16 {
                 }
             } else {
                 int tier = StringZilla.compilerTier();
-                if (tier != StringZilla.C1
-                        && getChar(src, fromIndex + tgtCount - 1) != (tgt[tgtCount - 1] & 0xff)) {
+                boolean candidate = getChar(src, fromIndex + tgtCount - 1) == (tgt[tgtCount - 1] & 0xff);
+                if (tier == StringZilla.C1 && candidate) {
+                    if (matchesLatin1Reverse(src, tgt, tgtCount, fromIndex)) {
+                        return fromIndex;
+                    }
+                    fromIndex--;
+                } else if (!candidate) {
                     if (tier == 0) {
                         fromIndex = StringZilla.lastMixedCandidate(src, tgt, tgtCount, fromIndex);
                         if (fromIndex < 0) {
@@ -2216,6 +2221,16 @@ final class StringUTF16 {
         }
     }
 
+    // The trailing character was checked before entering this probe.
+    @ForceInline
+    private static boolean matchesLatin1Reverse(byte[] src, byte[] tgt, int count, int fromIndex) {
+        for (int i = count - 2; i >= 0; i--) {
+            if (getChar(src, fromIndex + i) != (tgt[i] & 0xff)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     // Keep C2's loop profile independent of interpreter-only filtering.
     @DontInline
