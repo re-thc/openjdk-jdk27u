@@ -125,8 +125,11 @@ public class BatchedInterning {
     }
 
     // Threads define classes with the same new names at the same time. Each
-    // round has names that no class of earlier rounds used, and classes of
-    // earlier rounds become unreachable, so that their names die.
+    // round has names that no class of the three rounds before it used. The
+    // classes of earlier rounds become unreachable and System.gc() may unload
+    // them, so that names looked up again may be dead symbols in the table,
+    // unless they were cleaned or are still referenced. The test does not
+    // check which of these happened.
     static void testConcurrentNames() throws Exception {
         // A Phaser rather than a CyclicBarrier: when a worker fails, terminating
         // it releases the others at once, while a reset barrier would wait for

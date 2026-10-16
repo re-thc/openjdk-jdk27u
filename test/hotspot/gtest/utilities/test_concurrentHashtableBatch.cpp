@@ -155,8 +155,13 @@ static void cht_get_batch_while_resizing(Thread* thr) {
   volatile int done = 0;
   volatile size_t errors = 0;
   volatile size_t batches = 0;
+  volatile int readers_started = 0;
   auto worker = [&](Thread* current, int id) {
     if (id == 0) {
+      // Start once every reader is looking up, so that all resizing overlaps reads.
+      while (AtomicAccess::load_acquire(&readers_started) < readers) {
+        os::naked_yield();
+      }
       for (int round = 0; round < rounds; round++) {
         for (uintptr_t v = 1; v <= churn; v++) {
           BatchLookup l;
@@ -183,6 +188,7 @@ static void cht_get_batch_while_resizing(Thread* thr) {
     BatchLookup lookups[count];
     uintptr_t found[count];
     uint64_t seed = (uint64_t)id;
+    bool started = false;
     while (AtomicAccess::load_acquire(&done) == 0) {
       for (size_t i = 0; i < count; i++) {
         seed = seed * 6364136223846793005ULL + 1442695040888963407ULL;
@@ -204,6 +210,10 @@ static void cht_get_batch_while_resizing(Thread* thr) {
         }
       }
       AtomicAccess::inc(&batches);
+      if (!started) {
+        AtomicAccess::inc(&readers_started);
+        started = true;
+      }
     }
   };
   TestThreadGroup<decltype(worker)> ttg(worker, readers + 1);
