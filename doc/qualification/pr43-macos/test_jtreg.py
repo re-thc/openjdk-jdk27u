@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import Mock
-from jtreg import inspect_home, select_installed, unchanged, version_tuple
+from jtreg import inspect_home, meets_minimum, select_installed, unchanged, version_tuple
 
 
 class JtregTest(unittest.TestCase):
@@ -18,7 +18,25 @@ class JtregTest(unittest.TestCase):
         self.assertEqual((8, 2, 1, 1), version_tuple('jtreg 8.2.1+1\n'))
         self.assertEqual((8, 3, 0, 1), version_tuple('jtreg, version 8.3+1\n'))
         self.assertEqual((8, 3, 0, 0), version_tuple('jtreg 8.3-dev+0\n'))
+        self.assertEqual((8, 3, 0, 1), version_tuple('jtreg 8.3+1-19\n'))
         self.assertEqual((9, 0, 0, 0), version_tuple('jtreg 9.0\n'))
+
+    def test_upstream_minimum_semantics(self):
+        # Version.compareTo deliberately treats a zero/absent build as
+        # unspecified, rather than a known build older than +1.
+        for text in ('jtreg 8.2.1-dev+0', 'jtreg 8.2.1', 'jtreg 8.2.1+1',
+                     'jtreg 8.2.1+2', 'jtreg 8.3-dev+0', 'jtreg 9.0'):
+            with self.subTest(text=text):
+                self.assertTrue(meets_minimum(version_tuple(text)))
+        self.assertFalse(meets_minimum(version_tuple('jtreg 8.2.0+99')))
+        self.assertFalse(meets_minimum((8, 2, 1, 1), minimum=(8, 2, 1, 2)))
+
+    def test_reported_dev_build_is_accepted(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = self.home(directory, 'reported')
+            identity = inspect_home(home, 'unused', reader=lambda *args: 'jtreg 8.2.1-dev+0')
+            self.assertEqual('8.2.1-dev+0', identity['version_output'].removeprefix('jtreg '))
+            self.assertEqual('8.2.1+0', identity['version'])
 
     def test_malformed_version(self):
         for text in ('openjdk version "26"', 'jtreg 8.3.0.1', 'jtreg unknown'):
@@ -47,9 +65,9 @@ class JtregTest(unittest.TestCase):
     def test_explicit_incompatible_home_is_error(self):
         with tempfile.TemporaryDirectory() as directory:
             home = self.home(directory, 'old')
-            with self.assertRaisesRegex(ValueError, '8.2.1\\+1 or newer'):
+            with self.assertRaisesRegex(ValueError, 'TEST.ROOT 8.2.1\\+1'):
                 select_installed('unused', explicit=home, env={}, extra_homes=[],
-                                 reader=lambda *args: 'jtreg 8.2.1')
+                                 reader=lambda *args: 'jtreg 8.2.0+99')
 
     def test_unsupported_discovery_requests_fallback(self):
         with tempfile.TemporaryDirectory() as directory:

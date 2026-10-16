@@ -6,6 +6,10 @@ No CI artifact, Library file, private workspace, chat patch or Linux binary is
 required. This is documentation/test tooling only; it does not change PR43's
 product source or merge it.
 
+The [source and qualification review](REVIEW.md) reconciles the reported native
+Mac result and remaining review scope. [PR_DESCRIPTION.md](PR_DESCRIPTION.md)
+contains a proposed replacement PR body; publication to PR43 is separate.
+
 ## Standard prerequisites, checked before builds
 
 - A **native macOS arm64** shell/agent, not Intel or Rosetta. The runner records
@@ -31,6 +35,15 @@ product source or merge it.
 A failed dependency request is a concrete blocker: stop that request, retain the
 error, and do not bypass proxies, TLS, Gatekeeper, quarantine or other controls.
 The script does not install Homebrew/Xcode or silently substitute another ISA.
+
+The minimum follows jtreg's own comparison semantics. Configure checks release
+8.2.1; `TEST.ROOT` declares 8.2.1+1. In upstream jtreg
+[`Version.compareTo`](https://github.com/openjdk/jtreg/blob/5afa26a21f06e3f231982f0d0abc50c33d68167c/src/share/classes/com/sun/javatest/regtest/tool/Version.java#L179),
+an equal release with build zero is treated as an unspecified build, and the
+milestone is ignored. Thus `8.2.1-dev+0` satisfies that declaration; it does not
+invalidate an observed active-IR run. The selector uses those same semantics.
+Retain the actual reported version and JAR hash; a version label alone does not
+prove which harness source was built or that all required rules executed.
 
 ## One complete local run
 

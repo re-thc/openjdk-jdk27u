@@ -20,11 +20,20 @@ class IncompatibleVersion(ValueError):
 
 def version_tuple(output):
     match = re.search(r'\bjtreg,?\s+(?:version\s+)?(\d+(?:\.\d+){0,2})'
-                      r'(?:-[\w.-]+)?(?:\+(\d+))?(?![\w.+-])', output, re.I)
+                      r'(?:-[\w.-]+)?(?:\+(\d+)(?:-[\w.-]+)?)?(?![\w.+-])', output, re.I)
     if not match:
         raise ValueError('Cannot identify jtreg version from: ' + output.strip())
     release = tuple(map(int, match[1].split('.')))
     return release + (0,) * (3 - len(release)) + (int(match[2] or 0),)
+
+
+def meets_minimum(actual, minimum=MINIMUM):
+    # Match jtreg Version.compareTo: compare release numbers first. When they
+    # are equal, build zero means unspecified and does not order below +1.
+    # The milestone (such as -dev) is not part of that comparison.
+    if actual[:3] != minimum[:3]:
+        return actual[:3] > minimum[:3]
+    return actual[3] == 0 or minimum[3] == 0 or actual[3] >= minimum[3]
 
 
 def jar_sha(home):
@@ -52,8 +61,8 @@ def inspect_home(home, java, origin='dependencies.json', reader=read_version):
     before = jar_sha(home)
     output = reader(java, jar)
     version = version_tuple(output)
-    if version < MINIMUM:
-        raise IncompatibleVersion('Requires jtreg 8.2.1+1 or newer; found ' + output)
+    if not meets_minimum(version):
+        raise IncompatibleVersion('Requires jtreg satisfying TEST.ROOT 8.2.1+1; found ' + output)
     if before != jar_sha(home):
         raise ValueError('jtreg.jar changed during version inspection')
     return {'home': str(home), 'version': '.'.join(map(str, version[:3])) + '+' + str(version[3]),
