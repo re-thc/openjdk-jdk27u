@@ -1,39 +1,18 @@
-name: PR9 exact-source native builds
+name: PR9 ARM fastdebug build identity only
 on:
   workflow_dispatch:
-  push:
-    branches: [pr/common-intrinsics-final-evidence]
-    paths: [.github/qualification/chain-checkpoint/layout-native-activation/launch.json]
+    inputs:
+      workflow-source-sha:
+        description: 'Approved full commit SHA containing these workflow definitions'
+        required: true
+        type: string
 permissions:
   contents: read
 concurrency:
-  group: pr9-exact-source-native-${{ github.ref }}
+  group: pr9-arm-fastdebug-identity-only
   cancel-in-progress: false
 jobs:
-  prepare:
-    runs-on: ubuntu-26.04
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          ref: c04d1ba1e96b2176ce8a8e56eacae73c2d356d2b
-          sparse-checkout: |
-            .github
-            make/conf/github-actions.conf
-          persist-credentials: false
-      - uses: ./.github/actions/build-jtreg
   linux-aarch64:
-    needs: prepare
     uses: ./.github/workflows/pr9-native-linux.yml
     with:
-      platform: linux-aarch64
-      runs-on: ubuntu-26.04-arm
-      bootjdk-platform: linux-aarch64
-      gcc-major-version: '16'
-  windows-x64:
-    needs: prepare
-    uses: ./.github/workflows/pr9-native-windows.yml
-    with:
-      platform: windows-x64
-      runs-on: windows-2025
-      architecture: x86.x64
-      msvc-toolset-version: '14.44'
+      workflow-source-sha: ${{ inputs.workflow-source-sha }}
