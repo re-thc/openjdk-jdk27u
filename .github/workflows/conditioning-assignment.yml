@@ -1,0 +1,51 @@
+name: Fixed unchanged-code conditioning assignment diagnostic
+on:
+  push:
+    tags: [diagnostic-tiny-zlib-conditioning-assignment-20261016-once]
+permissions:
+  contents: read
+concurrency:
+  group: conditioning-assignment-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  assignment:
+    if: github.event.created == true && github.event.deleted == false && github.event.forced == false && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: production
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          sparse-checkout: |
+            .github/scripts/conditioning-assignment
+            .github/workflows
+      - name: Existing prerequisites only
+        run: |
+          for tool in gcc-14 ar nm make python3; do command -v "$tool"; done
+      - name: Synthetic fixtures only
+        run: |
+          python3 production/.github/scripts/conditioning-assignment/test_timing_model.py
+          python3 production/.github/scripts/conditioning-assignment/test_packet_io.py
+          python3 production/.github/scripts/conditioning-assignment/test_assignment.py
+      - name: Compile pinned unchanged source without executing it
+        run: python3 production/.github/scripts/conditioning-assignment/assignment.py --build-only --checkout production --out validation/assignment
+      - name: One separately approved fixed diagnostic attempt
+        run: python3 production/.github/scripts/conditioning-assignment/assignment.py --execute-once --out validation/assignment
+      - name: Retained outcome only
+        if: always()
+        run: |
+          if test -f validation/assignment/REPORT.txt; then
+            cat validation/assignment/REPORT.txt >> "$GITHUB_STEP_SUMMARY"
+          elif test -f validation/assignment/result.json; then
+            cat validation/assignment/result.json >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: always()
+        with:
+          name: conditioning-assignment-${{ github.run_id }}
+          path: validation/assignment
+          retention-days: 90
+          if-no-files-found: error

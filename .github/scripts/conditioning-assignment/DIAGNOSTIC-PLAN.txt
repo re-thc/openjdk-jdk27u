@@ -1,0 +1,126 @@
+REVISED CONDITIONING-ASSIGNMENT DIAGNOSTIC v2 — REVIEW ONLY, NO EXECUTION APPROVAL
+
+Scope and fixed sample budget
+One unchanged pinned zlib-ng library (88601f0bdd192e9f87d4bd0a50d5d2e2dc9b8cd0),
+one process, two persistent stream slots. Existing reuse4k text profile5, input
+IDs532..539, level6/wrapped/window15/memLevel8/default strategy; no new corpus.
+Keep3328 measured-slot reuse64 warm operations,8 target preparation operations,
+64 timed operations per row, same ring phase/checks/stream lifecycle. Reset both
+streams twice outside timing before each quartet. No candidate arm/backend
+patch, build or runner is part of this preparation. No companion process;
+therefore this does not reproduce the old nine-process hardware context.
+Eight blocks x three conditions x two orders =48 quartets/192 rows, exactly
+one worker/profile old guard slice. Keep900s hard cap, all rows, no retries or
+adaptation. A block, not a row or process, is the statistical observation.
+
+Intervention: matched target-gap budgets
+Assigned A/B gaps (including fixed warm/prep and then neutral busy-wait):
+  balanced:40.0/40.0 ms
+  A_extra:42.2/37.8 ms
+  B_extra:37.8/42.2 ms
+For rows1..3, target_start=previous MEASURED END+assigned incoming-role gap.
+For row0, use quartet-entry anchor+its assigned gap, NOT a common40ms gap.
+Thus all four target budgets sum160ms per quartet under either order; each
+paired set sums320ms. Actual remaining busy-wait time may differ because
+fixed-work durations vary; record it, never claim actual spin time is matched.
+Use the same neutral busy-wait implementation in all cases, no sleep. Targets
+are fixed before measurement, not adjusted by observed outcomes. Historical
+profile5 warm/prep maximum14.936142ms motivated headroom, not a future guarantee.
+
+Delivery validity depends ONLY on imposed gaps/start adherence
+Record anchor, preceding measured end, incoming role/slot, expected gap,
+programmed target, fixed-work end, actual measured start/end and padding bounds.
+Targets must equal the assignment exactly. Actual starts must be no earlier
+than target and no more than50,000ns late; fixed work must finish by target.
+If any check fails, retain every row and mark delivery invalid; do not shorten
+work, compensate a later gap, delete rows or retry.50us is an intervention
+delivery tolerance, NOT a replacement for the old100ns/1pp performance gates.
+DO NOT use measured midpoint, center contrast, measured duration or its
+decomposition as a delivery-validity test. They are outcomes: a timed burst
+may change the duration term/actual center despite perfectly delivered gaps.
+
+Joint order/condition/slot balance, exact schedule frozen in diagnostic-plan.json
+Role mapping alternates by BLOCK:0,1,0,1,0,1,0,1. Each temporal half contains
+two blocks of each physical mapping. Every condition/block includes both ABBA
+and BAAB, with first assignment jointly balanced as follows:
+- Each condition is first in ABBA four times and BAAB four times; within each
+  role mapping and each temporal half it is first twice in either order.
+- Each condition appears2 or3 times at each condition position; within each
+  role mapping it appears1 or2 times. Exact three-way balance is impossible
+  with8 blocks, and residual carryover/position limitations stay explicit.
+- Within every condition/position cell, first-order counts differ by at most1,
+  both globally and within each role mapping. For each position and mapping,
+  first-order counts are exactly2/2. No block has all three first-orders equal.
+This is a fixed combinatorial design, not a selection based on native results.
+
+Hardware/telemetry prerequisite for any later execution
+Before measuring, require available Linux per-thread grouped cycles,
+instructions and raw generic reference-cycle event counts. Generic availability
+is not a host-specific semantic validation; frequency inference is out of scope.
+No installation, permission workaround or clock-only fallback. Unavailable
+preflight means no measurement and an exact blocker, not automatic retry.
+Bracket warm/prep, padding and timed work separately; record actual counter
+bracket bounds and time_enabled/time_running. Require non-multiplexed counts;
+retain invalid/unsupported results and mark telemetry invalid. Counter syscall
+brackets contain bookkeeping: they are not exactly compression-only intervals.
+Keep raw wall/thread-CPU bounds, scheduler/affinity/cgroup/host metadata.
+Report cycles/reference-event ratios only as raw event-count ratios, with
+host_reference_semantics_verified=false and frequency_inference_supported=false.
+This harness makes no effective-frequency or hardware-mechanism inference;
+assignment-response claims remain limited to this new setup. Generic opening
+is not substituted for an unimplemented host-specific semantics review.
+
+Frozen new-diagnostic analysis and uncertainty rules
+For each block b and condition c, compute raw D_c,b as the mean of the two
+order-specific A-minus-B contrasts in ns/op, deriving EVERY ns/op from actual
+(end-begin)/64. Use one positive common reference T_b: grand mean ns/op of all
+24 rows in that block (three conditions, two quartets each). Define
+  d_c,b=100*D_c,b/T_b in percentage points;
+  h_b=(d_Aextra,b-d_Bextra,b)/2.
+No condition-specific denominator, timestamp adjustment or outcome deletion.
+Retain raw/normalized block values, each order, each physical mapping, actual
+gap/center/duration terms, padding durations and hardware counts as outcomes.
+
+Freeze FOUR planned two-sided mean intervals: d_balanced,d_Aextra,d_Bextra,h.
+Each uses eight block values, df7, half-width=t*SD/sqrt8 with
+  t=Student_t_ppf(1-.05/(2*4),7)=3.3352949398170826.
+This is a NEW assignment-only diagnostic family4 with95% nominal simultaneous
+coverage under the block model, not the completed family280 qualification
+analysis. Its critical/denominator NEVER rescores old data or relaxes old
+gates. Eight-block independence remains an unestablished model assumption;
+one process/host is not eight independent process replicates. Only these four
+intervals receive the coverage claim; order/slot/counter summaries are descriptive.
+Student mean intervals also rely on an adequate block-contrast distribution
+model; with only8 blocks, nominal coverage is not empirically guaranteed.
+Freeze1pp as this diagnostic's achieved-precision/bounded-response tolerance.
+Do not choose new precision thresholds, criticals or samples after outcomes.
+
+Independent outcome flags; assignment response and instability may coexist
+All informative flags require valid delivery and telemetry for the whole run.
+Always retain observed h interval direction even when precision is inadequate.
+- INFORMATIVE_ASSIGNMENT_RESPONSE: h interval excludes0 AND half-width<=1pp.
+  Either direction is possible; busy-wait assignment need not create the
+  predicted sign. This supports only a response to THIS intervention/setup.
+- INFORMATIVE_BOUNDED_RESPONSE: abs(mean h)+half-width<=1pp. This bounds the
+  modeled response at that tolerance, never proves zero response.
+- RESIDUAL_INSTABILITY: the balanced d interval has abs(mean)+half-width>1pp.
+  This flag can arise from imprecision or signed offset. Report which via
+  independent precision/direction flags; it is not a claim of a physical cause.
+  It CAN coexist with INFORMATIVE_ASSIGNMENT_RESPONSE or with INDETERMINATE.
+- INDETERMINATE: delivery/telemetry invalid OR h is neither a precise signed
+  response nor bounded at1pp. A signed but too-wide h interval remains
+  indeterminate, retaining its observed direction. All rows still reported.
+If both h flags hold, report both (a small signed but bounded response).
+No single mutually exclusive pass/fail hides these simultaneous outcomes.
+No diagnostic outcome qualifies a backend, JDK, stock-zlib comparison or ship.
+
+Interpretation frozen before any execution
+Matched target-gap sums reduce the earlier intervention-budget confound, but
+busy-wait assignment still changes activity placement, frequency/cache state
+and time. This is NOT a pure timestamp-geometry intervention. Assignment
+response cannot identify bias magnitude/sign in the old run. Residual balanced
+instability would show why this gap repair alone is insufficient. A bounded or
+indeterminate response cannot rule out all original conditioning mechanisms.
+The old HOLD, every row, family280 critical and100ns/1pp gates stay untouched.
+No new implementation approval, native execution or repository publication is
+implied. First independently review this revised plan and synthetic fixtures.
