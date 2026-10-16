@@ -1,0 +1,106 @@
+--- a/.github/workflows/pr9-native-linux.yml
++++ b/.github/workflows/pr9-native-linux.yml
+@@ -86,6 +86,7 @@
+     runs-on: ${{ inputs.runs-on }}
+ 
+     strategy:
++      fail-fast: false
+       matrix:
+         debug-level: ${{ fromJSON(inputs.debug-levels) }}
+ 
+@@ -226,13 +227,18 @@
+         shell: bash
+         run: |
+           set -euo pipefail
+-          test "$(git rev-parse HEAD)" = e41d7823bf6de77c4bfba52e896bf325221488cb
+           image="build/${{ inputs.platform }}/images/jdk"
+-          grep -Fx 'SOURCE=".:git:e41d7823bf6d"' "$image/release"
+           identity="$RUNNER_TEMP/pr9-identity"
+           mkdir -p "$identity"
+-          git rev-parse HEAD > "$identity/checkout-source.txt"
++          trap 'rc=$?; printf "exit_code=%s\n" "$rc" > "$identity/source-validation-status.txt"; trap - EXIT; exit "$rc"' EXIT
++          git rev-parse HEAD | tee "$identity/checkout-source.txt"
++          git status --porcelain > "$identity/git-status.txt"
+           cp "$image/release" "$identity/release"
++          sed -n '/^SOURCE=/p' "$image/release" | tee "$identity/source-line.txt"
++          set -x
++          test "$(git rev-parse HEAD)" = e41d7823bf6de77c4bfba52e896bf325221488cb
++          grep -Fx 'SOURCE=".:git:e41d7823bf6d"' "$image/release"
++          set +x
+           printf '%s\n' "$GITHUB_SHA" > "$identity/workflow-source.txt"
+           printf '%s\n' "$GITHUB_WORKFLOW_REF" > "$identity/workflow-ref.txt"
+           printf '%s\n' "$GITHUB_RUN_ID" > "$identity/workflow-run-id.txt"
+@@ -240,6 +246,7 @@
+           find "$image" -type f \( -name libjvm.so -o -name jvm.dll -o -name modules -o -name 'classes*.jsa' -o -name release \) -print0 | sort -z | xargs -0 sha256sum > "$identity/payload-sha256.txt"
+ 
+       - name: 'Upload actual-source identity receipt'
++        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+         with:
+           name: pr9-native-identity-${{ inputs.platform }}-${{ matrix.debug-level }}
+@@ -258,3 +265,12 @@
+       - name: 'Compiler cache statistics'
+         run: ccache --show-stats | tee -a "$GITHUB_STEP_SUMMARY"
+         if: ${{ !cancelled() }}
++
++      - name: 'Preserve built bundles after diagnostic failure'
++        if: ${{ failure() && !cancelled() && steps.build.outcome == 'success' }}
++        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
++        with:
++          name: pr9-native-unverified-bundles-${{ inputs.platform }}-${{ matrix.debug-level }}
++          path: build/${{ inputs.platform }}/bundles/*
++          if-no-files-found: error
++          retention-days: 14
+--- a/.github/workflows/pr9-native-windows.yml
++++ b/.github/workflows/pr9-native-windows.yml
+@@ -76,6 +76,7 @@
+         shell: bash
+ 
+     strategy:
++      fail-fast: false
+       matrix:
+         debug-level: ${{ fromJSON(inputs.debug-levels) }}
+         include:
+@@ -235,13 +236,18 @@
+         shell: bash
+         run: |
+           set -euo pipefail
+-          test "$(git rev-parse HEAD)" = e41d7823bf6de77c4bfba52e896bf325221488cb
+           image="build/${{ inputs.platform }}/images/jdk"
+-          grep -Fx 'SOURCE=".:git:e41d7823bf6d"' "$image/release"
+           identity="$RUNNER_TEMP/pr9-identity"
+           mkdir -p "$identity"
+-          git rev-parse HEAD > "$identity/checkout-source.txt"
++          trap 'rc=$?; printf "exit_code=%s\n" "$rc" > "$identity/source-validation-status.txt"; trap - EXIT; exit "$rc"' EXIT
++          git rev-parse HEAD | tee "$identity/checkout-source.txt"
++          git status --porcelain > "$identity/git-status.txt"
+           cp "$image/release" "$identity/release"
++          sed -n '/^SOURCE=/p' "$image/release" | tee "$identity/source-line.txt"
++          set -x
++          test "$(git rev-parse HEAD)" = e41d7823bf6de77c4bfba52e896bf325221488cb
++          grep -Fx 'SOURCE=".:git:e41d7823bf6d"' "$image/release"
++          set +x
+           printf '%s\n' "$GITHUB_SHA" > "$identity/workflow-source.txt"
+           printf '%s\n' "$GITHUB_WORKFLOW_REF" > "$identity/workflow-ref.txt"
+           printf '%s\n' "$GITHUB_RUN_ID" > "$identity/workflow-run-id.txt"
+@@ -249,6 +255,7 @@
+           find "$image" -type f \( -name libjvm.so -o -name jvm.dll -o -name modules -o -name 'classes*.jsa' -o -name release \) -print0 | sort -z | xargs -0 sha256sum > "$identity/payload-sha256.txt"
+ 
+       - name: 'Upload actual-source identity receipt'
++        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+         with:
+           name: pr9-native-identity-${{ inputs.platform }}-${{ matrix.debug-level }}
+@@ -261,3 +268,12 @@
+           platform: ${{ inputs.platform }}
+           debug-suffix: '${{ matrix.suffix }}'
+         if: ${{ inputs.dry-run == false }}
++
++      - name: 'Preserve built bundles after diagnostic failure'
++        if: ${{ failure() && !cancelled() && steps.build.outcome == 'success' }}
++        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
++        with:
++          name: pr9-native-unverified-bundles-${{ inputs.platform }}-${{ matrix.debug-level }}
++          path: build/${{ inputs.platform }}/bundles/*
++          if-no-files-found: error
++          retention-days: 14
