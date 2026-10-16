@@ -488,7 +488,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     }
 
     private static InetAddressResolver loadResolver() {
-        // Not findFirst().map(lambda): that spins a lambda class on first use
+        // Avoid lambda linkage during provider discovery.
         Iterator<InetAddressResolverProvider> providers =
                 ServiceLoader.load(InetAddressResolverProvider.class).iterator();
         if (providers.hasNext()) {
@@ -1135,9 +1135,6 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             return Arrays.stream(lookupAll(host, policy));
         }
 
-        /**
-         * Same as lookupByName, for callers that want an array.
-         */
         InetAddress[] lookupAll(String host, LookupPolicy policy)
                 throws UnknownHostException {
             Objects.requireNonNull(host);
@@ -1724,7 +1721,6 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         var resolver = resolver();
         try {
             if (resolver instanceof PlatformResolver platformResolver) {
-                // No stream and array conversion lambda for the built-in resolver
                 result = platformResolver.lookupAll(host, PLATFORM_LOOKUP_POLICY);
             } else {
                 addresses = resolver.lookupByName(host, PLATFORM_LOOKUP_POLICY);

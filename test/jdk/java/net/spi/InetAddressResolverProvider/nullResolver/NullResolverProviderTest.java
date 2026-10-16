@@ -44,7 +44,6 @@ public class NullResolverProviderTest {
             throw new RuntimeException("InetAddressResolverProvider was not found");
         }
 
-        // The resolver in use is the built-in resolver offered to the provider
         InetAddressResolver builtin = NullResolverProviderImpl.configuration.builtinResolver();
         Field field = InetAddress.class.getDeclaredField("resolver");
         field.setAccessible(true);

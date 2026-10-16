@@ -40,7 +40,6 @@ import jdk.test.lib.process.ProcessTools;
 
 public class FirstUseNoLambdas {
 
-    // classes that are used by the first virtual thread, executor, timed park and wait
     private static final String[] OWNERS = {
         "java.lang.VirtualThread",
         "java.lang.ThreadBuilders",
@@ -64,14 +63,13 @@ public class FirstUseNoLambdas {
         output.shouldHaveExitValue(0);
         output.shouldContain("done");
 
-        // the lines for classes that are loaded after the test starts
         boolean started = false;
         for (String line : output.asLines()) {
             if (!started) {
                 started = line.contains("FirstUseNoLambdas ");
                 continue;
             }
-            // a lambda proxy class that is spun at runtime, not one from the CDS archive
+            // Archived lambda proxies do not require runtime linkage.
             if (line.contains("$$Lambda") && !line.contains("shared objects file")) {
                 for (String owner : OWNERS) {
                     if (line.contains("] " + owner)) {
@@ -83,15 +81,12 @@ public class FirstUseNoLambdas {
     }
 
     private static void run() throws Exception {
-        // first virtual thread
         Thread.ofVirtual().start(new Task()).join();
 
-        // first task submitted to a virtual thread per task executor
         try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
             executor.submit(new Task()).get();
         }
 
-        // first timed park, sleep, and timed wait
         Thread.ofVirtual().start(new TimedParkTask()).join();
         Thread.ofVirtual().start(new SleepTask()).join();
         Thread.ofVirtual().start(new TimedWaitTask()).join();
@@ -99,7 +94,7 @@ public class FirstUseNoLambdas {
         System.out.println("done");
     }
 
-    // use classes, not lambdas, so that the test itself doesn't bootstrap lambdas
+    // Keep test callbacks from introducing lambda linkage.
     private static class Task implements Runnable {
         @Override
         public void run() { }

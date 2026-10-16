@@ -41,12 +41,10 @@ public class SchedulerProperties {
             return;
         }
 
-        // valid values
         test("ok", "-Djdk.virtualThreadScheduler.parallelism=1",
                    "-Djdk.virtualThreadScheduler.maxPoolSize=2",
                    "-Djdk.virtualThreadScheduler.minRunnable=1");
 
-        // invalid values fail when the first virtual thread is created
         test("java.lang.NumberFormatException", "-Djdk.virtualThreadScheduler.parallelism=abc");
         test("java.lang.NumberFormatException", "-Djdk.virtualThreadScheduler.maxPoolSize=abc");
         test("java.lang.NumberFormatException", "-Djdk.virtualThreadScheduler.minRunnable=abc");
@@ -54,10 +52,6 @@ public class SchedulerProperties {
         test("java.lang.IllegalArgumentException", "-Djdk.virtualThreadScheduler.maxPoolSize=0");
     }
 
-    /**
-     * Runs "SchedulerProperties run" with the given options, expecting it to exit
-     * normally with the given string in the output.
-     */
     private static void test(String expectedOutput, String... options)
             throws Exception {
         String[] command = new String[options.length + 2];
@@ -71,12 +65,11 @@ public class SchedulerProperties {
     }
 
     private static void run() throws Exception {
-        // a platform thread can be started, no scheduler is needed
+        // Scheduler validation must not prevent platform-thread creation.
         Thread thread = new Thread(new Task());
         thread.start();
         thread.join();
 
-        // the properties are read here
         try {
             Thread.ofVirtual().start(new Task()).join();
             System.out.println("ok");

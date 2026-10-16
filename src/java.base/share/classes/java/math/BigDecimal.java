@@ -5165,8 +5165,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /**
-     * {@code FIVE_TO_2_TO[n] == 5^(2^n)} once computed, else null. The larger
-     * powers take a long time to compute, so they are computed on first use.
+     * {@code FIVE_TO_2_TO[n] == 5^(2^n)} once computed, else null.
      */
     @Stable
     private static final BigInteger[] FIVE_TO_2_TO = new BigInteger[16 + 1];

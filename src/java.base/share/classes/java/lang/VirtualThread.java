@@ -230,8 +230,7 @@ final class VirtualThread extends BaseVirtualThread {
 
         this.scheduler = scheduler;
         this.cont = new VThreadContinuation(this, task);
-        // lambdas and method references are not used by this class, as linking
-        // them is a large part of the cost of starting the first virtual thread
+        // Avoid lambda linkage when creating the first virtual thread.
         this.runContinuation = new Runnable() {
             @Hidden
             public void run() {

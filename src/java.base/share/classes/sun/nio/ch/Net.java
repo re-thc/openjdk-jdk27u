@@ -335,8 +335,7 @@ public class Net {
 
     // -- Socket options
 
-    // Initializes the jdk.net module on the first use of an option that is
-    // not one of the standard options, which is not needed to bind a socket
+    // Standard socket options do not require jdk.net initialization.
     private static final class ExtendedOptions {
         static final ExtendedSocketOptions INSTANCE =
                 ExtendedSocketOptions.getInstance();
@@ -359,7 +358,6 @@ public class Net {
         Class<?> type = name.type();
         boolean isIPv6 = (family == StandardProtocolFamily.INET6);
 
-        // map option name to platform level/name, null for an extended option
         OptionKey key = SocketOptionRegistry.findOption(name, family);
 
         if (key == null && ExtendedOptions.INSTANCE.isOptionSupported(name)) {
@@ -439,7 +437,6 @@ public class Net {
     {
         Class<?> type = name.type();
 
-        // map option name to platform level/name, null for an extended option
         OptionKey key = SocketOptionRegistry.findOption(name, family);
 
         if (key == null && ExtendedOptions.INSTANCE.isOptionSupported(name)) {
