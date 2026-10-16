@@ -92,9 +92,6 @@ final class StringZilla {
     static int lastMixedCandidate(byte[] src, byte[] tgt, int count, int fromIndex) {
         int last = count - 1;
         int ch = tgt[last] & 0xff;
-        if (StringUTF16.getChar(src, fromIndex + last) == ch) {
-            return fromIndex;
-        }
         int result = rfindCharUTF16(src, last << 1, (fromIndex + 1) << 1, ch);
         if (result == FALLBACK) {
             return fromIndex;

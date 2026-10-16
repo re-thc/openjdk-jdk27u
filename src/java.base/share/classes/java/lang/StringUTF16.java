@@ -2168,13 +2168,15 @@ final class StringUTF16 {
                 if (result != StringZilla.FALLBACK) {
                     return result < 0 ? -1 : result >> 1;
                 }
-            } else if (StringZilla.compilerTier() == 0) {
-                fromIndex = StringZilla.lastMixedCandidate(src, tgt, tgtCount, fromIndex);
-                if (fromIndex < 0) {
-                    return -1;
+            } else if (getChar(src, fromIndex + tgtCount - 1) != (tgt[tgtCount - 1] & 0xff)) {
+                if (StringZilla.compilerTier() == 0) {
+                    fromIndex = StringZilla.lastMixedCandidate(src, tgt, tgtCount, fromIndex);
+                    if (fromIndex < 0) {
+                        return -1;
+                    }
+                } else {
+                    return lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex);
                 }
-            } else {
-                return lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex);
             }
         }
         assert fromIndex >= 0;
