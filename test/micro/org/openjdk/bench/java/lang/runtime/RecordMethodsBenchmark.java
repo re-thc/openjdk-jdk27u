@@ -45,9 +45,6 @@ import org.openjdk.jmh.annotations.Warmup;
 /// The result of generated compared to the other distinct/polluted shows
 /// whether the generated code could perform type profiling.
 /// Specialized is the result of distinct without trap, should be even faster.
-///
-/// The records with primitive, mixed and null components measure the generated
-/// equals, hashCode and toString of records with other components than references.
 @Fork(3)
 @Warmup(iterations = 10, time = 1)
 @Measurement(iterations = 5, time = 2)
@@ -57,24 +54,12 @@ public class RecordMethodsBenchmark {
 
     record One(int a) {}
 
-    record Primitives(int i, long l, double d, float f, boolean z, char c, short s, byte b) {}
-
-    record Mixed(int id, String name, Object payload, long timestamp) {}
-
-    record Nulls(String a, Object b, Integer c) {}
-
     @State(Scope.Thread)
     public static class BenchmarkState {
         Key k1 = new Key(new One(1), "a");
         Key k2 = new Key(new One(1), new String("a"));
         SpecializedKey sk1 = new SpecializedKey(new One(1), "a");
         SpecializedKey sk2 = new SpecializedKey(new One(1), new String("a"));
-        Primitives p1 = new Primitives(1, 2L, 3.0, 4.0f, true, 'c', (short) 6, (byte) 7);
-        Primitives p2 = new Primitives(1, 2L, 3.0, 4.0f, true, 'c', (short) 6, (byte) 7);
-        Mixed m1 = new Mixed(1, "name", new One(2), 3L);
-        Mixed m2 = new Mixed(1, new String("name"), new One(2), 3L);
-        Nulls n1 = new Nulls(null, null, null);
-        Nulls n2 = new Nulls(null, null, null);
     }
 
     @Benchmark
@@ -115,56 +100,6 @@ public class RecordMethodsBenchmark {
     @Benchmark
     public boolean equalsSpecial(BenchmarkState state) {
         return state.sk1.equals(state.sk2);
-    }
-
-    @Benchmark
-    public int hashCodePrimitives(BenchmarkState state) {
-        return state.p1.hashCode();
-    }
-
-    @Benchmark
-    public boolean equalsPrimitives(BenchmarkState state) {
-        return state.p1.equals(state.p2);
-    }
-
-    @Benchmark
-    public String toStringPrimitives(BenchmarkState state) {
-        return state.p1.toString();
-    }
-
-    @Benchmark
-    public int hashCodeMixed(BenchmarkState state) {
-        return state.m1.hashCode();
-    }
-
-    @Benchmark
-    public boolean equalsMixed(BenchmarkState state) {
-        return state.m1.equals(state.m2);
-    }
-
-    @Benchmark
-    public String toStringMixed(BenchmarkState state) {
-        return state.m1.toString();
-    }
-
-    @Benchmark
-    public int hashCodeNulls(BenchmarkState state) {
-        return state.n1.hashCode();
-    }
-
-    @Benchmark
-    public boolean equalsNulls(BenchmarkState state) {
-        return state.n1.equals(state.n2);
-    }
-
-    @Benchmark
-    public String toStringNulls(BenchmarkState state) {
-        return state.n1.toString();
-    }
-
-    @Benchmark
-    public String toStringGenerated(BenchmarkState state) {
-        return state.k1.toString();
     }
 
     /// A key object.
