@@ -220,6 +220,57 @@ BFM_INSN(I, 31, RShift, sbfmw)
 BFM_INSN(L, 63, URShift, ubfm)
 BFM_INSN(I, 31, URShift, ubfmw)
 dnl
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct andLConvL2I(iRegINoSp dst, iRegL src1, iRegL src2)
+%{
+  match(Set dst (ConvL2I (AndL src1 src2)));
+  predicate(!n->in(1)->in(1)->is_Con() && !n->in(1)->in(2)->is_Con());
+
+  ins_cost(INSN_COST);
+  format %{ "andw $dst, $src1, $src2\t# truncated long" %}
+  ins_encode %{
+    __ andw(as_Register($dst$$reg), as_Register($src1$$reg),
+             as_Register($src2$$reg));
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct orLConvL2I(iRegINoSp dst, iRegL src1, iRegL src2)
+%{
+  match(Set dst (ConvL2I (OrL src1 src2)));
+  predicate(!n->in(1)->in(1)->is_Con() && !n->in(1)->in(2)->is_Con());
+
+  ins_cost(INSN_COST);
+  format %{ "orrw $dst, $src1, $src2\t# truncated long" %}
+  ins_encode %{
+    __ orrw(as_Register($dst$$reg), as_Register($src1$$reg),
+             as_Register($src2$$reg));
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct xorLConvL2I(iRegINoSp dst, iRegL src1, iRegL src2)
+%{
+  match(Set dst (ConvL2I (XorL src1 src2)));
+  predicate(!n->in(1)->in(1)->is_Con() && !n->in(1)->in(2)->is_Con());
+
+  ins_cost(INSN_COST);
+  format %{ "eorw $dst, $src1, $src2\t# truncated long" %}
+  ins_encode %{
+    __ eorw(as_Register($dst$$reg), as_Register($src1$$reg),
+             as_Register($src2$$reg));
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+
 // Bitfield extract with shift & mask
 define(`BFX_INSN',
 `// This pattern is automatically generated from aarch64_ad.m4
