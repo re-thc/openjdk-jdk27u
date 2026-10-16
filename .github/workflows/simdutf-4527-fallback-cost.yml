@@ -1,0 +1,81 @@
+name: SIMDUTF 4527 fallback costs
+on:
+  push:
+    branches: [review/simdutf-4527-fallback-cost]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  controls:
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux-x64
+          - runner: ubuntu-24.04-arm
+            platform: linux-aarch64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: bundles-${{ matrix.platform }}
+          run-id: 38825405919
+          github-token: ${{ github.token }}
+          path: bundles/head
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: bundles-${{ matrix.platform }}
+          run-id: 38601904956
+          github-token: ${{ github.token }}
+          path: bundles/base
+      - name: Measure isolated scalar paths and Base64 crossover (diagnostic)
+        run: |
+          mkdir -p image/head image/base jmh results
+          tar -xf bundles/head/jdk-${{ matrix.platform }}.tar.gz -C image/head
+          tar -xf bundles/base/jdk-${{ matrix.platform }}.tar.gz -C image/base
+          curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar -o jmh/core.jar
+          curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/org/openjdk/jmh/jmh-generator-annprocess/1.37/jmh-generator-annprocess-1.37.jar -o jmh/generator.jar
+          curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/net/sf/jopt-simple/jopt-simple/5.0.4/jopt-simple-5.0.4.jar -o jmh/options.jar
+          curl -fsSL --retry 3 https://repo.maven.apache.org/maven2/org/apache/commons/commons-math3/3.6.1/commons-math3-3.6.1.jar -o jmh/math.jar
+          env -u DOCKER_HOST -u DOCKER_CONTEXT -u DOCKER_TLS -u DOCKER_TLS_VERIFY -u DOCKER_CERT_PATH docker --host=unix:///var/run/docker.sock info
+          env -u DOCKER_HOST -u DOCKER_CONTEXT -u DOCKER_TLS -u DOCKER_TLS_VERIFY -u DOCKER_CERT_PATH docker --host=unix:///var/run/docker.sock run --rm --mount "type=bind,src=$GITHUB_WORKSPACE,dst=$GITHUB_WORKSPACE" --workdir "$GITHUB_WORKSPACE" ubuntu:26.04 /bin/bash -c 'set -euo pipefail
+          apt-get -qq update
+          DEBIAN_FRONTEND=noninteractive apt-get -qq install -y python3 libstdc++6 zlib1g
+          task_head_java=$(find image/head -path "*/bin/java" -print -quit)
+          task_base_java=$(find image/base -path "*/bin/java" -print -quit)
+          python3 make/scripts/simdutf-4527-fallback-cost.py "${task_head_java%/bin/java}" "${task_base_java%/bin/java}" results'
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: simdutf-4527-fallback-cost-${{ matrix.platform }}
+          path: results
+          retention-days: 14
+
+  decode:
+    runs-on: windows-2025
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: simdutf-final-image-linux-aarch64
+          run-id: 38825589995
+          github-token: ${{ github.token }}
+          path: input
+      - name: Decode recorded ARM C1 machine code
+        run: |
+          python -m pip install --disable-pip-version-check capstone==5.0.7
+          python make/scripts/simdutf-arm-string-code.py
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: simdutf-4527-arm-string-code
+          path: decoded
+          retention-days: 14
