@@ -78,24 +78,6 @@ package gc;
  */
 
 /*
- * @test id=shenandoah
- * @summary Tests that one full GC unloads a freshly not-entrant nmethod.
- * @requires vm.gc.Shenandoah
- * @requires vm.flagless
- * @requires vm.compiler1.enabled
- * @requires vm.opt.ClassUnloading != false
- * @requires vm.opt.MethodFlushing != false
- * @library /test/lib /
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI -Xbatch -XX:-BackgroundCompilation
- *                   -XX:+UseShenandoahGC gc.TestCodeCacheUnload
- */
-
-/*
  * @test id=z
  * @summary Tests that one full GC unloads a freshly not-entrant nmethod.
  * @requires vm.gc.Z

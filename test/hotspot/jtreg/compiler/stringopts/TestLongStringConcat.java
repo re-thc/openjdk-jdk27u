@@ -23,18 +23,9 @@
 
 /*
  * @test
- * @bug 8237950
+ * @bug 8237950 8391643
  * @summary Test very long chain of StringBuilder append calls.
  * @run main/othervm -Xbatch compiler.stringopts.TestLongStringConcat
- */
-
-/*
- * @test
- * @bug 8391643
- * @summary We missed ResourceMark in TypeInterfaces::intersection_with and
- *          TypeInterfaces::union_with.
- * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+StressVerifyMeetJoin
- *                   ${test.main.class}
  */
 
 package compiler.stringopts;
