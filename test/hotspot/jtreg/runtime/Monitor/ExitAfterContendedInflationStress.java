@@ -51,9 +51,13 @@
  * @run main/othervm -Xmx256m -XX:-UseFourByteObjectHeaders ExitAfterContendedInflationStress 10
  */
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
 public class ExitAfterContendedInflationStress {
     static final int CONTENDERS = 2;
     static final long MAX_ITERATIONS = 20_000_000;
+    static final long JOIN_NANOS = TimeUnit.SECONDS.toNanos(60);
 
     // A plain field in the same eight bytes as a four-byte header, written
     // while the lock is held.
@@ -65,7 +69,7 @@ public class ExitAfterContendedInflationStress {
 
     static volatile Holder slot;
     static volatile boolean stop;
-    static volatile String failure;
+    static final AtomicReference<Throwable> contenderFailure = new AtomicReference<>();
 
     static int spin(int n) {
         int x = 0;
@@ -105,60 +109,104 @@ public class ExitAfterContendedInflationStress {
         }
     }
 
+    static void contend(long[] entered, int id) {
+        try {
+            Holder last = null;
+            long n = 0;
+            while (!stop) {
+                Holder o = slot;
+                if (o != null && o != last) {
+                    last = o;
+                    synchronized (o) {
+                        if (o.inCall) {
+                            throw new RuntimeException("Entered a monitor held by its owner");
+                        }
+                        n++;
+                    }
+                } else {
+                    Thread.onSpinWait();
+                }
+            }
+            entered[id] = n;
+        } catch (Throwable t) {
+            contenderFailure.compareAndSet(null, t);
+        }
+    }
+
+    // Stops the contenders and waits a bounded time for them. Contenders that
+    // do not stop are reported without hiding an exception already in flight.
+    static void stopContenders(Thread[] contenders, Throwable inFlight) throws InterruptedException {
+        stop = true;
+        long deadline = System.nanoTime() + JOIN_NANOS;
+        StringBuilder alive = new StringBuilder();
+        for (Thread t : contenders) {
+            if (t == null) {
+                continue;
+            }
+            long remaining = TimeUnit.NANOSECONDS.toMillis(deadline - System.nanoTime());
+            t.join(Math.max(1, remaining));
+            if (t.isAlive()) {
+                alive.append(' ').append(t.getName()).append('(').append(t.getState()).append(')');
+            }
+        }
+        if (alive.length() > 0) {
+            RuntimeException e = new RuntimeException("Contenders did not stop:" + alive);
+            if (inFlight == null) {
+                throw e;
+            }
+            inFlight.addSuppressed(e);
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         long seconds = Long.parseLong(args[0]);
-        long deadline = System.nanoTime() + seconds * 1_000_000_000L;
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(seconds);
 
         Thread[] contenders = new Thread[CONTENDERS];
         long[] entered = new long[CONTENDERS];
-        for (int i = 0; i < CONTENDERS; i++) {
-            final int id = i;
-            contenders[i] = new Thread(() -> {
-                Holder last = null;
-                long n = 0;
-                while (!stop) {
-                    Holder o = slot;
-                    if (o != null && o != last) {
-                        last = o;
-                        synchronized (o) {
-                            if (o.inCall) {
-                                failure = "Entered a monitor held by its owner";
-                            }
-                            n++;
-                        }
-                    } else {
-                        Thread.onSpinWait();
-                    }
+        long iterations = 0;
+        long sink = 0;
+        Throwable inFlight = null;
+        try {
+            for (int i = 0; i < CONTENDERS; i++) {
+                final int id = i;
+                contenders[i] = new Thread(() -> contend(entered, id), "contender-" + i);
+                contenders[i].setDaemon(true);
+                contenders[i].start();
+            }
+
+            // Vary how long the owner holds each fresh object, so that its exit
+            // falls at different points of a contender's inflation.
+            int seed = 0x9E3779B9;
+            while (iterations < MAX_ITERATIONS && contenderFailure.get() == null && System.nanoTime() < deadline) {
+                for (int k = 0; k < 1000; k++) {
+                    seed ^= seed << 13;
+                    seed ^= seed >>> 17;
+                    seed ^= seed << 5;
+                    int mode = seed & 3;
+                    sink += hold(new Holder(), (seed >>> 20) & 0x3ff, mode != 0, mode == 2);
+                    slot = null;
                 }
-                entered[id] = n;
-            });
-            contenders[i].start();
+                iterations += 1000;
+            }
+        } catch (Throwable t) {
+            inFlight = t;
+            throw t;
+        } finally {
+            stopContenders(contenders, inFlight);
         }
 
-        // Vary how long the owner holds each fresh object, so that its exit
-        // falls at different points of a contender's inflation.
-        long iterations = 0;
-        int seed = 0x9E3779B9;
-        long sink = 0;
-        while (iterations < MAX_ITERATIONS && failure == null && System.nanoTime() < deadline) {
-            for (int k = 0; k < 1000; k++) {
-                seed ^= seed << 13;
-                seed ^= seed >>> 17;
-                seed ^= seed << 5;
-                int mode = seed & 3;
-                sink += hold(new Holder(), (seed >>> 20) & 0x3ff, mode != 0, mode == 2);
-                slot = null;
-            }
-            iterations += 1000;
-        }
-        stop = true;
-        long total = 0;
-        for (int i = 0; i < CONTENDERS; i++) {
-            contenders[i].join();
-            total += entered[i];
-        }
+        Throwable failure = contenderFailure.get();
         if (failure != null) {
-            throw new RuntimeException(failure);
+            throw new RuntimeException("Contender failed", failure);
+        }
+        long total = 0;
+        for (long n : entered) {
+            total += n;
+        }
+        // The race needs contended exits; a run without them tests nothing.
+        if (iterations == 0 || total == 0) {
+            throw new RuntimeException("No contended work: iterations=" + iterations + " contended entries=" + total);
         }
         System.out.println("iterations=" + iterations + " contended entries=" + total + " (" + sink + ")");
     }
