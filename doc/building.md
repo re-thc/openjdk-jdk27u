@@ -654,6 +654,66 @@ libffi-devel`.
 Use `--with-libffi=<path>` if `configure` does not properly locate your libffi
 files.
 
+### Optional HexFormat SIMD library
+
+The optional `--enable-hex-simd` configuration builds a private JNI library
+backed by [hex-simd](https://github.com/Nugine/simd). It is disabled by default;
+ordinary JDK builds do not require Rust or Cargo. Java retains its existing
+implementation if this library is absent or the operation is ineligible.
+
+Enabled builds require installed Rust/Cargo 1.85 or later, with a Rust host
+matching one of these native JDK targets:
+
+| JDK target | Rust target |
+| --- | --- |
+| Linux x64 | `x86_64-unknown-linux-gnu` |
+| Linux AArch64 | `aarch64-unknown-linux-gnu` |
+| macOS AArch64 | `aarch64-apple-darwin` |
+| Windows x64 (Microsoft toolchain) | `x86_64-pc-windows-msvc` |
+
+Cross builds and other targets are currently rejected when the option is
+explicitly enabled. These are build targets, not a claim of runtime or
+performance qualification on every platform. Use the normal platform JDK
+prerequisites and the corresponding native Rust toolchain. In particular,
+Windows builds require native Windows Cargo and Rust, alongside the normal
+JDK Unix shell environment and Visual Studio tools.
+
+The checked-in manifest pins `Nugine/simd` revision
+`dff9585c080896a9ebdb8d6dcabce17bd69a0874`; `Cargo.lock` pins `outref` 0.5.1
+and its registry checksum. No UUID dependency is included. Populate Cargo's
+normal dependency cache explicitly, then configure and build as usual:
+
+```
+cargo fetch --locked --manifest-path src/java.base/share/native/libhexsimd/rust/Cargo.toml
+bash configure --enable-hex-simd [other normal platform configure options]
+make images
+```
+
+The make build uses Cargo `--frozen`, a separate output directory under
+`support/native/java.base/hexsimd-rust`, and two Cargo jobs. It cannot update
+the lockfile or fetch dependencies. To build without any network access,
+prepare the same Cargo cache first and run these commands offline. `CARGO`
+and `RUSTC` can be supplied to configure using the normal tool overrides.
+Rust produces a position-independent static archive; the configured JDK C
+toolchain builds and links the JNI library, using the system dependencies
+reported by that Rust compiler. Rust panics abort and cannot unwind across
+the C interface.
+
+The linked Rust standard library's copyright and license files must be
+available for redistribution. Configure locates them in the Rust sysroot's
+`share/doc/rust`; use `--with-rust-runtime-notices=<directory>` if the matching
+compiler release's files are elsewhere. The normal java.base legal-notice
+copy phase includes these files and the pinned dependencies' MIT notices
+in jmods and images. Disabled builds omit the optional library's notices.
+
+The Rust boundary tests can be run independently using the same frozen cache:
+
+```
+cargo test --frozen --release --jobs 2 \
+    --manifest-path src/java.base/share/native/libhexsimd/rust/Cargo.toml \
+    --target-dir build/hex-simd-rust-test
+```
+
 ## Build Tools Requirements
 
 ### Autoconf

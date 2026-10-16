@@ -37,6 +37,75 @@ $(call FillFindCache, $(wildcard $(TOPDIR)/src/java.base/*/native))
 include lib/CoreLibraries.gmk
 
 ################################################################################
+# Build the optional library-backed HexFormat implementation. The static Rust
+# archive is private to libhexsimd; the JNI shared library uses the normal JDK
+# toolchain, export rules, debug information and image packaging.
+
+ifeq ($(ENABLE_HEX_SIMD), true)
+  ifneq ($(STATIC_LIBS), true)
+    HEX_SIMD_RUST_SRC := $(TOPDIR)/src/java.base/share/native/libhexsimd/rust
+    HEX_SIMD_RUST_OUTPUT := $(SUPPORT_OUTPUTDIR)/native/java.base/hexsimd-rust
+    HEX_SIMD_RUST_ARCHIVE := $(HEX_SIMD_RUST_OUTPUT)/$(HEX_SIMD_RUST_TARGET)/release/$(LIBRARY_PREFIX)jdk_hex_codec$(STATIC_LIBRARY_SUFFIX)
+    HEX_SIMD_RUST_FLAGS := -C relocation-model=pic \
+        --remap-path-prefix=$(strip $(call FixPath, $(TOPDIR)))=/jdk
+    ifeq ($(call isTargetOs, macosx), true)
+      HEX_SIMD_RUST_ENV := MACOSX_DEPLOYMENT_TARGET='$(MACOSX_VERSION_MIN)' \
+          SDKROOT='$(strip $(call FixPath, $(SYSROOT)))'
+    endif
+    HEX_SIMD_RUST_DEPS := $(call FindFiles, $(HEX_SIMD_RUST_SRC))
+    HEX_SIMD_RUST_VARDEPS := $(CARGO) $(RUSTC) $(RUSTC_VERSION) \
+        $(HEX_SIMD_RUST_TARGET) $(HEX_SIMD_RUST_FLAGS) $(HEX_SIMD_RUST_ENV)
+    HEX_SIMD_RUST_VARDEPS_FILE := $(call DependOnVariable, HEX_SIMD_RUST_VARDEPS, \
+        $(HEX_SIMD_RUST_OUTPUT)/cargo.vardeps)
+
+    $(HEX_SIMD_RUST_ARCHIVE): $(HEX_SIMD_RUST_DEPS) $(HEX_SIMD_RUST_VARDEPS_FILE)
+	$(call LogInfo, Compiling pinned Hex SIMD Rust archive)
+	$(call ExecuteWithLog, $(HEX_SIMD_RUST_OUTPUT)/cargo, \
+	    MAKEFLAGS= CARGO_MAKEFLAGS= $(HEX_SIMD_RUST_ENV) \
+	    RUSTC='$(strip $(call FixPath, $(RUSTC)))' \
+	    RUSTFLAGS='$(HEX_SIMD_RUST_FLAGS)' \
+	    $(CARGO) build --frozen --release --jobs 2 \
+	        --manifest-path $(HEX_SIMD_RUST_SRC)/Cargo.toml \
+	        --target $(HEX_SIMD_RUST_TARGET) --target-dir $(HEX_SIMD_RUST_OUTPUT))
+
+    $(eval $(call SetupJdkLibrary, BUILD_LIBHEXSIMD, \
+        NAME := hexsimd, \
+        OPTIMIZATION := HIGH, \
+        INCLUDE_FILES := hexsimd.c, \
+        EXTRA_LINK_DEPS := $(HEX_SIMD_RUST_ARCHIVE), \
+        LIBS := $(HEX_SIMD_RUST_ARCHIVE) $(HEX_SIMD_NATIVE_LIBS), \
+    ))
+
+    TARGETS += $(BUILD_LIBHEXSIMD)
+  endif
+else
+  # Reconfiguring an existing output directory with --disable-hex-simd must
+  # not leave an old optional library available to the exploded JDK or jmods.
+  HEX_SIMD_DISABLED_CLEANUP := $(SUPPORT_OUTPUTDIR)/native/java.base/hexsimd-disabled.marker
+  HEX_SIMD_DISABLED_BASENAME := $(LIBRARY_PREFIX)hexsimd
+  HEX_SIMD_DISABLED_FILES := $(HEX_SIMD_DISABLED_BASENAME)$(SHARED_LIBRARY_SUFFIX) \
+      $(HEX_SIMD_DISABLED_BASENAME).debuginfo \
+      $(HEX_SIMD_DISABLED_BASENAME).diz \
+      $(HEX_SIMD_DISABLED_BASENAME)$(SHARED_LIBRARY_SUFFIX).diz \
+      $(HEX_SIMD_DISABLED_BASENAME)$(SHARED_LIBRARY_SUFFIX).pdb \
+      $(HEX_SIMD_DISABLED_BASENAME)$(SHARED_LIBRARY_SUFFIX).stripped.pdb \
+      $(HEX_SIMD_DISABLED_BASENAME)$(SHARED_LIBRARY_SUFFIX).map
+
+  $(HEX_SIMD_DISABLED_CLEANUP): $(SPEC)
+	$(call MakeDir, $(@D))
+	$(RM) $(foreach dir, $(call FindLibDirForModule, java.base) \
+	    $(SUPPORT_OUTPUTDIR)/modules_libs_filtered/java.base \
+	    $(JDK_OUTPUTDIR)/lib $(JDK_OUTPUTDIR)/bin, \
+	    $(addprefix $(dir)/, $(HEX_SIMD_DISABLED_FILES)))
+	$(RM) -r $(foreach dir, $(call FindLibDirForModule, java.base) \
+	    $(SUPPORT_OUTPUTDIR)/modules_libs_filtered/java.base $(JDK_OUTPUTDIR)/lib, \
+	    $(dir)/$(HEX_SIMD_DISABLED_BASENAME)$(SHARED_LIBRARY_SUFFIX).dSYM)
+	$(TOUCH) $@
+
+  TARGETS += $(HEX_SIMD_DISABLED_CLEANUP)
+endif
+
+################################################################################
 ## Build libnet
 ################################################################################
 

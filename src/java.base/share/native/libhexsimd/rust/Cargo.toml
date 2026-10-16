@@ -1,0 +1,20 @@
+# Copyright (c) 2026, Harry Chan. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only WITH Classpath-exception-2.0
+
+[package]
+name = "jdk-hex-codec"
+version = "0.1.0"
+edition = "2021"
+publish = false
+rust-version = "1.85"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+hex-simd = { git = "https://github.com/Nugine/simd", rev = "dff9585c080896a9ebdb8d6dcabce17bd69a0874", default-features = false, features = ["std", "detect"] }
+
+[profile.release]
+panic = "abort"
+lto = "thin"
+codegen-units = 1

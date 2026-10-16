@@ -176,6 +176,30 @@ ifneq ($(TOOLCHAIN_TYPE), gcc)
   LEGAL_EXCLUDES += gcc.md
 endif
 
+ifneq ($(ENABLE_HEX_SIMD), true)
+  LEGAL_EXCLUDES += hex-simd.md
+  HEX_SIMD_DISABLED_NOTICES := $(SUPPORT_OUTPUTDIR)/native/java.base/hexsimd-disabled-notices.marker
+
+  $(HEX_SIMD_DISABLED_NOTICES): $(SPEC)
+	$(call MakeDir, $(@D))
+	$(RM) $(LEGAL_DST_DIR)/hex-simd.md
+	$(RM) -r $(LEGAL_DST_DIR)/rust
+	$(TOUCH) $@
+
+  TARGETS += $(HEX_SIMD_DISABLED_NOTICES)
+else
+  # Match the statically linked standard library's compiler release, including
+  # its transitive runtime notices. Keep relative license links in the HTML.
+  $(eval $(call SetupCopyFiles, COPY_RUST_RUNTIME_NOTICES, \
+      SRC := $(RUST_RUNTIME_NOTICES), \
+      FILES := $(RUST_RUNTIME_COPYRIGHT) \
+          $(wildcard $(RUST_RUNTIME_NOTICES)/licenses/*.txt) \
+          $(wildcard $(RUST_RUNTIME_NOTICES)/LICENSE*), \
+      DEST := $(LEGAL_DST_DIR)/rust, \
+  ))
+  TARGETS += $(COPY_RUST_RUNTIME_NOTICES)
+endif
+
 $(eval $(call SetupCopyLegalFiles, COPY_LEGAL, \
     EXCLUDES := $(LEGAL_EXCLUDES), \
 ))
