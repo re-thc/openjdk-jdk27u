@@ -26,6 +26,7 @@
 #define SHARE_CLASSFILE_COMPACTHASHTABLE_INLINE_HPP
 
 #include "classfile/compactHashtable.hpp"
+
 #include "runtime/prefetch.inline.hpp"
 
 template <typename K, typename V, V (*DECODE)(address, u4), bool (*EQUALS)(V, K, int)>
