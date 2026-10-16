@@ -4,8 +4,25 @@ on:
     branches: [review/simdutf-small-api-cost]
 permissions:
   contents: read
-  actions: read
+  actions: write
+concurrency:
+  group: simdutf-small-api-cost
+  cancel-in-progress: true
 jobs:
+  cleanup:
+    runs-on: macos-15
+    timeout-minutes: 5
+    steps:
+      - name: Cancel superseded diagnostic
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          task_sha=$(gh api repos/re-thc/openjdk-jdk27u/actions/runs/38860433439 --jq .head_sha)
+          test "$task_sha" = a60b4fd04b0bcd9a31062661b34b88329c1b8ae4
+          task_status=$(gh api repos/re-thc/openjdk-jdk27u/actions/runs/38860433439 --jq .status)
+          if test "$task_status" != completed; then
+            gh api --method POST repos/re-thc/openjdk-jdk27u/actions/runs/38860433439/cancel
+          fi
   controls:
     timeout-minutes: 60
     strategy:
