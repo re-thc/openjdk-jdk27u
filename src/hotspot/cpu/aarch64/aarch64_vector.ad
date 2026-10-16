@@ -146,9 +146,10 @@ source %{
   }
 
   // Called once after find_shared, before the arena swap and node-index reset.
-  // Each AddF is resolved once; a valid cycle is marked once. Rejected paths
-  // (including cycles without a Phi) are memoized too. Loop uses are scanned
-  // once per counted loop, so total work is linear in nodes and graph edges.
+  // For A registered entries, reduction-input inspections are at most 2A and
+  // loop uses are scanned once. Rejected paths are memoized too. Indexed
+  // storage/initialization also depends on the old node-index span U: total
+  // cost is O(U + A + E_loop), with O(U + A) storage and O(1) lookup.
   void Matcher::prepare_float_roundtrip_accumulations() {
     if (_float_roundtrip_adds == nullptr) {
       return;

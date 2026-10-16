@@ -15,6 +15,7 @@
 #include <random>
 #include <stdexcept>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 using uint = unsigned int;
@@ -196,11 +197,17 @@ struct Graph {
     for (uint i = 0; i < length; ++i) tail = add(tail, reversed);
     edge(p, 2, tail); return p;
   }
-  void classify(uint shuffle = 0) {
+  void reindex(uint offset, uint stride) {
+    for (uint i = 0; i < nodes.size(); ++i) nodes[i]->_idx = offset + i * stride;
+  }
+  uint index_span() const { return nodes.back()->_idx + 1; }
+  void classify(uint shuffle = 0, uint registrations = 1) {
     auto order = adds;
     std::mt19937 rng(shuffle); std::shuffle(order.begin(), order.end(), rng);
     metrics = {};
-    for (Node* n : order) matcher.record(n);
+    for (Node* n : order) {
+      for (uint i = 0; i < registrations; ++i) matcher.record(n);
+    }
     matcher.prepare();
     compile.swapped = true;
     compile.current_nodes = 0; // The real matcher resets these counters here.
@@ -324,6 +331,33 @@ int main() {
     g.compile.node_arena()->nodes.insert(&foreign);
     assert(!g.matcher.is_float_roundtrip_reduction_accumulation(&foreign));
     Graph next; next.cycle(8); assert(next.admitted() == 0); ++cases;
+  }
+  for (auto indices : {std::make_pair(65536u, 1u), std::make_pair(1048576u, 1u), std::make_pair(65536u, 1024u)}) {
+    Graph g; g.cycle(8); g.reindex(indices.first, indices.second); g.classify();
+    assert(g.admitted() == 8 && metrics.helper == 16);
+    assert(metrics.slots < 64ull * (g.index_span() + g.adds.size()));
+    std::cout << "SPARSE_COST span=" << g.index_span() << " registered=" << g.adds.size()
+              << " helper_visits=" << metrics.helper << " slot_work=" << metrics.slots << '\n';
+    ++cases;
+  }
+  { // Sparse rejected paths remain memoized; their index span still has a cost.
+    Graph g; g.cycle(8); g.reductions[3]->strict = true;
+    g.reindex(1048576, 37); g.classify();
+    assert(g.admitted() == 0 && metrics.helper == 8);
+    assert(metrics.slots < 64ull * (g.index_span() + g.adds.size())); ++cases;
+  }
+  { // Duplicate registration changes list work, not recognition or membership.
+    Graph g; g.cycle(8); g.classify(3, 7);
+    assert(g.admitted() == 8 && metrics.helper == 16);
+    assert(metrics.slots < 100ull * (g.index_span() + 7 * g.adds.size())); ++cases;
+  }
+  { // Lookup beyond the old index span must not grow arrays or revisit paths.
+    Graph g; g.cycle(8); g.classify();
+    uint64_t slots = metrics.slots, helpers = metrics.helper;
+    Node outside(g.index_span() + 4096, Op_AddF, 3), largest(UINT32_MAX, Op_AddF, 3);
+    assert(!g.matcher.is_float_roundtrip_reduction_accumulation(&outside));
+    assert(!g.matcher.is_float_roundtrip_reduction_accumulation(&largest));
+    assert(g.admitted() == 8 && metrics.slots == slots && metrics.helper == helpers); ++cases;
   }
   std::cout << "STRUCTURAL_PASS cases=" << cases
             << " metric=production_helper_and_container_operations native_JVMs=0\n";
