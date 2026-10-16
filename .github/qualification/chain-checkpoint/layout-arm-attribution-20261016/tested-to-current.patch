@@ -1,0 +1,1406 @@
+diff --git a/doc/common-intrinsics/BENCHMARKS.md b/doc/common-intrinsics/BENCHMARKS.md
+index e0f42237a3e..f7d42471e03 100644
+--- a/doc/common-intrinsics/BENCHMARKS.md
++++ b/doc/common-intrinsics/BENCHMARKS.md
+@@ -1,14 +1,16 @@
+ # Performance and qualification
+ 
+-Measurements use `190109a0d2dffbd96bdb606f1d7f8a4ceb0b439e`, based on
+-`master` at `87edd79d3104ff502f7befec034716b081436f49`, including four-byte
+-object headers. The subsequent runtime change at `bcaa0c0cd43` registers the
+-C1 guard handler for AOT code caching; intrinsic implementations are unchanged.
++Current x64 measurements use `8bf01e9ed8a3df53fd8836d61216ed511ad3e591`
++and unmodified `master` at `87edd79d3104ff502f7befec034716b081436f49`, with
++the same four-byte object-header defaults. Native tests and startup comparisons
++also use these revisions on AArch64. The ARM throughput reference below uses
++`190109a0d2d`.
+ 
+ ## Methodology
+ 
+-Measurements compare the same release image with `UseCommonIntrinsics`
+-disabled and enabled. JMH 1.37 uses three alternating fresh-JVM pairs, one
++Current x64 measurements compare unmodified master with the modified release
++image at its default enabled setting. ARM reference measurements compare the
++same older image with the flag disabled and enabled. JMH 1.37 uses three alternating fresh-JVM pairs, one
+ worker pinned to a CPU, three one-second warmups and five one-second
+ measurements per fork. The VM uses Serial GC, a 128–256 MiB heap, one active
+ processor and `CICompilerCount=2`. C1 stops at level 1; C2 disables tiered
+@@ -16,39 +18,50 @@ ## Methodology
+ blackholes use the standard JMH fork machinery. No local build or test runs
+ concurrently with the measurements.
+ 
+-Means are ns/op; speedup is disabled/enabled. Paired 95% Student-t intervals
++Means are ns/op. Current x64 speedup is master/modified; ARM reference speedup
++is disabled/enabled. Paired 95% Student-t intervals
+ use the three fork means, rather than treating iterations within a fork as
+-independent observations. The [complete CSV](summary.csv) includes C2 controls.
++independent observations. The [current x64 CSV](summary.csv) includes C2 controls and experiment sizes.
+ Public API cases include dispatch and allocation. BigInteger modPow uses
+ exponent 65537. Scalar inputs are non-final JMH state fields.
+ 
+-[Raw local samples, binary fingerprints and test summaries](https://github.com/re-thc/openjdk-jdk27u/tree/dce7a1df36b7ff3948464a4301fe0cd21efcf1ab/.github/qualification/local-x64)
+-are pinned separately from the implementation.
+-[Native x64 and ARM samples and test summaries](https://github.com/re-thc/openjdk-jdk27u/tree/c5ac319fa07293da056700b652a448a82ed8e889/.github/qualification)
+-include the CI environment and binary fingerprints.
++[Current x64 samples, binary fingerprints and all test summaries](https://github.com/re-thc/openjdk-jdk27u/tree/08e855a448acda54c7b1872c286443495503f11a/.github/qualification/final-x64)
++are pinned separately from the implementation. The same record retains
++unprepared startup samples and the loading controls.
++[Historical native ARM evidence](https://github.com/re-thc/openjdk-jdk27u/tree/c5ac319fa07293da056700b652a448a82ed8e889/.github/qualification/ci-linux-aarch64)
++records the reference revision and hardware.
+ 
+ ## Linux x86-64
+ 
+ AMD EPYC 9V74, GCC 16.2, `UseAVX=3`, `MaxVectorSize=64`, SHA-3 enabled.
+ 
+-| Workload | Input | Interpreter ns/op, off → on | Speedup | C1 ns/op, off → on | Speedup |
++| Workload | Input | Interpreter ns/op, master → modified | Speedup | C1 ns/op, master → modified | Speedup |
+ | --- | --- | ---: | ---: | ---: | ---: |
+-| AES-256 CTR | 4,096 bytes | 916,008.61 → 693.97 | 1319.96× | 37,911.08 → 353.61 | 107.21× |
+-| SHA-256 | 4,096 bytes | 1,586,556.30 → 6,874.13 | 230.80× | 29,101.06 → 2,490.64 | 11.68× |
+-| SHA3-256 | 4,096 bytes | 944,367.10 → 13,266.81 | 71.18× | 21,862.96 → 8,164.71 | 2.68× |
+-| byte[] hash | 4,096 bytes | 33,408.92 → 1,531.69 | 21.81× | 3,480.26 → 1,493.97 | 2.33× |
+-| BigInteger multiply | 4,096 bits | 518,747.33 → 36,427.54 | 14.24× | 25,771.01 → 5,753.75 | 4.48× |
+-| BigInteger modPow | 4,096 bits | 19,117,847.57 → 733,349.46 | 26.07× | 826,828.74 → 123,143.06 | 6.71× |
+-| long bitCount | scalar | 99.98 → 47.35 | 2.11× | 3.46 → 0.58 | 5.98× |
++| AES-256 CTR | 4,096 bytes | 958,959.60 → 744.37 | 1288.29× | 38,508.41 → 360.06 | 106.95× |
++| SHA-256 | 4,096 bytes | 1,610,809.35 → 7,021.25 | 229.42× | 30,532.93 → 2,571.65 | 11.87× |
++| SHA3-256 | 4,096 bytes | 941,863.50 → 13,652.17 | 68.99× | 21,967.80 → 8,249.30 | 2.66× |
++| byte[] hash | 4,096 bytes | 33,001.55 → 1,589.13 | 20.77× | 3,601.03 → 1,554.20 | 2.32× |
++| BigInteger multiply | 4,096 bits | 522,480.74 → 36,999.18 | 14.12× | 26,821.64 → 6,196.43 | 4.33× |
++| BigInteger modPow | 4,096 bits | 18,774,800.02 → 789,476.20 | 23.78× | 865,865.06 → 131,578.49 | 6.58× |
++| long bitCount | scalar | 98.87 → 48.45 | 2.04× | 3.58 → 0.59 | 6.06× |
++
++The three-pair C2 intervals include zero. Multiplication and SHA-256 also
++have six alternating pairs with eight one-second warmups and ten two-second
++measurements per fork:
++
++| C2 control | Master → modified | Paired 95% change |
++| --- | ---: | ---: |
++| BigInteger multiply | 4,782.95 → 4,824.75 ns/op | −155.92 to +239.52 ns |
++| SHA-256 | 2,502.42 → 2,477.22 ns/op | −45.76 to −4.63 ns |
+ 
+-All seven C2 control intervals include zero; none establishes a slowdown in
+-these selected cases. A separate GitHub Actions x64 run on an EPYC 9V74 also
+-passes the C2 controls. These measurements do not establish whole-application
+-throughput or the absence of every possible regression.
++These selected controls do not establish a C2 slowdown. Kernel measurements
++include public API dispatch and allocation; they do not establish
++whole-application throughput.
+ 
+-## Linux AArch64
++## Linux AArch64 reference
+ 
+-Neoverse-N2, native GCC 16 release image from the same implementation revision.
++Neoverse-N2, native GCC 16 release image at `190109a0d2d`. These historical
++flag comparisons are separate from the current x64 master comparison.
+ 
+ | Workload | Input | Interpreter ns/op, off → on | Speedup | C1 ns/op, off → on | Speedup |
+ | --- | --- | ---: | ---: | ---: | ---: |
+@@ -96,79 +109,94 @@ ## Guard isolation
+ 
+ ## Startup
+ 
+-The historical interpreter startup regression was +1.07 ms, approximately
+-4.2%, with a paired 95% interval of +0.145 to +1.986 ms. It is retained as a
+-measured cost of the historical implementation, not dismissed as noise.
+-[Historical methodology and samples](https://github.com/re-thc/openjdk-jdk27u/blob/5330bbb8568e6bdc89bf6528e066d06918c58184/doc/common-intrinsics/BENCHMARKS.md)
+-remain pinned.
+-
+-The updated interpreter skips unused Base64 compiler stubs and x86 SIMD-sort
+-library loading. A paired comparison on the same current host uses 100 blocks
+-of four fresh `java -version` processes: each version with the flag off and on,
+-reversing order in alternate blocks. Ten initial blocks are discarded. The
+-baseline includes the upstream sync and uses the same object-header defaults.
+-
+-| Interpreter flag cost | Mean | Paired 95% interval |
+-| --- | ---: | ---: |
+-| Synced baseline | +1.513 ms | +0.741 to +2.285 ms |
+-| Updated implementation | −0.120 ms | −0.797 to +0.557 ms |
+-| Change in flag cost | −1.633 ms | −2.747 to −0.518 ms |
++The implementation defers compiler stubs until an enabled bulk-intrinsic class
++is linked after bootstrap, outside the leaf adapters. C2 initialization shares
++the same serialized publication. Interpreter entries retain Java until the
++stubs are ready. Scalar and hash entries do not require the compiler blob.
++Existing C1 availability checks keep their direct path, and interpreter entry
++lookup remains inline.
+ 
+-A separate current-image run uses 100 alternating fresh-VM pairs per tier,
+-with ten warm pairs discarded. Worker and coordinator use separate CPUs;
+-Serial GC, a 32–256 MiB heap and one active processor are fixed.
++Current x64 measurements compare `8bf01e9ed8a` with unmodified `master` at
++`87edd79d3104`. Each mode uses 600 blocks containing master, modified flag-off
++and modified flag-on, cycling through all six orders. Eighteen warm blocks are
++discarded. The worker and coordinator use separate CPUs; Serial GC,
++32–256 MiB heap and one active processor are fixed.
+ 
+-| Mode | Off → on | Mean change | Paired 95% interval |
++| Mode | Master → modified enabled | Paired change | 95% interval |
+ | --- | ---: | ---: | ---: |
+-| Interpreter | 21.052 → 21.211 ms | +0.160 ms | −0.233 to +0.552 ms |
+-| C1 | 22.097 → 22.599 ms | +0.502 ms | −0.208 to +1.211 ms |
+-| C2 | 24.304 → 24.302 ms | −0.003 ms | −0.507 to +0.502 ms |
+-
+-The paired before/after result establishes a reduction in interpreter startup
+-cost on this host. The local current-image intervals include zero, which does
+-not prove zero overhead. The separate x64 CI run measures an interpreter cost
+-of +0.366 ms (95% interval +0.214 to +0.518 ms) and a C1 cost of +0.643 ms
+-(+0.568 to +0.718 ms). Its C2 interval includes zero. On ARM the interpreter
+-cost is +0.208 ms
+-(+0.016 to +0.400 ms), and the C1 cost is +0.212 ms (+0.002 to +0.423 ms).
+-The ARM C2 interval also includes zero.
+-
+-The flag remains enabled by default: the measured interpreter and C1
+-throughput gains justify retaining a small startup cost for these modes.
+-`-XX:-UseCommonIntrinsics` remains available for startup-sensitive workloads.
++| Interpreter | 20.941 → 20.849 ms | −0.092 ms | −0.324 to +0.141 ms |
++| C1 | 22.478 → 22.597 ms | +0.119 ms | −0.150 to +0.387 ms |
++| C2 | 23.677 → 23.754 ms | +0.078 ms | −0.138 to +0.293 ms |
++
++The corresponding flag-off/on changes are +0.083 ms (−0.108 to +0.274),
+++0.282 ms (−0.0003 to +0.563) and −0.024 ms (−0.307 to +0.260).
++These intervals do not establish a startup regression or prove zero overhead.
++
++Both JVM libraries were prepared with an identical single-CPU copy before
++warming; SHA-256 verifies unchanged bytes. Unprepared local images measured
+++0.37–0.50 ms against master, concentrated in library loading. A standalone
++`dlopen` control measured 1.410 versus 1.701 ms on the original files, while
++identically prepared copies measured 1.446 versus 1.459 ms (paired change
+++0.013 ms, 95% interval −0.023 to +0.050 ms). Initial and
++controlled samples are retained with the evidence. These are warm-start
++measurements of these images, not cold-start or whole-application guarantees.
++An independent [native CI run](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38397336007)
++uses the same 600-block design and identical library preparation:
++
++| Architecture | Mode | Master → modified enabled | Paired change | 95% interval |
++| --- | --- | ---: | ---: | ---: |
++| x64 | Interpreter | 20.027 → 20.065 ms | +0.038 ms | −0.008 to +0.083 ms |
++| x64 | C1 | 21.452 → 21.420 ms | −0.032 ms | −0.083 to +0.019 ms |
++| x64 | C2 | 23.843 → 23.867 ms | +0.024 ms | −0.063 to +0.112 ms |
++| AArch64 | Interpreter | 20.656 → 20.394 ms | −0.262 ms | −0.342 to −0.183 ms |
++| AArch64 | C1 | 22.254 → 22.061 ms | −0.193 ms | −0.283 to −0.104 ms |
++| AArch64 | C2 | 23.979 → 23.922 ms | −0.056 ms | −0.127 to +0.014 ms |
++
++The native x64 flag-off/on interpreter comparison measures +0.051 ms
++(95% interval +0.013 to +0.090 ms). Its master comparison includes zero,
++as do all other native flag-off/on intervals. These results do not establish
++zero enabled-path cost.
+ 
+ ## Hardware and runtime qualification
+ 
+-On the AVX-512 host, release and fastdebug common-intrinsic tests pass,
+-including breakpoint-only debugging, guard isolation at C1 levels 1 and 3,
+-method handles, streaming digests, vector boundaries and aliases. Fastdebug
+-uses `CheckUnhandledOops` and `VerifyOops`. The AVX-512 test requires native
+-Keccak execution in interpreter and both C1 modes. Related HotSpot AES,
+-BigInteger, ChaCha20 and digest tests also pass.
+-
+-[Final packaged-image qualification](https://github.com/re-thc/openjdk-jdk27u/blob/147796219f1a96a890994ee3bc264bf709aa0235/.github/qualification/local-x64/head-qualification.json)
+-at `bcaa0c0cd43` passes all 18 common-intrinsic records in each build and the
+-seven AOT/CDS records below. The report includes binary fingerprints.
+-
+-[Native Linux x64 and AArch64 qualification](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38315107246)
+-passes release and fastdebug common-intrinsic suites, related HotSpot and JDK
+-crypto/BigInteger tests, and C1 math tests at levels 1 and 3. The x64 CI host
+-also executes the AVX-512 cases. ARM skips x86-only tests.
+-
+-[AOT code-cache qualification](https://github.com/re-thc/openjdk-jdk27u/blob/55353f8ced7c9b67a199791a255350f70fe29496/.github/qualification/local-x64/aot-current.json)
+-passes seven AOT/CDS runtime records on fastdebug, including
+-G1, Serial and ZGC caches, compressed-oop configurations and CPU compatibility.
+-
+-A C1-only x86 VM built from the benchmarked implementation with
+-`--with-jvm-features=-compiler2` passes scalar arithmetic, scalar operations,
+-guard isolation and level-1 method handles.
+-[WhiteBox verifies that C2 is excluded](https://github.com/re-thc/openjdk-jdk27u/blob/55353f8ced7c9b67a199791a255350f70fe29496/.github/qualification/local-x64/c1-current.json).
+-The copied class image uses
+-`-Xshare:off`; C1-only performance is outside this evidence.
+-
+-The 391-entry applicability audit, official include-order checker and
+-compilation of all four JMH classes pass. Windows AVX-512 execution and tier2
+-remain outside the qualified scope.
++The final x64 implementation at `8bf01e9ed8a` passes 136 jtreg records:
++
++| Selection | Passed |
++| --- | ---: |
++| Common intrinsics, release | 20 |
++| Common intrinsics, fastdebug | 20 |
++| Related HotSpot crypto and BigInteger | 11 |
++| JDK crypto | 74 |
++| AOT/CDS and code-cache overflow, fastdebug | 10 |
++| Flagless metaspace/CDS | 1 |
++
++Fastdebug common tests use `CheckUnhandledOops` and `VerifyOops`. AVX-512
++execution covers shifts, tails, aliases and native Keccak in interpreter and
++C1 levels 1 and 3. Tests also cover breakpoint-only debugging, per-site guard
++feedback, method handles and concurrent first-use publication.
++
++Polynomial assignment tests cover lengths 0–33, selection and aliasing,
++and the public two-limb general-purpose field in interpreter, C1 and C2.
++A native Linux probe reproduces the old Microsoft x64 ABI register collision
++and passes with the fixed scalar loop; it is not a Windows PR-JVM execution.
++The 391-entry applicability audit and official include-order checker pass.
++
++The [code-identical Linux run](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38385226401)
++passes all four release/debug builds and 23 of 24 tier1 selections. AArch64
++runtime fails `FourByteHeaderArchiveDeterminism.java#z`: the first two ZGC
++archives differ at byte 1,785,800. [Paired baseline/PR reproduction](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38640541680)
++is queued; this failure has not been attributed to the PR. The docs-only head
++has no new CI run.
++
++[Windows/macOS release/debug builds](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38393501715)
++pass; their tier1 jobs are skipped. The [targeted native run](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38397336007)
++passes all six test selections on both x64 and AArch64: common intrinsics in
++release/fastdebug, related HotSpot tests, JDK crypto and C1 math at levels 1
++and 3. Windows AVX-512 execution and tier2 remain outside the evidence.
++
++Earlier native ARM tests and the C1-only x64 scalar/guard/method-handle checks
++remain [reference evidence](https://github.com/re-thc/openjdk-jdk27u/blob/55353f8ced7c9b67a199791a255350f70fe29496/.github/qualification/local-x64/c1-current.json).
++C1-only performance is unqualified.
+ 
+ ## Reproduction
+ 
+@@ -183,7 +211,9 @@ ## Reproduction
+   MICRO='FORK=3;VM_OPTIONS=-Xint -XX:+UseCommonIntrinsics'
+ ```
+ 
+-Repeat with `-XX:-UseCommonIntrinsics`, and use
++For current-head comparisons, build unmodified master with the same toolchain
++and run the same benchmarks at default flag settings. For flag comparisons,
++repeat with `-XX:-UseCommonIntrinsics`. Use
+ `-Xbatch -XX:TieredStopAtLevel=1` or `-Xbatch -XX:-TieredCompilation` for the
+ compiled modes. The mixed benchmark uses `failedGuard=false,true` and
+ `size=1024,4096`.
+diff --git a/doc/common-intrinsics/README.md b/doc/common-intrinsics/README.md
+index fbd2ae9620e..448952e87df 100644
+--- a/doc/common-intrinsics/README.md
++++ b/doc/common-intrinsics/README.md
+@@ -60,9 +60,18 @@ ## Fallback and availability
+ polling remain in force. Methods containing breakpoints use the ordinary
+ interpreter even when only JVMTI Breakpoint events are enabled.
+ Compiler stubs are generated when a class containing an enabled common leaf
+-intrinsic is linked after bootstrap, including in `-Xint`. Publication is
+-serialized with C2 initialization. Early interpreter calls use Java until the
+-stubs are ready; leaf adapters never initialize them. Unused Base64 stubs and
++intrinsic is linked after bootstrap, including in `-Xint`. BigInteger defers
++this work until arithmetic demand: small multiplication and squaring accumulate
++work in the bytecode resolver, while Montgomery operations prepare on their
++first call. Nontrivial modular exponentiation and Karatsuba squares prepare
++before their initial recursive products; isolated smaller products retain
++deferral. Recursive multiplication prepares at 104-by-104 limbs in the
++interpreter and 120-by-120 limbs with a compiler; smaller first products retain
++their measured Java advantage. These are first-use preparation guards, not leaf
++size limits. C1 lowering and direct native or method-handle targets prepare
++separately in safe VM frames. Publication is serialized with C2 initialization.
++Early interpreter calls use Java until the stubs are ready; leaf adapters never
++initialize them. Unused Base64 stubs and
+ the x86 SIMD sort library are skipped when compilation is disabled.
+ Interpreter entries check generator CPU predicates before stubs exist; C1
+ checks the generated stub slots. Unsupported backends retain Java directly.
+@@ -70,6 +79,12 @@ ## Fallback and availability
+ entries. Abstract multi-block digest lowering requires all five digest
+ backends. Pure-C1 builds can use scalar operations without C2 stubs.
+ 
++Static CDS dumps use ordinary interpreter entries for these methods. An
++intrinsic entry can resume Java when a safepoint is pending, resolving references
++that its fast path skips. Running the Java bodies consistently during assembly
++keeps that archived resolution state independent of safepoint timing. Normal
++execution and AOT training retain the common entries.
++
+ ## Validation
+ 
+ The jtreg suite covers independent arithmetic and shift oracles, unsigned
+diff --git a/doc/common-intrinsics/summary.csv b/doc/common-intrinsics/summary.csv
+index 5d383cbe2b2..e4ed808ec32 100644
+--- a/doc/common-intrinsics/summary.csv
++++ b/doc/common-intrinsics/summary.csv
+@@ -1,64 +1,22 @@
+-host,tier,benchmark,parameters,off_ns,on_ns,speedup,difference_ns,paired_95_low_ns,paired_95_high_ns
+-Linux x64 AMD EPYC 9V74,c1,aesCtr,length=4096,37911.07982139138,353.60633609122937,107.21267113157847,-37557.47348530015,-40172.66330809744,-34942.28366250286
+-Linux x64 AMD EPYC 9V74,c1,bitCount,,3.462494439545179,0.5790791708364799,5.9793109714922155,-2.883415268708699,-2.912739149421395,-2.8540913879960033
+-Linux x64 AMD EPYC 9V74,c1,hashBytes,length=4096,3480.263444726466,1493.9718821876,2.3295374472713437,-1986.2915625388662,-2102.6699281881197,-1869.9131968896127
+-Linux x64 AMD EPYC 9V74,c1,modPow,length=4096,826828.7448682764,123143.06183022859,6.714375398657745,-703685.6830380477,-738833.5587302485,-668537.807345847
+-Linux x64 AMD EPYC 9V74,c1,multiply,length=4096,25771.012051318463,5753.748466325254,4.478995250165608,-20017.26358499321,-20738.94777716842,-19295.579392817996
+-Linux x64 AMD EPYC 9V74,c1,sha256,length=4096,29101.063475682295,2490.6405885997697,11.684168164963063,-26610.422887082525,-31069.573012140165,-22151.272762024884
+-Linux x64 AMD EPYC 9V74,c1,sha3,length=4096,21862.958678878473,8164.713008939502,2.6777375585572734,-13698.245669938971,-15556.025710058242,-11840.4656298197
+-Linux x64 AMD EPYC 9V74,c2,aesCtr,length=4096,297.61581407834825,296.71880629842315,1.0030230904172044,-0.8970077799250854,-20.0126155878442,18.218600027994025
+-Linux x64 AMD EPYC 9V74,c2,bitCount,,0.582836456520563,0.573674211448282,1.0159711642765852,-0.009162245072280991,-0.047931728046567326,0.02960723790200534
+-Linux x64 AMD EPYC 9V74,c2,hashBytes,length=4096,176.83005232946886,175.62351033576988,1.0068700482719666,-1.2065419936989674,-5.003460321133041,2.5903763337351062
+-Linux x64 AMD EPYC 9V74,c2,modPow,length=4096,117661.8307553063,116852.30967701988,1.0069277285192217,-809.5210782864209,-4765.268040301838,3146.2258837289955
+-Linux x64 AMD EPYC 9V74,c2,multiply,length=4096,4702.795273454405,4671.870836634358,1.00661928334524,-30.92443682004705,-520.1081385672449,458.2592649271508
+-Linux x64 AMD EPYC 9V74,c2,sha256,length=4096,2418.9284071585384,2392.9545178618964,1.010854318000097,-25.973889296642028,-145.32718940798827,93.37941081470422
+-Linux x64 AMD EPYC 9V74,c2,sha3,length=4096,7782.716866927825,7777.281055434623,1.0006989346861013,-5.435811493202588,-212.37259556280952,201.50097257640437
+-Linux x64 AMD EPYC 9V74,int,aesCtr,length=4096,916008.6147374442,693.9655022548857,1319.9627528473377,-915314.6492351893,-1001997.9612817906,-828631.337188588
+-Linux x64 AMD EPYC 9V74,int,bitCount,,99.98156385913991,47.345317257943115,2.111751903877379,-52.636246601196795,-55.27521904302785,-49.99727415936574
+-Linux x64 AMD EPYC 9V74,int,hashBytes,length=4096,33408.92021855666,1531.6873410587948,21.811840656372073,-31877.232877497867,-34452.497046313845,-29301.96870868189
+-Linux x64 AMD EPYC 9V74,int,modPow,length=4096,19117847.570197504,733349.459936438,26.069218857616008,-18384498.110261068,-18843511.840408333,-17925484.380113803
+-Linux x64 AMD EPYC 9V74,int,multiply,length=4096,518747.3279490929,36427.54424685339,14.2405242701449,-482319.78370223945,-496276.8767616137,-468362.6906428652
+-Linux x64 AMD EPYC 9V74,int,sha256,length=4096,1586556.2967723333,6874.134686915577,230.80087444201953,-1579682.162085418,-1645752.2048229552,-1513612.1193478806
+-Linux x64 AMD EPYC 9V74,int,sha3,length=4096,944367.1017730777,13266.805868149884,71.18270299260617,-931100.2959049278,-969845.3053212465,-892355.286488609
+-github-linux-x64,c1,aesCtr,length=4096,35541.590878012736,340.6314433692504,104.34031141242893,-35200.95943464348,-35244.63738494616,-35157.281484340805
+-github-linux-x64,c1,bitCount,,3.278881374460614,0.5489975648331845,5.972488011776368,-2.7298838096274296,-2.734457302921749,-2.7253103163331103
+-github-linux-x64,c1,hashBytes,length=4096,3377.2041607245033,1414.798105638306,2.3870573103438177,-1962.406055086197,-2028.4438494789488,-1896.3682606934453
+-github-linux-x64,c1,modPow,length=4096,779581.5324858972,116588.0728415102,6.6866319468687,-662993.4596443869,-665709.8198733713,-660277.0994154025
+-github-linux-x64,c1,multiply,length=4096,24075.574564529164,5492.145677818498,4.3836372843795495,-18583.428886710666,-18811.32690676603,-18355.530866655303
+-github-linux-x64,c1,sha256,length=4096,26801.22798177743,2389.885529108302,11.214440045493443,-24411.342452669127,-24544.840661022,-24277.844244316253
+-github-linux-x64,c1,sha3,length=4096,20249.08198329324,7635.033238966577,2.6521275480437865,-12614.048744326661,-12668.619055870495,-12559.478432782827
+-github-linux-x64,c2,aesCtr,length=4096,283.58849821774874,283.8049614170551,0.9992372818352944,0.21646319930636082,-2.120600196781037,2.5535265953937585
+-github-linux-x64,c2,bitCount,,0.5468703258836476,0.5464804389550064,1.000713450840778,-0.0003898869286410959,-0.001108467825741243,0.0003286939684590513
+-github-linux-x64,c2,hashBytes,length=4096,168.81194894477335,168.54143950803748,1.0016050025294994,-0.2705094367358735,-1.07117786122417,0.5301589877524231
+-github-linux-x64,c2,modPow,length=4096,111422.89000547529,111528.19612147646,0.9990557893011515,105.30611600117118,-615.1901600717057,825.802392074048
+-github-linux-x64,c2,multiply,length=4096,4347.887187333135,4329.7334240124555,1.004192813169513,-18.153763320679598,-68.02688785854683,31.71936121718763
+-github-linux-x64,c2,sha256,length=4096,2317.84932557841,2313.5694548426964,1.0018498993953933,-4.279870735713757,-12.715008919347763,4.155267447920249
+-github-linux-x64,c2,sha3,length=4096,7444.616460099223,7442.893591847504,1.0002314782860267,-1.722868251719774,-4.332927493869656,0.8871909904301085
+-github-linux-x64,int,aesCtr,length=4096,965951.640030524,675.625168174147,1429.715300039775,-965276.0148623498,-1118998.9706090805,-811553.059115619
+-github-linux-x64,int,bitCount,,101.4589043860636,45.72388454744808,2.2189476110845043,-55.73501983861552,-63.70023268365769,-47.769806993573354
+-github-linux-x64,int,hashBytes,length=4096,49918.729048770416,1486.3899199584112,33.583872157964535,-48432.339128812004,-57344.44573421726,-39520.23252340675
+-github-linux-x64,int,modPow,length=4096,22121352.81927386,740557.5384886388,29.871214145520756,-21380795.28078522,-24545019.709579006,-18216570.851991437
+-github-linux-x64,int,multiply,length=4096,643892.2532132783,36104.31182172131,17.83422036660717,-607787.9413915569,-682583.5240095435,-532992.3587735703
+-github-linux-x64,int,sha256,length=4096,1615310.2346665517,6595.202512243792,244.92200681749767,-1608715.032154308,-1758615.996066794,-1458814.0682418218
+-github-linux-x64,int,sha3,length=4096,933572.0969679696,12805.495480559857,72.90401987062774,-920766.6014874097,-956694.0760774171,-884839.1268974022
+-github-linux-aarch64,c1,aesCtr,length=4096,48889.08080042097,1214.5645477011103,40.25235290537394,-47674.516252719855,-47835.73826225346,-47513.294243186254
+-github-linux-aarch64,c1,bitCount,,3.1551289346015343,2.915148327449644,1.0823219199147374,-0.23998060715189032,-0.2425299971786943,-0.23743121712508633
+-github-linux-aarch64,c1,hashBytes,length=4096,3640.5582456451325,1226.5661433027547,2.9680896260859284,-2413.992102342378,-2426.0404918539275,-2401.9437128308286
+-github-linux-aarch64,c1,modPow,length=4096,1024346.4993420413,189494.63374399312,5.40567550174498,-834851.8655980482,-835538.3658160152,-834165.3653800812
+-github-linux-aarch64,c1,multiply,length=4096,31991.438093474193,5975.642310485258,5.353640065995901,-26015.795782988935,-26457.15601966935,-25574.43554630852
+-github-linux-aarch64,c1,sha256,length=4096,33945.46286534487,2110.1177237828547,16.086999546399756,-31835.34514156201,-31877.695757895315,-31792.994525228707
+-github-linux-aarch64,c1,sha3,length=4096,15642.926546474977,7725.082831960255,2.0249525974992753,-7917.843714514722,-7927.376719209156,-7908.310709820287
+-github-linux-aarch64,c2,aesCtr,length=4096,1119.929284286943,1124.8737168701732,0.9956044554076812,4.944432583230157,-9.141686078683822,19.030551245144135
+-github-linux-aarch64,c2,bitCount,,0.5971521140808933,0.6022114641366704,0.9915987151406522,0.005059350055776994,0.0037970898956578934,0.0063216102158960945
+-github-linux-aarch64,c2,hashBytes,length=4096,532.6844233140957,532.8816158188806,0.99962995063269,0.19719250478480413,-0.5936587631336674,0.9880437727032756
+-github-linux-aarch64,c2,modPow,length=4096,150725.88115405475,150815.2560903028,0.9994073879621664,89.37493624805938,-22.740430747693125,201.4903032438119
+-github-linux-aarch64,c2,multiply,length=4096,4650.80670468548,4655.347741054742,0.9990245548513562,4.541036369261444,0.9370565058589788,8.14501623266391
+-github-linux-aarch64,c2,sha256,length=4096,1986.9492187509566,1982.1133932607986,1.002439732008572,-4.83582549015811,-11.3388318878286,1.6671809075123791
+-github-linux-aarch64,c2,sha3,length=4096,7441.725749076834,7438.558378967973,1.0004258042953345,-3.1673701088608746,-5.060324400873223,-1.2744158168485262
+-github-linux-aarch64,int,aesCtr,length=4096,938877.0351226367,1659.1369589230053,565.8827802450314,-937217.8981637137,-943120.7843143224,-931315.0120131051
+-github-linux-aarch64,int,bitCount,,117.21425269381835,55.833615682177474,2.09934913334359,-61.38063701164088,-67.2277611847195,-55.53351283856227
+-github-linux-aarch64,int,hashBytes,length=4096,52497.58553373655,1310.193791438372,40.068565334982274,-51187.391742298176,-57128.717812553885,-45246.06567204247
+-github-linux-aarch64,int,modPow,length=4096,21000096.68888889,805827.854081947,26.06027650013861,-20194268.83480694,-20241249.185698513,-20147288.48391537
+-github-linux-aarch64,int,multiply,length=4096,574556.1585745097,33415.890098117125,17.194100078958662,-541140.2684763926,-555643.3306671376,-526637.2062856476
+-github-linux-aarch64,int,sha256,length=4096,1653903.0025514113,7499.564846456627,220.53319578039822,-1646403.4377049545,-1661596.37290077,-1631210.502509139
+-github-linux-aarch64,int,sha3,length=4096,1043906.2100361021,13404.735646852045,77.87592665292523,-1030501.4743892502,-1057885.7325279394,-1003117.2162505608
++host,tier,benchmark,parameters,master_ns,modified_ns,speedup,difference_ns,paired_95_low_ns,paired_95_high_ns,pairs,warmup_iterations,measurement_iterations,measurement_seconds
++Linux x64 AMD EPYC 9V74,c1,aesCtr,length=4096,38508.41115232967,360.056063537971,106.95115303416804,-38148.35508879169,-40192.366827529906,-36104.34335005348,3,3,5,1
++Linux x64 AMD EPYC 9V74,c1,bitCount,,3.5845825829728972,0.5916446038130226,6.058675359956013,-2.9929379791598745,-3.14455117083374,-2.841324787486009,3,3,5,1
++Linux x64 AMD EPYC 9V74,c1,hashBytes,length=4096,3601.026725936138,1554.1970802264595,2.316969174470099,-2046.8296457096787,-2394.172177774068,-1699.4871136452894,3,3,5,1
++Linux x64 AMD EPYC 9V74,c1,modPow,length=4096,865865.0617047843,131578.48958992262,6.580597363621807,-734286.5721148617,-763824.9590437288,-704748.1851859946,3,3,5,1
++Linux x64 AMD EPYC 9V74,c1,multiply,length=4096,26821.640139770618,6196.433331552769,4.328561077740082,-20625.20680821785,-22712.18690854268,-18538.226707893016,3,3,5,1
++Linux x64 AMD EPYC 9V74,c1,sha256,length=4096,30532.934443872473,2571.653360649034,11.872881046521204,-27961.28108322344,-34338.59965068873,-21583.962515758147,3,3,5,1
++Linux x64 AMD EPYC 9V74,c1,sha3,length=4096,21967.80014238789,8249.297412730126,2.6629904394630852,-13718.502729657761,-16179.003627684935,-11258.001831630587,3,3,5,1
++Linux x64 AMD EPYC 9V74,c2,aesCtr,length=4096,312.3722472731568,310.8357631517931,1.004943073814236,-1.536484121363685,-35.59672456739381,32.52375632466644,3,3,5,1
++Linux x64 AMD EPYC 9V74,c2,bitCount,,0.589577789155639,0.599331131068149,0.9837262885124501,0.009753341912509947,-0.0903571727679522,0.10986385659297208,3,3,5,1
++Linux x64 AMD EPYC 9V74,c2,hashBytes,length=4096,182.75411797968187,182.05389059993178,1.0038462642981294,-0.7002273797501081,-2.596514344446493,1.1960595849462767,3,3,5,1
++Linux x64 AMD EPYC 9V74,c2,modPow,length=4096,125932.96374489769,122560.59143447044,1.0275159598281667,-3372.3723104272553,-22187.902316778323,15443.157695923814,3,3,5,1
++Linux x64 AMD EPYC 9V74,c2,multiply,length=4096,4782.948027596249,4824.74729921846,0.9913364847877147,41.79927162221096,-155.9210466147858,239.51958985920774,6,8,10,2
++Linux x64 AMD EPYC 9V74,c2,sha256,length=4096,2502.4172784283564,2477.222953407703,1.0101703905924155,-25.194325020653803,-45.759215671518625,-4.6294343697889815,6,8,10,2
++Linux x64 AMD EPYC 9V74,c2,sha3,length=4096,8070.119264471886,8115.563021571565,0.9944004184332145,45.443757099678805,-1093.4050472113465,1184.2925614107041,3,3,5,1
++Linux x64 AMD EPYC 9V74,int,aesCtr,length=4096,958959.6041013765,744.36745934189,1288.2879175685778,-958215.2366420346,-1013530.2900604961,-902900.1832235731,3,3,5,1
++Linux x64 AMD EPYC 9V74,int,bitCount,,98.8690488001477,48.45109979907686,2.040594521283322,-50.41794900107083,-60.33084432936897,-40.50505367277269,3,3,5,1
++Linux x64 AMD EPYC 9V74,int,hashBytes,length=4096,33001.548622898335,1589.1271972537727,20.767090689738044,-31412.421425644563,-32592.768912517942,-30232.073938771184,3,3,5,1
++Linux x64 AMD EPYC 9V74,int,modPow,length=4096,18774800.020302273,789476.2005629007,23.781337558897583,-17985323.819739375,-18934743.081196688,-17035904.558282062,3,3,5,1
++Linux x64 AMD EPYC 9V74,int,multiply,length=4096,522480.7355933183,36999.17921457514,14.12141422281867,-485481.55637874315,-501769.1734184577,-469193.9393390286,3,3,5,1
++Linux x64 AMD EPYC 9V74,int,sha256,length=4096,1610809.3549564534,7021.249508920569,229.41918712757663,-1603788.1054475328,-1782716.5008032564,-1424859.7100918093,3,3,5,1
++Linux x64 AMD EPYC 9V74,int,sha3,length=4096,941863.5000583001,13652.166428525125,68.99003941897094,-928211.333629775,-991887.4168279751,-864535.2504315749,3,3,5,1
+diff --git a/src/hotspot/share/interpreter/interpreterRuntime.cpp b/src/hotspot/share/interpreter/interpreterRuntime.cpp
+index a8f3d501083..0701ca55203 100644
+--- a/src/hotspot/share/interpreter/interpreterRuntime.cpp
++++ b/src/hotspot/share/interpreter/interpreterRuntime.cpp
+@@ -56,6 +56,7 @@
+ #include "prims/jvmtiExport.hpp"
+ #include "prims/methodHandles.hpp"
+ #include "prims/nativeLookup.hpp"
++#include "runtime/commonIntrinsics.hpp"
+ #include "runtime/continuation.hpp"
+ #include "runtime/deoptimization.hpp"
+ #include "runtime/fieldDescriptor.inline.hpp"
+@@ -821,16 +822,28 @@ void InterpreterRuntime::resolve_invoke(Bytecodes::Code bytecode, TRAPS) {
+     resolved_method = methodHandle(current, info.resolved_method());
+   } // end JvmtiHideSingleStepping
+ 
+-  update_invoke_cp_cache_entry(info, bytecode, resolved_method, pool, method_index);
++  bool cache_call = true;
++  if ((bytecode == Bytecodes::_invokestatic && resolved_method->intrinsic_id() != vmIntrinsics::_none) ||
++      resolved_method->method_holder()->name() == vmSymbols::java_math_BigInteger()) {
++    LastFrameAccessor call_frame(current);
++    cache_call = CommonIntrinsics::cache_interpreter_call(resolved_method(),
++        call_frame.get_frame().interpreter_frame_tos_at(0));
++  }
++  update_invoke_cp_cache_entry(info, bytecode, resolved_method, pool, method_index, cache_call);
+ }
+ 
+ void InterpreterRuntime::update_invoke_cp_cache_entry(CallInfo& info, Bytecodes::Code bytecode,
+                                                       methodHandle& resolved_method,
+                                                       constantPoolHandle& pool,
+-                                                      int method_index) {
++                                                      int method_index, bool cache_call) {
+   // Don't allow safepoints until the method is cached.
+   NoSafepointVerifier nsv;
+ 
++  // Common-intrinsic preparation may have blocked after resolution. CallInfo
++  // keeps the old method alive and follows redefinition to the current version.
++  // Refresh under this verifier so publication cannot cache an obsolete method.
++  resolved_method = methodHandle(Thread::current(), info.resolved_method());
++
+   // check if link resolution caused cpCache to be updated
+   ConstantPoolCache* cache = pool->cache();
+   if (cache->resolved_method_entry_at(method_index)->is_resolved(bytecode)) return;
+@@ -867,7 +880,7 @@ void InterpreterRuntime::update_invoke_cp_cache_entry(CallInfo& info, Bytecodes:
+ 
+   switch (info.call_kind()) {
+   case CallInfo::direct_call:
+-    cache->set_direct_call(bytecode, method_index, resolved_method, sender->is_interface());
++    cache->set_direct_call(bytecode, method_index, resolved_method, sender->is_interface(), cache_call);
+     break;
+   case CallInfo::vtable_call:
+     cache->set_vtable_call(bytecode, method_index, resolved_method, info.vtable_index());
+diff --git a/src/hotspot/share/interpreter/interpreterRuntime.hpp b/src/hotspot/share/interpreter/interpreterRuntime.hpp
+index 3228027fa93..a7927f4b91b 100644
+--- a/src/hotspot/share/interpreter/interpreterRuntime.hpp
++++ b/src/hotspot/share/interpreter/interpreterRuntime.hpp
+@@ -112,7 +112,7 @@ class InterpreterRuntime: AllStatic {
+ 
+   static void update_invoke_cp_cache_entry(CallInfo& info, Bytecodes::Code bytecode,
+                                            methodHandle& resolved_method,
+-                                           constantPoolHandle& pool, int method_index);
++                                           constantPoolHandle& pool, int method_index, bool cache_call = true);
+  public:
+   // Synchronization
+   static void    monitorenter(JavaThread* current, BasicObjectLock* elem);
+diff --git a/src/hotspot/share/interpreter/templateInterpreterGenerator.cpp b/src/hotspot/share/interpreter/templateInterpreterGenerator.cpp
+index be3e8995ad9..bdfd17016ac 100644
+--- a/src/hotspot/share/interpreter/templateInterpreterGenerator.cpp
++++ b/src/hotspot/share/interpreter/templateInterpreterGenerator.cpp
+@@ -22,6 +22,7 @@
+  *
+  */
+ 
++#include "cds/cdsConfig.hpp"
+ #include "compiler/disassembler.hpp"
+ #include "interpreter/interp_masm.hpp"
+ #include "interpreter/interpreter.hpp"
+@@ -31,6 +32,7 @@
+ #include "interpreter/templateTable.hpp"
+ #include "oops/methodData.hpp"
+ #include "runtime/commonIntrinsics.hpp"
++#include "runtime/timerTrace.hpp"
+ 
+ #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
+ 
+@@ -238,25 +240,55 @@ void TemplateInterpreterGenerator::generate_all() {
+ 
+ #undef native_method_entry
+ 
++  // Bytecodes
++  set_entry_points_for_all_bytes();
++
++  // installation of code in other places in the runtime
++  set_safepoints_for_all_bytes();
++
++  // Keep the ordinary bytecode layout independent of optional intrinsic
++  // entries. Changes to intrinsic flags or alias sharing must not reposition
++  // hot Java fallback handlers. Deoptimization entries remain last.
+ #if defined(AMD64) || defined(AARCH64)
+-  if (CommonIntrinsics::enabled() && InlineIntrinsics) {
++  // A safepoint can select the Java fallback of an intrinsic entry. During a
++  // static archive assembly that would make archived constant-pool resolution
++  // depend on safepoint timing. AOT training clears those entries in its
++  // preimage and can retain the common entries while running the application.
++  if (CommonIntrinsics::enabled() && InlineIntrinsics &&
++      (!CDSConfig::is_dumping_static_archive() || CDSConfig::is_dumping_preimage_static_archive())) {
++    TraceTime timer("Common intrinsic entry generation", TRACETIME_LOG(Debug, startuptime));
+     CodeletMark cm(_masm, "common intrinsic entry points");
+-    for (int i = 1; i < static_cast<int>(vmIntrinsics::ID_LIMIT); i++) {
+-      vmIntrinsics::ID id = vmIntrinsics::ID_from(i);
++    // Visit only our catalogue. Most VM intrinsics have no common entry.
++#define COMMON_ID(id, slots, result) vmIntrinsics::id,
++    static const vmIntrinsics::ID ids[] = {
++      COMMON_INTRINSICS_DO(COMMON_ID)
++      COMMON_SCALAR_INTRINSICS_DO(COMMON_ID)
++      COMMON_BINARY_SCALAR_INTRINSICS_DO(COMMON_ID)
++      vmIntrinsics::_vectorizedHashCodeLeaf
++    };
++#undef COMMON_ID
++    for (vmIntrinsics::ID id : ids) {
+       if (CommonIntrinsics::is_available_for_interpreter(id) && vmIntrinsics::is_intrinsic_available(id)) {
+-        __ align(CodeEntryAlignment);
+-        Interpreter::_common_entry_table[i] = generate_common_intrinsic_entry(id);
++        // These aliases have identical arguments, operations and guards.
++        // Check each ID's flags above even when its code can be shared.
++        vmIntrinsics::ID canonical = id;
++        switch (id) {
++          case vmIntrinsics::_min_strict: canonical = vmIntrinsics::_min; break;
++          case vmIntrinsics::_max_strict: canonical = vmIntrinsics::_max; break;
++          case vmIntrinsics::_vectorizedHashCodeLeaf: canonical = vmIntrinsics::_vectorizedHashCode; break;
++          default: break;
++        }
++        address entry = Interpreter::_common_entry_table[vmIntrinsics::as_int(canonical)];
++        if (entry == nullptr) {
++          __ align(CodeEntryAlignment);
++          entry = generate_common_intrinsic_entry(id);
++        }
++        Interpreter::_common_entry_table[vmIntrinsics::as_int(id)] = entry;
+       }
+     }
+   }
+ #endif
+ 
+-  // Bytecodes
+-  set_entry_points_for_all_bytes();
+-
+-  // installation of code in other places in the runtime
+-  set_safepoints_for_all_bytes();
+-
+   { CodeletMark cm(_masm, "deoptimization entry points");
+     Interpreter::_deopt_entry[0] = EntryPoint();
+     Interpreter::_deopt_entry[0].set_entry(vtos, generate_deopt_entry_for(vtos, 0));
+diff --git a/src/hotspot/share/oops/cpCache.cpp b/src/hotspot/share/oops/cpCache.cpp
+index edb5f6714c0..3ecef47f8b9 100644
+--- a/src/hotspot/share/oops/cpCache.cpp
++++ b/src/hotspot/share/oops/cpCache.cpp
+@@ -79,7 +79,9 @@ void ConstantPoolCache::set_direct_or_vtable_call(Bytecodes::Code invoke_code,
+                                                        int method_index,
+                                                        const methodHandle& method,
+                                                        int vtable_index,
+-                                                       bool sender_is_interface) {
++                                                       bool sender_is_interface,
++                                                       bool cache_call) {
++  assert(cache_call || invoke_code == Bytecodes::_invokestatic, "only static calls defer caching");
+   bool is_vtable_call = (vtable_index >= 0);  // FIXME: split this method on this boolean
+   assert(method->interpreter_entry() != nullptr, "should have been set at this point");
+   assert(!method->is_obsolete(),  "attempt to write obsolete method to cpCache");
+@@ -165,7 +167,7 @@ void ConstantPoolCache::set_direct_or_vtable_call(Bytecodes::Code invoke_code,
+   if (byte_no == 1) {
+     assert(invoke_code != Bytecodes::_invokevirtual &&
+            invoke_code != Bytecodes::_invokeinterface, "");
+-    bool do_resolve = true;
++    bool do_resolve = cache_call;
+     // Don't mark invokespecial to method as resolved if sender is an interface.  The receiver
+     // has to be checked that it is a subclass of the current class every time this bytecode
+     // is executed.
+@@ -233,10 +235,10 @@ void ConstantPoolCache::set_direct_or_vtable_call(Bytecodes::Code invoke_code,
+ }
+ 
+ void ConstantPoolCache::set_direct_call(Bytecodes::Code invoke_code, int method_index, const methodHandle& method,
+-                                        bool sender_is_interface) {
++                                        bool sender_is_interface, bool cache_call) {
+   int index = Method::nonvirtual_vtable_index;
+   // index < 0; FIXME: inline and customize set_direct_or_vtable_call
+-  set_direct_or_vtable_call(invoke_code, method_index, method, index, sender_is_interface);
++  set_direct_or_vtable_call(invoke_code, method_index, method, index, sender_is_interface, cache_call);
+ }
+ 
+ void ConstantPoolCache::set_vtable_call(Bytecodes::Code invoke_code, int method_index, const methodHandle& method, int index) {
+diff --git a/src/hotspot/share/oops/cpCache.hpp b/src/hotspot/share/oops/cpCache.hpp
+index f698f50d3a8..ec774770e33 100644
+--- a/src/hotspot/share/oops/cpCache.hpp
++++ b/src/hotspot/share/oops/cpCache.hpp
+@@ -124,7 +124,8 @@ class ConstantPoolCache: public MetaspaceObj {
+     int method_index,                            // Index into the resolved method entry array
+     const methodHandle& method,                  // the method/prototype if any (null, otherwise)
+     int             vtable_index,                // the vtable index if any, else negative
+-    bool            sender_is_interface
++    bool            sender_is_interface,
++    bool            cache_call = true
+   );
+ 
+  public:
+@@ -132,7 +133,8 @@ class ConstantPoolCache: public MetaspaceObj {
+     Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
+     int method_index,                            // Index into the resolved method entry array
+     const methodHandle& method,                  // the method to call
+-    bool            sender_is_interface
++    bool            sender_is_interface,
++    bool            cache_call = true
+   );
+ 
+   void set_vtable_call(                          // sets entry to vtable index
+diff --git a/src/hotspot/share/oops/method.cpp b/src/hotspot/share/oops/method.cpp
+index bea03302d32..c188b20b463 100644
+--- a/src/hotspot/share/oops/method.cpp
++++ b/src/hotspot/share/oops/method.cpp
+@@ -1257,7 +1257,8 @@ void Method::remove_unshareable_flags() {
+ // Called when the method_holder is getting linked. Setup entrypoints so the method
+ // is ready to be called from interpreter, compiler, and vtables.
+ void Method::link_method(const methodHandle& h_method, TRAPS) {
+-  if (h_method->intrinsic_id() != vmIntrinsics::_none) {
++  if (h_method->intrinsic_id() != vmIntrinsics::_none &&
++      !CommonIntrinsics::is_big_integer(h_method->intrinsic_id())) {
+     CommonIntrinsics::prepare(h_method->intrinsic_id());
+   }
+   if (log_is_enabled(Info, perf, class, link)) {
+diff --git a/src/hotspot/share/prims/methodHandles.cpp b/src/hotspot/share/prims/methodHandles.cpp
+index 99a58b09e75..7bec7f6bb1a 100644
+--- a/src/hotspot/share/prims/methodHandles.cpp
++++ b/src/hotspot/share/prims/methodHandles.cpp
+@@ -46,6 +46,7 @@
+ #include "oops/oop.inline.hpp"
+ #include "oops/typeArrayOop.inline.hpp"
+ #include "prims/methodHandles.hpp"
++#include "runtime/commonIntrinsics.hpp"
+ #include "runtime/deoptimization.hpp"
+ #include "runtime/fieldDescriptor.inline.hpp"
+ #include "runtime/handles.inline.hpp"
+@@ -249,6 +250,11 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
+   assert(info.resolved_appendix().is_null(), "only normal methods here");
+   methodHandle m(Thread::current(), info.resolved_method());
+   assert(m.not_null(), "null method handle");
++  CommonIntrinsics::prepare_for_java_call(m());
++  // Preparation may block while redefinition replaces the target. Derive and
++  // publish the MemberName from the current method without another safepoint.
++  NoSafepointVerifier nsv;
++  m = methodHandle(Thread::current(), info.resolved_method());
+   InstanceKlass* m_klass = m->method_holder();
+   assert(m_klass != nullptr, "null holder for method handle");
+   int flags = (m->access_flags().as_method_flags());
+diff --git a/src/hotspot/share/runtime/commonIntrinsics.cpp b/src/hotspot/share/runtime/commonIntrinsics.cpp
+index 0d7c9f0fafc..c4bc4ebb464 100644
+--- a/src/hotspot/share/runtime/commonIntrinsics.cpp
++++ b/src/hotspot/share/runtime/commonIntrinsics.cpp
+@@ -24,6 +24,7 @@
+ #include "classfile/classLoaderData.hpp"
+ #include "oops/fieldInfo.inline.hpp"
+ #include "oops/instanceKlass.inline.hpp"
++#include "oops/method.inline.hpp"
+ #include "oops/typeArrayKlass.hpp"
+ #include "oops/typeArrayOop.inline.hpp"
+ #include "runtime/atomicAccess.hpp"
+@@ -43,6 +44,13 @@ constexpr jint max_quadratic_limbs = 2048;
+ constexpr jint max_montgomery_limbs = 512;
+ constexpr jint max_hash_elements = 65536;
+ 
++#if defined(COMPILER2) && (defined(AMD64) || defined(AARCH64))
++// Let cold, small BigInteger operations use Java before paying for the whole
++// compiler blob. Accumulate arithmetic work across unresolved static calls.
++constexpr jlong big_integer_warmup_work = 16384;
++volatile jlong big_integer_work = 0;
++#endif
++
+ bool all_digest_intrinsics_enabled() {
+   return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_md5_implCompress) &&
+          vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha_implCompress) &&
+@@ -160,6 +168,44 @@ KnownField sha256_state("sun/security/provider/SHA2", "state", "[I");
+ KnownField sha512_state("sun/security/provider/SHA5", "state", "[J");
+ KnownField sha3_state("sun/security/provider/SHA3", "state", "[J");
+ 
++KnownField big_integer_mag("java/math/BigInteger", "mag", "[I");
++
++vmIntrinsics::ID big_integer_workload(const Method* method, const intptr_t* args = nullptr) {
++  if (!CommonIntrinsics::enabled() || StubRoutines::compiler_stubs_initialized() ||
++      method->method_holder()->name() != vmSymbols::java_math_BigInteger()) {
++    return vmIntrinsics::_none;
++  }
++  // These Java computations use several kernels. Waiting for a later kernel
++  // leaves their initial products in Java; preparing on product size alone
++  // also charges isolated medium-sized products for the entire compiler blob.
++  Symbol* name = method->name();
++  Symbol* signature = method->signature();
++  if (name->equals("oddModPow") && signature->equals(
++          "(Ljava/math/BigInteger;Ljava/math/BigInteger;)Ljava/math/BigInteger;")) {
++    return vmIntrinsics::_montgomerySquare;
++  }
++  if (name->equals("squareKaratsuba") && signature->equals("()Ljava/math/BigInteger;")) {
++    return vmIntrinsics::_squareToLen;
++  }
++  if (args != nullptr && name->equals("multiplyKaratsuba") && signature->equals(
++          "(Ljava/math/BigInteger;Ljava/math/BigInteger;)Ljava/math/BigInteger;")) {
++    // Cold recursive products break even later with C1. Retain deferral for
++    // the smaller products that still finish faster in Java on their own.
++    const jint first_product_limbs = UseCompiler ? 120 : 104;
++    // Drop these raw oops before returning the ID to the blocking preparer.
++    NoSafepointVerifier nsv;
++    Arguments values(args, 2);
++    oop x = big_integer_mag.object(values.object());
++    oop y = big_integer_mag.object(values.object());
++    if (array_range(x, T_INT, 0, 0) && array_range(y, T_INT, 0, 0) &&
++        static_cast<jlong>(typeArrayOop(x)->length()) * typeArrayOop(y)->length() >=
++            first_product_limbs * first_product_limbs) {
++      return vmIntrinsics::_multiplyToLen;
++    }
++  }
++  return vmIntrinsics::_none;
++}
++
+ bool aes_key(oop key) {
+   return array_range(key, T_INT, 0, 0) &&
+          (typeArrayOop(key)->length() == 44 || typeArrayOop(key)->length() == 52 ||
+@@ -934,12 +980,82 @@ bool CommonIntrinsics::needs_compiler_stubs(vmIntrinsics::ID id) {
+ void CommonIntrinsics::prepare(vmIntrinsics::ID id) {
+   // Linking can allocate and block; the interpreter and C1 leaf adapters cannot.
+   // Bootstrap calls retain the Java fallback until the stubs are published.
+-  if (is_init_completed() && needs_compiler_stubs(id) &&
++  if ((UseCompiler || InlineIntrinsics) && is_init_completed() && needs_compiler_stubs(id) &&
+       is_available_for_interpreter(id) && vmIntrinsics::is_intrinsic_available(id)) {
+     StubRoutines::ensure_compiler_stubs_initialized();
+   }
+ }
+ 
++bool CommonIntrinsics::is_big_integer(vmIntrinsics::ID id) {
++  switch (id) {
++    case vmIntrinsics::_multiplyToLen:
++    case vmIntrinsics::_squareToLen:
++    case vmIntrinsics::_mulAdd:
++    case vmIntrinsics::_montgomeryMultiply:
++    case vmIntrinsics::_montgomerySquare:
++    case vmIntrinsics::_bigIntegerRightShiftWorker:
++    case vmIntrinsics::_bigIntegerLeftShiftWorker:
++      return true;
++    default: return false;
++  }
++}
++
++void CommonIntrinsics::prepare_for_java_call(const Method* method) {
++  if (!enabled() || !is_init_completed() || StubRoutines::compiler_stubs_initialized()) {
++    return;
++  }
++  vmIntrinsics::ID id = method->intrinsic_id();
++  prepare(is_big_integer(id) ? id : big_integer_workload(method));
++}
++
++bool CommonIntrinsics::cache_interpreter_call(const Method* method, const intptr_t* args) {
++#if defined(COMPILER2) && (defined(AMD64) || defined(AARCH64))
++  if (!enabled() || !is_init_completed() || StubRoutines::compiler_stubs_initialized()) {
++    return true;
++  }
++  vmIntrinsics::ID id = method->intrinsic_id();
++  if (id == vmIntrinsics::_none) {
++    prepare(big_integer_workload(method, args));
++    return true;
++  }
++  if ((!UseCompiler && !InlineIntrinsics) || !is_init_completed() ||
++      !is_big_integer(id) || !needs_compiler_stubs(id) ||
++      StubRoutines::compiler_stubs_initialized() ||
++      !is_available_for_interpreter(id) || !vmIntrinsics::is_intrinsic_available(id)) {
++    return true;
++  }
++  // Modular exponentiation chains Montgomery calls. Delaying their setup
++  // prolongs the first modPow operation instead of avoiding unused work.
++  if (id == vmIntrinsics::_montgomeryMultiply || id == vmIntrinsics::_montgomerySquare) {
++    prepare(id);
++    return true;
++  }
++  // Only read integer arguments; no raw oop is retained across prepare().
++  // Slots are in the same expression-stack order used by the leaf adapters.
++  jlong work = 0;
++  auto limbs = [](intptr_t value) -> jlong {
++    jint n = static_cast<jint>(value);
++    return n > 0 ? MIN2(n, max_quadratic_limbs) : 0;
++  };
++  switch (id) {
++    case vmIntrinsics::_multiplyToLen: work = limbs(args[3]) * limbs(args[1]); break;
++    case vmIntrinsics::_squareToLen: work = limbs(args[2]) * limbs(args[2]) / 2; break;
++    case vmIntrinsics::_mulAdd: work = limbs(args[1]); break;
++    case vmIntrinsics::_bigIntegerRightShiftWorker:
++    case vmIntrinsics::_bigIntegerLeftShiftWorker: work = limbs(args[0]); break;
++    default: ShouldNotReachHere();
++  }
++  work = MAX2(static_cast<jlong>(1), MIN2(work, big_integer_warmup_work));
++  if (AtomicAccess::add(&big_integer_work, work) < big_integer_warmup_work) {
++    // The entry still contains the resolved method and its signature. Leaving
++    // its bytecode unset makes a later invocation revisit this safe VM frame.
++    return false;
++  }
++  prepare(id);
++#endif
++  return true;
++}
++
+ bool CommonIntrinsics::is_scalar(vmIntrinsics::ID id) {
+   switch (id) {
+ #define COMMON_SCALAR(id, slots, result) case vmIntrinsics::id: return true;
+@@ -1049,7 +1165,11 @@ bool CommonIntrinsics::is_available_for_interpreter(vmIntrinsics::ID id) {
+ // Acquire the completed stub publication before inspecting backend slots.
+ bool CommonIntrinsics::is_available_for_c1(vmIntrinsics::ID id) {
+   if (needs_compiler_stubs(id) && !StubRoutines::compiler_stubs_initialized()) {
+-    return false;
++    // A lowering request has live ci handles and may prepare outside the leaf.
++    prepare(id);
++    if (!StubRoutines::compiler_stubs_initialized()) {
++      return false;
++    }
+   }
+   if (!is_supported(id)) {
+     return false;
+diff --git a/src/hotspot/share/runtime/commonIntrinsics.hpp b/src/hotspot/share/runtime/commonIntrinsics.hpp
+index a4c78a5025c..eed0d447a3f 100644
+--- a/src/hotspot/share/runtime/commonIntrinsics.hpp
++++ b/src/hotspot/share/runtime/commonIntrinsics.hpp
+@@ -28,6 +28,8 @@
+ #include "memory/allStatic.hpp"
+ #include "utilities/globalDefinitions.hpp"
+ 
++class Method;
++
+ // Intrinsic ID, Java parameter slots (including the receiver), result type.
+ // Keep the interpreter and C1 entry points in one catalogue. Existing
+ // interpreter/C1 intrinsics deliberately do not appear here.
+@@ -132,6 +134,9 @@ class CommonIntrinsics : AllStatic {
+   static constexpr jlong fallback = min_jlong;
+   static bool enabled();
+   static bool needs_compiler_stubs(vmIntrinsics::ID id);
++  static bool is_big_integer(vmIntrinsics::ID id);
++  static bool cache_interpreter_call(const Method* method, const intptr_t* args);
++  static void prepare_for_java_call(const Method* method);
+   static void prepare(vmIntrinsics::ID id);
+   static bool is_scalar(vmIntrinsics::ID id);
+   static bool is_binary_scalar(vmIntrinsics::ID id);
+diff --git a/src/hotspot/share/runtime/javaCalls.cpp b/src/hotspot/share/runtime/javaCalls.cpp
+index 291be708d25..27c724c599e 100644
+--- a/src/hotspot/share/runtime/javaCalls.cpp
++++ b/src/hotspot/share/runtime/javaCalls.cpp
+@@ -34,6 +34,7 @@
+ #include "oops/oop.inline.hpp"
+ #include "prims/jniCheck.hpp"
+ #include "prims/jvmtiExport.hpp"
++#include "runtime/commonIntrinsics.hpp"
+ #include "runtime/handles.inline.hpp"
+ #include "runtime/interfaceSupport.inline.hpp"
+ #include "runtime/javaCalls.hpp"
+@@ -370,6 +371,10 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
+     os::map_stack_shadow_pages(sp);
+   }
+ 
++  // Native callers select their target directly, without a bytecode resolver.
++  // Prepare before parameters() converts the rooted handles to raw oops.
++  CommonIntrinsics::prepare_for_java_call(method());
++
+   // do call
+   { JavaCallWrapper link(method, receiver, result, CHECK);
+     { HandleMark hm(thread);  // HandleMark used by HandleMarkCleaner
+diff --git a/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicInitialization.java b/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicInitialization.java
+index 12bf8417f46..646004309ac 100644
+--- a/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicInitialization.java
++++ b/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicInitialization.java
+@@ -47,13 +47,70 @@ public class TestCommonIntrinsicInitialization {
+ 
+     public static void main(String[] args) throws Exception {
+         if (args.length != 0) {
+-            exercise();
++            if (args[0].startsWith("bigint-modpow")) {
++                exerciseModPow(args[0].endsWith("large") ? 512 : 64);
++            } else if (args[0].startsWith("bigint-product")) {
++                exerciseProduct(args[0].endsWith("large") ? 512 : 320);
++            } else if (args[0].startsWith("bigint-")) {
++                int bytes = switch (args[0]) {
++                    case "bigint-medium" -> 256;
++                    case "bigint-large" -> 512;
++                    default -> 64;
++                };
++                exerciseBigInteger(args[0].equals("bigint-warm"), bytes);
++            } else {
++                exercise();
++            }
+             return;
+         }
+-        for (String mode : new String[] {"-Xint", "-XX:TieredStopAtLevel=1"}) {
++        for (String mode : new String[] {"-Xint", "-XX:TieredStopAtLevel=1", "-XX:TieredStopAtLevel=3"}) {
+             ProcessTools.executeTestJava("-XX:+UseCommonIntrinsics", mode,
+                     "-Xlog:startuptime", "-version")
+                     .shouldHaveExitValue(0).shouldNotContain(GENERATION);
++            ProcessTools.executeTestJava("-XX:+UseCommonIntrinsics", mode,
++                    "-Xlog:startuptime", TestCommonIntrinsicInitialization.class.getName(), "bigint-cold")
++                    .shouldHaveExitValue(0).shouldNotContain(GENERATION);
++            ProcessTools.executeTestJava("-XX:+UseCommonIntrinsics", mode,
++                    "-Xlog:startuptime", TestCommonIntrinsicInitialization.class.getName(), "bigint-medium")
++                    .shouldHaveExitValue(0).shouldNotContain(GENERATION);
++            ProcessTools.executeTestJava("-XX:+UseCommonIntrinsics", mode,
++                    "-Xlog:startuptime", TestCommonIntrinsicInitialization.class.getName(), "bigint-product-medium")
++                    .shouldHaveExitValue(0).shouldNotContain(GENERATION);
++            String large = ProcessTools.executeTestJava("-XX:+UseCommonIntrinsics", mode,
++                    "-Xlog:startuptime", TestCommonIntrinsicInitialization.class.getName(), "bigint-large")
++                    .shouldHaveExitValue(0).getOutput();
++            int generation = large.indexOf(GENERATION);
++            int multiply = large.indexOf("before-multiply");
++            if (multiply < 0 || generation < multiply ||
++                    large.indexOf(GENERATION, generation + GENERATION.length()) >= 0) {
++                throw new AssertionError("Expected one compiler-stub generation at first large square: " + large);
++            }
++            String product = ProcessTools.executeTestJava("-XX:+UseCommonIntrinsics", mode,
++                    "-Xlog:startuptime", TestCommonIntrinsicInitialization.class.getName(), "bigint-product-large")
++                    .shouldHaveExitValue(0).getOutput();
++            generation = product.indexOf(GENERATION);
++            multiply = product.indexOf("before-multiply");
++            if (multiply < 0 || generation < multiply ||
++                    product.indexOf(GENERATION, generation + GENERATION.length()) >= 0) {
++                throw new AssertionError("Expected one compiler-stub generation at first large product: " + product);
++            }
++            String warm = ProcessTools.executeTestJava("-XX:+UseCommonIntrinsics", mode,
++                    "-Xlog:startuptime", TestCommonIntrinsicInitialization.class.getName(), "bigint-warm")
++                    .shouldHaveExitValue(0).getOutput();
++            int first = warm.indexOf(GENERATION);
++            if (first < 0 || warm.indexOf(GENERATION, first + GENERATION.length()) >= 0) {
++                throw new AssertionError("Expected one BigInteger compiler-stub generation: " + warm);
++            }
++            for (String operation : new String[] {"bigint-modpow", "bigint-modpow-large"}) {
++                String modPow = ProcessTools.executeTestJava("-XX:+UseCommonIntrinsics", mode,
++                        "-Xlog:startuptime", TestCommonIntrinsicInitialization.class.getName(), operation)
++                        .shouldHaveExitValue(0).getOutput();
++                first = modPow.indexOf(GENERATION);
++                int call = modPow.indexOf("before-modpow");
++                if (call < 0 || first < call || modPow.indexOf(GENERATION, first + GENERATION.length()) >= 0) {
++                    throw new AssertionError("Expected one compiler-stub generation at first modPow use: " + modPow);
++                }
++            }
+         }
+         for (String mode : new String[] {"-Xint", "-XX:TieredStopAtLevel=1", "-XX:-TieredCompilation"}) {
+             String output = ProcessTools.executeTestJava("-XX:+UseCommonIntrinsics", mode,
+@@ -66,6 +123,69 @@ public static void main(String[] args) throws Exception {
+         }
+     }
+ 
++    private static void exerciseBigInteger(boolean warm, int bytes) {
++        byte[] input = new byte[bytes];
++        input[0] = 1;
++        input[input.length - 1] = 3;
++        BigInteger value = new BigInteger(1, input);
++        int top = (bytes - 1) * 8;
++        System.out.println("before-multiply");
++        for (int i = 0; i < (warm ? 1000 : 1); i++) {
++            BigInteger result = value.multiply(value);
++            if (result.bitLength() != top * 2 + 1 || result.bitCount() != 5 || result.intValue() != 9 ||
++                !result.testBit(top * 2) || !result.testBit(top + 1) || !result.testBit(top + 2)) {
++                throw new AssertionError("BigInteger square");
++            }
++        }
++    }
++
++    private static void exerciseProduct(int bytes) {
++        byte[] input = new byte[bytes];
++        input[0] = 1;
++        input[input.length - 1] = 3;
++        BigInteger x = new BigInteger(1, input);
++        input[input.length - 1] = 5;
++        BigInteger y = new BigInteger(1, input);
++        int top = (bytes - 1) * 8;
++        System.out.println("before-multiply");
++        BigInteger result = x.multiply(y);
++        if (result.bitLength() != top * 2 + 1 || result.bitCount() != 6 || result.intValue() != 15 ||
++                !result.testBit(top * 2) || !result.testBit(top + 3)) {
++            throw new AssertionError("BigInteger first product");
++        }
++    }
++
++    private static void exerciseModPow(int bytes) {
++        byte[] input = new byte[bytes];
++        input[0] = 1;
++        input[input.length - 1] = 3;
++        BigInteger value = new BigInteger(1, input);
++        byte[] modulusBytes = new byte[bytes];
++        Arrays.fill(modulusBytes, (byte) 0xff);
++        BigInteger modulus = new BigInteger(1, modulusBytes);
++        BigInteger exponent = BigInteger.valueOf(65537);
++        // Independently computed modular exponentiation of (2^((bytes-1)*8) + 3).
++        String expectedHex = bytes == 64
++                ? "6f98e2a7637caeedd66c498239e1f2b6be9ccc196df314f9d25cbe55f6982ab9b"
++                + "0a0f0c937970e1a0f00fadcdd8e956e53d9b023c8a47b171e39e7c61897c5e2"
++                : "90264a30deba58ba971d08f2e9a90a284daeb9c6a63e17a8a56587454a0a3a10f7266cd524337b400a77ef6a706b213b"
++                + "a5f780e80d2a6a8a59674e1a57c19c798720101e86fa805de9db2aa344787a5fc51a73bb7062f2880d44e0622c125a1b"
++                + "8fa988744a6f4e0fd7c10a75b2ed99f18ed1b66820ff2fcf2e2f43677d08a296c95c2921657372e98d2580964e7f2583"
++                + "b831df8c2e339e7781ce98e95ab7b94f72a0a3adf338afa1018ce93fc49bc46920fe8e3e45e91da0ab5bda2d5b9aca51"
++                + "f6b09bcfac45b2b83cf90aaa013c6e4bbdcdac4e614ddffdd500d1f0ee01bb575059b3af390ce4f808f6ee567f5a432e"
++                + "701d25beae4b67c3c6fa8e9fcb923c9a9b93555a440bad834e998c64c185e068088d94850da798636e662940aaa2bd28"
++                + "dde5dd42762398a10d597f9f51c70964f1e40756c2d058b5af5a35d21ca018c901dbd5c8199df3f8d8b324c3d5412d0b"
++                + "45ce5b620a67a3ff65364ee1045e83439824e0c2db095d6e87466543d5dac2a3b9c7675fb13c1f88710a988d170bd1d7"
++                + "a35941cb881a8d89a34b3dd05fcff42d6eb971b8aa8b571d6cb072b5b58d7ed3536a29f0752e7b479860d825b06502c7"
++                + "fc37e8eecba0e4df7e0cd12e12f7c3f8577d5679064a812dc0bd9bb2c56dd8be78beb11d0535f8d3889600fcd33362a6"
++                + "9d61bc2cd6533ed9f5436c5d9e3903d8e6116d316698fe3b85db4de9d5fcd14c";
++        BigInteger expected = new BigInteger(expectedHex, 16);
++        System.out.println("before-modpow");
++        if (!value.modPow(exponent, modulus).equals(expected)) {
++            throw new AssertionError("BigInteger first modPow");
++        }
++    }
++
+     private static void exercise() throws Exception {
+         CountDownLatch ready = new CountDownLatch(8);
+         CountDownLatch start = new CountDownLatch(1);
+diff --git a/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicInterpreterLayout.java b/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicInterpreterLayout.java
+new file mode 100644
+index 00000000000..02a10f69118
+--- /dev/null
++++ b/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicInterpreterLayout.java
+@@ -0,0 +1,106 @@
++/*
++ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
++ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
++ *
++ * This code is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 only, as
++ * published by the Free Software Foundation.
++ *
++ * This code is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ * version 2 for more details (a copy is included in the LICENSE file that
++ * accompanied this code).
++ *
++ * You should have received a copy of the GNU General Public License version
++ * 2 along with this work; if not, write to the Free Software Foundation,
++ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
++ *
++ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
++ * or visit www.oracle.com if you need additional information or have any
++ * questions.
++ */
++
++/*
++ * @test
++ * @summary Optional common entries preserve the ordinary interpreter dispatch prefix
++ * @requires vm.flavor == "server" & vm.gc.Serial
++ * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
++ * @library /test/lib
++ * @run driver compiler.intrinsics.common.TestCommonIntrinsicInterpreterLayout
++ */
++
++package compiler.intrinsics.common;
++
++import java.util.HashMap;
++import java.util.Map;
++import java.util.regex.Matcher;
++import java.util.regex.Pattern;
++import jdk.test.lib.process.ProcessTools;
++
++public class TestCommonIntrinsicInterpreterLayout {
++    private static final Pattern HEADER = Pattern.compile(
++            "(?m)^(.+?)\\s+\\[(0x[0-9a-fA-F]+),\\s*(0x[0-9a-fA-F]+)\\]\\s+([0-9]+) bytes$");
++
++    private record Segment(String name, long start, long end) { }
++    private record Layout(Map<Integer, Segment> bytecodes, Segment common, Segment deopt) { }
++
++    public static void main(String[] args) throws Exception {
++        Layout off = layout(false);
++        Layout on = layout(true);
++        if (off.common() != null || on.common() == null) {
++            throw new AssertionError("Expected common entries only in the enabled interpreter");
++        }
++        if (!off.bytecodes().keySet().equals(on.bytecodes().keySet())) {
++            throw new AssertionError("Intrinsic flags changed the set of bytecode handlers");
++        }
++        // Inspect the generated layout rather than asserting a timing threshold.
++        // A catalogue or alias change must not insert code ahead of Java fallbacks.
++        for (Segment bytecode : on.bytecodes().values()) {
++            if (Long.compareUnsigned(bytecode.end(), on.common().start()) > 0) {
++                throw new AssertionError("Common entries precede ordinary bytecode " + bytecode.name()
++                        + ": bytecode end=" + Long.toHexString(bytecode.end())
++                        + ", common start=" + Long.toHexString(on.common().start()));
++            }
++        }
++        if (on.deopt() == null || Long.compareUnsigned(on.common().end(), on.deopt().start()) > 0) {
++            throw new AssertionError("Deoptimization entries must remain after common entries");
++        }
++        System.out.println("Common entries follow " + on.bytecodes().size() + " ordinary bytecode handlers");
++    }
++
++    private static Layout layout(boolean enabled) throws Exception {
++        // Fixed children isolate the entry-generation flag from ambient VM modes.
++        String output = ProcessTools.executeProcess(ProcessTools.createLimitedTestJavaProcessBuilder(
++                "-Xint", "-Xshare:off", "-XX:ActiveProcessorCount=1", "-XX:CICompilerCount=2",
++                "-XX:+UseSerialGC", "-Xms64m", "-Xmx64m", "-XX:+UnlockDiagnosticVMOptions",
++                "-XX:+PrintInterpreter", "-XX:" + (enabled ? "+" : "-") + "UseCommonIntrinsics",
++                "-version")).shouldHaveExitValue(0).getOutput();
++        Map<Integer, Segment> bytecodes = new HashMap<>();
++        Segment common = null;
++        Segment deopt = null;
++        Matcher matcher = HEADER.matcher(output);
++        while (matcher.find()) {
++            String name = matcher.group(1).trim();
++            Segment segment = new Segment(name,
++                    Long.parseUnsignedLong(matcher.group(2).substring(2), 16),
++                    Long.parseUnsignedLong(matcher.group(3).substring(2), 16));
++            if (name.equals("common intrinsic entry points")) {
++                common = segment;
++            } else if (name.equals("deoptimization entry points")) {
++                deopt = segment;
++            }
++            String[] fields = name.split("\\s+");
++            if (fields.length >= 2 && fields[fields.length - 2].matches("[0-9]+")) {
++                int code = Integer.parseInt(fields[fields.length - 2]);
++                if (bytecodes.put(code, segment) != null) {
++                    throw new AssertionError("Duplicate bytecode header: " + name);
++                }
++            }
++        }
++        if (bytecodes.size() < 150 || !bytecodes.containsKey(51) || !bytecodes.containsKey(104)) {
++            throw new AssertionError("Missing ordinary interpreter codelet headers: " + bytecodes.size());
++        }
++        return new Layout(bytecodes, common, deopt);
++    }
++}
+diff --git a/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicRedefinition.java b/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicRedefinition.java
+new file mode 100644
+index 00000000000..338abad2b1e
+--- /dev/null
++++ b/test/hotspot/jtreg/compiler/intrinsics/common/TestCommonIntrinsicRedefinition.java
+@@ -0,0 +1,189 @@
++/*
++ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
++ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
++ *
++ * This code is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 only, as
++ * published by the Free Software Foundation.
++ *
++ * This code is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ * version 2 for more details (a copy is included in the LICENSE file that
++ * accompanied this code).
++ *
++ * You should have received a copy of the GNU General Public License version
++ * 2 along with this work; if not, write to the Free Software Foundation,
++ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
++ *
++ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
++ * or visit www.oracle.com if you need additional information or have any
++ * questions.
++ */
++
++/*
++ * @test
++ * @summary Redefinition during first BigInteger stub preparation keeps resolved targets current
++ * @requires vm.jvmti & vm.compiler2.enabled
++ * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
++ * @library /test/lib
++ * @modules java.instrument
++ * @run main RedefineClassHelper
++ * @run driver TestCommonIntrinsicRedefinition
++ */
++
++import java.io.InputStream;
++import java.lang.classfile.ClassFile;
++import java.lang.classfile.ClassTransform;
++import java.lang.classfile.CodeBuilder;
++import java.lang.classfile.CodeElement;
++import java.lang.classfile.CodeTransform;
++import java.lang.invoke.MethodHandle;
++import java.lang.invoke.MethodHandles;
++import java.lang.invoke.MethodType;
++import java.math.BigInteger;
++import java.util.Arrays;
++import java.util.Set;
++import java.util.concurrent.CountDownLatch;
++import java.util.concurrent.atomic.AtomicReference;
++import jdk.test.lib.process.ProcessTools;
++
++public class TestCommonIntrinsicRedefinition {
++    private static final String GENERATION = "StubRoutines generation compiler stubs";
++    private static final Set<String> TARGETS = Set.of("implMultiplyToLen", "implSquareToLen", "implMulAdd",
++            "implMontgomeryMultiply", "implMontgomerySquare", "oddModPow",
++            "squareKaratsuba", "multiplyKaratsuba");
++
++    public static void main(String[] args) throws Throwable {
++        if (args.length != 0) {
++            race(args[0]);
++            return;
++        }
++        for (String mode : new String[] { "-Xint", "-XX:TieredStopAtLevel=1", "-XX:TieredStopAtLevel=3" }) {
++            for (String operation : new String[] { "multiply", "modpow", "handle" }) {
++                // Each JVM has a fresh compiler-stub publication and independent
++                // resolver/MemberName first-use windows.
++                for (int repetition = 0; repetition < 2; repetition++) {
++                    String output = ProcessTools.executeTestJava("-javaagent:redefineagent.jar", mode,
++                            "--add-opens=java.base/java.math=ALL-UNNAMED", "-XX:+UseCommonIntrinsics",
++                            "-XX:+UnlockDiagnosticVMOptions", "-XX:+SafepointALot",
++                            "-XX:GuaranteedSafepointInterval=1", "-Xlog:startuptime",
++                            TestCommonIntrinsicRedefinition.class.getName(), operation)
++                            .shouldHaveExitValue(0).shouldContain("redefinition-race-passed").getOutput();
++                    int first = output.indexOf(GENERATION);
++                    int start = output.indexOf("before-first-use");
++                    if (start < 0 || first < start || output.indexOf(GENERATION, first + GENERATION.length()) >= 0) {
++                        throw new AssertionError("Expected one compiler-stub generation during first use: " + output);
++                    }
++                }
++            }
++        }
++    }
++
++    private static byte[] addNop(byte[] original) {
++        return ClassFile.of().transformClass(ClassFile.of().parse(original),
++                ClassTransform.transformingMethodBodies(m -> TARGETS.contains(m.methodName().stringValue()),
++                        new CodeTransform() {
++                            @Override
++                            public void atStart(CodeBuilder builder) {
++                                // Different bytecodes make the replaced target obsolete;
++                                // identical-bytecode redefinition only marks it old.
++                                builder.nop();
++                            }
++
++                            @Override
++                            public void accept(CodeBuilder builder, CodeElement element) {
++                                builder.with(element);
++                            }
++                        }));
++    }
++
++    private static void race(String operation) throws Throwable {
++        byte[] original;
++        try (InputStream input = BigInteger.class.getResourceAsStream("BigInteger.class")) {
++            original = input.readAllBytes();
++        }
++        byte[] changed = addNop(original);
++        byte[] leftBytes = new byte[512];
++        byte[] rightBytes = new byte[512];
++        leftBytes[0] = rightBytes[0] = (byte) 0x80;
++        leftBytes[511] = 3;
++        rightBytes[511] = 5;
++        BigInteger left = new BigInteger(1, leftBytes);
++        BigInteger right = new BigInteger(1, rightBytes);
++        BigInteger product = BigInteger.ONE.shiftLeft(8190).setBit(4098).add(BigInteger.valueOf(15));
++        byte[] small = new byte[64];
++        small[0] = 1;
++        small[63] = 3;
++        BigInteger value = new BigInteger(1, small);
++        Arrays.fill(small, (byte) 0xff);
++        BigInteger modulus = new BigInteger(1, small);
++        BigInteger exponent = BigInteger.valueOf(65537);
++        BigInteger power = new BigInteger(
++                "6f98e2a7637caeedd66c498239e1f2b6be9ccc196df314f9d25cbe55f6982ab9b"
++                + "0a0f0c937970e1a0f00fadcdd8e956e53d9b023c8a47b171e39e7c61897c5e2", 16);
++        int[] x = new int[128];
++        int[] y = new int[128];
++        x[0] = y[0] = 0x80000000;
++        x[127] = 3;
++        y[127] = 5;
++        int[] expected = new int[256];
++        expected[0] = 0x40000000;
++        expected[127] = 4;
++        expected[255] = 15;
++
++        int workers = 12;
++        CountDownLatch ready = new CountDownLatch(workers + 1);
++        CountDownLatch start = new CountDownLatch(1);
++        AtomicReference<Throwable> failure = new AtomicReference<>();
++        Thread[] threads = new Thread[workers + 1];
++        threads[0] = new Thread(() -> {
++            ready.countDown();
++            try {
++                start.await();
++                for (int i = 0; i < 48; i++) {
++                    RedefineClassHelper.redefineClass(BigInteger.class, (i & 1) == 0 ? changed : original);
++                }
++            } catch (Throwable t) {
++                failure.compareAndSet(null, t);
++            }
++        }, "redefine-BigInteger");
++        for (int i = 1; i < threads.length; i++) {
++            threads[i] = new Thread(() -> {
++                ready.countDown();
++                try {
++                    start.await();
++                    MethodHandles.Lookup lookup = operation.equals("handle")
++                            ? MethodHandles.privateLookupIn(BigInteger.class, MethodHandles.lookup()) : null;
++                    for (int call = 0; call < 32; call++) {
++                        switch (operation) {
++                            case "multiply" -> {
++                                if (!left.multiply(right).equals(product)) throw new AssertionError("multiply");
++                            }
++                            case "modpow" -> {
++                                if (!value.modPow(exponent, modulus).equals(power)) throw new AssertionError("modPow");
++                            }
++                            case "handle" -> {
++                                MethodHandle handle = lookup.findStatic(BigInteger.class, "implMultiplyToLen",
++                                        MethodType.methodType(int[].class, int[].class, int.class,
++                                                int[].class, int.class, int[].class));
++                                int[] actual = (int[]) handle.invokeExact(x, 128, y, 128, new int[256]);
++                                if (!Arrays.equals(actual, expected)) throw new AssertionError("method handle multiply");
++                            }
++                            default -> throw new AssertionError(operation);
++                        }
++                    }
++                } catch (Throwable t) {
++                    failure.compareAndSet(null, t);
++                }
++            }, "first-use-" + i);
++        }
++        for (Thread thread : threads) thread.start();
++        ready.await();
++        System.out.println("before-first-use");
++        start.countDown();
++        for (Thread thread : threads) thread.join();
++        if (failure.get() != null) throw new AssertionError("Redefinition/first-use race", failure.get());
++        System.out.println("redefinition-race-passed");
++    }
++}
+diff --git a/test/hotspot/jtreg/runtime/cds/CommonIntrinsicArchiveDeterminism.java b/test/hotspot/jtreg/runtime/cds/CommonIntrinsicArchiveDeterminism.java
+new file mode 100644
+index 00000000000..f3072c2c961
+--- /dev/null
++++ b/test/hotspot/jtreg/runtime/cds/CommonIntrinsicArchiveDeterminism.java
+@@ -0,0 +1,80 @@
++/*
++ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
++ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
++ *
++ * This code is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 only, as
++ * published by the Free Software Foundation.
++ *
++ * This code is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ * version 2 for more details (a copy is included in the LICENSE file that
++ * accompanied this code).
++ *
++ * You should have received a copy of the GNU General Public License version
++ * 2 along with this work; if not, write to the Free Software Foundation,
++ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
++ *
++ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
++ * or visit www.oracle.com if you need additional information or have any
++ * questions.
++ */
++
++/*
++ * @test id=serial
++ * @summary Static archive resolution is independent of common intrinsics and safepoint timing
++ * @requires vm.cds & vm.gc.Serial & vm.bits == "64" & (os.arch == "amd64" | os.arch == "aarch64")
++ * @library /test/lib
++ * @build jdk.test.whitebox.WhiteBox DeterministicDump
++ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
++ * @run main/othervm/timeout=480 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
++ *      -XX:+WhiteBoxAPI CommonIntrinsicArchiveDeterminism Serial
++ */
++
++/*
++ * @test id=g1
++ * @summary Static archive resolution is independent of common intrinsics and safepoint timing
++ * @requires vm.cds & vm.gc.G1 & vm.bits == "64" & (os.arch == "amd64" | os.arch == "aarch64")
++ * @library /test/lib
++ * @build jdk.test.whitebox.WhiteBox DeterministicDump
++ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
++ * @run main/othervm/timeout=480 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
++ *      -XX:+WhiteBoxAPI CommonIntrinsicArchiveDeterminism G1
++ */
++
++/*
++ * @test id=z
++ * @summary Static archive resolution is independent of common intrinsics and safepoint timing
++ * @requires vm.cds & vm.gc.Z & vm.bits == "64" & (os.arch == "amd64" | os.arch == "aarch64")
++ * @library /test/lib
++ * @build jdk.test.whitebox.WhiteBox DeterministicDump
++ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
++ * @run main/othervm/timeout=480 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
++ *      -XX:+WhiteBoxAPI CommonIntrinsicArchiveDeterminism Z
++ */
++
++import java.io.File;
++import java.util.ArrayList;
++import java.util.List;
++import jdk.test.lib.cds.CDSArchiveUtils;
++
++public class CommonIntrinsicArchiveDeterminism {
++    public static void main(String[] args) throws Exception {
++        for (boolean compressed : new boolean[] { false, true }) {
++            ArrayList<String> base = new ArrayList<>(List.of(
++                    "-XX:+Use" + args[0] + "GC", "-XX:+UseFourByteObjectHeaders",
++                    "-Xmx128M", "-Xms128M", "-Xmn120M",
++                    "-XX:" + (compressed ? "+" : "-") + "UseCompressedOops"));
++            String ordinary = DeterministicDump.dump(base, "-XX:-UseCommonIntrinsics");
++            File archive = new File(ordinary + ".jsa");
++            DeterministicDump.HEADER_SIZE = CDSArchiveUtils.fileHeaderSize(archive);
++            String common = DeterministicDump.dump(base, "-XX:+UseCommonIntrinsics");
++            String safepoints = DeterministicDump.dump(base, "-XX:+UseCommonIntrinsics",
++                    "-XX:+UnlockDiagnosticVMOptions", "-XX:+SafepointALot",
++                    "-XX:GuaranteedSafepointInterval=1");
++            DeterministicDump.compare(ordinary, common, archive);
++            DeterministicDump.compare(ordinary, safepoints, archive);
++        }
++    }
++}

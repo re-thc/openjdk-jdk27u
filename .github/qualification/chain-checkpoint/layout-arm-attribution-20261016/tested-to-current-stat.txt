@@ -1,0 +1,18 @@
+ doc/common-intrinsics/BENCHMARKS.md                | 218 ++++++++++++---------
+ doc/common-intrinsics/README.md                    |  21 +-
+ doc/common-intrinsics/summary.csv                  |  86 +++-----
+ .../share/interpreter/interpreterRuntime.cpp       |  19 +-
+ .../share/interpreter/interpreterRuntime.hpp       |   2 +-
+ .../interpreter/templateInterpreterGenerator.cpp   |  54 +++--
+ src/hotspot/share/oops/cpCache.cpp                 |  10 +-
+ src/hotspot/share/oops/cpCache.hpp                 |   6 +-
+ src/hotspot/share/oops/method.cpp                  |   3 +-
+ src/hotspot/share/prims/methodHandles.cpp          |   6 +
+ src/hotspot/share/runtime/commonIntrinsics.cpp     | 124 +++++++++++-
+ src/hotspot/share/runtime/commonIntrinsics.hpp     |   5 +
+ src/hotspot/share/runtime/javaCalls.cpp            |   5 +
+ .../common/TestCommonIntrinsicInitialization.java  | 124 +++++++++++-
+ .../TestCommonIntrinsicInterpreterLayout.java      | 106 ++++++++++
+ .../common/TestCommonIntrinsicRedefinition.java    | 189 ++++++++++++++++++
+ .../cds/CommonIntrinsicArchiveDeterminism.java     |  80 ++++++++
+ 17 files changed, 871 insertions(+), 187 deletions(-)

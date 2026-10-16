@@ -1,0 +1,109 @@
+{
+  "source": "e41d7823bf6de77c4bfba52e896bf325221488cb",
+  "base_workflow_revision": "12fb0c876b9ec3b23ce59f003badc086e2b0f368",
+  "status": "prepared-only-not-applied-not-dispatched",
+  "files": [
+    {
+      "path": ".github/workflows/pr9-native-linux.yml",
+      "sha256": "a0813eecc1023808c69ea8aaff639406f21c708bdf6937d5444a40606dcf92c5"
+    },
+    {
+      "path": ".github/workflows/pr9-native-windows.yml",
+      "sha256": "5ed1b92ba6ae0dfb4e8425f36e0cca658248f3b260f86a9fc32c7c597e28832c"
+    }
+  ],
+  "patch_sha256": "5e2fa0a118e81ac444c877d292fe995120c3b84fa6dff5c60279d499e55619f6",
+  "static_checks": [
+    {
+      "workflow": ".github/workflows/pr9-native-linux.yml",
+      "step": "Restore and verify exact candidate source",
+      "check": "bash-n"
+    },
+    {
+      "workflow": ".github/workflows/pr9-native-linux.yml",
+      "step": "Set architecture",
+      "check": "bash-n"
+    },
+    {
+      "workflow": ".github/workflows/pr9-native-linux.yml",
+      "step": "Install toolchain and dependencies",
+      "check": "bash-n"
+    },
+    {
+      "workflow": ".github/workflows/pr9-native-linux.yml",
+      "step": "Install mold 3.0.0",
+      "check": "bash-n"
+    },
+    {
+      "workflow": ".github/workflows/pr9-native-linux.yml",
+      "step": "Verify GCC version",
+      "check": "bash-n"
+    },
+    {
+      "workflow": ".github/workflows/pr9-native-linux.yml",
+      "step": "Configure",
+      "check": "bash-n"
+    },
+    {
+      "workflow": ".github/workflows/pr9-native-linux.yml",
+      "step": "Check development profile",
+      "check": "bash-n"
+    },
+    {
+      "workflow": ".github/workflows/pr9-native-linux.yml",
+      "step": "Verify actual JVM source and retain core payload identity",
+      "check": "bash-n"
+    },
+    {
+      "workflow": ".github/workflows/pr9-native-linux.yml",
+      "step": "Compiler cache statistics",
+      "check": "bash-n"
+    },
+    {
+      "workflow": ".github/workflows/pr9-native-windows.yml",
+      "step": "Restore and verify exact candidate source",
+      "check": "bash-n"
+    },
+    {
+      "workflow": ".github/workflows/pr9-native-windows.yml",
+      "step": "Check toolchain installed for x64",
+      "check": "bash-n"
+    },
+    {
+      "workflow": ".github/workflows/pr9-native-windows.yml",
+      "step": "Check toolchain installed for ARM64",
+      "check": "bash-n"
+    },
+    {
+      "workflow": ".github/workflows/pr9-native-windows.yml",
+      "step": "Install toolchain and dependencies for x64",
+      "check": "bash-n"
+    },
+    {
+      "workflow": ".github/workflows/pr9-native-windows.yml",
+      "step": "Install toolchain and dependencies for ARM64",
+      "check": "bash-n"
+    },
+    {
+      "workflow": ".github/workflows/pr9-native-windows.yml",
+      "step": "Configure",
+      "check": "bash-n"
+    },
+    {
+      "workflow": ".github/workflows/pr9-native-windows.yml",
+      "step": "Verify configured toolchain",
+      "check": "bash-n"
+    },
+    {
+      "workflow": ".github/workflows/pr9-native-windows.yml",
+      "step": "Check development profile",
+      "check": "bash-n"
+    },
+    {
+      "workflow": ".github/workflows/pr9-native-windows.yml",
+      "step": "Verify actual JVM source and retain core payload identity",
+      "check": "bash-n"
+    }
+  ],
+  "scope": "Diagnostic output/artifact retention and matrix failure isolation only. Runtime sources, build commands and existing identity assertions are unchanged. Actual remote SOURCE is unknown, so the strict check is not relaxed. No build, rerun, VM test or stopped archive stress was launched."
+}

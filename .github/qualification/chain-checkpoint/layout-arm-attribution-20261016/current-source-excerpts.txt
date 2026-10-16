@@ -1,0 +1,636 @@
+Source e41d7823bf6de77c4bfba52e896bf325221488cb; line numbers belong to this exact checkout.
+
+src/hotspot/cpu/aarch64/templateInterpreterGenerator_aarch64.cpp
+986: address TemplateInterpreterGenerator::generate_common_intrinsic_entry(vmIntrinsics::ID id) {
+987:   address entry = __ pc();
+988:   Label slow_path;
+989:   if (JvmtiExport::can_post_interpreter_events()) {
+990:     __ ldrw(rscratch1, Address(rthread, JavaThread::interp_only_mode_offset()));
+991:     __ cbnzw(rscratch1, slow_path);
+992:   }
+993:   __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
+994: #if INCLUDE_JVMTI
+995:   // Breakpoint events alone do not put the thread in interpreter-only mode.
+996:   Label no_breakpoints;
+997:   __ ldr(rscratch1, Address(rmethod, Method::method_counters_offset()));
+998:   __ cbz(rscratch1, no_breakpoints);
+999:   __ ldrh(rscratch1, Address(rscratch1, in_bytes(MethodCounters::number_of_breakpoints_offset())));
+1000:   __ cbnzw(rscratch1, slow_path);
+1001:   __ bind(no_breakpoints);
+1002: #endif
+1003:   if (CommonIntrinsics::is_scalar(id)) {
+1004:     bool binary = CommonIntrinsics::is_binary_scalar(id);
+1005:     bool wide = CommonIntrinsics::scalar_is_wide(id);
+1006:     int offset = binary ? (wide ? 2 : 1) * wordSize : 0;
+1007:     __ ldr(r0, Address(esp, offset));
+1008:     if (binary) __ ldr(r1, Address(esp, 0));
+1009:     common_scalar_intrinsic(_masm, id, r0, r0, binary ? r1 : noreg, r2, r3, v0, &slow_path);
+1010:     __ andr(sp, r19_sender_sp, -16);
+1011:     __ ret(lr);
+1012:     __ bind(slow_path);
+1013:     __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+1014:     return entry;
+1015:   }
+1016:   if (CommonIntrinsics::needs_compiler_stubs(id)) {
+1017:     __ lea(rscratch1, ExternalAddress(StubRoutines::compiler_stubs_initialized_address()));
+1018:     __ ldarb(rscratch2, rscratch1);
+1019:     __ cbz(rscratch2, slow_path);
+1020:   }
+1021:   // Arguments stay on the expression stack so the Java fallback can reuse them.
+1022:   __ mov(c_rarg0, esp);
+1023:   __ stp(rscratch2, lr, Address(__ pre(sp, -2 * wordSize)));
+1024:   __ super_call_VM_leaf(CommonIntrinsics::entry_for(id), c_rarg0);
+1025:   __ ldp(rscratch2, lr, Address(__ post(sp, 2 * wordSize)));
+1026:   __ mov(rscratch1, CommonIntrinsics::fallback);
+1027:   __ cmp(r0, rscratch1);
+1028:   __ br(Assembler::EQ, slow_path);
+1029:   __ andr(sp, r19_sender_sp, -16);
+1030:   __ ret(lr);
+1031:   __ bind(slow_path);
+1032:   __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+1033:   return entry;
+1034: }
+1035: 
+1036: /**
+1037:  * Method entry for static native methods:
+1038:  *   int java.util.zip.CRC32.update(int crc, int b)
+1039:  */
+1040: address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
+1041:   assert(UseCRC32Intrinsics, "this intrinsic is not supported");
+1042:   address entry = __ pc();
+1043: 
+1044:   // rmethod: Method*
+1045:   // r19_sender_sp: senderSP must preserved for slow path
+1046:   // esp: args
+1047: 
+1048:   Label slow_path;
+
+src/hotspot/share/interpreter/abstractInterpreter.hpp
+141:   static MethodKind method_kind(const methodHandle& m);
+142:   static address    entry_for_kind(MethodKind k)                { assert(0 <= k && k < number_of_method_entries, "illegal kind"); return _entry_table[k]; }
+143:   static address    entry_for_method(const methodHandle& m) {
+144:     vmIntrinsics::ID id = m->intrinsic_id();
+145:     if (id != vmIntrinsics::_none) {
+146:       address common_entry = _common_entry_table[vmIntrinsics::as_int(id)];
+147:       if (common_entry != nullptr && !m->is_synchronized() && !m->is_native()) {
+148:         return common_entry;
+149:       }
+150:     }
+151:     return entry_for_kind(method_kind(m));
+152:   }
+
+src/hotspot/share/interpreter/templateInterpreterGenerator.cpp
+243:   // Bytecodes
+244:   set_entry_points_for_all_bytes();
+245: 
+246:   // installation of code in other places in the runtime
+247:   set_safepoints_for_all_bytes();
+248: 
+249:   // Keep the ordinary bytecode layout independent of optional intrinsic
+250:   // entries. Changes to intrinsic flags or alias sharing must not reposition
+251:   // hot Java fallback handlers. Deoptimization entries remain last.
+252: #if defined(AMD64) || defined(AARCH64)
+253:   // A safepoint can select the Java fallback of an intrinsic entry. During a
+254:   // static archive assembly that would make archived constant-pool resolution
+255:   // depend on safepoint timing. AOT training clears those entries in its
+256:   // preimage and can retain the common entries while running the application.
+257:   if (CommonIntrinsics::enabled() && InlineIntrinsics &&
+258:       (!CDSConfig::is_dumping_static_archive() || CDSConfig::is_dumping_preimage_static_archive())) {
+259:     TraceTime timer("Common intrinsic entry generation", TRACETIME_LOG(Debug, startuptime));
+260:     CodeletMark cm(_masm, "common intrinsic entry points");
+261:     // Visit only our catalogue. Most VM intrinsics have no common entry.
+262: #define COMMON_ID(id, slots, result) vmIntrinsics::id,
+263:     static const vmIntrinsics::ID ids[] = {
+264:       COMMON_INTRINSICS_DO(COMMON_ID)
+265:       COMMON_SCALAR_INTRINSICS_DO(COMMON_ID)
+266:       COMMON_BINARY_SCALAR_INTRINSICS_DO(COMMON_ID)
+267:       vmIntrinsics::_vectorizedHashCodeLeaf
+268:     };
+269: #undef COMMON_ID
+270:     for (vmIntrinsics::ID id : ids) {
+271:       if (CommonIntrinsics::is_available_for_interpreter(id) && vmIntrinsics::is_intrinsic_available(id)) {
+272:         // These aliases have identical arguments, operations and guards.
+273:         // Check each ID's flags above even when its code can be shared.
+274:         vmIntrinsics::ID canonical = id;
+275:         switch (id) {
+276:           case vmIntrinsics::_min_strict: canonical = vmIntrinsics::_min; break;
+277:           case vmIntrinsics::_max_strict: canonical = vmIntrinsics::_max; break;
+278:           case vmIntrinsics::_vectorizedHashCodeLeaf: canonical = vmIntrinsics::_vectorizedHashCode; break;
+279:           default: break;
+280:         }
+281:         address entry = Interpreter::_common_entry_table[vmIntrinsics::as_int(canonical)];
+282:         if (entry == nullptr) {
+283:           __ align(CodeEntryAlignment);
+284:           entry = generate_common_intrinsic_entry(id);
+285:         }
+286:         Interpreter::_common_entry_table[vmIntrinsics::as_int(id)] = entry;
+287:       }
+288:     }
+289:   }
+290: #endif
+291: 
+292:   { CodeletMark cm(_masm, "deoptimization entry points");
+293:     Interpreter::_deopt_entry[0] = EntryPoint();
+294:     Interpreter::_deopt_entry[0].set_entry(vtos, generate_deopt_entry_for(vtos, 0));
+295:     for (int i = 1; i < Interpreter::number_of_deopt_entries; i++) {
+296:       Interpreter::_deopt_entry[i] =
+297:         EntryPoint(
+298:                    generate_deopt_entry_for(atos, i),
+
+src/hotspot/share/interpreter/interpreterRuntime.cpp
+280: JRT_ENTRY(void, InterpreterRuntime::quicken_io_cc(JavaThread* current))
+281:   // Force resolving; quicken the bytecode
+282:   LastFrameAccessor last_frame(current);
+283:   int which = last_frame.get_index_u2(Bytecodes::_checkcast);
+284:   ConstantPool* cpool = last_frame.method()->constants();
+285:   // We'd expect to assert that we're only here to quicken bytecodes, but in a multithreaded
+286:   // program we might have seen an unquick'd bytecode in the interpreter but have another
+287:   // thread quicken the bytecode before we get here.
+288:   // assert( cpool->tag_at(which).is_unresolved_klass(), "should only come here to quicken bytecodes" );
+289:   Klass* klass = cpool->klass_at(which, CHECK);
+290:   current->set_vm_result_metadata(klass);
+291: JRT_END
+292: 
+
+src/hotspot/share/interpreter/interpreterRuntime.cpp
+818:       }
+819:       return;
+820:     }
+821: 
+822:     resolved_method = methodHandle(current, info.resolved_method());
+823:   } // end JvmtiHideSingleStepping
+824: 
+825:   bool cache_call = true;
+826:   if ((bytecode == Bytecodes::_invokestatic && resolved_method->intrinsic_id() != vmIntrinsics::_none) ||
+827:       resolved_method->method_holder()->name() == vmSymbols::java_math_BigInteger()) {
+828:     LastFrameAccessor call_frame(current);
+829:     cache_call = CommonIntrinsics::cache_interpreter_call(resolved_method(),
+830:         call_frame.get_frame().interpreter_frame_tos_at(0));
+831:   }
+832:   update_invoke_cp_cache_entry(info, bytecode, resolved_method, pool, method_index, cache_call);
+833: }
+834: 
+835: void InterpreterRuntime::update_invoke_cp_cache_entry(CallInfo& info, Bytecodes::Code bytecode,
+836:                                                       methodHandle& resolved_method,
+837:                                                       constantPoolHandle& pool,
+838:                                                       int method_index, bool cache_call) {
+839:   // Don't allow safepoints until the method is cached.
+840:   NoSafepointVerifier nsv;
+841: 
+842:   // Common-intrinsic preparation may have blocked after resolution. CallInfo
+843:   // keeps the old method alive and follows redefinition to the current version.
+844:   // Refresh under this verifier so publication cannot cache an obsolete method.
+845:   resolved_method = methodHandle(Thread::current(), info.resolved_method());
+846: 
+847:   // check if link resolution caused cpCache to be updated
+848:   ConstantPoolCache* cache = pool->cache();
+849:   if (cache->resolved_method_entry_at(method_index)->is_resolved(bytecode)) return;
+850: 
+851: #ifdef ASSERT
+852:   if (bytecode == Bytecodes::_invokeinterface) {
+853:     if (resolved_method->method_holder() == vmClasses::Object_klass()) {
+854:       // NOTE: THIS IS A FIX FOR A CORNER CASE in the JVM spec
+855:       // (see also CallInfo::set_interface for details)
+856:       assert(info.call_kind() == CallInfo::vtable_call ||
+857:              info.call_kind() == CallInfo::direct_call, "");
+858:       assert(resolved_method->is_final() || info.has_vtable_index(),
+859:              "should have been set already");
+860:     } else if (!resolved_method->has_itable_index()) {
+861:       // Resolved something like CharSequence.toString.  Use vtable not itable.
+862:       assert(info.call_kind() != CallInfo::itable_call, "");
+863:     } else {
+864:       // Setup itable entry
+865:       assert(info.call_kind() == CallInfo::itable_call, "");
+866:       int index = resolved_method->itable_index();
+867:       assert(info.itable_index() == index, "");
+868:     }
+869:   } else if (bytecode == Bytecodes::_invokespecial) {
+870:     assert(info.call_kind() == CallInfo::direct_call, "must be direct call");
+871:   } else {
+872:     assert(info.call_kind() == CallInfo::direct_call ||
+873:            info.call_kind() == CallInfo::vtable_call, "");
+874:   }
+875: #endif
+876:   // Get sender and only set cpCache entry to resolved if it is not an
+877:   // interface.  The receiver for invokespecial calls within interface
+878:   // methods must be checked for every call.
+879:   InstanceKlass* sender = pool->pool_holder();
+880: 
+881:   switch (info.call_kind()) {
+882:   case CallInfo::direct_call:
+883:     cache->set_direct_call(bytecode, method_index, resolved_method, sender->is_interface(), cache_call);
+884:     break;
+885:   case CallInfo::vtable_call:
+
+src/java.base/share/classes/jdk/internal/util/ArraysSupport.java
+361:      */
+362:     @IntrinsicCandidate
+363:     private static int vectorizedHashCode(Object array, int fromIndex, int length, int initialValue,
+364:                                           int basicType) {
+365:         return switch (basicType) {
+366:             case T_BOOLEAN -> unsignedHashCode(initialValue, (byte[]) array, fromIndex, length);
+367:             case T_CHAR -> array instanceof byte[]
+368:                     ? utf16hashCode(initialValue, (byte[]) array, fromIndex, length)
+369:                     : hashCode(initialValue, (char[]) array, fromIndex, length);
+370:             case T_BYTE -> hashCode(initialValue, (byte[]) array, fromIndex, length);
+371:             case T_SHORT -> hashCode(initialValue, (short[]) array, fromIndex, length);
+372:             case T_INT -> hashCode(initialValue, (int[]) array, fromIndex, length);
+373:             default -> throw new IllegalArgumentException("unrecognized basic type: " + basicType);
+374:         };
+375:     }
+
+src/java.base/share/classes/java/lang/Long.java
+1547:     @IntrinsicCandidate
+1548:     public static int numberOfLeadingZeros(long i) {
+1549:         int x = (int)(i >>> 32);
+1550:         return x == 0 ? 32 + Integer.numberOfLeadingZeros((int)i)
+1551:                 : Integer.numberOfLeadingZeros(x);
+1552:     }
+1553: 
+
+src/hotspot/share/oops/cpCache.cpp
+468: 
+469: void ConstantPoolCache::remove_resolved_method_entries_if_non_deterministic() {
+470:   ConstantPool* cp = constant_pool();
+471:   ConstantPool* src_cp =  ArchiveBuilder::current()->get_source_addr(cp);
+472:   for (int i = 0; i < _resolved_method_entries->length(); i++) {
+473:     ResolvedMethodEntry* rme = _resolved_method_entries->adr_at(i);
+474:     int cp_index = rme->constant_pool_index();
+475:     bool archived = false;
+476:     bool resolved = rme->is_resolved(Bytecodes::_invokevirtual)   ||
+477:                     rme->is_resolved(Bytecodes::_invokespecial)   ||
+478:                     rme->is_resolved(Bytecodes::_invokeinterface) ||
+479:                     rme->is_resolved(Bytecodes::_invokehandle)    ||
+480:                     (rme->is_resolved(Bytecodes::_invokestatic) && VM_Version::supports_fast_class_init_checks());
+481: 
+482:     const char* rejection_reason = nullptr;
+483:     if (resolved && !CDSConfig::is_dumping_preimage_static_archive()
+484:         && can_archive_resolved_method(src_cp, rme, rejection_reason)) {
+485:       rme->mark_and_relocate(src_cp);
+486:       archived = true;
+487:     } else {
+488:       rme->remove_unshareable_info();
+489:     }
+490:     LogTarget(Trace, aot, resolve) lt;
+491:     if (lt.is_enabled()) {
+492:       ResourceMark rm;
+493:       int klass_cp_index = cp->uncached_klass_ref_index_at(cp_index);
+
+src/hotspot/share/oops/cpCache.cpp
+557: bool ConstantPoolCache::can_archive_resolved_method(ConstantPool* src_cp, ResolvedMethodEntry* method_entry, const char*& rejection_reason) {
+558:   InstanceKlass* pool_holder = constant_pool()->pool_holder();
+559:   if (pool_holder->defined_by_other_loaders()) {
+560:     // Archiving resolved cp entries for classes from non-builtin loaders
+561:     // is not yet supported.
+562:     rejection_reason = "(pool holder comes from a non-builtin loader)";
+563:     return false;
+564:   }
+565: 
+566:   if (CDSConfig::is_dumping_dynamic_archive()) {
+567:     // InstanceKlass::methods() has been resorted. We need to
+568:     // update the vtable_index in method_entry (not implemented)
+569:     rejection_reason = "(InstanceKlass::methods() has been resorted)";
+570:     return false;
+571:   }
+572: 
+573:   int cp_index = method_entry->constant_pool_index();
+574: 
+575:   if (!method_entry->is_resolved(Bytecodes::_invokevirtual)) {
+576:     if (method_entry->method() == nullptr) {
+577:       rejection_reason = "(method entry is not resolved)";
+578:       return false;
+579:     }
+580:     if (method_entry->method()->is_continuation_native_intrinsic()) {
+581:       rejection_reason = "(corresponding stub is generated on demand during method resolution)";
+582:       return false; // FIXME: corresponding stub is generated on demand during method resolution (see LinkResolver::resolve_static_call).
+583:     }
+584:     if (method_entry->is_resolved(Bytecodes::_invokehandle)) {
+585:       if (!CDSConfig::is_dumping_method_handles()) {
+586:         rejection_reason = "(not dumping method handles)";
+587:         return false;
+588:       }
+589: 
+590:       Symbol* sig = constant_pool()->uncached_signature_ref_at(cp_index);
+591:       Klass* k;
+592:       if (!AOTConstantPoolResolver::check_methodtype_signature(constant_pool(), sig, &k, true)) {
+593:         // invokehandles that were resolved in the training run should have been filtered in
+594:         // AOTConstantPoolResolver::maybe_resolve_fmi_ref so we shouldn't come to here.
+595:         //
+596:         // If we come here it's because the AOT assembly phase has executed an invokehandle
+597:         // that uses an excluded type like jdk.jfr.Event. This should not happen because the
+598:         // AOT assembly phase should execute only a very limited set of Java code.
+599:         ResourceMark rm;
+600:         fatal("AOT assembly phase must not resolve any invokehandles whose signatures include an excluded type");
+601:       }
+602:     }
+603:     if (method_entry->method()->is_method_handle_intrinsic() && !CDSConfig::is_dumping_method_handles()) {
+604:       rejection_reason = "(not dumping intrinsic method handles)";
+605:       return false;
+606:     }
+607:   }
+608: 
+609:   assert(src_cp->tag_at(cp_index).is_method() || src_cp->tag_at(cp_index).is_interface_method(), "sanity");
+610: 
+611:   if (!AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index)) {
+612:       rejection_reason = "(resolution is not deterministic)";
+613:     return false;
+614:   }
+615:   return true;
+616: }
+
+src/hotspot/share/oops/constantPool.cpp
+537: void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
+538:   assert(ArchiveBuilder::current()->is_in_buffer_space(this), "must be");
+539:   assert(tag_at(cp_index).is_klass(), "must be resolved");
+540: 
+541:   bool can_archive;
+542:   Klass* k = nullptr;
+543: 
+544:   if (CDSConfig::is_dumping_preimage_static_archive()) {
+545:     can_archive = false;
+546:   } else {
+547:     k = resolved_klass_at(cp_index);
+548:     if (k == nullptr) {
+549:       // We'd come here if the referenced class has been excluded via
+550:       // SystemDictionaryShared::is_excluded_class(). As a result, ArchiveBuilder
+551:       // has cleared the resolved_klasses()->at(...) pointer to null. Thus, we
+552:       // need to revert the tag to JVM_CONSTANT_UnresolvedClass.
+553:       can_archive = false;
+554:     } else {
+555:       ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
+556:       can_archive = AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index);
+557:     }
+558:   }
+559: 
+560:   if (!can_archive) {
+561:     int resolved_klass_index = klass_slot_at(cp_index).resolved_klass_index();
+562:     // This might be at a safepoint but do this in the right order.
+563:     tag_at_put(cp_index, JVM_CONSTANT_UnresolvedClass);
+564:     resolved_klasses()->at_put(resolved_klass_index, nullptr);
+565:   }
+566: 
+
+src/hotspot/share/cds/aotConstantPoolResolver.cpp
+40: // Returns true if we CAN PROVE that cp_index will always resolve to
+41: // the same information at both dump time and run time. This is a
+42: // necessary (but not sufficient) condition for pre-resolving cp_index
+43: // during CDS archive assembly.
+44: bool AOTConstantPoolResolver::is_resolution_deterministic(ConstantPool* cp, int cp_index) {
+45:   assert(!is_in_archivebuilder_buffer(cp), "sanity");
+46: 
+47:   if (cp->tag_at(cp_index).is_klass()) {
+48:     // We require cp_index to be already resolved. This is fine for now, are we
+49:     // currently archive only CP entries that are already resolved.
+50:     Klass* resolved_klass = cp->resolved_klass_at(cp_index);
+51:     return resolved_klass != nullptr && is_class_resolution_deterministic(cp->pool_holder(), resolved_klass);
+52:   } else if (cp->tag_at(cp_index).is_invoke_dynamic()) {
+53:     return is_indy_resolution_deterministic(cp, cp_index);
+54:   } else if (cp->tag_at(cp_index).is_field() ||
+55:              cp->tag_at(cp_index).is_method() ||
+56:              cp->tag_at(cp_index).is_interface_method()) {
+57:     int klass_cp_index = cp->uncached_klass_ref_index_at(cp_index);
+58:     if (!cp->tag_at(klass_cp_index).is_klass()) {
+59:       // Not yet resolved
+60:       return false;
+61:     }
+62:     Klass* k = cp->resolved_klass_at(klass_cp_index);
+63:     if (!is_class_resolution_deterministic(cp->pool_holder(), k)) {
+64:       return false;
+65:     }
+66: 
+67:     if (!k->is_instance_klass()) {
+68:       // TODO: support non instance klasses as well.
+69:       return false;
+70:     }
+71: 
+72:     // Here, We don't check if this entry can actually be resolved to a valid Field/Method.
+73:     // This method should be called by the ConstantPool to check Fields/Methods that
+74:     // have already been successfully resolved.
+75:     return true;
+76:   } else {
+
+src/hotspot/share/cds/cdsConfig.cpp
+45: bool CDSConfig::_is_dumping_static_archive = false;
+46: bool CDSConfig::_is_dumping_preimage_static_archive = false;
+47: bool CDSConfig::_is_dumping_final_static_archive = false;
+
+src/hotspot/share/cds/cdsConfig.cpp
+568: 
+569:   UseSharedSpaces = false;
+570:   RequireSharedSpaces = false;
+571:   _is_dumping_static_archive = true;
+572:   _is_dumping_preimage_static_archive = true;
+573: 
+574:   // At VM exit, the module graph may be contaminated with program states.
+
+src/hotspot/share/cds/cdsConfig.cpp
+650:   if (!FLAG_IS_DEFAULT(AOTMode)) {
+651:     // Using any form of the new AOTMode switch enables enhanced optimizations.
+652:     FLAG_SET_ERGO_IF_DEFAULT(AOTClassLinking, true);
+653:   }
+654: 
+655:   if (AOTClassLinking) {
+656:     // If AOTClassLinking is specified, enable all AOT optimizations by default.
+657:     FLAG_SET_ERGO_IF_DEFAULT(AOTInvokeDynamicLinking, true);
+658:   } else {
+659:     // AOTInvokeDynamicLinking depends on AOTClassLinking.
+660:     FLAG_SET_ERGO(AOTInvokeDynamicLinking, false);
+661:   }
+662: 
+663:   if (is_dumping_static_archive()) {
+664:     if (is_dumping_preimage_static_archive()) {
+665:       // Don't tweak execution mode during AOT training run
+666:     } else if (is_dumping_final_static_archive()) {
+667:       if (Arguments::mode() == Arguments::_comp) {
+668:         // AOT assembly phase submits the non-blocking compilation requests
+669:         // for methods collected during training run, then waits for all compilations
+670:         // to complete. With -Xcomp, we block for each compilation request, which is
+671:         // counter-productive. Switching back to mixed mode improves testing time
+672:         // with AOT and -Xcomp.
+673:         Arguments::set_mode_flags(Arguments::_mixed);
+674:       }
+675:     } else if (!mode_flag_cmd_line) {
+676:       // By default, -Xshare:dump runs in interpreter-only mode, which is required for deterministic archive.
+677:       //
+678:       // If your classlist is large and you don't care about deterministic dumping, you can use
+679:       // -Xshare:dump -Xmixed to improve dumping speed.
+680:       Arguments::set_mode_flags(Arguments::_int);
+681:     } else if (Arguments::mode() == Arguments::_comp) {
+682:       // -Xcomp may use excessive CPU for the test tiers. Also, -Xshare:dump runs a small and fixed set of
+683:       // Java code, so there's not much benefit in running -Xcomp.
+
+src/hotspot/share/runtime/arguments.cpp
+2301:     // -Xshare:dump
+2302:     } else if (match_option(option, "-Xshare:dump")) {
+2303:       CDSConfig::enable_dumping_static_archive();
+2304:       CDSConfig::set_old_cds_flags_used();
+2305:     // -Xshare:on
+
+make/SourceRevision.gmk
+40: STORED_SOURCE_REVISION := $(TOPDIR)/.src-rev
+41: 
+42: # Locate all sourcecode repositories included in the forest, as absolute paths
+43: FindAllReposAbs = \
+44:     $(strip $(sort $(dir $(filter-out $(TOPDIR)/build/%, $(wildcard \
+45:         $(addprefix $(TOPDIR)/, .git */.git */*/.git */*/*/.git */*/*/*/.git) \
+46:     )))))
+47: 
+48: # Locate all sourcecode repositories included in the forest, as relative paths
+49: FindAllReposRel = \
+50:     $(strip $(subst $(TOPDIR)/,.,$(patsubst $(TOPDIR)/%/, %, $(FindAllReposAbs))))
+51: 
+52: USE_SCM := false
+53: ifneq ($(and $(GIT), $(wildcard $(TOPDIR)/.git)), )
+54:   USE_SCM := true
+55:   SCM_DIR := .git
+56:   ID_COMMAND := $(PRINTF) "git:%s%s\n" \
+57:       "$$($(GIT) log -n1 --format=%H | cut -c1-12)" \
+58:       "$$(if test -n "$$($(GIT) status --porcelain)"; then $(PRINTF) '+'; fi)"
+59: endif
+60: 
+61: ifeq ($(USE_SCM), true)
+62: 
+
+make/SourceRevision.gmk
+101:     $1: $$(REPO_REVISIONS)
+102: 	$$(call MakeDir, $$(@D))
+103: 	$$(ECHO) `$$(CAT) $$(REPO_REVISIONS)` > $$@.tmp
+104: 	if [ ! -f $$@ ] || [ "`$$(CAT) $$@`" != "`$$(CAT) $$@.tmp`" ]; then \
+105: 	  $$(MV) $$@.tmp $$@ ; \
+106: 	else \
+107: 	  $$(RM) $$@.tmp ; \
+108: 	fi
+109:   endef
+
+.github/actions/get-gtest/action.yml
+42:     - name: 'Checkout GTest source'
+43:       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+44:       with:
+45:         repository: google/googletest
+46:         ref: 'v${{ steps.version.outputs.value }}'
+47:         path: gtest
+48: 
+49:     - name: 'Export path to where GTest is installed'
+50:       id: path-name
+
+test/hotspot/jtreg/runtime/cds/DeterministicDump.java
+66:     public static void doTest(boolean compressed, String... extraArgs) throws Exception {
+67:         ArrayList<String> baseArgs = new ArrayList<>();
+68:         baseArgs.addAll(Arrays.asList(extraArgs));
+69: 
+70:         // Try to reduce indeterminism of GC heap sizing and evacuation.
+71:         baseArgs.add("-Xmx128M");
+72:         baseArgs.add("-Xms128M");
+73:         baseArgs.add("-Xmn120M");
+74: 
+75:         if (Platform.is64bit()) {
+76:             // This option is available only on 64-bit.
+77:             String sign = (compressed) ?  "+" : "-";
+78:             baseArgs.add("-XX:" + sign + "UseCompressedOops");
+79:         }
+80: 
+81:         String baseArchive = dump(baseArgs);
+82:         File baseArchiveFile = new File(baseArchive + ".jsa");
+83:         HEADER_SIZE = CDSArchiveUtils.fileHeaderSize(baseArchiveFile);
+84: 
+85:         // (1) Dump with the same args. Should produce the same archive.
+86:         String baseArchive2 = dump(baseArgs);
+87:         compare(baseArchive, baseArchive2, baseArchiveFile);
+88: 
+89:         // (2) This will cause the archive to be relocated during dump time. We should
+90:         //     still get the same bits. This simulates relocation that happens when
+91:         //     Address Space Layout Randomization prevents the archive space to
+92:         //     be mapped at the default location.
+93:         String relocatedArchive = dump(baseArgs, "-XX:+UnlockDiagnosticVMOptions", "-XX:ArchiveRelocationMode=1");
+94:         compare(baseArchive, relocatedArchive, baseArchiveFile);
+95:     }
+96: 
+97:     static int id = 0;
+98:     static String dump(ArrayList<String> args, String... more) throws Exception {
+99:         String logName = "SharedArchiveFile" + (id++);
+100:         String archiveName = logName + ".jsa";
+101:         String mapName = logName + ".map";
+102:         CDSOptions opts = (new CDSOptions())
+103:             .addPrefix("-Xint") // Override any -Xmixed/-Xcomp flags from jtreg -vmoptions
+104:             .addPrefix("-Xlog:cds=debug,gc=debug")
+105:             .addPrefix("-Xlog:aot+map*=trace:file=" + mapName + ":none:filesize=0")
+106:             .setArchiveName(archiveName)
+107:             .addSuffix(args)
+108:             .addSuffix(more);
+109:         CDSTestUtils.createArchiveAndCheck(opts);
+110: 
+111:         return logName;
+112:     }
+113: 
+114:     static void compare(String file0, String file1, File archiveFile) throws Exception {
+115:         byte[] buff0 = new byte[4096];
+116:         byte[] buff1 = new byte[4096];
+117:         try (FileInputStream in0 = new FileInputStream(file0 + ".jsa");
+118:              FileInputStream in1 = new FileInputStream(file1 + ".jsa")) {
+119:             int total = 0;
+120:             while (true) {
+121:                 int n0 = read(in0, buff0);
+122:                 int n1 = read(in1, buff1);
+123:                 if (n0 != n1) {
+124:                     throw new RuntimeException("File contents (file sizes?) are different after " + total + " bytes; n0 = "
+125:                                                + n0 + ", n1 = " + n1);
+126:                 }
+127:                 if (n0 == 0) {
+128:                     System.out.println("File contents are the same: " + total + " bytes");
+129:                     break;
+130:                 }
+131:                 for (int i = 0; i < n0; i++) {
+132:                     byte b0 = buff0[i];
+133:                     byte b1 = buff1[i];
+134:                     if (b0 != b1) {
+135:                         // The checksums are stored in the header so it should be skipped
+136:                         // since we want to see the first meaningful diff between the archives
+137:                         if (total + i > HEADER_SIZE) {
+138:                             print_diff(file0 + ".map", file1 + ".map", archiveFile, total + i);
+139:                             throw new RuntimeException("File content different at byte #" + (total + i) + ", b0 = " + b0 + ", b1 = " + b1);
+140:                         }
+141:                     }
+142:                 }
+143:                 total += n0;
+144:             }
+145:         }
+
+test/lib/jdk/test/lib/cds/CDSTestUtils.java
+245:     public static OutputAnalyzer createArchive(CDSOptions opts)
+246:         throws Exception {
+247: 
+248:         startNewArchiveName();
+249: 
+250:         ArrayList<String> cmd = new ArrayList<String>();
+251: 
+252:         for (String p : opts.prefix) cmd.add(p);
+253: 
+254:         cmd.add("-Xshare:dump");
+255:         cmd.add("-Xlog:cds,aot+hashtables");
+256:         if (opts.archiveName == null)
+257:             opts.archiveName = getDefaultArchiveName();
+258:         cmd.add("-XX:SharedArchiveFile=" + opts.archiveName);
+259: 
+260:         if (opts.classList != null) {
+261:             File classListFile = makeClassList(opts.classList);
+262:             cmd.add("-XX:ExtraSharedClassListFile=" + classListFile.getPath());
+263:         }
+264: 
+265:         for (String s : opts.suffix) cmd.add(s);
+266: 
+267:         String[] cmdLine = cmd.toArray(new String[cmd.size()]);
+268:         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmdLine);
+269:         return executeAndLog(pb, "dump");
+
+test/lib/jdk/test/lib/process/ProcessTools.java
+564:     public static ProcessBuilder createTestJavaProcessBuilder(String... command) {
+565:         return createJavaProcessBuilder(Utils.prependTestJavaOpts(command));
+566:     }
+
+test/lib/jdk/test/lib/Utils.java
+228:     public static String[] getTestJavaOpts() {
+229:         List<String> opts = new ArrayList<String>();
+230:         Collections.addAll(opts, safeSplitString(VM_OPTIONS));
+231:         Collections.addAll(opts, safeSplitString(JAVA_OPTIONS));
+232:         return opts.toArray(new String[0]);
+233:     }
