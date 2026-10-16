@@ -1,0 +1,258 @@
+{
+  "repository": "https://github.com/re-thc/openjdk-jdk27u.git",
+  "candidate": "bf4d2615bf435e8889ef95e48220938505905bbb",
+  "baseline_with_C1": "9711df62d0d019e6670f83832b09bd5dcf797dcb",
+  "plain_base": "758f41576fc79d35a62a3896dbe5ab97c448c436",
+  "C1_donor": "abf881b0108610051fb36636a5f8ce44e8076ddb",
+  "test_source_commit": "bf4d2615bf435e8889ef95e48220938505905bbb",
+  "tests": [
+    {
+      "label": "UBFX",
+      "path": "test/hotspot/jtreg/compiler/c2/aarch64/TestLongBitfieldExtract.java",
+      "source_sha256": "bf595ff5e0fb3eb166f112858af9de87c3194f191b76a6244d8307aada8e89c7",
+      "C2_annotated_targets": 14,
+      "IR_annotations": 28,
+      "before_matching": 14,
+      "positive_matching": {
+        "extract32": "ubfxLConvL2I",
+        "extract40": "ubfxLConvL2I",
+        "extractNegative": "ubfxLConvL2I",
+        "extractWide": "ubfxLConvL2I"
+      },
+      "negative_matching": [
+        "extract31",
+        "extractNoncontiguous",
+        "extractVariable",
+        "extractZeroMask",
+        "extractAllBits",
+        "extract64",
+        "extract48",
+        "extract63",
+        "extractBoundary",
+        "extractCrossBoundary"
+      ],
+      "applicable_methods": {
+        "extract32": 2,
+        "extract40": 2,
+        "extractNegative": 2,
+        "extractWide": 2,
+        "extract31": 2,
+        "extractNoncontiguous": 2,
+        "extractVariable": 2,
+        "extractZeroMask": 2,
+        "extractAllBits": 2,
+        "extract64": 2,
+        "extract48": 2,
+        "extract63": 2,
+        "extractBoundary": 2,
+        "extractCrossBoundary": 2
+      },
+      "C2_methods": [
+        "extract32",
+        "extract40",
+        "extractNegative",
+        "extractWide",
+        "extract31",
+        "extractNoncontiguous",
+        "extractVariable",
+        "extractZeroMask",
+        "extractAllBits",
+        "extract64",
+        "extract48",
+        "extract63",
+        "extractBoundary",
+        "extractCrossBoundary"
+      ]
+    },
+    {
+      "label": "PR36",
+      "path": "test/hotspot/jtreg/compiler/c2/aarch64/TestTruncatedLongShift.java",
+      "source_sha256": "9c7c999e89cc854581ccc49a24dec9b4351ea8f658bded5d34c5dd1106d9e922",
+      "C2_annotated_targets": 15,
+      "IR_annotations": 13,
+      "before_matching": 2,
+      "positive_matching": {
+        "shift32": "urShiftLConvL2I",
+        "shift48": "urShiftLConvL2I",
+        "shift63": "urShiftLConvL2I",
+        "shiftNegative": "urShiftLConvL2I",
+        "shiftWrapped": "urShiftLConvL2I",
+        "shiftNegative32": "urShiftLConvL2I",
+        "shiftWrapped63": "urShiftLConvL2I",
+        "shiftRedundantMask": "urShiftLConvL2I"
+      },
+      "negative_matching": [
+        "shift31",
+        "shiftWrapped31",
+        "shiftVariable"
+      ],
+      "applicable_methods": {
+        "shift32": 2,
+        "shift48": 1,
+        "shift63": 1,
+        "shiftNegative": 1,
+        "shiftWrapped": 1,
+        "shiftNegative32": 1,
+        "shiftWrapped63": 1,
+        "shiftRedundantMask": 2,
+        "shift31": 1,
+        "shiftWrapped31": 1,
+        "shiftVariable": 1
+      },
+      "C2_methods": [
+        "shift32",
+        "shift48",
+        "shift63",
+        "shiftNegative",
+        "shiftWrapped",
+        "shiftNegative32",
+        "shiftWrapped63",
+        "shiftRedundantMask",
+        "shift31",
+        "shiftWrapped31",
+        "shiftVariable",
+        "shiftShared",
+        "shiftSharedInput",
+        "shiftWiden",
+        "shiftWidenUnsigned"
+      ]
+    },
+    {
+      "label": "PR37",
+      "path": "test/hotspot/jtreg/compiler/c2/aarch64/TestTruncatedLongBitwise.java",
+      "source_sha256": "c74a16b308d06214f2742f6e8bade06eaf3cbd1fed9b073963e80adb99a22852",
+      "C2_annotated_targets": 34,
+      "IR_annotations": 13,
+      "before_matching": 3,
+      "positive_matching": {
+        "and": "andLConvL2I",
+        "or": "orLConvL2I",
+        "xor": "xorLConvL2I",
+        "mask": "andLConvL2I"
+      },
+      "negative_matching": [
+        "constantAnd",
+        "constantOr",
+        "constantXor",
+        "immediateAnd",
+        "immediateOr",
+        "immediateXor"
+      ],
+      "applicable_methods": {
+        "and": 2,
+        "or": 2,
+        "xor": 2,
+        "mask": 1,
+        "constantAnd": 1,
+        "constantOr": 1,
+        "constantXor": 1,
+        "immediateAnd": 1,
+        "immediateOr": 1,
+        "immediateXor": 1
+      },
+      "C2_methods": [
+        "and",
+        "or",
+        "xor",
+        "mask",
+        "constantAnd",
+        "constantOr",
+        "constantXor",
+        "immediateAnd",
+        "immediateOr",
+        "immediateXor",
+        "shiftedAnd",
+        "shiftedOr",
+        "shiftedXor",
+        "leftShiftedAnd",
+        "leftShiftedOr",
+        "leftShiftedXor",
+        "rightShiftedAnd",
+        "rightShiftedOr",
+        "rightShiftedXor",
+        "rotatedAnd",
+        "rotatedOr",
+        "rotatedXor",
+        "sharedAnd",
+        "sharedOr",
+        "sharedXor",
+        "widenedAnd",
+        "widenedOr",
+        "widenedXor",
+        "loadedAnd",
+        "loadedOr",
+        "loadedXor",
+        "pressureAnd",
+        "pressureOr",
+        "pressureXor"
+      ]
+    },
+    {
+      "label": "PR38",
+      "path": "test/hotspot/jtreg/compiler/vectorapi/TestFirstTrueMaskNormalization.java",
+      "source_sha256": "1246877d6dbce5ae232598501456f94b94dd5aecfc11aa006d80064958970e65",
+      "C2_annotated_targets": 11,
+      "IR_annotations": 22,
+      "before_matching": 11,
+      "positive_matching": {
+        "byte64": "vstoremask_firsttrueB_neon",
+        "byte128": "vstoremask_firsttrueB_neon"
+      },
+      "negative_matching": [
+        "short64",
+        "short128",
+        "int64",
+        "int128",
+        "long128",
+        "float64",
+        "float128",
+        "double128",
+        "shared"
+      ],
+      "applicable_methods": {
+        "byte64": 2,
+        "byte128": 2,
+        "short64": 2,
+        "short128": 2,
+        "int64": 2,
+        "int128": 2,
+        "long128": 2,
+        "float64": 2,
+        "float128": 2,
+        "double128": 2,
+        "shared": 2
+      },
+      "C2_methods": [
+        "byte64",
+        "byte128",
+        "short64",
+        "short128",
+        "int64",
+        "int128",
+        "long128",
+        "float64",
+        "float128",
+        "double128",
+        "shared"
+      ]
+    },
+    {
+      "label": "C1",
+      "path": "test/hotspot/jtreg/compiler/profiling/TestEmptySwitchProfile.java",
+      "C2_annotated_targets": 2,
+      "IR_annotations": 2,
+      "before_matching": 0,
+      "positive_matching": {},
+      "negative_matching": [],
+      "applicable_methods": {
+        "testTableSwitch": 1,
+        "testLookupSwitch": 1
+      },
+      "source_sha256": "b184e2849e0f2eebbbd91810b258f0b75cc58cee8404586d9e2cfb724210cb0d",
+      "C2_methods": [
+        "testTableSwitch",
+        "testLookupSwitch"
+      ]
+    }
+  ]
+}
