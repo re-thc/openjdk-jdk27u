@@ -82,6 +82,32 @@ TEST_VM(AssemblerAArch64, validate) {
   BufferBlob::free(b);
 }
 
+TEST_VM(AssemblerAArch64, shrn) {
+  BufferBlob* b = BufferBlob::create("aarch64SHRNTest", 256);
+  CodeBuffer code(b);
+  Assembler _masm(&code);
+  address entry = __ pc();
+
+  __ shrn(v0, __ T8B, v1, __ T8H, 4);
+  __ shrn(v31, __ T8B, v30, __ T8H, 1);
+  __ shrn(v17, __ T8B, v17, __ T8H, 8);
+  __ shrn(v0, __ T4H, v1, __ T4S, 1);
+  __ shrn(v31, __ T4H, v30, __ T4S, 16);
+  __ shrn(v0, __ T2S, v1, __ T2D, 1);
+  __ shrn(v31, __ T2S, v30, __ T2D, 32);
+  static const unsigned int expected[] = {
+    0x0f0c8420, // shrn v0.8b, v1.8h, #4
+    0x0f0f87df, // shrn v31.8b, v30.8h, #1
+    0x0f088631, // shrn v17.8b, v17.8h, #8
+    0x0f1f8420, // shrn v0.4h, v1.4s, #1
+    0x0f1087df, // shrn v31.4h, v30.4s, #16
+    0x0f3f8420, // shrn v0.2s, v1.2d, #1
+    0x0f2087df, // shrn v31.2s, v30.2d, #32
+  };
+  asm_check((unsigned int*)entry, expected, sizeof(expected) / sizeof(expected[0]));
+  BufferBlob::free(b);
+}
+
 constexpr uint32_t test_encode_dmb_ld = 0xd50339bf;
 constexpr uint32_t test_encode_dmb_st = 0xd5033abf;
 constexpr uint32_t test_encode_dmb    = 0xd5033bbf;
