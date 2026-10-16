@@ -3785,17 +3785,23 @@ address StubGenerator::generate_vectorizedMismatch() {
   const XMMRegister vec1 = xmm1;
   const XMMRegister vec2 = xmm2;
 
-  // Buffer and segment callers can supply mapped addresses. Register the
-  // protected PC range without adding work to the normal kernel path.
+  // Buffer and segment callers can supply mapped addresses. A fault in the
+  // protected PC range raises an asynchronous InternalError. As around C2's
+  // Unsafe.copyMemory calls, the thread flag tells the signal handler that
+  // this is an unsafe access; other stubs in the table keep crashing the VM.
+  const Address doing_unsafe_access(r15_thread, JavaThread::doing_unsafe_access_offset());
+  __ movb(doing_unsafe_access, 1);
   {
     UnsafeMemoryAccessMark umam(this, true, true);
     __ vectorized_mismatch(obja, objb, length, scale, result, tmp1, tmp2, vec0, vec1, vec2);
+    __ movb(doing_unsafe_access, 0);
     __ vzeroupper();
     __ leave();
     __ ret(0);
   }
   // A fault skips the kernel, including its element-index scaling. Return a
   // valid index while the pending asynchronous InternalError is delivered.
+  __ movb(doing_unsafe_access, 0);
   __ xorl(result, result);
   __ vzeroupper();
   __ leave();

@@ -3148,10 +3148,16 @@ class StubGenerator: public StubCodeGenerator {
     Label LOOP64, TAIL, WORD_LOOP, LAST_WORD, BYTE_LOOP, DIFF64, DIFF_WORD,
           DIFF_PREV_WORD, DIFF_PREV_BYTE, DIFF_AT, SAME, DONE;
 
+    // Buffer and segment callers can supply mapped addresses. A fault in the
+    // protected PC range raises an asynchronous InternalError. As around C2's
+    // Unsafe.copyMemory calls, the thread flag tells the signal handler that
+    // this is an unsafe access; other stubs in the table keep crashing the VM.
+    const Address doing_unsafe_access(rthread, in_bytes(JavaThread::doing_unsafe_access_offset()));
     __ enter();
+    __ mov(rscratch1, 1);
+    __ strb(rscratch1, doing_unsafe_access);
     {
-      // Buffer and segment callers can supply mapped addresses. A fault
-      // continues after this scope.
+      // A fault continues after this scope.
       UnsafeMemoryAccessMark umam(this, true, true);
 
       __ movw(cnt, length);           // zero-extend the int length
@@ -3251,11 +3257,13 @@ class StubGenerator: public StubCodeGenerator {
       __ lsrv(result, result, scale);
 
       __ bind(DONE);
+      __ strb(zr, doing_unsafe_access);
       __ leave();
       __ ret(lr);
     }
     // A fault skips the comparison. Return a valid index while the pending
     // asynchronous InternalError is delivered.
+    __ strb(zr, doing_unsafe_access);
     __ mov(result, zr);
     __ leave();
     __ ret(lr);

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -252,9 +251,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
         nmethod* nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
-        // A protected stub PC identifies an unsafe access from Java, including
-        // C1 mismatch calls which do not set doing_unsafe_access.
-        bool is_unsafe_memory_access = UnsafeMemoryAccess::contains_pc(pc);
+        bool is_unsafe_memory_access = (thread->doing_unsafe_access() && UnsafeMemoryAccess::contains_pc(pc));
         if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_memory_access) {
           address next_pc = pc + NativeCall::instruction_size;
           if (is_unsafe_memory_access) {
