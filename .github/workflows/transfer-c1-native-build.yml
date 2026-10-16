@@ -1,0 +1,137 @@
+name: Transfer c1 native build artifact
+
+on:
+  push:
+    branches:
+      - diagnostic/c1-native-transfer-38815696411
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  transfer:
+    if: github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Confirm one-time branch creation
+        env:
+          REF: ${{ github.ref }}
+          EVENT: ${{ github.event_name }}
+          CREATED: ${{ github.event.created }}
+          DELETED: ${{ github.event.deleted }}
+        run: |
+          set -euo pipefail
+          test "$REF" = refs/heads/diagnostic/c1-native-transfer-38815696411
+          test "$EVENT" = push
+          test "$CREATED" = true
+          test "$DELETED" = false
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$GITHUB_SHA" != de359971a1972f74866e963fb4f750359aecc145
+
+      - name: Download and verify original artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          test "$REPOSITORY" = re-thc/openjdk-jdk27u
+          mkdir transfer
+          cd transfer
+          artifact_json="$(gh api "repos/$REPOSITORY/actions/artifacts/12014298650")"
+          run_json="$(gh api "repos/$REPOSITORY/actions/runs/38815696411")"
+          python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["id"]==12014298650; assert d["name"]=="c1-native-build-38815696411"; assert d["size_in_bytes"]==643491662; assert d["expired"] is False' <<<"$artifact_json"
+          python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["id"]==38815696411; assert d["head_branch"]=="diagnose-c1-policy-20261016"; assert d["head_sha"]=="a107f5c66ad8bd0e40f474eb03d6c8601529b8f8"; assert d["run_attempt"]==1' <<<"$run_json"
+          python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["workflow_run"]["id"]==38815696411; assert d["workflow_run"]["head_sha"]=="a107f5c66ad8bd0e40f474eb03d6c8601529b8f8"; assert d["workflow_run"]["head_branch"]=="diagnose-c1-policy-20261016"' <<<"$artifact_json"
+          printf '%s\n' "$run_json" > source-run.json
+          printf '%s\n' "$artifact_json" > source-artifact.json
+          if gh api "repos/$REPOSITORY/actions/artifacts/12014298650/zip" > original.zip 2>download-error.txt; then
+            :
+          else
+            status=$?
+            printf 'Artifact transfer failed (exit %s); signed URLs are not logged.\n' "$status"
+            exit "$status"
+          fi
+          test "$(stat -c %s original.zip)" = 643491662
+          echo 'a93c431fe6562a2ad3e60ed3384bb748e4e3a91038bf7b3cf632d09e30bebba3  original.zip' | sha256sum --check --status
+          sha256sum original.zip | cut -d ' ' -f 1 > original.sha256
+
+      - name: Split unchanged archive and write manifest
+        run: |
+          set -euo pipefail
+          cd transfer
+          split --bytes=300M --numeric-suffixes=1 --suffix-length=3 original.zip part-
+          python3 - <<'PY'
+          import hashlib, json, os
+          parts = sorted(n for n in os.listdir('.') if n.startswith('part-'))
+          source_run = json.load(open('source-run.json'))
+          source_artifact = json.load(open('source-artifact.json'))
+          manifest = {
+              'source': {
+                  'repository': 're-thc/openjdk-jdk27u', 'run_id': 38815696411,
+                  'artifact_id': 12014298650, 'artifact_name': 'c1-native-build-38815696411',
+                  'artifact_size_bytes': 643491662,
+                  'artifact_sha256': 'a93c431fe6562a2ad3e60ed3384bb748e4e3a91038bf7b3cf632d09e30bebba3',
+                  'source_run': {'run_id': 38815696411, 'head_branch': 'diagnose-c1-policy-20261016',
+                                 'head_sha': 'a107f5c66ad8bd0e40f474eb03d6c8601529b8f8', 'attempt': 1},
+                  'source_run_metadata': {k: source_run[k] for k in ('id', 'head_branch', 'head_sha', 'run_attempt', 'status', 'conclusion', 'created_at', 'updated_at', 'html_url')},
+                  'source_artifact_metadata': {k: source_artifact[k] for k in ('id', 'name', 'size_in_bytes', 'digest', 'expired', 'created_at', 'expires_at')}
+              },
+              'transfer': {'repository': 're-thc/openjdk-jdk27u', 'run_id': os.environ['GITHUB_RUN_ID'],
+                           'commit': os.environ['GITHUB_SHA'], 'ref': os.environ['GITHUB_REF'],
+                           'workflow': os.environ['GITHUB_WORKFLOW'], 'workflow_path': '.github/workflows/transfer-c1-native-build.yml',
+                           'event': os.environ['GITHUB_EVENT_NAME'], 'attempt': int(os.environ['GITHUB_RUN_ATTEMPT'])},
+              'parts': []
+          }
+          for name in parts:
+              size = os.path.getsize(name)
+              assert size <= 300 * 1024 * 1024
+              h = hashlib.sha256()
+              with open(name, 'rb') as stream:
+                  for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+                      h.update(chunk)
+              digest = h.hexdigest()
+              manifest['parts'].append({'name': name, 'size_bytes': size, 'sha256': digest})
+          assert len(parts) == 3
+          assert sum(p['size_bytes'] for p in manifest['parts']) == 643491662
+          json.dump(manifest, open('manifest.json', 'w'), indent=2)
+          PY
+
+      - name: Upload numbered part 001
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: c1-native-build-38815696411-part-001
+          path: transfer/part-001
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Upload numbered part 002
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: c1-native-build-38815696411-part-002
+          path: transfer/part-002
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Upload numbered part 003
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: c1-native-build-38815696411-part-003
+          path: transfer/part-003
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Upload manifest and checksums
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: c1-native-build-38815696411-manifest
+          path: |
+            transfer/manifest.json
+            transfer/original.sha256
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
