@@ -178,9 +178,7 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
 
   DEBUG_ONLY(const u1* const old_current = stream->current();)
 
-  // The Utf8 entries, interned together after parsing, which lets the
-  // SymbolTable overlap the cache misses of their lookups. Freed on return,
-  // so they are not kept while the superclasses of this class are loaded.
+  // Release the batched Utf8 entries before loading superclasses.
   ResourceMark rm(THREAD);
   const char** names = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, const char*, length);
   int* lengths = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, int, length);

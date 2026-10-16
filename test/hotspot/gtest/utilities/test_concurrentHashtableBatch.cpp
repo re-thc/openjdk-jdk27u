@@ -26,6 +26,7 @@
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
+#include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
 
@@ -127,6 +128,38 @@ static void cht_get_batch_grow_hint(Thread* thr) {
   cht->get_batch(thr, lookups, 1, bf, &hint);
   EXPECT_TRUE(hint) << "Walked a chain longer than the grow hint";
   EXPECT_EQ(found[0], lookups[0]._val);
+  delete cht;
+}
+
+static void cht_get_batch_during_grow(Thread* thr) {
+  BatchTestTable* cht = new BatchTestTable(5, 6, (size_t)-1);
+  BatchLookup lookups[4];
+  uintptr_t found[4] = {};
+  const uintptr_t values[] = {1, 17, 33, 32};
+  for (size_t i = 0; i < 3; i++) {
+    lookups[i]._val = values[i];
+    EXPECT_TRUE(cht->insert(thr, lookups[i], values[i]));
+  }
+
+  BatchTestTable::GrowTask grow(cht);
+  ASSERT_TRUE(grow.prepare(thr));
+  ASSERT_TRUE(grow.do_task(thr));
+  EXPECT_EQ(cht->get_size_log2(thr), (size_t)5);
+
+  // The first bucket has moved, but the old table is still published.
+  // Insert through its redirect so the value exists only in the new table.
+  lookups[3]._val = values[3];
+  EXPECT_TRUE(cht->insert(thr, lookups[3], values[3]));
+  BatchFound bf(found);
+  cht->get_batch(thr, lookups, 4, bf);
+  for (size_t i = 0; i < 4; i++) {
+    EXPECT_EQ(found[i], values[i]);
+  }
+  EXPECT_EQ(bf._calls, (size_t)4);
+
+  while (grow.do_task(thr)) { }
+  grow.done(thr);
+  EXPECT_EQ(cht->get_size_log2(thr), (size_t)6);
   delete cht;
 }
 
@@ -236,6 +269,10 @@ TEST_VM(ConcurrentHashTable, get_batch) {
 
 TEST_VM(ConcurrentHashTable, get_batch_grow_hint) {
   nomt_test_doer(cht_get_batch_grow_hint);
+}
+
+TEST_VM(ConcurrentHashTable, get_batch_during_grow) {
+  nomt_test_doer(cht_get_batch_during_grow);
 }
 
 TEST_VM(ConcurrentHashTable, get_batch_while_resizing) {

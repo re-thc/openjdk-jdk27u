@@ -244,8 +244,6 @@ public:
 // The PackageEntryTable is a Hashtable containing a list of all packages defined
 // by a particular class loader.  Each package is represented as a PackageEntry node.
 class PackageEntryTable : public CHeapObj<mtModule> {
-  // Grows with the packages, of which a class loader of an application can
-  // define thousands.
   ResizeableHashTable<SymbolHandle, PackageEntry*, AnyObj::C_HEAP, mtModule,
                       SymbolHandle::compute_hash> _table;
 public:

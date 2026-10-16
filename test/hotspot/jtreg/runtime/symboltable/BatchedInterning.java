@@ -24,8 +24,8 @@
 
 /*
  * @test
- * @summary Classes whose constant pools have new, shared, duplicate and dead
- *          names are defined correctly, also by many threads at once.
+ * @summary Batch interning preserves new, shared and duplicate constant pool names
+ *          during concurrent class loading.
  * @library /test/lib
  * @run main/othervm -Xlog:symboltable=info BatchedInterning
  */
@@ -66,7 +66,66 @@ public class BatchedInterning {
 
     public static void main(String[] args) throws Exception {
         testDuplicateNames();
+        testParsingLimitsAndErrors();
         testConcurrentNames();
+    }
+
+    // Exercise the largest batch and failures before and after it is interned.
+    static void testParsingLimitsAndErrors() throws Exception {
+        byte[] valid = parsingClass(65535, 0);
+        Asserts.assertEquals(new Loader().define("ParsingLimits", valid).getName(), "ParsingLimits");
+        for (int error = 1; error <= 4; error++) {
+            byte[] malformed = parsingClass(300, error);
+            try {
+                new Loader().define("ParsingLimits", malformed);
+                throw new AssertionError("Accepted malformed class, case " + error);
+            } catch (ClassFormatError expected) {
+            }
+        }
+        System.gc();
+        new Loader().define("ParsingLimits", valid);
+    }
+
+    // The first four entries describe the class and its superclass; the rest
+    // are unused Utf8 entries, including one of the maximum encoded length.
+    static byte[] parsingClass(int poolCount, int error) throws Exception {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(bytes);
+        out.writeInt(0xCAFEBABE);
+        out.writeShort(0);
+        out.writeShort(52);
+        out.writeShort(poolCount);
+        out.writeByte(1);
+        out.writeUTF("ParsingLimits");
+        out.writeByte(7);
+        out.writeShort(1);
+        out.writeByte(1);
+        out.writeUTF("java/lang/Object");
+        out.writeByte(7);
+        out.writeShort(3);
+        for (int i = 5; i < poolCount; i++) {
+            if (i == poolCount - 1 && error != 0 && error != 4) {
+                out.writeByte(error == 1 ? 0 : 1);
+                out.writeShort(2);
+                if (error != 3) {
+                    out.writeByte(0xff);  // invalid modified UTF-8
+                    out.writeByte(0xff);
+                }
+                break;
+            }
+            out.writeByte(1);
+            out.writeUTF(i == 5 ? "x".repeat(65535) : "batchedParsing" + i);
+        }
+        if (error != 3) {
+            out.writeShort(error == 4 ? 0x0211 : 0x0021); // a final interface is invalid
+            out.writeShort(2);
+            out.writeShort(4);
+            out.writeShort(0); // interfaces
+            out.writeShort(0); // fields
+            out.writeShort(0); // methods
+            out.writeShort(0); // attributes
+        }
+        return bytes.toByteArray();
     }
 
     // A class file with two Utf8 entries of the same new name, used as the names of two fields.

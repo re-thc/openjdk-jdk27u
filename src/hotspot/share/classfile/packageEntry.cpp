@@ -283,12 +283,14 @@ Array<PackageEntry*>* PackageEntryTable::build_aot_table(ClassLoaderData* loader
 
 void PackageEntryTable::load_archived_entries(Array<PackageEntry*>* archived_packages) {
   assert(CDSConfig::is_using_archive(), "runtime only");
+  assert(Module_lock->owned_by_self(), "should have the Module_lock");
 
   for (int i = 0; i < archived_packages->length(); i++) {
     PackageEntry* archived_entry = archived_packages->at(i);
     archived_entry->load_from_archive();
     _table.put(archived_entry->name(), archived_entry);
   }
+  _table.maybe_grow(2);
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP
@@ -301,8 +303,6 @@ void PackageEntryTable::locked_create_entry(Symbol* name, ModuleEntry* module) {
   PackageEntry* entry = new PackageEntry(name, module);
   bool created = _table.put(name, entry);
   assert(created, "must be");
-  // maybe_grow divides entries by buckets in integers, so this grows at an
-  // average chain of 3.
   _table.maybe_grow(2);
 }
 
