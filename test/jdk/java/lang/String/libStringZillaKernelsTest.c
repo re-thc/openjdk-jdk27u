@@ -111,6 +111,7 @@ static jint check_kernels(void) {
 
         // A rejected long-needle prefix must not skip overlapping suffixes.
         const jint overlap_lengths[] = {128, 129, 130, 255, 256, 257, 258, 259, 511, 512, 513, 768};
+        const jint overlap_spans[] = {1, 2, 4, 8, 15, 16, 17, 30, 31, 32, 33, 64, 128, 256};
         char overlap_source[1536];
         char overlap_target[1024];
         jchar overlap_utf16_source[1536];
@@ -118,7 +119,8 @@ static jint check_kernels(void) {
         for (unsigned int n = 0; n < sizeof(overlap_lengths) / sizeof(overlap_lengths[0]); n++) {
             jint count = overlap_lengths[n];
             for (jint pos = 0; pos <= 17; pos += 17) {
-                for (jint extra = 1; extra <= 256; extra *= 2) {
+                for (unsigned int s = 0; s < sizeof(overlap_spans) / sizeof(overlap_spans[0]); s++) {
+                    jint extra = overlap_spans[s];
                     jint size = pos + count + extra;
                     memset(overlap_source, 'a', size);
                     memset(overlap_target, 'a', count);

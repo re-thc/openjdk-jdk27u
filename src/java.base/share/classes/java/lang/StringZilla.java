@@ -64,6 +64,12 @@ final class StringZilla {
 
     @ForceInline
     static boolean matchesUTF16(byte[] src, int offset, byte[] tgt, int length) {
+        if (compilerTier() == 0) {
+            int result = equalsRange(src, offset << 1, length << 1, tgt, 0);
+            if (result != FALLBACK) {
+                return result != 0;
+            }
+        }
         for (int i = 0; i < length; i++) {
             if (StringUTF16.getChar(src, offset + i) != StringUTF16.getChar(tgt, i)) {
                 return false;
@@ -80,6 +86,16 @@ final class StringZilla {
             }
         }
         return true;
+    }
+
+    // Skip impossible positions before Java verifies a long mixed needle.
+    static int lastMixedCandidate(byte[] src, byte[] tgt, int count, int fromIndex) {
+        int result = rfindCharUTF16(src, (count - 1) << 1,
+                (fromIndex + 1) << 1, tgt[count - 1] & 0xff);
+        if (result == FALLBACK) {
+            return fromIndex;
+        }
+        return result < 0 ? -1 : result >> 1;
     }
 
     // Isolate native argument setup from C1's short/early scalar path.

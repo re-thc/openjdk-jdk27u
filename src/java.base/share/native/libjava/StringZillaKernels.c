@@ -198,6 +198,19 @@ static sz_cptr_t rfind_utf16_serial(sz_cptr_t src, sz_size_t src_bytes,
     return result < 0 ? NULL : src + result;
 }
 
+#if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
+static sz_cptr_t rfind_utf16_haswell(sz_cptr_t src, sz_size_t src_bytes,
+                                   sz_cptr_t tgt, sz_size_t tgt_bytes) {
+    // Avoid long-needle preprocessing for a single aligned candidate batch.
+    if (tgt_bytes > 256 && src_bytes - tgt_bytes < 64 && ((src_bytes | tgt_bytes) & 1) == 0) {
+        int result = search_utf16_haswell((const jchar*)src, (int)(src_bytes / 2),
+                                         (const jchar*)tgt, (int)(tgt_bytes / 2), JNI_TRUE);
+        return result < 0 ? NULL : src + result;
+    }
+    return sz_rfind_haswell(src, src_bytes, tgt, tgt_bytes);
+}
+#endif
+
 /* Every published table is immutable; repeated initialization is harmless. */
 #define DEFINE_KERNELS(tag, forward, backward, backward_utf16, equality, aligned, caps) \
 static jint tag##_find_latin1(const char* s, jint n, const char* t, jint m) { \
@@ -243,7 +256,7 @@ static const StringZillaKernels tag##_kernels = { \
 
 DEFINE_KERNELS(serial, sz_find_serial, sz_rfind_serial, rfind_utf16_serial, sz_equal_serial, search_utf16_default, JVM_STRINGZILLA_SERIAL)
 #if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
-DEFINE_KERNELS(haswell, sz_find_haswell, sz_rfind_haswell, sz_rfind_haswell, sz_equal_haswell, search_utf16_haswell, JVM_STRINGZILLA_HASWELL)
+DEFINE_KERNELS(haswell, sz_find_haswell, sz_rfind_haswell, rfind_utf16_haswell, sz_equal_haswell, search_utf16_haswell, JVM_STRINGZILLA_HASWELL)
 DEFINE_KERNELS(skylake, sz_find_skylake, sz_rfind_skylake, sz_rfind_skylake, sz_equal_skylake, search_utf16_haswell, JVM_STRINGZILLA_SKYLAKE)
 #endif
 #if (defined(__aarch64__) || defined(_M_ARM64)) && SZ_USE_NEON

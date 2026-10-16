@@ -157,6 +157,24 @@ public class StringZillaSearch {
             check(periodic + target, target, 0);
             check(target + periodic, target, periodic.length());
         }
+        for (int count = 1; count <= 8; count++) {
+            String target = "\u0401".repeat(count - 1) + "\u0101";
+            String source = "\u0401".repeat(128) + target;
+            for (int from : new int[]{0, 127, 128, source.length()}) {
+                check(source, target, from);
+            }
+        }
+        // Long mixed needles retain Java verification after the character filter.
+        for (int count : new int[]{65, 128, 257}) {
+            String target = "b" + "a".repeat(count - 1);
+            String source = "\u0100" + "x".repeat(128) + target + "x".repeat(128)
+                    + target + target.substring(1);
+            for (int from : new int[]{0, 128, source.length(), Integer.MAX_VALUE}) {
+                check(source, target, from);
+            }
+            check("\uff01\u0400".repeat(count + 128), "\u00ff".repeat(count), Integer.MAX_VALUE);
+            check("\u0100" + "x".repeat(65536) + target, target, Integer.MAX_VALUE);
+        }
         // Exercise compiled paths with variable inputs.
         Random random = new Random(0x5a17);
         for (int trial = 0; trial < 5000; trial++) {
