@@ -38,6 +38,7 @@ import java.util.stream.StreamSupport;
 import jdk.internal.lang.CaseFolding;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -2169,16 +2170,7 @@ final class StringUTF16 {
                 if (tgtCount <= 8 && StringZilla.matchesUTF16Latin1(src, fromIndex, tgt, tgtCount)) {
                     return fromIndex;
                 }
-                if (StringZilla.compilerTier() == StringZilla.C1) {
-                    return lastIndexOfLatin1NativeC1(src, searchLength, tgt, tgtCount);
-                }
-                int result = StringZilla.rfindUTF16Latin1(src, 0, searchLength << 1, tgt, tgtCount);
-                if (result == StringZilla.FALLBACK) {
-                    result = StringZilla.searchLarge(src, 0, searchLength << 1, tgt, tgtCount, 2, true);
-                }
-                if (result != StringZilla.FALLBACK) {
-                    return result < 0 ? -1 : result >> 1;
-                }
+                return lastIndexOfLatin1Native(src, searchLength, tgt, tgtCount);
             } else {
                 int tier = StringZilla.compilerTier();
                 if (getChar(src, fromIndex + tgtCount - 1) != (tgt[tgtCount - 1] & 0xff)) {
@@ -2202,7 +2194,7 @@ final class StringUTF16 {
 
         char strLastChar = (char)(tgt[strLastIndex] & 0xff);
 
-        checkIndex(i, src);
+        Preconditions.checkIndex(i, src.length >> 1, Preconditions.SIOOBE_FORMATTER);
 
     startSearchForLastChar:
         while (true) {
@@ -2225,9 +2217,9 @@ final class StringUTF16 {
         }
     }
 
-    // Isolate native argument setup from C1's scalar fallback.
+    // Keep native argument setup out of the inline scalar search.
     @DontInline
-    private static int lastIndexOfLatin1NativeC1(byte[] src, int length, byte[] tgt, int count) {
+    private static int lastIndexOfLatin1Native(byte[] src, int length, byte[] tgt, int count) {
         int result = StringZilla.rfindUTF16Latin1(src, 0, length << 1, tgt, count);
         if (result == StringZilla.FALLBACK) {
             result = StringZilla.searchLarge(src, 0, length << 1, tgt, count, 2, true);
@@ -2250,7 +2242,7 @@ final class StringUTF16 {
 
         char strLastChar = (char)(tgt[strLastIndex] & 0xff);
 
-        checkIndex(i, src);
+        Preconditions.checkIndex(i, src.length >> 1, Preconditions.SIOOBE_FORMATTER);
 
         if (StringZilla.compilerTier() == StringZilla.C2) {
             while (i - min >= 32 && getChar(src, i) != strLastChar) {
