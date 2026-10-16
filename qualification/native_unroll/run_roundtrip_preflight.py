@@ -19,6 +19,8 @@ def main():
     for name in ['release-jdk', 'debug-jdk', 'control-jdk', 'control-debug-jdk', 'jtreg', 'frozen', 'out']:
         p.add_argument('--' + name, type=pathlib.Path, required=True)
     p.add_argument('--execute', action='store_true')
+    p.add_argument('--historical-control', action='store_true',
+                   help='Label reused controls as compiler diagnostics, without matched-toolchain attribution')
     a = p.parse_args()
     out = a.out.resolve()
     if out.exists() and any(out.iterdir()):
@@ -131,7 +133,9 @@ def main():
                         if not task_rows:
                             raise RuntimeError('No attributed compiler task durations')
                         chain_records.append(dict(image=label, sve=sve, count=count, sample=sample, samples=rows, compiler_tasks=task_rows,
-                            interpretation='Bounded chain lengths1/8/32/64, one forced compilation per fresh JVM, three process repetitions per length; diagnostic compile work, not runtime performance. Recurrence walk remains potentially quadratic; report scaling for review.'))
+                            interpretation=('Bounded chains1/8/32/64, one forced compilation per fresh JVM, three process repetitions per length; diagnostic compile work, not runtime performance. '
+                                + ('Historical correctness controls; not a newly matched-toolchain performance pair.' if a.historical_control
+                                   else 'Recurrence walk remains potentially quadratic; report scaling for review.'))))
         # Graph printing is excluded from all48compile-cost processes above.
         # Each observed matching VM is separate, and its elapsed values are excluded.
         for count in [1, 8, 32, 64]:
@@ -179,10 +183,12 @@ def main():
                     if len(processes) != 3:
                         raise RuntimeError('Missing fresh-process compilation repetitions')
                     medians[image] = statistics.median(statistics.mean(t['seconds'] for t in x['compiler_tasks']) for x in processes)
+                ratio_key = 'candidate_vs_historical_control_diagnostic' if a.historical_control else 'candidate_vs_matched_b3'
                 scaling.append(dict(sve=sve, count=count, median_task_seconds=medians,
-                    candidate_vs_matched_b3=medians['candidate'] / medians['control'] if medians['control'] else None))
+                    **{ratio_key: medians['candidate'] / medians['control'] if medians['control'] else None}))
     (out / 'chain-compilation-results.json').write_text(json.dumps(dict(processes=chain_records, scaling=scaling,
-        review_required='The predicate can do quadratic recurrence walks. These bounded measurements do not prove linear complexity or isolated grouping cost.'), indent=2) + '\n')
+        review_required=('Historical controls are correctness controls. Compiler-task values are diagnostic and do not establish matched-toolchain performance or linear wall-time complexity.'
+            if a.historical_control else 'The predicate can do quadratic recurrence walks. These bounded measurements do not prove linear complexity or isolated grouping cost.')), indent=2) + '\n')
     # Stress has separate flags and cannot substitute for clean IR assertions.
     for sve in ['default', '0']:
         flags = [] if sve == 'default' else ['-XX:UseSVE=0']
