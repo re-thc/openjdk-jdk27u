@@ -1,0 +1,85 @@
+{
+  "experiment": "pr14-classifier-jtreg83-v1",
+  "version": "8.3-dev+1",
+  "minimum": "8.2.1+1",
+  "installed": {
+    "path": "/workspace/toolchains/jtreg83",
+    "archive": {
+      "bytes": 10210539,
+      "sha256": "6b5a36898448d35ee86024379fc3df81f08be5225b26db0db2b7e3d31feb0d88"
+    },
+    "release": "JTREG_VERSION=8.3 1\nBUILD_DATE=September 11, 2026\nSOURCE=git:551e17adac05+\n",
+    "consumer_jars": {
+      "lib/asmtools.jar": {
+        "bytes": 753719,
+        "sha256": "294e9db8fd4f4ebd2f69d4bc1ffdb62d0cd9323d5b4294a9c92a4532d59e4001"
+      },
+      "lib/guice-5.1.0.jar": {
+        "bytes": 777563,
+        "sha256": "4130e50bfac48099c860f0d903b91860c81a249c90f38245f8fed58fc817bc26"
+      },
+      "lib/javatest.jar": {
+        "bytes": 4496759,
+        "sha256": "ca3c9f662badca3a3c3a4a85dc9089611b694f82dd3d172dd0688cadce4f92e6"
+      },
+      "lib/jcommander-1.82.jar": {
+        "bytes": 88407,
+        "sha256": "deeac157c8de6822878d85d0c7bc8467a19cc8484d37788f7804f039dde280b1"
+      },
+      "lib/jtreg.jar": {
+        "bytes": 769441,
+        "sha256": "c1b4102b6a9cd4d291514126afbc25474e1fe98a45fbdeb398154e67db19086b"
+      },
+      "lib/junit-platform-console-standalone-1.14.2.jar": {
+        "bytes": 3177810,
+        "sha256": "5566ffe2aa48263867bca745925f73bf7b01591b30d9a60f191c0b16fa0955e9"
+      },
+      "lib/testng-7.3.0.jar": {
+        "bytes": 922167,
+        "sha256": "63727488f9717d57f0d0a0fee5a1fc10a2be9cfcff2ec3a7187656d663c0774e"
+      }
+    }
+  },
+  "ci": {
+    "source_repository": "openjdk/jtreg",
+    "source_commit": "551e17adac0579859012c4c46318b8fa3cf2ff37",
+    "source_tag": "jtreg-8.3+1",
+    "recipe_version_numbers": {
+      "JTREG_VERSION": "8.3",
+      "DEFAULT_ANT_VERSION": "1.10.15",
+      "DEFAULT_ANT_ARCHIVE_CHECKSUM": "1b460a543caf0b2087fef210c7b4813909901fdc",
+      "DEFAULT_ASMTOOLS_SRC_TAG": "9.1-b01",
+      "DEFAULT_ASMTOOLS_SRC_ARCHIVE_CHECKSUM": "96c52b18da85490d12ad04ec0cfa71c83b67136d",
+      "DEFAULT_GOOGLE_GUICE_VERSION": "5.1.0",
+      "DEFAULT_GOOGLE_GUICE_JAR_CHECKSUM": "da25056c694c54ba16e78e4fc35f17fc60f0d1b4",
+      "DEFAULT_JCOMMANDER_VERSION": "1.82",
+      "DEFAULT_JCOMMANDER_JAR_CHECKSUM": "0a7c5fef184d238065de38f81bbc6ee50cca2e21",
+      "DEFAULT_JTHARNESS_SRC_TAG": "jt6.0-b24",
+      "DEFAULT_JTHARNESS_SRC_ARCHIVE_CHECKSUM": "3d25ddea8e59ab8ff0943bc65aebc80a2aecc4a3",
+      "DEFAULT_JUNIT_VERSION": "1.14.2",
+      "DEFAULT_JUNIT_JAR_CHECKSUM": "99b3e0fe1df38e5eea763c168c033c030a4bd46c",
+      "DEFAULT_JUNIT_LICENSE_FILE": "LICENSE-junit.txt",
+      "DEFAULT_TESTNG_VERSION": "7.3.0",
+      "DEFAULT_TESTNG_JAR_CHECKSUM": "a5069c3dfba58d23702f96c3d9f5081f5ce7136f",
+      "DEFAULT_TESTNG_LICENSE_VERSION": "7.3.0",
+      "DEFAULT_TESTNG_LICENSE_CHECKSUM": "c646d2cd1433560a4b43cb98e7273b59aac4563c"
+    },
+    "dependency_endpoints": {
+      "code_tools": "https://github.com/openjdk",
+      "maven": "https://repo1.maven.org/maven2",
+      "ant": "https://archive.apache.org/dist/ant/binaries"
+    },
+    "endpoint_change": "Explicit proposed GitHub official source-archive endpoint for JT Harness/AsmTools; retain unchanged upstream archive checksums, fail on mismatch/denial, no fallback. Requires approval before execution.",
+    "delivery": "Build once in preflight runner; use same bytes for all candidate/control tests; do not upload harness binaries or sources."
+  },
+  "preserved_experiment": {
+    "pin_file": "classifier-provenance.json",
+    "pin_record": {
+      "bytes": 10666,
+      "sha256": "c3a26c82e093f44949df4d59a47385d72b888f03c57b3fc24b661d50737ede36"
+    },
+    "old_workflow": "vector-api-classifier-preflight.yml",
+    "product_head": "5e2a1a63d4451b54069a365ac1d69dfcd208ee9d"
+  },
+  "qualified": false
+}
