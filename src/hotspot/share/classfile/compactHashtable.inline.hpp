@@ -52,7 +52,6 @@ inline void CompactHashtable<K, V, DECODE, EQUALS>::lookup_batch(const KEY* keys
       Prefetch::read(entries[i], 0);
     }
     for (int i = 0; i < n; i++) {
-      // The value of the first entry with the hash of the key.
       const unsigned int hash = hashes[start + i];
       const int index = hash % _bucket_count;
       u4* entry = entries[i];
@@ -76,7 +75,7 @@ inline void CompactHashtable<K, V, DECODE, EQUALS>::lookup_batch(const KEY* keys
     for (int i = 0; i < n; i++) {
       V value = values[start + i];
       if (value != nullptr && !EQUALS(value, keys[start + i], lens[start + i])) {
-        // Another key with the same hash, rare enough to look up again.
+        // The first candidate may belong to another key.
         values[start + i] = lookup(keys[start + i], hashes[start + i], lens[start + i]);
       }
     }

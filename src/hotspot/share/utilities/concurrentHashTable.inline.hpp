@@ -1112,8 +1112,6 @@ inline void ConcurrentHashTable<CONFIG, MT>::
   get_batch(Thread* thread, LOOKUP_FUNC* lookups, size_t count,
             FOUND_FUNC& found_f, bool* grow_hint)
 {
-  // Enough items to have many cache misses in flight, few enough that the
-  // lines they prefetch stay in the L1 cache until they are used.
   const size_t group_size = 16;
   Node* nodes[group_size];
   size_t max_loops = 0;
