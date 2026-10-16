@@ -15,7 +15,11 @@ from classifier_images import (TOOLS, FILES, configure_arguments, historical_bin
 
 def cleanup_group(child, grace=1.0):
     """Finish the whole group even if its leader has already exited/reaped."""
-    previous = signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    deferred_term = False
+    def defer_term(signum, frame):
+        nonlocal deferred_term
+        deferred_term = True
+    previous = signal.signal(signal.SIGTERM, defer_term)
     killed = False
     try:
         try:
@@ -58,6 +62,8 @@ def cleanup_group(child, grace=1.0):
             child.wait(timeout=10)
         finally:
             signal.signal(signal.SIGTERM, previous)
+            if deferred_term:
+                raise TimeoutError('Producer terminated during process-group cleanup')
 
 
 def run_logged(argv, cwd, env, logfile, timeout):
@@ -152,6 +158,8 @@ def main():
         after = {name: record(path) for name, path in paths.items()}
         require(before == after, 'Toolchain changed during candidate build')
         require((logs / 'spec.gmk').is_file(), 'Configure spec not captured')
+        require(source_binding(source, pin) == result['source'],
+                'Candidate source binding changed during build')
         result.update(image=actual, candidate_payload=payload, tools_after=after,
             evidence={path.relative_to(out).as_posix():record(path) for path in sorted(logs.iterdir())},
             status='completed')

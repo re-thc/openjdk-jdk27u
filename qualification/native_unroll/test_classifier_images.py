@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import stat
 import subprocess
 import sys
@@ -42,7 +43,7 @@ def main():
     def rejected(name, operation, match):
         try:
             operation()
-        except (RuntimeError, subprocess.CalledProcessError) as error:
+        except (RuntimeError, TimeoutError, subprocess.CalledProcessError) as error:
             assert match in str(error), (name, error)
             passed(name)
         else:
@@ -176,6 +177,9 @@ def main():
             lib.parent.mkdir(parents=True)
             lib.write_text('INERT CANDIDATE VM ' + active['level'])
             (scaffold / 'build/native-candidate/spec.gmk').write_text('INERT_CONFIG=true\n')
+            if active.get('mutate_source'):
+                path=repo/'qualification/native_unroll/run_roundtrip_preflight.py'
+                path.write_bytes(path.read_bytes()+b'\nfixture mutation during build\n')
         elif argv[0] == 'bash':
             assert argv[1].endswith('/bin/configure-dev')
         elif argv[-1] == '--version':
@@ -344,6 +348,23 @@ def main():
         rejected('failed producer stops before smoke/archive/completed record', producer.main, 'injected producer failure')
     assert json.loads((fail / 'classifier-build.json').read_text())['status'] == 'failed'
     assert not (fail / 'classifier-jdk.tar.gz').exists() and len(calls) - before == 5
+    active.update(failure=False,mutate_source=True)
+    changed=root/'source-mutated-during-build'
+    argv[argv.index('--out')+1]=str(changed)
+    source_file=repo/'qualification/native_unroll/run_roundtrip_preflight.py';saved=source_file.read_bytes()
+    try:
+        with mock.patch.object(sys,'argv',argv),mock.patch.object(producer,'pins',return_value=pin), \
+             mock.patch.object(producer,'source_binding',side_effect=lambda root,p:binding.source_binding(repo,p)), \
+             mock.patch.object(producer.os,'uname',return_value=type('Host',(),{'machine':'aarch64'})()), \
+             mock.patch.object(producer,'toolchain',return_value=tools), \
+             mock.patch.object(producer,'run_logged',side_effect=fake_run):
+            rejected('mutation during build prevents completed status and archive',producer.main,'Uncommitted executed')
+        assert json.loads((changed/'classifier-build.json').read_text())['status']=='failed'
+        assert not (changed/'classifier-jdk.tar.gz').exists()
+    finally:
+        source_file.write_bytes(saved)
+        active['mutate_source']=False
+        shutil.rmtree(scaffold/'build')
     # Real bounded helper, using only a Python sleeper; no compiler or JVM.
     try:
         producer.run_logged([sys.executable,'-c','import time; print("fixture",flush=True); time.sleep(5)'],
@@ -380,6 +401,40 @@ sys.exit(int(sys.argv[2]))
         assert state in (None,'Z','X','x')
         assert '"kill_required": true' in log.read_text()
         assert '"live_members_after_cleanup": 0' in log.read_text()
+    # Deliver actual TERM inside configure's successful-leader cleanup, while
+    # an inert grandchild keeps the process group alive. Make must never start.
+    cancelled=root/'cancelled-after-configure'
+    argv[argv.index('--out')+1]=str(cancelled)
+    pidfile=root/'cancelled-configure-grandchild.pid'
+    real_logged,real_killpg=producer.run_logged,os.killpg
+    injected=[]
+    def term_during_cleanup(pgid,signum):
+        real_killpg(pgid,signum)
+        if signum==signal.SIGTERM and not injected:
+            injected.append(pgid)
+            os.kill(os.getpid(),signal.SIGTERM)
+    def cancellation_run(command,cwd,env,logfile,timeout):
+        if str(command[0])!='bash':
+            return fake_run(command,cwd,env,logfile,timeout)
+        calls.append(dict(level=active['level'],argv=[str(x) for x in command],fixture_only=True))
+        with mock.patch.object(producer.os,'killpg',side_effect=term_during_cleanup):
+            return real_logged([sys.executable,str(leader),str(pidfile),'0'],root,env,logfile,10)
+    before=len(calls)
+    with mock.patch.object(sys,'argv',argv),mock.patch.object(producer,'pins',return_value=pin), \
+         mock.patch.object(producer,'source_binding',side_effect=lambda root,p:binding.source_binding(repo,p)), \
+         mock.patch.object(producer.os,'uname',return_value=type('Host',(),{'machine':'aarch64'})()), \
+         mock.patch.object(producer,'toolchain',return_value=tools), \
+         mock.patch.object(producer,'run_logged',side_effect=cancellation_run):
+        rejected('TERM during successful configure cleanup prevents make',producer.main,'during process-group cleanup')
+    assert len(injected)==1 and len(calls)-before==4  # Three versions, then configure.
+    assert json.loads((cancelled/'classifier-build.json').read_text())['status']=='failed'
+    assert not (cancelled/'classifier-jdk.tar.gz').exists() and not (scaffold/'build').exists()
+    proc=Path('/proc')/pidfile.read_text()/'stat'
+    try:
+        state=proc.read_text().rsplit(')',1)[1].split()[0]
+    except FileNotFoundError:
+        state=None
+    assert state in (None,'Z','X','x')
     result = dict(passed=True, cases=cases, count=len(cases), native_CPP_builds=0, native_JVMs=0,
         compiler_or_JVM_processes_executed=0, producer_native_actions='Intercepted; inert files only',
         actual_retained_metadata_pins_checked=bool(a.native_metadata),
