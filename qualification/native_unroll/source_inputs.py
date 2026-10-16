@@ -17,14 +17,16 @@ def verify(path, frozen, controller=None, source=Path('.')):
     require({n:payload_manifest(p) for n,p in roots.items()}==value['payloads'], 'Once-compiled input payload changed')
     require(all(record(Path(source)/n)==v for n,v in value['sources'].items()), 'Probe source changed')
     require(value['same_toolchain'] is True, 'Unmatched source-built toolchain')
-    require(value.get('scope','complete') in ('complete','correctness'),'Unknown source experiment scope')
+    require(value.get('scope','complete') in ('complete','correctness','assembly'),'Unknown source experiment scope')
     roles={'b3-release','b3-fastdebug','candidate-release','candidate-fastdebug'}
+    if value.get('scope','complete')=='assembly':roles.remove('candidate-fastdebug')
     if value.get('scope','complete')=='complete':roles.add('base87-release')
     require(set(value['images'])==roles and set(value['build_receipts'])==roles,'Incomplete source-built image roles')
     require(all(v['same_tools']==value['build_toolchain'] for v in value['build_receipts'].values()),'Unmatched build tools')
     refs={'base87-release':'87edd79d3104ff502f7befec034716b081436f49','b3-release':'b3ce67e362c3b1678fcf3d18ee714182b2395c86','b3-fastdebug':'b3ce67e362c3b1678fcf3d18ee714182b2395c86','candidate-release':value['source_head'],'candidate-fastdebug':value['source_head']}
     require(all(value['build_receipts'][role]['source_head']==ref for role,ref in refs.items() if role in roles),'Build source role differs')
     for level in ['release','fastdebug']:
+        if 'candidate-'+level not in value['images']:continue
         control=value['images']['b3-'+level]['files'];candidate=value['images']['candidate-'+level]['files']
         vm='lib/server/libjvm.dylib' if 'lib/server/libjvm.dylib' in control else 'lib/server/libjvm.so'
         require(all(control[n]==candidate[n] for n in control if n!=vm) and

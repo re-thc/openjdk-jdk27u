@@ -44,16 +44,38 @@ def main():
             f=image/'lib/asmtools.jar';saved=f.read_bytes();f.write_bytes(saved+b'changed')
             reject('modified JAR rejected',lambda:h.verify_installed(image));f.write_bytes(saved)
             extra=image/'extra.jar';extra.write_bytes(b'extra')
-            reject('extra JAR rejected',lambda:h.inventory(image));extra.unlink()
-            f.unlink();reject('missing JAR rejected',lambda:h.inventory(image))
+            reject('extra JAR rejected',lambda:h.verify_installed(image));extra.unlink()
+            f.unlink();reject('missing JAR rejected',lambda:h.verify_installed(image))
             target=t/'external.jar';target.write_bytes(saved);f.symlink_to(target)
-            reject('JAR symlink rejected',lambda:h.inventory(image));f.unlink();f.write_bytes(saved)
+            assert h.inventory(image)['lib/asmtools.jar']==record(target);cases.append('distribution dependency symlink is hashed')
+            f.unlink();f.write_bytes(saved)
         with mock.patch.object(h.subprocess,'run',side_effect=AssertionError('Unapproved execution')):
             plan=h.smoke(image,t/'jdk',t/'out')
             assert plan['compatibility_status']=='deferred-unavailable-debug-image' and not plan['executes']
             cases.append('no debug image explicitly defers complete compatibility')
             reject('no debug image prevents runtime smoke',lambda:h.smoke(image,t/'jdk',t/'out',execute=True))
             reject('CI verification cannot bypass unresolved admission',lambda:h.verify_ci(image,t/'receipt'))
+        assert h.suite_minimum()=='8.2.1+1'
+        for version in ['8.2.1+1','8.3+0','8.3-dev+0','8.10+0','8.2.1.0+1']:
+            with zipfile.ZipFile(image/'lib/jtreg.jar','w') as z:
+                z.writestr('META-INF/MANIFEST.MF','jtreg-VersionString: '+version+'\n')
+            assert h.harness_version(image)==version
+            cases.append('suite minimum admits '+version)
+        for version in ['8.2.1+0','8.2+99','8.1+1000']:
+            with zipfile.ZipFile(image/'lib/jtreg.jar','w') as z:
+                z.writestr('META-INF/MANIFEST.MF','jtreg-VersionString: '+version+'\n')
+            reject('older numeric version rejected '+version,lambda:h.inventory(image))
+        with zipfile.ZipFile(image/'lib/jtreg.jar','w') as z:
+            z.writestr('META-INF/MANIFEST.MF','jtreg-VersionString: 8.3+0\n')
+        (image/'lib/asmtools.jar').rename(image/'lib/other-dependency.jar')
+        (image/'additional').mkdir();(image/'additional/another.jar').write_bytes(b'INERT')
+        assert 'additional/another.jar' in h.inventory(image)
+        cases.append('generic compatible distribution accepts renamed/additional dependency JARs')
+        link=image/'dependency-directory';link.symlink_to(image/'additional',target_is_directory=True)
+        assert 'dependency-directory/another.jar' in h.inventory(image)
+        cases.append('dependency directory symlink payload is inventoried')
+        link.unlink();link.symlink_to(image,target_is_directory=True)
+        reject('cyclic dependency directory rejected',lambda:h.inventory(image));link.unlink()
         optional=h.pins()['optional_local_debug_image']
         assessment=h.debug_assessment(optional['path'],optional['spec'])
         if assessment['available']:

@@ -1,140 +1,142 @@
-# Apple Silicon Vector validation
+# Focused native Mac Vector validation
 
-An Apple M6 Mac removes the native-arm64 correctness runner blocker. It can run
-WhiteBox, C2 IR/matcher assertions, NEON conversion/reduction tests, compiler stress,
-release/fastdebug Vector suites and a separate paired Mac performance experiment.
-Its lack of SVE means it cannot validate SVE lowering or establish recovery of the
-historical Linux ARM regression. PR43's successful builds/IR/gtest/hsdis establish
-useful host infrastructure, not the identity of these classifier/reference VMs.
+Start with the focused scope on an Apple Silicon Mac. It builds only the pinned
+b3 fastdebug image and the exact classifier fastdebug HotSpot overlay. It runs
+three generic harness smoke tests, three control semantics tests and five
+candidate semantics/IR tests with NEON (`UseSVE=0`). It does not require release
+images, original87, full suites, 72 phase processes, seven gap audits or timings.
+The maximum campaign duration is four hours; every stage and child process group
+is bounded. No runtime execution is authorized by this document.
 
-## Repository and normal build tools
-
-Check out `codex/vector-api-classifier-jtreg83-review` in public
-`re-thc/openjdk-jdk27u`; pin the reported review commit for the local agent. The
-candidate product tree remains classifier5e2a1a63d4451b54069a365ac1d69dfcd208ee9d;
-b3 control is b3ce67e362c3b1678fcf3d18ee714182b2395c86. No Library packet or retained
-binary is needed. Use installed native JDK27, Xcode command-line tools/SDK, GNU make4or newer (`gmake`),
-Python3 and installed compatible jtreg8.3 build1or later. Capstone is additionally
-required for the optional complete performance/assembly scope. No source fetch,
-managed installation or execution is authorized by these instructions.
-
-## Recommended command: correctness only, no benchmarks
+From the exact review commit supplied in the publication handoff, inspect:
 
 ```bash
-git clone --branch codex/vector-api-classifier-jtreg83-review https://github.com/re-thc/openjdk-jdk27u.git
-cd openjdk-jdk27u
-export BOOT_JDK=/path/to/native/arm64/jdk27
-export JTREG=/path/to/installed/jtreg83
-export QUAL_OUT=/path/outside/checkout/vector-mac-correctness-v1
+export BOOT_JDK=/absolute/path/to/native/jdk27/Contents/Home
+export JTREG=/absolute/path/to/installed/jtreg
+export QUAL_OUT=/absolute/path/outside/checkout/vector-mac-focused-v1
 PYTHONDONTWRITEBYTECODE=1 python3 qualification/native_unroll/native_source_qualify.py \
-  --platform mac --scope correctness --boot-jdk "$BOOT_JDK" --jtreg "$JTREG" --out "$QUAL_OUT"
-# After the local agent receives execution approval; use a fresh output directory:
-PYTHONDONTWRITEBYTECODE=1 python3 qualification/native_unroll/native_source_qualify.py \
-  --platform mac --scope correctness --boot-jdk "$BOOT_JDK" --jtreg "$JTREG" --out "$QUAL_OUT" --execute
+  --platform mac --scope focused --boot-jdk "$BOOT_JDK" --jtreg "$JTREG" --out "$QUAL_OUT"
+# Only after explicit approval of this one focused execution, use the same command with --execute.
 ```
 
-Plan mode executes no JVM/build/download. Correctness mode creates two full b3
-images and two classifier HotSpot overlays, runs the generic native Mach-O arm64
-fastdebug compatibility smoke before overlays, then all focused gates and four
-full release/fastdebug Vector suite configurations. It does not build original87,
-run timing processes or claim a performance result. Hard cap24hours; no retry.
-The Linux source route instead requires SVE, keeps both ISA configurations and
-has its separate36hour cap. No hosted CI or binary transfer is necessary.
+Python 3.11 or newer is required (`hashlib.file_digest` is used). Supply an
+installed jtreg satisfying the checked-in suites' minimum **8.2.1+1**; **8.3+0
+is compatible by numeric release ordering**. A newer release does not need build
+1. Generic admission hashes the selected distribution's JARs, including dependency
+symlink targets, without requiring historical filenames or bytes. The optional
+`verify-installed` command checks one known distribution exactly; it is not an
+execution prerequisite. Actual WhiteBox, driver/othervm and C2 IR compatibility
+must still pass before the candidate overlay is built.
 
-## Transparent ordinary source-build equivalents
+Use an installed native JDK 27 and normal OpenJDK build prerequisites. Discover
+JDK installations with `/usr/libexec/java_home -V`; select the actual
+`Contents/Home` root containing `bin/java`, `bin/javac` and
+`lib/server/libjvm.dylib`. Locate jtreg with `command -v jtreg` and inspect its
+installation root for `lib/jtreg.jar`. Do not assume a launcher symlink's parent
+is that root. Inspect the manifest without launching Java if execution is not
+approved. Do not download, install or rebuild a harness to change a valid `+0`.
 
-The runner automates normal worktree/configure/make operations. If the local
-agent wants independently built images for direct test commands instead, these
-are equivalent full-image source builds (do not also run the automatic builds):
+The runner requires native Darwin arm64, validates thin Mach-O arm64 boot and
+built Java/javac/libjvm files, resolves clang/clang++/ld/ar through `xcrun`, binds
+the SDK path and SDKSettings identity, and requires GNU make 4 or newer (`gmake`
+preferred over Apple's BSD make). The same tool and SDK bytes are checked across
+builds. Candidate modules and all template entries remain identical to b3 except
+`lib/server/libjvm.dylib`. Missing tools, wrong architecture or an unavailable
+SDK stop execution; no installation is attempted. Paths may contain spaces and
+are passed as separate arguments. The checkout path must contain no whitespace
+because the generic smoke's jtreg external library root requires it.
 
-```bash
-repo="$PWD"
-work="$(dirname "$repo")/vector-mac-manual"
-mkdir -p "$work"
-git worktree add --detach "$work/control" b3ce67e362c3b1678fcf3d18ee714182b2395c86
-git worktree add --detach "$work/candidate" HEAD
-for role in control candidate; do
-  for level in release fastdebug; do
-    (
-      cd "$work/$role"
-      bash bin/configure-dev --with-conf-name="mac-$level" \
-        --with-debug-level="$level" --with-boot-jdk="$BOOT_JDK" \
-        --with-jtreg="$JTREG" --with-native-debug-symbols=none --with-jobs=2
-      gmake CONF="mac-$level" images
-    )
-  done
- done
-```
+Existing matching images are optional acceleration, never private prerequisites.
+`--reuse-builds /path/to/previous/campaign` admits only a same-commit, same-platform
+campaign whose source worktrees, configuration arguments/specs, complete image
+payloads, toolchain, boot JDK, SDK and harness identities still match. A mismatch
+stops rather than silently using or replacing an image. PR43 binaries are not
+assumed to contain this classifier. A clean host can build everything from Git.
 
-Keep the same Xcode/SDK, boot JDK and build options for each matched level; record
-source commits, specs, tool versions and image identities. Existing PR43 images
-may accelerate only generic harness smoke unless these exact source identities
-and configurations match. The automated performance route uses verified overlays
-with byte-identical b3 templates/modules rather than assuming independent full
-images have identical Java-module payloads.
+## Expected focused evidence
 
-## Exact focused tests and expected evidence
+Keep the entire fresh output directory, including failures. Success requires:
 
-For direct manual testing, from the review checkout:
+- `plan.json` with platform `mac`, scope `focused`, two builds and zero timed JVMs.
+- `campaign.json` with exact source, tools/SDK, harness and image/build receipts.
+- `harness-smoke/result.json` and its three passing `.jtr` reports, including
+  `HARNESS_MINIMUM_SMOKE_OK`, `HARNESS_WHITEBOX_OTHERVM_OK`,
+  `HARNESS_IR_ASSERTION_PASSED` and `HARNESS_IR_ENABLED=true WHITEBOX_API_READY=true`.
+- `focused/gate.json` with both control and candidate configurations passed, and
+  their work/report directories. All eight selected reports must pass. Both
+  semantics tests must show actual interpreter 0, C1 1, C2 4 and cold 0 evidence
+  (`ROUNDTRIP_REDUCTION_PASS` / `ROUNDTRIP_EDGES_PASS`). Candidate IR reports must
+  contain `-DShouldDoIRVerification=true`; disabled matching of the essential
+  `carried128` / `reversed` positive rule is rejected. The two zero-seed IR tests
+  also execute their width, strict-order and matcher assertions.
+- `qualification-result.json` with scope `focused`, `timing_executed=false`,
+  `release_assembly=false`, `full_suites=false` and `qualified=false`.
 
-```bash
-for role in control candidate; do
-  for level in release fastdebug; do
-    tests='TestFloatRoundTripReduction TestFloatRoundTripReductionEdges TestZeroSeedFPReduction'
-    flags='-XX:UseSVE=0'
-    if [ "$role" = control ]; then flags="$flags -DVerifyIR=false"; fi
-    if [ "$role:$level" = candidate:fastdebug ]; then
-      tests="$tests TestZeroSeedFPReductionIR TestZeroSeedFPReductionStrictIR TestFloatRoundTripCompileControls"
-    fi
-    args=()
-    for test in $tests; do args+=("$repo/test/hotspot/jtreg/compiler/vectorapi/$test.java"); done
-    "$BOOT_JDK/bin/java" -jar "$JTREG/lib/jtreg.jar" \
-      "-jdk:$work/$role/build/mac-$level/images/jdk" \
-      -othervm -concurrency:1 -timeoutFactor:2 -verbose:summary \
-      "-javaoptions:$flags" "-w:$work/$role-$level-work" \
-      "-r:$work/$role-$level-report" "${args[@]}"
-  done
- done
-```
+A pass does not qualify the historical Linux/SVE regression or close independent
+OSR, call-boundary, wide fallback or dynamic-insert allocation gaps. There is no
+SVE coverage on this Mac. Any failed or missing gate stops without a rerun.
 
-The automated route additionally requires its existing clean candidate IR checks,
-actual ordinary interpreter0/C1=1/C2=4 and cold0 markers, NEON positive matcher,
-strict-order negatives, separate chain/OSR controls and fixed-seed stress. Expect
-`test result: Passed.` for every selected report; candidate fastdebug must show
-`-DShouldDoIRVerification=true`, actual matcher/IR assertions and no disabled
-positive rule. `ROUNDTRIP_REDUCTION_PASS`, `ROUNDTRIP_EDGES_PASS`, actual tier
-markers and `ROUNDTRIP_CHAIN_PASS` must be present where required. A passing test
-that skipped matching is not sufficient. Mac uses the explicit NEON UseSVE=0
-configuration once; it does not relabel this as independent SVE coverage.
+## Separately selectable release assembly
 
-Successful automated output includes `harness-smoke/result.json` with all three
-smoke tests passed, `preflight/jtreg83-gate.json`, `full/full-result.json` with
-four suites/72 phase processes/seven separate gap processes, and
-`qualification-result.json` with platform=mac, scope=correctness,
-timing_executed=false and qualified=false. Failures retain their command/log and
-stop; no automatic rerun. hsdis may help review, but raw-code decoder gates in the
-complete route require actual machine bytes and cannot accept a missing listing.
-
-## Separate optional paired Mac performance run
-
-Only with a separate new execution approval and fresh output directory:
+After separate execution approval, inspect and run the assembly scope in a fresh
+output directory. It builds b3 fastdebug for generic compatibility, then b3
+release and its classifier release overlay. It compiles common probes once and
+captures **14 separate observed JVMs**: two release images, three headers,
+conversion/raw controls, plus two legacy unroll-one controls. It requires an
+installed compatible capstone decoder, but no original87 or timed campaign.
+Its Mac cap is six hours. Candidate fastdebug IR remains independently required
+through the focused scope; assembly alone cannot substitute for it.
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 python3 qualification/native_unroll/native_source_qualify.py \
-  --platform mac --scope complete --boot-jdk "$BOOT_JDK" --jtreg "$JTREG" \
-  --out /path/outside/checkout/vector-mac-paired-v1
-# Add --execute only after approval of this complete Mac campaign.
+  --platform mac --scope assembly --boot-jdk "$BOOT_JDK" --jtreg "$JTREG" \
+  --out /absolute/path/outside/checkout/vector-mac-assembly-v1
+# Add --execute only with separate approval of this assembly scope.
 ```
 
-This also builds original87 release from pinned Git commit
-87edd79d3104ff502f7befec034716b081436f49. It keeps18 separate release assembly JVMs
-and15 NEON-only primary contrasts with12 adjacent AB/BA process pairs each:
-up to360 timed JVMs, unchanged five100000-call windows, process-pair bootstrap
-uncertainty,1.02 upper non-regression bound, strict compact gains versus original87,
-0.01B/call maximum allocation and no pooling/diagnostic printing in timings.
-Mac has no Linux taskset pinning; keep the host quiet and treat scheduling effects
-through the process-level uncertainty. A missed bound remains a miss, not a rerun
-invitation. All Mac output carries historical_linux_recovery_claim=false.
-It can establish only this Mac experiment's behavior, never the hosted Linux
-regression's recovery or any SVE result. The native Linux/SVE route and its30
-primary contrasts remain distinct and outstanding.
+Expect `source-inputs-correctness.json` (scope `assembly`),
+`assembly/assembly-index.json`, raw `.out`/`.xml` logs,
+`assembly/installed-assembly-gate.json` and `qualification-result.json`.
+The decoder requires actual ordinary-entry machine code, NEON conversion dataflow,
+scalar recurrence and unchanged raw-control loops. These diagnostics never enter
+timed JVMs.
+
+The later `--scope correctness` option includes release/fastdebug suites, compiler
+stress and the 72 phase/seven gap processes, without timing or original87.
+`--scope complete` additionally builds original87 and runs the separate Mac
+paired experiment: 18 assembly JVMs and at most 360 timed JVMs, 15 independent
+contrasts with 12 balanced AB/BA process pairs each. It retains the 1.02 upper
+paired 95% non-regression bound, strict compact gains, 0.01 B/call allocation
+bound and no pooling. Both later scopes have a 24-hour Mac cap and require their
+own execution approval. Linux/SVE recovery remains a separate experiment.
+
+## Ready-to-send local agent prompt
+
+Replace `REVIEW_COMMIT_FROM_HANDOFF` with the exact 40-character commit in the
+publication handoff before sending; it must equal the fetched branch head. This
+avoids a self-referential commit hash in this committed file.
+
+> Work in https://github.com/re-thc/openjdk-jdk27u.git, review branch
+> `codex/vector-api-classifier-jtreg83-review`, pinned commit
+> `REVIEW_COMMIT_FROM_HANDOFF`. Read repository instructions and
+> `qualification/native_unroll/MAC-ARM-VALIDATION.md`. Fetch that branch, verify
+> its head equals the supplied pin, and check out the exact commit in a clean
+> checkout with no whitespace in its path. Keep PR14 draft and unchanged; do not
+> merge, force-push or launch CI. First inspect only: require native Darwin arm64,
+> Python 3.11+, installed GNU make 4+, working Xcode clang/SDK paths, a native
+> JDK 27 (`/usr/libexec/java_home -V`) and an installed jtreg root containing
+> `lib/jtreg.jar`. Accept the suites' minimum 8.2.1+1 or newer numeric release,
+> including 8.3+0; do not fetch or install anything. Existing binaries are optional
+> and must pass the runner's full reuse identity checks. Set absolute BOOT_JDK,
+> JTREG and a fresh QUAL_OUT outside the checkout. Print the smallest plan with
+> `PYTHONDONTWRITEBYTECODE=1 python3 qualification/native_unroll/native_source_qualify.py --platform mac --scope focused --boot-jdk "$BOOT_JDK" --jtreg "$JTREG" --out "$QUAL_OUT"`.
+> No JVM or build is authorized by this prompt alone: obtain explicit approval
+> for this one four-hour focused scope before adding `--execute`. Execute once
+> only if approved. Do not expand to assembly, full suites, phase/gap audits or
+> timing. Stop on missing prerequisites, wrong architecture, denied access,
+> identity mismatch, cap exhaustion or any failed/skipped essential IR gate;
+> preserve all output and do not retry or substitute routes. Report the exact
+> checkout pin, command, tools and scope; send `harness-smoke/result.json`,
+> `focused/gate.json`, `qualification-result.json`, and actual tier/IR markers
+> listed above, or the precise failed action/log. A focused pass is not historical
+> Linux/SVE performance qualification and does not close the separate allocations.

@@ -1,4 +1,5 @@
 """Fail closed on missing installed native idiom; separate diagnostic processes only."""
+from assembly_cohorts import verify_index
 import argparse
 import json
 import pathlib
@@ -70,10 +71,10 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('root',type=pathlib.Path)
     parser.add_argument('--platform',choices=['linux','mac'],default='linux')
+    parser.add_argument('--pair-only',action='store_true')
     args=parser.parse_args();root=args.root
     index = json.loads((root / 'assembly-index.json').read_text())
-    if len(index) != (18 if args.platform=='mac' else 36):
-        raise RuntimeError('Incomplete assembly cohort')
+    verify_index(index,args.platform,args.pair_only)
     evidence = []
     raw = {}
     for entry in index:

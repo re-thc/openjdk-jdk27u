@@ -9,14 +9,15 @@ the diagnostic branch carries the reviewed classifier product/test trees.
 
 Use a quiet, dedicated Linux aarch64 host with enabled SVE, adequate RAM/disk for
 three full JDK builds plus two overlays, and a native JDK27 boot JDK. The current
-executor is x86_64 and cannot execute this route. Supply an installed8.3 build1or later
-harness. Its actual JARs and full payload are bound once and rechecked throughout;
+executor is x86_64 and cannot execute this route. Supply an installed harness satisfying the suite minimum 8.2.1+1 (including
+8.3+0). Generic admission does not require the historical distribution filenames
+or bytes. Its actual JARs and full payload are bound once and rechecked throughout;
 no comparison may silently switch harnesses. Local x86 compatibility already
 passed minimum admission, native WhiteBox, driver/othervm and an actual AddI IR
 assertion; native compatibility is checked again on the intended host.
 
 Required tools: gcc-16/g++-16 and binutils, mold, make, standard OpenJDK build
-prerequisites, taskset, Python3 with capstone. Use normally provisioned
+prerequisites, taskset, Python 3.11+ with capstone for assembly/complete scopes. Use normally provisioned
 build tools and JDK27; this runner does not install tools or download binaries.
 If building jtreg is necessary, use official openjdk/jtreg commit
 551e17adac0579859012c4c46318b8fa3cf2ff37 and its normal `bash make/build.sh --jdk
@@ -58,7 +59,7 @@ subreaper, bounds every process group, and applies a36hour hard timer. Worktrees
 logs, input/build identities and partial results stay in the fresh output folder.
 There is no automatic resume or second attempt.
 
-## Smallest complete sequence and retained gates
+## Complete Linux sequence and retained gates
 
 1. Verify the single installed harness and decoder/tool availability; require
    default SVE coverage. Build the pinned b3 fastdebug reference from Git, then
@@ -124,6 +125,9 @@ Optional installed image checks are skipped explicitly if unavailable, so fresh
 checkout testing does not require a retained host binary.
 
 For Apple Silicon, see [MAC-ARM-VALIDATION.md](MAC-ARM-VALIDATION.md). Its
-`--platform mac --scope correctness` route runs no paired performance campaign;
+`--platform mac --scope focused` is the smallest two-build fastdebug smoke,
+semantics and actual IR/NEON gate. `--scope assembly` separately captures release
+code without original87 or timings; `--scope correctness` runs the later full
+correctness suites without a paired performance campaign;
 `--platform mac --scope complete` is a separate NEON-only Mac experiment. Neither
 can establish SVE behavior or historical Linux recovery.

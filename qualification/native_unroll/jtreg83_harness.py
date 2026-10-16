@@ -21,22 +21,64 @@ def pins():
 
 
 
+def version_key(text):
+    # jtreg's suite minimum compares numeric release components, then the build.
+    # A prerelease milestone is not a different numeric release. Build 0 on a
+    # newer release (8.3+0) must not make it older than 8.2.1+1.
+    match=re.fullmatch(r'(\d+(?:\.\d+)*)(?:-[A-Za-z0-9._-]+)?(?:\+(\d+)(?:-[A-Za-z0-9._-]+)?)?',text)
+    require(match is not None,'Malformed jtreg version: '+text)
+    release=tuple(int(n) for n in match.group(1).split('.'))
+    while len(release)>1 and release[-1]==0:release=release[:-1]
+    return release,int(match.group(2) or 0)
+
+
+def version_at_least(selected,minimum):
+    release,build=version_key(selected);required,required_build=version_key(minimum)
+    width=max(len(release),len(required))
+    return (release+(0,)*(width-len(release)),build)>=(required+(0,)*(width-len(required)),required_build)
+
+
+def suite_minimum():
+    root=Path(__file__).resolve().parents[2]
+    values=[]
+    for relative in ['test/hotspot/jtreg/TEST.ROOT','test/jdk/TEST.ROOT']:
+        match=re.search(r'^requiredVersion=(\S+)',(root/relative).read_text(),re.M)
+        require(match is not None,'Suite minimum is missing: '+relative)
+        values.append(match.group(1))
+    minimum=values[0]
+    for value in values[1:]:
+        if version_at_least(value,minimum):minimum=value
+    return minimum
+
+
 def harness_version(image):
     with zipfile.ZipFile(Path(image)/'lib/jtreg.jar') as archive:
         lines=archive.read('META-INF/MANIFEST.MF').decode().splitlines()
     versions=[line.split(': ',1)[1] for line in lines if line.startswith('jtreg-VersionString: ')]
-    require(len(versions)==1 and re.fullmatch(r'8\.3(?:\.0)?(?:-[A-Za-z0-9.]+)?\+[1-9][0-9]*',versions[0]),
-            'Compatible jtreg8.3 build1or later required')
+    require(len(versions)==1 and version_at_least(versions[0],suite_minimum()),
+            'Harness is older than suite minimum '+suite_minimum())
     return versions[0]
 
+
 def inventory(image):
-    image = Path(image)
-    require(image.is_dir() and not image.is_symlink(), 'Harness directory must be real')
-    jars = sorted(image.rglob('*.jar'))
-    require(all(not p.is_symlink() and p.resolve().is_relative_to(image.resolve()) for p in jars),
-            'Harness JAR symlink/escape')
-    actual = {p.relative_to(image).as_posix(): record(p) for p in jars}
-    require(set(actual) == set(pins()['installed']['consumer_jars']), 'Seven-JAR inventory differs')
+    image=Path(image)
+    require(image.is_dir(),'Harness directory is missing')
+    require((image/'lib/jtreg.jar').is_file(),'Harness entry JAR is missing')
+    actual={}
+    def visit(directory,label,ancestors):
+        resolved=directory.resolve()
+        require(resolved not in ancestors,'Cyclic harness directory symlink')
+        for child in sorted(directory.iterdir()):
+            name=label/child.name
+            if child.is_dir():visit(child,name,ancestors|{resolved})
+            elif child.name.endswith('.jar'):
+                require(child.is_file(),'Harness JAR is unreadable: '+str(name))
+                actual[name.as_posix()]=record(child)
+    # Distribution-specific names and ordinary dependency symlinks are allowed;
+    # every selected JAR is hashed, including symlink targets. Runtime smoke
+    # establishes whether that distribution satisfies this suite's APIs.
+    visit(image,Path(),set())
+    require('lib/jtreg.jar' in actual,'Harness entry JAR was not inventoried')
     harness_version(image)
     return actual
 
@@ -92,7 +134,7 @@ def debug_assessment(image, spec):
 def smoke_sources(repo, suite):
     require(not any(c.isspace() for c in str(repo)), 'Smoke library root must not contain whitespace')
     return {
-        'TEST.ROOT': 'requiredVersion=8.2.1+1\nexternal.lib.roots = ' + os.path.relpath(repo,suite) + '\n',
+        'TEST.ROOT': 'requiredVersion='+suite_minimum()+'\nexternal.lib.roots = ' + os.path.relpath(repo,suite) + '\n',
         'HarnessMinimum.java': '''/* @test
  * @run main/othervm HarnessMinimum
  */
@@ -164,7 +206,7 @@ def smoke(image, jdk, out, debug_jdk=None, debug_spec=None, execute=False):
          '-concurrency:1','-timeoutFactor:2','-verbose:summary','-w:'+str(out/'work'),'-r:'+str(out/'report'),
          str(out/'suite')]]
     plan=dict(experiment=EXPERIMENT,commands=commands,maximum_seconds=390,executes=execute,
-        required_minimum='8.2.1+1',debug_assessment=assessment,
+        required_minimum=suite_minimum(),debug_assessment=assessment,
         compatibility_status='planned-not-executed' if assessment['available'] else 'deferred-unavailable-debug-image',
         required_checks=['minimum-version','driver/ClassFileInstaller','WhiteBox native API in othervm',
                          'fastdebug C2 ADD_I IR assertion with positive enabled evidence'],qualified=False)

@@ -14,7 +14,10 @@ compatibility evidence, not classifier or performance qualification.
 To plan a generic smoke on another host, use committed `jtreg83_harness.py smoke`
 with explicit `--image`, `--jdk`, `--debug-jdk`, `--debug-spec` and fresh `--out`.
 Without `--execute` it prints a plan. Runtime needs its own applicable approval.
-The native recipe includes this gate before either classifier overlay. An exact
+The native recipe includes this gate before either classifier overlay. Generic
+admission uses the suites' numeric minimum 8.2.1+1, including 8.3+0, and hashes
+the selected distribution without requiring the old filenames or byte map.
+`verify-installed` is an optional exact check of the retained known distribution. An exact
 classifier VM is not required for generic compatibility. Installed images remain
 optional acceleration; the source route creates its own b3 fastdebug reference.
 

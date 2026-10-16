@@ -15,6 +15,8 @@ from unittest import mock
 import native_source_qualify as n
 import source_inputs as inputs
 import jtreg83_harness as h
+import focused_native as focused
+from assembly_cohorts import cohorts,verify_index
 import run_roundtrip_candidate as performance
 from run_roundtrip_full import suite_counts
 from classifier_images import payload_manifest,record,source_binding,pins
@@ -29,7 +31,7 @@ def main():
         except (RuntimeError,SystemExit):cases.append(name)
         else:raise AssertionError('Accepted '+name)
     source_binding(root,pins());cases.append('complete current source binding and unchanged product/test/build trees')
-    for target,scope,count,builds in [('linux','complete',720,5),('mac','complete',360,5),('mac','correctness',0,4)]:
+    for target,scope,count,builds in [('linux','complete',720,5),('mac','complete',360,5),('mac','correctness',0,4),('mac','focused',0,2),('mac','assembly',0,3),('linux','assembly',0,3)]:
         with mock.patch.object(n.subprocess,'Popen',side_effect=AssertionError('Execution during planning')), mock.patch.object(n,'git',return_value='reviewhead'):
             plan=n.plan(root,Path('/not-created'),Path('/harness'),Path('/boot'),target,scope)
         assert plan['performance']['maximum_timed_JVMs']==count and len(plan['builds'])==builds
@@ -57,7 +59,7 @@ def main():
                 def python(self,name,module,args):
                     calls.append(('python',name))
                     if fail==name:raise RuntimeError('injected '+name)
-                    assert '--platform' in args or name=='harness-smoke'
+                    assert '--platform' in args or name in ('harness-smoke','assembly-gate')
                     if '--platform' in args:assert args[args.index('--platform')+1]==target
                     if name=='assembly-gate':
                         (out/'assembly').mkdir(exist_ok=True);(out/'assembly/installed-assembly-gate.json').write_text('{"passed":true}')
@@ -65,8 +67,11 @@ def main():
                         d=out/('recovery' if name=='legacy-recovery' else 'retention');d.mkdir();(d/'initial-gate.json').write_text('{"passes":true}')
                     elif name=='full-suites':
                         (out/'full').mkdir();(out/'full/full-result.json').write_text('{"passed":true}')
+            def fake_focused(*args):
+                calls.append(('focused','gate'))
+                if fail=='focused':raise RuntimeError('injected focused')
             uname=SimpleNamespace(machine='arm64' if target=='mac' else 'aarch64')
-            with mock.patch.object(n,'Campaign',C),mock.patch.object(n,'source_binding'),mock.patch.object(n,'inventory'),mock.patch.object(n,'harness_version',return_value='8.3-dev+1'), \
+            with mock.patch.object(n,'native_macho'),mock.patch.object(n.focused_native,'run',side_effect=fake_focused),mock.patch.object(n,'Campaign',C),mock.patch.object(n,'source_binding'),mock.patch.object(n,'inventory'),mock.patch.object(n,'harness_version',return_value='8.3-dev+1'), \
                  mock.patch.object(n,'compile_inputs',return_value=(t/'frozen',t/'controller',t/'manifest')), mock.patch.object(n,'complete_manifest',return_value=t/'complete-manifest'), \
                  mock.patch.object(n.os,'uname',return_value=uname),mock.patch.object(n.sys,'platform','darwin' if target=='mac' else 'linux'), \
                  mock.patch.object(n.signal,'signal'),mock.patch.object(n.signal,'setitimer'), \
@@ -93,6 +98,70 @@ def main():
         assert calls.index(('build','base87-release'))>calls.index(('python','correctness'))
         cases.append('separate Mac complete scope retains ordered assembly/recovery/retention/full gates')
 
+        calls,out=model('mac','focused')
+        assert [v for k,v in calls if k=='build']==['b3-fastdebug','candidate-fastdebug']
+        assert ('focused','gate') in calls and not any(k=='python' and v!='harness-smoke' for k,v in calls)
+        assert json.loads((out/'qualification-result.json').read_text())['full_suites'] is False
+        cases.append('focused Mac runs only matched fastdebug smoke semantics and IR')
+        calls,_=model('mac','focused','harness-smoke')
+        assert ('build','candidate-fastdebug') not in calls
+        calls,_=model('mac','focused','focused')
+        cases.append('focused harness and IR failures stop without release/timing fallback')
+        calls,out=model('mac','assembly')
+        assert [v for k,v in calls if k=='build']==['b3-fastdebug','b3-release','candidate-release']
+        assert ('python','assembly-gate') in calls and ('python','full-suites') not in calls
+        assert not json.loads((out/'qualification-result.json').read_text())['timing_executed']
+        cases.append('assembly scope needs no original87 candidate fastdebug full suites or timing')
+
+        reports=t/'focused-fixture';reports.mkdir()
+        def report_text(name):
+            text='test result: Passed.\n-DShouldDoIRVerification=true\n'
+            if name=='TestFloatRoundTripReduction':
+                for mode,level in [('semantics',0),('semantics',1),('semantics',4),('cold',0)]:
+                    text+=f'ROUNDTRIP_REDUCTION_PASS mode={mode} required={level} actual={level} after={level}\n'
+            if name=='TestFloatRoundTripReductionEdges':
+                for mode,level in [('semantics',0),('semantics',1),('semantics',4),('cold',0)]:
+                    text+=f'ROUNDTRIP_EDGES_PASS mode={mode} six_targets_level={level}\n'
+            return text
+        for name in focused.SEMANTICS+focused.IR:(reports/(name+'.jtr')).write_text(report_text(name))
+        focused.verify_reports(reports,True);cases.append('focused actual tier and IR evidence accepted')
+        for name,marker in [('TestFloatRoundTripReduction','actual=1'),('TestZeroSeedFPReductionIR','-DShouldDoIRVerification=true')]:
+            f=reports/(name+'.jtr');f.write_text(report_text(name).replace(marker,''))
+            rejected('focused missing '+marker,lambda:focused.verify_reports(reports,True));f.write_text(report_text(name))
+        for name,method in [('TestFloatRoundTripReduction','carried128'),('TestFloatRoundTripReductionEdges','reversed')]:
+            f=reports/(name+'.jtr');f.write_text(report_text(name)+f'Disabling IR matching for rule 1 of 2 in {method}:')
+            rejected('focused skipped positive '+method,lambda:focused.verify_reports(reports,True));f.write_text(report_text(name))
+        f=reports/'TestZeroSeedFPReductionStrictIR.jtr';f.write_text(report_text(f.stem)+'IR verification disabled')
+        rejected('focused disabled strict IR rejected',lambda:focused.verify_reports(reports,True));f.unlink()
+        rejected('focused missing report rejected',lambda:focused.verify_reports(reports,True))
+
+        # Exercise the real small-scope command generator against inert report writers.
+        class FocusedCampaign:
+            target='mac';boot=t/'boot';jtreg=t/'jtreg'
+            builds={'candidate-fastdebug':{'source_head':'reviewhead'}}
+            def __init__(self):self.root=root;self.out=t/'focused-command-model';self.out.mkdir();self.commands=[]
+            def invariant(self):pass
+            def run(self,name,argv):
+                self.commands.append((name,argv))
+                if name.endswith('-flags'):
+                    (self.out/(name+'.log')).write_text('UseSVE = 0 MaxVectorSize = 16');return
+                work=Path(next(str(v)[3:] for v in argv if str(v).startswith('-w:')));work.mkdir(parents=True)
+                names=focused.SEMANTICS+(focused.IR if 'candidate' in name else [])
+                for test in names:(work/(test+'.jtr')).write_text(report_text(test))
+        fc=FocusedCampaign();focused.run(fc,t/'control-image',t/'candidate-image')
+        assert len(fc.commands)==4
+        assert '-javaoptions:-XX:UseSVE=0 -DVerifyIR=false' in fc.commands[1][1]
+        assert '-javaoptions:-XX:UseSVE=0' in fc.commands[3][1]
+        assert json.loads((fc.out/'focused/gate.json').read_text())['passed']
+        cases.append('actual focused command generator preserves candidate IR and restricts VerifyIR=false to control')
+        for target,pair,count in [('mac',True,14),('linux',True,28),('mac',False,18),('linux',False,36)]:
+            rows=[dict(condition=condition,image=image,name=str(i)) for i,(condition,image) in enumerate(cohorts(target,pair))]
+            assert len(rows)==count;verify_index(rows,target,pair)
+            if pair:assert not any(r['image']=='base87' for r in rows)
+            rows[-1]=rows[0]
+            rejected('duplicate assembly cohort rejected '+target+str(pair),lambda:verify_index(rows,target,pair))
+        cases.append('separate pair-only and complete assembly cohorts preserve exact roles and conditions')
+
         # Build inert once-compiled input and image manifests; no executable content.
         frozen=t/'frozen';controller=t/'controller';src=t/'src';src.mkdir()
         roots={'classes':frozen/'qualification/classes','whitebox':frozen/'qualification/whitebox','controller':controller}
@@ -110,6 +179,34 @@ def main():
             images[role]=dict(root=str(d),files={name:record(d/name) for name in n.image_files('linux')})
             ref=n.BASE if role.startswith('base87') else n.B3 if role.startswith('b3') else 'reviewhead'
             receipts[role]=dict(source_head=ref,same_tools={'compiler':'inert'})
+        # Optional reuse is fail-closed on all identities, without executing images.
+        reuse=t/'reuse';reuse.mkdir();rc=n.Campaign.__new__(n.Campaign)
+        rc.root=src;rc.target='linux';rc.boot=t/'boot';rc.jtreg=t/'harness';rc.sdk=None
+        rc.tool_records={'compiler':'inert'};rc.harness_jars={'lib/jtreg.jar':'inert'};rc.harness={'payload':'inert'};rc.reuse={}
+        ri=images['b3-release'];source=t/'reuse-source';source.mkdir();spec=source/'spec.gmk';spec.write_text('INERT SPEC')
+        receipt=dict(source_dir=str(source),source_head=n.B3,spec_path=str(spec),spec=record(spec),
+                     same_tools=rc.tool_records,configure_arguments=rc.configure_arguments('release'),
+                     image_payload=payload_manifest(Path(ri['root'])))
+        saved=dict(source_head='reviewhead',platform='linux',tools=rc.tool_records,sdk=None,
+                   harness_jars=rc.harness_jars,harness_payload=rc.harness,images={'b3-release':ri},builds={'b3-release':receipt})
+        def check_reuse(value):
+            (reuse/'campaign.json').write_text(json.dumps(value))
+            def fake_git(directory,*args):return ('reviewhead' if directory==src else n.B3) if args[0]=='rev-parse' else ''
+            with mock.patch.object(n,'git',side_effect=fake_git):rc.load_reuse(reuse)
+        check_reuse(saved);assert 'b3-release' in rc.reuse
+        cases.append('optional matching source/configuration/full image/tool/harness reuse accepted')
+        for label,mutate in [
+                ('head',lambda x:x.update(source_head='other')),
+                ('tools',lambda x:x.update(tools={})),
+                ('SDK',lambda x:x.update(sdk={'other':True})),
+                ('harness',lambda x:x.update(harness_jars={})),
+                ('spec',lambda x:x['builds']['b3-release'].update(spec={})),
+                ('configuration',lambda x:x['builds']['b3-release'].update(configure_arguments=[])),
+                ('payload',lambda x:x['builds']['b3-release'].update(image_payload={})),
+                ('core image',lambda x:x['images']['b3-release']['files'].update(release={}))]:
+            wrong=copy.deepcopy(saved);mutate(wrong)
+            rejected('reuse mismatch rejected '+label,lambda:check_reuse(wrong))
+
         value=dict(schema=1,experiment='pr14-native-source-v1',scope='complete',source_head='reviewhead',
             frozen=str(frozen),controller=str(controller),same_toolchain=True,images=images,build_receipts=receipts,
             build_toolchain={'compiler':'inert'},sources={'Probe.java':record(src/'Probe.java')},
@@ -133,6 +230,9 @@ def main():
         correctness=copy.deepcopy(value);correctness['scope']='correctness'
         for key in ['images','build_receipts']:correctness[key].pop('base87-release')
         verify(correctness);cases.append('correctness input manifest needs no original87 image')
+        assembly=copy.deepcopy(correctness);assembly['scope']='assembly'
+        for key in ['images','build_receipts']:assembly[key].pop('candidate-fastdebug')
+        verify(assembly);cases.append('assembly source manifest binds exactly three required roles')
 
         jar=t/'stable83/lib/jtreg.jar';jar.parent.mkdir(parents=True)
         import zipfile
@@ -148,8 +248,28 @@ def main():
         vm=spec.parent/'jdk/lib/server/libjvm.dylib';vm.parent.mkdir(parents=True);vm.write_bytes((debug/'lib/server/libjvm.dylib').read_bytes())
         spec.write_text('DEBUG_LEVEL := fastdebug\nOPENJDK_TARGET_CPU := aarch64\n')
         with mock.patch.object(h.platform,'system',return_value='Darwin'),mock.patch.object(h.platform,'machine',return_value='arm64'):
+            n.native_macho(debug/'bin/java')
             assert h.debug_assessment(debug,spec)['available'];cases.append('native Mach-O arm64 fastdebug compatibility admission')
 
+        bad=t/'wrong-macho';bad.write_bytes(b'INERT ELF')
+        rejected('non-native Mach-O launcher rejected before any JVM',lambda:n.native_macho(bad))
+        sdk=t/'Xcode SDK';sdk.mkdir();(sdk/'SDKSettings.json').write_text('INERT SDK')
+        tools=t/'Xcode tools';tools.mkdir()
+        for name in ['clang','clang++','ld','ar','gmake']:(tools/name).write_text('INERT '+name)
+        boot=t/'boot-tools'
+        for name in ['bin/java','bin/javac','lib/modules','release']:
+            f=boot/name;f.parent.mkdir(parents=True,exist_ok=True);f.write_text('INERT '+name)
+        def xcrun(args,**kwargs):
+            assert args[0]=='xcrun'
+            return str(sdk if args[1]=='--show-sdk-path' else tools/args[2])+'\n'
+        with mock.patch.object(n.subprocess,'check_output',side_effect=xcrun), \
+             mock.patch.object(n.shutil,'which',return_value=str(tools/'gmake')),mock.patch.object(n,'git',return_value=''):
+            c=n.Campaign(src,t/'unused-output',jar.parent.parent,boot,'mac','focused')
+            assert c.tools['clang']==(tools/'clang').resolve() and c.tools['make']==(tools/'gmake').resolve()
+            assert c.env['SDKROOT']==str(sdk) and '--with-sysroot='+str(sdk) in c.configure_arguments('fastdebug')
+            c.invariant();cases.append('Mac resolves native Xcode tools GNU make and explicitly configures the bound SDK with spaces')
+            (sdk/'SDKSettings.json').write_text('CHANGED')
+            rejected('changed Mac SDK stops next stage',c.invariant)
         reports=t/'suite-reports';reports.mkdir()
         (reports/'pass.jtr').write_text('test result: Passed. Execution successful')
         (reports/'skip.jtr').write_text('test result: Not run. Platform requires SVE')

@@ -11,6 +11,7 @@ import statistics
 import subprocess
 import xml.etree.ElementTree as ET
 
+from assembly_cohorts import cohorts
 from run_release_causal import EXPECTED, HEADER, BASE, B3, interval, record, rows
 
 CONTROLLER = {
@@ -66,7 +67,7 @@ def finish_timing_gate(out, paired, specs):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     for name in ['base', 'b3', 'rebuilt-b3', 'candidate']:
-        p.add_argument('--' + name + '-jdk', type=pathlib.Path, required=True)
+        p.add_argument('--' + name + '-jdk', type=pathlib.Path, required=name!='base')
     p.add_argument('--frozen', type=pathlib.Path, required=True)
     p.add_argument('--controller', type=pathlib.Path, required=True)
     p.add_argument('--out', type=pathlib.Path, required=True)
@@ -76,15 +77,18 @@ def main():
     p.add_argument('--pairs', type=int, default=12)
     p.add_argument('--source-input-manifest', type=pathlib.Path)
     p.add_argument('--platform', choices=['linux','mac'], default='linux')
+    p.add_argument('--assembly-pair-only', action='store_true')
     p.add_argument('--execute', action='store_true')
     a = p.parse_args()
+    if a.assembly_pair_only and (a.mode!='assembly' or not a.source_input_manifest):p.error('Pair-only assembly requires explicit source inputs and assembly mode')
+    if not a.assembly_pair_only and a.base_jdk is None:p.error('Original baseline is required for complete comparisons')
     global SELECTED_STAGE, SPECS, SOURCE_PAIR, PROPOSAL
     expected_kernels, expected_controllers = EXPECTED, CONTROLLER
     if a.source_input_manifest:
         from source_inputs import verify
         binding = verify(a.source_input_manifest, a.frozen, a.controller, a.source)
         require_source_scope = binding.get('scope','complete')
-        if require_source_scope != 'complete': p.error('Correctness-only inputs cannot enter timings')
+        if require_source_scope!='complete' and not (require_source_scope=='assembly' and a.assembly_pair_only and a.mode=='assembly'):p.error('Non-performance inputs cannot enter timings')
         SOURCE_PAIR = True
         PROPOSAL = 'Source-built classifier ' + binding['source_head']
         expected_kernels, expected_controllers = binding['kernel_classes'], binding['controller_classes']
@@ -105,9 +109,10 @@ def main():
         for name, sha in expected.items():
             if record(directory / name)['sha256'] != sha:
                 p.error('Byte-identical input required: ' + name)
-    images = {'base87': a.base_jdk.resolve(), 'b3': a.b3_jdk.resolve(),
+    images = {'b3': a.b3_jdk.resolve(),
               'rebuilt_b3': a.rebuilt_b3_jdk.resolve(),
               'candidate': a.candidate_jdk.resolve()}
+    if a.base_jdk is not None:images['base87']=a.base_jdk.resolve()
     source = a.source.resolve()
     product_files = ['src/hotspot/cpu/aarch64/aarch64.ad',
                      'src/hotspot/cpu/aarch64/aarch64_vector.ad',
@@ -118,7 +123,7 @@ def main():
     cpu = min(os.sched_getaffinity(0)) if a.platform=='linux' else None
     plan = {
         'scope': 'Cumulative zero-seed plus grouping screen; no isolated grouping effect claim; no PR14 publication',
-        'original_baseline': BASE, 'pr14': B3, 'proposal_head': PROPOSAL,
+        'assembly_pair_only': a.assembly_pair_only, 'original_baseline': None if a.assembly_pair_only else BASE, 'pr14': B3, 'proposal_head': PROPOSAL,
         'candidate_commit': subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip(),
         'candidate_product_files': [record(source / rel) for rel in product_files],
         'pairs_per_comparison': a.pairs, 'comparisons': comparisons(), 'cpu': cpu,
@@ -199,16 +204,9 @@ def main():
                 'B_per_op': max(int(r['allocated_bytes']) / int(r['calls']) for r in windows)}
 
     if a.mode == 'assembly':
-        observed = []
-        for header, sve in itertools.product(['legacy','four','eight'], ['0'] if a.platform=='mac' else ['default','0']):
-            for image in ['base87', 'rebuilt_b3', 'candidate']:
-                observed.append(([header, sve, 'default', 'conversion'], image))
-            for image in ['rebuilt_b3', 'candidate']:
-                observed.append(([header, sve, 'default', 'rawBits'], image))
-        for sve, image in itertools.product(['0'] if a.platform=='mac' else ['default','0'], ['base87','rebuilt_b3','candidate']):
-            observed.append((['legacy', sve, '1', 'conversion'], image))
+        observed = cohorts(a.platform,a.assembly_pair_only)
         index = []
-        expected = 18 if a.platform=='mac' else 36
+        expected = len(observed)
         status_path = out / 'assembly-run-status.json'
         status_path.write_text(json.dumps({'expected_methods': expected, 'completed_methods': 0, 'complete': False}) + '\n')
         for condition, image in observed:
