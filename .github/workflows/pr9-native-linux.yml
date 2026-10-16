@@ -1,0 +1,260 @@
+#
+# Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+name: 'Build (linux)'
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        required: true
+        type: string
+      runs-on:
+        required: false
+        type: string
+        default: 'ubuntu-26.04'
+      bootjdk-platform:
+        required: false
+        type: string
+        default: 'linux-x64'
+      extra-conf-options:
+        required: false
+        type: string
+      make-target:
+        required: false
+        type: string
+        default: 'product-bundles test-bundles'
+      debug-levels:
+        required: false
+        type: string
+        default: '[ "debug", "release" ]'
+      gcc-major-version:
+        required: true
+        type: string
+      gcc-package-suffix:
+        required: false
+        type: string
+        default: ''
+      apt-architecture:
+        required: false
+        type: string
+      apt-extra-packages:
+        required: false
+        type: string
+      configure-arguments:
+        required: false
+        type: string
+      make-arguments:
+        required: false
+        type: string
+      dry-run:
+        required: false
+        type: boolean
+        default: false
+      bundle-suffix:
+        required: false
+        type: string
+      static-suffix:
+        required: false
+        type: string
+
+jobs:
+  build-linux:
+    name: build
+    runs-on: ${{ inputs.runs-on }}
+
+    strategy:
+      matrix:
+        debug-level: ${{ fromJSON(inputs.debug-levels) }}
+
+    steps:
+      - name: 'Checkout the JDK source'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: c04d1ba1e96b2176ce8a8e56eacae73c2d356d2b
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: 'Checkout immutable candidate bundle'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: c158ea6ba18667c2e71127e9b1bb8b9b760f3fbd
+          path: pr9-source-bootstrap
+          sparse-checkout: .github/qualification/chain-checkpoint/layout-source-e41d
+          persist-credentials: false
+
+      - name: 'Restore and verify exact candidate source'
+        shell: bash
+        run: |
+          set -euo pipefail
+          bootstrap="$RUNNER_TEMP/pr9-source-bootstrap"
+          test ! -e "$bootstrap"
+          mv pr9-source-bootstrap "$bootstrap"
+          bundle="$bootstrap/.github/qualification/chain-checkpoint/layout-source-e41d/layout-source.bundle"
+          echo "79f0619e2fe9cf1b26b9526c615ce56c1d5b60082aa389c511098c9354ff1ed9  $bundle" | sha256sum --check
+          git bundle verify "$bundle"
+          git -c gc.auto=0 -c maintenance.auto=false fetch "$bundle" refs/heads/common-intrinsics:refs/remotes/qualification/candidate
+          git checkout --detach e41d7823bf6de77c4bfba52e896bf325221488cb
+          test "$(git rev-parse HEAD)" = e41d7823bf6de77c4bfba52e896bf325221488cb
+          test -z "$(git status --porcelain)"
+          git rev-parse HEAD
+
+      - name: 'Get the BootJDK'
+        id: bootjdk
+        uses: ./.github/actions/get-bootjdk
+        with:
+          platform: ${{ inputs.bootjdk-platform }}
+
+      - name: 'Get JTReg'
+        id: jtreg
+        uses: ./.github/actions/get-jtreg
+
+      - name: 'Get GTest'
+        id: gtest
+        uses: ./.github/actions/get-gtest
+
+      - name: 'Set architecture'
+        id: arch
+        run: |
+          # Set a proper suffix for packages if using a different architecture
+          if [[ '${{ inputs.apt-architecture }}' != '' ]]; then
+            echo 'suffix=:${{ inputs.apt-architecture }}' >> $GITHUB_OUTPUT
+          fi
+
+      # Upgrading apt to solve libc6 installation bugs, see JDK-8260460.
+      - name: 'Install toolchain and dependencies'
+        run: |
+          # Install dependencies using apt-get
+          if [[ '${{ inputs.apt-architecture }}' != '' ]]; then
+            sudo dpkg --add-architecture ${{ inputs.apt-architecture }}
+          fi
+          # Ubuntu 26.04 packages GCC 16 in universe; it is not preinstalled.
+          sudo apt update
+          sudo apt install --only-upgrade apt
+          sudo apt install \
+            gcc-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }} \
+            g++-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }} \
+            ccache \
+            ${{ inputs.apt-extra-packages }}
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
+
+      - name: 'Install mold 3.0.0'
+        run: |
+          # Ubuntu's older mold cannot read GCC 16's AS_NEEDED linker script.
+          case "$(uname -m)" in
+            x86_64) checksum=6c90d4a474c7c0409dfb575be03a5345878ac14fdba18de8b40fa58c60121189 ;;
+            aarch64) checksum=52c759d3689babaea4c42af2f31062a74ab83e17ffb5a8090232534c67b70577 ;;
+            *) exit 1 ;;
+          esac
+          archive="$RUNNER_TEMP/mold.tar.gz"
+          curl --fail --location --retry 3 \
+            "https://github.com/rui314/mold/releases/download/v3.0.0/mold-3.0.0-$(uname -m)-linux.tar.gz" \
+            --output "$archive"
+          echo "$checksum  $archive" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/mold"
+          tar --extract --file "$archive" --strip-components=1 --directory "$RUNNER_TEMP/mold"
+          echo "$RUNNER_TEMP/mold/bin" >> "$GITHUB_PATH"
+
+      - name: 'Verify GCC version'
+        run: |
+          test "$(gcc -dumpversion)" = "${{ inputs.gcc-major-version }}"
+          test "$(g++ -dumpversion)" = "${{ inputs.gcc-major-version }}"
+          gcc --version
+          mold --version
+
+      - name: 'Restore compiler cache'
+        uses: ./.github/actions/compiler-cache
+        with:
+          platform: ${{ inputs.platform }}
+          debug-level: ${{ matrix.debug-level }}
+          toolchain: gcc-${{ inputs.gcc-major-version }}
+
+      - name: 'Configure'
+        run: >
+          bash bin/configure-dev
+          --with-conf-name=${{ inputs.platform }}
+          ${{ matrix.debug-level == 'debug' && '--with-debug-level=fastdebug' || '' }}
+          --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
+          --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
+          --with-jtreg=${{ steps.jtreg.outputs.path }}
+          --with-gtest=${{ steps.gtest.outputs.path }}
+          --with-zlib=system
+          --with-jmod-compress=zip-1
+          --with-external-symbols-in-bundles=none
+          --with-native-debug-symbols-level=1
+          ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
+          echo "Dumping config.log:" &&
+          cat config.log &&
+          exit 1)
+
+      - name: 'Build'
+        id: build
+        uses: ./.github/actions/do-build
+        with:
+          make-target: '${{ inputs.make-target }} ${{ inputs.make-arguments }}'
+          platform: ${{ inputs.platform }}
+          debug-suffix: "${{ matrix.debug-level == 'debug' && '-debug' || '' }}"
+        if: ${{ inputs.dry-run == false }}
+
+      - name: 'Check development profile'
+        run: bash .github/scripts/check-dev-profile.sh "build/${{ inputs.platform }}/images/jdk" "build/${{ inputs.platform }}/spec.gmk"
+        if: ${{ inputs.dry-run == false }}
+
+      - name: 'Verify actual JVM source and retain core payload identity'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = e41d7823bf6de77c4bfba52e896bf325221488cb
+          image="build/${{ inputs.platform }}/images/jdk"
+          grep -Fx 'SOURCE=".:git:e41d7823bf6d"' "$image/release"
+          identity="$RUNNER_TEMP/pr9-identity"
+          mkdir -p "$identity"
+          git rev-parse HEAD > "$identity/checkout-source.txt"
+          cp "$image/release" "$identity/release"
+          printf '%s\n' "$GITHUB_SHA" > "$identity/workflow-source.txt"
+          printf '%s\n' "$GITHUB_WORKFLOW_REF" > "$identity/workflow-ref.txt"
+          printf '%s\n' "$GITHUB_RUN_ID" > "$identity/workflow-run-id.txt"
+          "$image/bin/java" -XX:ActiveProcessorCount=1 -version > "$identity/java-version.txt" 2>&1
+          find "$image" -type f \( -name libjvm.so -o -name jvm.dll -o -name modules -o -name 'classes*.jsa' -o -name release \) -print0 | sort -z | xargs -0 sha256sum > "$identity/payload-sha256.txt"
+
+      - name: 'Upload actual-source identity receipt'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr9-native-identity-${{ inputs.platform }}-${{ matrix.debug-level }}
+          path: ${{ runner.temp }}/pr9-identity
+          retention-days: 14
+
+      - name: 'Upload bundles'
+        uses: ./.github/actions/upload-bundles
+        with:
+          platform: ${{ inputs.platform }}
+          debug-suffix: "${{ matrix.debug-level == 'debug' && '-debug' || '' }}"
+          bundle-suffix: ${{ inputs.bundle-suffix }}
+          static-suffix: ${{ inputs.static-suffix }}
+        if: ${{ inputs.dry-run == false }}
+
+      - name: 'Compiler cache statistics'
+        run: ccache --show-stats | tee -a "$GITHUB_STEP_SUMMARY"
+        if: ${{ !cancelled() }}
