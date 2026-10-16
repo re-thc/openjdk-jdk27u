@@ -152,6 +152,25 @@ public class ClassLoaders {
         PlatformClassLoader(BootClassLoader parent) {
             super("platform", parent, null);
         }
+
+        @Override
+        protected Class<?> loadClassOrNull(String cn, boolean resolve) {
+            if (findLoadedModule(cn) != null) {
+                return super.loadClassOrNull(cn, resolve);
+            }
+
+            // The package is not in a module of a built-in loader. This loader
+            // has no class path so it only delegates to the boot loader, and
+            // as it doesn't define the class there is no need for the lock.
+            Class<?> c = findLoadedClass(cn);
+            if (c == null) {
+                c = JLA.findBootstrapClassOrNull(cn);
+            }
+            if (resolve && c != null) {
+                resolveClass(c);
+            }
+            return c;
+        }
     }
 
     /**
