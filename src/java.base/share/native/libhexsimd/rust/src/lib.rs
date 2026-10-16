@@ -5,8 +5,9 @@ use hex_simd::AsciiCase;
 
 // Private leaf ABI. The caller supplies disjoint, valid ranges and keeps them
 // alive until return. No pointer escapes, Rust allocation or callback occurs.
-// The JNI caller limits calls to bounded chunks and publishes output only once
-// every chunk succeeds. No Rust object crosses the C boundary.
+// JNI copies each successful bounded chunk into a private Java destination.
+// Java exposes the result only after complete conversion; failed native decode
+// is replayed by the Java parser. No Rust object crosses the C boundary.
 
 /// Encode `len` input bytes to exactly `2 * len` ASCII bytes.
 ///

@@ -41,6 +41,14 @@ AC_DEFUN_ONCE([LIB_SETUP_HEX_SIMD],
 
     UTIL_REQUIRE_PROGS(CARGO, cargo)
     UTIL_REQUIRE_PROGS(RUSTC, rustc)
+    # Cargo's RUSTC environment variable takes one executable, not a shell
+    # command. Keep the normalized command for configure probes, but remove the
+    # complete (possibly multiword) fixpath prefix before exporting to make.
+    UTIL_GET_EXECUTABLE(RUSTC)
+    if test "x$RUSTC" != "x$RUSTC_EXECUTABLE" && \
+        test "x$RUSTC" != "x$FIXPATH $RUSTC_EXECUTABLE"; then
+      AC_MSG_ERROR([RUSTC must name a single executable without arguments; use a compiler wrapper executable for additional options])
+    fi
     AC_MSG_CHECKING([for Cargo version (1.85 or later required)])
     CARGO_VERSION=`$CARGO --version | $CUT -d ' ' -f 2`
     CARGO_MAJOR=`$ECHO "$CARGO_VERSION" | $CUT -d . -f 1`
@@ -108,6 +116,7 @@ AC_DEFUN_ONCE([LIB_SETUP_HEX_SIMD],
   AC_SUBST(ENABLE_HEX_SIMD)
   AC_SUBST(CARGO)
   AC_SUBST(RUSTC)
+  AC_SUBST(RUSTC_EXECUTABLE)
   AC_SUBST(RUSTC_VERSION)
   AC_SUBST(HEX_SIMD_RUST_TARGET)
   AC_SUBST(HEX_SIMD_NATIVE_LIBS)

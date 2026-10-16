@@ -50,21 +50,80 @@ public class Correctness {
             }
         }
     }
+    private static boolean checkDecodeRoute() {
+        // Availability alone does not prove entry into decode0. A successful
+        // direct call does: decode has no Java implementation in the helper.
+        String valid = "Aa".repeat(HexFormatSupport.DECODE_MIN);
+        byte[] dst = new byte[valid.length() / 2];
+        Arrays.fill(dst, (byte)0x5b);
+        boolean routed = HexFormatSupport.decode(valid, dst);
+        String expected = System.getProperty("hexsimd.expectDecodeNative");
+        if (expected == null || routed != Boolean.parseBoolean(expected))
+            throw new AssertionError("wrong decode route: " + routed + "; expected " + expected);
+        for (byte b : dst) {
+            if (b != (routed ? (byte)0xaa : (byte)0x5b))
+                throw new AssertionError("wrong decode route output");
+        }
+        return routed;
+    }
+    private static void invalidBoundaries(boolean nativeDecode) {
+        // Both nibbles around vector widths and the 8192-character JNI input
+        // chunk boundary. A failure in the second chunk must leave the already
+        // copied first chunk private; public parsing must still replay Java.
+        char[] chars = new char[8320];
+        Arrays.fill(chars, 'A');
+        for (int pair : new int[]{0,14,16,30,32,62,64,126,128,254,256,8190,8192,8194,8318}) {
+            for (int nibble = 0; nibble < 2; nibble++) {
+                int pos = pair + nibble;
+                for (int c = 0; c <= 255; c++) {
+                    if (HexFormat.isHexDigit(c)) continue;
+                    chars[pos] = (char)c;
+                    String s = new String(chars);
+                    byte[] dst = new byte[chars.length / 2];
+                    Arrays.fill(dst, (byte)0x5b);
+                    if (HexFormatSupport.decode(s, dst))
+                        throw new AssertionError("accepted invalid Latin1 at " + pos + ": " + c);
+                    for (int i = 0; i < dst.length; i++) {
+                        byte expected = nativeDecode && pos >= 8192 && i < 4096
+                                ? (byte)0xaa : (byte)0x5b;
+                        if (dst[i] != expected)
+                            throw new AssertionError("wrong private chunk copy at " + pos + ": " + c);
+                    }
+                    decode(s, 0, s.length());
+                }
+                // UTF16 is intentionally ineligible, even after a valid first
+                // chunk: no part of the private destination may be touched.
+                chars[pos] = '\u1234';
+                String utf16 = new String(chars);
+                byte[] dst = new byte[chars.length / 2];
+                Arrays.fill(dst, (byte)0x5b);
+                if (HexFormatSupport.decode(utf16, dst))
+                    throw new AssertionError("UTF16 entered native decoder");
+                for (byte b : dst) {
+                    if (b != (byte)0x5b) throw new AssertionError("UTF16 fallback wrote output");
+                }
+                decode(utf16, 0, utf16.length());
+                chars[pos] = 'A';
+            }
+        }
+    }
     public static void main(String[] args) throws Exception {
         String expected = System.getProperty("hexsimd.expectNative");
         if (expected != null && HexFormatSupport.isAvailable() != Boolean.parseBoolean(expected))
-            throw new AssertionError("wrong native route");
+            throw new AssertionError("wrong native availability");
+        boolean nativeDecode = checkDecodeRoute();
         for (int n = 0; n <= 160; n++) bytes(n);
         for (int n : new int[]{255,256,257,511,512,513,1023,1024,1025,4095,4096,4097,8191,8192,8193,65536,1048576}) bytes(n);
         for (int i = 0; i < 1000; i++) bytes(RANDOM.nextInt(4000));
-        // Every byte value at vector boundaries; arbitrary malformed ASCII/Latin1
-        // and UTF16, including odd length, preserve the exact exception message.
+        // Every code unit, with enough characters to enter public native decode
+        // for eligible Latin1 Strings. UTF16 deliberately checks Java fallback.
         for (int c = 0; c < 65536; c++) {
-            char[] s = new char[66];
+            char[] s = new char[2 * HexFormatSupport.DECODE_MIN];
             Arrays.fill(s, 'A');
-            s[(c % 65)] = (char)c;
+            s[c % s.length] = (char)c;
             decode(new String(s), 0, s.length);
         }
+        invalidBoundaries(nativeDecode);
         for (String s : new String[]{"", "0", "xyz", "0g", "g0", "00\n0", "aAbB09", "000\u1234"}) {
             decode(s, 0, s.length());
             decode(new StringBuilder(s), 0, s.length());
@@ -102,6 +161,6 @@ public class Correctness {
         for (int i = 0; i < 30; i++) bytes(131073);
         collector.join();
         System.out.println("PASS " + checks + " differential checks; nativeAvailable=" +
-                HexFormatSupport.isAvailable());
+                HexFormatSupport.isAvailable() + "; nativeDecode=" + nativeDecode);
     }
 }

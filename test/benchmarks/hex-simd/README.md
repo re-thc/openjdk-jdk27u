@@ -40,6 +40,22 @@ bash "$exp/verify.sh"
 The make build uses frozen Cargo dependencies and two Cargo jobs. The Rust
 archive is private to the JNI library. Disabled configurations remove owned
 stale optional libraries/notices and invalidate the java.base jmod.
+Cargo receives a separately exported compiler executable, with native path
+conversion on Windows; configure retains its normalized command for probes.
+`RUSTC` overrides must name one executable without arguments. Use a wrapper
+executable when additional compiler options are required. The already
+normalized Cargo command is invoked once, preserving Cargo override arguments.
+
+Run the build-path regression fixtures without installing Rust or Cargo:
+
+```sh
+python3 test/make/hex-simd/TestRustPaths.py
+```
+
+These use the production configure macro, spec exports, path conversion macro
+and Cargo recipe with fake tools. They cover bare Linux commands, both Windows
+multiword fixpath forms, compiler-argument rejection and disabled builds. The
+Windows converter is simulated; this does not qualify execution on Windows.
 
 The harness compiles an unchanged reference from baseline commit
 `89885a6288e7aaabd01678a704a586272c0f96e3`. Only that reference class is patched
@@ -48,6 +64,13 @@ from the normal build. Reference debug information matches java.base's helpful
 NullPointerException metadata. The suite covers Serial/G1/ZGC, compact strings
 on/off, JNI checking, offsets, malformed input, diagnostics, chunk boundaries,
 large inputs, GC pressure and small platform-thread stacks.
+The exhaustive code-unit sweep uses at least 256 characters to reach the
+decode cutoff for eligible Latin1 Strings. Invalid ASCII/Latin1 is checked in
+both nibble positions around vector widths and the JNI chunk boundary. The
+harness asserts native availability separately from a successful direct native
+decode; UTF16 and compact-string-disabled inputs must take Java fallback.
+Failed later chunks may leave earlier successful chunks in the private
+destination, which remains unpublished while Java replays its parser.
 
 Test genuine library absence separately from the startup-disabled control:
 
@@ -91,6 +114,20 @@ Linux AArch64, macOS ARM64 and Windows x64 require actual native build/run
 qualification. Rust/Cargo 1.85 minimum-version execution also remains a gate.
 The target mappings and platform source paths have been reviewed; runtime and
 performance qualification on those targets remains outstanding.
+
+The build-path repair was checked with a fresh Linux configure and isolated
+Rust archive build. The strengthened correctness suite passed 96,808
+differential checks per configuration against the previously qualified Linux
+runtime, across the six collector/compact-string combinations, the disabled
+control and genuine library absence. This did not rebuild or retime that
+runtime. Its helper class SHA-256 remains
+`d8eef0c7b909395d466bd0e3f6ada1a767db7fdcbbc07be382084aedd5f21c97`,
+native library SHA-256 remains
+`111c8fd4af8c278c62f78f12f133277e7271dffb932ae696b2dbafb3756478e2`,
+and both packaged images' `lib/modules` SHA-256 remains
+`bb11e5c12331a9a0cac22339f1bfcdcc8e25a777ea2ac05993de077c2e803dc3`.
+The image without the library omits its native files. The repair's simulated
+Windows path fixtures do not change the outstanding native platform gates.
 
 On each target, check out the exact review commit and run the commands above
 with its installed native toolchain. Expected Rust hosts are

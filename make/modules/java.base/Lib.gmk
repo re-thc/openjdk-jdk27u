@@ -46,6 +46,10 @@ ifeq ($(ENABLE_HEX_SIMD), true)
     HEX_SIMD_RUST_SRC := $(TOPDIR)/src/java.base/share/native/libhexsimd/rust
     HEX_SIMD_RUST_OUTPUT := $(SUPPORT_OUTPUTDIR)/native/java.base/hexsimd-rust
     HEX_SIMD_RUST_ARCHIVE := $(HEX_SIMD_RUST_OUTPUT)/$(HEX_SIMD_RUST_TARGET)/release/$(LIBRARY_PREFIX)jdk_hex_codec$(STATIC_LIBRARY_SUFFIX)
+    # RUSTC is a configure command and may start with "fixpath exec". Cargo
+    # needs one executable filename, converted here because the environment
+    # assignment is outside Cargo's own, already normalized fixpath command.
+    HEX_SIMD_RUSTC_EXECUTABLE := $(strip $(call FixPath, $(RUSTC_EXECUTABLE)))
     HEX_SIMD_RUST_FLAGS := -C relocation-model=pic \
         --remap-path-prefix=$(strip $(call FixPath, $(TOPDIR)))=/jdk
     ifeq ($(call isTargetOs, macosx), true)
@@ -53,7 +57,7 @@ ifeq ($(ENABLE_HEX_SIMD), true)
           SDKROOT='$(strip $(call FixPath, $(SYSROOT)))'
     endif
     HEX_SIMD_RUST_DEPS := $(call FindFiles, $(HEX_SIMD_RUST_SRC))
-    HEX_SIMD_RUST_VARDEPS := $(CARGO) $(RUSTC) $(RUSTC_VERSION) \
+    HEX_SIMD_RUST_VARDEPS := $(CARGO) $(RUSTC_EXECUTABLE) $(HEX_SIMD_RUSTC_EXECUTABLE) $(RUSTC_VERSION) \
         $(HEX_SIMD_RUST_TARGET) $(HEX_SIMD_RUST_FLAGS) $(HEX_SIMD_RUST_ENV)
     HEX_SIMD_RUST_VARDEPS_FILE := $(call DependOnVariable, HEX_SIMD_RUST_VARDEPS, \
         $(HEX_SIMD_RUST_OUTPUT)/cargo.vardeps)
@@ -62,11 +66,11 @@ ifeq ($(ENABLE_HEX_SIMD), true)
 	$(call LogInfo, Compiling pinned Hex SIMD Rust archive)
 	$(call ExecuteWithLog, $(HEX_SIMD_RUST_OUTPUT)/cargo, \
 	    MAKEFLAGS= CARGO_MAKEFLAGS= $(HEX_SIMD_RUST_ENV) \
-	    RUSTC='$(strip $(call FixPath, $(RUSTC)))' \
+	    RUSTC='$(HEX_SIMD_RUSTC_EXECUTABLE)' \
 	    RUSTFLAGS='$(HEX_SIMD_RUST_FLAGS)' \
 	    $(CARGO) build --frozen --release --jobs 2 \
-	        --manifest-path $(HEX_SIMD_RUST_SRC)/Cargo.toml \
-	        --target $(HEX_SIMD_RUST_TARGET) --target-dir $(HEX_SIMD_RUST_OUTPUT))
+	        --manifest-path '$(HEX_SIMD_RUST_SRC)/Cargo.toml' \
+	        --target '$(HEX_SIMD_RUST_TARGET)' --target-dir '$(HEX_SIMD_RUST_OUTPUT)')
 
     $(eval $(call SetupJdkLibrary, BUILD_LIBHEXSIMD, \
         NAME := hexsimd, \

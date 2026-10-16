@@ -7,7 +7,9 @@ out=${HEX_SIMD_OUT:-"$repo/build/hex-simd-production"}
 mkdir -p "$out"
 for gc in G1 Serial Z; do
     for compact in + -; do
-        JAVA_OPTS="-Xms256m -Xmx512m -XX:+Use${gc}GC -XX:${compact}CompactStrings -Xcheck:jni -Dhexsimd.expectNative=true" \
+        decode_native=false
+        if [[ $compact == + ]]; then decode_native=true; fi
+        JAVA_OPTS="-Xms256m -Xmx512m -XX:+Use${gc}GC -XX:${compact}CompactStrings -Xcheck:jni -Dhexsimd.expectNative=true -Dhexsimd.expectDecodeNative=$decode_native" \
             bash "$here/run.sh" Correctness > "$out/correctness-${gc}-${compact}.txt" 2>&1
         cat "$out/correctness-${gc}-${compact}.txt"
         JAVA_OPTS="-Xms256m -Xmx512m -XX:+Use${gc}GC -XX:${compact}CompactStrings -Xcheck:jni -Dhexsimd.expectNative=true" \
@@ -15,12 +17,12 @@ for gc in G1 Serial Z; do
         cat "$out/bulk-${gc}-${compact}.txt"
     done
 done
-JAVA_OPTS='-Xms256m -Xmx512m -Xcheck:jni -Djdk.hexFormat.useNative=false -Dhexsimd.expectNative=false' \
+JAVA_OPTS='-Xms256m -Xmx512m -Xcheck:jni -Djdk.hexFormat.useNative=false -Dhexsimd.expectNative=false -Dhexsimd.expectDecodeNative=false' \
     bash "$here/run.sh" Correctness > "$out/correctness-disabled.txt" 2>&1
 cat "$out/correctness-disabled.txt"
 if [[ -n ${HEX_SIMD_NO_LIBRARY_JDK:-} ]]; then
     JAVA_HOME="$HEX_SIMD_NO_LIBRARY_JDK" \
-        JAVA_OPTS='-Xms256m -Xmx512m -Xcheck:jni -Dhexsimd.expectNative=false' \
+        JAVA_OPTS='-Xms256m -Xmx512m -Xcheck:jni -Dhexsimd.expectNative=false -Dhexsimd.expectDecodeNative=false' \
         bash "$here/run.sh" Correctness > "$out/correctness-no-library.txt" 2>&1
     cat "$out/correctness-no-library.txt"
 fi
