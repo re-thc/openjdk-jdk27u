@@ -47,9 +47,7 @@ import jdk.test.whitebox.WhiteBox;
 public class ParserTest {
     private static final BigInteger MEMORY_SIZE_MAX = BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE);
     private static final String MEMORY_SIZE_TOO_LARGE = "Parsing error memory size value: value is too large";
-    // Every spelling of the supported units; the empty unit is a plain byte count.
     private static final String[] MEMORY_SIZE_UNITS = {"", "b", "B", "k", "K", "m", "M", "g", "G"};
-    // java.util.Random is fully specified, so a fixed seed gives the same cases on every JDK.
     private static final long MEMORY_SIZE_ORACLE_SEED = 0x5EED27L;
     private static final int MEMORY_SIZE_RANDOM_CASES_PER_UNIT = 200;
 
@@ -244,18 +242,13 @@ public class ParserTest {
 
         testMemorySizeLimits(name, args);
         testMemorySizeOracle(name, args);
-
-        //shouldFail(name + "=7gg", args); <---- should fail, doesn't
-        //shouldFail(name + "=7t", args);  <----- should fail, doesn't
     }
 
-    // The parser accepts any size up to 2^64-1 bytes. Stricter limits belong to the consumers.
     private void testMemorySizeLimits(String name, DiagnosticCommand[] args) throws Exception {
         BigInteger max = MEMORY_SIZE_MAX;
         BigInteger overflow = max.add(BigInteger.ONE);
         String renderedMax = Long.toString(max.longValue());
 
-        // Decimal conversion must be range checked before any unit is applied.
         String[] oversized = {
             overflow.toString(),
             max.add(BigInteger.TWO).toString(),
@@ -266,7 +259,6 @@ public class ParserTest {
             "0".repeat(30) + overflow,
         };
         for (String unit : MEMORY_SIZE_UNITS) {
-            // The largest value that still fits once the unit is applied, and the one after it.
             BigInteger multiplier = unitMultiplier(unit);
             BigInteger limit = max.divide(multiplier);
             parse(name, Long.toString(limit.multiply(multiplier).longValue()), name + "=" + limit + unit, args);
@@ -276,7 +268,6 @@ public class ParserTest {
             }
         }
 
-        // Leading zeros and a plus sign are existing syntax and must keep working, however long the string is.
         parse(name, renderedMax, name + "=" + "0".repeat(30) + max, args);
         parse(name, "7", name + "=+7", args);
         parse(name, "7", name + "=007", args);
@@ -304,7 +295,6 @@ public class ParserTest {
         };
     }
 
-    // One generated input. The expectation comes from BigInteger arithmetic, not from the parser's own logic.
     private record MemorySizeCase(String text, BigInteger bytes) {
         boolean representable() {
             return bytes.compareTo(MEMORY_SIZE_MAX) <= 0;
@@ -318,8 +308,6 @@ public class ParserTest {
 
     private record MemorySizeCases(List<MemorySizeCase> unique, int generated) { }
 
-    // Deterministic for a given seed: boundary values for every unit plus seeded pseudo-random values.
-    // Inputs that are generated more than once are kept once.
     private static MemorySizeCases memorySizeCases(long seed) {
         Random random = new Random(seed);
         BigInteger twoTo63 = BigInteger.ONE.shiftLeft(63);
@@ -375,7 +363,6 @@ public class ParserTest {
 
     private void testMemorySizeOracle(String name, DiagnosticCommand[] args) throws Exception {
         MemorySizeCases generated = memorySizeCases(MEMORY_SIZE_ORACLE_SEED);
-        // The same seed must give the same cases.
         if (!generated.equals(memorySizeCases(MEMORY_SIZE_ORACLE_SEED))) {
             throw new Exception("Memory size case generation is not deterministic");
         }

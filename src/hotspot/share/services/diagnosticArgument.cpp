@@ -326,7 +326,6 @@ template <> void DCmdArgument<MemorySizeArgument>::parse_value(const char* str,
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
                "Parsing error memory size value: negative values not allowed\n");
   }
-  // Check decimal conversion overflow before applying unit scaling.
   STATIC_ASSERT(sizeof(unsigned long long) == sizeof(_value._val));
   char* end = nullptr;
   errno = 0;

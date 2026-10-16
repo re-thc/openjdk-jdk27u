@@ -101,8 +101,6 @@ public class MemorySizeOverflowTest {
         }
     }
 
-    // The parser accepts 2^64-1 bytes. JFR enforces smaller limits of its own, so the startup options must be
-    // rejected by JFR (not by the parser) and before JFR allocates anything.
     private static void testJfrStartupMaximum() throws Exception {
         for (String size : new String[] {MAX.toString(), MAX + "b"}) {
             for (String option : JFR_OPTIONS) {
@@ -131,11 +129,9 @@ public class MemorySizeOverflowTest {
     public static void main(String[] args) throws Exception {
         JMXExecutor executor = new JMXExecutor();
         BigInteger overflow = MAX.add(BigInteger.ONE);
-        // k/m/g multiplication overflow.
         for (String size : new String[] {"18014398509481984k", "17592186044416M", "17179869184g"}) {
             rejectOverflow(executor, size, true);
         }
-        // Decimal conversion overflow, with no unit and with the byte unit.
         for (String size : new String[] {overflow.toString(), overflow + "b", "9".repeat(32)}) {
             rejectOverflow(executor, size, true);
         }
