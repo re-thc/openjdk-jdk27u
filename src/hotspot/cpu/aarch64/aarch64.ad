@@ -11539,6 +11539,26 @@ instruct ubfxL(iRegLNoSp dst, iRegL src, immI rshift, immL_bitmask mask)
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct ubfxLConvL2I(iRegINoSp dst, iRegL src, immI rshift, immI_bitmask mask)
+%{
+  match(Set dst (AndI (ConvL2I (URShiftL src rshift)) mask));
+  predicate((exact_log2((juint)n->in(2)->get_int() + 1) +
+             (n->in(1)->in(1)->in(2)->get_int() & 63)) <= 64);
+
+  ins_cost(INSN_COST);
+  format %{ "ubfx $dst, $src, $rshift, $mask" %}
+  ins_encode %{
+    int shift = $rshift$$constant & 63;
+    int width = exact_log2((juint)$mask$$constant + 1);
+    __ ubfx(as_Register($dst$$reg), as_Register($src$$reg), shift, width);
+  %}
+  ins_pipe(ialu_reg_shift);
+%}
+
+
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 
 // We can use ubfx when extending an And with a mask when we know mask
 // is positive.  We know that because immI_bitmask guarantees it.
