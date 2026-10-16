@@ -30,6 +30,7 @@
 
 class Zmij : AllStatic {
  public:
+  static bool is_enabled();
   // Format bit 0 selects binary64 (otherwise binary32).
   // Bit 1 selects UTF16 output.
   // The caller reserves MAX_CHARS characters. Return 0 for Java fallback.

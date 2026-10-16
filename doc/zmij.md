@@ -47,10 +47,13 @@ the exponent. Positive zero leaves metadata unchanged. The metadata bridge
 depends on private vendor tables and representation, so upgrades must pass
 the production-bridge verifier.
 
-The precision factory chain is forced inline so compiled callers can optimize
-the metadata holder together with the resulting value. When native splitting
-is unavailable, positive non-tiny inputs with a holder omit the unused text
-buffer. Null holders, negative inputs and tiny subnormals keep that buffer.
+The precision factories request forced inlining in C2 and when native
+conversion is enabled in C1, so callers can optimize the metadata holder
+together with the resulting value. With native conversion disabled or
+unavailable, C1 applies its ordinary inlining budgets to these factories.
+In that Java-only route, positive non-tiny inputs with a holder omit the
+unused text buffer. Null holders, negative inputs, tiny subnormals and
+native-declined paths keep that buffer.
 
 ## Integer formatting
 
@@ -89,12 +92,23 @@ including sanitizer checks and scalar/SIMD fallback profiles. Failed patches,
 compilation or assumptions stop installation. `--cxx` selects a host C++17
 compiler.
 
+Set `BOOT_JDK` to an installed JDK 26 or 27 and `JTREG_HOME` to jtreg
+8.2.1+1 or newer. From the repository root, configure a release build and
+run the focused compiler-policy test, followed by the conversion suites:
+
 ```sh
-make CONF=<configuration> images
-make CONF=<configuration> test TEST='test/jdk/jdk/internal/math/ToDecimal test/jdk/jdk/internal/util/DecimalDigits test/jdk/java/lang/Float test/jdk/java/lang/Double test/jdk/java/math/BigDecimal test/jdk/java/text/Format/DecimalFormat test/jdk/java/util/Formatter test/hotspot/jtreg/compiler/intrinsics/zmij test/hotspot/jtreg/compiler/intrinsics/decimalinteger'
+bash configure --with-conf-name=zmij --with-boot-jdk="$BOOT_JDK" \
+    --with-jtreg="$JTREG_HOME" --with-debug-level=release --with-jobs=2
+make CONF=zmij JOBS=2 images
+make CONF=zmij test TEST='test/hotspot/jtreg/compiler/c1/TestDecimalFactoryInlining.java' JTREG='JOBS=1'
+make CONF=zmij test TEST='test/jdk/jdk/internal/math/ToDecimal test/jdk/jdk/internal/util/DecimalDigits test/jdk/java/lang/Float test/jdk/java/lang/Double test/jdk/java/math/BigDecimal test/jdk/java/text/Format/DecimalFormat test/jdk/java/util/Formatter test/hotspot/jtreg/compiler/intrinsics/zmij test/hotspot/jtreg/compiler/intrinsics/decimalinteger' JTREG='JOBS=1'
 ```
 
 Tests cover raw-bit round trips, shortest significands, precision flags,
 signed zero, subnormals, Latin1/UTF16 offsets and guarded output bounds across
 execution tiers, JNI, SSE2 and opt-outs. WhiteBox verifies intrinsic controls
-and the C2-only float append choice.
+and the C2-only float append choice. The decimal-factory policy test verifies
+actual C1 levels 1/2/3 and C2 level 4, native on/off and JNI routes, explicit
+inlining directives, compilation order and initialization behavior. Its
+unrelated-holder, overload and loader fixtures check that the C1 exception
+is limited to the two bootstrap precision factories.

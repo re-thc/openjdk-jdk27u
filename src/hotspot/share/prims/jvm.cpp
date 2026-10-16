@@ -3204,11 +3204,7 @@ JVM_END
 // JNI version ///////////////////////////////////////////////////////////////////////////////
 
 JVM_LEAF(jboolean, JVM_IsZmijEnabled(void))
-#if defined(VM_LITTLE_ENDIAN) && (defined(AMD64) || defined(AARCH64))
-  return UseZmijIntrinsics;
-#else
-  return false;
-#endif
+  return Zmij::is_enabled();
 JVM_END
 
 JVM_LEAF(jlong, JVM_DecimalZmij(jlong bits))
