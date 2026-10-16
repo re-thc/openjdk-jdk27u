@@ -479,6 +479,28 @@ int PhaseChaitin::possibly_merge_multidef(Node *n, uint k, Block *block, RegToDe
 
 
 #ifdef AMD64
+// Existing copy removal may bypass a redundant invariant Phi. Keep only the
+// exact entry and stack home proved in an earlier analysis, not arbitrary sources.
+class InvariantSpillEntry : public ArenaObj {
+public:
+  Node* const _node;
+  const uint _lid;
+  const Type* const _type;
+  const uint _is_oop;
+  const RegMask _home;
+
+  InvariantSpillEntry(Node* node, uint lid, const LRG& lrg)
+    : _node(node), _lid(lid), _type(node->bottom_type()), _is_oop(lrg._is_oop), _home(lrg.mask()) {}
+
+  bool matches(Node* node, uint lid, const LRG& lrg) const {
+    RegMask missing(_home), extra(lrg.mask());
+    missing.subtract(lrg.mask());
+    extra.subtract(_home);
+    return node == _node && lid == _lid && node->bottom_type() == _type &&
+           lrg._is_oop == _is_oop && missing.is_empty() && extra.is_empty();
+  }
+};
+
 // Physical GP liveness is rebuilt after coloring. The old IFG has already had
 // bound-register interference removed, and Select has replaced allowed masks
 // with selected colors. Neither is an alternative-color legality test here.
@@ -489,6 +511,8 @@ class SpillCopyRetention : public StackObj {
   RegMask* _live_out;
   uint* _members;
   uint& _work_left;
+  GrowableArray<InvariantSpillEntry*>& _entries;
+  Arena& _entry_arena;
 
   bool charge() const {
     if (_work_left == 0) {
@@ -498,15 +522,24 @@ class SpillCopyRetention : public StackObj {
     return true;
   }
 
-  void allocated(Node* n, RegMask& result) const {
+  static bool supported_mask(const RegMask& mask) {
+    RegMask base;
+    return !mask.is_offset() && mask.rm_size_in_words() <= base.rm_size_in_words();
+  }
+
+  bool allocated(Node* n, RegMask& result) const {
     result.clear();
     uint lid = _ra._lrg_map.live_range_id(n);
     if (lid != 0) {
+      if (!supported_mask(_ra.lrgs(lid).mask())) {
+        return false;
+      }
       result.assignFrom(_gp);
       result.and_with(_ra.lrgs(lid).mask());
       // A 32-bit x86 write also destroys the upper half of the same GP.
       result.smear_to_sets(2);
     }
+    return true;
   }
 
   bool uses(Node* n, RegMask& result) const {
@@ -520,7 +553,9 @@ class SpillCopyRetention : public StackObj {
       }
       if (n->in(k) != nullptr) {
         RegMask input;
-        allocated(n->in(k), input);
+        if (!allocated(n->in(k), input)) {
+          return false;
+        }
         result.or_with(input); // Includes debug and recovery inputs.
       }
     }
@@ -532,8 +567,7 @@ class SpillCopyRetention : public StackObj {
       return false;
     }
     RegMask defs, inputs;
-    allocated(n, defs);
-    if (!uses(n, inputs)) {
+    if (!allocated(n, defs) || !uses(n, inputs)) {
       return false;
     }
     live.subtract(defs);
@@ -544,7 +578,7 @@ class SpillCopyRetention : public StackObj {
   bool consumer(Node* use, uint edge, RegMask& allowed) const {
     if (!use->is_Mach() || use->is_MachSafePoint() || use->as_Mach()->has_call() ||
         use->as_Mach()->two_adr() == edge || use->jvms() != nullptr ||
-        use->in_RegMask(edge).is_offset()) {
+        !supported_mask(use->in_RegMask(edge))) {
       return false;
     }
     allowed.and_with(use->in_RegMask(edge));
@@ -593,7 +627,9 @@ class SpillCopyRetention : public StackObj {
           return false; // Includes paired stack slots and Phi definitions.
         }
         RegMask killed;
-        allocated(n, killed);
+        if (!allocated(n, killed)) {
+          return false;
+        }
         defs.or_with(killed);
       }
       if (block == first) {
@@ -614,8 +650,9 @@ class SpillCopyRetention : public StackObj {
   }
 
 public:
-  SpillCopyRetention(PhaseChaitin& ra, PhaseCFG& cfg, uint& work_left)
-    : _ra(ra), _cfg(cfg), _work_left(work_left) {
+  SpillCopyRetention(PhaseChaitin& ra, PhaseCFG& cfg, uint& work_left,
+                     GrowableArray<InvariantSpillEntry*>& entries, Arena& entry_arena)
+    : _ra(ra), _cfg(cfg), _work_left(work_left), _entries(entries), _entry_arena(entry_arena) {
     _gp.assignFrom(*Matcher::idealreg2regmask[Op_RegP]);
     _gp.or_with(*Matcher::idealreg2regmask[Op_RegI]);
     _gp.smear_to_sets(2);
@@ -643,8 +680,8 @@ public:
         --_work_left;
         uint lid = _ra._lrg_map.live_range_id(block->get_node(j));
         if (lid != 0) {
-          if (_ra.lrgs(lid).mask().is_offset()) {
-            return false; // This bounded prototype does not handle rollover chunks.
+          if (!supported_mask(_ra.lrgs(lid).mask())) {
+            return false; // No extended masks or rolled-over chunks in this prototype.
           }
           ++_members[lid];
         }
@@ -678,7 +715,9 @@ public:
                   break;
                 }
                 RegMask input;
-                allocated(phi->in(edge), input);
+                if (!allocated(phi->in(edge), input)) {
+                  return false;
+                }
                 out.or_with(input);
               }
             }
@@ -706,7 +745,7 @@ public:
 
   bool eligible(Node* n) const {
     if (!n->is_MachSpillCopy() || n->outcnt() == 0 ||
-        n->out_RegMask().is_offset() ||
+        !supported_mask(n->out_RegMask()) ||
         n->as_MachSpillCopy()->spill_type() != MachSpillCopyNode::MemToReg) {
       return false;
     }
@@ -733,6 +772,14 @@ public:
     // of mutable Java Phis, the broad DOWN range, or call/debug copies.
     Node* source = n->in(1);
     if (!source->is_Phi()) {
+      for (int i = 0; i < _entries.length(); i++) {
+        if (!charge()) {
+          return false;
+        }
+        if (_entries.at(i)->matches(source, source_lid, _ra.lrgs(source_lid))) {
+          return true;
+        }
+      }
       return false;
     }
     Node* entry = nullptr;
@@ -750,7 +797,23 @@ public:
         entry = source->in(k);
       }
     }
-    return self && entry != nullptr;
+    if (!self || entry == nullptr) {
+      return false;
+    }
+    if (entry->bottom_type() == source->bottom_type() &&
+        _ra._lrg_map.live_range_id(entry) == source_lid) {
+      bool found = false;
+      for (int i = 0; i < _entries.length(); i++) {
+        if (!charge()) {
+          return false;
+        }
+        found |= _entries.at(i)->_node == entry;
+      }
+      if (!found) {
+        _entries.append(new (&_entry_arena) InvariantSpillEntry(entry, source_lid, _ra.lrgs(source_lid)));
+      }
+    }
+    return true;
   }
 
   uint assess(Node* seed, RegMask& allowed) {
@@ -828,9 +891,13 @@ void PhaseChaitin::retain_spill_copies() {
 #ifdef AMD64
   ResourceMark rm;
   uint work_left = 1000000;
+  Arena entry_arena(mtCompiler);
+  GrowableArray<InvariantSpillEntry*> entries(&entry_arena, 16, 0, nullptr);
   for (uint change = 0; change < 8 && work_left != 0; change++) {
     ResourceMark iteration;
-    SpillCopyRetention retention(*this, _cfg, work_left);
+    // Preserve exact validated entries across per-iteration cleanup and scratch
+    // allocation. In nested loops a Phi can become self+entry after one cleanup.
+    SpillCopyRetention retention(*this, _cfg, work_left, entries, entry_arena);
     if (!retention.compute()) {
       return;
     }
