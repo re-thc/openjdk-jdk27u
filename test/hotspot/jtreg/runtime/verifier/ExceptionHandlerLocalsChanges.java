@@ -59,11 +59,8 @@ import static java.lang.constant.ConstantDescs.CD_void;
 import static java.lang.constant.ConstantDescs.INIT_NAME;
 
 /**
- * The classes under test have a try block and an exception handler with a
- * stackmap frame, which the locals of the verifier must match at every
- * instruction of the try block. In the classes that fail to verify, they match
- * at the first instructions. Then the locals change in a way that the verifier
- * has to notice, so that they do not match at the next instruction.
+ * Successful handler matches must be invalidated when stores, stack-map
+ * frames or object initialization change the locals.
  */
 public class ExceptionHandlerLocalsChanges {
 
@@ -81,19 +78,14 @@ public class ExceptionHandlerLocalsChanges {
         }
     }
 
-    // Emits instructions, and the stackmap frames for the ones that are
-    // branch targets.
     interface Code {
         void emit(CodeBuilder cob, List<StackMapFrameInfo> frames);
     }
 
     static final Code NOTHING = (cob, frames) -> { };
 
-    // A method of a class under test, which is the static method test() or the
-    // constructor. It has the code
-    //   before; try { body } catch (Throwable) { ... } after; return
-    // where the handler returns, or throws in a constructor, which cannot
-    // return before it called super().
+    // Emits before; try { body } catch (Throwable) { ... } after; return.
+    // Constructor handlers rethrow because super() may not have been called.
     static class TestMethod {
         final boolean constructor;
         final MethodTypeDesc type;
@@ -107,12 +99,11 @@ public class ExceptionHandlerLocalsChanges {
             this.type = type;
         }
 
-        // The locals in the stackmap frame of the exception handler
         TestMethod handler(VerificationTypeInfo... locals) {
             return handler(() -> List.of(locals));
         }
 
-        // The same, if they depend on the code that is emitted
+        // Deferred locals may refer to labels bound while emitting code.
         TestMethod handler(Supplier<List<VerificationTypeInfo>> locals) {
             handlerLocals = locals;
             return this;
@@ -167,14 +158,10 @@ public class ExceptionHandlerLocalsChanges {
                 });
         }
 
-        // The class with this method must verify.
         void accepted() throws Exception {
             verify(cb -> emit(cb, "test"), null);
         }
 
-        // The class with this method must fail to verify because the frame of
-        // the handler does not match the locals at an instruction of the try
-        // block, with a message that contains the mismatch.
         void rejected(String mismatch) throws Exception {
             verify(cb -> emit(cb, "test"), mismatch);
         }
@@ -213,17 +200,13 @@ public class ExceptionHandlerLocalsChanges {
         return new TestMethod(true, MethodTypeDesc.of(CD_void));
     }
 
-    // The message about a local of the current frame that is not assignable to
-    // the one in the frame of the handler.
     static String mismatch(String current, int local, String expected) {
         return (current == null ? "" : "Type " + current + " ") + "(current frame, locals[" + local
                 + "]) is not assignable to " + expected + " (stack map, locals[" + local + "])";
     }
 
-    // Longs and doubles occupy two locals. Storing something over one of them
-    // changes the other one too.
+    // Stores into either slot of a long or double can invalidate the other slot.
     static void longsAndDoubles() throws Exception {
-        // A long or double replaces ints that the handler expects.
         method(CD_int, CD_int, CD_int).handler(INT, INT, INT)
             .body(cob -> cob.nop().lconst_0().lstore(1).nop())
             .rejected(mismatch("long", 1, "integer"));
@@ -243,8 +226,7 @@ public class ExceptionHandlerLocalsChanges {
             .body(cob -> cob.nop().dconst_0().dstore(1).nop())
             .rejected(mismatch("double", 1, "integer"));
 
-        // A store over the second half of a long or double invalidates the
-        // first half.
+        // Overwriting the second slot invalidates the first.
         method(CD_int, CD_long).handler(INT, LONG)
             .body(cob -> cob.nop().iconst_0().istore(2).nop())
             .rejected(mismatch("top", 1, "long"));
@@ -261,7 +243,7 @@ public class ExceptionHandlerLocalsChanges {
             .body(cob -> cob.nop().iconst_0().istore(3).nop())
             .rejected(mismatch("top", 2, "long"));
 
-        // A store over the first half of a long or double replaces the value.
+        // Overwriting the first slot replaces the value.
         method(CD_int, CD_long).handler(INT, LONG)
             .body(cob -> cob.nop().iconst_0().istore(1).nop())
             .rejected(mismatch("integer", 1, "long"));
@@ -269,13 +251,11 @@ public class ExceptionHandlerLocalsChanges {
             .body(cob -> cob.nop().iconst_0().istore(2).nop())
             .rejected(mismatch("integer", 2, "long"));
 
-        // The handler only expects the first local, whatever is stored over
-        // the others.
+        // Locals not required by the handler may change freely.
         method(CD_int, CD_long).handler(INT).body(cob -> cob
             .nop().lconst_0().lstore(1).nop().iconst_0().istore(2).nop().dconst_0().dstore(2).nop()
             .fconst_0().fstore(1).nop().lconst_0().lstore(2).nop())
             .accepted();
-        // The long or double that is stored is the one it expects.
         method(CD_int, CD_long).handler(INT, LONG)
             .body(cob -> cob.nop().lconst_0().lstore(1).nop().nop())
             .accepted();
@@ -284,19 +264,14 @@ public class ExceptionHandlerLocalsChanges {
             .accepted();
     }
 
-    // Binds the label to the next instruction, which is given a stackmap frame
-    // with the locals.
     static void frame(CodeBuilder cob, List<StackMapFrameInfo> frames, Label label,
                       VerificationTypeInfo... locals) {
         cob.labelBinding(label);
         frames.add(StackMapFrameInfo.of(label, List.of(locals), List.of()));
     }
 
-    // A stackmap frame inside the try block replaces the locals.
     static void stackMapFrames() throws Exception {
-        // The frame removes a local that the handler expects (as a chop frame),
-        // or makes its type less specific (as a full frame), when it is reached
-        // by falling through...
+        // Fall-through to chop or full frames can invalidate a cached handler match.
         method(CD_int, CD_int).handler(INT, INT).body((cob, frames) -> {
             cob.nop().nop();
             frame(cob, frames, cob.newLabel(), INT);
@@ -313,8 +288,7 @@ public class ExceptionHandlerLocalsChanges {
             cob.nop().nop();
         }).rejected(mismatch("'java/lang/Object'", 1, "'java/lang/String'"));
 
-        // ... and when it follows a goto, so that the locals are taken from it
-        // without being matched.
+        // After goto, the target frame replaces locals without a fall-through match.
         method(CD_int, CD_int).handler(INT, INT).body((cob, frames) -> {
             Label target = cob.newLabel();
             cob.nop().nop().goto_(target);
@@ -328,8 +302,7 @@ public class ExceptionHandlerLocalsChanges {
             cob.nop().nop();
         }).rejected(mismatch("'java/lang/Object'", 1, "'java/lang/String'"));
 
-        // The frame keeps the locals that the handler expects, also if it adds
-        // one (as an append frame).
+        // Matching and append frames preserve the locals required by the handler.
         method(CD_int, CD_int).handler(INT).body((cob, frames) -> {
             cob.nop().nop();
             frame(cob, frames, cob.newLabel(), INT);
@@ -358,14 +331,11 @@ public class ExceptionHandlerLocalsChanges {
         cob.aload(0).invokespecial(CD_Object, INIT_NAME, MethodTypeDesc.of(CD_void));
     }
 
-    // A constructor that has copies of the uninitialized this in locals 1 and
-    // 2. Calling super() initializes all of them, and clears flagThisUninit.
+    // Calling super() initializes every alias and clears flagThisUninit.
     static void uninitializedThis() throws Exception {
         Consumer<CodeBuilder> copy = cob -> cob.aload(0).astore(1).aload(0).astore(2);
 
-        // The try block calls super(). The handler, which expects the copies
-        // not to be initialized, matches the locals before the call but not
-        // the ones after it, with or without another instruction after it.
+        // A handler expecting uninitialized aliases must reject the state after super().
         for (boolean last : new boolean[] {false, true}) {
             Consumer<CodeBuilder> body = cob -> {
                 cob.nop();
@@ -381,14 +351,12 @@ public class ExceptionHandlerLocalsChanges {
                 .before(copy).body(body)
                 .rejected(mismatch(null, 1, "uninitializedThis"));
         }
-        // The frame of the handler has no flagThisUninit, which it only has with
-        // an uninitializedThis in its locals, but the locals before the call do.
+        // The current frame has flagThisUninit, but the handler does not.
         constructor().handler()
             .before(copy).body(cob -> cob.nop().nop())
             .rejected(FLAGS);
 
-        // The try block ends before super() is called, also if it makes the
-        // copies.
+        // The protected range ends before super(), including any alias stores.
         constructor().handler(UNINITIALIZED_THIS, UNINITIALIZED_THIS, UNINITIALIZED_THIS)
             .before(copy).body(cob -> cob.nop().nop()).after(ExceptionHandlerLocalsChanges::callSuper)
             .accepted();
@@ -396,16 +364,13 @@ public class ExceptionHandlerLocalsChanges {
             .body(cob -> cob.nop().aload(0).astore(1).nop().aload(0).astore(2).nop())
             .after(ExceptionHandlerLocalsChanges::callSuper)
             .accepted();
-        // The try block starts after super() was called. All of the copies are
-        // initialized and the flag is cleared.
+        // After super(), all aliases are initialized and the flag is clear.
         constructor().handler(OBJECT, OBJECT, OBJECT)
             .before(cob -> { copy.accept(cob); callSuper(cob); }).body(cob -> cob.nop().nop())
             .accepted();
     }
 
-    // The code of a static method that creates an object and keeps it in
-    // locals 0 and 1. The handler can expect them to be uninitialized, which is
-    // the type of the object that the labeled new instruction creates.
+    // The label identifies the uninitialized object stored in locals 0 and 1.
     static class NewObject implements Code {
         Label label;
 
@@ -425,11 +390,8 @@ public class ExceptionHandlerLocalsChanges {
         cob.invokespecial(CD_Object, INIT_NAME, MethodTypeDesc.of(CD_void));
     }
 
-    // Calling the constructor initializes all of the copies of the new object.
     static void uninitializedObject() throws Exception {
-        // The try block calls the constructor. The handler, which expects the
-        // copies not to be initialized, matches the locals before the call but
-        // not the ones after it.
+        // The constructor invalidates handler matches for every uninitialized alias.
         NewObject first = new NewObject();
         method().handler(() -> List.of(first.uninitialized(), first.uninitialized()))
             .before(first).body(cob -> { cob.nop(); callConstructor(cob); cob.nop(); })
@@ -438,7 +400,6 @@ public class ExceptionHandlerLocalsChanges {
         method().handler(() -> List.of(TOP, second.uninitialized()))
             .before(second).body(cob -> { cob.nop(); callConstructor(cob); cob.nop(); })
             .rejected(mismatch("'java/lang/Object'", 1, "uninitialized 0"));
-        // The handler does not expect the copies.
         method().handler(TOP, TOP)
             .before(new NewObject()).body(cob -> { cob.nop(); callConstructor(cob); cob.nop(); })
             .accepted();
@@ -449,8 +410,7 @@ public class ExceptionHandlerLocalsChanges {
             .accepted();
     }
 
-    // What matched in one method says nothing about the other methods of the
-    // class, which are verified in no particular order.
+    // Handler matches must not carry over between methods.
     static void severalMethods() throws Exception {
         TestMethod valid = method(CD_int, CD_int).handler(INT, INT).body(cob -> cob.nop().nop());
         TestMethod invalid = method(CD_int, CD_int).handler(INT, STRING).body(cob -> cob.nop().nop());

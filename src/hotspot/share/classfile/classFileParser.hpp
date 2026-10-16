@@ -187,8 +187,7 @@ class ClassFileParser {
   u2 _java_fields_count;
 
   bool _need_verify;
-  // Utf8 entries of the constant pool that passed a format check, as a mask of
-  // the Checked* kinds per entry. Used when verifying only.
+  // Successful format checks by Utf8 index (Checked* mask).
   u1* _checked_utf8;
 
   bool _has_nonstatic_concrete_methods;
@@ -431,8 +430,6 @@ class ClassFileParser {
                                      const Symbol* signature,
                                      TRAPS) const;
 
-  // The same checks for the Utf8 entry at a constant pool index, skipped if the
-  // entry already passed them.
   enum { CheckedFieldName = 1, CheckedMethodName = 2,
          CheckedFieldSignature = 4, CheckedMethodSignature = 8 };
   void verify_legal_field_name(int name_index, TRAPS);

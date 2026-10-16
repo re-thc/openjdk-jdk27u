@@ -33,9 +33,15 @@ import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.invoke.MethodHandles;
+import java.lang.management.ManagementFactory;
+import java.lang.ref.Reference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.management.ObjectName;
 
+import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -43,20 +49,37 @@ public class SymbolTableGrowth {
 
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-            "-Xlog:symboltable=debug",
-            DefineClasses.class.getName());
+            DefineClasses.class.getName(),
+            Long.toString(Utils.adjustTimeout(60_000)));
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
-        output.shouldMatch("\\[symboltable\\s*\\] Grown to size:\\d+");
+        output.shouldMatch("SymbolTable grew from \\d+ to \\d+ buckets");
     }
 
     static class DefineClasses {
-        // Each class adds its name and its field names as new symbols, enough to
-        // exceed two symbols per bucket of the default 32768 bucket table.
+        // Exceed two live symbols per bucket of the default 32768-bucket table.
         static final int CLASSES = 1500;
         static final int FIELDS_PER_CLASS = 64;
 
+        private static final Pattern BUCKETS = Pattern.compile("Number of buckets\\s*:\\s*(\\d+)");
+
+        // The SymbolTable precedes the shared tables in VM.symboltable output.
+        static long buckets() throws Exception {
+            String out = (String) ManagementFactory.getPlatformMBeanServer().invoke(
+                new ObjectName("com.sun.management:type=DiagnosticCommand"),
+                "vmSymboltable",
+                new Object[] { new String[0] },
+                new String[] { String[].class.getName() });
+            Matcher m = BUCKETS.matcher(out);
+            if (!m.find()) {
+                throw new RuntimeException("No bucket count in: " + out);
+            }
+            return Long.parseLong(m.group(1));
+        }
+
         public static void main(String[] args) throws Exception {
+            long timeoutMillis = Long.parseLong(args[0]);
+            long initial = buckets();
             MethodHandles.Lookup lookup = MethodHandles.lookup();
             // Keep the classes alive so that their symbols are not cleaned up.
             List<Class<?>> classes = new ArrayList<>();
@@ -69,7 +92,18 @@ public class SymbolTableGrowth {
                 });
                 classes.add(lookup.defineClass(bytes));
             }
-            System.out.println("Defined " + classes.size() + " classes");
+            // The service thread grows the table concurrently, wait for it.
+            long deadline = System.nanoTime() + timeoutMillis * 1_000_000;
+            long current;
+            while ((current = buckets()) <= initial) {
+                if (System.nanoTime() - deadline > 0) {
+                    throw new RuntimeException("SymbolTable did not grow from " + initial +
+                                               " buckets within " + timeoutMillis + " ms");
+                }
+                Thread.sleep(100);
+            }
+            Reference.reachabilityFence(classes);
+            System.out.println("SymbolTable grew from " + initial + " to " + current + " buckets");
         }
     }
 }

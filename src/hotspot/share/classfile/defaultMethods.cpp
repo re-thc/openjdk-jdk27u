@@ -621,10 +621,8 @@ static bool already_in_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots, Meth
   return found;
 }
 
-// The hierarchy walk for a slot only produces a default method or an overpass
-// from a non-static, non-private, non-overpass method that an interface declares.
-// A slot without such a method, e.g. one for a static method of a superclass,
-// would walk the whole hierarchy to find nothing, so don't create it.
+// A hierarchy walk can produce a default method or overpass only from a
+// non-static, non-private, non-overpass interface declaration.
 static bool has_interface_candidate(InstanceKlass* klass, Method* m) {
   Array<InstanceKlass*>* interfaces = klass->transitive_interfaces();
   for (int i = 0; i < interfaces->length(); ++i) {

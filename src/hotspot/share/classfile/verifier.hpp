@@ -279,9 +279,7 @@ class ClassVerifier : public StackObj {
  private:
   Thread* _thread;
 
-  // Symbols of class and array names, indexed by a hash of the name. The same
-  // names show up again and again in the descriptors of a class, and many are
-  // the names of classes in its constant pool.
+  // Direct-mapped cache of class and array name symbols.
   Symbol** _name_cache;
   unsigned _name_cache_mask;
   GrowableArray<Symbol*>* _symbols;  // keep a list of symbols created
@@ -390,9 +388,7 @@ class ClassVerifier : public StackObj {
 
   InstanceKlass*      _klass;  // the class being verified
   methodHandle        _method; // current method being verified
-  // For each exception handler of the current method, the locals and flags
-  // that its stackmap frame was last matched against, see
-  // verify_exception_handler_targets().
+  // Last successfully matched locals version and flags for each handler.
   uint64_t*           _handler_states;
   VerificationType    _this_type; // the verification type of the current class
 
@@ -438,8 +434,6 @@ class ClassVerifier : public StackObj {
   // Initializes a sig_as_verification_types entry and puts it in the hash table.
   void create_method_sig_entry(sig_as_verification_types* sig_verif_types, int sig_index);
 
-  // Returns the verification types of a field descriptor, which are translated
-  // the first time that it is used.
   GrowableArray<VerificationType>* field_sig_verif_types(int sig_index);
 
   // Return status modes
@@ -475,7 +469,6 @@ class ClassVerifier : public StackObj {
   // goes out of scope.  Since these symbols escape the scope in which they're
   // created, we can't use a TempNewSymbol.
   Symbol* create_temporary_symbol(const char *s, int length);
-  // The symbol for the class or array name that sig_stream is at.
   Symbol* create_temporary_symbol(SignatureStream* sig_stream);
 
   TypeOrigin ref_ctx(const char* str);
