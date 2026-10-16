@@ -115,7 +115,8 @@ Execution is a separately approved scope in a fresh checkout:
 python3 "$Q/diagnostic.py" --execute-approved --approval-reference NEW_APPROVAL
 ```
 
-One Python observer, one JDK coordinator, one baseline fork; no compiler,
+The intended scope is one Python observer, one JDK coordinator and one baseline
+fork; no compiler,
 candidate, jcmd, helper probes, retries or CI job. Five one-second warmups and
 seven one-second measurements of `ordinaryHit`, one worker and 1024 operations
 per invocation. Global cap 90 seconds, including the final receipt write and post-write deadline
@@ -132,8 +133,31 @@ observer affinity4: both share the cgroup quota. No perf/pidstat/PMU dependency.
 CLOCK_MONOTONIC must be shared by Python and HotSpot. Sampling target20ms;
 reject gaps over30ms or acquisition brackets over5ms within final two warmups
 and all measured windows. Observer CPU above2% of one CPU makes collection
-inconclusive. Identity uses PID/TID starttimes and the unique HotSpot-truncated
-JMH worker name; ambiguity and counter resets fail admission.
+inconclusive. Admission (capped at8seconds) reads the coordinator's task child lists and the
+fork's task names, each capped at64tasks. It binds the coordinator/fork PID
+starttimes, isolated process group/session, executable and unique worker TID
+starttime, then performs a full owned-descendant audit. No process/task discovery
+occurs in the timed sampling loop. Seven retained descriptors supply eight
+bounded reads per tick: coordinator stat, fork stat, worker stat twice, worker
+schedstat/sched, cgroup cpu.stat and global proc stat. PID/TID starttimes are
+checked on every sample. Disappearance ends collection without rebinding;
+missing measured-window boundaries remain inconclusive.
+
+Full ownership audits run before launch, at admission and after collection.
+The subreaper and identity-checked isolated-group kill plus individual escaped-
+descendant cleanup remain active. A live leftover or unknown adopted child is
+inconclusive even if cleanup succeeds. The collection loop does not observe
+short-lived extra processes or duplicate worker names that appear and disappear
+between audits. Consequently it records the two bound JVM identities and audit
+results, not a claim of complete process-event accounting. No kernel process
+trace is available. This detection limit is explicit in each receipt.
+
+Stage CPU/wall costs distinguish admission/audits, fixed-file reads, encoding and
+writes, output size checks, analysis and cleanup. The2% observer gate covers the
+collection phase (including instrumentation, output and wakeups); admission and
+shutdown costs are separately visible. Acquisition brackets now include context
+reads as well as task reads. The90-second closure boundary tests remain in force.
+See `OBSERVER-COST.md` for the causal profile, offline budget evidence and limits.
 
 Report conservative lower/upper deltas for worker runtime, run-queue wait,
 context switches, migrations and timeslices using interior and exterior

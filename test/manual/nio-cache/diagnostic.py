@@ -11,6 +11,7 @@ import signal
 import subprocess
 import time
 from process_cleanup import ChildScope, cleanup_errors, enable_subreaper, require_no_children
+from observer import BoundSampler, Costs, children, read_identity, worker
 
 ROOT = Path(__file__).resolve().parent
 WORKER = 'org.ope..rker-1'  # HotSpot first seven + '..' + final six bytes.
@@ -35,44 +36,6 @@ def log_pid(xml, gc):
 def stat_identity(raw):
     fields = raw[raw.rfind(')') + 2:].split()
     return {'start': int(fields[19]), 'cpu': int(fields[36]), 'state': fields[0]}
-
-
-def task(pid, tid):
-    root = Path('/proc') / str(pid) / 'task' / str(tid)
-    before = time.monotonic_ns()
-    first = stat_identity((root / 'stat').read_text())
-    counters = list(map(int, (root / 'schedstat').read_text().split()))
-    if len(counters) != 3 or any(x < 0 for x in counters):
-        raise ValueError('schedstat format')
-    sched = (root / 'sched').read_text()
-    fields = {}
-    for key in ('se.nr_migrations', 'nr_switches', 'nr_voluntary_switches', 'nr_involuntary_switches'):
-        match = re.search(r'^' + re.escape(key) + r'\s*:\s*(\d+)\s*$', sched, re.M)
-        if not match:
-            raise ValueError('missing sched counter ' + key)
-        fields[key] = int(match[1])
-    last = stat_identity((root / 'stat').read_text())
-    if first['start'] != last['start']:
-        raise ValueError('TID reuse during sample')
-    return {'before_ns': before, 'after_ns': time.monotonic_ns(), 'tid': tid,
-            **last, 'runtime_ns': counters[0], 'wait_ns': counters[1],
-            'timeslices': counters[2], **fields}
-
-
-def snapshot(pid, start):
-    root = Path('/proc') / str(pid)
-    if stat_identity((root / 'stat').read_text())['start'] != start:
-        raise ValueError('fork PID reused')
-    matches = []
-    for entry in (root / 'task').iterdir():
-        try:
-            if (entry / 'comm').read_text().strip() == WORKER:
-                matches.append(int(entry.name))
-        except FileNotFoundError:
-            continue
-    if len(matches) > 1:
-        raise ValueError('ambiguous worker identity')
-    return task(pid, matches[0]) if matches else None
 
 
 def window_bounds(samples, begin, end):
@@ -158,12 +121,62 @@ def close_receipt(path, receipt, started, end):
         return False
 
 
+def admit_processes(proc, java, deadline):
+    coordinator = {'pid': proc.pid, **read_identity(proc.pid)}
+    if coordinator['pgrp'] != proc.pid or coordinator['session'] != proc.pid:
+        raise ValueError('coordinator is not isolated process-group/session leader')
+    fork = None
+    while proc.poll() is None:
+        if time.monotonic() >= deadline:
+            raise TimeoutError('8-second fork/worker admission cap')
+        found = children(proc.pid, coordinator)
+        if len(found) > 1:
+            raise ValueError('unexpected coordinator children')
+        if found:
+            pid = next(iter(found))
+            row = read_identity(pid)
+            if row['ppid'] != proc.pid or row['pgrp'] != proc.pid or row['session'] != proc.pid:
+                raise ValueError('fork outside owned coordinator group/session')
+            if fork is not None and (pid, row['start']) != (fork['pid'], fork['start']):
+                raise ValueError('fork identity changed during admission')
+            fork = {'pid': pid, **row}
+            # taskset execs the coordinator; JMH starts the identified java executable.
+            if (Path('/proc') / str(pid) / 'exe').resolve() != Path(java).resolve():
+                raise ValueError('unexpected fork executable')
+            bound = worker(pid, fork)
+            if bound:
+                tid, thread = bound
+                return coordinator, fork, {'tid': tid, **thread}
+        time.sleep(.02)
+    raise ValueError('coordinator exited before worker admission')
+
+
+def audit_owned(scope, identities):
+    observed = scope.owned(scope.backend.snapshot())
+    if {pid: row['start'] for pid, row in observed.items()} != identities:
+        raise ValueError('admission/exit ownership audit mismatch')
+
+
+def output_size(paths):
+    total = 0
+    for path in paths:
+        try:
+            total += path.stat().st_size
+        except FileNotFoundError:
+            pass
+    if total > 48 * 1024 * 1024:
+        raise ValueError('48MiB total output cap')
+
+
 def run(reference):
     started = time.monotonic()
     end = started + 90
     proc = None
     scope = None
-    receipt = {'approval_reference': reference, 'status': 'inconclusive', 'performance_qualified': False}
+    sampler = None
+    costs = Costs()
+    receipt = {'approval_reference': reference, 'status': 'inconclusive', 'performance_qualified': False,
+               'ownership_detection': 'One bound coordinator/fork; full admission/exit/cleanup audits. Sampling does not enumerate processes or threads and cannot detect transient extra children or duplicate worker names during collection.'}
     out = ROOT / 'run'
     out.mkdir(exist_ok=False)  # One execution; never overwrite or resume.
     def expired(*unused):
@@ -188,55 +201,63 @@ def run(reference):
         command = json.loads((ROOT / 'command.json').read_text())
         env = frozen['environment']
         enable_subreaper()
-        require_no_children()
-        scope = ChildScope()
+        costs.measure('prelaunch_ownership_audit', require_no_children)
+        scope = costs.measure('ownership_scope', ChildScope)
         samples = []
-        seen = {}
-        fork = None
-        cpu_start = time.process_time_ns()
-        sampling_start = time.monotonic_ns()
         if time.monotonic() >= started + 30:
             raise TimeoutError('preflight exceeded 30s; no launch')
         with (out / 'stdout').open('wb') as so, (out / 'stderr').open('wb') as se, (out / 'samples.jsonl').open('w') as stream:
             proc = subprocess.Popen(command, env=env, cwd=out, stdout=so, stderr=se, start_new_session=True)
+            admission_end = min(started + 60, time.monotonic() + 8)
+            coordinator, bound_fork, thread = costs.measure(
+                'admission_discovery', admit_processes, proc, command[3], admission_end)
+            fork = bound_fork['pid']
+            seen = {proc.pid: coordinator['start'], fork: bound_fork['start']}
+            costs.measure('admission_ownership_audit', audit_owned, scope, seen)
+            if time.monotonic() >= admission_end:
+                raise TimeoutError('admission ownership audit exceeded cap')
+            receipt['bound_identities'] = {'coordinator': coordinator, 'fork': bound_fork, 'worker': thread}
+            sampler = BoundSampler(coordinator, bound_fork, thread)
+            capped = [out / name for name in ('stdout', 'stderr', 'samples.jsonl', 'result.json',
+                      'hotspot_pid' + str(fork) + '.xml', 'gc_' + str(fork) + '.log')]
+            cpu_start = time.process_time_ns()
+            sampling_start = time.monotonic_ns()
             while proc.poll() is None:
                 tick = time.monotonic_ns()
-                owned = scope.owned(scope.backend.snapshot())
-                for pid, row in owned.items():
-                    if pid in seen and seen[pid] != row['start']:
-                        raise ValueError('owned PID reused')
-                    seen[pid] = row['start']
-                if len(seen) > 2:
-                    raise ValueError('more than one coordinator and one fork')
-                children = [pid for pid in seen if pid != proc.pid]
-                if children:
-                    if fork is not None and fork != children[0]:
-                        raise ValueError('fork changed')
-                    fork = children[0]
-                    try:
-                        sample = snapshot(fork, seen[fork])
-                    except (FileNotFoundError, ProcessLookupError):
-                        sample = None  # Exit races are recorded as a gap, never interpolated.
-                    if sample:
-                        sample['cgroup_cpu_stat'] = Path('/sys/fs/cgroup/cpu.stat').read_text()
-                        sample['proc_stat'] = Path('/proc/stat').read_text()
-                        samples.append(sample)
-                        stream.write(json.dumps(sample) + '\n')
-                if sum(p.stat().st_size for p in out.iterdir() if p.is_file()) > 48 * 1024 * 1024:
-                    raise ValueError('48MiB total output cap')
-                if time.monotonic() > min(end - 2, started + 60):
+                try:
+                    sample = costs.measure('bound_reads', sampler.sample)
+                except (FileNotFoundError, ProcessLookupError):
+                    receipt['sampling_end'] = 'bound task/process exited; no rebinding'
+                    break
+                samples.append(sample)
+                costs.measure('encode_write', lambda: stream.write(json.dumps(sample) + '\n'))
+                costs.measure('output_cap', output_size, capped)
+                if time.monotonic() >= min(end - 2, started + 60):
                     raise TimeoutError('60-second invocation cap')
                 time.sleep(max(0, (PERIOD_NS - (time.monotonic_ns() - tick)) / 1e9))
-        observer_cpu = time.process_time_ns() - cpu_start
-        observer_wall = time.monotonic_ns() - sampling_start
+            observer_cpu = time.process_time_ns() - cpu_start
+            observer_wall = time.monotonic_ns() - sampling_start
+            sampler.close()
+            sampler = None
+            # Collection has ended. Global discovery is permitted again here.
+            while proc.poll() is None:
+                if time.monotonic() >= min(end - 2, started + 60):
+                    raise TimeoutError('coordinator exit deadline')
+                time.sleep(.02)
+            # Every still-owned process must be one of the bound identities.
+            remaining = costs.measure('exit_ownership_audit', scope.backend.snapshot)
+            owned = scope.owned(remaining)
+            if any(pid not in seen or seen[pid] != row['start'] for pid, row in owned.items()):
+                raise ValueError('unexpected process at exit ownership audit')
+        costs.measure('final_output_cap', output_size, [p for p in out.iterdir() if p.is_file()])
         receipt.update(exit_code=proc.returncode, process_identities=seen,
                        observer_cpu_ns=observer_cpu, observer_wall_ns=observer_wall,
                        observer_cpu_fraction=observer_cpu / observer_wall)
-        cleanup = scope.close(proc, min(end, time.monotonic() + 2))
+        cleanup = costs.measure('cleanup', scope.close, proc, min(end, time.monotonic() + 2))
         receipt['cleanup'] = cleanup
         if cleanup_errors(cleanup):
             raise ValueError('cleanup failed')
-        require_no_children()
+        costs.measure('final_ownership_audit', require_no_children)
         if proc.returncode != 0 or (out / 'stderr').stat().st_size:
             raise ValueError('nonzero exit or nonempty stderr')
         xml, gc = list(out.glob('hotspot_*.xml')), list(out.glob('gc_*.log'))
@@ -260,7 +281,7 @@ def run(reference):
         if any(not isinstance(v, (int, float)) or isinstance(v, bool) or not math.isfinite(v) or v <= 0
                for v in d['primaryMetric']['rawData'][0]):
             raise ValueError('invalid score')
-        receipt['windows'] = analyze((out / 'stdout').read_text(), samples)
+        receipt['windows'] = costs.measure('analysis', analyze, (out / 'stdout').read_text(), samples)
         receipt['scores_ns_op'] = payload[0]['primaryMetric']['rawData'][0]
         if observer_cpu / observer_wall > .02:
             raise ValueError('observer exceeds 2% of one CPU; intrusive collection')
@@ -269,8 +290,11 @@ def run(reference):
         receipt['error'] = repr(exc)
     finally:
         signal.setitimer(signal.ITIMER_REAL, 0)
+        if sampler is not None:
+            sampler.close()
         if scope is not None and 'cleanup' not in receipt:
-            receipt['cleanup'] = scope.close(proc, min(end, time.monotonic() + 2))
+            receipt['cleanup'] = costs.measure('cleanup', scope.close, proc, min(end, time.monotonic() + 2))
+        receipt['observer_costs'] = costs.stages
         closed = close_receipt(out / 'receipt.json', receipt, started, end)
     return 0 if closed and receipt['status'].startswith('diagnostic data only') else 1
 

@@ -43,30 +43,52 @@ class LinuxProcesses:
     def __init__(self):
         self.parent = os.getpid()
 
+    def read(self, pid):
+        raw = (Path('/proc') / str(pid) / 'stat').read_text()
+        tail = raw[raw.rfind(')') + 2:].split()
+        return {'ppid': int(tail[1]), 'start': int(tail[19]), 'state': tail[0],
+                'pgrp': int(tail[2]), 'session': int(tail[3])}
+
     def snapshot(self):
+        # Enumerate the root once. Path.glob('[0-9]*/stat') also scans each
+        # process directory, which dominates cost on process-dense hosts.
         table = {}
-        for path in Path('/proc').glob('[0-9]*/stat'):
-            try:
-                raw = path.read_text()
-            except (FileNotFoundError, ProcessLookupError):
-                continue
-            # comm can contain spaces and parentheses. Fields after the final
-            # ')' begin at field 3 (state); starttime is field 22.
-            tail = raw[raw.rfind(')') + 2:].split()
-            pid = int(path.parent.name)
-            table[pid] = {'ppid': int(tail[1]), 'start': int(tail[19]),
-                          'state': tail[0]}
+        with os.scandir('/proc') as entries:
+            for entry in entries:
+                if not entry.name.isascii() or not entry.name.isdecimal():
+                    continue
+                pid = int(entry.name)
+                try:
+                    table[pid] = self.read(pid)
+                except (FileNotFoundError, ProcessLookupError):
+                    continue
         return table
 
     def kill(self, pid, start):
-        # Re-read the identity immediately before signaling; never deliberately
-        # target a recycled PID. Only descendants of this controller are owned.
-        current = self.snapshot().get(pid)
-        if current is not None and current['start'] == start:
-            try:
+        # Revalidate only this owned identity immediately before signaling.
+        try:
+            current = self.read(pid)
+            if current['start'] == start:
                 os.kill(pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
+        except (FileNotFoundError, ProcessLookupError):
+            pass
+
+    def kill_group(self, group, owned):
+        # Popen(start_new_session=True) isolates the coordinator and descendants.
+        # A stable live owned member binds the original group even if its
+        # leader has exited. Escaped descendants are still killed individually.
+        for pid, row in owned.items():
+            if row.get('pgrp') != group or row.get('session') != group:
+                continue
+            try:
+                current = self.read(pid)
+                if (current['start'] == row['start'] and current['pgrp'] == group
+                        and current['session'] == group and current['state'] not in ('Z', 'X')):
+                    os.killpg(group, signal.SIGKILL)
+                    return True
+            except (FileNotFoundError, ProcessLookupError):
+                continue
+        return False
 
     def reap(self, pid):
         try:
@@ -138,6 +160,10 @@ class ChildScope:
                     if row['state'] not in ('Z', 'X'):
                         if proc is not None and code is not None and pid != proc.pid:
                             live_leftovers.add(pid)
+                if proc is not None:
+                    backend.kill_group(proc.pid, remaining)
+                for pid, row in remaining.items():
+                    if row['state'] not in ('Z', 'X'):
                         backend.kill(pid, row['start'])
                 for pid, row in remaining.items():
                     if proc is None or pid != proc.pid:
