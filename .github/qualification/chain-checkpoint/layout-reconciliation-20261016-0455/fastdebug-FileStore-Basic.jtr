@@ -1,0 +1,363 @@
+#Test Results (version 2)
+#Fri Oct 16 04:55:28 UTC 2026
+#-----testdescription-----
+$file=/workspace/openjdk-jdk27u/test/jdk/java/nio/file/FileStore/Basic.java
+$root=/workspace/openjdk-jdk27u/test/jdk
+keywords=bug4313887 bug6873621 bug6979526 bug7006126 bug7020517 bug8264400 bug8360887 intermittent junit
+library=.. /test/lib
+run=USER_SPECIFIED build jdk.test.lib.Platform jdk.test.lib.util.FileUtils\nUSER_SPECIFIED junit Basic\n
+source=Basic.java
+title=Unit test for java.nio.file.FileStore
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/openjdk-jdk27u/test/jdk/java/nio/file/FileStore/Basic.java
+elapsed=11789 0\:00\:11.789
+end=Fri Oct 16 04\:55\:28 UTC 2026
+environment=regtest
+execStatus=Failed. Execution failed\: `main' threw exception\: java.lang.Exception\: JUnit test failure
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=6861002e9944
+javatestOS=Linux 6.18.44 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile build compile junit
+start=Fri Oct 16 04\:55\:16 UTC 2026
+test=java/nio/file/FileStore/Basic.java
+testJDK=/workspace/openjdk-jdk27u/build/pr9-fastdebug/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.44,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:1,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.44
+totalTime=11790
+user.name=agent
+work=/workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/java/nio/file/FileStore
+
+#section:script_messages
+----------messages:(10/800)----------
+JDK under test: /workspace/openjdk-jdk27u/build/pr9-fastdebug/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (fastdebug build 27.0.2-internal-adhoc.agent.openjdk-jdk27u)
+OpenJDK 64-Bit Server VM (fastdebug build 27.0.2-internal-adhoc.agent.openjdk-jdk27u, mixed mode, sharing)
+Library ..; kind: packages
+   source directory: /workspace/openjdk-jdk27u/test/jdk/java/nio/file
+   class directory: /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d/java/nio/file
+Library /test/lib; kind: packages
+   source directory: /workspace/openjdk-jdk27u/test/lib
+   class directory: /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d/test/lib
+
+#section:build
+----------messages:(7/353)----------
+command: build jdk.test.lib.Platform jdk.test.lib.util.FileUtils
+reason: User specified action: run build jdk.test.lib.Platform jdk.test.lib.util.FileUtils 
+started: Fri Oct 16 04:55:16.842 UTC 2026
+Library /test/lib:
+  compile: jdk.test.lib.Platform, jdk.test.lib.util.FileUtils
+finished: Fri Oct 16 04:55:21.019 UTC 2026
+elapsed time (seconds): 4.177
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/345)----------
+command: compile /workspace/openjdk-jdk27u/test/lib/jdk/test/lib/Platform.java /workspace/openjdk-jdk27u/test/lib/jdk/test/lib/util/FileUtils.java
+reason: .class file out of date or does not exist
+started: Fri Oct 16 04:55:16.843 UTC 2026
+Mode: othervm
+Process id: 909492
+finished: Fri Oct 16 04:55:21.018 UTC 2026
+elapsed time (seconds): 4.175
+----------configuration:(8/661)----------
+javac compilation environment
+  source path: /workspace/openjdk-jdk27u/test/jdk/java/nio/file
+               /workspace/openjdk-jdk27u/test/lib
+  class path:  /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d
+               /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d/java/nio/file
+               /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d/test/lib
+               /workspace/toolchains/jtreg83/lib/junit-platform-console-standalone-1.14.2.jar
+
+----------rerun:(33/3245)*----------
+cd /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/java/nio/file/FileStore/Basic && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/openjdk-jdk27u/build/pr9-fastdebug/images/jdk/bin/javac \\
+        -J-XX:ActiveProcessorCount=2 \\
+        -J-XX:CICompilerCount=2 \\
+        -J-Xmx1g \\
+        -J-Djdk.test.lib.random.seed=42 \\
+        -J-Dseed=42 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Dtest.vm.opts='-XX:ActiveProcessorCount=2 -XX:CICompilerCount=2 -Xmx1g -Djdk.test.lib.random.seed=42 -Dseed=42 -Dtest.boot.jdk=/workspace/toolchains/jdk27' \\
+        -J-Dtest.tool.vm.opts='-J-XX:ActiveProcessorCount=2 -J-XX:CICompilerCount=2 -J-Xmx1g -J-Djdk.test.lib.random.seed=42 -J-Dseed=42 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/openjdk-jdk27u/build/pr9-fastdebug/images/jdk \\
+        -J-Dcompile.jdk=/workspace/openjdk-jdk27u/build/pr9-fastdebug/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/openjdk-jdk27u/build/pr9-fastdebug/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/openjdk-jdk27u/test/jdk \\
+        -J-Dtest.name=java/nio/file/FileStore/Basic.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=SUMMARY,e=SUMMARY,t=false,m=false] \\
+        -J-Dtest.file=/workspace/openjdk-jdk27u/test/jdk/java/nio/file/FileStore/Basic.java \\
+        -J-Dtest.main.class=Basic \\
+        -J-Dtest.src=/workspace/openjdk-jdk27u/test/jdk/java/nio/file/FileStore \\
+        -J-Dtest.src.path=/workspace/openjdk-jdk27u/test/jdk/java/nio/file/FileStore:/workspace/openjdk-jdk27u/test/jdk/java/nio/file:/workspace/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d \\
+        -J-Dtest.class.path=/workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d:/workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d/java/nio/file:/workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d/test/lib \\
+        -d /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d/test/lib \\
+        -sourcepath /workspace/openjdk-jdk27u/test/jdk/java/nio/file:/workspace/openjdk-jdk27u/test/lib \\
+        -classpath /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d:/workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d/java/nio/file:/workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d/test/lib:/workspace/toolchains/jtreg83/lib/junit-platform-console-standalone-1.14.2.jar /workspace/openjdk-jdk27u/test/lib/jdk/test/lib/Platform.java /workspace/openjdk-jdk27u/test/lib/jdk/test/lib/util/FileUtils.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:build
+----------messages:(7/208)----------
+command: build Basic
+reason: Named class compiled on demand
+started: Fri Oct 16 04:55:21.019 UTC 2026
+Test directory:
+  compile: Basic
+finished: Fri Oct 16 04:55:24.243 UTC 2026
+elapsed time (seconds): 3.224
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/285)----------
+command: compile /workspace/openjdk-jdk27u/test/jdk/java/nio/file/FileStore/Basic.java
+reason: .class file out of date or does not exist
+started: Fri Oct 16 04:55:21.019 UTC 2026
+Mode: othervm
+Process id: 909712
+finished: Fri Oct 16 04:55:24.242 UTC 2026
+elapsed time (seconds): 3.223
+----------configuration:(10/809)----------
+javac compilation environment
+  source path: /workspace/openjdk-jdk27u/test/jdk/java/nio/file/FileStore
+               /workspace/openjdk-jdk27u/test/jdk/java/nio/file
+               /workspace/openjdk-jdk27u/test/lib
+  class path:  /workspace/openjdk-jdk27u/test/jdk/java/nio/file/FileStore
+               /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d
+               /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d/java/nio/file
+               /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d/test/lib
+               /workspace/toolchains/jtreg83/lib/junit-platform-console-standalone-1.14.2.jar
+
+----------rerun:(33/3294)*----------
+cd /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/java/nio/file/FileStore/Basic && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/openjdk-jdk27u/build/pr9-fastdebug/images/jdk/bin/javac \\
+        -J-XX:ActiveProcessorCount=2 \\
+        -J-XX:CICompilerCount=2 \\
+        -J-Xmx1g \\
+        -J-Djdk.test.lib.random.seed=42 \\
+        -J-Dseed=42 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Dtest.vm.opts='-XX:ActiveProcessorCount=2 -XX:CICompilerCount=2 -Xmx1g -Djdk.test.lib.random.seed=42 -Dseed=42 -Dtest.boot.jdk=/workspace/toolchains/jdk27' \\
+        -J-Dtest.tool.vm.opts='-J-XX:ActiveProcessorCount=2 -J-XX:CICompilerCount=2 -J-Xmx1g -J-Djdk.test.lib.random.seed=42 -J-Dseed=42 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/openjdk-jdk27u/build/pr9-fastdebug/images/jdk \\
+        -J-Dcompile.jdk=/workspace/openjdk-jdk27u/build/pr9-fastdebug/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/openjdk-jdk27u/build/pr9-fastdebug/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/openjdk-jdk27u/test/jdk \\
+        -J-Dtest.name=java/nio/file/FileStore/Basic.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=SUMMARY,e=SUMMARY,t=false,m=false] \\
+        -J-Dtest.file=/workspace/openjdk-jdk27u/test/jdk/java/nio/file/FileStore/Basic.java \\
+        -J-Dtest.main.class=Basic \\
+        -J-Dtest.src=/workspace/openjdk-jdk27u/test/jdk/java/nio/file/FileStore \\
+        -J-Dtest.src.path=/workspace/openjdk-jdk27u/test/jdk/java/nio/file/FileStore:/workspace/openjdk-jdk27u/test/jdk/java/nio/file:/workspace/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d \\
+        -J-Dtest.class.path=/workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d:/workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d/java/nio/file:/workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d/test/lib \\
+        -d /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d \\
+        -sourcepath /workspace/openjdk-jdk27u/test/jdk/java/nio/file/FileStore:/workspace/openjdk-jdk27u/test/jdk/java/nio/file:/workspace/openjdk-jdk27u/test/lib \\
+        -classpath /workspace/openjdk-jdk27u/test/jdk/java/nio/file/FileStore:/workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d:/workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d/java/nio/file:/workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d/test/lib:/workspace/toolchains/jtreg83/lib/junit-platform-console-standalone-1.14.2.jar /workspace/openjdk-jdk27u/test/jdk/java/nio/file/FileStore/Basic.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:junit
+----------messages:(7/217)----------
+command: junit Basic
+reason: User specified action: run junit Basic 
+started: Fri Oct 16 04:55:24.243 UTC 2026
+Mode: othervm
+Process id: 909839
+finished: Fri Oct 16 04:55:28.631 UTC 2026
+elapsed time (seconds): 4.388
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(126/11332)----------
+[04:55:27.567] STARTED    Basic::testEnumerateFileStores '[1] /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/java/nio/file/FileStore/Basic/junit-11787476629622188754'
+org.opentest4j.AssertionFailedError: FileStores should be unique ==> expected: <29> but was: <25>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:150)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:563)
+	at Basic.testEnumerateFileStores(Basic.java:180)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:583)
+	at java.base/java.util.Optional.ifPresent(Optional.java:182)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:186)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:214)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:186)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:186)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:214)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Spliterators.java:1024)
+	at java.base/java.util.stream.ReferencePipeline$Head.forEach(ReferencePipeline.java:803)
+	at java.base/java.util.stream.ReferencePipeline$7$1FlatMap.accept(ReferencePipeline.java:293)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:214)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:214)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:214)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Spliterators.java:1024)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:570)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:560)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:153)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:176)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:265)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:632)
+	at java.base/java.util.stream.ReferencePipeline$7$1FlatMap.accept(ReferencePipeline.java:293)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1724)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:570)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:560)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:153)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:176)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:265)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:632)
+	at java.base/java.util.stream.ReferencePipeline$7$1FlatMap.accept(ReferencePipeline.java:293)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:214)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:214)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:214)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1724)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:570)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:560)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:153)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:176)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:265)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:632)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1612)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1612)
+[04:55:28.235] FAILED     Basic::testEnumerateFileStores '[1] /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/java/nio/file/FileStore/Basic/junit-11787476629622188754' [668ms]
+[04:55:28.251] STARTED    Basic::testSpaceAttributes '[1] /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/java/nio/file/FileStore/Basic/junit-14582280858635141428'
+[04:55:28.267] SUCCESSFUL Basic::testSpaceAttributes '[1] /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/java/nio/file/FileStore/Basic/junit-14582280858635141428' [16ms]
+[04:55:28.273] STARTED    Basic::testAttributes '[1] /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/java/nio/file/FileStore/Basic/junit-15394525625972603873'
+[04:55:28.306] SUCCESSFUL Basic::testAttributes '[1] /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/java/nio/file/FileStore/Basic/junit-15394525625972603873' [32ms]
+[04:55:28.341] STARTED    Basic::testEquality '[1] /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/java/nio/file/FileStore/Basic/junit-5110174572930023366'
+[04:55:28.345] SUCCESSFUL Basic::testEquality '[1] /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/java/nio/file/FileStore/Basic/junit-5110174572930023366' [3ms]
+[04:55:28.349] STARTED    Basic::testDirectoryWritable '[1] /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/java/nio/file/FileStore/Basic/junit-4193031324266465460'
+org.opentest4j.AssertionFailedError: expected: <false> but was: <true>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertFalse.failNotFalse(AssertFalse.java:63)
+	at org.junit.jupiter.api.AssertFalse.assertFalse(AssertFalse.java:36)
+	at org.junit.jupiter.api.AssertFalse.assertFalse(AssertFalse.java:31)
+	at org.junit.jupiter.api.Assertions.assertFalse(Assertions.java:231)
+	at Basic.testDirectoryWritable(Basic.java:99)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:583)
+	at java.base/java.util.Optional.ifPresent(Optional.java:182)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:186)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:214)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:186)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:186)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:214)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Spliterators.java:1024)
+	at java.base/java.util.stream.ReferencePipeline$Head.forEach(ReferencePipeline.java:803)
+	at java.base/java.util.stream.ReferencePipeline$7$1FlatMap.accept(ReferencePipeline.java:293)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:214)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:214)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:214)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Spliterators.java:1024)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:570)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:560)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:153)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:176)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:265)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:632)
+	at java.base/java.util.stream.ReferencePipeline$7$1FlatMap.accept(ReferencePipeline.java:293)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1724)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:570)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:560)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:153)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:176)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:265)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:632)
+	at java.base/java.util.stream.ReferencePipeline$7$1FlatMap.accept(ReferencePipeline.java:293)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:214)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:214)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:214)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1724)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:570)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:560)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:153)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:176)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:265)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:632)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1612)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1612)
+[04:55:28.360] FAILED     Basic::testDirectoryWritable '[1] /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/java/nio/file/FileStore/Basic/junit-4193031324266465460' [10ms]
+JavaTest Message: JUnit Platform Failure(s): 2
+
+[ JUnit Containers: found 10, started 9, succeeded 9, failed 0, aborted 0, skipped 1]
+[ JUnit Tests: found 5, started 5, succeeded 3, failed 2, aborted 0, skipped 0]
+
+java.lang.Exception: JUnit test failure
+	at com.sun.javatest.regtest.agent.JUnitRunner.runWithJUnitPlatform(JUnitRunner.java:160)
+	at com.sun.javatest.regtest.agent.JUnitRunner.main(JUnitRunner.java:112)
+	at com.sun.javatest.regtest.agent.JUnitRunner.main(JUnitRunner.java:81)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:583)
+	at com.sun.javatest.regtest.agent.MainMethodHelper.executeModernMainClass(MainMethodHelper.java:56)
+	at com.sun.javatest.regtest.agent.MainWrapper$MainTask.run(MainWrapper.java:140)
+	at java.base/java.lang.Thread.run(Thread.java:1527)
+
+JavaTest Message: Test threw exception: java.lang.Exception: JUnit test failure
+JavaTest Message: shutting down test
+
+STATUS:Failed.`main' threw exception: java.lang.Exception: JUnit test failure
+----------rerun:(33/3368)*----------
+cd /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/java/nio/file/FileStore/Basic && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d:/workspace/openjdk-jdk27u/test/jdk/java/nio/file/FileStore:/workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d/java/nio/file:/workspace/openjdk-jdk27u/test/jdk/java/nio/file:/workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d/test/lib:/workspace/openjdk-jdk27u/test/lib:/workspace/toolchains/jtreg83/lib/junit-platform-console-standalone-1.14.2.jar:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/pr9-fastdebug/images/jdk/bin/java \\
+        -Dtest.vm.opts='-XX:ActiveProcessorCount=2 -XX:CICompilerCount=2 -Xmx1g -Djdk.test.lib.random.seed=42 -Dseed=42 -Dtest.boot.jdk=/workspace/toolchains/jdk27' \\
+        -Dtest.tool.vm.opts='-J-XX:ActiveProcessorCount=2 -J-XX:CICompilerCount=2 -J-Xmx1g -J-Djdk.test.lib.random.seed=42 -J-Dseed=42 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/pr9-fastdebug/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/pr9-fastdebug/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/pr9-fastdebug/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/jdk \\
+        -Dtest.name=java/nio/file/FileStore/Basic.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=SUMMARY,e=SUMMARY,t=false,m=false] \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/jdk/java/nio/file/FileStore/Basic.java \\
+        -Dtest.main.class=Basic \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/jdk/java/nio/file/FileStore \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/jdk/java/nio/file/FileStore:/workspace/openjdk-jdk27u/test/jdk/java/nio/file:/workspace/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d \\
+        -Dtest.class.path=/workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d:/workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d/java/nio/file:/workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/classes/java/nio/file/FileStore/Basic.d/test/lib \\
+        -XX:ActiveProcessorCount=2 \\
+        -XX:CICompilerCount=2 \\
+        -Xmx1g \\
+        -Djdk.test.lib.random.seed=42 \\
+        -Dseed=42 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/pr9-fastdebug/images/test/jdk/jtreg/native \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/pr9-layout-validation/clean-fastdebug-tier2-jdk-io-tools-time-work/java/nio/file/FileStore/Basic.d/junit.0.jta java/nio/file/FileStore/Basic.java Basic
+result: Failed. Execution failed: `main' threw exception: java.lang.Exception: JUnit test failure
+
+
+test result: Failed. Execution failed: `main' threw exception: java.lang.Exception: JUnit test failure

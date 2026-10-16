@@ -1,0 +1,66 @@
+{
+  "source": "e41d7823bf6de77c4bfba52e896bf325221488cb",
+  "status": "qualification-held-native-repair-prepared-only",
+  "checkpoint_commit": "810280403c8c73cf34e39287f52fa78fa63bf242",
+  "checkpoint_path": ".github/qualification/chain-checkpoint/layout-reconciliation-20261016-0455",
+  "archive_sha256": "a22d854488d5d5f5f2b52b13ed3e48dac5ea3209c2ab4c9289393536ec6e87cd",
+  "verified_manifest_entries": 140,
+  "zip_crc_check": "passed",
+  "latest_snapshot": {
+    "utc": "2026-10-16T04:59:11.996265+00:00",
+    "source": "e41d7823bf6de77c4bfba52e896bf325221488cb",
+    "completed_main_groups": {
+      "release": 11,
+      "fastdebug": 7
+    },
+    "active": [
+      {
+        "name": "clean-fastdebug-tier2-jdk-io-tools-time",
+        "failed": 1,
+        "last": "Passed: java/nio/file/WatchService/LotsOfEntries.java",
+        "reported_passed": 368,
+        "executed_passed": 367,
+        "skipped": 1,
+        "error": 37
+      },
+      {
+        "name": "clean-fastdebug-tier2-jdk-net",
+        "failed": 0,
+        "last": "Passed: java/net/httpclient/SplitResponseSSL.java",
+        "reported_passed": 519,
+        "executed_passed": 519,
+        "skipped": 0,
+        "error": 0
+      }
+    ],
+    "active_batches": 2,
+    "completed_batches": 24,
+    "total_observed_counts": {
+      "executed_passed": 9166,
+      "skipped": 26,
+      "failed": 22,
+      "error": 37
+    },
+    "tasks": 238,
+    "zombies": 82,
+    "pid1_zombies": 82,
+    "free_GiB": 2.26,
+    "memory_events": "low 0\nhigh 0\nmax 394982\noom 1\noom_kill 1\noom_group_kill 0\n"
+  },
+  "failure_classification_counts": {
+    "baseline-cross-collector-header-mismatch": 12,
+    "environment-core-pattern-unavailable": 4,
+    "baseline-reproduced-filestore-failure": 2,
+    "unclassified": 38,
+    "baseline-reproduced-native-gss-failure": 2,
+    "environment-external-dns-unavailable": 1
+  },
+  "note": "The immutable archive records its earlier snapshot. Release subsequently finished 11/11 main groups with retained failures. Fastdebug FileStore failure matches the saved baseline cause and is preserved separately. No test/build restart or workflow patch application/dispatch/rerun occurred.",
+  "remaining_plan": [
+    "Finish existing ordinary workers; preserve all original outcomes.",
+    "Diagnose and plan only unmet ordinary setup cases; isolate the 12 GiB ReadXBytes case after other VMs stop. No blind or blanket rerun.",
+    "Review unapplied identity diagnostic repair. A replacement native build requires approval because no JDK images were retained.",
+    "Close local correctness/setup gates before clearing the hold and resuming missing performance phases; retain every slowdown/control signal.",
+    "Native ARM archive correctness/performance and Windows AVX512 remain unqualified. No stopped four-byte-header stress may be rerouted or restarted."
+  ]
+}
