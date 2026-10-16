@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +25,8 @@
 package compiler.intrinsics;
 
 /*
- * @test
- * @requires vm.opt.final.UseVectorizedMismatchIntrinsic == true
+ * @test id=x64
+ * @requires vm.opt.final.UseVectorizedMismatchIntrinsic == true & os.simpleArch == "x64"
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.util
  *
@@ -37,6 +38,17 @@ package compiler.intrinsics;
  *  @run main/othervm -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,*::test*
  *                    -Xbatch -XX:-TieredCompilation
  *                    -XX:+UnlockDiagnosticVMOptions -XX:UseAVX=3 -XX:AVX3Threshold=0
+ *                     compiler.intrinsics.VectorizedMismatchTest
+ */
+
+/*
+ * @test id=default
+ * @requires vm.opt.final.UseVectorizedMismatchIntrinsic == true
+ * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.util
+ *
+ *  @run main/othervm -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,*::test*
+ *                    -Xbatch -XX:-TieredCompilation
  *                     compiler.intrinsics.VectorizedMismatchTest
  */
 

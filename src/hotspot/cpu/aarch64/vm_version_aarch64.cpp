@@ -2,6 +2,7 @@
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2020, Red Hat Inc. All rights reserved.
  * Copyright 2025, 2026 Arm Limited and/or its affiliates.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,9 +327,9 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseAdler32Intrinsics, true);
   }
 
-  if (UseVectorizedMismatchIntrinsic) {
-    warning("UseVectorizedMismatchIntrinsic specified, but not available on this CPU.");
-    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  // The stub needs only the base Advanced SIMD instructions.
+  if (FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, true);
   }
 
   if (supports_aes()) {

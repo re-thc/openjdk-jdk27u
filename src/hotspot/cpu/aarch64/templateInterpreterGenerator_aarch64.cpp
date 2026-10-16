@@ -331,7 +331,113 @@ address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() {
   return entry_point;
 }
 
-address TemplateInterpreterGenerator::generate_vectorizedMismatch_entry() { return nullptr; }
+/**
+ * Method entry for static (non-native) method:
+ *   int jdk.internal.util.ArraysSupport.vectorizedMismatch(Object a, long aOffset,
+ *                                                          Object b, long bOffset,
+ *                                                          int length, int log2ArrayIndexScale)
+ */
+address TemplateInterpreterGenerator::generate_vectorizedMismatch_entry() {
+  assert(UseVectorizedMismatchIntrinsic, "this intrinsic is not supported");
+  address entry = __ pc();
+
+  // rmethod: Method*
+  // r19_sender_sp: senderSP must be preserved for the slow path
+  // esp: args
+  // lr: return address
+
+  // We don't generate a local frame because we jump to stub code and there
+  // is no safepoint on this path. The vanilla entry handles everything else.
+  Label slow_path, checked, bounded;
+
+  // JVMTI events and breakpoints need the bytecodes.
+  if (JvmtiExport::can_post_interpreter_events()) {
+    __ ldrw(rscratch1, Address(rthread, JavaThread::interp_only_mode_offset()));
+    __ cbnzw(rscratch1, slow_path);
+  }
+#if INCLUDE_JVMTI
+  Label no_counters;
+  __ ldr(rscratch1, Address(rmethod, Method::method_counters_offset()));
+  __ cbz(rscratch1, no_counters);
+  __ ldrh(rscratch1, Address(rscratch1, in_bytes(MethodCounters::number_of_breakpoints_offset())));
+  __ cbnzw(rscratch1, slow_path);
+  __ bind(no_counters);
+#endif
+  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
+  if ((UseCompiler || CountCompiledCalls) && ProfileInterpreter) {
+    // A MethodData means the interpreter now profiles the Java body for C2,
+    // which still compiles that body for short native and untyped inputs.
+    __ ldr(rscratch1, Address(rmethod, Method::method_data_offset()));
+    __ cbnz(rscratch1, slow_path);
+  }
+
+  const Register obja   = c_rarg0;
+  const Register objb   = c_rarg1;
+  const Register length = c_rarg2;
+  const Register scale  = c_rarg3;
+  const Register stub   = r10;
+  const Register tmp    = r11;
+
+  // Arguments are reversed on the Java expression stack; each long takes two slots.
+  __ ldrw(scale, Address(esp, 0));             // log2ArrayIndexScale
+  __ ldrw(length, Address(esp, wordSize));     // length
+  // The stub needs a positive length and an element scale from 0 to 3.
+  __ cmpw(scale, 3u);
+  __ br(Assembler::HI, slow_path);
+  __ cmpw(length, 0u);
+  __ br(Assembler::LE, slow_path);
+  __ ldr(objb, Address(esp, 4 * wordSize));    // Object b
+  __ ldr(obja, Address(esp, 7 * wordSize));    // Object a
+  // Compiled code bounds off-heap leaf calls to 64 KiB. Longer native ranges
+  // keep the Java loop and its safepoint polls.
+  __ cbz(obja, bounded);
+  __ cbnz(objb, checked);
+  __ bind(bounded);
+  __ lslv(tmp, length, scale);  // byte length; at most 2^34 for an int length and scale 3
+  __ mov(rscratch1, 64 * K);
+  __ cmp(tmp, rscratch1);
+  __ br(Assembler::HI, slow_path);
+
+  __ bind(checked);
+  // The stub is generated after the interpreter, so check its entry when called.
+  __ lea(stub, ExternalAddress((address) StubRoutines::vectorizedMismatch_addr()));
+  __ ldr(stub, Address(stub));
+  __ cbz(stub, slow_path);
+
+  // Count the invocation as the vanilla entry does, so compilation policy and
+  // inlining heuristics see it. This follows every other check: an invocation
+  // that takes the vanilla entry is counted there and only there, including
+  // when counters are missing or the count would notify the policy.
+  if (UseCompiler || CountCompiledCalls) {
+    const Address invocation_counter(tmp, MethodCounters::invocation_counter_offset() +
+                                          InvocationCounter::counter_offset());
+    __ ldr(tmp, Address(rmethod, Method::method_counters_offset()));
+    __ cbz(tmp, slow_path);
+    __ ldrw(rscratch1, invocation_counter);
+    __ addw(rscratch1, rscratch1, InvocationCounter::count_increment);
+    __ ldrw(rscratch2, Address(tmp, in_bytes(MethodCounters::invoke_mask_offset())));
+    __ tstw(rscratch1, rscratch2);
+    __ br(Assembler::EQ, slow_path);
+    __ strw(rscratch1, invocation_counter);
+  }
+
+  // A null base leaves the offset as an absolute address.
+  __ ldr(tmp, Address(esp, 5 * wordSize));     // aOffset
+  __ add(obja, obja, tmp);
+  __ ldr(tmp, Address(esp, 2 * wordSize));     // bOffset
+  __ add(objb, objb, tmp);
+
+  __ andr(sp, r19_sender_sp, -16); // Restore the caller's SP
+
+  // We are frameless so we can just jump to the stub. It returns the result
+  // in r0 to lr.
+  __ br(stub);
+
+  // generate a vanilla interpreter entry as the slow path
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}
 
 // Abstract method entry
 // Attempt to execute abstract method. Throw exception

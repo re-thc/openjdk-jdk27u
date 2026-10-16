@@ -23,12 +23,18 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @summary Segment and buffer mismatch must recover from faults in truncated mapped memory
- * @requires (os.family == "linux") & (os.simpleArch == "x64") & vm.compiler2.enabled
+ * @requires (os.family == "linux") & (os.simpleArch == "x64" | os.simpleArch == "aarch64") & vm.compiler2.enabled
  * @run main/othervm -Xint -Dtest.warmup=10 TestMappedNativeMismatch
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 TestMappedNativeMismatch
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 TestMappedNativeMismatch
+ */
+
+/*
+ * @test id=avx3
+ * @summary Segment and buffer mismatch must recover from faults in the x86 stub's AVX-512 paths
+ * @requires (os.family == "linux") & (os.simpleArch == "x64") & vm.compiler2.enabled
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000
  *                  -XX:+UnlockDiagnosticVMOptions -XX:AVX3Threshold=0 TestMappedNativeMismatch
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000

@@ -61,7 +61,7 @@
  * @summary Once ArraysSupport.vectorizedMismatch has a MethodData, interpreted calls run
  *          and profile its Java body, which C2 still compiles for some inputs
  * @requires vm.compMode != "Xint" & vm.opt.final.UseVectorizedMismatchIntrinsic == true
- * @requires os.arch == "amd64" | os.arch == "x86_64"
+ * @requires os.arch == "amd64" | os.arch == "x86_64" | os.arch == "aarch64"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc java.base/jdk.internal.util
  * @build jdk.test.whitebox.WhiteBox
@@ -148,7 +148,9 @@ public class InterpretedVectorizedMismatchTest {
     private static void checkPair(Input a, Input b, int scale, int[] lengths) {
         for (int length : lengths) {
             check(a, b, length, scale, -1);
-            int[] positions = length <= 80 ? null : new int[] {0, 1, (8 >> scale) - 1, 8 >> scale,
+            // Every position of ranges of up to 200 elements, which span several
+            // 64-byte blocks; sampled positions of longer ones.
+            int[] positions = length <= 200 ? null : new int[] {0, 1, (8 >> scale) - 1, 8 >> scale,
                     length / 2, length - (8 >> scale) - 1, length - 1};
             int count = positions == null ? length : positions.length;
             for (int p = 0; p < count; p++) {
@@ -211,7 +213,7 @@ public class InterpretedVectorizedMismatchTest {
                     "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInterpreter",
                     "-XX:" + (enabled ? "+" : "-") + "UseVectorizedMismatchIntrinsic", "-version"));
             output.shouldHaveExitValue(0);
-            boolean supported = Platform.isX64() &&
+            boolean supported = (Platform.isX64() || Platform.isAArch64()) &&
                     !output.getOutput().contains("UseVectorizedMismatchIntrinsic specified, but not available");
             Matcher m = size.matcher(output.getStdout());
             int bytes = m.find() ? Integer.parseInt(m.group(1)) : 0;
@@ -279,7 +281,7 @@ public class InterpretedVectorizedMismatchTest {
 
     // The two implementations differ on equal input: the Java body leaves a
     // tail of less than one word to its caller (~3 for 127 bytes), while the
-    // x86 stub compares the tail and returns -1.
+    // stub compares the tail and returns -1.
     private static void checkProfiled() throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
         Method target = target();
