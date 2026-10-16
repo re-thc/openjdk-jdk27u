@@ -1,144 +1,135 @@
-name: 'C1 policy matched rebuild diagnostic'
-
-# Staged replacement ONLY on a separate diagnostic branch. Keeping the existing
-# main.yml path permits dispatch through its existing default-branch registration.
-
-on:
-  push:
-    branches: [diagnose-c1-policy-20261016]
+name: C1 policy existing-image diagnostic
+'on':
   workflow_dispatch:
-
+    inputs:
+      expected_head:
+        description: Approved diagnostic commit SHA
+        required: true
+        type: string
 permissions:
   contents: read
   actions: read
-
-# Separate diagnostic branch only. There are no PR triggers or automatic retries.
 concurrency:
   group: c1-policy-diagnostic-${{ github.ref }}
   cancel-in-progress: false
-
 env:
   LC_ALL: C
   LANG: C
   OPENBLAS_NUM_THREADS: '1'
   OMP_NUM_THREADS: '1'
-
 jobs:
-  build:
-    if: github.ref == 'refs/heads/diagnose-c1-policy-20261016'
-    runs-on: ubuntu-26.04
-    timeout-minutes: 90
-    outputs:
-      archive-sha256: ${{ steps.build.outputs.archive_sha256 }}
-      manifest-sha256: ${{ steps.build.outputs.manifest_sha256 }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          sparse-checkout: |
-            .github
-            make/scripts/c1-policy-diagnostic
-            make/conf
-      - name: 'Checkout immutable source history'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: fc06b7bf0599d23ef644bf5657ddab36e8d96a3d
-          path: native-history
-          fetch-depth: 16 # The two immutable source commits are ten commits apart.
-          persist-credentials: false
-      - name: 'Get checksum-pinned BootJDK using repository infrastructure'
-        id: bootjdk
-        uses: ./.github/actions/get-bootjdk
-        with:
-          platform: linux-x64
-      - name: 'Prepare the repository Linux toolchain'
-        shell: bash
-        run: |
-          set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install --yes gcc-16 g++-16 autoconf zip unzip python3-scipy
-          curl --fail --location \
-            https://github.com/rui314/mold/releases/download/v3.0.0/mold-3.0.0-x86_64-linux.tar.gz \
-            --output "$RUNNER_TEMP/mold.tar.gz"
-          echo "6c90d4a474c7c0409dfb575be03a5345878ac14fdba18de8b40fa58c60121189  $RUNNER_TEMP/mold.tar.gz" | sha256sum --check
-          mkdir "$RUNNER_TEMP/mold"
-          tar --extract --file "$RUNNER_TEMP/mold.tar.gz" --strip-components=1 --directory "$RUNNER_TEMP/mold"
-          echo "$RUNNER_TEMP/mold/bin" >> "$GITHUB_PATH"
-      - name: 'Build original, matched control and patched HotSpot'
-        id: build
-        env:
-          BOOT_JDK: ${{ steps.bootjdk.outputs.path }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          /usr/bin/python3 make/scripts/c1-policy-diagnostic/build.py \
-            --history "$GITHUB_WORKSPACE/native-history" \
-            --boot-jdk "$BOOT_JDK" \
-            --work "$RUNNER_TEMP/c1-build-work" \
-            --output "$RUNNER_TEMP/c1-build-output"
-      - name: 'Preserve build inputs, images and failures'
-        if: ${{ always() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: c1-native-build-${{ github.run_id }}
-          path: ${{ runner.temp }}/c1-build-output
-          if-no-files-found: warn
-          compression-level: 1
-          retention-days: 14
-
   diagnostic:
-    needs: build
     runs-on: ubuntu-26.04
     timeout-minutes: 75
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          sparse-checkout: |
-            .github
-            make/scripts/c1-policy-diagnostic
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: c1-native-build-${{ github.run_id }}
-          path: ${{ runner.temp }}/c1-native-artifact
-      - name: 'Prepare analysis tools'
-        shell: bash
-        run: |
-          set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install --yes python3-scipy binutils
-      - name: 'Unpack the exact build artifact'
-        env:
-          ARCHIVE_SHA: ${{ needs.build.outputs.archive-sha256 }}
-          MANIFEST_SHA: ${{ needs.build.outputs.manifest-sha256 }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          /usr/bin/python3 make/scripts/c1-policy-diagnostic/preflight.py \
-            --archive "$RUNNER_TEMP/c1-native-artifact/native-images.tar" \
-            --archive-sha256 "$ARCHIVE_SHA" --manifest-sha256 "$MANIFEST_SHA" \
-            --destination "$RUNNER_TEMP/c1-native-payload"
-      - name: 'Run the frozen 196-fork / 50-minute protocol'
-        shell: bash
-        run: |
-          set -euo pipefail
-          /usr/bin/python3 make/scripts/c1-policy-diagnostic/run.py \
-            --payload "$RUNNER_TEMP/c1-native-payload" \
-            --output "$RUNNER_TEMP/c1-native-results"
-      - name: 'Analyze without extending runtime or restarting measurements'
-        if: ${{ always() }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ -f "$RUNNER_TEMP/c1-native-results/completion.json" ]]; then
-            /usr/bin/python3 make/scripts/c1-policy-diagnostic/analyze.py "$RUNNER_TEMP/c1-native-results"
-          fi
-      - name: 'Preserve every raw sample, command, diagnostic and HOLD'
-        if: ${{ always() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: c1-native-results-${{ github.run_id }}
-          path: ${{ runner.temp }}/c1-native-results
-          if-no-files-found: warn
-          compression-level: 1
-          retention-days: 14
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: 'false'
+        sparse-checkout: |
+          .github
+          make/scripts/c1-policy-diagnostic
+    - name: Verify approved head and original immutable build artifact
+      env:
+        GH_TOKEN: ${{ github.token }}
+        EXPECTED_HEAD: ${{ inputs.expected_head }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p "$RUNNER_TEMP/c1-native-preflight"
+        /usr/bin/python3 - <<'PYCODE' 2>&1 | tee "$RUNNER_TEMP/c1-native-preflight/source-check.log"
+        import json
+        import os
+        from pathlib import Path
+        import urllib.request
+
+        if os.environ['GITHUB_RUN_ATTEMPT'] != '1':
+            raise ValueError('Workflow reruns are not approved')
+        if os.environ['EXPECTED_HEAD'] != os.environ['GITHUB_SHA']:
+            raise ValueError('Dispatch is not at the approved diagnostic head')
+
+        def get(suffix):
+            request = urllib.request.Request(
+                'https://api.github.com/repos/re-thc/openjdk-jdk27u/' + suffix,
+                headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                         'Accept': 'application/vnd.github+json'})
+            with urllib.request.urlopen(request, timeout=20) as response:
+                return json.load(response)
+
+        run = get('actions/runs/38815696411')
+        artifact = get('actions/artifacts/12014298650')
+        job = get('actions/jobs/116699670046')
+        path = Path(os.environ['RUNNER_TEMP']) / 'c1-native-results-source.json'
+        path.write_text(json.dumps({'run': run, 'artifact': artifact, 'build_job': job}, indent=2))
+        source = 'a107f5c66ad8bd0e40f474eb03d6c8601529b8f8'
+        if (run['id'], run['run_attempt'], run['head_sha'], run['status'], run['conclusion']) != (
+                38815696411, 1, source, 'completed', 'failure'):
+            raise ValueError('Original run identity/state changed')
+        if (job['id'], job['run_id'], job['status'], job['conclusion']) != (
+                116699670046, 38815696411, 'completed', 'success'):
+            raise ValueError('Successful original build job is not the expected one')
+        if (artifact['id'], artifact['name'], artifact['size_in_bytes'], artifact['digest'],
+                artifact['expired'], artifact['workflow_run']['id'],
+                artifact['workflow_run']['head_sha']) != (
+                12014298650, 'c1-native-build-38815696411', 643491662,
+                'sha256:a93c431fe6562a2ad3e60ed3384bb748e4e3a91038bf7b3cf632d09e30bebba3',
+                False, 38815696411, source):
+            raise ValueError('Original immutable artifact binding changed or expired')
+        print('SOURCE_RUN_AND_ARTIFACT_IDENTITY_PASS')
+        PYCODE
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        artifact-ids: '12014298650'
+        run-id: '38815696411'
+        repository: re-thc/openjdk-jdk27u
+        github-token: ${{ github.token }}
+        merge-multiple: 'true'
+        digest-mismatch: error
+        path: ${{ runner.temp }}/c1-native-artifact
+      timeout-minutes: 15
+    - name: Prepare analysis tools
+      shell: bash
+      run: |
+        set -euo pipefail
+        sudo apt-get update
+        sudo apt-get install --yes python3-scipy binutils
+    - name: Unpack the exact build artifact
+      env:
+        ARCHIVE_SHA: f0f67bc86173ad344190bab52355f768ac759837bb886ce87e2ce6afd642de51
+        MANIFEST_SHA: d8b5a411f02c89170a301e43d9ccba15dcba8de7085d2c80d459ab2724e7db82
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p "$RUNNER_TEMP/c1-native-preflight"
+        /usr/bin/python3 make/scripts/c1-policy-diagnostic/preflight.py \
+          --archive "$RUNNER_TEMP/c1-native-artifact/native-images.tar" \
+          --archive-sha256 "$ARCHIVE_SHA" --manifest-sha256 "$MANIFEST_SHA" \
+          --destination "$RUNNER_TEMP/c1-native-payload" \
+          2>&1 | tee "$RUNNER_TEMP/c1-native-preflight/staging.log"
+    - name: Run the frozen 196-fork / 50-minute protocol
+      shell: bash
+      run: |
+        set -euo pipefail
+        /usr/bin/python3 make/scripts/c1-policy-diagnostic/run.py \
+          --payload "$RUNNER_TEMP/c1-native-payload" \
+          --output "$RUNNER_TEMP/c1-native-results"
+    - name: Analyze without extending runtime or restarting measurements
+      if: ${{ always() }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [[ -f "$RUNNER_TEMP/c1-native-results/completion.json" ]]; then
+          /usr/bin/python3 make/scripts/c1-policy-diagnostic/analyze.py "$RUNNER_TEMP/c1-native-results"
+        fi
+    - name: Preserve every raw sample, command, diagnostic and HOLD
+      if: ${{ always() }}
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: c1-native-results-${{ github.run_id }}
+        path: |-
+          ${{ runner.temp }}/c1-native-results
+          ${{ runner.temp }}/c1-native-results-source.json
+          ${{ runner.temp }}/c1-native-preflight
+        if-no-files-found: warn
+        compression-level: '1'
+        retention-days: '14'
+    if: github.ref == 'refs/heads/diagnose-c1-policy-20261016'

@@ -9,6 +9,7 @@ import resource
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 
 from common import BASE, CHANGED, HERE, ORIGINAL, PATCH_SHA, safe_extract, save, sha, snapshot, verify
@@ -157,11 +158,28 @@ def verify_native(payload):
     return native
 
 
+def elf_dependencies(path, resolved, vm):
+    if 'not found' in resolved:
+        raise ValueError('Unresolved ELF dependency: ' + str(path))
+    bindings = re.findall(r'^\s*libjvm\.so\s+=>\s+(\S+)', resolved, re.M)
+    if any(Path(binding).resolve() != vm.resolve() for binding in bindings):
+        raise ValueError('ELF resolves a different image JVM: ' + str(path))
+    libraries = {}
+    for word in resolved.split():
+        if word.startswith('/'):
+            library = Path(word)
+            if not library.is_file():
+                raise ValueError('Missing resolved ELF library: ' + word)
+            libraries[str(library.resolve())] = sha(library)
+    return libraries
+
+
 def check_elf(payload, output, invoke):
     records = []
     libraries = {}
     for arm in ['before', 'current', 'repair']:
         root = Path(payload) / 'images' / arm
+        vm = root / 'lib/server/libjvm.so'
         for path in sorted(root.rglob('*')):
             if not path.is_file() or path.is_symlink():
                 continue
@@ -180,13 +198,29 @@ def check_elf(payload, output, invoke):
             records.append(record)
             save(Path(output) / 'elf-resolution.json', records)
             if 'not found' in resolved:
-                raise ValueError('Unresolved ELF dependency: ' + str(path))
-            for word in resolved.split():
-                if word.startswith('/'):
-                    library = Path(word)
-                    if not library.is_file():
-                        raise ValueError('Missing resolved ELF library: ' + word)
-                    libraries[str(library.resolve())] = sha(library)
+                missing = re.findall(r'^\s*(\S+)\s+=>\s+not found\s*$', resolved, re.M)
+                if (set(missing) != {'libjvm.so'} or not path.is_relative_to(root / 'lib')
+                        or not path.name.endswith('.so') or path == vm):
+                    raise ValueError('Unresolved ELF dependency: ' + str(path))
+                if not vm.is_file() or vm.is_symlink():
+                    raise ValueError('Missing image JVM for ELF context: ' + str(vm))
+                vm_dynamic = invoke(['readelf', '-d', str(vm)], 10)
+                if not re.search(r'\(SONAME\).*\[libjvm\.so\]', vm_dynamic):
+                    raise ValueError('Image JVM has no libjvm.so SONAME: ' + str(vm))
+                # The launcher dlopens this exact VM RTLD_GLOBAL before JNI DSOs.
+                # Model only that dependency for ldd, without changing any JVM env.
+                with tempfile.TemporaryDirectory(prefix='elf-jvm-', dir=output) as context:
+                    (Path(context) / 'libjvm.so').symlink_to(vm.resolve())
+                    record['jvm_context'] = {
+                        'path': str(vm), 'sha256': sha(vm), 'dynamic': vm_dynamic}
+                    resolved = invoke(['env', 'LD_LIBRARY_PATH=' + context, 'ldd', str(path)], 10)
+                    record['jvm_context_ldd'] = resolved
+                    save(Path(output) / 'elf-resolution.json', records)
+                    if not re.search(r'^\s*libjvm\.so\s+=>\s+/', resolved, re.M):
+                        raise ValueError('Image JVM absent from contextual ELF trace: ' + str(path))
+                    libraries.update(elf_dependencies(path, resolved, vm))
+            else:
+                libraries.update(elf_dependencies(path, resolved, vm))
     save(Path(output) / 'resolved-library-hashes.json', libraries)
     save(Path(output) / 'elf-resolution.json', records)
 
