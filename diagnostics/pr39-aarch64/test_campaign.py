@@ -7,6 +7,7 @@
 """Verify fixed sampling and failure gates without launching a benchmark."""
 import json
 from pathlib import Path
+import re
 import tempfile
 import unittest
 
@@ -15,6 +16,14 @@ from prepare import verify_jtreg
 
 
 class CampaignTests(unittest.TestCase):
+    def test_review_publication_has_no_automatic_campaign_trigger(self):
+        workflow = Path(__file__).resolve().parents[2] / ".github/workflows/pr39-aarch64-qualification.yml"
+        text = workflow.read_text()
+        events = text.split("\non:\n", 1)[1].split("\npermissions:", 1)[0]
+        self.assertEqual(re.findall(r"(?m)^  ([a-z_]+):", events), ["workflow_dispatch"])
+        self.assertEqual(text.count("github.event.inputs.reviewed_commit == github.sha"), 2)
+        self.assertEqual(text.count("github.event_name == 'workflow_dispatch'"), 2)
+
     def test_plan_is_fixed_and_unique(self):
         cases = plan()
         self.assertEqual({k: len(v) for k, v in cases.items()}, {"screen": 34, "main": 98})

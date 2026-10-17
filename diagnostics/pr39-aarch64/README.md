@@ -1,6 +1,7 @@
 # PR39 native AArch64 qualification
 
-Status: source package prepared for review; no native campaign has been launched.
+Status: source package for isolated Git review; publication has no automatic CI trigger.
+No native campaign has been launched.
 Production code is unchanged from PR39 head `9fedf7ac9040bf1d46e383201524f1ca7a13a29e`.
 There is no native ARM performance verdict yet.
 
@@ -23,11 +24,23 @@ tier1 will not be repeated by this workflow.
 
 The historical measurement baseline in the description resolves to
 `e206bae32b2a6cc1fa9464ad34d75f2df4b347e9`. It is the common ancestor of the
-PR head and its advertised base `de359971a1972f74866e963fb4f750359aecc145`.
+PR head and the PR API's reported `.base.sha`,
+`de359971a1972f74866e963fb4f750359aecc145`.
 It predates master changes to the interpreter, class loading, ARM C2, and startup.
 It can describe the author's historical x86 experiment, but does not isolate
 the incremental merge result on current master. Those x86 results remain the
 author's separate work.
+
+Two direct reads identify current master as
+`89885a6288e7aaabd01678a704a586272c0f96e3`: `git ls-remote origin refs/heads/master`
+and `GET /repos/re-thc/openjdk-jdk27u/git/ref/heads/master`. The pull-request
+endpoint separately reports `.base.ref=master` with `.base.sha=de359971a19`.
+The campaign follows the actual Git ref and the synthetic merge's parents;
+it does not treat the differing PR metadata value as the current branch tip.
+`89885a6288e` has immediate parent `de359971a1972f74866e963fb4f750359aecc145`
+and changes only `src/hotspot/cpu/x86/vm_version_x86.cpp` (AMD Zen3+ spilling).
+Using `89885a6288e` in both the base and merge candidate keeps that update
+matched and isolates PR39's incremental changes. It adds no ARM tuning scope.
 
 This campaign uses a matched pair with the master updates present in both:
 
@@ -36,8 +49,13 @@ This campaign uses a matched pair with the master updates present in both:
 | Base | `89885a6288e7aaabd01678a704a586272c0f96e3` | `d77a085e51da37106c582c017af6151e01e95f42` |
 | Candidate | `d234724f75df8ec94427ba168533a5fc89fae714` | `b4693729ab5276f398ab6068b2377472284df285` |
 
-The candidate is the identified PR merge tree, with parents base `89885a6288e`
-and PR head `9fedf7ac9`. It is deliberately distinguished from the branch head.
+The candidate is the identified PR merge tree. Its exact ordered parents are:
+
+1. `89885a6288e7aaabd01678a704a586272c0f96e3` (current master ref).
+2. `9fedf7ac9040bf1d46e383201524f1ca7a13a29e` (current author head).
+
+Its tree is `b4693729ab5276f398ab6068b2377472284df285`, verified with both Git
+and GitHub's Git-commit API. It is deliberately distinguished from the branch head.
 The workflow fetches these commits and makes normal detached source checkouts;
 it does not import previously built binaries. Existing ARM artifacts were listed
 and are unexpired, but no binary handoff is needed. A read of the ARM build log
@@ -60,12 +78,31 @@ across the builds. Source, configure options, compiler/package versions,
 image file hashes, CPU implementer/part information, OS, runner image version,
 and process affinity are retained. Only Serial, G1, and ZGC are in the profile.
 
-After independent review, publishing this branch **including the new workflow
-file** normally starts the campaign: its only trigger is a push to
-`codex/pr39-aarch64-qualification` changing that workflow. No dispatch permission
-or main-branch workflow installation is assumed. This branch push does not match
-the ordinary sanity workflow's master-only push trigger. Publishing and launching
-are deferred; this package has not been pushed. The workflow refuses rerun attempts.
+Publishing `codex/pr39-aarch64-qualification` starts no campaign. The new
+workflow has only `workflow_dispatch`; there are no push, pull-request,
+schedule or workflow-run triggers. The ordinary sanity workflow pushes only
+on master, and no PR is opened for this review branch. The other workflows
+are reusable `workflow_call` definitions. The author's PR head and description
+are left untouched.
+
+After independent source review and explicit launch authorization, the launch
+action is a single dispatch of the exact reviewed commit:
+
+```sh
+gh workflow run pr39-aarch64-qualification.yml \
+  --repo re-thc/openjdk-jdk27u \
+  --ref codex/pr39-aarch64-qualification \
+  -f reviewed_commit=<exact-reviewed-commit-sha>
+```
+
+This command is documentation, not an action taken during publication. Both
+jobs require the dispatch event, the exact review branch, a `reviewed_commit`
+input matching `github.sha`, and attempt 1. A changed branch tip or a rerun
+cannot execute the approved campaign. Source pins are checked again by the driver.
+Dispatch access and GitHub's availability of this branch-only workflow are not
+assumed. If GitHub does not expose this dispatch, report that launch blocker;
+do not launch a generic sanity workflow, install this on master, add a push
+trigger, or start an alternative campaign automatically.
 
 The complete reservation is at most **225 runner-minutes**: JTReg preparation
 15 minutes plus one native job 210 minutes, including dependency preparation,
