@@ -10,18 +10,20 @@ production revision explicitly. It is source-only, leaves execution on hold,
 and supplies no new budget or deadline. Existing evidence and gates remain
 unchanged.
 
-The next proposed action is the
-[bounded mechanism/code-quality check](MECHANISM-VALIDATION.md), with its
-[fixed command manifest](MECHANISM-VALIDATION-PLAN.json). It excludes timing and
-requires a healthy admitted host plus separate execution release. Neither this
-plan nor the historical runner launches it automatically.
+The next proposed action has a separate executable
+[bounded mechanism/code-quality runner](MECHANISM-VALIDATION.md), a
+[fixed scope and job registry](MECHANISM-VALIDATION-PLAN.json), and a
+[complete source inventory](MECHANISM-SOURCE-MANIFEST.json). It excludes timing,
+builds the repaired revision from fresh worktrees, and requires a healthy
+admitted host plus one separately frozen execution receipt. Publishing its source
+does not authorize or launch it.
 
 Publication supplies source and instructions only. **No build, Java compilation,
 test, code capture, timing retry, installation, CI, PR or default change is
-authorized by publishing this branch.** Execute the proposal below only after a
-separate explicit execution approval. The failed attempt remains
-`INVALID_BUILD_BLOCKED`, integration `HOLD`; the performance hypothesis remains
-unresolved. A failed build is neither allocator falsification nor a slowdown.
+authorized by publishing this branch.** Use only the new entry point above for a
+future approved mechanism check. The rest of this document preserves historical
+75ee82d campaign instructions and expired budgets; its commands are not a route
+to validating b7534f5. The completed measured result remains NO-GO.
 
 ## Identifiable repair and identical comparison treatment
 
