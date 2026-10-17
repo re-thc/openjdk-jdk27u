@@ -60,9 +60,9 @@ def owned_processes():
             processes[pid] = process_info(pid)
         except (FileNotFoundError, ProcessLookupError, PermissionError, ValueError, IndexError):
             continue
-    # A /proc scan is not atomic. Validate each parent identity after its
-    # child's captured record before accepting the ancestry edge: a reused
-    # parent PID must never make an unrelated child look like our descendant.
+    # A /proc scan is not atomic. Reread each child before validating its
+    # parent's owned identity: a stale child record must not acquire a new
+    # owned parent just because its original parent's PID was reused.
     parents = {os.getpid(): process_info(os.getpid())[1]}
     owned = {}
     while True:
@@ -71,8 +71,11 @@ def owned_processes():
             if pid in owned or info[0] not in parents:
                 continue
             try:
-                if process_info(info[0])[1] == parents[info[0]]:
-                    new[pid] = info
+                fresh = process_info(pid)
+                if fresh[:2] != info[:2]:  # unchanged parent and birth
+                    continue
+                if process_info(fresh[0])[1] == parents[fresh[0]]:
+                    new[pid] = fresh
             except (FileNotFoundError, ProcessLookupError, PermissionError,
                     ValueError, IndexError):
                 continue

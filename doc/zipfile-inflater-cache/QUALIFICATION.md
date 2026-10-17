@@ -68,8 +68,9 @@ all work at four hours. It pins that tree to four available CPUs, gives it
 owned temporary/cache directories and disables core dumps. At completion, error,
 interruption or deadline it sends TERM, then KILL after ten seconds, to individual
 owned descendants, including orphaned jobs adopted through Linux subreaping.
-Each ancestry edge is checked against the parent's captured birth identity after
-reading its child, and PID handles verify leaf identities before signalling.
+Each candidate child is reread and must retain its captured birth and parent PID
+before the parent's owned birth identity is revalidated; the fresh child record
+is retained. PID handles verify leaf identities before signalling.
 This avoids killing reused/unrelated PIDs. Cleanup
 and the final disk check share at most thirty seconds of postflight grace beyond
 the work deadline. No broad pkill or machine-wide cleanup is used; logs and
@@ -93,6 +94,12 @@ configuration/build/correctness sublimits are 10/90/30 minutes. The existing
 30-minute timing deadline and per-process limits below remain inside the outer
 four-hour deadline. Linux /proc, Python 3.9+ pidfds and subreaper support are
 required; their absence stops before the sequence starts, without installation.
+
+Run the offline ownership regression with
+`python3 -E -B doc/zipfile-inflater-cache/test-supervise-linux.py`.
+Its synthetic process records exercise the ownership function without starting
+the supervisor, reading real /proc records or signalling processes; this does
+not qualify the runtime campaign.
 
 Use a quiet host; do not change governors, disable security or flush OS caches.
 Do not overlap other builds/checks with timing. Preserve every outcome; no
