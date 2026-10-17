@@ -281,3 +281,16 @@ publishes a PR or changes defaults. The old approximately nine-percent
 time-gap contribution is a historical hypothesis, not a release claim. This
 publication establishes a supported build prerequisite and reproducible
 continuation instructions; it supplies no new performance evidence.
+
+## Reviewed preparation-only jtreg continuation
+
+The portable [continuation instructions](scripts/jdk27/cold-call/RESUME-PREPARATION.md)
+cover only the exact `installed-jtreg-version` stop before any safety/capture/measurement
+workload, after all three builds and full image inventories completed. The stopped
+parent and its source checkout remain immutable. A separately reviewed local receipt
+binds every original image/configuration/evidence identity without publishing host
+metadata. The only environment correction is explicit `JTREG_JAVA` selection of the
+same installed boot JDK 27. No build repeats, deadline renewal, measurements before
+review release, changed matrix, unreviewed resume or publication of host records is
+authorized. The unchanged original **2026-10-17T14:31:01.403725+00:00** deadline, stage
+budgets, two evidence-bound reviews and numerical/resource gates still apply.
