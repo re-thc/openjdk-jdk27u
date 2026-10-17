@@ -6,6 +6,12 @@ retain Java fallback when the library is unavailable or the input is ineligible.
 Encoding requires empty delimiter/prefix/suffix. Decoding additionally requires
 an original String argument with Latin1 storage. Binary-byte cutoffs are 1,024
 for encode and 128 for decode. `-Djdk.hexFormat.useNative=false` disables loading.
+These cutoffs are provisional Linux x64 choices. The published source review is
+a milestone; full integration qualification remains incomplete. See
+[QUALIFICATION.md](QUALIFICATION.md) for the exact evidence reconciliation and
+one bounded build/correctness/startup/workload decision batch. The new harness
+accounting guard and protected/first-use workload sources are uncompiled and
+unrun as of 2026-10-17; no new outcome is claimed for them.
 
 Loading is guarded until VM bootstrap completes. JNI uses bounded region copies
 into separate scratch buffers, without pinning arrays or retaining heap
@@ -91,6 +97,9 @@ Run sequentially without concurrent builds/tests. The harness asserts native
 availability, escapes results, rotates inputs, alternates sample order and
 records Java allocation. Calls include allocation, copies, transition, String
 construction and range handling; first-use loading is outside steady state.
+Allocation accounting must be supported and enabled; otherwise the harness
+fails instead of reporting an unavailable measurement as zero. The same harness
+can run on the baseline image, where the optional helper class is absent.
 
 ```sh
 export JAVA_OPTS='-Xms512m -Xmx512m -XX:+UseG1GC -XX:ActiveProcessorCount=2 -Dhexsimd.expectNative=true'
@@ -111,7 +120,10 @@ jmod/jlink packaging, the collector/compact-string matrix, disabling, genuine
 library absence, native boundary tests and public HexFormat jtreg tests.
 
 Linux AArch64, macOS ARM64 and Windows x64 require actual native build/run
-qualification. Rust/Cargo 1.85 minimum-version execution also remains a gate.
+correctness qualification through the separately approved normal CI stage.
+They are not additional performance-host prerequisites for the available-host
+benefit decision. Rust/Cargo 1.85 execution remains an untested minimum-version
+claim, which does not block measuring the installed compatible toolchain.
 The target mappings and platform source paths have been reviewed; runtime and
 performance qualification on those targets remains outstanding.
 
@@ -129,8 +141,10 @@ and both packaged images' `lib/modules` SHA-256 remains
 The image without the library omits its native files. The repair's simulated
 Windows path fixtures do not change the outstanding native platform gates.
 
-On each target, check out the exact review commit and run the commands above
-with its installed native toolchain. Expected Rust hosts are
+For later supported-platform correctness, check out the exact review commit and
+run the build/correctness commands with its normal installed CI toolchain.
+Architecture-specific performance is a separate measurement and claim.
+Expected Rust hosts are
 `x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`,
 `aarch64-apple-darwin` and `x86_64-pc-windows-msvc`, respectively. Use the
 repository's normal MSYS/MSVC environment on Windows. Cross builds and other
