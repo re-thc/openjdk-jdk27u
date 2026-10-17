@@ -30,6 +30,7 @@ import jdk.internal.ValueBased;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.HexDigits;
+import jdk.internal.util.HexFormatSupport;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -435,6 +436,10 @@ public final class HexFormat {
         if (delimiter.isEmpty()) {
             // Allocate the byte array and fill in the hex pairs for each byte
             rep = new byte[checkMaxArraySize(length * 2L)];
+            if (length >= HexFormatSupport.ENCODE_MIN &&
+                    HexFormatSupport.encode(bytes, fromIndex, length, rep, ucase)) {
+                return jla.uncheckedNewStringWithLatin1Bytes(rep);
+            }
             for (int i = 0; i < length; i++) {
                 short pair = HexDigits.digitPair(bytes[fromIndex + i], ucase);
                 int pos = i * 2;
@@ -518,6 +523,7 @@ public final class HexFormat {
         Objects.requireNonNull(string, "string");
         Objects.checkFromToIndex(fromIndex, toIndex, string.length());
 
+        boolean nativeString = string instanceof String;
         if (fromIndex != 0 || toIndex != string.length()) {
             string = string.subSequence(fromIndex, toIndex);
         }
@@ -525,7 +531,7 @@ public final class HexFormat {
         if (string.isEmpty())
             return EMPTY_BYTES;
         if (delimiter.isEmpty() && prefix.isEmpty() && suffix.isEmpty())
-            return parseNoDelimiter(string);
+            return parseNoDelimiter(string, nativeString);
 
         // avoid overflow for max length prefix or suffix
         long valueChars = prefix.length() + 2L + suffix.length();
@@ -813,12 +819,18 @@ public final class HexFormat {
      * @throws IllegalArgumentException if the string length is not valid or
      *          the string contains non-hexadecimal characters
      */
-    private static byte[] parseNoDelimiter(CharSequence string) {
+    private static byte[] parseNoDelimiter(CharSequence string, boolean nativeString) {
         if ((string.length() & 1) != 0)
             throw new IllegalArgumentException("string length not even: " +
                     string.length());
 
         byte[] bytes = new byte[string.length() / 2];
+        if (nativeString && bytes.length >= HexFormatSupport.DECODE_MIN &&
+                HexFormatSupport.decode((String) string, bytes)) {
+            return bytes;
+        }
+        // Native validation failure replays the Java parser into the same private
+        // array, preserving exact diagnostics without exposing partial output.
         for (int i = 0; i < bytes.length; i++) {
             bytes[i] = (byte) fromHexDigits(string, i * 2);
         }

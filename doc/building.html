@@ -86,6 +86,8 @@ id="toc-external-library-requirements">External Library Requirements</a>
 <li><a href="#x11" id="toc-x11">X11</a></li>
 <li><a href="#alsa" id="toc-alsa">ALSA</a></li>
 <li><a href="#libffi" id="toc-libffi">libffi</a></li>
+<li><a href="#optional-hexformat-simd-library"
+id="toc-optional-hexformat-simd-library">Optional HexFormat SIMD library</a></li>
 </ul></li>
 <li><a href="#build-tools-requirements"
 id="toc-build-tools-requirements">Build Tools Requirements</a>
@@ -845,6 +847,91 @@ version of Hotspot.</p>
 </ul>
 <p>Use <code>--with-libffi=&lt;path&gt;</code> if <code>configure</code>
 does not properly locate your libffi files.</p>
+<h3 id="optional-hexformat-simd-library">Optional HexFormat SIMD
+library</h3>
+<p>The optional <code>--enable-hex-simd</code> configuration builds a
+private JNI library backed by <a
+href="https://github.com/Nugine/simd">hex-simd</a>. It is disabled by
+default; ordinary JDK builds do not require Rust or Cargo. Java retains
+its existing implementation if this library is absent or the operation
+is ineligible.</p>
+<p>Enabled builds require installed Rust/Cargo 1.85 or later, with a
+Rust host matching one of these native JDK targets:</p>
+<table>
+<thead>
+<tr class="header">
+<th>JDK target</th>
+<th>Rust target</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Linux x64</td>
+<td><code>x86_64-unknown-linux-gnu</code></td>
+</tr>
+<tr class="even">
+<td>Linux AArch64</td>
+<td><code>aarch64-unknown-linux-gnu</code></td>
+</tr>
+<tr class="odd">
+<td>macOS AArch64</td>
+<td><code>aarch64-apple-darwin</code></td>
+</tr>
+<tr class="even">
+<td>Windows x64 (Microsoft toolchain)</td>
+<td><code>x86_64-pc-windows-msvc</code></td>
+</tr>
+</tbody>
+</table>
+<p>Cross builds and other targets are currently rejected when the option
+is explicitly enabled. These are build targets, not a claim of runtime
+or performance qualification on every platform. Use the normal platform
+JDK prerequisites and the corresponding native Rust toolchain. In
+particular, Windows builds require native Windows Cargo and Rust,
+alongside the normal JDK Unix shell environment and Visual Studio
+tools.</p>
+<p>The checked-in manifest pins <code>Nugine/simd</code> revision
+<code>dff9585c080896a9ebdb8d6dcabce17bd69a0874</code>;
+<code>Cargo.lock</code> pins <code>outref</code> 0.5.1 and its registry
+checksum. No UUID dependency is included. Populate Cargo’s normal
+dependency cache explicitly, then configure and build as usual:</p>
+<pre><code>cargo fetch --locked --manifest-path src/java.base/share/native/libhexsimd/rust/Cargo.toml
+bash configure --enable-hex-simd [other normal platform configure options]
+make images</code></pre>
+<p>The make build uses Cargo <code>--frozen</code>, a separate output
+directory under <code>support/native/java.base/hexsimd-rust</code>, and
+two Cargo jobs. It cannot update the lockfile or fetch dependencies. To
+build without any network access, prepare the same Cargo cache first and
+run these commands offline. <code>CARGO</code> and <code>RUSTC</code>
+can be supplied to configure using the normal tool overrides.
+<code>RUSTC</code> must name a single executable without arguments; use a
+compiler wrapper executable if additional options are needed. Cargo receives
+that executable's native path, while configure retains its normal command
+wrapper for probes. Rust produces a position-independent static archive; the configured JDK C
+toolchain builds and links the JNI library, using the system
+dependencies reported by that Rust compiler. Rust panics abort and
+cannot unwind across the C interface.</p>
+<p>The linked Rust standard library’s copyright and license files must
+be available for redistribution. Configure locates them in the Rust
+sysroot’s <code>share/doc/rust</code>; use
+<code>--with-rust-runtime-notices=&lt;directory&gt;</code> if the
+matching compiler release’s files are elsewhere. The normal java.base
+legal-notice copy phase includes these files and the pinned
+dependencies’ MIT notices in jmods and images. Disabled builds omit the
+optional library’s notices.</p>
+<p>The Rust boundary tests can be run independently using the same
+frozen cache:</p>
+<pre><code>cargo test --frozen --release --jobs 2 \
+    --manifest-path src/java.base/share/native/libhexsimd/rust/Cargo.toml \
+    --target-dir build/hex-simd-rust-test</code></pre>
+<p>The normal <code>test/jdk/java/util/HexFormat</code> jtreg suite includes
+bulk validation, JNI chunk boundaries and both compact-string modes. With an
+enabled image, pass <code>-vmoption:-Dhexsimd.expectNative=true</code> to require
+library availability; without that assertion the same tests also exercise
+fallback-only builds. The native decoder route is checked separately from
+availability. The build path fixtures can be run with
+<code>python3 test/make/hex-simd/TestRustPaths.py</code>; their simulated Windows
+conversion is not native Windows qualification.</p>
 <h2 id="build-tools-requirements">Build Tools Requirements</h2>
 <h3 id="autoconf">Autoconf</h3>
 <p>The JDK build requires <a
