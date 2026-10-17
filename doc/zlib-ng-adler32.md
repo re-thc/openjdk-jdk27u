@@ -1,0 +1,54 @@
+# Adler32 call selection
+
+Adler32 uses the same zlib-ng backend through three distinct call paths:
+
+- A C1 intrinsic emits a native leaf call inside the compiled method.
+- A default native invocation can pass through the c2i adapter to the interpreter
+  Adler32 entry, which calls the `ZIP_Adler32` leaf.
+- With `-XX:-UseAdler32Intrinsics`, the native invocation uses the JNI function.
+
+Apple AArch64 C1 declines direct-buffer Adler32 intrinsification at all lengths.
+With Adler intrinsics enabled, its default path uses the interpreter entry.
+Disabling `UseZipIntrinsics` does not select an Adler32 call path.
+
+A compiler log that reports a native-method decline does not establish the
+machine-level entry address. Comparisons must distinguish the C1 leaf,
+interpreter-entry and JNI paths rather than treating them as equivalent.
+
+## Regression coverage
+
+The tests in `test/hotspot/jtreg/compiler/intrinsics/zip/` cover:
+
+- `TestC1DirectAdler32`: literal and volatile lengths, including 4095, 4096 and
+  4097 bytes and smaller boundaries; offsets, seeds, incremental checksums and
+  floating-point values retained across method-handle calls.
+- `TestZlibNGAdler32`: public heap and direct-buffer updates, read-only buffers,
+  positions and limits, nonzero seeds, boundary sizes and concurrent GC.
+- `TestC1DirectAdler32CallShape`: a public direct-buffer update in the C1
+  compilation holding floating-point values. Its Apple-specific configuration
+  forces wrapper inlining with `C1MaxInlineSize=300` and `C1InlineStackLimit=100`.
+  It checks the compilation log for a direct `invokestatic` declined as a native
+  method and rejects intrinsified, outlined or method-handle call shapes. Parser
+  fixtures run independently on all platforms.
+
+The call-shape configuration is separate from the default-policy correctness
+controls. A level-1 compilation assertion alone does not establish target
+inlining. Compilation-log checks also do not prove a particular FP register,
+spill sequence or machine-level native entry; those require code and relocation
+inspection. Correctness tests do not measure performance.
+
+## Running the tests
+
+Build the JDK with jtreg configured, then set `JDK_CONF` to the build configuration
+name and run from the repository root:
+
+```sh
+make CONF="$JDK_CONF" test \
+  TEST="hotspot_jtreg:compiler/intrinsics/zip/TestC1DirectAdler32.java \
+hotspot_jtreg:compiler/intrinsics/zip/TestC1DirectAdler32CallShape.java \
+hotspot_jtreg:compiler/intrinsics/zip/TestZlibNGAdler32.java"
+```
+
+Run against release and fastdebug configurations as needed. The Apple call-shape
+case requires native macOS AArch64 with C1 enabled; its parser tests are portable.
+The test declarations include Adler-enabled and disabled checked-JNI cases.
