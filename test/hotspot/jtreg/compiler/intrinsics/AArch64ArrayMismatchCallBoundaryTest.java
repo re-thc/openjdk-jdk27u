@@ -29,7 +29,7 @@
  * @run main/othervm -Xint compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest semantics
  * @run main/othervm -XX:TieredStopAtLevel=1 compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest semantics
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 -XX:CompileCommand=dontinline,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::*Store compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest semantics
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 -XX:CompileCommand=dontinline,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::*Store -XX:-UseVectorizedMismatchIntrinsic compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest semantics
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 -XX:CompileCommand=dontinline,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::*Store -XX:+UnlockDiagnosticVMOptions -XX:-UseVectorizedMismatchIntrinsic compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest semantics
  */
 
 /*
