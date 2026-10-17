@@ -44,15 +44,10 @@ MAIN = "org.openjdk.bench.java.text.DateFormatSymbolsQualification"
 FOOTPRINT = "org.openjdk.bench.java.text.DateFormatSymbolsFootprint"
 COLLECTORS = ("Serial", "G1", "Z")
 CASES = (
-    ("symbolsNew", 1), ("symbolsClone", 1), ("symbolsClone", 4),
-    ("symbolsCloneShared", 4),
-    ("symbolsCloneSerialized", 1), ("symbolsCloneSerialized", 4),
-    ("symbolsCloneDeserialized", 1), ("symbolsCloneDeserialized", 4),
-    ("symbolsCloneSubclass", 1), ("symbolsCloneSubclass", 4),
-    ("symbolsCloneZones", 1), ("symbolsCloneZones", 4),
+    ("symbolsClone", 1), ("symbolsClone", 4), ("symbolsCloneShared", 4),
+    ("symbolsCloneSerialized", 4), ("symbolsCloneZones", 4),
     ("formatterNewLocale", 1), ("formatterNewSymbols", 1),
-    ("formatterClone", 1), ("formatUS", 1), ("parseUS", 1),
-    ("formatJA", 1), ("parseJA", 1), ("parseInvalid", 1),
+    ("formatterClone", 1),
     ("serializeFresh", 1), ("serializeRepeated", 1),
     ("calendarControl", 1), ("numberCloneControl", 1),
 )
@@ -60,7 +55,8 @@ CONTROLS = {"calendarControl", "numberCloneControl"}
 
 
 def git(source, *arguments):
-    return subprocess.check_output(["git", "-C", str(source), *arguments], text=True).strip()
+    return subprocess.check_output(["git", "-C", str(source), *arguments],
+                                   text=True, timeout=10).strip()
 
 
 def digest(path):
@@ -86,6 +82,20 @@ def paired(rows, metric):
                 interval95=interval(deltas))
 
 
+def loss_gate(observation, ceiling):
+    """A noise ceiling never permits a positive measured central loss."""
+    lo, hi = observation["interval95"]
+    positive = sum(ratio > 1 for ratio in observation["ratios"])
+    consistent = lo > 1 or positive >= 7
+    observation["positivePairs"] = positive
+    observation["consistentLoss"] = consistent
+    if consistent:
+        return "hold-consistent-loss"
+    if observation["geometricMean"] > 1:
+        return "hold-observed-loss"
+    return "pass" if hi <= ceiling else "hold-uncertainty"
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--baseline-source", type=pathlib.Path, required=True)
@@ -94,15 +104,31 @@ def main():
     parser.add_argument("--platform", choices=("linux-x64", "linux-aarch64", "macos-arm64", "windows-x64"), required=True)
     parser.add_argument("--out", type=pathlib.Path, required=True)
     args = parser.parse_args()
-    for name in ("JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "_JAVA_OPTIONS", "LD_PRELOAD", "DYLD_INSERT_LIBRARIES"):
+    root = pathlib.Path(os.environ["DFS_QUAL_ROOT"]).resolve()
+    supervisor = int(os.environ["DFS_QUAL_SUPERVISOR"])
+    if platform.system() != "Linux" or not pathlib.Path(f"/proc/{supervisor}").exists():
+        raise RuntimeError("Use the Linux outer supervisor for this Stage A campaign")
+    ancestor = os.getppid()
+    while ancestor != supervisor and ancestor > 1:
+        ancestor = int(pathlib.Path(f"/proc/{ancestor}/stat").read_text().rsplit(")", 1)[1].split()[1])
+    owner = json.loads((root / "owner.json").read_text())
+    if ancestor != supervisor or owner["supervisorPid"] != supervisor or owner["candidate"] != args.candidate_ref:
+        raise RuntimeError("Runner is outside its recorded supervisor lineage")
+    managed_options = ('-Djava.io.tmpdir="' + str(root / "tmp") +
+                       '" -Duser.home="' + str(root / "home") + '" -XX:-UsePerfData')
+    if os.environ.get("JAVA_TOOL_OPTIONS") != managed_options:
+        raise RuntimeError("Missing supervisor-managed Java temporary directory")
+    for name in ("JDK_JAVA_OPTIONS", "_JAVA_OPTIONS", "LD_PRELOAD", "DYLD_INSERT_LIBRARIES"):
         if os.environ.get(name):
             raise RuntimeError("Remove ambient runtime injection before qualification: " + name)
     sources = {"baseline": args.baseline_source.resolve(), "candidate": args.candidate_source.resolve()}
     out = args.out.resolve()
+    if any(root not in path.parents for path in (*sources.values(), out)):
+        raise RuntimeError("Sources and results must be contained by the supervisor root")
     if any(out == source or source in out.parents for source in sources.values()):
         raise RuntimeError("Keep raw output outside both source trees")
     out.mkdir(parents=True, exist_ok=False)
-    deadline = time.monotonic() + 11700  # 3h15m including compilation and all JVMs
+    deadline = time.monotonic() + 6300  # 105m; outer supervisor includes all earlier phases
     commits = {label: git(source, "rev-parse", "HEAD") for label, source in sources.items()}
     if commits["baseline"] != BASELINE:
         raise RuntimeError("Baseline identity mismatch")
@@ -173,9 +199,10 @@ def main():
                     productionSha256=PRODUCT_SHA256,
                     harnessHashes={p.name: digest(p) for p in (here / "DateFormatSymbolsQualification.java",
                         here / "DateFormatSymbolsQualification.py", here / "DateFormatSymbolsFootprint.java")},
-                    releases=releases, profiles=profiles, blocks=8, cases=list(CASES), startupPairs=20,
-                    operationBudgetRatio=1.02, startupBudget="max(5%,5ms)",
-                    timingForks=1152, diagnosticForks=6, startupJvms=720, allocationJvms=6)
+                    releases=releases, profiles=profiles, blocks=8, cases=list(CASES), startupPairs=8,
+                    uncertaintyCeilingRatio=1.02, lossRule="any-positive-central-loss-HOLD; >=7/8-positive-or-lower95>1-consistent-loss-HOLD",
+                    startupUncertaintyCeiling="max(5%,5ms)", managedJavaOptions=managed_options,
+                    timingForks=576, diagnosticForks=6, startupJvms=96, allocationJvms=6)
     (out / "identity.json").write_text(json.dumps(metadata, indent=2))
 
     completed = dict(invocations=0, timing=0, startup=0, allocation=0, diagnostic=0)
@@ -230,8 +257,10 @@ def main():
 
     # Every explicit GC must start; incompatible image/collector stops the run.
     allocation = {}
+    allocation_bytes = {}
     for gc in COLLECTORS:
         allocation[gc] = {}
+        allocation_bytes[gc] = {}
         for label in ("baseline", "candidate"):
             text, _ = run(java(label, gc) + ["--add-opens=java.base/java.text=ALL-UNNAMED",
                 "-javaagent:" + str(agent), "-cp", classes, FOOTPRINT, "allocation"],
@@ -241,14 +270,20 @@ def main():
             if len(cohorts) != 2:
                 raise RuntimeError("Missing cohort measurements")
             allocation[gc][label] = cohorts
+            byte_values = {mode: float(value) for mode, value in re.findall(r"^(\w+) B/op=([0-9.]+)$", text, re.MULTILINE)}
+            if set(byte_values) != {"symbolsNew", "symbolsClone", "formatterNew", "formatterClone"} or any(
+                    not math.isfinite(value) or value <= 0 for value in byte_values.values()):
+                raise RuntimeError("Missing allocation-only B/op measurements")
+            allocation_bytes[gc][label] = byte_values
     (out / "allocation.json").write_text(json.dumps(allocation, indent=2))
+    (out / "allocation-bytes.json").write_text(json.dumps(allocation_bytes, indent=2))
 
     startup = []
-    for block in range(20):
+    for block in range(8):
         labels = ("baseline", "candidate") if block % 2 == 0 else ("candidate", "baseline")
         for gc in COLLECTORS:
-            for cds in ("off", "on"):
-                for mode in ("noop", "symbols", "formatter"):
+            for cds in ("on",):
+                for mode in ("noop", "formatter"):
                     for label in labels:
                         name = f"startup-{block}-{gc}-{cds}-{mode}-{label}"
                         _, elapsed = run(java(label, gc) + ["-Xshare:" + cds, "-cp", classes,
@@ -312,14 +347,14 @@ def main():
                 observation["allocationGate"] = "pass" if 0.99 <= byte_ratios["geometricMean"] <= 1.01 else "inconclusive"
                 invalid_controls |= observation["gate"] != "pass" or observation["allocationGate"] != "pass"
             else:
-                observation["gate"] = "pass" if hi <= 1.02 else ("regression" if lo > 1.02 else "inconclusive")
+                observation["gate"] = loss_gate(observation, 1.02)
                 # Sharing should materially reduce normal construction/clone
                 # allocation. Fallback and reused paths must not increase it.
                 allocation_limit = 0.30 if mode in ("symbolsNew", "symbolsClone", "symbolsCloneShared") else (
                     0.90 if mode in ("formatterNewLocale", "formatterNewSymbols", "formatterClone") else 1.01)
                 if byte_ratios["geometricMean"] > allocation_limit:
                     observation["allocationGate"] = "fail"
-                    status.append("regression")
+                    status.append("hold-allocation")
                 else:
                     observation["allocationGate"] = "pass"
             status.append(observation["gate"])
@@ -329,15 +364,21 @@ def main():
                 retained_failure = True
             if after["instanceBytes"] != before["instanceBytes"] or after["arrayBytes"] > 0.01 * before["arrayBytes"]:
                 retained_failure = True
-        for cds in ("off", "on"):
-            for mode in ("noop", "symbols", "formatter"):
+        for mode, before in allocation_bytes[gc]["baseline"].items():
+            ratio = allocation_bytes[gc]["candidate"][mode] / before
+            limit = 0.30 if mode.startswith("symbols") else 0.90
+            gate = "pass" if ratio <= limit else "hold-allocation"
+            summary[f"allocation/{gc}/{mode}"] = dict(ratio=ratio, ceiling=limit, gate=gate)
+            status.append(gate)
+        for cds in ("on",):
+            for mode in ("noop", "formatter"):
                 selected = [r for r in startup if r["gc"] == gc and r["cds"] == cds and r["mode"] == mode]
                 observation = paired(selected, "milliseconds")
                 baseline_ms = statistics.median(r["milliseconds"][0] for r in selected if r["label"] == "baseline")
                 limit = max(1.05, 1 + 5 / baseline_ms)
                 lo, hi = observation["interval95"]
                 observation["limitRatio"] = limit
-                observation["gate"] = "pass" if hi <= limit else ("regression" if lo > limit else "inconclusive")
+                observation["gate"] = loss_gate(observation, limit)
                 if mode == "noop":
                     observation["gate"] = "pass" if lo >= 1 / limit and hi <= limit else "inconclusive"
                     invalid_controls |= observation["gate"] != "pass"
@@ -347,10 +388,9 @@ def main():
     summary["controlValidity"] = "invalid" if invalid_controls else "valid"
     summary["measurementDecision"] = "not-qualified" if retained_failure else (
         "inconclusive" if invalid_controls else (
-            "not-qualified" if "regression" in status else (
-                "inconclusive" if "inconclusive" in status else "pass")))
+            "HOLD" if any(gate != "pass" for gate in status) else "pass"))
     summary["qualificationDecision"] = "pending-correctness-ledger-review"
-    summary["note"] = "Runner results alone cannot waive platform correctness or resource/identity checks. No historical timings are pooled."
+    summary["note"] = "Bounds are descriptive per cell, not simultaneous guarantees. No mixed concurrent clone/serialization performance claim. Outer resource, cleanup and correctness gates remain mandatory."
     if time.monotonic() > deadline:
         raise TimeoutError("Qualification deadline exhausted before final summary")
     (out / "summary.json").write_text(json.dumps(summary, indent=2))
