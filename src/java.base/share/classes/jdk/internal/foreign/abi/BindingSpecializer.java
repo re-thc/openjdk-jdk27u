@@ -80,6 +80,7 @@ import static java.lang.constant.ConstantDescs.*;
 import static jdk.internal.constant.ConstantUtils.*;
 
 public class BindingSpecializer {
+    private static final String TEMPLATE_SOURCE_ID = DowncallTemplateVersion.ID;
     private static final String DUMP_CLASSES_DIR
             = System.getProperty("jdk.internal.foreign.abi.Specializer.DUMP_CLASSES_DIR");
     private static final boolean PERFORM_VERIFICATION
@@ -171,7 +172,12 @@ public class BindingSpecializer {
         }
         callerMethodType = callerMethodType.insertParameterTypes(0, SegmentAllocator.class);
 
-        byte[] bytes = specializeHelper(leafHandle.type(), callerMethodType, callingSequence, abi);
+        byte[] bytes = DowncallTemplates.lookup(TEMPLATE_SOURCE_ID, CLASSFILE_VERSION,
+                DUMP_CLASSES_DIR == null && !PERFORM_VERIFICATION && SCOPE_DEDUP_DEPTH == 2,
+                abi, callingSequence, leafHandle.type(), callerMethodType);
+        if (bytes == null) {
+            bytes = specializeHelper(leafHandle.type(), callerMethodType, callingSequence, abi);
+        }
 
         try {
             MethodHandles.Lookup definedClassLookup = MethodHandles.lookup()

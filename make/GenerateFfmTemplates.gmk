@@ -1,0 +1,24 @@
+# Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+
+include MakeFileStart.gmk
+
+FFM_TARGET_CONFIG := $(OPENJDK_TARGET_OS)|$(OPENJDK_TARGET_CPU)|$(OPENJDK_TARGET_CPU_ENDIAN)|$(OPENJDK_TARGET_CPU_BITS)|$(VERSION_CLASSFILE_MAJOR)
+
+# Always verify current compiler/build-host JDK and target artifacts. The tool
+# reuses immutable complete versions by content, not shared prerequisite mtimes.
+.PHONY: ffm-template-assets
+ffm-template-assets:
+	$(call LogInfo, Verifying foreign downcall templates)
+	$(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+	    build.tools.foreign.GenerateDowncallTemplates build \
+	    $(TOPDIR) $(JDK_OUTPUTDIR)/modules/java.base \
+	    $(SUPPORT_OUTPUTDIR)/ffm-templates '$(FFM_TARGET_CONFIG)' \
+	    $(BOOT_JDK) $(BUILD_JDK) $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes $(SPEC)
+
+TARGETS += ffm-template-assets
+
+include MakeFileEnd.gmk
