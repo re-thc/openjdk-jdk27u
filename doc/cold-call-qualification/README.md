@@ -10,6 +10,12 @@ production revision explicitly. It is source-only, leaves execution on hold,
 and supplies no new budget or deadline. Existing evidence and gates remain
 unchanged.
 
+The next proposed action is the
+[bounded mechanism/code-quality check](MECHANISM-VALIDATION.md), with its
+[fixed command manifest](MECHANISM-VALIDATION-PLAN.json). It excludes timing and
+requires a healthy admitted host plus separate execution release. Neither this
+plan nor the historical runner launches it automatically.
+
 Publication supplies source and instructions only. **No build, Java compilation,
 test, code capture, timing retry, installation, CI, PR or default change is
 authorized by publishing this branch.** Execute the proposal below only after a

@@ -1,0 +1,760 @@
+{
+  "schema_version": 1,
+  "status": "PROPOSED_NOT_AUTHORIZED",
+  "execution_approved": false,
+  "automatic_launch": false,
+  "production_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+  "control_revision": "01903ba375f94c0ab7f9193d3e36bd30fe663d7e",
+  "codec_revision": "7a6b345d0df3d8571a30f4a9c974dfaa3a10d9b6",
+  "qualification_helpers_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+  "prior_verdict": "NO-GO",
+  "original_allowance_reused": false,
+  "proposed_total_seconds": 7200,
+  "deadline_utc": null,
+  "jobs_parallelism": 4,
+  "processes_sequential": true,
+  "attempts_per_job": 1,
+  "phase_caps_seconds": {
+    "preflight": 300,
+    "builds": 4800,
+    "prepare": 300,
+    "safety": 600,
+    "capture": 300,
+    "review": 840,
+    "cleanup": 60
+  },
+  "build_caps_include_configure": true,
+  "readiness_requirements": {
+    "linux_arch": "x86_64",
+    "native_only": true,
+    "minimum_ram_bytes": 17179869184,
+    "minimum_free_workspace_bytes": 37580963840,
+    "maximum_initial_pid1_zombies": 32,
+    "maximum_additional_pid1_zombies": 64,
+    "minimum_pid_headroom": 4096,
+    "pid_watch_interval_seconds": 5,
+    "gcc_and_gxx": "16.2.0",
+    "boot_jdk": "27",
+    "jtreg": "8.3",
+    "zstd_headers_and_library": "1.5.7",
+    "junit": "installed; resolve and hash existing jar",
+    "installations": false,
+    "privileged_process_management": false,
+    "security_setting_changes": false
+  },
+  "build_reuse": {
+    "allowed_only_after_readiness_pass": true,
+    "retained_evidence_trees_mutable": false,
+    "cross_host_binary_handoff": false,
+    "older_candidate_images_valid_for_new_revision": false,
+    "incremental_cache_only_in_independent_scratch_tree": true,
+    "required_provenance": [
+      "exact current and previous source commits",
+      "clean source status",
+      "release SOURCE and full image inventory",
+      "spec.gmk and configure argv hashes",
+      "compiler/linker/boot-JDK identities and hashes",
+      "full successful images command log",
+      "new libjvm/image hashes",
+      "proof changed allocator objects were rebuilt from the new source"
+    ]
+  },
+  "source_corpus": {
+    "bytes": 764896,
+    "sha256": "dddfad1293504a9bd47b89e491c29e74833e16fc39a4fe752f88091dbc5678b9",
+    "production_java_files": 37,
+    "factory_inputs": 19,
+    "frames": 57,
+    "levels": [
+      1,
+      3,
+      9
+    ],
+    "rounds_per_capture": 32
+  },
+  "expected_safety_selectors": 15,
+  "expected_safety_invocations": 6,
+  "expected_captures": [
+    "capture-release-base",
+    "capture-release-default",
+    "capture-release-off",
+    "capture-release-on",
+    "capture-debug-off",
+    "capture-debug-on"
+  ],
+  "excluded": [
+    "timing ensemble",
+    "CodecProbe",
+    "native throughput probe",
+    "encoder diagnostic",
+    "PMU/JFR/perf sampling",
+    "new corpus or seed",
+    "capture retry",
+    "installation",
+    "CI",
+    "PR or merge",
+    "default flag change"
+  ],
+  "jobs": [
+    {
+      "id": "base-release-checkout",
+      "phase": "preflight",
+      "source_revision": "01903ba375f94c0ab7f9193d3e36bd30fe663d7e",
+      "cwd": "{jdk_repository}",
+      "argv": [
+        "git",
+        "worktree",
+        "add",
+        "--detach",
+        "{base-release_source}",
+        "01903ba375f94c0ab7f9193d3e36bd30fe663d7e"
+      ]
+    },
+    {
+      "id": "base-release-configure",
+      "phase": "builds",
+      "source_revision": "01903ba375f94c0ab7f9193d3e36bd30fe663d7e",
+      "cwd": "{base-release_source}",
+      "cap_seconds": 180,
+      "argv": [
+        "bash",
+        "configure",
+        "--with-conf-name=mechanism",
+        "--with-jobs=4",
+        "--with-jvm-variants=server",
+        "--with-debug-level=release",
+        "--with-boot-jdk={boot_jdk}",
+        "--with-jtreg={jtreg}",
+        "--with-toolchain-path={gcc16_bin}",
+        "{identical_frozen_dependency_configure_args...}"
+      ],
+      "build_role": "base-release"
+    },
+    {
+      "id": "base-release-images",
+      "phase": "builds",
+      "source_revision": "01903ba375f94c0ab7f9193d3e36bd30fe663d7e",
+      "cwd": "{base-release_source}",
+      "cap_seconds": 1500,
+      "argv": [
+        "make",
+        "CONF=mechanism",
+        "JOBS=4",
+        "images"
+      ],
+      "build_role": "base-release"
+    },
+    {
+      "id": "candidate-release-checkout",
+      "phase": "preflight",
+      "source_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+      "cwd": "{jdk_repository}",
+      "argv": [
+        "git",
+        "worktree",
+        "add",
+        "--detach",
+        "{candidate-release_source}",
+        "b7534f5ccac7847a22ba7b63a6ea18beb71580e2"
+      ]
+    },
+    {
+      "id": "candidate-release-configure",
+      "phase": "builds",
+      "source_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+      "cwd": "{candidate-release_source}",
+      "cap_seconds": 180,
+      "argv": [
+        "bash",
+        "configure",
+        "--with-conf-name=mechanism",
+        "--with-jobs=4",
+        "--with-jvm-variants=server",
+        "--with-debug-level=release",
+        "--with-boot-jdk={boot_jdk}",
+        "--with-jtreg={jtreg}",
+        "--with-toolchain-path={gcc16_bin}",
+        "{identical_frozen_dependency_configure_args...}"
+      ],
+      "build_role": "candidate-release"
+    },
+    {
+      "id": "candidate-release-images",
+      "phase": "builds",
+      "source_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+      "cwd": "{candidate-release_source}",
+      "cap_seconds": 1500,
+      "argv": [
+        "make",
+        "CONF=mechanism",
+        "JOBS=4",
+        "images"
+      ],
+      "build_role": "candidate-release"
+    },
+    {
+      "id": "candidate-fastdebug-checkout",
+      "phase": "preflight",
+      "source_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+      "cwd": "{jdk_repository}",
+      "argv": [
+        "git",
+        "worktree",
+        "add",
+        "--detach",
+        "{candidate-fastdebug_source}",
+        "b7534f5ccac7847a22ba7b63a6ea18beb71580e2"
+      ]
+    },
+    {
+      "id": "candidate-fastdebug-configure",
+      "phase": "builds",
+      "source_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+      "cwd": "{candidate-fastdebug_source}",
+      "cap_seconds": 180,
+      "argv": [
+        "bash",
+        "configure",
+        "--with-conf-name=mechanism",
+        "--with-jobs=4",
+        "--with-jvm-variants=server",
+        "--with-debug-level=fastdebug",
+        "--with-boot-jdk={boot_jdk}",
+        "--with-jtreg={jtreg}",
+        "--with-toolchain-path={gcc16_bin}",
+        "{identical_frozen_dependency_configure_args...}"
+      ],
+      "build_role": "candidate-fastdebug"
+    },
+    {
+      "id": "candidate-fastdebug-images",
+      "phase": "builds",
+      "source_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+      "cwd": "{candidate-fastdebug_source}",
+      "cap_seconds": 1800,
+      "argv": [
+        "make",
+        "CONF=mechanism",
+        "JOBS=4",
+        "images"
+      ],
+      "build_role": "candidate-fastdebug"
+    },
+    {
+      "id": "prepare-57-frames",
+      "phase": "prepare",
+      "cap_seconds": 180,
+      "cwd": "{codec_source}",
+      "argv": [
+        "python3",
+        "{qualification_scripts}/cold-call/qualify_decoder.py",
+        "prepare",
+        "--java-home",
+        "{candidate-release_image}",
+        "--junit",
+        "{junit}",
+        "--source-corpus",
+        "{output}/source.bin",
+        "--output",
+        "{output}/prepared"
+      ]
+    },
+    {
+      "id": "compile-native-policy",
+      "phase": "prepare",
+      "cap_seconds": 120,
+      "cwd": "{candidate-release_source}",
+      "source_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+      "argv": [
+        "{gcc16_bin}/g++",
+        "-std=c++17",
+        "-fPIC",
+        "-shared",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-I{candidate-release_image}/include",
+        "-I{candidate-release_image}/include/linux",
+        "{candidate-release_source}/test/hotspot/jtreg/compiler/regalloc/libColdCallSpillPolicy.cpp",
+        "-o",
+        "{output}/native-test/libColdCallSpillPolicy.so"
+      ]
+    },
+    {
+      "id": "base-release-existing",
+      "phase": "safety",
+      "cap_seconds": 300,
+      "cwd": "{output}",
+      "source_revision": "01903ba375f94c0ab7f9193d3e36bd30fe663d7e",
+      "selected_tests": 2,
+      "argv": [
+        "{jtreg}/bin/jtreg",
+        "-conc:1",
+        "-othervm",
+        "-jdk:{base-release_image}",
+        "-w:{output}/base-release-existing-work",
+        "-r:{output}/base-release-existing-report",
+        "{base-release_source}/test/hotspot/jtreg/compiler/regalloc/TestC2IntPressure.java",
+        "{base-release_source}/test/hotspot/jtreg/compiler/exceptions/TestSpilling.java"
+      ]
+    },
+    {
+      "id": "candidate-release-focused",
+      "phase": "safety",
+      "cap_seconds": 300,
+      "cwd": "{output}",
+      "source_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+      "selected_tests": 3,
+      "argv": [
+        "{jtreg}/bin/jtreg",
+        "-conc:1",
+        "-othervm",
+        "-jdk:{candidate-release_image}",
+        "-w:{output}/candidate-release-focused-work",
+        "-r:{output}/candidate-release-focused-report",
+        "-nativepath:{output}/native-test",
+        "{candidate-release_source}/test/hotspot/jtreg/compiler/regalloc/TestColdCallSpillPolicy.java",
+        "{candidate-release_source}/test/hotspot/jtreg/compiler/regalloc/TestColdCallSpillPlacement.java",
+        "{candidate-release_source}/test/hotspot/jtreg/compiler/regalloc/TestColdCallDerivedPointers.java"
+      ]
+    },
+    {
+      "id": "candidate-release-existing",
+      "phase": "safety",
+      "cap_seconds": 300,
+      "cwd": "{output}",
+      "source_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+      "selected_tests": 2,
+      "argv": [
+        "{jtreg}/bin/jtreg",
+        "-conc:1",
+        "-othervm",
+        "-jdk:{candidate-release_image}",
+        "-w:{output}/candidate-release-existing-work",
+        "-r:{output}/candidate-release-existing-report",
+        "-vmoption:-XX:+UnlockDiagnosticVMOptions",
+        "-vmoption:-XX:+UseColdCallSpillDeferral",
+        "{candidate-release_source}/test/hotspot/jtreg/compiler/regalloc/TestC2IntPressure.java",
+        "{candidate-release_source}/test/hotspot/jtreg/compiler/exceptions/TestSpilling.java"
+      ]
+    },
+    {
+      "id": "candidate-fastdebug-focused",
+      "phase": "safety",
+      "cap_seconds": 300,
+      "cwd": "{output}",
+      "source_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+      "selected_tests": 3,
+      "argv": [
+        "{jtreg}/bin/jtreg",
+        "-conc:1",
+        "-othervm",
+        "-jdk:{candidate-fastdebug_image}",
+        "-w:{output}/candidate-fastdebug-focused-work",
+        "-r:{output}/candidate-fastdebug-focused-report",
+        "-nativepath:{output}/native-test",
+        "{candidate-fastdebug_source}/test/hotspot/jtreg/compiler/regalloc/TestColdCallSpillPolicy.java",
+        "{candidate-fastdebug_source}/test/hotspot/jtreg/compiler/regalloc/TestColdCallSpillPlacement.java",
+        "{candidate-fastdebug_source}/test/hotspot/jtreg/compiler/regalloc/TestColdCallDerivedPointers.java"
+      ]
+    },
+    {
+      "id": "candidate-fastdebug-existing",
+      "phase": "safety",
+      "cap_seconds": 300,
+      "cwd": "{output}",
+      "source_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+      "selected_tests": 3,
+      "argv": [
+        "{jtreg}/bin/jtreg",
+        "-conc:1",
+        "-othervm",
+        "-jdk:{candidate-fastdebug_image}",
+        "-w:{output}/candidate-fastdebug-existing-work",
+        "-r:{output}/candidate-fastdebug-existing-report",
+        "-vmoption:-XX:+UnlockDiagnosticVMOptions",
+        "-vmoption:-XX:+UseColdCallSpillDeferral",
+        "{candidate-fastdebug_source}/test/hotspot/jtreg/compiler/regalloc/TestC2IntPressure.java",
+        "{candidate-fastdebug_source}/test/hotspot/jtreg/compiler/exceptions/TestSpilling.java",
+        "{candidate-fastdebug_source}/test/hotspot/jtreg/compiler/regalloc/TestVerifyRegisterAllocator.java"
+      ]
+    },
+    {
+      "id": "candidate-fastdebug-handshake",
+      "phase": "safety",
+      "cap_seconds": 300,
+      "cwd": "{output}",
+      "source_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+      "selected_tests": 2,
+      "argv": [
+        "{jtreg}/bin/jtreg",
+        "-conc:1",
+        "-othervm",
+        "-jdk:{candidate-fastdebug_image}",
+        "-w:{output}/candidate-fastdebug-handshake-work",
+        "-r:{output}/candidate-fastdebug-handshake-report",
+        "{candidate-fastdebug_source}/test/hotspot/jtreg/runtime/handshake/AsyncHandshakeWalkStackTest.java",
+        "{candidate-fastdebug_source}/test/hotspot/jtreg/runtime/Unsafe/InternalErrorTest.java"
+      ]
+    },
+    {
+      "id": "capture-release-base",
+      "phase": "capture",
+      "cap_seconds": 45,
+      "cwd": "{codec_source}",
+      "source_revision": "01903ba375f94c0ab7f9193d3e36bd30fe663d7e",
+      "directive": [
+        {
+          "match": "dev.jzstd.internal.BlockDecoder::decodeSequencesRolling",
+          "PrintAssembly": true
+        }
+      ],
+      "argv": [
+        "{base-release_image}/bin/java",
+        "--add-modules",
+        "jdk.incubator.vector",
+        "-Xshare:off",
+        "-Xms512m",
+        "-Xmx512m",
+        "-XX:+UseG1GC",
+        "-Xbatch",
+        "-XX:-TieredCompilation",
+        "-XX:-UseOnStackReplacement",
+        "-XX:CompileThresholdScaling=0.1",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+LogCompilation",
+        "-XX:LogFile={output}/capture-release-base.xml",
+        "-XX:CompilerDirectivesFile={output}/capture-release-base-directives.json",
+        "-cp",
+        "{output}/prepared/classes",
+        "dev.jzstd.DecoderQualification",
+        "check",
+        "{output}/prepared/corpora",
+        "32"
+      ]
+    },
+    {
+      "id": "capture-release-base-objdump",
+      "phase": "capture",
+      "cap_seconds": 5,
+      "cwd": "{output}",
+      "argv": [
+        "python3",
+        "{qualification_scripts}/cold-call/decode_capture.py",
+        "{output}/capture-release-base.log",
+        "{output}/capture-release-base.asm",
+        "--target",
+        "BlockDecoder::decodeSequencesRolling"
+      ]
+    },
+    {
+      "id": "capture-release-default",
+      "phase": "capture",
+      "cap_seconds": 45,
+      "cwd": "{codec_source}",
+      "source_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+      "directive": [
+        {
+          "match": "dev.jzstd.internal.BlockDecoder::decodeSequencesRolling",
+          "PrintAssembly": true
+        }
+      ],
+      "argv": [
+        "{candidate-release_image}/bin/java",
+        "--add-modules",
+        "jdk.incubator.vector",
+        "-Xshare:off",
+        "-Xms512m",
+        "-Xmx512m",
+        "-XX:+UseG1GC",
+        "-Xbatch",
+        "-XX:-TieredCompilation",
+        "-XX:-UseOnStackReplacement",
+        "-XX:CompileThresholdScaling=0.1",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+LogCompilation",
+        "-XX:LogFile={output}/capture-release-default.xml",
+        "-XX:CompilerDirectivesFile={output}/capture-release-default-directives.json",
+        "-cp",
+        "{output}/prepared/classes",
+        "dev.jzstd.DecoderQualification",
+        "check",
+        "{output}/prepared/corpora",
+        "32"
+      ]
+    },
+    {
+      "id": "capture-release-default-objdump",
+      "phase": "capture",
+      "cap_seconds": 5,
+      "cwd": "{output}",
+      "argv": [
+        "python3",
+        "{qualification_scripts}/cold-call/decode_capture.py",
+        "{output}/capture-release-default.log",
+        "{output}/capture-release-default.asm",
+        "--target",
+        "BlockDecoder::decodeSequencesRolling"
+      ]
+    },
+    {
+      "id": "capture-release-off",
+      "phase": "capture",
+      "cap_seconds": 45,
+      "cwd": "{codec_source}",
+      "source_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+      "directive": [
+        {
+          "match": "dev.jzstd.internal.BlockDecoder::decodeSequencesRolling",
+          "PrintAssembly": true
+        }
+      ],
+      "argv": [
+        "{candidate-release_image}/bin/java",
+        "--add-modules",
+        "jdk.incubator.vector",
+        "-Xshare:off",
+        "-Xms512m",
+        "-Xmx512m",
+        "-XX:+UseG1GC",
+        "-Xbatch",
+        "-XX:-TieredCompilation",
+        "-XX:-UseOnStackReplacement",
+        "-XX:CompileThresholdScaling=0.1",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:-UseColdCallSpillDeferral",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+LogCompilation",
+        "-XX:LogFile={output}/capture-release-off.xml",
+        "-XX:CompilerDirectivesFile={output}/capture-release-off-directives.json",
+        "-cp",
+        "{output}/prepared/classes",
+        "dev.jzstd.DecoderQualification",
+        "check",
+        "{output}/prepared/corpora",
+        "32"
+      ]
+    },
+    {
+      "id": "capture-release-off-objdump",
+      "phase": "capture",
+      "cap_seconds": 5,
+      "cwd": "{output}",
+      "argv": [
+        "python3",
+        "{qualification_scripts}/cold-call/decode_capture.py",
+        "{output}/capture-release-off.log",
+        "{output}/capture-release-off.asm",
+        "--target",
+        "BlockDecoder::decodeSequencesRolling"
+      ]
+    },
+    {
+      "id": "capture-release-on",
+      "phase": "capture",
+      "cap_seconds": 45,
+      "cwd": "{codec_source}",
+      "source_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+      "directive": [
+        {
+          "match": "dev.jzstd.internal.BlockDecoder::decodeSequencesRolling",
+          "PrintAssembly": true
+        }
+      ],
+      "argv": [
+        "{candidate-release_image}/bin/java",
+        "--add-modules",
+        "jdk.incubator.vector",
+        "-Xshare:off",
+        "-Xms512m",
+        "-Xmx512m",
+        "-XX:+UseG1GC",
+        "-Xbatch",
+        "-XX:-TieredCompilation",
+        "-XX:-UseOnStackReplacement",
+        "-XX:CompileThresholdScaling=0.1",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+UseColdCallSpillDeferral",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+LogCompilation",
+        "-XX:LogFile={output}/capture-release-on.xml",
+        "-XX:CompilerDirectivesFile={output}/capture-release-on-directives.json",
+        "-cp",
+        "{output}/prepared/classes",
+        "dev.jzstd.DecoderQualification",
+        "check",
+        "{output}/prepared/corpora",
+        "32"
+      ]
+    },
+    {
+      "id": "capture-release-on-objdump",
+      "phase": "capture",
+      "cap_seconds": 5,
+      "cwd": "{output}",
+      "argv": [
+        "python3",
+        "{qualification_scripts}/cold-call/decode_capture.py",
+        "{output}/capture-release-on.log",
+        "{output}/capture-release-on.asm",
+        "--target",
+        "BlockDecoder::decodeSequencesRolling"
+      ]
+    },
+    {
+      "id": "capture-debug-off",
+      "phase": "capture",
+      "cap_seconds": 45,
+      "cwd": "{codec_source}",
+      "source_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+      "directive": [
+        {
+          "match": "dev.jzstd.internal.BlockDecoder::decodeSequencesRolling",
+          "PrintAssembly": true,
+          "c2": {
+            "TraceSpilling": true
+          }
+        }
+      ],
+      "argv": [
+        "{candidate-fastdebug_image}/bin/java",
+        "--add-modules",
+        "jdk.incubator.vector",
+        "-Xshare:off",
+        "-Xms512m",
+        "-Xmx512m",
+        "-XX:+UseG1GC",
+        "-Xbatch",
+        "-XX:-TieredCompilation",
+        "-XX:-UseOnStackReplacement",
+        "-XX:CompileThresholdScaling=0.1",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:-UseColdCallSpillDeferral",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+LogCompilation",
+        "-XX:LogFile={output}/capture-debug-off.xml",
+        "-XX:CompilerDirectivesFile={output}/capture-debug-off-directives.json",
+        "-XX:+VerifyRegisterAllocator",
+        "-cp",
+        "{output}/prepared/classes",
+        "dev.jzstd.DecoderQualification",
+        "check",
+        "{output}/prepared/corpora",
+        "32"
+      ]
+    },
+    {
+      "id": "capture-debug-off-objdump",
+      "phase": "capture",
+      "cap_seconds": 5,
+      "cwd": "{output}",
+      "argv": [
+        "python3",
+        "{qualification_scripts}/cold-call/decode_capture.py",
+        "{output}/capture-debug-off.log",
+        "{output}/capture-debug-off.asm",
+        "--target",
+        "BlockDecoder::decodeSequencesRolling"
+      ]
+    },
+    {
+      "id": "capture-debug-on",
+      "phase": "capture",
+      "cap_seconds": 45,
+      "cwd": "{codec_source}",
+      "source_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+      "directive": [
+        {
+          "match": "dev.jzstd.internal.BlockDecoder::decodeSequencesRolling",
+          "PrintAssembly": true,
+          "c2": {
+            "TraceSpilling": true
+          }
+        }
+      ],
+      "argv": [
+        "{candidate-fastdebug_image}/bin/java",
+        "--add-modules",
+        "jdk.incubator.vector",
+        "-Xshare:off",
+        "-Xms512m",
+        "-Xmx512m",
+        "-XX:+UseG1GC",
+        "-Xbatch",
+        "-XX:-TieredCompilation",
+        "-XX:-UseOnStackReplacement",
+        "-XX:CompileThresholdScaling=0.1",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+UseColdCallSpillDeferral",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+LogCompilation",
+        "-XX:LogFile={output}/capture-debug-on.xml",
+        "-XX:CompilerDirectivesFile={output}/capture-debug-on-directives.json",
+        "-XX:+VerifyRegisterAllocator",
+        "-cp",
+        "{output}/prepared/classes",
+        "dev.jzstd.DecoderQualification",
+        "check",
+        "{output}/prepared/corpora",
+        "32"
+      ]
+    },
+    {
+      "id": "capture-debug-on-objdump",
+      "phase": "capture",
+      "cap_seconds": 5,
+      "cwd": "{output}",
+      "argv": [
+        "python3",
+        "{qualification_scripts}/cold-call/decode_capture.py",
+        "{output}/capture-debug-on.log",
+        "{output}/capture-debug-on.asm",
+        "--target",
+        "BlockDecoder::decodeSequencesRolling"
+      ]
+    }
+  ],
+  "decoder_roots": [
+    {
+      "name": "llEntry",
+      "bci": 360
+    },
+    {
+      "name": "ofEntry",
+      "bci": 373
+    },
+    {
+      "name": "mlEntry",
+      "bci": 386
+    }
+  ],
+  "final_verdicts": [
+    "MECHANISM_PASS",
+    "MECHANISM_NO_GO",
+    "INCONCLUSIVE_INFRA"
+  ],
+  "pass_requires": [
+    "exact-source and image/config/input provenance",
+    "all 15 selectors and their nested activation/correctness assertions pass",
+    "all six final normal entrant C2 captures match XML and retain returning BCI684 call",
+    "all three current decoder roots identified by bytecode BCI and connected actual deferral/Phi activation",
+    "base/default/off relocation-aware code and frame/allocation equivalence",
+    "post-coloring complete all-path ledger accounts for all 19 prior hot stores and every replacement load/store/CISC/XMM/call/edge move",
+    "selected packed hot stores eliminated or moved exclusively to charged cold paths; no compensating hot spills; lower net frequency-weighted transport cost on each common cycle",
+    "no unexplained frame, code-size, instruction-count, failure/retry or safepoint/mask regression",
+    "independent evidence-bound code-quality review completed within the same cap",
+    "owned cleanup completed"
+  ],
+  "pass_is_not_performance_qualification": true,
+  "build_role_caps_seconds": {
+    "base-release": 1500,
+    "candidate-release": 1500,
+    "candidate-fastdebug": 1800
+  },
+  "preparation_actions": [
+    "Create source.bin by concatenating the 37 sorted pinned src/main/java files, each followed by one newline; verify the stated length and SHA256 before frame preparation.",
+    "Copy only the exact bundled qualification source helpers from qualification_helpers_revision into an isolated codec qualification checkout; record source hashes/local source commit and verify pinned production/test factory bytes.",
+    "Create output/native-test and write each listed method-scoped directive JSON before its capture; freeze every resolved path, argv, environment/config and input hash.",
+    "Adopted source/build/input material requires complete verified receipts; unresolved placeholders or uncertain reuse stop before launch."
+  ]
+}
