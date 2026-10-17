@@ -22,7 +22,8 @@
 
 """Print the decoder-only validation plan; --execute runs one assigned stage.
 
-No builds, downloads, encodes, JMH runs or CI are launched by this driver.
+Execution requires a separately authorized, create-once 120-minute campaign.
+No downloads, encodes, JMH runs or CI are launched by this driver.
 See compiler-decoder-int-lowmask.md for image provenance and execution scope.
 This is the separately pinned Git-reference cell, not a claimed reproduction
 of the unbound historical 504.5/1511.9 x86 result.
@@ -56,16 +57,130 @@ PINS = {
         "725dbbbd8beb91307dca54a93a7b719f7756696a79dcf7c0821be8e78ecffd55",
 }
 FLAGS = ["--add-modules", "jdk.incubator.vector", "-XX:+UseSerialGC", "-Xms1g", "-Xmx1g"]
-LIMITS = {"qualify": 1800, "prepare": 120, "diagnose": 300, "time": 180}
+LIMITS = {"init": 30, "build": 4200, "qualify": 1800, "prepare": 120,
+          "diagnose": 300, "review": 600, "time": 180}
+CAMPAIGN_SECONDS = 7200
+CLEANUP_SECONDS = 10
+OWNER = "Harry Chan <38070640+re-thc@users.noreply.github.com>"
+ASSESSMENTS = {
+    "bmi2_applicability": {name + "-flags.log" for name in
+                           ("base", "candidate", "base-debug", "candidate-debug")},
+    "site_291": {"candidate.log", "candidate.xml"},
+    "site_293": {"candidate.log", "candidate.xml"},
+    "release_allocation": {"base.log", "candidate.log"},
+    "wrapping_saturation": {"candidate.log"},
+    "release_copies_spills": {"base.log", "candidate.log"},
+    "release_code_size": {"base.log", "candidate.log", "base.xml", "candidate.xml"},
+    "release_compilation_cost": {"base.xml", "candidate.xml"},
+}
 METHOD = "dev.jzstd.internal.BlockDecoder::decodeSequencesRolling"
+ACTIVE_BUDGET = None
 
 
 def digest(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    result = hashlib.sha256()
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            result.update(chunk)
+    return result.hexdigest()
+
+
+def json_digest(value):
+    return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
+
+
+class Budget:
+    """Linux watchdog covers Python I/O/hashing, Git, subprocesses and cleanup."""
+
+    def __init__(self, seconds):
+        self.end = time.monotonic() + seconds
+
+    def remaining(self, cleanup=False):
+        remaining = self.end - time.monotonic() - (0 if cleanup else CLEANUP_SECONDS)
+        if remaining <= 0:
+            raise TimeoutError("Campaign/stage ceiling reached; stop inconclusive")
+        return remaining
+
+    def arm(self, cleanup=False):
+        signal.setitimer(signal.ITIMER_REAL, self.remaining(cleanup))
+
+    def __enter__(self):
+        global ACTIVE_BUDGET
+        self.previous = ACTIVE_BUDGET
+        ACTIVE_BUDGET = self
+        def expired(signum, frame):
+            raise TimeoutError("Campaign/stage ceiling reached; stop inconclusive")
+        self.handler = signal.signal(signal.SIGALRM, expired)
+        self.arm()
+        return self
+
+    def __exit__(self, *exc):
+        global ACTIVE_BUDGET
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, self.handler)
+        ACTIVE_BUDGET = self.previous
+
+
+def boot_id():
+    return Path("/proc/sys/kernel/random/boot_id").read_text().strip()
+
+
+def init_campaign(args):
+    # The clock starts before filesystem/provenance work, never at the first JVM.
+    start = time.monotonic()
+    campaign = {"version": 1, "cell_id": CELL, "boot_id": boot_id(),
+                "output": str(args.output), "started_monotonic": start,
+                "deadline_monotonic": start + CAMPAIGN_SECONDS,
+                "started_unix": time.time(), "overall_seconds": CAMPAIGN_SECONDS}
+    args.output.mkdir(parents=True, exist_ok=False)
+    path = args.output / "campaign.json"
+    with path.open("x") as target:
+        target.write(json.dumps(campaign, indent=2) + "\n")
+    path.chmod(0o444)
+    print(path)
+
+
+def load_campaign(args, budget):
+    path = args.output / "campaign.json"
+    campaign = json.loads(path.read_text())
+    if (campaign.get("version") != 1 or campaign.get("cell_id") != CELL
+            or campaign.get("boot_id") != boot_id() or campaign.get("output") != str(args.output)
+            or campaign.get("overall_seconds") != CAMPAIGN_SECONDS
+            or campaign["deadline_monotonic"] - campaign["started_monotonic"] != CAMPAIGN_SECONDS
+            or not 0 <= campaign["started_monotonic"] <= time.monotonic()):
+        raise ValueError("Invalid campaign clock, machine or output directory")
+    budget.end = min(budget.end, campaign["deadline_monotonic"])
+    budget.arm()
+    return digest(path)
+
+
+def run_process(command, budget, **kwargs):
+    budget.remaining()
+    process = None
+    try:
+        process = subprocess.Popen(command, start_new_session=True, **kwargs)
+        output, _ = process.communicate(timeout=budget.remaining())
+    except BaseException:
+        if process is None:
+            raise
+        # Reserve cleanup inside BOTH ceilings; never use an unbounded wait.
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        budget.end = min(budget.end, time.monotonic() + CLEANUP_SECONDS)
+        budget.arm(cleanup=True)
+        process.wait(timeout=budget.remaining(cleanup=True))
+        raise
+    return process.returncode, output
 
 
 def git(root, *args):
-    return subprocess.check_output(["git", "-C", str(root), *args], text=True).strip()
+    code, output = run_process(["git", "-C", str(root), *args], ACTIVE_BUDGET,
+                               stdout=subprocess.PIPE, text=True)
+    if code:
+        raise ValueError("Git provenance query failed: " + str(root))
+    return output.strip()
 
 
 def configuration(root, debug=False):
@@ -83,7 +198,10 @@ def commands(args, stage):
     classes = args.output / "classes"
     tail = ["-Dprobe.warmup=2", "-cp", classes, "CodecProbe", "decode", args.corpus, "1", args.frame]
     test = args.jdk_root / "test/hotspot/jtreg/compiler/intrinsics/bmi/TestBzhiIntMask.java"
-    if stage == "qualify":
+    if stage == "build":
+        yield "build-images", ["bash", args.jdk_root / "doc/compiler-decoder-int-lowmask-build.sh",
+                               args.base_root, args.jdk_root]
+    elif stage == "qualify":
         cases = [("candidate-debug", test, False),
                  ("candidate-debug-suite", test.parent, False),
                  ("candidate", test, False), ("base-debug", test, True)]
@@ -110,7 +228,7 @@ def commands(args, stage):
                 extra.append("-XX:CompileCommand=PrintIdealPhase," + METHOD
                              + ",BEFORE_MATCHING,MATCHING,REGISTER_ALLOCATION,FINAL_CODE")
             yield name, [jdk / "bin/java", *FLAGS, *extra, *tail]
-    else:
+    elif stage == "time":
         for index, name in enumerate(["base", "candidate", "candidate", "base",
                                       "candidate", "base", "base", "candidate"]):
             yield str(index) + "-" + name, [images[name] / "bin/java", *FLAGS, *tail]
@@ -125,6 +243,8 @@ def verify_sources(args):
             raise ValueError("Wrong revision or local changes: " + str(root))
     allowed = {"doc/compiler-decoder-int-lowmask.md", "doc/compiler-decoder-int-lowmask-validate.py",
                "doc/compiler-decoder-int-lowmask-inputs.py",
+               "doc/compiler-decoder-int-lowmask-build.sh",
+               "doc/test-compiler-decoder-int-lowmask-validate.py",
                "test/hotspot/jtreg/compiler/intrinsics/bmi/TestBzhiIntMask.java",
                "test/micro/org/openjdk/bench/vm/compiler/VariableIntLowMask.java"}
     if set(git(args.jdk_root, "diff", "--name-only", CANDIDATE, "HEAD").splitlines()) - allowed:
@@ -139,8 +259,13 @@ def verify_sources(args):
 
 
 def files_manifest(args, stage, heads):
-    files = {}
-    if stage in ("diagnose", "time"):
+    files = {str(args.jdk_root / relative): digest(args.jdk_root / relative) for relative in PINS}
+    for relative in ("doc/compiler-decoder-int-lowmask-validate.py",
+                     "doc/compiler-decoder-int-lowmask-build.sh"):
+        files[str(args.jdk_root / relative)] = digest(args.jdk_root / relative)
+    if stage == "build":
+        return files
+    if stage in ("diagnose", "review", "time"):
         provenance = json.loads(args.input_manifest.read_text())
         if (provenance["cell_id"] != CELL or provenance["codec_pin"] != CODEC
                 or provenance["evidence_commit"] != INPUT_EVIDENCE
@@ -190,45 +315,127 @@ def classes_manifest(args):
     return {str(path): digest(path) for path in sorted(classes.rglob("*.class"))}
 
 
-def run_stage(args):
+def diagnostic_artifacts(args):
+    directory = args.output / "diagnose"
+    artifacts = {str(path.relative_to(directory)): digest(path)
+                 for path in sorted(directory.rglob("*"))
+                 if path.is_file() and path != directory / "manifest.json"}
+    required = {name + suffix for name in ("base", "candidate", "base-debug", "candidate-debug")
+                for suffix in (".log", ".xml", "-flags.log")}
+    if not required <= artifacts.keys():
+        raise ValueError("Missing diagnostic logs/XML")
+    return artifacts
+
+
+def diagnostic_evidence(args, campaign, heads):
+    path = args.output / "diagnose/manifest.json"
+    receipt = json.loads(path.read_text())
+    artifacts = diagnostic_artifacts(args)
+    if (not receipt.get("completed") or receipt.get("campaign_sha256") != campaign
+            or receipt.get("heads") != heads or receipt.get("artifacts_sha256") != artifacts):
+        raise ValueError("Incomplete, changed or different-campaign diagnostic evidence")
+    # Source heads, exact product pins, classes, inputs and ALL images are in
+    # this receipt; hash it together with every captured file, not just inputs.
+    evidence = {"diagnose_manifest_sha256": digest(path), "artifacts_sha256": artifacts,
+                "heads": heads, "product_sha256": PINS, "campaign_sha256": campaign,
+                "inputs_images_classes_sha256": receipt["sha256"]}
+    return json_digest(evidence), artifacts
+
+
+def verdict_template(evidence, artifacts):
+    return {"owner": OWNER, "decision": "stop", "evidence_sha256": evidence,
+            "assessments": {name: {"verified": False, "finding": "",
+                                    "evidence": [{"path": path, "sha256": artifacts[path],
+                                                  "locator": ""} for path in sorted(required)]}
+                            for name, required in ASSESSMENTS.items()}}
+
+
+def validate_verdict(args, campaign, heads):
+    evidence, artifacts = diagnostic_evidence(args, campaign, heads)
+    verdict = json.loads(args.owner_verdict.read_text())
+    if (verdict.get("owner") != OWNER or verdict.get("decision") != "allow-timing"
+            or verdict.get("evidence_sha256") != evidence):
+        raise ValueError("Missing owner allow-timing verdict bound to exact diagnostic evidence")
+    for name, required in ASSESSMENTS.items():
+        assessment = verdict.get("assessments", {}).get(name, {})
+        if assessment.get("verified") is not True or not assessment.get("finding", "").strip():
+            raise ValueError("Missing verified owner assessment: " + name)
+        references = assessment.get("evidence", [])
+        if not required <= {ref.get("path") for ref in references}:
+            raise ValueError("Missing required release/site evidence: " + name)
+        for ref in references:
+            if (ref.get("path") not in artifacts or artifacts[ref["path"]] != ref.get("sha256")
+                    or not ref.get("locator", "").strip()):
+                raise ValueError("Unbound or unlocated owner evidence: " + name)
+    return {"owner_verdict_sha256": digest(args.owner_verdict), "evidence_sha256": evidence}
+
+
+def review_window(args, campaign):
+    receipt = json.loads((args.output / "diagnose/manifest.json").read_text())
+    if not receipt.get("completed") or receipt.get("campaign_sha256") != campaign:
+        raise ValueError("Review requires completed diagnostics from this campaign")
+    # The human's review clock starts at diagnose completion, not when a later
+    # review invocation happens. Inter-stage gaps cannot renew this window.
+    start = receipt["completed_monotonic"]
+    if not 0 <= start <= time.monotonic():
+        raise ValueError("Invalid diagnostic completion clock")
+    return start, start + LIMITS["review"]
+
+
+def run_stage(args, budget):
     stage = args.stage
+    campaign = load_campaign(args, budget)
+    if stage == "review":
+        _, end = review_window(args, campaign)
+        budget.end = min(budget.end, end)
+        budget.arm()
     heads = verify_sources(args)
-    files = files_manifest(args, stage, heads)
-    prerequisites = {"qualify": [], "prepare": ["qualify"],
-                     "diagnose": ["qualify", "prepare"], "time": ["qualify", "prepare", "diagnose"]}
+    files = dict(files_manifest(args, stage, heads))
+    prerequisites = {"build": [], "qualify": ["build"], "prepare": ["build", "qualify"],
+                     "diagnose": ["build", "qualify", "prepare"],
+                     "review": ["build", "qualify", "prepare", "diagnose"],
+                     "time": ["build", "qualify", "prepare", "diagnose", "review"]}
     for previous in prerequisites[stage]:
         receipt = json.loads((args.output / previous / "manifest.json").read_text())
-        if not receipt.get("completed") or receipt["heads"] != heads:
+        if (not receipt.get("completed") or receipt["heads"] != heads
+                or receipt.get("campaign_sha256") != campaign):
             raise ValueError("Incomplete or different-source prerequisite: " + previous)
         for file, expected in receipt["sha256"].items():
             if file in files and files[file] != expected:
                 raise ValueError("Changed prerequisite input: " + file)
         if previous == "prepare" and receipt["classes_sha256"] != classes_manifest(args):
             raise ValueError("Class set differs from the pinned prepare stage")
+    verdict = validate_verdict(args, campaign, heads) if stage in ("review", "time") else {}
+    if stage == "time":
+        review_path = args.output / "review/manifest.json"
+        reviewed = json.loads(review_path.read_text())
+        if any(reviewed.get(key) != value for key, value in verdict.items()):
+            raise ValueError("Owner verdict or diagnostic evidence changed after review")
+        start, end = review_window(args, campaign)
+        if not start <= reviewed.get("completed_monotonic", -1) <= end - CLEANUP_SECONDS:
+            raise ValueError("Owner review did not complete inside the fixed review window")
+        files[str(review_path)] = digest(review_path)
     directory = args.output / stage
     directory.mkdir(parents=True, exist_ok=False)
     manifest = {"cell_id": CELL, "historical_504_cell_identity_verified": False,
-                "stage": stage, "heads": heads, "sha256": files, "records": []}
+                "stage": stage, "heads": heads, "sha256": files, "records": [],
+                "campaign_sha256": campaign, **verdict}
     path = directory / "manifest.json"
     path.write_text(json.dumps(manifest, indent=2) + "\n")
     env = dict(os.environ, JAVA_HOME=str(args.jtreg_java_home), LC_ALL="C")
-    deadline = time.monotonic() + LIMITS[stage]
     for name, command in commands(args, stage):
         command = list(map(str, command))
         record = {"name": name, "command": command}
         manifest["records"].append(record)
         path.write_text(json.dumps(manifest, indent=2) + "\n")
         with (directory / (name + ".log")).open("x") as log:
-            if time.monotonic() >= deadline:
-                raise TimeoutError("Stage ceiling reached before " + name)
-            process = subprocess.Popen(command, cwd=directory, env=env, stdout=log,
-                                       stderr=subprocess.STDOUT, start_new_session=True)
             try:
-                record["exit_code"] = process.wait(timeout=max(0.01, deadline - time.monotonic()))
-            except subprocess.TimeoutExpired:
-                os.killpg(process.pid, signal.SIGKILL)
-                process.wait()
+                record["exit_code"], _ = run_process(command, budget, cwd=directory,
+                    env=env, stdout=log, stderr=subprocess.STDOUT)
+            except (subprocess.TimeoutExpired, TimeoutError):
                 record["timed_out"] = True
+                path.write_text(json.dumps(manifest, indent=2) + "\n")
+                raise
             path.write_text(json.dumps(manifest, indent=2) + "\n")
         if record.get("timed_out") or record.get("exit_code") != 0:
             raise RuntimeError("Stopped at " + name + "; retain " + str(directory))
@@ -257,6 +464,13 @@ def run_stage(args):
         raise ValueError("Source revision changed during the stage")
     if stage == "prepare":
         manifest["classes_sha256"] = classes_manifest(args)
+    if stage == "build":
+        # Post-build image/provenance hashing remains inside the build budget.
+        manifest["sha256"] = files_manifest(args, "qualify", heads)
+    if stage == "diagnose":
+        manifest["artifacts_sha256"] = diagnostic_artifacts(args)
+    if stage in ("review", "time") and validate_verdict(args, campaign, heads) != verdict:
+        raise ValueError("Owner verdict changed during the stage")
     if stage == "time":
         pairs = []
         for first in range(0, 8, 2):
@@ -267,7 +481,15 @@ def run_stage(args):
                           "candidate_over_base": candidate["median_MB_s"] / base["median_MB_s"]})
         manifest["pairs"] = pairs
     manifest["completed"] = True
+    manifest["completed_monotonic"] = time.monotonic()
+    if digest(args.output / "campaign.json") != campaign:
+        raise ValueError("Campaign clock changed during the stage")
+    budget.remaining()
     path.write_text(json.dumps(manifest, indent=2) + "\n")
+    if stage == "diagnose":
+        evidence, artifacts = diagnostic_evidence(args, campaign, heads)
+        (args.output / "owner-verdict.template.json").write_text(
+            json.dumps(verdict_template(evidence, artifacts), indent=2) + "\n")
     print(path)
 
 
@@ -275,6 +497,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--stage", choices=LIMITS, help="select one stage; omitted prints all stages")
     parser.add_argument("--execute", action="store_true", help="run the selected, separately assigned stage")
+    parser.add_argument("--owner-verdict", type=Path, help="owner review JSON; defaults to output/owner-verdict.json")
     parser.add_argument("--jdk-root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--base-root", type=Path, default=Path("/workspace/executor-lowmask-base"))
     parser.add_argument("--codec-root", type=Path, default=Path("/workspace/executor-jzstd"))
@@ -290,14 +513,22 @@ def main():
     for key, value in vars(args).items():
         if isinstance(value, Path):
             setattr(args, key, value.resolve())
+    if args.owner_verdict is None:
+        args.owner_verdict = args.output / "owner-verdict.json"
     if args.execute:
         if not args.stage:
             parser.error("--execute requires one --stage")
-        run_stage(args)
+        # Arm before campaign receipt loading, source checks or image hashing.
+        with Budget(LIMITS[args.stage]) as budget:
+            if args.stage == "init":
+                init_campaign(args)
+            else:
+                run_stage(args, budget)
     else:
         print("# cell: " + CELL + "; original 504.5/1511.9 x86 identity unverified")
         for stage in [args.stage] if args.stage else LIMITS:
-            print("# " + stage + ": subprocess budget " + str(LIMITS[stage]) + " seconds")
+            print("# " + stage + ": whole-stage ceiling " + str(LIMITS[stage])
+                  + " seconds, including hashing and cleanup; campaign ceiling 7200 seconds")
             for name, command in commands(args, stage):
                 print(name + ": " + shlex.join(map(str, command)))
 

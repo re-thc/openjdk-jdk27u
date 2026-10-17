@@ -346,53 +346,39 @@ approximately 27 GiB free disk after creating the baseline checkout. These
 are reservation limits, not predicted completion times. Build all four images
 sequentially, with four make jobs: matching baseline/candidate release images
 for final code and timing, and matching fastdebug images for ADLC/assertions
-and graph evidence. Build ceiling is 70 minutes; subsequent subprocess budgets
-are qualification 30, probe preparation two, diagnostics five and timing three.
-The remaining ten minutes cover manual review and read-only provenance checks.
-Enforce the overall 120-minute campaign ceiling on this VM. Stop
-inconclusive when a ceiling or prerequisite fails; do not add more cells.
+and graph evidence. Build ceiling is 70 minutes; whole-stage ceilings are
+qualification 30, probe preparation two, diagnostics five and timing three.
+Each ceiling includes source/image hashing, provenance checks and cleanup.
+The owner review has a fixed ten-minute window starting at diagnostic completion.
+All stages share one create-once campaign clock, including gaps between commands;
+their limits cannot extend the overall 120-minute deadline. Each stage reserves
+ten seconds inside both deadlines for process-group cleanup and bounded waits.
+A Linux `SIGALRM` watchdog covers Python hashing, Git and manifest I/O as well as
+subprocess execution. Monotonic timestamps and the Linux boot ID reject clock
+rollback/reboot reuse. Stop inconclusive when a ceiling or prerequisite fails;
+do not restart the clock or add more cells.
 
-After campaign authorization, ordinary checkout-based build commands are:
+After campaign authorization, create the campaign once, then build through the
+same driver so configure, all four images and build-provenance hashing share the
+70-minute ceiling and overall deadline:
 
 ```sh
-timeout --kill-after=10s 70m bash -s > /workspace/executor-lowmask-build.log 2>&1 <<'BUILD'
-set -euo pipefail
-source /workspace/toolchains/activate.sh
-common=(
-  --with-jobs=4
-  --with-boot-jdk=/workspace/toolchains/jdk27
-  --with-jtreg=/workspace/toolchains/jtreg83
-  --with-freetype=system
-  --with-freetype-include=/workspace/toolchains/sysroot/usr/include/freetype2
-  --with-freetype-lib=/workspace/toolchains/sysroot/usr/lib/x86_64-linux-gnu
-  --with-toolchain-path=/workspace/toolchains/gcc16/bin
-  '--with-extra-ldflags=-fuse-ld=mold -B/workspace/toolchains/mold/bin'
-  --x-includes=/workspace/toolchains/sysroot/usr/include
-  --x-libraries=/workspace/toolchains/sysroot/usr/lib/x86_64-linux-gnu
-  --with-cups-include=/workspace/toolchains/sysroot/usr/include
-  --with-fontconfig-include=/workspace/toolchains/sysroot/usr/include
-  --with-alsa-include=/workspace/toolchains/sysroot/usr/include
-  --with-alsa-lib=/workspace/toolchains/sysroot/usr/lib/x86_64-linux-gnu
-)
-for root in /workspace/executor-lowmask-base /workspace/executor-bzhi-jdk; do
-  cd "$root"
-  test -z "$(git status --porcelain)"
-  for mode in release fastdebug; do
-    bash configure --with-conf-name="lowmask-$mode" --with-debug-level="$mode" "${common[@]}"
-    make CONF="lowmask-$mode" JOBS=4 \
-      'BUILD_LIBJVM_handshake.cpp_EXTRA_CXXFLAGS=-Wno-error=nonnull' images
-    git rev-parse HEAD > "build/lowmask-$mode/lowmask-source-head.txt"
-    sha256sum "build/lowmask-$mode/spec.gmk" \
-      "build/lowmask-$mode/images/jdk/bin/java" \
-      "build/lowmask-$mode/images/jdk/lib/server/libjvm.so" \
-      "build/lowmask-$mode/images/jdk/lib/modules" \
-      "build/lowmask-$mode/images/jdk/release" > "build/lowmask-$mode/lowmask-build-sha256.txt"
-  done
-done
-BUILD
+cd /workspace/executor-bzhi-jdk
+driver=doc/compiler-decoder-int-lowmask-validate.py
+python3 "$driver" --stage init --execute
+python3 "$driver" --stage build --execute
 ```
 
-The driver prints all later commands without creating output directories or
+Initialization exclusively creates the output directory and read-only
+`campaign.json`; reinitializing an existing directory fails. Every later stage
+loads its immutable start/deadline and binds the campaign-file SHA256 into its
+receipt. Changed clocks or receipts cannot be carried across stages. The build
+stage uses [compiler-decoder-int-lowmask-build.sh](compiler-decoder-int-lowmask-build.sh)
+with the same ordinary configure/make commands, managed toolchains, four jobs
+and local baseline `handshake.cpp` warning override described above. Running the
+helper alone would bypass the ceiling and is outside this campaign procedure.
+
+The driver prints the plan without creating output directories or
 starting subprocesses by default:
 
 ```sh
@@ -408,7 +394,7 @@ build layout; configure/build provenance remains in `build/<conf>`.
 The inputs are already verified at the driver's default paths. Both expected
 hashes are pinned in the driver; changing them is rejected rather than silently
 selecting another cell. After campaign authorization, run one stage at a time
-and preserve the same output directory across stages:
+and preserve the initialized output directory and campaign receipt across stages:
 
 ```sh
 set -euo pipefail
@@ -418,9 +404,16 @@ python3 "$driver" --stage prepare --execute
 python3 "$driver" --stage diagnose --execute
 ```
 
-Review the activation and allocation criteria below before invoking timing:
+After diagnose completes, copy `owner-verdict.template.json` to
+`owner-verdict.json` in that output directory. Within the fixed ten-minute review
+window, the owner must review the captures and fill every finding and exact
+compile ID/nmethod/BCI or code-range locator. Keep `decision: "stop"` and
+`verified: false` for any unverified criterion. Only after all criteria below
+are established may the owner set every assessment to `verified: true` and the
+decision to `allow-timing`, then validate review before invoking timing:
 
 ```sh
+python3 "$driver" --stage review --execute
 python3 "$driver" --stage time --execute
 ```
 
@@ -436,24 +429,38 @@ options, tracked source changes, input mismatches, extra candidate source
 changes, existing stage output and
 nonzero exits. Produced class hashes and the exact class set must match a
 completed preparation from the same source heads; later stages also require
-completed prerequisites and unchanged recorded
-images/inputs. Subprocesses share each stage's fixed wall-time budget and their
-process group is killed on timeout. No test result is inferred from merely
-printing this plan.
+completed prerequisites from the same campaign and unchanged recorded
+images/inputs. Review/timing also require an explicit verdict by
+`Harry Chan <38070640+re-thc@users.noreply.github.com>` bound to the SHA256 of the
+diagnostic manifest and every captured log/XML, exact source heads, product
+pins, classes, inputs and all four images. Adding, removing or changing a capture
+invalidates that verdict. The time stage revalidates the verdict and review
+receipt before starting any sample process and after the stage; merely setting
+`diagnose.completed` cannot enable timing. Subprocess groups are killed on
+timeout, and cleanup waits are bounded by the remaining stage/campaign ceiling.
+No test result is inferred from merely printing this plan.
 
-The diagnostic stage has four flag queries and four separate decode processes.
+The diagnostic stage has four flag queries and four separate `CodecProbe`
+decode processes. The four decode processes themselves execute the probe's timed
+warmup/windows; they are diagnostic runs whose rates must be excluded from
+performance samples. The four flag queries do not run timed probe loops.
 Both release images capture actual final code and compilation XML; fastdebug
 adds `BEFORE_MATCHING`, `MATCHING`, `REGISTER_ALLOCATION` and `FINAL_CODE` output.
 An effective BMI2-off flag query stops the stage as inapplicable.
 Fastdebug graph/code is supporting evidence and cannot stand in for release
 allocation or timing. Before timing, this lead's owner must establish default
 BMI2 applicability, both parser sites' activation on this cell, safe destination
-allocation, retained wrapping/saturation semantics, copies/spills, code size and compilation
-cost from those captures. If readable release disassembly is unavailable, retain
+allocation, retained wrapping/saturation semantics, release copies/spills,
+release code size and release compilation cost from those captures. The verdict
+requires separate assessments for source sites 291 and 293 plus each of these
+criteria, with hashed release capture references as well as explicit findings.
+Supporting fastdebug evidence cannot satisfy a required release reference.
+If readable release disassembly is unavailable, retain
 bytes and mark physical-code claims unverified; do not download a disassembler
 or claim activation from mnemonics alone. Failure to activate is a localization
 result, and failure of correctness stops qualification.
 
+Only the separate eight processes in the time stage are clean performance samples.
 Timing is exactly ABBA then BAAB, with the original SerialGC/vector/1 GiB option
 vector, two-second warmup and five 700 ms windows in each of eight fresh JVMs.
 No diagnostics enter those commands. The manifest retains all four adjacent
@@ -469,3 +476,14 @@ assigned, use
 `make CONF=lowmask-release test TEST=micro:org.openjdk.bench.vm.compiler.VariableIntLowMask MICRO='FORK=1;WARMUP_ITER=1;WARMUP_TIME=1;ITER=1;TIME=1'`
 on matched images. It is outside this fixed decoder campaign and cannot replace
 codec activation or end-to-end evidence.
+
+The driver repair is source-only. Run its offline regression suite with:
+
+```sh
+python3 doc/test-compiler-decoder-int-lowmask-validate.py
+bash -n doc/compiler-decoder-int-lowmask-build.sh
+```
+
+These tests use temporary fixture receipts, mock clocks/processes and no JVMs,
+builds, diagnostics or timing. The campaign commands above still require separate
+execution authorization; passing offline tests does not grant it.
