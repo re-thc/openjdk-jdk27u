@@ -17,23 +17,35 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Objects;
-import jdk.internal.misc.Unsafe;
-import jdk.internal.misc.VM;
 
 public class InstantSpeedateDisabled {
     private static final String PROPERTY = "jdk.time.instantSpeedate";
 
     private static void uninitialized(String name) throws Exception {
         Class<?> type = Class.forName("java.time.InstantParser$" + name, false, null);
-        if (!Unsafe.getUnsafe().shouldBeInitialized(type)) {
+        // The java.time JUnit actions compile this entire test tree without
+        // this standalone test's @modules exports. Keep internal API access
+        // reflective so sibling tests can still compile it.
+        Class<?> unsafe = Class.forName("jdk.internal.misc.Unsafe");
+        Object instance = unsafe.getMethod("getUnsafe").invoke(null);
+        if (!(boolean)unsafe.getMethod("shouldBeInitialized", Class.class).invoke(instance, type)) {
             throw new AssertionError(name + " initialized on the disabled route");
         }
+    }
+
+    private static boolean booted() throws Exception {
+        return (boolean)Class.forName("jdk.internal.misc.VM").getMethod("isBooted").invoke(null);
+    }
+
+    private static String savedProperty(String name) throws Exception {
+        return (String)Class.forName("jdk.internal.misc.VM")
+                .getMethod("getSavedProperty", String.class).invoke(null, name);
     }
 
     public static class EarlyLoader extends ClassLoader {
         public EarlyLoader(ClassLoader parent) throws Exception {
             super(parent);
-            if (VM.isBooted()) throw new AssertionError("preboot check ran after boot");
+            if (booted()) throw new AssertionError("preboot check ran after boot");
             Instant value = Instant.parse("1969-12-31T23:59:59.000001Z");
             if (value.getEpochSecond() != -1 || value.getNano() != 1000) {
                 throw new AssertionError(value);
@@ -71,7 +83,7 @@ public class InstantSpeedateDisabled {
         if (!"checked".equals(System.getProperty("test.instant.preboot"))) {
             throw new AssertionError("preboot check did not execute");
         }
-        if (!"false".equals(VM.getSavedProperty(PROPERTY))) {
+        if (!"false".equals(savedProperty(PROPERTY))) {
             throw new AssertionError("test requires startup property false");
         }
         uninitialized("Library");
