@@ -1519,7 +1519,10 @@ bool PhaseIdealLoop::can_split_if(Node* n_ctrl, IfNode* routing_if, bool* consta
 
   // Check for safety of the merge point.
   if (!merge_point_safe(n_ctrl)) {
-    if (routing_if == nullptr || routing_if->in(0) != n_ctrl || !can_route_constant_phi_if(routing_if)) {
+    // Keep the additional routing admission opt-in with the guarded-load
+    // experiment. The legacy splitter retains its original policy by default.
+    if (!LoopScalarAliasVersioning || routing_if == nullptr || routing_if->in(0) != n_ctrl ||
+        !can_route_constant_phi_if(routing_if)) {
       return false;
     }
     if (constant_phi_routing != nullptr) {

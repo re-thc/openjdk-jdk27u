@@ -382,9 +382,9 @@
   product(bool, LoopMultiversioning, true, DIAGNOSTIC,                      \
           "Enable loop multiversioning (for speculative compilation)")      \
                                                                             \
-  product(bool, LoopScalarAliasVersioning, true, DIAGNOSTIC,                 \
-          "Version small non-counted loops to promote an invariant int "    \
-          "array load under an array-identity guard")                        \
+  product(bool, LoopScalarAliasVersioning, false, DIAGNOSTIC,                \
+          "Experimental: route constant merge conditions and version small " \
+          "non-counted loops for guarded invariant int array loads")         \
                                                                             \
   develop(bool, TraceLoopMultiversioning, false,                            \
           "Trace loop multiversioning")                                     \

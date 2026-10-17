@@ -106,11 +106,12 @@ public class TestScalarAliasVersioning {
             + ".*\\z";
 
     public static void main(String[] args) {
-        // The first scenario uses the product default. The second checks the
-        // same correctness cases without this optimization. These are compiler
-        // unit tests, not a default-tiering codec capture or a performance test.
+        // Keep the default, explicit opt-in and explicit disabled cases. Only
+        // opt-in may satisfy the accepted-phase activation assertion. These are
+        // compiler unit tests, not codec captures or a performance test.
         new TestFramework().addScenarios(new Scenario(0),
-                new Scenario(1, "-XX:-LoopScalarAliasVersioning")).start();
+                new Scenario(1, "-XX:+LoopScalarAliasVersioning"),
+                new Scenario(2, "-XX:-LoopScalarAliasVersioning")).start();
     }
 
     @Test
@@ -119,6 +120,8 @@ public class TestScalarAliasVersioning {
         phase = CompilePhase.AFTER_SCALAR_ALIAS_VERSIONING,
         applyIfAnd = {"LoopScalarAliasVersioning", "true", "LoopMultiversioning", "true",
                       "LoopUnswitching", "true"})
+    @IR(failOn = {ARRAY_ALIAS_GUARD}, phase = CompilePhase.BEFORE_MATCHING,
+        applyIf = {"LoopScalarAliasVersioning", "false"})
     public static long checked(int[] rep, int[] heads, int[] unused, int limit, int mask) {
         int initial = rep[0];
         // Expose null/bounds safety before the loop without asserting that rep

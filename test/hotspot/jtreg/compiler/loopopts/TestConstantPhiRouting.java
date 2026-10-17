@@ -33,6 +33,7 @@ package compiler.loopopts;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -247,7 +248,7 @@ public class TestConstantPhiRouting {
         System.out.println("CONSTANT_PHI_ROUTING_ORACLE_PASS");
     }
 
-    private static void checkLog(Path path) throws Exception {
+    private static void checkLog(Path path, boolean enabled) throws Exception {
         var factory = DocumentBuilderFactory.newInstance();
         factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         var document = factory.newDocumentBuilder().parse(path.toFile());
@@ -292,9 +293,38 @@ public class TestConstantPhiRouting {
         require(seenTasks.equals(installed.keySet()), "installed compilation missing its unique task");
         require(completed.containsAll(TARGETS), "missing successful normal C2 targets: " + completed);
         // Installed C2 code alone does not establish that the new admission ran.
-        require(events.getOrDefault(POSITIVE, 0) > 0, "positive routing did not activate");
+        if (enabled) {
+            require(events.getOrDefault(POSITIVE, 0) > 0, "positive routing did not activate");
+        } else {
+            require(document.getElementsByTagName("constant_phi_routing").getLength() == 0,
+                    "disabled experiment admitted constant-Phi routing");
+            require(document.getElementsByTagName("scalar_alias_versioning").getLength() == 0,
+                    "disabled experiment admitted scalar alias versioning");
+        }
         require(events.getOrDefault(MIXED, 0) == 0, "mixed condition incorrectly admitted");
         require(events.getOrDefault(LOCAL, 0) == 0, "intervening local access incorrectly admitted");
+    }
+
+    private static void run(String name, boolean enabled, String... flags) throws Exception {
+        Path log = Path.of("constant-phi-routing-" + name + ".xml").toAbsolutePath();
+        Files.deleteIfExists(log);
+        var options = new ArrayList<String>();
+        options.addAll(Arrays.asList(
+                "-Xbatch", "-XX:-TieredCompilation", "-XX:-UseOnStackReplacement", "-XX:CompileThreshold=1000",
+                "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintFlagsFinal", "-XX:+LogCompilation", "-XX:LogFile=" + log,
+                "-XX:CompileCommand=compileonly," + CLASS + "::test*"));
+        options.addAll(Arrays.asList(flags));
+        options.addAll(Arrays.asList(CLASS, "child"));
+        String origin = flags.length == 0 ? "default" : "command line";
+        ProcessTools.executeProcess(ProcessTools.createLimitedTestJavaProcessBuilder(options.toArray(String[]::new)))
+                .shouldHaveExitValue(0).shouldContain("CONSTANT_PHI_ROUTING_ORACLE_PASS")
+                .shouldMatch("(?m)^\\s*bool\\s+LoopScalarAliasVersioning\\s*:?=\\s*" + enabled
+                        + "\\b[^\\r\\n]*\\{" + origin + "\\}")
+                // StressRecompilation can discard successful Compile attempts
+                // without a failure tag. Their events cannot identify the
+                // installed attempt, even with one enclosing task element.
+                .shouldNotMatch("(?m)^\\s*bool\\s+StressRecompilation\\s*:?=\\s*true\\b");
+        checkLog(log, enabled);
     }
 
     public static void main(String[] args) throws Exception {
@@ -302,17 +332,8 @@ public class TestConstantPhiRouting {
             child();
             return;
         }
-        Path log = Path.of("constant-phi-routing.xml").toAbsolutePath();
-        Files.deleteIfExists(log);
-        ProcessTools.executeProcess(ProcessTools.createLimitedTestJavaProcessBuilder(
-                "-Xbatch", "-XX:-TieredCompilation", "-XX:-UseOnStackReplacement", "-XX:CompileThreshold=1000",
-                "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintFlagsFinal", "-XX:+LogCompilation", "-XX:LogFile=" + log,
-                "-XX:CompileCommand=compileonly," + CLASS + "::test*", CLASS, "child"))
-                .shouldHaveExitValue(0).shouldContain("CONSTANT_PHI_ROUTING_ORACLE_PASS")
-                // StressRecompilation can discard successful Compile attempts
-                // without a failure tag. Their events cannot identify the
-                // installed attempt, even with one enclosing task element.
-                .shouldNotMatch("(?m)^\\s*bool\\s+StressRecompilation\\s*:?=\\s*true\\b");
-        checkLog(log);
+        run("default", false);
+        run("enabled", true, "-XX:+LoopScalarAliasVersioning");
+        run("disabled", false, "-XX:-LoopScalarAliasVersioning");
     }
 }

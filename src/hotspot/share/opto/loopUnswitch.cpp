@@ -565,7 +565,14 @@ bool PhaseIdealLoop::try_scalar_alias_versioning(IdealLoopTree* loop, Node_List&
       }
       return valid;
     }();
-    if (!closure_is_independent || writer_base == nullptr || !may_require_nodes(loop->est_loop_clone_sz(2) + 16)) {
+    if (!closure_is_independent || writer_base == nullptr) {
+      continue;
+    }
+    // Reuse the existing fanout-aware node reservation for review evidence.
+    // These are IR/resource counts, not an instruction, byte or benefit model.
+    const uint body_nodes = loop->_body.size();
+    const uint clone_node_estimate = loop->est_loop_clone_sz(2) + 16;
+    if (!may_require_nodes(clone_node_estimate)) {
       continue;
     }
 
@@ -611,9 +618,11 @@ bool PhaseIdealLoop::try_scalar_alias_versioning(IdealLoopTree* loop, Node_List&
 #endif
     if (C->log() != nullptr) {
       C->log()->elem("scalar_alias_versioning loop='%u' slow_loop='%u' guard='%u' read_base='%u' "
-                     "writer_base='%u' fast_load='%u' slow_load='%u' entry_memory='%u' memory_phi='%u'",
+                     "writer_base='%u' fast_load='%u' slow_load='%u' entry_memory='%u' memory_phi='%u' "
+                     "body_nodes='%u' clone_node_estimate='%u'",
                      head->_idx, slow_head->_idx, selector.selector()->_idx, read_base->_idx, writer_base->_idx,
-                     promoted->_idx, slow_load->_idx, fast_memory->_idx, memory_phi->_idx);
+                     promoted->_idx, slow_load->_idx, fast_memory->_idx, memory_phi->_idx,
+                     body_nodes, clone_node_estimate);
     }
     C->print_method(PHASE_AFTER_SCALAR_ALIAS_VERSIONING, 2, head);
     C->set_major_progress();
