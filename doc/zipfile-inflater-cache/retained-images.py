@@ -8,6 +8,10 @@ import os
 from pathlib import Path
 import stat
 import subprocess
+import sys
+import time
+sys.dont_write_bytecode = True
+from campaign_deadline import original_deadline, report, require_remaining, supervised_deadline
 
 DIRECTORY = Path(__file__).resolve().parent
 
@@ -51,6 +55,11 @@ def verify(previous):
         if os.environ.get(name):
             raise ValueError('Clear external instrumentation/options: ' + name)
     binding = json.loads((DIRECTORY / 'retained-builds.json').read_text())
+    deadline = original_deadline(binding, previous)
+    inherited = supervised_deadline()
+    monotonic_deadline = time.monotonic() + require_remaining(deadline, inherited)
+    if inherited is not None:
+        monotonic_deadline = min(monotonic_deadline, inherited)
     if git(DIRECTORY, 'rev-parse', 'HEAD') != os.environ['ZIP_REVIEW_COMMIT']:
         raise ValueError('Continuation review HEAD changed')
     subprocess.run(['git', '-C', str(DIRECTORY), 'diff', '--quiet', 'HEAD', '--', '.'], check=True)
@@ -101,7 +110,7 @@ def verify(previous):
         raise ValueError('Prior baseline Serial controls were not complete')
     return dict(source_commits=binding['source_commits'], images=identities,
                 prior_elapsed_seconds=binding['prior_elapsed_seconds'],
-                remaining_work_seconds=14400 - binding['prior_elapsed_seconds'],
+                **report(binding, deadline, monotonic_deadline),
                 retained_evidence_files=len(analysis['evidence_sha256']),
                 baseline_serial_controls_reused=6)
 

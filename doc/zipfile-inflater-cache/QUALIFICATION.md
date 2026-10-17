@@ -137,8 +137,9 @@ invalidates the comparison.
 Run fifteen local cache/ZIP tests plus six protected local JAR consumer
 tests on C; the six consumer tests also run on B as controls. Do not sweep the
 whole URLClassLoader directory, which includes unrelated HTTP-server tests.
-The corrected selection replaces HTTP-dependent DeleteTempJarTest with local
-EnumerateAfterClose; [CONTINUATION.md](CONTINUATION.md) explains this scope fix.
+DeleteTempJarTest is excluded HTTP coverage. EnumerateAfterClose adds local
+lifecycle coverage; it does not cover the excluded HTTP path.
+[CONTINUATION.md](CONTINUATION.md) explains the scope and original absolute deadline.
 
 The exact twenty-one candidate and six baseline paths are in test-selections.sh;
 shared per-stage timeouts and unique log labels are in run-stages.sh. The sequence

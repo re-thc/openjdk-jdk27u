@@ -24,7 +24,9 @@ stopped before candidate tests on a harness test-selection error. The complete
 [retained-image continuation](zipfile-inflater-cache/CONTINUATION.md) is prepared
 for review and separate execution approval; it does not rebuild. Other native
 performance campaigns are not prerequisites by assumption.
-The full Linux sequence has a four-hour supervisor with owned-process cleanup.
+The full Linux sequence has a four-hour supervisor with owned-process cleanup;
+the continuation preserves the original 2026-10-17T18:47:24Z absolute deadline,
+including time spent waiting for review or approval.
 Proposed 2%/3% resolution checks do not authorize a slowdown: consistently slower
 results require explicit trade-off review. Qualification reports observed native
 allocation calls separately from live client bytes, not RSS or allocator-retained

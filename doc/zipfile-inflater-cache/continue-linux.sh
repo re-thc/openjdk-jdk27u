@@ -3,6 +3,7 @@
 # Invoke only via supervise-linux.py --resume-from after execution authorization.
 set -euo pipefail
 : "${ZIP_QUAL_SUPERVISED:?Use the outer supervisor}"
+: "${ZIP_QUAL_MONOTONIC_DEADLINE:?Use the outer supervisor deadline}"
 : "${BOOT_JDK:?same installed Boot JDK 27 required}"
 : "${JTREG_HOME:?same installed jtreg 8.3 required}"
 ROOT=${1:?new continuation output}
@@ -15,6 +16,7 @@ JTREG_HOME=$(cd -- "$JTREG_HOME" && pwd -P)
 export BOOT_JDK JTREG_HOME
 cd -- "$ROOT"
 phase() {
+  python3 -E -B "$Q/campaign_deadline.py" "$PREVIOUS" > "$ROOT/results/deadline-$1.json"
   printf '%s\n' "$1" > "$ROOT/.qualification-phase.next"
   mv -f -- "$ROOT/.qualification-phase.next" "$ROOT/.qualification-phase"
 }
@@ -22,6 +24,7 @@ mkdir -p "$ROOT/results" "$ROOT/classes"
 phase retained-input-check
 python3 -E -B "$Q/test-test-selection.py"
 python3 -E -B "$Q/test-image-layout.py"
+python3 -E -B "$Q/test-campaign-deadline.py"
 python3 -E "$Q/retained-images.py" "$PREVIOUS" > "$ROOT/results/initial-provenance.json"
 finish() {
   result=$?

@@ -92,6 +92,19 @@ class OwnedProcessesTest(unittest.TestCase):
         process.check_output.assert_called_once_with(
             ['du', '-sb', '--', '/fresh', '/preserved'], text=True, timeout=3)
 
+    def test_cleanup_reaps_preflight_workers_without_campaign_child(self):
+        function = next(node for node in ast.parse(self.source).body
+                        if isinstance(node, ast.FunctionDef) and node.name == 'cleanup')
+        processes = {20: (10, 200, 1)}
+        namespace = dict(time=SimpleNamespace(monotonic=lambda: 0, sleep=Mock()),
+                         owned_processes=Mock(side_effect=[processes, {}]),
+                         signal_owned=Mock(), signal=SimpleNamespace(SIGTERM=15, SIGKILL=9),
+                         os=SimpleNamespace(waitpid=Mock(), WNOHANG=1))
+        exec(compile(ast.Module(body=[function], type_ignores=[]), '<cleanup fixture>', 'exec'), namespace)
+        self.assertEqual(namespace['cleanup'](None, 10), {})
+        namespace['signal_owned'].assert_called_once_with(processes, 15)
+        namespace['os'].waitpid.assert_called_once_with(20, 1)
+
     def test_parent_is_revalidated_after_reading_child(self):
         snapshot = {30: (20, 300, 1), 20: (10, 200, 2)}
         original_parent = (10, 200, 4)

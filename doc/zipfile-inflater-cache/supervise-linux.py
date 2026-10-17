@@ -11,6 +11,8 @@ import signal
 import subprocess
 import sys
 import time
+sys.dont_write_bytecode = True
+from campaign_deadline import original_deadline, remaining_seconds, require_remaining
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--resume-from', type=Path, help='exact preserved terminal attempt; no rebuild')
@@ -32,6 +34,24 @@ if args.resume_from is not None:
     disk_roots.append(previous)
 if len(args.candidate) != 40 or any(c not in '0123456789abcdef' for c in args.candidate):
     raise SystemExit('Use the full reviewed commit SHA')
+source = Path(__file__).resolve().parent
+repository = source.parent.parent
+options = args.configure_options
+if options[:1] == ['--']:
+    options = options[1:]
+prior_elapsed_seconds = 0
+started = time.monotonic()
+admission_utc = time.time()
+absolute_deadline = admission_utc + 14400
+if args.resume_from is not None:
+    if options:
+        raise SystemExit('No configure options are accepted for retained images')
+    binding = json.loads((source / 'retained-builds.json').read_text())
+    absolute_deadline = original_deadline(binding, previous)
+    prior_elapsed_seconds = binding['prior_elapsed_seconds']
+work_seconds = max(0, absolute_deadline - admission_utc)
+deadline = started + work_seconds  # One anchor, before preflight; never reset.
+require_remaining(absolute_deadline, deadline)
 if not hasattr(os, 'pidfd_open') or not hasattr(signal, 'pidfd_send_signal'):
     raise SystemExit('Linux /proc and Python 3.9+ pidfd support are required')
 allowed = sorted(os.sched_getaffinity(0))
@@ -42,6 +62,7 @@ resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
 libc = ctypes.CDLL(None, use_errno=True)
 if libc.prctl(36, 1, 0, 0, 0) != 0:  # PR_SET_CHILD_SUBREAPER, including orphaned jobs
     raise OSError(ctypes.get_errno(), 'Cannot supervise orphaned descendants')
+require_remaining(absolute_deadline, deadline)
 root.mkdir(parents=True, exist_ok=False)
 for name in ('tmp', 'cache'):
     (root / name).mkdir()
@@ -113,9 +134,10 @@ def cleanup(child, deadline):
     remaining = owned_processes()
     while remaining and time.monotonic() < deadline:
         signal_owned(remaining, signal.SIGTERM if time.monotonic() - began < 10 else signal.SIGKILL)
-        child.poll()  # Popen reaps its direct child; reap other adopted children below.
+        if child is not None:
+            child.poll()  # Popen reaps its direct child; reap adopted children below.
         for pid in remaining:
-            if pid != child.pid:
+            if child is None or pid != child.pid:
                 try:
                     os.waitpid(pid, os.WNOHANG)
                 except ChildProcessError:
@@ -129,32 +151,10 @@ def disk_usage(timeout):
                                      text=True, timeout=timeout)
     return sum(int(line.split()[0]) for line in output.splitlines())
 
-source = Path(__file__).resolve().parent
-repository = source.parent.parent
-actual = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repository, text=True).strip()
-if actual != args.candidate:
-    raise SystemExit('Run the supervisor from the exact reviewed commit checkout')
-subprocess.run(['git', 'diff', '--quiet', 'HEAD', '--', 'doc/zipfile-inflater-cache'],
-               cwd=repository, check=True)
-options = args.configure_options
-if options[:1] == ['--']:
-    options = options[1:]
-prior_elapsed_seconds = 0
-if args.resume_from is not None:
-    if options:
-        raise SystemExit('No configure options are accepted for retained images')
-    binding = json.loads((source / 'retained-builds.json').read_text())
-    prior_elapsed_seconds = binding['prior_elapsed_seconds']
-    if not 0 <= prior_elapsed_seconds < 14400:
-        raise SystemExit('Invalid charge against original four-hour allowance')
-work_seconds = 4 * 60 * 60 - prior_elapsed_seconds
-if work_seconds <= 0:
-    raise SystemExit('Original four-hour work budget exhausted')
 env = os.environ.copy()
 env.update(ZIP_QUAL_SUPERVISED='1', TMPDIR=str(root / 'tmp'),
+           ZIP_QUAL_MONOTONIC_DEADLINE=repr(deadline),
            XDG_CACHE_HOME=str(root / 'cache'), CCACHE_DIR=str(root / 'cache' / 'ccache'))
-started = time.monotonic()
-deadline = started + work_seconds
 reason = 'completed'
 child = None
 remaining = {}
@@ -165,6 +165,16 @@ try:
         command = (['bash', str(source / 'continue-linux.sh'), str(root), args.candidate, str(previous)]
                    if args.resume_from is not None else
                    ['bash', str(source / 'run-linux.sh'), str(root), args.candidate, *options])
+        # Keep read-only git preflight inside the same monitored process tree.
+        # Arguments are passed as argv; the constant shell program never evals them.
+        preflight = '''actual=$(git rev-parse HEAD)
+test "$actual" = "$1" || { echo 'Run from the exact reviewed commit checkout' >&2; exit 1; }
+git diff --quiet HEAD -- doc/zipfile-inflater-cache
+shift
+exec "$@"
+'''
+        command = ['bash', '-euc', preflight, 'zip-qualification-preflight', args.candidate, *command]
+        require_remaining(absolute_deadline, deadline)
         child = subprocess.Popen(command, cwd=repository, env=env,
                                  stdout=output, stderr=subprocess.STDOUT, start_new_session=True)
         next_disk_check = started
@@ -173,8 +183,9 @@ try:
             now = time.monotonic()
             if stop_signal is not None:
                 reason = f'signal-{stop_signal}'; break
-            if now >= deadline:
-                reason = 'four-hour-deadline'; break
+            available = remaining_seconds(absolute_deadline, deadline)
+            if available <= 0:
+                reason = 'original-campaign-deadline'; break
             rss = sum(info[2] for info in owned_processes().values()) + process_info(os.getpid())[2]
             if rss > memory_limit:
                 reason = 'aggregate-rss-ceiling'; break
@@ -183,31 +194,35 @@ try:
             # One acknowledgment, after any in-flight scan finishes. Once armed,
             # never start another disk scan until the timed sequence has exited.
             if phase == 'timing-wait' and not timing_armed:
-                if disk_usage(min(10, deadline - now)) > disk_limit - 128 * 1024**2:
+                if disk_usage(min(10, available)) > disk_limit - 128 * 1024**2:
                     reason = 'timing-log-reserve-exhausted'; break
                 timing_armed = True
                 ready = root / '.timing-ready.next'
                 ready.write_text('ready\n')
                 ready.replace(root / '.timing-ready')
             elif not timing_armed and now >= next_disk_check:
-                if disk_usage(min(10, deadline - now)) > disk_limit:
+                if disk_usage(min(10, available)) > disk_limit:
                     reason = 'scratch-ceiling'; break
                 next_disk_check = time.monotonic() + 15
-            time.sleep(min(1, max(0, deadline - time.monotonic())))
-        if reason == 'completed' and child.returncode != 0:
+            time.sleep(min(1, remaining_seconds(absolute_deadline, deadline)))
+        if reason == 'completed' and remaining_seconds(absolute_deadline, deadline) <= 0:
+            reason = 'original-campaign-deadline'
+        elif reason == 'completed' and child.returncode != 0:
             reason = 'stage-nonzero-exit'
+except TimeoutError as failure:
+    reason = 'original-campaign-deadline'
+    error = str(failure)
 except BaseException as failure:
     reason = 'supervisor-error'
     error = repr(failure)
 finally:
-    postflight_deadline = time.monotonic() + 30
-    if child is not None:
-        try:
-            remaining = cleanup(child, postflight_deadline)
-        except BaseException as failure:
-            reason = 'cleanup-error'
-            error = repr(failure)
-            remaining = {'unknown': {'cleanup': 'not confirmed'}}
+    postflight_deadline = min(time.monotonic() + 30, deadline + 30)
+    try:
+        remaining = cleanup(child, postflight_deadline)
+    except BaseException as failure:
+        reason = 'cleanup-error'
+        error = repr(failure)
+        remaining = {'unknown': {'cleanup': 'not confirmed'}}
     try:
         available = postflight_deadline - time.monotonic()
         if available <= 0:
@@ -222,6 +237,11 @@ finally:
                   elapsed_seconds=time.monotonic() - started, error=error,
                   remaining_owned_processes=remaining,
                   postflight_disk_bytes=postflight_disk_bytes,
+                  original_launch_utc=(binding['campaign']['launch_utc']
+                                       if args.resume_from is not None else None),
+                  original_deadline_utc=(binding['campaign']['deadline_utc']
+                                         if args.resume_from is not None else None),
+                  remaining_work_seconds=remaining_seconds(absolute_deadline, deadline),
                   limits=dict(work_seconds=work_seconds, original_work_seconds=14400,
                               prior_elapsed_seconds=prior_elapsed_seconds,
                               cleanup_postflight_grace_seconds=30,

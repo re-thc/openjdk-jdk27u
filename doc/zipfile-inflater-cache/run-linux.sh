@@ -27,6 +27,7 @@ jdk_image() {
 phase source-check
 python3 -E -B "${BASH_SOURCE[0]%/*}/test-image-layout.py"
 python3 -E -B "${BASH_SOURCE[0]%/*}/test-test-selection.py"
+python3 -E -B "${BASH_SOURCE[0]%/*}/test-campaign-deadline.py"
 phase checkout
 B=89885a6288e7aaabd01678a704a586272c0f96e3
 git fetch origin master review/zipfile-compact-inflater-cache
