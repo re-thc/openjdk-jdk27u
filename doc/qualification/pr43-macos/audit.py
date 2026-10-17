@@ -28,6 +28,6 @@ def baseline(text, positives):
                 if node in constraint and re.search(r'\[found\]\s+0\s+[^\n]+\s+1\s+\[given\]',constraint):ok=True
         if not ok:errors.append(name+': no intended zero-node count failure for '+node)
     if any('> Phase "Before Matching"' in part for _,part in chunks):errors.append('Unexpected BEFORE_MATCHING failure')
-    if re.search(r'Method was not compiled|NO compilation output found|Test VM exited with code|assertEQ failed|must be C2 compiled',text):errors.append('Compilation/semantic/output failure, not a clean missing-node control')
+    if re.search(r'Method was not compiled|NO compilation output found|Test VM exited with code|assertEQ failed|must be C2 compiled|should have been C2 compiled',text):errors.append('Compilation/semantic/output failure, not a clean missing-node control')
     if 'IRViolationException' not in text:errors.append('No IRViolationException')
     return errors

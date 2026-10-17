@@ -6,6 +6,9 @@ is `9711df62d0d019e6670f83832b09bd5dcf797dcb`, with the same C1 fix in both arms
 PR43 is open and draft. This review and its tooling fixes belong to the separate
 `codex/pr43-macos-qualification` branch. The proposed replacement PR body is in
 [PR_DESCRIPTION.md](PR_DESCRIPTION.md); it has not been published to PR43.
+This branch also contains the separate, cherry-pickable test-only repair
+`d46869ad8a53cd815ba18eedc06900e1be9451be`, described in
+[UBFX_ASSERTIONS.md](UBFX_ASSERTIONS.md). It changes no compiler/runtime source.
 
 ## Evidence and recommendation
 
@@ -14,6 +17,9 @@ the exact candidate and baseline above. It reports Apple M6 arm64/NEON,
 macOS 27.0.1, SDK 27.0, Apple Clang 21.0.0, Boot JDK 27, GNU make 4.4.1,
 Autoconf 2.73, jtreg 8.2.1-dev+0, GoogleTest 1.14.0 and LLVM hsdis 23.1.3,
 using matching build configuration and toolchain in both arms.
+That report used the original UBFX test, before the assertion repair. The new
+portable fixture results are independently inspected JTRs and are not credited
+as another native ARM IR run.
 
 These are user-reported native outcomes. The Mac build receipts, JTR files,
 phase logs, image/harness hashes and disassembly were not supplied to this
@@ -75,11 +81,17 @@ is warranted solely because of the `-dev+0` label.
 
 ## Source review
 
-All four ARM aggregate deltas still have identical stable patch IDs and exact
-added/removed lines to their donor PRs. The prerequisite tree exactly matches
+The four original ARM aggregate commits retain identical stable patch IDs and
+exact added/removed lines to their donor PRs. The prerequisite tree exactly matches
 PR41. Five logical commits retain authorship and complete donor provenance;
-PR38 includes both its m4 repair and strengthened final tests. No product source
-polish is necessary, and none is included in this review branch update.
+PR38 includes both its m4 repair and strengthened final tests. No compiler/runtime
+correction was identified. The follow-up UBFX regression repair replaces the
+four raw boolean C2 checks with `TestFramework.assertCompiledByC2` so intentional
+`TriState.Maybe` states work while unexpected `TriState.No` still fails.
+Four portable fixtures with the actual framework confirm original exclusion
+failure, repaired exclusion success, normal C2 success and normal missing-C2
+failure. All 28 IR annotations, test bodies and semantic oracles are unchanged;
+the primary qualification audit still requires every rule and all C2/phase logs.
 
 - UBFX accepts the existing contiguous 1–30-bit mask operand and checks width
   plus Java-normalized shift at both matcher and encoder boundaries. PR35's
@@ -94,7 +106,7 @@ polish is necessary, and none is included in this review branch update.
   `20470f375e9258f4d873293de5fab30182673a7b6d8f932104d4071042337b50`;
   vector output is
   `13128e4361cb140c62afb11522b94e1fc7207b16f3f7062c9f9d2621fbef65dd`.
-  All five regression source hashes match the pinned manifest. The product
+  All five regression source hashes match the updated test-source manifest. The product
   delta remains exactly 15 intended paths, with no workflow changes.
 
 Live master was rechecked as `89885a6288e7aaabd01678a704a586272c0f96e3`.

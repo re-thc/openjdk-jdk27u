@@ -16,9 +16,26 @@ class AuditTest(unittest.TestCase):
     def test_wrong_count(self):self.assertTrue(baseline(self.sample(found=2),{'and':'andLConvL2I'}))
     def test_wrong_phase(self):self.assertTrue(baseline(self.sample(phase='Before Matching'),{'and':'andLConvL2I'}))
     def test_uncompiled(self):self.assertTrue(baseline(self.sample()+'Method was not compiled',{'and':'andLConvL2I'}))
+    def test_framework_compilation_assertion_failure(self):
+        self.assertTrue(baseline(self.sample()+'extract32 should have been C2 compiled',{'and':'andLConvL2I'}))
     def test_applicability(self):
         self.assertFalse(applicability('- and: 1, 2\n',{'and':2}))
         self.assertTrue(applicability('- and: 1\n',{'and':2}))
+
+    def test_ubfx_requires_every_applicable_rule(self):
+        import json
+        from pathlib import Path
+        manifest=json.loads((Path(__file__).parent/'manifest.json').read_text())
+        expected=next(t['applicable_methods'] for t in manifest['tests'] if t['label']=='UBFX')
+        self.assertEqual(28,sum(expected.values()))
+        def output(omit=None):
+            return '\n'.join('- '+name+': '+', '.join(str(i) for i in range(1,count+1)
+                             if (name,i)!=omit) for name,count in expected.items())
+        self.assertFalse(applicability(output(),expected))
+        for name,count in expected.items():
+            for rule in range(1,count+1):
+                with self.subTest(method=name,rule=rule):
+                    self.assertTrue(applicability(output((name,rule)),expected))
 
 class PhaseInventoryTest(unittest.TestCase):
     def test_phase_and_compiler_binding(self):

@@ -9,6 +9,8 @@ product source or merge it.
 The [source and qualification review](REVIEW.md) reconciles the reported native
 Mac result and remaining review scope. [PR_DESCRIPTION.md](PR_DESCRIPTION.md)
 contains a proposed replacement PR body; publication to PR43 is separate.
+The [UBFX assertion repair](UBFX_ASSERTIONS.md) documents the focused portable
+fixture and its separate test-source identity.
 
 ## Standard prerequisites, checked before builds
 
@@ -117,6 +119,7 @@ avoid that ambiguity.
 | Baseline: original base plus C1 prerequisite only | `9711df62d0d019e6670f83832b09bd5dcf797dcb` |
 | Original plain base, recorded but not an extra default build | `758f41576fc79d35a62a3896dbe5ab97c448c436` |
 | C1 upstream donor | `abf881b0108610051fb36636a5f8ce44e8076ddb` |
+| Repaired test sources, used identically in both arms | `d46869ad8a53cd815ba18eedc06900e1be9451be` |
 
 The runner creates detached worktrees for candidate and baseline, then builds
 **fastdebug and release for both**, matching the already supplied Mac-agent
@@ -129,18 +132,26 @@ logs are retained; Java and libjvm must be native Mach-O arm64. Both image debug
 levels, actual JVM properties, source stamps and binary hashes are recorded.
 
 The handoff commit itself is not the candidate JDK identity: product builds are
-explicitly from the two commits above. Advancing `master` does not change this
+explicitly from the candidate and prerequisite-only baseline above. Advancing `master` does not change this
 controlled comparison. A later current-master integration is a new identity and
 needs its own review/evidence. Do not silently rebase or pool old timings.
 
 ## Tests, annotations and negative controls
 
-Identical **candidate test sources** at the pinned candidate commit are used
-against all four images. `manifest.json` pins their SHA256 values and per-method
-IR applicability. No regression annotation, expected node, warmup, C2 assertion,
-shared store or semantic oracle is weakened. The only added Java source is the
+Identical **test sources** at `test_source_commit` are used against all four
+images. The follow-up repairs only UBFX's four compilation assertions to honor
+the framework's intentional-exclusion contract. `manifest.json` pins all source
+hashes and per-method IR applicability. The earlier reported native run used
+the original test sources at `reported_native_test_source_commit`; its receipts
+retain that identity. No IR annotation, expected node, warmup, shared store or
+semantic oracle changes. The only added Java source is the
 committed instruction-only driver, copied to a separate candidate test worktree;
 it disables IR for its own separate captures, never for the primary IR gate.
+
+Intentional-exclusion fixtures are not qualification runs. The primary gate still
+requires all applicable rules, C2 compilation logs and matching/input phases,
+rejects disabled IR, and does not accept ExcludeRandom or unexpected exclusions
+as a pass. Existing completed native results have not been rerun by this repair.
 
 - [TestLongBitfieldExtract](../../../test/hotspot/jtreg/compiler/c2/aarch64/TestLongBitfieldExtract.java):
   14 C2 targets, **28 IR rules**. All four baseline-positive probes must fail for
