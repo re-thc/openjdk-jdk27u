@@ -152,6 +152,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     CallGenerator* cg = find_intrinsic(callee, call_does_dispatch);
     if (cg != nullptr) {
       bool needs_predicate = cg->is_predicated();
+#ifndef AARCH64
       if (needs_predicate && callee->intrinsic_id() == vmIntrinsics::_vectorizedMismatch) {
         // Keep the existing array expansion and its inlining decisions.
         // Native addresses alone need size selection against the Java body.
@@ -159,6 +160,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
         needs_predicate = initial_gvn()->type(map->argument(jvms, 0)) == TypePtr::NULL_PTR ||
                           initial_gvn()->type(map->argument(jvms, 3)) == TypePtr::NULL_PTR;
       }
+#endif
       if (needs_predicate) {
         // Code without intrinsic but, hopefully, inlined.
         CallGenerator* inline_cg = this->call_generator(callee,
