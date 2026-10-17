@@ -1,0 +1,231 @@
+#
+# Copyright (c) 2026, re-thc. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+name: 'StringZilla native sanitizer qualification'
+
+on:
+  push:
+    branches: ['codex/stringzilla-validation-da3ae24']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PRODUCTION_SOURCE: da3ae24b030d8c9c0694bbb5b33412f76c27780c
+
+jobs:
+  native-sanitizers:
+    name: 'GCC 16 ASan/UBSan (${{ matrix.platform }})'
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x64
+            runner: ubuntu-26.04
+            machine: x86_64
+          - platform: linux-aarch64
+            runner: ubuntu-26.04-arm
+            machine: aarch64
+    steps:
+      - name: 'Checkout the qualification source'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+
+      - name: 'Record source provenance'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p native-validation
+          test "$(uname -m)" = '${{ matrix.machine }}'
+          git diff --exit-code "$PRODUCTION_SOURCE" HEAD -- src make test
+          test "$(git hash-object src/java.base/share/native/libjava/StringZillaKernels.c)" = 993fd1957118b4d45dee801a1977c15c3d982570
+          git rev-parse HEAD > native-validation/qualification-commit.txt
+          git rev-parse "$PRODUCTION_SOURCE" > native-validation/production-commit.txt
+          git ls-tree -r HEAD -- \
+            src/java.base/share/native/libjava/StringZillaKernels.c \
+            src/java.base/share/native/libjava/StringZillaKernels.h \
+            src/java.base/share/native/libjava/stringzilla \
+            src/hotspot/share/include \
+            src/hotspot/os/posix/include/jvm_md.h \
+            test/jdk/java/lang/String/libStringZillaKernelsTest.c \
+            > native-validation/source-blobs.txt
+          uname -a > native-validation/host.txt
+          lscpu > native-validation/cpu.txt
+          python3 make/scripts/update-stringzilla.py --verify | tee native-validation/vendor-verification.log
+          tar -czf native-validation/sources.tar.gz \
+            src/java.base/share/native/libjava/StringZillaKernels.c \
+            src/java.base/share/native/libjava/StringZillaKernels.h \
+            src/java.base/share/native/libjava/stringzilla \
+            src/hotspot/share/include \
+            src/hotspot/os/posix/include/jvm_md.h \
+            test/jdk/java/lang/String/libStringZillaKernelsTest.c
+
+      - name: 'Get JNI headers'
+        id: bootjdk
+        uses: ./.github/actions/get-bootjdk
+        with:
+          platform: ${{ matrix.platform }}
+
+      - name: 'Install GCC 16'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes gcc-16
+          test "$(gcc-16 -dumpversion)" = 16
+          gcc-16 --version | tee native-validation/compiler.txt
+
+      - name: 'Compile the production native contract tests with sanitizers'
+        shell: bash
+        env:
+          BOOT_JDK: ${{ steps.bootjdk.outputs.path }}
+        run: |
+          set -euo pipefail
+          cat > native-validation/driver.c <<'EOF'
+          #include "test/jdk/java/lang/String/libStringZillaKernelsTest.c"
+          #include <stdio.h>
+
+          int main(void) {
+              for (jint mask = 0; mask < 8; mask++) {
+                  requested_capabilities = mask;
+                  test_initialize();
+                  printf("requested=%d selected=%d executable=%d\n",
+                         mask, published->capabilities, can_execute(published->capabilities));
+              }
+              int failure = check_kernels();
+              if (failure != 0) {
+                  fprintf(stderr, "Native kernel check failed at line %d\n", failure);
+                  return 1;
+              }
+              puts("StringZilla production native kernel checks passed");
+              return 0;
+          }
+          EOF
+          native_compile=(gcc-16 -std=c11 -O2 -g -fno-omit-frame-pointer
+            -fsanitize=address,undefined,alignment -fno-sanitize-recover=all
+            -Wno-unknown-pragmas
+            "-I$GITHUB_WORKSPACE"
+            "-I$GITHUB_WORKSPACE/src/java.base/share/native/libjava"
+            "-I$GITHUB_WORKSPACE/src/java.base/share/native/libjava/stringzilla"
+            "-I$GITHUB_WORKSPACE/src/hotspot/share/include"
+            "-I$GITHUB_WORKSPACE/src/hotspot/os/posix/include"
+            "-I$BOOT_JDK/include" "-I$BOOT_JDK/include/linux"
+            native-validation/driver.c -o native-validation/stringzilla-native-sanitizers)
+          printf '%q ' "${native_compile[@]}" > native-validation/compile-command.txt
+          printf '\n' >> native-validation/compile-command.txt
+          sha256sum "$BOOT_JDK/include/jni.h" "$BOOT_JDK/include/linux/jni_md.h" \
+            > native-validation/jni-header-sha256.txt
+          "${native_compile[@]}" 2>&1 | tee native-validation/build.log
+          ldd native-validation/stringzilla-native-sanitizers > native-validation/linked-libraries.txt
+
+      - name: 'Execute native ASan/UBSan checks'
+        shell: bash
+        env:
+          ASAN_OPTIONS: 'abort_on_error=1:detect_leaks=1:strict_string_checks=1'
+          UBSAN_OPTIONS: 'halt_on_error=1:print_stacktrace=1'
+        run: |
+          set -euo pipefail
+          printf 'ASAN_OPTIONS=%s\nUBSAN_OPTIONS=%s\n' "$ASAN_OPTIONS" "$UBSAN_OPTIONS" \
+            > native-validation/sanitizer-options.txt
+          native-validation/stringzilla-native-sanitizers 2>&1 | tee native-validation/run.log
+          git diff --exit-code -- src make test
+          sha256sum native-validation/driver.c native-validation/stringzilla-native-sanitizers \
+            native-validation/sources.tar.gz native-validation/build.log native-validation/run.log \
+            > native-validation/artifact-sha256.txt
+          printf 'Native production kernel ASan/UBSan checks passed on %s. Backend masks and executable selections are recorded in run.log.\n' \
+            '${{ matrix.platform }}' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 'Upload native validation evidence'
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-native-validation-${{ matrix.platform }}
+          path: native-validation
+          if-no-files-found: error
+          retention-days: 14
+
+  msvc-baseline:
+    name: 'MSVC baseline serial instruction qualification'
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - name: 'Checkout the qualification source'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: 'Check MSVC 14.44 toolset'
+        shell: pwsh
+        run: |
+          $visualStudio = 'C:\Program Files\Microsoft Visual Studio\18\Enterprise'
+          $toolset = Get-ChildItem "$visualStudio\VC\Tools\MSVC" -Directory -ErrorAction SilentlyContinue |
+              Where-Object Name -Like '14.44.*'
+          if (-not $toolset) {
+              $installer = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe'
+              $installArgs = @('modify', '--quiet', '--installPath', '"' + $visualStudio + '"',
+                  '--add', 'Microsoft.VisualStudio.Component.VC.14.44.x86.x64')
+              $process = Start-Process -FilePath $installer -ArgumentList $installArgs -Wait -PassThru
+              if ($process.ExitCode -ne 0 -and $process.ExitCode -ne 3010) {
+                  throw "MSVC toolset installation failed: $($process.ExitCode)"
+              }
+          }
+
+      - name: 'Execute the exact production measurement helper baseline probe'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path msvc-validation -Force | Out-Null
+          git diff --exit-code $env:PRODUCTION_SOURCE HEAD -- src make test .github/scripts/stringzilla-performance.py
+          if ($LASTEXITCODE -ne 0) { throw 'Qualification source differs from measured production' }
+          $helperBlob = git hash-object .github/scripts/stringzilla-performance.py
+          if ($helperBlob -ne '02b9b67b17afb6ab0054c14f2994f9db11907042') { throw "Unexpected helper: $helperBlob" }
+          @'
+          import hashlib
+          import importlib.util
+          from pathlib import Path
+          helper = Path(".github/scripts/stringzilla-performance.py")
+          print("STRINGZILLA_HELPER_SHA256", hashlib.sha256(helper.read_bytes()).hexdigest(), flush=True)
+          spec = importlib.util.spec_from_file_location("measurement_helper", helper)
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+          module.msvc_baseline_probe(Path("msvc-validation").resolve(), Path(".").resolve())
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw 'Production MSVC baseline probe failed' }
+
+      - name: 'Upload MSVC baseline evidence'
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-msvc-baseline
+          path: msvc-validation
+          if-no-files-found: warn
+          retention-days: 14
