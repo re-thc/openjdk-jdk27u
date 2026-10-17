@@ -1,6 +1,6 @@
 # Executable mechanism and final-code validation
 
-Status: **source prepared and tested offline; runtime not authorized or launched**.
+Status: **local storage/staging proposal; new execution remains on hold**.
 The entry point is [mechanism_validation.py](scripts/jdk27/cold-call/mechanism_validation.py).
 It runs from an ordinary checkout of this JDK repository and creates isolated,
 fresh Git worktrees. It never calls the historical performance runner.
@@ -79,7 +79,7 @@ processing cannot renew either allowance; the first expiry pins cleanup's clock
 even when an owned critical section defers cancellation. Expiry prevents a pass.
 
 Before any external command, require native Linux x86-64, 16 GiB usable RAM,
-35 GiB free workspace, at most 32 PID1 zombies and at least 4,096 available
+strictly more than the 4 GiB workspace safety reserve, at most 32 PID1 zombies and at least 4,096 available
 process/thread slots under kernel, cgroup and per-user limits. Readiness uses
 read-only `/proc`, cgroup and filesystem accounting. No fork stress probe,
 installation, privilege change or PID1 management occurs. Prerequisites are
@@ -87,13 +87,83 @@ installed GCC/G++ 16.2.0, boot JDK 27, jtreg 8.3, JUnit Jupiter and zstd 1.5.7
 headers/library. Missing or ambiguous prerequisites stop this attempt.
 
 During commands the owner checks host/PID health at most five seconds apart.
-More than 64 additional PID1 zombies, fewer than 4,096 slots, less than 16 GiB
-usable RAM or less than 2 GiB remaining disk stops owned work. The lower ongoing
-disk floor allows admitted build outputs to consume their reserved space.
+More than 64 additional PID1 zombies, fewer than 4,096 slots or less than 16 GiB
+usable RAM stops owned work. Storage has a separate one-second watchdog below.
 Commands use four build jobs, jtreg concurrency one and private sessions.
 WNOWAIT keeps each session leader pinned through bounded TERM/KILL group cleanup;
 only then is its direct child reaped. A lost identity forbids group signaling
 and prevents a pass. No unrelated process is signaled or deleted.
+
+## Sequential storage proposal
+
+The former 35 GiB admission reservation was conservative, not an observed peak.
+It cannot be met by the inspected 31.45 GiB filesystem, whose available space
+was about 29.82 GiB. The original failed admission receipt remains historical
+and untouched. This proposal supplies no execution receipt, retry or permission
+to reuse that attempt. A later authorized execution must bind this exact new
+runner commit, package manifest and frozen configuration to a new single-use
+receipt; the same two-hour design and every code/safety gate apply.
+
+The storage guard admits available capacity rather than claiming that an
+estimated fastdebug build fits. It records the actual initial available bytes,
+filesystem device/capacity, filesystem used bytes, latest/minimum free space
+and peak observed net consumption. Its observed net-consumption allowance is
+`initial available - 4 GiB`; unrelated writes also consume it. At or below
+4 GiB available, changed/unavailable filesystem accounting, or a guard error,
+new work stops with INCONCLUSIVE_INFRA. A recovery in free space cannot reopen
+the stopped attempt. No fixed per-role size or guessed fastdebug minimum is
+presented as a proven bound.
+
+The existing main-thread watchdog forces a storage probe on each one-second
+timer tick, including synchronous analysis, inventory, object hashing and JSON
+writes. Cooperative checks reuse a sample for at most one second; command/host
+checks force another probe. The 4 GiB threshold is an explicit conservative
+stop buffer for outstanding writes from four build jobs, TERM/KILL/reap and
+small evidence/receipt writes. It is not a measured worst-case write burst or
+a guaranteed successful build envelope. A burst between probes, blocked I/O or
+unexpected fastdebug size may still exhaust storage and stop this attempt;
+none permits a pass, continuation, retry or expanded allowance. The first
+storage failure pins the same at-most-60-second cleanup clock. Only owned
+launch/cleanup critical sections may defer cancellation. Final cleanup receipt
+writes bypass the *work* space floor while retaining the original time bounds.
+`/tmp` is not counted as independent workspace capacity or used for build staging.
+
+Each role gets an exclusively created empty `build/mechanism` in its fresh
+worktree, with an immutable ownership receipt containing run/role identities
+and directory device/inodes. Roles still build serially with four jobs. After
+successful images, exact source checks, version/spec validation, full image
+inventory and all sealed-log verification, a separate `image-seal-ROLE.json`
+binds the complete image, ownership, approval, specification and command records.
+No compaction begins before that receipt is saved, hashed and all seals are
+verified again, with every owned process reaped.
+
+Compaction removes only private regular `.o` and `.gch` files below these two
+newly generated directories:
+
+- `build/mechanism/hotspot/variant-server/libjvm/objs`
+- `build/mechanism/support/native`
+
+The immutable object manifest records relative paths, identity, allocated bytes
+and SHA256 before unlinking. Every deletion rechecks ownership, uses anchored
+directory descriptors without following symlinks, rejects hardlinks and verifies
+the planned file identity. No pre-existing build directory can be adopted.
+Complete images keep their original paths and are reverified before and after
+compaction. Sources, specifications, debug sidecars, classes, generated sources,
+all logs and command/dependency records are retained. Only successfully sealed
+roles are compacted; a failed/interrupted seal preserves every object. An
+interrupted compaction retains its plan/progress, stops the campaign and cannot
+resume. No storage-triggered deletion of existing setup files or failed-role
+artifacts is attempted, including during final cleanup.
+
+This intentionally narrow compaction removes the dominant native object/PCH
+cost while retaining other reproducible outputs as well as all unique evidence.
+For role build footprints `F`, discarded object bytes `O`, source footprint `S`
+and evidence `E`, peak space is approximately
+`S + E + max(F_base, F_base-O_base+F_release,
+F_base-O_base+F_release-O_release+F_debug)`; directory/temporary/linker overhead
+is additional and governed by live free space. Objects are discarded before
+the next role begins, within the same role/4,800-second build caps. The unknown
+fastdebug footprint remains a possible controlled infrastructure stop.
 
 ## Frozen work and evidence
 
@@ -185,7 +255,8 @@ mechanical results are retained immediately without waiting for review to fix th
 every provenance, safety, activation, equivalence, transport and review gate.
 Completed safety/code regressions fail. Readiness, build, budget, cleanup or
 ambiguous evidence failures are inconclusive. Preserve receipts, logs, reports,
-XML, binaries, assembly, proofs, ledger and image/source inventories. Old campaign
+XML, required image/native/capture binaries, assembly, proofs, ledger and image/source inventories.
+The discarded reproducible object/PCH identities remain in their manifests. Old campaign
 evidence remains untouched. Nothing starts after the verdict.
 
 Pure Python negative/lifecycle tests mock process launches and management. They

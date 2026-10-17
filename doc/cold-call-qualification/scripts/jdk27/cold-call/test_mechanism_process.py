@@ -176,6 +176,46 @@ class ExecutorTests(unittest.TestCase):
             self.on_launch()
         return self.model.process
 
+    def test_intermediate_cleanup_requires_idle_and_every_owned_leader_reaped(self):
+        executor = self.create()
+        executor.assert_idle()
+        def during_launch():
+            with self.assertRaisesRegex(subject.Failure, "every owned command"):
+                executor.assert_idle()
+        self.on_launch = during_launch
+        self.run_command()
+        executor.assert_idle()
+        executor._owned[0].ownership_lost = True
+        with self.assertRaisesRegex(subject.Failure, "every owned command"):
+            executor.assert_idle()
+
+    def test_live_storage_failure_terminates_owned_group_and_forbids_more_work(self):
+        executor = self.create()
+        self.model.exited = False
+        def fail():
+            raise subject.Failure("storage safety reserve reached")
+        self.on_launch = lambda: setattr(executor, "host_probe", fail)
+        with self.assertRaisesRegex(subject.Failure, "storage safety reserve"):
+            self.run_command()
+        self.assertEqual(self.model.signals, [signal.SIGTERM, signal.SIGKILL])
+        self.assertTrue(self.model.reaped)
+        self.assertEqual(executor.close()["active_groups"], [])
+        with self.assertRaises(subject.Failure):
+            self.run_command("forbidden-retry")
+
+    def test_storage_cleanup_constraint_also_bounds_normal_log_hashing_and_receipts(self):
+        executor = self.create()
+        path = self.output / "log"
+        path.write_bytes(b"retained log")
+        executor.constrain_cleanup_deadline(self.timer.mono + 1)
+        self.timer.advance(1)
+        self.assertGreater(executor.clock.remaining(), 100)
+        with self.assertRaisesRegex(subject.Failure, "cap exhausted"):
+            executor._hash_file(path, self.timer.mono + 100)
+        with self.assertRaisesRegex(subject.Failure, "cap exhausted"):
+            executor._write_json(self.output / "new-receipt.json", {}, self.timer.mono + 100)
+        self.assertFalse((self.output / "new-receipt.json").exists())
+
     def run_command(self, name="check", cap=30, role_remaining=None, role_deadline=None):
         return self.executor.run(name, ["/installed/bin/tool", "literal;$()"], self.output,
                                  cap, role_remaining=role_remaining, role_deadline=role_deadline)

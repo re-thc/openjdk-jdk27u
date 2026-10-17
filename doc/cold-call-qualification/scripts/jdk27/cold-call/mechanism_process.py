@@ -236,14 +236,17 @@ class Executor:
             return snapshot
         except BaseException:
             self._failed = True
+            # Health/storage cancellation also bounds subsequent log hashing and
+            # receipts. It must not inherit a still-long build command deadline.
+            self.constrain_cleanup_deadline(self._cleanup_deadline())
             raise
 
     def _io_check(self, deadline, cleanup=False):
+        if self._cleanup_constraint is not None:
+            deadline = (self._cleanup_constraint if deadline is None else
+                        min(deadline, self._cleanup_constraint))
         if cleanup:
             _require(self.clock.remaining(0) > 0, "Outer deadline exhausted during cleanup evidence")
-            if self._cleanup_constraint is not None:
-                deadline = (self._cleanup_constraint if deadline is None else
-                            min(deadline, self._cleanup_constraint))
         else:
             self.clock.require_open()
         if deadline is not None:
@@ -367,6 +370,12 @@ class Executor:
         for owned in self._owned:
             if owned.cleanup_deadline is not None:
                 owned.cleanup_deadline = min(owned.cleanup_deadline, self._cleanup_constraint)
+
+    def assert_idle(self):
+        """No compile/link writer may remain when completed role objects are pruned."""
+        _require(not self._running and not self._launching and not self._cleaning
+                 and all(owned.reaped and not owned.ownership_lost for owned in self._owned),
+                 "Intermediate cleanup requires every owned command to be reaped")
 
     def _cleanup_deadline(self):
         deadline = self.clock._monotonic() + min(60.0, max(0.0, self.clock.remaining(0)))

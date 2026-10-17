@@ -144,6 +144,42 @@ class DeadlineTests(unittest.TestCase):
                 with self.assertRaises(deadline.DeadlineExpired):
                     runner.sha256(path)
 
+    def test_storage_watchdog_forces_each_one_second_probe_and_stops_cpu_work(self):
+        calls = []
+        def storage(force=False):
+            calls.append(force)
+            if len(calls) == 2:
+                raise runner.Failure("storage reserve reached")
+        with self.guard() as guard:
+            guard.work_check = storage
+            guard.check()
+            with self.assertRaisesRegex(runner.Failure, "storage reserve"):
+                guard._alarm(signal.SIGALRM, None)
+            self.assertEqual(calls, [False, True])
+            self.assertIsNotNone(guard.expired_at)
+            guard.rebind(lambda: 60)
+            guard.check()  # Cleanup receipt writes remain possible below the work reserve.
+            self.assertIsNone(guard.work_check)
+
+    def test_storage_stop_defers_only_owned_critical_sections_and_pins_cleanup(self):
+        critical = [True]
+        def storage(force=False):
+            raise runner.Failure("storage reserve reached")
+        with patch.object(deadline.time, "monotonic", return_value=1000) as now:
+            with self.guard(lambda: critical[0]) as guard:
+                guard.work_check = storage
+                guard._alarm(signal.SIGALRM, None)
+                self.assertEqual(guard.expired_at, 1000)
+                self.assertTrue(guard.pending)
+                critical[0] = False
+                now.return_value = 1001
+                with self.assertRaisesRegex(runner.Failure, "storage reserve"):
+                    guard._alarm(signal.SIGALRM, None)
+                guard.rebind(lambda: 999)
+                now.return_value = 1060
+                with self.assertRaises(deadline.DeadlineExpired):
+                    guard.check()
+
 
 if __name__ == "__main__":
     unittest.main()

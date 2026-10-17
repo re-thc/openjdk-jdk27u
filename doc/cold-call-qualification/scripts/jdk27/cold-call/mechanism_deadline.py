@@ -24,13 +24,15 @@ def deadline_check():
 
 
 class DeadlineGuard:
-    def __init__(self, remaining, hard_remaining=None, defer=None):
+    def __init__(self, remaining, hard_remaining=None, defer=None, work_check=None):
         self.remaining = remaining
         self.hard_remaining = hard_remaining or remaining
         self.defer = defer or (lambda: False)
         self.entered = False
         self.pending = False
         self.expired_at = None
+        self.work_check = work_check
+        self.pending_error = None
 
     @staticmethod
     def _seconds(probe):
@@ -43,11 +45,18 @@ class DeadlineGuard:
         remaining = min(self._seconds(self.remaining), self._hard_seconds())
         if self.pending or remaining <= 0:
             self._mark_expired(remaining)
-            raise DeadlineExpired("controller processing exhausted its original deadline")
+            raise self.pending_error or DeadlineExpired("controller processing exhausted its original deadline")
+        if self.work_check:
+            try:
+                self.work_check(force=False)
+            except Failure as error:
+                self._mark_expired(0)
+                self.pending, self.pending_error = True, error
+                raise
 
     def _mark_expired(self, remaining):
-        if self.expired_at is None:
-            self.expired_at = time.monotonic() + min(0.0, remaining)
+        anchor = time.monotonic() + min(0.0, remaining)
+        self.expired_at = anchor if self.expired_at is None else min(self.expired_at, anchor)
 
     def _hard_seconds(self):
         remaining = self._seconds(self.hard_remaining)
@@ -61,10 +70,18 @@ class DeadlineGuard:
     def _alarm(self, _signum, _frame):
         hard = self._hard_seconds()
         remaining = min(self._seconds(self.remaining), hard)
+        problem = self.pending_error
         if self.pending or remaining <= 0:
+            problem = problem or DeadlineExpired("controller processing exhausted its original deadline")
+        elif self.work_check:
+            try:
+                self.work_check(force=True)
+            except Failure as error:
+                problem = error
+        if problem is not None:
             self._mark_expired(remaining)
             hard = self._hard_seconds()
-            self.pending = True
+            self.pending, self.pending_error = True, problem
             # Launch registration and owned cleanup retain their identity anchor.
             # Cancellation is deferred only while the original hard clock is open.
             deferred = self.defer()
@@ -72,15 +89,17 @@ class DeadlineGuard:
                 self._arm(min(0.1, hard))
                 return
             signal.setitimer(signal.ITIMER_REAL, 0)
-            raise DeadlineExpired("controller processing exhausted its original deadline")
+            raise problem
         self._arm(remaining)
 
-    def rebind(self, remaining, defer=None):
+    def rebind(self, remaining, defer=None, work_check=None):
         """Switch to the caller's already anchored cleanup/phase deadline."""
         self.remaining = remaining
         if defer is not None:
             self.defer = defer
         self.pending = False
+        self.pending_error = None
+        self.work_check = work_check
         self.check()
         if self.entered:
             self._arm(min(self._seconds(self.remaining), self._hard_seconds()))

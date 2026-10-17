@@ -26,7 +26,7 @@
     "candidate-release": 1500,
     "candidate-fastdebug": 1800
   },
-  "build_policy": "fresh isolated detached Git worktrees and complete normal server images only",
+  "build_policy": "serial fresh isolated detached Git worktrees and complete normal server images; post-seal owned native object/PCH compaction",
   "attempts_per_job": 1,
   "job_registry": {
     "safety-base-existing": "safety",
@@ -182,5 +182,43 @@
     "new_or_increased_work": "MECHANISM_NO_GO",
     "unproven_effect_or_path_mapping": "INCONCLUSIVE_INFRA",
     "semantic_review_can_waive": false
+  },
+  "storage_policy": {
+    "status": "LOCAL_SOURCE_PROPOSAL_EXECUTION_HOLD",
+    "safety_reserve_bytes": 4294967296,
+    "work_requires_available_bytes": "strictly greater than safety_reserve_bytes",
+    "forced_poll_seconds": 1,
+    "observed_net_consumption_allowance": "initial available bytes minus safety reserve",
+    "accounting": "filesystem available/used bytes, including unrelated writers; device/capacity changes fail closed",
+    "unknown_fastdebug_peak": "possible INCONCLUSIVE_INFRA stop; no estimated complete-build minimum or retry",
+    "storage_failure_cleanup_seconds": 60,
+    "cleanup_removes_failed_role_artifacts": false,
+    "compaction": {
+      "roles_serial": true,
+      "fresh_empty_build_directory_required": true,
+      "successful_image_and_provenance_seal_required": true,
+      "all_owned_commands_reaped_before_unlink": true,
+      "roots": [
+        "hotspot/variant-server/libjvm/objs",
+        "support/native"
+      ],
+      "suffixes": [
+        ".gch",
+        ".o"
+      ],
+      "symlinks_and_hardlinks_rejected": true,
+      "object_identity_and_sha256_manifest_before_unlink": true,
+      "complete_images_reverified_before_and_after": true,
+      "preserve": [
+        "sources",
+        "complete images",
+        "specifications",
+        "debug sidecars",
+        "classes",
+        "all logs and command/dependency records"
+      ],
+      "attempts_per_role": 1,
+      "charged_to_original_build_role_and_phase_caps": true
+    }
   }
 }

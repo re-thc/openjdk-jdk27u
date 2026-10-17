@@ -23,6 +23,7 @@ import time
 sys.dont_write_bytecode = True
 from mechanism_process import Clock, Executor, Failure
 from mechanism_deadline import DeadlineGuard, deadline_check
+from mechanism_storage import StorageGuard, RoleStaging, RESERVE_BYTES, POLL_SECONDS
 from mechanism_evidence import analyze_capture, compare_captures
 from decode_capture import extract
 
@@ -75,6 +76,7 @@ PACKAGE_FILES = {"README.md", "MECHANISM-VALIDATION.md", "MECHANISM-VALIDATION-P
                  "MECHANISM-APPROVAL.example.json", "FUTURE-VALIDATION-PLAN.json"} | {
     "scripts/jdk27/cold-call/" + name for name in (
         "mechanism_validation.py", "mechanism_process.py", "mechanism_prepare.py", "mechanism_evidence.py", "mechanism_deadline.py",
+        "mechanism_storage.py", "test_mechanism_storage.py",
         "test_mechanism_validation.py", "test_mechanism_process.py", "test_mechanism_evidence.py",
         "test_mechanism_deadline.py",
         "qualify_decoder.py", "DecoderQualification.java", "decode_capture.py")}
@@ -270,9 +272,9 @@ def admit_host(snapshot, initial=None):
     require(snapshot.get("system") == "Linux" and snapshot.get("machine") == "x86_64"
             and snapshot.get("native") is True, "native Linux x86-64 required")
     require(snapshot.get("ram_bytes", 0) >= 16 * 1024**3, "16 GiB usable RAM required")
-    # The 35-GiB floor is admission only: expected build outputs consume space.
-    require(snapshot.get("free_bytes", 0) >= (35 if initial is None else 2) * 1024**3,
-            "insufficient workspace disk headroom")
+    # This is an explicit live stop reserve, not a claimed complete-build peak.
+    require(snapshot.get("free_bytes", 0) > RESERVE_BYTES,
+            "storage safety reserve reached")
     require(snapshot.get("process_headroom", 0) >= 4096, "insufficient process headroom")
     z = snapshot.get("pid1_zombies", -1)
     require(isinstance(z, int) and z >= 0, "PID1 zombie accounting unavailable")
@@ -454,6 +456,9 @@ class Mechanism:
         self.trees, self.images, self.source_seals, self.tool_seals = {}, {}, {}, {}
         self.failed = False
         self.deadline_guard = deadline_guard
+        self.storage = StorageGuard(self.output)
+        self.receipt["storage"] = self.storage.record
+        self.receipt["staging"] = {}
 
     def controller_remaining(self):
         """Read absolute bounds without mutating the aggregate Budget clock."""
@@ -481,6 +486,7 @@ class Mechanism:
         save(self.output / "campaign.json", self.receipt)
 
     def host_probe(self):
+        self.storage.check(force=True)
         snapshot = host_snapshot(self.output)
         admit_host(snapshot, self.initial_host)
         if self.initial_host is None:
@@ -665,6 +671,10 @@ class Mechanism:
         for role in ROLE_CAPS:
             self.budget.start_role(role)
             tree, c = self.trees[role], self.config
+            check = lambda: self.budget.remaining_role(role)
+            staging = RoleStaging(self.output, tree, role, self.approval["run_id"], save, sha256, check)
+            self.receipt["staging"][role] = staging.record
+            self.seals[str(staging.owner_path)] = staging.owner_hash
             debug = "fastdebug" if role == "candidate-fastdebug" else "release"
             configure = ["bash", "configure", "--with-conf-name=mechanism", "--with-debug-level=" + debug,
                          "--with-jobs=4", "--with-jvm-variants=server", "--with-boot-jdk=" + c["boot_jdk"],
@@ -697,8 +707,31 @@ class Mechanism:
                 if path.is_file() and not path.is_symlink():
                     self.image_seals[str(path)] = files[str(path.relative_to(image))]["sha256"]
             self.persist()
+            self.verify_seals(full=True, check=check)
+            seal_path = self.output / ("image-seal-" + role + ".json")
+            save(seal_path, dict(schema=1, run_id=self.approval["run_id"], role=role,
+                                ownership_sha256=staging.owner_hash,
+                                approval_sha256=sha256(self.input_paths[1]),
+                                runner_revision=self.approval["runner_revision"],
+                                config_sha256=self.approval["config_sha256"],
+                                package_sha256=self.approval["package_sha256"],
+                                source=self.receipt["sources"][role],
+                                compiler_subprograms=self.receipt["compiler_subprograms"],
+                                tool_hashes=self.tool_seals,
+                                image=self.receipt["images"][role],
+                                commands=[record for record in self.receipt["commands"]
+                                          if record["name"].endswith("-" + role)
+                                          or record["name"].startswith("source-" + role + "-")]))
+            seal_hash = sha256(seal_path, check)
+            self.seals[str(seal_path)] = seal_hash
+            staging.compact(seal_path, seal_hash, lambda: self.verify_seals(full=True, check=check),
+                            self.executor.assert_idle)
+            for name in ("staging-" + role + "-objects.json", "staging-" + role + ".json"):
+                self.seals[str(self.output / name)] = sha256(self.output / name, check)
+            self.storage.check(force=True)
             self.receipt["images"][role]["role_elapsed_seconds"] = ROLE_CAPS[role] - self.budget.remaining_role(role)
             self.budget.active_role = None
+            self.persist()
         left = specs["base-release"].copy()
         require(left == specs["candidate-release"], "release configurations are not matched")
         left["DEBUG_LEVEL"] = "fastdebug"
@@ -954,6 +987,7 @@ class Mechanism:
         old_handlers = {}
         try:
             self.host_probe()  # Admission is before any external command.
+            self.deadline_guard.work_check = self.storage.check
             env = {"LANG": "C", "LC_ALL": "C", "TZ": "UTC", **self.config["environment"],
                    "JTREG_JAVA": str(Path(self.config["boot_jdk"]) / "bin/java")}
             env["PATH"] = str(Path(self.config["boot_jdk"]) / "bin") + ":" + env["PATH"]
@@ -974,6 +1008,9 @@ class Mechanism:
             status = self.review()
         except BaseException as error:
             self.failed = True
+            if self.storage.failed_at is not None:
+                self.deadline_guard._mark_expired(self.storage.failed_at - time.monotonic())
+                self.defer_deadline()
             remaining = self.controller_remaining()
             if remaining <= 0:
                 self.deadline_guard._mark_expired(remaining)
@@ -1080,6 +1117,7 @@ def main(argv=None):
         print(json.dumps(dict(candidate=CANDIDATE, baseline=BASELINE, codec=CODEC,
                               phase_caps=PHASE_CAPS, role_caps=ROLE_CAPS,
                               safety_suites=SAFETY_SUITES, capture_cells=CAPTURE_CELLS,
+                              storage_reserve_bytes=RESERVE_BYTES, storage_poll_seconds=POLL_SECONDS,
                               execution_authorized=False), indent=2))
         return 0
     try:

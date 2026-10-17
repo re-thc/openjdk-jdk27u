@@ -66,7 +66,7 @@ class OfflineTest(unittest.TestCase):
 
     def host(self):
         return dict(system="Linux", machine="x86_64", native=True,
-                    ram_bytes=16 * 1024**3, free_bytes=35 * 1024**3,
+                    ram_bytes=16 * 1024**3, free_bytes=runner.RESERVE_BYTES + 1,
                     pid1_zombies=0, process_headroom=4096, probe_errors=[])
 
 
@@ -191,7 +191,7 @@ class HostAdmissionTests(OfflineTest):
 
     def test_unsafe_or_ambiguous_host_fails_closed(self):
         for field, changed in (("system", "Darwin"), ("machine", "aarch64"), ("native", False),
-                               ("ram_bytes", 16 * 1024**3 - 1), ("free_bytes", 35 * 1024**3 - 1),
+                               ("ram_bytes", 16 * 1024**3 - 1), ("free_bytes", runner.RESERVE_BYTES),
                                ("pid1_zombies", 33), ("process_headroom", 4095),
                                ("probe_errors", ["unknown cgroup limit"])):
             value = self.host()
@@ -407,7 +407,7 @@ class PackageTests(OfflineTest):
     def test_package_requires_every_declared_portable_source_and_no_extras(self):
         manifest, _ = self.fixture()
         runner.verify_package(manifest)
-        self.assertEqual(len(runner.PACKAGE_FILES), 19)
+        self.assertEqual(len(runner.PACKAGE_FILES), 21)
         for name in runner.PACKAGE_FILES:
             value = copy.deepcopy(manifest)
             del value["files"][name]
@@ -555,6 +555,9 @@ class MockExecutor:
         self.closed = True
         return self.harness.cleanup_receipt or dict(active_groups=[], direct_children_reaped=True, failed=False, elapsed_seconds=0.0)
 
+    def assert_idle(self):
+        pass  # This fixture never launches a writer.
+
     def cancel_signal(self, signum):
         raise runner.Failure("mock cancellation " + str(signum))
 
@@ -695,7 +698,7 @@ class LifecycleTests(OfflineTest):
             return str(Path(self.configuration["cc"]).parent / name.removeprefix("tool-resolve-")) + "\n", ""
         if name.startswith("configure-"):
             spec = cwd / "build/mechanism/spec.gmk"
-            spec.parent.mkdir(parents=True)
+            spec.parent.mkdir(parents=True, exist_ok=True)
             spec.write_text(self.make_spec(name.removeprefix("configure-")))
             return "configured normal server\n", ""
         if name.startswith("images-"):
@@ -708,6 +711,12 @@ class LifecycleTests(OfflineTest):
                 path = image / relative
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(data)
+            for relative in ("hotspot/variant-server/libjvm/objs/native.o",
+                             "support/native/java.base/native.o"):
+                obj = cwd / "build/mechanism" / relative
+                obj.parent.mkdir(parents=True, exist_ok=True)
+                obj.write_bytes(b"fresh fixture native object")
+            (cwd / "build/mechanism/support/native/java.base/compile.log").write_text("unique log")
             return "images complete\n", ""
         if name == "tool-zstd-headers":
             text = "#define ZSTD_VERSION_MAJOR 1\n#define ZSTD_VERSION_MINOR 5\n"
@@ -825,6 +834,67 @@ class LifecycleTests(OfflineTest):
             self.assertEqual(campaign.run(), "INCONCLUSIVE_INFRA")
         self.assertEqual(self.executors, [])
         self.assertEqual(campaign.receipt["commands"], [])
+
+    def test_each_role_is_sealed_and_compacted_before_the_next_configure(self):
+        campaign = self.fixture()
+        observed = []
+        def after(name):
+            if name.startswith("configure-") and name != "configure-base-release":
+                previous = "base-release" if name == "configure-candidate-release" else "candidate-release"
+                self.assertEqual(campaign.receipt["staging"][previous]["status"], "COMPLETE")
+                self.assertTrue((campaign.output / ("image-seal-" + previous + ".json")).is_file())
+                self.assertFalse((campaign.trees[previous] / "build/mechanism/hotspot/variant-server/libjvm/objs/native.o").exists())
+                self.assertEqual((campaign.trees[previous] / "build/mechanism/support/native/java.base/compile.log").read_text(), "unique log")
+                observed.append(previous)
+        self.after_command = after
+        self.assertEqual(campaign.run(), "MECHANISM_NO_GO", campaign.receipt.get("failure"))
+        self.assertEqual(observed, ["base-release", "candidate-release"])
+        self.assertTrue(all(value["status"] == "COMPLETE" for value in campaign.receipt["staging"].values()))
+        self.assertTrue(all(image.is_dir() for image in campaign.images.values()))
+
+    def test_interrupted_successful_image_seal_stops_before_any_object_deletion(self):
+        campaign = self.fixture()
+        original_save = runner.save
+        def interrupt(path, value):
+            if Path(path).name == "image-seal-base-release.json":
+                raise runner.Failure("interrupted successful-image seal")
+            original_save(path, value)
+        with patch.object(runner, "save", side_effect=interrupt):
+            self.assertEqual(campaign.run(), "INCONCLUSIVE_INFRA")
+        obj = campaign.trees["base-release"] / "build/mechanism/hotspot/variant-server/libjvm/objs/native.o"
+        self.assertTrue(obj.is_file())
+        self.assertNotIn("candidate-release", campaign.receipt["images"])
+        self.assertTrue(self.executors[0].closed)
+
+    def test_storage_stop_closes_owned_work_and_never_starts_another_role(self):
+        campaign = self.fixture()
+        def after(name):
+            if name == "images-base-release":
+                campaign.storage.failed = "storage guard stopped work: offline disk exhaustion"
+                campaign.storage.record["failure"] = campaign.storage.failed
+        self.after_command = after
+        self.assertEqual(campaign.run(), "INCONCLUSIVE_INFRA")
+        self.assertIn("storage guard", campaign.receipt["failure"]["reason"])
+        self.assertTrue(self.executors[0].closed)
+        self.assertEqual(campaign.receipt["cleanup"]["active_groups"], [])
+        self.assertNotIn("candidate-release", campaign.budget.roles)
+        self.assertEqual(campaign.receipt["safety"], {})
+
+    def test_compaction_cannot_outlive_or_reset_its_original_build_role_cap(self):
+        campaign = self.fixture()
+        tick = [100.0]
+        campaign.budget.monotonic = lambda: tick[0]
+        campaign.budget.last = tick[0]
+        compact = runner.RoleStaging.compact
+        def expire(staging, *args):
+            tick[0] += runner.ROLE_CAPS["base-release"] + 1
+            return compact(staging, *args)
+        with patch.object(runner.RoleStaging, "compact", expire):
+            self.assertEqual(campaign.run(), "INCONCLUSIVE_INFRA")
+        self.assertIn("build role cap", campaign.receipt["failure"]["reason"])
+        self.assertEqual(set(campaign.budget.roles), {"base-release"})
+        self.assertTrue((campaign.trees["base-release"] / "build/mechanism/hotspot/variant-server/libjvm/objs/native.o").is_file())
+        self.assertTrue(self.executors[0].closed)
 
     def test_missing_zstd_headers_stop_preflight_before_any_build(self):
         campaign = self.fixture()
