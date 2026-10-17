@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test id=fallback
  * @summary Verify exact downcall-template selection, fallback, class data, and scope handling
  * @compile --patch-module java.base=${test.src} -d ${test.classes} DowncallTemplateTest.java
  * @run main/othervm --patch-module java.base=${test.classes} jdk.internal.foreign.abi.DowncallTemplateTest default
@@ -31,9 +31,17 @@
  *      jdk.internal.foreign.abi.DowncallTemplateTest fallback
  */
 
+/*
+ * @test id=templates-required
+ * @summary Require template payload coverage on supported native images
+ * @compile --patch-module java.base=${test.src} -d ${test.classes} DowncallTemplateTest.java
+ * @run main/othervm --patch-module java.base=${test.classes} jdk.internal.foreign.abi.DowncallTemplateTest required
+ */
+
 package jdk.internal.foreign.abi;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
@@ -46,10 +54,18 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.ClassFileFormatVersion;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
+
+import jdk.internal.foreign.CABI;
+import jdk.internal.util.OperatingSystem;
+import jdk.internal.util.StaticProperty;
 
 /** Exercises the real template selector and emitted wrapper without a native call. */
 public class DowncallTemplateTest {
@@ -63,6 +79,21 @@ public class DowncallTemplateTest {
     private static final RuntimeException LEAF_FAILURE = new RuntimeException("leaf failure");
 
     private record Recipe(String platform, ABIDescriptor abi, CallingSequence sequence) { }
+
+    private static String nativeTemplatePlatform() {
+        if (!OperatingSystem.isLinux() || ByteOrder.nativeOrder() != ByteOrder.LITTLE_ENDIAN
+                || ValueLayout.ADDRESS.byteSize() != 8) {
+            return null;
+        }
+        String arch = StaticProperty.osArch();
+        if ((arch.equals("amd64") || arch.equals("x86_64")) && CABI.current() == CABI.SYS_V) {
+            return X64;
+        }
+        if (arch.equals("aarch64") && CABI.current() == CABI.LINUX_AARCH_64) {
+            return AARCH64;
+        }
+        return null;
+    }
 
     private static void check(boolean condition, String message) {
         checks++;
@@ -126,6 +157,57 @@ public class DowncallTemplateTest {
         return (CallingSequence) bindings.getClass().getMethod("callingSequence").invoke(bindings);
     }
 
+    private static CallingSequence copySequence(CallingSequence sequence, List<List<Binding>> arguments,
+                                                LinkerOptions options) {
+        return new CallingSequence(sequence.forUpcall(), sequence.callerMethodType(), sequence.calleeMethodType(),
+                sequence.functionDesc(), sequence.needsReturnBuffer(), sequence.returnBufferSize(),
+                sequence.allocationSize(), arguments, sequence.returnBindings(), options);
+    }
+
+    private static List<List<Binding>> copyArguments(CallingSequence sequence) {
+        List<List<Binding>> arguments = new ArrayList<>();
+        for (int i = 0; i < sequence.argumentBindingsCount(); i++) {
+            arguments.add(new ArrayList<>(sequence.argumentBindings(i)));
+        }
+        return arguments;
+    }
+
+    private static ABIDescriptor withStackAlignment(ABIDescriptor abi, int stackAlignment) {
+        return new ABIDescriptor(abi.arch, abi.inputStorage, abi.outputStorage, abi.volatileStorage,
+                stackAlignment, abi.shadowSpace, abi.scratch1, abi.scratch2, abi.targetAddrStorage,
+                abi.retBufAddrStorage, abi.capturedStateStorage);
+    }
+
+    private static void checkRejectedRecipes(Recipe recipe, DowncallTemplates.Entry entry,
+                                             MethodHandle target) throws Throwable {
+        CallingSequence sequence = recipe.sequence();
+        check(!DowncallTemplates.matches(entry, recipe.platform(),
+                withStackAlignment(recipe.abi(), recipe.abi().stackAlignment + 1), sequence,
+                target.type(), callerType(sequence)), "ABI stack-alignment mismatch rejected " + recipe.platform());
+
+        List<List<Binding>> heapArguments = copyArguments(sequence);
+        heapArguments.get(0).set(0, new Binding.SegmentOffset(true));
+        CallingSequence heapSymbol = copySequence(sequence, heapArguments, LinkerOptions.empty());
+        check(!DowncallTemplates.matches(entry, recipe.platform(), recipe.abi(), heapSymbol,
+                target.type(), callerType(heapSymbol)), "heap-capable symbol binding rejected " + recipe.platform());
+
+        List<List<Binding>> storageArguments = copyArguments(sequence);
+        Binding.VMStore originalStore = (Binding.VMStore) storageArguments.get(1).get(0);
+        VMStorage originalStorage = originalStore.storage();
+        VMStorage wrongStorage = new VMStorage(originalStorage.type(), originalStorage.segmentMaskOrSize(),
+                originalStorage.indexOrOffset() + 1, originalStorage.debugName());
+        storageArguments.get(1).set(0, new Binding.VMStore(wrongStorage, originalStore.type()));
+        CallingSequence wrongStorageSequence = copySequence(sequence, storageArguments, LinkerOptions.empty());
+        check(!DowncallTemplates.matches(entry, recipe.platform(), recipe.abi(), wrongStorageSequence,
+                target.type(), callerType(wrongStorageSequence)),
+                "binding storage mismatch rejected " + recipe.platform());
+
+        CallingSequence captured = sequence(recipe, Linker.Option.captureCallState("errno"));
+        check(captured.capturedStateMask() != 0 && !DowncallTemplates.matches(entry, recipe.platform(),
+                recipe.abi(), captured, target.type(), callerType(captured)),
+                "captureCallState recipe rejected " + recipe.platform());
+    }
+
     private static byte[] emittedBytes(Recipe recipe, MethodType caller, MethodHandle leaf) throws Throwable {
         Method emitter = BindingSpecializer.class.getDeclaredMethod("specializeHelper", MethodType.class,
                 MethodType.class, CallingSequence.class, ABIDescriptor.class);
@@ -162,6 +244,13 @@ public class DowncallTemplateTest {
     }
 
     private static void checkScopes(Recipe recipe, MethodHandle handle) throws Throwable {
+        try {
+            invoke(handle, MemorySegment.ofArray(new byte[8]), 1);
+            throw new AssertionError("Heap symbol was accepted");
+        } catch (IllegalArgumentException expected) {
+            check(true, "heap symbol rejected");
+        }
+
         MemorySegment closed;
         try (Arena arena = Arena.ofConfined()) {
             closed = arena.allocate(8);
@@ -212,13 +301,71 @@ public class DowncallTemplateTest {
         check(closeFailure.get() == null, "shared scope closed cleanly");
     }
 
+    private static void checkConcurrentSpecializations(Recipe recipe) throws InterruptedException {
+        int count = 4;
+        CountDownLatch ready = new CountDownLatch(count);
+        CountDownLatch start = new CountDownLatch(1);
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        int[] results = new int[count];
+        int[] inputs = {-17, 0, 23, 0x12345678};
+        Thread[] threads = new Thread[count];
+        for (int i = 0; i < count; i++) {
+            final int index = i;
+            threads[i] = new Thread(() -> {
+                ready.countDown();
+                try {
+                    start.await();
+                    boolean usePlus = (index & 1) == 0;
+                    MethodHandle handle = specialize(recipe, leaf(usePlus ? "plus" : "xor"));
+                    results[index] = invoke(handle, MemorySegment.ofAddress(0x1234), inputs[index]);
+                    int expected = usePlus ? inputs[index] + 17 : inputs[index] ^ 0x55;
+                    if (results[index] != expected) {
+                        throw new AssertionError("Concurrent specialization returned " + results[index]
+                                + ", expected " + expected);
+                    }
+                } catch (Throwable ex) {
+                    failure.compareAndSet(null, ex);
+                }
+            });
+            threads[i].setDaemon(true);
+            threads[i].start();
+        }
+        ready.await();
+        start.countDown();
+        for (Thread thread : threads) {
+            thread.join(10_000);
+            check(!thread.isAlive(), "concurrent specialization completed");
+        }
+        check(failure.get() == null, "concurrent independent specializations succeeded: " + failure.get());
+    }
+
     private static Recipe currentRecipe;
 
+    private static void checkTruncatedHeader(byte[] bundle, String sourceId, int major, int length) {
+        try {
+            check(DowncallTemplates.decode(new ByteArrayInputStream(Arrays.copyOf(bundle, length)),
+                    sourceId, major, GeneratedDowncallTemplateData.length(),
+                    GeneratedDowncallTemplateData.crc()) == null, "truncated header rejected at " + length);
+        } catch (IOException expected) {
+            // lookup() treats decoder I/O rejection as normal-generation fallback.
+            check(true, "truncated header rejected at " + length);
+        }
+    }
+
     public static void main(String[] args) throws Throwable {
-        if (args.length != 1 || !(args[0].equals("default") || args[0].equals("fallback"))) {
-            throw new AssertionError("Expected default or fallback mode");
+        if (args.length != 1 || !(args[0].equals("default") || args[0].equals("fallback")
+                || args[0].equals("required"))) {
+            throw new AssertionError("Expected default, fallback, or required mode");
         }
         boolean forcedFallback = args[0].equals("fallback");
+        boolean templatesRequired = args[0].equals("required");
+        String runtimePlatform = DowncallTemplates.platform();
+        String nativePlatform = nativeTemplatePlatform();
+        boolean supportedRuntime = nativePlatform != null;
+        if (templatesRequired && supportedRuntime) {
+            check(runtimePlatform.equals(nativePlatform),
+                    "native platform classifier expected " + nativePlatform + ", got " + runtimePlatform);
+        }
         int major = ClassFileFormatVersion.latest().major();
         String sourceId = DowncallTemplateVersion.ID;
 
@@ -228,6 +375,14 @@ public class DowncallTemplateTest {
         }
         check(platforms.isEmpty() || platforms.equals(Set.of(X64, AARCH64)),
                 "generated metadata is empty or covers x86_64 and AArch64: " + platforms);
+        if (templatesRequired && supportedRuntime) {
+            check(GeneratedDowncallTemplateData.ENTRIES.length == 2
+                    && platforms.equals(Set.of(X64, AARCH64)),
+                    "templates-required mode needs both generated ABI entries: " + platforms);
+        } else if (templatesRequired) {
+            System.out.println("DOWNCALL_TEMPLATE_REQUIRED_MODE_UNSUPPORTED_HOST_FALLBACK platform="
+                    + runtimePlatform);
+        }
 
         Recipe x64 = recipe(X64);
         Recipe aarch64 = recipe(AARCH64);
@@ -255,6 +410,17 @@ public class DowncallTemplateTest {
             check(DowncallTemplates.decode(new ByteArrayInputStream(Arrays.copyOf(bundle, bundle.length + 1)),
                     sourceId, major, GeneratedDowncallTemplateData.length(),
                     GeneratedDowncallTemplateData.crc()) == null, "trailing bundle data rejected");
+            check(DowncallTemplates.decode(new ByteArrayInputStream(Arrays.copyOf(bundle, bundle.length - 1)),
+                    sourceId, major, GeneratedDowncallTemplateData.length(),
+                    GeneratedDowncallTemplateData.crc()) == null, "truncated bundle rejected");
+            byte[] malformed = bundle.clone();
+            malformed[0] ^= 1;
+            check(DowncallTemplates.decode(new ByteArrayInputStream(malformed), sourceId, major,
+                    GeneratedDowncallTemplateData.length(), GeneratedDowncallTemplateData.crc()) == null,
+                    "malformed bundle header rejected");
+            for (int length : new int[]{0, 3, 12, 13}) {
+                checkTruncatedHeader(bundle, sourceId, major, length);
+            }
         }
         for (Recipe recipe : new Recipe[]{x64, aarch64}) {
             if (!platforms.isEmpty()) {
@@ -262,7 +428,9 @@ public class DowncallTemplateTest {
                 check(DowncallTemplates.matches(entry, recipe.platform(), recipe.abi(), recipe.sequence(),
                         plus.type(), callerType(recipe.sequence())), "exact recipe matches " + recipe.platform());
                 check(!DowncallTemplates.matches(entry, "unsupported", recipe.abi(), recipe.sequence(),
-                        plus.type(), callerType(recipe.sequence())), "unsupported platform rejected " + recipe.platform());
+                        plus.type(), callerType(recipe.sequence())),
+                        "unsupported platform rejected " + recipe.platform());
+                checkRejectedRecipes(recipe, entry, plus);
                 if (!forcedFallback) {
                     check(Arrays.equals(template, emittedBytes(recipe, callerType(recipe.sequence()), plus)),
                             "template equals production emitter for " + recipe.platform());
@@ -293,13 +461,16 @@ public class DowncallTemplateTest {
                 plus.type(), callerType(unsupportedSequence));
         check(rejected == null, "unsupported scalar shape falls back before ABI access");
 
-        String runtimePlatform = DowncallTemplates.platform();
         currentRecipe = runtimePlatform.equals(X64) ? x64 : runtimePlatform.equals(AARCH64) ? aarch64 : null;
         boolean defaultConfiguration = System.getProperty("jdk.internal.foreign.abi.Specializer.DUMP_CLASSES_DIR") == null
                 && !Boolean.getBoolean("jdk.internal.foreign.abi.Specializer.PERFORM_VERIFICATION")
                 && Integer.getInteger("jdk.internal.foreign.abi.Specializer.SCOPE_DEDUP_DEPTH", 2) == 2;
         boolean expectedTemplate = currentRecipe != null && platforms.contains(runtimePlatform)
                 && defaultConfiguration && !forcedFallback;
+        if (templatesRequired && supportedRuntime) {
+            check(defaultConfiguration, "templates-required mode needs default specialization configuration");
+            expectedTemplate = true;
+        }
         Recipe selectionRecipe = currentRecipe == null ? x64 : currentRecipe;
         byte[] selected = DowncallTemplates.lookup(sourceId, major, defaultConfiguration,
                 selectionRecipe.abi(), selectionRecipe.sequence(), plus.type(),
@@ -321,6 +492,7 @@ public class DowncallTemplateTest {
             check(invoke(independent, symbol, value) == (value ^ 0x55), "independent leaf class data");
         }
         checkScopes(executionRecipe, specialized);
+        checkConcurrentSpecializations(executionRecipe);
         System.out.println("DOWNCALL_TEMPLATE_PASS checks=" + checks + " selected=" + (selected != null)
                 + " platform=" + runtimePlatform);
     }

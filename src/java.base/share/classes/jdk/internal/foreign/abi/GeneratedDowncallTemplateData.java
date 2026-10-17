@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,4 +23,19 @@
  * questions.
  */
 package jdk.internal.foreign.abi;
-final class GeneratedDowncallTemplateData { static int length(){return 0;} static long crc(){return 0;} static java.io.InputStream open(){return null;} static final DowncallTemplates.Entry[] ENTRIES={}; }
+
+final class GeneratedDowncallTemplateData {
+    static int length() {
+        return 0;
+    }
+
+    static long crc() {
+        return 0;
+    }
+
+    static java.io.InputStream open() {
+        return null;
+    }
+
+    static final DowncallTemplates.Entry[] ENTRIES = {};
+}

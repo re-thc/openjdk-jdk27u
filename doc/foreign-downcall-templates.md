@@ -15,6 +15,11 @@ cannot generate the supported recipe emits empty metadata instead of failing
 the cross build. Missing, incompatible or corrupt template data uses the
 existing runtime emitter. There is no new production flag or public API.
 
+Formatting and test hardening do not change the emitter, recipe, encoded bundle
+format or validation algorithm. Content-derived source/build IDs will refresh
+on a normal rebuild because the source files are identity inputs. Do not reuse
+an old ID to make a new image appear source-identical.
+
 These are source-level changes, not a qualified speedup. In particular, the
 earlier handwritten adapter has a control-passing retained C2 slowdown hold
 (baseline/candidate elapsed ratio 0.95767, 95% CI [0.87993, 0.99977]). Its cause
@@ -57,16 +62,21 @@ make CONF=ffm-release JOBS="$FFM_JOBS" test \
     TEST="test/jdk/java/foreign/DowncallTemplateTest.java test/jdk/java/foreign/TestLinker.java test/jdk/java/foreign/callarranger"
 ```
 
-`DowncallTemplateTest` has two separate VM runs: default selection and forced
-verification fallback. It compares template bytes against both ABI emitters;
-checks source identity, version, checksum and framing guards; rejects options,
-unsupported shapes and platforms; and exercises independent class-data leaves,
-closed/wrong-thread scopes and cleanup on a throwing leaf. Synthetic leaves
-avoid native calls, so this test does not replace native ABI coverage.
+`DowncallTemplateTest` has separate `fallback` and `templates-required` test
+descriptions. The first runs optional default selection and forced verification
+fallback, allowing intentional empty-metadata images. The second runs explicit
+`required` mode: on supported native Linux images, empty metadata, a missing or
+invalid bundle, nondefault specializer configuration, or null selection fails
+the test. Unsupported hosts explicitly report fallback. A supported-image
+qualification must pass the required description; fallback coverage alone
+cannot qualify template installation.
 
-Empty metadata intentionally tests fallback. For the normal supported image,
-also require the default run to print `selected=true` for its Linux platform;
-a fallback-only pass does not validate template installation. Record the source
+The test compares bytes against both ABI emitters; checks identity, version,
+checksum, malformed headers and truncated header/payload rejection; rejects ABI
+and binding storage mismatches, capture state, options and unsupported recipes;
+and exercises heap-symbol, closed/wrong-thread scope rejection, throwing-leaf
+cleanup and concurrent independent specializations. Synthetic leaves avoid
+native calls, so this does not replace native ABI coverage. Record the source
 commit/diff, configure arguments, toolchain and build-JDK identities, generated
 source binding, native-file hashes and extracted module differences. Unexpected
 native differences must be explained before timing. A clean candidate build
@@ -74,12 +84,38 @@ must also confirm that success does not depend on stale incremental assets.
 
 ## Next complete qualification milestone
 
-The next milestone is one normal native Linux x86_64 release build pair,
-targeted correctness/native tests, and the existing full paired qualification.
-Keep builds, tests and compiler diagnostics outside timing. The executor must
-provide coherent ordinary process/accounting visibility; synthetic accounting
-fixtures do not attest the real Java child. Do not change namespaces, security
-settings or CPU selection after a failed admission.
+One bounded execution authorization should cover the following complete Linux
+x86_64 milestone, including preparation, diagnostics, collection and analysis.
+Successful stages proceed without another per-step approval request. An invalid
+stage stops the job with all evidence retained. This source-review publication
+does not authorize execution.
+
+1. **Prepare images and correctness evidence.** Use one native Linux x86_64
+   executor with ordinary installed build dependencies, enough resources for a
+   normal JDK build, and coherent child/process/accounting visibility. Pin the
+   base, candidate, harness and toolchain. Build the release pair by the normal
+   commands above; check native/module identities, template installation and
+   exact x64/AArch64 payload equality. Run both new jtreg descriptions, targeted
+   linker/callarranger and native ABI/lifetime tests, then the broader foreign
+   tests. Confirm a clean candidate build and normal cache invalidation/reuse;
+   run candidate fastdebug correctness separately. Preserve logs and failures.
+   Capture actual child/TID placement, cgroup membership, counter units and read
+   bounds during this ordinary preparation; a synthetic fixture or requested
+   taskset mask does not attest the Java child. No namespace/security changes,
+   tool installation or CPU reselection after failed admission is included.
+2. **Freeze measurement inputs.** After preparation passes, record image,
+   source, native library, harness, command-line, CDS and plan hashes. Produce
+   separate compiler diagnostics establishing the intended loop levels with
+   the same warmup/counts, then end build/test/diagnostic activity before timing.
+   Freeze the complete fork order and all acceptance rules below. There is no
+   separate five-second provenance-only experiment and no adaptive tuning.
+3. **Collect and decide once.** Run the startup stage and its controls, then
+   retained calls only if the earlier gates pass. Assess both unchanged control
+   labels and candidate comparisons. Report end-to-end wall/process CPU,
+   construction, first invocation, early calls and retained calls separately,
+   with uncertainty, actual tier evidence and every raw record. A failed control
+   or consistent slowdown blocks qualification; source similarity cannot
+   override it. The whole job ends without a retry or settings change.
 
 The fixed core matrix has 12 randomized paired blocks and three labels:
 baseline, identical-baseline control and candidate. Use default CDS and common
