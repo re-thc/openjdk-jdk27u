@@ -55,8 +55,7 @@ import java.util.function.Supplier;
 
 public class AnnotationsEnumInitialization {
 
-    // Each case has an enum of its own, which no other case initializes, and an
-    // annotation interface with a member of that enum
+    // Each case uses a separate enum to isolate initialization.
 
     // An enum initializer reads annotations on its thread while another thread parses them
     enum PP { X; static { fromInitializer(); } }  // parameter annotations, both
@@ -123,8 +122,6 @@ public class AnnotationsEnumInitialization {
     enum Gone { A }
     @Retention(RetentionPolicy.RUNTIME) @interface OnGone { Gone value(); }
 
-    // Reads of annotations, each from new reflective objects
-
     static Method method(String name) {
         for (Method m : AnnotationsEnumInitialization.class.getDeclaredMethods()) {
             if (m.getName().equals(name)) {
@@ -150,13 +147,11 @@ public class AnnotationsEnumInitialization {
         }
     }
 
-    // A RecordComponent caches its annotations, but getRecordComponents returns
-    // RecordComponent objects that don't share them
+    // RecordComponent annotation caches are not shared across getRecordComponents calls.
     static RecordComponent component(Class<?> record) {
         return record.getRecordComponents()[0];
     }
 
-    /** The value of the value member, or of the value member of the inner member. */
     static Object value(Annotation a) throws Throwable {
         try {
             if (a instanceof WithDefault w) {
@@ -188,14 +183,11 @@ public class AnnotationsEnumInitialization {
         }
     }
 
-    // An enum initializer that reads annotations on its thread while another thread parses them
-
     static volatile Supplier<Annotation> initializerRead;
     static volatile CountDownLatch initializing;
     static volatile Thread parser;
     static volatile Annotation fromInitializer;
 
-    /** Called by the static initializer of an enum of this kind of case, on its thread. */
     static void fromInitializer() {
         initializing.countDown();
         awaitParserParsingEnumValue();
@@ -203,9 +195,7 @@ public class AnnotationsEnumInitialization {
     }
 
     /**
-     * Waits until the parser thread parses an enum value, for which it waits for
-     * the initialization of the enum.  (The thread state of a thread that waits for
-     * the initialization of a class is not specified.)
+     * Wait for enum resolution; class-initialization waits have no specified Thread.State.
      */
     static void awaitParserParsingEnumValue() {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
@@ -228,7 +218,7 @@ public class AnnotationsEnumInitialization {
         throw new AssertionError("the parser thread did not parse an enum value");
     }
 
-    /** Runs the action on a daemon thread, which a deadlock leaves behind. */
+    // Daemon threads let the test VM exit even if a regression deadlocks.
     static Thread thread(String name, Runnable action, Throwable[] failure) {
         Thread t = new Thread(() -> {
             try {
@@ -256,11 +246,8 @@ public class AnnotationsEnumInitialization {
     }
 
     /**
-     * One thread initializes an enum, whose initializer reads annotations with
-     * initializerRead, after another thread began to read annotations with
-     * parserRead and waits for the initialization of the enum.  Both must finish,
-     * with the constant of the enum.  Each read must give the annotation instance
-     * that is read again later.
+     * Reads on the initializing and waiting threads must finish, resolve the
+     * constant and share annotation instances with subsequent reads.
      */
     static void crossThread(String what, Runnable initialize, Class<? extends Enum<?>> enumClass,
                             Supplier<Annotation> parserRead, Supplier<Annotation> initializerRead)
@@ -289,20 +276,16 @@ public class AnnotationsEnumInitialization {
         checkSame(fromParser[0], parserRead.get(), what + ", from the parser and later");
     }
 
-    // An enum constructor that reads annotations before the constants exist
-
     static volatile Supplier<Annotation> constructorRead;
     static volatile Annotation fromConstructor;
 
-    /** Called by the constructor of an enum of this kind of case. */
     static void fromConstructor() {
         fromConstructor = constructorRead.get();
     }
 
     /**
-     * The constructor of an enum reads annotations with read, which can't resolve
-     * the constant.  Once the enum is initialized, read must resolve it, and give
-     * the same annotation instance again, as must later reads with readAgain.
+     * An early unresolved read must not prevent later reads from resolving the
+     * constant and sharing their cached annotation instances.
      */
     static void tooEarly(String what, Runnable initialize, Supplier<Object> constant,
                          Supplier<Annotation> read, Supplier<Annotation> readAgain)
@@ -366,9 +349,8 @@ public class AnnotationsEnumInitialization {
     }
 
     /**
-     * A class whose method and its parameter have @OnGone(Gone.MISSING), which
-     * javac would not compile.  The annotations are cached as on master: each read
-     * gives the same annotation instances, whose value throws.
+     * Generate @OnGone(Gone.MISSING), which javac rejects, and verify that its
+     * cached annotation instances continue to throw.
      */
     static void permanentlyUnresolved() throws Throwable {
         java.lang.classfile.Annotation annotation = java.lang.classfile.Annotation.of(
@@ -393,11 +375,7 @@ public class AnnotationsEnumInitialization {
                   "a constant that doesn't exist, parameter annotation, read again");
     }
 
-    /**
-     * Checks that the read that initialized the enum resolved its constant: that
-     * a read that ran into the enum while it was being initialized did not hand
-     * this read its unresolved annotations.
-     */
+    // The initiating read must not reuse its recursive unresolved result.
     static void checkResolved(Class<? extends Enum<?>> enumClass, Annotation read) {
         try {
             checkValue(enumClass.getEnumConstants()[0], read, enumClass.getSimpleName() + ", the read that initialized it");

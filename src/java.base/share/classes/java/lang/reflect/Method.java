@@ -778,10 +778,7 @@ public final class Method extends Executable {
         return result;
     }
 
-    /**
-     * Returns the default value for the annotation member, or an ExceptionProxy
-     * for a value that could not be resolved, or null if there is no default.
-     */
+    // See JavaLangReflectAccess.parseDefaultValue for the raw parsing contract.
     Object parseDefaultValue() {
         if  (annotationDefault == null)
             return null;

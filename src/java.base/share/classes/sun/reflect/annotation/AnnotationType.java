@@ -129,9 +129,7 @@ public class AnnotationType {
                 memberTypes.put(name, invocationHandlerReturnType(type));
                 members.put(name, method);
 
-                // Keep temporarily unresolved enum defaults as proxies for member
-                // access. getInstance leaves them uncached. Preserve other errors
-                // from getDefaultValue.
+                // Keep temporary enum failures uncached; preserve getDefaultValue errors otherwise.
                 Object defaultValue =
                     SharedSecrets.getJavaLangReflectAccess().parseDefaultValue(method);
                 if (defaultValue instanceof ExceptionProxy

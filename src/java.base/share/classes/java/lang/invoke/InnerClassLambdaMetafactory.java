@@ -95,7 +95,7 @@ import sun.invoke.util.Wrapper;
     private final MethodType constructorType;        // Generated class constructor type "(CC)void"
     private final boolean useImplMethodHandle;       // use MethodHandle invocation instead of symbolic bytecode invocation
 
-    // Only needed when the class is generated, rather than loaded from the CDS archive; see initClassGeneration()
+    // Initialized only for class generation, not for CDS archive hits.
     private ClassDesc implMethodClassDesc;           // Name of type containing implementation "CC"
     private MethodTypeDesc implMethodDesc;           // Type descriptor for implementation methods "(I)Ljava/lang/String;"
     private MethodTypeDesc constructorTypeDesc;      // Type descriptor for the generated class constructor type "(CC)void"
@@ -230,7 +230,6 @@ import sun.invoke.util.Wrapper;
         } else {
             try {
                 MemberName ctor = caller.resolveOrFail(REF_newInvokeSpecial, innerClass, INIT_NAME, constructorType);
-                // The inner class implements the interface, so this has the factory type
                 MethodHandle mh = DirectMethodHandle.makeAllocator(innerClass, ctor, factoryType);
                 if (factoryType.parameterCount() == 0) {
                     // In the case of a non-capturing lambda, we optimize linkage by pre-computing a single instance
@@ -388,7 +387,7 @@ import sun.invoke.util.Wrapper;
                    .invokespecial(pool.methodRefEntry(lambdaClassEntry, pool.nameAndTypeEntry(INIT_NAME, constructorTypeDesc)))
                    .putstatic(pool.fieldRefEntry(lambdaClassEntry, pool.nameAndTypeEntry(LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor)))
                    .return_();
-                DirectCodeBuilder.withMaxs(cob, 2, 0); // new, dup
+                DirectCodeBuilder.withMaxs(cob, 2, 0);
             }
         });
     }
@@ -411,7 +410,7 @@ import sun.invoke.util.Wrapper;
                         cob.aload(0)
                            .invokespecial(CD_Object, INIT_NAME, MTD_void)
                            .return_();
-                        // this and a captured argument, which takes 2 slots if it is a long or double
+                        // Each assignment loads this and one captured value.
                         int slotCount = factoryType.parameterSlotCount();
                         int maxStack = parameterCount == 0 ? 1 : slotCount > parameterCount ? 3 : 2;
                         DirectCodeBuilder.withMaxs(cob, maxStack, 1 + slotCount);
@@ -471,8 +470,7 @@ import sun.invoke.util.Wrapper;
                         cob.invokespecial(SerializationSupport.CD_SerializedLambda, INIT_NAME,
                                           SerializationSupport.MTD_CTOR_SERIALIZED_LAMBDA)
                            .areturn();
-                        // new, dup and the 10 constructor arguments, the last being the array; storing
-                        // a captured argument also has the array, index and value (2 slots if long or double)
+                        // new, dup and 10 constructor arguments; array stores add 3 or 4 slots.
                         int slotCount = factoryType.parameterSlotCount();
                         int maxStack = argDescs.length == 0 ? 12 : slotCount > argDescs.length ? 16 : 15;
                         DirectCodeBuilder.withMaxs(cob, maxStack, 1);
@@ -499,7 +497,7 @@ import sun.invoke.util.Wrapper;
                                         .invokespecial(cp.methodRefEntry(nseCE, cp.nameAndTypeEntry(INIT_NAME,
                                                 SerializationSupport.MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION)))
                                         .athrow();
-                                DirectCodeBuilder.withMaxs(cob, 3, 2); // this and the stream argument
+                                DirectCodeBuilder.withMaxs(cob, 3, 2);
                             }
                         });
             }
@@ -556,11 +554,7 @@ import sun.invoke.util.Wrapper;
         };
     }
 
-    /**
-     * The operand stack depth needed by the code of {@link #forwardingMethod}: the
-     * captured and converted arguments are all on the stack for the invocation, and
-     * only the result of the invocation is on the stack for its conversion.
-     */
+    /** Maximum stack depth while loading arguments or converting the result. */
     private int forwardingMaxStack(MethodType methodType) {
         // new and dup for a constructor, the method handle to invoke, the captured arguments
         int depth = (implKind == MethodHandleInfo.REF_newInvokeSpecial ? 2 : 0)
@@ -575,10 +569,7 @@ import sun.invoke.util.Wrapper;
         return Math.max(maxStack, conversionSlots(implMethodType.returnType(), methodType.returnType()));
     }
 
-    /**
-     * The most stack slots that {@link TypeConvertingMethodAdapter#convertType} takes
-     * for converting a value from one type to another.
-     */
+    /** Maximum stack slots used by {@link TypeConvertingMethodAdapter#convertType}. */
     private static int conversionSlots(Class<?> from, Class<?> to) {
         // a primitive is widened to long or double before it is boxed to Long or Double
         if (from.isPrimitive() && (to == Long.class || to == Double.class)) {

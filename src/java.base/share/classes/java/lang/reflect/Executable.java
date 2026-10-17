@@ -599,8 +599,7 @@ public abstract sealed class Executable extends AccessibleObject
         if (parameterAnnotations == null)
             return new Annotation[numParameters][0];
 
-        // As with getDeclaredAnnotations, the annotation instances are shared
-        // among callers. The arrays are not, as callers may modify them.
+        // Share annotation instances, but clone both array levels for callers.
         Annotation[][] result = declaredParameterAnnotations(parameterTypes, parameterAnnotations).clone();
         for (int i = 0; i < result.length; i++) {
             result[i] = result[i].clone();
@@ -707,11 +706,9 @@ public abstract sealed class Executable extends AccessibleObject
     }
 
     /*
-     * Parse outside locks: an enum initializer may read the same annotations
-     * on this or another thread. CAS publication makes racing readers share the
-     * winning annotation instances. Leave annotations with constants unresolved
-     * during enum initialization uncached, so a later read parses them again.
-     * Copies cache only the annotations their root has published.
+     * Parse outside locks to avoid deadlocks with enum initializers. CAS makes
+     * readers share annotation instances; copies cache only published results.
+     * Leave temporarily unresolved enum constants uncached for a later read.
      */
     @SuppressWarnings("unchecked")
     private <T> T publish(long offset, T annotations) {
@@ -721,7 +718,6 @@ public abstract sealed class Executable extends AccessibleObject
                 : (T)unsafe.getReferenceVolatile(this, offset);
     }
 
-    // Initialized when an executable first publishes annotations, not with this class
     private static final class Offsets {
         static final Unsafe UNSAFE = Unsafe.getUnsafe();
         static final long DECLARED_ANNOTATIONS

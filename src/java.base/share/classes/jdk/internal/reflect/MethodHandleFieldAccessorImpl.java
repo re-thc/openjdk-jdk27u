@@ -41,12 +41,8 @@ abstract class MethodHandleFieldAccessorImpl extends FieldAccessorImpl {
 
     private final int fieldFlags;
     protected final MethodHandle getter;
-    // Created on first use as most fields are only ever read.  @Stable and not
-    // volatile, so that the JIT folds it into the code for a constant accessor like
-    // the final getter; a volatile read prevents that.  The race is benign: threads
-    // may each create a setter, which are interchangeable, and a method handle is
-    // safely published through its final fields (its LambdaForm is prepared by the
-    // constructor), as with the accessors in Field.
+    // Lazy and @Stable so constant accessors can fold the setter. Racing setters
+    // are interchangeable; MethodHandle final fields safely publish the prepared form.
     @Stable
     private MethodHandle setter;
 
@@ -58,12 +54,7 @@ abstract class MethodHandleFieldAccessorImpl extends FieldAccessorImpl {
         this.getter = getter;
     }
 
-    /**
-     * Returns the setter, adapted to {@code (Object, T)void} for an instance field
-     * or {@code (T)void} for a static field, where {@code T} is the field type for
-     * a primitive field and {@code Object} otherwise.  Must not be called when
-     * this accessor is read-only.
-     */
+    /** Returns the adapted setter. Must not be called for a read-only accessor. */
     protected final MethodHandle setter() {
         MethodHandle mh = setter;
         if (mh == null) {

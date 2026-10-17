@@ -40,7 +40,6 @@ import static java.util.Objects.requireNonNull;
 
 public final class SplitConstantPool implements ConstantPoolBuilder {
 
-    // Most generated classes have only a few dozen constants; the tables grow on demand
     private static final int INITIAL_CAPACITY = 64;
 
     private final ClassReaderImpl parent;

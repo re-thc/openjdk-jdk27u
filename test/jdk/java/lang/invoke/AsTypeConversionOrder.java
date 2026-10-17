@@ -48,9 +48,8 @@ public class AsTypeConversionOrder {
     public static class G { }
     public static class H { }
 
-    // Methods of the same group have the same shape and only differ in the classes of the parameters.
-    // Each of them casts to three, four or five different classes, in an order that would depend on
-    // the identity hash codes of the classes if the conversions were not applied in a fixed order.
+    // Each group has the same conversion shape with different target classes.
+    // Its adapters must share a LambdaForm regardless of class identity hashes.
     public static void s1(A a, B b, C c) { }
     public static void s2(D a, E b, F c) { }
     public static void s3(G a, H b, A c) { }

@@ -59,12 +59,9 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
     }
 
     /**
-     * Returns whether the member value, or a member value of an annotation in it,
-     * is a constant of an enum class that could not be found because the enum
-     * class is not initialized yet.  That happens to a value parsed by the thread
-     * that initializes the enum class, before its constants exist; any other
-     * thread waits for the initialization to finish.  Unlike other values that
-     * could not be resolved, such a value is found if it is parsed again later.
+     * Detects enum constants unavailable to their initializing thread, including
+     * nested annotation values. Reparse these after initialization; other threads
+     * wait for initialization, and permanently missing constants stay cached.
      */
     static boolean hasUnresolvedEnumConstant(Object memberValue) {
         if (memberValue instanceof EnumConstantNotPresentExceptionProxy proxy) {

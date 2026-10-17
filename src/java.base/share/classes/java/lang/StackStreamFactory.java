@@ -603,11 +603,7 @@ final class StackStreamFactory {
         }
     }
 
-    /*
-     * Buffer for the frame objects filled in by the VM.  The frame objects
-     * are allocated via bytecode invocation instead of via core reflection
-     * to minimize the overhead.
-     */
+    // Frame objects are filled in by the VM.
     abstract static class StackFrameBuffer<T extends ClassFrameInfo> extends FrameBuffer<T> {
         final StackWalker walker;
         private T[] stackFrames;
@@ -687,9 +683,6 @@ final class StackStreamFactory {
         }
     }
 
-    /*
-     * Buffer for StackFrameInfo.
-     */
     static class StackFrameInfoBuffer extends StackFrameBuffer<StackFrameInfo> {
         StackFrameInfoBuffer(StackWalker walker, int initialBatchSize) {
             super(walker, initialBatchSize);
@@ -706,9 +699,6 @@ final class StackStreamFactory {
         }
     }
 
-    /*
-     * Buffer for LiveStackFrameInfo.
-     */
     static class LiveStackFrameInfoBuffer extends StackFrameBuffer<LiveStackFrameInfo> {
         LiveStackFrameInfoBuffer(StackWalker walker, int initialBatchSize) {
             super(walker, initialBatchSize);

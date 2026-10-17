@@ -196,8 +196,6 @@ public final class RecordComponent implements AnnotatedElement {
                     declaredAnnotations = declAnnos;
                 }
             } else {
-                // As in Executable, parse outside locks and publish only if no
-                // enum constant is unresolved during its initialization.
                 declAnnos = AnnotationParser.parseAnnotations(
                         annotations,
                         SharedSecrets.getJavaLangAccess()
@@ -215,7 +213,6 @@ public final class RecordComponent implements AnnotatedElement {
         return declAnnos;
     }
 
-    // Initialized when a record component first publishes annotations, not with this class
     private static final class Offsets {
         static final Unsafe UNSAFE = Unsafe.getUnsafe();
         static final long DECLARED_ANNOTATIONS

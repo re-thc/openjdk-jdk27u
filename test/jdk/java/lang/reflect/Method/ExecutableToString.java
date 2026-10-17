@@ -103,7 +103,6 @@ public class ExecutableToString {
         check("public final void java.lang.Object.wait(long) throws java.lang.InterruptedException",
               wait.toString());
 
-        // The message of the exception has to include the string of the member
         Method clone = Object.class.getDeclaredMethod("clone");
         String msg = denied(clone);
         check("Unable to make protected native java.lang.Object java.lang.Object.clone()"

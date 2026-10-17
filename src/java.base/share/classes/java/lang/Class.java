@@ -3442,7 +3442,6 @@ public final class Class<T> implements java.io.Serializable,
         if (constants == null) {
             if (!isEnum()) return null;
             try {
-                // Invoked once, so don't create a method handle accessor
                 final Method values = getMethod("values");
                 @SuppressWarnings("unchecked")
                 T[] temporaryConstants = (T[])getReflectionFactory().invokeStatic(values);
@@ -3661,8 +3660,7 @@ public final class Class<T> implements java.io.Serializable,
             }
             // null or stale annotationData -> optimistically create new instance
             AnnotationData newAnnotationData = createAnnotationData(classRedefinedCount);
-            // Retry on the next read if this thread parsed an enum constant
-            // before the enum's initialization created it.
+            // Retry enum constants parsed before their initialization completes.
             if (AnnotationParser.hasUnresolvedEnumConstant(newAnnotationData.annotations.values())) {
                 return newAnnotationData;
             }

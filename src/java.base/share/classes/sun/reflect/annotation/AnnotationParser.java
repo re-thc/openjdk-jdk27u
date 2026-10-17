@@ -163,13 +163,8 @@ public class AnnotationParser {
     }
 
     /**
-     * Returns whether a member value of one of the given annotations, or of an
-     * annotation nested in one, is a constant of an enum class that could not be
-     * found because the enum class is not initialized yet: the annotations were
-     * parsed by the thread that initializes it, before its constants exist.  Such
-     * annotations must not be cached, so that the constant is found when they are
-     * parsed again.  Other values that could not be resolved are cached, as they
-     * would not be resolved later either.
+     * Returns whether annotations contain temporarily unresolved enum constants
+     * and must remain uncached. See AnnotationInvocationHandler.hasUnresolvedEnumConstant.
      */
     public static boolean hasUnresolvedEnumConstant(Collection<? extends Annotation> annotations) {
         for (Annotation annotation : annotations) {
@@ -181,11 +176,7 @@ public class AnnotationParser {
     }
 
     /**
-     * Returns whether a member value of one of the given parameter annotations,
-     * or of an annotation nested in one, is a constant of an enum class that could
-     * not be found because the enum class is not initialized yet.
-     *
-     * @see #hasUnresolvedEnumConstant(Collection)
+     * Parameter-annotation variant of {@link #hasUnresolvedEnumConstant(Collection)}.
      */
     public static boolean hasUnresolvedEnumConstant(Annotation[][] annotations) {
         for (Annotation[] parameterAnnotations : annotations) {

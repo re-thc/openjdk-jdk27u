@@ -1412,8 +1412,6 @@ class Field extends AccessibleObject implements Member {
                     declaredAnnotations = declAnnos;
                 }
             } else {
-                // As in Executable, parse outside locks and publish only if no
-                // enum constant is unresolved during its initialization.
                 declAnnos = AnnotationParser.parseAnnotations(
                         annotations,
                         SharedSecrets.getJavaLangAccess()
@@ -1431,7 +1429,6 @@ class Field extends AccessibleObject implements Member {
         return declAnnos;
     }
 
-    // Initialized when a field first publishes annotations, not with this class
     private static final class Offsets {
         static final Unsafe UNSAFE = Unsafe.getUnsafe();
         static final long DECLARED_ANNOTATIONS

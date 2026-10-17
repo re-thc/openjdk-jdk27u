@@ -1639,7 +1639,7 @@ class LambdaForm {
 
     private static LambdaForm createConstantForm(BasicType type) {
         UNSAFE.ensureClassInitialized(BoundMethodHandle.class); // defend access to SimpleMethodHandle
-        // Locked so that racing threads get the same form, and so share the forms derived from it
+        // Racing callers must share this form and its derived forms.
         synchronized (LF_constant) {
             var cached = LF_constant[type.ordinal()];
             if (cached != null)

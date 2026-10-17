@@ -61,7 +61,6 @@ public class FieldSet {
         }
     }
 
-    // the Fields of the Const, Var and Poly benchmarks below: eight fields of each type
     static class PolyHolder {
         Object o0, o1, o2, o3, o4, o5, o6, o7;
         int i0, i1, i2, i3, i4, i5, i6, i7;
@@ -215,9 +214,6 @@ public class FieldSet {
         long newValue = ThreadLocalRandom.current().nextLong();
         longField3.setLong(finalFieldHolder, newValue);
     }
-
-    // Writes (and, as a control, reads) of non-final fields that are Const, Var or Poly.
-    // The set of a boxed int is Field.set with an Integer for an int field.
 
     @Benchmark
     public void setInstanceConstObject() throws Exception {

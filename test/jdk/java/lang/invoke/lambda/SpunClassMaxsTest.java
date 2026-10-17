@@ -171,7 +171,6 @@ public class SpunClassMaxsTest {
         }
     }
 
-    // Lambdas that widen, unbox and box their arguments and result
     static void convertingLambdas() throws Throwable {
         MethodHandle impl = LOOKUP.findStatic(SpunClassMaxsTest.class, "widening",
                 methodType(long.class, long.class, long.class, long.class, long.class, long.class));
@@ -205,7 +204,6 @@ public class SpunClassMaxsTest {
         }
     }
 
-    // An interface with a method taking 'count' parameters of the given type
     static Class<?> defineInterface(String name, Class<?> type, int count) throws Exception {
         ClassDesc desc = type.describeConstable().orElseThrow();
         ClassDesc[] params = new ClassDesc[count];
@@ -216,7 +214,6 @@ public class SpunClassMaxsTest {
         return LOOKUP.defineClass(bytes);
     }
 
-    // A class with a static method adding up 'count' parameters of the given type
     static Class<?> defineAdder(String name, Class<?> type, int count) throws Exception {
         ClassDesc desc = type.describeConstable().orElseThrow();
         ClassDesc[] params = new ClassDesc[count];
@@ -256,7 +253,7 @@ public class SpunClassMaxsTest {
         return sum;
     }
 
-    // Lambdas and proxies for methods that use all the 255 slots for arguments
+    // Lambdas and proxies at the JVM argument-slot limit.
     static void manyArguments(Class<?> type, int count, String suffix) throws Throwable {
         Class<?> adder = defineAdder("Adder" + suffix, type, count);
         MethodHandle impl = LOOKUP.findStatic(adder, "sum", methodType(type, types(type, count)));
@@ -296,7 +293,7 @@ public class SpunClassMaxsTest {
             check(doubles.applyAsDouble(1.5, 2.5) == 4.0, "double proxy");
         }
 
-        // classes other than Object in the parameters are looked up by name in the static initializer
+        // Exercise class-name lookup for reference and array parameters.
         InvocationHandler referencesHandler = (proxy, method, args) -> (String) args[0] + ((int[]) args[1]).length + ((Object[]) args[2]).length;
         References references = (References) Proxy.newProxyInstance(References.class.getClassLoader(),
                 new Class<?>[]{References.class}, referencesHandler);
@@ -307,7 +304,6 @@ public class SpunClassMaxsTest {
         Mixed mixed = (Mixed) Proxy.newProxyInstance(Mixed.class.getClassLoader(), new Class<?>[]{Mixed.class}, mixedHandler);
         check(mixed.m(1, 2L, "c", 3.0, 4f, (char) 5, (byte) 6, (short) 7, true) == 1 + 2 + 3.0 + 4f, "mixed proxy");
 
-        // the exception handlers of a proxy method
         InvocationHandler thrower = (proxy, method, args) -> {
             throw (long) args[0] == 0 ? new IOException("declared") : new Exception("undeclared");
         };

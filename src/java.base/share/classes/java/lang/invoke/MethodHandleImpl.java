@@ -298,8 +298,7 @@ abstract class MethodHandleImpl {
         BoundMethodHandle mh = target.rebind();
 
         // Match each unique conversion to the positions at which it is to be applied.
-        // Iterate in argument order: an identity hash order would give the same
-        // conversions a different chain of LambdaForms from one run to the next.
+        // Use argument order so equivalent conversions share LambdaForms.
         LinkedHashMap<Object, int[]> convSpecMap = LinkedHashMap.newLinkedHashMap(convCount);
         for (int i = 0; i < convSpecs.length - MH_RECEIVER_OFFSET; i++) {
             Object convSpec = convSpecs[i];

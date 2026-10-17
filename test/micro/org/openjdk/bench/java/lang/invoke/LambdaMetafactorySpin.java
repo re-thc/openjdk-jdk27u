@@ -44,10 +44,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Measures linking a lambda: every call of {@code LambdaMetafactory.metafactory}
- * spins and defines a class for the lambda, as the invokedynamic instruction
- * of a lambda expression does when it is first executed. An invocation makes
- * 200 calls, and the classes stay loaded.
+ * Measures lambda linkage; each invocation spins 200 classes that stay loaded.
  */
 @BenchmarkMode(Mode.SingleShotTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)

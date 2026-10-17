@@ -65,8 +65,7 @@ public interface JavaLangReflectAccess {
     public boolean isTrustedFinalField(Field f);
 
     /**
-     * Returns the default value of an annotation member as it is parsed, with an
-     * ExceptionProxy for a value that could not be resolved, or null if there is none
+     * Returns a parsed annotation default, an ExceptionProxy if unresolved, or null if absent.
      */
     public Object parseDefaultValue(Method m);
 

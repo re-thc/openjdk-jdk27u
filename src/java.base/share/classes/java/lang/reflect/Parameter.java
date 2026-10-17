@@ -378,10 +378,8 @@ public final class Parameter implements AnnotatedElement {
     private Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
         Map<Class<? extends Annotation>, Annotation> declAnnos = declaredAnnotations;
         if (declAnnos == null) {
-            // Build outside locks: parsing may initialize an enum whose initializer
-            // reads these annotations. Racing maps share the executable's cached
-            // annotation instances. Do not cache values unresolved during
-            // enum initialization.
+            // Avoid locks during enum initialization. The executable shares annotation
+            // instances; keep temporarily unresolved enum constants uncached.
             declAnnos = new HashMap<>();
             for (Annotation a : getDeclaredAnnotations())
                 declAnnos.put(a.annotationType(), a);
