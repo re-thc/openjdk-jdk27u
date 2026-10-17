@@ -101,10 +101,26 @@ is necessary but is not evidence of a particular physical allocation.
 
 `VariableIntLowMask` supplies the requested JMH source. `independent` processes
 four lanes of wrapping byte-sized counts; `dependentNonzero` uses widths 1..31
-to retain an architectural dependency through the batch. Both report 256 mask
-operations per invocation. SuperWord is disabled only for this scalar diagnostic
-micro. Loads, additions and loop overhead remain, so neither rate is the latency
-of a single BZHI. Compare each mode on matched baseline/candidate images; do not
+to retain a data dependency through the batch. Its counts are independent array
+loads, so the old shift/subtract mask generation can run ahead; this case does
+not establish count-dependent mask latency.
+
+The separate `countFeedbackNonzero` case derives each raw byte-sized count from
+the preceding extraction's mixed result. `(value >>> 24) | 1` yields odd counts
+in `[1,255]`, whose Java-normalized widths are always odd and nonzero in `[1,31]`.
+After masking, multiplication, rotation and an input salt spread the extraction
+into the next count. Thus the shift/subtract mask generation cannot be prepared
+from an independent count array. Setup compares the measured recurrence with an
+unsigned-long mask reference, requires at least eight distinct normalized widths
+and varying extracted values in each of four successive fixed-input batches,
+checks that perturbing an extraction can change the next normalized width, and
+restores the original seed. Those checks are prepared source and have not been
+executed; they are not a proof of diversity in every warmed state. The mixing,
+loads and loop remain part of this diagnostic; it is not a single-instruction
+latency measurement or a guarantee of codec speedup.
+
+All three cases report 256 mask operations per invocation. SuperWord is disabled
+only for this scalar diagnostic micro. Compare each mode on matched images; do not
 substitute BMI2-off timing for the original BMI2-enabled baseline or claim that
 micro results establish codec benefit. The benchmark has not been compiled/run.
 

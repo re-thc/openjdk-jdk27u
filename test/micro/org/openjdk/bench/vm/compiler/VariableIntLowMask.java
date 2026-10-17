@@ -47,6 +47,7 @@ import org.openjdk.jmh.annotations.Warmup;
 @Fork(value = 3, jvmArgsAppend = {"-XX:-UseSuperWord"})
 public class VariableIntLowMask {
     private static final int SIZE = 256;
+    private static final int FEEDBACK_MULTIPLIER = 0x9e37_79b9;
     private int[] values;
     private byte[] counts;
     private byte[] nonzeroCounts;
@@ -64,6 +65,7 @@ public class VariableIntLowMask {
             nonzeroCounts[i] = (byte) (i % 31 + 1);
         }
         seed = random.nextInt();
+        verifyCountFeedback();
     }
 
     @Benchmark
@@ -85,6 +87,8 @@ public class VariableIntLowMask {
     @Benchmark
     @OperationsPerInvocation(SIZE)
     public int dependentNonzero() {
+        // Only the value is loop-carried. Independent counts can let the old
+        // shift/subtract mask generation execute ahead of that dependency.
         int value = seed;
         for (int i = 0; i < SIZE; i++) {
             // A zero mask would kill the architectural dependency. Keep the
@@ -93,5 +97,58 @@ public class VariableIntLowMask {
         }
         seed = value;
         return value;
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(SIZE)
+    public int countFeedbackNonzero() {
+        int value = seed;
+        for (int i = 0; i < SIZE; i++) {
+            // Raw counts remain byte-sized, but their low five bits are odd,
+            // hence never zero. Each count depends on the preceding extraction.
+            int bits = (value >>> 24) | 1;
+            int extracted = value & ((1 << bits) - 1);
+            value = Integer.rotateLeft(extracted * FEEDBACK_MULTIPLIER, 11) + values[i];
+        }
+        seed = value;
+        return value;
+    }
+
+    private void verifyCountFeedback() {
+        int initial = seed;
+        // Check successive invocation states as well as the initial batch.
+        for (int batch = 0; batch < 4; batch++) {
+            int value = seed;
+            int seenWidths = 0;
+            int extractedOr = 0;
+            int extractedAnd = -1;
+            int widthFeedbackChanges = 0;
+            for (int i = 0; i < SIZE; i++) {
+                int bits = ((value >>> 24) | 1) & 31;
+                if (bits == 0) {
+                    throw new AssertionError("Zero feedback width");
+                }
+                seenWidths |= 1 << bits;
+                // Independent mask formulation: no int shift/subtract expression.
+                long low = 0xffff_ffffL >>> (32 - bits);
+                int extracted = (int) (Integer.toUnsignedLong(value) & low);
+                extractedOr |= extracted;
+                extractedAnd &= extracted;
+                int next = Integer.rotateLeft(extracted * FEEDBACK_MULTIPLIER, 11) + values[i];
+                int perturbed = Integer.rotateLeft((extracted ^ 1) * FEEDBACK_MULTIPLIER, 11) + values[i];
+                if ((((next >>> 24) | 1) & 31) != (((perturbed >>> 24) | 1) & 31)) {
+                    widthFeedbackChanges++;
+                }
+                value = next;
+            }
+            if (Integer.bitCount(seenWidths) < 8 || extractedOr == extractedAnd || widthFeedbackChanges == 0) {
+                throw new AssertionError("Degenerate count-feedback recurrence");
+            }
+            if (countFeedbackNonzero() != value) {
+                throw new AssertionError("Count-feedback reference mismatch");
+            }
+        }
+        // Setup validation must not change any benchmark's initial state.
+        seed = initial;
     }
 }
