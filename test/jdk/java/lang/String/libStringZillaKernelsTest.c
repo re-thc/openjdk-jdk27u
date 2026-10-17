@@ -86,7 +86,7 @@ static jint check_kernels(void) {
     CHECK(sz_u32_popcount(0) == 0);
     CHECK(sz_u32_popcount(0xFFFFFFFFu) == 32);
     CHECK(sz_u32_popcount(0x01234567u) == 12);
-#if defined(_MSC_VER) && defined(_M_X64)
+#if defined(_MSC_VER) && !defined(__clang__) && defined(_M_X64)
     CHECK(sz_u64_ctz(0) == 64);
     CHECK(sz_u64_clz(0) == 64);
     CHECK(sz_u32_ctz(0) == 32);
@@ -210,7 +210,7 @@ static jint check_kernels(void) {
         char dense_source[640], dense_target[520];
         for (unsigned int n = 0; n < sizeof(dense_counts) / sizeof(dense_counts[0]); n++) {
             jint count = dense_counts[n];
-            const jint markers[] = {1, count / 2, count - 2, count - 1};
+            const jint markers[] = {0, 1, count / 2, count - 2, count - 1};
             for (unsigned int m = 0; m < sizeof(markers) / sizeof(markers[0]); m++) {
                 for (jint offset = 0; offset < 8; offset++) {
                     char* text = dense_source + offset;

@@ -40,6 +40,7 @@ final class StringZilla {
     private static final int BACKEND = CONFIGURATION & BACKEND_MASK;
     private static final int SERIAL = 0;
     private static final int HASWELL = 1;
+    private static final int NEON = 4;
     static final int C1 = 1;
     static final int C2 = 4;
     // Keep small inputs on the existing Java / platform intrinsic paths.
@@ -71,7 +72,7 @@ final class StringZilla {
                 return result != 0;
             }
         }
-        for (int i = 0; i < length; i++) {
+        for (int i = length - 1; i >= 0; i--) {
             if (StringUTF16.getChar(src, offset + i) != StringUTF16.getChar(tgt, i)) {
                 return false;
             }
@@ -90,8 +91,20 @@ final class StringZilla {
     }
 
     @ForceInline
-    static boolean probeMixedImmediate() {
-        return BACKEND == SERIAL && compilerTier() != 0;
+    static boolean usesNeon() {
+        return BACKEND == NEON;
+    }
+
+    @ForceInline
+    static boolean probeMixedImmediate(int count) {
+        if (BACKEND == SERIAL) {
+            return compilerTier() != 0;
+        }
+        if ((BACKEND == HASWELL || BACKEND == NEON) && count <= 32) {
+            int tier = compilerTier();
+            return tier == C2 || (tier == C1 && count <= 16);
+        }
+        return false;
     }
 
     @ForceInline
@@ -206,16 +219,33 @@ final class StringZilla {
     @ForceInline
     static boolean useReverseLatin1(int length, int count) {
         int tier = compilerTier();
-        if (tier == 0 || (BACKEND != SERIAL && BACKEND != HASWELL)) {
+        if (tier == 0) {
+            return true;
+        }
+        if (BACKEND == NEON && count > 256) {
+            if (tier == C1) {
+                return reverseWork(length, count) >= 1024;
+            }
+            if (tier == C2) {
+                return length - count >= 16 && reverseWork(length, count) >= 4096;
+            }
+        }
+        if (BACKEND != SERIAL && BACKEND != HASWELL) {
             return true;
         }
         if (tier == C1) {
-            return count <= 256 || reverseWork(length, count) >= 1024;
+            return count <= 256
+                    || (BACKEND == HASWELL && length - count < 64
+                        && (long)length * count <= MAX_WORK)
+                    || reverseWork(length, count) >= 1024;
         }
         if (count > 256) {
-            // AVX2 scans 32 candidate bytes before falling through to serial.
-            return (BACKEND != HASWELL || length - count >= 32)
-                    && reverseWork(length, count) >= 4096;
+            // The bounded AVX2 filter avoids long-needle preprocessing for
+            // at most 64 candidate positions.
+            return (BACKEND == HASWELL && length - count < 64
+                    && (long)length * count <= MAX_WORK)
+                    || ((BACKEND != HASWELL || length - count >= 32)
+                        && reverseWork(length, count) >= 4096);
         }
         return BACKEND == SERIAL ? count >= 32 && length >= 1024
                                  : count <= 128 || reverseWork(length, count) >= 1024;
@@ -240,6 +270,15 @@ final class StringZilla {
         int tier = compilerTier();
         if (tier == 0) {
             return true;
+        }
+        if (BACKEND == NEON) {
+            if (tier == C1 && count > 128) {
+                return reverseWork(length, count) >= 1024;
+            }
+            if (tier == C2) {
+                return count > 128 ? length - count >= 8 && reverseWork(length, count) >= 2048
+                                   : length >= 512;
+            }
         }
         if ((BACKEND == SERIAL || BACKEND == HASWELL) && tier == C1) {
             return count <= 128 || reverseWork(length, count) >= 1024;

@@ -158,12 +158,20 @@ int main(void) {
                     "/Fo" + str(obj), "/I" + str(includes), str(probe_source)]
     link_args = ["cl.exe", "/nologo", str(obj), "/Fe" + str(executable)]
     quoted = lambda values: " ".join('"' + str(value) + '"' for value in values)
-    shell = 'call "' + vcvars + '" -vcvars_ver=14.44 && ' + quoted(compile_args) + " && " + quoted(link_args)
+    batch = folder / "build-probe.cmd"
+    batch.write_text('@echo off\ncall "' + vcvars + '" -vcvars_ver=14.44\n'
+                     'if errorlevel 1 exit /b %errorlevel%\n' + quoted(compile_args) + '\n'
+                     'if errorlevel 1 exit /b %errorlevel%\n' + quoted(link_args) + '\n'
+                     'if errorlevel 1 exit /b %errorlevel%\n')
     probe_env = os.environ.copy()
     probe_env.pop("CL", None)
     probe_env.pop("_CL_", None)
-    transcript = command(["cmd.exe", "/d", "/c", shell], cwd=folder, env=probe_env)
-    (folder / "build.log").write_text(transcript)
+    completed = subprocess.run(["cmd.exe", "/d", "/c", batch.name], cwd=folder, env=probe_env,
+                               text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    (folder / "build.log").write_text(completed.stdout)
+    if completed.returncode:
+        print(completed.stdout[-12000:], flush=True)
+        raise RuntimeError("MSVC baseline probe compilation failed; see msvc-baseline/build.log")
     listing = assembly.read_text(errors="replace")
     assert not re.search(r"(?im)^[^\r\n;]*\b(?:lzcnt|tzcnt|popcnt)\b", listing), "Optional ISA in baseline serial bit operations"
     command([executable])
@@ -182,21 +190,29 @@ def compilation_traces(output, java_paths, backend_flags, classpath, source_shas
             if control != "original":
                 base += ["-XX:" + ("+" if control == "enabled" else "-") + "UseStringZillaIntrinsics"]
             diagnostic = [*base, "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintCompilation", "-XX:+PrintInlining"]
-            for benchmark, coder, position, needle in (("lastIndexOf", "MIXED", "END", "64"), ("equals", "LATIN1", "EQUAL", "4")):
-                path = folder / (tier + "-" + control + "-" + benchmark + ".log")
+            workloads = (("mixed64", "lastIndexOf", "4096", "MIXED", "END", "64"),
+                         ("equals4096", "equals", "4096", "LATIN1", "EQUAL", "4"),
+                         ("latin255", "lastIndexOf", "255", "LATIN1", "MISS", "4"),
+                         ("utf16-127", "lastIndexOf", "127", "UTF16", "MISS", "4"))
+            if tier == "c1":
+                workloads += (("utf16-128-end", "lastIndexOf", "128", "UTF16", "END", "4"),)
+            for case, benchmark, length, coder, position, needle in workloads:
+                path = folder / (tier + "-" + control + "-" + case + ".log")
                 with path.open("w") as log:
                     completed = subprocess.run([str(java_paths[control]), *base, "-cp", classpath, "org.openjdk.jmh.Main",
-                        "StringZillaSearch." + benchmark + "$", "-p", "length=4096", "-p", "coder=" + coder,
+                        "StringZillaSearch." + benchmark + "$", "-p", "length=" + length, "-p", "coder=" + coder,
                         "-p", "position=" + position, "-p", "needleLength=" + needle,
                         "-f", "1", "-wi", "1", "-w", "200ms", "-i", "1", "-r", "200ms", "-foe", "true",
                         "-jvm", str(java_paths[control]), "-jvmArgs", " ".join(diagnostic)],
                         stdout=log, stderr=subprocess.STDOUT, timeout=120)
                 assert completed.returncode == 0, path
+                methods = "lastIndexOf|compilerTier|rfind|matches" if benchmark == "lastIndexOf" else "equals"
                 lines = [line for line in path.read_text().splitlines()
-                         if re.search(r"java.lang.String(?:Zilla|UTF16|Latin1)?::(?:lastIndexOf|equals|compilerTier|rfind|matches)", line)]
-                emit("COMPILATION", {"tier": tier, "control": control, "benchmark": benchmark, "jvmArgs": diagnostic,
+                         if re.search(r"java.lang.String(?:Zilla|UTF16|Latin1)?::(?:" + methods + ")", line)]
+                emit("COMPILATION", {"case": case, "tier": tier, "control": control, "benchmark": benchmark,
+                     "params": {"length": length, "coder": coder, "position": position, "needleLength": needle}, "jvmArgs": diagnostic,
                      "source": source_shas["original" if control == "original" else "fork"],
-                     "timing_evidence": False, "log_sha256": sha(path), "selected_lines": lines[:60],
+                     "timing_evidence": False, "log_sha256": sha(path), "selected_lines": lines[-60:],
                      "omitted_matching_lines": max(0, len(lines) - 60)})
 
 
@@ -208,6 +224,7 @@ def main():
     parser.add_argument("--fork-source", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--backend", choices=("avx2", "serial", "neon", "msvc"), required=True)
+    parser.add_argument("--manifest", type=Path, help="Use a focused workload manifest.")
     args = parser.parse_args()
     args.original, args.fork = args.original.resolve(), args.fork.resolve()
     args.original_source, args.fork_source = args.original_source.resolve(), args.fork_source.resolve()
@@ -243,7 +260,7 @@ def run(args):
             "Get-CimInstance Win32_Processor | Select-Object Name,NumberOfCores,NumberOfLogicalProcessors | ConvertTo-Json -Compress"])
     executable = "java.exe" if os.name == "nt" else "java"
     java_paths = {"original": args.original / "bin" / executable, "enabled": args.fork / "bin" / executable, "disabled": args.fork / "bin" / executable}
-    manifest = args.fork_source / "doc/stringzilla/native-cases.tsv"
+    manifest = args.manifest.resolve() if args.manifest else args.fork_source / "doc/stringzilla/native-cases.tsv"
     rows = list(csv.DictReader(manifest.open(newline=""), delimiter="\t"))
     assert len({row["id"] for row in rows}) == len(rows)
     jars = download_jmh(args.output / "jmh")

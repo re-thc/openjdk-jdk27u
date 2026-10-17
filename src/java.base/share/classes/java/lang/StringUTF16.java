@@ -1209,28 +1209,49 @@ final class StringUTF16 {
             fromIndex = candidateEnd - last;
         }
         int searchLength = fromIndex + tgtCount;
-        if (searchLength >= (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1) && StringZilla.ENABLED
-                && (searchLength >= (StringZilla.MIN_BYTES >> 1) || StringZilla.compilerTier() == 0)) {
-            // Probe the rightmost candidate before selecting a search backend.
-            if (tgtCount <= 8 && StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount)) {
-                return fromIndex;
-            }
-            if (StringZilla.useReverseUTF16(searchLength, tgtCount)) {
-                int result = StringZilla.compilerTier() == StringZilla.C1
-                        ? StringZilla.rfindUTF16C1(src, searchLength, tgt, tgtCount)
-                        : StringZilla.rfindUTF16(src, 0, searchLength << 1, tgt, tgtCount << 1);
-                if (result == StringZilla.FALLBACK) {
-                    result = StringZilla.searchLarge(src, 0, searchLength << 1, tgt, tgtCount << 1, 1, true);
+        if (searchLength >= (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1) && StringZilla.ENABLED) {
+            if (searchLength < (StringZilla.MIN_BYTES >> 1) && StringZilla.compilerTier() != 0) {
+                if (StringZilla.compilerTier() == StringZilla.C1) {
+                    return lastIndexOfJavaFiltered(src, tgt, tgtCount, fromIndex);
                 }
-                if (result != StringZilla.FALLBACK) {
-                    return result < 0 ? -1 : result >> 1;
+                if (StringZilla.compilerTier() == StringZilla.C2) {
+                    if (tgtCount <= 8 && StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount)) {
+                        return fromIndex;
+                    }
+                    return lastIndexOfJavaC2Filtered(src, tgt, tgtCount, fromIndex);
                 }
-            }
-            if (StringZilla.compilerTier() == StringZilla.C1 ||
-                    (StringZilla.compilerTier() == StringZilla.C2 && tgtCount >= 128)) {
-                return lastIndexOfJavaFiltered(src, tgt, tgtCount, fromIndex);
+            } else {
+                // Probe the rightmost candidate before selecting a search backend.
+                if (tgtCount <= 8 && StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount)) {
+                    return fromIndex;
+                }
+                if (StringZilla.useReverseUTF16(searchLength, tgtCount)) {
+                    int result = StringZilla.compilerTier() == StringZilla.C1
+                            ? StringZilla.rfindUTF16C1(src, searchLength, tgt, tgtCount)
+                            : StringZilla.rfindUTF16(src, 0, searchLength << 1, tgt, tgtCount << 1);
+                    if (result == StringZilla.FALLBACK) {
+                        result = StringZilla.searchLarge(src, 0, searchLength << 1, tgt, tgtCount << 1, 1, true);
+                    }
+                    if (result != StringZilla.FALLBACK) {
+                        return result < 0 ? -1 : result >> 1;
+                    }
+                }
+                if (StringZilla.compilerTier() == StringZilla.C1 ||
+                        (StringZilla.compilerTier() == StringZilla.C2 && tgtCount >= 128)) {
+                    return lastIndexOfJavaFiltered(src, tgt, tgtCount, fromIndex);
+                }
+                if (StringZilla.compilerTier() == StringZilla.C2 && StringZilla.usesNeon()) {
+                    return lastIndexOfJavaC2Filtered(src, tgt, tgtCount, fromIndex);
+                }
             }
         }
+        return lastIndexOfJava(src, tgt, tgtCount, fromIndex);
+    }
+
+    @ForceInline
+    static int lastIndexOfJava(byte[] src, byte[] tgt, int tgtCount, int fromIndex) {
+        checkIndex(tgtCount - 1, tgt);
+        checkIndex(fromIndex + tgtCount - 1, src);
         int min = tgtCount - 1;
         int i = min + fromIndex;
         int strLastIndex = tgtCount - 1;
@@ -1254,6 +1275,16 @@ final class StringUTF16 {
             }
             return start + 1;
         }
+    }
+
+    // Keep miss filtering in the existing C2 character-search intrinsic.
+    @ForceInline
+    private static int lastIndexOfJavaC2Filtered(byte[] src, byte[] tgt, int count, int from) {
+        int last = count - 1;
+        if (indexOfChar0(src, getChar(tgt, last), last, from + count) < 0) {
+            return -1;
+        }
+        return lastIndexOfJavaFiltered(src, tgt, count, from);
     }
 
     // Filter compiled fallback candidates before comparing their interiors.
@@ -2157,6 +2188,7 @@ final class StringUTF16 {
     @ForceInline
     static int lastIndexOfLatin1(byte[] src, int srcCount,
                                         byte[] tgt, int tgtCount, int fromIndex) {
+        Preconditions.checkIndex(fromIndex + tgtCount - 1, src.length >> 1, Preconditions.SIOOBE_FORMATTER);
         if (fromIndex == 0) {
             if (tgtCount <= StringZilla.MAX_MIXED_NEEDLE
                     && StringZilla.ENABLED && StringZilla.compilerTier() == 0) {
@@ -2165,7 +2197,6 @@ final class StringUTF16 {
                     return result < 0 ? -1 : 0;
                 }
             }
-            Preconditions.checkIndex(tgtCount - 1, src.length >> 1, Preconditions.SIOOBE_FORMATTER);
             for (int i = tgtCount - 1; i >= 0; i--) {
                 if (getChar(src, i) != (tgt[i] & 0xff)) {
                     return -1;
@@ -2181,7 +2212,7 @@ final class StringUTF16 {
                 if (tgtCount <= 8 && StringZilla.matchesUTF16Latin1(src, fromIndex, tgt, tgtCount)) {
                     return fromIndex;
                 }
-                if (tgtCount > 8 && StringZilla.probeMixedImmediate()
+                if (tgtCount > 8 && StringZilla.probeMixedImmediate(tgtCount)
                         && StringZilla.matchesUTF16Latin1Reverse(src, fromIndex, tgt, tgtCount)) {
                     return fromIndex;
                 }
@@ -2199,7 +2230,8 @@ final class StringUTF16 {
                     }
                 } else if (tgtCount <= 2 * StringZilla.MAX_MIXED_NEEDLE || tier == 0) {
                     // Interpreted suffix loops allow longer needles without enlarging the native prefix.
-                    if (tier == StringZilla.C2) {
+                    if (tier == StringZilla.C2
+                            && !(tgtCount == StringZilla.MAX_MIXED_NEEDLE + 1 && StringZilla.usesNeon())) {
                         // The range contains only the rightmost candidate.
                         int result = indexOfLatin1_0(src, searchLength, tgt, tgtCount, fromIndex);
                         return result >= 0 ? result : lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex - 1);
@@ -2225,8 +2257,6 @@ final class StringUTF16 {
         int strLastIndex = tgtCount - 1;
 
         char strLastChar = (char)(tgt[strLastIndex] & 0xff);
-
-        Preconditions.checkIndex(i, src.length >> 1, Preconditions.SIOOBE_FORMATTER);
 
     startSearchForLastChar:
         while (true) {

@@ -211,11 +211,22 @@ static sz_cptr_t rfind_latin1_haswell(sz_cptr_t src, sz_size_t src_bytes,
     if (tgt_bytes > 256 && src_bytes - tgt_bytes < 64) {
         sz_size_t candidates = src_bytes - tgt_bytes + 1;
         sz_size_t middle = tgt_bytes / 2, last = tgt_bytes - 1;
+        // A less frequent sample avoids enumerating repeated candidate prefixes.
+        sz_size_t pivot = 0;
+        if (tgt[0] == tgt[middle]) {
+            pivot = tgt[0] == tgt[last] ? last - 1 : last;
+        } else if (tgt[0] == tgt[last] ||
+                   (tgt[middle] != tgt[last] && tgt[0] == tgt[last - 1])) {
+            pivot = middle;
+        }
         while (candidates != 0) {
-            sz_cptr_t candidate = sz_rfind_byte_haswell(src, candidates, tgt);
-            if (candidate == NULL) return NULL;
-            if (candidate[middle] == tgt[middle] && candidate[last] == tgt[last] &&
-                    candidate[last - 1] == tgt[last - 1] &&
+            // Shifting both ends by pivot keeps exactly the valid candidate
+            // starts, including zero, and preserves reverse match order.
+            sz_cptr_t hit = sz_rfind_byte_haswell(src + pivot, candidates, tgt + pivot);
+            if (hit == NULL) return NULL;
+            sz_cptr_t candidate = hit - pivot;
+            if (candidate[0] == tgt[0] && candidate[middle] == tgt[middle] &&
+                    candidate[last] == tgt[last] && candidate[last - 1] == tgt[last - 1] &&
                     sz_equal_haswell(candidate, tgt, tgt_bytes)) {
                 return candidate;
             }
