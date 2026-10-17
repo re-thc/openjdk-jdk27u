@@ -1,0 +1,505 @@
+{
+  "budgets_minutes": {
+    "build_driver": 34,
+    "charged": 158,
+    "correctness_driver": 11,
+    "jtreg_job": 3,
+    "native_job": 64,
+    "remaining": 67,
+    "reserved_total": 225,
+    "scope_step": 1,
+    "shared_native_work": 61,
+    "timing_driver": 10,
+    "upload_step": 2
+  },
+  "control_order": [
+    "before-scalar",
+    "before-getloop",
+    "after-scalar",
+    "after-getloop"
+  ],
+  "control_placements": 4,
+  "controls": [
+    {
+      "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.control",
+      "mode": "c2",
+      "params": {
+        "difference": "-1",
+        "kind": "BYTE",
+        "offset": "1",
+        "size": "128"
+      }
+    },
+    {
+      "benchmark": "org.openjdk.bench.java.nio.MemoryMismatch.intMismatchOppositeOrder",
+      "mode": "c2",
+      "params": {
+        "alignment": "1",
+        "difference": "MATCH",
+        "size": "4096",
+        "storage": "NATIVE"
+      }
+    }
+  ],
+  "gates": {
+    "between_fork_image_median_spread": 1.1,
+    "control_cross_image": 0.05,
+    "control_endpoint_spread": 1.1,
+    "first_row": "stable native4KiB equality benefit >=5% in both balanced orders before later rows",
+    "native_public_inlining_cases_required": 16,
+    "regression": "loss >5% AND >1ns in both orders",
+    "within_fork_spread": 1.15
+  },
+  "limits": [
+    "Correctness before any timing. Every native inlining case, including doubleRange, must pass.",
+    "One fixed screen only; no main-stage expansion, retry, new samples, relaxed gates or substitute runner.",
+    "The97 previously unrun main rows remain unqualified; passing this focused plan cannot promote PR39.",
+    "Actual CPU/image/toolchain/file hashes must be recorded anew; use fresh matched builds, not prior image handoffs.",
+    "Shared61-minute work deadline and64-minute native job can stop an otherwise progressing campaign; completion is not guaranteed."
+  ],
+  "measured_iterations": 3,
+  "measured_milliseconds": 250,
+  "native_correctness": {
+    "fastdebug": [
+      "AArch64ArrayMismatchCallBoundaryTest.java#call-boundary",
+      "AArch64VectorizedMismatchDispatchTest.java#store-ordering",
+      "NativeVectorizedMismatchTest.java#ideal",
+      "TestBoundedVectorizedMismatch.java"
+    ],
+    "fresh_vm_probes": 108,
+    "release_collectors": [
+      "G1",
+      "Serial",
+      "Z"
+    ],
+    "release_each": [
+      "AArch64ArrayMismatchCallBoundaryTest.java#semantics",
+      "VectorizedMismatchTest.java#default"
+    ],
+    "required_jtreg_records": 10
+  },
+  "orders": [
+    [
+      "base",
+      "candidate"
+    ],
+    [
+      "candidate",
+      "base"
+    ]
+  ],
+  "rows": {
+    "screen": [
+      {
+        "benchmark": "org.openjdk.bench.java.nio.MemoryMismatch.segmentMismatch",
+        "mode": "c2",
+        "params": {
+          "alignment": "1",
+          "difference": "MATCH",
+          "size": "4096",
+          "storage": "NATIVE"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "8"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "2",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "8"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "3",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "8"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "4",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "8"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "5",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "8"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "6",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "8"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "7",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "8"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "128"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "2",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "128"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "3",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "128"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "4",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "128"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "5",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "128"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "6",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "128"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "7",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "128"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1",
+          "kind": "BOOLEAN",
+          "offset": "1",
+          "size": "64"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1",
+          "kind": "CHAR",
+          "offset": "1",
+          "size": "64"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1",
+          "kind": "SHORT",
+          "offset": "1",
+          "size": "64"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1",
+          "kind": "INT",
+          "offset": "1",
+          "size": "64"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1",
+          "kind": "LONG",
+          "offset": "1",
+          "size": "64"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1",
+          "kind": "FLOAT",
+          "offset": "1",
+          "size": "64"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1",
+          "kind": "DOUBLE",
+          "offset": "1",
+          "size": "64"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "-1",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "8"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "-1",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "128"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "-1",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "65536"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "65536"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "7",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "65536"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "10",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "65536"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "25",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "131072"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "82",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "131072"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1267",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "131072"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.nio.MemoryMismatch.segmentMismatch",
+        "mode": "c2",
+        "params": {
+          "alignment": "1",
+          "difference": "10",
+          "size": "65536",
+          "storage": "NATIVE"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.nio.MemoryMismatch.segmentMismatch",
+        "mode": "c2",
+        "params": {
+          "alignment": "1",
+          "difference": "25",
+          "size": "131072",
+          "storage": "NATIVE"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.nio.MemoryMismatch.segmentMismatch",
+        "mode": "c2",
+        "params": {
+          "alignment": "1",
+          "difference": "82",
+          "size": "131072",
+          "storage": "HEAP_NATIVE"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.nio.MemoryMismatch.segmentMismatch",
+        "mode": "c2",
+        "params": {
+          "alignment": "1",
+          "difference": "1267",
+          "size": "131072",
+          "storage": "NATIVE_HEAP"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c1",
+        "params": {
+          "difference": "-1",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "128"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c1",
+        "params": {
+          "difference": "1",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "128"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "int",
+        "params": {
+          "difference": "-1",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "128"
+        }
+      },
+      {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "int",
+        "params": {
+          "difference": "1",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "128"
+        }
+      }
+    ]
+  },
+  "source_identity": {
+    "author": "9fedf7ac9040bf1d46e383201524f1ca7a13a29e",
+    "base": "89885a6288e7aaabd01678a704a586272c0f96e3",
+    "candidate": "6bff3b05deba58f2a9f6db9aab0e2fd1063d4826",
+    "candidate_parents": [
+      "89885a6288e7aaabd01678a704a586272c0f96e3",
+      "043b59159912d84c3be8e09bbb5e442e08bc9b8b"
+    ],
+    "candidate_tree": "a1903d2c5d1d97642a0d621449f928a332a2f91a",
+    "merge_base": "e206bae32b2a6cc1fa9464ad34d75f2df4b347e9",
+    "merge_message": "Merge repaired PR39 043b59159912 into pinned master for native qualification\n",
+    "repair": "043b59159912d84c3be8e09bbb5e442e08bc9b8b",
+    "repair_tree": "70b8308e0c997d655c17eefa330b73dd6e9e8782",
+    "src_tree": "2f2a0391e947b6dd420e46b585d9b44fd37e0957",
+    "test_tree": "01617b6e45445ab3401478559539a982bda458c5"
+  },
+  "status": "proposal; not launched or authorized",
+  "total_forks": 172,
+  "warmup_iterations": 3,
+  "warmup_milliseconds": 250
+}

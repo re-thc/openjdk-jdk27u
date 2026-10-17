@@ -22,11 +22,11 @@ import xml.etree.ElementTree as ET
 
 BASE = "89885a6288e7aaabd01678a704a586272c0f96e3"
 HEAD = "9fedf7ac9040bf1d46e383201524f1ca7a13a29e"
-REPAIR = "93926eadc57265249c5cfeef35a4975a551e827a"
+REPAIR = "043b59159912d84c3be8e09bbb5e442e08bc9b8b"
 MERGE_BASE = "e206bae32b2a6cc1fa9464ad34d75f2df4b347e9"
-CANDIDATE = "a7ca575cbf71a0ad451b5986f3b50132489b8c0f"
-TREE = "9587ce8f3a1076fea952b85fd27590ea002213c6"
-MERGE_MESSAGE = "Merge repaired PR39 93926eadc572 into pinned master for native qualification\n"
+CANDIDATE = "6bff3b05deba58f2a9f6db9aab0e2fd1063d4826"
+TREE = "a1903d2c5d1d97642a0d621449f928a332a2f91a"
+MERGE_MESSAGE = "Merge repaired PR39 043b59159912 into pinned master for native qualification\n"
 MERGE_DATE = "2026-10-17T00:00:00+00:00"
 ARRAY = "org.openjdk.bench.java.util.ArraysMismatchEarlyExit"
 MEMORY = "org.openjdk.bench.java.nio.MemoryMismatch"
@@ -54,7 +54,7 @@ def memory(size, storage="NATIVE", difference="MATCH", method="segmentMismatch",
                difference=difference, alignment=alignment)
 
 
-def plan():
+def plan(profile="full"):
     screen = [memory(4096)]
     screen += [array(size, at) for size in (8, 128) for at in range(1, 8)]
     screen += [array(64, 1, kind) for kind in
@@ -93,6 +93,9 @@ def plan():
     for storage in ("HEAP", "HEAP_NATIVE", "NATIVE_HEAP"):
         main += [memory(size, storage, difference, mode="c1") for size in (64, 128)
                  for difference in ("MATCH", "FIRST_WORD")]
+    if profile == "heap-repair":
+        return {"screen": screen + [array(128, at, mode=mode)
+                                    for mode in ("c1", "int") for at in (-1, 1)]}
     return {"screen": screen, "main": main}
 
 
@@ -104,6 +107,8 @@ class Deadline:
     def __init__(self, seconds, label):
         self.start = time.monotonic()
         self.end = self.start + seconds
+        if os.environ.get("PR39_WORK_END"):
+            self.end = min(self.end, self.start + float(os.environ["PR39_WORK_END"]) - time.time())
         self.label = label
 
     def remaining(self, cap=None, minimum=0):
@@ -176,6 +181,8 @@ def stop_owned_group(process, output):
 
 def run(command, log, timeout, cpu=None, cwd=None, disk_guard=None):
     """Own the group through timeout, cancellation and the Popen return race."""
+    if os.environ.get("PR39_WORK_END"):
+        timeout = min(timeout, float(os.environ["PR39_WORK_END"]) - time.time())
     if timeout <= 0:
         raise TimeoutError("No time remains to start a command")
     process = None
@@ -310,7 +317,11 @@ def callee_methods(case):
         kind = {"BYTE": "B", "BOOLEAN": "Z", "CHAR": "C", "SHORT": "S",
                 "INT": "I", "LONG": "J", "FLOAT": "F", "DOUBLE": "D"}[case["params"]["kind"]]
         return (vector, ("java.util.Arrays", "mismatch", f"([{kind}II[{kind}II)I"),
-                ("jdk.internal.util.ArraysSupport", "mismatch", f"([{kind}I[{kind}II)I"))
+                ("jdk.internal.util.ArraysSupport", "mismatch", f"([{kind}I[{kind}II)I"),
+                ("jdk.internal.util.ArraysSupport", "mismatchLarge", f"([{kind}I[{kind}II{'Z' if kind == 'F' else ''})I"),
+                ("jdk.internal.util.ArraysSupport", "mismatchPrefix", "(Ljava/lang/Object;JLjava/lang/Object;JII)I"),
+                ("jdk.internal.util.ArraysSupport", "mismatchPrefixFloating", "(Ljava/lang/Object;JLjava/lang/Object;JII)I"),
+                ("jdk.internal.util.ArraysSupport", "mismatchPrefixDouble", "([DI[DII)I"))
     if case["benchmark"].startswith(MEMORY + "."):
         scoped = "(Ljdk/internal/foreign/MemorySessionImpl;Ljdk/internal/foreign/MemorySessionImpl;Ljava/lang/Object;JLjava/lang/Object;JJ)J"
         return (vector,
@@ -397,7 +408,7 @@ def verdict(observations, control=False):
     return {"status": status, "medians_ns": medians, "candidate_over_base": ratios}
 
 
-def measure(root, evidence):
+def measure(root, evidence, profile="full"):
     if platform.system() != "Linux" or platform.machine() != "aarch64":
         raise RuntimeError("Native Linux AArch64 runner required; no emulated timing")
     if json.loads((evidence / "correctness-pass.json").read_text())["status"] != "pass":
@@ -405,10 +416,10 @@ def measure(root, evidence):
     identity = json.loads((evidence / "source-identity.json").read_text())
     if (identity["base"], identity["head"], identity["repair"], identity["candidate"], identity["candidate_tree"]) != (BASE, HEAD, REPAIR, CANDIDATE, TREE):
         raise RuntimeError("Source identity does not match the reviewed campaign")
-    deadline = Deadline(MEASUREMENT_LIMIT, "Measurement")
+    deadline = Deadline(10 * 60 if profile == "heap-repair" else MEASUREMENT_LIMIT, "Measurement")
     (evidence / "performance-pass.json").unlink(missing_ok=True)
     evidence.mkdir(parents=True, exist_ok=True)
-    cases = plan()
+    cases = plan(profile)
     save(evidence / "plan.json", cases)
     cpu = min(os.sched_getaffinity(0))
     save(evidence / "measurement-host.json", {
@@ -500,16 +511,17 @@ def measure(root, evidence):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("plan", "measure"))
+    parser.add_argument("--profile", choices=("full", "heap-repair"), default="full")
     parser.add_argument("--root", type=Path)
     parser.add_argument("--evidence", type=Path)
     args = parser.parse_args()
     if args.action == "plan":
-        print(json.dumps(plan(), indent=2))
+        print(json.dumps(plan(args.profile), indent=2))
     else:
         if not args.root or not args.evidence:
             parser.error("measure requires --root and --evidence")
         try:
-            measure(args.root.resolve(), args.evidence.resolve())
+            measure(args.root.resolve(), args.evidence.resolve(), args.profile)
         except Exception as error:
             args.evidence.mkdir(parents=True, exist_ok=True)
             save(args.evidence / "performance-stopped.json", {"status": "unqualified", "reason": str(error)})

@@ -1,0 +1,306 @@
+{
+  "campaign_status": "proposal only; no launch authorization",
+  "compiled_executable_source_matches_production": true,
+  "compiled_java_patch_sha256": "9ebbf45b77cffbde219049cd5cdde7235972160a8a7147c444a1f9e3087d3eb8",
+  "compiled_source_difference": "Final production commit only removes a source comment after the functional/classfile checks; no executable change.",
+  "compiled_source_sha256": "b5352db5460b9d369b5e226d6dc18f5fe244efc9283a38d7975ef3809b2f1123",
+  "java_selection_override": "PlatformProps.TARGET_ARCH_IS_AARCH64 replaced by true in isolated Java patch only",
+  "libjvm_sha256": "9931a7de0da6181d3204ceeb2b4eb74f290c93fed013b853d151774ce20c1354",
+  "local_graph_exception": {
+    "baseline_counterfactual": "Same forced compilation of original Java body with mismatch intrinsic disabled also outlines public double range; baseline public code1608bytes, wrapper104bytes. This is not an ARM instruction-size result.",
+    "method": "doubleRange",
+    "native_gate": "All16 must pass on actual nativeARM before timing; no exception or reduced gate is configured.",
+    "reason": "public compiled Arrays.mismatch remains above default inlining threshold on x86"
+  },
+  "local_graph_pass_count": 15,
+  "local_graph_total": 16,
+  "local_graphs": [
+    {
+      "java_call_targets": [],
+      "method": "byteRange",
+      "public_and_prefix_inlined": true
+    },
+    {
+      "java_call_targets": [],
+      "method": "byteFull",
+      "public_and_prefix_inlined": true
+    },
+    {
+      "java_call_targets": [],
+      "method": "booleanRange",
+      "public_and_prefix_inlined": true
+    },
+    {
+      "java_call_targets": [],
+      "method": "booleanFull",
+      "public_and_prefix_inlined": true
+    },
+    {
+      "java_call_targets": [],
+      "method": "charRange",
+      "public_and_prefix_inlined": true
+    },
+    {
+      "java_call_targets": [],
+      "method": "charFull",
+      "public_and_prefix_inlined": true
+    },
+    {
+      "java_call_targets": [],
+      "method": "shortRange",
+      "public_and_prefix_inlined": true
+    },
+    {
+      "java_call_targets": [],
+      "method": "shortFull",
+      "public_and_prefix_inlined": true
+    },
+    {
+      "java_call_targets": [],
+      "method": "intRange",
+      "public_and_prefix_inlined": true
+    },
+    {
+      "java_call_targets": [],
+      "method": "intFull",
+      "public_and_prefix_inlined": true
+    },
+    {
+      "java_call_targets": [],
+      "method": "longRange",
+      "public_and_prefix_inlined": true
+    },
+    {
+      "java_call_targets": [],
+      "method": "longFull",
+      "public_and_prefix_inlined": true
+    },
+    {
+      "java_call_targets": [],
+      "method": "floatRange",
+      "public_and_prefix_inlined": true
+    },
+    {
+      "java_call_targets": [],
+      "method": "floatFull",
+      "public_and_prefix_inlined": true
+    },
+    {
+      "java_call_targets": [
+        "java.util.Arrays::mismatch"
+      ],
+      "method": "doubleRange",
+      "public_and_prefix_inlined": false
+    },
+    {
+      "java_call_targets": [],
+      "method": "doubleFull",
+      "public_and_prefix_inlined": true
+    }
+  ],
+  "native_status": "not executed; unqualified",
+  "production_sha256": "f179b94b45ebf4cde0cf02e94dc1e59254195d47eea7e5e66bb848b41fa016b0",
+  "python_campaign_tests": {
+    "passed": 33,
+    "scope": "No JVM/build/benchmark/CI launch"
+  },
+  "raw_evidence_directory": "/workspace/scratch/pr39-heap-boundary-validation",
+  "raw_sha256": {
+    "baseline-double-boundary.log": "6eea5c684ba47b7262c0e7c05db08a117d3603805e18800d52cabde54621fb49",
+    "boundary-verify.log": "a687c7bfe55260b623834c17a2cf641c4dd4df9918e566b9d3102a848f2aba10",
+    "boundary.log": "9c6eaa2c232243914abdc25c426cb8bad4056cd89c19e98dcec2f816e5d48dcd",
+    "c1.log": "1f4e89811e6797ba2519c8a1458b8d902c5bf526b80db03678dc385036167790",
+    "c2-g1.log": "1f4e89811e6797ba2519c8a1458b8d902c5bf526b80db03678dc385036167790",
+    "c2-serial.log": "1f4e89811e6797ba2519c8a1458b8d902c5bf526b80db03678dc385036167790",
+    "c2-z.log": "1f4e89811e6797ba2519c8a1458b8d902c5bf526b80db03678dc385036167790",
+    "interpreter.log": "1f4e89811e6797ba2519c8a1458b8d902c5bf526b80db03678dc385036167790"
+  },
+  "scope": "Local semantic and static compiler validation on an existing native x86 VM with prior93926 ARM policy; no native ARM execution, timing, JDK/HotSpot build, or performance claim.",
+  "source_cpp_sha256": {
+    "src/hotspot/share/c1/c1_GraphBuilder.cpp": "c2e874870da741369b7e5575a0c986f462700b0cdd4ccacc7c0a0e34529905c0",
+    "src/hotspot/share/opto/doCall.cpp": "b0dfc896c33daea593560e9bb02e25f8100b2b819c384745d4ff7e67f3bec95b",
+    "src/hotspot/share/opto/library_call.cpp": "7f71fef63b1a3b27abef4572ee8f2edb1033c94a5b5d630ef99d195966eacf8b"
+  },
+  "source_identity": {
+    "author": "9fedf7ac9040bf1d46e383201524f1ca7a13a29e",
+    "base": "89885a6288e7aaabd01678a704a586272c0f96e3",
+    "candidate": "6bff3b05deba58f2a9f6db9aab0e2fd1063d4826",
+    "candidate_parents": [
+      "89885a6288e7aaabd01678a704a586272c0f96e3",
+      "043b59159912d84c3be8e09bbb5e442e08bc9b8b"
+    ],
+    "candidate_tree": "a1903d2c5d1d97642a0d621449f928a332a2f91a",
+    "merge_base": "e206bae32b2a6cc1fa9464ad34d75f2df4b347e9",
+    "merge_message": "Merge repaired PR39 043b59159912 into pinned master for native qualification\n",
+    "repair": "043b59159912d84c3be8e09bbb5e442e08bc9b8b",
+    "repair_tree": "70b8308e0c997d655c17eefa330b73dd6e9e8782",
+    "src_tree": "2f2a0391e947b6dd420e46b585d9b44fd37e0957",
+    "test_tree": "01617b6e45445ab3401478559539a982bda458c5"
+  },
+  "static": {
+    "hotspot_and_native_dispatch_sources_unchanged": true,
+    "model_endianness": [
+      "little",
+      "big"
+    ],
+    "new_private_methods": [
+      "private static int mismatchPrefixFloating(java.lang.Object, long, java.lang.Object, long, int, int);",
+      "private static int mismatchLarge(byte[], int, byte[], int, int);",
+      "private static int mismatchLarge(float[], int, float[], int, int, boolean);",
+      "private static int mismatchLarge(double[], int, double[], int, int);",
+      "private static int mismatchLarge(short[], int, short[], int, int);",
+      "private static int mismatchPrefix(java.lang.Object, long, java.lang.Object, long, int, int);",
+      "private static int mismatchLarge(char[], int, char[], int, int);",
+      "private static int mismatchLarge(boolean[], int, boolean[], int, int);",
+      "private static int mismatchPrefixDouble(double[], int, double[], int, int);",
+      "private static int mismatchLarge(long[], int, long[], int, int);",
+      "private static int mismatchLarge(int[], int, int[], int, int);"
+    ],
+    "non_aarch64_normalized_existing_method_bytecodes_equal": 59,
+    "overlapping_prefix_model_checks": 338,
+    "scales": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  "test_sha256": "937c818f06b458ce74425cf069ed3634f296e8a398067de67498f9012bfd3257",
+  "tests": [
+    {
+      "command": [
+        "/workspace/scratch/pr39-alias-order-validation/policy-full-jdk/bin/java",
+        "-Xint",
+        "--patch-module",
+        "java.base=/workspace/scratch/pr39-heap-boundary-validation/arm-selection-classes",
+        "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
+        "-cp",
+        "/workspace/scratch/pr39-heap-boundary-validation/test-classes:/workspace/scratch/pr39-alias-order-validation/classes",
+        "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest",
+        "semantics"
+      ],
+      "exit_code": 0,
+      "test": "interpreter"
+    },
+    {
+      "command": [
+        "/workspace/scratch/pr39-alias-order-validation/policy-full-jdk/bin/java",
+        "-XX:TieredStopAtLevel=1",
+        "--patch-module",
+        "java.base=/workspace/scratch/pr39-heap-boundary-validation/arm-selection-classes",
+        "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
+        "-cp",
+        "/workspace/scratch/pr39-heap-boundary-validation/test-classes:/workspace/scratch/pr39-alias-order-validation/classes",
+        "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest",
+        "semantics"
+      ],
+      "exit_code": 0,
+      "test": "c1"
+    },
+    {
+      "command": [
+        "/workspace/scratch/pr39-alias-order-validation/policy-full-jdk/bin/java",
+        "-Xbatch",
+        "-XX:-TieredCompilation",
+        "-XX:+UseG1GC",
+        "--patch-module",
+        "java.base=/workspace/scratch/pr39-heap-boundary-validation/arm-selection-classes",
+        "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
+        "-cp",
+        "/workspace/scratch/pr39-heap-boundary-validation/test-classes:/workspace/scratch/pr39-alias-order-validation/classes",
+        "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest",
+        "semantics"
+      ],
+      "exit_code": 0,
+      "test": "c2-g1"
+    },
+    {
+      "command": [
+        "/workspace/scratch/pr39-alias-order-validation/policy-full-jdk/bin/java",
+        "-Xbatch",
+        "-XX:-TieredCompilation",
+        "-XX:+UseSerialGC",
+        "--patch-module",
+        "java.base=/workspace/scratch/pr39-heap-boundary-validation/arm-selection-classes",
+        "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
+        "-cp",
+        "/workspace/scratch/pr39-heap-boundary-validation/test-classes:/workspace/scratch/pr39-alias-order-validation/classes",
+        "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest",
+        "semantics"
+      ],
+      "exit_code": 0,
+      "test": "c2-serial"
+    },
+    {
+      "command": [
+        "/workspace/scratch/pr39-alias-order-validation/policy-full-jdk/bin/java",
+        "-Xbatch",
+        "-XX:-TieredCompilation",
+        "-XX:+UseZGC",
+        "--patch-module",
+        "java.base=/workspace/scratch/pr39-heap-boundary-validation/arm-selection-classes",
+        "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
+        "-cp",
+        "/workspace/scratch/pr39-heap-boundary-validation/test-classes:/workspace/scratch/pr39-alias-order-validation/classes",
+        "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest",
+        "semantics"
+      ],
+      "exit_code": 0,
+      "test": "c2-z"
+    },
+    {
+      "command": [
+        "/workspace/scratch/pr39-alias-order-validation/policy-full-jdk/bin/java",
+        "-Xbootclasspath/a:/workspace/scratch/pr39-heap-boundary-validation/test-classes",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+WhiteBoxAPI",
+        "-XX:-TieredCompilation",
+        "-XX:-BackgroundCompilation",
+        "-XX:CompileThreshold=1000",
+        "-XX:CompileCommand=dontinline,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::*",
+        "-XX:CompileCommand=quiet",
+        "-XX:+PrintInlining",
+        "-XX:CompileCommand=PrintIdealPhase,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::byteRange,BEFORE_MATCHING",
+        "-XX:CompileCommand=PrintIdealPhase,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::byteFull,BEFORE_MATCHING",
+        "-XX:CompileCommand=PrintIdealPhase,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::booleanRange,BEFORE_MATCHING",
+        "-XX:CompileCommand=PrintIdealPhase,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::booleanFull,BEFORE_MATCHING",
+        "-XX:CompileCommand=PrintIdealPhase,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::charRange,BEFORE_MATCHING",
+        "-XX:CompileCommand=PrintIdealPhase,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::charFull,BEFORE_MATCHING",
+        "-XX:CompileCommand=PrintIdealPhase,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::shortRange,BEFORE_MATCHING",
+        "-XX:CompileCommand=PrintIdealPhase,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::shortFull,BEFORE_MATCHING",
+        "-XX:CompileCommand=PrintIdealPhase,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::intRange,BEFORE_MATCHING",
+        "-XX:CompileCommand=PrintIdealPhase,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::intFull,BEFORE_MATCHING",
+        "-XX:CompileCommand=PrintIdealPhase,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::longRange,BEFORE_MATCHING",
+        "-XX:CompileCommand=PrintIdealPhase,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::longFull,BEFORE_MATCHING",
+        "-XX:CompileCommand=PrintIdealPhase,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::floatRange,BEFORE_MATCHING",
+        "-XX:CompileCommand=PrintIdealPhase,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::floatFull,BEFORE_MATCHING",
+        "-XX:CompileCommand=PrintIdealPhase,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::doubleRange,BEFORE_MATCHING",
+        "-XX:CompileCommand=PrintIdealPhase,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::doubleFull,BEFORE_MATCHING",
+        "--patch-module",
+        "java.base=/workspace/scratch/pr39-heap-boundary-validation/arm-selection-classes",
+        "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
+        "-cp",
+        "/workspace/scratch/pr39-heap-boundary-validation/test-classes:/workspace/scratch/pr39-alias-order-validation/classes",
+        "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest",
+        "child"
+      ],
+      "exit_code": 0,
+      "test": "boundary-child"
+    },
+    {
+      "command": [
+        "/workspace/scratch/pr39-alias-order-validation/policy-full-jdk/bin/java",
+        "--patch-module",
+        "java.base=/workspace/scratch/pr39-heap-boundary-validation/arm-selection-classes",
+        "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
+        "-cp",
+        "/workspace/scratch/pr39-heap-boundary-validation/test-classes:/workspace/scratch/pr39-alias-order-validation/classes",
+        "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest",
+        "verify",
+        "/workspace/scratch/pr39-heap-boundary-validation/boundary.log"
+      ],
+      "exit_code": 1,
+      "test": "boundary-verify"
+    }
+  ]
+}

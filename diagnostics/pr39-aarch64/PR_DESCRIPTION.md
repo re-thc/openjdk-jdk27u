@@ -13,6 +13,15 @@ with all original arguments. Native/mixed calls retain their full guarded
 stub range. C1 admits constant valid ranges of at most 64 KiB. Compiler ordering
 barriers preserve plain heap access order around ambiguous unsafe prefix loads.
 
+AArch64 primitive-array callers now compare a bounded Java prefix before
+calling a private typed bulk helper. Bulk admission scans the remainder of the
+existing 128-byte minimum before cap/stub setup, retaining original arguments
+and tail/NaN handling. Only bulk helpers are marked `DontInline`; no inlining
+budget or force-inline policy changes. This follow-up has not run on native
+ARM. Its local semantics pass; a forced x86 graph fixture passes 15/16 cases,
+with double-range outlining also reproduced in its baseline. All 16 native
+cases remain mandatory before further timing.
+
 Scoped comparisons retain bounded chunks and Java safepoint polls. The
 interpreter bounds leaf work, counts once, and defers profiling, safepoints
 and JVMTI events to the ordinary entry. Mapped faults deliver `InternalError`;
@@ -26,7 +35,8 @@ are retained.
 **Native ARM performance qualification failed; this PR remains draft and is
 not ready to merge.** [Run 39045104945](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39045104945)
 built matched master/repaired-merge releases and candidate fastdebug on native
-Neoverse-N2. All **38 targeted jtreg records** and **108 fresh-VM probes** passed
+Neoverse-N2 at earlier repair `93926e`, before the array caller follow-up.
+All **38 targeted jtreg records** and **108 fresh-VM probes** passed
 across selected Serial, G1, ZGC and interpreter/C1/C2 paths, including bounds,
 mapped faults, polling, alias ordering, reachability, NIO/typed views, hashCode,
 CharBuffer and interpreter events.
@@ -57,8 +67,9 @@ That was not an execution of original author `9fedf7a`. Corrected repair
 provenance is retained in `diagnostics/pr39-aarch64/REPAIR.md`.
 [Author CI 39027042938](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39027042938)
 passed 57/57 jobs at `9fedf7a`, including Linux/macOS ARM64 builds and tier1;
-it predates this repair. Further heap work and reviewed native qualification
-are required before merge.
+it predates this repair. The follow-up caller repair and its focused qualification plan are ready for
+source review in `diagnostics/pr39-aarch64/HEAP-REPAIR.md`. Native qualification
+and broader unrun performance coverage remain required before merge.
 
 ---------
 - [ ] I confirm that I make this contribution in accordance with the [OpenJDK Interim AI Policy](https://openjdk.org/legal/ai).

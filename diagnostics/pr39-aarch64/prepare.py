@@ -231,8 +231,8 @@ def compile_fixtures(root, evidence):
             evidence / (label + "-fixtures.log"), 180)
 
 
-def correctness(root, evidence):
-    deadline = Deadline(CORRECTNESS_LIMIT, "Correctness")
+def correctness(root, evidence, profile="full"):
+    deadline = Deadline(11 * 60 if profile == "heap-repair" else CORRECTNESS_LIMIT, "Correctness")
     pass_path = evidence / "correctness-pass.json"
     pass_path.unlink(missing_ok=True)
     candidate = root / "candidate"
@@ -258,6 +258,16 @@ def correctness(root, evidence):
               ("TestNativeMismatch.", "TestMappedNativeMismatch.", "TestHandshake.", "TestLongMismatch.",
                "BufferMismatchBoundaryTest.", "DirectMismatchReachability."))]
     groups += [("release", "jdk-" + gc.lower(), gc, ["test/jdk/" + p for p in safety]) for gc in ("Serial", "Z")]
+    if profile == "heap-repair":
+        base = "test/hotspot/jtreg/compiler/"
+        groups = [("fastdebug", "hotspot", None, [
+            base + "intrinsics/AArch64ArrayMismatchCallBoundaryTest.java#call-boundary",
+            base + "intrinsics/AArch64VectorizedMismatchDispatchTest.java#store-ordering",
+            base + "intrinsics/NativeVectorizedMismatchTest.java#ideal",
+            base + "c1/TestBoundedVectorizedMismatch.java"])]
+        groups += [("release", "arrays-" + gc.lower(), gc, [
+            base + "intrinsics/AArch64ArrayMismatchCallBoundaryTest.java#semantics",
+            base + "intrinsics/VectorizedMismatchTest.java#default"]) for gc in ("G1", "Serial", "Z")]
     statuses = []
     for level, name, gc, tests in groups:
         deadline.remaining(minimum=1)
@@ -341,12 +351,16 @@ def verify_jtreg(work, tests):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("stage", choices=("sources", "build", "compile", "correctness"))
+    parser.add_argument("--profile", choices=("full", "heap-repair"), default="full")
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--evidence", type=Path, required=True)
     args = parser.parse_args()
     root, evidence = args.root.resolve(), args.evidence.resolve()
     evidence.mkdir(parents=True, exist_ok=True)
-    {"sources": sources, "build": build, "compile": compile_fixtures, "correctness": correctness}[args.stage](root, evidence)
+    if args.stage == "correctness":
+        correctness(root, evidence, args.profile)
+    else:
+        {"sources": sources, "build": build, "compile": compile_fixtures}[args.stage](root, evidence)
 
 
 if __name__ == "__main__":

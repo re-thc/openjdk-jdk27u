@@ -1,5 +1,8 @@
 # Executed native protocol for repair 93926e
 
+This is the historical executed protocol. The current manual workflow now
+prepares the separately unapproved [focused heap plan](HEAP-CAMPAIGN.md).
+
 This exact bounded plan was independently reviewed and explicitly approved,
 then launched **once** at `b394c38d0065ed5e2703cc26e6c217477699bb97` in
 [run 39045104945](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39045104945).

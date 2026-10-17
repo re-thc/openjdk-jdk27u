@@ -4,7 +4,7 @@
 # the Free Software Foundation. See the LICENSE file for details.
 
 name: PR39 native AArch64 qualification
-run-name: PR39 one bounded native AArch64 campaign
+run-name: PR39 focused heap repair qualification
 
 on:
   workflow_dispatch:
@@ -24,7 +24,7 @@ concurrency:
 jobs:
   jtreg:
     runs-on: ubuntu-26.04
-    timeout-minutes: 5
+    timeout-minutes: 3
     if: >-
       github.run_attempt == 1 && github.event_name == 'workflow_dispatch' &&
       github.ref == 'refs/heads/codex/pr39-aarch64-qualification' &&
@@ -36,7 +36,7 @@ jobs:
   qualification:
     needs: jtreg
     runs-on: ubuntu-26.04-arm
-    timeout-minutes: 125
+    timeout-minutes: 64
     if: >-
       github.run_attempt == 1 && github.event_name == 'workflow_dispatch' &&
       github.ref == 'refs/heads/codex/pr39-aarch64-qualification' &&
@@ -46,6 +46,7 @@ jobs:
         timeout-minutes: 1
         shell: bash
         run: |
+          printf 'PR39_WORK_END=%s\n' "$(python3 -c 'import time; print(time.time() + 61 * 60)')" >> "$GITHUB_ENV"
           printf 'QUAL_ROOT=%s/pr39-work\nQUAL_EVIDENCE=%s/pr39-evidence\n' \
             "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
 
@@ -59,7 +60,7 @@ jobs:
         run: |
           python3 -m unittest discover -s diagnostics/pr39-aarch64 -p 'test_*.py'
           mkdir -p "$QUAL_EVIDENCE"
-          python3 diagnostics/pr39-aarch64/campaign.py plan > "$QUAL_EVIDENCE/planned-rows.json"
+          python3 diagnostics/pr39-aarch64/campaign.py plan --profile heap-repair > "$QUAL_EVIDENCE/planned-rows.json"
 
       - name: Get the common BootJDK
         timeout-minutes: 3
@@ -98,17 +99,17 @@ jobs:
 
       - name: Targeted native correctness and collector safety gates
         id: correctness
-        timeout-minutes: 30
-        run: python3 diagnostics/pr39-aarch64/prepare.py correctness --root "$QUAL_ROOT" --evidence "$QUAL_EVIDENCE"
+        timeout-minutes: 12
+        run: python3 diagnostics/pr39-aarch64/prepare.py correctness --profile heap-repair --root "$QUAL_ROOT" --evidence "$QUAL_EVIDENCE"
 
       - name: One fixed balanced performance campaign
         id: measurement
-        timeout-minutes: 30
-        run: python3 diagnostics/pr39-aarch64/campaign.py measure --root "$QUAL_ROOT" --evidence "$QUAL_EVIDENCE"
+        timeout-minutes: 11
+        run: python3 diagnostics/pr39-aarch64/campaign.py measure --profile heap-repair --root "$QUAL_ROOT" --evidence "$QUAL_EVIDENCE"
 
       - name: Retain raw results and all incomplete or failed gates
         if: always()
-        timeout-minutes: 6
+        timeout-minutes: 2
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pr39-native-aarch64-${{ github.run_id }}

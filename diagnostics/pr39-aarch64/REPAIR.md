@@ -1,5 +1,9 @@
 # AArch64 mismatch repair for review
 
+The subsequent Java array-call boundary repair is described separately in
+[HEAP-REPAIR.md](HEAP-REPAIR.md). The policies and executed results below identify
+93926; they do not qualify that follow-up source.
+
 The source repair addresses the distinct paths exposed by native run
 [39033175975](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39033175975).
 The exact repaired merge has now passed native ARM targeted correctness and

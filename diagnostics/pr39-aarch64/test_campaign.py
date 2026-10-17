@@ -44,13 +44,36 @@ class CampaignTests(unittest.TestCase):
         job_header = text.split("  qualification:\n", 1)[1].split("    steps:\n", 1)[0]
         self.assertNotRegex(job_header, r"\$\{\{\s*runner\.")
         caps = [int(x) for x in re.findall(r"(?m)^        timeout-minutes: (\d+)$", text.split("  qualification:\n", 1)[1])]
-        self.assertEqual(sum(caps), 119)
-        self.assertLessEqual(sum(caps), 125 - 6)
-        self.assertEqual([int(x) for x in re.findall(r"(?m)^    timeout-minutes: (\d+)$", text)], [5, 125])
-        self.assertLessEqual(95 + 5 + 125, 225)
+        self.assertEqual(sum(caps), 78)
+        self.assertIn("time.time() + 61 * 60", text)
+        self.assertEqual([int(x) for x in re.findall(r"(?m)^    timeout-minutes: (\d+)$", text)], [3, 64])
+        self.assertLessEqual(158 + 3 + 64, 225)
         self.assertEqual(prepare.BUILD_LIMIT, 34 * 60)
         self.assertEqual(prepare.CORRECTNESS_LIMIT, 28 * 60)
-        self.assertRegex(text, r"Retain raw results[^\n]*\n        if: always\(\)\n        timeout-minutes: 6")
+        self.assertRegex(text, r"Retain raw results[^\n]*\n        if: always\(\)\n        timeout-minutes: 2")
+
+    def test_focused_heap_matrix_is_fixed(self):
+        cases = plan("heap-repair")
+        self.assertEqual(list(cases), ["screen"])
+        self.assertEqual(len(cases["screen"]), 39)
+        self.assertEqual(cases["screen"][:35], plan()["screen"])
+        self.assertEqual(cases["screen"][35:], [array(128, at, mode=mode)
+                         for mode in ("c1", "int") for at in (-1, 1)])
+        self.assertEqual((39 + 4) * 4, 172)
+
+    def test_shared_work_deadline_caps_every_stage(self):
+        with mock.patch.dict(os.environ, {"PR39_WORK_END": "1040"}), \
+             mock.patch("campaign.time.time", return_value=1000), \
+             mock.patch("campaign.time.monotonic", return_value=100):
+            deadline = Deadline(600, "fixture")
+            self.assertEqual(deadline.remaining(), 40)
+            self.assertEqual(deadline.remaining(cap=12), 12)
+        with mock.patch.dict(os.environ, {"PR39_WORK_END": "999"}), \
+             mock.patch("campaign.time.time", return_value=1000), \
+             mock.patch("campaign.subprocess.Popen") as spawn:
+            with self.assertRaises(TimeoutError):
+                campaign.run(["unused"], Path("unused"), 60)
+            spawn.assert_not_called()
 
     def test_repaired_merge_is_identified_before_checkout(self):
         with mock.patch("prepare.git", return_value=campaign.TREE) as git, \
