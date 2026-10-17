@@ -39,39 +39,46 @@ needed merely because successful IR matching prints no explicit success line.
   TestVmSocket -> StdoutMessages. The optional Applicable IR Rules table is
   printed only with PrintApplicableIRRules or Verbose. Its absence is normal.
 
-The report's passing tests, enabled IR flag and stated no disabled verification
-are consistent with successful matching. Its statement that neither zero-seed
-report contains any disabled/skipped text is not enough to independently audit
-individual applicability: several SVE-only rules should be disabled. This may
-reflect which output sections were searched. The original runner explicitly
-checked the carried128/reversed positive rules, but did not explicitly reject
-skipped essential zero-seed rules. The new gate adds those checks and rejects unsupported-node `Skip Rule` IDs
-that overlap required NEON rules (these notices omit the method name), missing
-UseSVE=0 commands and contradictory IR-disable flags; it does not
-retroactively claim that the v3 raw output passed the strengthened gate.
+## Completed local-agent applicability audit
 
-## Smallest existing-output excerpts for independent confirmation
+A subsequent 5,811-byte local-agent analysis report was read here. That agent
+reviewed the existing full JTRs, commands, checked-out annotations and available
+strict-test graphs on the Mac, without changing sources, building or rerunning.
+It confirms a focused correctness and active-IR pass at the exact 307315e source.
+This is attributed to that local-agent analysis; this executor still has not
+directly read the raw Mac files.
 
-No new build, JVM or test run is requested. From the existing v3 directory,
-provide only:
+The predicted inapplicable set exactly equals the logged disabled set. All the
+required rules listed above were active, with no `Skip Rule` notice or global
+IR-disable message. Excluded annotations are exclusively SVE-only/x64-only.
+Both Flag VM and Test VM commands use UseSVE=0 and enabled IR verification. There
+is no unintended Test, Exclude, Scenarios or AllowNotCompilable override; the
+strict test deliberately excludes only its scalar oracle methods.
 
-1. `qualification-result.json` (small complete file) and `focused/gate.json`'s
-   platform, source_head, passed and configurations role/sve/report-name fields.
-2. From `focused-candidate-sve0-flags.log`, the UseSVE and MaxVectorSize lines.
-3. From each of these two existing JTR files under
-   `focused/focused-candidate-sve0-work/compiler/vectorapi/`, extract the
-   execStatus/test-result line, Test VM command line containing
-   ShouldDoIRVerification/UseSVE, and **all** lines containing
-   `Disabling IR matching`, `Skip Rule`, `IR verification disabled`, `Applicable IR Rules`
-   or `Test VM Messages`:
-   `TestZeroSeedFPReductionIR.jtr` and
-   `TestZeroSeedFPReductionStrictIR.jtr`.
+MaxVectorSize=16 is printed by the separate same-image flags process, rather
+than directly printed by each Test VM. The Test VMs independently evaluate their
+own flag constraints through WhiteBox; the observed applicability agrees with
+that value. This is sufficient applicability evidence, with its indirect flag
+observation stated explicitly.
 
-If the JTR commands show enabled verification, no global disable and no disable
-of the required NEON rules, the passing framework reports suffice; no explicit
-success line or rerun is needed. If excerpts are still ambiguous, inspect the
-existing retained test-VM logs/applicability messages before proposing any new
-execution. Do not transfer JDK images or bulk binaries.
+The retained strict graphs show C2 compilation and the MATCHING phase, with
+18 AddF and 18 AddD occurrences in final-compile ideal output, no AddReductionV
+nodes, and no reduce_* nodes in matching output. These support the strict
+scalar-order ideal and matcher negatives. The earlier non-strict test's raw
+scratch graphs were overwritten by jtreg; its full passing JTR, command,
+annotation/disable-set cross-check and framework matching behavior establish
+active coverage without inventing retained graphs or a per-rule success line.
+
+The earlier statement that neither report contained disabled text was incomplete:
+the detailed audit finds precisely the expected foreign-platform exclusions.
+The original runner lacked explicit zero-seed exclusion guards; the later gate
+adds them. The local-agent audit closes the actual v3 applicability question
+using existing output, rather than retroactively claiming this executor ran that
+gate against raw files. No further upload or rerun is needed.
+
+The result remains limited to the exact 307315e focused Mac run. It does not
+qualify the later classifier prefilter, release assembly, full suites, SVE
+lowering or historical Linux performance recovery.
 
 ## Offline fixture repair
 

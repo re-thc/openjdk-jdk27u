@@ -92,5 +92,6 @@ The candidate needs separately attributed native Linux release assembly and the
 predefined paired recovery/retention gates before product publication to PR14.
 This review branch provides the source repair and evidence boundaries. It does
 not claim a no-regressions result or request repetition of the completed Mac
-correctness scope. The narrow existing-output IR applicability audit remains
-separate and does not block ordinary source work.
+correctness scope. The local-agent existing-output audit has now confirmed active IR coverage
+for the exact 307315e Mac run; raw files were not directly read here. It requires
+no further upload or rerun and does not qualify this later prefilter revision.

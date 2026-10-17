@@ -145,7 +145,8 @@ profile change is included; that is a separate investigation.
 
 The user reports both builds and all 11 focused tests passed on the exact
 307315e89de source. See [MAC-FOCUSED-V3-REVIEW.md](MAC-FOCUSED-V3-REVIEW.md)
-for the source audit, evidence limits and smallest existing text excerpts.
+for the completed local-agent active-IR audit and evidence limits. No further
+upload or rerun is needed for that focused result.
 Do not rerun merely to obtain a success message: matching success is silent.
 The offline fixtures now support symlinked macOS TMPDIR paths without requiring
 an environment change. This remains correctness evidence, not performance recovery.
