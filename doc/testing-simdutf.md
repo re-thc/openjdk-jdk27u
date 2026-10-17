@@ -88,7 +88,7 @@ timeout -k 10s 90s "$SIMDUTF_BOOT/bin/java" -Xmx256m \
 Require normal completion and correct UTF-32 bytes/round trips. Stop on a hang,
 crash or failure before running broader tests.
 
-Second, the focused semantic boundary suite and C1 opt-out regression:
+Second, the focused semantic boundary suite, C1 opt-out and admission regressions:
 
 ```sh
 timeout -k 30s 20m "$SIMDUTF_BOOT/bin/java" -Xmx256m \
@@ -98,7 +98,8 @@ timeout -k 30s 20m "$SIMDUTF_BOOT/bin/java" -Xmx256m \
     -w:"$SIMDUTF_OUT/wide-work" -r:"$SIMDUTF_OUT/wide-report" \
     test/jdk/java/lang/String/SimdUTFWideTest.java#portable \
     test/jdk/java/lang/String/SimdUTFWideTest.java#compiled \
-    test/hotspot/jtreg/compiler/intrinsics/simdutf/TestSimdUTFDisabled.java
+    test/hotspot/jtreg/compiler/intrinsics/simdutf/TestSimdUTFDisabled.java \
+    test/hotspot/jtreg/compiler/intrinsics/simdutf/TestSimdUTFUTF32Admission.java
 ```
 
 This covers exact bytes/coders, malformed replacement and REPORT/IGNORE,
@@ -146,3 +147,129 @@ configuration evidence; and no crash or unresolved failure. That permits a
 separate, smaller performance request. It does not establish measured
 thresholds, regression-free performance, AArch64 correctness or readiness to
 merge. Publishing or updating a remote review branch needs separate authority.
+
+## Preparing full-image performance qualification
+
+Correctness runs on an exploded fastdebug JDK do not establish performance.
+Timing requires complete release images of the original master and final
+candidate, built with the same compiler and configuration. The candidate image
+is used both normally and with `-XX:-UseSIMDUTFIntrinsics`; the original master
+does not accept that flag. Keep the benchmark JAR identical across all three.
+Record each checkout's commit, tree and parents, including any synthetic merge,
+configure arguments, compiler version/hash, image `release` file, and hashes of
+the launcher, libjava, libjvm and module image. Also record the benchmark JAR,
+source and dependency hashes, native architecture, CPU features, affinity,
+kernel and effective JVM arguments. A source label alone cannot identify an
+image. Native AArch64 execution is required for AArch64 timings.
+
+Set `SIMDUTF_BENCH_JAR` to the repository-built microbenchmark JAR and
+`SIMDUTF_BASE` / `SIMDUTF_HEAD` to the verified complete release images. The
+driver JDK in `SIMDUTF_BOOT` is used only to launch JMH; `-jvm` selects the image
+being measured.
+
+`SimdUTFWide` constructs its wire corpus independently of the charset methods
+under test and checks each trial's conversions against it. The segment setup
+checks exact bytes as well as a round trip. Its sizes count UTF-16 code units,
+not encoded bytes. The supplementary corpus contains `size / 2` pairs plus an
+ASCII character for an odd size, so a size of one contains no supplementary
+character. The fallback workloads use ASCII with Shift_JIS and windows-1252 to
+expose dispatch overhead in generic charset paths.
+
+Emit the untimed case/corpus manifest from the same benchmark JAR:
+
+```sh
+"$SIMDUTF_BOOT/bin/java" -Xmx512m -cp "$SIMDUTF_BENCH_JAR" \
+    org.openjdk.bench.java.lang.SimdUTFWide > corpus.csv
+```
+
+The default manifest has 10,260 wide-conversion cells and 76 fallback cells.
+Each row contains the method, all its parameters, encoded byte count and SHA256
+of the wire payload. It contains no timing result. A frozen size override can
+prepare a smaller pilot or a threshold grid without changing the benchmark:
+
+```sh
+"$SIMDUTF_BOOT/bin/java" -Xmx512m -cp "$SIMDUTF_BENCH_JAR" \
+    org.openjdk.bench.java.lang.SimdUTFWide \
+    --sizes 7,8,9,14,15,16,17,30,31,32,33,63,64,65 > boundary-corpus.csv
+```
+
+These points bracket x64's default 32-unit admission and the automatic UTF-32
+decoder's 64-byte floor, accounting for wire width and the UTF-16 BOM. AArch64
+currently retains the shared 256-unit default; add 63/64/65 and
+126/127/128/129 for its wire-width and BOM boundaries. Record the actual
+minimum on each image rather than assuming either architecture's policy. Larger
+boundary grids should include 2047/2048/2049 and 4095/4096/4097 code units around
+the 8 KiB staging capacity, 8191/8192/8193 around repeated staging, and
+262143/262144/262145 and 524287/524288/524289 around the 1 MiB native-call byte
+boundaries. Keep sizes at or below 1048576. These are sampling points, not
+measured crossover values. Explicit `SIMDUTFMinLength` overrides bypass the
+automatic operation floors and must be labeled separately.
+
+### Timing and allocation records
+
+Freeze the selected manifest, fork/iteration counts, heap, VM tier, corpus,
+commands, variant order, controls and regression criteria before execution.
+Run one exact method/parameter cell at a time. Omit blank manifest parameters;
+for example, buffer parameters are not applicable to String-only methods.
+Use JMH JSON and its built-in GC profiler for both timing and normalized
+allocation. A representative single cell, after its campaign has been selected,
+is:
+
+```sh
+"$SIMDUTF_BOOT/bin/java" -jar "$SIMDUTF_BENCH_JAR" \
+    'org.openjdk.bench.java.lang.SimdUTFWide.decodeBuffer$' \
+    -jvm "$SIMDUTF_HEAD/bin/java" \
+    -jvmArgs '-Xms512m -Xmx512m -XX:ActiveProcessorCount=2' \
+    -p charsetName=UTF-32LE -p content=BMP -p size=16 \
+    -p sourceKind=DIRECT -p destinationKind=HEAP \
+    -f 3 -wi 3 -i 5 -w 1s -r 1s -prof gc -rf json -rff result.json
+```
+
+Use the identical command with the original-master image for the baseline.
+Only the candidate-disabled variant adds
+`-jvmArgsAppend '-XX:-UseSIMDUTFIntrinsics'`. Retain JMH's actual fork command
+lines. Verify positive native admission on candidate-enabled images separately;
+successful public conversion alone could be a fallback.
+
+Use the unchanged `ArrayCopy.arrayCopy` and `Integers.toStringSmall` (`size=500`)
+as neutral controls, with their original source hashes recorded. The fallback
+charset methods are workloads under review, not neutral controls. Interleave
+the three variants in all six fixed orders (`B E D`, `E D B`, `D B E`, `B D E`,
+`D E B`, `E B D`) so every variant occupies every position equally. Preserve
+every block and fork; do not select the best order or rerun a failed control
+until it passes. Failed controls make their block inconclusive and require a
+cause to be established before a replacement experiment.
+
+Retain primary timing data, units, raw fork/iteration observations, confidence
+intervals, and `gc.alloc.rate.norm` with unit `B/op`. Missing, unsupported or
+non-finite allocation data are inconclusive; GC count or MB/s cannot substitute
+for allocation per operation. Report absolute allocation deltas, including
+when the baseline is zero, rather than dividing by zero. Constructor/getBytes
+and getString include their returned objects; buffers and setString use
+preallocated trial state, so their allocation records expose per-call
+temporaries. Do not subtract estimated object headers or String payloads from
+the profiler result. The Integers control performs a batch per invocation;
+compare it only with its matching control configuration.
+
+Join results to the frozen manifest by method and complete parameter map.
+Reject duplicates, unexpected cells, changed payload hashes, mismatched units,
+image/command mismatches and incomplete fork sets. Keep rows for unrun, failed
+and inconclusive configurations as well as successful ones. Do not relabel a
+diagnostic, patched-class result or emulator timing as a full-image result.
+
+### Deriving dispatch thresholds
+
+Derive crossovers separately for architecture, execution tier, operation,
+content and storage combination. String decode consumes wire bytes, while
+encode consumes UTF-16 units; buffer capacity and BOM removal can change the
+eligible amount. Use the recorded encoded byte count rather than equating
+`size` with bytes. Require a gain that persists across consecutive sampled
+sizes and balanced blocks without an unresolved allocation or control
+regression. A single winning cell is not a threshold. Keep ambiguous ranges on
+the existing path and add boundary samples before changing their admission.
+
+The global minimum also affects UTF-8, search and Base64, so a wide-conversion
+crossover cannot justify changing it without the corresponding workloads.
+Recheck short inputs and opt-out costs after any threshold change. x64 results
+cannot establish an AArch64 threshold, and a safe fallback is not a performance
+gain. Preserve CPU/ISA admission independently of this dispatch tuning.
