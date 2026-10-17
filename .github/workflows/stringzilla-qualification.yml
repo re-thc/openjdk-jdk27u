@@ -15,7 +15,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   prepare-jtreg:
@@ -210,6 +210,7 @@ jobs:
             -w:perf-output/jtreg-bounds-work -r:perf-output/jtreg-bounds-report \
             -javaoption:-XX:ActiveProcessorCount=2 -verbose:summary \
             test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds.java \
+            test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \
             2>&1 | tee perf-output/jtreg-bounds.log
 
       - name: Run StringZilla jtreg smoke on MSVC
@@ -229,8 +230,9 @@ jobs:
             -w:perf-output/jtreg-bounds-work -r:perf-output/jtreg-bounds-report `
             -javaoption:-XX:ActiveProcessorCount=2 -verbose:summary `
             test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds.java `
+            test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java `
             2>&1 | Tee-Object -FilePath perf-output/jtreg-bounds.log
-          if ($LASTEXITCODE -ne 0) { throw 'StringZilla physical bounds jtreg test failed' }
+          if ($LASTEXITCODE -ne 0) { throw 'StringZilla physical bounds and dispatch jtreg tests failed' }
 
       - name: Build and execute native ASan and UBSan contract checks
         if: runner.os == 'Linux'

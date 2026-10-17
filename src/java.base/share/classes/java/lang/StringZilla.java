@@ -41,6 +41,7 @@ final class StringZilla {
     private static final int SERIAL = 0;
     private static final int HASWELL = 1;
     private static final int NEON = 4;
+    static final boolean MSVC_SERIAL = (CONFIGURATION & 16) != 0 && BACKEND == SERIAL;
     static final int C1 = 1;
     static final int C2 = 4;
     // Keep small inputs on the existing Java / platform intrinsic paths.
@@ -271,6 +272,9 @@ final class StringZilla {
         if (tier == 0) {
             return true;
         }
+        if (MSVC_SERIAL && ((tier == C1 && count <= 8) || (tier == C2 && count <= 128))) {
+            return false;
+        }
         if (BACKEND == NEON) {
             if (tier == C1 && count > 128) {
                 return reverseWork(length, count) >= 1024;
@@ -288,6 +292,12 @@ final class StringZilla {
                 || (count > 128 ? (BACKEND != HASWELL || length - count >= 16)
                                  && reverseWork(length, count) >= 2048
                                 : length >= 512);
+    }
+
+    @ForceInline
+    static boolean useReverseUTF16Filter(int count) {
+        return (BACKEND == NEON && count < 128)
+                || (MSVC_SERIAL && count <= 128);
     }
 
     @ForceInline

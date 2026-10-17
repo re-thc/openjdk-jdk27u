@@ -1236,12 +1236,13 @@ final class StringUTF16 {
                         return result < 0 ? -1 : result >> 1;
                     }
                 }
+                if (StringZilla.compilerTier() == StringZilla.C2
+                        && StringZilla.useReverseUTF16Filter(tgtCount)) {
+                    return lastIndexOfJavaC2Filtered(src, tgt, tgtCount, fromIndex);
+                }
                 if (StringZilla.compilerTier() == StringZilla.C1 ||
                         (StringZilla.compilerTier() == StringZilla.C2 && tgtCount >= 128)) {
                     return lastIndexOfJavaFiltered(src, tgt, tgtCount, fromIndex);
-                }
-                if (StringZilla.compilerTier() == StringZilla.C2 && StringZilla.usesNeon()) {
-                    return lastIndexOfJavaC2Filtered(src, tgt, tgtCount, fromIndex);
                 }
             }
         }
@@ -2215,6 +2216,9 @@ final class StringUTF16 {
                 if (tgtCount > 8 && StringZilla.probeMixedImmediate(tgtCount)
                         && StringZilla.matchesUTF16Latin1Reverse(src, fromIndex, tgt, tgtCount)) {
                     return fromIndex;
+                }
+                if (StringZilla.MSVC_SERIAL && StringZilla.compilerTier() == StringZilla.C2) {
+                    return lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex);
                 }
                 return lastIndexOfLatin1Native(src, searchLength, tgt, tgtCount);
             } else {

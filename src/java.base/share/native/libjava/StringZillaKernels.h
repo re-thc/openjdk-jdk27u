@@ -33,7 +33,8 @@ enum {
     JVM_STRINGZILLA_HASWELL = 1,
     JVM_STRINGZILLA_SKYLAKE = 2,
     JVM_STRINGZILLA_NEON = 4,
-    JVM_STRINGZILLA_ENABLED = 8
+    JVM_STRINGZILLA_ENABLED = 8,
+    JVM_STRINGZILLA_MSVC = 16
 };
 
 typedef jint (*StringZillaSearchFn)(const char*, jint, const char*, jint);
