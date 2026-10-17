@@ -26,6 +26,7 @@
 #include "memory/resourceArea.hpp"
 #include "opto/chaitin.hpp"
 #include "opto/machnode.hpp"
+#include "opto/spillCopyRetention.hpp"
 
 // See if this register (or pairs, or vector) already contains the value.
 static bool register_contains_value(Node* val, OptoReg::Name reg, int n_regs,
@@ -479,27 +480,8 @@ int PhaseChaitin::possibly_merge_multidef(Node *n, uint k, Block *block, RegToDe
 
 
 #ifdef AMD64
-// Existing copy removal may bypass a redundant invariant Phi. Keep only the
-// exact entry and stack home proved in an earlier analysis, not arbitrary sources.
-class InvariantSpillEntry : public ArenaObj {
-public:
-  Node* const _node;
-  const uint _lid;
-  const Type* const _type;
-  const uint _is_oop;
-  const RegMask _home;
-
-  InvariantSpillEntry(Node* node, uint lid, const LRG& lrg)
-    : _node(node), _lid(lid), _type(node->bottom_type()), _is_oop(lrg._is_oop), _home(lrg.mask()) {}
-
-  bool matches(Node* node, uint lid, const LRG& lrg) const {
-    RegMask missing(_home), extra(lrg.mask());
-    missing.subtract(lrg.mask());
-    extra.subtract(_home);
-    return node == _node && lid == _lid && node->bottom_type() == _type &&
-           lrg._is_oop == _is_oop && missing.is_empty() && extra.is_empty();
-  }
-};
+using RetentionPolicy = SpillCopyRetentionPolicy;
+using InvariantSpillEntry = SpillCopyRetentionEntry<Node, Type>;
 
 // Physical GP liveness is rebuilt after coloring. The old IFG has already had
 // bound-register interference removed, and Select has replaced allowed masks
@@ -510,34 +492,38 @@ class SpillCopyRetention : public StackObj {
   RegMask _gp;
   RegMask* _live_out;
   uint* _members;
-  uint& _work_left;
+  uint* _positions;
+  uint* _phi_count;
+  RetentionPolicy::Budget& _budget;
   GrowableArray<InvariantSpillEntry*>& _entries;
   Arena& _entry_arena;
 
   bool charge() const {
-    if (_work_left == 0) {
-      return false;
-    }
-    --_work_left;
-    return true;
+    return _budget.charge();
   }
 
   static bool supported_mask(const RegMask& mask) {
-    RegMask base;
-    return !mask.is_offset() && mask.rm_size_in_words() <= base.rm_size_in_words();
+    return RetentionPolicy::supported_mask(mask);
+  }
+
+  bool dominates(Block* first, Block* last) const {
+    if (!charge() || last == nullptr || first->_dom_depth > last->_dom_depth) {
+      return false;
+    }
+    while (last != nullptr && last->_dom_depth > first->_dom_depth) {
+      if (!charge()) {
+        return false;
+      }
+      last = last->_idom;
+    }
+    return first == last;
   }
 
   bool allocated(Node* n, RegMask& result) const {
     result.clear();
     uint lid = _ra._lrg_map.live_range_id(n);
     if (lid != 0) {
-      if (!supported_mask(_ra.lrgs(lid).mask())) {
-        return false;
-      }
-      result.assignFrom(_gp);
-      result.and_with(_ra.lrgs(lid).mask());
-      // A 32-bit x86 write also destroys the upper half of the same GP.
-      result.smear_to_sets(2);
+      return RetentionPolicy::gp_registers(_gp, _ra.lrgs(lid).mask(), result);
     }
     return true;
   }
@@ -570,19 +556,17 @@ class SpillCopyRetention : public StackObj {
     if (!allocated(n, defs) || !uses(n, inputs)) {
       return false;
     }
-    live.subtract(defs);
-    live.or_with(inputs);
+    RetentionPolicy::transfer(live, defs, inputs);
     return true;
   }
 
   bool consumer(Node* use, uint edge, RegMask& allowed) const {
-    if (!use->is_Mach() || use->is_MachSafePoint() || use->as_Mach()->has_call() ||
-        use->as_Mach()->two_adr() == edge || use->jvms() != nullptr ||
-        !supported_mask(use->in_RegMask(edge))) {
+    if (!use->is_Mach()) {
       return false;
     }
-    allowed.and_with(use->in_RegMask(edge));
-    return !allowed.is_empty();
+    return RetentionPolicy::consumer(true, use->is_MachSafePoint(), use->as_Mach()->has_call(),
+                                     use->jvms() != nullptr, use->as_Mach()->two_adr(), edge,
+                                     use->in_RegMask(edge), allowed);
   }
 
   // Visit all paths from seed to use, including the use's own clobbers. Reverse
@@ -591,11 +575,12 @@ class SpillCopyRetention : public StackObj {
   bool interval(Node* seed, Node* use, const RegMask& home, RegMask& defs) {
     Block* first = _cfg.get_block_for_node(seed);
     Block* last = _cfg.get_block_for_node(use);
-    if (last == nullptr || !first->dominates(last)) {
+    if (first == nullptr || !dominates(first, last) ||
+        _positions[seed->_idx] == 0 || _positions[use->_idx] == 0) {
       return false;
     }
-    uint start = first->find_node(seed);
-    uint finish = last->find_node(use);
+    uint start = _positions[seed->_idx] - 1;
+    uint finish = _positions[use->_idx] - 1;
     if (first == last && finish <= start) {
       return false;
     }
@@ -604,27 +589,28 @@ class SpillCopyRetention : public StackObj {
     pending.push(last);
     uint blocks = 0;
     while (!pending.is_empty()) {
+      if (!charge()) {
+        return false;
+      }
       Block* block = pending.pop();
       if (visited.test_set(block->_pre_order)) {
         continue;
       }
-      if (++blocks > 64 || !first->dominates(block) || block->head()->is_Root()) {
+      if (++blocks > RetentionPolicy::MaxIntervalBlocks || !dominates(first, block) || block->head()->is_Root()) {
         return false;
       }
       uint begin = block == first ? start + 1 : 0;
       uint end = block == last ? finish + 1 : block->number_of_nodes();
       for (uint j = begin; j < end; j++) {
-        if (_work_left == 0) {
+        if (!charge()) {
           return false;
         }
-        --_work_left;
         Node* n = block->get_node(j);
-        if (n->is_MachSafePoint() || (n->is_Mach() && n->as_Mach()->has_call())) {
-          return false;
-        }
         uint lid = _ra._lrg_map.live_range_id(n);
-        if (lid != 0 && _ra.lrgs(lid).mask().overlap(home)) {
-          return false; // Includes paired stack slots and Phi definitions.
+        const RegMask& allocation = lid == 0 ? RegMask::Empty : _ra.lrgs(lid).mask();
+        if (RetentionPolicy::interval_barrier(n->is_MachSafePoint(),
+                                              n->is_Mach() && n->as_Mach()->has_call(), allocation, home)) {
+          return false; // Includes endpoint calls and both halves of stack definitions.
         }
         RegMask killed;
         if (!allocated(n, killed)) {
@@ -650,22 +636,36 @@ class SpillCopyRetention : public StackObj {
   }
 
 public:
-  SpillCopyRetention(PhaseChaitin& ra, PhaseCFG& cfg, uint& work_left,
+  SpillCopyRetention(PhaseChaitin& ra, PhaseCFG& cfg, RetentionPolicy::Budget& budget,
                      GrowableArray<InvariantSpillEntry*>& entries, Arena& entry_arena)
-    : _ra(ra), _cfg(cfg), _work_left(work_left), _entries(entries), _entry_arena(entry_arena) {
+    : _ra(ra), _cfg(cfg), _live_out(nullptr), _members(nullptr), _positions(nullptr), _phi_count(nullptr),
+      _budget(budget), _entries(entries), _entry_arena(entry_arena) {
     _gp.assignFrom(*Matcher::idealreg2regmask[Op_RegP]);
     _gp.or_with(*Matcher::idealreg2regmask[Op_RegI]);
     _gp.smear_to_sets(2);
     uint size = cfg.number_of_blocks() + 1;
+    uint node_index = Compile::current()->unique();
+    // Charge initialization before allocating. These are bounded logical array
+    // elements; fixed-width RegMask work and allocator costs are not CPU ticks.
+    if (!_budget.charge(3 * size + ra._lrg_map.max_lrg_id() + node_index)) {
+      return;
+    }
     _live_out = NEW_RESOURCE_ARRAY(RegMask, size);
     for (uint i = 0; i < size; i++) {
       new (&_live_out[i]) RegMask();
     }
     _members = NEW_RESOURCE_ARRAY(uint, ra._lrg_map.max_lrg_id());
     memset(_members, 0, sizeof(uint) * ra._lrg_map.max_lrg_id());
+    _positions = NEW_RESOURCE_ARRAY(uint, node_index);
+    memset(_positions, 0, sizeof(uint) * node_index);
+    _phi_count = NEW_RESOURCE_ARRAY(uint, size);
+    memset(_phi_count, 0, sizeof(uint) * size);
   }
 
   bool compute() {
+    if (_positions == nullptr) {
+      return false;
+    }
     uint size = _cfg.number_of_blocks() + 1;
     RegMask* live_in = NEW_RESOURCE_ARRAY(RegMask, size);
     for (uint i = 0; i < size; i++) {
@@ -674,11 +674,15 @@ public:
     for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
       Block* block = _cfg.get_block(i);
       for (uint j = 0; j < block->number_of_nodes(); j++) {
-        if (_work_left == 0) {
+        if (!charge()) {
           return false;
         }
-        --_work_left;
-        uint lid = _ra._lrg_map.live_range_id(block->get_node(j));
+        Node* n = block->get_node(j);
+        _positions[n->_idx] = j + 1;
+        if (j != 0 && j == _phi_count[block->_pre_order] + 1 && n->is_Phi()) {
+          ++_phi_count[block->_pre_order];
+        }
+        uint lid = _ra._lrg_map.live_range_id(n);
         if (lid != 0) {
           if (!supported_mask(_ra.lrgs(lid).mask())) {
             return false; // No extended masks or rolled-over chunks in this prototype.
@@ -687,9 +691,12 @@ public:
         }
       }
     }
-    for (uint trip = 0; trip < 64; trip++) {
+    for (uint trip = 0; trip < RetentionPolicy::MaxLivenessRounds; trip++) {
       bool changed = false;
       for (uint i = _cfg.number_of_blocks(); i-- > 0;) {
+        if (!charge()) {
+          return false;
+        }
         Block* block = _cfg.get_block(i);
         RegMask out;
         if (!block->head()->is_Root()) { // Root's exit hub cannot reenter Start.
@@ -706,19 +713,11 @@ public:
               if (_cfg.get_block_for_node(succ->pred(edge)) != block) {
                 continue;
               }
-              for (uint p = 1; p < succ->number_of_nodes(); p++) {
-                if (!charge()) {
-                  return false;
-                }
-                Node* phi = succ->get_node(p);
-                if (!phi->is_Phi()) {
-                  break;
-                }
-                RegMask input;
-                if (!allocated(phi->in(edge), input)) {
-                  return false;
-                }
-                out.or_with(input);
+              auto input_registers = [&](uint phi, uint predecessor, RegMask& input) {
+                return allocated(succ->get_node(phi + 1)->in(predecessor), input);
+              };
+              if (!RetentionPolicy::phi_edge_uses(_phi_count[succ->_pre_order], edge, input_registers, _budget, out)) {
+                return false;
               }
             }
           }
@@ -744,7 +743,7 @@ public:
   }
 
   bool eligible(Node* n) const {
-    if (!n->is_MachSpillCopy() || n->outcnt() == 0 ||
+    if (_positions[n->_idx] == 0 || !n->is_MachSpillCopy() || n->outcnt() == 0 ||
         !supported_mask(n->out_RegMask()) ||
         n->as_MachSpillCopy()->spill_type() != MachSpillCopyNode::MemToReg) {
       return false;
@@ -768,36 +767,25 @@ public:
         !OptoReg::is_stack(_ra.lrgs(source_lid).reg())) {
       return false;
     }
-    // Restrict this prototype to invariant stack Phis. Do not change placement
-    // of mutable Java Phis, the broad DOWN range, or call/debug copies.
+    // Only invariant stack Phis (or exact validated entries after cleanup) are
+    // eligible. This does not recolor the broad DOWN range or mutable Java Phis.
+    // Subsequent whole-method cleanup may rewrite call/debug inputs under their
+    // own masks; final OopMaps and ScopeValues must describe those new locations.
     Node* source = n->in(1);
     if (!source->is_Phi()) {
       for (int i = 0; i < _entries.length(); i++) {
         if (!charge()) {
           return false;
         }
-        if (_entries.at(i)->matches(source, source_lid, _ra.lrgs(source_lid))) {
+        const LRG& source_lrg = _ra.lrgs(source_lid);
+        if (_entries.at(i)->matches(source, source_lid, source->bottom_type(), source_lrg._is_oop, source_lrg.mask())) {
           return true;
         }
       }
       return false;
     }
-    Node* entry = nullptr;
-    bool self = false;
-    for (uint k = 1; k < source->req(); k++) {
-      if (!charge()) {
-        return false;
-      }
-      if (source->in(k) == source) {
-        self = true;
-      } else {
-        if (entry != nullptr && entry != source->in(k)) {
-          return false;
-        }
-        entry = source->in(k);
-      }
-    }
-    if (!self || entry == nullptr) {
+    Node* entry = RetentionPolicy::invariant_entry(source, _budget);
+    if (entry == nullptr) {
       return false;
     }
     if (entry->bottom_type() == source->bottom_type() &&
@@ -809,8 +797,10 @@ public:
         }
         found |= _entries.at(i)->_node == entry;
       }
-      if (!found) {
-        _entries.append(new (&_entry_arena) InvariantSpillEntry(entry, source_lid, _ra.lrgs(source_lid)));
+      if (!found && _entries.length() < RetentionPolicy::MaxEntries) {
+        const LRG& source_lrg = _ra.lrgs(source_lid);
+        _entries.append(new (&_entry_arena) InvariantSpillEntry(entry, source_lid, entry->bottom_type(),
+                                                             source_lrg._is_oop, source_lrg.mask()));
       }
     }
     return true;
@@ -823,7 +813,7 @@ public:
     allowed.and_with(*Matcher::idealreg2regmask[seed->ideal_reg()]);
     allowed.and_with(seed->out_RegMask());
     RegMask live(_live_out[block->_pre_order]);
-    const uint seed_index = block->find_node(seed);
+    const uint seed_index = _positions[seed->_idx] - 1;
     for (uint j = block->number_of_nodes(); j-- > seed_index;) {
       if (!step(block->get_node(j), live)) {
         return 0;
@@ -850,7 +840,7 @@ public:
     allowed.clear_to_sets(lrg.num_regs());
     uint benefit = 0;
     Node* source = seed->in(1);
-    for (DUIterator_Fast imax, i = source->fast_outs(imax); i < imax && _work_left != 0; i++) {
+    for (DUIterator_Fast imax, i = source->fast_outs(imax); i < imax && _budget.left() != 0; i++) {
       if (!charge()) {
         return 0;
       }
@@ -888,67 +878,107 @@ public:
 };
 #endif // AMD64
 
-void PhaseChaitin::retain_spill_copies() {
+bool PhaseChaitin::retain_spill_copies() {
 #ifdef AMD64
+  Compile::TracePhase total_time(_t_retainSpillCopies);
   ResourceMark rm;
-  uint work_left = 1000000;
+  RetentionPolicy::Budget budget(RetentionPolicy::MaxAnalysisWork);
+  RetentionPolicy::Budget cleanup_budget(RetentionPolicy::MaxCleanupMapWork);
+  uint blocks = _cfg.number_of_blocks();
+  uint nodes = 0, edges = 0, predecessor_edges = 0;
+  if (!RetentionPolicy::graph_size_supported(blocks, 0, C->unique(), _lrg_map.max_lrg_id(), _max_reg, 0)) {
+    return false; // The caller still performs its ordinary single cleanup.
+  }
+  {
+    Compile::TracePhase analysis_time(_t_retainSpillAnalysis);
+    for (uint i = 0; i < blocks; i++) {
+      Block* block = _cfg.get_block(i);
+      if (!budget.charge() || block->number_of_nodes() > RetentionPolicy::MaxNodes - nodes) {
+        return false;
+      }
+      nodes += block->number_of_nodes();
+      for (uint j = 0; j < block->number_of_nodes(); j++) {
+        uint inputs = block->get_node(j)->req();
+        if (!budget.charge() || inputs > RetentionPolicy::MaxEdges - edges) {
+          return false;
+        }
+        edges += inputs;
+      }
+      if (block->num_preds() != 0) {
+        predecessor_edges += block->num_preds() - 1;
+      }
+    }
+  }
+  uint64_t cleanup_work = RetentionPolicy::cleanup_map_work(blocks, predecessor_edges, _max_reg);
+  if (cleanup_work > cleanup_budget.left()) {
+    return false;
+  }
   Arena entry_arena(mtCompiler);
   GrowableArray<InvariantSpillEntry*> entries(&entry_arena, 16, 0, nullptr);
-  for (uint change = 0; change < 8 && work_left != 0; change++) {
+  bool cleaned = false;
+  for (uint change = 0; change < RetentionPolicy::MaxChanges && budget.left() != 0; change++) {
     ResourceMark iteration;
-    // Preserve exact validated entries across per-iteration cleanup and scratch
-    // allocation. In nested loops a Phi can become self+entry after one cleanup.
-    SpillCopyRetention retention(*this, _cfg, work_left, entries, entry_arena);
-    if (!retention.compute()) {
-      NOT_PRODUCT(if (trace_spilling()) {
-        ttyLocker ttyl;
-        tty->print_cr("RetainSpillCopiesState compile_id %d iteration %u analysis unavailable work_left %u",
-                      C->compile_id(), change, work_left);
-      })
-      return;
-    }
     Node* best = nullptr;
     RegMask best_mask;
     uint best_benefit = 0;
     uint trials = 0;
-    for (uint i = 0; i < _cfg.number_of_blocks() && trials < 128 && work_left != 0; i++) {
-      Block* block = _cfg.get_block(i);
-      if (block->_freq < OPTO_LRG_HIGH_FREQ) {
-        continue;
+    {
+      Compile::TracePhase analysis_time(_t_retainSpillAnalysis);
+      // Preserve exact validated entries across scratch reclamation and cleanup.
+      // Membership, positions and full liveness are rebuilt after every change.
+      SpillCopyRetention retention(*this, _cfg, budget, entries, entry_arena);
+      if (!retention.compute()) {
+        NOT_PRODUCT(if (trace_spilling()) {
+          ttyLocker ttyl;
+          tty->print_cr("RetainSpillCopiesState compile_id %d iteration %u analysis unavailable work_left %u",
+                        C->compile_id(), change, budget.left());
+        })
+        return cleaned;
       }
-      for (uint j = 1; j < block->number_of_nodes() && trials < 128 && work_left != 0; j++) {
-        --work_left;
-        Node* seed = block->get_node(j);
-        if (!retention.eligible(seed) || may_be_copy_of_callee(seed)) {
+      for (uint i = 0; i < blocks && trials < RetentionPolicy::MaxTrials && budget.left() != 0; i++) {
+        if (!budget.charge()) {
+          break;
+        }
+        Block* block = _cfg.get_block(i);
+        if (block->_freq < OPTO_LRG_HIGH_FREQ) {
           continue;
         }
-        ++trials;
-        RegMask allowed;
-        uint benefit = retention.assess(seed, allowed);
-        RegMask usable;
-        for (RegMaskIterator regs(allowed); regs.has_next();) {
-          OptoReg::Name reg = regs.next();
-          OptoReg::Name low = reg & ~1;
-          if (!_matcher.is_save_on_entry(low) && !_matcher.is_save_on_entry(OptoReg::add(low, 1))) {
-            usable.insert(reg);
+        for (uint j = 1; j < block->number_of_nodes() && trials < RetentionPolicy::MaxTrials && budget.left() != 0; j++) {
+          if (!budget.charge()) {
+            break;
           }
-        }
-        LRG& lrg = lrgs(_lrg_map.live_range_id(seed));
-        usable.clear_to_sets(lrg.num_regs());
-        if (benefit > best_benefit && !usable.is_empty()) {
-          best = seed;
-          best_benefit = benefit;
-          best_mask.assignFrom(usable);
+          Node* seed = block->get_node(j);
+          if (!retention.eligible(seed) || may_be_copy_of_callee(seed)) {
+            continue;
+          }
+          ++trials;
+          RegMask allowed;
+          uint benefit = retention.assess(seed, allowed);
+          RegMask usable;
+          for (RegMaskIterator regs(allowed); regs.has_next();) {
+            OptoReg::Name reg = regs.next();
+            OptoReg::Name low = reg & ~1;
+            if (!_matcher.is_save_on_entry(low) && !_matcher.is_save_on_entry(OptoReg::add(low, 1))) {
+              usable.insert(reg);
+            }
+          }
+          LRG& lrg = lrgs(_lrg_map.live_range_id(seed));
+          usable.clear_to_sets(lrg.num_regs());
+          if (benefit > best_benefit && !usable.is_empty()) {
+            best = seed;
+            best_benefit = benefit;
+            best_mask.assignFrom(usable);
+          }
         }
       }
     }
     NOT_PRODUCT(if (trace_spilling()) {
       ttyLocker ttyl;
       tty->print_cr("RetainSpillCopiesState compile_id %d iteration %u trials %u best_benefit %u work_left %u",
-                    C->compile_id(), change, trials, best_benefit, work_left);
+                    C->compile_id(), change, trials, best_benefit, budget.left());
     })
-    if (best == nullptr) {
-      return;
+    if (best == nullptr || !cleanup_budget.charge(static_cast<uint>(cleanup_work))) {
+      return cleaned; // Reserve cleanup admission before changing any color.
     }
     LRG& lrg = lrgs(_lrg_map.live_range_id(best));
     OptoReg::Name reg = best_mask.find_first_elem();
@@ -971,10 +1001,17 @@ void PhaseChaitin::retain_spill_copies() {
     // Materialize existing availability-based sharing before considering
     // another seed. Its extended uses must be visible to the next liveness
     // computation; recoloring several short seeds from stale facts is unsafe.
-    post_allocate_copy_removal();
+    {
+      Compile::TracePhase cleanup_time(_t_retainSpillCleanup);
+      post_allocate_copy_removal();
+    }
+    cleaned = true;
     // Keep each materialized allocation available to diagnostic graph review.
     C->print_method(PHASE_POST_ALLOCATION_COPY_REMOVAL, 4);
   }
+  return cleaned;
+#else
+  return false;
 #endif // AMD64
 }
 

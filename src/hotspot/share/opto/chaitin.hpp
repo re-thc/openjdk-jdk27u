@@ -720,7 +720,8 @@ private:
   void fixup_spills();
 
   // Post-Allocation peephole copy removal
-  void retain_spill_copies();
+  // True means retention ran copy removal and no graph mutation followed it.
+  bool retain_spill_copies();
   void post_allocate_copy_removal();
   Node *skip_copies( Node *c );
   // Replace the old node with the current live version of that value

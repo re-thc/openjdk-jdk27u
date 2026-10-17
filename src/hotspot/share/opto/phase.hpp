@@ -104,6 +104,9 @@ public:
     f(     _t_buildIFGphysical,      "buildIFG")                 \
     f(     _t_computeLive,           "computeLive")              \
     f(     _t_regAllocSplit,         "regAllocSplit")            \
+    f(     _t_retainSpillCopies,     "retainSpillCopies")        \
+    f(       _t_retainSpillAnalysis, "retainSpillAnalysis")      \
+    f(       _t_retainSpillCleanup,  "retainSpillCleanup")       \
     f(     _t_postAllocCopyRemoval,  "postAllocCopyRemoval")     \
     f(     _t_mergeMultidefs,        "mergeMultidefs")           \
     f(     _t_fixupSpills,           "fixupSpills")              \

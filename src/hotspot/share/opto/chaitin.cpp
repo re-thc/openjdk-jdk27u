@@ -654,10 +654,12 @@ void PhaseChaitin::Register_Allocate() {
   _allocator_successes += 1;
 
   // Peephole remove copies
-  if (RetainSpillCopies) {
-    retain_spill_copies();
+  // A successful retention iteration ends with normal whole-method cleanup.
+  // Use that as the final cleanup instead of adding an unconditional pass.
+  // Copy removal need not be at a fixed point; this can affect cold copies too.
+  if (!RetainSpillCopies || !retain_spill_copies()) {
+    post_allocate_copy_removal();
   }
-  post_allocate_copy_removal();
 
   C->print_method(PHASE_POST_ALLOCATION_COPY_REMOVAL, 4);
 

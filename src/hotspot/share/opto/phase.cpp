@@ -132,6 +132,11 @@ void Phase::print_timers() {
     tty->print_cr ("         Build IFG (phys):    %7.3f s", timers[_t_buildIFGphysical].seconds());
     tty->print_cr ("         Compute Liveness:    %7.3f s", timers[_t_computeLive].seconds());
     tty->print_cr ("         Regalloc Split:      %7.3f s", timers[_t_regAllocSplit].seconds());
+    if (RetainSpillCopies) {
+      tty->print_cr("         Spill retention:     %7.3f s", timers[_t_retainSpillCopies].seconds());
+      tty->print_cr("           Search:            %7.3f s", timers[_t_retainSpillAnalysis].seconds());
+      tty->print_cr("           Cleanup (nested):  %7.3f s", timers[_t_retainSpillCleanup].seconds());
+    }
     tty->print_cr ("         Postalloc Copy Rem:  %7.3f s", timers[_t_postAllocCopyRemoval].seconds());
     tty->print_cr ("         Merge multidefs:     %7.3f s", timers[_t_mergeMultidefs].seconds());
     tty->print_cr ("         Fixup Spills:        %7.3f s", timers[_t_fixupSpills].seconds());
@@ -149,6 +154,7 @@ void Phase::print_timers() {
        timers[_t_buildIFGphysical].seconds() +
        timers[_t_computeLive].seconds() +
        timers[_t_regAllocSplit].seconds() +
+       timers[_t_retainSpillCopies].seconds() - timers[_t_retainSpillCleanup].seconds() +
        timers[_t_postAllocCopyRemoval].seconds() +
        timers[_t_mergeMultidefs].seconds() +
        timers[_t_fixupSpills].seconds() +
