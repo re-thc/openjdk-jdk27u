@@ -8,7 +8,9 @@ Adler32 uses the same zlib-ng backend through three distinct call paths:
 - With `-XX:-UseAdler32Intrinsics`, the native invocation uses the JNI function.
 
 Apple AArch64 C1 declines direct-buffer Adler32 intrinsification at all lengths.
-With Adler intrinsics enabled, its default path uses the interpreter entry.
+With Adler intrinsics enabled, the interpreter-entry hop is inferred from
+entry selection and call evidence. A compiler decline or zero JNI-function
+hits alone does not establish that intermediate hop.
 Disabling `UseZipIntrinsics` does not select an Adler32 call path.
 
 A compiler log that reports a native-method decline does not establish the
@@ -52,3 +54,10 @@ hotspot_jtreg:compiler/intrinsics/zip/TestZlibNGAdler32.java"
 Run against release and fastdebug configurations as needed. The Apple call-shape
 case requires native macOS AArch64 with C1 enabled; its parser tests are portable.
 The test declarations include Adler-enabled and disabled checked-JNI cases.
+
+## Bounded comparison proposal
+
+The [public C1 study](../test/micro/org/openjdk/bench/java/util/zip/adler-study/README.md)
+defines a finite four-arm comparison, pinned dependency setup, exact C1 checks,
+prospective numeric gates and a 15-minute comparison cap. Its default command
+creates a plan only; no timing approval is embedded in the source.

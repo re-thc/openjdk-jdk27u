@@ -20,9 +20,9 @@ least 64 KiB. All these call paths use zlib-ng.
 
 Adler32 calls zlib-ng directly from the interpreter and C1 for scalar and heap
 array updates. C1 direct-buffer updates use the default native invocation path
-at all lengths on Apple AArch64 CPUs. With Adler intrinsics enabled, that path reaches the
-interpreter Adler entry and its native leaf; disabling Adler intrinsics selects
-true JNI. Other CPUs retain their direct-buffer selection. On x86-64, C1
+at all lengths on Apple AArch64 CPUs. With Adler intrinsics enabled, an interpreter-entry
+hop is inferred from entry selection and call evidence; disabling Adler
+intrinsics selects true JNI. Other CPUs retain their direct-buffer selection. On x86-64, C1
 declines bulk intrinsification at 64 KiB and above; that compiler decision alone
 does not identify JNI versus an interpreter entry. C2 calls zlib-ng for scalar
 updates and bulk updates of at least 1 KiB; shorter bulk updates use the HotSpot SIMD kernel.
