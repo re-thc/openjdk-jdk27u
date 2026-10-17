@@ -80,10 +80,21 @@ failure model. Tier1's GTestWrapper is not an explicit
 NMT-enabled Array receipt; compiler/stringopts and NIO selections also retain
 exact-ID receipts. The first qualification claim remains Linux-limited.
 
-Validation of the source repairs and supervisor: thirty-three offline mocked
+The first released attempt completed baseline make, then stopped at its strict
+live-descendant-after-launcher control, with complete owned cleanup. That HOLD
+is preserved. Scanner db266200's reviewed six-second natural successful-build
+drain now accommodates bounded asynchronous javac shutdown while retaining
+strict measurement cleanup and command diagnostics before signalling. The
+complete restricted continuation verifies a full retained baseline witness,
+preserves both production identities and the original ten-hour absolute cap,
+and runs every unstarted gate without rebuilding B or repeating measurements.
+It requires independent review before execution; see the harness
+[continuation contract](../test/manual/jvm-memory/qualification/CONTINUATION.md).
+
+Validation of the source repairs, supervisor and continuation: fifty-three offline mocked
 Python regressions pass, including layered adoption, inner failure, cancellation
 during launch, fixed deadline exhaustion and final child audit. The supervisor
-and full campaign remain unexecuted on native children/JVMs. The Java
+and repaired continuation remain unexecuted. The Java
 positive-byte EOF/repetition regression is committed but remains
 uncompiled/unexecuted. No build, JVM workload, benchmark, CI or workspace cleanup
 was performed for this repair.

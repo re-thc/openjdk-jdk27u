@@ -12,6 +12,7 @@ import sys
 import time
 
 CLEANUP_SECONDS = 2.0
+BUILD_DRAIN_SECONDS = 6.0  # Scanner db266200; javac stop-file polling is 5000ms.
 
 
 def enable_subreaper():
@@ -138,6 +139,35 @@ class LinuxProcesses:
             return True
         return False  # Includes live children and exited, not-yet-reaped children.
 
+    def describe(self, pid, start):
+        """Read commands only for a kernel-confirmed child, through pinned procfs.
+
+        Diagnostics do not authorize signalling. A proc directory descriptor
+        prevents subsequent numeric PID reuse from redirecting these reads.
+        """
+        directory = os.open('/proc/%d' % pid, os.O_RDONLY | os.O_DIRECTORY)
+        fd = None
+        try:
+            fd = self.child_handle(pid, start)
+            if fd is None:
+                return None  # A deeper child is diagnosed after adoption.
+            stat_fd = os.open('stat', os.O_RDONLY, dir_fd=directory)
+            with os.fdopen(stat_fd) as stream:
+                raw = stream.read()
+            if int(raw[raw.rfind(')') + 2:].split()[19]) != start:
+                raise RuntimeError('Child changed during command diagnostics')
+            command_fd = os.open('cmdline', os.O_RDONLY, dir_fd=directory)
+            with os.fdopen(command_fd, 'rb') as stream:
+                command = stream.read(16385)
+            return {'pid': pid, 'start': start, 'uid': os.fstat(directory).st_uid,
+                    'command': command[:16384].decode('utf-8', 'replace').rstrip('\0').split('\0'),
+                    'command_truncated': len(command) > 16384,
+                    'executable': os.readlink('exe', dir_fd=directory)}
+        finally:
+            if fd is not None:
+                os.close(fd)
+            os.close(directory)
+
     def now(self):
         return time.monotonic()
 
@@ -160,6 +190,54 @@ class ChildScope:
         return {pid: table[pid] for pid in descendants(table, self.backend.parent)
                 if pid not in protected}
 
+    def drain(self, proc, hard_deadline, check, seconds=BUILD_DRAIN_SECONDS):
+        """Successful builds only: observe natural shutdown without signals.
+
+        This is Scanner's six-second post-build policy adapted to the shared
+        pidfd backend. Late emptiness, cancellation and observation faults cannot
+        pass. The caller always retains its separate bounded cleanup afterward.
+        """
+        backend = self.backend
+        started = backend.now()
+        end = min(hard_deadline, started + seconds)
+        commands = {}
+        row = {'complete': False, 'started_monotonic': started,
+               'deadline_monotonic': end, 'seconds': seconds, 'commands': [],
+               'errors': [], 'remaining': []}
+        try:
+            while True:
+                check()
+                if proc.poll() != 0:
+                    raise RuntimeError('Natural drain requires successful build exit')
+                remaining = self.owned(backend.snapshot())
+                for pid, item in remaining.items():
+                    if item['state'] not in ('Z', 'X') and (pid, item['start']) not in commands:
+                        try:
+                            detail = backend.describe(pid, item['start'])
+                        except (FileNotFoundError, ProcessLookupError):
+                            detail = None  # Exited while observing; still audit custody.
+                        if detail is not None:
+                            commands[pid, item['start']] = detail
+                    if pid != proc.pid:
+                        backend.reap(pid, item['start'])
+                empty = not self.owned(backend.snapshot()) and (bool(self.outside) or backend.no_children())
+                now = backend.now()
+                row['observed_monotonic'] = now
+                row['remaining'] = [{'pid': p, **v} for p, v in sorted(remaining.items())]
+                if now > end:
+                    raise RuntimeError('Natural build drain deadline missed')
+                if empty:
+                    row['complete'] = True
+                    row['remaining'] = []
+                    break
+                if now >= end:
+                    raise RuntimeError('Persistent child after natural build drain')
+                backend.pause(min(.05, end - now))
+        except Exception as exc:
+            row['errors'].append(repr(exc))
+        row['commands'] = list(commands.values())
+        return row
+
     def close(self, proc, hard_deadline, cleanup_seconds=CLEANUP_SECONDS):
         """Always called, even after exit 0. Never waits without a finite cap.
 
@@ -175,6 +253,7 @@ class ChildScope:
         seen = set()
         live_leftovers = set()
         errors = []
+        commands = {}
         remaining = {}
         kernel_children = False
         while True:
@@ -184,6 +263,7 @@ class ChildScope:
                 kernel_children = not self.outside and not backend.no_children()
                 if not remaining and not kernel_children:
                     return {'complete': True, 'seen_pids': sorted(seen),
+                            'descendant_commands': list(commands.values()),
                             'live_descendants_after_launcher_exit': sorted(live_leftovers),
                             'remaining': [], 'errors': errors}
                 for pid, row in remaining.items():
@@ -193,6 +273,15 @@ class ChildScope:
                             live_leftovers.add(pid)
                 for pid, row in remaining.items():
                     if row['state'] not in ('Z', 'X'):
+                        if (pid, row['start']) not in commands:
+                            try:
+                                detail = backend.describe(pid, row['start'])
+                                if detail is not None:
+                                    commands[pid, row['start']] = detail
+                            except (FileNotFoundError, ProcessLookupError):
+                                pass
+                            except Exception as exc:
+                                errors.append('Child command diagnostics: ' + repr(exc))
                         backend.kill(pid, row['start'])
                 for pid, row in remaining.items():
                     if proc is None or pid != proc.pid:
@@ -203,18 +292,21 @@ class ChildScope:
                 kernel_children = not self.outside and not backend.no_children()
                 if not remaining and not kernel_children:
                     return {'complete': True, 'seen_pids': sorted(seen),
+                            'descendant_commands': list(commands.values()),
                             'live_descendants_after_launcher_exit': sorted(live_leftovers),
                             'remaining': [], 'errors': errors}
             except Exception as exc:
                 errors.append(repr(exc))
                 # An unreadable ownership snapshot must never become empty.
                 return {'complete': False, 'seen_pids': sorted(seen),
+                        'descendant_commands': list(commands.values()),
                         'live_descendants_after_launcher_exit': sorted(live_leftovers),
                         'remaining': [{'pid': pid, **row} for pid, row in sorted(remaining.items())],
                         'errors': errors}
             left = end - backend.now()
             if left <= 0:
                 return {'complete': False, 'seen_pids': sorted(seen),
+                        'descendant_commands': list(commands.values()),
                         'live_descendants_after_launcher_exit': sorted(live_leftovers),
                         'remaining': [{'pid': pid, **row} for pid, row in sorted(remaining.items())],
                         'errors': errors + ['Bounded cleanup deadline reached']

@@ -28,6 +28,7 @@ from process_cleanup import (ChildScope, LinuxProcesses, cleanup_errors,
 from nmt_other import check_accounting, parse_other_snapshot
 from storage_guard import StorageGuard
 from cancellation import Cancellation
+from continuation import load as load_continuation, match_arguments, verify_claim
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[3]
@@ -68,7 +69,7 @@ def sha(path):
 def save(path, value):
     # Atomic replace. Existing runs are forbidden; receipts within one run evolve.
     temporary = Path(str(path) + '.tmp')
-    temporary.write_text(json.dumps(value, indent=2) + '\n')
+    temporary.write_text(json.dumps(value, indent=2, allow_nan=False) + '\n')
     temporary.replace(path)
 
 
@@ -82,6 +83,20 @@ class Campaign:
         self.cancel = cancellation
         self.cancel.check()
         self.a = args
+        self.continuation = None
+        if args.continuation is not None:
+            self.continuation = load_continuation(args.continuation, args.continuation_sha256 or '')
+            match_arguments(self.continuation, args)
+            verify_claim(args.continuation, args.continuation_sha256,
+                         args.outer_owner_reference, args.output)
+            need(self.continuation['protocol'] == {
+                'methods': METHODS, 'sources': SOURCES, 'tests': TESTS, 'flags': COMMON,
+                'pairs': 8, 'order': 'BC,BB; CB,BB; repeated four times',
+                'confidence': 'paired log Student-t, df=7, Bonferroni 72 intervals',
+                'pause_metric': 'per-fork p99; paired log-ratio/delta t intervals'},
+                'Continuation changed fixed correctness/sampling/statistical protocol')
+        else:
+            need(args.continuation_sha256 is None, 'Witness hash without continuation')
         self.out = args.output.resolve()
         need(not self.out.exists(), 'Refuse an existing output/attempt directory')
         need(sys.platform == 'linux' and os.uname().machine=='x86_64',
@@ -97,6 +112,10 @@ class Campaign:
         self.out.mkdir()
         self.start = time.monotonic()
         self.deadline = self.start + 36000
+        if self.continuation is not None:
+            self.start = self.continuation['release']['start_monotonic']
+            self.deadline = self.continuation['release']['hard_deadline_monotonic']
+            need(time.monotonic() < self.deadline - 60, 'Original campaign deadline exhausted')
         self.records = []
         self.samples = []
         self.coverage = []
@@ -127,6 +146,8 @@ class Campaign:
                   self.a.gtest / 'googlemock/include/gmock/gmock.h', self.a.asan_runtime,
                   REPO / 'bin/configure-dev']
         paths += sorted((self.a.jtreg/'lib').glob('*.jar'))
+        if self.continuation is not None:
+            paths.append(self.a.continuation)
         for path in paths:
             need(path.is_file(), 'Missing installed input: ' + str(path))
         need('1.14.0' in (self.a.gtest / 'CMakeLists.txt').read_text(), 'Require gtest 1.14.0')
@@ -152,6 +173,12 @@ class Campaign:
             'uncatchable_controller_death_contained_here':False, 'inherited_core_limit_bytes':0,
             'individual_signalling':'held pidfd plus kernel direct-child ownership; no kill/killpg fallback',
             'new_launcher_runtime_qualified': False})
+        if self.continuation is not None:
+            save(self.out / 'continuation.json', {
+                'witness_sha256': self.a.continuation_sha256,
+                'witness': str(self.a.continuation), 'provenance': self.continuation,
+                'remaining_stages': 'all; no previous correctness or samples consumed',
+                'hard_deadline_monotonic': self.deadline})
 
     @staticmethod
     def context(path):
@@ -164,9 +191,11 @@ class Campaign:
         self.cancel.check()
         self.stage = name
         self.stage_end = min(self.deadline - 60, time.monotonic() + seconds)
+        if name == 'release-builds' and self.continuation is not None:
+            self.stage_end = min(self.stage_end, self.continuation['release_stage_deadline_monotonic'])
 
     def run(self, label, command, seconds=60, cwd=None, expected=0,
-            lines=None, workload=False, measured=False, extra_env=None):
+            lines=None, workload=False, measured=False, extra_env=None, build_stage=False):
         """Own every command, including Git/build/jcmd; no shell command expansion."""
         self.cancel.check()
         require_no_children(self.backend) if not getattr(self, 'nested', False) else None
@@ -175,6 +204,8 @@ class Campaign:
         previous_end = self.invocation_end
         end = min(self.deadline - 30, self.stage_end, previous_end - 2, time.monotonic() + seconds)
         need(not measured or workload, "Measured storage policy requires a bounded workload")
+        need(not build_stage or (not measured and not workload and lines is None),
+             'Natural shutdown grace is only for explicit untimed builds')
         storage = StorageGuard([self.out, REPO, Path(tempfile.gettempdir())], measured=measured)
         storage.admit()  # Before the process clock and any subprocess/log creation.
         self.invocation_end = end
@@ -184,7 +215,7 @@ class Campaign:
         selector = selectors.DefaultSelector()
         row = {'label': label, 'stage': self.stage, 'argv': list(map(str, command)),
                'cwd': str(cwd or REPO), 'expected_exit': expected,
-               'extra_environment': extra_env or {}, 'measured': measured,
+               'extra_environment': extra_env or {}, 'measured': measured, 'build_stage': build_stage,
                'context_before': self.context('/sys/fs/cgroup/cpu.stat')}
         env = self.env.copy()
         env.update(extra_env or {})
@@ -193,6 +224,22 @@ class Campaign:
         text = b''
         pending = b''
         guard_at = start
+        drain_attempted = False
+        def read_output(wait):
+            nonlocal text, pending
+            for key, _ in selector.select(wait):
+                block = os.read(key.fd, 65536)
+                if not block:
+                    selector.unregister(key.fileobj)
+                    continue
+                text += block
+                need(len(text) < 48 * 1024**2, 'Invocation stdout cap')
+                log.write(block)
+                pending += block
+                while b'\n' in pending:
+                    raw, pending = pending.split(b'\n', 1)
+                    if lines:
+                        lines(raw.decode('utf-8', 'strict'), proc, prefix)
         try:
             with Path(str(prefix)+'.stdout').open('wb') as log, Path(str(prefix)+'.stderr').open('wb') as err:
                 self.cancel.check()
@@ -208,6 +255,17 @@ class Campaign:
                     need(Path(str(prefix)+'.stderr').stat().st_size + len(text) < 48 * 1024**2,
                          'Invocation output cap')
                     storage.poll()  # All writers; timed commands reserve space instead of probing here.
+                    if build_stage and not drain_attempted and proc.poll() == 0:
+                        drain_attempted = True
+                        def check_drain():
+                            self.cancel.check()
+                            read_output(0)
+                            storage.poll()
+                            need(Path(str(prefix)+'.stderr').stat().st_size + len(text) < 48 * 1024**2,
+                                 'Build drain output cap')
+                        row['build_drain'] = scope.drain(proc, end - 2, check_drain)
+                        need(row['build_drain']['complete'], 'Build natural shutdown drain failed: ' +
+                             repr(row['build_drain']['errors']))
                     if workload and proc.poll() is None and time.monotonic()>=guard_at:
                         guard_at=time.monotonic()+1
                         try:
@@ -216,22 +274,21 @@ class Campaign:
                                  'Native JVM thread cap')
                         except FileNotFoundError:
                             pass
-                    for key, _ in selector.select(.05):
-                        block = os.read(key.fd, 65536)
-                        if not block:
-                            selector.unregister(key.fileobj)
-                            continue
-                        text += block
-                        need(len(text) < 48 * 1024**2, 'Invocation stdout cap')
-                        log.write(block)
-                        pending += block
-                        while b'\n' in pending:
-                            raw, pending = pending.split(b'\n', 1)
-                            if lines:
-                                lines(raw.decode('utf-8', 'strict'), proc, prefix)
+                    read_output(.05)
                 left = end - 2 - time.monotonic()
                 need(left > 0, 'No wait/cleanup reserve')
                 code = proc.wait(timeout=left)
+                if build_stage and not drain_attempted and code == 0:
+                    drain_attempted = True
+                    def check_drain():
+                        self.cancel.check()
+                        read_output(0)
+                        storage.poll()
+                        need(Path(str(prefix)+'.stderr').stat().st_size + len(text) < 48 * 1024**2,
+                             'Build drain output cap')
+                    row['build_drain'] = scope.drain(proc, end - 2, check_drain)
+                    need(row['build_drain']['complete'], 'Build natural shutdown drain failed: ' +
+                         repr(row['build_drain']['errors']))
                 row['exit'] = code
                 row['process_wall_seconds'] = time.monotonic() - start
                 log.flush()
@@ -288,7 +345,10 @@ class Campaign:
         need(framework.strip()=='f8d7d77c06936315286eb55f8de22cd23c188571','Wrong pinned GoogleTest source')
         self.run('gtest-clean',['git','diff','--quiet','HEAD'],cwd=self.a.gtest)
         for tag, revision in [('B', BASE), ('C', CANDIDATE)]:
-            self.run('checkout-' + tag,
+            if tag == 'B' and self.continuation is not None:
+                (self.out / tag).symlink_to(Path(self.continuation['previous']) / 'B', target_is_directory=True)
+            else:
+                self.run('checkout-' + tag,
                      ['git', 'worktree', 'add', '--detach', self.out / tag, revision], 60)
             actual, _ = self.run('revision-' + tag, ['git', 'rev-parse', 'HEAD'], cwd=self.out/tag)
             need(actual.strip() == revision, 'Wrong checkout')
@@ -297,6 +357,16 @@ class Campaign:
     def build(self, tag, debug='release', asan=False):
         repo = self.out / tag
         conf = tag + '-' + debug + ('-asan' if asan else '')
+        if tag == 'B' and self.continuation is not None:
+            need(debug == 'release' and not asan, 'Only retained baseline release may be reused')
+            # Reverify the trusted full witness immediately before consumption.
+            load_continuation(self.a.continuation, self.a.continuation_sha256)
+            save(self.out / 'baseline-reuse.json', {
+                'image': self.continuation['image'], 'baseline': BASE,
+                'manifest': self.continuation['image_manifest'],
+                'original_outcome': 'HOLD unchanged; successful make is preparation only',
+                'new_baseline_configure_or_build': False})
+            return self.image_receipt(repo, conf, asan)
         cmd = ['bash', 'bin/configure-dev', '--with-conf-name=' + conf,
                '--with-debug-level=' + debug, '--with-jobs=4', '--disable-precompiled-headers',
                '--with-source-date=2026-10-16T21:13:34Z', '--with-version-opt=memory-decision',
@@ -307,12 +377,25 @@ class Campaign:
         self.run('configure-' + conf, cmd, 180, repo)
         self.run('build-' + conf,
                  ['make', 'CONF=' + conf, 'JOBS=4', 'images', 'test-image-hotspot-gtest'],
-                 4200 if debug == 'fastdebug' or asan else 3000, repo)
+                 4200 if debug == 'fastdebug' or asan else 3000, repo, build_stage=True)
+        return self.image_receipt(repo, conf, asan)
+
+    def image_receipt(self, repo, conf, asan):
         image = repo / 'build' / conf / 'images/jdk'
         manifest = {str(p.relative_to(image)): sha(p) for p in image.rglob('*') if p.is_file()}
         save(self.out / (conf + '-image.json'), manifest)
         spec = repo / 'build' / conf / 'spec.gmk'
         configured = spec.read_text()
+        if self.continuation is not None:
+            previous_spec = (Path(self.continuation['previous']) / 'B/build/B-release/spec.gmk').read_text()
+            for key in ['CC', 'CXX', 'CC_VERSION_NUMBER', 'CXX_VERSION_NUMBER',
+                        'BOOT_JDK', 'JVM_FEATURES_server', 'ENABLE_DESKTOP', 'JVM_VARIANTS',
+                        'ENABLE_JAVAC_SERVER']:
+                pattern = r'^' + key + r'\s*:?=\s*(.*)$'
+                old = re.findall(pattern, previous_spec, re.M)
+                current = re.findall(pattern, configured, re.M)
+                need(len(old) == len(current) == 1 and old == current,
+                     'Retained baseline/candidate toolchain or profile differs: ' + key)
         features = re.findall(r'^JVM_FEATURES_server\s*:=\s*(.*)$', configured, re.M)
         need(len(features) == 1, 'Missing server feature receipt')
         need(sorted(x for x in features[0].split() if x.endswith('gc')) == ['g1gc','serialgc','zgc'],
@@ -643,7 +726,7 @@ class Campaign:
         from analyze import critical
         need(abs(critical(7,.05)-2.3646242516)<1e-8,'Student-t numerical preflight failed')
         self.run('offline-guard-regressions',[sys.executable,'-m','unittest','-v',
-                 'test_guards','test_supervisor'],120,HERE)
+                 'test_guards','test_supervisor','test_continuation'],120,HERE)
         self.checkout()
         images={tag:self.build(tag) for tag in ['B','C']}
         self.begin('correctness-benefit',5400)
@@ -688,6 +771,8 @@ def main():
     p=argparse.ArgumentParser(description=__doc__,allow_abbrev=False)
     p.add_argument('--execute',action='store_true',help='requires separate campaign authorization')
     p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--continuation',type=Path)
+    p.add_argument('--continuation-sha256')
     p.add_argument('--boot',type=Path,required=True)
     p.add_argument('--jtreg',type=Path,required=True)
     p.add_argument('--gtest',type=Path,required=True)

@@ -101,7 +101,7 @@ class EmptySelector:
 
 
 class ControllerTests(unittest.TestCase):
-    def exercise(self, label, when=None, disk_failure=False, exit_tail=False):
+    def exercise(self, label, when=None, disk_failure=False, exit_tail=False, build_stage=False):
         with tempfile.TemporaryDirectory() as folder:
             campaign = object.__new__(controller.Campaign)
             campaign.out = Path(folder)
@@ -137,6 +137,10 @@ class ControllerTests(unittest.TestCase):
                     proc.running = False
                     return {'complete': True, 'seen_pids': [123], 'remaining': [],
                             'live_descendants_after_launcher_exit': [], 'errors': []}
+                def drain(self, child, deadline, check):
+                    return {'complete': False, 'errors': ['persistent mock child'],
+                            'commands': [{'pid': 456, 'command': ['fake-server']}],
+                            'remaining': [{'pid': 456, 'state': 'S'}]}
 
             def launch(*args, **kwargs):
                 if exit_tail:
@@ -160,7 +164,7 @@ class ControllerTests(unittest.TestCase):
                  patch.object(controller.subprocess, 'Popen', side_effect=launch), \
                  patch.object(controller.os, 'set_blocking'):
                 with self.assertRaises(RuntimeError):
-                    campaign.run(label, ['never-executed'], workload=False)
+                    campaign.run(label, ['never-executed'], workload=False, build_stage=build_stage)
             self.assertEqual(closed, [proc])
             self.assertTrue(campaign.records[-1]['cleanup']['complete'])
             self.assertIsNotNone(campaign.records[-1]['error'])
@@ -183,6 +187,13 @@ class ControllerTests(unittest.TestCase):
         row=self.exercise('exit-tail',exit_tail=True)
         self.assertIn('Final combined invocation output cap',row['error'])
         self.assertEqual(row['combined_output_bytes'],48*1024**2+1)
+
+    def test_persistent_build_drain_stays_failed_after_complete_cleanup(self):
+        row = self.exercise('build-C-release', build_stage=True)
+        self.assertFalse(row['build_drain']['complete'])
+        self.assertTrue(row['cleanup']['complete'])
+        self.assertIn('persistent mock child', row['error'])
+        self.assertEqual(row['build_drain']['commands'][0]['command'], ['fake-server'])
 
     def test_cancellation_handlers_only_latch_first_request(self):
         latch = Cancellation()

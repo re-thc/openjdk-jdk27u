@@ -14,6 +14,7 @@ import signal
 import sys
 
 from cancellation import Cancellation
+from continuation import load as load_continuation, claim
 from process_cleanup import (ChildScope, LinuxProcesses, cleanup_errors,
                              enable_subreaper, require_no_children)
 
@@ -77,7 +78,7 @@ class Supervisor:
     """Lifecycle policy; injectable native boundary for deterministic offline tests."""
     def __init__(self, backend, cancellation, launch, record,
                  seconds=MAX_SECONDS, cleanup_seconds=CLEANUP_SECONDS,
-                 report_seconds=REPORT_SECONDS):
+                 report_seconds=REPORT_SECONDS, absolute_deadline=None):
         if not (0 < cleanup_seconds and 0 < report_seconds
                 and cleanup_seconds + report_seconds < seconds <= MAX_SECONDS):
             raise ValueError('Invalid supervisor deadline/reserves')
@@ -88,11 +89,14 @@ class Supervisor:
         self.seconds = seconds
         self.cleanup_seconds = cleanup_seconds
         self.report_seconds = report_seconds
+        self.absolute_deadline = absolute_deadline
 
     def run(self, argv):
         backend = self.backend
         start = backend.now()
         deadline = start + self.seconds
+        if self.absolute_deadline is not None:
+            deadline = min(deadline, self.absolute_deadline)
         cleanup_end = deadline - self.report_seconds
         run_end = cleanup_end - self.cleanup_seconds
         row = {'status': 'RUNNING', 'argv': list(map(str, argv)),
@@ -180,7 +184,7 @@ class Supervisor:
 
 def save(path, row):
     temporary = path.with_suffix('.tmp')
-    temporary.write_text(json.dumps(row, indent=2) + '\n')
+    temporary.write_text(json.dumps(row, indent=2, allow_nan=False) + '\n')
     temporary.replace(path)
 
 
@@ -188,6 +192,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument('--execute', action='store_true')
     parser.add_argument('--owner-output', type=Path, required=True)
+    parser.add_argument('--continuation', type=Path)
+    parser.add_argument('--continuation-sha256')
     parser.add_argument('campaign_args', nargs=argparse.REMAINDER)
     args = parser.parse_args()
     if not args.execute:
@@ -196,7 +202,8 @@ def main():
     if not forwarded or forwarded[0] != '--':
         parser.error('Use -- followed by the documented campaign arguments')
     forwarded = forwarded[1:]
-    if any(a.split('=', 1)[0] in ('--execute', '--outer-owner-reference') for a in forwarded):
+    if any(a.split('=', 1)[0] in ('--execute', '--outer-owner-reference',
+                               '--continuation', '--continuation-sha256') for a in forwarded):
         parser.error('Supervisor supplies execution and owner-reference arguments')
     owner = args.owner_output.resolve()
     if owner.exists():
@@ -211,19 +218,32 @@ def main():
         backend.verify_support()
         enable_subreaper()
         require_no_children(backend)
+        proof = None
+        if args.continuation is not None:
+            proof = load_continuation(args.continuation, args.continuation_sha256 or '')
+        elif args.continuation_sha256 is not None:
+            parser.error('Witness hash without continuation')
         owner.mkdir()
         receipt = owner / 'owner.json'
         argv = [sys.executable, str(HERE / 'run.py'), '--execute',
                 '--outer-owner-reference', str(receipt)] + forwarded
+        if proof is not None:
+            claim(args.continuation, args.continuation_sha256, receipt, argv)
+            argv += ['--continuation', str(args.continuation),
+                     '--continuation-sha256', args.continuation_sha256]
         hashes = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in
-                  [Path(__file__), HERE / 'process_cleanup.py', HERE / 'cancellation.py']}
+                  [Path(__file__), HERE / 'process_cleanup.py', HERE / 'cancellation.py',
+                   HERE / 'continuation.py', HERE / 'image_manifest.py']}
         def record(row):
-            save(receipt, {**row, 'owner_source_sha256': hashes})
+            save(receipt, {**row, 'owner_source_sha256': hashes,
+                           'continuation_sha256': args.continuation_sha256})
         with (owner / 'controller.stdout').open('xb') as stdout, \
              (owner / 'controller.stderr').open('xb') as stderr:
             def launch(command):
                 return fork_controller(command, backend, stdout.fileno(), stderr.fileno())
-            row = Supervisor(backend, cancellation, launch, record).run(argv)
+            row = Supervisor(backend, cancellation, launch, record,
+                             absolute_deadline=proof['release']['hard_deadline_monotonic']
+                             if proof is not None else None).run(argv)
         print(json.dumps({'status': row['status'], 'owner_receipt': str(receipt)}))
         return 0 if row['status'] == 'COMPLETED' else 2
     finally:

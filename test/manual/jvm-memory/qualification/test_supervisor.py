@@ -52,6 +52,12 @@ class Kernel:
     def no_children(self):
         return not any(row['ppid'] == self.parent for row in self.tasks.values())
 
+    def describe(self, pid, start):
+        row = self.tasks.get(pid)
+        if row and row['ppid'] == self.parent and row['start'] == start:
+            return {'pid': pid, 'start': start, 'command': ['fake-owned-child'], 'executable': '/fake'}
+        return None
+
     def kill(self, pid, start):
         row = self.tasks.get(pid)
         if row is None or row['start'] != start or row['ppid'] != self.parent:

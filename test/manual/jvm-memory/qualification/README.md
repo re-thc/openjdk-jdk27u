@@ -1,6 +1,11 @@
 # Staged memory qualification from source
 
-This entire source bundle is committed for review. The full campaign and analysis remain **unexecuted**. Thirty-three offline Python guard/owner
+This entire source bundle is committed for review. The full qualification and analysis remain **unexecuted**. The first released preparation attempt
+completed baseline make but stopped at the asynchronous-child ownership gate;
+its original HOLD and complete cleanup receipts are preserved locally.
+The complete restricted [preparation continuation](CONTINUATION.md) preserves
+the original deadline and verified baseline without repeating measurements.
+Fifty-three offline Python guard/owner/continuation
 regressions pass with fake children, clocks, disks and signals; they launch no
 subprocesses or JVMs. Java EOF/repetition coverage is source-only and has not
 been compiled or run under this continuation's no-build restriction.
@@ -89,7 +94,10 @@ verification is executed before correctness workloads.
 choices for this invocation**, not resumable attempts. Default `all` carries the
 single authorization through the staged decision without small approval gates.
 An intentionally early stop reports pending stages and is not a full pass.
-A new output directory is mandatory; no overwrite/resume/favorable retry.
+A new output directory is mandatory; no overwrite or favorable timing retry.
+The separately authorized restricted preparation continuation uses a trusted
+full baseline witness and original absolute deadline; it never reopens the
+terminal output or resumes consumed measurements. See [CONTINUATION.md](CONTINUATION.md).
 
 ## Frozen sources and bounds
 
@@ -256,7 +264,11 @@ Only kernel-confirmed direct children are eligible for signalling. Killing the
 controller reparents its children to the outer subreaper; deeper layers become
 eligible as their own parents exit. Repeated scans/adoption and a final kernel
 child audit must complete within the fixed 30-second outer allowance. Inner
-command cleanup keeps its two-second default. There is no numeric PID/group
+command cleanup keeps its two-second default. Successful explicit untimed build
+commands alone have Scanner's six-second natural drain for asynchronous javac
+shutdown before strict cleanup, retaining guards and custody. Persistent/late
+drain failure remains HOLD. No measurement receives grace. Child command/exec
+diagnostics are retained before signalling. There is no numeric PID/group
 fallback or repeated fresh cleanup budget. A live leftover, hidden child,
 ownership/read error or expired allowance remains HOLD/incomplete. Even
 controller exit zero requires cleanup and the final child audit.
@@ -287,8 +299,8 @@ adoption, inner failure, cancellation during launch/receipt closure, partial
 launch, fixed/exhausted deadlines, hidden children/final audit, unrelated tasks,
 fork/exec failure and the held-pidfd root boundary. Native fork/exec and signal
 operations are mocked; no native child/JVM is launched. Validation used
-`PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_guards test_supervisor`
-in this directory: **33 tests passed**. The future campaign runs both suites
+`PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_guards test_supervisor test_continuation`
+in this directory: **53 tests passed**. The future campaign runs all three suites
 before any builds. This does not certify native supervisor execution or kernel
 containment; the full campaign remains unexecuted.
 The Java state regression must execute after source compilation; a Java source
