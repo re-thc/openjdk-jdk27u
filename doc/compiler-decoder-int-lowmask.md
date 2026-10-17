@@ -133,12 +133,14 @@ The execution packet below replaces the earlier generic commands. No execution
 is requested in this source turn. Qualify ADLC generation and semantics before
 timing; preserve default inlining, GC and allocation behavior.
 
-The decisive compact codec cell is source L1 decode on the same retained native
-frame and same classes/output reuse, with the original option vector:
+The ready, explicitly separate cell is `git-source-native-l1-6901a47a`: source
+L1 decode using the reconstructed Git-reference frame, identical across the
+baseline and candidate, with the pinned classes/output reuse and original
+option vector. Its relationship to the original x86 capture is qualified below.
 
 ```text
 --add-modules jdk.incubator.vector -XX:+UseSerialGC -Xms1g -Xmx1g
--cp <pinned-classes> CodecProbe decode <corpus> 1 <identical-native-frame>
+-cp <pinned-classes> CodecProbe decode <corpus> 1 <git-reference-native-frame>
 ```
 
 Any later GC/allocation diagnostics require their own assignment and must remain
@@ -161,29 +163,77 @@ commit as well. The separate baseline checkout is
 `/workspace/executor-bzhi-jdk`; the unmodified codec checkout is
 `/workspace/executor-jzstd` at `7a6b345d0df3d8571a30f4a9c974dfaa3a10d9b6`.
 
-The sweep found no local JDK build, JVM, benchmark or CI process. That observation
-retires the old *local* serial-slot wait; it does not establish availability in
-another campaign's environment or grant execution authority. The parent owns
-the cold-call campaign and resource scheduling. No process was stopped, and
-the shared checkout and its old build directories were not modified. GitHub
-reported zero Actions runs for this review branch. This lead is not waiting
-for CI or Mac hardware.
+Tasks have separate VMs. This lead has no global serial-slot requirement and
+no dependency on the cold-call campaign. Its VM needs no release from another
+task. The only execution hold is authorization for the new measured campaign
+described here, including its prerequisite builds and qualification. No process
+was stopped, and the shared checkout and its old build directories were not
+modified. GitHub reported zero Actions runs for this review branch. This lead
+is not waiting for CI, Mac hardware or a private binary handoff.
 
-The remaining non-CI blockers are explicit execution authority and the pinned
-input artifact. This workspace has no probe classes, corpus or native L1 frame
-from the retained target capture. The parent/evidence owner must supply the
-corpus and identical native frame with independently retained expected SHA256s,
-or explicitly authorize a replacement cell whose results will be labelled as
-new evidence. The different macOS measurement JSON is not a substitute for
-the missing target artifacts. The driver never generates a frame or runs an
-encoder. Probe classes are compiled once from the pinned sources only after
-execution is assigned. Existing managed GCC16, boot JDK27 and jtreg83 paths are
-present; no installation, dependency download or reuse of an unproven old image
-is part of this packet.
+## Verified input reconstruction and the original-cell provenance gap
 
-Reserve one Linux x64 BMI2 host exclusively for this lead after the parent
-releases the cold-call slot: four CPU equivalents, a 16 GiB memory limit and
-24 GiB of free build/output disk, with a hard 120-minute overall ceiling.
+The source corpus is reconstructible from normal Git access. At codec pin
+`7a6b345d0df3d8571a30f4a9c974dfaa3a10d9b6`, sort the 37 recursive
+`src/main/java/*.java` paths lexically, concatenate each blob's bytes and append
+one LF after each file, including files already ending in LF. This is the exact
+[run.py recipe](https://github.com/re-thc/jzstd/blob/7a6b345d0df3d8571a30f4a9c974dfaa3a10d9b6/scripts/jdk27/run.py#L54).
+The result was constructed and verified here: 764,896 bytes, SHA256
+`dddfad1293504a9bd47b89e491c29e74833e16fc39a4fe752f88091dbc5678b9`.
+
+Normal Git fetch also exposed follow-up commit
+`983ffb34bd9e1ded6a9cd7685577d6251796191b`. Its
+[fresh_matrix record](https://github.com/re-thc/jzstd/blob/983ffb34bd9e1ded6a9cd7685577d6251796191b/scripts/jdk27/arm-residual-2026-10-16.json#L1373)
+binds that corpus to native-frame SHA256
+`6901a47a3100e2e1453a43a70017d5a6ad83fcc49a3f8b1be875d7ffe08dcab5`
+and libzstd 1.5.7. The pinned
+[native-probe.c recipe](https://github.com/re-thc/jzstd/blob/7a6b345d0df3d8571a30f4a9c974dfaa3a10d9b6/scripts/jdk27/native-probe.c#L35)
+uses a fresh CCtx and `ZSTD_compressCCtx` over the full corpus at level 1, with
+no parameter overrides. One untimed call through the already installed
+`/usr/lib/x86_64-linux-gnu/libzstd.so.1.5.7` reproduced a 176,726-byte frame
+matching the independently recorded SHA256 exactly. That library's SHA256 is
+`27f07c9a49c2c956bcfb64cd4712976586a66facbf15fc7f09bc37413b5f2b21`.
+No C/JDK build, JVM, repeated encode loop, decoder campaign or timing was used
+to construct these inputs.
+
+The ready corpus, frame and provenance are in
+`/workspace/decoder-lowmask-input/{corpus.bin,native.l1.zst,provenance.json}`.
+The [input reconstruction script](compiler-decoder-int-lowmask-inputs.py)
+performs the same checks and records all 37 source hashes, the Git evidence
+blob, native-library identity and generator hash. From a checkout with no
+existing output directory, the complete reproducible preparation command is:
+
+```sh
+git -C /workspace/executor-jzstd fetch --no-tags origin 983ffb34bd9e1ded6a9cd7685577d6251796191b
+python3 doc/compiler-decoder-int-lowmask-inputs.py --write
+```
+
+This proves byte identity with the later Git-recorded ARM reference frame.
+It does not prove identity with the original 504.5/1511.9 MB/s x86 cell. The
+advertised main history inspected here has three commits; neither
+those rates nor the 43,658-sequence capture appears in its tracked evidence.
+The missing bridge is an original x86 manifest binding that timing/capture to
+corpus/frame hashes, actual runtime/native build identities, options and raw
+samples. `run.py --corpus` allows an external input, so a source pin alone
+cannot supply that bridge. Frame length and libzstd version alone are also
+insufficient. The Jackson corpus in the performance-gate script is a distinct
+workload and was not substituted.
+
+The complete campaign below is therefore a proposed measurement of the named
+Git-reference cell, not a claimed reproduction of the original gap. Its driver
+pins both recorded hashes, requires the reconstruction provenance, labels all
+manifests with that cell ID and records original-cell identity as unverified.
+Re-establish target activation and path/sample counts on this cell; do not carry
+over the historical 43,658/87,304 counts or nmethod facts. Input readiness is
+resolved without a private handoff. Probe classes are compiled once from the
+pinned sources only after campaign authorization. Existing managed GCC16, boot
+JDK27 and jtreg83 paths are present; no installation or dependency download is
+part of this packet.
+
+## Bounded campaign on this task's VM, pending authorization
+
+Use this lead's own Linux x64 BMI2 VM: four CPU equivalents, a 16 GiB memory
+limit and 24 GiB of free build/output disk, with a hard 120-minute overall ceiling.
 The inspected environment has a four-CPU cgroup quota, 16 GiB memory limit and
 approximately 27 GiB free disk after creating the baseline checkout. These
 are reservation limits, not predicted completion times. Build all four images
@@ -192,10 +242,10 @@ for final code and timing, and matching fastdebug images for ADLC/assertions
 and graph evidence. Build ceiling is 70 minutes; subsequent subprocess budgets
 are qualification 30, probe preparation two, diagnostics five and timing three.
 The remaining ten minutes cover manual review and read-only provenance checks.
-The parent must assign/enforce the overall 120-minute reservation. Stop
+Enforce the overall 120-minute campaign ceiling on this VM. Stop
 inconclusive when a ceiling or prerequisite fails; do not add more cells.
 
-After that assignment, ordinary checkout-based build commands are:
+After campaign authorization, ordinary checkout-based build commands are:
 
 ```sh
 timeout --kill-after=10s 70m bash -s > /workspace/executor-lowmask-build.log 2>&1 <<'BUILD'
@@ -219,7 +269,7 @@ common=(
 )
 for root in /workspace/executor-lowmask-base /workspace/executor-bzhi-jdk; do
   cd "$root"
-  test -z "$(git status --porcelain --untracked-files=no)"
+  test -z "$(git status --porcelain)"
   for mode in release fastdebug; do
     bash configure --with-conf-name="lowmask-$mode" --with-debug-level="$mode" "${common[@]}"
     make CONF="lowmask-$mode" JOBS=4 images
@@ -242,27 +292,23 @@ cd /workspace/executor-bzhi-jdk
 python3 doc/compiler-decoder-int-lowmask-validate.py
 ```
 
-Once the parent supplies the corpus/frame at the driver's documented paths and
-their expected hashes, run one stage at a time. Set `CORPUS_SHA256` and
-`FRAME_SHA256` to those supplied values, not hashes first calculated from an
-unidentified replacement. Both variables are required by the following shell
-before any execution. Preserve the same output directory across stages:
+The inputs are already verified at the driver's default paths. Both expected
+hashes are pinned in the driver; changing them is rejected rather than silently
+selecting another cell. After campaign authorization, run one stage at a time
+and preserve the same output directory across stages:
 
 ```sh
 set -euo pipefail
-: "${CORPUS_SHA256:?Expected corpus SHA256 from the evidence owner}"
-: "${FRAME_SHA256:?Expected frame SHA256 from the evidence owner}"
 driver=doc/compiler-decoder-int-lowmask-validate.py
-inputs=(--corpus-sha256 "$CORPUS_SHA256" --frame-sha256 "$FRAME_SHA256")
 python3 "$driver" --stage qualify --execute
 python3 "$driver" --stage prepare --execute
-python3 "$driver" --stage diagnose --execute "${inputs[@]}"
+python3 "$driver" --stage diagnose --execute
 ```
 
 Review the activation and allocation criteria below before invoking timing:
 
 ```sh
-python3 "$driver" --stage time --execute "${inputs[@]}"
+python3 "$driver" --stage time --execute
 ```
 
 Qualification runs the focused test on candidate fastdebug/release, the BMI
@@ -273,11 +319,11 @@ rejects a focused run that does not report one passing test. It records exact
 commands, source heads, image and input hashes, logs and all five sample windows
 per timing process. Image provenance must name the checkout head and records
 the configure spec, JVM, launcher and module image. It rejects ambient Java
-options, tracked source changes,
-input mismatches, extra candidate source changes, existing stage output and
+options, tracked source changes, input mismatches, extra candidate source
+changes, existing stage output and
 nonzero exits. Produced class hashes and the exact class set must match a
-completed preparation from the same source
-heads; later stages also require completed prerequisites and unchanged recorded
+completed preparation from the same source heads; later stages also require
+completed prerequisites and unchanged recorded
 images/inputs. Subprocesses share each stage's fixed wall-time budget and their
 process group is killed on timeout. No test result is inferred from merely
 printing this plan.
@@ -288,8 +334,8 @@ adds `BEFORE_MATCHING`, `MATCHING`, `REGISTER_ALLOCATION` and `FINAL_CODE` outpu
 An effective BMI2-off flag query stops the stage as inapplicable.
 Fastdebug graph/code is supporting evidence and cannot stand in for release
 allocation or timing. Before timing, this lead's owner must establish default
-BMI2 applicability, both original target coverages, safe destination allocation,
-retained wrapping/saturation semantics, copies/spills, code size and compilation
+BMI2 applicability, both parser sites' activation on this cell, safe destination
+allocation, retained wrapping/saturation semantics, copies/spills, code size and compilation
 cost from those captures. If readable release disassembly is unavailable, retain
 bytes and mark physical-code claims unverified; do not download a disassembler
 or claim activation from mnemonics alone. Failure to activate is a localization
@@ -299,9 +345,11 @@ Timing is exactly ABBA then BAAB, with the original SerialGC/vector/1 GiB option
 vector, two-second warmup and five 700 ms windows in each of eight fresh JVMs.
 No diagnostics enter those commands. The manifest retains all four adjacent
 pair ratios and their direction; it does not infer statistical significance.
-End-to-end no benefit rejects the codec performance lead even if the matcher
-selects better code. The three JMH cases and their four-batch setup checks remain
-uncompiled/unexecuted: no managed JMH bundle was identified in the checked
+End-to-end no benefit rejects a performance benefit for this reference cell
+even if the matcher selects better code. Neither direction settles the original
+x86 gap while its provenance bridge remains absent. The three JMH cases and
+their four-batch setup checks remain uncompiled/unexecuted: no managed JMH
+bundle was identified in the checked
 toolchain/cache paths. If that supporting micro qualification is later assigned
 with a managed bundle, use
 `--with-jmh=<bundle>` and

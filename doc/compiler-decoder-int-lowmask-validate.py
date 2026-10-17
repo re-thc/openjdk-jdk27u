@@ -24,6 +24,8 @@
 
 No builds, downloads, encodes, JMH runs or CI are launched by this driver.
 See compiler-decoder-int-lowmask.md for image provenance and execution scope.
+This is the separately pinned Git-reference cell, not a claimed reproduction
+of the unbound historical 504.5/1511.9 x86 result.
 """
 
 import argparse
@@ -42,6 +44,10 @@ import time
 BASE = "89885a6288e7aaabd01678a704a586272c0f96e3"
 CANDIDATE = "340ecf10da523566c71b0dad2f4b162a3adeada0"
 CODEC = "7a6b345d0df3d8571a30f4a9c974dfaa3a10d9b6"
+CELL = "git-source-native-l1-6901a47a"
+CORPUS = "dddfad1293504a9bd47b89e491c29e74833e16fc39a4fe752f88091dbc5678b9"
+FRAME = "6901a47a3100e2e1453a43a70017d5a6ad83fcc49a3f8b1be875d7ffe08dcab5"
+INPUT_EVIDENCE = "983ffb34bd9e1ded6a9cd7685577d6251796191b"
 PINS = {
     "src/hotspot/cpu/x86/x86.ad": "5f6bf6bf99b9109efd1d80e465b58eead798dd362d11ff22570996423889fe02",
     "test/hotspot/jtreg/compiler/intrinsics/bmi/TestBzhiIntMask.java":
@@ -112,7 +118,8 @@ def verify_sources(args):
         heads[name] = git(root, "rev-parse", "HEAD")
         if (expected and heads[name] != expected) or git(root, "status", "--porcelain"):
             raise ValueError("Wrong revision or local changes: " + str(root))
-    allowed = {"doc/compiler-decoder-int-lowmask.md", "doc/compiler-decoder-int-lowmask-validate.py"}
+    allowed = {"doc/compiler-decoder-int-lowmask.md", "doc/compiler-decoder-int-lowmask-validate.py",
+               "doc/compiler-decoder-int-lowmask-inputs.py"}
     if set(git(args.jdk_root, "diff", "--name-only", CANDIDATE, "HEAD").splitlines()) - allowed:
         raise ValueError("Candidate contains changes outside this preparation packet")
     for relative, expected in PINS.items():
@@ -127,9 +134,16 @@ def verify_sources(args):
 def files_manifest(args, stage, heads):
     files = {}
     if stage in ("diagnose", "time"):
+        provenance = json.loads(args.input_manifest.read_text())
+        if (provenance["cell_id"] != CELL or provenance["codec_pin"] != CODEC
+                or provenance["evidence_commit"] != INPUT_EVIDENCE
+                or provenance["corpus_sha256"] != CORPUS or provenance["frame_sha256"] != FRAME
+                or provenance["historical_504_cell_identity_verified"] is not False):
+            raise ValueError("Input provenance differs from the separately pinned reference cell")
+        files[str(args.input_manifest)] = digest(args.input_manifest)
         for path, expected in [(args.corpus, args.corpus_sha256), (args.frame, args.frame_sha256)]:
             if not expected or not re.fullmatch("[0-9a-f]{64}", expected):
-                raise ValueError("Supply the owner's expected corpus and frame SHA256 values")
+                raise ValueError("Expected pinned corpus and frame SHA256 values")
             if digest(path) != expected:
                 raise ValueError("Input hash mismatch: " + str(path))
             files[str(path)] = expected
@@ -185,7 +199,8 @@ def run_stage(args):
             raise ValueError("Class set differs from the pinned prepare stage")
     directory = args.output / stage
     directory.mkdir(parents=True, exist_ok=False)
-    manifest = {"stage": stage, "heads": heads, "sha256": files, "records": []}
+    manifest = {"cell_id": CELL, "historical_504_cell_identity_verified": False,
+                "stage": stage, "heads": heads, "sha256": files, "records": []}
     path = directory / "manifest.json"
     path.write_text(json.dumps(manifest, indent=2) + "\n")
     env = dict(os.environ, JAVA_HOME=str(args.jtreg_java_home), LC_ALL="C")
@@ -260,8 +275,9 @@ def main():
     parser.add_argument("--output", type=Path, default=Path("/workspace/executor-lowmask-validation"))
     parser.add_argument("--corpus", type=Path, default=Path("/workspace/decoder-lowmask-input/corpus.bin"))
     parser.add_argument("--frame", type=Path, default=Path("/workspace/decoder-lowmask-input/native.l1.zst"))
-    parser.add_argument("--corpus-sha256")
-    parser.add_argument("--frame-sha256")
+    parser.add_argument("--input-manifest", type=Path, default=Path("/workspace/decoder-lowmask-input/provenance.json"))
+    parser.add_argument("--corpus-sha256", default=CORPUS, choices=[CORPUS])
+    parser.add_argument("--frame-sha256", default=FRAME, choices=[FRAME])
     args = parser.parse_args()
     for key, value in vars(args).items():
         if isinstance(value, Path):
@@ -271,6 +287,7 @@ def main():
             parser.error("--execute requires one --stage")
         run_stage(args)
     else:
+        print("# cell: " + CELL + "; original 504.5/1511.9 x86 identity unverified")
         for stage in [args.stage] if args.stage else LIMITS:
             print("# " + stage + ": subprocess budget " + str(LIMITS[stage]) + " seconds")
             for name, command in commands(args, stage):
