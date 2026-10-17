@@ -66,6 +66,10 @@ public class TestInstantSpeedate {
         eligible.setAccessible(true); fast.setAccessible(true); raw.setAccessible(true);
         Instant epoch = (Instant)fast.invoke(null, "1970-01-01T00:00:00Z");
         if (!Instant.EPOCH.equals(epoch)) throw new AssertionError("Native backend did not execute");
+        if (fast.invoke(null, "1900-02-29T00:00:00Z") != null
+                || !Instant.EPOCH.equals(fast.invoke(null, "1970-01-01T00:00:00Z"))) {
+            throw new AssertionError("A calendar miss disabled the native backend");
+        }
         for (String fraction : new String[] {"", ".1", ".12", ".123", ".1234", ".12345", ".123456"}) {
             String text = "2000-02-29T12:34:56" + fraction + "Z";
             compare(text);

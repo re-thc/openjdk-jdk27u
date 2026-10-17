@@ -396,10 +396,7 @@ public final class Instant
      */
     public static Instant parse(final CharSequence text) {
         if (InstantParserConfig.ENABLED && text instanceof String string) {
-            Instant parsed = InstantParser.tryParse(string);
-            if (parsed != null) {
-                return parsed;
-            }
+            return InstantParser.parse(string);
         }
         return DateTimeFormatter.ISO_INSTANT.parse(text, Instant::from);
     }

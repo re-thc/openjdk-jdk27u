@@ -63,6 +63,7 @@ package java.time;
 
 import jdk.internal.loader.BootLoader;
 import jdk.internal.misc.VM;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** Internal, bounded library path for Instant.parse. */
@@ -99,6 +100,11 @@ final class InstantParser {
             } catch (LinkageError ex) {
                 // Sticky unavailable state; original formatter remains usable.
             } finally {
+                if (!loaded) {
+                    // Only the loading thread publishes a permanent failure.
+                    // A caller observing LOADING must not disable the backend.
+                    failed = true;
+                }
                 STATE.set(loaded ? READY : UNAVAILABLE);
             }
             return loaded;
@@ -128,6 +134,11 @@ final class InstantParser {
 
     private static int pair(String text, int offset) {
         return (text.charAt(offset) - '0') * 10 + text.charAt(offset + 1) - '0';
+    }
+
+    static Instant parse(String text) {
+        Instant parsed = tryParse(text);
+        return parsed != null ? parsed : DateTimeFormatter.ISO_INSTANT.parse(text, Instant::from);
     }
 
     static Instant tryParse(String text) {
