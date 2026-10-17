@@ -52,7 +52,7 @@ import jdk.test.whitebox.WhiteBox;
 
 public class TestColdCallSpillPlacement {
     private static WhiteBox WB;
-    private static final int COLD = 0, HOT = 1, TWO = 2, MIXED = 3, VOID = 4, MAPS = 5, EXCEPTION = 6, ALIASES = 7, JOINS = 8;
+    private static final int COLD = 0, HOT = 1, TWO = 2, MIXED = 3, VOID = 4, MAPS = 5, EXCEPTION = 6, ALIASES = 7;
     private static final int GC = 1, DEOPT = 2, THROW = 4;
     private static final int ITERATIONS = 256;
     private static final int PROFILE_INVOCATIONS = 64;
@@ -125,12 +125,7 @@ public class TestColdCallSpillPlacement {
                         + a8 + a9 + a10 + a11 + a12 + a13 + a14 + a15;
             }
             if (kind == HOT || kind == MIXED) helperB(11);
-            if (kind == JOINS) {
-                // Two successive returning-call joins keep all eight packed
-                // entries live. Their combined constraint cost remains cold.
-                if ((i & 63) == 0) helperA(7);
-                if ((i & 127) == 1) helperB(9);
-            } else if (kind == TWO) {
+            if (kind == TWO) {
                 // Each site is below 10%, but together they exceed 10%.
                 if ((i & 15) == 0) helperA(7);
                 if ((i & 15) == 1) helperB(9);
@@ -161,7 +156,84 @@ public class TestColdCallSpillPlacement {
     private static int testInitializeCompiler() { return 42; }
 
     private static long testCold(long[] table, long seed, Box anchor) { return kernel(COLD, table, seed); }
-    private static long testJoins(long[] table, long seed, Box anchor) { return kernel(JOINS, table, seed); }
+    private static long testJoins(long[] table, long seed, Box anchor) {
+        long bits = seed, total = 0;
+        for (int i = 0; i < 1024; i++) {
+            // Every p value is needed for the load index and again after the
+            // loads. This makes pressure high at exactly three packed loads,
+            // without introducing more array values as possible witnesses.
+            long p0 = Long.rotateLeft(bits * 3L, 3);
+            long p1 = Long.rotateLeft(bits * 5L, 7);
+            long p2 = Long.rotateLeft(bits * 7L, 11);
+            long p3 = Long.rotateLeft(bits * 11L, 17);
+            long p4 = Long.rotateLeft(bits * 13L, 23);
+            long p5 = Long.rotateLeft(bits * 17L, 29);
+            long p6 = Long.rotateLeft(bits * 19L, 31);
+            long p7 = Long.rotateLeft(bits * 23L, 37);
+            long p8 = Long.rotateLeft(bits * 29L, 41);
+            long p9 = Long.rotateLeft(bits * 31L, 43);
+            long p10 = Long.rotateLeft(bits * 37L, 47);
+            long p11 = Long.rotateLeft(bits * 41L, 53);
+            int index = (int) (p0 ^ p1 ^ p2 ^ p3 ^ p4 ^ p5 ^ p6 ^ p7 ^ p8 ^ p9 ^ p10 ^ p11) & 31;
+            long a = table[index];
+            long b = table[(index + 1) & 31];
+            long c = table[(index + 2) & 31];
+            long mix = a ^ b ^ c;
+            long token = Long.rotateLeft(p0 + mix, 3) + Long.rotateLeft(p1 ^ mix, 7)
+                    + Long.rotateLeft(p2 + mix, 11) + Long.rotateLeft(p3 ^ mix, 17)
+                    + Long.rotateLeft(p4 + mix, 23) + Long.rotateLeft(p5 ^ mix, 29)
+                    + Long.rotateLeft(p6 + mix, 31) + Long.rotateLeft(p7 ^ mix, 37)
+                    + Long.rotateLeft(p8 + mix, 41) + Long.rotateLeft(p9 ^ mix, 43)
+                    + Long.rotateLeft(p10 + mix, 47) + Long.rotateLeft(p11 ^ mix, 53);
+            // All p temporaries die before the first returning-call join.
+            if ((i & 255) == 0) token += helperA(7);
+
+            // The returned value anchors this pressure burst after the first
+            // join. All q values contribute to the shift, then remain needed
+            // individually. The packed entries stay live across the peak.
+            long q0 = Long.rotateLeft(token * 3L, 3);
+            long q1 = Long.rotateLeft(token * 5L, 7);
+            long q2 = Long.rotateLeft(token * 7L, 11);
+            long q3 = Long.rotateLeft(token * 11L, 17);
+            long q4 = Long.rotateLeft(token * 13L, 23);
+            long q5 = Long.rotateLeft(token * 17L, 29);
+            long q6 = Long.rotateLeft(token * 19L, 31);
+            long q7 = Long.rotateLeft(token * 23L, 37);
+            long q8 = Long.rotateLeft(token * 29L, 41);
+            long q9 = Long.rotateLeft(token * 31L, 43);
+            long q10 = Long.rotateLeft(token * 37L, 47);
+            long q11 = Long.rotateLeft(token * 41L, 53);
+            int qShift = (int) (q0 ^ q1 ^ q2 ^ q3 ^ q4 ^ q5 ^ q6 ^ q7 ^ q8 ^ q9 ^ q10 ^ q11) & 63;
+            token += (q0 >>> qShift) + (q1 << (qShift + 3)) + (q2 >>> (qShift + 7)) + (q3 << (qShift + 11))
+                    + (q4 >>> (qShift + 17)) + (q5 << (qShift + 23)) + (q6 >>> (qShift + 29)) + (q7 << (qShift + 31))
+                    + (q8 >>> (qShift + 37)) + (q9 << (qShift + 41)) + (q10 >>> (qShift + 43)) + (q11 << (qShift + 47));
+            // The q values die before a distinct second returning-call join.
+            if ((i & 511) == 1) token ^= helperB(9);
+
+            long r0 = Long.rotateLeft(token * 3L, 3);
+            long r1 = Long.rotateLeft(token * 5L, 7);
+            long r2 = Long.rotateLeft(token * 7L, 11);
+            long r3 = Long.rotateLeft(token * 11L, 17);
+            long r4 = Long.rotateLeft(token * 13L, 23);
+            long r5 = Long.rotateLeft(token * 17L, 29);
+            long r6 = Long.rotateLeft(token * 19L, 31);
+            long r7 = Long.rotateLeft(token * 23L, 37);
+            long r8 = Long.rotateLeft(token * 29L, 41);
+            long r9 = Long.rotateLeft(token * 31L, 43);
+            long r10 = Long.rotateLeft(token * 37L, 47);
+            long r11 = Long.rotateLeft(token * 41L, 53);
+            int rShift = (int) (r0 ^ r1 ^ r2 ^ r3 ^ r4 ^ r5 ^ r6 ^ r7 ^ r8 ^ r9 ^ r10 ^ r11) & 63;
+            long fanout = (r0 >>> rShift) + (r1 << (rShift + 3)) + (r2 >>> (rShift + 7)) + (r3 << (rShift + 11))
+                    + (r4 >>> (rShift + 17)) + (r5 << (rShift + 23)) + (r6 >>> (rShift + 29)) + (r7 << (rShift + 31))
+                    + (r8 >>> (rShift + 37)) + (r9 << (rShift + 41)) + (r10 >>> (rShift + 43)) + (r11 << (rShift + 47));
+            // Raw packed values cannot die until after the final pressure
+            // burst: their shifts depend on its complete result.
+            long next = (a >>> (int) fanout) ^ (b << (int) (fanout >>> 8)) ^ (c >>> (int) (fanout >>> 16));
+            total += next ^ fanout;
+            bits = Long.rotateLeft(bits ^ next ^ token, 17);
+        }
+        return total ^ bits;
+    }
     private static long testHot(long[] table, long seed, Box anchor) { return kernel(HOT, table, seed); }
     private static long testTwo(long[] table, long seed, Box anchor) { return kernel(TWO, table, seed); }
     private static long testMixed(long[] table, long seed, Box anchor) { return kernel(MIXED, table, seed); }
@@ -224,7 +296,7 @@ public class TestColdCallSpillPlacement {
         System.out.println("END_COMPILE " + method.getName());
     }
 
-    private static void child(boolean enabled) throws Exception {
+    private static void child(boolean enabled, boolean joinsOnly) throws Exception {
         WB = WhiteBox.getWhiteBox();
         if (WB.getBooleanVMFlag("UseColdCallSpillDeferral") != enabled) {
             throw new AssertionError("Unexpected spill-deferral flag value");
@@ -236,7 +308,8 @@ public class TestColdCallSpillPlacement {
         for (int i = 0; i < table.length; i++) table[i] = random.nextLong();
         Box anchor = new Box(random.nextLong());
         Method kernel = TestColdCallSpillPlacement.class.getDeclaredMethod("kernel", int.class, long[].class, long.class);
-        String[] names = { "testCold", "testJoins", "testHot", "testTwo", "testMixed", "testVoid", "testMaps", "testException", "testAtomic", "testAliases" };
+        String[] names = joinsOnly ? new String[] { "testJoins" }
+                : new String[] { "testCold", "testJoins", "testHot", "testTwo", "testMixed", "testVoid", "testMaps", "testException", "testAtomic", "testAliases" };
         for (String name : names) {
             Method method = TestColdCallSpillPlacement.class.getDeclaredMethod(name, long[].class, long.class, Box.class);
             WB.setBooleanVMFlag("UseCompiler", false);
@@ -284,6 +357,10 @@ public class TestColdCallSpillPlacement {
                 long expectedThrow = referenceException(table, 1);
                 if (actual != expectedThrow || action != 0) throw new AssertionError("Exception lost live state");
             }
+        }
+        if (joinsOnly) {
+            System.out.println("CORRECTNESS_OK");
+            return;
         }
         double[] doubles = { 0.25, 1.5, 2.75, 3.0, 4.125, 5.25, 6.5, 7.75 };
         Box[] boxes = new Box[8];
@@ -337,62 +414,252 @@ public class TestColdCallSpillPlacement {
     private static boolean roundedEqual(double left, double right) {
         // TraceSpilling prints six significant digits. The native policy test
         // checks strict threshold equality using the unrounded production API.
-        return Math.abs(left - right) <= 1e-4 * Math.max(left, right);
+        return Double.isFinite(left) && Double.isFinite(right)
+                && Math.abs(left - right) <= 1e-4 * Math.max(left, right);
     }
 
     private static boolean loggedAboveMargin(double left, double right) {
         return left > right || (left > 0.0 && roundedEqual(left, right));
     }
 
-    private static int checkPlacementTrace(String text) {
-        Pattern definition = Pattern.compile("CCDEFER def=N(\\d+) L(\\d+) B\\d+ freq=(\\S+) constraint_freq=(\\S+)");
-        Pattern phi = Pattern.compile("CCPHI def=N(\\d+) L(\\d+) B\\d+ freq=(\\S+) up_freq=(\\S+)"
-                + " down_freq=(\\S+) constraint_freq=(\\S+)");
-        Pattern boundary = Pattern.compile("CCHRP def=N(\\d+) L(\\d+) B\\d+ keep=([01]) freq=(\\S+) constraint_freq=(\\S+)");
+    private static final class PhiPlacement {
+        final int node, range, block, expectedInputs;
+        final boolean pressureDown;
+        final double upFrequency, downFrequency;
+        final Set<Integer> upDefinitions = new HashSet<>();
+        int actualInputs;
+        double observedUp, observedDown;
+
+        PhiPlacement(int node, int range, int block, int expectedInputs, boolean pressureDown,
+                     double upFrequency, double downFrequency) {
+            this.node = node;
+            this.range = range;
+            this.block = block;
+            this.expectedInputs = expectedInputs;
+            this.pressureDown = pressureDown;
+            this.upFrequency = upFrequency;
+            this.downFrequency = downFrequency;
+        }
+    }
+
+    private static final class PlacementTrace {
+        final Map<Integer, Integer> markedNodes = new HashMap<>();
+        final Set<Integer> loadDefinitions = new HashSet<>();
+        final List<PhiPlacement> phis = new ArrayList<>();
+        final Set<NodeLocation> keptBoundaries = new HashSet<>();
+    }
+
+    private record JoinPair(int first, int second) { }
+    private record NodeLocation(int node, int block) { }
+
+    private static PlacementTrace checkPlacementTrace(String text) {
+        Pattern definition = Pattern.compile("CCDEFER def=N(\\d+) L(\\d+) B\\d+ freq=(\\S+) constraint_freq=(\\S+) loadL=([01])");
+        Pattern phi = Pattern.compile("CCPHI def=N(\\d+) L(\\d+) B(\\d+) freq=(\\S+) up_freq=(\\S+)"
+                + " down_freq=(\\S+) constraint_freq=(\\S+) inputs=(\\d+) pressure_down=([01])");
+        Pattern input = Pattern.compile("CCPHI_INPUT phi=N(\\d+) L(\\d+) B(\\d+) pred=B(\\d+) def=N(\\d+)"
+                + " up=([01]) deferred=([01]) freq=(\\S+)");
+        Pattern boundary = Pattern.compile("CCHRP def=N(\\d+) L(\\d+) B(\\d+) keep=([01]) freq=(\\S+) constraint_freq=(\\S+)");
         Set<Integer> deferred = new HashSet<>();
-        Map<Integer, Integer> markedNodes = new HashMap<>();
-        int phiCount = 0;
+        Map<Integer, Double> constraintsByRange = new HashMap<>();
+        PlacementTrace trace = new PlacementTrace();
+        PhiPlacement pending = null;
         for (String line : text.split("\\R")) {
+            if (pending != null && line.startsWith("CC") && !line.startsWith("CCPHI_INPUT ")) {
+                throw new AssertionError("Missing Phi input records before: " + line);
+            }
             if (line.startsWith("CCDEFER ")) {
                 Matcher matcher = definition.matcher(line);
                 if (!matcher.matches()) throw new AssertionError("Malformed definition trace: " + line);
                 int node = Integer.parseInt(matcher.group(1)), range = Integer.parseInt(matcher.group(2));
                 double frequency = traceFrequency(matcher.group(3));
                 double constraints = traceFrequency(matcher.group(4));
+                Double originalConstraints = constraintsByRange.putIfAbsent(range, constraints);
+                if (originalConstraints != null && !roundedEqual(originalConstraints, constraints)) {
+                    throw new AssertionError("Live-range constraint total changed: " + line);
+                }
                 if (!loggedAboveMargin(frequency, 10.0 * constraints)) {
                     throw new AssertionError("Definition did not meet the cold-constraint margin: " + line);
                 }
                 deferred.add(range);
-                markedNodes.put(node, range);
+                trace.markedNodes.put(node, range);
+                if (matcher.group(5).equals("1")) trace.loadDefinitions.add(node);
             } else if (line.startsWith("CCPHI ")) {
                 Matcher matcher = phi.matcher(line);
                 if (!matcher.matches()) throw new AssertionError("Malformed Phi trace: " + line);
                 int node = Integer.parseInt(matcher.group(1)), range = Integer.parseInt(matcher.group(2));
-                double frequency = traceFrequency(matcher.group(3));
-                double up = traceFrequency(matcher.group(4)), down = traceFrequency(matcher.group(5));
-                double constraints = traceFrequency(matcher.group(6));
-                if (!deferred.contains(range) || !loggedAboveMargin(frequency, 10.0 * constraints)
+                int block = Integer.parseInt(matcher.group(3));
+                double frequency = traceFrequency(matcher.group(4));
+                double up = traceFrequency(matcher.group(5)), down = traceFrequency(matcher.group(6));
+                double constraints = traceFrequency(matcher.group(7));
+                int inputs = Integer.parseInt(matcher.group(8));
+                Double originalConstraints = constraintsByRange.get(range);
+                if (!deferred.contains(range) || originalConstraints == null || !roundedEqual(originalConstraints, constraints)
+                        || inputs == 0 || !loggedAboveMargin(frequency, 10.0 * constraints)
                         || !loggedAboveMargin(up, 10.0 * (2.0 * down + 3.0 * constraints))) {
                     throw new AssertionError("Phi lost deferred provenance or weighted cost margin: " + line);
                 }
-                markedNodes.put(node, range);
-                phiCount++;
+                pending = new PhiPlacement(node, range, block, inputs, matcher.group(9).equals("1"), up, down);
+            } else if (line.startsWith("CCPHI_INPUT ")) {
+                Matcher matcher = input.matcher(line);
+                if (!matcher.matches()) throw new AssertionError("Malformed Phi input trace: " + line);
+                int node = Integer.parseInt(matcher.group(5));
+                boolean up = matcher.group(6).equals("1"), marked = matcher.group(7).equals("1");
+                double frequency = traceFrequency(matcher.group(8));
+                if (pending == null || pending.node != Integer.parseInt(matcher.group(1))
+                        || pending.range != Integer.parseInt(matcher.group(2))
+                        || pending.block != Integer.parseInt(matcher.group(3))) {
+                    throw new AssertionError("Phi input does not belong to the pending decision: " + line);
+                }
+                if (up) {
+                    Integer range = trace.markedNodes.get(node);
+                    if (!marked || range == null || range.intValue() != pending.range) {
+                        throw new AssertionError("UP input lacks exact deferred-node provenance: " + line);
+                    }
+                    pending.upDefinitions.add(node);
+                    pending.observedUp += frequency;
+                } else {
+                    pending.observedDown += frequency;
+                }
+                if (++pending.actualInputs == pending.expectedInputs) {
+                    if (!roundedEqual(pending.observedUp, pending.upFrequency)
+                            || !roundedEqual(pending.observedDown, pending.downFrequency)) {
+                        throw new AssertionError("Phi input frequency sums disagree with its costs: " + line);
+                    }
+                    trace.markedNodes.put(pending.node, pending.range);
+                    trace.phis.add(pending);
+                    pending = null;
+                }
             } else if (line.startsWith("CCHRP ")) {
                 Matcher matcher = boundary.matcher(line);
                 if (!matcher.matches()) throw new AssertionError("Malformed pressure-boundary trace: " + line);
                 int node = Integer.parseInt(matcher.group(1)), range = Integer.parseInt(matcher.group(2));
-                boolean keep = matcher.group(3).equals("1");
-                double frequency = traceFrequency(matcher.group(4));
-                double constraints = traceFrequency(matcher.group(5));
-                Integer markedRange = markedNodes.get(node);
-                if (markedRange == null || markedRange.intValue() != range
+                int block = Integer.parseInt(matcher.group(3));
+                boolean keep = matcher.group(4).equals("1");
+                double frequency = traceFrequency(matcher.group(5));
+                double constraints = traceFrequency(matcher.group(6));
+                Integer markedRange = trace.markedNodes.get(node);
+                Double originalConstraints = constraintsByRange.get(range);
+                if (markedRange == null || markedRange.intValue() != range || originalConstraints == null
+                        || !roundedEqual(originalConstraints, constraints)
                         || (keep && !loggedAboveMargin(frequency, 10.0 * constraints))
                         || (!keep && frequency > 10.0 * constraints && !roundedEqual(frequency, 10.0 * constraints))) {
                     throw new AssertionError("Pressure boundary lost provenance or cold-constraint decision: " + line);
                 }
+                if (keep) trace.keptBoundaries.add(new NodeLocation(node, block));
             }
         }
-        return phiCount;
+        if (pending != null) throw new AssertionError("Incomplete input records for Phi N" + pending.node);
+        return trace;
+    }
+
+    private static void checkJoinChains(PlacementTrace trace) {
+        if (trace.loadDefinitions.size() != 3) {
+            throw new AssertionError("Expected exactly three deferred packed loads: " + trace.loadDefinitions);
+        }
+        Set<Integer> ranges = new HashSet<>();
+        Map<JoinPair, Map<Integer, JoinPair>> groups = new HashMap<>();
+        for (int load : trace.loadDefinitions) {
+            int range = trace.markedNodes.get(load);
+            if (!ranges.add(range)) throw new AssertionError("Packed loads share a coalesced range: L" + range);
+            for (PhiPlacement first : trace.phis) {
+                if (first.range != range || !first.pressureDown || !first.upDefinitions.contains(load)
+                        || !trace.keptBoundaries.contains(new NodeLocation(first.node, first.block))) continue;
+                for (PhiPlacement second : trace.phis) {
+                    if (second.range != range || !second.pressureDown || second.block == first.block
+                            || !second.upDefinitions.contains(first.node)
+                            || !trace.keptBoundaries.contains(new NodeLocation(second.node, second.block))) continue;
+                    groups.computeIfAbsent(new JoinPair(first.block, second.block), ignored -> new HashMap<>())
+                            .put(load, new JoinPair(first.node, second.node));
+                }
+            }
+        }
+        for (Map<Integer, JoinPair> chains : groups.values()) {
+            if (chains.size() != 3) continue;
+            Set<Integer> nodes = new HashSet<>();
+            for (JoinPair chain : chains.values()) {
+                nodes.add(chain.first());
+                nodes.add(chain.second());
+            }
+            if (nodes.size() == 6) return;
+        }
+        throw new AssertionError("Missing three load-to-two-Phi chains with actual DOWN overrides and kept HRP boundaries");
+    }
+
+    private static String syntheticJoinTrace() {
+        StringBuilder text = new StringBuilder();
+        for (int i = 0; i < 3; i++) {
+            text.append("CCDEFER def=N").append(100 + i).append(" L").append(200 + i)
+                    .append(" B10 freq=1024 constraint_freq=6 loadL=1\n");
+        }
+        for (int i = 0; i < 3; i++) {
+            text.append("CCPHI def=N").append(300 + i).append(" L").append(200 + i)
+                    .append(" B20 freq=1024 up_freq=1020 down_freq=4 constraint_freq=6 inputs=2 pressure_down=1\n")
+                    .append("CCPHI_INPUT phi=N").append(300 + i).append(" L").append(200 + i)
+                    .append(" B20 pred=B11 def=N").append(100 + i).append(" up=1 deferred=1 freq=1020\n")
+                    .append("CCPHI_INPUT phi=N").append(300 + i).append(" L").append(200 + i)
+                    .append(" B20 pred=B12 def=N").append(500 + i).append(" up=0 deferred=0 freq=4\n");
+        }
+        for (int i = 0; i < 3; i++) {
+            text.append("CCPHI def=N").append(400 + i).append(" L").append(200 + i)
+                    .append(" B30 freq=1024 up_freq=1022 down_freq=2 constraint_freq=6 inputs=2 pressure_down=1\n")
+                    .append("CCPHI_INPUT phi=N").append(400 + i).append(" L").append(200 + i)
+                    .append(" B30 pred=B21 def=N").append(300 + i).append(" up=1 deferred=1 freq=1022\n")
+                    .append("CCPHI_INPUT phi=N").append(400 + i).append(" L").append(200 + i)
+                    .append(" B30 pred=B22 def=N").append(600 + i).append(" up=0 deferred=0 freq=2\n");
+        }
+        for (int i = 0; i < 3; i++) {
+            text.append("CCHRP def=N").append(300 + i).append(" L").append(200 + i)
+                    .append(" B20 keep=1 freq=1024 constraint_freq=6\n")
+                    .append("CCHRP def=N").append(400 + i).append(" L").append(200 + i)
+                    .append(" B30 keep=1 freq=1024 constraint_freq=6\n");
+        }
+        return text.toString();
+    }
+
+    private static void expectInvalidJoinTrace(String text) {
+        try {
+            checkJoinChains(checkPlacementTrace(text));
+        } catch (AssertionError expected) {
+            return;
+        }
+        throw new AssertionError("Incomplete or unrelated placement trace satisfied the join oracle");
+    }
+
+    private static void checkTraceOracle() {
+        if (loggedAboveMargin(1.0, 10.0 * Double.MAX_VALUE)) {
+            throw new AssertionError("Overflowed comparison met the logged margin");
+        }
+        String valid = syntheticJoinTrace();
+        checkJoinChains(checkPlacementTrace(valid));
+        String firstInput = "CCPHI_INPUT phi=N300 L200 B20 pred=B11 def=N100 up=1 deferred=1 freq=1020\n";
+        String secondInput = "CCPHI_INPUT phi=N400 L200 B30 pred=B21 def=N300 up=1 deferred=1 freq=1022\n";
+        expectInvalidJoinTrace(valid.replace(firstInput, ""));
+        expectInvalidJoinTrace(valid.replace(secondInput, ""));
+        expectInvalidJoinTrace(valid.replace("CCDEFER def=N100 L200 B10 freq=1024 constraint_freq=6 loadL=1\n", ""));
+        expectInvalidJoinTrace(valid.replace("CCHRP def=N400 L200 B30 keep=1 freq=1024 constraint_freq=6\n", ""));
+        expectInvalidJoinTrace(valid.replace("CCHRP def=N300 L200 B20 keep=1 freq=1024 constraint_freq=6\n", ""));
+        expectInvalidJoinTrace(valid.replace("CCHRP def=N300 L200 B20", "CCHRP def=N300 L200 B999"));
+        expectInvalidJoinTrace(valid.replace("CCHRP def=N400 L200 B30", "CCHRP def=N400 L200 B999"));
+        expectInvalidJoinTrace(valid.replace(
+                "CCPHI def=N300 L200 B20 freq=1024 up_freq=1020 down_freq=4 constraint_freq=6",
+                "CCPHI def=N300 L200 B20 freq=1024 up_freq=1020 down_freq=4 constraint_freq=5"));
+        expectInvalidJoinTrace(valid.replace(
+                "CCHRP def=N300 L200 B20 keep=1 freq=1024 constraint_freq=6",
+                "CCHRP def=N300 L200 B20 keep=1 freq=1024 constraint_freq=5"));
+        expectInvalidJoinTrace(valid + "CCDEFER def=N999 L200 B40 freq=1024 constraint_freq=5 loadL=0\n");
+        // An incidental sibling Phi is marked and has the right LRG, but it
+        // does not extend the first Phi's reaching definition through join two.
+        expectInvalidJoinTrace(valid.replace(secondInput, secondInput.replace("def=N300", "def=N100")));
+        expectInvalidJoinTrace(valid.replace(firstInput, firstInput.replace("def=N100", "def=N999")));
+        expectInvalidJoinTrace(valid.replace(firstInput, firstInput.replace("deferred=1", "deferred=0")));
+        expectInvalidJoinTrace(valid.replace("CCPHI_INPUT phi=N300 L200 B20 pred=B12 def=N500 up=0 deferred=0 freq=4\n", ""));
+        expectInvalidJoinTrace(valid.replace(
+                "CCPHI def=N300 L200 B20 freq=1024 up_freq=1020 down_freq=4 constraint_freq=6 inputs=2 pressure_down=1",
+                "CCPHI def=N300 L200 B20 freq=1024 up_freq=1020 down_freq=4 constraint_freq=6 inputs=2 pressure_down=0"));
+        expectInvalidJoinTrace(valid.replace(
+                "CCPHI def=N400 L200 B30 freq=1024 up_freq=1022 down_freq=2 constraint_freq=6 inputs=2 pressure_down=1",
+                "CCPHI def=N400 L200 B30 freq=1024 up_freq=1022 down_freq=2 constraint_freq=6 inputs=2 pressure_down=0"));
+        expectInvalidJoinTrace(valid.replace("up_freq=1020", "up_freq=1019"));
     }
 
     private static void checkFixedShiftCounts(String text) {
@@ -423,7 +690,8 @@ public class TestColdCallSpillPlacement {
         if (duplicated.isEmpty()) throw new AssertionError("Repeated debug value was not deferred");
     }
 
-    private static void run(Boolean enabled, boolean framePointer, boolean selection, boolean stress, boolean debug, boolean legacyShifts) throws Exception {
+    private static void run(Boolean enabled, boolean framePointer, boolean selection, boolean stress,
+                            boolean debug, boolean legacyShifts, boolean joinsOnly) throws Exception {
         List<String> options = new ArrayList<>(List.of(
                 "-Xbootclasspath/a:.", "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
                 "-XX:-TieredCompilation", "-Xbatch", "-XX:CompileThreshold=1000000",
@@ -433,10 +701,17 @@ public class TestColdCallSpillPlacement {
                 "-XX:CompileCommand=compileonly,compiler.regalloc.TestColdCallSpillPlacement::test*",
                 "-XX:CompileCommand=inline,compiler.regalloc.TestColdCallSpillPlacement::kernel",
                 "-XX:CompileCommand=dontinline,compiler.regalloc.TestColdCallSpillPlacement::helper*",
-                TestColdCallSpillPlacement.class.getName(), "child", Boolean.toString(Boolean.TRUE.equals(enabled))));
+                TestColdCallSpillPlacement.class.getName(), "child", Boolean.toString(Boolean.TRUE.equals(enabled)),
+                Boolean.toString(joinsOnly)));
         if (enabled != null) {
             options.add(options.indexOf("-XX:+WhiteBoxAPI") + 1,
                     "-XX:" + (enabled ? "+" : "-") + "UseColdCallSpillDeferral");
+        }
+        if (joinsOnly) {
+            // Keep exactly three load roots in the dedicated structural case.
+            // Other correctness/selection children retain their peeling flags.
+            options.addAll(options.indexOf("-XX:+WhiteBoxAPI") + 1,
+                    List.of("-XX:-PartialPeelLoop", "-XX:LoopPeeling=0"));
         }
         if (debug) {
             options.addAll(0, List.of("-XX:+UnlockDiagnosticVMOptions", "-XX:+VerifyRegisterAllocator", "-XX:+TraceSpilling",
@@ -447,23 +722,23 @@ public class TestColdCallSpillPlacement {
         OutputAnalyzer output = ProcessTools.executeTestJava(options.toArray(String[]::new));
         output.shouldHaveExitValue(0).shouldContain("CORRECTNESS_OK");
         String text = output.getOutput();
-        for (String name : new String[] { "testCold", "testJoins", "testHot", "testTwo", "testMixed", "testVoid", "testMaps", "testException", "testAtomic", "testAliases", "testFloating", "testOops" }) {
+        String[] names = joinsOnly ? new String[] { "testJoins" }
+                : new String[] { "testCold", "testJoins", "testHot", "testTwo", "testMixed", "testVoid", "testMaps", "testException", "testAtomic", "testAliases", "testFloating", "testOops" };
+        for (String name : names) {
             int begin = text.indexOf("BEGIN_COMPILE " + name);
             int end = text.indexOf("END_COMPILE " + name, begin);
             if (begin < 0 || end < 0) throw new AssertionError("Missing compilation boundary: " + name);
             boolean deferred = text.substring(begin, end).contains("CCDEFER ");
             String compilation = text.substring(begin, end);
-            boolean placement = deferred || compilation.contains("CCPHI ") || compilation.contains("CCHRP ");
+            boolean placement = deferred || compilation.contains("CCPHI ") || compilation.contains("CCPHI_INPUT ") || compilation.contains("CCHRP ");
             if (!Boolean.TRUE.equals(enabled) && placement) throw new AssertionError("Disabled feature selected " + name);
-            int phiCount = debug ? checkPlacementTrace(compilation) : 0;
+            PlacementTrace trace = debug ? checkPlacementTrace(compilation) : null;
             if (selection) {
                 boolean expected = name.equals("testCold") || name.equals("testJoins") || name.equals("testVoid") || name.equals("testMaps")
                         || name.equals("testException") || name.equals("testAtomic") || name.equals("testAliases");
                 if (deferred != expected) throw new AssertionError("Unexpected selection for " + name + ": " + deferred);
                 if (name.equals("testAliases")) checkDuplicateDebugUses(compilation);
-                if (name.equals("testJoins") && !legacyShifts && phiCount == 0) {
-                    throw new AssertionError("Successive returning-call joins did not preserve any deferred Phi");
-                }
+                if (joinsOnly) checkJoinChains(trace);
             }
             if (legacyShifts && name.equals("testCold")) checkFixedShiftCounts(compilation);
         }
@@ -474,23 +749,25 @@ public class TestColdCallSpillPlacement {
             if (args[0].equals("probe")) {
                 System.out.println("DEBUG_BUILD=" + Platform.isDebugBuild());
             } else {
-                child(Boolean.parseBoolean(args[1]));
+                child(Boolean.parseBoolean(args[1]), Boolean.parseBoolean(args[2]));
             }
             return;
         }
+        checkTraceOracle();
         // Driver actions can use a different VM from child actions (notably with
         // -XXaltjvm). Query the actual test VM before enabling debug-only checks.
         OutputAnalyzer probe = ProcessTools.executeTestJava(TestColdCallSpillPlacement.class.getName(), "probe");
         probe.shouldHaveExitValue(0);
         boolean debug = probe.getOutput().contains("DEBUG_BUILD=true");
         // Default and explicit-off runs also guard the opt-in compatibility promise.
-        run(null, false, false, false, debug, false);
-        run(false, false, false, false, debug, false);
-        run(true, false, debug, false, debug, false);
-        run(true, true, false, false, debug, false);
+        run(null, false, false, false, debug, false, false);
+        run(false, false, false, false, debug, false, false);
+        run(true, false, debug, false, debug, false, false);
+        run(true, true, false, false, debug, false, false);
         if (debug) {
-            run(true, false, false, true, true, false);
-            run(true, false, true, false, true, true);
+            run(true, false, true, false, true, false, true);
+            run(true, false, false, true, true, false, false);
+            run(true, false, true, false, true, true, false);
         }
     }
 }

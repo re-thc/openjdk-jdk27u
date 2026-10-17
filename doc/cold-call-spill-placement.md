@@ -104,15 +104,37 @@ The shared native policy tests model all three packed values through B120 and
 B80. They reject the incomplete second-join-only repair and cover weighted
 costs, equality, aggregate constraints, unknown backedges, unmarked inputs,
 multi-successor predecessor charging and invalid or overflowed frequencies.
-The Java placement test adds two sequential cold joins and requires a selected
-Phi. It checks range-level Phi provenance and costs, plus exact-node provenance
-and the hot-block guard for any emitted boundary records. Incoming Phi node
-identities are not traced; the all-UP-input provenance rule is covered by the
-shared native helper tests. Scheduling need not produce a pressure-boundary
-record. Boundary execution and the complete two-join/final-allocation chain
-still need execution and final code inspection. Existing GC, deoptimization,
-throwing-call, fixed-mask, oop and derived-pointer correctness checks remain
-required.
+
+The original Java fixture called at frequencies 1/64 and 1/128. Its first join
+would compare UP frequency 126/128 against a threshold of 130/128, so it could
+not demonstrate the intended placement. A requirement for any selected Phi
+also permitted an unrelated Phi to satisfy activation. That fixture and oracle
+have been replaced without changing the production costs.
+
+The standalone Java fixture has exactly three mutable packed loads and calls
+at 1/256 and 1/512 over 1,024 loop iterations. Those fixture frequencies give
+the first intended join a comparison of 510/512 against 130/512, and the second
+511/512 against 110/512. Separate pressure bursts are designed to make the load
+definitions hot and create pressure transitions
+after each join. The latter bursts depend on the corresponding helper-return
+token, preventing them from being hoisted above the join. Their temporaries
+are consumed before the next call; raw packed values remain live through both
+joins and the final pressure burst.
+
+The trace identifies actual long loads and records every accepted Phi input's
+node, state, provenance and predecessor frequency. The oracle checks complete
+input counts, costs and exact-node provenance. For each of the three distinct
+packed definitions it requires a direct UP path through two selected Phis in
+the same two join blocks, both overriding an otherwise pressure-forced DOWN
+choice, and an actual `CCHRP keep=1` event for both Phi nodes in their own join
+blocks. Constraint totals must match each range's original definition records.
+Missing joins, missing boundary activation and incidental Phi selections cannot
+satisfy the assertion. Synthetic positive and negative cases are included for
+the oracle itself.
+The strict activation check uses an isolated fixture process with loop peeling
+disabled; existing general correctness configurations retain their settings.
+Existing GC, deoptimization, throwing-call, fixed-mask, oop and derived-pointer
+correctness checks remain required.
 
 Only source inspection and static repository checks were performed for this
 change. The native and Java tests have not been compiled or run. No new JDK

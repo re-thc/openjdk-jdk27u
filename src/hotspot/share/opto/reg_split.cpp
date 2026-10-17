@@ -832,9 +832,10 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                              ColdCallSpillPolicy::should_defer(has_call_debug_use[slidx], scalar_lrg[slidx],
                                                               b->_freq, constraint_frequency[slidx]) &&
                              phi_costs.should_keep_up(constraint_frequency[slidx]);
+        bool pressure_down = is_high_pressure(b, &lrgs(lidx), b->end_idx()) && !prompt_use(b, lidx);
         // If entering a high-pressure area with no immediate use, assume Phi
         // is DOWN unless doing so recreates stores on proven deferred hot inputs.
-        if( is_high_pressure( b, &lrgs(lidx), b->end_idx()) && !prompt_use(b,lidx) && !keep_deferred )
+        if( pressure_down && !keep_deferred )
           UPblock[slidx] = false;
         // If we are not split up/down and all inputs are down, then we
         // are down
@@ -846,9 +847,20 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
           deferred->set(phi->_idx);
 #ifndef PRODUCT
           if (trace_spilling()) {
-            tty->print_cr("CCPHI def=N%d L%u B%u freq=%.6g up_freq=%.6g down_freq=%.6g constraint_freq=%.6g",
+            tty->print_cr("CCPHI def=N%d L%u B%u freq=%.6g up_freq=%.6g down_freq=%.6g constraint_freq=%.6g inputs=%u pressure_down=%d",
                           phi->_idx, lidx, b->_pre_order, b->_freq, phi_costs.up_frequency(),
-                          phi_costs.down_frequency(), constraint_frequency[slidx]);
+                          phi_costs.down_frequency(), constraint_frequency[slidx], b->num_preds() - 1, pressure_down);
+            // The regression test follows actual reaching definitions through
+            // successive joins; an unrelated Phi must not satisfy activation.
+            for (uint i = 1; i < b->num_preds(); i++) {
+              Block* input_block = _cfg.get_block_for_node(b->pred(i));
+              Node* input = Reaches[input_block->_pre_order][slidx];
+              assert(input != nullptr, "deferred Phi must have resolved inputs");
+              tty->print_cr("CCPHI_INPUT phi=N%d L%u B%u pred=B%u def=N%d up=%d deferred=%d freq=%.6g",
+                            phi->_idx, lidx, b->_pre_order, input_block->_pre_order, input->_idx,
+                            UP[input_block->_pre_order][slidx], deferred->test(input->_idx) != 0,
+                            input_block->_freq);
+            }
           }
 #endif
         }
@@ -1363,8 +1375,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
           deferred->set(n->_idx);
 #ifndef PRODUCT
           if (trace_spilling()) {
-            tty->print_cr("CCDEFER def=N%d L%u B%u freq=%.6g constraint_freq=%.6g",
-                          n->_idx, defidx, b->_pre_order, b->_freq, constraint_frequency[slidx]);
+            tty->print_cr("CCDEFER def=N%d L%u B%u freq=%.6g constraint_freq=%.6g loadL=%d",
+                          n->_idx, defidx, b->_pre_order, b->_freq, constraint_frequency[slidx],
+                          n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_LoadL);
           }
 #endif
         }

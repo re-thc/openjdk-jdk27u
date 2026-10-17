@@ -108,6 +108,29 @@ Java_compiler_regalloc_TestColdCallSpillPolicy_verify(JNIEnv* env, jclass) {
     CHECK(!uncoordinated.should_keep_up(1.82001));
   }
 
+  // The original Java integration fixture used calls at 1/64 and 1/128.
+  // Its first join cannot satisfy the actual whole-range weighted guard:
+  // 126/128 is below 10 * (2 * 2/128 + 3 * 3/128) == 130/128.
+  ColdCallSpillPolicy::PhiCosts old_fixture;
+  old_fixture.add_input(true, true, true, 126.0 / 128.0);
+  old_fixture.add_input(true, false, false, 2.0 / 128.0);
+  CHECK(!old_fixture.should_keep_up(3.0 / 128.0));
+
+  // The standalone fixture uses calls at 1/256 and 1/512, and requires
+  // both actual joins plus a pressure boundary on each of the three chains.
+  const double fixture_constraints = 3.0 / 512.0;
+  CHECK(ColdCallSpillPolicy::should_defer(true, true, 1.0, fixture_constraints));
+  ColdCallSpillPolicy::PhiCosts fixture_first;
+  fixture_first.add_input(true, true, true, 510.0 / 512.0);
+  fixture_first.add_input(true, false, false, 2.0 / 512.0);
+  CHECK(fixture_first.should_keep_up(fixture_constraints)); // 510/512 > 130/512
+  ColdCallSpillPolicy::PhiCosts fixture_second;
+  fixture_second.add_input(true, true, fixture_first.should_keep_up(fixture_constraints), 511.0 / 512.0);
+  fixture_second.add_input(true, false, false, 1.0 / 512.0);
+  CHECK(fixture_second.should_keep_up(fixture_constraints)); // 511/512 > 110/512
+  CHECK(!ColdCallSpillPolicy::should_defer(true, true, 1.0 / 256.0, fixture_constraints));
+  CHECK(!ColdCallSpillPolicy::should_defer(true, true, 1.0 / 512.0, fixture_constraints));
+
   // Keeping an already-UP deferred input does not need a memory transfer.
   // An empty join or all-DOWN inputs must not invent a register definition.
   ColdCallSpillPolicy::PhiCosts empty;
