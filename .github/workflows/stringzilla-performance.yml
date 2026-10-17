@@ -33,19 +33,15 @@ jobs:
           - runner: ubuntu-26.04
             platform: linux-x64
             backend: avx2
-            shell: bash
           - runner: ubuntu-26.04
             platform: linux-x64
             backend: serial
-            shell: bash
           - runner: ubuntu-26.04-arm
             platform: linux-aarch64
             backend: neon
-            shell: bash
           - runner: windows-2025
             platform: windows-x64
             backend: msvc
-            shell: pwsh
     env:
       MSYS2_PATH_TYPE: minimal
       CHERE_INVOKING: 1
@@ -164,8 +160,18 @@ jobs:
             rm -rf "$source_dir/build/perf"
           done
 
-      - name: Measure original, enabled and disabled
-        shell: ${{ matrix.shell }}
+      - name: Measure Linux original, enabled and disabled
+        if: runner.os == 'Linux'
+        shell: bash
+        run: >-
+          python .github/scripts/stringzilla-performance.py
+          --original perf-images/original --fork perf-images/fork
+          --original-source baseline --fork-source .
+          --output perf-output --backend ${{ matrix.backend }}
+
+      - name: Measure MSVC original, enabled and disabled
+        if: runner.os == 'Windows'
+        shell: pwsh
         run: >-
           python .github/scripts/stringzilla-performance.py
           --original perf-images/original --fork perf-images/fork
