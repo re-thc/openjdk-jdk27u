@@ -10,27 +10,14 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  prepare-jtreg:
-    runs-on: ubuntu-26.04
-    steps:
-      - name: Checkout test infrastructure
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          sparse-checkout: |
-            .github
-            make/conf/github-actions.conf
-      - name: Build JTReg
-        uses: ./.github/actions/build-jtreg
-
   measure:
-    needs: prepare-jtreg
     name: ${{ matrix.backend }} complete images
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 240
@@ -81,8 +68,36 @@ jobs:
         with:
           platform: ${{ matrix.platform }}
 
-      - name: Get JTReg
-        uses: ./.github/actions/get-jtreg
+      - name: Restore verified JTReg 8.2.1
+        shell: python
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          import hashlib, json, subprocess, zipfile
+          from pathlib import Path, PurePosixPath
+
+          endpoint = "repos/re-thc/openjdk-jdk27u/actions/artifacts/12111121678"
+          artifact = json.loads(subprocess.check_output(["gh", "api", endpoint], text=True))
+          digest = "a44a66929557be2dc1b8e257ebdff1c1268aeab9894c4a239316c2cedf27fb49"
+          assert artifact["id"] == 12111121678
+          assert artifact["name"] == "bundles-jtreg-8.2.1+1"
+          assert artifact["digest"] == "sha256:" + digest and not artifact["expired"]
+          assert artifact["workflow_run"]["id"] == 39059898881
+          assert "JTREG_VERSION=8.2.1+1" in Path("make/conf/github-actions.conf").read_text()
+          archive = Path("jtreg-bundle.zip")
+          with archive.open("wb") as output:
+              subprocess.run(["gh", "api", endpoint + "/zip"], stdout=output, check=True)
+          assert hashlib.sha256(archive.read_bytes()).hexdigest() == digest
+          with zipfile.ZipFile(archive) as bundle:
+              assert all(not PurePosixPath(name).is_absolute() and ".." not in PurePosixPath(name).parts
+                         for name in bundle.namelist())
+              bundle.extractall("jtreg/installed")
+          jar = Path("jtreg/installed/lib/jtreg.jar")
+          assert jar.is_file()
+          print("STRINGZILLA_JTREG_REUSE " + json.dumps({
+              "artifact": artifact["id"], "producer_run": 39059898881,
+              "zip_sha256": digest, "jar_sha256": hashlib.sha256(jar.read_bytes()).hexdigest()
+          }), flush=True)
 
       - name: Record sources and vendoring
         shell: bash
