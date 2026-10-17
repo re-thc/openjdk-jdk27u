@@ -56,12 +56,11 @@ omit the out-of-scope Shenandoah invocation and replace unsupported
 StressVerifyMeetJoin/IgnoreUnrecognizedVMOptions coverage with a supported,
 WhiteBox-confirmed C2 semantic regression; no stress coverage is implied.
 
-All 15 open fork PRs were refreshed with exact heads and fully paginated file
-inventories; none shares the selected changes' paths. The head/count inventory
-is in `memory-overhead-pr-audit.json`. PR44's monitor/GC correctness consolidation
-is separate and is not duplicated. PR9 Method/stubs, PR31 parser tables and
-PR23 generated classes remain outside this work. Shared compiler/runtime effects
-still need integrated tests; path independence alone does not prove compatibility.
+The collector changes here are limited to code-cache marking-cycle completion;
+broader GC/runtime correctness changes are separate. Method/stub optimization,
+parser tables and generated-class/linkage changes are outside this integration.
+Shared compiler/runtime effects still need integrated tests; separate source
+paths alone do not prove compatibility.
 
 ## Regression coverage and reproduction
 
@@ -130,19 +129,14 @@ integration; exact current-image results and limits are in
 `memory-overhead-validation.md`. No new performance run, observer compilation,
 installation, CI dispatch or runner provisioning was performed. Shenandoah and built-in HTTP/2 remain outside scope.
 
-## Disposition of the remaining 53-proposal packet
+## Scope limits
 
-Included original proposals 1 (prompt reuse only) and 47 (padding only); 52's
-26-file FromCardCache donor remains separate pending memory/refinement/CPU/pause
-and yield/group-identity coverage. Proposal 53's mark-stat cap,35's two Metachunk
-counters,24's IndexSet reduction and exact-bound compiler presizing remain
-unmeasured and excluded. The C2 scratch and Arrayunit repairs are narrowly reviewed
-additional findings, not generic ResourceArea retention or allocator redesign.
+The larger FromCardCache redesign, mark-stat caps, Metachunk counter changes,
+IndexSet reductions and compiler presizing remain outside this integration;
+their memory, concurrency or throughput effects are unqualified. The C2 scratch
+and Array unit repairs do not imply generic ResourceArea retention or an
+allocator redesign.
 
-Conditional allocator/table projects remain deferred:2,8,10,14,15,21,28,29,
-40,42,44,48,50,51. Their lifetime/concurrency or throughput evidence is
-missing. Rejected, false-premise, already-present or fixed-contract proposals
-remain excluded:3–7,9,11–13,16–20,22–23,26–27,30–34,36–39,41,43,45–46,49.
 No compressed-pointer/layout redesign, hot Method/subtype contract, eviction,
 slab unmapping, JFR constant-only laziness, global default tuning or HTTP/2/
 Shenandoah work is introduced to enlarge the result.
