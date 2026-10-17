@@ -56,7 +56,7 @@ public class TestByteMaskToLong {
     public static void main(String[] args) {
         TestFramework framework = new TestFramework().addFlags("--add-modules=jdk.incubator.vector");
         if (Platform.isAArch64()) {
-            framework.addFlags("-XX:UseSVE=0");
+            framework.addFlags("-XX:UseSVE=0", "-XX:MaxVectorSize=16");
         }
         framework.start();
     }
@@ -260,16 +260,23 @@ public class TestByteMaskToLong {
     public static void run(RunInfo info) {
         check(iteration++ & 65535);
         if (!info.isWarmUp()) {
-            for (String name : new String[] {"byte128", "byte64", "unsigned128", "and128", "or128",
-                                            "xor128", "not128", "block64", "shared128", "normalized128",
-                                            "normalized64", "short128", "int128", "long128", "float128", "double128"}) {
-                TestFramework.assertCompiledByC2(info.getTest(name));
-            }
+            assertCompiled(info);
             // This also exhausts all 256 low-byte patterns for byte64.
             // Zero, all, alternating and every single-bit byte128 mask occur here.
             for (int mask = 0; mask < 65536; mask++) check(mask);
             checkBlockEdges();
             checkFloatingPointEdges();
+            // New inputs can deoptimize a compiled test. Check all targets
+            // again after every exhaustive and edge-case oracle has run.
+            assertCompiled(info);
+        }
+    }
+
+    private static void assertCompiled(RunInfo info) {
+        for (String name : new String[] {"byte128", "byte64", "unsigned128", "and128", "or128",
+                                        "xor128", "not128", "block64", "shared128", "normalized128",
+                                        "normalized64", "short128", "int128", "long128", "float128", "double128"}) {
+            TestFramework.assertCompiledByC2(info.getTest(name));
         }
     }
 
