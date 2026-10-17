@@ -124,9 +124,19 @@ int main(int argc, char** argv) {
         for (unsigned int o = 0; o < sizeof(offsets) / sizeof(offsets[0]); o++) {
             int a_offset = offsets[o][0], b_offset = offsets[o][1];
             size_t a_size = (size_t)(n + a_offset), b_size = (size_t)(n + b_offset);
-            char* a_base = malloc(a_size != 0 ? a_size : 1);
-            char* b_base = malloc(b_size != 0 ? b_size : 1);
-            if (a_base == NULL || b_base == NULL) abort();
+            void* a_memory = NULL;
+            void* b_memory = NULL;
+            if (check_only) {
+                a_memory = malloc(a_size != 0 ? a_size : 1);
+                b_memory = malloc(b_size != 0 ? b_size : 1);
+            } else {
+                if (posix_memalign(&a_memory, 64, a_size != 0 ? a_size : 1) != 0 ||
+                    posix_memalign(&b_memory, 64, b_size != 0 ? b_size : 1) != 0) abort();
+                if ((((uintptr_t)a_memory | (uintptr_t)b_memory) & 63) != 0) abort();
+            }
+            if (a_memory == NULL || b_memory == NULL) abort();
+            char* a_base = a_memory;
+            char* b_base = b_memory;
             char* a = a_base + a_offset;
             char* b = b_base + b_offset;
             for (unsigned int m = 0; m < sizeof(mismatches) / sizeof(mismatches[0]); m++) {
@@ -229,6 +239,10 @@ def main():
     print("NATIVE_EQUALITY_CPU " + str(allowed[0]), flush=True)
     version = subprocess.check_output([args.compiler, "--version"], text=True)
     (OUT / "compiler.txt").write_text(version)
+    if Path(args.compiler).name.startswith("gcc"):
+        run([args.compiler, "-Q", "--help=target"], "compiler-target-flags.log")
+    else:
+        run([args.compiler, "-###", "-x", "c", "-c", "/dev/null"], "compiler-target-flags.log")
     metadata = {
         "scope": "native serial equality experiment; not whole-image Java/JIT evidence",
         "production_base": BASE,
@@ -240,6 +254,8 @@ def main():
         "probe_header_sha256": hashlib.sha256(probe_header.encode()).hexdigest(),
         "patched_header_sha256": hashlib.sha256((ROOT / COMPARE).read_bytes()).hexdigest(),
         "portable_loads": 0, "word_threshold": 24,
+        "timing_allocation": "64-byte-aligned allocations plus recorded offsets",
+        "sanitizer_allocation": "exact-size malloc allocations plus recorded offsets",
         "timing_flags": ["-std=c11", "-O3"],
         "sanitizers": ["address", "undefined", "alignment"],
     }

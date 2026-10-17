@@ -34,7 +34,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   serial-equality:
@@ -69,7 +69,7 @@ jobs:
       - name: 'Checkout the isolated experiment'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 3
+          fetch-depth: 4
 
       - name: 'Record source and host'
         shell: bash
