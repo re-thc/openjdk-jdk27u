@@ -28,7 +28,6 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <SystemConfiguration/SystemConfiguration.h>
 #include <dispatch/dispatch.h>
-#include <mach-o/dyld-interposing.h>
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdatomic.h>
@@ -111,10 +110,18 @@ static CFRunLoopSourceRef create_source(CFAllocatorRef allocator,
     return observer_source == NULL ? NULL : (CFRunLoopSourceRef)CFRetain(observer_source);
 }
 
-DYLD_INTERPOSE(create_store, SCDynamicStoreCreate)
-DYLD_INTERPOSE(set_keys, SCDynamicStoreSetNotificationKeys)
-DYLD_INTERPOSE(set_queue, SCDynamicStoreSetDispatchQueue)
-DYLD_INTERPOSE(create_source, SCDynamicStoreCreateRunLoopSource)
+// The SDK does not ship dyld's interposing convenience header. Each entry in
+// this Mach-O section is a replacement/original pointer pair. "used" retains
+// the records and the replacement functions even with optimization/dead-strip.
+static const struct {
+    const void *replacement;
+    const void *original;
+} interpositions[] __attribute__((used, section("__DATA,__interpose,interposing"))) = {
+    { (const void *)&create_store, (const void *)&SCDynamicStoreCreate },
+    { (const void *)&set_keys, (const void *)&SCDynamicStoreSetNotificationKeys },
+    { (const void *)&set_queue, (const void *)&SCDynamicStoreSetDispatchQueue },
+    { (const void *)&create_source, (const void *)&SCDynamicStoreCreateRunLoopSource }
+};
 
 JNIEXPORT jint JNICALL Java_KerberosNotifications_notifyChange(JNIEnv *env,
         jclass type, jstring name) {

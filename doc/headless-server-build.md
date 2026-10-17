@@ -112,11 +112,15 @@ Native macOS AArch64 validation at `5b3534b7` recorded successful release and
 fastdebug builds, profile checks and 29 runtime smokes per image under Command
 Line Tools, with no Metal discovery or artifacts. Each image had 56 modules/
 jmods, 11,196 Java inputs and 1,366 product native commands with matching objects.
-The release formal make suite passed; fastdebug's formal suite failed at
-Autoconf discovery. Its test-discovery fix and the subsequent launcher/framework
-and notification changes require targeted native confirmation, including the
-new callback-delivery regression; the earlier passed runtime scope
-remains applicable to the unchanged code.
+At `f0824d88112`, both images rebuilt and passed compilation-database and full
+profile checks. Jar diagnostics, instrumentation, cached Autoconf discovery and
+direct library links passed: libinstrument had no frameworks, libosxkrb5 used
+Foundation/Kerberos/SystemConfiguration without Cocoa or ApplicationServices,
+and libjli used only libSystem. Both formal make suites stopped while compiling
+the notification test because an SDK header was unavailable. Its interposition
+records are now declared locally; native compilation and callback delivery
+remain unconfirmed, as do suite targets whose completion was not recorded.
+This test-only correction allows the retained product images to be reused.
 
 Native Linux AArch64 and Windows x64 validation remains required.
 For macOS, configure with existing Command Line Tools selected through a
