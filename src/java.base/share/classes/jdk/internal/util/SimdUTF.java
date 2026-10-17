@@ -149,6 +149,13 @@ public final class SimdUTF {
     }
 
     @ForceInline
+    public static boolean isEligibleUTF32Decoding(int len) {
+        int threshold = minLength;
+        return threshold > 0 && len >= threshold
+                && (!automatic || len >= operationMinimumLength(DECODE_UTF32_BE));
+    }
+
+    @ForceInline
     public static boolean isEligibleLatin1Decoding(int len) {
         int threshold = minLength;
         return threshold > 0 && len >= threshold

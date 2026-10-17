@@ -65,17 +65,17 @@ final class SimdUTFBufferSupport {
     static void decode(ByteBuffer src, CharBuffer dst, boolean big, boolean utf32) {
         // Speculative reads must not move a mapped-memory fault ahead of a
         // scalar malformed-input or output-capacity result.
-        if (dst.isReadOnly() || mapped(src) || mapped(dst) || overlaps(src, 1, dst, 2)) return;
         int width = utf32 ? 4 : 2;
         int length = (int)Math.min(Math.min(src.remaining(), BYTE_CHUNK),
                 (long)dst.remaining() * width) & -width;
-        if (!SimdUTF.isEligible(length)) return;
+        if (!(utf32 ? SimdUTF.isEligibleUTF32Decoding(length) : SimdUTF.isEligible(length))) return;
+        if (dst.isReadOnly() || mapped(src) || mapped(dst) || overlaps(src, 1, dst, 2)) return;
         byte[] bytes = new byte[length];
         char[] chars = new char[length / 2];
         while (true) {
             length = (int)Math.min(Math.min(src.remaining(), bytes.length),
                     (long)dst.remaining() * width) & -width;
-            if (!SimdUTF.isEligible(length)) return;
+            if (!(utf32 ? SimdUTF.isEligibleUTF32Decoding(length) : SimdUTF.isEligible(length))) return;
             // Absolute bulk reads leave the decoder's input position unchanged.
             src.get(src.position(), bytes, 0, length);
             if (!utf32 && length < src.remaining()) {

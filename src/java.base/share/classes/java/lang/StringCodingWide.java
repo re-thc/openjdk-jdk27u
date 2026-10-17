@@ -152,6 +152,8 @@ final class StringCodingWide {
             return new String(value, String.LATIN1);
         }
         if (len == 0) return "";
+        if (src != null && !(kind.unit == 4
+                ? SimdUTF.isEligibleUTF32Decoding(len) : SimdUTF.isEligible(len))) return null;
         byte[] value = StringUTF16.newBytesFor(units);
         if (src != null) {
             int written = kind.unit == 2

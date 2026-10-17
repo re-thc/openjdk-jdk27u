@@ -88,7 +88,7 @@ class UTF_32Coder {
                         src.position(mark);
                     }
                 }
-                if (SimdUTF.isEligible(src.remaining()) && src.hasArray() && dst.hasArray()) {
+                if (SimdUTF.isEligibleUTF32Decoding(src.remaining()) && src.hasArray() && dst.hasArray()) {
                     int length = src.remaining() & ~3;
                     int written = SimdUTF.decodeUTF32Bytes(src.array(), src.arrayOffset() + mark,
                             length, dst.array(), dst.arrayOffset() + dst.position(),
@@ -99,7 +99,7 @@ class UTF_32Coder {
                         return CoderResult.UNDERFLOW;
                     }
                 }
-                if (SimdUTF.isEligible(src.remaining()) && (!src.hasArray() || !dst.hasArray())) {
+                if (SimdUTF.isEligibleUTF32Decoding(src.remaining()) && (!src.hasArray() || !dst.hasArray())) {
                     try {
                         SimdUTFBufferSupport.decode(src, dst, currentBO == BIG, true);
                     } finally {
