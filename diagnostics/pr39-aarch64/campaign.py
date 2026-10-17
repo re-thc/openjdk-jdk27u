@@ -22,11 +22,11 @@ import xml.etree.ElementTree as ET
 
 BASE = "89885a6288e7aaabd01678a704a586272c0f96e3"
 HEAD = "9fedf7ac9040bf1d46e383201524f1ca7a13a29e"
-REPAIR = "043b59159912d84c3be8e09bbb5e442e08bc9b8b"
+REPAIR = "7f0bf03bd947a95c551da4fa0352257738e5f281"
 MERGE_BASE = "e206bae32b2a6cc1fa9464ad34d75f2df4b347e9"
-CANDIDATE = "6bff3b05deba58f2a9f6db9aab0e2fd1063d4826"
-TREE = "a1903d2c5d1d97642a0d621449f928a332a2f91a"
-MERGE_MESSAGE = "Merge repaired PR39 043b59159912 into pinned master for native qualification\n"
+CANDIDATE = "c47db0c467240bb016416672f91f8a24c8006cb4"
+TREE = "5027a19d5b9d868a00fa37dabd04d104f3cbae07"
+MERGE_MESSAGE = "Merge repaired PR39 7f0bf03bd947 into pinned master for native qualification\n"
 MERGE_DATE = "2026-10-17T00:00:00+00:00"
 ARRAY = "org.openjdk.bench.java.util.ArraysMismatchEarlyExit"
 MEMORY = "org.openjdk.bench.java.nio.MemoryMismatch"
@@ -94,7 +94,8 @@ def plan(profile="full"):
         main += [memory(size, storage, difference, mode="c1") for size in (64, 128)
                  for difference in ("MATCH", "FIRST_WORD")]
     if profile == "heap-repair":
-        return {"screen": screen + [array(128, at, mode=mode)
+        return {"screen": screen + [array(size, -1) for size in (255, 256, 257)]
+                + [array(128, at, mode=mode)
                                     for mode in ("c1", "int") for at in (-1, 1)]}
     return {"screen": screen, "main": main}
 

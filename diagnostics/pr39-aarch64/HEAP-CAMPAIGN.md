@@ -10,9 +10,9 @@ explicit new approval are required before dispatch.
 
 - Author concurrency guard: `9fedf7ac9040bf1d46e383201524f1ca7a13a29e`.
 - Actual master/base: `89885a6288e7aaabd01678a704a586272c0f96e3`.
-- Repair: `043b59159912d84c3be8e09bbb5e442e08bc9b8b`.
-- Measurement candidate: `6bff3b05deba58f2a9f6db9aab0e2fd1063d4826`, tree
-  `a1903d2c5d1d97642a0d621449f928a332a2f91a`.
+- Repair: `7f0bf03bd947a95c551da4fa0352257738e5f281`.
+- Measurement candidate: `c47db0c467240bb016416672f91f8a24c8006cb4`, tree
+  `5027a19d5b9d868a00fa37dabd04d104f3cbae07`.
 - Ordered parents: master, then repair. Verified merge input
   `e206bae32b2a6cc1fa9464ad34d75f2df4b347e9` is not the measurement baseline.
 
@@ -42,7 +42,7 @@ Correctness must pass before any timing:
 
 - Candidate fastdebug: the new 16-case public call-boundary gate; existing
   twelve store-ordering graphs; native/heap bounds and polling Ideal checks;
-  bounded C1 admission checks. **Double range has no exception to the gate.**
+  bounded C1 admission checks. **No range case has an exception to the gate.**
 - Candidate release with each of G1, Serial and ZGC: the new array semantics
   test and existing raw mismatch test. New semantics run interpreter, C1,
   C2 and intrinsic-disabled modes, with independent offsets, bounds,
@@ -57,9 +57,10 @@ campaign does not relabel those results as executions of the new Java source.
 
 ## Exact measurement and gates
 
-[The complete matrix](heap-campaign.json) contains **39 fixed rows and four
-control placements: 172 forks**. It preserves all 35 previous C2 screening cases,
-then adds four fixed byte-array rows: equal and difference 1 at 128 elements
+[The complete matrix](heap-campaign.json) contains **42 fixed rows and four
+control placements: 184 forks**. It preserves all 35 previous C2 screening cases,
+then adds equal 255/256/257-byte array rows at the new suffix crossover and
+four fixed byte-array rows: equal and difference 1 at 128 elements
 under C1 and the interpreter. There is no main stage or automatic expansion.
 
 The two leading controls run first, then the native equal 4 KiB row. Its original

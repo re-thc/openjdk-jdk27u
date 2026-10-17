@@ -55,11 +55,12 @@ class CampaignTests(unittest.TestCase):
     def test_focused_heap_matrix_is_fixed(self):
         cases = plan("heap-repair")
         self.assertEqual(list(cases), ["screen"])
-        self.assertEqual(len(cases["screen"]), 39)
+        self.assertEqual(len(cases["screen"]), 42)
         self.assertEqual(cases["screen"][:35], plan()["screen"])
-        self.assertEqual(cases["screen"][35:], [array(128, at, mode=mode)
+        self.assertEqual(cases["screen"][35:], [array(size, -1) for size in (255, 256, 257)]
+                         + [array(128, at, mode=mode)
                          for mode in ("c1", "int") for at in (-1, 1)])
-        self.assertEqual((39 + 4) * 4, 172)
+        self.assertEqual((42 + 4) * 4, 184)
 
     def test_shared_work_deadline_caps_every_stage(self):
         with mock.patch.dict(os.environ, {"PR39_WORK_END": "1040"}), \

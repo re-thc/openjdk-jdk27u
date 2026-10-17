@@ -1,7 +1,7 @@
 # PR39 native AArch64 qualification
 
 The review branch now also contains the [follow-up heap caller repair](HEAP-REPAIR.md)
-at `043b59159912`. It is **not native-qualified**. Its [focused 67-minute
+at `7f0bf03bd947`. It is **not native-qualified**. Its [focused 67-minute
 campaign](HEAP-CAMPAIGN.md) is prepared for separate review and approval; no
 new workflow, JDK build or timing has launched. The executed results below
 belong to `93926` and remain unchanged.

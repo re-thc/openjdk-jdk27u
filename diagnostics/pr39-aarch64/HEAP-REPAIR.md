@@ -1,6 +1,6 @@
 # Array caller repair for native review
 
-Source `043b59159912d84c3be8e09bbb5e442e08bc9b8b` separates the AArch64 primitive
+Source `7f0bf03bd947a95c551da4fa0352257738e5f281` separates the AArch64 primitive
 array caller from bulk dispatch. It addresses the call boundaries identified in
 [run 39045104945](RESULTS-39045104945.md); it has **not** been measured or executed
 on native ARM. The prior 25 regressions remain unchanged evidence.
@@ -10,7 +10,8 @@ time. Sub-word inputs use their existing scalar comparisons. At most two
 words are compared in the ordinary caller; an early mismatch returns before
 any bulk helper, cap calculation or stub entry. Full-array overloads share the
 range entry. Public `Arrays` guards, exception order and return conventions
-are unchanged. No inlining budget or force-inline annotation is added.
+are unchanged. The existing first-element Java accesses remain ahead of unsafe
+word loads, including their null/bounds exception order. No inlining budget or force-inline annotation is added.
 
 Eight private typed `mismatchLarge` overloads use `@DontInline` to keep bulk
 work outside those callers while retaining concrete array types and constant
@@ -20,10 +21,19 @@ remainder is at most 112 bytes, below intrinsic admission. Differences at 25/82
 therefore return from this compiled helper before the cap/stub setup. Both
 prior images already called a helper for these cases; this change removes
 setup from the selected path rather than claiming an extra call explained
-the entire measured loss. The 128-byte minimum and 2 KiB heap cap are unchanged.
+the entire measured loss. The intrinsic's 128-byte minimum and 2 KiB heap leaf cap are unchanged.
+The array path finishes a request of at most 128 bytes in Java. For larger
+requests it continues after the matched 128 bytes and restores the public index,
+so the suffix intrinsic first becomes eligible at 256 total bytes. The focused
+plan checks equal 255/256/257 explicitly; this crossover is not a measured optimum.
 
-On an equal admission range, bulk dispatch keeps all original arguments and
-the existing tail/NaN handling. The float prefix classifies the loaded raw
+An equal admission range is not rescanned. Larger scans pass a remaining
+array subrange to the existing implementation, then add the compared-element
+count to a nonnegative result. Complemented tails remain valid because 128 bytes
+is a multiple of the Java word width. C2 still preserves every argument of
+that intrinsic call for its existing fallback and deoptimization; original
+array objects and indices remain ordinary Java locals, with no shifted raw
+pointer crossing a call. The existing tail/NaN handling is retained. The float prefix classifies the loaded raw
 NaN pair and requests a full rescan when canonical comparison is needed. Its
 bulk helper may skip the hot prefix only after raw equality; it cannot skip an
 unchecked element after a NaN pair. Double's bounded two-element prefix uses
@@ -46,23 +56,25 @@ validation, not native ARM execution or emulated performance.
 
 - Interpreter, C1 and C2 semantics pass, including G1, Serial and ZGC. Coverage
   includes every primitive kind, full/range calls, independent offsets,
-  prefix/tail/cap/chunk boundaries, preceding stores, differing NaN payloads,
+  prefix/tail/cap/chunk boundaries, same-method stores before and after comparison, differing NaN payloads,
   signed zero, later differences and exception order.
 - All 59 pre-existing methods have identical normalized bytecode on a
   non-AArch64 build. HotSpot/native dispatch sources are unchanged.
 - 338 bounded prefix/index model checks pass across scales 0–3 and both byte
   orders. The ordinary Java sources and test compile with Java 27.
-- The local precompiled-callee graph fixture inlines 15 of 16 public boundaries.
-  `doubleRange` still outlines on x86. A baseline counterfactual reproduces
-  that same rejection with the original Java body: public code 1608 bytes and
-  wrapper 104 bytes. This does not establish ARM code size or justify relaxing
-  the new native gate: **all 16 must pass before timing**.
+- The final guard-preserving source's unsupported x86 graph fixture inlines
+  all eight full-array wrappers and outlines all eight range wrappers. These
+  failures are retained. A separate baseline counterfactual also outlines
+  double range (public code 1608 bytes, wrapper 104 bytes); no corresponding
+  baseline claim is made for the other seven ranges. This does not establish
+  ARM instruction size or validate recovery. **All 16 native cases must pass
+  before timing**, with no allowance for the local failures.
 - 33 qualification-driver tests pass, including fixed rows, shared deadlines,
   no-retry gates, required result IDs and process-group cleanup.
 
 The new native-only call-boundary test deliberately compiles callees before
 callers, retains raw Ideal output and checks ordinary inlining without a
-library force-inline directive. The local double result is preserved as an
-unresolved ISA-dependent code-generation question. No native recovery or
+library force-inline directive. The local range-call results remain an unresolved code-generation risk for
+native review. No native recovery or
 application/x86 speedup is claimed. [The focused campaign](HEAP-CAMPAIGN.md)
 is prepared for independent review and separate launch approval.

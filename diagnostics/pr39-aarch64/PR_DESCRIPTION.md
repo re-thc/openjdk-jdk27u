@@ -15,12 +15,16 @@ barriers preserve plain heap access order around ambiguous unsafe prefix loads.
 
 AArch64 primitive-array callers now compare a bounded Java prefix before
 calling a private typed bulk helper. Bulk admission scans the remainder of the
-existing 128-byte minimum before cap/stub setup, retaining original arguments
-and tail/NaN handling. Only bulk helpers are marked `DontInline`; no inlining
-budget or force-inline policy changes. This follow-up has not run on native
-ARM. Its local semantics pass; a forced x86 graph fixture passes 15/16 cases,
-with double-range outlining also reproduced in its baseline. All 16 native
-cases remain mandatory before further timing.
+existing 128-byte admission range before cap/stub setup. Completed requests
+return from Java; larger requests continue after that prefix and restore the
+public index. C2 keeps the remaining-range call's arguments for its existing
+fallback. Tail/NaN handling and the 2 KiB heap leaf cap remain intact. Only
+bulk helpers are marked `DontInline`; no inlining budget or force-inline
+policy changes. Existing first-element access/exception order is preserved. This follow-up has not run on native
+ARM. Local semantics pass in six modes, but the final x86 graph fixture still
+outlines all eight range wrappers. Double-range outlining also occurs in its
+baseline; the other seven have no baseline code-shape result. All 16 native
+cases remain mandatory before timing. Native recovery is unproven.
 
 Scoped comparisons retain bounded chunks and Java safepoint polls. The
 interpreter bounds leaf work, counts once, and defers profiling, safepoints
