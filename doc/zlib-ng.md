@@ -19,10 +19,13 @@ use JNI. Deflater uses JNI for chunks at most 1 KiB and, on AArch64, chunks of a
 least 64 KiB. All these call paths use zlib-ng.
 
 Adler32 calls zlib-ng directly from the interpreter and C1 for scalar and heap
-array updates. C1 direct-buffer updates use ordinary JNI at all lengths on Apple
-AArch64 CPUs; other CPUs retain their direct-buffer selection. On x86-64, C1
-uses JNI for bulk updates of at least 64 KiB. C2 calls zlib-ng for scalar updates and bulk
-updates of at least 1 KiB; shorter bulk updates use the HotSpot SIMD kernel.
+array updates. C1 direct-buffer updates use the default native invocation path
+at all lengths on Apple AArch64 CPUs. With Adler intrinsics enabled, an interpreter-entry
+hop is inferred from entry selection and call evidence; disabling Adler
+intrinsics selects true JNI. Other CPUs retain their direct-buffer selection. On x86-64, C1
+declines bulk intrinsification at 64 KiB and above; that compiler decision alone
+does not identify JNI versus an interpreter entry. C2 calls zlib-ng for scalar
+updates and bulk updates of at least 1 KiB; shorter bulk updates use the HotSpot SIMD kernel.
 On x86-64 without AVX2, C2 uses zlib-ng for all bulk sizes.
 
 CRC32 bulk updates of at least 64 bytes use zlib-ng on x86-64 when the
@@ -63,6 +66,5 @@ Regression tests are in `test/hotspot/jtreg/compiler/intrinsics/zip/` and
 combinations and complete ZIP/GZIP writes. Record the CPU, revision, execution
 tier, forks, warmup, measurement settings and compressed sizes when comparing results.
 
-The Apple C1 direct-buffer candidate and its remaining qualification are described
-in [the source review](zlib-ng-apple-c1-review.md). Its correctness tests are not
-a performance qualification.
+[Adler32 call selection and regression tests](zlib-ng-adler32.md) describes the
+C1 leaf, interpreter-entry and JNI paths and provides test commands.

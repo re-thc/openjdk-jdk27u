@@ -3742,7 +3742,7 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
 #ifdef AARCH64
   if (VM_Version::cpu_family() == VM_Version::CPU_APPLE &&
       callee->intrinsic_id() == vmIntrinsics::_updateByteBufferAdler32) {
-    // Keep the ordinary JNI graph for Apple C1 direct-buffer Adler updates.
+    // Use the default native invocation path for Apple C1 direct buffers.
     return false;
   }
 #endif

@@ -163,8 +163,9 @@ public class TestC1DirectAdler32 {
     }
 
     // Keep the handle call here, not behind the deliberately non-inlined
-    // variable() helper. Code captures must confirm target inlining and FP
-    // liveness across the checksum call in this C1 compilation.
+    // variable() helper. These method-handle calls remain semantic coverage; C1
+    // compilation does not prove target inlining or a direct native call.
+    // TestC1DirectAdler32CallShape separately verifies the direct-call parse.
     private static long withFpPressure(int adler, long address, int offset) throws Throwable {
         double a = FP[0], b = FP[1], c = FP[2], d = FP[3];
         double e = FP[4], f = FP[5], g = FP[6], h = FP[7];
