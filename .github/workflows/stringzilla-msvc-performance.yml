@@ -1,0 +1,139 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+
+name: StringZilla MSVC complete-image performance
+
+on:
+  push:
+    branches: [codex/stringzilla-validation-da3ae24]
+    paths: [.github/workflows/stringzilla-msvc-performance.yml]
+
+permissions:
+  contents: read
+
+env:
+  PRODUCTION_SOURCE: da3ae24b030d8c9c0694bbb5b33412f76c27780c
+  MSYS2_PATH_TYPE: minimal
+  CHERE_INVOKING: 1
+
+jobs:
+  measure-msvc:
+    name: MSVC matched original, enabled and disabled
+    runs-on: windows-2025
+    timeout-minutes: 180
+    steps:
+      - name: Checkout qualification source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 3
+          persist-credentials: false
+
+      - name: Verify production source identity
+        shell: pwsh
+        run: |
+          git fetch --no-tags --depth=1 origin $env:PRODUCTION_SOURCE
+          if ($LASTEXITCODE -ne 0) { throw 'Production commit fetch failed' }
+          git diff --exit-code $env:PRODUCTION_SOURCE HEAD -- src make test bin/configure-dev
+          if ($LASTEXITCODE -ne 0) { throw 'Qualification runtime differs from production' }
+          $helperBlob = git hash-object .github/scripts/stringzilla-performance.py
+          if ($helperBlob -ne '088a0c13de2af8d791b9ff5131b1556a33e6b941') { throw "Unexpected helper: $helperBlob" }
+          New-Item -ItemType Directory -Path perf-output -Force | Out-Null
+          git rev-parse HEAD | Set-Content perf-output/qualification-commit.txt
+          git rev-parse $env:PRODUCTION_SOURCE | Set-Content perf-output/production-commit.txt
+          git rev-parse HEAD:src HEAD:make HEAD:test | Set-Content perf-output/source-tree-identity.txt
+
+      - name: Checkout untouched original
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: e206bae32b2a6cc1fa9464ad34d75f2df4b347e9
+          path: baseline
+          persist-credentials: false
+
+      - name: Get MSYS2
+        uses: ./.github/actions/get-msys2
+        with:
+          architecture: x86.x64
+
+      - name: Get boot JDK
+        id: bootjdk
+        uses: ./.github/actions/get-bootjdk
+        with:
+          platform: windows-x64
+
+      - name: Check MSVC 14.44 toolset
+        id: msvc-check
+        shell: bash
+        run: |
+          set +e
+          '/c/Program Files/Microsoft Visual Studio/18/Enterprise/vc/auxiliary/build/vcvars64.bat' -vcvars_ver=14.44
+          if [ $? -eq 0 ]; then
+            echo "installed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "installed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install MSVC 14.44 toolset
+        if: steps.msvc-check.outputs.installed != 'true'
+        shell: bash
+        run: |
+          '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe' \
+            modify --quiet --installPath 'C:\Program Files\Microsoft Visual Studio\18\Enterprise' \
+            --add Microsoft.VisualStudio.Component.VC.14.44.x86.x64
+
+      - name: Build matched complete MSVC images
+        shell: env /usr/bin/bash --login -eo pipefail {0}
+        env:
+          PATH: ''
+          BOOT_JDK: ${{ steps.bootjdk.outputs.path }}
+        run: |
+          mkdir -p perf-output perf-images
+          for control in original fork; do
+            if [[ $control == original ]]; then source_dir=baseline; else source_dir=.; fi
+            (
+              cd "$source_dir"
+              bash bin/configure-dev --with-conf-name=perf --with-debug-level=release \
+                --with-boot-jdk="$BOOT_JDK" --with-version-opt=stringzilla-benchmark \
+                --with-source-date=1792195200 --with-native-debug-symbols=none \
+                --with-toolchain-version=2026 --with-msvc-toolset-version=14.44 \
+                --with-jmod-compress=zip-1
+              make CONF=perf JOBS=2 images
+            )
+            spec="$source_dir/build/perf/spec.gmk"
+            test "$(awk '$1 == "TOOLCHAIN_TYPE" { print $3 }' "$spec")" = microsoft
+            test "$(awk '$1 == "TOOLCHAIN_VERSION" { print $3 }' "$spec")" = 2026
+            for compiler in CC CXX; do
+              version=$(awk -v key="${compiler}_VERSION_NUMBER" '$1 == key { print $3 }' "$spec")
+              [[ $version == 19.44.* ]]
+            done
+            cp "$spec" "perf-output/$control-spec.gmk"
+            cp -a "$source_dir/build/perf/images/jdk" "perf-images/$control"
+            bash .github/scripts/check-dev-profile.sh "perf-images/$control" "perf-output/$control-spec.gmk"
+            rm -rf "$source_dir/build/perf"
+          done
+
+      - name: Archive complete images for focused follow-up measurements
+        shell: pwsh
+        run: |
+          tar.exe -czf perf-output/original-jdk.tar.gz -C perf-images original
+          if ($LASTEXITCODE -ne 0) { throw 'Original image archiving failed' }
+          tar.exe -czf perf-output/fork-jdk.tar.gz -C perf-images fork
+          if ($LASTEXITCODE -ne 0) { throw 'Fork image archiving failed' }
+          Get-FileHash perf-output/original-jdk.tar.gz,perf-output/fork-jdk.tar.gz -Algorithm SHA256 |
+              Format-Table -AutoSize | Out-String | Tee-Object perf-output/image-archive-sha256.txt
+
+      - name: Measure original, enabled and disabled
+        shell: pwsh
+        run: >-
+          python .github/scripts/stringzilla-performance.py
+          --original perf-images/original --fork perf-images/fork
+          --original-source baseline --fork-source .
+          --output perf-output --backend msvc
+
+      - name: Retain complete images, raw results and build provenance
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-native-msvc-${{ github.sha }}
+          path: perf-output
+          if-no-files-found: warn
+          retention-days: 30
