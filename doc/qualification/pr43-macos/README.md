@@ -12,6 +12,11 @@ contains the concise body now published to PR43.
 The [UBFX assertion repair](UBFX_ASSERTIONS.md) documents the focused portable
 fixture and its separate test-source identity.
 
+PR43 now also contains the [byte128 mask-packing prototype](MASK_TO_LONG.md) at
+`9fd8620e40573264ec1f601db67e7f93e05b4939`. The commands and manifest below
+retain the original five-test comparison; they do **not** qualify that new rule.
+No new native campaign is requested by this documentation update.
+
 ## Standard prerequisites, checked before builds
 
 - A **native macOS arm64** shell/agent, not Intel or Rosetta. The runner records
@@ -119,7 +124,8 @@ avoid that ambiguity.
 | Baseline: original base plus C1 prerequisite only | `9711df62d0d019e6670f83832b09bd5dcf797dcb` |
 | Original plain base, recorded but not an extra default build | `758f41576fc79d35a62a3896dbe5ab97c448c436` |
 | C1 upstream donor | `abf881b0108610051fb36636a5f8ce44e8076ddb` |
-| Current PR43 head and repaired test sources, used identically in both arms | `456afea88231bc9ebf17dfa48811db90a8bae8b8` |
+| Repaired historical test sources, used identically in both arms | `456afea88231bc9ebf17dfa48811db90a8bae8b8` |
+| Current PR43 head, including the separate mask-packing prototype | `9fd8620e40573264ec1f601db67e7f93e05b4939` |
 
 The runner creates detached worktrees for candidate and baseline, then builds
 **fastdebug and release for both**, matching the already supplied Mac-agent
@@ -233,10 +239,11 @@ instruction pass from finding an opcode name in a string.
 
 ## Exact coverage limits and final report
 
-This Mac run can qualify the portable AArch64 scalar/C1/NEON compiler changes,
+This pinned Mac run can qualify the original portable AArch64 scalar/C1/NEON compiler changes,
 including active IR, rule-absent sensitivity and Mac native emitted code. It does
 not qualify Linux ABI/runtime-specific diagnostics, and none are prerequisites
-to execute these portable tests.
+to execute these portable tests. It does not cover the later byte128 `toLong()`
+prototype or its new regression tests.
 
 This source's BSD/macOS AArch64 port sets no SVE CPU feature and its SVE-length
 operations are ShouldNotCallThis. Do not force UseSVE=1/2 and mistake fallback to

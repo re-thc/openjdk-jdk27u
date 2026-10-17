@@ -3,8 +3,11 @@
 Test-only review commit: `d46869ad8a53cd815ba18eedc06900e1be9451be`, now applied
 directly to PR43 as `456afea88231bc9ebf17dfa48811db90a8bae8b8`. No qualification
 documentation or tooling was added to the product PR.
-Compiler/runtime sources remain identical to candidate
-`bf4d2615bf435e8889ef95e48220938505905bbb`.
+At that test-only commit, compiler/runtime sources remain identical to candidate
+`bf4d2615bf435e8889ef95e48220938505905bbb`. The later independent
+[mask-packing prototype](MASK_TO_LONG.md) at
+`9fd8620e40573264ec1f601db67e7f93e05b4939` changes compiler sources and needs
+separate native qualification.
 
 `RunInfo.isTestC2Compiled(String)` delegates to `TestVM.isC2Compiled`, which
 returns true only for `TriState.Yes`. Under supported `ExcludeRandom`, an

@@ -1,9 +1,12 @@
 # PR43 source and qualification review
 
-PR43's draft head is `456afea88231bc9ebf17dfa48811db90a8bae8b8` on
-`codex/aarch64-consolidated-compiler-fixes`. Its only change from the reported
-native candidate `bf4d2615bf435e8889ef95e48220938505905bbb` is the UBFX test's
-compilation assertion repair. Compiler/runtime sources are unchanged.
+PR43's draft head is `9fd8620e40573264ec1f601db67e7f93e05b4939` on
+`codex/aarch64-consolidated-compiler-fixes`. It adds a narrow raw-byte128
+`VectorMask.toLong()` lowering after the UBFX test repair at
+`456afea88231bc9ebf17dfa48811db90a8bae8b8`. The new compiler rule and its local
+validation are described in [MASK_TO_LONG.md](MASK_TO_LONG.md); native matching,
+installed-code and pressure checks remain pending. The original native report
+belongs to `bf4d2615bf435e8889ef95e48220938505905bbb`.
 The paired prerequisite-only baseline
 is `9711df62d0d019e6670f83832b09bd5dcf797dcb`, with the same C1 fix in both arms.
 PR43 is open and draft. This review and its tooling fixes belong to the separate
@@ -13,7 +16,7 @@ This branch also contains the separate, cherry-pickable test-only repair
 `d46869ad8a53cd815ba18eedc06900e1be9451be`, applied to PR43 as `456afea88231bc9ebf17dfa48811db90a8bae8b8` and described in
 [UBFX_ASSERTIONS.md](UBFX_ASSERTIONS.md). It changes no compiler/runtime source.
 
-## Evidence and recommendation
+## Historical evidence and remaining review
 
 The user-supplied report `Sentinel_eac712c3944c8191b3618e75bef79647` identifies
 the exact candidate and baseline above. It reports Apple M6 arm64/NEON,
@@ -41,8 +44,8 @@ CI evidence for run 38860660092, whose 57 jobs passed.
 | Installed instructions | Separate captures reportedly show UBFX, LSR, W-register AND/ORR/EOR, FMOV/RBIT/CLZ/LSR and byte128 SHRN. Assembly flags were absent from the active-IR runs. This establishes the reported opcode checks, not a measured speedup. |
 
 No correctness or matcher blocker is apparent in that report or in the source
-review. The smallest remaining material qualification step is **read-only review
-of the existing paired capture records**, not another native campaign. Bind the
+review of the original aggregates. Their remaining material qualification step
+is **read-only review of the existing paired capture records**. Bind the
 records to the two commits, native images and one actual harness identity, then
 compare shifted/rotated logical alternatives, shared/loaded/call-pressure cases
 and byte64/byte128 for instruction count, moves, spills and live registers.
@@ -50,10 +53,11 @@ In particular, the new shift/rotate plus narrow logical path has nominal cost
 2.0 versus the old shifted logical plus conversion at 2.9, and the byte64 rule
 reserves a vector temporary it does not emit. The supplied opcode summary does
 not explicitly resolve these selection/pressure questions. If that existing-code
-review finds no adverse selection, recommend PR43 for final review/merge with
-the correctness scope stated above and no performance claim. An adverse finding
-needs a focused source decision; a source change creates a new qualification
-identity.
+review finds no adverse selection, it resolves this gate for the original four
+ARM changes. The later mask-packing rule requires its own native correctness and
+code-generation evidence before the current PR can be recommended for final
+review. An adverse finding needs a focused source decision; a source change
+creates a new qualification identity.
 
 Performance/JMH and nonzero-SVE execution/IR/performance remain untested. No
 benchmark or build is requested by this review. The new NEON rule is statically
@@ -88,7 +92,8 @@ The four original ARM aggregate commits retain identical stable patch IDs and
 exact added/removed lines to their donor PRs. The prerequisite tree exactly matches
 PR41. Five logical commits retain authorship and complete donor provenance;
 PR38 includes both its m4 repair and strengthened final tests. No compiler/runtime
-correction was identified. The follow-up UBFX regression repair replaces the
+correction was identified for those original aggregates. The follow-up UBFX
+regression repair replaces the
 four raw boolean C2 checks with `TestFramework.assertCompiledByC2` so intentional
 `TriState.Maybe` states work while unexpected `TriState.No` still fails.
 Four portable fixtures with the actual framework confirm original exclusion
@@ -107,12 +112,14 @@ the primary qualification audit still requires every rule and all C2/phase logs.
 - Full scalar and vector m4 generation was repeated with the existing GNU m4
   1.4.19 and matches checked-in output byte for byte. Scalar output SHA256 is
   `20470f375e9258f4d873293de5fab30182673a7b6d8f932104d4071042337b50`;
-  vector output is
+  historical vector output is
   `13128e4361cb140c62afb11522b94e1fc7207b16f3f7062c9f9d2621fbef65dd`.
-  All five regression source hashes match the updated test-source manifest. The product
-  delta remains exactly 15 intended paths, with no workflow changes.
+  All five historical regression source hashes match the test-source manifest.
+  The original delta plus assertion repair covers 15 paths. The later prototype
+  changes the vector output hash and adds two test files, for 17 product paths
+  in total; neither change adds a workflow trigger.
 
-Live master was rechecked as `89885a6288e7aaabd01678a704a586272c0f96e3`.
+For that earlier review, live master was rechecked as `89885a6288e7aaabd01678a704a586272c0f96e3`.
 Its 84 changed paths since the original base do not overlap the product delta,
 and that exact delta passes `git apply --cached --check` against master using
 an isolated index. This proves mechanical compatibility. The Mac result and

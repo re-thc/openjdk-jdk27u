@@ -1,46 +1,17 @@
-AArch64 C2 misses direct lowering for truncated long operations and NEON byte-mask
-`firstTrue()` queries. This change selects UBFX for retained masked extracts,
-64-bit LSR for Java-normalized shifts 32–63, W-register AND/ORR/EOR for truncated
-register logical operations, and direct byte64/byte128 firstTrue queries.
-Byte128 uses SHRN #4; empty masks return the lane count. Constant, shared-value,
-widening, non-byte and SVE boundaries are preserved.
+AArch64 C2 misses direct lowering for truncated long operations and NEON byte-mask queries. This combines UBFX for retained masked extracts, 64-bit LSR for Java-normalized shifts 32–63, W-register logical operations, byte-mask `firstTrue()`, and a narrow byte128 `toLong()` prototype.
 
-The independent C1 switch-profiling fix (8385134) prevents a profiling bug from
-obscuring vector qualification. Logical commits retain complete donor provenance
-from #35, #36, #37, #38 and #41, including the m4 repair and final regression coverage.
-The UBFX regression also uses the framework's C2 assertion API so intentional
-compilation exclusions work while unexpected missing compilation still fails.
+The full-bitmap rule matches `VectorMaskToLong(VectorStoreMask(rawByteMask, 1))` only for 16 byte lanes with `UseSVE=0`. It selects lane weights from raw 0/-1 bytes, uses three pairwise additions, and extracts the low halfword; lane 0 remains bit 0 and upper bits are cleared. Including four constant moves and DUP, the lowering is 10 instructions versus the existing 12, before allocation-related moves/spills. It needs one vector temporary. The cheaper byte64 path, normalized boolean inputs, shared normalization, non-byte masks and existing SVE paths remain intact.
+
+The independent C1 switch-profiling prerequisite (8385134) prevents a profiling bug from obscuring vector qualification. Logical commits preserve the complete provenance from #35, #36, #37, #38 and #41. The UBFX test also uses the framework's C2 assertion API, honoring intentional compilation exclusions while rejecting unexpected missing compilation.
 
 Validation:
 
-- Full scalar/vector m4 regeneration matches generated sources byte for byte.
-  The test-only assertion repair preserves all 28 UBFX IR annotations, test
-  method bodies and semantic oracles. No workflow changes are included.
-- Native results are reported on Apple M6 arm64/NEON with matching configuration:
-  release and fastdebug builds for pre-repair candidate
-  `bf4d2615bf435e8889ef95e48220938505905bbb` and C1-only baseline
-  `9711df62d0d019e6670f83832b09bd5dcf797dcb`; all 20 class runs passed semantic
-  checks. Candidate fastdebug passed all 28 UBFX, 13 shift, 13 bitwise,
-  22 firstTrue and 2 C1 IR rules without exclusions. Baseline produced exactly
-  the 18 expected missing-node failures, including all four UBFX probes with
-  unchanged input shapes, plus exhaustive vector masks and shared/non-byte
-  controls. Those native results retain their original source identity.
-- Four portable fixtures using the actual framework reproduce the original
-  exclusion failure, pass after repair with and without intentional exclusions,
-  and reject unexpected missing C2 compilation. They provide no ARM IR credit.
-  The primary qualification audit still rejects missing rules/compilations.
-- Reported assembler results are 42/42 passed, including SHRN in both candidate
-  builds. Separate instruction captures show UBFX, LSR, W-register logical
-  operations and the byte firstTrue sequences; assembly flags were absent
-  from active-IR runs. Ordinary combined-source
-  [CI](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38860660092)
-  also passed all 57 jobs.
+- The new test has 16 C2 probes, 32 NEON IR assertions and two SVE exclusion assertions. Compare-loaded arrays are checked against scalar bitmap oracles for all 65,536 byte128 masks and all 256 byte64 masks, including zero/all/alternating/single-bit cases. It also covers logical combinations, four-mask 64-byte packing, shared boolean stores, normalized boolean arrays, non-byte masks and floating-point edges. Positive cases do not use a `fromLong()` round trip.
+- The exhaustive pairwise-add lane model and portable semantic/C2 test passed on the existing x86 JDK 27. The SVE launcher compiles and skips on unsupported hardware. These results provide no native AArch64 IR credit.
+- Full AArch64 scalar/vector/atomic/GC ADLC generation passed in release and fastdebug modes. Vector m4 regeneration is deterministic and matches the generated file. Four UBFX assertion-contract fixtures and all 20 qualification-audit tests passed; the normal gate still requires every applicable rule and C2/phase record.
+- Historical native Mac results belong to `bf4d2615bf435e8889ef95e48220938505905bbb` against C1-only baseline `9711df62d0d019e6670f83832b09bd5dcf797dcb`: all four builds, 20 semantic class runs, 78 active IR rules, 18 intended baseline missing-node failures and 42 assembler cases passed as reported. Those results do not qualify the new `toLong()` rule.
 
-Remaining review needs the existing paired Mac text captures for shifted/rotated
-selection, extra moves/spills and byte64 register pressure; those records are
-not accessible here. Performance/JMH and nonzero-SVE execution remain untested
-(`UseSVE=0`). No speedup or codec claim is made. The new NEON matcher is statically
-restricted to `UseSVE == 0`.
+Pending: native matching and installed-code inspection for the new rule, including constant materialization, live registers and spills; the existing paired Mac text captures for shifted/rotated logical selection and byte64 pressure; and execution of the SVE exclusion controls where hardware is available. Ordinary CI covers the new regression tests. Parser workload activation, performance/JMH and nonzero-SVE performance remain unmeasured. No simdjson speedup or controlled JDK-version regression is claimed.
 
 ---------
 - [ ] I confirm that I make this contribution in accordance with the [OpenJDK Interim AI Policy](https://openjdk.org/legal/ai).
