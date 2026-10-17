@@ -5,7 +5,7 @@ The production path applies only to String input matching ASCII
 uppercase T/Z, four-digit years and ordinary time fields. speedate validates the
 calendar and supplies integer epoch seconds and microseconds. Other inputs,
 invalid dates and ordinary native/load/link failures use the original JDK
-formatter. Nanosecond input is never truncated. Custom formatter overloads,
+formatter. Nanosecond input is never truncated. Custom formatters,
 other date/time APIs and timezone databases are unchanged.
 
 Configure defaults to disabled. Enabled images can disable the route at startup
@@ -46,9 +46,18 @@ Rust toolchain at runtime. Cross builds and static-library builds are rejected.
 | macOS arm64 | aarch64-apple-darwin | apple-m1 |
 | Windows x64 | x86_64-pc-windows-msvc | x86-64-v3 |
 
-Only Linux x64-v3 has completed native build, correctness, GC and performance
-qualification. The other targets remain unbuilt and untested; target selection
-and source review do not qualify them. The feature remains opt-in.
+An earlier Linux x64-v3 integration of this runtime source completed native
+build, correctness, GC and performance experiments. That evidence is historical:
+the published source head, including the later Windows build-path repair, has
+not completed a fresh end-to-end qualification. Other native targets remain
+unbuilt and untested. Windows also requires x86-64-v3 hardware; there is no
+runtime ISA dispatch. The feature remains opt-in.
+
+[QUALIFICATION.md](QUALIFICATION.md) reconciles the evidence and defines one
+bounded integration decision. Successful fallback, complete configure-disabled
+images and a stability-gated comparison remain to be qualified. Runtime disabling
+preserves outcomes but is not a zero-cost switch: historical canonical overhead
+was about 6–11.5%. No fresh performance result is claimed for the published head.
 
 ## Standalone regression and reproduction probe
 
@@ -107,7 +116,9 @@ x64 MSVC shell with `cl /LD`. Set `ONLOAD_LIB` to that absolute library path and
   -cp "$PROBE_OUT/classes" ProductionProbe onload
 ```
 
-For warmed measurements, use separate baseline/enabled/disabled images, serial
+The following options reproduce the historical measurement protocol; they are
+not the complete integration gate in QUALIFICATION.md. For warmed measurements,
+use separate baseline/enabled/disabled images, serial
 JVM forks and identical options. The probe includes public-call transition,
 copying, validation, result construction and escaping allocation. Run `bench`
 with `happy`, `mixed` or `invalid`, both String modes, and the same fixed options
