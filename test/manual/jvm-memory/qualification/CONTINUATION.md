@@ -126,7 +126,7 @@ Both old baseline reuse and deletion of earlier outputs remain prohibited by
 default.
 
 `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_guards test_supervisor test_continuation test_deadline test_staging`
-passes **110 offline tests**, including owned delayed/cancelled/failed preflight,
+passes **118 offline tests**, including owned delayed/cancelled/failed preflight,
 partial Git launch, chunk cancellation/deadline, reboot/reset/rollback/expiry,
 serialization, historical-reuse rejection and prospective boot/native-byte drift.
 No matched rebuild or continuation was executed for this repair. Independent

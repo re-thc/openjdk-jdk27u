@@ -11,7 +11,7 @@ Complete [configuration sealing and scoped object staging](STAGING.md) is now
 implemented locally for review. It defaults to dry run; actual cleanup requires
 explicit policy approval and a released campaign. All images/symbols/evidence
 stay retained, and C objects survive through the old-header link control.
-One hundred ten offline Python guard/owner/continuation/deadline/staging
+One hundred eighteen offline Python guard/owner/continuation/deadline/staging
 regressions pass with fake children, clocks, disks and signals; they launch no
 subprocesses or JVMs. Java EOF/repetition coverage is source-only and has not
 been compiled or run under this continuation's no-build restriction.
@@ -315,7 +315,7 @@ launch, fixed/exhausted deadlines, hidden children/final audit, unrelated tasks,
 fork/exec failure and the held-pidfd root boundary. Native fork/exec and signal
 operations are mocked; no native child/JVM is launched. Validation used
 `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_guards test_supervisor test_continuation test_deadline test_staging`
-in this directory: **110 tests passed**. The future campaign runs all five suites
+in this directory: **118 tests passed**. The future campaign runs all five suites
 before any builds. This does not certify native supervisor execution or kernel
 containment; the full campaign remains unexecuted.
 The Java state regression must execute after source compilation; a Java source

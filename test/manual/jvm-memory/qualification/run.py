@@ -534,6 +534,9 @@ class Campaign:
         if asan:
             cmd.append('--enable-asan')
         self.run('configure-' + conf, cmd, 180, repo)
+        # Validate configure's actual selections before make uses them. Every
+        # new pair needs this prospective proof, including a fresh campaign.
+        self.verify_matched_spec(repo, conf, asan)
         self.run('build-' + conf,
                  ['make', 'CONF=' + conf, 'JOBS=4', 'images', 'test-image-hotspot-gtest'],
                  4200 if debug == 'fastdebug' or asan else 3000, repo, build_stage=True)
@@ -543,31 +546,40 @@ class Campaign:
         self.seal_configuration(tag, conf)
         return image
 
-    def image_receipt(self, repo, conf, asan):
-        image = repo / 'build' / conf / 'images/jdk'
-        manifest = {str(p.relative_to(image)): sha(p) for p in image.rglob('*') if p.is_file()}
-        save(self.out / (conf + '-image.json'), manifest)
+    def verify_matched_spec(self, repo, conf, asan):
+        need(self.toolchain_inputs is not None, 'Missing prospective matched toolchain catalog')
         spec = repo / 'build' / conf / 'spec.gmk'
         configured = spec.read_text()
-        if self.continuation is not None:
-            previous_spec = (self.out / 'B/build/B-release/spec.gmk').read_text()
-            for key in ['CC', 'CXX', 'CC_VERSION_NUMBER', 'CXX_VERSION_NUMBER',
-                        'BOOT_JDK', 'JVM_FEATURES_server', 'ENABLE_DESKTOP', 'JVM_VARIANTS',
-                        'ENABLE_JAVAC_SERVER']:
-                pattern = r'^' + key + r'\s*:?=\s*(.*)$'
-                old = re.findall(pattern, previous_spec, re.M)
-                current = re.findall(pattern, configured, re.M)
-                need(len(old) == len(current) == 1 and old == current,
-                     'Retained baseline/candidate toolchain or profile differs: ' + key)
-                if key in ('CC', 'CXX'):
-                    need(toolchain_covers(self.toolchain_inputs, current[0].strip()),
-                         'Selected compiler is outside captured native input roots')
+        previous_spec = (self.out / 'B/build/B-release/spec.gmk').read_text()
+        for key in ['CC', 'CXX', 'CC_VERSION_NUMBER', 'CXX_VERSION_NUMBER',
+                    'BOOT_JDK', 'JVM_FEATURES_server', 'ENABLE_DESKTOP', 'JVM_VARIANTS',
+                    'ENABLE_JAVAC_SERVER']:
+            pattern = r'^' + key + r'\s*:?=\s*(.*)$'
+            old = re.findall(pattern, previous_spec, re.M)
+            current = re.findall(pattern, configured, re.M)
+            need(len(old) == len(current) == 1 and old == current,
+                 'Matched baseline/candidate toolchain or profile differs: ' + key)
+            if key in ('CC', 'CXX'):
+                need(toolchain_covers(self.toolchain_inputs, current[0].strip()),
+                     'Selected compiler is outside captured native input roots: ' + key)
+            if key == 'BOOT_JDK':
+                need(Path(current[0].strip()).resolve(strict=True) == Path(self.toolchain_inputs['boot']),
+                     'Selected boot JDK is outside captured boot inputs')
         features = re.findall(r'^JVM_FEATURES_server\s*:=\s*(.*)$', configured, re.M)
         need(len(features) == 1, 'Missing server feature receipt')
         need(sorted(x for x in features[0].split() if x.endswith('gc')) == ['g1gc','serialgc','zgc'],
              'Repository collector profile mismatch')
         need(bool(re.search(r'^ASAN_ENABLED\s*:=\s*true$',configured,re.M)) == asan,
              'Unexpected ASan configuration')
+        return configured
+
+    def image_receipt(self, repo, conf, asan):
+        # Recheck the same selections after make as well as before it.
+        configured = self.verify_matched_spec(repo, conf, asan)
+        image = repo / 'build' / conf / 'images/jdk'
+        manifest = {str(p.relative_to(image)): sha(p) for p in image.rglob('*') if p.is_file()}
+        save(self.out / (conf + '-image.json'), manifest)
+        spec = repo / 'build' / conf / 'spec.gmk'
         save(self.out / (conf + '-spec.json'), {'sha256': sha(spec), 'contents': configured})
         return image
 

@@ -22,6 +22,7 @@ import run as controller
 import staging
 import staging_cleanup
 import supervise
+import toolchain_inputs
 
 
 class StagingTests(unittest.TestCase):
@@ -382,6 +383,117 @@ class StagingTests(unittest.TestCase):
         self.assertEqual(result['status'], 'APPLIED_AND_VERIFIED')
         self.assertFalse(result['qualification_pass'])
         self.assertEqual(len(result['result']['deleted']), 3)
+
+
+class FreshMatchedSpecTests(unittest.TestCase):
+    """Synthetic configure receipts; no configure/compiler/JVM is executed."""
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory(); self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        native = self.root/'native'; boot = self.root/'boot'
+        for directory, names in [(native, ['gcc-16','g++-16','cc1','cc1plus','mold']),
+                                 (boot, ['bin/java','bin/javac','lib/modules','release'])]:
+            for name in names:
+                p = directory/name; p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_bytes(b'\x7fELFsynthetic' if directory == native else b'synthetic boot input')
+        self.fields = {'CC': str(native/'gcc-16'), 'CXX': str(native/'g++-16'),
+                       'CC_VERSION_NUMBER': '16.2.0', 'CXX_VERSION_NUMBER': '16.2.0',
+                       'BOOT_JDK': str(boot), 'JVM_FEATURES_server': 'g1gc serialgc zgc',
+                       'ENABLE_DESKTOP': 'false', 'JVM_VARIANTS': 'server',
+                       'ENABLE_JAVAC_SERVER': 'true', 'ASAN_ENABLED': 'false'}
+        c = self.c = object.__new__(controller.Campaign)
+        c.out = self.root/'output'; c.out.mkdir(); c.continuation = None
+        c.toolchain_inputs = toolchain_inputs.capture(boot, [native], lambda: None)
+        c.cancel = Cancellation(); c.stage = 'release-builds'; c.clock_guard = None
+        c.stage_end = c.deadline = time.monotonic()+120
+        c.a = SimpleNamespace(boot=boot, jtreg=self.root/'jtreg', gtest=self.root/'gtest',
+                              configure_option=[])
+        controller.save(c.out/'matched-toolchain-inputs.json', c.toolchain_inputs)
+        for tag in ['B', 'C']:
+            self.spec(tag)
+            image = c.out/tag/'build'/f'{tag}-release'/'images/jdk'
+            image.mkdir(parents=True); (image/'release').write_text('synthetic image')
+
+    def spec(self, tag, fields=None):
+        p = self.c.out/tag/'build'/f'{tag}-release'/'spec.gmk'; p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(''.join(f'{key} := {value}\n' for key,value in (fields or self.fields).items()))
+        return p
+
+    def test_fresh_matched_receipts_apply_without_continuation(self):
+        self.assertIsNone(self.c.continuation)
+        for tag in ['B', 'C']:
+            image = self.c.image_receipt(self.c.out/tag, f'{tag}-release', False)
+            self.assertTrue((image/'release').is_file())
+            self.assertTrue((self.c.out/f'{tag}-release-spec.json').is_file())
+
+    def test_fresh_out_of_root_cc_and_cxx_rejected_even_when_pair_matches(self):
+        outside = self.root/'uncataloged-compiler'; outside.write_bytes(b'\x7fELFother')
+        for key in ['CC', 'CXX']:
+            with self.subTest(key=key):
+                fields = {**self.fields, key: str(outside)}
+                self.spec('B', fields); self.spec('C', fields)
+                for tag in ['B', 'C']:
+                    with self.assertRaisesRegex(RuntimeError, 'outside captured native input roots: '+key):
+                        self.c.image_receipt(self.c.out/tag, f'{tag}-release', False)
+
+    def test_fresh_candidate_spec_mismatch_rejected_for_every_matched_field(self):
+        alternatives = {'CC': self.fields['CXX'], 'CXX': self.fields['CC'],
+                        'CC_VERSION_NUMBER': 'other', 'CXX_VERSION_NUMBER': 'other',
+                        'BOOT_JDK': '/other/boot', 'JVM_FEATURES_server': 'g1gc serialgc',
+                        'ENABLE_DESKTOP': 'true', 'JVM_VARIANTS': 'client',
+                        'ENABLE_JAVAC_SERVER': 'false'}
+        for key, value in alternatives.items():
+            with self.subTest(key=key):
+                self.spec('C', {**self.fields, key: value})
+                with self.assertRaisesRegex(RuntimeError, 'toolchain or profile differs: '+key):
+                    self.c.image_receipt(self.c.out/'C', 'C-release', False)
+
+    def test_fresh_pair_cannot_select_an_uncaptured_boot(self):
+        alternate = self.root/'other-boot'; alternate.mkdir()
+        for tag in ['B', 'C']:
+            self.spec(tag, {**self.fields, 'BOOT_JDK': str(alternate)})
+        with self.assertRaisesRegex(RuntimeError, 'outside captured boot inputs'):
+            self.c.image_receipt(self.c.out/'B', 'B-release', False)
+
+    def test_fresh_missing_catalog_refused(self):
+        self.c.toolchain_inputs = None
+        with self.assertRaisesRegex(RuntimeError, 'Missing prospective matched toolchain catalog'):
+            self.c.image_receipt(self.c.out/'B', 'B-release', False)
+
+    def test_fresh_missing_or_duplicate_compiler_spec_refused(self):
+        for change in ['missing', 'duplicate']:
+            with self.subTest(change=change):
+                p = self.spec('B')
+                text = p.read_text()
+                p.write_text(text.replace('CC :=', 'OTHER_CC :=') if change == 'missing'
+                             else text+'CC := '+self.fields['CC']+'\n')
+                with self.assertRaisesRegex(RuntimeError, 'toolchain or profile differs: CC'):
+                    self.c.image_receipt(self.c.out/'B', 'B-release', False)
+
+    def test_fresh_configured_uncataloged_compiler_stops_before_make(self):
+        outside = self.root/'uncataloged-compiler'; outside.write_bytes(b'\x7fELFother')
+        self.spec('B', {**self.fields, 'CC': str(outside)})
+        self.spec('C', {**self.fields, 'CC': str(outside)})
+        calls = []
+        self.c.run = lambda label, *args, **kwargs: calls.append(label)
+        with patch.object(self.c, 'seal_configuration') as sealed:
+            with self.assertRaisesRegex(RuntimeError, 'outside captured native input roots'):
+                self.c.build('C')
+            sealed.assert_not_called()
+        self.assertEqual(calls, ['configure-C-release'])
+
+    def test_fresh_postbuild_spec_drift_refused_before_sealing(self):
+        calls = []
+        def run(label, *args, **kwargs):
+            calls.append(label)
+            if label == 'build-C-release':
+                self.spec('C', {**self.fields, 'CXX_VERSION_NUMBER': 'changed during make'})
+        self.c.run = run
+        with patch.object(self.c, 'seal_configuration') as sealed:
+            with self.assertRaisesRegex(RuntimeError, 'toolchain or profile differs: CXX_VERSION_NUMBER'):
+                self.c.build('C')
+            sealed.assert_not_called()
+        self.assertEqual(calls, ['configure-C-release', 'build-C-release'])
 
 
 class ControllerOrderTests(unittest.TestCase):

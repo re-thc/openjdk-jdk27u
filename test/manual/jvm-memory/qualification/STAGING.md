@@ -61,6 +61,16 @@ controller; `--harness-commit` is required for every entry point.
 Entry points suppress local Python bytecode caches before importing harness
 modules; offline subprocesses inherit that setting, keeping source admission clean.
 
+Every new matched pair, including a fresh campaign without continuation, checks
+the actual configured CC/CXX against the captured native roots and BOOT_JDK
+against the captured boot image. Compiler paths/versions and profile fields must
+match the new B spec. These checks run immediately after configure, before make,
+and again in each post-build receipt. Missing catalogs/fields, duplicate fields,
+out-of-root compilers, an uncaptured boot JDK or a mismatched candidate spec fail
+closed. Unchanged but irrelevant cataloged roots cannot substitute for the
+selected tools. Offline fresh-mode regressions cover both compiler roots,
+every matched field, pre-make refusal and post-build spec drift.
+
 Cleanup rereads both canonical manifests with pinned byte hashes. It compares
 the complete current configuration with the seal before the first unlink.
 Directory descriptors and `O_NOFOLLOW` pin every ancestor; changed roots,
