@@ -268,7 +268,9 @@ class WitnessTests(unittest.TestCase):
         calls = []
         campaign.run = lambda label, *a, **k: calls.append((label, k))
         campaign.image_receipt = lambda repo, conf, asan: self.image
-        self.assertEqual(campaign.build('B'), self.image)
+        with patch.object(campaign, 'seal_configuration') as sealed:
+            self.assertEqual(campaign.build('B'), self.image)
+            sealed.assert_called_once_with('B', 'B-release')
         self.assertEqual([x[0] for x in calls], ['configure-B-release', 'build-B-release'])
         self.assertTrue(calls[-1][1]['build_stage'])
         self.assertFalse((campaign.out / 'baseline-reuse.json').exists())

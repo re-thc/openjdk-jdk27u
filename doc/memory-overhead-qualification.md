@@ -63,6 +63,16 @@ prerequisites. No extra native host or unmanaged installation
 is mandatory for this first decision. Preparing/reviewing the owned launcher,
 normal builds, measurement and analysis remain owned work.
 
+The [configuration staging implementation](../test/manual/jvm-memory/qualification/STAGING.md)
+seals complete images/native runtimes and preserves all symbols/evidence. It
+supports pinned exact dry-run object manifests, with actual removal behind an
+explicit approved policy after each configuration's final compile consumer.
+Candidate objects remain through the old-header negative control. Source
+validation and dry runs authorize no deletion or runtime. The 12-GiB gates and
+live reserve stay unchanged; debug/ASan peaks remain unmeasured. Missing an
+original release-build cutoff requires a separately approved new campaign;
+staging never extends an expired continuation.
+
 This source-planning continuation launched no builds, tests, benchmarks, observer,
 CI, installation or PR. No new performance or broader-platform pass is claimed.
 

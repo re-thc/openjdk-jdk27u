@@ -7,7 +7,11 @@ The complete restricted [preparation continuation](CONTINUATION.md) preserves
 the original fixed UTC cutoff without repeating measurements. Historical
 compiler/boot-module hashes are missing, so retained-baseline reuse is rejected;
 only an explicitly released matched rebuild of both images is supported.
-Seventy-one offline Python guard/owner/continuation/deadline
+Complete [configuration sealing and scoped object staging](STAGING.md) is now
+implemented locally for review. It defaults to dry run; actual cleanup requires
+explicit policy approval and a released campaign. All images/symbols/evidence
+stay retained, and C objects survive through the old-header link control.
+One hundred ten offline Python guard/owner/continuation/deadline/staging
 regressions pass with fake children, clocks, disks and signals; they launch no
 subprocesses or JVMs. Java EOF/repetition coverage is source-only and has not
 been compiled or run under this continuation's no-build restriction.
@@ -55,6 +59,7 @@ source /workspace/toolchains/activate.sh
 python3 test/manual/jvm-memory/qualification/supervise.py \
   --execute --owner-output /workspace/memory-owner-new -- \
   --output /workspace/memory-decision-new \
+  --harness-commit REVIEWED_COMMIT \
   --toolchain-input-root /workspace/toolchains/gcc16 \
   --toolchain-input-root /workspace/toolchains/gcc16-root \
   --toolchain-input-root /workspace/toolchains/mold \
@@ -73,6 +78,11 @@ arbitrary command. The owner directory must also be new. Keep `owner.json` and
 `controller.stdout`/`controller.stderr` with the campaign results. Direct
 `run.py` invocation is for an independently approved equivalent owner, not a
 controller-only `timeout` or an invented reference string.
+
+The example defaults to storage dry run. A separately approved complete staging
+release adds `--storage-cleanup=compile-objects-after-consumers-v1` after `--`.
+The separate `--cleanup-only` owner mode is solely for an approved, pinned old-B
+object plan; it does not run the campaign or reset a continuation deadline.
 
 The headless profile does not need the earlier desktop/sysroot configure flags.
 PCH is explicitly disabled in all configurations so the old-header control uses
@@ -304,8 +314,8 @@ adoption, inner failure, cancellation during launch/receipt closure, partial
 launch, fixed/exhausted deadlines, hidden children/final audit, unrelated tasks,
 fork/exec failure and the held-pidfd root boundary. Native fork/exec and signal
 operations are mocked; no native child/JVM is launched. Validation used
-`PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_guards test_supervisor test_continuation test_deadline`
-in this directory: **71 tests passed**. The future campaign runs all four suites
+`PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_guards test_supervisor test_continuation test_deadline test_staging`
+in this directory: **110 tests passed**. The future campaign runs all five suites
 before any builds. This does not certify native supervisor execution or kernel
 containment; the full campaign remains unexecuted.
 The Java state regression must execute after source compilation; a Java source

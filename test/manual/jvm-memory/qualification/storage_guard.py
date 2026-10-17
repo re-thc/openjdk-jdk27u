@@ -26,9 +26,15 @@ class StorageGuard:
         self.before = None
         self.next_poll = None
         self.polls = 0
+        self.minimum = None
 
     def snapshot(self):
-        return {path: self.usage(path).free for path in self.paths}
+        snapshot = {path: self.usage(path).free for path in self.paths}
+        if self.minimum is None:
+            self.minimum = dict(snapshot)
+        else:
+            self.minimum = {path: min(self.minimum[path], free) for path, free in snapshot.items()}
+        return snapshot
 
     @staticmethod
     def require_space(snapshot, allowance=0):
@@ -59,6 +65,9 @@ class StorageGuard:
                 if self.before[path] - after[path] > TIMED_ALLOWANCE:
                     raise StorageError('Timed write allowance exceeded, or concurrent disk writer: ' + path)
         return {'before_free_bytes': self.before, 'after_free_bytes': after,
+                'minimum_observed_free_bytes': self.minimum,
+                'peak_space_scope': ('admission/finish only; in-interval peak unmeasured' if self.measured
+                                     else 'sampled at admission/polls/finish; instantaneous peak unmeasured'),
                 'active_storage_polls': self.polls,
                 'policy': 'admit-reserved-check-after-exit' if self.measured else 'admit-poll-check-after-exit',
                 'reserve_bytes': RESERVE,

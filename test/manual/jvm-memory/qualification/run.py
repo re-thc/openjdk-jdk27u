@@ -23,6 +23,8 @@ import tempfile
 import time
 import xml.etree.ElementTree as ET
 
+sys.dont_write_bytecode = True  # Reviewed-source admission must not dirty its own checkout.
+
 from process_cleanup import (ChildScope, LinuxProcesses, cleanup_errors,
                              enable_subreaper, require_no_children)
 from nmt_other import check_accounting, parse_other_snapshot
@@ -31,6 +33,7 @@ from cancellation import Cancellation
 from continuation import load as load_continuation, match_arguments, verify_claim, claim, git as verification_git
 from deadline import FixedCutoff, UTC_CUTOFF, utc
 from toolchain_inputs import capture as capture_toolchain, verify as verify_toolchain, covers as toolchain_covers
+import staging
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[3]
@@ -103,6 +106,8 @@ class Campaign:
                 with verification(check_verification, verification_records, self.clock_guard.preparation_deadline):
                     need(verification_git(REPO, 'rev-parse', 'HEAD') == args.harness_commit,
                          'Reviewed harness HEAD differs')
+                    need(not verification_git(REPO, 'status', '--porcelain', '--untracked-files=all'),
+                         'Reviewed harness checkout is dirty')
                 self.continuation = load_continuation(
                     args.continuation, args.continuation_sha256 or '',
                     matched_rebuild=args.matched_rebuild, check=check_verification,
@@ -145,8 +150,13 @@ class Campaign:
         self.coverage = []
         self.hello_sha = None
         self.number = 0
+        self.staging_number = 0
+        self.sealed = {}
+        self.staging_plans = {}
+        self.discarded_objects = {}
         resource.setrlimit(resource.RLIMIT_CORE, (0, 0))  # Job-local; prevent unbounded crash core files.
         self.env = os.environ.copy()
+        self.env['PYTHONDONTWRITEBYTECODE'] = '1'
         for key in ['JAVA_TOOL_OPTIONS', '_JAVA_OPTIONS', 'JDK_JAVA_OPTIONS',
                     'JDK_JAVAC_OPTIONS', 'JTREG_JAVA_OPTIONS', 'TEST_VM_FLAGLESS']:
             self.env.pop(key, None)
@@ -157,6 +167,21 @@ class Campaign:
         self.stage = 'prepare'
         self.stage_end = self.deadline
         self.invocation_end = self.deadline
+        if self.continuation is None:
+            # A separately authorized fresh campaign must pin its reviewed
+            # harness too. Verification remains inside the already-owned child.
+            from continuation import verification
+            records = []
+            try:
+                with verification(self.check_budget, records, self.deadline - 60):
+                    need(verification_git(REPO, 'rev-parse', 'HEAD') == args.harness_commit,
+                         'Reviewed harness HEAD differs')
+                    need(not verification_git(REPO, 'status', '--porcelain', '--untracked-files=all'),
+                         'Reviewed harness checkout is dirty')
+            finally:
+                save(Path(args.outer_owner_reference).parent / 'verification.json', {
+                    'git': records, 'harness_commit': args.harness_commit,
+                    'scope': 'new campaign; no original continuation budget is reset'})
         self.freeze()
         # Every new pair needs prospective byte custody, including ordinary
         # fresh entry points. No path/version-only fallback remains.
@@ -189,6 +214,7 @@ class Campaign:
         need('1.14.0' in (self.a.gtest / 'CMakeLists.txt').read_text(), 'Require gtest 1.14.0')
         save(self.out / 'freeze.json', {
             'baseline': BASE, 'candidate': CANDIDATE,
+            'harness_commit': self.a.harness_commit,
             'source_and_input_sha256': {str(p): sha(p) for p in paths},
             'argv': sys.argv, 'environment': {k: self.env.get(k) for k in
                  ['PATH', 'JAVA_HOME', 'AUTOCONF', 'LD_LIBRARY_PATH', 'LD_PRELOAD', 'ASAN_OPTIONS', 'CC', 'CXX']},
@@ -203,6 +229,8 @@ class Campaign:
             'max_seconds': 36000, 'max_output_bytes': 4 * 1024**3,
             'max_workload_threads': 256, 'minimum_free_gib':12,
             'storage_guard':'all writers admit/poll/finish; measured admit+256MiB and finish, no timed disk probes', 'bootstrap': None, 'pause_metric':'per-fork p99; paired log-ratio/delta t intervals',
+            'storage_cleanup': self.a.storage_cleanup,
+            'debug_asan_storage_peak': 'unmeasured; 12 GiB admission is a reservation, not a measured peak',
             'confidence': 'paired log Student-t, df=7, Bonferroni 72 intervals',
             'cancellation':'cooperative SIGTERM/SIGHUP/SIGINT; first request preserved during cleanup',
             'outer_owner_reference':self.a.outer_owner_reference,
@@ -250,6 +278,89 @@ class Campaign:
             'manifest_sha256': sha(self.out / 'matched-toolchain-inputs.json'),
             'verified_monotonic': time.monotonic(),
             'scope': 'prospective matched builds only; no retained-baseline identity claim'})
+
+    def staging_operation(self, conf, action, operation):
+        """Untimed and childless, inside the same original stage/owner budget."""
+        self.staging_number += 1
+        receipt_path = self.out / ('%s-staging-%03d-%s.json' % (conf, self.staging_number, action))
+        end = min(self.stage_end, self.deadline - 60, time.monotonic() + staging.MAX_SECONDS)
+        guard = StorageGuard([self.out, REPO, Path(tempfile.gettempdir())])
+        receipt = {'configuration': conf, 'action': action, 'status': 'STARTING',
+                   'deadline_monotonic': end, 'timed': False}
+        failure = None
+        def check():
+            self.check_budget()
+            need(time.monotonic() < end, 'Bounded staging deadline exhausted')
+            guard.poll()
+        def audit():
+            require_no_children(self.backend)
+        try:
+            guard.admit()
+            audit(); check()
+            receipt['result'] = operation(check, audit)
+            audit(); check()
+            receipt['status'] = 'VERIFIED'
+        except BaseException as exc:
+            failure = exc
+            receipt.update(status='HOLD', error=repr(exc))
+        finally:
+            try:
+                receipt['storage'] = guard.finish()
+                receipt['observed_net_free_change_bytes'] = {
+                    path: free - receipt['storage']['before_free_bytes'][path]
+                    for path, free in receipt['storage']['after_free_bytes'].items()}
+            except BaseException as exc:
+                receipt.update(status='HOLD', storage_error=repr(exc))
+                if failure is None:
+                    failure = exc
+            staging.write_new(receipt_path, receipt)
+        if failure is not None:
+            raise failure
+        return receipt['result']
+
+    def seal_configuration(self, tag, conf):
+        need(staging.CONFIGURATIONS.get(conf) == tag, 'Wrong configuration tag')
+        def prepare(check, audit):
+            sealed = staging.seal(self.out, conf, check, audit)
+            plan = staging.make_plan(self.out, conf, sealed)
+            staging.write_new(self.out / (conf + '-complete-seal.json'), sealed)
+            staging.write_new(self.out / (conf + '-object-cleanup-plan.json'), plan)
+            self.sealed[conf] = sealed
+            self.staging_plans[conf] = plan
+            self.discarded_objects[conf] = []
+            return {'seal_sha256': staging.digest(sealed), 'plan_sha256': staging.digest(plan),
+                    'objects': plan['object_count'],
+                    'reclaimable_allocated_bytes': plan['reclaimable_allocated_bytes']}
+        return self.staging_operation(conf, 'seal', prepare)
+
+    def cleanup_configuration(self, conf):
+        def cleanup(check, audit):
+            sealed = staging.read_pinned(self.out / (conf + '-complete-seal.json'),
+                                         staging.digest(self.sealed[conf]), check)
+            plan = staging.read_pinned(self.out / (conf + '-object-cleanup-plan.json'),
+                                       staging.digest(self.staging_plans[conf]), check)
+            journal_path = self.out / (conf + '-object-cleanup-journal.jsonl')
+            with journal_path.open('x') as stream:
+                def journal(row):
+                    stream.write(json.dumps(row, allow_nan=False) + '\n')
+                    stream.flush()  # Intent and partial progress survive controller failure.
+                result = staging.operate(self.out, conf, sealed, plan,
+                    check=check, audit=audit,
+                    apply=self.a.storage_cleanup == staging.POLICY,
+                    approved_policy=self.a.storage_cleanup, journal=journal)
+            self.discarded_objects[conf] = result['deleted']
+            return result
+        return self.staging_operation(conf, 'cleanup', cleanup)
+
+    def verify_configuration(self, conf):
+        def verify(check, audit):
+            staging.read_pinned(self.out / (conf + '-complete-seal.json'),
+                                staging.digest(self.sealed[conf]), check)
+            staging.verify_retained(self.out, conf, self.sealed[conf],
+                                    self.discarded_objects[conf], check, audit)
+            return {'seal_sha256': staging.digest(self.sealed[conf]),
+                    'discarded_objects': len(self.discarded_objects[conf])}
+        return self.staging_operation(conf, 'verify', verify)
 
     def run(self, label, command, seconds=60, cwd=None, expected=0,
             lines=None, workload=False, measured=False, extra_env=None, build_stage=False):
@@ -428,7 +539,9 @@ class Campaign:
                  4200 if debug == 'fastdebug' or asan else 3000, repo, build_stage=True)
         if self.toolchain_inputs is not None:
             self.verify_build_inputs(conf, 'after')
-        return self.image_receipt(repo, conf, asan)
+        image = self.image_receipt(repo, conf, asan)
+        self.seal_configuration(tag, conf)
+        return image
 
     def image_receipt(self, repo, conf, asan):
         image = repo / 'build' / conf / 'images/jdk'
@@ -779,10 +892,16 @@ class Campaign:
         from analyze import critical
         need(abs(critical(7,.05)-2.3646242516)<1e-8,'Student-t numerical preflight failed')
         self.run('offline-guard-regressions',[sys.executable,'-m','unittest','-v',
-                 'test_guards','test_supervisor','test_continuation','test_deadline'],120,HERE)
+                 'test_guards','test_supervisor','test_continuation','test_deadline',
+                 'test_staging'],120,HERE)
         self.checkout()
-        images={tag:self.build(tag) for tag in ['B','C']}
+        images = {'B': self.build('B')}
+        # B has no later compile/link consumer. Images/spec/symbols stay in place.
+        self.cleanup_configuration('B-release')
+        images['C'] = self.build('C')
         self.begin('correctness-benefit',5400)
+        for conf in ['B-release', 'C-release']:
+            self.verify_configuration(conf)
         self.run('profile-B',['bash','.github/scripts/check-dev-profile.sh',images['B'],
             self.out/'B/build/B-release/spec.gmk'],120,self.out/'B')
         self.run('profile-C',['bash','.github/scripts/check-dev-profile.sh',images['C'],
@@ -791,11 +910,16 @@ class Campaign:
         self.old_control(images['C'])
         self.correctness(images['B'],'B',baseline=True)
         self.correctness(images['C'],'C')
+        # old_control links both ordinary JVM and gtest objects. Never prune C
+        # before its native/negative-control/correctness consumers have finished.
+        self.cleanup_configuration('C-release')
         cp=self.compile_sources()
         self.memory(images)
         if self.a.stop_after=='benefit':
             return {'decision':'BENEFIT_ESTABLISHED_PERFORMANCE_PENDING','platform':'linux-x64'}
         self.begin('performance',14400)
+        for conf in ['B-release', 'C-release']:
+            self.verify_configuration(conf)
         self.performance(images,cp)
         from analyze import analyze
         decision=analyze(self.samples)
@@ -812,8 +936,12 @@ class Campaign:
         debug=self.build('C','fastdebug')
         self.native(debug,'C-fastdebug')
         self.correctness(debug,'C-fastdebug')
+        self.cleanup_configuration('C-fastdebug')
         asan=self.build('C',asan=True)
         self.native(asan,'C-release-asan',asan=True)
+        self.cleanup_configuration('C-release-asan')
+        for conf in self.sealed:
+            self.verify_configuration(conf)
         require_no_children(self.backend)
         return {**decision,'decision':'LOCAL_GO_FOR_REVIEW',
                 'platform':'linux-x64','supported_platform_ci':'not run; separate integration approval',
@@ -827,8 +955,10 @@ def main():
     p.add_argument('--continuation',type=Path)
     p.add_argument('--continuation-sha256')
     p.add_argument('--matched-rebuild',action='store_true')
-    p.add_argument('--harness-commit')
+    p.add_argument('--harness-commit', required=True)
     p.add_argument('--toolchain-input-root',type=Path,action='append',default=[])
+    p.add_argument('--storage-cleanup', choices=['dry-run', staging.POLICY], default='dry-run',
+                   help='Explicit approval of the scoped object policy; default only validates manifests')
     p.add_argument('--boot',type=Path,required=True)
     p.add_argument('--jtreg',type=Path,required=True)
     p.add_argument('--gtest',type=Path,required=True)

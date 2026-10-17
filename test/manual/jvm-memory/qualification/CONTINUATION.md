@@ -118,8 +118,15 @@ become a pass.
 
 ## Source validation only
 
-`PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_guards test_supervisor test_continuation test_deadline`
-passes **71 offline tests**, including owned delayed/cancelled/failed preflight,
+[Complete configuration sealing and scoped object staging](STAGING.md) now
+adds exact dry-run manifests and opt-in final-consumer cleanup. Its approval
+does not reset either original UTC cutoff. Missing the original release-build
+window requires a separately approved new campaign, not an extended continuation.
+Both old baseline reuse and deletion of earlier outputs remain prohibited by
+default.
+
+`PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_guards test_supervisor test_continuation test_deadline test_staging`
+passes **110 offline tests**, including owned delayed/cancelled/failed preflight,
 partial Git launch, chunk cancellation/deadline, reboot/reset/rollback/expiry,
 serialization, historical-reuse rejection and prospective boot/native-byte drift.
 No matched rebuild or continuation was executed for this repair. Independent

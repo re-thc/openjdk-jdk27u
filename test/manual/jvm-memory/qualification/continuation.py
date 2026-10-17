@@ -145,7 +145,8 @@ def check_original(previous, owner, release):
     for name, expected in freeze['source_and_input_sha256'].items():
         p = Path(name)
         if p.parent == harness and p.name in {
-                'run.py', 'process_cleanup.py', 'supervise.py', 'test_guards.py', 'test_supervisor.py'}:
+                'run.py', 'process_cleanup.py', 'supervise.py', 'storage_guard.py',
+                'test_guards.py', 'test_supervisor.py'}:
             continue
         need(sha(p) == expected, 'Original installed input changed: ' + name)
     return freeze, outer, build

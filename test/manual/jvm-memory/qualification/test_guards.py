@@ -67,6 +67,21 @@ class StorageTests(unittest.TestCase):
         with self.assertRaises(StorageError):
             g.finish()
 
+    def test_minimum_is_sampled_not_peak_and_no_extra_timed_probe(self):
+        g = self.guard(); g.admit()
+        self.now = 1; self.free = 2 * RESERVE; g.poll()
+        self.now = 2; self.free = 3 * RESERVE; g.poll()
+        receipt = g.finish()
+        self.assertEqual(receipt['minimum_observed_free_bytes'], {'/output': 2 * RESERVE})
+        self.assertIn('instantaneous peak unmeasured', receipt['peak_space_scope'])
+        self.probes = 0; self.free = 4 * RESERVE
+        timed = self.guard(True); timed.admit()
+        self.now += 10; timed.poll()
+        self.assertEqual(self.probes, 1)
+        result = timed.finish()
+        self.assertEqual(self.probes, 2)
+        self.assertIn('in-interval peak unmeasured', result['peak_space_scope'])
+
 
 class Stream(io.BytesIO):
     def fileno(self):

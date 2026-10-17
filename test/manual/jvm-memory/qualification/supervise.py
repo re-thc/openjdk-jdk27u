@@ -14,6 +14,8 @@ import signal
 import sys
 import time
 
+sys.dont_write_bytecode = True
+
 from cancellation import Cancellation
 from deadline import UTC_CUTOFF, ORIGINAL_UTC_CUTOFF
 from process_cleanup import (ChildScope, LinuxProcesses, cleanup_errors,
@@ -209,6 +211,8 @@ def main():
     parser.add_argument('--continuation', type=Path)
     parser.add_argument('--continuation-sha256')
     parser.add_argument('--matched-rebuild', action='store_true')
+    parser.add_argument('--cleanup-only', action='store_true',
+                        help='Separately approved exact old-B object cleanup, never a campaign')
     parser.add_argument('campaign_args', nargs=argparse.REMAINDER)
     args = parser.parse_args()
     if not args.execute:
@@ -232,16 +236,21 @@ def main():
             parser.error('Witness hash without continuation')
         if args.continuation is not None and not args.matched_rebuild:
             parser.error('Original toolchain bytes were not recorded; explicit --matched-rebuild required')
+        if args.cleanup_only and args.continuation is not None:
+            parser.error('Exact cleanup is separate from campaign continuation')
         owner.mkdir()
         receipt = owner / 'owner.json'
-        argv = [sys.executable, str(HERE / 'run.py'), '--execute',
+        entry = 'staging_cleanup.py' if args.cleanup_only else 'run.py'
+        argv = [sys.executable, str(HERE / entry), '--execute',
                 '--outer-owner-reference', str(receipt)] + forwarded
         if args.continuation is not None:
             argv += ['--continuation', str(args.continuation),
                      '--continuation-sha256', args.continuation_sha256 or '', '--matched-rebuild']
         def record(row):
-            save(receipt, {**row, 'source_hash_receipt': 'owned controller freeze.json',
-                           'continuation_sha256': args.continuation_sha256})
+            save(receipt, {**row, 'source_hash_receipt': ('owned exact-cleanup receipt' if args.cleanup_only
+                                                        else 'owned controller freeze.json'),
+                           'continuation_sha256': args.continuation_sha256,
+                           'scope': 'exact-old-B-cleanup' if args.cleanup_only else 'qualification'})
         def admit():
             if len(list(Path('/proc/self/task').iterdir())) != 1:
                 raise RuntimeError('Outer fork owner must be single-threaded')
@@ -254,6 +263,7 @@ def main():
                 stderr = logs.enter_context((owner / 'controller.stderr').open('xb'))
                 return fork_controller(command, backend, stdout.fileno(), stderr.fileno())
             row = Supervisor(backend, cancellation, launch, record,
+                             seconds=240 if args.cleanup_only else MAX_SECONDS,
                              utc_cutoff=UTC_CUTOFF if args.continuation is not None else None,
                              admit=admit).run(argv)
         print(json.dumps({'status': row['status'], 'owner_receipt': str(receipt)}))
