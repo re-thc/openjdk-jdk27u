@@ -457,6 +457,43 @@ class methodHandle;
   do_intrinsic(_bigIntegerLeftShiftWorker, java_math_BigInteger, leftShift_name, big_integer_shift_worker_signature, F_S) \
    do_name(     leftShift_name,                                 "shiftLeftImplWorker")                                  \
                                                                                                                         \
+  do_class(jdk_internal_math_Zmij, "jdk/internal/math/Zmij")                                                           \
+  do_intrinsic(_useJavaFloatAppend, jdk_internal_math_Zmij, useJavaFloatAppend_name, void_boolean_signature, F_S)              \
+   do_name(useJavaFloatAppend_name, "useJavaFloatAppend")                                                                \
+  do_intrinsic(_decimalZmij, jdk_internal_math_Zmij, decimalZmij_name, long_long_signature, F_SN)                          \
+   do_name(decimalZmij_name, "decimal0")                                                                                \
+  do_intrinsic(_formatZmij, jdk_internal_math_Zmij, formatZmij_name, formatZmij_signature, F_SN)                             \
+   do_name(formatZmij_name, "format0")                                                                                 \
+   do_signature(formatZmij_signature, "([BIJI)I")                                                                       \
+                                                                                                                     \
+  do_class(jdk_internal_util_DecimalDigits, "jdk/internal/util/DecimalDigits")                                              \
+  do_intrinsic(_parseDecimalInt, java_lang_Integer, parseDecimalInt_name, parseDecimalInt_signature, F_S)                   \
+   do_name(parseDecimalInt_name, "parseInt")                                                                                \
+   do_signature(parseDecimalInt_signature, "(Ljava/lang/String;I)I")                                                        \
+  do_intrinsic(_parseDecimalLong, java_lang_Long, parseDecimalLong_name, parseDecimalLong_signature, F_S)                   \
+   do_name(parseDecimalLong_name, "parseLong")                                                                              \
+   do_signature(parseDecimalLong_signature, "(Ljava/lang/String;I)J")                                                       \
+  do_intrinsic(_parseUnsignedDecimalInt, java_lang_Integer, parseUnsignedDecimalInt_name, parseDecimalInt_signature, F_S)   \
+   do_name(parseUnsignedDecimalInt_name, "parseUnsignedInt")                                                                \
+  do_intrinsic(_parseUnsignedDecimalLong, java_lang_Long, parseUnsignedDecimalLong_name, parseDecimalLong_signature, F_S)   \
+   do_name(parseUnsignedDecimalLong_name, "parseUnsignedLong")                                                              \
+  do_intrinsic(_formatDecimalIntLatin1, jdk_internal_util_DecimalDigits, decimalCharsLatin1_name, decimalIntChars_signature, F_S)\
+   do_name(decimalCharsLatin1_name, "uncheckedGetCharsLatin1")                                                              \
+   do_signature(decimalIntChars_signature, "(II[B)I")                                                                       \
+  do_intrinsic(_formatDecimalIntUTF16, jdk_internal_util_DecimalDigits, decimalCharsUTF16_name, decimalIntChars_signature, F_S)\
+   do_name(decimalCharsUTF16_name, "uncheckedGetCharsUTF16")                                                                \
+  do_intrinsic(_formatDecimalLongLatin1, jdk_internal_util_DecimalDigits, decimalCharsLatin1_name, decimalLongChars_signature, F_S)\
+   do_signature(decimalLongChars_signature, "(JI[B)I")                                                                      \
+  do_intrinsic(_formatDecimalLongUTF16, jdk_internal_util_DecimalDigits, decimalCharsUTF16_name, decimalLongChars_signature, F_S)\
+                                                                                                                            \
+  do_class(jdk_internal_math_FloatingDecimal, "jdk/internal/math/FloatingDecimal")                                     \
+  do_intrinsic(_parseFastFloat, jdk_internal_math_FloatingDecimal, parseFastFloat_name, parseFastFloat_signature, F_SN)   \
+  do_intrinsic(_parseFastFloatDigits, jdk_internal_math_FloatingDecimal, parseFastFloatDigits_name, parseFastFloatDigits_signature, F_SN) \
+   do_name(parseFastFloatDigits_name, "parseFastFloatDigits")                                                             \
+   do_signature(parseFastFloatDigits_signature, "([BII)D")                                                               \
+   do_name(parseFastFloat_name, "parseFastFloat")                                                                        \
+   do_signature(parseFastFloat_signature, "(Ljava/lang/String;I)D")                                                      \
+                                                                                                                       \
   do_class(jdk_internal_util_ArraysSupport, "jdk/internal/util/ArraysSupport")                                                          \
   do_intrinsic(_vectorizedMismatch, jdk_internal_util_ArraysSupport, vectorizedMismatch_name, vectorizedMismatch_signature, F_S)\
    do_name(vectorizedMismatch_name, "vectorizedMismatch")                                                               \

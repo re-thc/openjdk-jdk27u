@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
+ * Copyright (c) 2026, Harry Chan. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +32,7 @@ import static java.lang.Integer.*;
 import static java.lang.Math.multiplyHigh;
 import static jdk.internal.math.MathUtils.*;
 
-import sun.nio.cs.ISO_8859_1;
+import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * This class exposes a method to render a {@code float} as a string.
@@ -159,7 +160,7 @@ public final class FloatToDecimal extends ToDecimal {
         int type = pair & 0xFF00;
         if (type == NON_SPECIAL) {
             int size = pair & 0xFF;
-            return new String(str, 0, size, ISO_8859_1.INSTANCE);
+            return decimalString(str, size);
         }
         return special(type);
     }
@@ -185,6 +186,24 @@ public final class FloatToDecimal extends ToDecimal {
         return putSpecial(str, index, type);
     }
 
+    /** Selects the lower-cost builder path independently for each compiler. */
+    @ForceInline
+    public int putDecimalForAppend(byte[] str, int index, float v) {
+        if (!Zmij.useJavaFloatAppend()) {
+            return putDecimal(str, index, v);
+        }
+        int magnitude = floatToRawIntBits(v) & 0x7fffffff;
+        if (magnitude != 0 && magnitude <= 128) {
+            // Native shortest subnormal significands may differ from Java's
+            // two-digit preference. Keep append and toString consistent.
+            return putDecimal(str, index, v);
+        }
+        assert 0 <= index && index <= length(str) - MAX_CHARS : "Trusted caller missed bounds check";
+        int pair = toDecimalJava(str, index, v);
+        int type = pair & 0xFF00;
+        return type == NON_SPECIAL ? index + (pair & 0xFF) : putSpecial(str, index, type);
+    }
+
     /*
      * Returns
      *     Combine type and size, the first byte is size, the second byte is type
@@ -195,7 +214,27 @@ public final class FloatToDecimal extends ToDecimal {
      *     MINUS_INF       iff v is NEGATIVE_INFINITY
      *     NAN             iff v is NaN
      */
+    @ForceInline
     private int toDecimal(byte[] str, int index, float v) {
+        int bits = floatToRawIntBits(v);
+        int magnitude = bits & 0x7fffffff;
+        if (magnitude == 0) {
+            return bits == 0 ? PLUS_ZERO : MINUS_ZERO;
+        }
+        if (magnitude >= 0x7f800000) {
+            return magnitude != 0x7f800000 ? NAN : (bits > 0 ? PLUS_INF : MINUS_INF);
+        }
+        if (str != null) {
+            int size = Zmij.format(str, index, bits, 0, isLatin1());
+            if (size != 0) {
+                return size;
+            }
+        }
+        return toDecimalJava(str, index, v);
+    }
+
+    @ForceInline
+    private int toDecimalJava(byte[] str, int index, float v) {
         /*
          * For full details see references [2] and [1].
          *

@@ -69,6 +69,8 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
+#include "utilities/fastFloat.hpp"
+#include "utilities/zmij.hpp"
 
 
 // Implementation of StubAssembler
@@ -322,6 +324,13 @@ const char* Runtime1::name_for_address(address entry) {
 
   FUNCTION_CASE(entry, os::javaTimeMillis);
   FUNCTION_CASE(entry, os::javaTimeNanos);
+  FUNCTION_CASE(entry, FastFloat::parse);
+  FUNCTION_CASE(entry, FastFloat::parse_digits);
+  FUNCTION_CASE(entry, Zmij::decimal);
+  FUNCTION_CASE(entry, Zmij::format);
+#if defined(AMD64) && !defined(ZERO)
+  FUNCTION_CASE(entry, Zmij::format_sse41);
+#endif
   FUNCTION_CASE(entry, SharedRuntime::OSR_migration_end);
   FUNCTION_CASE(entry, SharedRuntime::d2f);
   FUNCTION_CASE(entry, SharedRuntime::d2i);

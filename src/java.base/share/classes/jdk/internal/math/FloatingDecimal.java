@@ -25,6 +25,8 @@
 
 package jdk.internal.math;
 
+import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 
 import static jdk.internal.math.FDBigInteger.valueOfMulPow52;
@@ -49,6 +51,43 @@ public final class FloatingDecimal {
     private static final int    MAX_DEC_DIGITS = 15;  // max{n : 10^n ≤ 2^P}
     private static final int    FLOG_10_MAX_LONG = 18;  // max{i : 10^i ≤ Long.MAX_VALUE}
 
+    // The native parser returns NaN to request the full Java grammar/parser.
+    private static final boolean USE_FAST_FLOAT = isFastFloatEnabled0();
+
+    private static native boolean isFastFloatEnabled0();
+
+    /** Returns whether native decimal conversion is enabled. */
+    public static boolean isFastFloatEnabled() {
+        return USE_FAST_FLOAT;
+    }
+
+    @IntrinsicCandidate
+    private static native double parseFastFloat(String s, int ix);
+
+    @IntrinsicCandidate
+    private static native double parseFastFloatDigits(byte[] digits, int length, int decExp);
+
+    // Avoid a native call for the usual symbolic and hexadecimal spellings.
+    // Whitespace-prefixed variants are still handled correctly by the adapter.
+    @ForceInline
+    private static boolean isFastFloatCandidate(String s) {
+        int length = s.length();
+        if (length == 0 || length > 1024) {
+            return false;
+        }
+        int first = 0;
+        int ch = s.charAt(first);
+        if (ch == '+' || ch == '-') {
+            if (++first == length) {
+                return false;
+            }
+            ch = s.charAt(first);
+        }
+        return ch != 'N' && ch != 'I'
+                && (ch != '0' || first + 1 == length
+                    || (s.charAt(first + 1) | 0x20) != 'x');
+    }
+
     /**
      * Converts a {@link String} to a double precision floating point value.
      *
@@ -57,7 +96,14 @@ public final class FloatingDecimal {
      * @throws NumberFormatException If the {@link String} does not
      * represent a properly formatted double precision value.
      */
+    @ForceInline
     public static double parseDouble(String s) throws NumberFormatException {
+        if (USE_FAST_FLOAT && s != null && isFastFloatCandidate(s)) {
+            double v = parseFastFloat(s, BINARY_64_IX);
+            if (!Double.isNaN(v)) {
+                return v;
+            }
+        }
         return readJavaFormatString(s, BINARY_64_IX);
     }
 
@@ -69,7 +115,14 @@ public final class FloatingDecimal {
      * @throws NumberFormatException If the {@link String} does not
      * represent a properly formatted single precision value.
      */
+    @ForceInline
     public static float parseFloat(String s) throws NumberFormatException {
+        if (USE_FAST_FLOAT && s != null && isFastFloatCandidate(s)) {
+            double v = parseFastFloat(s, BINARY_32_IX);
+            if (!Double.isNaN(v)) {
+                return (float) v;
+            }
+        }
         return (float) readJavaFormatString(s, BINARY_32_IX);
     }
 
@@ -82,7 +135,14 @@ public final class FloatingDecimal {
      * @param length Number of digits to use
      * @return The double-precision value of the conversion
      */
+    @ForceInline
     public static double parseDoubleSignlessDigits(int decExp, byte[] d, int length) {
+        if (USE_FAST_FLOAT && length >= 8 && length <= 768 && length <= d.length && d[0] != '0') {
+            double v = parseFastFloatDigits(d, length, decExp);
+            if (!Double.isNaN(v)) {
+                return v;
+            }
+        }
         return new ASCIIToBinaryBuffer(false, decExp, d, length).doubleValue();
     }
 

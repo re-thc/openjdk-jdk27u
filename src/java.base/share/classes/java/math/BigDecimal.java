@@ -40,8 +40,10 @@ import java.util.Objects;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.math.FloatingDecimal;
 import jdk.internal.math.FormattedFPDecimal;
 import jdk.internal.util.DecimalDigits;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -1379,12 +1381,16 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * of a {@code float}.
      * Consider using {@code new BigDecimal(Float.toString(v))} instead.
      *
+     * @implNote Decimal precision and scale are computed independently of
+     * native shortest rendering for tiny subnormal values.
+     *
      * @param  val {@code double} to convert to a {@code BigDecimal}.
      * @return a {@code BigDecimal} whose value is equal to or approximately
      *         equal to the value of {@code val}.
      * @throws NumberFormatException if {@code val} is infinite or NaN.
      * @since  1.5
      */
+    @ForceInline
     public static BigDecimal valueOf(double val) {
         if (!Double.isFinite(val)) {
             throw new NumberFormatException("Infinite or NaN");
@@ -3862,6 +3868,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (scale == 0) {
             return signum() * w.floatValue();
         }
+        // Reuse an existing decimal representation for native conversion.
+        // Formatting an uncached value costs more than the arithmetic below.
+        String s = stringCache;
+        if (FloatingDecimal.isFastFloatEnabled() && s != null && s.length() <= 1024) {
+            return FloatingDecimal.parseFloat(s);
+        }
         int ql = (int) qb - (P_F + 3);
         BigInteger pow10 = bigTenToThe(scale);
         BigInteger m, n;
@@ -4064,6 +4076,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         }
         if (scale == 0) {
             return signum() * w.doubleValue();
+        }
+        // Reuse an existing decimal representation for native conversion.
+        // Formatting an uncached value costs more than the arithmetic below.
+        String s = stringCache;
+        if (FloatingDecimal.isFastFloatEnabled() && s != null && s.length() <= 1024) {
+            return FloatingDecimal.parseDouble(s);
         }
 
         /*
