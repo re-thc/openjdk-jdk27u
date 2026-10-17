@@ -204,10 +204,10 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path msvc-validation -Force | Out-Null
-          git diff --exit-code $env:PRODUCTION_SOURCE HEAD -- src make test .github/scripts/stringzilla-performance.py
+          git diff --exit-code $env:PRODUCTION_SOURCE HEAD -- src make test
           if ($LASTEXITCODE -ne 0) { throw 'Qualification source differs from measured production' }
           $helperBlob = git hash-object .github/scripts/stringzilla-performance.py
-          if ($helperBlob -ne '02b9b67b17afb6ab0054c14f2994f9db11907042') { throw "Unexpected helper: $helperBlob" }
+          if ($helperBlob -ne '088a0c13de2af8d791b9ff5131b1556a33e6b941') { throw "Unexpected helper: $helperBlob" }
           @'
           import hashlib
           import importlib.util

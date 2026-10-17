@@ -158,12 +158,20 @@ int main(void) {
                     "/Fo" + str(obj), "/I" + str(includes), str(probe_source)]
     link_args = ["cl.exe", "/nologo", str(obj), "/Fe" + str(executable)]
     quoted = lambda values: " ".join('"' + str(value) + '"' for value in values)
-    shell = 'call "' + vcvars + '" -vcvars_ver=14.44 && ' + quoted(compile_args) + " && " + quoted(link_args)
+    batch = folder / "build-probe.cmd"
+    batch.write_text('@echo off\ncall "' + vcvars + '" -vcvars_ver=14.44\n'
+                     'if errorlevel 1 exit /b %errorlevel%\n' + quoted(compile_args) + '\n'
+                     'if errorlevel 1 exit /b %errorlevel%\n' + quoted(link_args) + '\n'
+                     'if errorlevel 1 exit /b %errorlevel%\n')
     probe_env = os.environ.copy()
     probe_env.pop("CL", None)
     probe_env.pop("_CL_", None)
-    transcript = command(["cmd.exe", "/d", "/c", shell], cwd=folder, env=probe_env)
-    (folder / "build.log").write_text(transcript)
+    completed = subprocess.run(["cmd.exe", "/d", "/c", batch.name], cwd=folder, env=probe_env,
+                               text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    (folder / "build.log").write_text(completed.stdout)
+    if completed.returncode:
+        print(completed.stdout[-12000:], flush=True)
+        raise RuntimeError("MSVC baseline probe compilation failed; see msvc-baseline/build.log")
     listing = assembly.read_text(errors="replace")
     assert not re.search(r"(?im)^[^\r\n;]*\b(?:lzcnt|tzcnt|popcnt)\b", listing), "Optional ISA in baseline serial bit operations"
     command([executable])
