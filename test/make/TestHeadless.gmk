@@ -127,6 +127,7 @@ IMPORT_SUPPORT_TEST := $(TEST_SUPPORT_DIR)/headless-source-imports
 IMPORT_SOURCE_ARGS := IMPORT_MODULES_SRC=$(IMPORT_SOURCE_TEST) \
     SUPPORT_OUTPUTDIR=$(IMPORT_SUPPORT_TEST) TOP_SRC_DIRS= \
     MODULEPATH=$(call PathList, $(JDK_OUTPUTDIR)/modules $(IMPORT_SUPPORT_TEST)/classes)
+# Product javac can emit a newer class-file version than the boot JDK accepts.
 source-imports: module-info
 	$(MKDIR) -p $(IMPORT_SUPPORT_TEST)/javatmp
 	+$(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/common/modules/GensrcModuleInfo.gmk MODULE=server.extra $(IMPORT_SOURCE_ARGS) all
@@ -134,7 +135,7 @@ source-imports: module-info
 	+$(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/CompileJavaModules.gmk MODULE=client.keep $(IMPORT_SOURCE_ARGS) client.keep_BIN=$(IMPORT_SUPPORT_TEST)/classes all
 	+$(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/CompileJavaModules.gmk MODULE=server.extra $(IMPORT_SOURCE_ARGS) server.extra_BIN=$(IMPORT_SUPPORT_TEST)/classes all
 	+$(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/CompileJavaModules.gmk MODULE=server.open $(IMPORT_SOURCE_ARGS) server.open_BIN=$(IMPORT_SUPPORT_TEST)/classes all
-	$(FIXPATH) $(JAVA) -cp $(TEST_SUPPORT_DIR)/headless-module-info build.tools.module.ModuleInfoExtraTest --check-imports $(IMPORT_SUPPORT_TEST)/classes
+	$(FIXPATH) $(IMAGES_OUTPUTDIR)/jdk/bin/java -cp $(TEST_SUPPORT_DIR)/headless-module-info build.tools.module.ModuleInfoExtraTest --check-imports $(IMPORT_SUPPORT_TEST)/classes
 	@test ! -e $(IMPORT_SUPPORT_TEST)/classes/java.desktop
 	@test ! -e $(IMPORT_SUPPORT_TEST)/classes/java.base
 
