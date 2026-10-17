@@ -33,6 +33,8 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:TieredStopAtLevel=1 -Xbatch -XX:+UseAdler32Intrinsics TestC1DirectAdler32
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:TieredStopAtLevel=1 -Xbatch -XX:+UseAdler32Intrinsics -Xcheck:jni TestC1DirectAdler32
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:TieredStopAtLevel=1 -Xbatch -XX:-UseAdler32Intrinsics -Xcheck:jni TestC1DirectAdler32
  */
 
@@ -160,11 +162,14 @@ public class TestC1DirectAdler32 {
         return (int) UPDATE.invokeExact(adler, address, offset, length);
     }
 
+    // Keep the handle call here, not behind the deliberately non-inlined
+    // variable() helper. Code captures must confirm target inlining and FP
+    // liveness across the checksum call in this C1 compilation.
     private static long withFpPressure(int adler, long address, int offset) throws Throwable {
         double a = FP[0], b = FP[1], c = FP[2], d = FP[3];
         double e = FP[4], f = FP[5], g = FP[6], h = FP[7];
         double i = FP[8], j = FP[9], k = FP[10], l = FP[11];
-        int value = variable(adler, address, offset);
+        int value = (int) UPDATE.invokeExact(adler, address, offset, length);
         return Integer.toUnsignedLong(value) ^ Double.doubleToRawLongBits(
                 a + b + c + d + e + f + g + h + i + j + k + l);
     }

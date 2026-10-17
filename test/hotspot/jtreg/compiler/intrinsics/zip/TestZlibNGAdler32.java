@@ -28,6 +28,7 @@
  * @requires vm.compiler2.enabled
  * @run main/othervm -Xmx64m -Xint TestZlibNGAdler32
  * @run main/othervm -Xmx64m -Xbatch -XX:TieredStopAtLevel=1 TestZlibNGAdler32
+ * @run main/othervm -Xmx64m -Xbatch -XX:TieredStopAtLevel=1 -XX:+UnlockDiagnosticVMOptions -XX:+UseAdler32Intrinsics -Xcheck:jni TestZlibNGAdler32
  * @run main/othervm -Xmx64m -Xbatch -XX:TieredStopAtLevel=1 -XX:+UnlockDiagnosticVMOptions -XX:-UseAdler32Intrinsics -Xcheck:jni TestZlibNGAdler32
  * @run main/othervm -Xmx64m -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 TestZlibNGAdler32
  * @run main/othervm -Xmx64m -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:-UseAdler32Intrinsics TestZlibNGAdler32

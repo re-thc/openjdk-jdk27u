@@ -69,19 +69,28 @@ exact private intrinsic target; setting a public ByteBuffer limit to a literal
 would not by itself ensure a constant native length. WhiteBox requests and
 checks level1 compilation of the literal/variable/FP-live helpers with ordinary
 background compilation disabled by `-Xbatch`. It tests intrinsics explicitly
-enabled and disabled, the latter with checked JNI, on x64/AArch64 so unrelated
-selection paths also retain semantic coverage.
+enabled, enabled with checked JNI, and disabled with checked JNI, on x64/AArch64
+so unrelated selection paths also retain semantic coverage. The enabled
+checked-JNI case reaches the new Apple selection guard; a disabled-only case
+returns at the earlier availability check and cannot cover that guard.
 
 An independent per-byte modulo65521 reference validates offsets0/1/7/31,
 nonzero/signed-jint seeds and incremental continuation. Static ownership and a
-reachability fence keep the raw direct allocation alive. FP values are consumed
-after native work as a semantic ABI regression check, not proof of use of any
-particular FP register. Code captures must still confirm method-handle inlining
-and the actual native route; a level1 compilation assertion alone does not do so.
+reachability fence keep the raw direct allocation alive. The FP-live helper
+invokes the handle directly in its own body, rather than calling the deliberately
+non-inlined `variable()` helper. This permits the checksum target to be inlined
+in the same C1 compilation that holds the FP values. Their use after the handle
+call is a semantic regression check, not proof of target inlining, a JNI/leaf
+route, or use of any particular FP register. A level1 compilation assertion
+establishes none of those properties. Code captures must confirm the inlining
+chain to the checksum target, its emitted native call inside the FP helper, and
+the live/spilled/rematerialized FP values. An outlined adapter or separate Java
+checksum call is a remaining coverage gap, not a passed same-compilation ABI test.
 
 `TestZlibNGAdler32` adds4095/4096/4097 and0/1/63/64/65 to the existing public
 heap/direct,seeded,offset,GC and incremental matrix, adds read-only direct views,
-checks both position and limit, and adds C1 checked-JNI/intrinsic-disabled coverage.
+checks both position and limit, and adds C1 checked-JNI coverage with Adler
+intrinsics explicitly enabled and disabled.
 The inherited interpreter/C2 cases and65535/65536/65537 large neighbors remain.
 No runtime, test compilation, JDK build, benchmark or CI job was executed while
 preparing this source-only change. The new tests are not reported as passed.
@@ -96,11 +105,15 @@ preparing this source-only change. The new tests are not reported as passed.
    AArch64; include the public checks under Serial/G1/Z with checked JNI. Retain
    interpreter/C2 results and x86/non-Apple AArch64 controls. No such execution
    is authorized merely by this source commit.
-3. Capture C1 inlining/LIR/disassembly for the literal and volatile sites and
-   public ByteBuffer callers. Verify ordinary JNI targets, buffer lifetime,
-   return width and FP preservation; distinguish constant public requests from
-   proven constant native arguments. Do not claim the historical split caused
-   the saved gap without captures from the measured source as well.
+3. Capture C1 inlining/LIR/disassembly for the literal and volatile sites,
+   `withFpPressure`, and public ByteBuffer callers. Establish the handle-to-target
+   inlining chain and the checksum call inside the FP helper's own compilation;
+   record any remaining adapter/Java call instead of assuming same-compilation
+   coverage. Verify ordinary JNI targets, buffer lifetime, return width and FP
+   liveness/preservation, including enabled checked-JNI configuration; distinguish
+   constant public requests from proven constant native arguments. Do not claim
+   the historical split caused the saved gap without captures from the measured
+   source as well.
 4. Separately review and authorize one fixed performance comparison of exact
    baseline/candidate and same-image Adler-only-disabled control. Include small
    constants/dynamic sites,4095/4096/4097,ordinary/long buffers,actual public
