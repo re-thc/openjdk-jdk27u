@@ -111,8 +111,8 @@ class UnsafeAccessErrorHandshakeClosure : public AsyncHandshakeClosure {
  public:
   UnsafeAccessErrorHandshakeClosure() : AsyncHandshakeClosure("UnsafeAccessErrorHandshakeClosure") {}
   void do_thread(Thread* thr) {
-    JavaThread* self = JavaThread::cast(thr);
-    assert(self == JavaThread::current(), "must be");
+    JavaThread* self = JavaThread::current();
+    assert(thr == self, "must be");
 
     self->handshake_state()->handle_unsafe_access_error();
   }

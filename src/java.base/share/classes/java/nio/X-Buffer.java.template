@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1760,7 +1761,17 @@ public abstract sealed class $Type$Buffer
     public int hashCode() {
         int h = 1;
         int p = position();
-        for (int i = limit() - 1; i >= p; i--)
+        int i = limit() - 1;
+        // Four elements per step give the same value as one per step
+        // (h = 31 * h + e), with only one multiplication on the dependency chain.
+        for (; i - 3 >= p; i -= 4)
+#if[int]
+            h = 923521 * h + 29791 * get(i) + 961 * get(i - 1) + 31 * get(i - 2) + get(i - 3);
+#else[int]
+            h = 923521 * h + 29791 * (int)get(i) + 961 * (int)get(i - 1)
+                + 31 * (int)get(i - 2) + (int)get(i - 3);
+#end[int]
+        for (; i >= p; i--)
 #if[int]
             h = 31 * h + get(i);
 #else[int]
@@ -1893,6 +1904,7 @@ public abstract sealed class $Type$Buffer
      *
      * @since 11
      */
+    @ForceInline
     public int mismatch($Type$Buffer that) {
         int thisPos = this.position();
         int thisRem = this.limit() - thisPos;

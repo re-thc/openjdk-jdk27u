@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,6 +133,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_float16ToFloat:    return java_lang_Float_float16ToFloat;
       case vmIntrinsics::_floatToFloat16:    return java_lang_Float_floatToFloat16;
       case vmIntrinsics::_currentThread:     return java_lang_Thread_currentThread;
+      case vmIntrinsics::_vectorizedMismatch: return jdk_internal_util_ArraysSupport_vectorizedMismatch;
 #endif // ZERO
       case vmIntrinsics::_dsin:              return java_lang_math_sin;
       case vmIntrinsics::_dcos:              return java_lang_math_cos;
@@ -227,6 +229,8 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
                                   : return vmIntrinsics::_float16ToFloat;
   case java_lang_Float_floatToFloat16
                                   : return vmIntrinsics::_floatToFloat16;
+  case jdk_internal_util_ArraysSupport_vectorizedMismatch
+                                  : return vmIntrinsics::_vectorizedMismatch;
 
   default:
     fatal("unexpected method intrinsic kind: %d", kind);
@@ -327,6 +331,7 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_Thread_currentThread       : tty->print("java_lang_Thread_currentThread"); break;
     case java_lang_Float_float16ToFloat       : tty->print("java_lang_Float_float16ToFloat"); break;
     case java_lang_Float_floatToFloat16       : tty->print("java_lang_Float_floatToFloat16"); break;
+    case jdk_internal_util_ArraysSupport_vectorizedMismatch: tty->print("jdk_internal_util_ArraysSupport_vectorizedMismatch"); break;
     default:
       if (kind >= method_handle_invoke_FIRST &&
           kind <= method_handle_invoke_LAST) {

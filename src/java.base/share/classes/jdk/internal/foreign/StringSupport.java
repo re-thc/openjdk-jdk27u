@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,10 +202,9 @@ public final class StringSupport {
                 }
             }
         }
-        // Handle the tail
-        // Prevent over scanning as we step by 2
-        final long endScan = toOffset & ~1; // The last bit is zero
-        for (; offset < endScan; offset += Short.BYTES) {
+        // Handle the tail. A terminator lies entirely within the region, also
+        // when fromOffset is not a multiple of its size.
+        for (; offset <= toOffset - Short.BYTES; offset += Short.BYTES) {
             short val = SCOPED_MEMORY_ACCESS.getShortUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, !Architecture.isLittleEndian());
             if (val == 0) {
                 return requireWithinStringSize(offset - fromOffset, segment, fromOffset, toOffset);
@@ -240,10 +240,9 @@ public final class StringSupport {
                 }
             }
         }
-        // Handle the tail
-        // Prevent over scanning as we step by 4
-        final long endScan = toOffset & ~3; // The last two bit are zero
-        for (; offset < endScan; offset += Integer.BYTES) {
+        // Handle the tail. A terminator lies entirely within the region, also
+        // when fromOffset is not a multiple of its size.
+        for (; offset <= toOffset - Integer.BYTES; offset += Integer.BYTES) {
             int val = SCOPED_MEMORY_ACCESS.getIntUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, !Architecture.isLittleEndian());
             if (val == 0) {
                 return requireWithinStringSize(offset - fromOffset, segment, fromOffset, toOffset);

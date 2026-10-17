@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1100,7 +1101,48 @@ void LIRGenerator::do_FmaIntrinsic(Intrinsic* x) {
 }
 
 void LIRGenerator::do_vectorizedMismatch(Intrinsic* x) {
-  fatal("vectorizedMismatch intrinsic is not implemented on this platform");
+  assert(UseVectorizedMismatchIntrinsic, "why are we here?");
+
+  // Make all state_for calls early since they can emit code
+  LIR_Opr result = rlock_result(x);
+
+  LIRItem a(x->argument_at(0), this); // Object
+  LIRItem aOffset(x->argument_at(1), this); // long
+  LIRItem b(x->argument_at(2), this); // Object
+  LIRItem bOffset(x->argument_at(3), this); // long
+  LIRItem length(x->argument_at(4), this); // int
+  LIRItem log2ArrayIndexScale(x->argument_at(5), this); // int
+
+  a.load_item();
+  aOffset.load_item();
+  b.load_item();
+  bOffset.load_item();
+
+  // A null base leaves the offset as an absolute address.
+  LIR_Address* addr_a = new LIR_Address(a.result(), aOffset.result(), T_BYTE);
+  LIR_Address* addr_b = new LIR_Address(b.result(), bOffset.result(), T_BYTE);
+
+  BasicTypeList signature(4);
+  signature.append(T_ADDRESS);
+  signature.append(T_ADDRESS);
+  signature.append(T_INT);
+  signature.append(T_INT);
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  const LIR_Opr result_reg = result_register_for(x->type());
+
+  LIR_Opr ptr_addr_a = new_register(T_ADDRESS);
+  __ leal(LIR_OprFact::address(addr_a), ptr_addr_a);
+
+  LIR_Opr ptr_addr_b = new_register(T_ADDRESS);
+  __ leal(LIR_OprFact::address(addr_b), ptr_addr_b);
+
+  __ move(ptr_addr_a, cc->at(0));
+  __ move(ptr_addr_b, cc->at(1));
+  length.load_item_force(cc->at(2));
+  log2ArrayIndexScale.load_item_force(cc->at(3));
+
+  __ call_runtime_leaf(StubRoutines::vectorizedMismatch(), getThreadTemp(), result_reg, cc->args());
+  __ move(result_reg, result);
 }
 
 // _i2l, _i2f, _i2d, _l2i, _l2f, _l2d, _f2i, _f2l, _f2d, _d2i, _d2l, _d2f
