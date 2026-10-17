@@ -64,6 +64,11 @@ public interface JavaLangReflectAccess {
     /** Tests if this is a trusted final field */
     public boolean isTrustedFinalField(Field f);
 
+    /**
+     * Returns a parsed annotation default, an ExceptionProxy if unresolved, or null if absent.
+     */
+    public Object parseDefaultValue(Method m);
+
     /** Returns a new instance created by the given constructor with access check */
     public <T> T newInstance(Constructor<T> ctor, Object[] args, Class<?> caller)
         throws IllegalAccessException, InstantiationException, InvocationTargetException;

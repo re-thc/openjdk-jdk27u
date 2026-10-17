@@ -40,6 +40,8 @@ public class TestInstantSpeedate {
                 "1969-12-31T23:59:59.000001Z", "1970-01-01T00:00:00Z",
                 "9999-12-31T23:59:59.1234Z", "9999-12-31T24:00:00Z",
                 "2016-12-31T23:59:60.123456Z", "2000-01-01T00:00:00.000000000Z",
+                "2000-01-01T00:00:00.1234567Z", "2000-01-01T00:00:00.12345678Z",
+                "2000-01-01T00:00:00.123456789Z",
                 "2000-01-01t00:00:00z", "2000-01-01T00:00:00+00:00:30",
                 "2000-01-01T00:00:00.Z", "2000-01-01T00:00:00,1Z"}) {
             compare(s);
@@ -64,6 +66,27 @@ public class TestInstantSpeedate {
         eligible.setAccessible(true); fast.setAccessible(true); raw.setAccessible(true);
         Instant epoch = (Instant)fast.invoke(null, "1970-01-01T00:00:00Z");
         if (!Instant.EPOCH.equals(epoch)) throw new AssertionError("Native backend did not execute");
+        for (String fraction : new String[] {"", ".1", ".12", ".123", ".1234", ".12345", ".123456"}) {
+            String text = "2000-02-29T12:34:56" + fraction + "Z";
+            compare(text);
+            Instant expected = DateTimeFormatter.ISO_INSTANT.parse(text, Instant::from);
+            if (!expected.equals(fast.invoke(null, text))) {
+                throw new AssertionError("Native fraction miss or mismatch: " + text);
+            }
+        }
+        String negativeText = "1969-12-31T23:59:59.000001Z";
+        compare(negativeText);
+        Instant negative = (Instant)fast.invoke(null, negativeText);
+        if (negative == null || negative.getEpochSecond() != -1 || negative.getNano() != 1000) {
+            throw new AssertionError("Native pre-epoch fraction mismatch: " + negative);
+        }
+        for (String text : new String[] {"2000-01-01T00:00:00.1234567Z",
+                "2000-01-01T00:00:00.12345678Z", "2000-01-01T00:00:00.123456789Z"}) {
+            compare(text);
+            if (fast.invoke(null, text) != null || (long)raw.invoke(null, text) != Long.MIN_VALUE) {
+                throw new AssertionError("Excess precision must use original Java parsing: " + text);
+            }
+        }
         char[] unicode = "2000-01-01T00:00:00Z".toCharArray();
         unicode[11] = 0; unicode[12] = '\u0210';
         for (String s : new String[] {"2000-01-01T/::00:00Z", "2000-/;-01T00:00:00Z", new String(unicode)}) {
