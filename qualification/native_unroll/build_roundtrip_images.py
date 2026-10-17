@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Build cumulative zero-seed plus grouping candidate and exact-b3 control."""
+from tool_invocation import invocation_path,invocation_records,configure_paths
 import argparse
 import json
 import os
@@ -82,16 +83,19 @@ def main():
         path = shutil.which(name)
         if not path:
             p.error('Missing native tool: ' + name)
-        tool_paths[name] = pathlib.Path(path).resolve()
+        tool_paths[name] = invocation_path(path)
     for label, compiler, program in [('cc1', 'gcc-16', 'cc1'), ('cc1plus', 'g++-16', 'cc1plus')]:
         name = subprocess.check_output([str(tool_paths[compiler]), '-print-prog-name=' + program], text=True).strip()
         path = pathlib.Path(name) if pathlib.Path(name).is_absolute() else pathlib.Path(shutil.which(name) or name)
-        tool_paths[label] = path.resolve()
+        tool_paths[label] = invocation_path(path)
+    configure_paths(dict(tool_paths,source=candidate,output=out,boot_jdk=boot,template=template))
     tools = {k: record(v) for k, v in tool_paths.items()}
+    invocations=invocation_records(tool_paths)
     env = {**os.environ, 'CC': str(tool_paths['gcc-16']), 'CXX': str(tool_paths['g++-16'])}
     for name in ['gcc-16', 'g++-16', 'mold']:
         (out / (name + '-version.txt')).write_text(subprocess.check_output([str(tool_paths[name]), '--version'], text=True))
     plan['toolchain_before_builds'] = tools
+    plan['tool_invocations'] = invocations
     (out / 'matched-build-plan.json').write_text(json.dumps(plan, indent=2) + '\n')
     results = {}
     for label, source in sources.items():
@@ -123,7 +127,7 @@ def main():
         (out / 'matched-build-results.json').write_text(json.dumps(results, indent=2) + '\n')
         with tarfile.open(out / (image_name + '.tar.gz'), 'w:gz') as tf:
             tf.add(image, arcname=image_name)
-        if {k: record(v)['sha256'] for k, v in tool_paths.items()} != {k: v['sha256'] for k, v in tools.items()}:
+        if invocation_records(tool_paths)!=invocations or {k: record(v)['sha256'] for k, v in tool_paths.items()} != {k: v['sha256'] for k, v in tools.items()}:
             raise RuntimeError('Toolchain bytes changed between matched builds')
     plan['execution'] = 'completed'
     plan['toolchain_unchanged_after_each_build'] = True

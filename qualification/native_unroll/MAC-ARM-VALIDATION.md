@@ -13,7 +13,7 @@ From the exact review commit supplied in the publication handoff, inspect:
 ```bash
 export BOOT_JDK=/absolute/path/to/native/jdk27/Contents/Home
 export JTREG=/absolute/path/to/installed/jtreg
-export QUAL_OUT=/absolute/path/outside/checkout/vector-mac-focused-v1
+export QUAL_OUT=/absolute/path/outside/checkout/vector-mac-focused-v3
 PYTHONDONTWRITEBYTECODE=1 python3 qualification/native_unroll/native_source_qualify.py \
   --platform mac --scope focused --boot-jdk "$BOOT_JDK" --jtreg "$JTREG" --out "$QUAL_OUT"
 # Only after explicit approval of this one focused execution, use the same command with --execute.
@@ -42,14 +42,24 @@ the SDK path and SDKSettings identity, and requires GNU make 4 or newer (`gmake`
 preferred over Apple's BSD make). The same tool and SDK bytes are checked across
 builds. Candidate modules and all template entries remain identical to b3 except
 `lib/server/libjvm.dylib`. Missing tools, wrong architecture or an unavailable
-SDK stop execution; no installation is attempted. Paths may contain spaces and
-are passed as separate arguments. The checkout path must contain no whitespace
-because the generic smoke's jtreg external library root requires it.
+SDK stop execution; no installation is attempted. Invocation paths retain their selected names, including `clang++`, `gmake`,
+symlinks and wrappers. `CXX` must name `clang++`, even when its canonical target
+is `clang`. `campaign.json` records `tool_invocations` separately: selected path,
+resolved executable, symlink targets and executable bytes. The invariant checks
+both identity and invocation provenance before and after commands and before
+reuse; changing a symlink to a same-byte alternate target is rejected.
+
+OpenJDK configure rejects whitespace in Unix build paths
+(`make/autoconf/util_paths.m4`). Use whitespace-free checkout, output, boot JDK,
+jtreg, SDK and build-tool paths. The runner checks these before any JVM or build;
+it does not split or add shell quoting to a discovered tool path. Direct
+subprocess arguments preserve spaces and literal characters, but that does not
+make whitespace-containing configure paths supported.
 
 Existing matching images are optional acceleration, never private prerequisites.
 `--reuse-builds /path/to/previous/campaign` admits only a same-commit, same-platform
 campaign whose source worktrees, configuration arguments/specs, complete image
-payloads, toolchain, boot JDK, SDK and harness identities still match. A mismatch
+payloads, toolchain invocation/provenance, boot JDK, SDK and harness identities still match. A mismatch
 stops rather than silently using or replacing an image. PR43 binaries are not
 assumed to contain this classifier. A clean host can build everything from Git.
 
@@ -110,6 +120,27 @@ paired 95% non-regression bound, strict compact gains, 0.01 B/call allocation
 bound and no pooling. Both later scopes have a 24-hour Mac cap and require their
 own execution approval. Linux/SVE recovery remains a separate experiment.
 
+
+## Correction after the reported v2 build failure
+
+The user's `vector-mac-focused-v2` run at `8675beb12a3` reportedly failed while
+linking adlc, before any of the 11 selected smoke/semantics/IR tests. The runner
+resolved the `clang++` symlink to `clang` before assigning CXX. That changes the
+compiler driver mode and can omit automatic C++ standard-library linkage. The
+corrected runner retains the selected executable spelling for execution and
+records its resolved identity separately. It applies the same repair to Linux
+compiler/helper/linker/make discovery and the retained image builders.
+
+The v2 Mac logs are on the user's host and were not read by this executor.
+Offline regression fixtures reproduce the lost argv[0] with a real multi-call
+script, verify the corrected selected path and literal arguments, exercise the
+Mac discovery/environment and Linux tool discovery, and reject invocation or
+SDK mutation. These checks do not establish that a new Mac build passes.
+Preserve v2 evidence unchanged. Use the exact corrected commit from the handoff
+and a fresh `vector-mac-focused-v3` output only after approval for a new focused
+execution. Do not reuse the failed v2 worktree or images. No desktop/Metal build
+profile change is included; that is a separate investigation.
+
 ## Ready-to-send local agent prompt
 
 Replace `REVIEW_COMMIT_FROM_HANDOFF` with the exact 40-character commit in the
@@ -121,7 +152,7 @@ avoids a self-referential commit hash in this committed file.
 > `REVIEW_COMMIT_FROM_HANDOFF`. Read repository instructions and
 > `qualification/native_unroll/MAC-ARM-VALIDATION.md`. Fetch that branch, verify
 > its head equals the supplied pin, and check out the exact commit in a clean
-> checkout with no whitespace in its path. Keep PR14 draft and unchanged; do not
+> checkout with whitespace-free checkout, output, tool, SDK, boot JDK and jtreg paths. Preserve the prior v2 evidence and use a fresh vector-mac-focused-v3 output. Keep PR14 draft and unchanged; do not
 > merge, force-push or launch CI. First inspect only: require native Darwin arm64,
 > Python 3.11+, installed GNU make 4+, working Xcode clang/SDK paths, a native
 > JDK 27 (`/usr/libexec/java_home -V`) and an installed jtreg root containing
@@ -130,7 +161,7 @@ avoids a self-referential commit hash in this committed file.
 > and must pass the runner's full reuse identity checks. Set absolute BOOT_JDK,
 > JTREG and a fresh QUAL_OUT outside the checkout. Print the smallest plan with
 > `PYTHONDONTWRITEBYTECODE=1 python3 qualification/native_unroll/native_source_qualify.py --platform mac --scope focused --boot-jdk "$BOOT_JDK" --jtreg "$JTREG" --out "$QUAL_OUT"`.
-> No JVM or build is authorized by this prompt alone: obtain explicit approval
+> Verify campaign CXX retains the clang++ invocation path; its resolved provenance may name clang. No JVM or build is authorized by this prompt alone: obtain explicit approval
 > for this one four-hour focused scope before adding `--execute`. Execute once
 > only if approved. Do not expand to assembly, full suites, phase/gap audits or
 > timing. Stop on missing prerequisites, wrong architecture, denied access,

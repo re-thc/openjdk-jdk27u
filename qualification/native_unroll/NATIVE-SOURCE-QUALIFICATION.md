@@ -113,9 +113,15 @@ uncertainty, suite results and separate gap findings before claiming regression
 qualification. The probe results cannot establish literal simultaneous zero
 regressions. No merge, force-push or product-PR update is performed.
 
+Tool execution preserves selected compiler/helper/linker/make names and wrappers;
+canonical identity and symlink provenance are recorded separately and rechecked.
+This prevents `clang++`/`g++` driver-mode changes from path canonicalization.
+All Unix configure input/tool/SDK paths must be whitespace-free.
+
 ## Source-only regression checks
 
 ```bash
+PYTHONDONTWRITEBYTECODE=1 python3 qualification/native_unroll/test_tool_invocation.py --out /tmp/vector-invocation-offline
 PYTHONDONTWRITEBYTECODE=1 python3 qualification/native_unroll/test_native_source.py --out /tmp/vector-source-offline
 PYTHONDONTWRITEBYTECODE=1 python3 qualification/native_unroll/test_jtreg83_bundle.py --out /tmp/vector-harness-offline
 ```

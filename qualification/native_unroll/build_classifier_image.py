@@ -1,4 +1,5 @@
 """Build one classifier HotSpot overlay; never rebuild historical controls or Java modules."""
+from tool_invocation import invocation_path,invocation_records,configure_paths
 import argparse
 import json
 import os
@@ -83,10 +84,10 @@ def toolchain():
     for name in TOOLS[:8]:
         found = shutil.which(name)
         require(found, 'Missing native tool: ' + name)
-        paths[name] = Path(found).resolve()
+        paths[name] = invocation_path(found)
     for name, compiler in [('cc1', 'gcc-16'), ('cc1plus', 'g++-16')]:
         found = subprocess.check_output([str(paths[compiler]), '-print-prog-name=' + name], text=True).strip()
-        paths[name] = Path(found if Path(found).is_absolute() else shutil.which(found) or found).resolve()
+        paths[name] = invocation_path(found if Path(found).is_absolute() else shutil.which(found) or found)
     return paths
 
 
@@ -127,9 +128,11 @@ def main():
         previous_term_handler = signal.signal(signal.SIGTERM, interrupted)
         deadline = time.monotonic() + 80 * 60
         paths = toolchain()
+        configure_paths(dict(paths,source=source,output=out,boot_jdk=boot_image,template=a.template_jdk))
         before = {name: record(path) for name, path in paths.items()}
+        invocations=invocation_records(paths)
         env = dict(os.environ, CC=str(paths['gcc-16']), CXX=str(paths['g++-16']))
-        result.update(tools_before=before, tool_paths={k:str(v) for k,v in paths.items()},
+        result.update(tools_before=before,tool_invocations=invocations, tool_paths={k:str(v) for k,v in paths.items()},
             compiler_env={k:env[k] for k in ('CC', 'CXX')},
             make=[str(paths['make']), 'CONF=native-candidate', 'hotspot'], status='building')
         save()
@@ -156,7 +159,7 @@ def main():
         require(actual['lib/server/libjvm.so'] != result['historical_control']['image']['lib/server/libjvm.so'],
                 'New candidate VM was not installed')
         after = {name: record(path) for name, path in paths.items()}
-        require(before == after, 'Toolchain changed during candidate build')
+        require(before == after and invocation_records(paths)==invocations, 'Toolchain invocation/identity changed during candidate build')
         require((logs / 'spec.gmk').is_file(), 'Configure spec not captured')
         require(source_binding(source, pin) == result['source'],
                 'Candidate source binding changed during build')

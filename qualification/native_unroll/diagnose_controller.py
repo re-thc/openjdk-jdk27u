@@ -1,8 +1,9 @@
+from tool_invocation import invocation_path
 import pathlib,subprocess,json,csv,xml.etree.ElementTree as ET
 p=pathlib.Path('controller-diagnostic').resolve();p.mkdir()
 frozen=pathlib.Path('saved/prior/frozen/qualification').resolve()
 old_controller=pathlib.Path('saved/controller-classes').resolve()
-argv=[str(pathlib.Path('b3-release/bin/java').resolve()),'-Xms256m','-Xmx512m','-XX:ActiveProcessorCount=2',
+argv=[str(invocation_path('b3-release/bin/java')),'-Xms256m','-Xmx512m','-XX:ActiveProcessorCount=2',
  '--add-modules=jdk.incubator.vector','-DvectorBits=128','-DmeasureCalls=100000','-Xbatch','-XX:-TieredCompilation',
  '-XX:+UnlockDiagnosticVMOptions','-XX:+LogCompilation','-XX:LogFile='+str(p/'compiler.xml'),
  '-XX:CompileCommand=dontinline,PhaseVectorProbe::invoke','-XX:CompileCommand=dontinline,PhaseVectorKernels::conversion',

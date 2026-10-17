@@ -182,12 +182,12 @@ def main():
         # Optional reuse is fail-closed on all identities, without executing images.
         reuse=t/'reuse';reuse.mkdir();rc=n.Campaign.__new__(n.Campaign)
         rc.root=src;rc.target='linux';rc.boot=t/'boot';rc.jtreg=t/'harness';rc.sdk=None
-        rc.tool_records={'compiler':'inert'};rc.harness_jars={'lib/jtreg.jar':'inert'};rc.harness={'payload':'inert'};rc.reuse={}
+        rc.tool_invocations={'compiler':'inert invocation'};rc.tool_records={'compiler':'inert'};rc.harness_jars={'lib/jtreg.jar':'inert'};rc.harness={'payload':'inert'};rc.reuse={}
         ri=images['b3-release'];source=t/'reuse-source';source.mkdir();spec=source/'spec.gmk';spec.write_text('INERT SPEC')
         receipt=dict(source_dir=str(source),source_head=n.B3,spec_path=str(spec),spec=record(spec),
                      same_tools=rc.tool_records,configure_arguments=rc.configure_arguments('release'),
                      image_payload=payload_manifest(Path(ri['root'])))
-        saved=dict(source_head='reviewhead',platform='linux',tools=rc.tool_records,sdk=None,
+        saved=dict(source_head='reviewhead',platform='linux',tools=rc.tool_records,tool_invocations=rc.tool_invocations,sdk=None,
                    harness_jars=rc.harness_jars,harness_payload=rc.harness,images={'b3-release':ri},builds={'b3-release':receipt})
         def check_reuse(value):
             (reuse/'campaign.json').write_text(json.dumps(value))
@@ -198,6 +198,7 @@ def main():
         for label,mutate in [
                 ('head',lambda x:x.update(source_head='other')),
                 ('tools',lambda x:x.update(tools={})),
+                ('invocations',lambda x:x.update(tool_invocations={})),
                 ('SDK',lambda x:x.update(sdk={'other':True})),
                 ('harness',lambda x:x.update(harness_jars={})),
                 ('spec',lambda x:x['builds']['b3-release'].update(spec={})),
@@ -253,9 +254,10 @@ def main():
 
         bad=t/'wrong-macho';bad.write_bytes(b'INERT ELF')
         rejected('non-native Mach-O launcher rejected before any JVM',lambda:n.native_macho(bad))
-        sdk=t/'Xcode SDK';sdk.mkdir();(sdk/'SDKSettings.json').write_text('INERT SDK')
-        tools=t/'Xcode tools';tools.mkdir()
-        for name in ['clang','clang++','ld','ar','gmake']:(tools/name).write_text('INERT '+name)
+        sdk=t/'Xcode-SDK';sdk.mkdir();(sdk/'SDKSettings.json').write_text('INERT SDK')
+        tools=t/'Xcode-tools';tools.mkdir()
+        for name in ['clang','ld','ar','make']:(tools/name).write_text('INERT '+name)
+        (tools/'clang++').symlink_to('clang');(tools/'gmake').symlink_to('make')
         boot=t/'boot-tools'
         for name in ['bin/java','bin/javac','lib/modules','release']:
             f=boot/name;f.parent.mkdir(parents=True,exist_ok=True);f.write_text('INERT '+name)
@@ -265,9 +267,14 @@ def main():
         with mock.patch.object(n.subprocess,'check_output',side_effect=xcrun), \
              mock.patch.object(n.shutil,'which',return_value=str(tools/'gmake')),mock.patch.object(n,'git',return_value=''):
             c=n.Campaign(src,t/'unused-output',jar.parent.parent,boot,'mac','focused')
-            assert c.tools['clang']==(tools/'clang').resolve() and c.tools['make']==(tools/'gmake').resolve()
+            assert c.tools['clang']==(tools/'clang').resolve() and c.tools['make']==tools/'gmake' and c.tools['clang++']==tools/'clang++'
             assert c.env['SDKROOT']==str(sdk) and '--with-sysroot='+str(sdk) in c.configure_arguments('fastdebug')
-            c.invariant();cases.append('Mac resolves native Xcode tools GNU make and explicitly configures the bound SDK with spaces')
+            c.invariant();cases.append('Mac preserves clang++ and gmake symlink invocation names with independently bound SDK')
+            assert c.env['CXX']==str(tools/'clang++') and c.tool_invocations['clang++']['resolved']==str(tools/'clang')
+            (tools/'clang-alternate').write_text((tools/'clang').read_text())
+            (tools/'clang++').unlink();(tools/'clang++').symlink_to('clang-alternate')
+            rejected('same-byte clang++ symlink retarget stops next stage',c.invariant)
+            (tools/'clang++').unlink();(tools/'clang++').symlink_to('clang')
             (sdk/'SDKSettings.json').write_text('CHANGED')
             rejected('changed Mac SDK stops next stage',c.invariant)
         reports=t/'suite-reports';reports.mkdir()

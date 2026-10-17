@@ -17,6 +17,7 @@ sys.dont_write_bytecode=True
 from classifier_images import git, pins, source_binding, payload_manifest, record, require
 from build_classifier_image import cleanup_group, toolchain
 from jtreg83_harness import inventory,harness_version
+from tool_invocation import invocation_path,invocation_records,configure_paths
 import focused_native
 
 BASE='87edd79d3104ff502f7befec034716b081436f49'
@@ -97,10 +98,10 @@ class Campaign:
         self.selected_harness_version=harness_version(jtreg)
         self.reuse={}
         if target=='mac':
-            self.tools={n:Path(subprocess.check_output(['xcrun','--find',n],text=True).strip()).resolve() for n in ['clang','clang++','ld','ar']}
+            self.tools={n:invocation_path(subprocess.check_output(['xcrun','--find',n],text=True).strip()) for n in ['clang','clang++','ld','ar']}
             make=shutil.which('gmake') or shutil.which('make')
             require(make is not None,'GNU make4 or newer is required (gmake on macOS)')
-            self.tools['make']=Path(make).resolve()
+            self.tools['make']=invocation_path(make)
         else:self.tools=toolchain()
         self.env=dict(os.environ,PYTHONDONTWRITEBYTECODE='1',CC=str(self.tools['clang' if target=='mac' else 'gcc-16']),CXX=str(self.tools['clang++' if target=='mac' else 'g++-16']))
         self.env['MAKE']=str(self.tools['make'])
@@ -111,19 +112,22 @@ class Campaign:
             require(settings is not None,'SDK identity settings missing')
             self.sdk=dict(root=str(sdk),settings=str(settings),record=record(settings))
             self.env['SDKROOT']=str(sdk)
+        configure_paths(dict(self.tools,source=root,output=out,boot_jdk=boot,jtreg=jtreg,**({'sdk':sdk} if target=='mac' else {})))
         for name in ['bin/java','bin/javac','lib/modules','release']:self.tools['boot/'+name]=boot/name
         if self.sdk:self.tools['sdk/settings']=Path(self.sdk['settings'])
         self.tool_records={k:record(v) for k,v in self.tools.items()}
+        self.tool_invocations=invocation_records(self.tools)
         self.images={}
         self.builds={}
     def save(self):
         (self.out/'campaign.json').write_text(json.dumps(dict(experiment='pr14-native-source-v1',
-            source_head=git(self.root,'rev-parse','HEAD'),platform=self.target,scope=self.scope,sdk=self.sdk,harness_version=self.selected_harness_version,harness_jars=self.harness_jars,harness_payload=self.harness,commands=self.commands,images=self.images,builds=self.builds,tools=self.tool_records,
+            source_head=git(self.root,'rev-parse','HEAD'),platform=self.target,scope=self.scope,sdk=self.sdk,harness_version=self.selected_harness_version,harness_jars=self.harness_jars,harness_payload=self.harness,commands=self.commands,images=self.images,builds=self.builds,tools=self.tool_records,tool_invocations=self.tool_invocations,
             qualified=False),indent=2)+'\n')
     def invariant(self):
         if self.sdk:require(record(Path(self.sdk['settings']))==self.sdk['record'],'Mac SDK changed')
         require(payload_manifest(self.jtreg)==self.harness and inventory(self.jtreg)==self.harness_jars,'Common harness changed')
-        require({k:record(v) for k,v in self.tools.items()}==self.tool_records,'Common toolchain changed')
+        require({k:record(v) for k,v in self.tools.items()}==self.tool_records and
+                invocation_records(self.tools)==self.tool_invocations,'Common toolchain invocation/identity changed')
         require(not git(self.root,'status','--porcelain','--','src','test','make','bin','qualification','.github/workflows'),
                 'Reviewed source changed')
     def stage(self,name):
@@ -164,7 +168,7 @@ class Campaign:
         saved=json.loads((Path(directory)/'campaign.json').read_text())
         require(saved['source_head']==git(self.root,'rev-parse','HEAD') and saved['platform']==self.target,
                 'Reuse source/platform differs')
-        require(saved['tools']==self.tool_records and saved['sdk']==self.sdk and
+        require(saved.get('tool_invocations')==self.tool_invocations and saved['tools']==self.tool_records and saved['sdk']==self.sdk and
                 saved['harness_jars']==self.harness_jars and saved['harness_payload']==self.harness,
                 'Reuse tool/SDK/harness identities differ')
         for key,image in saved['images'].items():
@@ -208,7 +212,7 @@ class Campaign:
         require(not git(src,'status','--porcelain','--','src','test','make','bin','configure'),'Build changed tracked source')
         self.images[key]=self.image(image)
         self.builds[key]=dict(source_head=git(src,'rev-parse','HEAD'),src_tree=git(src,'rev-parse','HEAD:src'),
-            target=make_target,spec=record(src/('build/'+conf+'/spec.gmk')),same_tools=self.tool_records,
+            target=make_target,spec=record(src/('build/'+conf+'/spec.gmk')),same_tools=self.tool_records,tool_invocations=self.tool_invocations,
             source_dir=str(src),spec_path=str(src/('build/'+conf+'/spec.gmk')),
             configure_arguments=self.configure_arguments(level),image_payload=payload_manifest(image),
             template=str(template) if template else None)
