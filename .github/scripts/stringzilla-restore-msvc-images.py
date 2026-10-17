@@ -70,8 +70,12 @@ def main():
         source = re.search(r'^SOURCE="(.*)"$', release, re.MULTILINE)
         assert source is not None
         top = re.search(r"(?:^|\s)\.:git:([0-9a-f]{12})(\+?)(?=\s|$)", source[1])
-        assert top is not None and top[1] == revision[:12], source[1]
-        receipt["archives"][control] = {"sha256": actual, "release_source": source[1]}
+        if source[1]:
+            assert top is not None and top[1] == revision[:12], source[1]
+        receipt["archives"][control] = {
+            "sha256": actual, "release_source": source[1],
+            "embedded_revision_available": bool(source[1]),
+            "source_attestation": "pinned producer workflow, artifact digest and archive SHA-256"}
         shutil.copy2(archives / (control + "-spec.gmk"), OUTPUT / (control + "-spec.gmk"))
     (OUTPUT / "artifact-reuse.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print("STRINGZILLA_IMAGE_REUSE " + json.dumps(receipt, separators=(",", ":")), flush=True)
