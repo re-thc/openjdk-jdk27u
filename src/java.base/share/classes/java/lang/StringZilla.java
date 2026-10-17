@@ -40,6 +40,7 @@ final class StringZilla {
     private static final int BACKEND = CONFIGURATION & BACKEND_MASK;
     private static final int SERIAL = 0;
     private static final int HASWELL = 1;
+    private static final int NEON = 4;
     static final int C1 = 1;
     static final int C2 = 4;
     // Keep small inputs on the existing Java / platform intrinsic paths.
@@ -90,8 +91,20 @@ final class StringZilla {
     }
 
     @ForceInline
-    static boolean probeMixedImmediate() {
-        return BACKEND == SERIAL && compilerTier() != 0;
+    static boolean usesNeon() {
+        return BACKEND == NEON;
+    }
+
+    @ForceInline
+    static boolean probeMixedImmediate(int count) {
+        if (BACKEND == SERIAL) {
+            return compilerTier() != 0;
+        }
+        if (BACKEND == NEON && count <= 32) {
+            int tier = compilerTier();
+            return tier == C2 || (tier == C1 && count <= 16);
+        }
+        return false;
     }
 
     @ForceInline
@@ -240,6 +253,9 @@ final class StringZilla {
         int tier = compilerTier();
         if (tier == 0) {
             return true;
+        }
+        if (BACKEND == NEON && tier == C2 && count <= 128) {
+            return length >= 512;
         }
         if ((BACKEND == SERIAL || BACKEND == HASWELL) && tier == C1) {
             return count <= 128 || reverseWork(length, count) >= 1024;
