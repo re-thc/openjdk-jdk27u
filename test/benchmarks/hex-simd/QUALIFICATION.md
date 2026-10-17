@@ -1,10 +1,15 @@
 # One bounded HexFormat integration decision
 
-Status on 2026-10-17: source review milestone complete; integration qualification
-incomplete. This document and the new workload/first-use sources have not been
-built or run. They describe one future available-host execution batch, with one
-useful decision at its end, followed by separately authorized integration
-stages. No execution is authorized by merely adding this document.
+Status on 2026-10-17: the approved one-time run at
+`8b45847b7455188270fd130717d12d69170eeb05` ended INCOMPLETE after 43.17 seconds,
+at the post-configure collector evidence gate, before a JDK build or measurement.
+Configure reported the correct release profile; the runner's regex crossed empty
+inactive feature declarations and rejected them. Its source-only repair now
+checks declared active JVM variants with line-bounded parsing. Eight offline
+profile fixtures passed. The frozen campaign was not retried; no new correctness
+or performance result exists. Execution of the repaired source requires a new
+explicit decision, not an automatic retry. Merely adding this document grants
+no execution authorization.
 
 ## Exact source and evidence reconciliation
 
@@ -115,8 +120,9 @@ The published preparation commit before this runner repair was
 not new evidence. The executable [qualify.py](qualify.py) now owns the whole
 batch: supervision, worktrees/builds, checks, all measurements, adjudication,
 disabled reconfiguration, process cleanup and the final result. It is Linux
-x64 only. Its source has been inspected; the runner and new workload sources
-remain unexecuted. No campaign outcome is claimed in this preparation commit.
+x64 only. The historical prepared runner reached only configuration in the
+terminal attempt described above; the workload sources remain unexecuted.
+The repaired profile parser has only offline fixture/retained-spec evidence.
 
 After execution is authorized, use the full source commit from the review
 handoff, not a moving branch name. Use installed compatible tools; the selected
@@ -358,4 +364,5 @@ A lack of them does not erase a positive Stage 1 result or block proposing Stage
 2. A published source branch alone is not completed integration. Any source or
 threshold change after the frozen Q invalidates the relevant artifact's result;
 report that fact and a complete replacement batch, without automatic reruns or
-a chain of tiny approvals. All execution described here remains unrun.
+a chain of tiny approvals. Full qualification remains unexecuted after the
+terminal configuration-gate attempt; its raw result and logs are retained.

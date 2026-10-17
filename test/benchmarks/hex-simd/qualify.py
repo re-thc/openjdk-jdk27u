@@ -365,6 +365,21 @@ def parse_hexformat_testng(records):
     return {"total": total, "passed": passed, "expected_low_heap_skips": skipped, "record": str(path)}
 
 
+def require_gc_profile(text):
+    """Validate configured variants; empty inactive declarations are normal."""
+    declarations = re.findall(r"^(JVM_VARIANTS|JVM_FEATURES_[A-Za-z0-9_]+)[ \t]*:=[ \t]*([^\r\n]*)$",
+                              text, re.M)
+    settings = dict(declarations)
+    require(len(settings) == len(declarations), "duplicate development profile declaration")
+    variants = settings.get("JVM_VARIANTS", "").split()
+    require(variants and len(set(variants)) == len(variants), "missing/duplicate configured JVM variants")
+    for variant in variants:
+        features = settings.get("JVM_FEATURES_" + variant, "").split()
+        require(sorted(f for f in features if f.endswith("gc")) == ["g1gc", "serialgc", "zgc"],
+                "development collector profile differs for " + variant)
+    return variants
+
+
 def read_bench(path, kind, sizes, state):
     text = path.read_text()
     require(f"# nativeAvailable={str(state == 'enabled').lower()}" in text, "wrong availability: " + str(path))
@@ -595,9 +610,7 @@ class Campaign:
                  argv, cwd=self.sources[state], deadline=deadline)
         spec = self.sources[state] / "build" / conf / "spec.gmk"
         text = spec.read_text()
-        features = re.findall(r"^JVM_FEATURES_\w+\s*:=\s*(.*)$", text, re.M)
-        require(features and all(sorted(f for f in row.split() if f.endswith("gc")) == ["g1gc", "serialgc", "zgc"]
-                                 for row in features), "development collector profile differs")
+        require_gc_profile(text)
         label = state + ("-disabled" if not enabled and state == "candidate" else "")
         snapshot = self.s.logs / ("spec-" + label + ".gmk")
         shutil.copyfile(spec, snapshot)
