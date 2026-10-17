@@ -20,7 +20,7 @@ jobs:
   measure:
     name: ${{ matrix.backend }} complete images
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 240
+    timeout-minutes: 360
     strategy:
       fail-fast: false
       matrix:
@@ -47,7 +47,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: 23801203d0374b27415af992cbd31382dae2ac2a
+          ref: 2550a2100281b5a6d6aa7a9310a9e6b047937e2c
 
       - name: Checkout untouched original
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
