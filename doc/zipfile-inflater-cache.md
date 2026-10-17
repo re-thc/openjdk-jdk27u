@@ -6,14 +6,21 @@ ArrayList. Unbounded LIFO reuse is preserved. Cleanup marks even an empty cache
 closed before closing active streams; failed admission ends the returning
 inflater outside the cache monitor.
 
-Prior local validation: the normal JDK build and 15 targeted ZIP/inflater tests
-passed under each of Serial, G1 and ZGC (45 test executions). On Linux x64 with
+Prior local validation: a generic-configure JDK build and 15 targeted ZIP/inflater
+tests passed under each of Serial, G1 and ZGC (45 test executions). On Linux x64 with
 a 128 MiB heap and the fork's default headers, container bytes per unused/serial
 ZipFile fell from 16/64 to zero under Serial/G1, and from 24/112 to zero under
 ZGC. Resource-object sizes and promoted-cache containers were unchanged. These
 are per-file heap-container counts, excluding one shared closed marker. They
 are not RSS or native-memory reductions. Native reuse and release were checked;
-throughput neutrality and other platforms/backends were not validated.
+startup, throughput neutrality and other platforms/backends were not validated.
+
+The [staged qualification plan](zipfile-inflater-cache/QUALIFICATION.md) first
+decides value with exact-head Linux profile builds, retained-container/native
+reuse checks and protected startup/throughput cases. Only a worthwhile Linux
+result proceeds to normal supported-platform PR correctness CI. Its harness
+sources and self-checks are prepared for review, not compiled or executed;
+other native performance campaigns are not prerequisites by assumption.
 
 ## Build and regression
 
