@@ -76,11 +76,162 @@ source_hpp %{
   // Assert that the given node is not a variable shift.
   bool assert_not_var_shift(const Node* n);
 
+  bool is_float_roundtrip_reduction_accumulation(const Node* n);
+
   Assembler::SIMD_Arrangement get_arrangement(const Node* n);
   Assembler::SIMD_RegVariant get_reg_variant(const Node* n);
 %}
 
 source %{
+
+#include "opto/loopnode.hpp"
+
+  // Match only a single-use F2I -> I2F -> unordered four-float reduction.
+  // The AddF is kept separate in Ideal IR: its loop-carried order is strict.
+  static Node* float_roundtrip_reduction_input(const Node* n) {
+    if (n->Opcode() != Op_AddF) {
+      return nullptr;
+    }
+    for (uint input = 1; input <= 2; input++) {
+      const Node* reduction = n->in(input);
+      if (reduction->Opcode() != Op_AddReductionVF || reduction->req() != 3 ||
+          reduction->outcnt() != 1 ||
+          reduction->as_Reduction()->requires_strict_order()) {
+        continue;
+      }
+      const TypeF* seed = reduction->in(1)->bottom_type()->isa_float_constant();
+      if (seed == nullptr || jint_cast(seed->getf()) != 0) {
+        continue;
+      }
+      const Node* to_float = reduction->in(2);
+      if (to_float->Opcode() != Op_VectorCastI2X || to_float->outcnt() != 1) {
+        continue;
+      }
+      const Node* to_int = to_float->in(1);
+      if (to_int->Opcode() != Op_VectorCastF2X || to_int->outcnt() != 1) {
+        continue;
+      }
+      const TypeVect* result_type = to_float->bottom_type()->isa_vect();
+      const TypeVect* int_type = to_int->bottom_type()->isa_vect();
+      const TypeVect* source_type = to_int->in(1)->bottom_type()->isa_vect();
+      if (result_type != nullptr && int_type != nullptr && source_type != nullptr &&
+          result_type->element_basic_type() == T_FLOAT && result_type->length() == 4 &&
+          int_type->element_basic_type() == T_INT && int_type->length() == 4 &&
+          source_type->element_basic_type() == T_FLOAT && source_type->length() == 4) {
+        return n->in(3 - input);
+      }
+    }
+    return nullptr;
+  }
+
+  void Matcher::collect_float_roundtrip_add(Node* n) {
+    if (C->is_osr_compilation() ||
+        (UseSVE > 0 && MaxVectorSize != 16) ||
+        !VM_Version::use_neon_for_vector(16)) {
+      return;
+    }
+    // Most floating adds have no conversion/reduction input. Do not allocate
+    // phase-classification state for those unrelated compilations. find_shared
+    // does not reshape this supported unmasked chain; prepare still rechecks it.
+    if (float_roundtrip_reduction_input(n) == nullptr) {
+      return;
+    }
+    if (_float_roundtrip_adds == nullptr) {
+      _float_roundtrip_adds = new (C->comp_arena()) Node_List(C->comp_arena());
+    }
+    _float_roundtrip_adds->push(n);
+  }
+
+  // Called once after find_shared, before the arena swap and node-index reset.
+  // Collection performs K constant-depth checks for K visited floating adds.
+  // For A registered/reached entries, preparation inspections are at most 2A and
+  // loop uses are scanned once. Rejected paths are memoized too. Indexed
+  // storage/initialization also depends on the old node-index span U: total
+  // cost is O(K + U + A + E_loop), with O(U + A) storage and O(1) lookup.
+  // No classification containers are allocated when collection admits no adds.
+  void Matcher::prepare_float_roundtrip_accumulations() {
+    if (_float_roundtrip_adds == nullptr) {
+      return;
+    }
+    assert(_float_roundtrip_accumulations == nullptr, "prepare once");
+    ResourceMark rm;
+    Node_Array terminal;
+    Node_List path;
+    VectorSet resolved;
+    VectorSet checked_phis;
+    VectorSet checked_loops;
+    VectorSet single_float_phi_loops;
+
+    for (uint i = 0; i < _float_roundtrip_adds->size(); i++) {
+      Node* cursor = _float_roundtrip_adds->at(i);
+      assert(path.size() == 0, "previous path resolved");
+      while (cursor != nullptr && cursor->Opcode() == Op_AddF && !resolved.test(cursor->_idx)) {
+        // A repeated node in the current path has a null terminal: a non-Phi
+        // cycle cannot describe the required counted-loop recurrence.
+        resolved.set(cursor->_idx);
+        path.push(cursor);
+        cursor = float_roundtrip_reduction_input(cursor);
+      }
+      Node* phi = nullptr;
+      if (cursor != nullptr) {
+        phi = cursor->is_Phi() ? cursor : terminal[cursor->_idx];
+      }
+      while (path.size() != 0) {
+        Node* node = path.pop();
+        if (phi != nullptr) {
+          terminal.map(node->_idx, phi);
+        }
+      }
+    }
+
+    for (uint i = 0; i < _float_roundtrip_adds->size(); i++) {
+      Node* phi = terminal[_float_roundtrip_adds->at(i)->_idx];
+      if (phi == nullptr || checked_phis.test_set(phi->_idx)) {
+        continue;
+      }
+      if (phi->req() != 3 || phi->in(0) == nullptr || !phi->in(0)->is_CountedLoop() ||
+          phi->in(2) == nullptr || terminal[phi->in(2)->_idx] != phi) {
+        continue;
+      }
+      Node* loop = phi->in(0);
+      if (!checked_loops.test_set(loop->_idx)) {
+        uint float_phis = 0;
+        for (DUIterator_Fast imax, j = loop->fast_outs(imax); j < imax; j++) {
+          Node* out = loop->fast_out(j);
+          if (out->is_Phi() && out->in(0) == loop &&
+              out->bottom_type()->basic_type() == T_FLOAT) {
+            float_phis++;
+          }
+        }
+        if (float_phis == 1) {
+          single_float_phi_loops.set(loop->_idx);
+        }
+      }
+      // Independent accumulators can exploit ILP; keep their rules unchanged.
+      if (!single_float_phi_loops.test(loop->_idx)) {
+        continue;
+      }
+      if (_float_roundtrip_accumulations == nullptr) {
+        _float_roundtrip_accumulations = new (C->comp_arena()) Node_Array(C->comp_arena());
+      }
+      // Distinct valid Phi cycles are disjoint: every node has one terminal.
+      for (Node* cursor = phi->in(2); cursor != phi; cursor = float_roundtrip_reduction_input(cursor)) {
+        assert(cursor != nullptr && terminal[cursor->_idx] == phi, "resolved cycle");
+        _float_roundtrip_accumulations->map(cursor->_idx, cursor);
+      }
+    }
+  }
+
+  bool Matcher::is_float_roundtrip_reduction_accumulation(const Node* n) const {
+    // New Mach indices start at zero: compare exact old-node identity. The
+    // cache is immutable during selection and disabled before old storage dies.
+    return _float_roundtrip_accumulations != nullptr &&
+           (*_float_roundtrip_accumulations)[n->_idx] == n;
+  }
+
+  bool is_float_roundtrip_reduction_accumulation(const Node* n) {
+    return Compile::current()->matcher()->is_float_roundtrip_reduction_accumulation(n);
+  }
 
   typedef void (C2_MacroAssembler::* sve_mem_insn_predicate)(FloatRegister Rt, Assembler::SIMD_RegVariant T,
                                                              PRegister Pg, const Address &adr);
@@ -2229,31 +2380,51 @@ REDUCE_ADD_INT_NEON_SVE_PAIRWISE(L, iRegL)
 
 // reduction addF
 
-instruct reduce_non_strict_order_add2F_neon(vRegF dst, vRegF fsrc, vReg vsrc) %{
-  // Non-strictly ordered floating-point add reduction for a 64-bits-long vector. This rule is
-  // intended for the VectorAPI (which allows for non-strictly ordered add reduction).
-  predicate(Matcher::vector_length(n->in(2)) == 2 && !n->as_Reduction()->requires_strict_order());
-  match(Set dst (AddReductionVF fsrc vsrc));
-  effect(TEMP_DEF dst);
-  format %{ "reduce_non_strict_order_add2F_neon $dst, $fsrc, $vsrc" %}
+// Keep this exact conversion/reduction chain next to its strict scalar
+// recurrence. One temporary is sufficient regardless of the unroll factor.
+instruct convF2I2F_reduce_acc4F_neon(vRegF dst, vRegF acc, immF0 zero,
+                                   vReg src, vReg tmp) %{
+  predicate(is_float_roundtrip_reduction_accumulation(n));
+  match(Set dst (AddF acc (AddReductionVF zero (VectorCastI2X (VectorCastF2X src)))));
+  match(Set dst (AddF (AddReductionVF zero (VectorCastI2X (VectorCastF2X src))) acc));
+  effect(TEMP tmp);
+  // Sum of the existing matcher costs: two casts, reduction, scalar AddF.
+  ins_cost(INSN_COST * 8);
+  format %{ "convF2I2F_reduce_acc4F_neon $dst, $acc, $src\t# KILL $tmp" %}
   ins_encode %{
-    __ faddp($dst$$FloatRegister, $vsrc$$FloatRegister, __ S);
-    __ fadds($dst$$FloatRegister, $dst$$FloatRegister, $fsrc$$FloatRegister);
+    __ fcvtzs($tmp$$FloatRegister, __ T4S, $src$$FloatRegister);
+    __ scvtfv(__ T4S, $tmp$$FloatRegister, $tmp$$FloatRegister);
+    __ faddp($tmp$$FloatRegister, __ T4S, $tmp$$FloatRegister, $tmp$$FloatRegister);
+    __ faddp($tmp$$FloatRegister, $tmp$$FloatRegister, __ S);
+    __ fadds($dst$$FloatRegister, $acc$$FloatRegister, $tmp$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_non_strict_order_add4F_neon(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp) %{
+instruct reduce_non_strict_order_add2F_neon(vRegF dst, immF0 zero, vReg vsrc) %{
+  // Non-strictly ordered floating-point add reduction for a 64-bits-long vector. This rule is
+  // intended for the Vector API (which allows for non-strictly ordered add reduction).
+  // The immediate $zero contains the identity scalar.
+  predicate(Matcher::vector_length(n->in(2)) == 2 && !n->as_Reduction()->requires_strict_order());
+  match(Set dst (AddReductionVF zero vsrc));
+  format %{ "reduce_non_strict_order_add2F_neon $dst, $zero, $vsrc" %}
+  ins_encode %{
+    __ faddp($dst$$FloatRegister, $vsrc$$FloatRegister, __ S);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_non_strict_order_add4F_neon(vRegF dst, immF0 zero, vReg vsrc, vReg tmp) %{
   // Non-strictly ordered floating-point add reduction for 128-bits-long vector. This rule is
-  // intended for the VectorAPI (which allows for non-strictly ordered add reduction).
+  // intended for the Vector API (which allows for non-strictly ordered add reduction).
+  // The immediate $zero contains the identity scalar.
   predicate(Matcher::vector_length(n->in(2)) == 4 && !n->as_Reduction()->requires_strict_order());
-  match(Set dst (AddReductionVF fsrc vsrc));
-  effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "reduce_non_strict_order_add4F_neon $dst, $fsrc, $vsrc\t# KILL $tmp" %}
+  match(Set dst (AddReductionVF zero vsrc));
+  effect(TEMP tmp);
+  format %{ "reduce_non_strict_order_add4F_neon $dst, $zero, $vsrc\t# KILL $tmp" %}
   ins_encode %{
     __ faddp($tmp$$FloatRegister, __ T4S, $vsrc$$FloatRegister, $vsrc$$FloatRegister);
     __ faddp($dst$$FloatRegister, $tmp$$FloatRegister, __ S);
-    __ fadds($dst$$FloatRegister, $dst$$FloatRegister, $fsrc$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2311,16 +2482,15 @@ REDUCE_ADD_FP_SVE(F,  S)
 
 // reduction addD
 
-instruct reduce_non_strict_order_add2D_neon(vRegD dst, vRegD dsrc, vReg vsrc) %{
+instruct reduce_non_strict_order_add2D_neon(vRegD dst, immD0 zero, vReg vsrc) %{
   // Non-strictly ordered floating-point add reduction for doubles. This rule is
-  // intended for the VectorAPI (which allows for non-strictly ordered add reduction).
-  predicate(!n->as_Reduction()->requires_strict_order());
-  match(Set dst (AddReductionVD dsrc vsrc));
-  effect(TEMP_DEF dst);
-  format %{ "reduce_non_strict_order_add2D_neon $dst, $dsrc, $vsrc\t# 2D" %}
+  // intended for the Vector API (which allows for non-strictly ordered add reduction).
+  // The immediate $zero contains the identity scalar.
+  predicate(Matcher::vector_length(n->in(2)) == 2 && !n->as_Reduction()->requires_strict_order());
+  match(Set dst (AddReductionVD zero vsrc));
+  format %{ "reduce_non_strict_order_add2D_neon $dst, $zero, $vsrc\t# 2D" %}
   ins_encode %{
     __ faddp($dst$$FloatRegister, $vsrc$$FloatRegister, __ D);
-    __ faddd($dst$$FloatRegister, $dst$$FloatRegister, $dsrc$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
