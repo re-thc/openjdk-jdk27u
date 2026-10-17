@@ -135,12 +135,25 @@ were absent from the product/host-tool compilation inputs. No build-time or
 resource speedup is claimed. Native Linux AArch64, macOS AArch64 and Windows
 x64 builds remain to be run as described above.
 
-The follow-up descriptor/Windows-policy correction has passed standalone javac
-parsing and compilation tests for real imported modules, the initial focused
-make suite (including console-helper behavior and coordinated collector
-overrides), and the configure library/probe checks. Its final source-import
-make recipe and complete rebuilt image/profile check remain unverified: this VM
-exhausted process/thread resources with approximately 32,000 unreaped build
-subprocesses. Resume `make test-make-headless` and `make images compile-commands`
-followed by the profile check on a healthy executor. Native Windows and macOS
-validation remains required; the portable helper test does not replace it.
+The follow-up corrections were recovered from the published branch and validated
+on a fresh Linux x64 executor, preserving the exhausted executor and its logs.
+Release with GCC 16.2 and clean fastdebug with GCC 14.2 both passed
+`images compile-commands`, `test-make-headless` and the complete profile check.
+The make suite generated and compiled real imported sources with normal product
+warning-as-error settings and checked the resulting descriptor semantics. It
+also covered coordinated collector overrides, mandatory module filters, direct
+targets, stale outputs, configure probes and the portable console helper.
+Additional regressions cover empty and nonempty Unicode-escaped descriptors;
+the augmentation fixture no longer overwrites the open-module import input.
+
+Both configurations again had 56 product javac lists, 11,198 Java inputs, 1,405
+product native compilation records with matching objects, and 56 image jmods.
+The profile reports 1,418 native records including the 13 ADLC host objects;
+fastdebug's compilation database also contains its precompiled-header command.
+Serial/G1/ZGC, C1/C2 and all profile server/compiler/tool smokes passed.
+
+Native Linux AArch64, macOS AArch64 and Windows x64 validation of the final
+correction remains external, including macOS/Windows console, JNI, signal/exit
+and native dependency inspection. Automatic PR CI is triggered by ordinary
+pushes; no manual dispatch or rerun was requested. Foreign-platform graph tests
+and the portable console helper do not replace those native checks.
