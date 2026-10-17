@@ -18,9 +18,10 @@ uses JNI. Direct-to-direct Inflater calls and x86-64 mixed-buffer Inflater calls
 use JNI. Deflater uses JNI for chunks at most 1 KiB and, on AArch64, chunks of at
 least 64 KiB. All these call paths use zlib-ng.
 
-Adler32 calls zlib-ng directly from the interpreter and C1 for scalar, heap
-array and direct-buffer updates. On x86-64, C1 uses JNI for bulk updates of at
-least 64 KiB. C2 calls zlib-ng for scalar updates and bulk
+Adler32 calls zlib-ng directly from the interpreter and C1 for scalar and heap
+array updates. C1 direct-buffer updates use ordinary JNI at all lengths on Apple
+AArch64 CPUs; other CPUs retain their direct-buffer selection. On x86-64, C1
+uses JNI for bulk updates of at least 64 KiB. C2 calls zlib-ng for scalar updates and bulk
 updates of at least 1 KiB; shorter bulk updates use the HotSpot SIMD kernel.
 On x86-64 without AVX2, C2 uses zlib-ng for all bulk sizes.
 
@@ -61,3 +62,7 @@ Regression tests are in `test/hotspot/jtreg/compiler/intrinsics/zip/` and
 `ZipStreamCalls` and `ChecksumPaths` cover reusable streams, checksums, buffer
 combinations and complete ZIP/GZIP writes. Record the CPU, revision, execution
 tier, forks, warmup, measurement settings and compressed sizes when comparing results.
+
+The Apple C1 direct-buffer candidate and its remaining qualification are described
+in [the source review](zlib-ng-apple-c1-review.md). Its correctness tests are not
+a performance qualification.

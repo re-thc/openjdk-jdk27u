@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @summary Check zlib-ng bulk Adler32 at the SIMD boundary with GC, offsets and nonzero seeds
+ * @summary Check zlib-ng Adler32 boundaries and small inputs with GC, offsets and nonzero seeds
  * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
  * @requires vm.compiler2.enabled
  * @run main/othervm -Xmx64m -Xint TestZlibNGAdler32
  * @run main/othervm -Xmx64m -Xbatch -XX:TieredStopAtLevel=1 TestZlibNGAdler32
+ * @run main/othervm -Xmx64m -Xbatch -XX:TieredStopAtLevel=1 -XX:+UnlockDiagnosticVMOptions -XX:-UseAdler32Intrinsics -Xcheck:jni TestZlibNGAdler32
  * @run main/othervm -Xmx64m -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 TestZlibNGAdler32
  * @run main/othervm -Xmx64m -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:-UseAdler32Intrinsics TestZlibNGAdler32
  */
@@ -38,7 +39,8 @@ import java.util.zip.Adler32;
 
 public class TestZlibNGAdler32 {
     private static final int[] OFFSETS = {0, 1, 7, 31};
-    private static final int[] LENGTHS = {1023, 1024, 1025, 65535, 65536, 65537};
+    private static final int[] LENGTHS = {0, 1, 63, 64, 65, 1023, 1024, 1025,
+                                          4095, 4096, 4097, 65535, 65536, 65537};
 
     private static long reference(long adler, byte[] input, int offset, int length) {
         int s1 = (int) adler & 0xffff;
@@ -61,8 +63,8 @@ public class TestZlibNGAdler32 {
             } else {
                 direct.clear().position(offset).limit(offset + length);
                 adler.update(direct);
-                if (direct.position() != offset + length) {
-                    throw new AssertionError("Direct buffer position");
+                if (direct.position() != offset + length || direct.limit() != offset + length) {
+                    throw new AssertionError("Direct buffer position/limit");
                 }
             }
         }
@@ -80,6 +82,7 @@ public class TestZlibNGAdler32 {
         }
         ByteBuffer direct = ByteBuffer.allocateDirect(input.length);
         direct.put(input);
+        ByteBuffer readOnly = direct.asReadOnlyBuffer();
         long[][][] expected = new long[2][OFFSETS.length][LENGTHS.length];
         for (int o = 0; o < OFFSETS.length; o++) {
             for (int l = 0; l < LENGTHS.length; l++) {
@@ -112,6 +115,8 @@ public class TestZlibNGAdler32 {
                 check(heapChecksum, input, null, OFFSETS[o], LENGTHS[l], pass + 1,
                       expected[pass][o][l]);
                 check(directChecksum, input, direct, OFFSETS[o], LENGTHS[l], pass + 1,
+                      expected[pass][o][l]);
+                check(directChecksum, input, readOnly, OFFSETS[o], LENGTHS[l], pass + 1,
                       expected[pass][o][l]);
             }
         } finally {
