@@ -138,7 +138,7 @@ public class CustomXDHParameters {
 
     // The ids in the supported_groups extension of the ClientHello for an
     // engine that is set to use the constraints.
-    private static Set<Integer> clientHelloGroups(
+    static Set<Integer> clientHelloGroups(
             AlgorithmConstraints constraints) throws Exception {
         SSLContext ctx = SSLContext.getInstance("TLS");
         ctx.init(null, null, null);

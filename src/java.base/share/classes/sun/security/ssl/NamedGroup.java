@@ -39,6 +39,7 @@ import java.util.Objects;
 import java.util.Set;
 import javax.crypto.KeyAgreement;
 import javax.crypto.spec.DHParameterSpec;
+import jdk.internal.access.SharedSecrets;
 import sun.security.ssl.ECDHKeyExchange.ECDHEPossession;
 import sun.security.util.CurveDB;
 
@@ -270,11 +271,6 @@ enum NamedGroup {
     final AlgorithmParameters keAlgParams;
     final boolean isAvailable;
     final Provider defaultProvider;
-
-    // The XDH AlgorithmParameters, looked up on first use by
-    // getKeAlgParams().
-    private volatile AlgorithmParameters xdhAlgParams;
-    private volatile boolean xdhAlgParamsLookedUp;
 
     // performance optimization
     private static final Set<CryptoPrimitive> KEY_AGREEMENT_PRIMITIVE_SET =
@@ -612,35 +608,34 @@ enum NamedGroup {
                         this.algorithm, getKeAlgParams(constraints));
     }
 
-    // The XDH AlgorithmParameters are not looked up in the constructor when
-    // the KeyAgreement impl is available, as the lookup loads all the
-    // providers if none supports them.  Look them up here instead, but only
-    // for the constraints set by the application: those of the JDK don't
-    // check XDH parameters, so null makes no difference to them, while a
-    // custom provider's parameters may make one to the application's.
+    // Look up XDH parameters only for application constraints. The JDK's
+    // constraints do not check them, while a custom provider's parameters
+    // may affect an application's decision. Use ordinary JCA discovery so
+    // that mutable and instrumented providers remain observable.
     private AlgorithmParameters getKeAlgParams(
             AlgorithmConstraints constraints) {
-        if (keAlgParams != null || !isAvailable ||
+        if (!isAvailable ||
                 spec != NamedGroupSpec.NAMED_GROUP_XDH ||
                 (constraints instanceof SSLAlgorithmConstraints sslConstraints
                         && !sslConstraints.hasUserSpecifiedConstraints())) {
             return keAlgParams;
         }
 
-        if (!xdhAlgParamsLookedUp) {
-            AlgorithmParameters algParams = null;
-            try {
-                algParams = AlgorithmParameters.getInstance(algorithm);
+        // Providers and their services can change after group initialization.
+        // Do not retain either a failed lookup or parameters from an earlier
+        // provider selection. Each caller initializes its own parameters.
+        try {
+            AlgorithmParameters algParams =
+                    SharedSecrets.getJavaSecurityAlgorithmParametersAccess()
+                            .getInstanceOrNull(algorithm);
+            if (algParams != null) {
                 algParams.init(keAlgParamSpec);
-            } catch (InvalidParameterSpecException
-                    | NoSuchAlgorithmException exp) {
-                algParams = null;
             }
-            xdhAlgParams = algParams;
-            xdhAlgParamsLookedUp = true;
+            return algParams;
+        } catch (InvalidParameterSpecException
+                | NoSuchAlgorithmException exp) {
+            return null;
         }
-
-        return xdhAlgParams;
     }
 
     byte[] encodePossessionPublicKey(

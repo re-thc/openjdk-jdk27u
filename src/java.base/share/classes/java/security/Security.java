@@ -51,6 +51,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import jdk.internal.access.JavaSecurityPropertiesAccess;
+import jdk.internal.access.JavaSecurityAlgorithmParametersAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.event.EventHelper;
 import jdk.internal.event.SecurityPropertyModificationEvent;
@@ -350,17 +351,30 @@ public final class Security {
 
     static {
         initialize();
-        // Set up JavaSecurityPropertiesAccess in SharedSecrets
-        SharedSecrets.setJavaSecurityPropertiesAccess(new JavaSecurityPropertiesAccess() {
-            @Override
-            public Properties getInitialProperties() {
-                return initialSecurityProperties;
-            }
-            @Override
-            public Properties getCurrentProperties() {
-                return props;
-            }
-        });
+        // Reuse one stateless accessor for both secrets. In particular, the
+        // optional factory needs no AlgorithmParameters class initializer.
+        var access = new SecurityAccess();
+        SharedSecrets.setJavaSecurityPropertiesAccess(access);
+        SharedSecrets.setJavaSecurityAlgorithmParametersAccess(access);
+    }
+
+    private static class SecurityAccess implements JavaSecurityPropertiesAccess,
+            JavaSecurityAlgorithmParametersAccess {
+        @Override
+        public Properties getInitialProperties() {
+            return initialSecurityProperties;
+        }
+
+        @Override
+        public Properties getCurrentProperties() {
+            return props;
+        }
+
+        @Override
+        public AlgorithmParameters getInstanceOrNull(String algorithm)
+                throws NoSuchAlgorithmException {
+            return AlgorithmParameters.getInstanceOrNull(algorithm);
+        }
     }
 
     private static void initialize() {
@@ -783,6 +797,13 @@ public final class Security {
         } catch (ClassNotFoundException e) {
             throw new AssertionError("Spi class not found", e);
         }
+    }
+
+    // Preserve SPI-class initialization and normal provider selection, but
+    // distinguish an unadvertised algorithm from a construction failure.
+    static GetInstance.Instance getImplOrNull(String algorithm, String type)
+            throws NoSuchAlgorithmException {
+        return GetInstance.getInstanceOrNull(type, getSpiClass(type), algorithm);
     }
 
     /*
