@@ -53,7 +53,7 @@ PINS = {
     "test/hotspot/jtreg/compiler/intrinsics/bmi/TestBzhiIntMask.java":
         "75ac257b53e874ff871ea372c82e2fd5ac7003f92319ba5cb046034c652ce81f",
     "test/micro/org/openjdk/bench/vm/compiler/VariableIntLowMask.java":
-        "b7c4672b32db157a2978a67b400fd875ea924d11c7813761bf22f6e59ca47f88",
+        "725dbbbd8beb91307dca54a93a7b719f7756696a79dcf7c0821be8e78ecffd55",
 }
 FLAGS = ["--add-modules", "jdk.incubator.vector", "-XX:+UseSerialGC", "-Xms1g", "-Xmx1g"]
 LIMITS = {"qualify": 1800, "prepare": 120, "diagnose": 300, "time": 180}
@@ -68,8 +68,13 @@ def git(root, *args):
     return subprocess.check_output(["git", "-C", str(root), *args], text=True).strip()
 
 
+def configuration(root, debug=False):
+    return root / "build" / ("lowmask-fastdebug" if debug else "lowmask-release")
+
+
 def image(root, debug=False):
-    return root / "build" / ("lowmask-fastdebug" if debug else "lowmask-release") / "jdk"
+    # The `jdk` target is exploded; `images` puts lib/modules here.
+    return configuration(root, debug) / "images/jdk"
 
 
 def commands(args, stage):
@@ -120,7 +125,8 @@ def verify_sources(args):
             raise ValueError("Wrong revision or local changes: " + str(root))
     allowed = {"doc/compiler-decoder-int-lowmask.md", "doc/compiler-decoder-int-lowmask-validate.py",
                "doc/compiler-decoder-int-lowmask-inputs.py",
-               "test/hotspot/jtreg/compiler/intrinsics/bmi/TestBzhiIntMask.java"}
+               "test/hotspot/jtreg/compiler/intrinsics/bmi/TestBzhiIntMask.java",
+               "test/micro/org/openjdk/bench/vm/compiler/VariableIntLowMask.java"}
     if set(git(args.jdk_root, "diff", "--name-only", CANDIDATE, "HEAD").splitlines()) - allowed:
         raise ValueError("Candidate contains changes outside this preparation packet")
     for relative, expected in PINS.items():
@@ -163,10 +169,11 @@ def files_manifest(args, stage, heads):
             continue
         for root in (args.base_root, args.jdk_root):
             jdk = image(root, debug)
-            source = jdk.parent / "lowmask-source-head.txt"
+            build = configuration(root, debug)
+            source = build / "lowmask-source-head.txt"
             if source.read_text().strip() != heads["base" if root == args.base_root else "candidate"]:
                 raise ValueError("Image build provenance differs from checkout: " + str(jdk))
-            for path in (source, jdk.parent / "spec.gmk", jdk.parent / "lowmask-build-sha256.txt"):
+            for path in (source, build / "spec.gmk", build / "lowmask-build-sha256.txt"):
                 files[str(path)] = digest(path)
             for path in (jdk / "bin/java", jdk / "lib/server/libjvm.so", jdk / "lib/modules", jdk / "release"):
                 files[str(path)] = digest(path)

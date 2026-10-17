@@ -53,6 +53,16 @@ public class VariableIntLowMask {
     private byte[] nonzeroCounts;
     private int seed;
 
+    // Validate setup without invoking the JMH harness or any timed windows.
+    public static void main(String[] args) {
+        VariableIntLowMask benchmark = new VariableIntLowMask();
+        benchmark.setup();
+        benchmark.independent();
+        benchmark.dependentNonzero();
+        benchmark.countFeedbackNonzero();
+        System.out.println("VariableIntLowMask setup checks and untimed calls passed");
+    }
+
     @Setup
     public void setup() {
         Random random = new Random(8389111);

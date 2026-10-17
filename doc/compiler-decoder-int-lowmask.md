@@ -1,14 +1,100 @@
 # Decoder int low-mask matcher candidate
 
-This local source candidate is based directly on fork
+This compiler candidate is based directly on fork
 `89885a6288e7aaabd01678a704a586272c0f96e3`. It is independent of the rejected
 unknown-frequency inlining policy and the separately scoped G1 polling work.
-Source is published on `review/decoder-int-lowmask`; the implementation and
-benchmark revision is `340ecf10da523566c71b0dad2f4b162a3adeada0`. No JDK/ADLC
-build, Java compilation, JVM execution, benchmark or CI launch was performed.
-This is a reviewable implementation, not a validated performance result or an
-upstream-approved patch. Later preparation commits do not change the matcher,
-14 semantic targets or three benchmark cases.
+Source is published on `review/decoder-int-lowmask` in draft
+[PR #50](https://github.com/re-thc/openjdk-jdk27u/pull/50). The matcher and the logic
+of all three benchmark cases remain at `340ecf10da523566c71b0dad2f4b162a3adeada0`; the
+benchmark now also has an untimed setup entry point. The regression IR regex
+covers ADLC's auto-commuted `_0` rule. The 14 target expressions
+and semantic oracles are unchanged. Ordinary product builds, untimed correctness
+checks and normal draft CI are authorized. The separate measured campaign
+remains unapproved, and no throughput gain or original-capture identity is
+claimed.
+
+## Ordinary correctness and draft qualification
+
+Standalone prebuilt ADLC accepted the baseline and candidate full x86 sources
+under both release and fastdebug defines: four successful generations. The
+bootstrap tool SHA256 is
+`00499c9a5de8772b778301516cd4bf808b31b9d355a68ffca7d8a004328d5ae5`;
+commands, source hashes and generated hashes are retained in
+`/workspace/executor-lowmask-adlc-check/manifest.json`. This uses an existing
+generator, rather than proving that generator's source/build provenance.
+
+Both generated match variants append a fresh `RREGI` MachTemp, tie the result
+to that scratch through `two_adr()`, kill flags and map the real source/count
+operands correctly. ADLC generates `bzhiI_rReg_rReg` and
+`bzhiI_rReg_rReg_0` for the two root-AND orders. The original exact-name IR regex
+excluded `_0` in both positive and negative assertions; it now recognizes the
+two-name family. Generated-output and allocator-source review independently
+confirmed the intended interference with dying or identical source/count inputs.
+
+Current checks:
+
+- Candidate fastdebug JDK build and VM startup: passed. Its initial GCC16 build stopped
+  on baseline `handshake.cpp`'s `-Wnonnull` diagnostic in `JavaThread::cast`.
+  It completed with the local, per-file override below; the diagnostic
+  stays visible as a warning, and `-Werror` remains enabled elsewhere. No
+  handshake/runtime source or CI warning policy was changed.
+- Focused regression on the boot JDK with `VerifyIR=false`: passed, including
+  its enabled/disabled BMI2 scenarios. This is a semantic control, not a matched
+  fork-baseline image or proof of the new matcher's selection.
+- The benchmark compiled with the real JMH 1.37 annotation processor, obtained
+  through the repository's `make/devkit/createJMHBundle.sh`. Its four-batch setup
+  checks and one untimed call to each of the three methods passed on the boot
+  JDK and candidate, including the candidate's eager C2 configuration.
+- Candidate focused regression with IR verification enabled: passed in both
+  BMI2 scenarios. The enabled matching dump contains the base rule in `mask`
+  and `swapped`, and `_0` in `sameSSA`. The regex repair therefore covers an
+  actually selected alias-test variant, not only a hypothetical generated name.
+- One untimed reference-cell decode verified all 764,896 output bytes on the
+  boot JDK and candidate. The candidate also passed with eager C2 for the parser.
+  No `CodecProbe` run was used: that probe always performs timed windows.
+- The full candidate BMI jtreg directory passed all 27 tests. Normal CI results
+  are tracked on PR #50. No pending CI run is treated as a pass.
+
+An additional one-shot eager-C2 decoder dump did not select either new rule.
+At the two historical source sites (lines 291 and 293), `Bits.mask`'s saturated
+`bits >= 32` behavior remained as `CmpLTMask` feeding an `AndI` between the
+`LShiftI` and final `AddI(-1)`. That tree is outside this generic wrapped-mask
+rule. The dump confirms untimed decoder correctness for that eager configuration;
+it does not establish activation under the default profile. Default-profile
+activation remains a prerequisite to any decoder benefit claim.
+
+The candidate build uses the existing managed GCC16, boot JDK27 and jtreg83:
+
+```sh
+source /workspace/toolchains/activate.sh
+make CONF=lowmask-fastdebug JOBS=4 \
+  'BUILD_LIBJVM_handshake.cpp_EXTRA_CXXFLAGS=-Wno-error=nonnull' jdk
+JAVA_HOME=/workspace/toolchains/jdk27 /workspace/toolchains/jtreg83/bin/jtreg \
+  -jdk:/workspace/executor-bzhi-jdk/build/lowmask-fastdebug/jdk -conc:1 -timeoutFactor:2 \
+  -w:/workspace/executor-lowmask-focused-work -r:/workspace/executor-lowmask-focused-report \
+  test/hotspot/jtreg/compiler/intrinsics/bmi/TestBzhiIntMask.java
+JAVA_HOME=/workspace/toolchains/jdk27 /workspace/toolchains/jtreg83/bin/jtreg \
+  -jdk:/workspace/executor-bzhi-jdk/build/lowmask-fastdebug/jdk -conc:1 -timeoutFactor:2 \
+  -w:/workspace/executor-lowmask-bmi-work -r:/workspace/executor-lowmask-bmi-report \
+  test/hotspot/jtreg/compiler/intrinsics/bmi
+```
+
+The benchmark's standalone entry point executes setup validation and one call
+to each method, without the JMH engine or timing:
+
+```sh
+mkdir -p build/lowmask-untimed-micro
+build/lowmask-fastdebug/jdk/bin/javac -proc:full -cp 'build/jmh/jars/*' \
+  -d build/lowmask-untimed-micro \
+  test/micro/org/openjdk/bench/vm/compiler/VariableIntLowMask.java
+build/lowmask-fastdebug/jdk/bin/java -XX:-UseSuperWord \
+  -cp 'build/lowmask-untimed-micro:build/jmh/jars/*' \
+  org.openjdk.bench.vm.compiler.VariableIntLowMask
+build/lowmask-fastdebug/jdk/bin/java -XX:-UseSuperWord -XX:-TieredCompilation -Xcomp \
+  '-XX:CompileCommand=compileonly,org.openjdk.bench.vm.compiler.VariableIntLowMask::*' \
+  -cp 'build/lowmask-untimed-micro:build/jmh/jars/*' \
+  org.openjdk.bench.vm.compiler.VariableIntLowMask
+```
 
 ## Retained target evidence and upstream work
 
@@ -16,10 +102,11 @@ At codec pin `7a6b345d0df3d8571a30f4a9c974dfaa3a10d9b6`, the original hot
 sequence-reader trees for
 [BlockDecoder.java:291 and :293](https://github.com/re-thc/jzstd/blob/7a6b345d0df3d8571a30f4a9c974dfaa3a10d9b6/src/main/java/dev/jzstd/internal/BlockDecoder.java#L291)
 contain `AndI(AddI(LShiftI(1,count),-1),value)` (nodes 2374 and 2407).
-The parent-qualified x86 capture records `salI -> decI -> andI` sequences at
+The retained historical x86 report records `salI -> decI -> andI` sequences at
 048a-04a0 and 04bd-04d3, with count Phis in `[0,255]` and 87,304 occurrences per
-pinned 43,658-sequence frame. These are retained observations supplied by the
-parent, not fresh captures here. They do not establish a cycle share or explain
+pinned 43,658-sequence frame. The original raw nmethod is unavailable in this
+checkout; these are report-level observations, not fresh captures here. They
+do not establish a cycle share or explain
 the large Java/native gap. The bound does not justify dropping count masking.
 
 The optimization is April Ivy's
@@ -92,7 +179,7 @@ and :2473-2479 are not revived.
 
 ## Prepared regressions and benchmark source
 
-`TestBzhiIntMask` has 14 compiled targets and independent interpreted references.
+`TestBzhiIntMask` has 14 compilation targets and independent interpreted references.
 It covers all count residues and byte counts, negative and MIN/MAX counts,
 31/32/33 and 63/64 boundaries, identical source/count, source/count still live,
 shared masks, register pressure, int-to-long result width, long-mask exclusions,
@@ -117,20 +204,22 @@ from an independent count array. Setup compares the measured recurrence with an
 unsigned-long mask reference, requires at least eight distinct normalized widths
 and varying extracted values in each of four successive fixed-input batches,
 checks that perturbing an extraction can change the next normalized width, and
-restores the original seed. Those checks are prepared source and have not been
-executed; they are not a proof of diversity in every warmed state. The mixing,
+restores the original seed. Those checks passed on the boot and candidate JDKs,
+including an eager-C2 candidate control;
+they are not a proof of diversity in every warmed state. The mixing,
 loads and loop remain part of this diagnostic; it is not a single-instruction
 latency measurement or a guarantee of codec speedup.
 
 All three cases report 256 mask operations per invocation. SuperWord is disabled
 only for this scalar diagnostic micro. Compare each mode on matched images; do not
 substitute BMI2-off timing for the original BMI2-enabled baseline or claim that
-micro results establish codec benefit. The benchmark has not been compiled/run.
+micro results establish codec benefit. Untimed compilation/setup checks do not
+replace performance measurement.
 
 ## Deferred decoder-only validation
 
-The execution packet below replaces the earlier generic commands. No execution
-is requested in this source turn. Qualify ADLC generation and semantics before
+The measured execution packet below remains separate from ordinary correctness.
+Qualify ADLC generation and semantics before
 timing; preserve default inlining, GC and allocation behavior.
 
 The ready, explicitly separate cell is `git-source-native-l1-6901a47a`: source
@@ -151,10 +240,11 @@ its whole matrix as this decoder-only validation. JMH runs, if later assigned,
 use existing managed dependencies and remain supporting evidence. No speedup,
 machine-code safety or final compiler-cost result is claimed by source review.
 
-## Execution packet from the source-only sweep
+## Separate measured campaign preparation
 
-Preparation is complete at the branch head carrying this packet. The product,
-semantic test and micro source are identical to `340ecf10da5`; the companion
+Preparation is complete at the branch head carrying this packet. The matcher
+and benchmark case logic are identical to `340ecf10da5`; the benchmark has an
+untimed main method, and the regression includes the generated-name regex repair. The companion
 [driver](compiler-decoder-int-lowmask-validate.py) checks their full SHA256s.
 Use `git rev-parse HEAD` in the candidate checkout to freeze the preparation
 commit as well. The separate baseline checkout is
@@ -165,11 +255,12 @@ commit as well. The separate baseline checkout is
 
 Tasks have separate VMs. This lead has no global serial-slot requirement and
 no dependency on the cold-call campaign. Its VM needs no release from another
-task. The only execution hold is authorization for the new measured campaign
-described here, including its prerequisite builds and qualification. No process
-was stopped, and the shared checkout and its old build directories were not
-modified. GitHub reported zero Actions runs for this review branch. This lead
-is not waiting for CI, Mac hardware or a private binary handoff.
+task. Ordinary builds, untimed correctness and normal draft PR CI are permitted;
+only the separate new measured campaign described below still needs approval.
+The public draft was approved specifically and opened as PR #50, with normal
+CI. No existing process was stopped, and the shared checkout and its old build
+directories were not modified. There is no Mac or private binary-handoff
+dependency for local qualification.
 
 ## Verified input reconstruction and the original-cell provenance gap
 
@@ -225,8 +316,9 @@ pins both recorded hashes, requires the reconstruction provenance, labels all
 manifests with that cell ID and records original-cell identity as unverified.
 Re-establish target activation and path/sample counts on this cell; do not carry
 over the historical 43,658/87,304 counts or nmethod facts. Input readiness is
-resolved without a private handoff. Probe classes are compiled once from the
-pinned sources only after campaign authorization. Existing managed GCC16, boot
+resolved without a private handoff. The timed probe's classes are compiled once
+from the pinned sources for the separate campaign; untimed correctness uses a
+separate one-shot helper. Existing managed GCC16, boot
 JDK27 and jtreg83 paths are present; no installation or dependency download is
 part of this packet.
 
@@ -272,13 +364,14 @@ for root in /workspace/executor-lowmask-base /workspace/executor-bzhi-jdk; do
   test -z "$(git status --porcelain)"
   for mode in release fastdebug; do
     bash configure --with-conf-name="lowmask-$mode" --with-debug-level="$mode" "${common[@]}"
-    make CONF="lowmask-$mode" JOBS=4 images
+    make CONF="lowmask-$mode" JOBS=4 \
+      'BUILD_LIBJVM_handshake.cpp_EXTRA_CXXFLAGS=-Wno-error=nonnull' images
     git rev-parse HEAD > "build/lowmask-$mode/lowmask-source-head.txt"
     sha256sum "build/lowmask-$mode/spec.gmk" \
-      "build/lowmask-$mode/jdk/bin/java" \
-      "build/lowmask-$mode/jdk/lib/server/libjvm.so" \
-      "build/lowmask-$mode/jdk/lib/modules" \
-      "build/lowmask-$mode/jdk/release" > "build/lowmask-$mode/lowmask-build-sha256.txt"
+      "build/lowmask-$mode/images/jdk/bin/java" \
+      "build/lowmask-$mode/images/jdk/lib/server/libjvm.so" \
+      "build/lowmask-$mode/images/jdk/lib/modules" \
+      "build/lowmask-$mode/images/jdk/release" > "build/lowmask-$mode/lowmask-build-sha256.txt"
   done
 done
 BUILD
@@ -291,6 +384,11 @@ starting subprocesses by default:
 cd /workspace/executor-bzhi-jdk
 python3 doc/compiler-decoder-int-lowmask-validate.py
 ```
+
+The campaign driver uses `build/<conf>/images/jdk`, which has `lib/modules`.
+The ordinary `jdk` target produces the exploded `build/<conf>/jdk` used for
+local untimed tests above. The distinction was checked against the actual
+build layout; configure/build provenance remains in `build/<conf>`.
 
 The inputs are already verified at the driver's default paths. Both expected
 hashes are pinned in the driver; changing them is rejected rather than silently
@@ -348,10 +446,10 @@ pair ratios and their direction; it does not infer statistical significance.
 End-to-end no benefit rejects a performance benefit for this reference cell
 even if the matcher selects better code. Neither direction settles the original
 x86 gap while its provenance bridge remains absent. The three JMH cases and
-their four-batch setup checks remain uncompiled/unexecuted: no managed JMH
-bundle was identified in the checked
-toolchain/cache paths. If that supporting micro qualification is later assigned
-with a managed bundle, use
+their four-batch setup checks are subject to the untimed qualification above.
+JMH performance measurement remains separate. The standard managed JMH 1.37
+bundle is now available in `build/jmh/jars`. If micro performance is later
+assigned, use
 `--with-jmh=<bundle>` and
 `make CONF=lowmask-release test TEST=micro:org.openjdk.bench.vm.compiler.VariableIntLowMask MICRO='FORK=1;WARMUP_ITER=1;WARMUP_TIME=1;ITER=1;TIME=1'`
 on matched images. It is outside this fixed decoder campaign and cannot replace
