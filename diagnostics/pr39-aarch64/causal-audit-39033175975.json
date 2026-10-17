@@ -1,0 +1,3264 @@
+{
+  "candidate_tree": "b4693729ab5276f398ab6068b2377472284df285",
+  "group_counts": {
+    "heap-early": 17,
+    "heap-equal-128": 1,
+    "heap-equal-65536": 1,
+    "heap-equal-8": 1,
+    "heap-long-prefix": 3,
+    "heap-primitive-early": 7,
+    "native-long-prefix": 1,
+    "native-short-prefix": 3
+  },
+  "measured_source": "678938fb5e6dba44a4d7089b026effdfa266ec13",
+  "raw_artifact_sha256": "18709e984f467d67042fe4e76faf506c1ac4002f93fcd75048177a11f4ec1f05",
+  "rows": [
+    {
+      "between_fork_median_spread": {
+        "base": 1.0069361536173926,
+        "candidate": 1.0036767895403127
+      },
+      "candidate_over_base": [
+        1.2173343132199805,
+        1.2302848584957187
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "8"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.0549236600456466,
+          1.0589463972940572
+        ],
+        "candidate": [
+          1.0696085119266039,
+          1.065528714303901
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-000-0-base-compilation-pid257783.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.235",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-000-0-candidate-compilation-pid257862.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.214",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-000-1-base-compilation-pid258058.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.227",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-000-1-candidate-compilation-pid257941.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.212",
+          "worker_id": "442"
+        }
+      ],
+      "formal_status": "regression",
+      "group": "heap-early",
+      "medians_ns": {
+        "base": [
+          5.341176357529659,
+          5.304384332950623
+        ],
+        "candidate": [
+          6.501997252980165,
+          6.525903728471064
+        ]
+      },
+      "row": "screen-000",
+      "within_fork_spread": {
+        "base": [
+          1.0585737564523061,
+          1.0592260416862276
+        ],
+        "candidate": [
+          1.0697500058880196,
+          1.066015294744972
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0014880781407642,
+        "candidate": 1.0021496590585355
+      },
+      "candidate_over_base": [
+        1.2330665601385706,
+        1.2285933303789738
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "2",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "8"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.0585219241924178,
+          1.0862195872434166
+        ],
+        "candidate": [
+          1.0669025281561038,
+          1.06822918969713
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-001-0-base-compilation-pid258177.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.222",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-001-0-candidate-compilation-pid258257.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.214",
+          "worker_id": "441"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-001-1-base-compilation-pid258455.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.222",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-001-1-candidate-compilation-pid258337.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.208",
+          "worker_id": "441"
+        }
+      ],
+      "formal_status": "regression",
+      "group": "heap-early",
+      "medians_ns": {
+        "base": [
+          5.309660853070377,
+          5.317562043320703
+        ],
+        "candidate": [
+          6.547165243597918,
+          6.533121260300204
+        ]
+      },
+      "row": "screen-001",
+      "within_fork_spread": {
+        "base": [
+          1.058815117334284,
+          1.088286681556718
+        ],
+        "candidate": [
+          1.0677095355870247,
+          1.0689455404854107
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.00121392974295,
+        "candidate": 1.0029941801560587
+      },
+      "candidate_over_base": [
+        1.2289427912306163,
+        1.2311279644955717
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "3",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "8"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.0611779486627957,
+          1.066702893043775
+        ],
+        "candidate": [
+          1.0739293853843437,
+          1.0697047026276216
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-002-0-base-compilation-pid258573.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.222",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-002-0-candidate-compilation-pid258652.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.209",
+          "worker_id": "441"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-002-1-base-compilation-pid258849.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.227",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-002-1-candidate-compilation-pid258732.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.207",
+          "worker_id": "441"
+        }
+      ],
+      "formal_status": "regression",
+      "group": "heap-early",
+      "medians_ns": {
+        "base": [
+          5.299863808702484,
+          5.306297471013453
+        ],
+        "candidate": [
+          6.513229422208956,
+          6.532731204496792
+        ]
+      },
+      "row": "screen-002",
+      "within_fork_spread": {
+        "base": [
+          1.0620473538820159,
+          1.0670780943232265
+        ],
+        "candidate": [
+          1.0742741649038385,
+          1.0706818053942078
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.004591267335921,
+        "candidate": 1.0021197728260687
+      },
+      "candidate_over_base": [
+        1.2108833119484972,
+        1.219021383340171
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "4",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "8"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.0511643776373807,
+          1.050101964847473
+        ],
+        "candidate": [
+          1.0744180029130492,
+          1.064996861045963
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-003-0-base-compilation-pid258967.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.219",
+          "worker_id": "441"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-003-0-candidate-compilation-pid259046.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.215",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-003-1-base-compilation-pid259242.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.237",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-003-1-candidate-compilation-pid259125.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.204",
+          "worker_id": "441"
+        }
+      ],
+      "formal_status": "regression",
+      "group": "heap-early",
+      "medians_ns": {
+        "base": [
+          5.380327107126371,
+          5.355737484553772
+        ],
+        "candidate": [
+          6.514948306843458,
+          6.528758517227547
+        ]
+      },
+      "row": "screen-003",
+      "within_fork_spread": {
+        "base": [
+          1.0582918391236853,
+          1.0552547826238188
+        ],
+        "candidate": [
+          1.0755055207403634,
+          1.0660907813306144
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0094986674180493,
+        "candidate": 1.002717818065138
+      },
+      "candidate_over_base": [
+        1.229265451542144,
+        1.2143984203842502
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "5",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "8"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.0586843952091518,
+          1.0560207724904789
+        ],
+        "candidate": [
+          1.075850020527949,
+          1.0738067667473288
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-004-0-base-compilation-pid259359.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.233",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-004-0-candidate-compilation-pid259438.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.203",
+          "worker_id": "441"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-004-1-base-compilation-pid259635.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.230",
+          "worker_id": "441"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-004-1-candidate-compilation-pid259517.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.219",
+          "worker_id": "442"
+        }
+      ],
+      "formal_status": "regression",
+      "group": "heap-early",
+      "medians_ns": {
+        "base": [
+          5.302722990132424,
+          5.353091792225736
+        ],
+        "candidate": [
+          6.518454170868042,
+          6.500786216650828
+        ]
+      },
+      "row": "screen-004",
+      "within_fork_spread": {
+        "base": [
+          1.058785737112145,
+          1.060337958656724
+        ],
+        "candidate": [
+          1.0763617034980537,
+          1.074106898889122
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0017747959868253,
+        "candidate": 1.0049819017684885
+      },
+      "candidate_over_base": [
+        1.2290402256533444,
+        1.2329749044148586
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "6",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "8"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.0565858367244825,
+          1.0520817883966742
+        ],
+        "candidate": [
+          1.0711169880305664,
+          1.069154414816544
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-005-0-base-compilation-pid259752.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.226",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-005-0-candidate-compilation-pid259834.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.213",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-005-1-base-compilation-pid260031.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.221",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-005-1-candidate-compilation-pid259914.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.216",
+          "worker_id": "441"
+        }
+      ],
+      "formal_status": "regression",
+      "group": "heap-early",
+      "medians_ns": {
+        "base": [
+          5.316458175111565,
+          5.3258938037448775
+        ],
+        "candidate": [
+          6.534140955215686,
+          6.5666934035960285
+        ]
+      },
+      "row": "screen-005",
+      "within_fork_spread": {
+        "base": [
+          1.058445661584479,
+          1.0550619203942
+        ],
+        "candidate": [
+          1.073847748852915,
+          1.0722581987676856
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0027281603137046,
+        "candidate": 1.004185747134676
+      },
+      "candidate_over_base": [
+        1.225309953232424,
+        1.233795625135919
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "7",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "8"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.05712640031735,
+          1.0565740617549764
+        ],
+        "candidate": [
+          1.06711027019808,
+          1.0708714160865238
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-006-0-base-compilation-pid260148.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.223",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-006-0-candidate-compilation-pid260227.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.209",
+          "worker_id": "441"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-006-1-base-compilation-pid260425.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.220",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-006-1-candidate-compilation-pid260307.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.206",
+          "worker_id": "441"
+        }
+      ],
+      "formal_status": "regression",
+      "group": "heap-early",
+      "medians_ns": {
+        "base": [
+          5.318752589676801,
+          5.304281658962109
+        ],
+        "candidate": [
+          6.517120486911716,
+          6.544399505316145
+        ]
+      },
+      "row": "screen-006",
+      "within_fork_spread": {
+        "base": [
+          1.0587006307763338,
+          1.0567637361209061
+        ],
+        "candidate": [
+          1.0676128941806788,
+          1.0734567270392292
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0043282465786167,
+        "candidate": 1.0063859285364696
+      },
+      "candidate_over_base": [
+        1.4532558927302268,
+        1.4688664986607742
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "128"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.0553886191412787,
+          1.0808578915034863
+        ],
+        "candidate": [
+          1.0680549163796127,
+          1.067939126755593
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-007-0-base-compilation-pid260543.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.227",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-007-0-candidate-compilation-pid260622.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.212",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-007-1-base-compilation-pid260820.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.229",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-007-1-candidate-compilation-pid260702.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.213",
+          "worker_id": "442"
+        }
+      ],
+      "formal_status": "regression",
+      "group": "heap-early",
+      "medians_ns": {
+        "base": [
+          5.328507199706055,
+          5.305543499207906
+        ],
+        "candidate": [
+          7.743684487428264,
+          7.79313510317395
+        ]
+      },
+      "row": "screen-007",
+      "within_fork_spread": {
+        "base": [
+          1.058285359176783,
+          1.0810563640342814
+        ],
+        "candidate": [
+          1.0685332170305506,
+          1.0695393895719407
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0080953173134886,
+        "candidate": 1.0013529436165556
+      },
+      "candidate_over_base": [
+        1.4584036011856327,
+        1.4486494619576569
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "2",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "128"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.0539513418146729,
+          1.0550104174012807
+        ],
+        "candidate": [
+          1.0679630847583879,
+          1.0630068383762756
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-008-0-base-compilation-pid260937.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.235",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-008-0-candidate-compilation-pid261016.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.216",
+          "worker_id": "441"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-008-1-base-compilation-pid261213.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.236",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-008-1-candidate-compilation-pid261096.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.225",
+          "worker_id": "441"
+        }
+      ],
+      "formal_status": "regression",
+      "group": "heap-early",
+      "medians_ns": {
+        "base": [
+          5.30425035836243,
+          5.347189948123559
+        ],
+        "candidate": [
+          7.735737824225951,
+          7.7462038413345855
+        ]
+      },
+      "row": "screen-008",
+      "within_fork_spread": {
+        "base": [
+          1.0546582176874575,
+          1.0593970508736914
+        ],
+        "candidate": [
+          1.068279510433203,
+          1.0640981461480912
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0137980112025076,
+        "candidate": 1.0001305538783534
+      },
+      "candidate_over_base": [
+        1.4553650573675403,
+        1.4357446402895444
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "3",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "128"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.0570247371022634,
+          1.04362368450014
+        ],
+        "candidate": [
+          1.0654229668679305,
+          1.064542501354728
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-009-0-base-compilation-pid261330.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.230",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-009-0-candidate-compilation-pid261409.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.211",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-009-1-base-compilation-pid261605.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.229",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-009-1-candidate-compilation-pid261488.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.208",
+          "worker_id": "442"
+        }
+      ],
+      "formal_status": "regression",
+      "group": "heap-early",
+      "medians_ns": {
+        "base": [
+          5.3208941197532615,
+          5.394311876424974
+        ],
+        "candidate": [
+          7.743843375841314,
+          7.744854364627391
+        ]
+      },
+      "row": "screen-009",
+      "within_fork_spread": {
+        "base": [
+          1.0586767086459372,
+          1.0458800087794637
+        ],
+        "candidate": [
+          1.0656461017853356,
+          1.0646525959654427
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0038104227582143,
+        "candidate": 1.0121568555307392
+      },
+      "candidate_over_base": [
+        1.4559045391428809,
+        1.4680100214965908
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "4",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "128"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.0573846488293397,
+          1.0582973474932693
+        ],
+        "candidate": [
+          1.0630114090714846,
+          1.0647306290629648
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-010-0-base-compilation-pid261724.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.233",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-010-0-candidate-compilation-pid261804.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.211",
+          "worker_id": "441"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-010-1-base-compilation-pid262001.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.237",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-010-1-candidate-compilation-pid261883.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.216",
+          "worker_id": "442"
+        }
+      ],
+      "formal_status": "regression",
+      "group": "heap-early",
+      "medians_ns": {
+        "base": [
+          5.311841211189983,
+          5.332081571829122
+        ],
+        "candidate": [
+          7.733533730577714,
+          7.8275491828824455
+        ]
+      },
+      "row": "screen-010",
+      "within_fork_spread": {
+        "base": [
+          1.0585329125831129,
+          1.0609491673404736
+        ],
+        "candidate": [
+          1.0632902841977974,
+          1.0722907173098832
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0113623299744987,
+        "candidate": 1.001898709834249
+      },
+      "candidate_over_base": [
+        1.4521016385942749,
+        1.4658177340216898
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "5",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "128"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.0545948910114162,
+          1.0877077893150933
+        ],
+        "candidate": [
+          1.0602458051199528,
+          1.0582020760737243
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-011-0-base-compilation-pid262119.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.231",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-011-0-candidate-compilation-pid262198.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.217",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-011-1-base-compilation-pid262394.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.233",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-011-1-candidate-compilation-pid262277.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.216",
+          "worker_id": "441"
+        }
+      ],
+      "formal_status": "regression",
+      "group": "heap-early",
+      "medians_ns": {
+        "base": [
+          5.367877152878686,
+          5.307570782287329
+        ],
+        "candidate": [
+          7.794703209467911,
+          7.779931377252141
+        ]
+      },
+      "row": "screen-011",
+      "within_fork_spread": {
+        "base": [
+          1.0607178456752424,
+          1.0878949754383618
+        ],
+        "candidate": [
+          1.0641032044650995,
+          1.0591465338484676
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0059706629852452,
+        "candidate": 1.000937100019831
+      },
+      "candidate_over_base": [
+        1.4480676881858467,
+        1.4553498040016366
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "6",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "128"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.0513126971847888,
+          1.057794451726002
+        ],
+        "candidate": [
+          1.0682671469780394,
+          1.063989893920388
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-012-0-base-compilation-pid262511.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.229",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-012-0-candidate-compilation-pid262590.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.216",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-012-1-base-compilation-pid262786.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.229",
+          "worker_id": "441"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-012-1-candidate-compilation-pid262669.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.221",
+          "worker_id": "442"
+        }
+      ],
+      "formal_status": "regression",
+      "group": "heap-early",
+      "medians_ns": {
+        "base": [
+          5.356517037972265,
+          5.324724900104597
+        ],
+        "candidate": [
+          7.7565992439045965,
+          7.749337339729859
+        ]
+      },
+      "row": "screen-012",
+      "within_fork_spread": {
+        "base": [
+          1.0568178635792025,
+          1.059435493476047
+        ],
+        "candidate": [
+          1.0702187975291733,
+          1.0646097975769575
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0028263753692552,
+        "candidate": 1.0078413330843918
+      },
+      "candidate_over_base": [
+        1.465872677709788,
+        1.4585785836364769
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "7",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "128"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.0507345836885458,
+          1.058413430308531
+        ],
+        "candidate": [
+          1.0617380237064211,
+          1.0715920339449287
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-013-0-base-compilation-pid262903.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.229",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-013-0-candidate-compilation-pid262984.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.204",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-013-1-base-compilation-pid263183.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.219",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-013-1-candidate-compilation-pid263066.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.232",
+          "worker_id": "442"
+        }
+      ],
+      "formal_status": "regression",
+      "group": "heap-early",
+      "medians_ns": {
+        "base": [
+          5.3198456905348985,
+          5.304852186976089
+        ],
+        "candidate": [
+          7.798216447387267,
+          7.737543789280451
+        ]
+      },
+      "row": "screen-013",
+      "within_fork_spread": {
+        "base": [
+          1.0521759034825944,
+          1.0585635686228758
+        ],
+        "candidate": [
+          1.0653102127173928,
+          1.0729095652946035
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0013642322621392,
+        "candidate": 1.0011944753553415
+      },
+      "candidate_over_base": [
+        1.444225088000731,
+        1.447922791159928
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1",
+          "kind": "BOOLEAN",
+          "offset": "1",
+          "size": "64"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.3298377077931258,
+          1.323253415702463
+        ],
+        "candidate": [
+          1.1022181662035386,
+          1.0972919957302483
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-014-0-base-compilation-pid263300.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.218",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-014-0-candidate-compilation-pid263380.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.192",
+          "worker_id": "441"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-014-1-base-compilation-pid263576.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.214",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-014-1-candidate-compilation-pid263459.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.197",
+          "worker_id": "441"
+        }
+      ],
+      "formal_status": "inconclusive",
+      "group": "heap-primitive-early",
+      "medians_ns": {
+        "base": [
+          5.245477624939455,
+          5.238331324347007
+        ],
+        "candidate": [
+          7.57565038448405,
+          7.584699312169
+        ]
+      },
+      "row": "screen-014",
+      "within_fork_spread": {
+        "base": [
+          1.333546327453194,
+          1.3262216667609923
+        ],
+        "candidate": [
+          1.1043409368106532,
+          1.098039495600071
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0005394247165245,
+        "candidate": 1.0036479532887916
+      },
+      "candidate_over_base": [
+        1.5328731689170787,
+        1.5264782237792311
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1",
+          "kind": "CHAR",
+          "offset": "1",
+          "size": "64"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.346527466216766,
+          1.3420459346174252
+        ],
+        "candidate": [
+          1.072350236497202,
+          1.0707865996662198
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-015-0-base-compilation-pid263693.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.220",
+          "worker_id": "443"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-015-0-candidate-compilation-pid263772.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.211",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-015-1-base-compilation-pid263968.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.224",
+          "worker_id": "443"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-015-1-candidate-compilation-pid263851.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.204",
+          "worker_id": "441"
+        }
+      ],
+      "formal_status": "inconclusive",
+      "group": "heap-primitive-early",
+      "medians_ns": {
+        "base": [
+          4.766945840055111,
+          4.76951724846357
+        ],
+        "candidate": [
+          7.307123375901363,
+          7.280564217719077
+        ]
+      },
+      "row": "screen-015",
+      "within_fork_spread": {
+        "base": [
+          1.3489632084156782,
+          1.3438589124899905
+        ],
+        "candidate": [
+          1.0727515257749773,
+          1.073429361365095
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0011089316272883,
+        "candidate": 1.0004825457586852
+      },
+      "candidate_over_base": [
+        1.504702913739506,
+        1.5023112155111902
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1",
+          "kind": "SHORT",
+          "offset": "1",
+          "size": "64"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.3276735065341614,
+          1.3348116510412977
+        ],
+        "candidate": [
+          1.0510858484777796,
+          1.0500910038207694
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-016-0-base-compilation-pid264085.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.220",
+          "worker_id": "443"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-016-0-candidate-compilation-pid264164.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.208",
+          "worker_id": "441"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-016-1-base-compilation-pid264363.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.220",
+          "worker_id": "443"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-016-1-candidate-compilation-pid264244.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.198",
+          "worker_id": "442"
+        }
+      ],
+      "formal_status": "inconclusive",
+      "group": "heap-primitive-early",
+      "medians_ns": {
+        "base": [
+          4.989864977844579,
+          4.99539839693441
+        ],
+        "candidate": [
+          7.508264371329454,
+          7.504643037661183
+        ]
+      },
+      "row": "screen-016",
+      "within_fork_spread": {
+        "base": [
+          1.3279259294061834,
+          1.3350026291763866
+        ],
+        "candidate": [
+          1.0554111744564392,
+          1.0548752554949108
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0001621404802687,
+        "candidate": 1.00173151258631
+      },
+      "candidate_over_base": [
+        1.4126316728119561,
+        1.4104185601010486
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1",
+          "kind": "INT",
+          "offset": "1",
+          "size": "64"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.283142391262747,
+          1.280509775248916
+        ],
+        "candidate": [
+          1.100216499023425,
+          1.103566546300624
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-017-0-base-compilation-pid264480.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.213",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-017-0-candidate-compilation-pid264560.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.204",
+          "worker_id": "441"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-017-1-base-compilation-pid264756.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.225",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-017-1-candidate-compilation-pid264639.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.206",
+          "worker_id": "442"
+        }
+      ],
+      "formal_status": "inconclusive",
+      "group": "heap-primitive-early",
+      "medians_ns": {
+        "base": [
+          5.035124197213205,
+          5.0343079321072715
+        ],
+        "candidate": [
+          7.112775917525247,
+          7.100481344708025
+        ]
+      },
+      "row": "screen-017",
+      "within_fork_spread": {
+        "base": [
+          1.2854973029913213,
+          1.28268499151812
+        ],
+        "candidate": [
+          1.1018861727647682,
+          1.103767210499536
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0004402577152918,
+        "candidate": 1.0004609767910602
+      },
+      "candidate_over_base": [
+        1.4960579098235138,
+        1.4960269271686113
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1",
+          "kind": "LONG",
+          "offset": "1",
+          "size": "64"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.2658817610955468,
+          1.2709029936706646
+        ],
+        "candidate": [
+          1.0800636533810126,
+          1.0804363295022519
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-018-0-base-compilation-pid264873.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.220",
+          "worker_id": "441"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-018-0-candidate-compilation-pid264953.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.216",
+          "worker_id": "441"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-018-1-base-compilation-pid265149.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.223",
+          "worker_id": "441"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-018-1-candidate-compilation-pid265032.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.214",
+          "worker_id": "440"
+        }
+      ],
+      "formal_status": "inconclusive",
+      "group": "heap-primitive-early",
+      "medians_ns": {
+        "base": [
+          4.738549916361638,
+          4.736464651255716
+        ],
+        "candidate": [
+          7.089145083466379,
+          7.085878657860836
+        ]
+      },
+      "row": "screen-018",
+      "within_fork_spread": {
+        "base": [
+          1.2678147099350208,
+          1.2724357872591399
+        ],
+        "candidate": [
+          1.0805333190074526,
+          1.080667349019382
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0103639957858541,
+        "candidate": 1.0071330139238641
+      },
+      "candidate_over_base": [
+        1.3831725322248394,
+        1.3787493685113053
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1",
+          "kind": "FLOAT",
+          "offset": "1",
+          "size": "64"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.2195336203347353,
+          1.2134364610103596
+        ],
+        "candidate": [
+          1.115492615820614,
+          1.1175840996410993
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-019-0-base-compilation-pid265266.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.251",
+          "worker_id": "444"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-019-0-candidate-compilation-pid265346.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.228",
+          "worker_id": "444"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-019-1-base-compilation-pid265543.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.259",
+          "worker_id": "444"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-019-1-candidate-compilation-pid265426.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.228",
+          "worker_id": "444"
+        }
+      ],
+      "formal_status": "inconclusive",
+      "group": "heap-primitive-early",
+      "medians_ns": {
+        "base": [
+          5.630820403137701,
+          5.689178202066722
+        ],
+        "candidate": [
+          7.788396115511264,
+          7.843950853447775
+        ]
+      },
+      "row": "screen-019",
+      "within_fork_spread": {
+        "base": [
+          1.2195470840081162,
+          1.2209634021919105
+        ],
+        "candidate": [
+          1.1180222585662958,
+          1.1199740318845255
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0028746548073109,
+        "candidate": 1.0034092533533387
+      },
+      "candidate_over_base": [
+        1.4352051737406597,
+        1.4262289046362506
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1",
+          "kind": "DOUBLE",
+          "offset": "1",
+          "size": "64"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.2536783480413125,
+          1.2518791146286157
+        ],
+        "candidate": [
+          1.0805598937517382,
+          1.0800915622511342
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-020-0-base-compilation-pid265660.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.255",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-020-0-candidate-compilation-pid265739.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.248",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-020-1-base-compilation-pid265935.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.249",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-020-1-candidate-compilation-pid265818.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.224",
+          "worker_id": "442"
+        }
+      ],
+      "formal_status": "inconclusive",
+      "group": "heap-primitive-early",
+      "medians_ns": {
+        "base": [
+          5.7138495009226995,
+          5.730274845858777
+        ],
+        "candidate": [
+          8.200546365699745,
+          8.172683616673824
+        ]
+      },
+      "row": "screen-020",
+      "within_fork_spread": {
+        "base": [
+          1.2564102111687694,
+          1.2570646525770734
+        ],
+        "candidate": [
+          1.0812268685319086,
+          1.082108867502045
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0238470825937922,
+        "candidate": 1.0019215769870098
+      },
+      "candidate_over_base": [
+        1.1539489548301383,
+        1.1292373404599805
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "-1",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "8"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.125953972497291,
+          1.1000436602516708
+        ],
+        "candidate": [
+          1.1511841551395443,
+          1.1453434212038633
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-021-0-base-compilation-pid266052.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.260",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-021-0-candidate-compilation-pid266132.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.224",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-021-1-base-compilation-pid266328.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.238",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-021-1-candidate-compilation-pid266211.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.268",
+          "worker_id": "442"
+        }
+      ],
+      "formal_status": "inconclusive",
+      "group": "heap-equal-8",
+      "medians_ns": {
+        "base": [
+          5.751028475059294,
+          5.888173726103283
+        ],
+        "candidate": [
+          6.6363932979930365,
+          6.649145638631206
+        ]
+      },
+      "row": "screen-021",
+      "within_fork_spread": {
+        "base": [
+          1.1264168995590857,
+          1.1036008410916005
+        ],
+        "candidate": [
+          1.1529613662149212,
+          1.1489551497451949
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0037419403803793,
+        "candidate": 1.0001888715490899
+      },
+      "candidate_over_base": [
+        0.7242770622004275,
+        0.7271245709967377
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "-1",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "128"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.057511993008159,
+          1.059448795888833
+        ],
+        "candidate": [
+          1.1031017462983492,
+          1.1031814868010004
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-022-0-base-compilation-pid266446.xml",
+          "path_kind": "worker-calls-C2-Arrays.mismatch",
+          "runtime_worker_events": [],
+          "stamp": "1.225",
+          "worker_id": "443"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-022-0-candidate-compilation-pid266526.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.223",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-022-1-base-compilation-pid266724.xml",
+          "path_kind": "worker-calls-C2-Arrays.mismatch",
+          "runtime_worker_events": [],
+          "stamp": "1.229",
+          "worker_id": "443"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-022-1-candidate-compilation-pid266607.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.222",
+          "worker_id": "443"
+        }
+      ],
+      "formal_status": "pass",
+      "group": "heap-equal-128",
+      "medians_ns": {
+        "base": [
+          13.364780366670178,
+          13.314956592932088
+        ],
+        "candidate": [
+          9.67980386092583,
+          9.681632100475928
+        ]
+      },
+      "row": "screen-022",
+      "within_fork_spread": {
+        "base": [
+          1.0595206848133047,
+          1.0595304362726172
+        ],
+        "candidate": [
+          1.1038247961773617,
+          1.1032761263314201
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0006677427687196,
+        "candidate": 1.0044201955418983
+      },
+      "candidate_over_base": [
+        1.0790466486692303,
+        1.0750153960050968
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "-1",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "65536"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.0398036838850404,
+          1.0448053788602794
+        ],
+        "candidate": [
+          1.0755208670321412,
+          1.0778036931427117
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-023-0-base-compilation-pid266842.xml",
+          "path_kind": "worker-calls-C2-Arrays.mismatch",
+          "runtime_worker_events": [],
+          "stamp": "1.229",
+          "worker_id": "443"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-023-0-candidate-compilation-pid266921.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.238",
+          "worker_id": "443"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-023-1-base-compilation-pid267118.xml",
+          "path_kind": "worker-calls-C2-Arrays.mismatch",
+          "runtime_worker_events": [],
+          "stamp": "1.233",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-023-1-candidate-compilation-pid267001.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.328",
+          "worker_id": "442"
+        }
+      ],
+      "formal_status": "regression",
+      "group": "heap-equal-65536",
+      "medians_ns": {
+        "base": [
+          3196.161118002987,
+          3194.0283286834233
+        ],
+        "candidate": [
+          3448.806942988024,
+          3433.6296286111074
+        ]
+      },
+      "row": "screen-023",
+      "within_fork_spread": {
+        "base": [
+          1.039824036143271,
+          1.044953082744754
+        ],
+        "candidate": [
+          1.0795193896709165,
+          1.07926085883601
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0055416087974722,
+        "candidate": 1.0054856388080713
+      },
+      "candidate_over_base": [
+        1.4564963178150494,
+        1.4565773931485242
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "65536"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.0610364435354545,
+          1.0575444924304398
+        ],
+        "candidate": [
+          1.0634057409369002,
+          1.068469084302201
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-024-0-base-compilation-pid267235.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.238",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-024-0-candidate-compilation-pid267314.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.208",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-024-1-base-compilation-pid267512.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.241",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-024-1-candidate-compilation-pid267394.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.220",
+          "worker_id": "441"
+        }
+      ],
+      "formal_status": "regression",
+      "group": "heap-early",
+      "medians_ns": {
+        "base": [
+          5.331567576830099,
+          5.302184942109083
+        ],
+        "candidate": [
+          7.765408543835145,
+          7.723042720968606
+        ]
+      },
+      "row": "screen-024",
+      "within_fork_spread": {
+        "base": [
+          1.0635916779568122,
+          1.0576793197680348
+        ],
+        "candidate": [
+          1.0658721669306015,
+          1.0690184414686055
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.006979819805352,
+        "candidate": 1.0061285760392669
+      },
+      "candidate_over_base": [
+        1.4580207335577682,
+        1.4592543045841966
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "7",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "65536"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.053391144137563,
+          1.060018080897186
+        ],
+        "candidate": [
+          1.0590584110776424,
+          1.0699576997954807
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-025-0-base-compilation-pid267635.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.237",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-025-0-candidate-compilation-pid267714.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.217",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-025-1-base-compilation-pid267911.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.234",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-025-1-candidate-compilation-pid267793.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.216",
+          "worker_id": "442"
+        }
+      ],
+      "formal_status": "regression",
+      "group": "heap-early",
+      "medians_ns": {
+        "base": [
+          5.345242028537828,
+          5.308191806238041
+        ],
+        "candidate": [
+          7.793473703492537,
+          7.746001742811423
+        ]
+      },
+      "row": "screen-025",
+      "within_fork_spread": {
+        "base": [
+          1.0576333652572416,
+          1.0601391283119714
+        ],
+        "candidate": [
+          1.0637842747866797,
+          1.0711985868593266
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.042753813552849,
+        "candidate": 1.0037487373187703
+      },
+      "candidate_over_base": [
+        1.391326169080246,
+        1.3292973989252728
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "10",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "65536"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.1280152267568857,
+          1.055739977686656
+        ],
+        "candidate": [
+          1.0682576667792592,
+          1.0676748973134258
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-026-0-base-compilation-pid268030.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.226",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-026-0-candidate-compilation-pid268112.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.215",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-026-1-base-compilation-pid268309.xml",
+          "path_kind": "worker-inline-Java",
+          "runtime_worker_events": [],
+          "stamp": "1.235",
+          "worker_id": "442"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-026-1-candidate-compilation-pid268192.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.213",
+          "worker_id": "442"
+        }
+      ],
+      "formal_status": "regression",
+      "group": "heap-early",
+      "medians_ns": {
+        "base": [
+          5.617809067148126,
+          5.857991828580481
+        ],
+        "candidate": [
+          7.816204768019472,
+          7.787013300657535
+        ]
+      },
+      "row": "screen-026",
+      "within_fork_spread": {
+        "base": [
+          1.128486638684399,
+          1.055956085456202
+        ],
+        "candidate": [
+          1.069864924828663,
+          1.067758126403784
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0035505598652887,
+        "candidate": 1.000285954087239
+      },
+      "candidate_over_base": [
+        0.99915495480933,
+        1.0029892411733268
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "25",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "131072"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.073482209566543,
+          1.0784809208551582
+        ],
+        "candidate": [
+          1.0961883303309554,
+          1.0930370819794661
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-027-0-base-compilation-pid268426.xml",
+          "path_kind": "worker-calls-C2-Arrays.mismatch",
+          "runtime_worker_events": [],
+          "stamp": "1.232",
+          "worker_id": "444"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-027-0-candidate-compilation-pid268506.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.258",
+          "worker_id": "443"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-027-1-base-compilation-pid268702.xml",
+          "path_kind": "worker-calls-C2-Arrays.mismatch",
+          "runtime_worker_events": [],
+          "stamp": "1.221",
+          "worker_id": "444"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-027-1-candidate-compilation-pid268585.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.227",
+          "worker_id": "443"
+        }
+      ],
+      "formal_status": "pass",
+      "group": "heap-long-prefix",
+      "medians_ns": {
+        "base": [
+          8.15785638049529,
+          8.128993901005204
+        ],
+        "candidate": [
+          8.150962623194776,
+          8.15329342427181
+        ]
+      },
+      "row": "screen-027",
+      "within_fork_spread": {
+        "base": [
+          1.075375062219101,
+          1.078730279953775
+        ],
+        "candidate": [
+          1.0968880175842977,
+          1.0935486618309838
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0002775189444724,
+        "candidate": 1.0021110063365024
+      },
+      "candidate_over_base": [
+        1.013593931107935,
+        1.0160155196452054
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "82",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "131072"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.0768036646828922,
+          1.075902187571856
+        ],
+        "candidate": [
+          1.0432230036788106,
+          1.0502197282982597
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-028-0-base-compilation-pid268820.xml",
+          "path_kind": "worker-calls-C2-Arrays.mismatch",
+          "runtime_worker_events": [],
+          "stamp": "1.229",
+          "worker_id": "444"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-028-0-candidate-compilation-pid268900.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.219",
+          "worker_id": "443"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-028-1-base-compilation-pid269096.xml",
+          "path_kind": "worker-calls-C2-Arrays.mismatch",
+          "runtime_worker_events": [],
+          "stamp": "1.231",
+          "worker_id": "444"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-028-1-candidate-compilation-pid268979.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.220",
+          "worker_id": "443"
+        }
+      ],
+      "formal_status": "pass",
+      "group": "heap-long-prefix",
+      "medians_ns": {
+        "base": [
+          9.844672831421033,
+          9.841941506202673
+        ],
+        "candidate": [
+          9.978500635671528,
+          9.999565313742224
+        ]
+      },
+      "row": "screen-028",
+      "within_fork_spread": {
+        "base": [
+          1.0770176236914129,
+          1.0759316278556201
+        ],
+        "candidate": [
+          1.0444446113434234,
+          1.0522249338558787
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0579978609911582,
+        "candidate": 1.0664742712840802
+      },
+      "candidate_over_base": [
+        0.9195781258638498,
+        0.9122692561600988
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit.mismatch",
+        "mode": "c2",
+        "params": {
+          "difference": "1267",
+          "kind": "BYTE",
+          "offset": "1",
+          "size": "131072"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          0.9905154312223996,
+          1.0471759776340477
+        ],
+        "candidate": [
+          1.0869939159091133,
+          1.0843416755563344
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 0,
+          "path": "screen-029-0-base-compilation-pid269214.xml",
+          "path_kind": "worker-calls-C2-Arrays.mismatch",
+          "runtime_worker_events": [],
+          "stamp": "1.219",
+          "worker_id": "444"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 0,
+          "path": "screen-029-0-candidate-compilation-pid269294.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.217",
+          "worker_id": "443"
+        },
+        {
+          "compiler": "c2",
+          "image": "base",
+          "order": 1,
+          "path": "screen-029-1-base-compilation-pid269492.xml",
+          "path_kind": "worker-calls-C2-Arrays.mismatch",
+          "runtime_worker_events": [],
+          "stamp": "1.224",
+          "worker_id": "444"
+        },
+        {
+          "compiler": "c2",
+          "image": "candidate",
+          "order": 1,
+          "path": "screen-029-1-candidate-compilation-pid269375.xml",
+          "path_kind": "worker-inline-intrinsic",
+          "runtime_worker_events": [],
+          "stamp": "1.218",
+          "worker_id": "443"
+        }
+      ],
+      "formal_status": "pass",
+      "group": "heap-long-prefix",
+      "medians_ns": {
+        "base": [
+          55.143152551185445,
+          52.12028736950941
+        ],
+        "candidate": [
+          50.70843687724348,
+          47.54773578943294
+        ]
+      },
+      "row": "screen-029",
+      "within_fork_spread": {
+        "base": [
+          1.011949864514407,
+          1.0479542342895702
+        ],
+        "candidate": [
+          1.0926489015672776,
+          1.084374786041146
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.00782288528757,
+        "candidate": 1.000799951980709
+      },
+      "candidate_over_base": [
+        1.370498322672839,
+        1.3823244831718011
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.nio.MemoryMismatch.segmentMismatch",
+        "mode": "c2",
+        "params": {
+          "alignment": "1",
+          "difference": "10",
+          "size": "65536",
+          "storage": "NATIVE"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.0397726805093253,
+          1.0413853416984928
+        ],
+        "candidate": [
+          1.0299908907947737,
+          1.0245639827856565
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "helper_id": "471",
+          "helper_stamp": "0.769",
+          "image": "base",
+          "nmethod_total_bytes": 1528,
+          "order": 0,
+          "path": "screen-030-0-base-compilation-pid269609.xml",
+          "path_kind": "worker-call-C2-segment-helper",
+          "runtime_helper_events": []
+        },
+        {
+          "compiler": "c2",
+          "helper_id": "470",
+          "helper_stamp": "0.741",
+          "image": "candidate",
+          "nmethod_total_bytes": 1800,
+          "order": 0,
+          "path": "screen-030-0-candidate-compilation-pid269688.xml",
+          "path_kind": "worker-call-C2-segment-helper",
+          "runtime_helper_events": []
+        },
+        {
+          "compiler": "c2",
+          "helper_id": "471",
+          "helper_stamp": "0.752",
+          "image": "base",
+          "nmethod_total_bytes": 1528,
+          "order": 1,
+          "path": "screen-030-1-base-compilation-pid269885.xml",
+          "path_kind": "worker-call-C2-segment-helper",
+          "runtime_helper_events": []
+        },
+        {
+          "compiler": "c2",
+          "helper_id": "470",
+          "helper_stamp": "0.748",
+          "image": "candidate",
+          "nmethod_total_bytes": 1800,
+          "order": 1,
+          "path": "screen-030-1-candidate-compilation-pid269767.xml",
+          "path_kind": "worker-call-C2-segment-helper",
+          "runtime_helper_events": []
+        }
+      ],
+      "formal_status": "regression",
+      "group": "native-short-prefix",
+      "medians_ns": {
+        "base": [
+          6.7100103417627,
+          6.657926149244052
+        ],
+        "candidate": [
+          9.196057918503184,
+          9.203414323249804
+        ]
+      },
+      "row": "screen-030",
+      "within_fork_spread": {
+        "base": [
+          1.0448815054401548,
+          1.0419229272835033
+        ],
+        "candidate": [
+          1.0302311177924908,
+          1.0266114526091499
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0112811418100587,
+        "candidate": 1.0016949412784464
+      },
+      "candidate_over_base": [
+        1.285882194783371,
+        1.302592496174948
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.nio.MemoryMismatch.segmentMismatch",
+        "mode": "c2",
+        "params": {
+          "alignment": "1",
+          "difference": "25",
+          "size": "131072",
+          "storage": "NATIVE"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.0288134053950033,
+          1.0324503724888212
+        ],
+        "candidate": [
+          1.022098173247118,
+          1.0183088063150119
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "helper_id": "473",
+          "helper_stamp": "0.761",
+          "image": "base",
+          "nmethod_total_bytes": 1712,
+          "order": 0,
+          "path": "screen-031-0-base-compilation-pid270002.xml",
+          "path_kind": "worker-call-C2-segment-helper",
+          "runtime_helper_events": []
+        },
+        {
+          "compiler": "c2",
+          "helper_id": "471",
+          "helper_stamp": "0.747",
+          "image": "candidate",
+          "nmethod_total_bytes": 1944,
+          "order": 0,
+          "path": "screen-031-0-candidate-compilation-pid270081.xml",
+          "path_kind": "worker-call-C2-segment-helper",
+          "runtime_helper_events": []
+        },
+        {
+          "compiler": "c2",
+          "helper_id": "471",
+          "helper_stamp": "0.755",
+          "image": "base",
+          "nmethod_total_bytes": 1712,
+          "order": 1,
+          "path": "screen-031-1-base-compilation-pid270277.xml",
+          "path_kind": "worker-call-C2-segment-helper",
+          "runtime_helper_events": []
+        },
+        {
+          "compiler": "c2",
+          "helper_id": "472",
+          "helper_stamp": "0.741",
+          "image": "candidate",
+          "nmethod_total_bytes": 1944,
+          "order": 1,
+          "path": "screen-031-1-candidate-compilation-pid270160.xml",
+          "path_kind": "worker-call-C2-segment-helper",
+          "runtime_helper_events": []
+        }
+      ],
+      "formal_status": "regression",
+      "group": "native-short-prefix",
+      "medians_ns": {
+        "base": [
+          7.391912182504253,
+          7.309453204351971
+        ],
+        "candidate": [
+          9.505128260884506,
+          9.521238895130807
+        ]
+      },
+      "row": "screen-031",
+      "within_fork_spread": {
+        "base": [
+          1.0369586228738754,
+          1.033238485920943
+        ],
+        "candidate": [
+          1.0224191091738088,
+          1.0185608102361436
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.00446407540021,
+        "candidate": 1.0031541386626739
+      },
+      "candidate_over_base": [
+        1.1868177342107087,
+        1.177828202644131
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.nio.MemoryMismatch.segmentMismatch",
+        "mode": "c2",
+        "params": {
+          "alignment": "1",
+          "difference": "82",
+          "size": "131072",
+          "storage": "HEAP_NATIVE"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.0195341513154867,
+          1.0145914565557084
+        ],
+        "candidate": [
+          1.0288551764685983,
+          1.0221266473481196
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "helper_id": "476",
+          "helper_stamp": "0.758",
+          "image": "base",
+          "nmethod_total_bytes": 2056,
+          "order": 0,
+          "path": "screen-032-0-base-compilation-pid270394.xml",
+          "path_kind": "worker-call-C2-segment-helper",
+          "runtime_helper_events": []
+        },
+        {
+          "compiler": "c2",
+          "helper_id": "475",
+          "helper_stamp": "0.746",
+          "image": "candidate",
+          "nmethod_total_bytes": 2328,
+          "order": 0,
+          "path": "screen-032-0-candidate-compilation-pid270473.xml",
+          "path_kind": "worker-call-C2-segment-helper",
+          "runtime_helper_events": []
+        },
+        {
+          "compiler": "c2",
+          "helper_id": "476",
+          "helper_stamp": "0.764",
+          "image": "base",
+          "nmethod_total_bytes": 2056,
+          "order": 1,
+          "path": "screen-032-1-base-compilation-pid270670.xml",
+          "path_kind": "worker-call-C2-segment-helper",
+          "runtime_helper_events": []
+        },
+        {
+          "compiler": "c2",
+          "helper_id": "477",
+          "helper_stamp": "0.745",
+          "image": "candidate",
+          "nmethod_total_bytes": 2328,
+          "order": 1,
+          "path": "screen-032-1-candidate-compilation-pid270553.xml",
+          "path_kind": "worker-call-C2-segment-helper",
+          "runtime_helper_events": []
+        }
+      ],
+      "formal_status": "regression",
+      "group": "native-short-prefix",
+      "medians_ns": {
+        "base": [
+          10.245239042091484,
+          10.290974561668556
+        ],
+        "candidate": [
+          12.159231386382107,
+          12.121000071426547
+        ]
+      },
+      "row": "screen-032",
+      "within_fork_spread": {
+        "base": [
+          1.0257850551242254,
+          1.0200769126379114
+        ],
+        "candidate": [
+          1.0297100235484218,
+          1.0225151441990175
+        ]
+      }
+    },
+    {
+      "between_fork_median_spread": {
+        "base": 1.0124881067850104,
+        "candidate": 1.043988424251755
+      },
+      "candidate_over_base": [
+        0.8094534390258826,
+        0.8346369845243362
+      ],
+      "case": {
+        "benchmark": "org.openjdk.bench.java.nio.MemoryMismatch.segmentMismatch",
+        "mode": "c2",
+        "params": {
+          "alignment": "1",
+          "difference": "1267",
+          "size": "131072",
+          "storage": "NATIVE_HEAP"
+        }
+      },
+      "first_iteration_inflation_vs_last_two": {
+        "base": [
+          1.021823750054143,
+          1.008529245723793
+        ],
+        "candidate": [
+          1.021310957461661,
+          1.01890559306657
+        ]
+      },
+      "fork_paths": [
+        {
+          "compiler": "c2",
+          "helper_id": "477",
+          "helper_stamp": "0.763",
+          "image": "base",
+          "nmethod_total_bytes": 2064,
+          "order": 0,
+          "path": "screen-033-0-base-compilation-pid270787.xml",
+          "path_kind": "worker-call-C2-segment-helper",
+          "runtime_helper_events": []
+        },
+        {
+          "compiler": "c2",
+          "helper_id": "479",
+          "helper_stamp": "0.752",
+          "image": "candidate",
+          "nmethod_total_bytes": 2288,
+          "order": 0,
+          "path": "screen-033-0-candidate-compilation-pid270867.xml",
+          "path_kind": "worker-call-C2-segment-helper",
+          "runtime_helper_events": []
+        },
+        {
+          "compiler": "c2",
+          "helper_id": "477",
+          "helper_stamp": "0.766",
+          "image": "base",
+          "nmethod_total_bytes": 2064,
+          "order": 1,
+          "path": "screen-033-1-base-compilation-pid271065.xml",
+          "path_kind": "worker-call-C2-segment-helper",
+          "runtime_helper_events": []
+        },
+        {
+          "compiler": "c2",
+          "helper_id": "480",
+          "helper_stamp": "0.747",
+          "image": "candidate",
+          "nmethod_total_bytes": 2288,
+          "order": 1,
+          "path": "screen-033-1-candidate-compilation-pid270947.xml",
+          "path_kind": "worker-call-C2-segment-helper",
+          "runtime_helper_events": []
+        }
+      ],
+      "formal_status": "pass",
+      "group": "native-long-prefix",
+      "medians_ns": {
+        "base": [
+          57.0900119293661,
+          57.802958094697544
+        ],
+        "candidate": [
+          46.21170649025405,
+          48.24448664074493
+        ]
+      },
+      "row": "screen-033",
+      "within_fork_spread": {
+        "base": [
+          1.0241608195902434,
+          1.0249942698691594
+        ],
+        "candidate": [
+          1.0222645597019115,
+          1.0225746422099717
+        ]
+      }
+    }
+  ],
+  "scope": "Causal path audit of existing data only. No new measurement, sample removal, or gate reclassification. nmethod sizes include metadata; no measured ARM machine-code bytes were retained."
+}

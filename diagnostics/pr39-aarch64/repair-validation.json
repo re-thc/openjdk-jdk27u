@@ -1,0 +1,290 @@
+{
+  "build": {
+    "collectors": [
+      "Serial",
+      "G1",
+      "Z"
+    ],
+    "configure": {
+      "bytes": 18062,
+      "path": "/workspace/scratch/pr39-repair-host-configure.log",
+      "sha256": "206e893ca2bf645554d819720c38edaba75211659b61afcb06054eb55fbd0d95"
+    },
+    "debug_level": "fastdebug",
+    "hotspot": "passed",
+    "jdk": "passed",
+    "jdk_log": {
+      "bytes": 248,
+      "path": "/workspace/scratch/pr39-repair-host-jdk-final-build.log",
+      "sha256": "c444c866c9fe5a45b8aa9dc85e0f62e97fb91dd731fa22ba8f94f43cbd6edf36"
+    },
+    "profile": "bin/configure-dev"
+  },
+  "historical_campaign": {
+    "charged_runner_minutes": 95,
+    "measured_source": "678938fb5e6dba44a4d7089b026effdfa266ec13",
+    "remaining_budget_authorizes_launch": false,
+    "remaining_runner_minutes": 130,
+    "repair_included": false
+  },
+  "host_graph_replay": {
+    "all_captures_passed": true,
+    "captures": [
+      {
+        "case_group": "chunkCases",
+        "expected_fallback": "EITHER",
+        "graph_count": 4,
+        "passed": true,
+        "path": "/workspace/scratch/pr39-repair-validation/host-native-ideal/NativeVectorizedMismatchTest-chunk-default.log",
+        "sha256": "a5521c7da9e39585218b8ddab3280a796b74010ffb8253e3f1f23c2bc69aec98"
+      },
+      {
+        "case_group": "chunkCases",
+        "expected_fallback": "EITHER",
+        "graph_count": 4,
+        "passed": true,
+        "path": "/workspace/scratch/pr39-repair-validation/host-native-ideal/NativeVectorizedMismatchTest-chunk-serial.log",
+        "sha256": "2367f0d686a5499f0c1bbf37ca211df4e00509e3f62242a9a790b4a9a8f82698"
+      },
+      {
+        "case_group": "idealCases",
+        "expected_fallback": "CALL",
+        "graph_count": 23,
+        "passed": true,
+        "path": "/workspace/scratch/pr39-repair-validation/host-native-ideal/NativeVectorizedMismatchTest-default-CALL.log",
+        "sha256": "31f9dd7f9050f6048309ce9b4d682a36c48105b5cea8a9307fc7a4484947ba53"
+      },
+      {
+        "case_group": "idealCases",
+        "expected_fallback": "EITHER",
+        "graph_count": 23,
+        "passed": true,
+        "path": "/workspace/scratch/pr39-repair-validation/host-native-ideal/NativeVectorizedMismatchTest-default-EITHER.log",
+        "sha256": "31f9dd7f9050f6048309ce9b4d682a36c48105b5cea8a9307fc7a4484947ba53"
+      },
+      {
+        "case_group": "idealCases",
+        "expected_fallback": "INLINED",
+        "graph_count": 23,
+        "passed": true,
+        "path": "/workspace/scratch/pr39-repair-validation/host-native-ideal/NativeVectorizedMismatchTest-default-INLINED.log",
+        "sha256": "d3c84b9ac02655e37658d150c54aae26daa3457e37420809427cdff2e803b24a"
+      },
+      {
+        "case_group": "idealCases",
+        "expected_fallback": "CALL",
+        "graph_count": 23,
+        "passed": true,
+        "path": "/workspace/scratch/pr39-repair-validation/host-native-ideal/NativeVectorizedMismatchTest-no-partial-CALL.log",
+        "sha256": "31f9dd7f9050f6048309ce9b4d682a36c48105b5cea8a9307fc7a4484947ba53"
+      },
+      {
+        "case_group": "idealCases",
+        "expected_fallback": "EITHER",
+        "graph_count": 23,
+        "passed": true,
+        "path": "/workspace/scratch/pr39-repair-validation/host-native-ideal/NativeVectorizedMismatchTest-no-partial-EITHER.log",
+        "sha256": "31f9dd7f9050f6048309ce9b4d682a36c48105b5cea8a9307fc7a4484947ba53"
+      },
+      {
+        "case_group": "idealCases",
+        "expected_fallback": "INLINED",
+        "graph_count": 23,
+        "passed": true,
+        "path": "/workspace/scratch/pr39-repair-validation/host-native-ideal/NativeVectorizedMismatchTest-no-partial-INLINED.log",
+        "sha256": "d3c84b9ac02655e37658d150c54aae26daa3457e37420809427cdff2e803b24a"
+      }
+    ],
+    "exit_code": 0,
+    "log": "/workspace/scratch/pr39-host-native-capture-replay.log",
+    "native_test_source_sha256": "4ef80d678e142d76519c7136c5a872b1a7fd0349679f859f6f7af70c0361ce6a",
+    "os_arch_override": false,
+    "replay_source_sha256": "a945a28ae2c071381a706fff90a484d613a7b8a11dff3f509dfc5eb400f046fb",
+    "scope": "Replay existing complete-source x86 C2 graph captures only; no child generation, CI or timing",
+    "semantic_review": {
+      "address_bases": "Prefix AddP keeps the original oop base only when the original unsafe address has an oop pointer type; raw/null/unrestricted-offset addresses use top(). Original unsafe address and byte offset remain separate AddP inputs.",
+      "bounds": "ARM minimum128-byte control dominates both heap prefix words and all16 native/mixed words; actual leaf count is min(original element length,2048>>scale). Native admission maximum64KiB remains.",
+      "memory_io": "After the bounded leaf, sequential small-range/nonnegative-result branches join the post-leaf memory. The Java branch clones that state, captures normal control/reset memory/IO and exceptions, and joins all result paths through existing phis.",
+      "results_and_deoptimization": "Scalar index uses original byte offset; NEON addresses remain original, so positive index is unchanged. All Java fallback arguments remain original; negative complete/tail results are unshifted.",
+      "safepoints": "Exact normal Java mismatch call may replace explicit loop poll by C2 guaranteed-safepoint contract; C2/C1 returns and interpreter entry poll. Per-cycle verification still rejects bypasses and leaf-only cycles.",
+      "uniform_cap_limit": "Uniform native/mixed2KiB cap exceeds the specific observed heap-bulk regression evidence. Native4KiBequal becomes scalar128+NEON2KiB+fullJava4KiB; performance risk remains unqualified. A heap-onlycap would be narrower, while leaving nativebulk behavior unqualified. No native performance claim."
+    },
+    "source_sha256": {
+      "src/hotspot/share/c1/c1_GraphBuilder.cpp": "c2e874870da741369b7e5575a0c986f462700b0cdd4ccacc7c0a0e34529905c0",
+      "src/hotspot/share/opto/doCall.cpp": "b0dfc896c33daea593560e9bb02e25f8100b2b819c384745d4ff7e67f3bec95b",
+      "src/hotspot/share/opto/library_call.cpp": "1a093546cd0bdf48b1168281bdefa09b514c40c12f585a0850625cb39eea87c1",
+      "test/hotspot/jtreg/compiler/intrinsics/NativeVectorizedMismatchTest.java": "4ef80d678e142d76519c7136c5a872b1a7fd0349679f859f6f7af70c0361ce6a"
+    },
+    "total_graphs": 146,
+    "verifier_architecture": "x86_64"
+  },
+  "limits": [
+    "Policy-only x86 checks do not validate AArch64 matcher rules, register allocation, signal handling or performance.",
+    "The 2 KiB cap is not an optimized or performance-qualified native threshold.",
+    "No native-equal ARM sample justifies the native/mixed cap directly; the 4 KiB benefit gate remains unmeasured.",
+    "Historical compilation XML identifies tiers and inlining but contains no timed ARM nmethod instruction bytes."
+  ],
+  "native_graph_mutation_checks": {
+    "count": 82,
+    "note": "Parenthesized actual call arguments, bounded leaf length, original Java arguments, sequential guards, per-cycle explicit poll or exact Java safepoint; leaf-only, arbitrary-call and off-cycle bypasses rejected",
+    "result": "passed"
+  },
+  "native_repair_qualification": "pending; no CI or benchmark launch authorized",
+  "policy_vm": {
+    "host_libjvm_sha256": "4806615c2c511c9e8940871fb756ae1721b0bb8f51f6a287b2d0486d7f620b96",
+    "policy_libjvm_sha256": "7fba079f8f2308fb60c46d4dd34d30c88bef0b2d9731fc23af92ee7bf11a9ea2",
+    "scope": "Local x86 shared compiler graph-policy correctness only; not an AArch64 build or performance result",
+    "units": {
+      "c1_GraphBuilder": {
+        "compile": "passed",
+        "local_sha256": "bf85844443ba1ff1f76c98d573fa9f08dad4951475bea6e8d17de26ba83aaadc",
+        "overrides": [
+          [
+            "#ifdef AARCH64\n  if (callee->intrinsic_id() == vmIntrinsics::_vectorizedMismatch)",
+            "#if 1\n  if (callee->intrinsic_id() == vmIntrinsics::_vectorizedMismatch)"
+          ]
+        ],
+        "production_sha256": "c2e874870da741369b7e5575a0c986f462700b0cdd4ccacc7c0a0e34529905c0"
+      },
+      "doCall": {
+        "compile": "passed",
+        "local_sha256": "e774cebb70e8978c8e00a19f8787073a9152cbda944ba73da96f86c82546574e",
+        "overrides": [
+          [
+            "#ifndef AARCH64\n      if (needs_predicate && callee->intrinsic_id() == vmIntrinsics::_vectorizedMismatch)",
+            "#if 0\n      if (needs_predicate && callee->intrinsic_id() == vmIntrinsics::_vectorizedMismatch)"
+          ]
+        ],
+        "production_sha256": "b0dfc896c33daea593560e9bb02e25f8100b2b819c384745d4ff7e67f3bec95b"
+      },
+      "library_call": {
+        "compile": "passed",
+        "local_sha256": "f1bef911a686ec6d40616e84dcef8940e152b52dddaabb5203d19c87da57b214",
+        "overrides": [
+          [
+            "const bool aarch64_mismatch = AARCH64_ONLY(true) NOT_AARCH64(false);",
+            "const bool aarch64_mismatch = true;"
+          ],
+          [
+            "if (AARCH64_ONLY(true) NOT_AARCH64(false) && !native_access)",
+            "if (true && !native_access)"
+          ]
+        ],
+        "production_sha256": "1a093546cd0bdf48b1168281bdefa09b514c40c12f585a0850625cb39eea87c1"
+      }
+    }
+  },
+  "policy_vm_setup": {
+    "bytes": 5119,
+    "path": "/workspace/scratch/pr39-policy-vm.py",
+    "sha256": "cb194eee0ee991712ac3911b738ee3fb307f9b10ab361cf8c76c8ff687ab0453"
+  },
+  "production_parent": "20054eaf75bcee6be4ded3ca291d15a7f3637aba",
+  "python_tests": {
+    "count": 25,
+    "result": "passed",
+    "scope": "plan, gates, tier identity, retention, cleanup; no JMH"
+  },
+  "raw_graphs": [
+    {
+      "bytes": 197578,
+      "path": "/workspace/scratch/pr39-repair-validation/policy-dispatch-ideal/AArch64VectorizedMismatchDispatchTest-ideal.log",
+      "sha256": "bf69be56b4910b9a4914063976910ad95cefaa9284791762dffac10ac09b1e05"
+    },
+    {
+      "bytes": 1465048,
+      "path": "/workspace/scratch/pr39-repair-validation/policy-native-ideal/NativeVectorizedMismatchTest-chunk-default.log",
+      "sha256": "3183ba5574b7cb445145ea833256725295bdbefe3ec83375bf6b8e119186d215"
+    },
+    {
+      "bytes": 1450500,
+      "path": "/workspace/scratch/pr39-repair-validation/policy-native-ideal/NativeVectorizedMismatchTest-chunk-serial.log",
+      "sha256": "7921555d2ee5aa6df275d2308a42e41b3d017bcc6ee41a9da1ecf2a2eb2b5a59"
+    },
+    {
+      "bytes": 493223,
+      "path": "/workspace/scratch/pr39-repair-validation/policy-native-ideal/NativeVectorizedMismatchTest-default-CALL.log",
+      "sha256": "5d1c98cd4136e9c27d28d4a411ee32005b613ea776ab80bb10a9eda78510c203"
+    },
+    {
+      "bytes": 493223,
+      "path": "/workspace/scratch/pr39-repair-validation/policy-native-ideal/NativeVectorizedMismatchTest-default-EITHER.log",
+      "sha256": "5d1c98cd4136e9c27d28d4a411ee32005b613ea776ab80bb10a9eda78510c203"
+    },
+    {
+      "bytes": 995613,
+      "path": "/workspace/scratch/pr39-repair-validation/policy-native-ideal/NativeVectorizedMismatchTest-default-INLINED.log",
+      "sha256": "2043375ad77f222bb3dbed911bfad2cd97107cb4456f33d8bf181cfae2a08496"
+    },
+    {
+      "bytes": 493223,
+      "path": "/workspace/scratch/pr39-repair-validation/policy-native-ideal/NativeVectorizedMismatchTest-no-partial-CALL.log",
+      "sha256": "5d1c98cd4136e9c27d28d4a411ee32005b613ea776ab80bb10a9eda78510c203"
+    },
+    {
+      "bytes": 493223,
+      "path": "/workspace/scratch/pr39-repair-validation/policy-native-ideal/NativeVectorizedMismatchTest-no-partial-EITHER.log",
+      "sha256": "5d1c98cd4136e9c27d28d4a411ee32005b613ea776ab80bb10a9eda78510c203"
+    },
+    {
+      "bytes": 995613,
+      "path": "/workspace/scratch/pr39-repair-validation/policy-native-ideal/NativeVectorizedMismatchTest-no-partial-INLINED.log",
+      "sha256": "2043375ad77f222bb3dbed911bfad2cd97107cb4456f33d8bf181cfae2a08496"
+    }
+  ],
+  "scope": "Source and shared compiler-logic correctness checks on native x86; no repaired ARM build, ARM execution or performance claim",
+  "source_sha256": {
+    "src/hotspot/share/c1/c1_GraphBuilder.cpp": "c2e874870da741369b7e5575a0c986f462700b0cdd4ccacc7c0a0e34529905c0",
+    "src/hotspot/share/opto/doCall.cpp": "b0dfc896c33daea593560e9bb02e25f8100b2b819c384745d4ff7e67f3bec95b",
+    "src/hotspot/share/opto/library_call.cpp": "1a093546cd0bdf48b1168281bdefa09b514c40c12f585a0850625cb39eea87c1",
+    "test/hotspot/jtreg/compiler/c1/TestBoundedVectorizedMismatch.java": "97a31db67c49bedb26a413d9f4a19baf187980277c196a290a7923802fb9d71a",
+    "test/hotspot/jtreg/compiler/intrinsics/AArch64VectorizedMismatchDispatchTest.java": "d235b7f2d0415aa08ce6022c2d501faf75aa21fe233d7b50587d5add33b4730f",
+    "test/hotspot/jtreg/compiler/intrinsics/NativeVectorizedMismatchTest.java": "4ef80d678e142d76519c7136c5a872b1a7fd0349679f859f6f7af70c0361ce6a"
+  },
+  "target": "linux-x86_64; AMD EPYC 9V74; local host, not the Neoverse-N2 campaign",
+  "test_driver": {
+    "bytes": 4399,
+    "path": "/workspace/scratch/pr39-run-repair-tests.py",
+    "sha256": "f2958e9af52f9f42989a648f61a8058c288d3bc016f1d80d4eb74bef616b5430"
+  },
+  "tests": [
+    {
+      "driver_log": {
+        "bytes": 914,
+        "path": "/workspace/scratch/pr39-repair-validation/policy-c1-admission/driver.log",
+        "sha256": "4ac4fb34ef39a6a0df23604e6ac50113b640a580a407383be3e183e19b6ce45f"
+      },
+      "exit_code": 0,
+      "name": "policy-c1-admission"
+    },
+    {
+      "driver_log": {
+        "bytes": 2553,
+        "path": "/workspace/scratch/pr39-repair-validation/policy-dispatch-ir/driver.log",
+        "sha256": "157405b9a290e8a9ca737ef2ec96dba4d9e775591dc384daf10dbe9dd1b780d7"
+      },
+      "exit_code": 0,
+      "name": "policy-dispatch-ir"
+    },
+    {
+      "driver_log": {
+        "bytes": 3133,
+        "path": "/workspace/scratch/pr39-repair-validation/policy-dispatch-ideal/driver.log",
+        "sha256": "cf3504c9f0342cb825ad33987dd2441e85f7d1c3e68de29e10aa8bf7721ee694"
+      },
+      "exit_code": 0,
+      "name": "policy-dispatch-ideal"
+    },
+    {
+      "driver_log": {
+        "bytes": 40910,
+        "path": "/workspace/scratch/pr39-repair-validation/policy-native-ideal/driver.log",
+        "sha256": "af447dcbeabdf249abbc7e2e57384ad3aa31ad3dd50d5f010f4db30aae63b5b3"
+      },
+      "driver_only_property": "-Dos.arch=aarch64 selects the ARM verifier; VM/backend remain x86",
+      "exit_code": 0,
+      "name": "policy-native-ideal"
+    }
+  ],
+  "toolchain": "g++-16 (Debian 16.2.0-3) 16.2.0; GNU linker; BootJDK 27+35-2325"
+}

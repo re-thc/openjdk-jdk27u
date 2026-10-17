@@ -5,8 +5,13 @@ vectorized mismatch stub from C2 and the interpreter. AArch64 gains an Advanced
 SIMD stub, enabled by default through interpreter, C1 and C2, including heap
 arrays that previously used the Java loop.
 
-Native C2 leaves are selected for 128 B through 64 KiB with a guarded first-word
-early exit. Short native C2 scans keep the Java loop. Scoped native and mixed
+Native C2 leaves are selected for 128 B through 64 KiB. On AArch64, heap calls
+below 128 B retain Java; guarded C2 loads check the first two heap words or the
+first sixteen native/mixed words before stub entry. AArch64 C2 vector work is
+capped at 2 KiB; an equal prefix on a larger request calls the existing Java
+implementation with all original arguments. AArch64 C1 uses a leaf only for
+constant valid ranges of at most 64 KiB. Short native C2 scans keep the Java loop.
+Scoped native and mixed
 scans use bounded chunks with Java safepoint polls between them; heap segment
 scans retain the scoped boundary. The interpreter entry bounds its leaf work,
 counts invocations once, and defers profiling, safepoints and JVMTI events to
@@ -27,7 +32,7 @@ Neoverse-N2. All 34 required jtreg records and 108 fresh-VM probes passed across
 Serial, G1 and ZGC.
 
 **The native ARM performance gate failed; this PR is not ready to merge.**
-The fixed 34-row screen found 21 regressions and 8 inconclusive rows with stable
+The original source's fixed 34-row screen found 21 regressions and 8 inconclusive rows with stable
 controls. Heap byte-array early mismatches regressed about 21–23% for 8-byte
 requests and 44–47% for 128-byte requests; native short-prefix and equal 64 KiB
 heap scans also regressed. The screen stopped before the 98 main timing rows.
@@ -37,7 +42,14 @@ forks recorded zero collections. Full results, machine/source identities and
 attribution limits are in `diagnostics/pr39-aarch64/RESULTS.md`. No application
 or x86 speedup is claimed by this qualification. The historical x86 measurements
 against `e206bae32` remain separate from this incremental current-master ARM
-comparison. No speculative production repair or threshold change was added.
+comparison.
+
+The subsequent AArch64 repair and regression tests are available for review,
+with every screening row audited in `diagnostics/pr39-aarch64/REPAIR.md` and its
+linked data. The 2 KiB cutoff preserves a vector opportunity through the observed
+byte-1,267 case; it is not a measured optimum. The repaired source still needs
+native ARM build, correctness and matched performance validation, with actual
+instruction bytes retained. No further CI or benchmark has been launched.
 
 ---------
 - [ ] I confirm that I make this contribution in accordance with the [OpenJDK Interim AI Policy](https://openjdk.org/legal/ai).

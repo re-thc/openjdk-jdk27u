@@ -289,12 +289,18 @@ def samples(path, case):
     return values
 
 
+def benchmark_methods(case):
+    klass, _, method = case["benchmark"].rpartition(".")
+    package, _, simple = klass.rpartition(".")
+    worker = package + ".jmh_generated." + simple + "_" + method + "_jmhTest"
+    return ((klass, method), (worker, method + "_avgt_jmhStub"))
+
+
 def installed_tier(prefix, case):
     paths = list(prefix.parent.glob(prefix.name + "-compilation-*.xml"))
     if not paths:
         raise ValueError(f"Missing installed-code log for {prefix}")
-    klass, _, method = case["benchmark"].rpartition(".")
-    worker = klass.rsplit(".", 1)[-1] + "_" + method + "_jmhTest"
+    targets = benchmark_methods(case)
     records = []
     for path in paths:
         for node in ET.parse(path).iter("nmethod"):
@@ -302,8 +308,7 @@ def installed_tier(prefix, case):
             if len(spec) < 2:
                 continue
             owner, name = spec[0].replace("/", "."), spec[1]
-            if ((owner == klass and name == method) or
-                    (owner.rsplit(".", 1)[-1] == worker and name == method + "_avgt_jmhStub")):
+            if (owner, name) in targets:
                 records.append(dict(node.attrib))
     expected = {"c2": "c2", "c1": "c1", "int": None}[case["mode"]]
     if expected is None:
@@ -369,11 +374,16 @@ def measure(root, evidence):
         flags = ["-Xms256m", "-Xmx256m", "-XX:+UseG1GC", "--enable-native-access=ALL-UNNAMED",
                  "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED", "-XX:+PrintCompilation",
                  "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintIntrinsics", "-XX:+LogCompilation",
-                 "-XX:LogFile=" + str(prefix) + "-compilation-%p.xml"] + MODES[case["mode"]]
+                 "-XX:LogFile=" + str(prefix) + "-compilation-%p.xml"]
+        flags += ["-XX:CompileCommand=print," + klass + "::" + method
+                  for klass, method in benchmark_methods(case)]
+        flags += MODES[case["mode"]]
+        # A third fixed warmup can absorb the observed normal-worker recompile.
+        # Retain the stability gates and allow no retries or extra measured samples.
         command = [str(java["candidate"]), "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                    "-cp", classpath, "org.openjdk.jmh.Main", "^" + case["benchmark"] + "$",
                    "-jvm", str(java[label]), "-jvmArgs", " ".join(flags),
-                   "-bm", "avgt", "-tu", "ns", "-wi", "2", "-w", "250ms",
+                   "-bm", "avgt", "-tu", "ns", "-wi", "3", "-w", "250ms",
                    "-i", "3", "-r", "250ms", "-f", "1", "-t", "1", "-foe", "true",
                    "-rf", "json", "-rff", str(prefix) + ".json"]
         for key, value in case["params"].items():

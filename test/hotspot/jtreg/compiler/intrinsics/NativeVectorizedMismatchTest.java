@@ -69,6 +69,8 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -84,6 +86,7 @@ import java.util.regex.Pattern;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.WhiteBox;
@@ -91,6 +94,7 @@ import jdk.test.whitebox.WhiteBox;
 public class NativeVectorizedMismatchTest {
     private static final int LIMIT = 65536;
     private static final int MINIMUM = 128;
+    private static final int AARCH64_PREFIX = 2048;
     private static final MemorySegment A = Arena.ofAuto().allocate(2 * LIMIT + 16);
     private static final MemorySegment B = Arena.ofAuto().allocate(2 * LIMIT + 16);
     private static final byte[] HEAP = new byte[2 * LIMIT + 16];
@@ -586,7 +590,8 @@ public class NativeVectorizedMismatchTest {
 
     private enum Kind {
         VARIABLE,   // guarded leaf with a Java fallback
-        IN_RANGE,   // constant in range: leaf only
+        IN_RANGE,   // constant at the minimum: leaf only
+        AT_LIMIT,   // constant at the bound: AArch64 also has its full-range Java fallback
         ABOVE,      // constant above the bound: polling Java fallback only
         SHORT,      // constant below the minimum: bounded Java fallback only
         CHUNKED     // a Java loop over bounded leaves
@@ -625,14 +630,14 @@ public class NativeVectorizedMismatchTest {
                 new IdealCase("mixedRange", Kind.VARIABLE, 0, mixed),
                 new IdealCase("mixedReverseRange", Kind.VARIABLE, 0, reverse),
                 new IdealCase("nativeAtMinimum", Kind.IN_RANGE, 0, i -> nativeAtMinimum(NA, NB)),
-                new IdealCase("nativeAtLimit", Kind.IN_RANGE, 0, i -> nativeAtLimit(NA, NB)),
-                new IdealCase("nativeCharsAtLimit", Kind.IN_RANGE, 1, i -> nativeCharsAtLimit(NA, NB)),
-                new IdealCase("nativeIntsAtLimit", Kind.IN_RANGE, 2, i -> nativeIntsAtLimit(NA, NB)),
-                new IdealCase("nativeLongsAtLimit", Kind.IN_RANGE, 3, i -> nativeLongsAtLimit(NA, NB)),
+                new IdealCase("nativeAtLimit", Kind.AT_LIMIT, 0, i -> nativeAtLimit(NA, NB)),
+                new IdealCase("nativeCharsAtLimit", Kind.AT_LIMIT, 1, i -> nativeCharsAtLimit(NA, NB)),
+                new IdealCase("nativeIntsAtLimit", Kind.AT_LIMIT, 2, i -> nativeIntsAtLimit(NA, NB)),
+                new IdealCase("nativeLongsAtLimit", Kind.AT_LIMIT, 3, i -> nativeLongsAtLimit(NA, NB)),
                 new IdealCase("mixedAtMinimum", Kind.IN_RANGE, 0, i -> mixedAtMinimum(HEAP, NB)),
-                new IdealCase("mixedAtLimit", Kind.IN_RANGE, 0, i -> mixedAtLimit(HEAP, NB)),
-                new IdealCase("mixedReverseAtLimit", Kind.IN_RANGE, 0, i -> mixedReverseAtLimit(NB, HEAP)),
-                new IdealCase("mixedIntsAtLimit", Kind.IN_RANGE, 2, i -> mixedIntsAtLimit(INT_HEAP, NB)),
+                new IdealCase("mixedAtLimit", Kind.AT_LIMIT, 0, i -> mixedAtLimit(HEAP, NB)),
+                new IdealCase("mixedReverseAtLimit", Kind.AT_LIMIT, 0, i -> mixedReverseAtLimit(NB, HEAP)),
+                new IdealCase("mixedIntsAtLimit", Kind.AT_LIMIT, 2, i -> mixedIntsAtLimit(INT_HEAP, NB)),
                 new IdealCase("nativeAboveLimit", Kind.ABOVE, 0, i -> nativeAboveLimit(NA, NB)),
                 new IdealCase("nativeCharsAboveLimit", Kind.ABOVE, 1, i -> nativeCharsAboveLimit(NA, NB)),
                 new IdealCase("nativeLongsAboveLimit", Kind.ABOVE, 3, i -> nativeLongsAboveLimit(NA, NB)),
@@ -712,6 +717,7 @@ public class NativeVectorizedMismatchTest {
                 flags.add(test);
                 flags.add("ideal-child");
                 OutputAnalyzer output = ProcessTools.executeProcess(ProcessTools.createLimitedTestJavaProcessBuilder(flags));
+                retainIdeal(output, (partial == null ? "default" : "no-partial") + "-" + expected);
                 output.shouldHaveExitValue(0);
                 String config = (partial == null ? "default partial inlining" : partial) + ", fallback " + expected;
                 verifyIdeal(output.getStdout().lines().toList(), idealCases(), expected, config);
@@ -743,10 +749,17 @@ public class NativeVectorizedMismatchTest {
             flags.add(test);
             flags.add("chunk-child");
             OutputAnalyzer output = ProcessTools.executeProcess(ProcessTools.createLimitedTestJavaProcessBuilder(flags));
+            retainIdeal(output, gc == null ? "chunk-default" : "chunk-serial");
             output.shouldHaveExitValue(0);
             verifyIdeal(output.getStdout().lines().toList(), chunkCases(), Fallback.EITHER,
                         gc == null ? "default GC" : gc);
         }
+    }
+
+    private static void retainIdeal(OutputAnalyzer output, String name) throws Exception {
+        Path capture = Path.of("NativeVectorizedMismatchTest-" + name + ".log").toAbsolutePath();
+        Files.writeString(capture, output.getStdout() + "\n" + output.getStderr());
+        System.out.println("Ideal graph capture: " + capture);
     }
 
     private static void verifyIdeal(List<String> lines, List<IdealCase> cases, Fallback expected, String config) {
@@ -803,8 +816,8 @@ public class NativeVectorizedMismatchTest {
                     continue;
                 }
                 List<Integer> in = new ArrayList<>();
-                // Calls list their debug-info inputs in parentheses after the fixed inputs.
-                for (String token : m.group(3).replaceAll("\\(.*?\\)", " ").trim().split("\\s+")) {
+                // Call arguments follow the fixed inputs inside parentheses.
+                for (String token : m.group(3).replace('(', ' ').replace(')', ' ').trim().split("\\s+")) {
                     if (token.equals("|")) {
                         break; // precedence edges follow
                     }
@@ -894,21 +907,38 @@ public class NativeVectorizedMismatchTest {
             return false;
         }
 
-        // Each repetition of a leaf in a chunk loop passes a safepoint poll: no control cycle
-        // through the leaf avoids every SafePoint. A strip-mined counted loop fails this, since
-        // its inner loop repeats the leaf and only the outer loop polls.
+        // Each repetition must safepoint. C2 may remove the explicit poll when
+        // every cycle calls the normal Java mismatch implementation instead;
+        // CallStaticJava is a guaranteed safepoint and its compiled return polls.
+        // Count only that exact callee, never an arbitrary call or a leaf. A
+        // strip-mined inner loop that repeats a leaf without either still fails.
         void verifyChunked() {
             List<N> leaves = nodes.values().stream()
                     .filter(n -> n.name().equals("CallLeaf") && n.spec().contains("# vectorizedMismatch"))
                     .toList();
             Set<Integer> polls = named("SafePoint").stream().map(N::idx).collect(Collectors.toSet());
+            Set<Integer> barriers = new HashSet<>(polls);
+            if (Platform.isAArch64()) {
+                named("CallStaticJava").stream().filter(n -> NAMED_FALLBACK.matcher(n.spec()).find())
+                        .map(N::idx).forEach(barriers::add);
+            }
             List<N> repeated = leaves.stream().filter(this::inLoop).toList();
             if (repeated.isEmpty()) {
                 throw new AssertionError("no leaf in a chunk loop: leaves=" + leaves);
             }
             for (N leaf : repeated) {
-                if (inLoopAvoiding(leaf, polls)) {
-                    throw new AssertionError("a chunk loop repeats " + leaf + " without passing a poll; polls=" + polls);
+                if (inLoopAvoiding(leaf, barriers)) {
+                    throw new AssertionError("a chunk loop repeats " + leaf + " without a poll or normal Java mismatch call; " +
+                                             "barriers=" + barriers);
+                }
+            }
+            if (Platform.isAArch64()) {
+                for (N leaf : leaves) {
+                    Integer scale = intCon(input(leaf, 8));
+                    if (scale == null || scale < 0 || scale > 3) {
+                        throw new AssertionError("chunk leaf has an invalid scale: " + leaf);
+                    }
+                    verifyAArch64Leaf(leaf, scale);
                 }
             }
         }
@@ -1010,6 +1040,169 @@ public class NativeVectorizedMismatchTest {
             return result;
         }
 
+        private N uncast(N n) {
+            while (n != null && n.name().equals("CastII")) {
+                n = input(n, 1);
+            }
+            return n;
+        }
+
+        // Return the original length when a variable leaf count is min(length, cap).
+        // A constant leaf count must itself fit the cap.
+        private N verifyAArch64Leaf(N leaf, int scale) {
+            int cap = AARCH64_PREFIX >> scale;
+            if (!Integer.valueOf(scale).equals(intCon(input(leaf, 8)))) {
+                throw new AssertionError("wrong leaf scale: " + leaf);
+            }
+            N count = uncast(input(leaf, 7));
+            Integer constant = intCon(count);
+            if (constant != null) {
+                if (constant < 0 || constant > cap) {
+                    throw new AssertionError("leaf exceeds its byte cap: " + count);
+                }
+                return null;
+            }
+            if (count != null && count.name().equals("MinI")) {
+                for (int i = 1; i <= 2; i++) {
+                    if (Integer.valueOf(cap).equals(intCon(input(count, i)))) {
+                        return uncast(input(count, 3 - i));
+                    }
+                }
+            }
+            throw new AssertionError("leaf length is not bounded by " + cap + ": " + count);
+        }
+
+        private boolean leafResult(N n, N leaf) {
+            n = uncast(n);
+            return n != null && n.name().equals("Proj") && input(n, 0) == leaf;
+        }
+
+        private Boolean negativeResult(N bool, N leaf) {
+            if (bool == null || !bool.name().equals("Bool")) {
+                return null;
+            }
+            N cmp = input(bool, 1);
+            if (cmp == null || !cmp.name().equals("CmpI") || !leafResult(input(cmp, 1), leaf) ||
+                    !Integer.valueOf(0).equals(intCon(input(cmp, 2)))) {
+                return null;
+            }
+            return switch (test(bool)) {
+                case "lt" -> true;
+                case "ge" -> false;
+                default -> null;
+            };
+        }
+
+        private Boolean abovePrefix(N bool, N length, int scale) {
+            if (bool == null || !bool.name().equals("Bool")) {
+                return null;
+            }
+            N cmp = input(bool, 1);
+            if (cmp == null || !cmp.name().equals("CmpI") || uncast(input(cmp, 1)) != length) {
+                return null;
+            }
+            Integer bound = intCon(input(cmp, 2));
+            int cap = AARCH64_PREFIX >> scale;
+            return switch (test(bool)) {
+                case "gt" -> Integer.valueOf(cap).equals(bound) ? true : null;
+                case "le" -> Integer.valueOf(cap).equals(bound) ? false : null;
+                case "ge" -> Integer.valueOf(cap + 1).equals(bound) ? true : null;
+                case "lt" -> Integer.valueOf(cap + 1).equals(bound) ? false : null;
+                default -> null;
+            };
+        }
+
+        private void verifyAArch64(Kind kind, int scale, Fallback expected,
+                                   List<N> leaves, List<N> calls, List<N> safepoints, List<N> traps,
+                                   boolean polls) {
+            if (leaves.size() != 1) {
+                throw new AssertionError("expected exactly one bounded leaf: " + leaves);
+            }
+            N leaf = leaves.getFirst();
+            N originalLength = verifyAArch64Leaf(leaf, scale);
+            boolean variable = kind == Kind.VARIABLE;
+            List<Set<Integer>> guards = variable ? lengthGuards(scale) : List.of(
+                    named("Start").stream().map(N::idx).collect(Collectors.toSet()), Set.of());
+            Set<Integer> inside = guards.get(0), outside = guards.get(1);
+            if (inside.isEmpty() || !dominatedBy(leaf, inside)) {
+                throw new AssertionError("leaf is reachable without its length guard: " + leaf);
+            }
+            Set<Integer> equal = firstWordEqual(inside);
+            if (equal.size() != 16) {
+                throw new AssertionError("expected sixteen pinned native prefix comparisons: " + equal);
+            }
+            for (int word : equal) {
+                if (!dominatedBy(leaf, Set.of(word))) {
+                    throw new AssertionError("leaf bypasses a scalar-prefix comparison: " + word);
+                }
+            }
+            if (kind == Kind.IN_RANGE) {
+                if (!Integer.valueOf(MINIMUM >> scale).equals(intCon(input(leaf, 7))) ||
+                        !calls.isEmpty() || !safepoints.isEmpty() || !traps.isEmpty()) {
+                    throw new AssertionError("minimum range must use only its bounded leaf: " + leaf +
+                                             " calls=" + calls + " safepoints=" + safepoints + " traps=" + traps);
+                }
+                return;
+            }
+            List<N> bulk = calls.stream().filter(n -> dominatedBy(n, Set.of(leaf.idx()))).toList();
+            if (bulk.size() != 1) {
+                throw new AssertionError("missing full-range fallback after the bounded leaf: " + bulk);
+            }
+            N fullCall = bulk.getFirst();
+            if (!Integer.valueOf(scale).equals(intCon(input(fullCall, 12))) ||
+                    (variable ? originalLength == null || uncast(input(fullCall, 11)) != originalLength :
+                     !Integer.valueOf(LIMIT >> scale).equals(intCon(input(fullCall, 11))))) {
+                throw new AssertionError("Java fallback does not keep the original length and scale: " + fullCall);
+            }
+            Set<Integer> negativeGuards = new HashSet<>(), aboveGuards = new HashSet<>();
+            for (N iff : named("If")) {
+                Boolean negative = negativeResult(input(iff, 1), leaf);
+                if (negative != null) {
+                    negativeGuards.add(projection(iff, negative));
+                }
+                Boolean above = abovePrefix(input(iff, 1), originalLength, scale);
+                if (above != null) {
+                    aboveGuards.add(projection(iff, above));
+                }
+            }
+            if (negativeGuards.isEmpty() || !dominatedBy(fullCall, negativeGuards)) {
+                throw new AssertionError("Java fallback bypasses the negative-prefix-result condition: " + fullCall);
+            }
+            // The size comparison has folded true for a constant range at LIMIT.
+            if (variable && (aboveGuards.isEmpty() || !dominatedBy(fullCall, aboveGuards))) {
+                throw new AssertionError("Java fallback bypasses the above-prefix-length condition: " + fullCall);
+            }
+            List<N> outsideCalls = calls.stream().filter(n -> !bulk.contains(n)).toList();
+            if (!variable) {
+                if (!outsideCalls.isEmpty() || !safepoints.isEmpty() || !traps.isEmpty()) {
+                    throw new AssertionError("unexpected fallback outside a constant range: " + calls);
+                }
+                return;
+            }
+            boolean call = outsideCalls.size() == 1;
+            boolean inlined = outsideCalls.isEmpty() && polls;
+            if (outsideCalls.size() > 1 || call && polls || !call && !inlined ||
+                    expected == Fallback.CALL && !call || expected == Fallback.INLINED && !inlined) {
+                throw new AssertionError("expected outside fallback " + expected + ": calls=" + outsideCalls +
+                                         " safepoints=" + safepoints);
+            }
+            for (N n : outsideCalls) {
+                if (!dominatedBy(n, outside)) {
+                    throw new AssertionError("outside fallback is reachable inside the bound: " + n);
+                }
+            }
+            for (N n : safepoints) {
+                if (!dominatedBy(n, outside)) {
+                    throw new AssertionError("poll is reachable inside the bound: " + n);
+                }
+            }
+            for (N n : traps) {
+                if (!dominatedBy(n, outside)) {
+                    throw new AssertionError("uncommon trap is reachable inside the bound: " + n);
+                }
+            }
+        }
+
         void verify(Kind kind, int scale, Fallback expected) {
             if (kind == Kind.CHUNKED) {
                 verifyChunked();
@@ -1032,7 +1225,11 @@ public class NativeVectorizedMismatchTest {
             // A genuine inlined fallback polls in a loop of the Java implementation.
             boolean polls = safepoints.stream().anyMatch(n -> inLoop(n) &&
                     n.spec().contains("ArraysSupport::vectorizedMismatch @ bci:"));
-            if (kind == Kind.IN_RANGE) {
+            if (Platform.isAArch64() && (kind == Kind.VARIABLE || kind == Kind.IN_RANGE || kind == Kind.AT_LIMIT)) {
+                verifyAArch64(kind, scale, expected, leaves, namedCalls, safepoints, traps, polls);
+                return;
+            }
+            if (kind == Kind.IN_RANGE || kind == Kind.AT_LIMIT) {
                 if (leaves.size() != 1 || !namedCalls.isEmpty() || !safepoints.isEmpty() || !traps.isEmpty()) {
                     throw new AssertionError("expected only the leaf: leaves=" + leaves + " calls=" + namedCalls +
                                              " safepoints=" + safepoints + " traps=" + traps);

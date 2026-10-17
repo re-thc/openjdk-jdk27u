@@ -1,8 +1,11 @@
 # PR39 native AArch64 qualification
 
-**Native correctness passed; the fixed performance screen failed. PR39 is not
-ready to merge.** Production code remains unchanged from author head
-`9fedf7ac9040bf1d46e383201524f1ca7a13a29e`.
+**The original native correctness campaign passed and its fixed performance
+screen failed. PR39 is not ready to merge.** This review branch now contains an
+AArch64 source repair: short heap calls retain Java, guarded scalar prefixes
+avoid early stub entry, C2 vector work is capped at 2 KiB before an original-argument
+Java fallback, and C1 leaf admission is bounded. See [the repair and its limits](REPAIR.md).
+The repaired source has not run on native ARM or been benchmarked.
 
 [Run 39033175975](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39033175975)
 completed the single approved preparation-repair continuation at source
@@ -20,14 +23,16 @@ The prior [preparation attempt](https://github.com/re-thc/openjdk-jdk27u/actions
 stopped at JMH annotation-processor discovery before targeted correctness or
 timing. The continuation used an explicit pinned-JAR processor path and rebuilt
 all three matched images. Charged usage is 33 + 62 = **95 runner-minutes**, with
-**130 of the original 225 minutes remaining**. No further campaign has started.
+**130 of the original 225 minutes remaining**. That balance does not authorize
+another launch. No further CI or benchmark campaign has started.
 
 ## Sources and existing evidence
 
 The author head, actual master ref and synthetic merge parents/tree were
 verified before launch and remained unchanged through the completed campaign.
-The package incorporates the author's `9fedf7ac9` segment-base/address caching
-change. The author branch and PR description remain untouched.
+The measured package incorporated the author's `9fedf7ac9` segment-base/address
+caching change. Historical results below describe that source, not the subsequent
+repair. The author branch and PR description remain untouched.
 
 [CI run 39027042938](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39027042938)
 completed successfully on `9fedf7ac9`: **57/57 jobs**, including native Linux
@@ -54,7 +59,7 @@ and changes only `src/hotspot/cpu/x86/vm_version_x86.cpp` (AMD Zen3+ spilling).
 Using `89885a6288e` in both the base and merge candidate keeps that update
 matched and isolates PR39's incremental changes. It adds no ARM tuning scope.
 
-This campaign uses a matched pair with the master updates present in both:
+The completed campaign used a matched pair with the master updates present in both:
 
 | Role | Commit | Tree |
 |---|---|---|
@@ -72,9 +77,12 @@ The workflow fetches these commits and makes normal detached source checkouts
 for three matched native builds.
 
 Before building, the driver verifies both remote branch tips, the merge parents,
-the candidate tree, and that the qualification branch has no production edits.
-A changed tip stops the campaign for a fresh source review. There is no rebase,
-force push, or modification of concurrent author work.
+the candidate tree, and equality of review-branch production sources to the
+pinned author head.
+Those pins remain historical: the new repair intentionally fails that source
+guard. A later campaign requires an identified repair merge tree, reviewed pins
+and a separately approved budget. There is no rebase, force push, or modification
+of concurrent author work.
 
 ## Launch and budget
 
@@ -227,8 +235,8 @@ and equal short/large byte ranges. Additional screen rows request 64 KiB or
 128 KiB with differences at 1, 7, 10, 25, 82 and 1267 bytes, including native
 and both mixed segment orders. It specifically tests the new ARM heap stub
 call cost after the caller's first-element check. Arrays are not an unchanged
-control on ARM. No first-word C2 prefilter has been added without current native
-evidence or an end-to-end workload supporting it.
+control on ARM. The completed screen supplies the measured losing paths that
+motivate the subsequent repair; it does not measure recovery or application speed.
 
 The large-request rows are motivated by supplied offline native-zstd sequence
 evidence: 43,658 decoded sequences had median accepted match length 10 bytes,
@@ -258,14 +266,12 @@ disassembly or identification of the supplied native binary. It explains why
 a large requested range alone is insufficient to select a profitable kernel.
 The actual common-prefix distribution and the caller's known seed bytes matter.
 
-The PR already checks the first byte and first word in segment mismatch. Its
-native C2 intrinsic also has a guarded first-word precheck. Those paths already
-avoid the stub on a first-word difference. Heap `ArraysSupport` C2 calls on ARM
-still call the stub after the public caller's first-element check, without the
-native path's first-word C2 precheck. The scope for avoiding setup is therefore
-specific to the caller and tier. Accepted native matches with median length 10
-do not by themselves prove that an additional first-8-byte check helps Java;
-rejected candidates and seed-relative extension positions remain unmeasured.
+The measured PR checked the first byte and first word in segment mismatch and
+had a native C2 first-word precheck. Its heap C2 calls lacked that precheck and
+bypassed the size predicate. The [per-row audit](causal-audit-39033175975.json)
+distinguishes heap caller inlining from out-of-line native helper compilation.
+All measured mismatch forks recorded zero collections. The exact ARM instructions
+were not retained, so call-path evidence does not prove an instruction bottleneck.
 
 The leaf itself allocates no objects and makes no GC transition. Chunk loops,
 session checks, reachability fences and surrounding caller allocation can still
@@ -277,12 +283,11 @@ images and without adding samples. CharBuffer staging is expected to allocate;
 unexpected allocation or GC activity in mismatch rows needs investigation when
 interpreting their result. Raw GC evidence must accompany any causal claim.
 
-A possible heap C2 precheck would need ordinary nodes, a valid element scale
-and at least one readable word, with loads below the existing array/range/null
-guards and unchanged exception order. Empty/negative ranges and raw intrinsic
-callers must remain valid. There is no new assembly or implementation change in
-this package: current native and end-to-end evidence is insufficient to choose
-that fix. The fixed large-request early-exit screen is the next decision gate.
+The repair uses ordinary C2 nodes below range guards, retains array guards and
+exception order, and calls the existing Java implementation with original
+arguments after an equal bounded vector prefix. Its new graph and semantic
+tests are described in [REPAIR.md](REPAIR.md). Preserving a vector opportunity
+does not prove its prior measured benefit survives the added dispatch.
 
 Main rows include twelve C1 segment cases: HEAP, HEAP_NATIVE and NATIVE_HEAP at
 64 and 128 bytes, both equal and differing in the first word. These cover the
@@ -301,12 +306,19 @@ These are microbenchmarks; they do not establish an application speedup.
 
 Each row has two matched blocks in **A/B then B/A** order: one fresh JMH fork
 per image per block, one thread pinned to the same allowed CPU, G1, 256 MiB heap,
-two 250 ms warmups and three 250 ms measured iterations. C2 uses `-Xbatch`, no
+three 250 ms warmups and three 250 ms measured iterations. The completed historical
+run used two warmups; the third is a fixed future protocol change intended to
+absorb the observed worker recompile, with no promise of stable activation.
+C2 uses `-Xbatch`, no
 tiering, and threshold 1000; C1 stops at level 1; interpreter rows use `-Xint`.
 JMH 1.37 and its fixed dependencies are checksum verified; the shared source,
 generated classes and dependencies are hashed. Compilation/intrinsic logs,
 LogCompilation XML, raw JMH JSON and GC profiler metrics are retained for every
-row. Each fork must have finite nonnegative `gc.alloc.rate` evidence and valid
+row. Future source also requests exact benchmark and generated-worker code dumps
+with `CompileCommand=print`; raw instruction bytes are required for attribution
+when an assembler listing is unavailable. Neither this capture nor the extra
+warmup changes row counts, samples, loss/stability gates, or the 29-minute cap.
+Each fork must have finite nonnegative `gc.alloc.rate` evidence and valid
 `gc.count` samples. Missing/disabled or failed allocation profiling is reported
 as unavailable, never as zero allocation. JMH legitimately omits `gc.time` when
 no count/time delta occurs and `gc.alloc.rate.norm` when allocation is exactly

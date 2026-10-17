@@ -1,6 +1,8 @@
 # Native AArch64 verdict for PR39
 
-**Correctness passed; the performance screen failed. PR39 is not ready to merge.**
+**The measured pre-repair candidate passed correctness and failed the performance
+screen.** The [source repair](REPAIR.md) is separate and has not been qualified
+on native ARM.
 
 [Run 39033175975](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39033175975)
 was the single approved preparation-repair continuation at qualification commit
@@ -84,9 +86,13 @@ The retained iterations 2 and 3 also show the listed early-exit and equal
 or reclassify the inconclusive rows.
 
 All measured forks report zero collections and valid allocation-rate evidence.
-The heap measurement worker inlined the Java word-load mismatch loop in the
-baseline and the vectorized mismatch intrinsic in the candidate. Together with
-source inspection, this supports investigating ARM stub-entry and scan costs;
+For heap early exits, the baseline measurement worker inlined the Java
+word-load loop and the candidate inlined the vectorized mismatch intrinsic.
+For equal 128 B/64 KiB and the three longer-prefix heap rows, the baseline
+worker instead called a separately compiled `Arrays.mismatch` containing the
+Java word loop; the candidate still inlined through the intrinsic. Caller
+inlining and code layout therefore also confound those comparisons. Together
+with source inspection, this supports investigating ARM stub-entry and scan costs;
 it does not isolate one instruction or prove application impact. The native
 measurement worker called the already compiled segment mismatch helper, so
 caller/inlining effects remain part of those observed losses. A first-word heap
@@ -110,8 +116,9 @@ runner-minutes: JTReg 1 and native 61. Aggregate charged usage is **95 of the
 upload. No further run has been launched.
 
 The remaining blocker is the native performance regression screen, together
-with the main matrix it prevented. No current native application measurement
-supports a particular production repair, and no speculative prefilter or
-threshold change has been added. Any repair needs a focused source review and
-current native evidence within a separately approved remaining-budget campaign.
-The author branch and PR description have not been modified by this package.
+with the main matrix it prevented. The subsequent [repair proposal](REPAIR.md) uses this path evidence for
+short-range Java selection, scalar prefix exits and bounded vector work before
+a Java bulk fallback. The measured results above describe the original source,
+not that repair. Native execution, actual ARM machine-code captures and recovery
+timings remain required after independent source review and separate campaign
+authorization. The author branch and PR description remain unchanged.

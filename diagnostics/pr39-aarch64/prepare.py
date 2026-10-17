@@ -206,6 +206,8 @@ def correctness(root, evidence):
     hotspot += ["compiler/intrinsics/InterpretedVectorizedMismatchTest.java#" + name
                 for name in ("values", "no-intrinsics", "counted", "profiled")]
     hotspot += ["compiler/intrinsics/ShortNativeMismatchTest.java",
+               "compiler/intrinsics/AArch64VectorizedMismatchDispatchTest.java",
+               "compiler/c1/TestBoundedVectorizedMismatch.java",
                "compiler/intrinsics/VectorizedMismatchTest.java#default",
                "compiler/igvn/RemoveDeadRegionFromVectorizedMismatchIntrinsic.java"]
     jdk = ["java/foreign/" + n + ".java" for n in
@@ -225,7 +227,7 @@ def correctness(root, evidence):
     for level, name, gc, tests in groups:
         deadline.remaining(minimum=1)
         # Serial graph tests select their own collector. Do not inject a conflicting GC.
-        options = "JOBS=2;TIMEOUT_FACTOR=4;KEYWORDS=!manual"
+        options = "JOBS=2;TIMEOUT_FACTOR=4;KEYWORDS=!manual;RETAIN=all"
         if gc:
             options += ";JAVA_OPTIONS=-XX:+Use" + gc + "GC"
         command = ["make", "CONF=qual-" + level, "test-only", "TEST=" + " ".join(tests), "JTREG=" + options]
@@ -290,6 +292,7 @@ def verify_jtreg(work, tests):
     # These safety graph and event ids must execute, rather than being filtered by @requires.
     required = {
         "compiler/intrinsics/NativeVectorizedMismatchTest.java": ("ir", "ir-serial", "ideal"),
+        "compiler/intrinsics/AArch64VectorizedMismatchDispatchTest.java": ("ir", "ideal"),
         "compiler/intrinsics/InterpretedVectorizedMismatchTest.java": ("values", "no-intrinsics", "counted", "profiled"),
         "java/foreign/TestMappedNativeMismatch.java": ("default",),
     }

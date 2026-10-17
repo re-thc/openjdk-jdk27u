@@ -66,6 +66,17 @@ class CampaignTests(unittest.TestCase):
                 for difference in ("MATCH", "FIRST_WORD"):
                     self.assertIn(memory(size, storage, difference, mode="c1"), cases["main"])
 
+    def test_code_capture_targets_the_benchmark_and_its_generated_worker(self):
+        for benchmark, worker in (
+                (campaign.ARRAY + ".mismatch", "org.openjdk.bench.java.util.jmh_generated.ArraysMismatchEarlyExit_mismatch_jmhTest"),
+                (campaign.MEMORY + ".segmentMismatch", "org.openjdk.bench.java.nio.jmh_generated.MemoryMismatch_segmentMismatch_jmhTest"),
+                (campaign.HASH + ".hash", "org.openjdk.bench.java.nio.jmh_generated.BufferHashCode_hash_jmhTest"),
+                (campaign.CHARS + ".append", "org.openjdk.bench.java.nio.jmh_generated.CharBufferPutString_append_jmhTest")):
+            with self.subTest(benchmark=benchmark):
+                klass, _, method = benchmark.rpartition(".")
+                self.assertEqual(campaign.benchmark_methods(campaign.row(benchmark)),
+                                 ((klass, method), (worker, method + "_avgt_jmhStub")))
+
     def test_balanced_consistent_loss_is_a_regression(self):
         observations = [{"base": [10, 10, 10], "candidate": [12, 12, 12]}] * 2
         self.assertEqual(verdict(observations)["status"], "regression")
@@ -199,6 +210,21 @@ class CampaignTests(unittest.TestCase):
             campaign.installed_tier(prefix, array(8, 7, mode="int"))
             with self.assertRaises(ValueError):
                 campaign.installed_tier(prefix, array(8, 7))
+
+    def test_generated_worker_tier_requires_its_exact_package(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefix = Path(directory) / "fork"
+            log = Path(directory) / "fork-compilation-123.xml"
+            case = memory(128)
+            worker, method = campaign.benchmark_methods(case)[1]
+            for owner in ("unrelated." + worker, worker):
+                log.write_text("<hotspot_log><nmethod compiler='c2' stamp='0.4' "
+                               f"method='{owner} {method} ()V'/></hotspot_log>")
+                if owner == worker:
+                    campaign.installed_tier(prefix, case)
+                else:
+                    with self.assertRaises(ValueError):
+                        campaign.installed_tier(prefix, case)
 
     def test_disk_admission_and_pruning_preserve_images(self):
         with tempfile.TemporaryDirectory() as directory:

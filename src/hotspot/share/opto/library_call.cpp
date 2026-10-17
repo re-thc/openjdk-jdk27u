@@ -6741,8 +6741,14 @@ Node* LibraryCallKit::inline_vectorizedMismatch_predicate() {
   }
   int minimum = 128 >> scale->get_con();
   int maximum = (64 * K) >> scale->get_con();
-  // Reuse the normal Java expansion for short inputs and polling work above
-  // the leaf bound. The unsigned range also excludes empty/negative inputs.
+  bool native_access = _gvn.type(argument(0)) == TypePtr::NULL_PTR ||
+                       _gvn.type(argument(3)) == TypePtr::NULL_PTR;
+  if (AARCH64_ONLY(true) NOT_AARCH64(false) && !native_access) {
+    // Heap calls also need the short-input Java expansion on AArch64.
+    // Large heap calls use a bounded vector prefix inside the intrinsic.
+    maximum = max_jint;
+  }
+  // The unsigned range also excludes empty/negative inputs.
   Node* adjusted = _gvn.transform(new SubINode(argument(6), intcon(minimum)));
   Node* cmp = _gvn.transform(new CmpUNode(adjusted, intcon(maximum - minimum)));
   Node* outside = _gvn.transform(new BoolNode(cmp, BoolTest::gt));
@@ -6772,17 +6778,17 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   }
 
   bool native_access = a_native || b_native;
-  int native_limit = 0;
-  if (native_access) {
+  const bool aarch64_mismatch = AARCH64_ONLY(true) NOT_AARCH64(false);
+  const bool has_java_path = native_access || aarch64_mismatch;
+  int intrinsic_limit = 0;
+  if (has_java_path) {
     const TypeInt* scale_type = _gvn.type(scale)->is_int();
     if (!scale_type->is_con() || scale_type->get_con() < 0 || scale_type->get_con() > 3) {
       return false;
     }
-    // Newly accelerated off-heap calls must not turn a Java polling loop into
-    // an unbounded leaf. Larger ranges retain the existing Java implementation.
-    native_limit = (64 * K) >> scale_type->get_con();
+    intrinsic_limit = native_access ? (64 * K) >> scale_type->get_con() : max_jint;
     const TypeInt* length_type = _gvn.type(length)->is_int();
-    if (length_type->_lo > native_limit || length_type->_hi < (128 >> scale_type->get_con())) {
+    if (length_type->_lo > intrinsic_limit || length_type->_hi < (128 >> scale_type->get_con())) {
       return false;
     }
     C->set_has_unsafe_access(true);
@@ -6808,24 +6814,24 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   //      return Phi(result1, result2);
   //
   enum { inline_path = 1,  // input is small enough to process it all at once
-         stub_path   = 2,  // input is too large; call into the VM
-         java_path   = 3,  // off-heap work exceeds the leaf bound
-         first_word_path = 4, // a native input differs in its first word
-         PATH_LIMIT  = 5
+         stub_path   = 2,  // bounded stub result
+         java_path   = 3,  // input is outside the intrinsic range
+         first_word_path = 4, // an input differs in its scalar prefix
+         bulk_java_path = 5,  // an equal vector prefix precedes a large Java scan
+         PATH_LIMIT  = 6
   };
 
-  Node* exit_block = new RegionNode(native_access ? PATH_LIMIT : java_path);
+  Node* exit_block = new RegionNode(has_java_path ? PATH_LIMIT : java_path);
   Node* result_phi = new PhiNode(exit_block, TypeInt::INT);
   Node* memory_phi = new PhiNode(exit_block, Type::MEMORY, TypePtr::BOTTOM);
-  Node* io_phi = native_access ? new PhiNode(exit_block, Type::ABIO) : nullptr;
+  Node* io_phi = has_java_path ? new PhiNode(exit_block, Type::ABIO) : nullptr;
 
-  if (native_access) {
-    // Retain size selection if a native base becomes known after the
-    // predicated call-generator decision. The unsigned range excludes
-    // short, empty, negative and unbounded native inputs.
+  if (has_java_path) {
+    // Retain size selection if input types become known after predication.
+    // The range guard dominates the scalar-prefix loads below.
     int minimum = 128 >> _gvn.type(scale)->is_int()->get_con();
     Node* adjusted = _gvn.transform(new SubINode(length, intcon(minimum)));
-    Node* bound_cmp = _gvn.transform(new CmpUNode(adjusted, intcon(native_limit - minimum)));
+    Node* bound_cmp = _gvn.transform(new CmpUNode(adjusted, intcon(intrinsic_limit - minimum)));
     Node* out_of_bounds = _gvn.transform(new BoolNode(bound_cmp, BoolTest::gt));
     RegionNode* slow_region = new RegionNode(1);
     record_for_igvn(slow_region);
@@ -6843,27 +6849,52 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
     }
   }
 
-  if (native_access) {
-    // The guarded native range contains at least 128 bytes. An unaligned
-    // first-word comparison avoids entering the vector stub for early exits.
-    // Pin unsafe loads after the range/session guards, as for Unsafe accesses.
-    Node* a_word = make_load(control(), obja_adr, TypeLong::LONG, T_LONG, MemNode::unordered,
-                             LoadNode::Pinned, false, true, true, true);
-    Node* b_word = make_load(control(), objb_adr, TypeLong::LONG, T_LONG, MemNode::unordered,
-                             LoadNode::Pinned, false, true, true, true);
-    Node* diff = _gvn.transform(new XorLNode(a_word, b_word));
-    Node* cmp = _gvn.transform(new CmpLNode(diff, longcon(0)));
-    Node* different = _gvn.transform(new BoolNode(cmp, BoolTest::ne));
-    Node* mismatch_control = generate_guard(different, nullptr, PROB_FAIR);
-    if (mismatch_control != nullptr) {
+  if (has_java_path) {
+    // The range guard makes these pinned, unaligned prefix loads safe.
+    // Avoid stub entry for early heap and native/scoped mismatches, retaining
+    // the original Java arguments for deoptimization.
+    int prefix_words = aarch64_mismatch ? (native_access ? 16 : 2) : 1;
+    RegionNode* different_region = new RegionNode(1);
+    PhiNode* different_word = new PhiNode(different_region, TypeLong::LONG);
+    PhiNode* different_offset = new PhiNode(different_region, TypeInt::INT);
+    record_for_igvn(different_region);
+    // Nullable array bases with unrestricted offsets also use raw addresses.
+    Node* a_base = obja_adr->bottom_type()->make_ptr()->isa_oopptr() != nullptr ? obja : top();
+    Node* b_base = objb_adr->bottom_type()->make_ptr()->isa_oopptr() != nullptr ? objb : top();
+    for (int i = 0; i < prefix_words && !stopped(); i++) {
+      int byte_offset = i * BytesPerLong;
+      Node* a_adr = byte_offset == 0 ? obja_adr
+          : basic_plus_adr(a_base, obja_adr, byte_offset);
+      Node* b_adr = byte_offset == 0 ? objb_adr
+          : basic_plus_adr(b_base, objb_adr, byte_offset);
+      Node* a_word = make_load(control(), a_adr, TypeLong::LONG, T_LONG, MemNode::unordered,
+                               LoadNode::Pinned, false, true, true, true);
+      Node* b_word = make_load(control(), b_adr, TypeLong::LONG, T_LONG, MemNode::unordered,
+                               LoadNode::Pinned, false, true, true, true);
+      Node* diff = _gvn.transform(new XorLNode(a_word, b_word));
+      Node* cmp = _gvn.transform(new CmpLNode(diff, longcon(0)));
+      Node* different = _gvn.transform(new BoolNode(cmp, BoolTest::ne));
+      Node* mismatch_control = generate_guard(different, nullptr, PROB_FAIR);
+      if (mismatch_control != nullptr) {
+        different_region->add_req(mismatch_control);
+        different_word->add_req(diff);
+        different_offset->add_req(intcon(byte_offset));
+      }
+    }
+    if (different_region->req() > 1) {
       PreserveJVMState pjvms(this);
-      set_control(mismatch_control);
+      set_control(_gvn.transform(different_region));
+      Node* diff = _gvn.transform(different_word);
+      Node* byte_offset = _gvn.transform(different_offset);
 #ifdef VM_LITTLE_ENDIAN
       Node* zeros = _gvn.transform(new CountTrailingZerosLNode(diff));
 #else
       Node* zeros = _gvn.transform(new CountLeadingZerosLNode(diff));
 #endif
-      Node* index = _gvn.transform(new RShiftINode(zeros, intcon(3 + _gvn.type(scale)->is_int()->get_con())));
+      int scale_value = _gvn.type(scale)->is_int()->get_con();
+      Node* word_index = _gvn.transform(new RShiftINode(zeros, intcon(3 + scale_value)));
+      Node* offset_index = _gvn.transform(new RShiftINode(byte_offset, intcon(scale_value)));
+      Node* index = _gvn.transform(new AddINode(offset_index, word_index));
       exit_block->init_req(first_word_path, control());
       memory_phi->init_req(first_word_path, map()->memory());
       io_phi->init_req(first_word_path, i_o());
@@ -6937,15 +6968,45 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   if (call_stub_path != nullptr) {
     set_control(call_stub_path);
 
+    // Limit new AArch64 leaf work even for heap arrays. An unequal prefix
+    // retains the vector result; equal large inputs call the existing Java
+    // implementation. Re-scan with the original arguments so deoptimization,
+    // indices and the negative tail result retain their original meaning.
+    int vector_limit = aarch64_mismatch ? (2 * K) >> scale_t->get_con() : 0;
+    Node* stub_length = aarch64_mismatch
+        ? _gvn.transform(new MinINode(length, intcon(vector_limit))) : length;
     Node* call = make_runtime_call(RC_LEAF,
                                    OptoRuntime::vectorizedMismatch_Type(),
                                    StubRoutines::vectorizedMismatch(), "vectorizedMismatch", TypePtr::BOTTOM,
-                                   obja_adr, objb_adr, length, scale);
+                                   obja_adr, objb_adr, stub_length, scale);
+    Node* stub_result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+    if (aarch64_mismatch) {
+      RegionNode* keep_stub_result = new RegionNode(1);
+      record_for_igvn(keep_stub_result);
+      Node* large_cmp = _gvn.transform(new CmpINode(length, intcon(vector_limit)));
+      Node* small = _gvn.transform(new BoolNode(large_cmp, BoolTest::le));
+      generate_slow_guard(small, keep_stub_result);
+      if (!stopped()) {
+        Node* result_cmp = _gvn.transform(new CmpINode(stub_result, intcon(0)));
+        Node* different = _gvn.transform(new BoolNode(result_cmp, BoolTest::ge));
+        generate_slow_guard(different, keep_stub_result);
+      }
+      if (!stopped()) {
+        PreserveJVMState pjvms(this);
+        CallJavaNode* java_call = generate_method_call_static(vmIntrinsics::_vectorizedMismatch, false);
+        Node* java_result = set_results_for_java_call(java_call);
+        exit_block->init_req(bulk_java_path, control());
+        memory_phi->init_req(bulk_java_path, reset_memory());
+        io_phi->init_req(bulk_java_path, i_o());
+        result_phi->init_req(bulk_java_path, java_result);
+      }
+      set_control(_gvn.transform(keep_stub_result));
+    }
 
     exit_block->init_req(stub_path, control());
     memory_phi->init_req(stub_path, map()->memory());
     if (io_phi != nullptr) io_phi->init_req(stub_path, i_o());
-    result_phi->init_req(stub_path, _gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+    result_phi->init_req(stub_path, stub_result);
   }
 
   exit_block = _gvn.transform(exit_block);
