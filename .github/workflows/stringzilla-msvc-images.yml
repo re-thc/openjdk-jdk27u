@@ -1,0 +1,76 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+
+name: StringZilla MSVC existing-image qualification
+
+on:
+  push:
+    branches: [codex/stringzilla-msvc-image-qualification]
+    paths: [.github/workflows/stringzilla-msvc-images.yml]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: stringzilla-msvc-image-qualification
+  cancel-in-progress: false
+
+jobs:
+  qualify:
+    name: MSVC existing complete images
+    runs-on: windows-2025
+    timeout-minutes: 180
+    steps:
+      - name: Checkout measurement helpers
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+
+      - name: Checkout measured fork source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: adbea61e47c00f12cdd6458ed96777914ee22d99
+          path: fork-source
+          persist-credentials: false
+
+      - name: Checkout untouched original source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: e206bae32b2a6cc1fa9464ad34d75f2df4b347e9
+          path: original-source
+          persist-credentials: false
+
+      - name: Restore matching JTReg
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: 12111121678
+          run-id: 39059898881
+          github-token: ${{ github.token }}
+          path: jtreg/installed
+          merge-multiple: true
+
+      - name: Restore verified images and run jtreg
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/scripts/stringzilla-restore-msvc-images.py
+
+      - name: Measure original, enabled and disabled
+        shell: pwsh
+        run: >-
+          python .github/scripts/stringzilla-performance.py
+          --original perf-images/original --fork perf-images/fork
+          --original-source original-source --fork-source fork-source
+          --output perf-output --backend msvc
+          --manifest fork-source/doc/stringzilla/qualification-cases.tsv
+
+      - name: Retain image provenance, validation and raw timings
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-msvc-existing-images-${{ github.sha }}
+          path: perf-output
+          if-no-files-found: error
+          retention-days: 30
