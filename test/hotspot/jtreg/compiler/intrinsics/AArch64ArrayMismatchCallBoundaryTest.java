@@ -28,8 +28,8 @@
  * @modules java.base/jdk.internal.util
  * @run main/othervm -Xint compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest semantics
  * @run main/othervm -XX:TieredStopAtLevel=1 compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest semantics
- * @run main/othervm -Xbatch -XX:-TieredCompilation compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest semantics
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:-UseVectorizedMismatchIntrinsic compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest semantics
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 -XX:CompileCommand=dontinline,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::*Store compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest semantics
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 -XX:CompileCommand=dontinline,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::*Store -XX:-UseVectorizedMismatchIntrinsic compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest semantics
  */
 
 /*
@@ -136,6 +136,62 @@ public class AArch64ArrayMismatchCallBoundaryTest {
         return Arrays.mismatch(a, b);
     }
 
+    public static int byteStore(byte[] a, int af, byte[] b, int bf, int length, int position) {
+        b[bf + position] = 1;
+        int result = byteRange(a, af, af + length, b, bf, bf + length);
+        b[bf + position] = 0;
+        return result;
+    }
+
+    public static int booleanStore(boolean[] a, int af, boolean[] b, int bf, int length, int position) {
+        b[bf + position] = true;
+        int result = booleanRange(a, af, af + length, b, bf, bf + length);
+        b[bf + position] = false;
+        return result;
+    }
+
+    public static int charStore(char[] a, int af, char[] b, int bf, int length, int position) {
+        b[bf + position] = 1;
+        int result = charRange(a, af, af + length, b, bf, bf + length);
+        b[bf + position] = 0;
+        return result;
+    }
+
+    public static int shortStore(short[] a, int af, short[] b, int bf, int length, int position) {
+        b[bf + position] = 1;
+        int result = shortRange(a, af, af + length, b, bf, bf + length);
+        b[bf + position] = 0;
+        return result;
+    }
+
+    public static int intStore(int[] a, int af, int[] b, int bf, int length, int position) {
+        b[bf + position] = 1;
+        int result = intRange(a, af, af + length, b, bf, bf + length);
+        b[bf + position] = 0;
+        return result;
+    }
+
+    public static int longStore(long[] a, int af, long[] b, int bf, int length, int position) {
+        b[bf + position] = 1;
+        int result = longRange(a, af, af + length, b, bf, bf + length);
+        b[bf + position] = 0;
+        return result;
+    }
+
+    public static int floatStore(float[] a, int af, float[] b, int bf, int length, int position) {
+        b[bf + position] = 1;
+        int result = floatRange(a, af, af + length, b, bf, bf + length);
+        b[bf + position] = 0;
+        return result;
+    }
+
+    public static int doubleStore(double[] a, int af, double[] b, int bf, int length, int position) {
+        b[bf + position] = 1;
+        int result = doubleRange(a, af, af + length, b, bf, bf + length);
+        b[bf + position] = 0;
+        return result;
+    }
+
     private static int range(int kind, Object a, int af, int at, Object b, int bf, int bt) {
         return switch (kind) {
             case 0 -> byteRange((byte[]) a, af, at, (byte[]) b, bf, bt);
@@ -164,6 +220,20 @@ public class AArch64ArrayMismatchCallBoundaryTest {
         };
     }
 
+    private static int store(int kind, Object a, int af, Object b, int bf, int length, int position) {
+        return switch (kind) {
+            case 0 -> byteStore((byte[]) a, af, (byte[]) b, bf, length, position);
+            case 1 -> booleanStore((boolean[]) a, af, (boolean[]) b, bf, length, position);
+            case 2 -> charStore((char[]) a, af, (char[]) b, bf, length, position);
+            case 3 -> shortStore((short[]) a, af, (short[]) b, bf, length, position);
+            case 4 -> intStore((int[]) a, af, (int[]) b, bf, length, position);
+            case 5 -> longStore((long[]) a, af, (long[]) b, bf, length, position);
+            case 6 -> floatStore((float[]) a, af, (float[]) b, bf, length, position);
+            case 7 -> doubleStore((double[]) a, af, (double[]) b, bf, length, position);
+            default -> throw new AssertionError(kind);
+        };
+    }
+
     private static void value(int kind, Object array, int index, boolean different) {
         switch (kind) {
             case 0 -> ((byte[]) array)[index] = (byte) (different ? 1 : 0);
@@ -186,6 +256,12 @@ public class AArch64ArrayMismatchCallBoundaryTest {
 
     private static void semantics() {
         for (int kind = 0; kind < TYPES.length; kind++) {
+            Object warmA = Array.newInstance(TYPES[kind], 4096);
+            Object warmB = Array.newInstance(TYPES[kind], 4096);
+            for (int i = 0; i < 2000; i++) {
+                int position = switch (i % 3) { case 0 -> 1; case 1 -> 25; default -> 2176; };
+                check(store(kind, warmA, 0, warmB, 0, 4096, position), position, "compiled store path");
+            }
             for (int bytes : BYTES) {
                 int length = bytes >> SCALES[kind];
                 for (int offset : new int[] {0, 1, 7}) {
@@ -195,8 +271,11 @@ public class AArch64ArrayMismatchCallBoundaryTest {
                     check(range(kind, a, offset, offset + length, b, offset, offset + length), -1, context);
                     check(full(kind, a, b), -1, context);
                     check(range(kind, a, offset, offset + length, b, offset, offset + length + 1), length, context);
-                    for (int position : new int[] {0, 1, 2, 3, 7, 8, 10, 15, 16, 17, 25, 63, 82,
-                                                   127, 128, 129, 1267, 2047, 2048, 2049, length / 2, length - 1}) {
+                    for (int position : new int[] {0, 1, 2, 3, 7, 8, 10, 15, 16, 17, 25, 31, 32, 33, 63, 64, 65, 82,
+                                                   127, 128, 129, 255, 256, 257, 271, 272, 273,
+                                                   511, 512, 513, 543, 544, 545, 1023, 1024, 1025,
+                                                   1087, 1088, 1089, 1267, 2047, 2048, 2049,
+                                                   2175, 2176, 2177, length / 2, length - 1}) {
                         if (position < 0 || position >= length) continue;
                         value(kind, b, offset + position, true);
                         check(range(kind, a, offset, offset + length, b, offset, offset + length), position, context);
@@ -205,6 +284,8 @@ public class AArch64ArrayMismatchCallBoundaryTest {
                         check(range(kind, a, offset, offset + length, b, offset, offset + length), -1, context + " store");
                         value(kind, a, offset + position, false);
                         value(kind, b, offset + position, false);
+                        check(store(kind, a, offset, b, offset, length, position), position, context + " store/compare/store");
+                        check(range(kind, a, offset, offset + length, b, offset, offset + length), -1, context + " following store");
                     }
                 }
             }
