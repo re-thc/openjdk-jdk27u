@@ -23,6 +23,8 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(re.findall(r"(?m)^  ([a-z_]+):", events), ["workflow_dispatch"])
         self.assertEqual(text.count("github.event.inputs.reviewed_commit == github.sha"), 2)
         self.assertEqual(text.count("github.event_name == 'workflow_dispatch'"), 2)
+        job_header = text.split("  qualification:\n", 1)[1].split("    steps:\n", 1)[0]
+        self.assertNotRegex(job_header, r"\$\{\{\s*runner\.")
 
     def test_plan_is_fixed_and_unique(self):
         cases = plan()
