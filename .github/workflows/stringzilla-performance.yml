@@ -1,9 +1,11 @@
 # Copyright (c) 2026, re-thc. All rights reserved.
 # SPDX-License-Identifier: GPL-2.0-only
 
-name: StringZilla performance
+name: StringZilla synchronized qualification
 
 on:
+  push:
+    branches: [codex/stringzilla-synced-qualification]
   workflow_dispatch:
 
 permissions:
@@ -58,6 +60,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: 23801203d0374b27415af992cbd31382dae2ac2a
 
       - name: Checkout untouched original
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
