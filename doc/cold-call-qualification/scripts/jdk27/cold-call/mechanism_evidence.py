@@ -410,20 +410,52 @@ def _transport(instructions):
                 "kind": "", "annotations": ins["annotations"]}
         if op in {"push", "pushq", "pop", "popq", "enter", "leave"}:
             push = op in {"push", "pushq"}
-            frame.append(dict(item, kind="frame-" + op, implicit_stack_reads=int(not push),
+            width = 2 if "data16" in ins["mnemonic"].split()[:-1] or (args and re.fullmatch(r"(?:[abcd]x|[sd]i|[bs]p|r\d+w)", args[0])) else 8
+            frame.append(dict(item, kind="frame-push" if push else "frame-pop", implicit_stack_reads=int(not push),
                               implicit_stack_writes=int(push), relative_cost=1 if push else 2,
+                              implicit_stack_bytes=width, frame_allocation_bytes=0, frame_release_bytes=0,
+                              frame_adjustment_complete=op not in {"enter", "leave"},
                               weighted_cost=(1 if push else 2) * ins["frequency"] if ins["frequency"] is not None else None))
             if op in {"enter", "leave"}:
                 unknown.append({"pc": ins["pc"], "reason": "unsupported frame instruction"})
+            if op in {"pop", "popq"} and args and args[0] in {"rsp", "esp", "sp"}:
+                frame[-1]["frame_adjustment_complete"] = False
+                unknown.append({"pc": ins["pc"], "reason": "stack pointer restored from unproven memory"})
         elif args and ((args[0] == "rsp" and op in {"add", "sub", "lea", "and", "mov"})
                        or (args[0] == "rbp" and op in {"mov", "lea"} and len(args) > 1 and "rsp" in args[1])):
+            allocation = release = 0
+            complete = False
+            if len(args) == 2 and args[0] == "rsp":
+                immediate = re.fullmatch(r"(?:0x[0-9a-f]+|\d+)", args[1])
+                displacement = re.fullmatch(r"\[rsp(?:([+-])(0x[0-9a-f]+|\d+))?\]", args[1])
+                if op in {"add", "sub"} and immediate:
+                    amount = int(args[1], 0)
+                    allocation, release, complete = (amount, 0, True) if op == "sub" else (0, amount, True)
+                elif op == "lea" and displacement:
+                    amount = int(displacement[2], 0) if displacement[2] else 0
+                    allocation, release, complete = (amount, 0, True) if displacement[1] == "-" else (0, amount, True)
+                elif op == "mov" and args[1] == "rbp" and proven_rbp:
+                    complete = True
+            elif args[0] == "rbp" and proven_rbp:
+                complete = ((op == "mov" and args[1] == "rsp") or
+                            (op == "lea" and re.fullmatch(r"\[rsp(?:[+-]0x[0-9a-f]+)?\]", args[1]) is not None))
             frame.append(dict(item, kind="frame-adjust", implicit_stack_reads=0, implicit_stack_writes=0,
+                              implicit_stack_bytes=0, frame_allocation_bytes=allocation, frame_release_bytes=release,
+                              frame_adjustment_complete=complete,
                               relative_cost=0, weighted_cost=0 if ins["frequency"] is not None else None))
+            if not complete:
+                unknown.append({"pc": ins["pc"], "reason": "unresolved frame allocation/adjustment"})
         elif op in {"call", "callq", "ret", "retq"}:
             call = op in {"call", "callq"}
+            release = int(args[0], 0) if not call and args and re.fullmatch(r"0x[0-9a-f]+|\d+", args[0]) else 0
             frame.append(dict(item, kind="frame-call" if call else "frame-return", implicit_stack_reads=int(not call),
                               implicit_stack_writes=int(call), relative_cost=1 if call else 2,
+                              implicit_stack_bytes=8, frame_allocation_bytes=0, frame_release_bytes=release,
+                              frame_adjustment_complete=True,
                               weighted_cost=(1 if call else 2) * ins["frequency"] if ins["frequency"] is not None else None))
+        elif args and ((args[0] in {"rsp", "esp", "sp"} and op not in {"cmp", "test", "bt", "push", "pushq"}) or
+                       (op in {"xchg", "xadd"} and any(arg in {"rsp", "esp", "sp"} for arg in args))):
+            unknown.append({"pc": ins["pc"], "reason": "unresolved stack-pointer mutation"})
         if op == "lea":
             if len(args) == 2 and any(re.search(r"\b" + base + r"\b", args[1]) for base in aliases):
                 # An address escaping the fixed stack bases needs interblock
@@ -722,6 +754,124 @@ def _normalized(instructions, start, stop):
     return rows, relocations, unresolved
 
 
+def _frame_summary(rows):
+    """Keep implicit work separate: explicit store savings cannot pay for it."""
+    metrics = {key: 0 for key in (
+        "frame-push", "frame-pop", "frame-call", "frame-return", "frame-adjust",
+        "implicit_stack_reads", "implicit_stack_writes", "implicit_read_bytes", "implicit_write_bytes",
+        "relative_cost", "frame_allocation_bytes", "frame_release_bytes")}
+    weighted = dict(metrics)
+    complete = weighted_complete = True
+    errors = []
+    allocations = []
+    layout = []
+    for row in rows:
+        kind = row.get("kind")
+        values = {key: row.get(key) for key in ("implicit_stack_reads", "implicit_stack_writes",
+                  "implicit_stack_bytes", "relative_cost", "frame_allocation_bytes", "frame_release_bytes")}
+        if (kind not in {"frame-push", "frame-pop", "frame-call", "frame-return", "frame-adjust"} or
+                row.get("frame_adjustment_complete") is not True or
+                any(not isinstance(value, (int, float)) or isinstance(value, bool) or
+                    not math.isfinite(value) or value < 0 for value in values.values())):
+            complete = False
+            errors.append({"pc": row.get("pc"), "reason": "unproven implicit stack/frame effect"})
+            continue
+        contributions = {kind: 1, "implicit_stack_reads": values["implicit_stack_reads"],
+                         "implicit_stack_writes": values["implicit_stack_writes"],
+                         "implicit_read_bytes": values["implicit_stack_reads"] * values["implicit_stack_bytes"],
+                         "implicit_write_bytes": values["implicit_stack_writes"] * values["implicit_stack_bytes"],
+                         "relative_cost": values["relative_cost"],
+                         "frame_allocation_bytes": values["frame_allocation_bytes"],
+                         "frame_release_bytes": values["frame_release_bytes"]}
+        for key, value in contributions.items():
+            metrics[key] += value
+        allocations.append(values["frame_allocation_bytes"])
+        # Equal aggregate bytes do not prove an equal stack extent: moving a
+        # release past another reservation can increase the live frame. Require
+        # the decoded adjustment/order layout to stay fixed unless the ordinary
+        # growth metrics already establish NO_GO. Addresses and call operands
+        # are deliberately absent; actual adjustment constants remain exact.
+        layout.append([kind, values["implicit_stack_bytes"], values["frame_release_bytes"],
+                       re.sub(r"\s+", " ", row["instruction"]).strip() if kind == "frame-adjust" else ""])
+        frequency = row.get("frequency")
+        if not isinstance(frequency, (int, float)) or not math.isfinite(frequency) or frequency < 0:
+            weighted_complete = False
+        else:
+            for key, value in contributions.items():
+                weighted[key] += value * frequency
+    metrics["max_frame_allocation_bytes"] = max(allocations, default=0)
+    return {"complete": complete, "weighted_complete": complete and weighted_complete,
+            "metrics": metrics, "weighted_metrics": weighted, "layout": layout, "errors": errors}
+
+
+def _common_frame_paths(proof):
+    """Match control decisions without instruction addresses/register allocation.
+
+    Duplicate structural paths must have the same frame effects; otherwise the
+    correspondence is ambiguous and cannot waive a path-specific increase.
+    """
+    by_pc = {i["pc"]: i for i in proof.get("instructions", [])}
+    frame = {row["pc"]: row for row in proof.get("frame", [])}
+    groups = defaultdict(list)
+    try:
+        for cycle in proof.get("cycles", []):
+            if cycle["kind"] != "common-no-call":
+                continue
+            pcs = cycle["instructions"]
+            signature = []
+            for index, pc in enumerate(pcs):
+                ins = by_pc[pc]
+                if ins.get("branch"):
+                    next_pc = pcs[(index + 1) % len(pcs)]
+                    if next_pc not in ins["successors"]:
+                        raise ValueError("cycle edge not in decoded CFG")
+                    bcis = sorted(set(re.findall(r"[\w.$]+::?[\w$]+@\d+", " ".join(ins["annotations"]))))
+                    signature.append([ins["mnemonic"], next_pc == ins["target"], bcis])
+            key = json.dumps(signature, separators=(",", ":"))
+            groups[key].append({"cycle_id": cycle["id"], "summary": _frame_summary([frame[pc] for pc in pcs if pc in frame])})
+    except (KeyError, TypeError, ValueError) as error:
+        return {"complete": False, "paths": {}, "error": str(error)}
+    complete = bool(groups) and all(row["summary"]["complete"] for rows in groups.values() for row in rows)
+    complete = complete and all(len({json.dumps([row["summary"]["metrics"], row["summary"]["layout"]], sort_keys=True) for row in rows}) == 1
+                                for rows in groups.values())
+    return {"complete": complete, "paths": dict(groups)}
+
+
+def _frame_comparison(off, on, debug):
+    before, after = _frame_summary(off.get("frame", [])), _frame_summary(on.get("frame", []))
+    old_paths, new_paths = _common_frame_paths(off), _common_frame_paths(on)
+    complete = before["complete"] and after["complete"]
+    mapping = (old_paths["complete"] and new_paths["complete"] and old_paths["paths"].keys() == new_paths["paths"].keys())
+    layout_proven = complete and before["layout"] == after["layout"]
+    path_layout_proven = bool(mapping) and all(rows[0]["summary"]["layout"] == new_paths["paths"][key][0]["summary"]["layout"]
+                                              for key, rows in old_paths["paths"].items())
+    increases = []
+    if complete:
+        increases.extend({"scope": "whole-method", "metric": key, "before": value, "after": after["metrics"][key]}
+                         for key, value in before["metrics"].items() if after["metrics"][key] > value)
+    path_increases = []
+    if mapping:
+        for key, rows in old_paths["paths"].items():
+            old = rows[0]["summary"]["metrics"]
+            new = new_paths["paths"][key][0]["summary"]["metrics"]
+            path_increases.extend({"scope": "common-path", "path": key, "metric": metric, "before": value, "after": new[metric]}
+                                  for metric, value in old.items() if new[metric] > value)
+    weighted_complete = before["weighted_complete"] and after["weighted_complete"]
+    weighted_increases = []
+    if debug and weighted_complete:
+        weighted_increases = [{"scope": "whole-method-frequency-weighted", "metric": key, "before": value,
+                               "after": after["weighted_metrics"][key]}
+                              for key, value in before["weighted_metrics"].items() if after["weighted_metrics"][key] > value]
+    return {"before": before, "after": after, "old_common_paths": old_paths, "new_common_paths": new_paths,
+            "method_effects_proven": complete, "common_paths_proven": bool(mapping),
+            "frame_layout_proven": layout_proven and path_layout_proven,
+            "method_no_increase": complete and not increases,
+            "common_paths_no_increase": bool(mapping) and not path_increases,
+            "weighted_effects_proven": weighted_complete,
+            "weighted_no_increase": weighted_complete and not weighted_increases,
+            "increases": increases + path_increases + weighted_increases}
+
+
 def analyze_capture(log_text, xml_path_or_text, asm_text, cell, debug):
     """Return a fail-closed, JSON-serializable proof without running tools."""
     proof = {"schema": 1, "cell": cell, "debug": bool(debug), "complete": False,
@@ -748,7 +898,9 @@ def analyze_capture(log_text, xml_path_or_text, asm_text, cell, debug):
                           "relative_cost": sum(r["relative_cost"] for r in rows),
                           "weighted_cost": sum(r["weighted_cost"] for r in rows) if all(r["weighted_cost"] is not None for r in rows) else None,
                           "frame_effects": frame_rows,
-                          "frame_relative_cost": sum(r["relative_cost"] for r in frame_rows)})
+                          "frame_relative_cost": sum(r["relative_cost"] for r in frame_rows),
+                          "frame_summary": _frame_summary(frame_rows),
+                          "combined_relative_cost": sum(r["relative_cost"] for r in rows + frame_rows)})
         common = [c for c in cycles if c["kind"] == "common-no-call"]
         common_pcs = set(pc for c in common for pc in c["transport_pcs"])
         common_stores = [r for r in ledger if r["pc"] in common_pcs and r["store_count"]]
@@ -769,6 +921,7 @@ def analyze_capture(log_text, xml_path_or_text, asm_text, cell, debug):
                       "xmm_instructions": [i for i in instructions if re.search(r"\b(?:xmm|ymm|zmm)\d+\b", i["operands"])],
                       "gpr_register_moves": gpr_moves, "frame_sizes": frame_sizes,
                       "roots": roots, "mach_blocks": headers, "transport": ledger, "frame": frame,
+                      "frame_summary": _frame_summary(frame),
                       "unclassified_effects": unknown, "cycles": cycles, "cycle_enumeration": enumeration,
                       "common_store_inventory": common_stores, "activation": activation,
                       "returning_bci684_calls": [{"pc": i["pc"], "block": i["block"],
@@ -785,6 +938,8 @@ def analyze_capture(log_text, xml_path_or_text, asm_text, cell, debug):
                                  "implicit_stack_writes": sum(r.get("implicit_stack_writes", 0) for r in frame),
                                  "all_frame_weighted_cost": sum(r["weighted_cost"] for r in frame)
                                  if all(r["weighted_cost"] is not None for r in frame) else None,
+                                 "all_combined_weighted_cost": sum(r["weighted_cost"] for r in ledger + frame)
+                                 if all(r["weighted_cost"] is not None for r in ledger + frame) else None,
                                  "gpr_register_moves": len(gpr_moves)}})
         proof["checks"] = {"xml_final_entrant": True, "compile_id_tied_to_assembly": True,
                            "all_main_bytes_decoded": True, "all_control_flow_resolved": True,
@@ -975,7 +1130,22 @@ def compare_captures(proofs):
         old_cycles = [c["relative_cost"] for c in off.get("cycles", []) if c["kind"] == "common-no-call"]
         new_cycles = [c["relative_cost"] for c in on.get("cycles", []) if c["kind"] == "common-no-call"]
         checks[flavor + "_no_compensating_common_cycle"] = bool(old_cycles and new_cycles) and max(new_cycles) < min(old_cycles)
+        # Implicit return-address/saved-register traffic and frame allocation
+        # are independent hard gates. Lower explicit spill counts cannot pay
+        # for new pushes/pops/calls/returns, a larger frame, or hotter frame work.
+        frame_comparison = _frame_comparison(off, on, flavor == "debug")
+        ledger["store_accounting"][flavor]["implicit_frame_comparison"] = frame_comparison
+        checks[flavor + "_implicit_frame_effects_proven"] = frame_comparison["method_effects_proven"]
+        checks[flavor + "_implicit_frame_layout_proven"] = frame_comparison["frame_layout_proven"]
+        checks[flavor + "_no_increased_method_implicit_frame_work"] = frame_comparison["method_no_increase"]
+        checks[flavor + "_common_implicit_frame_paths_proven"] = frame_comparison["common_paths_proven"]
+        checks[flavor + "_no_increased_common_path_implicit_frame_work"] = frame_comparison["common_paths_no_increase"]
+        valid_pair = bool(off.get("complete") and on.get("complete") and checks["off_on_parse_inlining_branch_shape_equal"])
+        if valid_pair and frame_comparison["increases"]:
+            measured_failure = True
         if flavor == "debug":
+            checks["debug_weighted_implicit_frame_effects_proven"] = frame_comparison["weighted_effects_proven"]
+            checks["debug_no_increased_all_path_weighted_implicit_frame_work"] = frame_comparison["weighted_no_increase"]
             before = off.get("totals", {}).get("common_unique_weighted_cost")
             after = on.get("totals", {}).get("common_unique_weighted_cost")
             checks["debug_less_weighted_transport"] = before is not None and after is not None and after < before
@@ -984,6 +1154,11 @@ def compare_captures(proofs):
             checks["debug_less_all_path_weighted_transport"] = before is not None and after is not None and after < before
             if (off.get("complete") and on.get("complete") and checks["off_on_parse_inlining_branch_shape_equal"]
                     and before is not None and after is not None and after >= before):
+                measured_failure = True
+            before = off.get("totals", {}).get("all_combined_weighted_cost")
+            after = on.get("totals", {}).get("all_combined_weighted_cost")
+            checks["debug_less_all_path_combined_weighted_transport"] = before is not None and after is not None and after < before
+            if valid_pair and before is not None and after is not None and after >= before:
                 measured_failure = True
         if off.get("complete") and on.get("complete") and old_cost is not None and new_cost is not None and new_cost >= old_cost:
             measured_failure = True

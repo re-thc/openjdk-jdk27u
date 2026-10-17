@@ -390,11 +390,10 @@ class ExecutorTests(unittest.TestCase):
             self.timer.advance(2)
             return original()
         self.executor.host_probe = slow_probe
-        with self.assertRaisesRegex(subject.Failure, "cap exhausted before launch"):
+        with self.assertRaisesRegex(subject.Failure, "cap exhausted"):
             self.run_command(cap=30, role_remaining=1)
         self.mocks[0].assert_not_called()
         self.assertEqual(self.executor.records[-1]["deadline_monotonic"], 1001)
-        self.assertEqual(self.executor.records[-1]["remaining_launch_seconds"], -1)
         with self.assertRaises(subject.Failure):
             self.run_command("after-slow-probe")
         self.mocks[0].assert_not_called()
@@ -407,7 +406,7 @@ class ExecutorTests(unittest.TestCase):
             self.timer.advance(2)
             return original()
         self.executor.host_probe = slow_probe
-        with self.assertRaisesRegex(subject.Failure, "cap exhausted before launch"):
+        with self.assertRaisesRegex(subject.Failure, "cap exhausted"):
             self.run_command(cap=30)
         self.mocks[0].assert_not_called()
         self.assertEqual(self.executor.records[-1]["deadline_monotonic"], 1001)
@@ -422,7 +421,7 @@ class ExecutorTests(unittest.TestCase):
             self.timer.advance(2)
             original()
         with patch.object(self.executor, "_save", side_effect=slow_save):
-            with self.assertRaisesRegex(subject.Failure, "cap exhausted before launch"):
+            with self.assertRaisesRegex(subject.Failure, "cap exhausted"):
                 self.run_command(cap=1)
         self.mocks[0].assert_not_called()
 
@@ -542,6 +541,171 @@ class ExecutorTests(unittest.TestCase):
         self.run_command()
         self.assertEqual(self.model.signals, [signal.SIGTERM, signal.SIGKILL])
         self.assertEqual(self.model.events[-1], "reap")
+        self.assertIn(signal.SIGALRM, self.mocks[6].call_args_list[0].args[1])
+
+    def test_slow_log_hash_expires_absolute_role_cap_after_owned_cleanup(self):
+        self.create()
+        self.on_launch = lambda: Path(self.executor.records[-1]["stdout_path"]).write_text("offline log fixture")
+        original = subject.hashlib.sha256
+        updates = []
+        class SlowDigest:
+            def __init__(inner):
+                inner.digest = original()
+            def update(inner, chunk):
+                updates.append(len(chunk))
+                self.timer.advance(1)
+                inner.digest.update(chunk)
+            def hexdigest(inner):
+                return inner.digest.hexdigest()
+        with patch.object(subject.hashlib, "sha256", side_effect=SlowDigest):
+            with self.assertRaisesRegex(subject.Failure, "Log evidence incomplete.*cap exhausted"):
+                self.run_command(cap=30, role_deadline=self.timer.mono + 1)
+        self.assertEqual(len(updates), 1)
+        self.assertTrue(self.model.reaped)
+        self.assertEqual(self.model.signals, [signal.SIGTERM, signal.SIGKILL])
+        self.assertNotIn("stdout_sha256", self.executor.records[-1])
+        self.assertEqual(self.executor.records[-1]["status"], "failed")
+        self.assertTrue(self.executor.close()["direct_children_reaped"])
+        with self.assertRaises(subject.Failure):
+            self.run_command("after-hash-expiry")
+        self.assertEqual(self.mocks[0].call_count, 1)
+
+    def test_hash_processing_preserves_outer_cleanup_reserve(self):
+        self.timer.utc = datetime(2026, 11, 1, 1, 58, 59, tzinfo=timezone.utc)
+        self.create()
+        self.on_launch = lambda: Path(self.executor.records[-1]["stdout_path"]).write_text("offline log fixture")
+        original = subject.hashlib.sha256
+        class SlowDigest:
+            def __init__(inner):
+                inner.digest = original()
+            def update(inner, chunk):
+                self.timer.advance(1)
+                inner.digest.update(chunk)
+            def hexdigest(inner):
+                return inner.digest.hexdigest()
+        with patch.object(subject.hashlib, "sha256", side_effect=SlowDigest):
+            with self.assertRaisesRegex(subject.Failure, "cleanup reserve"):
+                self.run_command()
+        self.assertTrue(self.model.reaped)
+        self.assertEqual(self.executor.clock.remaining(0), 60)
+        self.assertFalse(self.executor.close()["failed"])
+
+    def test_slow_json_encoding_after_launch_expires_cap_but_still_reaps(self):
+        self.create()
+        original = subject.json.JSONEncoder.iterencode
+        advanced = []
+        def slow_encoding(encoder, data, *args, **kwargs):
+            for chunk in original(encoder, data, *args, **kwargs):
+                if self.executor._owned and not advanced:
+                    advanced.append(True)
+                    self.timer.advance(1)
+                yield chunk
+        with patch.object(subject.json.JSONEncoder, "iterencode", new=slow_encoding):
+            with self.assertRaisesRegex(subject.Failure, "cap exhausted"):
+                self.run_command(cap=1)
+        self.assertTrue(self.model.reaped)
+        self.assertEqual(self.model.signals, [signal.SIGTERM, signal.SIGKILL])
+        self.assertEqual(self.executor.records[-1]["status"], "failed")
+        # The partial running receipt did not replace the registered receipt.
+        previous = json.loads((self.output / "process-receipt.json").read_text())
+        self.assertEqual(previous["records"][-1]["status"], "registered")
+        self.assertTrue(self.executor.close()["direct_children_reaped"])
+
+    def test_slow_json_writer_expires_phase_cap_but_still_reaps(self):
+        self.create()
+        self.executor._phase_deadline = self.timer.mono + 1
+        original = Path.open
+        advanced = []
+        class SlowWriter:
+            def __init__(inner, handle):
+                inner.handle = handle
+            def __enter__(inner):
+                inner.handle.__enter__()
+                return inner
+            def __exit__(inner, *args):
+                return inner.handle.__exit__(*args)
+            def write(inner, chunk):
+                result = inner.handle.write(chunk)
+                if self.executor._owned and not advanced:
+                    advanced.append(True)
+                    self.timer.advance(1)
+                return result
+        def opening(path, mode="r", *args, **kwargs):
+            handle = original(path, mode, *args, **kwargs)
+            return SlowWriter(handle) if mode == "w" and path.name.endswith(".json.tmp") else handle
+        with patch.object(Path, "open", new=opening):
+            with self.assertRaisesRegex(subject.Failure, "cap exhausted"):
+                self.run_command()
+        self.assertTrue(self.model.reaped)
+        self.assertEqual(self.executor.records[-1]["status"], "failed")
+        self.assertEqual(len(advanced), 1)
+        self.assertTrue(self.executor.close()["direct_children_reaped"])
+
+    def test_cleanup_json_uses_one_shared_deadline_without_renewal(self):
+        self.create()
+        self.run_command()
+        self.executor._close_deadline = self.timer.mono + 1
+        original = subject.json.JSONEncoder.iterencode
+        encodings = []
+        def slow_encoding(encoder, data, *args, **kwargs):
+            encodings.append(True)
+            self.timer.advance(1)
+            yield from original(encoder, data, *args, **kwargs)
+        with patch.object(subject.json.JSONEncoder, "iterencode", new=slow_encoding):
+            receipt = self.executor.close()
+            ended = self.timer.mono
+            self.assertIs(self.executor.close(), receipt)
+        self.assertEqual(self.timer.mono, ended)
+        self.assertEqual(len(encodings), 1)
+        self.assertTrue(receipt["failed"])
+        self.assertTrue(receipt["direct_children_reaped"])
+        self.assertEqual(receipt["elapsed_seconds"], 1)
+        self.assertFalse((self.output / "cleanup-receipt.json").exists())
+        self.assertIn("Shared cleanup deadline", receipt["errors"][-1])
+
+    def test_first_expiry_constrains_cleanup_before_delayed_launch_handoff(self):
+        self.model = Model(exited=False, stubborn=True)
+        self.create()
+        first_expiry = self.timer.mono
+        def delayed_handoff():
+            self.executor.constrain_cleanup_deadline(first_expiry + 60)
+            self.executor.cancel_signal(signal.SIGALRM)  # Deferred in Popen handoff.
+            self.timer.advance(10)
+            self.assertEqual(self.executor._cleanup_deadline() - self.timer.mono, 50)
+        self.on_launch = delayed_handoff
+        def unkillable(pid, sig):
+            self.model.signals.append(sig)
+        self.mocks[5].side_effect = unkillable
+        with self.assertRaisesRegex(subject.Failure, "cleanup incomplete"):
+            self.run_command(cap=120)
+        self.assertAlmostEqual(self.timer.mono, first_expiry + 60)
+        self.assertEqual(self.executor._owned[0].cleanup_deadline, first_expiry + 60)
+        self.executor.constrain_cleanup_deadline(first_expiry + 600)
+        self.assertEqual(self.executor._cleanup_deadline(), first_expiry + 60)
+        ended = self.timer.mono
+        cleanup = self.executor.close()
+        self.assertEqual(self.timer.mono, ended)
+        self.assertEqual(cleanup["deadline_monotonic"], first_expiry + 60)
+        self.assertTrue(cleanup["failed"])
+        with self.assertRaises(subject.Failure):
+            self.run_command("after-expiry")
+        self.assertEqual(self.mocks[0].call_count, 1)
+
+    def test_constraint_can_tighten_already_running_owned_cleanup(self):
+        self.model = Model(exited=False, stubborn=True)
+        self.create()
+        tightened = []
+        def unkillable(pid, sig):
+            self.model.signals.append(sig)
+            if not tightened:
+                tightened.append(True)
+                self.executor.constrain_cleanup_deadline(self.timer.mono + 1)
+        self.mocks[5].side_effect = unkillable
+        with self.assertRaisesRegex(subject.Failure, "cleanup incomplete"):
+            self.run_command(cap=2)
+        self.assertAlmostEqual(self.timer.mono, 1003)
+        self.assertEqual(self.executor._owned[0].cleanup_deadline, 1003)
+        self.assertTrue(self.executor.close()["failed"])
 
 
 if __name__ == "__main__":

@@ -170,5 +170,17 @@
   "cleanup_included": true,
   "independent_evidence_review_required": true,
   "preserve_old_performance_verdict": "NO-GO",
-  "job_count": 61
+  "job_count": 61,
+  "controller_processing_watchdog": {
+    "max_check_interval_seconds": 1,
+    "absolute_outer_bound": true,
+    "work_cleanup_reserve_seconds": 60,
+    "first_expiry_pins_cleanup": true,
+    "streamed_hash_and_receipt_deadline_checks": true
+  },
+  "implicit_stack_frame_acceptance": {
+    "new_or_increased_work": "MECHANISM_NO_GO",
+    "unproven_effect_or_path_mapping": "INCONCLUSIVE_INFRA",
+    "semantic_review_can_waive": false
+  }
 }

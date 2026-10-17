@@ -22,6 +22,7 @@ import time
 # Running the committed entry point must not dirty its normal source checkout.
 sys.dont_write_bytecode = True
 from mechanism_process import Clock, Executor, Failure
+from mechanism_deadline import DeadlineGuard, deadline_check
 from mechanism_evidence import analyze_capture, compare_captures
 from decode_capture import extract
 
@@ -73,8 +74,9 @@ PACKAGE_FILES = {"README.md", "MECHANISM-VALIDATION.md", "MECHANISM-VALIDATION-P
                  "MECHANISM-REFERENCE-STORES.json", "MECHANISM-CONFIG.example.json",
                  "MECHANISM-APPROVAL.example.json", "FUTURE-VALIDATION-PLAN.json"} | {
     "scripts/jdk27/cold-call/" + name for name in (
-        "mechanism_validation.py", "mechanism_process.py", "mechanism_prepare.py", "mechanism_evidence.py",
+        "mechanism_validation.py", "mechanism_process.py", "mechanism_prepare.py", "mechanism_evidence.py", "mechanism_deadline.py",
         "test_mechanism_validation.py", "test_mechanism_process.py", "test_mechanism_evidence.py",
+        "test_mechanism_deadline.py",
         "qualify_decoder.py", "DecoderQualification.java", "decode_capture.py")}
 
 
@@ -84,6 +86,7 @@ def require(condition, message):
 
 
 def sha256(path, check=None):
+    check = check or deadline_check
     digest = hashlib.sha256()
     with Path(path).open("rb") as stream:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
@@ -100,8 +103,17 @@ def json_bytes(value):
 def save(path, value):
     path = Path(path)
     temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_bytes(json_bytes(value))
+    deadline_check()
+    encoder = json.JSONEncoder(sort_keys=True, indent=2)
+    with temporary.open("w") as stream:
+        for piece in encoder.iterencode(value):
+            deadline_check()
+            stream.write(piece)
+        deadline_check()
+        stream.write("\n")
+    deadline_check()
     temporary.replace(path)
+    deadline_check()
 
 
 def utc(value):
@@ -279,6 +291,7 @@ class Budget:
         self.phase, self.last = None, monotonic()
         self.used = {name: 0.0 for name in PHASE_CAPS}
         self.roles = {}
+        self.active_role = None
 
     def check(self):
         now = self.monotonic()
@@ -309,6 +322,7 @@ class Budget:
         self.check()
         require(role in ROLE_CAPS and role not in self.roles, "build role cannot restart")
         self.roles[role] = self.monotonic()
+        self.active_role = role
 
     def remaining_role(self, role):
         self.check()
@@ -419,7 +433,7 @@ def inventory(root, budget=None, check=None):
 
 class Mechanism:
     def __init__(self, config, approval, output, config_path, approval_path, manifest_path,
-                 clock=None, executor_factory=Executor):
+                 clock=None, executor_factory=Executor, deadline_guard=None):
         self.config, self.approval = config, approval
         self.output = Path(output)
         self.clock = clock or Clock(approval)
@@ -439,6 +453,27 @@ class Mechanism:
         self.executor_factory, self.executor = executor_factory, None
         self.trees, self.images, self.source_seals, self.tool_seals = {}, {}, {}, {}
         self.failed = False
+        self.deadline_guard = deadline_guard
+
+    def controller_remaining(self):
+        """Read absolute bounds without mutating the aggregate Budget clock."""
+        budget = self.budget
+        remaining = self.clock.remaining(reserve=0 if budget.phase == "cleanup" else 60)
+        now = budget.monotonic()
+        if budget.phase:
+            remaining = min(remaining, PHASE_CAPS[budget.phase] - budget.used[budget.phase] - (now - budget.last))
+        if budget.active_role and budget.phase != "cleanup":
+            role = budget.active_role
+            remaining = min(remaining, budget.roles[role] + ROLE_CAPS[role] - now)
+        return remaining
+
+    def defer_deadline(self):
+        if self.executor and self.deadline_guard and self.deadline_guard.expired_at is not None:
+            self.executor.constrain_cleanup_deadline(self.deadline_guard.expired_at + 60)
+        if self.executor and (getattr(self.executor, "_launching", False) or getattr(self.executor, "_cleaning", False)):
+            self.executor.cancel_signal(signal.SIGALRM)
+            return True
+        return False
 
     def persist(self):
         self.receipt["phase_seconds"] = self.budget.used
@@ -663,6 +698,7 @@ class Mechanism:
                     self.image_seals[str(path)] = files[str(path.relative_to(image))]["sha256"]
             self.persist()
             self.receipt["images"][role]["role_elapsed_seconds"] = ROLE_CAPS[role] - self.budget.remaining_role(role)
+            self.budget.active_role = None
         left = specs["base-release"].copy()
         require(left == specs["candidate-release"], "release configurations are not matched")
         left["DEBUG_LEVEL"] = "fastdebug"
@@ -894,6 +930,15 @@ class Mechanism:
         return ledger["verdict"]
 
     def run(self):
+        if self.deadline_guard is not None:
+            self.deadline_guard.rebind(self.controller_remaining, self.defer_deadline)
+            return self._run()
+        with DeadlineGuard(self.controller_remaining, lambda: self.clock.remaining(reserve=0),
+                           self.defer_deadline) as guard:
+            self.deadline_guard = guard
+            return self._run()
+
+    def _run(self):
         require(sum(PHASE_CAPS.values()) == 7200 and sum(ROLE_CAPS.values()) == PHASE_CAPS["builds"],
                 "invalid frozen budget")
         self.output.mkdir(parents=True, exist_ok=False)
@@ -929,6 +974,10 @@ class Mechanism:
             status = self.review()
         except BaseException as error:
             self.failed = True
+            remaining = self.controller_remaining()
+            if remaining <= 0:
+                self.deadline_guard._mark_expired(remaining)
+                self.defer_deadline()
             self.receipt["failure"] = dict(type=type(error).__name__, reason=str(error), phase=self.budget.phase)
             # An executed safety/correctness failure is a no-go. Missing evidence,
             # deadlines, preparation, and ownership failures remain inconclusive.
@@ -941,6 +990,14 @@ class Mechanism:
                 status = "MECHANISM_NO_GO"
         finally:
             cleanup_start = time.monotonic()
+            if self.deadline_guard.expired_at is not None:
+                cleanup_start = min(cleanup_start, self.deadline_guard.expired_at)
+            try:
+                self.deadline_guard.rebind(lambda: min(self.clock.remaining(reserve=0),
+                                                       cleanup_start + 60 - time.monotonic()), self.defer_deadline)
+            except Failure as error:
+                self.receipt["cleanup_budget_failure"] = str(error)
+                status = "INCONCLUSIVE_INFRA"
             try:
                 self.budget.enter("cleanup")
             except Failure as error:
@@ -974,12 +1031,20 @@ class Mechanism:
                 self.receipt["final_seal_failure"] = str(error)
                 status = "INCONCLUSIVE_INFRA"
             self.receipt["status"] = status
-            self.persist()
+            try:
+                self.persist()
+            except Failure as error:
+                status = "INCONCLUSIVE_INFRA"
+                self.receipt["status"] = status
+                self.receipt["final_receipt_failure"] = str(error)
             if self.clock.remaining(reserve=0) <= 0 or time.monotonic() - cleanup_start > 60:
                 status = "INCONCLUSIVE_INFRA"
                 self.receipt["status"] = status
                 self.receipt["final_deadline_failure"] = "final receipt exceeded immutable cleanup/outer cap"
-                self.persist()
+                try:
+                    self.persist()
+                except Failure:
+                    pass  # No new I/O allowance after the immutable deadline.
             for signum, handler in old_handlers.items():
                 signal.signal(signum, handler)
         return status
@@ -1019,17 +1084,21 @@ def main(argv=None):
         return 0
     try:
         require(args.output.is_absolute(), "absolute new output directory required")
-        require(sha256(args.approval) == args.approval_sha256, "approval receipt hash mismatch")
-        config = validate_config(json.loads(args.config.read_text()))
-        for key in ("jdk_source", "codec_source", "boot_jdk", "jtreg"):
-            require(not args.output.resolve().is_relative_to(Path(config[key]).resolve()),
-                    "output must be outside source/tool checkouts")
-        manifest_path = DOCUMENTS / "MECHANISM-SOURCE-MANIFEST.json"
-        verify_package(json.loads(manifest_path.read_text()))
+        require(args.approval.stat().st_size <= 16384, "approval receipt exceeds bounded input size")
         approval = json.loads(args.approval.read_text())
-        validate_approval(approval, sha256(args.config), approval.get("runner_revision"), sha256(manifest_path))
-        campaign = Mechanism(config, approval, args.output, args.config, args.approval, manifest_path)
-        status = campaign.run()
+        clock = Clock(approval)
+        with DeadlineGuard(lambda: clock.remaining(), lambda: clock.remaining(reserve=0)) as guard:
+            require(sha256(args.approval) == args.approval_sha256, "approval receipt hash mismatch")
+            config = validate_config(json.loads(args.config.read_text()))
+            for key in ("jdk_source", "codec_source", "boot_jdk", "jtreg"):
+                require(not args.output.resolve().is_relative_to(Path(config[key]).resolve()),
+                        "output must be outside source/tool checkouts")
+            manifest_path = DOCUMENTS / "MECHANISM-SOURCE-MANIFEST.json"
+            verify_package(json.loads(manifest_path.read_text()))
+            validate_approval(approval, sha256(args.config), approval.get("runner_revision"), sha256(manifest_path))
+            campaign = Mechanism(config, approval, args.output, args.config, args.approval, manifest_path,
+                                 clock=clock, deadline_guard=guard)
+            status = campaign.run()
         print(status + " " + str(args.output / "campaign.json"))
         return 0 if status == "MECHANISM_PASS" else 1
     except (Failure, OSError, ValueError, KeyError) as error:

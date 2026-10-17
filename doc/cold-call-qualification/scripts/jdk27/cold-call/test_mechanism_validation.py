@@ -7,6 +7,7 @@ import io
 import json
 import os
 from pathlib import Path
+import signal
 import subprocess
 import tempfile
 import unittest
@@ -37,6 +38,10 @@ class OfflineTest(unittest.TestCase):
             blocker = patch.object(subprocess, name, side_effect=AssertionError("Offline tests cannot spawn: " + name))
             blocker.start()
             self.addCleanup(blocker.stop)
+        for name, value in (("getitimer", (0.0, 0.0)), ("setitimer", (0.0, 0.0)), ("signal", None)):
+            timer = patch.object(signal, name, return_value=value)
+            timer.start()
+            self.addCleanup(timer.stop)
         self.now = datetime(2026, 10, 17, 20, 0, tzinfo=timezone.utc)
 
     def approval(self):
@@ -402,7 +407,7 @@ class PackageTests(OfflineTest):
     def test_package_requires_every_declared_portable_source_and_no_extras(self):
         manifest, _ = self.fixture()
         runner.verify_package(manifest)
-        self.assertEqual(len(runner.PACKAGE_FILES), 17)
+        self.assertEqual(len(runner.PACKAGE_FILES), 19)
         for name in runner.PACKAGE_FILES:
             value = copy.deepcopy(manifest)
             del value["files"][name]
@@ -552,6 +557,10 @@ class MockExecutor:
 
     def cancel_signal(self, signum):
         raise runner.Failure("mock cancellation " + str(signum))
+
+    def constrain_cleanup_deadline(self, absolute):
+        previous = getattr(self, "cleanup_deadline", absolute)
+        self.cleanup_deadline = min(previous, absolute)
 
 
 class LifecycleTests(OfflineTest):
@@ -1173,6 +1182,63 @@ class LifecycleTests(OfflineTest):
         self.assertEqual(wait.call_count, 1)
         self.assertTrue(self.executors[0].closed)
         self.assertFalse((campaign.output / "reviewed-transport-ledger.json").exists())
+
+    def assert_deadline_cleanup(self, campaign):
+        self.assertEqual(campaign.receipt["status"], "INCONCLUSIVE_INFRA")
+        self.assertEqual(campaign.receipt["failure"]["type"], "DeadlineExpired")
+        self.assertTrue(self.executors[0].closed)
+        self.assertIs(campaign.receipt["cleanup"]["direct_children_reaped"], True)
+        self.assertEqual(campaign.receipt["cleanup"]["active_groups"], [])
+        self.assertLessEqual(self.executors[0].cleanup_deadline, campaign.deadline_guard.expired_at + 60)
+        captures = [row["name"] for row in self.executors[0].records if row["name"].startswith("capture-")]
+        self.assertEqual(captures, ["capture-" + cell for cell in runner.CAPTURE_CELLS])
+        self.assertEqual(len(captures), len(set(captures)))
+
+    def test_synchronous_capture_analysis_cannot_overrun_outer_work_deadline(self):
+        campaign = self.fixture()
+        def expire(*_args):
+            campaign.clock.seconds = 59
+            campaign.deadline_guard._alarm(signal.SIGALRM, None)
+        with patch.object(runner, "analyze_capture", side_effect=expire) as analyze:
+            self.assertEqual(campaign.run(), "INCONCLUSIVE_INFRA")
+        self.assertEqual(analyze.call_count, 1)
+        self.assert_deadline_cleanup(campaign)
+
+    def test_synchronous_capture_analysis_cannot_reset_review_phase_allowance(self):
+        campaign = self.fixture()
+        def expire(*_args):
+            campaign.budget.last -= 841
+            campaign.deadline_guard._alarm(signal.SIGALRM, None)
+        with patch.object(runner, "analyze_capture", side_effect=expire) as analyze:
+            self.assertEqual(campaign.run(), "INCONCLUSIVE_INFRA")
+        self.assertEqual(analyze.call_count, 1)
+        self.assertEqual(campaign.clock.seconds, 7200.0)
+        self.assert_deadline_cleanup(campaign)
+
+    def test_synchronous_ledger_comparison_obeys_original_review_phase_deadline(self):
+        campaign = self.fixture()
+        def expire(_proofs):
+            campaign.budget.last -= 841
+            campaign.deadline_guard._alarm(signal.SIGALRM, None)
+        with patch.object(runner, "compare_captures", side_effect=expire) as compare:
+            self.assertEqual(campaign.run(), "INCONCLUSIVE_INFRA")
+        self.assertEqual(compare.call_count, 1)
+        self.assertEqual(campaign.clock.seconds, 7200.0)
+        self.assert_deadline_cleanup(campaign)
+
+    def test_synchronous_semantic_review_obeys_original_work_deadline(self):
+        campaign = self.fixture()
+        self.capture_stores.update(on=16, **{"debug-on": 16})
+        def expire(_ledger, _review):
+            campaign.clock.seconds = 59
+            campaign.deadline_guard._alarm(signal.SIGALRM, None)
+        with patch.object(runner, "compare_captures", side_effect=self.semantic_compare), \
+                patch.object(runner.time, "sleep", side_effect=lambda _: self.semantic_reply(campaign)), \
+                patch.object(evidence, "apply_semantic_review", side_effect=expire) as apply:
+            self.assertEqual(campaign.run(), "INCONCLUSIVE_INFRA")
+        self.assertEqual(apply.call_count, 1)
+        self.assertFalse((campaign.output / "reviewed-transport-ledger.json").exists())
+        self.assert_deadline_cleanup(campaign)
 
 
 if __name__ == "__main__":

@@ -66,6 +66,18 @@ cannot reset elapsed debits; commands use the smaller phase, role, command and
 absolute UTC/monotonic remainder. Sixty seconds is reserved before new work.
 Unused time cannot buy another selector, capture or attempt.
 
+The controller's main-thread watchdog applies those same absolute bounds to
+synchronous analysis, comparison, hashing and receipt processing. It checks at
+most one second apart, preserves the 60-second cleanup reserve, and interrupts
+CPU work even when the analyzer has no cooperative callback. Log hashes and
+streamed JSON writes also check the existing command/role/phase/outer limits
+between chunks. Owned launch registration and TERM/KILL/reap keep their identity
+anchor; cancellation is deferred only through those critical sections while the
+original outer clock remains open. Cleanup and its receipt writes share one
+anchored limit of at most 60 seconds and the remaining outer time. Evidence
+processing cannot renew either allowance; the first expiry pins cleanup's clock
+even when an owned critical section defers cancellation. Expiry prevents a pass.
+
 Before any external command, require native Linux x86-64, 16 GiB usable RAM,
 35 GiB free workspace, at most 32 PID1 zombies and at least 4,096 available
 process/thread slots under kernel, cgroup and per-user limits. Readiness uses
@@ -126,6 +138,14 @@ not a new timing observation. An unmappable reference, incomplete CFG, unknown
 stack effect, absent activation or missing frequency remains inconclusive.
 Every old store and replacement transport stays in the ledger. Trace activation
 or smaller code alone cannot pass; recreated/compensating hot transport fails.
+
+Implicit stack work is also an acceptance gate. Push/pop/call/return operations
+and their byte counts, frame allocations, matched common-path traffic and debug
+frequency-weighted traffic must not increase. Newly introduced or increased
+frame work rejects advancement even if explicit stores decrease. Debug's
+combined explicit-plus-implicit weighted cost must improve. Ambiguous frame
+widths, allocations or path mappings stay inconclusive, and semantic review
+cannot waive these gates.
 
 If every mechanical gate passes, or only the explicitly listed semantic store
 bindings remain open, the runner writes `review-request.json` and waits within

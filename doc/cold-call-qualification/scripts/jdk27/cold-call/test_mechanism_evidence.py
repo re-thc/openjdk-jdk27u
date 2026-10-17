@@ -7,7 +7,8 @@ from unittest.mock import patch
 from mechanism_evidence import analyze_capture, compare_captures, apply_semantic_review, semantic_review_digest, _reference_paths, _transport
 
 
-def synthetic_capture(cell="release-off", debug=False, stores=19, activation=False, shift=0):
+def synthetic_capture(cell="release-off", debug=False, stores=19, activation=False, shift=0,
+                      hot_frame=(), cold_frame=(), tail_frame=()):
     """Minimal executable-x86 loop fixture; return (PrintAssembly, XML, objdump)."""
     start = 0x1000 + shift
     rows = []
@@ -20,6 +21,8 @@ def synthetic_capture(cell="release-off", debug=False, stores=19, activation=Fal
              emit("48 8b 53 10", "mov rdx,QWORD PTR [rbx+0x10]")]
     for slot in range(stores):
         emit("89 44 24 %02x" % (slot * 4), "mov DWORD PTR [rsp+0x%x],eax" % (slot * 4))
+    for data, text in hot_frame:
+        emit(data, text)
     emit("85 c0", "test eax,eax")
     pc = start + sum(len(r[1]) for r in rows)
     displacement = start - (pc + 6)
@@ -27,9 +30,13 @@ def synthetic_capture(cell="release-off", debug=False, stores=19, activation=Fal
     call = start + sum(len(r[1]) for r in rows)
     displacement = (0x9000 + shift) - (call + 5)
     emit("e8 " + displacement.to_bytes(4, "little", signed=True).hex(), "call 0x%x" % (0x9000 + shift))
+    for data, text in cold_frame:
+        emit(data, text)
     pc = start + sum(len(r[1]) for r in rows)
     displacement = start - (pc + 5)
     emit("e9 " + displacement.to_bytes(4, "little", signed=True).hex(), "jmp 0x%x" % start)
+    for data, text in tail_frame:
+        emit(data, text)
     stop = rows[-1][0] + len(rows[-1][1])
     header = "Compiled method (c2) 100  17             dev.jzstd.internal.BlockDecoder::decodeSequencesRolling (991 bytes)"
     trace = []
@@ -297,12 +304,35 @@ class CaptureTests(unittest.TestCase):
         self.assertFalse(unknown)
         self.assertEqual(2, sum(row["implicit_stack_reads"] for row in frame))
         self.assertEqual(2, sum(row["implicit_stack_writes"] for row in frame))
+        self.assertEqual(16, sum(row["implicit_stack_reads"] * row["implicit_stack_bytes"] for row in frame))
+        self.assertEqual(16, sum(row["implicit_stack_writes"] * row["implicit_stack_bytes"] for row in frame))
+
+    def test_frame_allocation_bytes_explicit(self):
+        proof = capture(hot_frame=(("48 83 ec 20", "sub rsp,0x20"), ("48 83 c4 20", "add rsp,0x20")))
+        self.assertTrue(proof["complete"], proof)
+        summary = proof["frame_summary"]["metrics"]
+        self.assertEqual(32, summary["frame_allocation_bytes"])
+        self.assertEqual(32, summary["frame_release_bytes"])
+        self.assertEqual(32, summary["max_frame_allocation_bytes"])
+
+    def test_dynamic_stack_alignment_is_unproven(self):
+        proof = capture(hot_frame=(("48 83 e4 e0", "and rsp,0xffffffffffffffe0"),))
+        self.assertFalse(proof["complete"])
+        self.assertFalse(proof["frame_summary"]["complete"])
+
+    def test_unrecognized_stack_pointer_mutations_are_unproven(self):
+        for data, text in (("48 94", "xchg rax,rsp"), ("48 ff c4", "inc rsp"), ("5c", "pop rsp")):
+            with self.subTest(instruction=text):
+                proof = capture(hot_frame=((data, text),))
+                self.assertFalse(proof["complete"])
+                self.assertFalse(proof["checks"]["all_stack_effects_classified"])
 
 
 class ComparisonTests(unittest.TestCase):
-    def proofs(self, new_stores=18):
+    def proofs(self, new_stores=18, on_options=None, all_options=None):
         return {cell: capture(cell, stores=new_stores if cell.endswith("-on") else 19,
-                              activation=cell == "debug-on", shift=index * 0x100000)
+                              activation=cell == "debug-on", shift=index * 0x100000,
+                              **dict(all_options or {}, **(on_options or {} if cell.endswith("-on") else {})))
                 for index, cell in enumerate(("release-base", "release-default", "release-off", "release-on", "debug-off", "debug-on"))}
 
     def test_missing_capture_inconclusive(self):
@@ -369,10 +399,82 @@ class ComparisonTests(unittest.TestCase):
         self.assertEqual("MECHANISM_NO_GO", ledger["verdict"])
         self.assertFalse(ledger["checks"]["debug_less_all_path_weighted_transport"])
 
+    def test_explicit_savings_cannot_hide_push_or_pop(self):
+        for data, text, kind in (("55", "push rbp", "frame-push"), ("5d", "pop rbp", "frame-pop")):
+            with self.subTest(kind=kind):
+                ledger = compare_captures(self.proofs(on_options={"hot_frame": ((data, text),)}))
+                self.assertEqual("MECHANISM_NO_GO", ledger["verdict"])
+                self.assertTrue(ledger["checks"]["release_less_total_common_transport"])
+                self.assertFalse(ledger["checks"]["release_no_increased_common_path_implicit_frame_work"])
+                increases = ledger["store_accounting"]["debug"]["implicit_frame_comparison"]["increases"]
+                self.assertTrue(any(row["metric"] == kind for row in increases))
+
+    def test_explicit_savings_cannot_hide_extra_cold_call(self):
+        proofs = self.proofs(on_options={"cold_frame": (("e8 00 00 00 00", "call 0x9000"),)})
+        ledger = compare_captures(proofs)
+        self.assertEqual("MECHANISM_NO_GO", ledger["verdict"])
+        self.assertTrue(ledger["checks"]["debug_less_total_common_transport"])
+        self.assertFalse(ledger["checks"]["debug_no_increased_method_implicit_frame_work"])
+        self.assertFalse(ledger["checks"]["debug_no_increased_all_path_weighted_implicit_frame_work"])
+
+    def test_explicit_savings_cannot_hide_extra_return(self):
+        ledger = compare_captures(self.proofs(on_options={"tail_frame": (("c3", "ret"),)}))
+        self.assertEqual("MECHANISM_NO_GO", ledger["verdict"])
+        self.assertTrue(ledger["checks"]["debug_less_total_common_transport"])
+        self.assertFalse(ledger["checks"]["release_no_increased_method_implicit_frame_work"])
+
+    def test_explicit_savings_cannot_hide_larger_frame(self):
+        before = (("48 83 ec 20", "sub rsp,0x20"), ("48 83 c4 20", "add rsp,0x20"))
+        after = (("48 83 ec 40", "sub rsp,0x40"), ("48 83 c4 40", "add rsp,0x40"))
+        ledger = compare_captures(self.proofs(all_options={"hot_frame": before}, on_options={"hot_frame": after}))
+        self.assertEqual("MECHANISM_NO_GO", ledger["verdict"])
+        self.assertFalse(ledger["checks"]["debug_no_increased_common_path_implicit_frame_work"])
+        self.assertTrue(any(row["metric"] == "max_frame_allocation_bytes"
+                            for row in ledger["store_accounting"]["debug"]["implicit_frame_comparison"]["increases"]))
+
+    def test_existing_implicit_work_moved_hotter_no_go(self):
+        proofs = self.proofs()
+        proofs["debug-on"]["frame"][0]["frequency"] = 2.0
+        ledger = compare_captures(proofs)
+        self.assertEqual("MECHANISM_NO_GO", ledger["verdict"])
+        self.assertTrue(ledger["checks"]["debug_no_increased_method_implicit_frame_work"])
+        self.assertFalse(ledger["checks"]["debug_no_increased_all_path_weighted_implicit_frame_work"])
+
+    def test_equal_aggregate_allocation_reordered_is_unproven(self):
+        reserve = ("48 83 ec 20", "sub rsp,0x20")
+        release = ("48 83 c4 20", "add rsp,0x20")
+        proofs = self.proofs(all_options={"hot_frame": (reserve, release, reserve, release)},
+                             on_options={"hot_frame": (reserve, reserve, release, release)})
+        ledger = compare_captures(proofs)
+        self.assertEqual("INCONCLUSIVE_INFRA", ledger["verdict"])
+        self.assertTrue(ledger["checks"]["release_no_increased_method_implicit_frame_work"])
+        self.assertFalse(ledger["checks"]["release_implicit_frame_layout_proven"])
+
+    def test_increased_return_cleanup_no_go(self):
+        ledger = compare_captures(self.proofs(all_options={"tail_frame": (("c2 10 00", "ret 0x10"),)},
+                                            on_options={"tail_frame": (("c2 20 00", "ret 0x20"),)}))
+        self.assertEqual("MECHANISM_NO_GO", ledger["verdict"])
+        self.assertFalse(ledger["checks"]["release_no_increased_method_implicit_frame_work"])
+
+    def test_common_path_unproven_mapping_inconclusive(self):
+        proofs = self.proofs()
+        # Same work, but control correspondence is unavailable.
+        next(ins for ins in proofs["release-on"]["instructions"] if ins["branch"])["mnemonic"] = "jz"
+        ledger = compare_captures(proofs)
+        self.assertEqual("INCONCLUSIVE_INFRA", ledger["verdict"])
+        self.assertFalse(ledger["checks"]["release_common_implicit_frame_paths_proven"])
+
+    def test_unproven_implicit_width_inconclusive(self):
+        proofs = self.proofs()
+        del proofs["debug-on"]["frame"][0]["implicit_stack_bytes"]
+        ledger = compare_captures(proofs)
+        self.assertEqual("INCONCLUSIVE_INFRA", ledger["verdict"])
+        self.assertFalse(ledger["checks"]["debug_implicit_frame_effects_proven"])
+
 
 class SemanticReceiptTests(unittest.TestCase):
-    def ledger(self):
-        proofs = ComparisonTests().proofs()
+    def ledger(self, proofs=None):
+        proofs = proofs or ComparisonTests().proofs()
         stores = [{"offset": hex(row["offset"]), "instruction": row["instruction"]}
                   for row in proofs["release-off"]["common_store_inventory"]]
         reference = {"schema": 1, "paths": {name: {"stores": copy.deepcopy(stores), "stack_mov_stores": 19}
@@ -470,6 +572,25 @@ class SemanticReceiptTests(unittest.TestCase):
         receipt["all_replacement_transport_reviewed"] = False
         with self.assertRaises(ValueError):
             apply_semantic_review(ledger, receipt)
+
+    def test_unchanged_implicit_work_allows_legitimate_pass(self):
+        effects = (("55", "push rbp"), ("5d", "pop rbp"),
+                   ("48 83 ec 20", "sub rsp,0x20"), ("48 83 c4 20", "add rsp,0x20"))
+        ledger = self.ledger(ComparisonTests().proofs(all_options={"hot_frame": effects}))
+        self.assertEqual(["changed_transport_semantically_bound"], [k for k, v in ledger["checks"].items() if not v])
+        self.assertEqual("MECHANISM_PASS", apply_semantic_review(ledger, self.receipt(ledger))["verdict"])
+
+    def test_review_cannot_waive_implicit_frame_regression(self):
+        ledger = self.ledger(ComparisonTests().proofs(on_options={"hot_frame": (("55", "push rbp"),)}))
+        self.assertEqual("MECHANISM_NO_GO", ledger["verdict"])
+        with self.assertRaises(ValueError):
+            apply_semantic_review(ledger, self.receipt(ledger))
+
+    def test_review_cannot_waive_unproven_implicit_frame_mapping(self):
+        ledger = self.ledger()
+        ledger["checks"]["release_common_implicit_frame_paths_proven"] = False
+        with self.assertRaises(ValueError):
+            apply_semantic_review(ledger, self.receipt(ledger))
 
 
 if __name__ == "__main__":

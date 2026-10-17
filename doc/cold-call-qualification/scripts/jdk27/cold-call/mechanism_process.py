@@ -160,7 +160,7 @@ class _Owned:
         _require(self.observe() is not None, "Owned leader is not ready for nonblocking reap")
         # Signal callbacks must not run between releasing the anchor and marking
         # its receipt. No caller may signal this group after this point.
-        previous = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGINT, signal.SIGTERM})
+        previous = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGINT, signal.SIGTERM, signal.SIGALRM})
         try:
             pid, status = os.waitpid(self.process.pid, os.WNOHANG)
             _require(pid == self.process.pid, "Owned leader nonblocking reap did not complete")
@@ -198,6 +198,9 @@ class Executor:
         self._closed = False
         self._failed = False
         self._cleanup = None
+        self._work_deadline = None
+        self._close_deadline = None
+        self._cleanup_constraint = None
         self.host_snapshots = []
         self.clock.require_open()
         self._host_check(initial=True)
@@ -235,12 +238,55 @@ class Executor:
             self._failed = True
             raise
 
-    def _save(self):
+    def _io_check(self, deadline, cleanup=False):
+        if cleanup:
+            _require(self.clock.remaining(0) > 0, "Outer deadline exhausted during cleanup evidence")
+            if self._cleanup_constraint is not None:
+                deadline = (self._cleanup_constraint if deadline is None else
+                            min(deadline, self._cleanup_constraint))
+        else:
+            self.clock.require_open()
+        if deadline is not None:
+            _require(self.clock._monotonic() < deadline,
+                     "Command/phase/role cap exhausted during evidence processing" if not cleanup else
+                     "Shared cleanup deadline exhausted during evidence processing")
+
+    def _write_json(self, path, data, deadline=None, cleanup=False):
+        """Bound incremental encoding/writes; never publish a partial receipt."""
+        self._io_check(deadline, cleanup)
+        path = Path(path)
+        temporary = path.with_name(path.name + ".tmp")
+        encoder = json.JSONEncoder(indent=2)
+        with temporary.open("w") as handle:
+            for chunk in encoder.iterencode(data):
+                self._io_check(deadline, cleanup)
+                handle.write(chunk)
+                self._io_check(deadline, cleanup)
+            handle.write("\n")
+            self._io_check(deadline, cleanup)
+        self._io_check(deadline, cleanup)
+        temporary.replace(path)
+        self._io_check(deadline, cleanup)
+
+    def _hash_file(self, path, deadline):
+        digest = hashlib.sha256()
+        with Path(path).open("rb") as handle:
+            while True:
+                self._io_check(deadline)
+                chunk = handle.read(1 << 20)
+                self._io_check(deadline)
+                if not chunk:
+                    break
+                digest.update(chunk)
+                self._io_check(deadline)
+        return digest.hexdigest()
+
+    def _save(self, deadline=None, cleanup=False):
+        deadline = self._work_deadline if deadline is None and not cleanup else deadline
+        self._io_check(deadline, cleanup)
         data = dict(clock=self.clock.record(), records=self.records, host_snapshots=self.host_snapshots,
                     cancelled_signal=self._cancelled)
-        temporary = self.output / "process-receipt.json.tmp"
-        temporary.write_text(json.dumps(data, indent=2) + "\n")
-        temporary.replace(self.output / "process-receipt.json")
+        self._write_json(self.output / "process-receipt.json", data, deadline, cleanup)
 
     def start_phase(self, name, cap, absolute_deadline=None):
         self._check_cancel()
@@ -264,22 +310,21 @@ class Executor:
             return
         # A later close() cannot grant a failed cleanup another sixty seconds.
         owned.cleanup_deadline = deadline if owned.cleanup_deadline is None else min(deadline, owned.cleanup_deadline)
-        deadline = owned.cleanup_deadline
         self._cleaning = True
         final_signal_sent = False
         try:
             # Even successful commands can leave background descendants. Keep
             # the WNOWAIT leader anchor until TERM/KILL and group inspection end.
             owned.send(signal.SIGTERM)
-            grace = min(deadline, self.clock._monotonic() + 3.0)
+            grace = min(owned.cleanup_deadline, self.clock._monotonic() + 3.0)
             while True:
                 owned.observe()
                 owned.last_members = _group_members(owned.process.pid)
                 if not owned.last_members["live"]:
                     break
-                if self.clock._monotonic() >= grace or self.clock.remaining(0) <= 0:
+                if self.clock._monotonic() >= min(grace, owned.cleanup_deadline) or self.clock.remaining(0) <= 0:
                     break
-                time.sleep(min(0.1, max(0.0, grace - self.clock._monotonic()),
+                time.sleep(min(0.1, max(0.0, min(grace, owned.cleanup_deadline) - self.clock._monotonic()),
                                max(0.0, self.clock.remaining(0))))
             # Finish group signalling while the WNOWAIT session leader still
             # pins the group identity, even when TERM already removed all live
@@ -292,9 +337,9 @@ class Executor:
                 if event is not None and not owned.last_members["live"]:
                     owned.reap()
                     break
-                _require(self.clock._monotonic() < deadline and self.clock.remaining(0) > 0,
+                _require(self.clock._monotonic() < owned.cleanup_deadline and self.clock.remaining(0) > 0,
                          "Owned cleanup exhausted its bounded absolute-deadline allowance")
-                time.sleep(min(0.1, max(0.0, deadline - self.clock._monotonic()),
+                time.sleep(min(0.1, max(0.0, owned.cleanup_deadline - self.clock._monotonic()),
                                max(0.0, self.clock.remaining(0))))
         except BaseException as error:
             owned.error = type(error).__name__ + ": " + str(error)
@@ -310,8 +355,22 @@ class Executor:
         finally:
             self._cleaning = False
 
+    def constrain_cleanup_deadline(self, absolute):
+        """Pin first-expiry cleanup before any deferred launch handoff finishes."""
+        absolute = _deadline(absolute, "shared cleanup")
+        self._cleanup_constraint = (absolute if self._cleanup_constraint is None else
+                                    min(absolute, self._cleanup_constraint))
+        if self._close_deadline is not None:
+            self._close_deadline = min(self._close_deadline, self._cleanup_constraint)
+        # A watchdog can tighten the bound while a cleanup loop is running.
+        # Its loops read this same field rather than an obsolete local copy.
+        for owned in self._owned:
+            if owned.cleanup_deadline is not None:
+                owned.cleanup_deadline = min(owned.cleanup_deadline, self._cleanup_constraint)
+
     def _cleanup_deadline(self):
-        return self.clock._monotonic() + min(60.0, max(0.0, self.clock.remaining(0)))
+        deadline = self.clock._monotonic() + min(60.0, max(0.0, self.clock.remaining(0)))
+        return min(deadline, self._cleanup_constraint) if self._cleanup_constraint is not None else deadline
 
     def run(self, name, argv, cwd, cap, role_remaining=None, role_deadline=None):
         try:
@@ -347,6 +406,7 @@ class Executor:
             deadline = min(deadline, _deadline(role_deadline, "role"))
         budget = deadline - now
         _require(budget > 0, "Phase, command or role budget exhausted before launch")
+        self._work_deadline = deadline
         self._host_check()
         self._names.add(name)
         record = dict(name=name, phase=self._phase, argv=list(argv), cwd=str(cwd),
@@ -412,14 +472,17 @@ class Executor:
                                           deadline_monotonic=owned.cleanup_deadline)
             self._running = False
             record["wall_seconds"] = self.clock._monotonic() - started
-            for stream in ("stdout", "stderr"):
-                path = Path(record[stream + "_path"])
-                if path.is_file():
-                    digest = hashlib.sha256()
-                    with path.open("rb") as handle:
-                        for chunk in iter(lambda: handle.read(1 << 20), b""):
-                            digest.update(chunk)
-                    record[stream + "_sha256"] = digest.hexdigest()
+            evidence_error = None
+            try:
+                for stream in ("stdout", "stderr"):
+                    path = Path(record[stream + "_path"])
+                    if path.is_file():
+                        record[stream + "_sha256"] = self._hash_file(path, deadline)
+            except BaseException as error:
+                evidence_error = type(error).__name__ + ": " + str(error)
+                problem = Failure((str(problem) + "; " if problem is not None else "") +
+                                  "Log evidence incomplete: " + evidence_error)
+            record["wall_seconds"] = self.clock._monotonic() - started
             if problem is None and record["exit_code"] != 0:
                 problem = Failure("Command failed without retry: " + name)
             if problem is None and self._cancelled is not None:
@@ -428,7 +491,15 @@ class Executor:
             if problem is not None:
                 record["failure"] = str(problem)
                 self._failed = True
-            self._save()
+            if evidence_error is None:
+                try:
+                    self._save()
+                except BaseException as error:
+                    problem = Failure((str(problem) + "; " if problem is not None else "") +
+                                      "Command receipt incomplete (" + type(error).__name__ + "): " + str(error))
+                    record["status"] = "failed"
+                    record["failure"] = str(problem)
+                    self._failed = True
         if problem is not None:
             raise problem
         return record
@@ -439,7 +510,13 @@ class Executor:
         self._closed = True
         started = self.clock._monotonic()
         errors = []
-        deadline = self._cleanup_deadline()
+        if self._close_deadline is None:
+            self._close_deadline = self._cleanup_deadline()
+            pending = [o.cleanup_deadline for o in self._owned
+                       if not o.reaped and o.cleanup_deadline is not None]
+            if pending:
+                self._close_deadline = min(self._close_deadline, *pending)
+        deadline = self._close_deadline
         for owned in self._owned:
             if owned.reaped or owned.ownership_lost:
                 continue
@@ -447,6 +524,7 @@ class Executor:
                 self._cleanup_one(owned, deadline)
             except BaseException as error:
                 errors.append(type(error).__name__ + ": " + str(error))
+        deadline = self._close_deadline  # A watchdog may have tightened it during owned cleanup.
         self._cleanup = dict(direct_children_reaped=all(o.reaped for o in self._owned),
                              direct_children_count=len(self._owned),
                              direct_children_reaped_count=sum(o.reaped for o in self._owned),
@@ -455,10 +533,17 @@ class Executor:
                                             for o in self._owned if not o.reaped],
                              errors=errors, elapsed_seconds=self.clock._monotonic() - started,
                              cancelled_signal=self._cancelled,
+                             deadline_monotonic=deadline,
                              clock=self.clock.record())
         self._cleanup["failed"] = bool(errors or self._cleanup["active_groups"] or
                                         not self._cleanup["direct_children_reaped"] or
                                         self._cleanup["elapsed_seconds"] > 60 or self.clock.remaining(0) < 0)
-        (self.output / "cleanup-receipt.json").write_text(json.dumps(self._cleanup, indent=2) + "\n")
-        self._save()
+        try:
+            self._write_json(self.output / "cleanup-receipt.json", self._cleanup, deadline, cleanup=True)
+            self._save(deadline=deadline, cleanup=True)
+        except BaseException as error:
+            self._cleanup["failed"] = True
+            self._cleanup["errors"].append("Cleanup evidence incomplete (" + type(error).__name__ + "): " + str(error))
+            self._failed = True
+        self._cleanup["elapsed_seconds"] = self.clock._monotonic() - started
         return self._cleanup
