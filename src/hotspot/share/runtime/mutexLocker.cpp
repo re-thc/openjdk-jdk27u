@@ -35,6 +35,7 @@
 
 // Mutexes used in the VM (see comment in mutexLocker.hpp):
 
+Mutex*   CompilerStubs_lock           = nullptr;
 Mutex*   NMethodState_lock            = nullptr;
 Monitor* SystemDictionary_lock        = nullptr;
 Mutex*   InvokeMethodTypeTable_lock   = nullptr;
@@ -231,6 +232,7 @@ void mutex_init() {
   MUTEX_DEFN(JmethodIdCreation_lock          , PaddedMutex  , nosafepoint-1);    // used for creating jmethodIDs can also lock HandshakeState_lock
   MUTEX_DEFN(InvokeMethodTypeTable_lock      , PaddedMutex  , safepoint);
   MUTEX_DEFN(InvokeMethodIntrinsicTable_lock , PaddedMonitor, safepoint);
+  MUTEX_DEFN(CompilerStubs_lock              , PaddedMutex  , safepoint);
   MUTEX_DEFN(AdapterHandlerLibrary_lock      , PaddedMutex  , safepoint);
   MUTEX_DEFN(SharedDictionary_lock           , PaddedMutex  , safepoint);
   MUTEX_DEFN(VMStatistic_lock                , PaddedMutex  , safepoint);

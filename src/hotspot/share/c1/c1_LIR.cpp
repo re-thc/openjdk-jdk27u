@@ -28,6 +28,7 @@
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciInstance.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_version.hpp"
@@ -543,6 +544,49 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       if (opAllocObj->_tmp4->is_valid())         do_temp(opAllocObj->_tmp4);
       if (opAllocObj->_result->is_valid())       do_output(opAllocObj->_result);
       if (opAllocObj->_stub != nullptr)          do_stub(opAllocObj->_stub);
+      break;
+    }
+
+
+    case lir_common_scalar: {
+      LIR_OpCommonScalar* scalar = static_cast<LIR_OpCommonScalar*>(op);
+      LIR_Op2* op2 = scalar;
+      do_input(op2->_opr1);
+#ifdef AMD64
+      // One-operand multiply and unsigned divide overwrite their fixed RAX
+      // input even when the result is allocated in a different register.
+      if (op2->_opr1->is_fixed_cpu()) do_temp(op2->_opr1);
+#endif
+      if (op2->_opr2->is_valid()) do_input(op2->_opr2);
+#if defined(AMD64) || defined(AARCH64)
+      vmIntrinsics::ID id = vmIntrinsics::ID_from(scalar->intrinsic_id());
+      bool keep_inputs = false;
+#ifdef AMD64
+      keep_inputs = id == vmIntrinsics::_addExactI || id == vmIntrinsics::_addExactL ||
+                    id == vmIntrinsics::_subtractExactI || id == vmIntrinsics::_subtractExactL ||
+                    id == vmIntrinsics::_multiplyExactI || id == vmIntrinsics::_multiplyExactL;
+#endif
+#ifdef AARCH64
+      keep_inputs = id == vmIntrinsics::_remainderUnsigned_i || id == vmIntrinsics::_remainderUnsigned_l ||
+                    id == vmIntrinsics::_multiplyExactL;
+#endif
+      // These instruction sequences read their inputs after writing a scratch
+      // register. Keep dead inputs from being reused for that scratch register
+      // or for an early output, as for the platform's other division lowering.
+      if (keep_inputs) {
+        do_temp(op2->_opr1);
+        do_temp(op2->_opr2);
+      }
+#endif
+      if (op2->_tmp1->is_valid()) do_temp(op2->_tmp1);
+      if (op2->_tmp2->is_valid()) do_temp(op2->_tmp2);
+      if (op2->_tmp3->is_valid()) do_temp(op2->_tmp3);
+      if (scalar->fallback() != nullptr) {
+        do_stub(scalar->fallback());
+      } else if (op2->_info != nullptr) {
+        do_info(op2->_info);
+      }
+      do_output(op2->_result);
       break;
     }
 
@@ -1703,6 +1747,7 @@ const char * LIR_Op::name() const {
      case lir_monaddr:               s = "mon_addr";      break;
      // LIR_Op2
      case lir_cmp:                   s = "cmp";           break;
+     case lir_common_scalar:         s = "common_scalar"; break;
      case lir_cmp_l2i:               s = "cmp_l2i";       break;
      case lir_ucmp_fd2i:             s = "ucomp_fd2i";    break;
      case lir_cmp_fd2i:              s = "comp_fd2i";     break;

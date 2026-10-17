@@ -12755,7 +12755,7 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_dilithiumDecomposePoly = generate_dilithiumDecomposePoly();
     }
 
-    if (UseBASE64Intrinsics) {
+    if (UseCompiler && UseBASE64Intrinsics) {
         StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
         StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
     }

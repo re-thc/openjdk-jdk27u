@@ -940,6 +940,7 @@ enum LIR_Code {
       , lir_branch
       , lir_cond_float_branch
       , lir_cmp
+      , lir_common_scalar
       , lir_cmp_l2i
       , lir_ucmp_fd2i
       , lir_cmp_fd2i
@@ -1735,6 +1736,22 @@ class LIR_OpAllocArray : public LIR_Op {
   virtual void print_instr(outputStream* out) const PRODUCT_RETURN;
 };
 
+
+// Scalar operations carry their intrinsic ID separately from their operands.
+class LIR_OpCommonScalar : public LIR_Op2 {
+  int _intrinsic_id;
+  CodeStub* _fallback;
+ public:
+  LIR_OpCommonScalar(int id, LIR_Opr left, LIR_Opr right, LIR_Opr result,
+                    LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr vtmp,
+                    CodeEmitInfo* info, CodeStub* fallback)
+    : LIR_Op2(lir_common_scalar, left, right, result, tmp1, tmp2, vtmp),
+      _intrinsic_id(id), _fallback(fallback) {
+    _info = info;
+  }
+  int intrinsic_id() const { return _intrinsic_id; }
+  CodeStub* fallback() const { return _fallback; }
+};
 
 class LIR_Op3: public LIR_Op {
  friend class LIR_OpVisitState;

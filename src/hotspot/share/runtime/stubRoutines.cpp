@@ -29,8 +29,10 @@
 #include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/vectorSupport.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/timerTrace.hpp"
@@ -73,6 +75,8 @@ STUBGEN_ENTRIES_DO(DEFINE_STUBGEN_ENTRY_FIELD, DEFINE_STUBGEN_ENTRY_FIELD_INIT, 
 #undef DEFINE_STUBGEN_ENTRY_FIELD_ARRAY
 #undef DEFINE_STUBGEN_ENTRY_FIELD_INIT
 #undef DEFINE_STUBGEN_ENTRY_FIELD
+
+bool StubRoutines::_compiler_stubs_initialized = false;
 
 jint    StubRoutines::_verify_oop_count                         = 0;
 
@@ -205,18 +209,9 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
   int size = code_size + CodeEntryAlignment * max_aligned_stubs;
   BufferBlob* stubs_code = BufferBlob::create(buffer_name, size);
   if (stubs_code == nullptr) {
-    // The compiler blob may be created late by a C2 compiler thread
-    // rather than during normal initialization by the initial thread.
-    // In that case we can tolerate an allocation failure because the
-    // compiler will have been shut down and we have no need of the
-    // blob.
-    // TODO: Ideally we would still like to try to use any AOT cached
-    // blob here but we don't have a fallback if we find that it is
-    // missing stubs we need so for now we exit. This should only
-    // happen in cases where we have a very small code cache.
-    if (Thread::current()->is_Compiler_thread()) {
-      assert(blob_id == BlobId::stubgen_compiler_id, "sanity");
-      assert(DelayCompilerStubsGeneration, "sanity");
+    // Delayed compiler stubs can be requested by a compiler or a Java
+    // thread. If CodeCache is full, empty slots retain the Java fallback.
+    if (blob_id == BlobId::stubgen_compiler_id && DelayCompilerStubsGeneration) {
       log_warning(stubs)("%s\t not generated:\t no space left in CodeCache", buffer_name);
       return nullptr;
     }
@@ -329,18 +324,35 @@ void stubs_AOTAddressTable_init() { StubRoutines::init_AOTAddressTable(); }
  * to remove this at some point and have a determinate ordered init.
  */
 
-void compiler_stubs_init(bool in_compiler_thread) {
-  if (in_compiler_thread && DelayCompilerStubsGeneration) {
-    // Temporarily revert state of stubs generation because
-    // it is called after final_stubs_init() finished
-    // during compiler runtime initialization.
-    // It is fine because these stubs are only used by
-    // compiled code and compiler is not running yet.
+bool StubRoutines::compiler_stubs_initialized() {
+  return AtomicAccess::load_acquire(&_compiler_stubs_initialized);
+}
+
+void StubRoutines::ensure_compiler_stubs_initialized() {
+  if (compiler_stubs_initialized()) {
+    return;
+  }
+  MutexLocker ml(CompilerStubs_lock);
+  if (compiler_stubs_initialized()) {
+    return;
+  }
+
+  bool frozen = StubCodeDesc::is_frozen();
+  if (frozen) {
     StubCodeDesc::unfreeze();
-    StubRoutines::initialize_compiler_stubs();
+  }
+  initialize_compiler_stubs();
+  if (frozen) {
     StubCodeDesc::freeze();
-  } else if (!in_compiler_thread && !DelayCompilerStubsGeneration) {
-    StubRoutines::initialize_compiler_stubs();
+  }
+  // Publish even if CodeCache allocation failed. Empty slots retain Java and
+  // must not race with another attempt to generate this immutable blob.
+  AtomicAccess::release_store(&_compiler_stubs_initialized, true);
+}
+
+void compiler_stubs_init(bool in_compiler_thread) {
+  if (in_compiler_thread || !DelayCompilerStubsGeneration) {
+    StubRoutines::ensure_compiler_stubs_initialized();
   }
 }
 

@@ -160,6 +160,7 @@ class UnsafeMemoryAccessMark : public StackObj {
 };
 
 class StubRoutines: AllStatic {
+  static bool _compiler_stubs_initialized;
 
 public:
   // Dependencies
@@ -230,6 +231,12 @@ public:
 #undef DECLARE_BLOB_INIT_METHOD
 
 public:
+
+  static void ensure_compiler_stubs_initialized();
+  static bool compiler_stubs_initialized();
+  static address compiler_stubs_initialized_address() {
+    return reinterpret_cast<address>(&_compiler_stubs_initialized);
+  }
 
   // Calls to Java
   typedef void (*CallStub)(

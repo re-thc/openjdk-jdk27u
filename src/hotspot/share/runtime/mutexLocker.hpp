@@ -54,6 +54,7 @@ extern Monitor* Heap_lock;                       // a lock on the heap
 extern Mutex*   PSOldGenExpand_lock;         // a lock on expanding the heap
 #endif
 extern Mutex*   AdapterHandlerLibrary_lock;      // a lock on the AdapterHandlerLibrary
+extern Mutex*   CompilerStubs_lock;              // serializes compiler-stub publication
 extern Mutex*   SignatureHandlerLibrary_lock;    // a lock on the SignatureHandlerLibrary
 extern Mutex*   VtableStubs_lock;                // a lock on the VtableStubs
 extern Mutex*   SymbolArena_lock;                // a lock on the symbol table arena

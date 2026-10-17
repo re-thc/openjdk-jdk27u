@@ -99,7 +99,8 @@ PredicateFailedStub::PredicateFailedStub(CodeEmitInfo* info) {
 
 void PredicateFailedStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-  address a = Runtime1::entry_for(StubId::c1_predicate_failed_trap_id);
+  address a = Runtime1::entry_for(_is_intrinsic ? StubId::c1_intrinsic_failed_trap_id
+                                               : StubId::c1_predicate_failed_trap_id);
   __ far_call(RuntimeAddress(a));
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
