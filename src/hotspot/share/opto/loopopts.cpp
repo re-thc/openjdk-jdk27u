@@ -1407,6 +1407,270 @@ static Node* is_inner_of_stripmined_loop(const Node* out) {
   return out_le;
 }
 
+// A secondary loop cursor need not be an affine function of the counted IV.
+// Recognize a deliberately restricted guarded sum without changing its type:
+//
+//   cursor = 0;
+//   step = non_negative_component;
+//   if (step != 0 && step > limit - cursor) throw ...;
+//   ... cursor + step <= array.length - slack ...;
+//   cursor += step;
+//
+// Every accepted update preserves 0 <= cursor <= max(limit, 0). In particular,
+// limit - cursor and a positive accepted update cannot overflow. The signed end
+// test then implies the source cursor bounds, even though the cursor's inferred
+// interval is INT. This proof is local; do not narrow the Phi or remove casts.
+class GuardedCursorProof : public StackObj {
+  PhaseIdealLoop* const _phase;
+  PhiNode* const _cursor;
+  Node* _step;
+  Node* _limit;
+  int _work;
+
+  static Node* value(Node* n) {
+    for (int i = 0; i < 8 && n != nullptr && n->is_CastII(); i++) {
+      n = n->in(1);
+    }
+    return n;
+  }
+
+  bool live_control(Node* n) const {
+    return n != nullptr && n->is_CFG() && n->in(0) != nullptr && _phase->has_node(n) &&
+           _phase->igvn().type_or_null(n) != Type::TOP;
+  }
+
+  bool same_cursor(Node* n, int depth = 0) {
+    if (--_work < 0 || depth > 8) {
+      return false;
+    }
+    n = value(n);
+    if (n == _cursor) {
+      return true;
+    }
+    if (n == nullptr || !n->is_Phi() || !live_control(n->in(0)) || !n->in(0)->is_Region() ||
+        n->in(0)->is_Loop() || n->req() < 2 ||
+        n->req() != n->in(0)->req()) {
+      return false;
+    }
+    // A skipped access can merge the cursor with its range-check cast.
+    for (uint i = 1; i < n->req(); i++) {
+      if (!live_control(n->in(0)->in(i)) || !same_cursor(n->in(i), depth + 1)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool same_end(Node* end, Node* step, int depth = 0) {
+    if (--_work < 0 || depth > 8) {
+      return false;
+    }
+    end = value(end);
+    step = value(step);
+    if (end == nullptr || step == nullptr) {
+      return false;
+    }
+    if (step->Opcode() == Op_ConI && step->get_int() == 0 && same_cursor(end)) {
+      return true;
+    }
+    if (end->Opcode() == Op_AddI &&
+        ((same_cursor(end->in(1)) && value(end->in(2)) == step) ||
+         (same_cursor(end->in(2)) && value(end->in(1)) == step))) {
+      return true;
+    }
+    // Split-if can distribute p + Phi(step, 0) into Phi(p + step, p).
+    // Check the correlated inputs, rather than assuming unrelated Phis agree.
+    if (!end->is_Phi() || !step->is_Phi() || end->in(0) != step->in(0) ||
+        !live_control(end->in(0)) || !end->in(0)->is_Region() || end->in(0)->is_Loop() || end->req() < 2 ||
+        end->req() != step->req() || end->req() != end->in(0)->req()) {
+      return false;
+    }
+    for (uint i = 1; i < end->req(); i++) {
+      if (!live_control(end->in(0)->in(i)) || !same_end(end->in(i), step->in(i), depth + 1)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static bool non_negative_component(Node* n) {
+    n = value(n);
+    if (n == nullptr) {
+      return false;
+    }
+    if (n->Opcode() == Op_ConI) {
+      return n->get_int() >= 0;
+    }
+    // Do not use a type refined by the range check being proved. A mask with
+    // its sign bit clear establishes non-negativity independently of control.
+    return n->Opcode() == Op_AndI && n->in(2)->Opcode() == Op_ConI && n->in(2)->get_int() >= 0;
+  }
+
+  bool checked_component(Node* step, Node* ctrl, int depth) {
+    if (--_work < 0 || depth > 8 || !live_control(ctrl)) {
+      return false;
+    }
+    step = value(step);
+    if (step == nullptr) {
+      return false;
+    }
+    if (step->Opcode() == Op_ConI && step->get_int() == 0) {
+      return true;
+    }
+    if (step->is_Phi()) {
+      Node* region = step->in(0);
+      if (!live_control(region) || !region->is_Region() || region->is_Loop() ||
+          step->req() < 2 || region->req() != step->req() || !_phase->is_dominator(region, ctrl)) {
+        return false;
+      }
+      for (uint i = 1; i < step->req(); i++) {
+        if (!checked_component(step->in(i), region->in(i), depth + 1)) {
+          return false;
+        }
+      }
+      return true;
+    }
+    if (!non_negative_component(step)) {
+      return false;
+    }
+    for (Node* dom = ctrl; dom != _cursor->in(0) && live_control(dom) && --_work >= 0; dom = _phase->idom(dom)) {
+      if (!dom->is_IfProj() || dom->in(0)->Opcode() != Op_If) {
+        continue;
+      }
+      Node* bol = dom->in(0)->in(1);
+      if (bol == nullptr || !bol->is_Bool() || bol->in(1)->Opcode() != Op_CmpI) {
+        continue;
+      }
+      BoolTest::mask test = bol->as_Bool()->_test._test;
+      if (dom->Opcode() == Op_IfFalse) {
+        test = BoolTest::negate_mask(test);
+      }
+      Node* cmp = bol->in(1);
+      Node* sub = cmp->in(2);
+      if (test == BoolTest::eq && value(cmp->in(1)) == step &&
+          sub->Opcode() == Op_ConI && sub->get_int() == 0) {
+        return true;
+      }
+      if ((test == BoolTest::le || test == BoolTest::lt) && value(cmp->in(1)) == step &&
+          sub->Opcode() == Op_SubI && same_cursor(sub->in(2))) {
+        Node* limit = value(sub->in(1));
+        // Parameters and constants are invariant even if other loop structure
+        // has already changed. More general invariant expressions are omitted.
+        if (limit == nullptr || (!limit->is_Parm() && limit->Opcode() != Op_ConI) ||
+            (_limit != nullptr && _limit != limit)) {
+          return false;
+        }
+        _limit = limit;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool checked_update(Node* update, Node* ctrl, int depth) {
+    if (--_work < 0 || depth > 8 || !live_control(ctrl)) {
+      return false;
+    }
+    update = value(update);
+    if (update == nullptr) {
+      return false;
+    }
+    if (same_cursor(update)) {
+      return true;
+    }
+    if (update->is_Phi()) {
+      Node* region = update->in(0);
+      if (!live_control(region) || !region->is_Region() || region->is_Loop() ||
+          update->req() < 2 || region->req() != update->req() || !_phase->is_dominator(region, ctrl)) {
+        return false;
+      }
+      for (uint i = 1; i < update->req(); i++) {
+        if (!checked_update(update->in(i), region->in(i), depth + 1)) {
+          return false;
+        }
+      }
+      return true;
+    }
+    if (update->Opcode() != Op_AddI) {
+      return false;
+    }
+    Node* step = nullptr;
+    if (same_cursor(update->in(1))) {
+      step = value(update->in(2));
+    } else if (same_cursor(update->in(2))) {
+      step = value(update->in(1));
+    }
+    if (step == nullptr || (_step != nullptr && _step != step)) {
+      return false;
+    }
+    _step = step;
+    return checked_component(step, ctrl, depth + 1);
+  }
+
+ public:
+  GuardedCursorProof(PhaseIdealLoop* phase, PhiNode* cursor)
+    : _phase(phase), _cursor(cursor), _step(nullptr), _limit(nullptr), _work(192) {}
+
+  bool covers(IfNode* check, Node* length, jint offset) {
+    Node* loop = _cursor->in(0);
+    if (!live_control(loop) || !loop->is_Loop() || loop->req() != 3 || _cursor->req() != 3 ||
+        !live_control(loop->in(LoopNode::EntryControl)) || !live_control(loop->in(LoopNode::LoopBackControl)) ||
+        !live_control(check->in(0)) || !_phase->is_dominator(loop, check->in(0))) {
+      return false;
+    }
+    Node* init = value(_cursor->in(1));
+    if (init == nullptr || init->Opcode() != Op_ConI || init->get_int() != 0 ||
+        !checked_update(_cursor->in(2), loop->in(LoopNode::LoopBackControl), 0) ||
+        _step == nullptr || _limit == nullptr || !checked_component(_step, check->in(0), 0)) {
+      return false;
+    }
+    for (Node* dom = check->in(0); dom != loop && live_control(dom) && --_work >= 0; dom = _phase->idom(dom)) {
+      if (!dom->is_IfProj() || dom->in(0)->Opcode() != Op_If) {
+        continue;
+      }
+      Node* bol = dom->in(0)->in(1);
+      if (bol == nullptr || !bol->is_Bool() || bol->in(1)->Opcode() != Op_CmpI) {
+        continue;
+      }
+      BoolTest::mask test = bol->as_Bool()->_test._test;
+      if (dom->Opcode() == Op_IfFalse) {
+        test = BoolTest::negate_mask(test);
+      }
+      Node* sum = value(bol->in(1)->in(1));
+      Node* bound = value(bol->in(1)->in(2));
+      if ((test != BoolTest::le && test != BoolTest::lt) || sum == nullptr || bound == nullptr ||
+          bound->Opcode() != Op_AddI || bound->in(2)->Opcode() != Op_ConI ||
+          bound->in(2)->get_int() >= offset || value(bound->in(1)) != length) {
+        continue;
+      }
+      if (same_end(sum, _step)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static bool covers(PhaseIdealLoop* phase, IfNode* check) {
+    Node* bol = check->in(1);
+    if (bol == nullptr || !bol->is_Bool() || bol->as_Bool()->_test._test != BoolTest::lt || bol->in(1)->Opcode() != Op_CmpU ||
+        check->outcnt() != 2) {
+      return false;
+    }
+    Node* index = value(bol->in(1)->in(1));
+    Node* bound = value(bol->in(1)->in(2));
+    if (index == nullptr || bound == nullptr || !index->is_Phi() || bound->Opcode() != Op_AddI || bound->in(2)->Opcode() != Op_ConI ||
+        bound->in(2)->get_int() >= 0) {
+      return false;
+    }
+    Node* length = value(bound->in(1));
+    if (length == nullptr || length->Opcode() != Op_LoadRange) {
+      return false;
+    }
+    GuardedCursorProof proof(phase, index->as_Phi());
+    return proof.covers(check, length, bound->in(2)->get_int());
+  }
+};
+
 //------------------------------split_if_with_blocks_post----------------------
 // Do the real work in a non-recursive function.  CFG hackery wants to be
 // in the post-order, so it can dirty the I-DOM info and not use the dirtied
@@ -1506,6 +1770,15 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
   // Check for an IF ready to split; one that has its
   // condition codes input coming from a Phi at the block start.
   int n_op = n->Opcode();
+
+  if (n_op == Op_RangeCheck && !_has_irreducible_loops && GuardedCursorProof::covers(this, n->as_If())) {
+    // Keep all surviving loads and address casts below the original immediate
+    // control. The proof depends on several guards, not on one projection alone.
+    rewire_safe_outputs_to_dominator(n->as_If()->true_proj(), n->in(0), true);
+    _igvn.replace_input_of(n, 1, _igvn.intcon(1));
+    C->set_major_progress();
+    return;
+  }
 
   // Check for an IF being dominated by another IF same test
   if (n_op == Op_If ||
