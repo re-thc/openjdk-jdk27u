@@ -688,6 +688,10 @@ public final class String
     }
 
     private static String decode(Charset charset, byte[] bytes, int offset, int length) {
+        if (SimdUTF.isEligible(length)) {
+            String wide = StringCodingWide.decode(charset, bytes, offset, length);
+            if (wide != null) return wide;
+        }
         // (1)We never cache the "external" cs, the only benefit of creating
         // an additional StringDe/Encoder object to wrap it is to share the
         // de/encode() method. These SD/E objects are short-lived, the young-gen
@@ -874,6 +878,10 @@ public final class String
             }
         }
 
+        if (SimdUTF.isEligible(len)) {
+            String wide = StringCodingWide.decode(cs, src, 0, len);
+            if (wide != null) return wide;
+        }
         CharsetDecoder cd = cs.newDecoder();
         // ascii fastpath
         if (cd instanceof ArrayDecoder ad &&
@@ -950,8 +958,12 @@ public final class String
     private static <E extends Exception> byte[] encodeWithEncoder(
             Charset cs, byte coder, byte[] val, Class<E> exClass)
             throws E {
-        CharsetEncoder ce = cs.newEncoder();
         int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
+        if (SimdUTF.isEligible(len)) {
+            byte[] wide = StringCodingWide.encode(cs, coder, val);
+            if (wide != null) return wide;
+        }
+        CharsetEncoder ce = cs.newEncoder();
         int en = scale(len, ce.maxBytesPerChar());
         boolean doReplace = exClass == null;
         // fastpath with ArrayEncoder implies `doReplace`.

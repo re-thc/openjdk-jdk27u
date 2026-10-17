@@ -2353,6 +2353,17 @@ public final class System {
             }
 
             @Override
+            public String newStringFromSegment(MemorySegment segment, long offset, int length, Charset charset) {
+                return StringCodingWide.decodeSegment(segment, offset, length, charset);
+            }
+
+            @Override
+            public int encodeToSegment(String string, MemorySegment segment, long offset,
+                                       Charset charset, int srcIndex, int numChars) {
+                return StringCodingWide.encodeSegment(string, segment, offset, charset, srcIndex, numChars);
+            }
+
+            @Override
             public void finishInit(StackTraceElement[] stackTrace) {
                 StackTraceElement.finishInit(stackTrace);
             }

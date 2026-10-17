@@ -88,7 +88,7 @@ class UTF_32Coder {
                         src.position(mark);
                     }
                 }
-                if (SimdUTF.isEligible(src.remaining()) && src.hasArray() && dst.hasArray()) {
+                if (SimdUTF.isEligibleUTF32Decoding(src.remaining()) && src.hasArray() && dst.hasArray()) {
                     int length = src.remaining() & ~3;
                     int written = SimdUTF.decodeUTF32Bytes(src.array(), src.arrayOffset() + mark,
                             length, dst.array(), dst.arrayOffset() + dst.position(),
@@ -97,6 +97,13 @@ class UTF_32Coder {
                         mark += length;
                         dst.position(dst.position() + written);
                         return CoderResult.UNDERFLOW;
+                    }
+                }
+                if (SimdUTF.isEligibleUTF32Decoding(src.remaining()) && (!src.hasArray() || !dst.hasArray())) {
+                    try {
+                        SimdUTFBufferSupport.decode(src, dst, currentBO == BIG, true);
+                    } finally {
+                        mark = src.position();
                     }
                 }
                 while (src.remaining() >= 4) {
@@ -156,13 +163,17 @@ class UTF_32Coder {
         }
 
         protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
-            if (SimdUTF.isEligible(src.remaining()) && src.hasArray() && dst.hasArray()) {
+            if (SimdUTF.isEligible(src.remaining())) {
                 if (!doneBOM && src.hasRemaining()) {
                     if (dst.remaining() < 4) {
                         return CoderResult.OVERFLOW;
                     }
                     put(BOM_BIG, dst);
                     doneBOM = true;
+                }
+                if (!src.hasArray() || !dst.hasArray()) {
+                    SimdUTFBufferSupport.encode(src, dst, byteOrder == BIG, true);
+                    return encodeLoopScalar(src, dst);
                 }
                 int length = src.remaining();
                 int written = SimdUTF.encodeUTF32Bytes(src.array(), src.arrayOffset() + src.position(),
