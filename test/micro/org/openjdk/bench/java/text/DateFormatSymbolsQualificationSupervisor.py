@@ -16,7 +16,7 @@
 # 2 along with this work; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
-"""Source-only Stage A Linux supervisor. Not yet executed or qualified.
+"""Stage A Linux supervisor. Full campaign not yet executed or qualified.
 
 One owned run covers local Git preparation, normal builds, correctness,
 measurement, analysis and cleanup. See doc/date-format-symbols-qualification.md.
@@ -53,6 +53,7 @@ CLEANUP_SECONDS = 120
 RSS_LIMIT = 8 * 1024 ** 3
 DISK_LIMIT = 20 * 1024 ** 3
 PAGE_SIZE = os.sysconf("SC_PAGE_SIZE") if sys.platform == "linux" else 0
+LIVE_PROCESS_STATES = frozenset({"R", "S", "D", "T", "t", "I", "X", "x", "K", "W", "P"})
 
 
 def write_json(path, value):
@@ -79,9 +80,8 @@ def process_table():
         except FileNotFoundError:
             pass  # Exit between directory listing and stat read.
         except PermissionError:
-            # Hidden unrelated processes are harmless; an owned unreadable PID
-            # is detected below by comparing with our remembered identities.
-            pass
+            # Without parent/identity evidence we cannot exclude ownership.
+            raise RuntimeError("Cannot observe process ownership: " + path.name)
     return table
 
 
@@ -97,10 +97,52 @@ def owned_processes(table, remembered):
             break
         live.update(added)
     for pid, start in remembered.items():
-        if pid not in table and pathlib.Path(f"/proc/{pid}").exists():
+        if pid in table and table[pid]["start"] != start:
+            raise RuntimeError(f"Previously owned PID was reused: {pid}/{start}")
+        if pid not in table:
+            try:
+                pathlib.Path(f"/proc/{pid}").stat()
+            except (FileNotFoundError, ProcessLookupError):
+                continue
+            # stat propagates permission/observer errors; exists can hide them.
             raise RuntimeError(f"Cannot account for previously owned process {pid}/{start}")
     remembered.update({pid: row["start"] for pid, row in live.items()})
     return live
+
+
+def cleanup_snapshot(remembered, zombie_evidence):
+    """Only matching, observed state-Z identities are terminated zombies."""
+    owned = owned_processes(process_table(), remembered)
+    survivors, zombies = {}, {}
+    for pid, row in owned.items():
+        if row["state"] != "Z" and row["state"] not in LIVE_PROCESS_STATES:
+            raise RuntimeError(f"Unknown owned process state: {pid}/{row['start']} {row['state']!r}")
+        if pid == os.getpid():
+            continue
+        if row["state"] == "Z":
+            zombies[pid] = row
+            zombie_evidence[f"{pid}/{row['start']}"] = dict(pid=pid, **row)
+        else:
+            # Even transient dead states other than Z remain conservatively live.
+            survivors[pid] = row
+    return owned, survivors, zombies
+
+
+def reap_owned_children(child, remembered, reaped):
+    if child is not None:
+        child.poll()  # Reap Popen's child before waitpid(-1) can consume it.
+        if child.returncode is None:
+            return False
+    uncertain = False
+    while True:
+        try:
+            pid, status = os.waitpid(-1, os.WNOHANG)
+        except ChildProcessError:
+            return uncertain
+        if pid == 0:
+            return uncertain
+        reaped.append(dict(pid=pid, start=remembered.get(pid), status=status))
+        uncertain |= pid not in remembered
 
 
 def signal_identity(pid, start, sig):
@@ -109,8 +151,9 @@ def signal_identity(pid, start, sig):
         # Open first: pidfd signaling cannot hit a replacement PID after stat.
         handle = os.pidfd_open(pid)
         fields = pathlib.Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()
-        if int(fields[19]) == start:
-            signal.pidfd_send_signal(handle, sig)
+        if int(fields[19]) != start:
+            raise RuntimeError(f"PID identity changed before cleanup signal: {pid}/{start}")
+        signal.pidfd_send_signal(handle, sig)
     except ProcessLookupError:
         pass
     except FileNotFoundError:
@@ -397,6 +440,8 @@ def supervisor(args):
     args.root.mkdir(mode=0o700, parents=False, exist_ok=False)
     token = uuid.uuid4().hex
     remembered = {}
+    zombie_evidence = {}
+    reaped = []
     peak_rss = peak_disk = 0
     failure = None
     scan = None
@@ -460,10 +505,12 @@ def supervisor(args):
             with (args.root / "resources.jsonl").open("a", buffering=1) as ledger:
                 while True:
                     now = time.monotonic()
-                    live = owned_processes(process_table(), remembered)
+                    live, _, _ = cleanup_snapshot(remembered, zombie_evidence)
                     for pid, row in live.items():
                         if pid != child.pid and row["ppid"] == os.getpid() and row["state"] == "Z":
-                            os.waitpid(pid, os.WNOHANG)
+                            result = os.waitpid(pid, os.WNOHANG)
+                            if result[0]:
+                                reaped.append(dict(pid=pid, start=row["start"], status=result[1]))
                     rss = sum(row["rss"] for row in live.values())
                     peak_rss = max(peak_rss, rss)
                     if rss > RSS_LIMIT:
@@ -521,29 +568,21 @@ def supervisor(args):
         # Freeze/kill identities, not arbitrary users or machine-wide Java processes.
         # Repeated snapshots capture children created just before a parent stops.
         remaining = {}
+        remaining_zombies = {}
         try:
             while time.monotonic() < cleanup_deadline - 5:
-                live = owned_processes(process_table(), remembered)
+                live, remaining, remaining_zombies = cleanup_snapshot(remembered, zombie_evidence)
                 peak_rss = max(peak_rss, sum(row["rss"] for row in live.values()))
                 if peak_rss > RSS_LIMIT:
                     failure = failure or "Total owned RSS ceiling exhausted during cleanup"
-                remaining = {pid: row for pid, row in live.items() if pid != os.getpid()}
-                if not remaining:
-                    break
                 for pid, row in remaining.items():
                     signal_identity(pid, row["start"], signal.SIGSTOP)
                 for pid, row in remaining.items():
                     signal_identity(pid, row["start"], signal.SIGKILL)
-                if child is not None:
-                    child.poll()  # Reap Popen's child before waitpid(-1) can consume it.
-                if child is None or child.returncode is not None:
-                    while True:
-                        try:
-                            pid, _ = os.waitpid(-1, os.WNOHANG)
-                            if pid == 0:
-                                break
-                        except ChildProcessError:
-                            break
+                if reap_owned_children(child, remembered, reaped):
+                    failure = failure or "Reaped child without recorded identity"
+                if not remaining:
+                    break
                 time.sleep(0.1)
             if remaining:
                 failure = failure or "Owned descendants did not terminate"
@@ -551,7 +590,7 @@ def supervisor(args):
                 # Final storage measurement is also monitored, before discarding builds.
                 final_scan = StorageScan(args.root)
                 while final_scan.thread.is_alive() and time.monotonic() < min(final_scan.started + 10, cleanup_deadline - 2):
-                    live = owned_processes(process_table(), remembered)
+                    live, _, _ = cleanup_snapshot(remembered, zombie_evidence)
                     peak_rss = max(peak_rss, sum(row["rss"] for row in live.values()))
                     time.sleep(0.1)
                 if final_scan.thread.is_alive() or final_scan.error:
@@ -569,7 +608,7 @@ def supervisor(args):
                         str(args.root), "--token", token], env=env, stdout=stream,
                         stderr=subprocess.STDOUT, start_new_session=True)
                     while cleaner.poll() is None and time.monotonic() < cleanup_deadline - 1:
-                        live = owned_processes(process_table(), remembered)
+                        live, _, _ = cleanup_snapshot(remembered, zombie_evidence)
                         peak_rss = max(peak_rss, sum(row["rss"] for row in live.values()))
                         time.sleep(0.1)
                     if cleaner.poll() is None:
@@ -581,8 +620,7 @@ def supervisor(args):
                             failure = failure or "Cleaner did not terminate"
                     if cleaner.poll() != 0:
                         failure = failure or "File cleanup incomplete"
-                live = owned_processes(process_table(), remembered)
-                remaining = {pid: row for pid, row in live.items() if pid != os.getpid()}
+                live, remaining, remaining_zombies = cleanup_snapshot(remembered, zombie_evidence)
                 if remaining:
                     failure = failure or "Owned processes remain after file cleanup"
                 if peak_rss > RSS_LIMIT:
@@ -606,6 +644,8 @@ def supervisor(args):
             failure=failure, worker=decision, elapsedSeconds=time.monotonic()-started,
             peakOwnedRssBytes=peak_rss, peakOwnedStorageBytes=peak_disk,
             remainingOwnedPids={str(pid): row["start"] for pid, row in remaining.items()},
+            remainingOwnedZombiePids={str(pid): row["start"] for pid, row in remaining_zombies.items()},
+            ownedZombieEvidence=zombie_evidence, reapedOwnedChildren=reaped,
             note="Sampling is not an instantaneous kernel quota. No mixed clone/serialization performance claim.")
         write_json(args.root / "decision.json", report)
         if time.monotonic() > cleanup_deadline and not failure:

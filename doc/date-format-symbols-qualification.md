@@ -1,7 +1,8 @@
 # One qualification milestone for DateFormatSymbols sharing
 
-Status: prepared, not executed. No build, test, benchmark, CI job or installation
-was launched while preparing this milestone. Source review found no further
+Status: campaign not executed. Only deterministic offline cleanup fixtures have
+run; no build, JVM correctness test, benchmark, CI job or installation was
+launched while preparing this milestone. Source review found no further
 ownership defect requiring a product change. Approval to publish the source
 review did not qualify its performance or authorize this execution.
 
@@ -79,11 +80,12 @@ substitute for the exact-head reduced-profile correctness in Stage A.
 
 ## One executable entry, after execution authorization
 
-The plan, Java fixture, measurement driver and new executable Linux supervisor
-are **unexecuted source**. Static review does not validate their runtime behavior.
+The Java fixture, measurement driver and full Linux supervisor campaign remain
+**unexecuted**. Offline cleanup fixtures do not validate campaign runtime behavior.
 Their first compilation/execution belongs to the proposed milestone; a harness
-failure stops it and is owned here. No build, test, benchmark, CI, installation,
-PR or product-source edit is authorized by this source-only revision.
+failure stops it and is owned here. This cleanup repair runs offline fixtures
+only; it launches no campaign build, JVM test, benchmark, CI or installation,
+and changes no product source.
 
 Use the **full immutable qualification commit published with this plan** for
 `QUALIFICATION_REF`. The original clean checkout must already be at that exact
@@ -199,11 +201,21 @@ boot facade, cache, temporary and home directories using symlink-safe deletion. 
 controller source, command logs, correctness reports **and jtreg work files**
 (including the final partial failed/hung test invocation),
 raw measurements, build identities, resource ledger and decision. Cleaner exit
-and remaining process/path identities are checked. Any remaining PID/path,
-accounting uncertainty or deadline overrun prevents success. The outer
+and remaining process/path identities are checked. Matching owned state-Z
+zombies retain explicit identity evidence and reaping attempts; they are
+terminated processes and do not fail the live-survivor gate. Any remaining live
+PID/path, unknown state, reused PID, ownership/observer uncertainty or deadline
+overrun prevents success. The outer
 `decision.json`, not a measurement-only summary, is the milestone result.
 Raw artifacts stay local; publication is limited to redacted identities,
 reproduction commands and aggregate results needed for review.
+
+The deterministic offline cleanup fixtures use mocked process snapshots,
+reaping and signaling only, without launching children or reading `/proc`:
+
+```sh
+python3 -B test/micro/org/openjdk/bench/java/text/DateFormatSymbolsQualificationSupervisorTest.py
+```
 
 ## Exact-head correctness once for the new profile
 
