@@ -1,6 +1,6 @@
 # Staged memory qualification from source
 
-This entire source bundle is committed for review. The full campaign and analysis remain **unexecuted**. Ten offline Python guard
+This entire source bundle is committed for review. The full campaign and analysis remain **unexecuted**. Seventeen offline Python guard
 regressions pass with fake children, clocks, disks and signals; they launch no
 subprocesses or JVMs. Java EOF/repetition coverage is source-only and has not
 been compiled or run under this continuation's no-build restriction.
@@ -212,8 +212,15 @@ SIGTERM, SIGHUP and SIGINT only latch the first cancellation request; handlers d
 not raise in the middle of Popen or cleanup. Safe points before/after launch and
 in the supervision loop initiate bounded owned-descendant cleanup. Signals during
 cleanup do not interrupt it. Cancellation is recorded and cannot become a GO.
-Ownership uses subreaping and PID/start-time revalidation; reused PIDs are not
-signalled. Signals and cleanup consume the same invocation/global budget.
+Ownership uses subreaping, held pidfds and kernel direct-child verification
+with `waitid(P_PIDFD, WNOWAIT)`, not a start-time check followed by numeric kill.
+Only a confirmed direct child is signalled through that held descriptor;
+grandchildren are eligible only after their parent exits and the subreaper
+adopts them. Reaping also uses a pidfd. No numeric PID or process-group signal
+fallback exists, even when a task exits between validation and signalling.
+The admission check verifies required pidfd syscalls on self before any child
+launch. Unsupported/denied APIs stop admission; nothing weakens the ownership
+check. Start values remain an additional filter, not the signalling identity. Signals and cleanup consume the same invocation/global budget.
 
 The controller alone does **not** contain SIGKILL, interpreter death, or a native
 launch that never returns. The recorded `--outer-owner-reference` is an owner
@@ -222,12 +229,12 @@ approved pre-existing job/cgroup owner that can kill all descendants, including
 new sessions, at its hard deadline; ordinary `timeout` of just the controller
 process group is insufficient. No owner, cgroup or runner is provisioned here.
 
-`test_guards.py` contains ten fake-clock/disk/child/signal regressions, including
+`test_guards.py` contains seventeen fake-clock/disk/child/signal regressions, including
 build/jtreg writers with closed stdout, timed probe exclusion, cancellation during
 launch/cleanup, repeated signals and PID reuse. It launches no child processes
 or JVMs. Source-repair validation used
 `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_guards` in this directory:
-10 tests passed, including both build and jtreg closed-stdout cases. The future campaign runs these offline checks before any builds.
+17 tests passed, including both build and jtreg closed-stdout cases. The future campaign runs these offline checks before any builds.
 The Java state regression must execute after source compilation; a Java source
 review is not claimed as a runtime positive-byte pass.
 
@@ -240,3 +247,11 @@ and the three NIO channel test selections need their own exact-ID JTRs and image
 identities. `coverage.json` indexes these receipts from this Linux-only local
 campaign. A generic green tier1 job cannot replace them. These requirements do
 not add other platforms or enlarge the proposed campaign.
+
+The combined stdout/stderr size is checked after process exit and again after
+owned cleanup, before any success receipt. Late final stderr cannot bypass the
+48-MiB limit even if each stream individually stays below it. Offline coverage
+includes a sparse late-tail case and identity changes before pidfd validation,
+after ownership confirmation, same-start-tick unrelated reuse, original-task
+exit, and descriptor-based reaping. These are mocked regressions, not a claim
+of runtime campaign or outer-job containment qualification.

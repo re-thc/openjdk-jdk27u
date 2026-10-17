@@ -108,6 +108,7 @@ class Campaign:
                     'JDK_JAVAC_OPTIONS', 'JTREG_JAVA_OPTIONS', 'TEST_VM_FLAGLESS']:
             self.env.pop(key, None)
         self.backend = LinuxProcesses()
+        self.backend.verify_support()  # Fail admission before children if pidfd syscalls are unavailable.
         enable_subreaper()
         require_no_children(self.backend)
         self.stage = 'prepare'
@@ -149,6 +150,7 @@ class Campaign:
             'cancellation':'cooperative SIGTERM/SIGHUP/SIGINT; first request preserved during cleanup',
             'outer_owner_reference':self.a.outer_owner_reference,
             'uncatchable_controller_death_contained_here':False, 'inherited_core_limit_bytes':0,
+            'individual_signalling':'held pidfd plus kernel direct-child ownership; no kill/killpg fallback',
             'new_launcher_runtime_qualified': False})
 
     @staticmethod
@@ -232,6 +234,10 @@ class Campaign:
                 code = proc.wait(timeout=left)
                 row['exit'] = code
                 row['process_wall_seconds'] = time.monotonic() - start
+                log.flush()
+                row['combined_output_bytes'] = (Path(str(prefix)+'.stdout').stat().st_size
+                                                 + Path(str(prefix)+'.stderr').stat().st_size)
+                need(row['combined_output_bytes'] < 48 * 1024**2, 'Final combined invocation output cap')
                 need(code == expected, 'Unexpected exit: ' + str(code))
                 if workload:
                     stderr_text = Path(str(prefix)+'.stderr').read_text()
@@ -243,6 +249,12 @@ class Campaign:
             selector.close()
             self.invocation_end = previous_end
             row['cleanup'] = scope.close(proc, end)
+            try:
+                row['combined_output_bytes'] = (Path(str(prefix)+'.stdout').stat().st_size
+                                                 + Path(str(prefix)+'.stderr').stat().st_size)
+                need(row['combined_output_bytes'] < 48 * 1024**2, 'Final combined invocation output cap')
+            except Exception as exc:
+                failure = (failure + '; ' if failure else '') + repr(exc)
             try:
                 row['storage'] = storage.finish()  # After process timing and cleanup.
             except Exception as exc:

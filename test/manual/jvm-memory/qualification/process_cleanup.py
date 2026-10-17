@@ -5,7 +5,6 @@ The controller must enable subreaping before it starts any child. A scope record
 existing children before launch, then owns new descendants, including orphans
 adopted after a launcher exits or a descendant changes its process group/session.
 """
-import errno
 import os
 from pathlib import Path
 import signal
@@ -42,6 +41,23 @@ def descendants(table, parent):
 class LinuxProcesses:
     def __init__(self):
         self.parent = os.getpid()
+        if not (hasattr(os, 'pidfd_open') and hasattr(os, 'P_PIDFD')
+                and hasattr(signal, 'pidfd_send_signal')):
+            raise RuntimeError('Cleanup requires pidfd_open, P_PIDFD and pidfd_send_signal; no numeric fallback')
+
+    def verify_support(self):
+        """Admission-only syscall check on self, before launching any children."""
+        fd = os.pidfd_open(self.parent, 0)
+        try:
+            signal.pidfd_send_signal(fd, 0, None, 0)  # Permission/support check, no signal delivered.
+            try:
+                os.waitid(os.P_PIDFD, fd, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+            except ChildProcessError:
+                pass  # Self is not our child; kernel accepted P_PIDFD.
+            else:
+                raise RuntimeError('Unexpected self-child pidfd ownership result')
+        finally:
+            os.close(fd)
 
     def read(self, pid):
         raw = (Path('/proc') / str(pid) / 'stat').read_text()
@@ -64,40 +80,53 @@ class LinuxProcesses:
                     continue
         return table
 
+    def child_handle(self, pid, start):
+        """Return a held pidfd only after kernel confirmation of direct ownership.
+
+        A /proc start value alone is insufficient (PID reuse, including same-tick
+        reuse). waitid(P_PIDFD, WNOWAIT) confirms that the descriptor's task is our
+        direct child. Grandchildren are deliberately not signalled until killing
+        their owned parent reparents them to this subreaper. After confirmation,
+        any later exit/reap/reuse still leaves the pidfd bound to the original task.
+        """
+        try:
+            fd = os.pidfd_open(pid, 0)
+        except ProcessLookupError:
+            return None
+        try:
+            if self.read(pid)['start'] != start:
+                os.close(fd)
+                return None
+            os.waitid(os.P_PIDFD, fd, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+            return fd
+        except (FileNotFoundError, ProcessLookupError, ChildProcessError):
+            os.close(fd)
+            return None
+        except BaseException:
+            os.close(fd)
+            raise
+
     def kill(self, pid, start):
-        # Revalidate only this owned identity immediately before signaling.
+        fd = self.child_handle(pid, start)
+        if fd is None:
+            return
         try:
-            current = self.read(pid)
-            if current['start'] == start:
-                os.kill(pid, signal.SIGKILL)
-        except (FileNotFoundError, ProcessLookupError):
+            signal.pidfd_send_signal(fd, signal.SIGKILL, None, 0)
+        except ProcessLookupError:
+            pass  # Bound task exited; this never targets a reused numeric PID.
+        finally:
+            os.close(fd)
+
+    def reap(self, pid, start):
+        fd = self.child_handle(pid, start)
+        if fd is None:
+            return
+        try:
+            os.waitid(os.P_PIDFD, fd, os.WEXITED | os.WNOHANG)
+        except (ChildProcessError, ProcessLookupError):
             pass
-
-    def kill_group(self, group, owned):
-        # Popen(start_new_session=True) isolates the coordinator and descendants.
-        # A stable live owned member binds the original group even if its
-        # leader has exited. Escaped descendants are still killed individually.
-        for pid, row in owned.items():
-            if row.get('pgrp') != group or row.get('session') != group:
-                continue
-            try:
-                current = self.read(pid)
-                if (current['start'] == row['start'] and current['pgrp'] == group
-                        and current['session'] == group and current['state'] not in ('Z', 'X')):
-                    os.killpg(group, signal.SIGKILL)
-                    return True
-            except (FileNotFoundError, ProcessLookupError):
-                continue
-        return False
-
-    def reap(self, pid):
-        try:
-            os.waitpid(pid, os.WNOHANG)
-        except ChildProcessError:
-            pass  # Not yet reparented; a later scan either finds it or is empty.
-        except OSError as exc:
-            if exc.errno != errno.ESRCH:
-                raise
+        finally:
+            os.close(fd)
 
     def no_children(self):
         # /proc enumeration alone can race a final fork/exit/reparent. This
@@ -160,14 +189,12 @@ class ChildScope:
                     if row['state'] not in ('Z', 'X'):
                         if proc is not None and code is not None and pid != proc.pid:
                             live_leftovers.add(pid)
-                if proc is not None:
-                    backend.kill_group(proc.pid, remaining)
                 for pid, row in remaining.items():
                     if row['state'] not in ('Z', 'X'):
                         backend.kill(pid, row['start'])
                 for pid, row in remaining.items():
                     if proc is None or pid != proc.pid:
-                        backend.reap(pid)
+                        backend.reap(pid, row['start'])
                 if proc is not None:
                     proc.poll()
                 remaining = self.owned(backend.snapshot())

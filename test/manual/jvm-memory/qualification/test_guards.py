@@ -101,7 +101,7 @@ class EmptySelector:
 
 
 class ControllerTests(unittest.TestCase):
-    def exercise(self, label, when=None, disk_failure=False):
+    def exercise(self, label, when=None, disk_failure=False, exit_tail=False):
         with tempfile.TemporaryDirectory() as folder:
             campaign = object.__new__(controller.Campaign)
             campaign.out = Path(folder)
@@ -139,6 +139,16 @@ class ControllerTests(unittest.TestCase):
                             'live_descendants_after_launcher_exit': [], 'errors': []}
 
             def launch(*args, **kwargs):
+                if exit_tail:
+                    def finish_with_tail(timeout):
+                        # Each stream is below 48 MiB; only the final sum is over.
+                        stdout=next(campaign.out.glob('*.stdout'))
+                        with stdout.open('r+b') as stream:
+                            stream.truncate(24*1024**2)
+                        kwargs['stderr'].truncate(24*1024**2+1)
+                        kwargs['stderr'].flush()
+                        return 0
+                    proc.wait=finish_with_tail
                 if when == 'launch':
                     campaign.cancel.request(signal.SIGTERM)
                 return proc
@@ -169,12 +179,10 @@ class ControllerTests(unittest.TestCase):
         row = self.exercise('cleanup', when='cleanup')
         self.assertEqual(row['cancellation_signal'], signal.SIGHUP)
 
-    def test_pid_reuse_is_not_signalled(self):
-        backend = LinuxProcesses()
-        with patch.object(backend, 'read', return_value={'start': 200}), \
-             patch('process_cleanup.os.kill') as kill:
-            backend.kill(123, 100)
-        kill.assert_not_called()
+    def test_exit_tail_combined_output_cannot_pass(self):
+        row=self.exercise('exit-tail',exit_tail=True)
+        self.assertIn('Final combined invocation output cap',row['error'])
+        self.assertEqual(row['combined_output_bytes'],48*1024**2+1)
 
     def test_cancellation_handlers_only_latch_first_request(self):
         latch = Cancellation()
@@ -186,6 +194,101 @@ class ControllerTests(unittest.TestCase):
             self.assertEqual(latch.signum, signal.SIGTERM)
             latch.restore()
             self.assertEqual(install.call_count, 6)
+
+
+class PidfdTests(unittest.TestCase):
+    def backend(self):
+        return LinuxProcesses()
+
+    def test_pidfd_admission_checks_self_without_delivering_a_signal(self):
+        backend=self.backend()
+        with patch('process_cleanup.os.pidfd_open',return_value=77), \
+             patch('process_cleanup.signal.pidfd_send_signal') as send, \
+             patch('process_cleanup.os.waitid',side_effect=ChildProcessError), \
+             patch('process_cleanup.os.close') as close:
+            backend.verify_support()
+        send.assert_called_once_with(77,0,None,0)
+        close.assert_called_once_with(77)
+
+    def test_unsupported_pidfd_admission_has_no_numeric_fallback(self):
+        backend=self.backend()
+        with patch('process_cleanup.os.pidfd_open',side_effect=OSError('unsupported')), \
+             patch('process_cleanup.signal.pidfd_send_signal') as send, \
+             patch('process_cleanup.os.kill') as numeric, \
+             patch('process_cleanup.os.killpg') as group:
+            with self.assertRaises(OSError):
+                backend.verify_support()
+        send.assert_not_called();numeric.assert_not_called();group.assert_not_called()
+
+    def test_identity_changes_before_descriptor_validation(self):
+        backend=self.backend()
+        with patch('process_cleanup.os.pidfd_open',return_value=77), \
+             patch.object(backend,'read',return_value={'start':200}), \
+             patch('process_cleanup.os.close') as close, \
+             patch('process_cleanup.signal.pidfd_send_signal') as send, \
+             patch('process_cleanup.os.kill') as numeric, \
+             patch('process_cleanup.os.killpg') as group:
+            backend.kill(123,100)
+        send.assert_not_called();numeric.assert_not_called();group.assert_not_called()
+        close.assert_called_once_with(77)
+
+    def test_same_start_tick_unrelated_process_rejected_by_kernel_ownership(self):
+        backend=self.backend()
+        with patch('process_cleanup.os.pidfd_open',return_value=77), \
+             patch.object(backend,'read',return_value={'start':100}), \
+             patch('process_cleanup.os.waitid',side_effect=ChildProcessError), \
+             patch('process_cleanup.os.close') as close, \
+             patch('process_cleanup.signal.pidfd_send_signal') as send:
+            backend.kill(123,100)
+        send.assert_not_called();close.assert_called_once_with(77)
+
+    def test_reuse_after_validation_signals_only_held_identity(self):
+        backend=self.backend()
+        numeric_target={'pid': 'original'}
+        delivered=[]
+        def validate(*args):
+            # Numeric PID now names an unrelated task after the ownership check.
+            numeric_target['pid']='unrelated'
+            return None
+        def send(fd,*args):
+            self.assertEqual(numeric_target['pid'],'unrelated')
+            self.assertEqual(fd,77)  # Descriptor still denotes original task.
+            delivered.append('original')
+        with patch('process_cleanup.os.pidfd_open',return_value=77), \
+             patch.object(backend,'read',return_value={'start':100}), \
+             patch('process_cleanup.os.waitid',side_effect=validate), \
+             patch('process_cleanup.os.close') as close, \
+             patch('process_cleanup.signal.pidfd_send_signal',side_effect=send), \
+             patch('process_cleanup.os.kill') as numeric, \
+             patch('process_cleanup.os.killpg') as group:
+            backend.kill(123,100)
+        self.assertEqual(delivered,['original'])
+        numeric.assert_not_called();group.assert_not_called();close.assert_called_once_with(77)
+
+    def test_original_exit_does_not_fall_back_to_recycled_pid(self):
+        backend=self.backend()
+        with patch('process_cleanup.os.pidfd_open',return_value=77), \
+             patch.object(backend,'read',return_value={'start':100}), \
+             patch('process_cleanup.os.waitid',return_value=None), \
+             patch('process_cleanup.os.close') as close, \
+             patch('process_cleanup.signal.pidfd_send_signal',side_effect=ProcessLookupError), \
+             patch('process_cleanup.os.kill') as numeric, \
+             patch('process_cleanup.os.killpg') as group:
+            backend.kill(123,100)
+        numeric.assert_not_called();group.assert_not_called();close.assert_called_once_with(77)
+
+    def test_reap_uses_the_held_descriptor(self):
+        backend=self.backend()
+        with patch('process_cleanup.os.pidfd_open',return_value=77), \
+             patch.object(backend,'read',return_value={'start':100}), \
+             patch('process_cleanup.os.waitid',return_value=None) as wait, \
+             patch('process_cleanup.os.close') as close, \
+             patch('process_cleanup.os.waitpid') as numeric:
+            backend.reap(123,100)
+        self.assertEqual(len(wait.call_args_list),2)
+        self.assertTrue(all(call.args[0]==controller.os.P_PIDFD and call.args[1]==77
+                            for call in wait.call_args_list))
+        numeric.assert_not_called();close.assert_called_once_with(77)
 
 
 if __name__ == '__main__':

@@ -75,7 +75,15 @@ not claim to supply that containment. Tier1's GTestWrapper is not an explicit
 NMT-enabled Array receipt; compiler/stringopts and NIO selections also retain
 exact-ID receipts. The first qualification claim remains Linux-limited.
 
-Validation of this source repair: ten offline mocked Python guard regressions
+Validation of this source repair: seventeen offline mocked Python guard regressions
 pass. The Java positive-byte EOF/repetition regression is committed but remains
 uncompiled/unexecuted. No build, JVM workload, benchmark, CI or workspace cleanup
 was performed for this repair.
+
+The combined stdout/stderr size is checked after process exit and again after
+owned cleanup, before any success receipt. Late final stderr cannot bypass the
+48-MiB limit even if each stream individually stays below it. Offline coverage
+includes a sparse late-tail case and identity changes before pidfd validation,
+after ownership confirmation, same-start-tick unrelated reuse, original-task
+exit, and descriptor-based reaping. These are mocked regressions, not a claim
+of runtime campaign or outer-job containment qualification.
