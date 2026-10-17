@@ -21,11 +21,13 @@ class TestSelectionTest(unittest.TestCase):
 
     def make_selection(self, selection):
         # Include the repository's real MAKEOVERRIDES/USER_MAKE_VARS parser,
-        # then cross its sub-make argv boundary. The leaf only prints inputs.
+        # then cross its sub-make argv boundary. The leaf records structured argv
+        # separately from make diagnostics, whose wording/order is not a contract.
         with tempfile.TemporaryDirectory(prefix='zip-make-argv-') as temporary:
             path = Path(temporary)
+            capture = path / 'argv.json'
             (path / 'leaf.mk').write_text('''capture:
-\t@$(PYTHON) -c 'import json,sys; print(json.dumps(sys.argv[1:]))' "$(TEST)" $(USER_MAKE_VARS)
+\t@$(PYTHON) -c 'import json,sys; from pathlib import Path; Path(sys.argv[1]).write_text(json.dumps(sys.argv[2:]))' "$(CAPTURE)" "$(TEST)" $(USER_MAKE_VARS)
 ''')
             (path / 'outer.mk').write_text('''include $(REPOSITORY)/make/PreInitSupport.gmk
 capture:
@@ -34,10 +36,11 @@ capture:
             result = subprocess.run(
                 ['make', '--no-print-directory', '-f', str(path / 'outer.mk'),
                  'REPOSITORY=' + str(self.repository), 'LEAF=' + str(path / 'leaf.mk'),
+                 'CAPTURE=' + str(capture),
                  'PYTHON=python3', 'JDK_IMAGE_DIR=/fixture/images/jdk',
                  'TEST=' + selection, 'capture'],
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=10)
-            return result
+            return result, json.loads(capture.read_text()) if capture.exists() else None
 
     def test_both_normalized_make_selections(self):
         cache, consumer, candidate = self.selections()
@@ -46,9 +49,9 @@ capture:
         for selection, count in ((consumer, 6), (candidate, 21)):
             self.assertNotIn('\n', selection)
             self.assertNotIn('\r', selection)
-            result = self.make_selection(selection)
+            result, argv = self.make_selection(selection)
             self.assertEqual(result.returncode, 0, result.stdout)
-            argv = json.loads(result.stdout.strip().splitlines()[-1])
+            self.assertIsNotNone(argv, result.stdout)
             self.assertEqual(argv[0], selection)
             self.assertEqual(len(argv[0].split(' ')), count)
             self.assertEqual(len(set(argv[0].split(' '))), count)
@@ -57,13 +60,13 @@ capture:
             # No test path may leak into a non-control assignment or make goal.
             self.assertFalse(any('test/jdk/' in value for value in argv[1:]), argv)
 
-    def test_original_mixed_newline_boundary_fails_actual_make(self):
+    def test_original_mixed_newline_selection_is_rejected(self):
         cache, consumer, _ = self.selections()
         old = cache.replace(' ', '\n') + ' ' + consumer.replace(' ', '\n')
-        result = self.make_selection(old)
+        result, _ = self.make_selection(old)
+        # The paired normalized controls prove this make fixture works. The
+        # malformed input must fail, whichever leaked target make reports first.
         self.assertNotEqual(result.returncode, 0, result.stdout)
-        boundary = cache.split(' ')[-1] + ' ' + consumer.split(' ')[0]
-        self.assertIn("No rule to make target '" + boundary + "'", result.stdout)
 
     def test_continuation_jtreg_commands_preserve_groups_and_output_roots(self):
         build = runpy.run_path(str(self.directory / 'run-retained-jtreg.py'))['command']

@@ -7,6 +7,9 @@ images remain intact; no allocation or performance phase ran. The complete
 [retained-image continuation](CONTINUATION.md) is prepared for review and separate
 execution approval. It reuses those images without rebuilding. The fresh-build
 instructions below are a reproduction reference, not authorization to rerun.
+The first continuation stopped in an offline fixture's exact-error-target
+assertion before runtime validation. The repaired fixture checks malformed-input
+rejection without requiring diagnostic order; all terminal evidence is retained.
 Compact-cache startup/throughput remain unmeasured; default eviction is rejected.
 
 ## Subject and existing evidence

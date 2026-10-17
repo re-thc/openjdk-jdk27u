@@ -12,6 +12,13 @@ uses those exact inputs; it does not rebuild, patch or resume the failed process
 It is the explicitly prepared exception to the generic fresh-run instructions
 in [QUALIFICATION.md](QUALIFICATION.md).
 
+The continuation at `451a57272e2486c5e898d57bb97a354d6968ede6` stopped after
+2.405466 seconds in an offline fixture, before retained-image verification or
+any runtime selection. Its malformed-input case failed as intended, but the
+fixture incorrectly required make to report one particular leaked target first.
+That terminal evidence remains intact. This revision repairs the fixture; any
+execution still requires separate approval and the original deadline below.
+
 ## Complete invocation, after execution approval
 
 Use the same installed GCC 16.2, Boot JDK 27 and jtreg 8.3. Resolve their existing
@@ -95,8 +102,21 @@ selection once into a single space-separated line. The full-run entry point is
 fixed too. [test-test-selection.py](test-test-selection.py) invokes GNU make with
 the repository's actual `PreInitSupport.gmk` parser and crosses its sub-make argv
 boundary. It proves 6/21 distinct existing paths survive and no test path leaks
-as an assignment or target; the original mixed-newline fixture fails at the
-exact reported boundary. This fixture launches no build, jtreg or JVM.
+as an assignment or target. The leaf records argv in a dedicated JSON file,
+independent of diagnostic output position. The original mixed-newline input must
+return a failing make exit; the first invalid target reported is immaterial.
+The normalized controls retain their exact argv, path, count, uniqueness and
+non-control-argument checks. This fixture launches no build, jtreg or JVM.
+
+The remaining preflight was audited for incidental diagnostic assumptions.
+Image-layout and deadline negative tests check exceptions raised by their own
+controlled code, while their positive checks compare paths, identities and
+numeric bounds. Git admission uses exit status and the exact reviewed HEAD.
+Retained verification compares pinned file/tree hashes, source IDs and tool
+identities. Its baseline pass markers are in an already hash-pinned historical
+log, rather than newly generated diagnostics. No other preflight condition
+depends on which external error is printed first. Installed-tool identity and
+runtime pass/allocation/timing gates remain strict.
 
 The continuation invokes [run-retained-jtreg.py](run-retained-jtreg.py) directly
 instead of make, preventing image/test-image regeneration and old-report writes.

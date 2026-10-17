@@ -20,7 +20,9 @@ decides value with exact-head Linux profile builds, retained-container/native
 reuse checks and protected startup/throughput cases. Only a worthwhile Linux
 result proceeds to normal supported-platform PR correctness CI. The latest
 attempt built both packaged JDKs and passed six baseline Serial controls, then
-stopped before candidate tests on a harness test-selection error. The complete
+stopped before candidate tests on a harness test-selection error. A continuation
+then stopped in an offline diagnostic assertion before runtime validation. The
+repaired fixture preserves strict normalized-argument checks. The complete
 [retained-image continuation](zipfile-inflater-cache/CONTINUATION.md) is prepared
 for review and separate execution approval; it does not rebuild. Other native
 performance campaigns are not prerequisites by assumption.
