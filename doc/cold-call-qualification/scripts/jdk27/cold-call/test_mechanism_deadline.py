@@ -92,6 +92,19 @@ class DeadlineTests(unittest.TestCase):
                 with self.assertRaises(deadline.DeadlineExpired):
                     guard.check()
 
+    def test_recorded_stop_anchor_is_exact_and_can_only_shorten_cleanup(self):
+        with patch.object(deadline.time, "monotonic", return_value=1010) as now:
+            with self.guard() as guard:
+                guard.pin_stop(1000)
+                self.assertEqual(guard.expired_at, 1000)
+                guard.pin_stop(1005)
+                self.assertEqual(guard.expired_at, 1000)
+                guard.pin_stop(999)
+                self.assertEqual(guard.expired_at, 999)
+                now.return_value = 1059
+                with self.assertRaises(deadline.DeadlineExpired):
+                    guard.check()
+
     def test_deferred_cleanup_still_stops_at_the_first_expiry_plus_sixty(self):
         with patch.object(deadline.time, "monotonic", return_value=1000) as now:
             with self.guard(lambda: True) as guard:

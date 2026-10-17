@@ -66,6 +66,38 @@ class GuardTests(OfflineTest):
         self.assertEqual(guard.record["minimum_available_bytes"], 12 * 1024**3)
         self.assertEqual(guard.record["max_net_consumption_bytes"], 16 * 1024**3)
 
+    def test_low_space_host_sample_latches_before_a_later_healthy_probe(self):
+        guard = self.guard(20 * 1024**3)
+        guard.check()
+        self.now += 0.25
+        with self.assertRaisesRegex(storage.Failure, "host storage safety reserve"):
+            guard.observe_host_space(storage.RESERVE_BYTES)
+        self.assertEqual(guard.failed_at, self.now)
+        self.assertEqual(guard.record["minimum_available_bytes"], storage.RESERVE_BYTES)
+        self.assertEqual(guard.record["peak_observed_net_consumption_bytes"], 16 * 1024**3)
+        self.now += 5
+        with self.assertRaisesRegex(storage.Failure, "host storage safety reserve"):
+            guard.check(force=True)
+        with self.assertRaisesRegex(storage.Failure, "host storage safety reserve"):
+            guard.observe_host_space(20 * 1024**3)
+        self.assertEqual(guard.failed_at, self.now - 5)
+
+    def test_ambiguous_host_storage_sample_fails_closed(self):
+        for available in (-1, None, True, "4294967297", 40 * 1024**3 + 1):
+            guard = self.guard(20 * 1024**3)
+            guard.check()
+            with self.subTest(available=available), self.assertRaisesRegex(storage.Failure, "invalid host storage"):
+                guard.observe_host_space(available)
+            self.assertIsNotNone(guard.failed_at)
+
+    def test_host_space_observation_cannot_initialize_or_replace_filesystem_identity(self):
+        guard = self.guard(20 * 1024**3)
+        with self.assertRaisesRegex(storage.Failure, "requires initial probe"):
+            guard.observe_host_space(20 * 1024**3)
+        self.assertIsNone(guard.record["initial"])
+        with self.assertRaises(storage.Failure):
+            guard.check()
+
     def test_missing_changed_or_invalid_filesystem_accounting_fails_closed(self):
         for mutation in (lambda v: setattr(v, "f_bavail", -1),
                          lambda v: setattr(v, "f_bavail", v.f_blocks + 1),

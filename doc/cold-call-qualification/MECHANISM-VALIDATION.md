@@ -1,6 +1,6 @@
 # Executable mechanism and final-code validation
 
-Status: **local storage/staging proposal; new execution remains on hold**.
+Status: **source/test draft; new execution remains on hold**.
 The entry point is [mechanism_validation.py](scripts/jdk27/cold-call/mechanism_validation.py).
 It runs from an ordinary checkout of this JDK repository and creates isolated,
 fresh Git worktrees. It never calls the historical performance runner.
@@ -15,6 +15,27 @@ incremental caches and binary transfer are unsupported.
 The previous performance result remains **NO-GO**. This runner has no timing,
 performance probes, expanded diagnostics, CI, publication or continuation into
 another campaign. A mechanism pass cannot qualify performance.
+
+## Ordinary correctness and draft status
+
+The storage/deadline draft passes 248 offline Python tests, including mocked
+controller/process lifecycle, interrupted sealing, compaction ownership and
+independent host/disk samples. Those tests prohibit external workload launches;
+they do not supply product or mechanism qualification.
+
+A separate untimed ordinary fastdebug build of the pinned `b7534f5...` candidate
+accepted configuration with GCC/G++ 16.2.0, boot JDK 27, normal server features
+and warnings as errors. Image compilation started but the unchanged host-health
+gate stopped owned work before a complete image was available. The two focused
+product selectors (policy and placement) therefore did not run locally. No
+complete local product build or regression pass is claimed. Ordinary draft CI
+may independently compile and test the product; its results are separate from
+the fixed decoder mechanism check below.
+
+The three-image mechanism/code-traffic qualification still requires a fresh
+explicit execution approval. The spent admission attempt is not repeated,
+resumed or pooled with ordinary checks. The historical performance NO-GO stays
+unchanged, and actual spill removal without replacement remains unproven.
 
 ## One future invocation
 
@@ -117,9 +138,12 @@ presented as a proven bound.
 The existing main-thread watchdog forces a storage probe on each one-second
 timer tick, including synchronous analysis, inventory, object hashing and JSON
 writes. Cooperative checks reuse a sample for at most one second; command/host
-checks force another probe. The 4 GiB threshold is an explicit conservative
-stop buffer for outstanding writes from four build jobs, TERM/KILL/reap and
-small evidence/receipt writes. It is not a measured worst-case write burst or
+checks force another probe. A low-space reading from the separate host-health
+snapshot also latches the storage failure and its original cleanup timestamp, even when the
+adjacent dedicated storage probes have space. Recovery cannot discard that
+observed failure or give final sealing a second cleanup allowance. The 4 GiB
+threshold is an explicit conservative stop buffer for outstanding writes from
+four build jobs, TERM/KILL/reap and small evidence/receipt writes. It is not a measured worst-case write burst or
 a guaranteed successful build envelope. A burst between probes, blocked I/O or
 unexpected fastdebug size may still exhaust storage and stop this attempt;
 none permits a pass, continuation, retry or expanded allowance. The first

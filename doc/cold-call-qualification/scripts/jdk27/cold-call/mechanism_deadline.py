@@ -55,7 +55,12 @@ class DeadlineGuard:
                 raise
 
     def _mark_expired(self, remaining):
-        anchor = time.monotonic() + min(0.0, remaining)
+        self.pin_stop(time.monotonic() + min(0.0, remaining))
+
+    def pin_stop(self, anchor):
+        """Bind a previously observed monotonic failure without rebuilding its clock."""
+        if type(anchor) not in (int, float) or not math.isfinite(anchor):
+            raise DeadlineExpired("invalid recorded controller stop timestamp")
         self.expired_at = anchor if self.expired_at is None else min(self.expired_at, anchor)
 
     def _hard_seconds(self):

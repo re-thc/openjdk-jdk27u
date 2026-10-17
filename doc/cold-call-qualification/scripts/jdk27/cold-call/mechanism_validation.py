@@ -488,6 +488,8 @@ class Mechanism:
     def host_probe(self):
         self.storage.check(force=True)
         snapshot = host_snapshot(self.output)
+        if snapshot.get("probe_errors") == []:
+            self.storage.observe_host_space(snapshot.get("free_bytes"))
         admit_host(snapshot, self.initial_host)
         if self.initial_host is None:
             self.initial_host = snapshot
@@ -1009,7 +1011,7 @@ class Mechanism:
         except BaseException as error:
             self.failed = True
             if self.storage.failed_at is not None:
-                self.deadline_guard._mark_expired(self.storage.failed_at - time.monotonic())
+                self.deadline_guard.pin_stop(self.storage.failed_at)
                 self.defer_deadline()
             remaining = self.controller_remaining()
             if remaining <= 0:

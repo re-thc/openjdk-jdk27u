@@ -40,6 +40,35 @@ class StorageGuard:
         self.record = dict(reserve_bytes=RESERVE_BYTES, poll_seconds=POLL_SECONDS,
                            samples=0, initial=None, latest=None, failure=None)
 
+    def stop(self, error, observed_at):
+        """Every observed storage failure pins the same one-shot cleanup anchor."""
+        if self.failed is None:
+            self.failed_at = observed_at
+            self.failed = "storage guard stopped work: " + str(error)
+            self.record["failure"] = self.failed
+            self.record["failure_monotonic"] = self.failed_at
+        raise Failure(self.failed) from error
+
+    def observe_host_space(self, available):
+        """Do not lose a low-space host sample between independent statvfs probes."""
+        if self.failed:
+            raise Failure(self.failed)
+        now = self.monotonic()
+        try:
+            require(self.record["initial"] is not None, "host storage observation requires initial probe")
+            require(type(available) is int and 0 <= available <= self.record["initial"]["total_bytes"],
+                    "invalid host storage accounting")
+            self.record["host_space_observation"] = dict(available_bytes=available, monotonic=now)
+            self.record["minimum_available_bytes"] = min(self.record["minimum_available_bytes"], available)
+            self.record["peak_observed_net_consumption_bytes"] = max(
+                self.record["peak_observed_net_consumption_bytes"],
+                self.record["initial"]["available_bytes"] - available)
+            require(available > RESERVE_BYTES,
+                    "host storage safety reserve reached: available=" + str(available)
+                    + " reserve=" + str(RESERVE_BYTES))
+        except Failure as error:
+            self.stop(error, now)
+
     def check(self, force=False):
         if self.failed:
             raise Failure(self.failed)
@@ -78,11 +107,7 @@ class StorageGuard:
                     + " reserve=" + str(RESERVE_BYTES))
             return sample
         except (OSError, ValueError, AttributeError, Failure) as error:
-            self.failed_at = now
-            self.failed = "storage guard stopped work: " + str(error)
-            self.record["failure"] = self.failed
-            self.record["failure_monotonic"] = self.failed_at
-            raise Failure(self.failed) from error
+            self.stop(error, now)
 
 
 def identity(path):

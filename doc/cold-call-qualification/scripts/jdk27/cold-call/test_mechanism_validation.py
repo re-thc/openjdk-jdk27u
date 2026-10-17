@@ -852,6 +852,39 @@ class LifecycleTests(OfflineTest):
         self.assertTrue(all(value["status"] == "COMPLETE" for value in campaign.receipt["staging"].values()))
         self.assertTrue(all(image.is_dir() for image in campaign.images.values()))
 
+    def test_initial_host_disk_sample_pins_cleanup_even_when_guard_probe_has_space(self):
+        campaign = self.fixture()
+        low = self.host()
+        low["free_bytes"] = runner.RESERVE_BYTES
+        with patch.object(runner, "host_snapshot", return_value=low):
+            self.assertEqual(campaign.run(), "INCONCLUSIVE_INFRA")
+        self.assertEqual(campaign.receipt["commands"], [])
+        self.assertEqual(self.executors, [])
+        self.assertIn("host storage safety reserve", campaign.receipt["failure"]["reason"])
+        self.assertIsNotNone(campaign.storage.failed_at)
+        self.assertLessEqual(campaign.deadline_guard.expired_at, campaign.storage.failed_at)
+
+    def test_live_host_disk_sample_stops_before_next_role_and_pins_cleanup(self):
+        campaign = self.fixture()
+        low = [False]
+        def after(name):
+            if name == "images-base-release":
+                low[0] = True
+        def snapshot(_):
+            value = self.host()
+            if low[0]:
+                value["free_bytes"] = runner.RESERVE_BYTES
+            return value
+        self.after_command = after
+        with patch.object(runner, "host_snapshot", side_effect=snapshot):
+            self.assertEqual(campaign.run(), "INCONCLUSIVE_INFRA")
+        self.assertTrue(self.executors[0].closed)
+        self.assertEqual(campaign.receipt["cleanup"]["active_groups"], [])
+        self.assertEqual(set(campaign.budget.roles), {"base-release"})
+        self.assertEqual(campaign.receipt["safety"], {})
+        self.assertIsNotNone(campaign.storage.failed_at)
+        self.assertLessEqual(campaign.deadline_guard.expired_at, campaign.storage.failed_at)
+
     def test_interrupted_successful_image_seal_stops_before_any_object_deletion(self):
         campaign = self.fixture()
         original_save = runner.save
