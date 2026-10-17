@@ -50,6 +50,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/jniHandles.hpp"
+#include "runtime/rustRegex.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
@@ -1022,6 +1023,26 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   __ ret(lr);
 
   // generate a vanilla native entry as the slow path
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}
+
+address TemplateInterpreterGenerator::generate_rustRegex_entry() {
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false, false);
+  __ ldr(c_rarg0, Address(esp, 2 * wordSize)); // long handle (two slots)
+  __ ldr(c_rarg1, Address(esp, wordSize)); // byte[] input
+  __ add(c_rarg1, c_rarg1, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  __ ldr(c_rarg2, Address(esp)); // int[] captures and arguments
+  __ add(c_rarg2, c_rarg2, arrayOopDesc::base_offset_in_bytes(T_INT));
+  // Tail call using the platform ABI; preserve the interpreter's return LR.
+  __ andr(sp, r19_sender_sp, -16);
+  // The target is libjvm text, not a code-cache blob. Materialize the full
+  // address so the jump also works with a small or distant code cache.
+  __ mov(rscratch1, CAST_FROM_FN_PTR(address, RustRegex::match));
+  __ br(rscratch1);
   __ bind(slow_path);
   __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
   return entry;

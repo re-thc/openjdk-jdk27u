@@ -409,6 +409,9 @@ public interface JavaLangAccess {
      */
     void uncheckedPutCharUTF16(byte[] bytes, int index, int ch);
 
+    /** Returns the immutable Latin-1 backing array, or null for UTF-16. */
+    byte[] getLatin1Bytes(String s);
+
     /**
      * {@return the sequence of bytes obtained by encoding the given string in UTF-8}
      *
