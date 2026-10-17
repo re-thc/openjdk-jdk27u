@@ -30,7 +30,7 @@
  * @run driver/timeout=60 FourByteHeaderZGCMediumRemsetParser
  */
 
-import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -98,8 +98,8 @@ public class FourByteHeaderZGCMediumRemsetParser {
         // Suppress the oracle's correlation output for synthetic inputs.
         AssertionError failure = null;
         PrintStream previous = System.out;
-        ByteArrayOutputStream captured = new ByteArrayOutputStream();
-        try (PrintStream sink = new PrintStream(captured, true, StandardCharsets.UTF_8)) {
+        try (PrintStream sink = new PrintStream(OutputStream.nullOutputStream(), true,
+                                               StandardCharsets.UTF_8)) {
             System.setOut(sink);
             try {
                 FourByteHeaderZGCMediumRemset.Oracle.check(input.text, input.inPlace);
@@ -127,7 +127,7 @@ public class FourByteHeaderZGCMediumRemsetParser {
         String kind = operation.get("op").asString();
         if (kind.equals("regex_replace")) {
             Matcher matcher = Pattern.compile(operation.get("pattern").asString()).matcher(text);
-            String replacement = replacement(operation.get("replacement").asString());
+            String replacement = operation.get("replacement").asString();
             StringBuilder result = new StringBuilder();
             int matches = 0;
             while (matcher.find()) {
@@ -184,30 +184,6 @@ public class FourByteHeaderZGCMediumRemsetParser {
                         && text.indexOf(needle, at + 1) == -1,
                 "Missing or ambiguous exact edit line");
         return at;
-    }
-
-    private static String replacement(String python) {
-        // The manifest's restricted replacements use literal text and \g<N>;
-        // its regex patterns otherwise belong to the shared Java/Python subset.
-        StringBuilder java = new StringBuilder();
-        for (int i = 0; i < python.length();) {
-            char c = python.charAt(i++);
-            if (c == '\\') {
-                require(python.startsWith("g<", i), "Unsupported replacement escape");
-                int end = python.indexOf('>', i + 2);
-                require(end > i + 2, "Malformed replacement reference");
-                String group = python.substring(i + 2, end);
-                require(group.chars().allMatch(Character::isDigit), "Invalid reference");
-                java.append('$').append(group);
-                i = end + 1;
-            } else {
-                if (c == '$') {
-                    java.append('\\');
-                }
-                java.append(c);
-            }
-        }
-        return java.toString();
     }
 
     private static void require(boolean condition, String message) {

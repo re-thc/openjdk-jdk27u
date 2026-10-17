@@ -20,12 +20,12 @@
     }
   ],
   "operation_contract": {
-    "regex_replace": "Python re syntax and replacement backreferences. Replace all matches; require the stated exact 'matches' count.",
+    "regex_replace": "Java Pattern/Matcher syntax, with $N replacement group references. Replace all matches; require the stated exact 'matches' count.",
     "insert_after_line": "Require exactly one line equal to anchor (excluding LF), insert text immediately after its LF.",
     "remove_line": "Require exactly one line equal to line; remove that complete line and its LF.",
     "move_line_after": "Require exactly one exact line and anchor; remove line including LF, then insert after anchor including its LF.",
     "move_line_before": "As move_line_after, but insert before anchor.",
-    "move_regex_line_after": "Find exactly one complete line by Python re.fullmatch(pattern, line without LF); move after the exact anchor.",
+    "move_regex_line_after": "Find exactly one complete line by Pattern.matcher(line without LF).matches(); move after the exact anchor.",
     "ordering": "Start from the named unmodified base for every case. Apply operations sequentially. No mutation result is reused as another case's base.",
     "encoding": "UTF-8 without BOM, LF endings, one final LF. Files are synthetic parser input, not captured test execution."
   },
@@ -151,7 +151,7 @@
         {
           "op": "regex_replace",
           "pattern": "(?m)^(.*GC\\(1\\) Major Collection \\(Timer\\)) [^\\n]+s\\n",
-          "replacement": "\\g<1> Aborted\n",
+          "replacement": "$1 Aborted\n",
           "matches": 1
         }
       ]
@@ -167,7 +167,7 @@
         {
           "op": "regex_replace",
           "pattern": "(?m)^(.*GC\\(1\\) Major Collection \\(Timer\\) [^\\n]+s)\\n",
-          "replacement": "\\g<1>\n\\g<1>\n",
+          "replacement": "$1\n$1\n",
           "matches": 1
         }
       ]
@@ -215,7 +215,7 @@
         {
           "op": "regex_replace",
           "pattern": "(Remember: from: 0x[0-9a-f]+ to: )0x[0-9a-f]+",
-          "replacement": "\\g<1>0x1",
+          "replacement": "$10x1",
           "matches": 40
         }
       ]
@@ -231,7 +231,7 @@
         {
           "op": "regex_replace",
           "pattern": "(Remember: from: )0x[0-9a-f]+",
-          "replacement": "\\g<1>0x1",
+          "replacement": "$10x1",
           "matches": 40
         }
       ]
@@ -359,7 +359,7 @@
         {
           "op": "regex_replace",
           "pattern": "(GC\\(1\\) O: Medium\\s+)0x[0-9a-f]+",
-          "replacement": "\\g<1>0x8000000",
+          "replacement": "$10x8000000",
           "matches": 8
         }
       ]
@@ -375,7 +375,7 @@
         {
           "op": "regex_replace",
           "pattern": "(?m)(GC\\(1\\) O: Medium[^\\n]+O/)[0-9]+([^\\n]*\\(relocate page\\)\\n)",
-          "replacement": "\\g<1>99\\g<2>",
+          "replacement": "$199$2",
           "matches": 4
         }
       ]
@@ -407,7 +407,7 @@
         {
           "op": "regex_replace",
           "pattern": "(?m)^(.*GC\\(1\\) O: Medium\\s+0x0\\s+[^\\n]*\\(relocate page done [^)]*\\))\\n",
-          "replacement": "\\g<1>\n\\g<1>\n",
+          "replacement": "$1\n$1\n",
           "matches": 1
         }
       ]
@@ -423,7 +423,7 @@
         {
           "op": "regex_replace",
           "pattern": "(?m)^(FIXTURE OWNER id=1 src=)0x[0-9a-f]+",
-          "replacement": "\\g<1>0x20000000",
+          "replacement": "$10x20000000",
           "matches": 1
         }
       ]
@@ -439,7 +439,7 @@
         {
           "op": "regex_replace",
           "pattern": "(?m)^(FIXTURE SURVIVE id=1 firstBefore=)0x[0-9a-f]+",
-          "replacement": "\\g<1>0x20000000",
+          "replacement": "$10x20000000",
           "matches": 1
         }
       ]
@@ -455,7 +455,7 @@
         {
           "op": "regex_replace",
           "pattern": "(?m)^(FIXTURE SURVIVE id=[0-9]+ firstBefore=(0x[0-9a-f]+) firstAfter=)0x[0-9a-f]+",
-          "replacement": "\\g<1>\\g<2>",
+          "replacement": "$1$2",
           "matches": 20
         }
       ]
@@ -471,7 +471,7 @@
         {
           "op": "regex_replace",
           "pattern": "(?m)^(FIXTURE OWNER id=1 [^\\n]*sizeBefore=)393216",
-          "replacement": "\\g<1>393208",
+          "replacement": "$1393208",
           "matches": 1
         }
       ]
@@ -487,7 +487,7 @@
         {
           "op": "regex_replace",
           "pattern": "(?m)^(FIXTURE OWNER id=1 [^\\n]*sizeAfter=)393224",
-          "replacement": "\\g<1>393232",
+          "replacement": "$1393232",
           "matches": 1
         }
       ]
@@ -503,7 +503,7 @@
         {
           "op": "regex_replace",
           "pattern": "(?m)^(FIXTURE OWNER id=1 [^\\n]*hashAfter=)1001",
-          "replacement": "\\g<1>-1",
+          "replacement": "$1-1",
           "matches": 1
         }
       ]
@@ -535,7 +535,7 @@
         {
           "op": "regex_replace",
           "pattern": "(?m)^(FIXTURE OWNER id=1 [^\\n]*)\\n",
-          "replacement": "\\g<1>\n\\g<1>\n",
+          "replacement": "$1\n$1\n",
           "matches": 1
         }
       ]
@@ -567,7 +567,7 @@
         {
           "op": "regex_replace",
           "pattern": "(?m)^(FIXTURE SURVIVE id=1 [^\\n]*)\\n",
-          "replacement": "\\g<1>\n\\g<1>\n",
+          "replacement": "$1\n$1\n",
           "matches": 1
         }
       ]
@@ -599,7 +599,7 @@
         {
           "op": "regex_replace",
           "pattern": "(?m)^(FIXTURE DONE major=2 minor=1)\\n",
-          "replacement": "\\g<1>\n\\g<1>\n",
+          "replacement": "$1\n$1\n",
           "matches": 1
         }
       ]

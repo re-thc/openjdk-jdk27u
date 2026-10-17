@@ -5,6 +5,8 @@
 
 `mutations.json` describes independent edits of these two inputs. Each mutation
 starts from its original base; cases are never chained.
+Regular expressions and replacements use Java `Pattern`/`Matcher` syntax (`$N`
+for captured groups).
 
 Edit-target count errors and unexpected exceptions fail the test. Only an
 assertion raised by the evidence parser can satisfy an expected rejection.
