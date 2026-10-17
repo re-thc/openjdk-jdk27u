@@ -10,7 +10,27 @@ mutable Phis, unsupported masks, calls, polls and constrained consumers.
 This follow-up is source-reviewed only. Its C++ changes and new tests have not
 been built or executed. The prior `4ef044f2088` captures are evidence for that
 older compiler, not execution results for this revision. No throughput or
-compile-time improvement is claimed.
+compile-time improvement is claimed. The positive Java activation assertion is
+checked in, but its outcome is unverified; the test is required to fail if the
+fixture does not actually produce an accepted base-oop recolor.
+
+## Narrow mechanism and scope
+
+The source supports an assignment/availability limitation. Existing copy
+removal can reuse a value only when an assigned register still contains it;
+it does not search for and assign a different spare GP to make the value survive.
+Retaining a stack home across calls therefore does not itself require every
+local reload between those calls. The correction proves an alternative GP is
+dead at entry, legal for original consumers and unclobbered on every relevant
+path, then creates that availability before invoking existing cleanup.
+
+This is not a claim that cleanup discards an already available legal register
+copy. An old short reload's assigned register can simply be overwritten before
+the later use. The earlier matched intervention supports that placement
+mechanism, not an end-to-end codec win. The refreshed workspace does not contain
+the earlier raw graph/assembly captures; no new per-load attribution or extra
+reload elimination is asserted from their absence. No safety rule, search limit
+or consumer mask is relaxed to obtain a positive test.
 
 ## Cost controls
 
@@ -63,6 +83,11 @@ cold copies and debug locations: cleanup is not assumed to reach a fixed point.
 The lower limits and wider accounting can also stop before choices made by the
 older prototype. Generated code must be recaptured before transferring old
 instruction counts to this revision.
+
+The shared commit helper also rejects the seed's current GP alias family before
+reserving cleanup admission. A same-color choice would create no new surviving
+value and must not purchase another whole-method cleanup. This is an avoidable
+work correction, not a measured reduction in codec loads or compile time.
 
 ## Timing visibility (not measured here)
 
@@ -121,15 +146,47 @@ mask bailouts. The nested-Phi case explicitly supplies a cleanup fold to test
 the production eligibility helper; it does not execute an entire C2 cleanup.
 The tests do not construct an entire machine CFG or verify OopMap emission.
 
+The new selected-state positives call the production `eligible_lrg` and `recolor`
+functions on real, value-initialized `LRG` objects with int, narrow-oop and paired
+base-oop types. They supply a self+entry invariant and legal operand/availability
+facts, require recoloring to succeed, and check the chosen high slot, complete
+mask/cache, definition/oop flags, unchanged source home and consumed cleanup
+reservation. The definition pointer is an identity-only token, never a fabricated
+Node to dereference. These tests deliberately do not claim to construct a C2
+MemToReg node or infer complete CFG eligibility. Mask/admission/no-op rejections
+must leave the allocation unchanged. Fixed, two-address, Phi-edge, home-overwrite
+and unsupported-mask cases remain checked separately.
+
 `test/hotspot/jtreg/compiler/regalloc/TestRetainSpillCopies.java` supplies an
 end-to-end numeric C2 workload and an array-based interpreted oracle. Sixteen
-live long states, variable division/rotation, nested loops and joins, invariant
-array references and an explicitly non-inlined returning call exercise allocator
-pressure. The checked-in run directives cover retention enabled, disabled and
-enabled with a preserved frame pointer, with allocator verification and an
-assertion that the target reached normal C2 compilation. This is correctness
-stress, not an assertion of a particular physical allocation, retention firing,
-Phi survival after optimization, performance benefit or GC/deoptimization.
+live long states, variable division/rotation, nested loops and joins exercise
+allocator pressure. The target now has five distinct, dependent array-read
+sites in its inner iteration. The non-inlined returning call also takes that
+array, preserving an actual argument-mask/call-clobber constraint. These source
+properties create a useful activation fixture; they are not a proof of its
+eventual selected allocation or of survival of an invariant Phi.
+
+`TestRetainSpillCopiesActivation` runs the fixed 1,200-case oracle in three child
+VM configurations: enabled, disabled and enabled with a preserved frame pointer.
+It reads actual `LogCompilation`, binds the exact method/signature to a normal
+installed C2 nmethod and its successful compile task, and requires a
+`retained_spill_copy` event in the primary enabled run, including a base oop.
+The event is emitted only after an alternate color is committed and whole-method
+cleanup returns. It records node IDs, prospective benefit, old/new color and
+source home/oop state before/after. It is not a count of actual loads removed.
+An enabled flag, WhiteBox level, search/state trace or another compilation's
+event cannot pass this gate. Non-tiered logs may omit `level`; `compiler='c2'`
+identifies the installed compiler.
+
+A CompileTask can contain multiple discarded Compile attempts with the same
+compile ID. The child explicitly disables `StressRecompilation`, and the driver
+rejects any credited task containing a `failure` event rather than attributing
+an earlier attempt's recolor to the installed code. The disabled control requires
+zero accepted events anywhere in its log. All three configurations require exact
+numeric results and normal C2 compilation; the frame-pointer variant need not
+activate retention. No actual physical register number is pinned by the driver.
+Zero accepted events in the enabled fixture is a coverage failure, not a skip,
+a reason to retry until lucky, or a reason to weaken the activation assertion.
 
 For a **separately authorized future validation**, on a configured AMD64
 fastdebug build, the standard repository entry points are:
@@ -139,8 +196,27 @@ make test TEST=gtest:SpillCopyRetention
 make test TEST=test/hotspot/jtreg/compiler/regalloc/TestRetainSpillCopies.java
 ```
 
-These commands were not run. Build compatibility, the new regression outcomes,
-isolated compile-cost measurements and recapture of generated-code effects are
-open gates. The earlier security-stopped active-frame validation remains stopped;
-it has neither been retried nor replaced by this change. Broader GC/recovery
-qualification, unsupported architectures and runtime performance remain open.
+These commands were not run. The exact remaining qualification sequence is:
+
+1. Separately authorize a build and one bounded native/Java regression run.
+   Require all native positives/rejections and the compile-task-bound base-oop
+   event plus oracle/control checks. Preserve a zero-event or retry failure as
+   a failed gate; inspect that compilation instead of increasing budgets or
+   silently accepting C2 compilation alone. Positive JVM activation is currently
+   **unverified**.
+2. Separately authorize a matched codec code capture. Check actual accepted
+   seeds, BEFORE-state legality, final consumers and useful memory operations,
+   original call/bounds/stack-home obligations and changed debug locations.
+   Recompute route effects; earlier load totals do not transfer automatically.
+3. If authorized, use the isolated phase timers to measure search and full
+   cleanup cost on that fixed workload. The logical counters are not timing
+   evidence. No broad performance campaign is part of this assignment.
+
+The security-stopped **active-frame deoptimization/recovery validation remains
+an independent blocking release gate**. This revision contains no implementation,
+execution or transfer of that probe, and supplies no replacement procedure for
+it. Selected-state tests, accepted compiler events, numeric oracle results and
+source review do not validate restored active-frame values/roots. Until that
+gate is independently resolved under appropriate authorization, this is source
+research for review, **not a safe deployable PR or release fix**. Broader recovery,
+unsupported architectures and runtime performance remain unqualified.

@@ -27,6 +27,10 @@
 #include "memory/allocation.hpp"
 #include "opto/regmask.hpp"
 
+class LRG;
+class Node;
+class Type;
+
 // Small policy operations shared by the AMD64 prototype and its native tests.
 // These limits bound logical search work and graph sizes, NOT compilation time.
 // Copy removal has its own admission allowance and an independent pass limit.
@@ -110,6 +114,21 @@ public:
                                const RegMask& allocation, const RegMask& home) {
     return safepoint || call || allocation.overlap(home);
   }
+
+  // Selected-state checks only. Scheduled MemToReg identity, a used definition,
+  // the invariant source and the complete CFG/use-interval proof are checked by
+  // the caller. The native positives exercise this exact predicate on real LRGs.
+  static bool eligible_lrg(const LRG& seed, const LRG& source, const Node* definition,
+                           uint members, uint ideal_reg, const Type* type, const RegMask& gp);
+
+  // An unchanged color would pay for cleanup without creating new availability.
+  static void remove_current_color(const LRG& seed, RegMask& allowed);
+
+  // Commit only an alternate color permitted by both masks and after reserving
+  // cleanup admission. Rejection leaves the LRG unchanged. Source homes/typing
+  // are not parameters to mutate. No CFG or sharing claim is made by this seam.
+  static bool recolor(LRG& seed, const RegMask& allowed, const RegMask& output,
+                       Budget& cleanup_budget, uint cleanup_work);
 
   // Phi operands are uses on their particular predecessor edge, not in the
   // successor's ordinary transfer. The callback obtains that edge's allocation.

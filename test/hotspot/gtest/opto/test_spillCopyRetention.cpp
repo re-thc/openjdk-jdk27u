@@ -22,7 +22,9 @@
  */
 
 #include "memory/resourceArea.hpp"
+#include "opto/chaitin.hpp"
 #include "opto/spillCopyRetention.hpp"
+#include "opto/type.hpp"
 #include "runtime/thread.hpp"
 #include "unittest.hpp"
 
@@ -136,6 +138,115 @@ struct RetentionTestNode {
   uint req() const { return count; }
   RetentionTestNode* in(uint i) const { return inputs[i]; }
 };
+
+static void check_selected_reload_recolors(uint kind, const Type* type, uint oop, uint width) {
+  ASSERT_NE(type, nullptr);
+  uintptr_t identities[2] = {};
+  // Identity token only: no Node is constructed, accessed or dereferenced.
+  // Full CFG/Node eligibility remains an integration qualification obligation.
+  Node* definition = reinterpret_cast<Node*>(&identities[0]);
+  LRG seed{}, source{};
+  RegMask gp = slots(0, 1);
+  gp.or_with(slots(2, 3));
+  gp.or_with(slots(4, 5));
+  seed._def = definition;
+  source._def = reinterpret_cast<Node*>(&identities[1]); // Identity only.
+  seed._is_oop = oop;
+  source._is_oop = oop;
+  seed.set_num_regs(width);
+  source.set_num_regs(width);
+  for (uint i = 0; i < width; i++) {
+    seed.insert(i);
+    source.insert(OptoReg::stack2reg(8 + i));
+  }
+  seed.set_reg(width - 1);
+  source.set_reg(OptoReg::stack2reg(8 + width - 1));
+  seed.compute_set_mask_size();
+  source.compute_set_mask_size();
+  RegMask home(source.mask());
+  OptoReg::Name home_reg = source.reg();
+  ASSERT_TRUE(Policy::eligible_lrg(seed, source, definition, 1, kind, type, gp));
+  if (kind == Op_RegP) {
+    ASSERT_FALSE(Policy::eligible_lrg(seed, source, definition, 1, kind, TypeOopPtr::BOTTOM, gp));
+    ASSERT_FALSE(Policy::eligible_lrg(seed, source, definition, 1, kind, TypeRawPtr::BOTTOM, gp));
+  }
+  RetentionTestNode entry, invariant;
+  invariant.count = 3;
+  invariant.inputs[1] = &entry;
+  invariant.inputs[2] = &invariant;
+  Policy::Budget analysis(20);
+  ASSERT_EQ(Policy::invariant_entry(&invariant, analysis), &entry);
+  RegMask allowed(gp);
+  // A separate old value occupies pair4/5; original fixed operand masks leave
+  // pair2/3 available. Both facts are supplied, not inferred from a fake CFG.
+  allowed.subtract(slots(4, 5));
+  RegMask output = slots(2, 3);
+  ASSERT_TRUE(Policy::consumer(true, false, false, false, 0, 1, output, allowed));
+  Policy::Budget cleanup(76);
+  ASSERT_TRUE(Policy::recolor(seed, allowed, output, cleanup, 76));
+  ASSERT_EQ(seed.reg(), OptoReg::Name(2 + width - 1));
+  ASSERT_EQ(seed.mask_size(), static_cast<int>(width));
+  ASSERT_EQ(seed.mask().size(), width);
+  ASSERT_TRUE(seed.mask().member(2));
+  ASSERT_EQ(seed.mask().member(3), width == 2);
+  ASSERT_FALSE(seed.mask().member(0));
+  ASSERT_EQ(seed._def, definition);
+  ASSERT_EQ(static_cast<uint>(seed._is_oop), oop);
+  ASSERT_EQ(source.reg(), home_reg);
+  ASSERT_EQ(static_cast<uint>(source._is_oop), oop);
+  RegMask difference(home);
+  difference.subtract(source.mask());
+  ASSERT_TRUE(difference.is_empty());
+  difference.assignFrom(source.mask());
+  difference.subtract(home);
+  ASSERT_TRUE(difference.is_empty());
+  ASSERT_EQ(cleanup.left(), 0U);
+  // Repeating the request is a no-op and must not spend another cleanup pass.
+  Policy::Budget unused(76);
+  ASSERT_FALSE(Policy::recolor(seed, allowed, output, unused, 76));
+  ASSERT_EQ(unused.left(), 76U);
+}
+
+TEST_VM(SpillCopyRetention, selected_int_narrow_and_base_oop_recolors) {
+  check_selected_reload_recolors(Op_RegI, TypeInt::INT, 0, 1);
+  check_selected_reload_recolors(Op_RegN, TypeNarrowOop::BOTTOM, 0, 1);
+  check_selected_reload_recolors(Op_RegP, TypeInstPtr::NOTNULL, 1, 2);
+}
+
+TEST_VM(SpillCopyRetention, selected_rejections_leave_state_unchanged) {
+  uintptr_t identity = 0;
+  Node* definition = reinterpret_cast<Node*>(&identity);
+  LRG seed{}, source{};
+  RegMask gp = slots(0, 1);
+  gp.or_with(slots(2, 3));
+  seed._def = definition;
+  seed.set_num_regs(1);
+  seed.insert(0);
+  seed.set_reg(0);
+  seed.compute_set_mask_size();
+  source.set_num_regs(1);
+  source.insert(OptoReg::stack2reg(8));
+  source.set_reg(OptoReg::stack2reg(8));
+  source.compute_set_mask_size();
+  ASSERT_TRUE(Policy::eligible_lrg(seed, source, definition, 1, Op_RegI, TypeInt::INT, gp));
+  seed._is_bound = 1;
+  ASSERT_FALSE(Policy::eligible_lrg(seed, source, definition, 1, Op_RegI, TypeInt::INT, gp));
+  seed._is_bound = 0;
+  ASSERT_FALSE(Policy::eligible_lrg(seed, source, definition, 2, Op_RegI, TypeInt::INT, gp));
+  ASSERT_FALSE(Policy::eligible_lrg(seed, source, definition, 1, Op_RegN, TypeNarrowKlass::NULL_PTR, gp));
+  RegMask alternate = slots(2, 3);
+  Policy::Budget insufficient(75), unused(76);
+  ASSERT_FALSE(Policy::recolor(seed, alternate, alternate, insufficient, 76));
+  ASSERT_FALSE(Policy::recolor(seed, alternate, RegMask::Empty, unused, 76));
+  ASSERT_EQ(unused.left(), 76U);
+  ASSERT_EQ(seed.reg(), 0);
+  ASSERT_EQ(seed.mask_size(), 1);
+  ASSERT_EQ(seed.mask().size(), 1U);
+  ASSERT_TRUE(seed.mask().member(0));
+  ASSERT_EQ(seed._def, definition);
+  ASSERT_EQ(source.reg(), OptoReg::stack2reg(8));
+  ASSERT_EQ(source.mask_size(), 1);
+}
 
 TEST_VM(SpillCopyRetention, nested_invariant_phi_cleanup_requires_exact_entry) {
   RetentionTestNode entry, other, inner, outer;

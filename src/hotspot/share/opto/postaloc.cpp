@@ -22,6 +22,7 @@
  *
  */
 
+#include "compiler/compileLog.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/chaitin.hpp"
@@ -750,21 +751,12 @@ public:
     }
     uint lid = _ra._lrg_map.live_range_id(n);
     uint source_lid = _ra._lrg_map.live_range_id(n->in(1));
-    if (lid == 0 || source_lid == 0 || _members[lid] != 1) {
+    if (lid == 0 || source_lid == 0) {
       return false;
     }
     const LRG& lrg = _ra.lrgs(lid);
     uint reg = n->ideal_reg();
-    if (!lrg.alive() || lrg._def != n || lrg.is_bound() || lrg._fat_proj ||
-        lrg._is_vector || lrg._is_float || !OptoReg::is_reg(lrg.reg()) || !_gp.member(lrg.reg()) ||
-        (reg != Op_RegP && reg != Op_RegN && reg != Op_RegI) ||
-        lrg.num_regs() != (reg == Op_RegP ? 2 : 1) ||
-        (reg == Op_RegP && (n->bottom_type()->isa_oopptr() == nullptr ||
-                           n->bottom_type()->is_ptr()->offset() != 0)) ||
-        (reg == Op_RegP && !lrg._is_oop) ||
-        (reg == Op_RegN && n->bottom_type()->isa_narrowoop() == nullptr) ||
-        lrg._is_oop != _ra.lrgs(source_lid)._is_oop ||
-        !OptoReg::is_stack(_ra.lrgs(source_lid).reg())) {
+    if (!RetentionPolicy::eligible_lrg(lrg, _ra.lrgs(source_lid), n, _members[lid], reg, n->bottom_type(), _gp)) {
       return false;
     }
     // Only invariant stack Phis (or exact validated entries after cleanup) are
@@ -963,7 +955,7 @@ bool PhaseChaitin::retain_spill_copies() {
             }
           }
           LRG& lrg = lrgs(_lrg_map.live_range_id(seed));
-          usable.clear_to_sets(lrg.num_regs());
+          RetentionPolicy::remove_current_color(lrg, usable);
           if (benefit > best_benefit && !usable.is_empty()) {
             best = seed;
             best_benefit = benefit;
@@ -977,27 +969,32 @@ bool PhaseChaitin::retain_spill_copies() {
       tty->print_cr("RetainSpillCopiesState compile_id %d iteration %u trials %u best_benefit %u work_left %u",
                     C->compile_id(), change, trials, best_benefit, budget.left());
     })
-    if (best == nullptr || !cleanup_budget.charge(static_cast<uint>(cleanup_work))) {
-      return cleaned; // Reserve cleanup admission before changing any color.
+    if (best == nullptr) {
+      return cleaned;
     }
     LRG& lrg = lrgs(_lrg_map.live_range_id(best));
-    OptoReg::Name reg = best_mask.find_first_elem();
-    // Pair masks contain low and high slots; Select records the high slot.
-    reg = OptoReg::add(reg, lrg.num_regs() - 1);
-    assert(best_mask.member(reg) && best->out_RegMask().member(reg), "legal selected color");
-    assert(OptoReg::is_stack(lrgs(_lrg_map.live_range_id(best->in(1))).reg()), "keep stack home");
+    Node* source = best->in(1);
+    uint seed_id = best->_idx;
+    uint source_id = source->_idx;
+    const char* kind = best->ideal_reg() == Op_RegP ? "base_oop" :
+                       best->ideal_reg() == Op_RegN ? "narrow_oop" : "int";
+    const char* invariant = source->is_Phi() ? "phi" : "validated_entry";
+    uint source_lid = _lrg_map.live_range_id(source);
+    OptoReg::Name old_reg = lrg.reg();
+    OptoReg::Name home = lrgs(source_lid).reg();
+    uint source_oop = lrgs(source_lid)._is_oop;
+    assert(OptoReg::is_stack(home), "keep stack home");
+    if (!RetentionPolicy::recolor(lrg, best_mask, best->out_RegMask(), cleanup_budget,
+                                  static_cast<uint>(cleanup_work))) {
+      return cleaned; // No color change or cleanup when admission/masks reject.
+    }
+    OptoReg::Name reg = lrg.reg();
     NOT_PRODUCT(if (trace_spilling()) {
       ttyLocker ttyl;
       tty->print_cr("RetainSpillCopies compile_id %d change %u seed %u source %u candidates %u old %s new %s",
                     C->compile_id(), change, best->_idx, best->in(1)->_idx, best_benefit,
-                    OptoReg::regname(lrg.reg()), OptoReg::regname(reg));
+                    OptoReg::regname(old_reg), OptoReg::regname(reg));
     })
-    lrg.clear();
-    lrg.set_reg(reg);
-    for (int r = 0; r < lrg.num_regs(); r++) {
-      lrg.insert(OptoReg::add(reg, -r));
-    }
-    lrg.set_mask_size(lrg.num_regs());
     // Materialize existing availability-based sharing before considering
     // another seed. Its extended uses must be visible to the next liveness
     // computation; recoloring several short seeds from stale facts is unsafe.
@@ -1006,6 +1003,15 @@ bool PhaseChaitin::retain_spill_copies() {
       post_allocate_copy_removal();
     }
     cleaned = true;
+    // This event belongs to this CompileLog task and follows both an actual
+    // color change and completed cleanup. Search/state messages are not accepted
+    // events. Final debug locations may differ; only the broad home is retained.
+    if (C->log() != nullptr) {
+      C->log()->elem("retained_spill_copy seed='%u' source='%u' benefit='%u' old='%d' new='%d' "
+                     "slots='%d' kind='%s' invariant='%s' home='%d' home_after='%d' oop='%u' oop_after='%u'",
+                     seed_id, source_id, best_benefit, old_reg, reg, lrg.num_regs(), kind, invariant,
+                     home, lrgs(source_lid).reg(), source_oop, static_cast<uint>(lrgs(source_lid)._is_oop));
+    }
     // Keep each materialized allocation available to diagnostic graph review.
     C->print_method(PHASE_POST_ALLOCATION_COPY_REMOVAL, 4);
   }
