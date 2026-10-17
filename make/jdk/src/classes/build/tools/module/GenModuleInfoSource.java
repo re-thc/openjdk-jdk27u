@@ -61,8 +61,8 @@ import static java.util.stream.Collectors.*;
  * platform-specific exports, opens, uses, and provides and write to
  * the specified output file.
  *
- * GenModuleInfoSource will be invoked for each module that has
- * module-info.java.extra in the source directory.
+ * GenModuleInfoSource also removes qualified exports and opens to excluded
+ * modules, including for modules without platform-specific additions.
  *
  * The extra exports, opens, uses, provides can be specified
  * in module-info.java.extra.
@@ -438,6 +438,12 @@ public class GenModuleInfoSource {
                 }
                 var positions = Trees.instance(task).getSourcePositions();
                 bodyEnd = (int) positions.getEndPosition(unit, declaration) - 1;
+                // Source positions refer to raw input. A Unicode-escaped closing
+                // brace occupies more than one character, including in an empty
+                // descriptor where it also determines the preserved header.
+                if (source.charAt(bodyEnd) != '}') {
+                    bodyEnd = source.lastIndexOf('\\', bodyEnd);
+                }
                 bodyStart = declaration.getDirectives().isEmpty() ? bodyEnd
                         : (int) positions.getStartPosition(unit, declaration.getDirectives().getFirst());
                 for (DirectiveTree directive : declaration.getDirectives()) {

@@ -40,6 +40,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.tools.ToolProvider;
 import build.tools.module.GenModuleInfoSource.Statement;
 
@@ -50,6 +51,10 @@ public class ModuleInfoExtraTest {
     private static final Path DIR = Paths.get("gen-module-info-test");
     private static boolean verbose = false;
     public static void main(String... args) throws Exception {
+        if (args.length == 2 && args[0].equals("--check-imports")) {
+            checkImportDescriptors(Path.of(args[1]));
+            return;
+        }
         if (args.length != 0)
             verbose = true;
 
@@ -58,7 +63,43 @@ public class ModuleInfoExtraTest {
         test.testModuleInfo();
         test.testExcludedModules();
         test.testSourceImports();
+        test.testUnicodeBraces();
         test.errorCases();
+    }
+
+    void testUnicodeBraces() throws IOException {
+        Path input = DIR.resolve("unicode-imports/module-info.java");
+        Path output = DIR.resolve("unicode-generated/module-info.java");
+        Path extra = DIR.resolve("unicode-imports/extra");
+        Files.createDirectories(input.getParent());
+        Files.createDirectories(output.getParent());
+        Files.writeString(extra, "uses java.lang.Runnable;");
+        for (String body : List.of("", "requires static java.sql;")) {
+            String source = "open module unicode.test \\uu007b\n" + body
+                    + "\n\\u007d // trailing comment\n";
+            Files.writeString(input, source);
+            GenModuleInfoSource unchanged = new GenModuleInfoSource(input, List.of(), Set.of("unicode.test"));
+            unchanged.generate(output);
+            if (!Files.readString(output).equals(source)) {
+                throw new AssertionError("Unmodified escaped descriptor changed");
+            }
+            GenModuleInfoSource augmented = new GenModuleInfoSource(input, List.of(extra), Set.of("unicode.test"));
+            augmented.generate(output);
+            Path classes = DIR.resolve("unicode-classes");
+            if (ToolProvider.getSystemJavaCompiler().run(null, null, null,
+                    "-Werror", "-d", classes.toString(), output.toString()) != 0) {
+                throw new AssertionError("Escaped augmented descriptor compilation failed");
+            }
+            var descriptor = ModuleFinder.of(classes).find("unicode.test").orElseThrow().descriptor();
+            if (!descriptor.isOpen() || !descriptor.uses().contains("java.lang.Runnable") ||
+                    (!body.isEmpty() && descriptor.requires().stream().noneMatch(r ->
+                            r.name().equals("java.sql") && r.modifiers().contains(ModuleDescriptor.Requires.Modifier.STATIC)))) {
+                throw new AssertionError("Escaped descriptor semantics lost");
+            }
+            if (!Files.readString(output).endsWith("\\u007d // trailing comment\n")) {
+                throw new AssertionError("Escaped descriptor suffix lost");
+            }
+        }
     }
 
     void testSourceImports() throws IOException {
@@ -135,7 +176,8 @@ public class ModuleInfoExtraTest {
         // multiline static/transitive requires too.
         Path extra = input.resolve("extra");
         Files.writeString(extra, "exports openapi to client.keep;");
-        Path original = input.resolve("server.open/module-info.java");
+        Path original = DIR.resolve("augmented-source/module-info.java");
+        Files.createDirectories(original.getParent());
         Files.writeString(original, open.replace("exports openapi to java.desktop, client.keep;", ""));
         GenModuleInfoSource augmented = new GenModuleInfoSource(original, List.of(extra), allowed);
         augmented.generate(generated.resolve("server.open/module-info.java"));
@@ -153,15 +195,28 @@ public class ModuleInfoExtraTest {
                 throw new AssertionError("Imported source compilation failed");
             }
         }
+        checkImportDescriptors(output);
+    }
+
+    static void checkImportDescriptors(Path output) {
         var finder = ModuleFinder.of(output);
         ModuleDescriptor open = finder.find("server.open").orElseThrow().descriptor();
         ModuleDescriptor closed = finder.find("server.extra").orElseThrow().descriptor();
-        if (!open.isOpen() || closed.isOpen() || closed.exports().size() != 2 ||
+        if (!open.isOpen() || open.exports().size() != 1 || closed.isOpen() || closed.exports().size() != 2 ||
                 closed.opens().size() != 1 || !closed.uses().contains("java.lang.Runnable") ||
                 closed.provides().size() != 1) {
             throw new AssertionError("Imported descriptor semantics lost");
         }
+        var openExport = open.exports().iterator().next();
+        if (!openExport.source().equals("openapi") || !openExport.targets().equals(Set.of("client.keep"))) {
+            throw new AssertionError("Open module qualified export changed: " + openExport);
+        }
         for (var descriptor : List.of(open, closed)) {
+            Set<String> required = descriptor.requires().stream()
+                    .map(ModuleDescriptor.Requires::name).collect(Collectors.toSet());
+            if (!required.containsAll(Set.of("java.sql", "java.logging", "java.xml", "java.naming"))) {
+                throw new AssertionError("Imported requires directives lost: " + required);
+            }
             for (var requirement : descriptor.requires()) {
                 Set<ModuleDescriptor.Requires.Modifier> expected = switch (requirement.name()) {
                     case "java.sql" -> Set.of(ModuleDescriptor.Requires.Modifier.STATIC);
