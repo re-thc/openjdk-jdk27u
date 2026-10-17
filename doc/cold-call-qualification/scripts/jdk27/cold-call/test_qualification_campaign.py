@@ -7,9 +7,13 @@ These tests never start a qualification campaign, Java, Git, or a build.
 import copy
 from datetime import datetime, timedelta
 import hashlib
+import importlib
+import io
 import json
 import os
 from pathlib import Path
+import runpy
+import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
@@ -49,6 +53,18 @@ class OfflineTest(unittest.TestCase):
         self.wait = patch.object(runner.os, "wait4", side_effect=AssertionError("offline test tried to reap"))
         self.wait.start()
         self.addCleanup(self.wait.stop)
+        self.waitid = patch.object(runner.os, "waitid", side_effect=AssertionError("offline test tried to inspect a child"))
+        self.waitid.start()
+        self.addCleanup(self.waitid.stop)
+        self.signal_group = patch.object(runner.os, "killpg", side_effect=AssertionError("offline test tried to signal"))
+        self.signal_group.start()
+        self.addCleanup(self.signal_group.stop)
+        self.mask = patch.object(runner.signal, "pthread_sigmask", return_value=set())
+        self.mask.start()
+        self.addCleanup(self.mask.stop)
+        self.sleep = patch.object(runner.time, "sleep", side_effect=AssertionError("offline test tried to sleep"))
+        self.sleep.start()
+        self.addCleanup(self.sleep.stop)
         self.read = patch.object(runner.os, "read", side_effect=AssertionError("offline test tried to read stdin"))
         self.read.start()
         self.addCleanup(self.read.stop)
@@ -122,6 +138,7 @@ class ClockTests(OfflineTest):
         process = SimpleNamespace(pid=12345, returncode=None)
         usage = SimpleNamespace(ru_maxrss=42, ru_utime=0.1, ru_stime=0.2)
         with patch.object(runner.subprocess, "Popen", return_value=process) as spawn, \
+                patch.object(runner.os, "waitid", return_value=SimpleNamespace(si_pid=process.pid, si_code=os.CLD_EXITED, si_status=0)), \
                 patch.object(runner.os, "wait4", return_value=(process.pid, 0, usage)):
             campaign.run("only-mocked-command", ["unavailable-test-program"], cap=1000)
         command = spawn.call_args.args[0]
@@ -175,7 +192,8 @@ class CampaignTests(OfflineTest):
             tick[0] += 20
             process = SimpleNamespace(pid=12345, returncode=None)
             usage = SimpleNamespace(ru_maxrss=0, ru_utime=0, ru_stime=0)
-            with patch.object(runner.subprocess, "Popen", return_value=process) as spawn, \
+            with patch.object(runner.subprocess, "Popen", side_effect=lambda *args, **kwargs: SimpleNamespace(pid=12345, returncode=None)) as spawn, \
+                    patch.object(runner.os, "waitid", return_value=SimpleNamespace(si_pid=process.pid, si_code=os.CLD_EXITED, si_status=0)), \
                     patch.object(runner.os, "wait4", return_value=(process.pid, 0, usage)):
                 campaign.run("phase-limited", ["unavailable-test-program"], cap=40)
                 campaign.start_phase("capture")
@@ -187,6 +205,8 @@ class CampaignTests(OfflineTest):
         process = SimpleNamespace(pid=12345, returncode=None)
         usage = SimpleNamespace(ru_maxrss=0, ru_utime=0, ru_stime=0)
         with patch.object(runner.subprocess, "Popen", return_value=process) as spawn, \
+                patch.object(runner.os, "waitid", return_value=SimpleNamespace(si_pid=process.pid, si_code=os.CLD_EXITED, si_status=1)), \
+                patch.object(runner.os, "killpg", return_value=None), \
                 patch.object(runner.os, "wait4", return_value=(process.pid, 1 << 8, usage)):
             with self.assertRaises(RuntimeError):
                 campaign.run("failed-once", ["unavailable-test-program"])
@@ -199,14 +219,28 @@ class CampaignTests(OfflineTest):
         with patch.object(runner.time, "monotonic", return_value=100.0):
             campaign = self.campaign()
             process = Mock(pid=12345, returncode=None)
-            process.wait.return_value = 0
+            process.wait.side_effect = AssertionError("Popen.wait releases the anchor")
+            process.poll.side_effect = AssertionError("Popen.poll releases the anchor")
+            event = SimpleNamespace(si_pid=process.pid, si_code=os.CLD_EXITED, si_status=0)
+            first = [True]
+
+            def observe(*args):
+                if first[0]:
+                    first[0] = False
+                    raise InterruptedError("offline interruption")
+                return event
+
             with patch.object(runner.subprocess, "Popen", return_value=process), \
-                    patch.object(runner.os, "wait4", side_effect=InterruptedError("offline interruption")), \
+                    patch.object(runner.os, "waitid", side_effect=observe), \
+                    patch.object(runner.os, "wait4", return_value=(process.pid, 0, SimpleNamespace(ru_maxrss=0, ru_utime=0, ru_stime=0))) as reap, \
                     patch.object(runner.os, "killpg", side_effect=ProcessLookupError) as signal_group:
                 with self.assertRaisesRegex(InterruptedError, "offline interruption"):
                     campaign.run("interrupted-once", ["unavailable-test-program"])
-            signal_group.assert_called_once_with(process.pid, runner.signal.SIGTERM)
-            process.wait.assert_called_once_with(timeout=9.0)
+            self.assertEqual([call.args[1] for call in signal_group.call_args_list],
+                             [runner.signal.SIGTERM, runner.signal.SIGKILL])
+            reap.assert_called_once_with(process.pid, 0)
+            process.wait.assert_not_called()
+            process.poll.assert_not_called()
             self.assertIsNone(campaign.active)
             self.assertEqual(campaign.records[0]["status"], "interrupted")
 
@@ -258,6 +292,173 @@ class CampaignTests(OfflineTest):
         with self.assertRaises(RuntimeError):
             campaign.timing()
         campaign.run.assert_not_called()
+
+
+class OwnedCommandTests(OfflineTest):
+    def process(self):
+        process = Mock(pid=12345, returncode=None)
+        process.wait.side_effect = AssertionError("Popen.wait must not release ownership")
+        process.poll.side_effect = AssertionError("Popen.poll must not release ownership")
+        return process
+
+    def test_prompt_leader_still_kills_term_ignoring_descendant_before_reap(self):
+        process = self.process()
+        owned = runner.OwnedCommand(process)
+        events = []
+        descendant_alive = [True]
+        event = SimpleNamespace(si_pid=process.pid, si_code=os.CLD_EXITED, si_status=0)
+
+        def signal_group(pid, sig):
+            self.assertTrue(owned.anchored)
+            self.assertFalse(owned.reaped)
+            events.append(sig)
+            if sig == runner.signal.SIGKILL:
+                descendant_alive[0] = False
+
+        def reap(pid, flags):
+            self.assertFalse(owned.anchored)
+            self.assertFalse(descendant_alive[0], "Leader exit must not skip descendant KILL")
+            events.append("reap")
+            return pid, 0, SimpleNamespace()
+
+        with patch.object(runner.os, "waitid", return_value=event) as observe, \
+                patch.object(runner.os, "killpg", side_effect=signal_group), \
+                patch.object(runner.os, "wait4", side_effect=reap):
+            owned.cancel()
+            with self.assertRaises(RuntimeError):
+                owned.signal_group(runner.signal.SIGKILL)
+        self.assertEqual(events, [runner.signal.SIGTERM, runner.signal.SIGKILL, "reap"])
+        self.assertTrue(all(call.args[2] & os.WNOWAIT for call in observe.call_args_list))
+        self.assertTrue(owned.reaped)
+        process.wait.assert_not_called()
+        process.poll.assert_not_called()
+
+    def test_release_before_final_wait4_interruption_only_retries_reap(self):
+        process = self.process()
+        owned = runner.OwnedCommand(process)
+        event = SimpleNamespace(si_pid=process.pid, si_code=os.CLD_EXITED, si_status=0)
+        events = []
+
+        def reap(pid, flags):
+            self.assertFalse(owned.anchored)
+            events.append("reap")
+            if events.count("reap") == 1:
+                raise InterruptedError("offline final-reap interruption")
+            return pid, 0, SimpleNamespace()
+
+        with patch.object(runner.time, "monotonic", return_value=100.0), \
+                patch.object(runner.os, "waitid", return_value=event), \
+                patch.object(runner.os, "killpg", side_effect=lambda pid, sig: events.append(sig)), \
+                patch.object(runner.os, "wait4", side_effect=reap):
+            owned.cancel()
+        self.assertEqual(events, [runner.signal.SIGTERM, runner.signal.SIGKILL, "reap", "reap"])
+        self.assertTrue(owned.reaped)
+
+    def test_lost_child_forbids_signals_and_reaping(self):
+        campaign = self.campaign()
+        process = self.process()
+        with patch.object(runner.subprocess, "Popen", return_value=process), \
+                patch.object(runner.os, "waitid", side_effect=ChildProcessError), \
+                patch.object(runner.os, "killpg") as signal_group, patch.object(runner.os, "wait4") as reap:
+            with self.assertRaises(ChildProcessError):
+                campaign.run("lost-child", ["unavailable-test-program"])
+        signal_group.assert_not_called()
+        reap.assert_not_called()
+        process.wait.assert_not_called()
+        process.poll.assert_not_called()
+
+    def test_known_returncode_forbids_group_signalling(self):
+        process = self.process()
+        process.returncode = 0
+        owned = runner.OwnedCommand(process)
+        with self.assertRaises(RuntimeError):
+            owned.signal_group(runner.signal.SIGTERM)
+        self.assertFalse(owned.anchored)
+        runner.os.killpg.assert_not_called()
+        runner.os.waitid.assert_not_called()
+
+    def test_exception_after_normal_reap_never_signals_released_group(self):
+        campaign = self.campaign()
+        process = self.process()
+        event = SimpleNamespace(si_pid=process.pid, si_code=os.CLD_EXITED, si_status=0)
+        with patch.object(runner.subprocess, "Popen", return_value=process), \
+                patch.object(runner.os, "waitid", return_value=event), \
+                patch.object(runner.os, "wait4", return_value=(process.pid, 0, SimpleNamespace())), \
+                patch.object(runner.os, "waitstatus_to_exitcode", side_effect=RuntimeError("offline post-reap exception")), \
+                patch.object(runner.os, "killpg") as signal_group:
+            with self.assertRaisesRegex(RuntimeError, "post-reap exception"):
+                campaign.run("post-reap", ["unavailable-test-program"])
+        signal_group.assert_not_called()
+        self.assertIsNone(campaign.active)
+
+    def test_failed_cancel_does_not_start_second_cleanup_reserve(self):
+        campaign = self.campaign()
+        process = self.process()
+        event = SimpleNamespace(si_pid=process.pid, si_code=os.CLD_EXITED, si_status=1)
+
+        def failed_cleanup(owned):
+            owned.cleanup_started = True
+            raise RuntimeError("offline exhausted first cleanup reserve")
+
+        with patch.object(runner.subprocess, "Popen", return_value=process), \
+                patch.object(runner.os, "waitid", return_value=event), \
+                patch.object(runner.OwnedCommand, "cancel", autospec=True, side_effect=failed_cleanup) as cancel:
+            with self.assertRaisesRegex(RuntimeError, "first cleanup reserve"):
+                campaign.run("failed-cleanup", ["unavailable-test-program"])
+        self.assertEqual(cancel.call_count, 1)
+        self.assertIs(campaign.active, process)
+
+    def test_term_and_int_during_launch_are_deferred_until_owned_cleanup(self):
+        for index, signum in enumerate((runner.signal.SIGTERM, runner.signal.SIGINT)):
+            with self.subTest(signum=signum):
+                campaign = self.campaign("launch-" + str(index))
+                process = self.process()
+                events = []
+                event = SimpleNamespace(si_pid=process.pid, si_code=os.CLD_EXITED, si_status=0)
+
+                def spawn(*args, **kwargs):
+                    runner.signal.pthread_sigmask.assert_not_called()
+                    runner.cancellation_signal(signum, None)
+                    events.append("spawn-return")
+                    return process
+
+                def reap(pid, flags):
+                    events.append("reap")
+                    return pid, 0, SimpleNamespace()
+
+                runner.signal.pthread_sigmask.reset_mock()
+                with patch.object(runner.subprocess, "Popen", side_effect=spawn), \
+                        patch.object(runner.os, "waitid", return_value=event), \
+                        patch.object(runner.os, "killpg", side_effect=lambda pid, sig: events.append(sig)), \
+                        patch.object(runner.os, "wait4", side_effect=reap):
+                    with self.assertRaisesRegex(InterruptedError, "Deferred owner cancellation"):
+                        campaign.run("launch-cancel", ["unavailable-test-program"])
+                self.assertEqual(events, ["spawn-return", runner.signal.SIGTERM, runner.signal.SIGKILL, "reap"])
+                self.assertIsNone(runner._LAUNCHING_CAMPAIGN)
+                self.assertIsNone(campaign.active)
+                process.wait.assert_not_called()
+                process.poll.assert_not_called()
+
+    def test_filename_cli_and_diagnostic_import_share_cancellation_registry(self):
+        config = self.root / "config.json"
+        config.write_text(json.dumps(self.config()))
+        observations = []
+
+        def parse(*args, **kwargs):
+            canonical = sys.modules["qualification_campaign"]
+            observations.append(canonical is sys.modules["__main__"])
+            helper = importlib.import_module("capture_timed_profile")
+            observations.append(helper.Campaign is canonical.Campaign)
+            observations.append(helper.Campaign.run.__globals__ is canonical.cancellation_signal.__globals__)
+            return SimpleNamespace(action="plan", config=config, output=None)
+
+        with patch.dict(sys.modules):
+            sys.modules.pop("capture_timed_profile", None)
+            with patch.object(runner.argparse.ArgumentParser, "parse_args", side_effect=parse), \
+                    patch.object(sys, "stdout", io.StringIO()):
+                runpy.run_path(str(Path(runner.__file__)), run_name="__main__")
+        self.assertEqual(observations, [True, True, True])
+        runner.subprocess.Popen.assert_not_called()
 
 
 class ProvenanceTests(OfflineTest):

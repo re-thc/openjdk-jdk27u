@@ -148,6 +148,14 @@ this remainder and its stage cap, reserving ten seconds inside the original
 allowance for termination cleanup. Expiry, EOF, a stale review or any failed gate
 stops; no partial-directory resume or automatic retry exists.
 
+Owned-command cancellation retains the direct session leader with `waitid` /
+`WNOWAIT` until TERM and unconditional KILL have been sent to its group. A leader
+that exits promptly cannot cause a TERM-ignoring descendant to escape cleanup.
+The unreaped leader pins group identity; after releasing that anchor the runner
+never signals its numeric group again. Cleanup is one-shot within the existing
+ten-second reserve. TERM/INT received during launch are deferred until ownership
+registration, without passing a blocked signal mask to the executed command.
+
 All preparation, manual review and cleanup remain inside the same original
 14,400 seconds. The following stage limits are maxima, not new entitlements:
 

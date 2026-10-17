@@ -25,10 +25,16 @@ import sys
 import time
 import xml.etree.ElementTree as ET
 
+if __name__ == "__main__":
+    # The diagnostic helper imports this name. Keep one launch registry and
+    # signal handler when the runner is started by its filename.
+    sys.modules["qualification_campaign"] = sys.modules[__name__]
+
 from decode_capture import extract
 
 ROOT = Path(__file__).resolve().parents[3]
 HERE = Path(__file__).resolve().parent
+_LAUNCHING_CAMPAIGN = None
 ORIGINAL_STARTED_UTC = "2026-10-17T10:31:01.403725+00:00"
 DEADLINE_UTC = "2026-10-17T14:31:01.403725+00:00"
 CLEANUP_GRACE_SECONDS = 10
@@ -87,6 +93,13 @@ def dump(path, data):
 
 def utc_now():
     return datetime.now(timezone.utc)
+
+
+def cancellation_signal(signum, frame):
+    if _LAUNCHING_CAMPAIGN is not None:
+        _LAUNCHING_CAMPAIGN.cancellation(signum)
+        return
+    raise InterruptedError("Owner received cancellation signal " + str(signum))
 
 
 class ContinuationClock:
@@ -158,6 +171,81 @@ def validate_review(review, request_hash, stage):
     return decision
 
 
+class OwnedCommand:
+    """Keep the direct session leader unreaped until the last group signal.
+
+    WNOWAIT preserves its PID even when it exits before a descendant. There is
+    one waiter; no Popen wait/poll or reaper may release this anchor early.
+    """
+    def __init__(self, process):
+        self.process = process
+        self.anchored = True
+        self.reaped = False
+        self.cleanup_started = False
+
+    def observe(self, nonblocking=False):
+        require(self.anchored, "Process-group ownership already released")
+        if self.process.returncode is not None:
+            self.anchored = False
+            raise RuntimeError("Direct child was already reaped; group signalling is forbidden")
+        flags = os.WEXITED | os.WNOWAIT | (os.WNOHANG if nonblocking else 0)
+        try:
+            event = os.waitid(os.P_PID, self.process.pid, flags)
+        except ChildProcessError:
+            self.anchored = False
+            raise
+        if event is not None and event.si_pid != self.process.pid:
+            self.anchored = False
+            raise RuntimeError("Owned-child identity mismatch; group signalling is forbidden")
+        return event
+
+    def signal_group(self, sig):
+        self.observe(nonblocking=True)
+        try:
+            os.killpg(self.process.pid, sig)
+        except ProcessLookupError:
+            pass
+
+    def reap(self, deadline=None):
+        require(self.observe(nonblocking=True) is not None, "Owned child has not exited")
+        # Defer repeated cancellation until both ownership and wait status are
+        # updated. A pending signal after restore cannot signal a reused PGID.
+        previous = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGTERM, signal.SIGINT})
+        try:
+            self.anchored = False
+            limit = deadline if deadline is not None else time.monotonic() + CLEANUP_GRACE_SECONDS
+            while True:
+                try:
+                    _, status, usage = os.wait4(self.process.pid, 0)
+                    break
+                except InterruptedError:
+                    require(time.monotonic() < limit, "Owned-child reap was interrupted until cleanup expiry")
+            self.reaped = True
+            self.process.returncode = os.waitstatus_to_exitcode(status)
+            return status, usage
+        finally:
+            signal.pthread_sigmask(signal.SIG_SETMASK, previous)
+
+    def cancel(self):
+        previous = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGTERM, signal.SIGINT})
+        try:
+            require(not self.cleanup_started, "Owned-command cleanup is one-shot")
+            self.cleanup_started = True
+            deadline = time.monotonic() + CLEANUP_GRACE_SECONDS
+            self.signal_group(signal.SIGTERM)
+            while self.observe(nonblocking=True) is None and time.monotonic() < deadline - 1:
+                time.sleep(min(0.05, max(0, deadline - 1 - time.monotonic())))
+            # Always kill the still-anchored group, including when the leader
+            # exited promptly after TERM but another member ignored it.
+            self.signal_group(signal.SIGKILL)
+            while self.observe(nonblocking=True) is None and time.monotonic() < deadline:
+                time.sleep(min(0.05, max(0, deadline - time.monotonic())))
+            require(self.observe(nonblocking=True) is not None, "Owned command did not exit within cleanup grace")
+            return self.reap(deadline)
+        finally:
+            signal.pthread_sigmask(signal.SIG_SETMASK, previous)
+
+
 class Campaign:
     def __init__(self, config, output, clock=None, phase_caps=None):
         self.clock = clock if clock is not None else ContinuationClock()
@@ -175,6 +263,8 @@ class Campaign:
         self.records = []
         self.review_elapsed = 0.0
         self.active = None
+        self.launching = False
+        self.pending_cancellation = None
         self.env = os.environ.copy()
         for key in ("JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "_JAVA_OPTIONS", "MAKEFLAGS",
                     "JAVA_HOME", "CLASSPATH", "CC", "CXX", "CFLAGS", "CXXFLAGS", "LDFLAGS"):
@@ -196,7 +286,16 @@ class Campaign:
         self.phase = phase
         self.phase_started = time.monotonic()
 
+    def cancellation(self, signum):
+        if self.launching:
+            # Do not raise between fork/exec and ownership registration. Unlike
+            # masking around Popen, this leaves the child's TERM/INT unblocked.
+            self.pending_cancellation = signum
+            return
+        raise InterruptedError("Owner received cancellation signal " + str(signum))
+
     def run(self, name, command, cwd=ROOT, cap=180):
+        global _LAUNCHING_CAMPAIGN
         require(not any(r["name"] == name for r in self.records), "No command retries: " + name)
         remaining = min(self.clock.remaining(),
                         self.phase_caps[self.phase] - (time.monotonic() - self.phase_started), cap)
@@ -211,34 +310,42 @@ class Campaign:
         # GNU timeout supplies process-group termination; wait4 provides a
         # per-command high-water RSS without installing GNU time or a sampler.
         with log.open("w") as stream:
-            process = subprocess.Popen(["timeout", "--kill-after=10s", str(int(remaining)) + "s",
-                                        *command], cwd=cwd, env=self.env, stdout=stream,
-                                        stderr=subprocess.STDOUT, start_new_session=True)
-            self.active = process
+            owned = None
             try:
-                _, status, usage = os.wait4(process.pid, 0)
-                process.returncode = os.waitstatus_to_exitcode(status)
+                self.launching = True
+                try:
+                    _LAUNCHING_CAMPAIGN = self
+                    process = subprocess.Popen(["timeout", "--kill-after=10s", str(int(remaining)) + "s",
+                                                 *command], cwd=cwd, env=self.env, stdout=stream,
+                                                 stderr=subprocess.STDOUT, start_new_session=True)
+                    owned = OwnedCommand(process)
+                    self.active = process
+                finally:
+                    self.launching = False
+                    _LAUNCHING_CAMPAIGN = None
+                if self.pending_cancellation is not None:
+                    signum = self.pending_cancellation
+                    self.pending_cancellation = None
+                    raise InterruptedError("Deferred owner cancellation signal " + str(signum))
+                event = owned.observe()
+                if event.si_code != os.CLD_EXITED or event.si_status != 0:
+                    status, usage = owned.cancel()
+                else:
+                    status, usage = owned.reap()
             except BaseException:
                 # This session belongs only to this command. Never touch PID 1,
                 # unrelated workers, cgroups or a previous host's processes.
-                cleanup_deadline = time.monotonic() + CLEANUP_GRACE_SECONDS
                 try:
-                    os.killpg(process.pid, signal.SIGTERM)
-                except ProcessLookupError:
-                    pass
-                try:
-                    process.wait(timeout=max(0.001, cleanup_deadline - time.monotonic() - 1))
-                except subprocess.TimeoutExpired:
-                    try:
-                        os.killpg(process.pid, signal.SIGKILL)
-                    except ProcessLookupError:
-                        pass
-                    process.wait(timeout=max(0.001, cleanup_deadline - time.monotonic()))
-                row.update(status="interrupted", log_sha256=sha(log))
-                self.save()
+                    if owned is not None and owned.anchored and not owned.cleanup_started:
+                        owned.cancel()
+                finally:
+                    row.update(status="interrupted", log_sha256=sha(log),
+                               cleanup=dict(group_anchor_retained=owned is not None and owned.anchored,
+                                            direct_child_reaped=owned is not None and owned.reaped))
+                    self.save()
                 raise
             finally:
-                self.active = None
+                self.active = None if owned is None or owned.reaped else process
         row.update(status="finished", exit_code=process.returncode,
                    wall_seconds=time.monotonic() - start, peak_rss_kib=usage.ru_maxrss,
                    cpu_seconds=usage.ru_utime + usage.ru_stime, log_sha256=sha(log))
@@ -869,10 +976,9 @@ def main():
     campaign = Campaign(json.loads(args.config.read_text()), args.output)
     campaign.state["supplied_config"] = dict(path=str(args.config.resolve()), sha256=sha(args.config))
     campaign.save()
-    previous_term = signal.getsignal(signal.SIGTERM)
-    def interrupted(signum, frame):
-        raise InterruptedError("Owner received termination signal")
-    signal.signal(signal.SIGTERM, interrupted)
+    previous_signals = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGINT)}
+    for sig in previous_signals:
+        signal.signal(sig, cancellation_signal)
     try:
         campaign.build()
         campaign.verify_images()
@@ -901,7 +1007,8 @@ def main():
         campaign.save()
         raise
     finally:
-        signal.signal(signal.SIGTERM, previous_term)
+        for sig, previous in previous_signals.items():
+            signal.signal(sig, previous)
 
 
 if __name__ == "__main__":

@@ -9,10 +9,12 @@ import argparse
 import json
 from pathlib import Path
 import re
+import signal
 import time
 import xml.etree.ElementTree as ET
 
-from qualification_campaign import Campaign, COMMON, DEADLINE_UTC, METHOD, TARGET, dump, require, sha, utc_now
+from qualification_campaign import (Campaign, COMMON, DEADLINE_UTC, METHOD, TARGET,
+                                    cancellation_signal, dump, require, sha, utc_now)
 from decode_capture import extract
 
 
@@ -95,7 +97,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("campaign", type=Path)
     args = parser.parse_args()
-    run_diagnostics(args.campaign)
+    previous = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGINT)}
+    try:
+        for sig in previous:
+            signal.signal(sig, cancellation_signal)
+        run_diagnostics(args.campaign)
+    finally:
+        for sig, handler in previous.items():
+            signal.signal(sig, handler)
 
 
 if __name__ == "__main__":
