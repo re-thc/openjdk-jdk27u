@@ -4467,6 +4467,33 @@ instruct vstoremask_truecount_neon(iRegINoSp dst, vReg src, immI_gt_1 size, vReg
 
 // first true
 
+// Query a 0/-1 byte mask directly, avoiding boolean-byte normalization.
+instruct vstoremask_firsttrueB_neon(iRegINoSp dst, vReg src, immI_1 size, vReg tmp) %{
+  predicate(UseSVE == 0);
+  match(Set dst (VectorMaskFirstTrue (VectorStoreMask src size)));
+  effect(TEMP tmp);
+  format %{ "vstoremask_firsttrueB_neon $dst, $src\t# KILL $tmp" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src);
+    assert(length_in_bytes == 8 || length_in_bytes == 16, "unsupported vector size");
+    uint shift = 3;
+    if (length_in_bytes == 16) {
+      // Each original byte is all zeroes or all ones. Narrowing halfwords
+      // after shifting by four packs each byte into a four-bit field.
+      __ shrn($tmp$$FloatRegister, __ T8B, $src$$FloatRegister, __ T8H, 4);
+      __ fmovd($dst$$Register, $tmp$$FloatRegister);
+      shift--;
+    } else {
+      __ fmovd($dst$$Register, $src$$FloatRegister);
+    }
+    __ rbit($dst$$Register, $dst$$Register);
+    __ clz($dst$$Register, $dst$$Register);
+    // CLZ(0) == 64 also gives the number of lanes for an empty mask.
+    __ lsrw($dst$$Register, $dst$$Register, shift);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct vmask_firsttrue_neon(iRegINoSp dst, vReg src) %{
   predicate(UseSVE == 0);
   match(Set dst (VectorMaskFirstTrue src));
