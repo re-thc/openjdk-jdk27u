@@ -510,12 +510,8 @@ public class AArch64ArrayMismatchCallBoundaryTest {
             long bulk = nodes.stream().filter(s -> s.contains("CallStaticJava") &&
                     s.contains("# Static  jdk.internal.util.ArraysSupport::mismatchLarge ")).count();
             boolean hiddenCall = nodes.stream().anyMatch(s -> s.contains("CallStaticJava") &&
-                    (s.contains("# Static  java.util.Arrays::mismatch ") ||
-                     s.contains("# Static  jdk.internal.util.ArraysSupport::mismatch ") ||
-                     s.contains("# Static  jdk.internal.util.ArraysSupport::mismatchPrefix ") ||
-                     s.contains("# Static  jdk.internal.util.ArraysSupport::mismatchPrefixFloating ") ||
-                     s.contains("# Static  jdk.internal.util.ArraysSupport::mismatchPrefixDouble ") ||
-                     s.contains("# Static  jdk.internal.util.ArraysSupport::vectorizedMismatch ")));
+                    s.contains("# Static  ") &&
+                    !s.contains("# Static  jdk.internal.util.ArraysSupport::mismatchLarge "));
             boolean leaf = nodes.stream().anyMatch(s -> s.contains("CallLeaf") && s.contains("vectorizedMismatch"));
             if (nodes.isEmpty() || bulk > 1 || hiddenCall || leaf) {
                 failures.add(entry.getKey() + ": hidden mismatch boundary, leaf call, or missing graph");
