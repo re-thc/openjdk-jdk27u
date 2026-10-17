@@ -32,10 +32,12 @@ import tarfile
 import tempfile
 import time
 import unittest
+from unittest import mock
 
 sys.dont_write_bytecode = True
 import qualify as q
 import guard_evidence as guard
+import storage
 
 
 class QualificationTests(unittest.TestCase):
@@ -71,6 +73,166 @@ class QualificationTests(unittest.TestCase):
                 if item['screen_record']['kind'] == 'compiler':
                     wi = item['argv'].index('-wi')
                     self.assertEqual(item['argv'][wi + 1], '0')
+
+    def test_staged_last_consumers_precede_cleanup_and_next_build(self):
+        commands = self.plan()['commands']
+        indices = {row['name']:i for i, row in enumerate(commands)}
+        for number, (name, _, _) in enumerate(q.VARIANTS):
+            prune = indices[name + '-prune']
+            self.assertTrue(all(indices[x] < prune for x in storage.LAST_CONSUMERS[name]))
+            if number + 1 < len(q.VARIANTS):
+                self.assertLess(prune, indices[q.VARIANTS[number + 1][0] + '-clone'])
+        self.assertLess(storage.MIN_FREE_BYTES, 25 * storage.GiB)
+        self.assertEqual(storage.MAX_WORK_BYTES + storage.FREE_FLOOR_BYTES, storage.MIN_FREE_BYTES)
+        self.assertLess(sum(storage.peak_components().values()), storage.MAX_WORK_BYTES)
+
+    def prune_fixture(self, name='baseline-release', live_reference=False):
+        root = self.root / 'new-campaign'
+        root.mkdir()
+        for child in ('input-manifests', 'storage', 'results'):
+            (root / child).mkdir()
+        q.write_json(root / 'plan.json', dict(test=True))
+        q.write_json(root / 'campaign-owner.json', storage.create_owner(root, q.sha256(root / 'plan.json')))
+        q.write_json(root / 'runs.json', [dict(name=x, returncode=0) for x in storage.LAST_CONSUMERS[name]])
+        tree = root / name
+        build = tree / 'build/qualified'
+        image = build / 'images/jdk'
+        image.mkdir(parents=True)
+        (tree / 'Tracked.java').write_text('unchanged source')
+        (image / 'runtime').write_text('complete immutable image')
+        (build / 'spec.gmk').write_text('original configuration')
+        (build / 'configure.log').write_text('original log')
+        (build / 'build.log').write_text('completed normal build')
+        for child in ('hotspot', 'support', 'jdk', 'images/jmods', 'test-results'):
+            (build / child).mkdir(parents=True)
+            (build / child / 'temporary').write_text('generated intermediate')
+        if name == 'baseline-release':
+            retained = build / 'images/test/micro/benchmarks.jar'
+        else:
+            retained = build / 'images/test/hotspot/gtest/server/libjvm.so'
+        retained.parent.mkdir(parents=True)
+        retained.write_text('retained test artifact')
+        if live_reference:
+            (image / 'bad-link').symlink_to(build / 'support/temporary')
+        outside = self.root / 'other-task-data'
+        outside.mkdir()
+        (outside / 'keep').write_text('unrelated data')
+        (build / 'support/escape').symlink_to(outside, target_is_directory=True)
+        expected = next(source for variant, source, _ in q.VARIANTS if variant == name)
+        def source_record(path):
+            return dict(head=expected, tracked_files=q.file_manifest(path / 'Tracked.java'))
+        with mock.patch.object(q, 'capture_source', side_effect=source_record):
+            q.freeze(root / 'input-manifests', tree, 'source')
+            for item in (image, build / 'spec.gmk', build / 'configure.log'):
+                q.freeze(root / 'input-manifests', item)
+        return root, tree, build, image, retained, source_record, outside
+
+    def test_cleanup_keeps_original_inputs_and_removes_only_owned_intermediates(self):
+        root, tree, build, image, retained, capture, outside = self.prune_fixture()
+        original = q.file_manifest(image)
+        with mock.patch.object(q, 'capture_source', side_effect=capture):
+            q.prune_build(root, 'baseline-release')
+            q.verify_frozen(root / 'input-manifests')
+        self.assertEqual(q.file_manifest(image), original)
+        self.assertTrue((tree / 'Tracked.java').exists())
+        self.assertTrue((build / 'spec.gmk').exists())
+        self.assertTrue(retained.exists())
+        self.assertFalse((build / 'support').exists())
+        self.assertFalse((build / 'hotspot').exists())
+        self.assertFalse((build / 'jdk').exists())
+        self.assertFalse((build / 'images/jmods').exists())
+        self.assertEqual((outside / 'keep').read_text(), 'unrelated data')
+        self.assertTrue((root / 'results/build-evidence/baseline-release/test-results/temporary').exists())
+        journal = json.loads((root / 'storage/baseline-release-prune.json').read_text())
+        self.assertEqual(journal['status'], 'complete')
+        self.assertIn('support', journal['removed'])
+        self.assertGreater(journal['allocated_build_before'], journal['allocated_build_after'])
+
+    def test_gtest_artifacts_survive_last_consumer_cleanup(self):
+        root, tree, build, image, retained, capture, outside = self.prune_fixture('candidate-fastdebug')
+        with mock.patch.object(q, 'capture_source', side_effect=capture):
+            q.prune_build(root, 'candidate-fastdebug')
+            q.verify_frozen(root / 'input-manifests')
+        self.assertTrue(retained.exists())
+        self.assertFalse((build / 'hotspot').exists())
+
+    def test_cleanup_refuses_missing_consumer_and_unowned_root(self):
+        root, tree, build, image, retained, capture, outside = self.prune_fixture()
+        q.write_json(root / 'runs.json', [])
+        with mock.patch.object(q, 'capture_source', side_effect=capture):
+            with self.assertRaisesRegex(ValueError, 'Last consumers'):
+                q.prune_build(root, 'baseline-release')
+        self.assertTrue((build / 'support/temporary').exists())
+        owner = json.loads((root / 'campaign-owner.json').read_text())
+        owner['directory_inode'] += 1
+        q.write_json(root / 'campaign-owner.json', owner)
+        with self.assertRaisesRegex(ValueError, 'ownership'):
+            q.prune_build(root, 'baseline-release')
+        self.assertTrue((build / 'support/temporary').exists())
+
+    def test_cleanup_refuses_image_drift_before_any_removal(self):
+        root, tree, build, image, retained, capture, outside = self.prune_fixture()
+        (image / 'runtime').write_text('drift')
+        with mock.patch.object(q, 'capture_source', side_effect=capture):
+            with self.assertRaisesRegex(ValueError, 'Input drift'):
+                q.prune_build(root, 'baseline-release')
+        self.assertTrue((build / 'support/temporary').exists())
+
+    def test_cleanup_refuses_retained_reference_to_intermediate(self):
+        root, tree, build, image, retained, capture, outside = self.prune_fixture(live_reference=True)
+        with mock.patch.object(q, 'capture_source', side_effect=capture):
+            with self.assertRaisesRegex(ValueError, 'Retained input refers'):
+                q.prune_build(root, 'baseline-release')
+        self.assertTrue((build / 'support/temporary').exists())
+
+    def test_interrupted_cleanup_preserves_inputs_and_remains_active(self):
+        root, tree, build, image, retained, capture, outside = self.prune_fixture()
+        real_remove = storage.remove_generated
+        removed = []
+        def fail_after_first(target):
+            if removed:
+                raise OSError('injected cancellation-like interruption')
+            real_remove(target)
+            removed.append(target)
+        with mock.patch.object(q, 'capture_source', side_effect=capture), mock.patch.object(storage, 'remove_generated', side_effect=fail_after_first):
+            with self.assertRaises(OSError):
+                q.prune_build(root, 'baseline-release')
+            q.verify_frozen(root / 'input-manifests')
+        journal = json.loads((root / 'storage/baseline-release-prune.json').read_text())
+        self.assertEqual(journal['status'], 'removing')
+        self.assertEqual(len(journal['removed']), 1)
+        self.assertTrue((image / 'runtime').exists())
+        (root / 'candidate-release/build/qualified').mkdir(parents=True)
+        with self.assertRaisesRegex(ValueError, 'More than one build'):
+            storage.check_limits(root)
+
+    def test_cleanup_rejects_symlinked_build_ancestor(self):
+        root, tree, build, image, retained, capture, outside = self.prune_fixture()
+        moved = tree / 'build/original'
+        build.rename(moved)
+        build.symlink_to(moved, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, 'symlinked build ancestor'):
+            storage.deletion_targets(root, 'baseline-release')
+        self.assertTrue((moved / 'support/temporary').exists())
+
+    def test_storage_rejects_two_active_builds_and_incomplete_prune(self):
+        (self.root / 'baseline-release/build/qualified').mkdir(parents=True)
+        (self.root / 'candidate-release/build/qualified').mkdir(parents=True)
+        (self.root / 'storage').mkdir()
+        q.write_json(self.root / 'storage/baseline-release-prune.json', dict(status='removing'))
+        with self.assertRaisesRegex(ValueError, 'More than one build'):
+            storage.check_limits(self.root)
+
+    def test_transient_image_uses_active_bound_then_retained_image_bound(self):
+        build = self.root / 'candidate-release/build/qualified'
+        image = build / 'images/jdk'
+        image.mkdir(parents=True)
+        (image / 'runtime').write_text('image')
+        with mock.patch.object(storage, 'MAX_IMAGE_BYTES', 1):
+            storage.check_limits(self.root, build)
+            q.freeze(self.root / 'input-manifests', image)
+            with self.assertRaisesRegex(ValueError, 'Completed JDK image'):
+                storage.check_limits(self.root, build)
 
     def test_every_download_is_pinned(self):
         rows = q.dependencies()

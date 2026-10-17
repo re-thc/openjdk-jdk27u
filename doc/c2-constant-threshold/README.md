@@ -82,13 +82,13 @@ source for existing interoperability checks.
 
 ## Preparation, validation and measurement
 
-The plan emits 109 commands plus final input verification, sequentially. It
+The plan emits 113 commands plus final input verification, sequentially. It
 stops at the first failure; it never retries or raises a limit automatically.
 
 | Stage | Actual work | Bounds and required evidence |
 |---|---|---|
 | Preparation | Host preflight; eight pinned downloads; local extraction; pinned codec clone | Hash/length checks before unpacking; supported boot JDK and source commit availability |
-| Builds | Baseline/candidate **release** pair and baseline/candidate **fastdebug** pair, ordinary `configure` + `make images` | Four jobs; 75 min cap per image build; same toolchain/boot JDK/configuration within each pair; exact source pin/configure/spec/release records |
+| Builds | Baseline/candidate **release** pair and baseline/candidate **fastdebug** pair, ordinary `configure` + `make images` | One active build; four jobs; 75 min cap per image build; same toolchain/boot JDK/configuration within each pair; exact source pin/configure/spec/release records |
 | Standard compiler tests | Candidate `make test-image-hotspot-gtest`, then `make test-only TEST='gtest:opto.constant_threshold_*'`; Java IR class, StressIGVN/VerifyIterativeGVN, same nearby regressions listed in EVIDENCE.md | All four registered native tests must pass; IR/stress/nearby exit zero; normal GTest library/linking/harness, no shim |
 | Artifact preparation | Normal baseline `make build-microbenchmark`; verify selected six benchmark names; compile unchanged jzstd; prepare existing corpora/reference frames | Shared benchmark jar and codec classes, generated once; source/file provenance saved |
 | Codec correctness | Both release VMs run existing functional JUnit tests, 54-frame guarded-destination driver, and source-corpus encoder check-only at levels 1/3/9 | 918 destination checks per VM; allocating/direct output and guard bytes; zero skipped/failed functional tests; byte-identical encoded frames between VMs; reference zstd decodes to the exact source corpus |
@@ -157,16 +157,24 @@ The 30-minute measurement allowance is inside those seven hours. Ten minutes
 are reserved for final input verification; no new main-stage command may use
 that reserve. Every subprocess is also capped individually.
 
-Reserve 70 GiB free private scratch and about 12 GiB available RAM for normal
-four-job builds / the existing functional suite. Builds are sequential; four
-jobs and the configure resource inputs are fixed. The functional test JVM uses
-at most 4 GiB Java heap; JMH measured forks use 512 MiB, launcher 256 MiB, reserved code
-cache 128 MiB, active processor count 4. Typical measurement RSS is around 1.5–2 GiB;
-this is a planning estimate, not an OS-enforced RSS ceiling. An upper planning
-CPU budget is 28 core-hours at four active CPUs, subject to normal build-tool
-threading. The runner stops below 2 GiB remaining disk space. Outer logs/results
-have a polled 1 GiB stop threshold with possible final-write overshoot; intermediate
-build products remain covered by the free-space check and 70 GiB scratch reserve.
+Storage now uses a **20 GiB initial free-space requirement**, an **18 GiB
+campaign allocation stop threshold**, and a **2 GiB free-space floor**, fitting
+this VM's roughly 25 GiB available without deleting existing data. One active
+build coexists with retained source checkouts and complete images. JMH/GTest
+make-based consumers finish before that build's campaign-created intermediates
+are pruned and the next build begins. All source/image/configuration paths and
+original manifests remain unchanged. Read [STORAGE.md](STORAGE.md) for the
+measured-vs-bounded calculation, exact last consumers/removal targets, ownership
+gates, interruption handling and retained evidence. The component sum is
+17.125 GiB; bounds are polled stop thresholds, not guaranteed future peak results.
+
+Plan about 12 GiB available RAM for four-job builds / the existing functional
+suite. The functional test JVM uses at most 4 GiB heap; JMH measured forks use
+512 MiB, launcher 256 MiB, code cache 128 MiB and active processor count four.
+Typical measurement RSS remains about 1.5–2 GiB, a planning estimate rather than
+an OS-enforced RSS ceiling. Upper planning CPU budget remains 28 core-hours,
+subject to build-tool threading. Outer logs/results retain their polled 1 GiB
+stop threshold. No resource limit is automatically raised.
 
 SIGINT, SIGTERM, timeouts and errors clean up only the command's own process
 group, including make descendants and JMH forks: SIGTERM, up to 3 s, then SIGKILL
@@ -175,7 +183,8 @@ and reap, up to 2 s. Final drift verification runs on success and failure, with 
 success. A second interrupt cannot bypass that cleanup. These steps stay within
 the seven-hour overall deadline, with a final 5 s cleanup reserve; abrupt SIGKILL
 of the runner cannot be handled. Incomplete final verification is recorded as a
-failure. Logs and build directories remain private for inspection.
+failure. Logs, retained source/images, prune journals and remaining products
+stay private; only the authorized new campaign intermediates are pruned.
 
 Input manifests cover every file/mode/symlink and resolved symlink file content
 in all four JDK images, the boot JDK, downloaded archives, unpacked test/JMH
@@ -199,9 +208,12 @@ python3 -B -m unittest discover -s doc/c2-constant-threshold \
   -p 'test_qualify.py' -v
 ```
 
-Ten harness tests currently pass, covering the complete plan/pins, full-image
+Twenty harness tests currently pass, covering the complete plan/pins, full-image
 support-file drift, safe extraction, exact bytecode/graph scope discrimination,
-timeouts and repeated-SIGTERM descendant cleanup with final drift verification. All
+timeouts and repeated-SIGTERM descendant cleanup with final drift verification.
+Lifecycle cases cover staged last consumers, required-artifact retention,
+missing-consumer/ownership refusals, image drift, symlink boundaries, unrelated
+data preservation and interrupted pruning before another build. All
 eight actual dependency downloads were fetched normally and their declared
 lengths/SHA256 verified; archive layouts were inspected. Standard GTest and all
 future build/codec/measurement stages remain unexecuted pending plan approval.

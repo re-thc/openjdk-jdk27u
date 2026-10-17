@@ -41,6 +41,7 @@ import xml.etree.ElementTree as ET
 
 sys.dont_write_bytecode = True
 import screen
+import storage
 
 HERE = Path(__file__).resolve().parent
 BASELINE = '2c3ecf578a57f2eb4d5ed30d395e537764e0fa99'
@@ -55,7 +56,7 @@ OVERALL_SECONDS = 7 * 3600
 MEASUREMENT_SECONDS = 30 * 60
 FINAL_SECONDS = 10 * 60
 MAX_LOG_BYTES = 1024 * 1024 * 1024
-MIN_DISK_BYTES = 70 * 1024**3
+MIN_DISK_BYTES = storage.MIN_FREE_BYTES
 VARIANTS = [('baseline-release', BASELINE, 'release'), ('candidate-release', CANDIDATE, 'release'),
             ('baseline-fastdebug', BASELINE, 'fastdebug'), ('candidate-fastdebug', CANDIDATE, 'fastdebug')]
 FUNCTIONAL_EXCLUSIONS = '.*(?:GoalGateTest|ReferenceParityTest)'
@@ -144,7 +145,7 @@ def freeze(state, path, kind='files'):
     write_json(target, record)
 
 
-def verify_frozen(state):
+def verify_frozen(state, within=None):
     failures = []
     records = sorted(state.glob('*.json'))
     if not records:
@@ -152,6 +153,8 @@ def verify_frozen(state):
     for record in records:
         row = json.loads(record.read_text())
         path = Path(row['path'])
+        if within is not None and not path.is_relative_to(within):
+            continue
         try:
             now = capture_source(path) if row['kind'] == 'source' else file_manifest(path)
             if row['kind'] == 'source-snapshot':
@@ -186,6 +189,8 @@ def build_plan(args):
     def add(stage, name, argv, timeout, cwd=None, expected=0):
         steps.append(dict(stage=stage, name=name, argv=list(map(str, argv)), timeout_seconds=timeout,
                           cwd=str(cwd or root), expected_exit=expected))
+        if cwd is not None and Path(cwd).name in storage.NAMES and str(argv[0]) in ('make', 'bash'):
+            steps[-1]['active_build'] = str(Path(cwd) / 'build/qualified')
     add('prepare', 'host-preflight', internal(['host', checkout, boot, root, *args.input_root]), 120)
     for row in dependencies():
         dest = deps / row['name']
@@ -200,6 +205,9 @@ def build_plan(args):
               '--with-jvm-variants=server', '--disable-javac-server', '--disable-precompiled-headers', '--with-native-debug-symbols=none',
               '--with-freetype=bundled', '--with-jtreg=' + str(deps / 'jtreg'),
               '--with-jmh=' + str(deps / 'jmh'), '--with-gtest=' + str(deps / 'gtest')] + args.configure_arg
+    cand = root / 'candidate-fastdebug'
+    base = root / 'baseline-release'
+    image = lambda name: root / name / 'build/qualified/images/jdk'
     for name, source, debug in VARIANTS:
         tree = root / name
         add('build', name + '-clone', ['git', 'clone', '--shared', '--no-checkout', checkout, tree], 120)
@@ -208,12 +216,16 @@ def build_plan(args):
             '--with-debug-level=' + debug] + common, 300, tree)
         add('build', name + '-images', ['make', 'CONF=qualified', 'JOBS=4', 'images'], 4500, tree)
         add('build', name + '-provenance', internal(['image', root, name, source, debug]), 180)
-    cand = root / 'candidate-fastdebug'
-    base = root / 'baseline-release'
-    image = lambda name: root / name / 'build/qualified/images/jdk'
-    add('validate', 'gtest-build', ['make', 'CONF=qualified', 'JOBS=4', 'test-image-hotspot-gtest'], 600, cand)
-    add('validate', 'gtest', ['make', 'CONF=qualified', 'test-only', 'TEST=gtest:opto.constant_threshold_*'], 120, cand)
-    add('validate', 'gtest-evidence', internal(['gtest', root]), 30)
+        if name == 'baseline-release':
+            add('validate', 'jmh-build', ['make', 'CONF=qualified', 'JOBS=4', 'build-microbenchmark'], 600, base)
+            add('validate', 'jmh-list', [image('baseline-release') / 'bin/java', '-Xmx256m', '-jar',
+                base / 'build/qualified/images/test/micro/benchmarks.jar', '-l'], 30)
+            add('validate', 'jmh-list-evidence', internal(['jmh-list', root]), 30)
+        if name == 'candidate-fastdebug':
+            add('validate', 'gtest-build', ['make', 'CONF=qualified', 'JOBS=4', 'test-image-hotspot-gtest'], 600, cand)
+            add('validate', 'gtest', ['make', 'CONF=qualified', 'test-only', 'TEST=gtest:opto.constant_threshold_*'], 120, cand)
+            add('validate', 'gtest-evidence', internal(['gtest', root]), 30)
+        add('build', name + '-prune', internal(['prune-build', root, name]), 300)
     jtreg = [str(image('candidate-fastdebug') / 'bin/java'), '-Xmx512m', '-jar', str(deps / 'jtreg/lib/jtreg.jar'),
              '-jdk:' + str(image('candidate-fastdebug')), '-timeoutFactor:4', '-agentvm', '-conc:1']
     add('validate', 'threshold-ir', jtreg + ['-w:' + str(results / 'ir-work'), '-r:' + str(results / 'ir-report'), IR_TEST], 300, cand)
@@ -222,10 +234,6 @@ def build_plan(args):
         '-w:' + str(results / 'stress-work'), '-r:' + str(results / 'stress-report'), IR_TEST], 300, cand)
     add('validate', 'nearby-regressions', jtreg + ['-w:' + str(results / 'related-work'),
         '-r:' + str(results / 'related-report')] + ['test/hotspot/jtreg/' + x for x in RELATED], 600, cand)
-    add('validate', 'jmh-build', ['make', 'CONF=qualified', 'JOBS=4', 'build-microbenchmark'], 600, base)
-    add('validate', 'jmh-list', [image('baseline-release') / 'bin/java', '-Xmx256m', '-jar',
-        base / 'build/qualified/images/test/micro/benchmarks.jar', '-l'], 30)
-    add('validate', 'jmh-list-evidence', internal(['jmh-list', root]), 30)
     add('validate', 'codec-source-and-corpus', internal(['codec-inputs', root]), 120)
     add('validate', 'reference-zstd-build', ['make', '-j4', 'zstd'], 180, deps / 'zstd')
     add('validate', 'codec-javac', [image('baseline-release') / 'bin/javac', '--add-modules', 'jdk.incubator.vector',
@@ -276,7 +284,11 @@ def build_plan(args):
     return dict(schema=2, execute=False, baseline=BASELINE, candidate=CANDIDATE, codec=CODEC,
                 overall_seconds=OVERALL_SECONDS, measurement_seconds=MEASUREMENT_SECONDS,
                 finalization_reserve_seconds=FINAL_SECONDS, build_jobs=4, min_disk_bytes=MIN_DISK_BYTES,
-                peak_rss_planning_gib=12, max_log_bytes=MAX_LOG_BYTES, commands=steps,
+                peak_rss_planning_gib=12, max_log_bytes=MAX_LOG_BYTES,
+                storage=dict(max_work_bytes=storage.MAX_WORK_BYTES, active_build_bytes=storage.MAX_ACTIVE_BUILD_BYTES,
+                             per_source_bytes=storage.MAX_SOURCE_BYTES, per_image_bytes=storage.MAX_IMAGE_BYTES,
+                             free_floor_bytes=storage.FREE_FLOOR_BYTES, peak_components_bytes=storage.peak_components(),
+                             policy='One active build; only campaign-owned intermediates after verified last consumers'), commands=steps,
                 final_step=internal(['verify', root]))
 
 
@@ -316,17 +328,32 @@ def log_size(root):
     return sum(p.stat().st_size for name in ('logs', 'results') for p in (root / name).rglob('*') if p.is_file())
 
 
+def check_and_record_storage(root, item, point):
+    sample = storage.check_limits(root, item.get('active_build'))
+    path = root / 'storage/usage.json'
+    previous = json.loads(path.read_text()) if path.exists() else {}
+    write_json(path, dict(maximum_sampled_work_bytes=max(previous.get('maximum_sampled_work_bytes', 0), sample['work_allocated_bytes']),
+                         maximum_sampled_active_build_bytes=max(previous.get('maximum_sampled_active_build_bytes', 0), sample.get('active_build_allocated_bytes', 0)),
+                         minimum_sampled_free_bytes=min(previous.get('minimum_sampled_free_bytes', sample['free_bytes']), sample['free_bytes']),
+                         last_command=item['name'], point=point, last_sample=sample))
+    return sample
+
+
 def run_one(item, root, deadline, env=None, enforce_resources=True):
     started = time.monotonic()
     end = min(deadline, started + item['timeout_seconds'])
     if end <= started:
         raise RuntimeError('Campaign/stage deadline exhausted: ' + item['name'])
     process = None
+    if enforce_resources:
+        check_and_record_storage(root, item, 'before')
+        if time.monotonic() >= end:
+            raise RuntimeError('Command budget exhausted by storage preflight: ' + item['name'])
     try:
         with (root / 'logs' / (item['name'] + '.log')).open('wb') as stream:
             process = subprocess.Popen(item['argv'], cwd=item['cwd'], env=env,
                                        stdout=stream, stderr=subprocess.STDOUT, start_new_session=True)
-            last_poll = 0
+            last_poll, last_storage = 0, time.monotonic()
             while process.poll() is None:
                 now = time.monotonic()
                 if now >= end:
@@ -337,11 +364,16 @@ def run_one(item, root, deadline, env=None, enforce_resources=True):
                     if shutil.disk_usage(root).free < 2 * 1024**3:
                         raise RuntimeError('Less than2GiB disk free; stop')
                     last_poll = now
+                if enforce_resources and item.get('active_build') and now - last_storage > 30:
+                    check_and_record_storage(root, item, 'during-build')
+                    last_storage = time.monotonic()
                 time.sleep(.1)
             if process.returncode != item.get('expected_exit', 0):
                 raise RuntimeError(f"{item['name']}: exit{process.returncode}; see private log")
             if group_exists(process.pid):
                 raise RuntimeError('Launcher exited with children remaining: ' + item['name'])
+            if enforce_resources:
+                check_and_record_storage(root, item, 'after')
             if time.monotonic() > end or (enforce_resources and log_size(root) > MAX_LOG_BYTES):
                 raise RuntimeError('Final command write/time exceeded budget: ' + item['name'])
     finally:
@@ -360,9 +392,11 @@ def execute(args, plan):
     main_end = end - FINAL_SECONDS
     root = args.output.resolve()
     root.mkdir(parents=True, exist_ok=False)
-    for sub in ('deps', 'logs', 'results', 'input-manifests'):
+    for sub in ('deps', 'logs', 'results', 'input-manifests', 'storage', 'tmp'):
         (root / sub).mkdir()
     write_json(root / 'plan.json', plan)
+    write_json(root / 'campaign-owner.json', storage.create_owner(root, sha256(root / 'plan.json')))
+    freeze(root / 'input-manifests', root / 'campaign-owner.json')
     records, failure, final_failure = [], None, None
     old_handlers = {}
     def cancel(signum, _frame):
@@ -371,6 +405,7 @@ def execute(args, plan):
         old_handlers[signum] = signal.signal(signum, cancel)
     env = os.environ.copy()
     env['PYTHONDONTWRITEBYTECODE'] = '1'
+    env['TMPDIR'] = str(root / 'tmp')
     env['PATH'] = str(root / 'deps/zstd/programs') + os.pathsep + env['PATH']
     measurement_start = None
     try:
@@ -438,7 +473,7 @@ def host_preflight(checkout, boot, root, extras):
         if os.environ.get(name):
             raise ValueError(name + ' must be unset')
     if shutil.disk_usage(root).free < MIN_DISK_BYTES:
-        raise ValueError('Need70GiB free scratch for four builds, dependencies and results')
+        raise ValueError('Need20GiB free scratch for the staged campaign, including2GiB free-space floor')
     if not (boot / 'bin/java').is_file() or not (boot / 'bin/javac').is_file():
         raise ValueError('Supply a normal supported boot JDK26/27 via --boot-jdk')
     release = (boot / 'release').read_text()
@@ -515,6 +550,71 @@ def image_provenance(root, name, source, debug):
     shutil.copy2(spec, root / 'results' / (name + '-spec.gmk'))
     shutil.copy2(configure, root / 'results' / (name + '-configure.log'))
 
+
+def prune_build(root, name):
+    """After successful last consumers, verify and remove only this campaign's intermediates."""
+    owner = storage.require_owner(root, sha256(root / 'plan.json'))
+    if name not in storage.LAST_CONSUMERS:
+        raise ValueError('Unknown prune variant')
+    runs = json.loads((root / 'runs.json').read_text())
+    completed = {r['name'] for r in runs if r.get('returncode') == 0}
+    missing = set(storage.LAST_CONSUMERS[name]) - completed
+    if missing:
+        raise ValueError('Last consumers have not succeeded: ' + str(sorted(missing)))
+    tree = root / name
+    expected = next(source for variant, source, _ in VARIANTS if variant == name)
+    if capture_source(tree)['head'] != expected:
+        raise ValueError('Wrong source identity before pruning')
+    state = root / 'input-manifests'
+    # Every original source/image/config manifest must already exist and still match.
+    build, targets = storage.deletion_targets(root, name)
+    keepers = [tree, build / 'images/jdk', build / 'spec.gmk', build / 'configure.log']
+    for keeper in keepers:
+        manifest = state / (hashlib.sha256(str(keeper).encode()).hexdigest() + '.json')
+        if not manifest.is_file():
+            raise ValueError('Required original input manifest missing: ' + str(keeper))
+    verify_frozen(state, within=tree)
+    keepers = keepers[1:]
+    if name == 'baseline-release':
+        jar = build / 'images/test/micro/benchmarks.jar'
+        freeze(state, jar)
+        keepers.append(jar)
+    if name == 'candidate-fastdebug':
+        gtest = build / 'images/test/hotspot/gtest'
+        freeze(state, gtest)
+        keepers.append(gtest)
+    # Preserve detailed normal build/test evidence before removing its generated container.
+    evidence = root / 'results/build-evidence' / name
+    evidence.mkdir(parents=True, exist_ok=False)
+    for relative in ('build.log', 'build.log.old', 'configure-support', 'make-support/build-times', 'test-results'):
+        source = build / relative
+        if source.exists():
+            destination = evidence / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            if source.is_dir():
+                shutil.copytree(source, destination, symlinks=True)
+            else:
+                shutil.copy2(source, destination, follow_symlinks=False)
+    keepers.append(evidence)
+    storage.reject_live_references(keepers, targets)
+    journal = root / 'storage' / (name + '-prune.json')
+    record = dict(status='verified-before-removal', owner_token=owner['token'], source_commit=expected,
+                  required_consumers=list(storage.LAST_CONSUMERS[name]),
+                  allocated_build_before=storage.allocated_bytes(build),
+                  targets=[str(p.relative_to(build)) for p in targets], removed=[])
+    write_json(journal, record)
+    for target in targets:
+        storage.remove_generated(target)
+        record['removed'].append(str(target.relative_to(build)))
+        record['status'] = 'removing'
+        write_json(journal, record)
+    # Keep original path-based source/image/config manifests, with no retirement or replacement.
+    verify_frozen(state, within=tree)
+    freeze(state, evidence)
+    record.update(status='complete', allocated_build_after=storage.allocated_bytes(build))
+    write_json(journal, record)
+    record['storage_after'] = storage.check_limits(root)
+    write_json(journal, record)
 
 def codec_inputs(root):
     codec = root / 'codec'
@@ -659,6 +759,8 @@ def internal_main(words):
         unpack(Path(words[0]))
     elif action == 'image':
         image_provenance(Path(words[0]), *words[1:])
+    elif action == 'prune-build':
+        prune_build(Path(words[0]), words[1])
     elif action == 'jmh-list':
         root = Path(words[0])
         found = set((root / 'logs/jmh-list.log').read_text().splitlines())
@@ -691,7 +793,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--checkout', type=Path, default=HERE.parents[1])
     parser.add_argument('--boot-jdk', type=Path, required=True, help='Normal JDK26/27 build prerequisite; no prebuilt candidate required')
-    parser.add_argument('--output', type=Path, required=True, help='New private work/results directory; reserve70GiB')
+    parser.add_argument('--output', type=Path, required=True, help='New private work/results directory; reserve20GiB for staged builds')
     parser.add_argument('--configure-arg', action='append', default=[], help='Same extra configure argument for every build; use = syntax')
     parser.add_argument('--input-root', type=Path, action='append', default=[], help='Hash an external non-system compiler/sysroot/tool root')
     parser.add_argument('--execute', action='store_true', help='Only after review/authorization: prepare, build and run the complete bounded workflow')
