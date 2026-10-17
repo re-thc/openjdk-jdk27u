@@ -47,7 +47,6 @@ public class TestCipherMode {
         "AES/KW/PKCS5Padding", // KeyWrapCipher
         "AES/KWP/NoPadding", // KeyWrapCipher
         "RSA/ECB/NoPadding", // RSACipher
-        "DESedeWrap/CBC/NoPadding", // DESedeWrapCipher
         "ChaCha20-Poly1305", // ChaCha20Cipher
     };
 
@@ -91,9 +90,6 @@ public class TestCipherMode {
         break;
         case "DES":
             key = new SecretKeySpec(BYTES32, 0, 8, algo);
-        break;
-        case "DESedeWrap":
-            key = new SecretKeySpec(BYTES32, 0, 24, "DESede");
         break;
         default:
             throw new RuntimeException("Unknown transformation: " + t);

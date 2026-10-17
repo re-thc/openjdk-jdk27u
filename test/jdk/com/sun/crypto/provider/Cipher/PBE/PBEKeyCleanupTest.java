@@ -55,7 +55,7 @@ public class PBEKeyCleanupTest {
     private static final int KEY_SIZE = 128;
 
     public static void main(String[] args) throws Exception {
-        testPBESecret("PBEWithMD5AndDES");
+        testPBESecret("PBEWithSHA1AndDESede");
         testPBKSecret("PBKDF2WithHmacSHA1");
     }
 

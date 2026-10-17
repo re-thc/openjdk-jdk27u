@@ -194,10 +194,15 @@ public enum TestCertificate {
             "CN=8292033.oracle.com,OU=JPG,C=US", "-keypass", "changeit",
             "-validity", "365", "-keystore", "keystore.pkcs12", "-storepass", "changeit")
             .shouldHaveExitValue(0);
-        // The keytool command will load the keystore and call CertificateFactory.generateCertificate
         jfrTool("keytool.jfr")
-            .shouldContain("8292033.oracle.com") // should record our new cert
             .shouldNotContain("algorithm = N/A") // shouldn't record cert under construction
+            .shouldHaveExitValue(0);
+        SecurityTools.keytool("-J-XX:StartFlightRecording=filename=keytool-list.jfr,settings=config.jfc",
+            "-list", "-keystore", "keystore.pkcs12", "-storepass", "changeit")
+            .shouldHaveExitValue(0);
+        // The keytool command will load the keystore and call CertificateFactory.generateCertificate
+        jfrTool("keytool-list.jfr")
+            .shouldContain("8292033.oracle.com") // should record our new cert
             .shouldHaveExitValue(0);
     }
 

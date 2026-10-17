@@ -65,7 +65,7 @@ public class CircularCRLTwoLevelRevoked {
 
     static String selfSignedCertStr =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIICPjCCAaegAwIBAgIBADANBgkqhkiG9w0BAQQFADAfMQswCQYDVQQGEwJVUzEQ\n" +
+        "MIICPjCCAaegAwIBAgIBADANBgkqhkiG9w0BAQsFADAfMQswCQYDVQQGEwJVUzEQ\n" +
         "MA4GA1UEChMHRXhhbXBsZTAeFw0wOTA0MjcwMjI0MzJaFw0zMDA0MDcwMjI0MzJa\n" +
         "MB8xCzAJBgNVBAYTAlVTMRAwDgYDVQQKEwdFeGFtcGxlMIGfMA0GCSqGSIb3DQEB\n" +
         "AQUAA4GNADCBiQKBgQC4OTag24sTxL2tXTNuvpmUEtdxrYAZoFsslFQ60T+WD9wQ\n" +
@@ -74,15 +74,15 @@ public class CircularCRLTwoLevelRevoked {
         "AQABo4GJMIGGMB0GA1UdDgQWBBSCJd0hpl5PdAD9IZS+Hzng4lXLGzBHBgNVHSME\n" +
         "QDA+gBSCJd0hpl5PdAD9IZS+Hzng4lXLG6EjpCEwHzELMAkGA1UEBhMCVVMxEDAO\n" +
         "BgNVBAoTB0V4YW1wbGWCAQAwDwYDVR0TAQH/BAUwAwEB/zALBgNVHQ8EBAMCAgQw\n" +
-        "DQYJKoZIhvcNAQEEBQADgYEAluy6HIjWcq009lTLmhp+Np6dxU78pInBK8RZkza0\n" +
-        "484qGaxFGD3UGyZkI5uWmsH2XuMbuox5khfIq6781gmkPBHXBIEtJN8eLusOHEye\n" +
-        "iE8h7WI+N3qa6Pj56WionMrioqC/3X+b06o147bbhx8U0vkYv/HyPaITOFfMXTdz\n" +
-        "Vjw=\n" +
+        "DQYJKoZIhvcNAQELBQADgYEAiNtGz20VgRPqPt/qplrPF9IeSzfmrnwPtqAVseaP\n" +
+        "nKfd2FANh8oYMmz6PzVUHtRi0tfQSurEL+UzHnBQCyKZlCWiLqfdp4oOcX/MBN9H\n" +
+        "RuD6Q0RpflyFdJlxFs6Bqj/NAoVVfXWiP6mO5zxv0EyfPXDJdKIiTciY5fxH9Ns5\n" +
+        "GpY=\n" +
         "-----END CERTIFICATE-----";
 
     static String subCaCertStr =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIICUDCCAbmgAwIBAgIBAzANBgkqhkiG9w0BAQQFADAfMQswCQYDVQQGEwJVUzEQ\n" +
+        "MIICUDCCAbmgAwIBAgIBAzANBgkqhkiG9w0BAQsFADAfMQswCQYDVQQGEwJVUzEQ\n" +
         "MA4GA1UEChMHRXhhbXBsZTAeFw0wOTA0MjcwMjI0MzRaFw0yOTAxMTIwMjI0MzRa\n" +
         "MDExCzAJBgNVBAYTAlVTMRAwDgYDVQQKEwdFeGFtcGxlMRAwDgYDVQQLEwdDbGFz\n" +
         "cy0xMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCiAJnAQW2ad3ZMKUhSJVZj\n" +
@@ -91,16 +91,16 @@ public class CircularCRLTwoLevelRevoked {
         "P/mCz6kRhfUQPE0CMmOUewIDAQABo4GJMIGGMB0GA1UdDgQWBBT0/nNP8WpyxmYr\n" +
         "IBp4tN8y08jw2jBHBgNVHSMEQDA+gBSCJd0hpl5PdAD9IZS+Hzng4lXLG6EjpCEw\n" +
         "HzELMAkGA1UEBhMCVVMxEDAOBgNVBAoTB0V4YW1wbGWCAQAwDwYDVR0TAQH/BAUw\n" +
-        "AwEB/zALBgNVHQ8EBAMCAgQwDQYJKoZIhvcNAQEEBQADgYEAS9PzI6B39R/U9fRj\n" +
-        "UExzN1FXNP5awnAPtiv34kSCL6n6MryqkfG+8aaAOdZsSjmTylNFaF7cW/Xp1VBF\n" +
-        "hq0bg/SbEAbK7+UwL8GSC3crhULHLbh+1iFdVTEwxCw5YmB8ji3BaZ/WKW/PkjCZ\n" +
-        "7cXP6VDeZMG6oRQ4hbOcixoFPXo=\n" +
+        "AwEB/zALBgNVHQ8EBAMCAgQwDQYJKoZIhvcNAQELBQADgYEAaRhuBkn2EHB189Og\n" +
+        "jv6t9juoQlXjgcBymq0Vm5ok2bC/XzGWv3U6vfV3S8dzb4qSs7yuXfZTO2wpsr7s\n" +
+        "QhuOcq+GNbng9d5F7Se/+K9g+3UmJsfGHKJr7gRe+yXyBlj3qIpohUITMhEkAu9Y\n" +
+        "Ogau3imRT8pz6tSL0KXOeQ3My30=\n" +
         "-----END CERTIFICATE-----";
 
     // a revoked certificate
     static String targetCertStr =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIICNzCCAaCgAwIBAgIBBDANBgkqhkiG9w0BAQQFADAxMQswCQYDVQQGEwJVUzEQ\n" +
+        "MIICNzCCAaCgAwIBAgIBBDANBgkqhkiG9w0BAQsFADAxMQswCQYDVQQGEwJVUzEQ\n" +
         "MA4GA1UEChMHRXhhbXBsZTEQMA4GA1UECxMHQ2xhc3MtMTAeFw0wOTA0MjcwMjI0\n" +
         "MzhaFw0yOTAxMTIwMjI0MzhaMEExCzAJBgNVBAYTAlVTMRAwDgYDVQQKEwdFeGFt\n" +
         "cGxlMRAwDgYDVQQLEwdDbGFzcy0xMQ4wDAYDVQQDEwVTdXNhbjCBnzANBgkqhkiG\n" +
@@ -109,14 +109,14 @@ public class CircularCRLTwoLevelRevoked {
         "+rorcasE7bo5MBPuno/0oQRi/4MZn6lX3qB13ZUHAvZH96oCF6C3Ro19LAwav1Lo\n" +
         "FRcCAwEAAaNPME0wCwYDVR0PBAQDAgPoMB0GA1UdDgQWBBTCUH1tqQk96Pocr8Is\n" +
         "tDKMoIRQljAfBgNVHSMEGDAWgBT0/nNP8WpyxmYrIBp4tN8y08jw2jANBgkqhkiG\n" +
-        "9w0BAQQFAAOBgQB3YXuTA+QfaImQ2aN/e27Nv5a/FMml6y6t0+pzt5hUYG2W0C2f\n" +
-        "5Hdmf3whNCA7zE5RVDQP0iuGBPgjvrABuN98Vimv2eTV+N5aYTak0Aav/OuR5Lpi\n" +
-        "tYhXMMg5gSmT+JDARba4CX+Ap1oAaNe9Mtv8L6FWdvBqfzzifDHWavdIWA==\n" +
+        "9w0BAQsFAAOBgQBN78+Zq8dZcmR1qAlSPCqFnx+F18SgIXKlFDWz0I9GsD/s+AzH\n" +
+        "n14t2j7xjLOdBsEWZykAGCwKQ9/g5HdMI/81DgFJ1HN0JNWNnyOiPifgGUzb8Ei9\n" +
+        "MswbCUH2PfxlEUCK/VbH/Uy7dMfr45sutVdL0O6NEHN8VxJHA3waNURIAA==\n" +
         "-----END CERTIFICATE-----";
 
     static String topCrlIssuerCertStr =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIICKzCCAZSgAwIBAgIBAjANBgkqhkiG9w0BAQQFADAfMQswCQYDVQQGEwJVUzEQ\n" +
+        "MIICKzCCAZSgAwIBAgIBAjANBgkqhkiG9w0BAQsFADAfMQswCQYDVQQGEwJVUzEQ\n" +
         "MA4GA1UEChMHRXhhbXBsZTAeFw0wOTA0MjcwMjI0MzNaFw0yOTAxMTIwMjI0MzNa\n" +
         "MB8xCzAJBgNVBAYTAlVTMRAwDgYDVQQKEwdFeGFtcGxlMIGfMA0GCSqGSIb3DQEB\n" +
         "AQUAA4GNADCBiQKBgQDMJeBMBybHykI/YpwUJ4O9euqDSLb1kpWpceBS8TVqvgBC\n" +
@@ -124,15 +124,15 @@ public class CircularCRLTwoLevelRevoked {
         "atKy8zf8O9XzztelLJ26Gqb7QPV133WY3haAqHtCXOhEKkCN16NOYNC37DTaJwID\n" +
         "AQABo3cwdTAdBgNVHQ4EFgQULXSWzXzUOIpOJpzbSCpW42IJUugwRwYDVR0jBEAw\n" +
         "PoAUgiXdIaZeT3QA/SGUvh854OJVyxuhI6QhMB8xCzAJBgNVBAYTAlVTMRAwDgYD\n" +
-        "VQQKEwdFeGFtcGxlggEAMAsGA1UdDwQEAwIBAjANBgkqhkiG9w0BAQQFAAOBgQAY\n" +
-        "eMnf5AHSNlyUlzXk8o2S0h4gCuvKX6C3kFfKuZcWvFAbx4yQOWLS2s15/nzR4+AP\n" +
-        "FGX3lgJjROyAh7fGedTQK+NFWwkM2ag1g3hXktnlnT1qHohi0w31nVBJxXEDO/Ck\n" +
-        "uJTpJGt8XxxbFaw5v7cHy7XuTAeU/sekvjEiNHW00Q==\n" +
+        "VQQKEwdFeGFtcGxlggEAMAsGA1UdDwQEAwIBAjANBgkqhkiG9w0BAQsFAAOBgQAO\n" +
+        "g7JK2Ots2cZL1LRdkDHwYhljGid7wZKz4qioxW14shbA7iqditbz6MnRU7tdD4Jw\n" +
+        "Vpy4orCNUttAWDZ0ARqOCqytW/HMQWIRasqMTeO1SzOuub6SbJiZ0fuEdGDKu9oc\n" +
+        "l/cr3rQdhSSrN73phSjETL5lr7TniB8Js7/taiHQlQ==\n" +
         "-----END CERTIFICATE-----";
 
     static String subCrlIssuerCertStr =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIICPTCCAaagAwIBAgIBBDANBgkqhkiG9w0BAQQFADAfMQswCQYDVQQGEwJVUzEQ\n" +
+        "MIICPTCCAaagAwIBAgIBBDANBgkqhkiG9w0BAQsFADAfMQswCQYDVQQGEwJVUzEQ\n" +
         "MA4GA1UEChMHRXhhbXBsZTAeFw0wOTA0MjcwMjI0MzRaFw0yOTAxMTIwMjI0MzRa\n" +
         "MDExCzAJBgNVBAYTAlVTMRAwDgYDVQQKEwdFeGFtcGxlMRAwDgYDVQQLEwdDbGFz\n" +
         "cy0xMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDWUtDQx2MB/7arDiquMJyd\n" +
@@ -141,31 +141,31 @@ public class CircularCRLTwoLevelRevoked {
         "6jIBQdldVlSgv+VgUnFm5wIDAQABo3cwdTAdBgNVHQ4EFgQUkV3Qqtk7gIot9n60\n" +
         "jX6dloxrfMEwRwYDVR0jBEAwPoAUgiXdIaZeT3QA/SGUvh854OJVyxuhI6QhMB8x\n" +
         "CzAJBgNVBAYTAlVTMRAwDgYDVQQKEwdFeGFtcGxlggEAMAsGA1UdDwQEAwIBAjAN\n" +
-        "BgkqhkiG9w0BAQQFAAOBgQADu4GM8EdmIKhC7FRvk5jF90zfvZ38wbXBzCjKI4jX\n" +
-        "QJrhne1bfyeNNm5c1w+VKidT+XzBzBGH7ZqYzoZmzRIfcbLKX2brEBKiukeeAyL3\n" +
-        "bctQtbp19tX+uu2dQberD188AAysKTkHcJUV+rRsTwVJ9vcYKxoRxKk8DhH7ZS3M\n" +
-        "rg==\n" +
+        "BgkqhkiG9w0BAQsFAAOBgQBzA3zWKBgt72Wz5haEfAQ0B+Gei35/FwOFx8sCJfnN\n" +
+        "IRNToTgAAjlvnJyI62M1xbkw8+SYuPBg5C8h0symZ2acle/62Z0Mrw6y2bQy/MP5\n" +
+        "8519gStUoQw/RVHU6FhzhlB/23jo11mvkiFtpTodc0WxkMqzsw/r8p/Bx7susaoh\n" +
+        "Og==\n" +
         "-----END CERTIFICATE-----";
 
     static String topCrlStr =
         "-----BEGIN X509 CRL-----\n" +
-        "MIIBGzCBhQIBATANBgkqhkiG9w0BAQQFADAfMQswCQYDVQQGEwJVUzEQMA4GA1UE\n" +
+        "MIIBGzCBhQIBATANBgkqhkiG9w0BAQsFADAfMQswCQYDVQQGEwJVUzEQMA4GA1UE\n" +
         "ChMHRXhhbXBsZRcNMDkwNDI3MDIzODA0WhcNMjgwNjI2MDIzODA0WjAiMCACAQUX\n" +
         "DTA5MDQyNzAyMzgwMFowDDAKBgNVHRUEAwoBBKAOMAwwCgYDVR0UBAMCAQIwDQYJ\n" +
-        "KoZIhvcNAQEEBQADgYEAoarfzXEtw3ZDi4f9U8eSvRIipHSyxOrJC7HR/hM5VhmY\n" +
-        "CErChny6x9lBVg9s57tfD/P9PSzBLusCcHwHMAbMOEcTltVVKUWZnnbumpywlYyg\n" +
-        "oKLrE9+yCOkYUOpiRlz43/3vkEL5hjIKMcDSZnPKBZi1h16Yj2hPe9GMibNip54=\n" +
+        "KoZIhvcNAQELBQADgYEAmrUjV9zHIIcBOhXTVCShmPOqoNu5n/yEnGybE6wJOJpw\n" +
+        "Q5SkmlojZouseWGbvqUzA7mjDDCzd0q/9tXhoFNrWWatUPGt7lMkVGU+CKm1DccV\n" +
+        "ZCU079ckAhULMj1qyqCbRaKVw3vDgH6v6XFNITNEdRoq38Pk1Lo+8yFxMlZAnxw=\n" +
         "-----END X509 CRL-----";
 
     static String subCrlStr =
         "-----BEGIN X509 CRL-----\n" +
-        "MIIBLTCBlwIBATANBgkqhkiG9w0BAQQFADAxMQswCQYDVQQGEwJVUzEQMA4GA1UE\n" +
+        "MIIBLTCBlwIBATANBgkqhkiG9w0BAQsFADAxMQswCQYDVQQGEwJVUzEQMA4GA1UE\n" +
         "ChMHRXhhbXBsZTEQMA4GA1UECxMHQ2xhc3MtMRcNMDkwNDI3MDIzODA0WhcNMjgw\n" +
         "NjI2MDIzODA0WjAiMCACAQQXDTA5MDQyNzAyMzgwMVowDDAKBgNVHRUEAwoBBKAO\n" +
-        "MAwwCgYDVR0UBAMCAQIwDQYJKoZIhvcNAQEEBQADgYEAeS+POqYEIHIIJcsLxuUr\n" +
-        "aJFzQ/ujH0QmnyMNEL3Uavyq4VQuAahF+w6aTPb5UBzms0uX8NAvD2vNoUJvmJOX\n" +
-        "nGKuq4Q1DFj82E7/9d25nXdWGOmFvFCRVO+St2Xe5n8CJuZNBiz388FDSIOiFSCa\n" +
-        "ARGr6Qu68MYGtLMC6ZqP3u0=\n" +
+        "MAwwCgYDVR0UBAMCAQIwDQYJKoZIhvcNAQELBQADgYEAq89//BlKPeaItsEoSr9R\n" +
+        "6HCAPHfUbZ0yhr3jacfKNKYjMMZMUtbwDRgfhYPuYrQ1/HZOIhLGWq5RNp1/co48\n" +
+        "3G6MtNCORaJJJa8r4pQ2kt/CKtJ94lQ8/bd3E+PjsAlTXeAX1OITbUvtu4ASekbE\n" +
+        "F4qxaedfDuETZtej+/YLF54=\n" +
         "-----END X509 CRL-----";
 
     private static final PEMDecoder pemDecoder = PEMDecoder.of();
@@ -221,7 +221,6 @@ public class CircularCRLTwoLevelRevoked {
     }
 
     public static void main(String args[]) throws Exception {
-        // MD5 is used in this test case, don't disable MD5 algorithm.
         Security.setProperty(
                 "jdk.certpath.disabledAlgorithms", "MD2, RSA keySize < 1024");
 

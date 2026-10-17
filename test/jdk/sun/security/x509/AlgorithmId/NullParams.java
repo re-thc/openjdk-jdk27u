@@ -40,7 +40,6 @@ public class NullParams {
     public static void main(String[] args) throws Exception {
 
         // Full new list: must have NULL
-        test("MD2", true);
         test("MD5", true);
         test("SHA-1", true);
         test("SHA-224", true);
@@ -54,8 +53,6 @@ public class NullParams {
         test("SHA3-384", true);
         test("SHA3-512", true);
         test("RSA", true);
-        test("MD2withRSA", true);
-        test("MD5withRSA", true);
         test("SHA1withRSA", true);
         test("SHA224withRSA", true);
         test("SHA256withRSA", true);

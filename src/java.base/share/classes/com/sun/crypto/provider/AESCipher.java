@@ -43,8 +43,8 @@ import java.util.Arrays;
 
 /**
  * This class implements the AES algorithm in its various modes
- * (<code>ECB</code>, <code>CFB</code>, <code>OFB</code>, <code>CBC</code>,
- * <code>PCBC</code>) and padding schemes (<code>PKCS5Padding</code>,
+ * (<code>ECB</code>, <code>CFB</code>, <code>OFB</code>, <code>CBC</code>)
+ * and padding schemes (<code>PKCS5Padding</code>,
  * <code>NoPadding</code>, <code>ISO10126Padding</code>).
  *
  * @author Valerie Peng

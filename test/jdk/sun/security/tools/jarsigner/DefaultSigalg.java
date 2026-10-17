@@ -50,14 +50,13 @@ public class DefaultSigalg {
     public static void main(String[] args) throws Exception {
 
         // Three test cases
-        String[] keyalgs = {"DSA", "RSA", "EC", "RSASSA-PSS"};
+        String[] keyalgs = {"RSA", "EC", "RSASSA-PSS"};
         // Expected default keytool sigalg
-        String[] sigalgs = {"SHA256withDSA", "SHA384withRSA",
-                "SHA384withECDSA", "RSASSA-PSS"};
+        String[] sigalgs = {"SHA384withRSA", "SHA384withECDSA", "RSASSA-PSS"};
         // Expected keysizes
-        int[] keysizes = {2048, 3072, 384, 3072};
+        int[] keysizes = {3072, 384, 3072};
         // Expected jarsigner digest alg used in signature
-        String[] digestalgs = {"SHA-256", "SHA-384", "SHA-384", "SHA-384"};
+        String[] digestalgs = {"SHA-384", "SHA-384", "SHA-384"};
 
         // Create a jar file
         sun.tools.jar.Main m =
@@ -79,7 +78,7 @@ public class DefaultSigalg {
         }
 
         // Check result
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         try (FileInputStream jks = new FileInputStream("jks");
                 JarFile jf = new JarFile("a.jar")) {
             ks.load(jks, "changeit".toCharArray());

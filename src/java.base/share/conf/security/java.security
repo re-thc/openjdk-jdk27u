@@ -301,16 +301,6 @@ policy.allowSystemProperty=true
 keystore.type=pkcs12
 
 #
-# Controls compatibility mode for JKS and PKCS12 keystore types.
-#
-# When set to 'true', both JKS and PKCS12 keystore types support loading
-# keystore files in either JKS or PKCS12 format. When set to 'false' the
-# JKS keystore type supports loading only JKS keystore files and the PKCS12
-# keystore type supports loading only PKCS12 keystore files.
-#
-keystore.type.compat=true
-
-#
 # Determines whether this properties file can be appended to
 # or overridden on the command line via -Djava.security.properties
 #
@@ -500,7 +490,7 @@ sun.security.krb5.maxReferrals=5
 # Algorithm restrictions for certification path (CertPath) processing
 #
 # In some environments, certain algorithms or key lengths may be undesirable
-# for certification path building and validation.  For example, "MD2" is
+# for certification path building and validation.  For example, "MD5" is
 # generally no longer considered to be a secure hash algorithm.  This section
 # describes the mechanism for disabling algorithms based on algorithm name
 # and/or key length.  This includes algorithms used in certificates, as well
@@ -552,7 +542,7 @@ sun.security.krb5.maxReferrals=5
 # sub-element of the certificate algorithm name, the algorithm will be
 # rejected during certification path building and validation.  For example,
 # the assertion algorithm name "DSA" will disable all certificate algorithms
-# that rely on DSA, such as NONEwithDSA, SHA1withDSA.  However, the assertion
+# that rely on DSA, such as SHA1withDSA, SHA256withDSA.  However, the assertion
 # will not disable algorithms related to "ECDSA".
 #
 # The "IncludeProperty" allows a implementation-defined security property that
@@ -631,10 +621,10 @@ sun.security.krb5.maxReferrals=5
 # is not guaranteed to be examined and used by other implementations.
 #
 # Example:
-#   jdk.certpath.disabledAlgorithms=MD2, DSA, RSA keySize < 2048
+#   jdk.certpath.disabledAlgorithms=MD5, DSA, RSA keySize < 2048
 #
 #
-jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & usage TLSServer, \
+jdk.certpath.disabledAlgorithms=MD5, SHA1 jdkCA & usage TLSServer, \
     RSA keySize < 1024, DSA keySize < 1024, EC keySize < 224, \
     SHA1 usage SignedJAR & denyAfter 2019-01-01
 
@@ -655,13 +645,13 @@ jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & usage TLSServer, \
 
 jdk.security.legacyAlgorithms=SHA1, \
     RSA keySize < 2048, DSA keySize < 2048, \
-    DES, DESede, MD5, RC2, ARCFOUR
+    DES, DESede, MD5, ARCFOUR
 
 #
 # Algorithm restrictions for signed JAR files
 #
 # In some environments, certain algorithms or key lengths may be undesirable
-# for signed JAR validation.  For example, "MD2" is generally no longer
+# for signed JAR validation.  For example, "MD5" is generally no longer
 # considered to be a secure hash algorithm.  This section describes the
 # mechanism for disabling algorithms based on algorithm name and/or key length.
 # JARs signed with any of the disabled algorithms or key sizes will be treated
@@ -698,7 +688,7 @@ jdk.security.legacyAlgorithms=SHA1, \
 #
 # See "jdk.certpath.disabledAlgorithms" for syntax descriptions.
 #
-jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
+jdk.jar.disabledAlgorithms=MD5, RSA keySize < 1024, \
       DSA keySize < 1024, SHA1 denyAfter 2019-01-01
 
 #
@@ -737,8 +727,8 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 # Additional TLS-specific syntax supported by this property:
 #
 #   - TLS cipher suites can be disabled with this property using one or more
-#     "*" wildcard characters. For example, "TLS_RSA_*" disables all cipher
-#     suites that start with "TLS_RSA_". Only cipher suites starting with
+#     "*" wildcard characters. For example, "TLS_DHE_*" disables all cipher
+#     suites that start with "TLS_DHE_". Only cipher suites starting with
 #     "TLS_" are allowed to have wildcard characters.
 #
 #   - TLS protocol specific usage constraints are supported by this property:
@@ -764,18 +754,17 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 # It is not guaranteed to be examined and used by other implementations.
 #
 # Example:
-#   jdk.tls.disabledAlgorithms=MD5, SSLv3, DSA, RSA keySize < 2048, \
-#       rsa_pkcs1_sha1, secp224r1, TLS_RSA_*
-jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
-    MD5withRSA, DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, \
-    ECDH, TLS_RSA_*, rsa_pkcs1_sha1 usage HandshakeSignature, \
-    ecdsa_sha1 usage HandshakeSignature, dsa_sha1 usage HandshakeSignature
+#   jdk.tls.disabledAlgorithms=MD5, TLSv1.2, DSA, RSA keySize < 2048, \
+#       rsa_pkcs1_sha1, x448, TLS_DHE_*
+jdk.tls.disabledAlgorithms=DH keySize < 1024, EC keySize < 224, \
+    rsa_pkcs1_sha1 usage HandshakeSignature, \
+    ecdsa_sha1 usage HandshakeSignature
 
 #
 # Algorithm restrictions for Java Crypto API services
 #
 # In some environments, certain algorithms may be undesirable for certain
-# cryptographic services. For example, "MD2" is generally no longer considered
+# cryptographic services. For example, "MD5" is generally no longer considered
 # to be a secure hash algorithm.  This section describes the mechanism for
 # disabling algorithms at the JCA/JCE level based on service name and algorithm
 # name.
@@ -815,7 +804,7 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
 # It is not guaranteed to be examined and used by other implementations.
 #
 # Example:
-#   jdk.crypto.disabledAlgorithms=Cipher.RSA/ECB/PKCS1Padding, MessageDigest.MD2
+#   jdk.crypto.disabledAlgorithms=Cipher.RSA/ECB/PKCS1Padding, MessageDigest.MD5
 #
 #jdk.crypto.disabledAlgorithms=
 
@@ -848,14 +837,14 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
 # or
 #       TLS_KeyExchangeAlg_WITH_CipherAlg_MacAlg
 #
-# For example, the cipher suite TLS_RSA_WITH_AES_128_CBC_SHA uses RSA as the
-# key exchange algorithm, AES_128_CBC (128 bits AES cipher algorithm in CBC
-# mode) as the cipher (encryption) algorithm, and SHA-1 as the message digest
-# algorithm for HMAC.
+# For example, the cipher suite TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA uses
+# ECDHE_RSA as the key exchange algorithm, AES_128_CBC (128 bits AES cipher
+# algorithm in CBC mode) as the cipher (encryption) algorithm, and SHA-1 as
+# the message digest algorithm for HMAC.
 #
 # The LegacyAlgorithm can be one of the following standard algorithm names:
-#     1. JSSE cipher suite name, e.g., TLS_RSA_WITH_AES_128_CBC_SHA
-#     2. JSSE key exchange algorithm name, e.g., RSA
+#     1. JSSE cipher suite name, e.g., TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
+#     2. JSSE key exchange algorithm name, e.g., ECDHE_RSA
 #     3. JSSE cipher (encryption) algorithm name, e.g., AES_128_CBC
 #     4. JSSE message digest algorithm name, e.g., SHA
 #
@@ -874,9 +863,10 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
 # same syntax in future releases.
 #
 # Example:
-#   jdk.tls.legacyAlgorithms=DH_anon, DES_CBC, SSL_RSA_WITH_RC4_128_MD5
+#   jdk.tls.legacyAlgorithms=DHE_RSA, AES_128_CBC, \
+#       TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
 #
-jdk.tls.legacyAlgorithms=NULL, anon, RC4, DES, 3DES_EDE_CBC
+jdk.tls.legacyAlgorithms=
 
 #
 # The pre-defined default finite field Diffie-Hellman ephemeral (DHE)
@@ -1233,33 +1223,6 @@ jdk.xml.dsig.secureValidationPolicy=\
 #    maxdepth=5;maxarray=10000
 
 #
-# JCEKS Encrypted Key Serial Filter
-#
-# This filter, if configured, is used by the JCEKS KeyStore during the
-# deserialization of the encrypted Key object stored inside a key entry.
-# If not configured or the filter result is UNDECIDED (i.e. none of the patterns
-# matches), the filter configured by jdk.serialFilter will be consulted.
-#
-# If the system property jceks.key.serialFilter is also specified, it supersedes
-# the security property value defined here.
-#
-# The filter pattern uses the same format as jdk.serialFilter. The default
-# pattern allows java.lang.Enum, java.security.KeyRep, java.security.KeyRep$Type,
-# and javax.crypto.spec.SecretKeySpec and rejects all the others.
-jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep;\
-  java.base/java.security.KeyRep$Type;java.base/javax.crypto.spec.SecretKeySpec;!*
-
-# The iteration count used for password-based encryption (PBE) in JCEKS
-# keystores. Values in the range 10000 to 5000000 are considered valid.
-# If the value is out of this range, or is not a number, or is unspecified;
-# a default of 200000 is used.
-#
-# If the system property jdk.jceks.iterationCount is also specified, it
-# supersedes the security property value defined here.
-#
-#jdk.jceks.iterationCount = 200000
-
-#
 # PKCS12 KeyStore properties
 #
 # The following properties, if configured, are used by the PKCS12 KeyStore
@@ -1295,26 +1258,6 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 # a positive integer, or an unknown algorithm name, an exception will be thrown
 # when the property is used. If the property is not set or empty, a default
 # value will be used.
-#
-# Some PKCS12 tools and libraries may not support algorithms based on PBES2
-# and AES. To create a PKCS12 keystore which they can load, set the system
-# property "keystore.pkcs12.legacy" which overrides the values of the properties
-# defined below with legacy algorithms. Setting this system property (which can
-# only be enabled and has no value) is equivalent to
-#
-#   -Dkeystore.pkcs12.certProtectionAlgorithm=PBEWithSHA1AndRC2_40
-#   -Dkeystore.pkcs12.keyProtectionAlgorithm=PBEWithSHA1AndDESede
-#   -Dkeystore.pkcs12.macAlgorithm=HmacPBESHA1
-#   -Dkeystore.pkcs12.certPbeIterationCount=50000
-#   -Dkeystore.pkcs12.keyPbeIterationCount=50000
-#   -Dkeystore.pkcs12.macIterationCount=100000
-#
-# Also, you can downgrade an existing PKCS12 keystore created with stronger
-# algorithms to legacy algorithms with
-#
-#    keytool -J-Dkeystore.pkcs12.legacy -importkeystore -srckeystore ks -destkeystore ks
-#
-# This system property should be used at your own risk.
 #
 # Note: These properties are currently used by the JDK Reference implementation.
 # They are not guaranteed to be examined and used by other implementations.

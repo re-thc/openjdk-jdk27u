@@ -57,7 +57,7 @@ public class PBES2 {
         var key = new SecretKeySpec(bytes, "AES");
 
         var algos = Map.of(
-                "p1", "PBEWithMD5AndDES",
+                "p1", "PBEWithSHA1AndDESede",
                 "p2", "PBEWithHmacSHA384AndAES_128",
                 "p3", "PBEWithHmacSHA256AndAES_256");
 

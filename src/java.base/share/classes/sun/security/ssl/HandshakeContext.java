@@ -229,31 +229,6 @@ abstract class HandshakeContext implements ConnectionContext {
 
     // Initialize the non-final class variables.
     private void initialize() {
-        ProtocolVersion inputHelloVersion;
-        ProtocolVersion outputHelloVersion;
-        if (conContext.isNegotiated) {
-            inputHelloVersion = conContext.protocolVersion;
-            outputHelloVersion = conContext.protocolVersion;
-        } else {
-            if (activeProtocols.contains(ProtocolVersion.SSL20Hello)) {
-                inputHelloVersion = ProtocolVersion.SSL20Hello;
-
-                // Per TLS 1.3 protocol, implementation MUST NOT send an SSL
-                // version 2.0 compatible CLIENT-HELLO.
-                if (maximumActiveProtocol.useTLS13PlusSpec()) {
-                    outputHelloVersion = maximumActiveProtocol;
-                } else {
-                    outputHelloVersion = ProtocolVersion.SSL20Hello;
-                }
-            } else {
-                inputHelloVersion = maximumActiveProtocol;
-                outputHelloVersion = maximumActiveProtocol;
-            }
-        }
-
-        conContext.inputRecord.setHelloVersion(inputHelloVersion);
-        conContext.outputRecord.setHelloVersion(outputHelloVersion);
-
         if (!conContext.isNegotiated) {
             conContext.protocolVersion = maximumActiveProtocol;
         }
@@ -263,14 +238,8 @@ abstract class HandshakeContext implements ConnectionContext {
     private static List<ProtocolVersion> getActiveProtocols(
             SSLConfiguration sslConfig,
             AlgorithmConstraints algorithmConstraints) {
-        boolean enabledSSL20Hello = false;
         ArrayList<ProtocolVersion> protocols = new ArrayList<>(4);
         for (ProtocolVersion protocol : sslConfig.enabledProtocols) {
-            if (!enabledSSL20Hello && protocol == ProtocolVersion.SSL20Hello) {
-                enabledSSL20Hello = true;
-                continue;
-            }
-
             if (!algorithmConstraints.permits(
                     EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
                     protocol.name, null)) {
@@ -305,9 +274,6 @@ abstract class HandshakeContext implements ConnectionContext {
         }
 
         if (!protocols.isEmpty()) {
-            if (enabledSSL20Hello) {
-                protocols.add(ProtocolVersion.SSL20Hello);
-            }
             Collections.sort(protocols);
         }
 

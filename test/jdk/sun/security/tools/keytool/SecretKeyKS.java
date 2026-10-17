@@ -37,7 +37,7 @@ import java.nio.file.Path;
 public class SecretKeyKS {
     public static void main(String[] args) throws Exception {
         SecurityTools.keytool("-list -keystore " +
-                Path.of(System.getProperty("test.src"), "SecretKeyKS.jks") +
+                Path.of(System.getProperty("test.src"), "SecretKeyKS.p12") +
                 " -storepass password").shouldHaveExitValue(0);
     }
 }

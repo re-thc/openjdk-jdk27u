@@ -46,15 +46,15 @@ import java.security.KeyStore;
 public class ImportPrompt {
 
     private static final String COMMON =
-            "-storetype jks -storepass changeit -keypass changeit -debug";
+            "-storetype pkcs12 -storepass changeit -keypass changeit -debug";
 
     public static void main(String[] args) throws Throwable {
 
-        kt("-keystore ks1 -genkeypair -keyalg DSA -alias a -dname CN=A");
+        kt("-keystore ks1 -genkeypair -keyalg EC -alias a -dname CN=A");
         kt("-keystore ks1 -exportcert -alias a -file a.cert");
 
         // Just create a keystore
-        kt("-keystore ks2 -genkeypair -keyalg DSA -alias b -dname CN=B");
+        kt("-keystore ks2 -genkeypair -keyalg EC -alias b -dname CN=B");
 
         // no response text, assume no
         kt("-keystore ks2 -importcert -alias a -file a.cert");

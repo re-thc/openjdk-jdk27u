@@ -147,10 +147,10 @@ public class CPValidatorEndEntity {
         "O+DCkjG5d14+t1MsnkhB2izoQUMxQ3vDc1YnA/tEpw==\n" +
         "-----END CERTIFICATE-----";
 
-    // MD2withRSA 1024 signed with RSA 1024
-    static String intermediate_MD2withRSA_1024_1024 =
+    // SHA224withRSA 1024 signed with RSA 1024
+    static String intermediate_SHA224withRSA_1024_1024 =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIICUDCCAbmgAwIBAgIBBjANBgkqhkiG9w0BAQIFADAfMQswCQYDVQQGEwJVUzEQ\n" +
+        "MIICUDCCAbmgAwIBAgIBBjANBgkqhkiG9w0BAQ4FADAfMQswCQYDVQQGEwJVUzEQ\n" +
         "MA4GA1UEChMHRXhhbXBsZTAeFw0wOTA4MDYwMTExNDlaFw0yOTA0MjMwMTExNDla\n" +
         "MDExCzAJBgNVBAYTAlVTMRAwDgYDVQQKEwdFeGFtcGxlMRAwDgYDVQQLEwdDbGFz\n" +
         "cy0xMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCVOqnlZspyAEr90ELFaUo8\n" +
@@ -159,16 +159,16 @@ public class CPValidatorEndEntity {
         "AayhbKqDmhfx5lJdYNqd5QIDAQABo4GJMIGGMB0GA1UdDgQWBBTfWD9mRTppcUAl\n" +
         "UqGuu/R5t8CB5jBHBgNVHSMEQDA+gBTn0C+xmZY/BTab4W9gBp3dGa7WgqEjpCEw\n" +
         "HzELMAkGA1UEBhMCVVMxEDAOBgNVBAoTB0V4YW1wbGWCAQAwDwYDVR0TAQH/BAUw\n" +
-        "AwEB/zALBgNVHQ8EBAMCAgQwDQYJKoZIhvcNAQECBQADgYEAPtEjwbWuC5kc4DPc\n" +
-        "Ttf/wdbD8ZCdAWzcc3XF9q1TlvwVMNk6mbfM05y6ZVsztKTkwZ4EcvFu/yIqw1EB\n" +
-        "E1zlXQCaWXT3/ZMbqYZV4+mx+RUl8spUCb1tda25jnTg3mTOzB1iztm4gy903EMd\n" +
-        "m8omKDKeCgcw5dR4ITQYvyxe1as=\n" +
+        "AwEB/zALBgNVHQ8EBAMCAgQwDQYJKoZIhvcNAQEOBQADgYEABjW+SQclvK6RBZ5E\n" +
+        "ddbVxVp9n13ncSuD+6tOlI5wZTQdMSWr9NgypeBYp4y00Et1hMiqVw3Ev8CR22Mq\n" +
+        "2gvGB4D0hJQ+Ef9ifJQ1HWyas4Tg+IusdU9UuYdmAzFuK0MbBDcfTyldOAvwbwXX\n" +
+        "kUMYXmcPfZ4PtVYbeboeyIam8u8=\n" +
         "-----END CERTIFICATE-----";
 
-    // MD2withRSA 1024 signed with RSA 512
-    static String intermediate_MD2withRSA_1024_512 =
+    // SHA224withRSA 1024 signed with RSA 512
+    static String intermediate_SHA224withRSA_1024_512 =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIICDzCCAbmgAwIBAgIBBzANBgkqhkiG9w0BAQIFADAfMQswCQYDVQQGEwJVUzEQ\n" +
+        "MIICDzCCAbmgAwIBAgIBBzANBgkqhkiG9w0BAQ4FADAfMQswCQYDVQQGEwJVUzEQ\n" +
         "MA4GA1UEChMHRXhhbXBsZTAeFw0wOTA4MDYwMTExNDlaFw0yOTA0MjMwMTExNDla\n" +
         "MDExCzAJBgNVBAYTAlVTMRAwDgYDVQQKEwdFeGFtcGxlMRAwDgYDVQQLEwdDbGFz\n" +
         "cy0xMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCVOqnlZspyAEr90ELFaUo8\n" +
@@ -177,9 +177,9 @@ public class CPValidatorEndEntity {
         "AayhbKqDmhfx5lJdYNqd5QIDAQABo4GJMIGGMB0GA1UdDgQWBBTfWD9mRTppcUAl\n" +
         "UqGuu/R5t8CB5jBHBgNVHSMEQDA+gBSDgrB3juF01AGnyCtmxEnle+G/EKEjpCEw\n" +
         "HzELMAkGA1UEBhMCVVMxEDAOBgNVBAoTB0V4YW1wbGWCAQAwDwYDVR0TAQH/BAUw\n" +
-        "AwEB/zALBgNVHQ8EBAMCAgQwDQYJKoZIhvcNAQECBQADQQBHok1v6xymtpB7N9xy\n" +
-        "0OmDT27uhmzlP0eOzJvXVxj3Oi9TLQJgCUJ9122MzfRAs1E1uJTtvuu+UmI80NQx\n" +
-        "KQdp\n" +
+        "AwEB/zALBgNVHQ8EBAMCAgQwDQYJKoZIhvcNAQEOBQADQQCU+PLOllJS6UOzyWim\n" +
+        "NDHgUPwNUlWv1ipvvCBNAYNdGs7C4yKG5QpEcvI3UL+tfJ9rSiOl03qysuE1mLJV\n" +
+        "407r\n" +
         "-----END CERTIFICATE-----";
 
     // SHA1withRSA 1024 signed with RSA 1024
@@ -246,10 +246,10 @@ public class CPValidatorEndEntity {
         "TMU6m7N0\n" +
         "-----END CERTIFICATE-----";
 
-    // MD2withRSA 1024 signed with RSA 1024
-    static String endentiry_MD2withRSA_1024_1024 =
+    // SHA224withRSA 1024 signed with RSA 1024
+    static String endentiry_SHA224withRSA_1024_1024 =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIICNzCCAaCgAwIBAgIBBjANBgkqhkiG9w0BAQIFADAxMQswCQYDVQQGEwJVUzEQ\n" +
+        "MIICNzCCAaCgAwIBAgIBBjANBgkqhkiG9w0BAQ4FADAxMQswCQYDVQQGEwJVUzEQ\n" +
         "MA4GA1UEChMHRXhhbXBsZTEQMA4GA1UECxMHQ2xhc3MtMTAeFw0wOTA4MDYwMTEx\n" +
         "NTFaFw0yOTA0MjMwMTExNTFaMEExCzAJBgNVBAYTAlVTMRAwDgYDVQQKEwdFeGFt\n" +
         "cGxlMRAwDgYDVQQLEwdDbGFzcy0xMQ4wDAYDVQQDEwVBbGljZTCBnzANBgkqhkiG\n" +
@@ -258,15 +258,15 @@ public class CPValidatorEndEntity {
         "z6yAEE6SG7YviE+XGcvpQo47w8c6QSQjpBzdw7JxwbVlzUT7pF8x3RnXlGhWnWv6\n" +
         "c1ECAwEAAaNPME0wCwYDVR0PBAQDAgPoMB0GA1UdDgQWBBSaXXERsow2Wm/6uT07\n" +
         "OorBleV92TAfBgNVHSMEGDAWgBTfWD9mRTppcUAlUqGuu/R5t8CB5jANBgkqhkiG\n" +
-        "9w0BAQIFAAOBgQBxKsFf8NNQcXjDoKJJSG4Rk6ikcrhiGYuUI32+XHvs6hnav1Zc\n" +
-        "aJUpy7J4gMj/MnysMh/4AF9+m6zEEjuisXKUbYZhgtJxz+ukGSo163mJ8QJiAlRb\n" +
-        "Iwsy81r08mlSCR6jx2YhDAUxJIPC92R5Vb4CEutB7tWTwwz7vIHq330erA==\n" +
+        "9w0BAQ4FAAOBgQBopeOfIRXj9oN/315qm6M4ggA4lFmaHb1I0oh8iaZFPOdzpI++\n" +
+        "KYaYzjwb6NW8nq2x1OuRHmbvVIpPOVl9dEn7pl0MCXJQ/w2DpjD9UjbkWofsSo54\n" +
+        "QKqfO9GH8wVLWA2y63JIxZOICI5IsOoNkb26gcw+2hh9+AvzGI3YY9CKaA==\n" +
         "-----END CERTIFICATE-----";
 
-    // MD2withRSA 1024 signed with RSA 512
-    static String endentiry_MD2withRSA_1024_512 =
+    // SHA224withRSA 1024 signed with RSA 512
+    static String endentiry_SHA224withRSA_1024_512 =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIIB9jCCAaCgAwIBAgIBBzANBgkqhkiG9w0BAQIFADAxMQswCQYDVQQGEwJVUzEQ\n" +
+        "MIIB9jCCAaCgAwIBAgIBBzANBgkqhkiG9w0BAQ4FADAxMQswCQYDVQQGEwJVUzEQ\n" +
         "MA4GA1UEChMHRXhhbXBsZTEQMA4GA1UECxMHQ2xhc3MtMTAeFw0wOTA4MDYwMTEx\n" +
         "NTFaFw0yOTA0MjMwMTExNTFaMEExCzAJBgNVBAYTAlVTMRAwDgYDVQQKEwdFeGFt\n" +
         "cGxlMRAwDgYDVQQLEwdDbGFzcy0xMQ4wDAYDVQQDEwVBbGljZTCBnzANBgkqhkiG\n" +
@@ -275,8 +275,8 @@ public class CPValidatorEndEntity {
         "z6yAEE6SG7YviE+XGcvpQo47w8c6QSQjpBzdw7JxwbVlzUT7pF8x3RnXlGhWnWv6\n" +
         "c1ECAwEAAaNPME0wCwYDVR0PBAQDAgPoMB0GA1UdDgQWBBSaXXERsow2Wm/6uT07\n" +
         "OorBleV92TAfBgNVHSMEGDAWgBQ3QIeJNg+2PK+k/ZrrLqaGxnpTjTANBgkqhkiG\n" +
-        "9w0BAQIFAANBAIX63Ypi9P71RnC/pcMbhD+wekRFsTzU593X3MC7tyBJtEXwvAZG\n" +
-        "iMxXF5A+ohlr7/CrkV7ZTL8PLxnJdY5Y8rQ=\n" +
+        "9w0BAQ4FAANBACQ7aagpOhCDL2KJLED9jiq9SwGabw347VrV3spWbWxTEGmPURdf\n" +
+        "TZZQ/yZ6mL/XH7b4mRsSqQ+cP9ZaOx30DCM=\n" +
         "-----END CERTIFICATE-----";
 
     private static CertPath generateCertificatePath(String castr,
@@ -312,7 +312,7 @@ public class CPValidatorEndEntity {
     public static void main(String args[]) throws Exception {
         // reset the security property to make sure that the algorithms
         // and keys used in this test are not disabled.
-        Security.setProperty("jdk.certpath.disabledAlgorithms", "MD2");
+        Security.setProperty("jdk.certpath.disabledAlgorithms", "SHA224");
 
         try {
             validate(endentiry_SHA1withRSA_1024_1024,
@@ -329,7 +329,7 @@ public class CPValidatorEndEntity {
         }
 
         try {
-            validate(endentiry_MD2withRSA_1024_1024,
+            validate(endentiry_SHA224withRSA_1024_1024,
                                     intermediate_SHA1withRSA_1024_1024);
             throw new Exception("expected algorithm disabled exception");
         } catch (CertPathValidatorException cpve) {
@@ -344,7 +344,7 @@ public class CPValidatorEndEntity {
         }
 
         try {
-            validate(endentiry_MD2withRSA_1024_512,
+            validate(endentiry_SHA224withRSA_1024_512,
                                     intermediate_SHA1withRSA_512_1024);
             throw new Exception("expected algorithm disabled exception");
         } catch (CertPathValidatorException cpve) {

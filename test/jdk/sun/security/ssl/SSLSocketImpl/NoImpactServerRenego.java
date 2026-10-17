@@ -29,12 +29,6 @@
  * @bug 7188658 8190492
  * @summary Add possibility to disable client initiated renegotiation
  * @run main/othervm  -Djdk.tls.rejectClientInitiatedRenegotiation=true
- *      NoImpactServerRenego SSLv3
- * @run main/othervm  -Djdk.tls.rejectClientInitiatedRenegotiation=true
- *      NoImpactServerRenego TLSv1
- * @run main/othervm  -Djdk.tls.rejectClientInitiatedRenegotiation=true
- *      NoImpactServerRenego TLSv1.1
- * @run main/othervm  -Djdk.tls.rejectClientInitiatedRenegotiation=true
  *      NoImpactServerRenego TLSv1.2
  */
 
@@ -121,11 +115,6 @@ public class NoImpactServerRenego implements
 
         SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
         sslSocket.addHandshakeCompletedListener(this);
-
-        // Enable all supported protocols on server side to test SSLv3
-        if ("SSLv3".equals(tlsProtocol)) {
-            sslSocket.setEnabledProtocols(sslSocket.getSupportedProtocols());
-        }
 
         InputStream sslIS = sslSocket.getInputStream();
         OutputStream sslOS = sslSocket.getOutputStream();

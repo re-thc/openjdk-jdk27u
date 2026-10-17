@@ -117,10 +117,10 @@ public class CTSMode {
         toByteArray("11223344556677880011223344556677");
 
     private final static String[] ALGORITHMS2 = {
-        "DES", "DESede", "Blowfish", "AES"
+        "DES", "DESede", "AES"
     };
     private final static int[] KEYSIZES2 = {
-        8, 24, 16, 16
+        8, 24, 16
     };
 
     private static String toString(byte[] b) {

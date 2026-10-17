@@ -267,20 +267,6 @@ abstract class RSASignature extends SignatureSpi {
         return null;
     }
 
-    // Nested class for MD2withRSA signatures
-    public static final class MD2withRSA extends RSASignature {
-        public MD2withRSA() {
-            super("MD2", AlgorithmId.MD2_oid, 10);
-        }
-    }
-
-    // Nested class for MD5withRSA signatures
-    public static final class MD5withRSA extends RSASignature {
-        public MD5withRSA() {
-            super("MD5", AlgorithmId.MD5_oid, 10);
-        }
-    }
-
     // Nested class for SHA1withRSA signatures
     public static final class SHA1withRSA extends RSASignature {
         public SHA1withRSA() {

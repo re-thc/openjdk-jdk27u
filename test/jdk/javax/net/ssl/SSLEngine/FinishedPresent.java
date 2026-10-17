@@ -106,8 +106,8 @@ public class FinishedPresent {
      */
     public FinishedPresent() throws Exception {
 
-        KeyStore ks = KeyStore.getInstance("JKS");
-        KeyStore ts = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        KeyStore ts = KeyStore.getInstance("PKCS12");
 
         ks.load(new FileInputStream(keyFilename), passphrase);
         ts.load(new FileInputStream(trustFilename), passphrase);

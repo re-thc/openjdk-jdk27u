@@ -46,9 +46,7 @@ import sun.security.util.KeyUtil;
 
 final class DHKeyExchange {
     static final SSLPossessionGenerator poGenerator =
-            new DHEPossessionGenerator(false);
-    static final SSLPossessionGenerator poExportableGenerator =
-            new DHEPossessionGenerator(true);
+            new DHEPossessionGenerator();
     static final SSLKeyAgreementGenerator kaGenerator =
             new DHEKAGenerator();
 
@@ -248,16 +246,11 @@ final class DHKeyExchange {
         // corresponding authentication key
         private static final boolean useSmartEphemeralDHKeys;
 
-        // Flag to use legacy ephemeral DH key which size is 512 bits for
-        // exportable cipher suites, and 768 bits for others
+        // Flag to use legacy ephemeral DH key which size is 768 bits
         private static final boolean useLegacyEphemeralDHKeys;
 
-        // The customized ephemeral DH key size for non-exportable
-        // cipher suites.
+        // The customized ephemeral DH key size.
         private static final int customizedDHKeySize;
-
-        // Is it for exportable cipher suite?
-        private final boolean exportable;
 
         static {
             String property = System.getProperty("jdk.tls.ephemeralDHKeySize");
@@ -299,8 +292,8 @@ final class DHKeyExchange {
         }
 
         // Prevent instantiation of this class.
-        private DHEPossessionGenerator(boolean exportable) {
-            this.exportable = exportable;
+        private DHEPossessionGenerator() {
+            // blank
         }
 
         // Used for ServerKeyExchange, TLS 1.2 and prior versions.
@@ -325,64 +318,49 @@ final class DHKeyExchange {
 
             /*
              * 768 bit ephemeral DH private keys used to be used in
-             * ServerKeyExchange except that exportable ciphers max out at 512
-             * bit modulus values. We still adhere to this behavior in legacy
+             * ServerKeyExchange. We still adhere to this behavior in legacy
              * mode (system property "jdk.tls.ephemeralDHKeySize" is defined
              * as "legacy").
              *
-             * Only very old JDK releases don't support DH keys bigger than
-             * 1024 bits (JDK 1.5 and 6u/7u releases prior to adding support
-             * for DH keys > 1024 bits - see JDK-8062834). A 2048 bit
-             * DH key is always used for non-exportable cipher suites in
-             * default mode (when the system property
-             * "jdk.tls.ephemeralDHKeySize" is not defined).
+             * A 2048 bit DH key is always used in default mode (when the
+             * system property "jdk.tls.ephemeralDHKeySize" is not defined).
              *
              * Applications may also want to customize the ephemeral DH key
-             * size to a fixed length for non-exportable cipher suites. This
-             * can be done by setting the system property
-             * "jdk.tls.ephemeralDHKeySize" to a valid positive integer between
-             * 1024 and 8192 bits, inclusive.
+             * size to a fixed length. This can be done by setting the system
+             * property "jdk.tls.ephemeralDHKeySize" to a valid positive
+             * integer between 1024 and 8192 bits, inclusive.
              *
              * Note that the minimum acceptable key size is 2048 bits except
-             * for exportable cipher suites or legacy mode.
-             *
-             * Note that per RFC 2246, the key size limit of DH is 512 bits for
-             * exportable cipher suites.  Because of the weakness, exportable
-             * cipher suites are deprecated since TLS v1.1 and they are not
-             * enabled by default in Oracle provider. The legacy behavior is
-             * preserved and a 512 bit DH key is always used for exportable
-             * cipher suites.
+             * for legacy mode.
              */
-            int keySize = exportable ? 512 : 2048;           // default mode
-            if (!exportable) {
-                if (useLegacyEphemeralDHKeys) {          // legacy mode
-                    keySize = 768;
-                } else if (useSmartEphemeralDHKeys) {    // matched mode
-                    PrivateKey key = null;
-                    ServerHandshakeContext shc =
-                            (ServerHandshakeContext)context;
-                    if (shc.interimAuthn instanceof X509Possession) {
-                        key = ((X509Possession)shc.interimAuthn).popPrivateKey;
-                    }
-
-                    if (key != null) {
-                        int ks = KeyUtil.getKeySize(key);
-
-                        // DH parameter generation can be extremely slow, make
-                        // sure to use one of the supported pre-computed DH
-                        // parameters.
-                        //
-                        // Old deployed applications may not be ready to
-                        // support DH key sizes bigger than 2048 bits.  Please
-                        // DON'T use value other than 1024 and 2048 at present.
-                        // May improve the underlying providers and key size
-                        // limit in the future when the compatibility and
-                        // interoperability impact is limited.
-                        keySize = ks <= 1024 ? 1024 : 2048;
-                    } // Otherwise, anonymous cipher suites, 2048-bit is used.
-                } else if (customizedDHKeySize > 0) {    // customized mode
-                    keySize = customizedDHKeySize;
+            int keySize = 2048;                      // default mode
+            if (useLegacyEphemeralDHKeys) {          // legacy mode
+                keySize = 768;
+            } else if (useSmartEphemeralDHKeys) {    // matched mode
+                PrivateKey key = null;
+                ServerHandshakeContext shc =
+                        (ServerHandshakeContext)context;
+                if (shc.interimAuthn instanceof X509Possession) {
+                    key = ((X509Possession)shc.interimAuthn).popPrivateKey;
                 }
+
+                if (key != null) {
+                    int ks = KeyUtil.getKeySize(key);
+
+                    // DH parameter generation can be extremely slow, make
+                    // sure to use one of the supported pre-computed DH
+                    // parameters.
+                    //
+                    // Old deployed applications may not be ready to
+                    // support DH key sizes bigger than 2048 bits.  Please
+                    // DON'T use value other than 1024 and 2048 at present.
+                    // May improve the underlying providers and key size
+                    // limit in the future when the compatibility and
+                    // interoperability impact is limited.
+                    keySize = ks <= 1024 ? 1024 : 2048;
+                }
+            } else if (customizedDHKeySize > 0) {    // customized mode
+                keySize = customizedDHKeySize;
             }
 
             return new DHEPossession(

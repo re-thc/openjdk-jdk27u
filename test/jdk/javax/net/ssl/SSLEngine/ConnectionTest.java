@@ -91,8 +91,8 @@ public class ConnectionTest {
     }
 
     private SSLContext getSSLContext() throws Exception {
-        KeyStore ks = KeyStore.getInstance("JKS");
-        KeyStore ts = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        KeyStore ts = KeyStore.getInstance("PKCS12");
         char[] passphrase = "passphrase".toCharArray();
 
         ks.load(new FileInputStream(KEYSTORE_PATH), passphrase);

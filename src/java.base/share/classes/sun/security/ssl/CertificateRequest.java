@@ -46,11 +46,6 @@ import sun.security.ssl.X509Authentication.X509Possession;
  * Pack of the CertificateRequest handshake message.
  */
 final class CertificateRequest {
-    static final SSLConsumer t10HandshakeConsumer =
-        new T10CertificateRequestConsumer();
-    static final HandshakeProducer t10HandshakeProducer =
-        new T10CertificateRequestProducer();
-
     static final SSLConsumer t12HandshakeConsumer =
         new T12CertificateRequestConsumer();
     static final HandshakeProducer t12HandshakeProducer =
@@ -61,11 +56,11 @@ final class CertificateRequest {
     static final HandshakeProducer t13HandshakeProducer =
         new T13CertificateRequestProducer();
 
-    // TLS 1.2 and prior versions
+    // TLS 1.2
     private enum ClientCertificateType {
         // RFC 2246
         RSA_SIGN            ((byte)0x01, "rsa_sign", List.of("RSA"), true),
-        DSS_SIGN            ((byte)0x02, "dss_sign", List.of("DSA"), true),
+        DSS_SIGN            ((byte)0x02, "dss_sign"),
         RSA_FIXED_DH        ((byte)0x03, "rsa_fixed_dh"),
         DSS_FIXED_DH        ((byte)0x04, "dss_fixed_dh"),
 
@@ -84,11 +79,9 @@ final class CertificateRequest {
         private static final byte[] CERT_TYPES =
                 JsseJce.isEcAvailable() ? new byte[] {
                         ECDSA_SIGN.id,
-                        RSA_SIGN.id,
-                        DSS_SIGN.id
+                        RSA_SIGN.id
                     } :  new byte[] {
-                        RSA_SIGN.id,
-                        DSS_SIGN.id
+                        RSA_SIGN.id
                     };
 
         final byte id;
@@ -141,294 +134,6 @@ final class CertificateRequest {
             }
 
             return keyTypes.toArray(new String[0]);
-        }
-    }
-
-    /**
-     * The "CertificateRequest" handshake message for SSL 3.0 and TLS 1.0/1.1.
-     */
-    static final class T10CertificateRequestMessage extends HandshakeMessage {
-        final byte[] types;                 // certificate types
-        final List<byte[]> authorities;     // certificate authorities
-
-        T10CertificateRequestMessage(HandshakeContext handshakeContext,
-                X509Certificate[] trustedCerts, KeyExchange keyExchange) {
-            super(handshakeContext);
-
-            this.authorities = new ArrayList<>(trustedCerts.length);
-            for (X509Certificate cert : trustedCerts) {
-                X500Principal x500Principal = cert.getSubjectX500Principal();
-                authorities.add(x500Principal.getEncoded());
-            }
-
-            this.types = ClientCertificateType.CERT_TYPES;
-        }
-
-        T10CertificateRequestMessage(HandshakeContext handshakeContext,
-                ByteBuffer m) throws IOException {
-            super(handshakeContext);
-
-            // struct {
-            //     ClientCertificateType certificate_types<1..2^8-1>;
-            //     DistinguishedName certificate_authorities<0..2^16-1>;
-            // } CertificateRequest;
-            if (m.remaining() < 4) {
-                throw handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                    "Incorrect CertificateRequest message: no sufficient data");
-            }
-            this.types = Record.getBytes8(m);
-
-            int listLen = Record.getInt16(m);
-            if (listLen > m.remaining()) {
-                throw handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                    "Incorrect CertificateRequest message:no sufficient data");
-            }
-
-            if (listLen > 0) {
-                this.authorities = new LinkedList<>();
-                while (listLen > 0) {
-                    // opaque DistinguishedName<1..2^16-1>;
-                    byte[] encoded = Record.getBytes16(m);
-                    listLen -= (2 + encoded.length);
-                    authorities.add(encoded);
-                }
-            } else {
-                this.authorities = Collections.emptyList();
-            }
-        }
-
-        String[] getKeyTypes() {
-            return  ClientCertificateType.getKeyTypes(types);
-        }
-
-        // This method will throw IllegalArgumentException if the
-        // X500Principal cannot be parsed.
-        X500Principal[] getAuthorities() {
-            X500Principal[] principals = new X500Principal[authorities.size()];
-            int i = 0;
-
-            for (byte[] encoded : authorities) {
-                principals[i++] = new X500Principal(encoded);
-            }
-
-            return principals;
-        }
-
-        @Override
-        public SSLHandshake handshakeType() {
-            return SSLHandshake.CERTIFICATE_REQUEST;
-        }
-
-        @Override
-        public int messageLength() {
-            int len = 1 + types.length + 2;
-            for (byte[] encoded : authorities) {
-                len += encoded.length + 2;
-            }
-            return len;
-        }
-
-        @Override
-        public void send(HandshakeOutStream hos) throws IOException {
-            hos.putBytes8(types);
-
-            int listLen = 0;
-            for (byte[] encoded : authorities) {
-                listLen += encoded.length + 2;
-            }
-
-            hos.putInt16(listLen);
-            for (byte[] encoded : authorities) {
-                hos.putBytes16(encoded);
-            }
-        }
-
-        @Override
-        public String toString() {
-            MessageFormat messageFormat = new MessageFormat(
-                    """
-                            "CertificateRequest": '{'
-                              "certificate types": {0}
-                              "certificate authorities": {1}
-                            '}'""",
-                    Locale.ENGLISH);
-
-            List<String> typeNames = new ArrayList<>(types.length);
-            for (byte type : types) {
-                typeNames.add(ClientCertificateType.nameOf(type));
-            }
-
-            List<String> authorityNames = new ArrayList<>(authorities.size());
-            for (byte[] encoded : authorities) {
-                try {
-                    X500Principal principal = new X500Principal(encoded);
-                    authorityNames.add(principal.toString());
-                } catch (IllegalArgumentException iae) {
-                    authorityNames.add("unparseable distinguished name: " + iae);
-                }
-            }
-            Object[] messageFields = {
-                typeNames,
-                authorityNames
-            };
-
-            return messageFormat.format(messageFields);
-        }
-    }
-
-    /**
-     * The "CertificateRequest" handshake message producer for SSL 3.0 and
-     * TLS 1.0/1.1.
-     */
-    private static final
-            class T10CertificateRequestProducer implements HandshakeProducer {
-        // Prevent instantiation of this class.
-        private T10CertificateRequestProducer() {
-            // blank
-        }
-
-        @Override
-        public byte[] produce(ConnectionContext context,
-                HandshakeMessage message) throws IOException {
-            // The producing happens in server side only.
-            ServerHandshakeContext shc = (ServerHandshakeContext)context;
-
-            X509Certificate[] caCerts =
-                    shc.sslContext.getX509TrustManager().getAcceptedIssuers();
-            T10CertificateRequestMessage crm = new T10CertificateRequestMessage(
-                    shc, caCerts, shc.negotiatedCipherSuite.keyExchange);
-            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
-                SSLLogger.fine(
-                    "Produced CertificateRequest handshake message", crm);
-            }
-
-            // Output the handshake message.
-            crm.write(shc.handshakeOutput);
-            shc.handshakeOutput.flush();
-
-            //
-            // update
-            //
-            shc.handshakeConsumers.put(SSLHandshake.CERTIFICATE.id,
-                    SSLHandshake.CERTIFICATE);
-            shc.handshakeConsumers.put(SSLHandshake.CERTIFICATE_VERIFY.id,
-                    SSLHandshake.CERTIFICATE_VERIFY);
-
-            // The handshake message has been delivered.
-            return null;
-        }
-    }
-
-    /**
-     * The "CertificateRequest" handshake message consumer for SSL 3.0 and
-     * TLS 1.0/1.1.
-     */
-    private static final
-            class T10CertificateRequestConsumer implements SSLConsumer {
-        // Prevent instantiation of this class.
-        private T10CertificateRequestConsumer() {
-            // blank
-        }
-
-        @Override
-        public void consume(ConnectionContext context,
-                ByteBuffer message) throws IOException {
-            // The consuming happens in client side only.
-            ClientHandshakeContext chc = (ClientHandshakeContext)context;
-
-            // clean up this consumer
-            chc.handshakeConsumers.remove(SSLHandshake.CERTIFICATE_REQUEST.id);
-            chc.receivedCertReq = true;
-
-            // If we're processing this message and the server's certificate
-            // message consumer has not already run then this is a state
-            // machine violation.
-            if (chc.handshakeConsumers.containsKey(
-                    SSLHandshake.CERTIFICATE.id)) {
-                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
-                        "Unexpected CertificateRequest handshake message");
-            }
-
-            SSLConsumer certStatCons = chc.handshakeConsumers.remove(
-                    SSLHandshake.CERTIFICATE_STATUS.id);
-            if (certStatCons != null) {
-                // Stapling was active but no certificate status message
-                // was sent.  We need to run the absence handler which will
-                // check the certificate chain.
-                CertificateStatus.handshakeAbsence.absent(context, null);
-            }
-
-            T10CertificateRequestMessage crm =
-                    new T10CertificateRequestMessage(chc, message);
-            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
-                SSLLogger.fine(
-                        "Consuming CertificateRequest handshake message", crm);
-            }
-
-            //
-            // validate
-            //
-            // blank
-
-            //
-            // update
-            //
-
-            // An empty client Certificate handshake message may be allowed.
-            chc.handshakeProducers.put(SSLHandshake.CERTIFICATE.id,
-                    SSLHandshake.CERTIFICATE);
-
-            X509ExtendedKeyManager km = chc.sslContext.getX509KeyManager();
-            String clientAlias = null;
-
-            try {
-                if (chc.conContext.transport instanceof SSLSocketImpl) {
-                    clientAlias = km.chooseClientAlias(crm.getKeyTypes(),
-                        crm.getAuthorities(),
-                        (SSLSocket) chc.conContext.transport);
-                } else if (chc.conContext.transport instanceof SSLEngineImpl) {
-                    clientAlias =
-                        km.chooseEngineClientAlias(crm.getKeyTypes(),
-                            crm.getAuthorities(),
-                            (SSLEngine) chc.conContext.transport);
-                }
-            } catch (IllegalArgumentException iae) {
-                chc.conContext.fatal(Alert.DECODE_ERROR,
-                    "The distinguished names of the peer's "
-                    + "certificate authorities could not be parsed",
-                        iae);
-            }
-
-            if (clientAlias == null) {
-                if (SSLLogger.isOn() &&
-                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
-                    SSLLogger.warning("No available client authentication");
-                }
-                return;
-            }
-
-            PrivateKey clientPrivateKey = km.getPrivateKey(clientAlias);
-            if (clientPrivateKey == null) {
-                if (SSLLogger.isOn() &&
-                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
-                    SSLLogger.warning("No available client private key");
-                }
-                return;
-            }
-
-            X509Certificate[] clientCerts = km.getCertificateChain(clientAlias);
-            if ((clientCerts == null) || (clientCerts.length == 0)) {
-                if (SSLLogger.isOn() &&
-                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
-                    SSLLogger.warning("No available client certificate");
-                }
-                return;
-            }
-
-            chc.handshakePossessions.add(
-                    new X509Possession(clientPrivateKey, clientCerts));
-            chc.handshakeProducers.put(SSLHandshake.CERTIFICATE_VERIFY.id,
-                    SSLHandshake.CERTIFICATE_VERIFY);
         }
     }
 

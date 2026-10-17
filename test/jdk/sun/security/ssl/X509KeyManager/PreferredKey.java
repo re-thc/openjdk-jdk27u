@@ -50,8 +50,8 @@ public class PreferredKey {
     public static void main(String[] args) throws Exception {
         X509KeyManager km = getKeyManager();
 
-        testPreferredKey(km, "RSA", new String[] {"RSA", "DSA"});
-        testPreferredKey(km, "DSA", new String[] {"DSA", "RSA"});
+        testPreferredKey(km, "RSA", new String[] {"RSA", "EC"});
+        testPreferredKey(km, "EC", new String[] {"EC", "RSA"});
     }
 
     private static void testPreferredKey(X509KeyManager km,
@@ -73,7 +73,7 @@ public class PreferredKey {
         char[] passphrase = "passphrase".toCharArray();
 
         KeyPair rsaKey = KeyPairGenerator.getInstance("RSA").generateKeyPair();
-        KeyPair dsaKey = KeyPairGenerator.getInstance("DSA").generateKeyPair();
+        KeyPair ecKey = KeyPairGenerator.getInstance("EC").generateKeyPair();
 
         // create a key store
         KeyStore ks = KeyStore.getInstance("PKCS12");
@@ -84,11 +84,11 @@ public class PreferredKey {
                 passphrase,
                 new Certificate[]{createSelfSignedCert(rsaKey,
                         "SHA256withRSA")});
-        ks.setKeyEntry("dummydsa",
-                dsaKey.getPrivate(),
+        ks.setKeyEntry("dummyec",
+                ecKey.getPrivate(),
                 passphrase,
-                new Certificate[]{createSelfSignedCert(dsaKey,
-                        "SHA256withDSA")});
+                new Certificate[]{createSelfSignedCert(ecKey,
+                        "SHA256withECDSA")});
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("NewSunX509");
         kmf.init(ks, passphrase);

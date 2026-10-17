@@ -76,8 +76,7 @@ public class DisableSHA1inHandshakeSignatureTLS12 extends
     protected List<String> getDisabledSignatureSchemes() {
         return List.of(
                 "ecdsa_sha1",
-                "rsa_pkcs1_sha1",
-                "dsa_sha1"
+                "rsa_pkcs1_sha1"
         );
     }
 

@@ -100,15 +100,15 @@ public class CipherSuiteOrder {
         SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
 
         /**
-         * The suite "SSL_RSA_WITH_RC4_128_MD5" is first in the
+         * The suite "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA" is first in the
          * client ordered cipher suite list. Place it last in this
          * list to make sure that the server conforms to the client set
          * ordering in choosing the cipher suite to use.
          */
         String enabledSuites[] = {
-                        "SSL_RSA_WITH_DES_CBC_SHA",
-                        "SSL_DHE_DSS_WITH_DES_CBC_SHA",
-                        "SSL_RSA_WITH_RC4_128_MD5"
+                        "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+                        "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
+                        "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA"
                         };
         sslSocket.setEnabledCipherSuites(enabledSuites);
         System.out.println("");
@@ -130,7 +130,7 @@ public class CipherSuiteOrder {
         System.out.println("Cipher suite in use: " +
                                 cipherSuiteChosen);
         sslSocket.close();
-        if (!cipherSuiteChosen.equals("SSL_RSA_WITH_RC4_128_MD5"))
+        if (!cipherSuiteChosen.equals("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA"))
             throw new Exception("Test failed: Wrong cipher suite is chosen");
     }
 
@@ -159,10 +159,10 @@ public class CipherSuiteOrder {
          * default ordering.
          */
         String enabledSuites[] = {
-                        "SSL_RSA_WITH_RC4_128_MD5",
-                        "SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
-                        "SSL_RSA_WITH_RC4_128_SHA",
-                        "SSL_DHE_DSS_WITH_DES_CBC_SHA"
+                        "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+                        "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+                        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+                        "TLS_DHE_RSA_WITH_AES_128_CBC_SHA"
                         };
         sslSocket.setEnabledCipherSuites(enabledSuites);
         System.out.println("");

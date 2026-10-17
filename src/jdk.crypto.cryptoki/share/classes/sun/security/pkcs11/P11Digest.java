@@ -99,7 +99,7 @@ final class P11Digest extends MessageDigestSpi implements Cloneable,
         this.algorithm = algorithm;
         this.mechanism = new CK_MECHANISM(mechanism);
         digestLength = switch ((int) mechanism) {
-            case (int) CKM_MD2, (int) CKM_MD5 -> 16;
+            case (int) CKM_MD5 -> 16;
             case (int) CKM_SHA_1 -> 20;
             case (int) CKM_SHA224, (int) CKM_SHA512_224, (int) CKM_SHA3_224 -> 28;
             case (int) CKM_SHA256, (int) CKM_SHA512_256, (int) CKM_SHA3_256 -> 32;

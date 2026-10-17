@@ -28,12 +28,6 @@
  * @test
  * @bug 7188658
  * @summary Add possibility to disable client initiated renegotiation
- * @run main/othervm RejectClientRenego true SSLv3
- * @run main/othervm RejectClientRenego false SSLv3
- * @run main/othervm RejectClientRenego true TLSv1
- * @run main/othervm RejectClientRenego false TLSv1
- * @run main/othervm RejectClientRenego true TLSv1.1
- * @run main/othervm RejectClientRenego false TLSv1.1
  * @run main/othervm RejectClientRenego true TLSv1.2
  * @run main/othervm RejectClientRenego false TLSv1.2
  */

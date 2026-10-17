@@ -58,20 +58,13 @@ public class EndEntityExtensionCheck {
      */
     private static final String CA =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIICgDCCAj2gAwIBAgIEC18hWjALBgcqhkjOOAQDBQAwETEPMA0GA1UEAxMGVGVz\n" +
-        "dENBMB4XDTE1MDQwNzIyMzUyMFoXDTI1MDQwNjIyMzUyMFowETEPMA0GA1UEAxMG\n" +
-        "VGVzdENBMIIBuDCCASwGByqGSM44BAEwggEfAoGBAP1/U4EddRIpUt9KnC7s5Of2\n" +
-        "EbdSPO9EAMMeP4C2USZpRV1AIlH7WT2NWPq/xfW6MPbLm1Vs14E7gB00b/JmYLdr\n" +
-        "mVClpJ+f6AR7ECLCT7up1/63xhv4O1fnxqimFQ8E+4P208UewwI1VBNaFpEy9nXz\n" +
-        "rith1yrv8iIDGZ3RSAHHAhUAl2BQjxUjC8yykrmCouuEC/BYHPUCgYEA9+Gghdab\n" +
-        "Pd7LvKtcNrhXuXmUr7v6OuqC+VdMCz0HgmdRWVeOutRZT+ZxBxCBgLRJFnEj6Ewo\n" +
-        "FhO3zwkyjMim4TwWeotUfI0o4KOuHiuzpnWRbqN/C/ohNWLx+2J6ASQ7zKTxvqhR\n" +
-        "kImog9/hWuWfBpKLZl6Ae1UlZAFMO/7PSSoDgYUAAoGBAJOWy2hVy4iNwsi/idWG\n" +
-        "oksr9IZxQIFR2YavoUmD+rIgfYUpiCihzftDLMMaNYqp9PPxuOyoIPGPbwmKpAs5\n" +
-        "nq6gLwH2lSsN+EwyV2SJ0J26PHiMuRNZWWfKR3cpEqbQVb0CmvqSpj8zYfamPzp7\n" +
-        "eXSWwahzgLCGJM3SgCfDFC0uoyEwHzAdBgNVHQ4EFgQU7tLD8FnWM+r6jBr+mCXs\n" +
-        "8G5yBpgwCwYHKoZIzjgEAwUAAzAAMC0CFQCHCtzC3S0ST0EZBucikVui4WXD8QIU\n" +
-        "L3Oxy6989/FhZlZWJlhqc1ungEQ=\n" +
+        "MIIBOjCB4KADAgECAgkA0C5D8Oqi5IowCgYIKoZIzj0EAwMwETEPMA0GA1UEAxMG\n" +
+        "VGVzdENBMB4XDTE1MDQwNzIyMzUyMFoXDTI1MDQwNjIyMzUyMFowETEPMA0GA1UE\n" +
+        "AxMGVGVzdENBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE5vwUrN8ZDayM6944\n" +
+        "KMFbuWTdz0jS7HU6LeMEq0btazLxxJCehrc3tN9S9R+fBP0LL5Sar/LGTYp7hplA\n" +
+        "8yQc86MhMB8wHQYDVR0OBBYEFK3kFZ64tzp+29461ckSriBPX6tWMAoGCCqGSM49\n" +
+        "BAMDA0kAMEYCIQCI+fvYywMdoWADaqHrLgItgjU0o2xQk2Sfue+l6ZFZBwIhAI8g\n" +
+        "In1uWvjeBb0d5M1lVWvJqlX8M5woQzWcunSpTRww\n" +
         "-----END CERTIFICATE-----";
 
     /*
@@ -83,21 +76,14 @@ public class EndEntityExtensionCheck {
      */
     private static final String EE =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIICrTCCAmugAwIBAgIELjciKzALBgcqhkjOOAQDBQAwETEPMA0GA1UEAxMGVGVz\n" +
-        "dENBMB4XDTE1MDQwNzIzMDA1OFoXDTE1MDcwNjIzMDA1OFowETEPMA0GA1UEAxMG\n" +
-        "VGVzdEVFMIIBtzCCASwGByqGSM44BAEwggEfAoGBAP1/U4EddRIpUt9KnC7s5Of2\n" +
-        "EbdSPO9EAMMeP4C2USZpRV1AIlH7WT2NWPq/xfW6MPbLm1Vs14E7gB00b/JmYLdr\n" +
-        "mVClpJ+f6AR7ECLCT7up1/63xhv4O1fnxqimFQ8E+4P208UewwI1VBNaFpEy9nXz\n" +
-        "rith1yrv8iIDGZ3RSAHHAhUAl2BQjxUjC8yykrmCouuEC/BYHPUCgYEA9+Gghdab\n" +
-        "Pd7LvKtcNrhXuXmUr7v6OuqC+VdMCz0HgmdRWVeOutRZT+ZxBxCBgLRJFnEj6Ewo\n" +
-        "FhO3zwkyjMim4TwWeotUfI0o4KOuHiuzpnWRbqN/C/ohNWLx+2J6ASQ7zKTxvqhR\n" +
-        "kImog9/hWuWfBpKLZl6Ae1UlZAFMO/7PSSoDgYQAAoGAN97otrAJEuUg/O97vScI\n" +
-        "01xs1jqTz5o0PGpKiDDJNB3tCCUbLqXoBQBvSefQ8vYL3mmlEJLxlwfbajRmJQp0\n" +
-        "tUy5SUCZHk3MdoKxSvrqYnVpYwJHFXKWs6lAawxfuWbkm9SREuepOWnVzy2ecf5z\n" +
-        "hvy9mgEBfi4E9Cy8Byq2TpyjUDBOMAwGAyoDBAEB/wQCAAAwHwYDVR0jBBgwFoAU\n" +
-        "7tLD8FnWM+r6jBr+mCXs8G5yBpgwHQYDVR0OBBYEFNRVqt5F+EAuJ5x1IZLDkoMs\n" +
-        "mDj4MAsGByqGSM44BAMFAAMvADAsAhQyNGhxIp5IshN1zqLs4pUY214IMAIUMmTL\n" +
-        "3ZMpMAjITbuHHlFNUqZ7A9s=\n" +
+        "MIIBaTCCAQ6gAwIBAgIIY9vH4piYGhEwCgYIKoZIzj0EAwMwETEPMA0GA1UEAxMG\n" +
+        "VGVzdENBMB4XDTE1MDQwNzIzMDA1OFoXDTE1MDcwNjIzMDA1OFowETEPMA0GA1UE\n" +
+        "AxMGVGVzdEVFMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAETyqYEGRbRIDQlzRE\n" +
+        "K8h09CkG7xDUFbuckzlpkMan8pcj9PTEmEngSK87m+gJLobSrvvlKOkMu5kwAlC5\n" +
+        "8xq13aNQME4wDAYDKgMEAQH/BAIAADAdBgNVHQ4EFgQUi7X4znXp1o7ZxhBBHO/y\n" +
+        "0S7lYxIwHwYDVR0jBBgwFoAUreQVnri3On7b3jrVyRKuIE9fq1YwCgYIKoZIzj0E\n" +
+        "AwMDSQAwRgIhAPlZtAG/8FJLPQp5MshvThyHDt2VRn0LIw1AcNx+ZtJBAiEArs7Y\n" +
+        "YcYO0F1j6vvFp6QZ2UIck6gNlx+fNu/WOMm6zlk=\n" +
         "-----END CERTIFICATE-----";
 
     public static void main(String[] args) throws Exception {
@@ -108,7 +94,7 @@ public class EndEntityExtensionCheck {
          *  extensions in the end entity certificate, and leaves that up
          *  to EndEntityChecker, which should catch such extensions.
          */
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(null, null);
         ks.setCertificateEntry("testca", chain[chain.length - 1]);
 

@@ -49,7 +49,7 @@ public class TestAESCipher {
 
     private static final String ALGORITHM = "AES";
     private static final String PROVIDER = System.getProperty("test.provider.name", "SunJCE");
-    private static final String[] MODES = { "ECb", "CbC", "CTR", "PCBC", "OFB",
+    private static final String[] MODES = { "ECb", "CbC", "CTR", "OFB",
         "OFB150", "cFB", "CFB7", "cFB8", "cFB16", "cFB24", "cFB32",
         "Cfb40", "cfB48", "cfB56", "cfB64", "cfB72", "cfB80", "cfB88",
         "cfB96", "cfb104", "cfB112", "cfB120", "OFB8", "OFB16", "OFB24",
@@ -64,8 +64,7 @@ public class TestAESCipher {
         TestAESCipher test = new TestAESCipher();
         for (String mode : MODES) {
             int padKinds = 1;
-            if (mode.equalsIgnoreCase("ECB") || mode.equalsIgnoreCase("PCBC")
-                    || mode.equalsIgnoreCase("CBC")) {
+            if (mode.equalsIgnoreCase("ECB") || mode.equalsIgnoreCase("CBC")) {
                 padKinds = PADDING.length;
             }
 

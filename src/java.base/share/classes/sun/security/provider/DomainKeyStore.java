@@ -725,23 +725,10 @@ abstract class DomainKeyStore extends KeyStoreSpi {
     public void engineLoad(InputStream stream, char[] password)
         throws IOException, NoSuchAlgorithmException, CertificateException
     {
-        // Support loading from a stream only for a JKS or default type keystore
+        // Support loading from a stream only for a default type keystore
         try {
-            KeyStore keystore;
-
-            try {
-                keystore = KeyStore.getInstance("JKS");
-                keystore.load(stream, password);
-
-            } catch (Exception e) {
-                // Retry
-                if (!"JKS".equalsIgnoreCase(DEFAULT_KEYSTORE_TYPE)) {
-                    keystore = KeyStore.getInstance(DEFAULT_KEYSTORE_TYPE);
-                    keystore.load(stream, password);
-                } else {
-                    throw e;
-                }
-            }
+            KeyStore keystore = KeyStore.getInstance(DEFAULT_KEYSTORE_TYPE);
+            keystore.load(stream, password);
             String keystoreName = DEFAULT_STREAM_PREFIX + streamCounter++;
             keystores.put(keystoreName, keystore);
 

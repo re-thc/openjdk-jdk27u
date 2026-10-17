@@ -54,18 +54,13 @@ import java.util.Map;
 import static sun.security.ssl.CipherType.AEAD_CIPHER;
 import static sun.security.ssl.CipherType.BLOCK_CIPHER;
 import static sun.security.ssl.CipherType.NULL_CIPHER;
-import static sun.security.ssl.CipherType.STREAM_CIPHER;
-import static sun.security.ssl.JsseJce.CIPHER_3DES;
 import static sun.security.ssl.JsseJce.CIPHER_AES;
 import static sun.security.ssl.JsseJce.CIPHER_AES_GCM;
 import static sun.security.ssl.JsseJce.CIPHER_CHACHA20_POLY1305;
-import static sun.security.ssl.JsseJce.CIPHER_DES;
-import static sun.security.ssl.JsseJce.CIPHER_RC4;
 
 enum SSLCipher {
-    // exportable ciphers
     @SuppressWarnings({"unchecked", "rawtypes"})
-    B_NULL("NULL", NULL_CIPHER, 0, 0, 0, 0, true, true,
+    B_NULL("NULL", NULL_CIPHER, 0, 0, 0,
         new Map.Entry[] {
             new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
                 new NullReadCipherGenerator(),
@@ -73,7 +68,7 @@ enum SSLCipher {
             ),
             new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
                 new NullReadCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_TO_13
+                ProtocolVersion.PROTOCOLS_12_13
             )
         }, new Map.Entry[] {
             new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
@@ -82,171 +77,40 @@ enum SSLCipher {
             ),
             new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
                 new NullWriteCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_TO_13
+                ProtocolVersion.PROTOCOLS_12_13
             )
         }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    B_RC4_40(CIPHER_RC4, STREAM_CIPHER, 5, 16, 0, 0, true, true,
+    B_AES_128(CIPHER_AES, BLOCK_CIPHER, 16, 16, 0,
         new Map.Entry[] {
-            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-                new StreamReadCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_TO_10
-            )
-        }, new Map.Entry[] {
-            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-                new StreamWriteCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_TO_10
-            )
-        }),
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    B_RC2_40("RC2", BLOCK_CIPHER, 5, 16, 8, 0, false, true,
-        new Map.Entry[] {
-            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-                new StreamReadCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_TO_10
-            )
-        }, new Map.Entry[] {
-            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-                new StreamWriteCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_TO_10
-            )
-        }),
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    B_DES_40(CIPHER_DES,  BLOCK_CIPHER, 5, 8, 8, 0, true, true,
-        new Map.Entry[] {
-            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-                new T10BlockReadCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_TO_10
-            )
-        }, new Map.Entry[] {
-            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-                new T10BlockWriteCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_TO_10
-            )
-        }),
-
-    // domestic strength ciphers
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    B_RC4_128(CIPHER_RC4, STREAM_CIPHER, 16, 16, 0, 0, true, false,
-        new Map.Entry[] {
-            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-                new StreamReadCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_TO_12
-            )
-        }, new Map.Entry[] {
-            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-                new StreamWriteCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_TO_12
-            )
-        }),
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    B_DES(CIPHER_DES, BLOCK_CIPHER, 8, 8, 8, 0, true, false,
-        new Map.Entry[] {
-            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-                new T10BlockReadCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_TO_10
-            ),
             new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
                 new T11BlockReadCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_OF_11
+                ProtocolVersion.PROTOCOLS_OF_12
             )
         }, new Map.Entry[] {
             new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-                new T10BlockWriteCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_TO_10
-            ),
-            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
                 new T11BlockWriteCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_OF_11
+                ProtocolVersion.PROTOCOLS_OF_12
             )
         }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    B_3DES(CIPHER_3DES, BLOCK_CIPHER, 24, 24, 8, 0, true, false,
+    B_AES_256(CIPHER_AES, BLOCK_CIPHER, 32, 16, 0,
         new Map.Entry[] {
-            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-                new T10BlockReadCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_TO_10
-            ),
             new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
                 new T11BlockReadCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_11_12
+                ProtocolVersion.PROTOCOLS_OF_12
             )
         }, new Map.Entry[] {
-            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-                new T10BlockWriteCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_TO_10
-            ),
             new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
                 new T11BlockWriteCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_11_12
+                ProtocolVersion.PROTOCOLS_OF_12
             )
         }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    B_IDEA("IDEA", BLOCK_CIPHER, 16, 16, 8, 0, false, false,
-        new Map.Entry[] {
-            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-                null,
-                ProtocolVersion.PROTOCOLS_TO_12
-            )
-        }, new Map.Entry[] {
-            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-                null,
-                ProtocolVersion.PROTOCOLS_TO_12
-            )
-        }),
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    B_AES_128(CIPHER_AES, BLOCK_CIPHER, 16, 16, 16, 0, true, false,
-        new Map.Entry[] {
-            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-                new T10BlockReadCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_TO_10
-            ),
-            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-                new T11BlockReadCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_11_12
-            )
-        }, new Map.Entry[] {
-            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-                new T10BlockWriteCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_TO_10
-            ),
-            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-                new T11BlockWriteCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_11_12
-            )
-        }),
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    B_AES_256(CIPHER_AES, BLOCK_CIPHER, 32, 32, 16, 0, true, false,
-        new Map.Entry[] {
-            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-                new T10BlockReadCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_TO_10
-            ),
-            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-                new T11BlockReadCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_11_12
-            )
-        }, new Map.Entry[] {
-            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-                new T10BlockWriteCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_TO_10
-            ),
-            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-                new T11BlockWriteCipherGenerator(),
-                ProtocolVersion.PROTOCOLS_11_12
-            )
-        }),
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    B_AES_128_GCM(CIPHER_AES_GCM, AEAD_CIPHER, 16, 16, 12, 4, true, false,
+    B_AES_128_GCM(CIPHER_AES_GCM, AEAD_CIPHER, 16, 12, 4,
         new Map.Entry[] {
             new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
                 new T12GcmReadCipherGenerator(),
@@ -260,7 +124,7 @@ enum SSLCipher {
         }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    B_AES_256_GCM(CIPHER_AES_GCM, AEAD_CIPHER, 32, 32, 12, 4, true, false,
+    B_AES_256_GCM(CIPHER_AES_GCM, AEAD_CIPHER, 32, 12, 4,
         new Map.Entry[] {
             new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
                 new T12GcmReadCipherGenerator(),
@@ -274,7 +138,7 @@ enum SSLCipher {
         }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    B_AES_128_GCM_IV(CIPHER_AES_GCM, AEAD_CIPHER, 16, 16, 12, 0, true, false,
+    B_AES_128_GCM_IV(CIPHER_AES_GCM, AEAD_CIPHER, 16, 12, 0,
         new Map.Entry[] {
             new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
                 new T13GcmReadCipherGenerator(),
@@ -288,7 +152,7 @@ enum SSLCipher {
         }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    B_AES_256_GCM_IV(CIPHER_AES_GCM, AEAD_CIPHER, 32, 32, 12, 0, true, false,
+    B_AES_256_GCM_IV(CIPHER_AES_GCM, AEAD_CIPHER, 32, 12, 0,
         new Map.Entry[] {
             new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
                 new T13GcmReadCipherGenerator(),
@@ -302,8 +166,8 @@ enum SSLCipher {
         }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    B_CC20_P1305(CIPHER_CHACHA20_POLY1305, AEAD_CIPHER, 32, 32, 12,
-        12, true, false, new Map.Entry[] {
+    B_CC20_P1305(CIPHER_CHACHA20_POLY1305, AEAD_CIPHER, 32, 12,
+        12, new Map.Entry[] {
             new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
                 new T12CC20P1305ReadCipherGenerator(),
                 ProtocolVersion.PROTOCOLS_OF_12
@@ -332,15 +196,8 @@ enum SSLCipher {
     // algorithm name, e.g. AES
     final String algorithm;
 
-    // supported and compile time enabled. Also see isAvailable()
-    final boolean allowed;
-
     // number of bytes of entropy in the key
     final int keySize;
-
-    // length of the actual cipher key in bytes.
-    // for non-exportable ciphers, this is the same as keySize
-    final int expandedKeySize;
 
     // size of the IV
     final int ivSize;
@@ -349,9 +206,6 @@ enum SSLCipher {
     //
     // record_iv_length = ivSize - fixedIvSize
     final int fixedIvSize;
-
-    // exportable under 512/40 bit rules
-    final boolean exportable;
 
     // Is the cipher algorithm of Cipher Block Chaining (CBC) mode?
     final CipherType cipherType;
@@ -434,9 +288,7 @@ enum SSLCipher {
     }
 
     SSLCipher(String transformation,
-              CipherType cipherType, int keySize,
-              int expandedKeySize, int ivSize,
-              int fixedIvSize, boolean allowed, boolean exportable,
+              CipherType cipherType, int keySize, int ivSize, int fixedIvSize,
               Map.Entry<ReadCipherGenerator,
                       ProtocolVersion[]>[] readCipherGenerators,
               Map.Entry<WriteCipherGenerator,
@@ -449,10 +301,6 @@ enum SSLCipher {
         this.keySize = keySize;
         this.ivSize = ivSize;
         this.fixedIvSize = fixedIvSize;
-        this.allowed = allowed;
-
-        this.expandedKeySize = expandedKeySize;
-        this.exportable = exportable;
 
         this.readCipherGenerators = readCipherGenerators;
         this.writeCipherGenerators = writeCipherGenerators;
@@ -534,7 +382,7 @@ enum SSLCipher {
         if (available == null) {
             // AES/256 is unavailable when the default JCE policy jurisdiction
             // files are installed because of key length restrictions.
-            available = allowed && isUnlimited(keySize, transformation) &&
+            available = isUnlimited(keySize, transformation) &&
                     isTransformationAvailable(transformation);
             isAvailable = available;
         }
@@ -824,459 +672,6 @@ enum SSLCipher {
     }
 
     private static final
-            class StreamReadCipherGenerator implements ReadCipherGenerator {
-        @Override
-        public SSLReadCipher createCipher(SSLCipher sslCipher,
-                Authenticator authenticator,
-                ProtocolVersion protocolVersion, String algorithm,
-                Key key, AlgorithmParameterSpec params,
-                SecureRandom random) throws GeneralSecurityException {
-            return new StreamReadCipher(authenticator, protocolVersion,
-                    algorithm, key, params, random);
-        }
-
-        static final class StreamReadCipher extends SSLReadCipher {
-            private final Cipher cipher;
-
-            StreamReadCipher(Authenticator authenticator,
-                    ProtocolVersion protocolVersion, String algorithm,
-                    Key key, AlgorithmParameterSpec params,
-                    SecureRandom random) throws GeneralSecurityException {
-                super(authenticator, protocolVersion);
-                this.cipher = Cipher.getInstance(algorithm);
-                cipher.init(Cipher.DECRYPT_MODE, key, params, random);
-            }
-
-            @Override
-            public Plaintext decrypt(byte contentType, ByteBuffer bb,
-                    byte[] sequence) throws GeneralSecurityException {
-                int len = bb.remaining();
-                int pos;
-                ByteBuffer pt;
-
-                // Do in-place with the bb buffer if it's not read-only
-                if (!bb.isReadOnly()) {
-                    pt = bb.duplicate();
-                    pos = bb.position();
-                } else {
-                    pt = ByteBuffer.allocate(bb.remaining());
-                    pos = 0;
-                }
-
-                try {
-                    if (len != cipher.update(bb, pt)) {
-                        // catch BouncyCastle buffering error
-                        throw new RuntimeException(
-                                "Unexpected number of plaintext bytes");
-                    }
-                } catch (ShortBufferException sbe) {
-                    // catch BouncyCastle buffering error
-                    throw new RuntimeException("Cipher buffering error in " +
-                        "JCE provider " + cipher.getProvider().getName(), sbe);
-                }
-                pt.position(pos);
-                if (SSLLogger.isOn() &&
-                        SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
-                    SSLLogger.fine(
-                            "Plaintext after DECRYPTION", pt.duplicate());
-                }
-
-                MAC signer = (MAC)authenticator;
-                if (signer.macAlg().size != 0) {
-                    checkStreamMac(signer, pt, contentType, sequence);
-                } else {
-                    authenticator.increaseSequenceNumber();
-                }
-
-                return new Plaintext(contentType,
-                        ProtocolVersion.NONE.major, ProtocolVersion.NONE.minor,
-                        -1, -1L, pt.slice());
-            }
-
-            @Override
-            void dispose() {
-                if (cipher != null) {
-                    try {
-                        cipher.doFinal();
-                    } catch (Exception e) {
-                        // swallow all types of exceptions.
-                    }
-                }
-            }
-
-            @Override
-            int estimateFragmentSize(int packetSize, int headerSize) {
-                int macLen = ((MAC)authenticator).macAlg().size;
-                return packetSize - headerSize - macLen;
-            }
-        }
-    }
-
-    private static final
-            class StreamWriteCipherGenerator implements WriteCipherGenerator {
-        @Override
-        public SSLWriteCipher createCipher(SSLCipher sslCipher,
-                Authenticator authenticator,
-                ProtocolVersion protocolVersion, String algorithm,
-                Key key, AlgorithmParameterSpec params,
-                SecureRandom random) throws GeneralSecurityException {
-            return new StreamWriteCipher(authenticator,
-                    protocolVersion, algorithm, key, params, random);
-        }
-
-        static final class StreamWriteCipher extends SSLWriteCipher {
-            private final Cipher cipher;
-
-            StreamWriteCipher(Authenticator authenticator,
-                    ProtocolVersion protocolVersion, String algorithm,
-                    Key key, AlgorithmParameterSpec params,
-                    SecureRandom random) throws GeneralSecurityException {
-                super(authenticator, protocolVersion);
-                this.cipher = Cipher.getInstance(algorithm);
-                cipher.init(Cipher.ENCRYPT_MODE, key, params, random);
-            }
-
-            @Override
-            public int encrypt(byte contentType, ByteBuffer bb) {
-                // add message authentication code
-                MAC signer = (MAC)authenticator;
-                if (signer.macAlg().size != 0) {
-                    addMac(signer, bb, contentType);
-                } else {
-                    authenticator.increaseSequenceNumber();
-                }
-
-                if (SSLLogger.isOn() &&
-                        SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
-                    SSLLogger.finest(
-                        "Padded plaintext before ENCRYPTION", bb.duplicate());
-                }
-
-                int len = bb.remaining();
-                ByteBuffer dup = bb.duplicate();
-                try {
-                    if (len != cipher.update(dup, bb)) {
-                        // catch BouncyCastle buffering error
-                        throw new RuntimeException(
-                                "Unexpected number of plaintext bytes");
-                    }
-                    if (bb.position() != dup.position()) {
-                        throw new RuntimeException(
-                                "Unexpected ByteBuffer position");
-                    }
-                } catch (ShortBufferException sbe) {
-                    // catch BouncyCastle buffering error
-                    throw new RuntimeException("Cipher buffering error in " +
-                        "JCE provider " + cipher.getProvider().getName(), sbe);
-                }
-
-                return len;
-            }
-
-            @Override
-            void dispose() {
-                if (cipher != null) {
-                    try {
-                        cipher.doFinal();
-                    } catch (Exception e) {
-                        // swallow all types of exceptions.
-                    }
-                }
-            }
-
-            @Override
-            int getExplicitNonceSize() {
-                return 0;
-            }
-
-            @Override
-            int calculateFragmentSize(int packetLimit, int headerSize) {
-                int macLen = ((MAC)authenticator).macAlg().size;
-                return packetLimit - headerSize - macLen;
-            }
-
-            @Override
-            int calculatePacketSize(int fragmentSize, int headerSize) {
-                int macLen = ((MAC)authenticator).macAlg().size;
-                return fragmentSize + headerSize + macLen;
-            }
-        }
-    }
-
-    private static final
-            class T10BlockReadCipherGenerator implements ReadCipherGenerator {
-        @Override
-        public SSLReadCipher createCipher(SSLCipher sslCipher,
-                Authenticator authenticator,
-                ProtocolVersion protocolVersion, String algorithm,
-                Key key, AlgorithmParameterSpec params,
-                SecureRandom random) throws GeneralSecurityException {
-            return new BlockReadCipher(authenticator,
-                    protocolVersion, algorithm, key, params, random);
-        }
-
-        static final class BlockReadCipher extends SSLReadCipher {
-            private final Cipher cipher;
-
-            BlockReadCipher(Authenticator authenticator,
-                    ProtocolVersion protocolVersion, String algorithm,
-                    Key key, AlgorithmParameterSpec params,
-                    SecureRandom random) throws GeneralSecurityException {
-                super(authenticator, protocolVersion);
-                this.cipher = Cipher.getInstance(algorithm);
-                cipher.init(Cipher.DECRYPT_MODE, key, params, random);
-            }
-
-            @Override
-            public Plaintext decrypt(byte contentType, ByteBuffer bb,
-                    byte[] sequence) throws GeneralSecurityException {
-                BadPaddingException reservedBPE = null;
-
-                // sanity check length of the ciphertext
-                MAC signer = (MAC)authenticator;
-                int cipheredLength = bb.remaining();
-                int tagLen = signer.macAlg().size;
-                if (tagLen != 0) {
-                    if (!sanityCheck(tagLen, cipheredLength)) {
-                        reservedBPE = new BadPaddingException(
-                                "ciphertext sanity check failed");
-                    }
-                }
-                // decryption
-                ByteBuffer pt;
-                int pos;
-
-                // Do in-place with the bb buffer if it's not read-only
-                if (!bb.isReadOnly()) {
-                    pt = bb.duplicate();
-                    pos = bb.position();
-                } else {
-                    pt = ByteBuffer.allocate(cipheredLength);
-                    pos = 0;
-                }
-
-                try {
-                    if (cipheredLength != cipher.update(bb, pt)) {
-                        // catch BouncyCastle buffering error
-                        throw new RuntimeException(
-                                "Unexpected number of plaintext bytes");
-                    }
-                } catch (ShortBufferException sbe) {
-                    // catch BouncyCastle buffering error
-                    throw new RuntimeException("Cipher buffering error in " +
-                        "JCE provider " + cipher.getProvider().getName(), sbe);
-                }
-
-                if (SSLLogger.isOn() &&
-                        SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
-                    SSLLogger.fine(
-                            "Padded plaintext after DECRYPTION",
-                            pt.duplicate().position(pos));
-                }
-
-                // remove the block padding
-                pt.position(pos);
-                try {
-                    removePadding(pt, tagLen, cipher.getBlockSize(),
-                        protocolVersion);
-                } catch (BadPaddingException bpe) {
-                    if (reservedBPE == null) {
-                        reservedBPE = bpe;
-                    }
-                }
-
-                // Requires message authentication code for null, stream and
-                // block cipher suites.
-                try {
-                    if (tagLen != 0) {
-                        checkCBCMac(signer, pt,
-                                contentType, cipheredLength, sequence);
-                    } else {
-                        authenticator.increaseSequenceNumber();
-                    }
-                } catch (BadPaddingException bpe) {
-                    if (reservedBPE == null) {
-                        reservedBPE = bpe;
-                    }
-                }
-
-                // Is it a failover?
-                if (reservedBPE != null) {
-                    throw reservedBPE;
-                }
-
-                return new Plaintext(contentType,
-                        ProtocolVersion.NONE.major, ProtocolVersion.NONE.minor,
-                        -1, -1L, pt.slice());
-            }
-
-            @Override
-            void dispose() {
-                if (cipher != null) {
-                    try {
-                        cipher.doFinal();
-                    } catch (Exception e) {
-                        // swallow all types of exceptions.
-                    }
-                }
-            }
-
-            @Override
-            int estimateFragmentSize(int packetSize, int headerSize) {
-                int macLen = ((MAC)authenticator).macAlg().size;
-
-                // No padding for a maximum fragment.
-                //
-                // 1 byte padding length field: 0x00
-                return packetSize - headerSize - macLen - 1;
-            }
-
-            /**
-             * Sanity check the length of a fragment before decryption.
-             *
-             * In CBC mode, check that the fragment length is one or multiple
-             * times of the block size of the cipher suite, and is at least
-             * one (one is the smallest size of padding in CBC mode) bigger
-             * than the tag size of the MAC algorithm except the explicit IV
-             * size for TLS 1.1 or later.
-             *
-             * In non-CBC mode, check that the fragment length is not less than
-             * the tag size of the MAC algorithm.
-             *
-             * @return true if the length of a fragment matches above
-             *         requirements
-             */
-            private boolean sanityCheck(int tagLen, int fragmentLen) {
-                int blockSize = cipher.getBlockSize();
-                if ((fragmentLen % blockSize) == 0) {
-                    int minimal = tagLen + 1;
-                    minimal = Math.max(minimal, blockSize);
-
-                    return (fragmentLen >= minimal);
-                }
-
-                return false;
-            }
-        }
-    }
-
-    private static final
-            class T10BlockWriteCipherGenerator implements WriteCipherGenerator {
-        @Override
-        public SSLWriteCipher createCipher(SSLCipher sslCipher,
-                Authenticator authenticator,
-                ProtocolVersion protocolVersion, String algorithm,
-                Key key, AlgorithmParameterSpec params,
-                SecureRandom random) throws GeneralSecurityException {
-            return new BlockWriteCipher(authenticator,
-                    protocolVersion, algorithm, key, params, random);
-        }
-
-        static final class BlockWriteCipher extends SSLWriteCipher {
-            private final Cipher cipher;
-
-            BlockWriteCipher(Authenticator authenticator,
-                    ProtocolVersion protocolVersion, String algorithm,
-                    Key key, AlgorithmParameterSpec params,
-                    SecureRandom random) throws GeneralSecurityException {
-                super(authenticator, protocolVersion);
-                this.cipher = Cipher.getInstance(algorithm);
-                cipher.init(Cipher.ENCRYPT_MODE, key, params, random);
-            }
-
-            @Override
-            public int encrypt(byte contentType, ByteBuffer bb) {
-                int pos = bb.position();
-
-                // add message authentication code
-                MAC signer = (MAC)authenticator;
-                if (signer.macAlg().size != 0) {
-                    addMac(signer, bb, contentType);
-                } else {
-                    authenticator.increaseSequenceNumber();
-                }
-
-                int blockSize = cipher.getBlockSize();
-                int len = addPadding(bb, blockSize);
-                bb.position(pos);
-
-                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
-                    SSLLogger.fine(
-                            "Padded plaintext before ENCRYPTION",
-                            bb.duplicate());
-                }
-
-                ByteBuffer dup = bb.duplicate();
-                try {
-                    if (len != cipher.update(dup, bb)) {
-                        // catch BouncyCastle buffering error
-                        throw new RuntimeException(
-                                "Unexpected number of plaintext bytes");
-                    }
-
-                    if (bb.position() != dup.position()) {
-                        throw new RuntimeException(
-                                "Unexpected ByteBuffer position");
-                    }
-                } catch (ShortBufferException sbe) {
-                    // catch BouncyCastle buffering error
-                    throw new RuntimeException("Cipher buffering error in " +
-                        "JCE provider " + cipher.getProvider().getName(), sbe);
-                }
-
-                return len;
-            }
-
-            @Override
-            void dispose() {
-                if (cipher != null) {
-                    try {
-                        cipher.doFinal();
-                    } catch (Exception e) {
-                        // swallow all types of exceptions.
-                    }
-                }
-            }
-
-            @Override
-            int getExplicitNonceSize() {
-                return 0;
-            }
-
-            @Override
-            int calculateFragmentSize(int packetLimit, int headerSize) {
-                int macLen = ((MAC)authenticator).macAlg().size;
-                int blockSize = cipher.getBlockSize();
-                int fragLen = packetLimit - headerSize;
-                fragLen -= (fragLen % blockSize);   // cannot hold a block
-                // No padding for a maximum fragment.
-                fragLen -= 1;       // 1 byte padding length field: 0x00
-                fragLen -= macLen;
-                return fragLen;
-            }
-
-            @Override
-            int calculatePacketSize(int fragmentSize, int headerSize) {
-                int macLen = ((MAC)authenticator).macAlg().size;
-                int blockSize = cipher.getBlockSize();
-                int paddedLen = fragmentSize + macLen + 1;
-                if ((paddedLen % blockSize)  != 0) {
-                    paddedLen += blockSize - 1;
-                    paddedLen -= paddedLen % blockSize;
-                }
-
-                return headerSize + paddedLen;
-            }
-
-            @Override
-            boolean isCBCMode() {
-                return true;
-            }
-        }
-    }
-
-    // For TLS 1.1 and 1.2
-    private static final
             class T11BlockReadCipherGenerator implements ReadCipherGenerator {
         @Override
         public SSLReadCipher createCipher(SSLCipher sslCipher,
@@ -1357,7 +752,7 @@ enum SSLCipher {
 
                 // remove the block padding
                 try {
-                    removePadding(pt, tagLen, blockSize, protocolVersion);
+                    removePadding(pt, tagLen);
                 } catch (BadPaddingException bpe) {
                     if (reservedBPE == null) {
                         reservedBPE = bpe;
@@ -1418,7 +813,7 @@ enum SSLCipher {
              * times of the block size of the cipher suite, and is at least
              * one (one is the smallest size of padding in CBC mode) bigger
              * than the tag size of the MAC algorithm except the explicit IV
-             * size for TLS 1.1 or later.
+             * size.
              *
              * In non-CBC mode, check that the fragment length is not less than
              * the tag size of the MAC algorithm.
@@ -1441,7 +836,7 @@ enum SSLCipher {
         }
     }
 
-    // For TLS 1.1 and 1.2
+    // For TLS 1.2
     private static final
             class T11BlockWriteCipherGenerator implements WriteCipherGenerator {
         @Override
@@ -2820,9 +2215,6 @@ enum SSLCipher {
          */
         bb.limit(newlen + offset);
 
-        /*
-         * TLS version of the padding works for both SSLv3 and TLSv1
-         */
         for (i = 0, offset += len; i < pad; i++) {
             bb.put(offset++, (byte) (pad - 1));
         }
@@ -2834,8 +2226,7 @@ enum SSLCipher {
     }
 
     private static int removePadding(ByteBuffer bb,
-            int tagLen, int blockSize,
-            ProtocolVersion protocolVersion) throws BadPaddingException {
+            int tagLen) throws BadPaddingException {
         int len = bb.remaining();
         int offset = bb.position();
 
@@ -2859,20 +2250,8 @@ enum SSLCipher {
         int[] results = checkPadding(
                 bb.duplicate().position(offset + newLen),
                 (byte)(padLen & 0xFF));
-        if (protocolVersion.useTLS10PlusSpec()) {
-            if (results[0] != 0) {          // padding data has invalid bytes
-                throw new BadPaddingException("Invalid TLS padding data");
-            }
-        } else { // SSLv3
-            // SSLv3 requires 0 <= length byte < block size
-            // some implementations do 1 <= length byte <= block size,
-            // so accept that as well
-            // v3 does not require any particular value for the other bytes
-            if (padLen > blockSize) {
-                throw new BadPaddingException("Padding length (" +
-                padLen + ") of SSLv3 message should not be bigger " +
-                "than the block size (" + blockSize + ")");
-            }
+        if (results[0] != 0) {          // padding data has invalid bytes
+            throw new BadPaddingException("Invalid TLS padding data");
         }
 
         // Reset buffer limit to remove padding.

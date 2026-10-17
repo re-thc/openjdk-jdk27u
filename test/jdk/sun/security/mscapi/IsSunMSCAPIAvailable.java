@@ -34,6 +34,7 @@ import jtreg.SkippedException;
 
 import java.security.GeneralSecurityException;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.Security;
@@ -82,13 +83,22 @@ public class IsSunMSCAPIAvailable {
         System.out.println("    SHA1withRSA is implemented by: " +
             signature.getClass().getName());
 
-        signature = Signature.getInstance("MD5withRSA", p);
-        System.out.println("    MD5withRSA is implemented by: " +
-            signature.getClass().getName());
+        for (String alg : new String[] {
+                "SHA256withRSA", "SHA384withRSA", "SHA512withRSA"}) {
+            signature = Signature.getInstance(alg, p);
+            System.out.println("    " + alg + " is implemented by: " +
+                signature.getClass().getName());
+        }
 
-        signature = Signature.getInstance("MD2withRSA", p);
-        System.out.println("    MD2withRSA is implemented by: " +
-            signature.getClass().getName());
+        // MD2withRSA and MD5withRSA are no longer supported
+        for (String alg : new String[] {"MD2withRSA", "MD5withRSA"}) {
+            try {
+                Signature.getInstance(alg, p);
+                throw new RuntimeException(alg + " should not be available");
+            } catch (NoSuchAlgorithmException e) {
+                System.out.println("    " + alg + " is not available");
+            }
+        }
 
         /*
          * Key Pair Generator

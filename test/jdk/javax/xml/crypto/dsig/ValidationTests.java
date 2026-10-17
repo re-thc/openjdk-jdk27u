@@ -93,35 +93,16 @@ public class ValidationTests {
     private final static KeySelector SKKS = skks;
     private final static KeySelector KVKS =
         new KeySelectors.KeyValueKeySelector();
-    private final static KeySelector CKS =
-        new KeySelectors.CollectionKeySelector(new File(DATA_DIR));
-    private final static KeySelector RXKS =
-        new KeySelectors.RawX509KeySelector();
     private final static KeySelector XKS = null;
     private static URIDereferencer httpUd = null;
 
     private final static Test[] VALID_TESTS = {
-        new Test("signature-enveloped-dsa.xml", KVKS),
-        new Test("signature-enveloping-b64-dsa.xml", KVKS),
-        new Test("signature-enveloping-dsa.xml", KVKS),
         new Test("signature-enveloping-rsa.xml", KVKS),
         new Test("signature-enveloping-p256-sha1.xml", KVKS),
         new Test("signature-enveloping-p384-sha1.xml", KVKS),
         new Test("signature-enveloping-p521-sha1.xml", KVKS),
         new Test("signature-enveloping-hmac-sha1.xml", SKKS),
-        new Test("signature-external-dsa.xml", KVKS),
-        new Test("signature-external-b64-dsa.xml", KVKS),
-        new Test("signature-retrievalmethod-rawx509crt.xml", CKS),
-        new Test("signature-keyname.xml", CKS),
-        new Test("signature-x509-crt-crl.xml", RXKS),
-        new Test("signature-x509-crt.xml", RXKS),
-        new Test("signature-x509-is.xml", CKS),
-        new Test("signature-x509-ski.xml", CKS),
-        new Test("signature-x509-sn.xml", CKS),
-        new Test("signature.xml", XKS),
-        new Test("exc-signature.xml", KVKS),
-        new Test("sign-spec.xml", RXKS),
-        new Test("xmldsig-xfilter2.xml", KVKS)
+        new Test("signature.xml", XKS)
     };
 
     private final static Test[] INVALID_TESTS = {
@@ -159,8 +140,8 @@ public class ValidationTests {
             }
         }
         // test with reference caching enabled
-        System.out.println("Validating sign-spec.xml with caching enabled");
-        if (test_signature(new Test("sign-spec.xml", RXKS), true)) {
+        System.out.println("Validating signature.xml with caching enabled");
+        if (test_signature(new Test("signature.xml", XKS), true)) {
             System.out.println("PASSED");
         } else {
             System.out.println("FAILED");
@@ -198,7 +179,7 @@ public class ValidationTests {
         throws Exception
     {
         if (test.ks == null) {
-            KeyStore keystore = KeyStore.getInstance("JKS");
+            KeyStore keystore = KeyStore.getInstance("PKCS12");
             try (FileInputStream fis = new FileInputStream(KEYSTORE)) {
                 keystore.load(fis, "changeit".toCharArray());
                 test.ks = new X509KeySelector(keystore, false);

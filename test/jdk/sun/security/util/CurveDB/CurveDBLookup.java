@@ -54,25 +54,11 @@ public class CurveDBLookup {
     // The curves of CurveDB, listed here so that the race below is the
     // first lookup of them
     private static final List<KnownOIDs> CURVES = List.of(
-            KnownOIDs.c2tnb191v1, KnownOIDs.c2tnb191v2, KnownOIDs.c2tnb191v3,
-            KnownOIDs.c2tnb239v1, KnownOIDs.c2tnb239v2, KnownOIDs.c2tnb239v3,
-            KnownOIDs.c2tnb359v1, KnownOIDs.c2tnb431r1, KnownOIDs.secp192r1,
-            KnownOIDs.prime192v2, KnownOIDs.prime192v3, KnownOIDs.prime239v1,
-            KnownOIDs.prime239v2, KnownOIDs.prime239v3, KnownOIDs.secp256r1,
-            KnownOIDs.brainpoolP160r1, KnownOIDs.brainpoolP192r1,
+            KnownOIDs.secp224r1, KnownOIDs.secp256k1, KnownOIDs.secp256r1,
+            KnownOIDs.secp384r1, KnownOIDs.secp521r1,
             KnownOIDs.brainpoolP224r1, KnownOIDs.brainpoolP256r1,
             KnownOIDs.brainpoolP320r1, KnownOIDs.brainpoolP384r1,
-            KnownOIDs.brainpoolP512r1, KnownOIDs.sect163k1,
-            KnownOIDs.sect163r1, KnownOIDs.sect239k1, KnownOIDs.sect113r1,
-            KnownOIDs.sect113r2, KnownOIDs.secp112r1, KnownOIDs.secp112r2,
-            KnownOIDs.secp160r1, KnownOIDs.secp160k1, KnownOIDs.secp256k1,
-            KnownOIDs.sect163r2, KnownOIDs.sect283k1, KnownOIDs.sect283r1,
-            KnownOIDs.sect131r1, KnownOIDs.sect131r2, KnownOIDs.sect193r1,
-            KnownOIDs.sect193r2, KnownOIDs.sect233k1, KnownOIDs.sect233r1,
-            KnownOIDs.secp128r1, KnownOIDs.secp128r2, KnownOIDs.secp160r2,
-            KnownOIDs.secp192k1, KnownOIDs.secp224k1, KnownOIDs.secp224r1,
-            KnownOIDs.secp384r1, KnownOIDs.secp521r1, KnownOIDs.sect409k1,
-            KnownOIDs.sect409r1, KnownOIDs.sect571k1, KnownOIDs.sect571r1);
+            KnownOIDs.brainpoolP512r1);
 
     // Made when CurveDB is initialized
     private static final Set<KnownOIDs> BUILT_AT_INIT = Set.of(
@@ -163,9 +149,9 @@ public class CurveDBLookup {
         check(CurveDB.lookup((ECParameterSpec) null) == null, "null");
 
         // the curve for a field size
-        int[] sizes = {192, 224, 256, 384, 521};
-        String[] names = {"secp192r1", "secp224r1", "secp256r1",
-                "secp384r1", "secp521r1"};
+        int[] sizes = {224, 256, 384, 521};
+        String[] names = {"secp224r1", "secp256r1", "secp384r1",
+                "secp521r1"};
         for (int i = 0; i < sizes.length; i++) {
             AlgorithmParameters ap = AlgorithmParameters.getInstance("EC");
             ap.init(new ECKeySizeParameterSpec(sizes[i]));

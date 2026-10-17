@@ -186,8 +186,6 @@ public enum KnownOIDs {
     PKCS1("1.2.840.113549.1.1", "RSA", false), // RSA KeyPairGenerator and KeyFactory
     RSA("1.2.840.113549.1.1.1", "RSA", "RSA/ECB/PKCS1Padding"), // RSA encryption
 
-    MD2withRSA("1.2.840.113549.1.1.2"),
-    MD5withRSA("1.2.840.113549.1.1.4"),
     SHA1withRSA("1.2.840.113549.1.1.5"),
     OAEP("1.2.840.113549.1.1.7"),
     MGF1("1.2.840.113549.1.1.8"),
@@ -204,10 +202,6 @@ public enum KnownOIDs {
     DiffieHellman("1.2.840.113549.1.3.1", "DiffieHellman", "DH"),
 
     // PKCS5 1.2.840.113549.1.5.*
-    PBEWithMD5AndDES("1.2.840.113549.1.5.3"),
-    PBEWithMD5AndRC2("1.2.840.113549.1.5.6"),
-    PBEWithSHA1AndDES("1.2.840.113549.1.5.10"),
-    PBEWithSHA1AndRC2("1.2.840.113549.1.5.11"),
     PBKDF2("1.2.840.113549.1.5.12", "PBKDF2WithHmacSHA1"),
     PBES2("1.2.840.113549.1.5.13"),
     PBMAC1("1.2.840.113549.1.5.14"),
@@ -247,17 +241,12 @@ public enum KnownOIDs {
     CMSAlgorithmProtection("1.2.840.113549.1.9.52"),
 
     // PKCS12 1.2.840.113549.1.12.*
-    PBEWithSHA1AndRC4_128("1.2.840.113549.1.12.1.1"),
-    PBEWithSHA1AndRC4_40("1.2.840.113549.1.12.1.2"),
     PBEWithSHA1AndDESede("1.2.840.113549.1.12.1.3"),
-    PBEWithSHA1AndRC2_128("1.2.840.113549.1.12.1.5"),
-    PBEWithSHA1AndRC2_40("1.2.840.113549.1.12.1.6"),
     PKCS8ShroudedKeyBag("1.2.840.113549.1.12.10.1.2"),
     CertBag("1.2.840.113549.1.12.10.1.3"),
     SecretBag("1.2.840.113549.1.12.10.1.5"),
 
     // digestAlgs 1.2.840.113549.2.*
-    MD2("1.2.840.113549.2.2"),
     MD5("1.2.840.113549.2.5"),
     HmacSHA1("1.2.840.113549.2.7"),
     HmacSHA224("1.2.840.113549.2.8"),
@@ -268,7 +257,6 @@ public enum KnownOIDs {
     HmacSHA512$256("1.2.840.113549.2.13", "HmacSHA512/256"),
 
     // encryptionAlgs 1.2.840.113549.3.*
-    RC2$CBC$PKCS5Padding("1.2.840.113549.3.2", "RC2/CBC/PKCS5Padding", "RC2"),
     ARCFOUR("1.2.840.113549.3.4", "ARCFOUR", "RC4"),
     DESede$CBC$NoPadding("1.2.840.113549.3.7", "DESede/CBC/NoPadding"),
     RC5$CBC$PKCS5Padding("1.2.840.113549.3.9", "RC5/CBC/PKCS5Padding"),
@@ -280,30 +268,6 @@ public enum KnownOIDs {
     // X9.62 1.2.840.10045.*
     EC("1.2.840.10045.2.1"),
 
-    //c2pnb163v1("1.2.840.10045.3.0.1", "X9.62 c2pnb163v1"),
-    //c2pnb163v2("1.2.840.10045.3.0.2", "X9.62 c2pnb163v2"),
-    //c2pnb163v3("1.2.840.10045.3.0.3", "X9.62 c2pnb163v3"),
-    //c2pnb176w1("1.2.840.10045.3.0.4", "X9.62 c2pnb176w1"),
-    c2tnb191v1("1.2.840.10045.3.0.5", "X9.62 c2tnb191v1"),
-    c2tnb191v2("1.2.840.10045.3.0.6", "X9.62 c2tnb191v2"),
-    c2tnb191v3("1.2.840.10045.3.0.7", "X9.62 c2tnb191v3"),
-    //c2pnb208w1("1.2.840.10045.3.0.10", "X9.62 c2pnb208w1"),
-    c2tnb239v1("1.2.840.10045.3.0.11", "X9.62 c2tnb239v1"),
-    c2tnb239v2("1.2.840.10045.3.0.12", "X9.62 c2tnb239v2"),
-    c2tnb239v3("1.2.840.10045.3.0.13", "X9.62 c2tnb239v3"),
-    //c2pnb272w1("1.2.840.10045.3.0.16", "X9.62 c2pnb272w1"),
-    //c2pnb304w1("1.2.840.10045.3.0.17", "X9.62 c2pnb304w1"),
-    c2tnb359v1("1.2.840.10045.3.0.18", "X9.62 c2tnb359v1"),
-    //c2pnb368w1("1.2.840.10045.3.0.19", "X9.62 c2pnb368w1"),
-    c2tnb431r1("1.2.840.10045.3.0.20", "X9.62 c2tnb431r1"),
-
-    secp192r1("1.2.840.10045.3.1.1",
-            "secp192r1", "NIST P-192", "X9.62 prime192v1"),
-    prime192v2("1.2.840.10045.3.1.2", "X9.62 prime192v2"),
-    prime192v3("1.2.840.10045.3.1.3", "X9.62 prime192v3"),
-    prime239v1("1.2.840.10045.3.1.4", "X9.62 prime239v1"),
-    prime239v2("1.2.840.10045.3.1.5", "X9.62 prime239v2"),
-    prime239v3("1.2.840.10045.3.1.6", "X9.62 prime239v3"),
     secp256r1("1.2.840.10045.3.1.7",
             "secp256r1", "NIST P-256", "X9.62 prime256v1"),
     SHA1withECDSA("1.2.840.10045.4.1"),
@@ -317,8 +281,6 @@ public enum KnownOIDs {
     X942_DH("1.2.840.10046.2.1", "DiffieHellman", false), // unused by JDK providers
 
     // Teletrust 1.3.36.*
-    brainpoolP160r1("1.3.36.3.3.2.8.1.1.1"),
-    brainpoolP192r1("1.3.36.3.3.2.8.1.1.3"),
     brainpoolP224r1("1.3.36.3.3.2.8.1.1.5"),
     brainpoolP256r1("1.3.36.3.3.2.8.1.1.7"),
     brainpoolP320r1("1.3.36.3.3.2.8.1.1.9"),
@@ -326,38 +288,10 @@ public enum KnownOIDs {
     brainpoolP512r1("1.3.36.3.3.2.8.1.1.13"),
 
     // Certicom 1.3.132.*
-    sect163k1("1.3.132.0.1", "sect163k1", "NIST K-163"),
-    sect163r1("1.3.132.0.2"),
-    sect239k1("1.3.132.0.3"),
-    sect113r1("1.3.132.0.4"),
-    sect113r2("1.3.132.0.5"),
-    secp112r1("1.3.132.0.6"),
-    secp112r2("1.3.132.0.7"),
-    secp160r1("1.3.132.0.8"),
-    secp160k1("1.3.132.0.9"),
     secp256k1("1.3.132.0.10"),
-    sect163r2("1.3.132.0.15", "sect163r2", "NIST B-163"),
-    sect283k1("1.3.132.0.16", "sect283k1", "NIST K-283"),
-    sect283r1("1.3.132.0.17", "sect283r1", "NIST B-283"),
-
-    sect131r1("1.3.132.0.22"),
-    sect131r2("1.3.132.0.23"),
-    sect193r1("1.3.132.0.24"),
-    sect193r2("1.3.132.0.25"),
-    sect233k1("1.3.132.0.26", "sect233k1", "NIST K-233"),
-    sect233r1("1.3.132.0.27", "sect233r1", "NIST B-233"),
-    secp128r1("1.3.132.0.28"),
-    secp128r2("1.3.132.0.29"),
-    secp160r2("1.3.132.0.30"),
-    secp192k1("1.3.132.0.31"),
-    secp224k1("1.3.132.0.32"),
     secp224r1("1.3.132.0.33", "secp224r1", "NIST P-224"),
     secp384r1("1.3.132.0.34", "secp384r1", "NIST P-384"),
     secp521r1("1.3.132.0.35", "secp521r1", "NIST P-521"),
-    sect409k1("1.3.132.0.36", "sect409k1", "NIST K-409"),
-    sect409r1("1.3.132.0.37", "sect409r1", "NIST B-409"),
-    sect571k1("1.3.132.0.38", "sect571k1", "NIST K-571"),
-    sect571r1("1.3.132.0.39", "sect571r1", "NIST B-571"),
 
     ECDH("1.3.132.1.12"),
 
@@ -405,10 +339,9 @@ public enum KnownOIDs {
                                             // with modulus length as its parameter
 
     SkipIPAddress("1.3.6.1.4.1.42.2.11.2.1"),
-    JAVASOFT_JDKKeyProtector("1.3.6.1.4.1.42.2.17.1.1"),
-    JAVASOFT_JCEKeyProtector("1.3.6.1.4.1.42.2.19.1"),
     MICROSOFT_ExportApproved("1.3.6.1.4.1.311.10.3.3"),
 
+    // SunPKCS11 Blowfish keys in PKCS12 key stores
     Blowfish("1.3.6.1.4.1.3029.1.1.2");
 
     private final String stdName;

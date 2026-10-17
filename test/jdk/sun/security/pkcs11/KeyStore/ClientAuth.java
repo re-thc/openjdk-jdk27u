@@ -101,14 +101,8 @@ public class ClientAuth extends PKCS11Test {
     }
 
     @Test
-    public void testClientAuthTLSv1() throws Exception {
-        String[] args = { "TLSv1" };
-        runTest(args);
-    }
-
-    @Test
-    public void testClientAuthTLSv11() throws Exception {
-        String[] args = { "TLSv1.1" };
+    public void testClientAuthTLSv12() throws Exception {
+        String[] args = { "TLSv1.2" };
         runTest(args);
     }
 
@@ -140,7 +134,7 @@ public class ClientAuth extends PKCS11Test {
         char[] passphrase = JKS_PWD.toCharArray();
 
         // server gets KeyStore from JKS keystore
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(new FileInputStream(new File(DIR, SERVER_KS)), passphrase);
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);
@@ -267,7 +261,7 @@ public class ClientAuth extends PKCS11Test {
 
         System.setProperty("javax.net.ssl.trustStore",
                                         new File(DIR, TS).toString());
-        System.setProperty("javax.net.ssl.trustStoreType", "JKS");
+        System.setProperty("javax.net.ssl.trustStoreType", "PKCS12");
         System.setProperty("javax.net.ssl.trustStoreProvider", "SUN");
         System.setProperty("javax.net.ssl.trustStorePassword", JKS_PWD);
 

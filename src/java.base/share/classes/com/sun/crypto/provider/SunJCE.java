@@ -52,15 +52,11 @@ import static sun.security.util.SecurityProviderConstants.*;
  *
  * - AES
  *
- * - Blowfish
- *
- * - RC2
- *
  * - ARCFOUR (RC4 compatible)
  *
  * - ChaCha20 (Stream cipher only and in AEAD mode with Poly1305)
  *
- * - Cipher modes ECB, CBC, CFB, OFB, PCBC, CTR, and CTS for all block ciphers
+ * - Cipher modes ECB, CBC, CFB, OFB, CTR, and CTS for all block ciphers
  *   and mode GCM for AES cipher
  *
  * - Cipher padding ISO10126Padding for non-PKCS#5 block ciphers and
@@ -71,8 +67,6 @@ import static sun.security.util.SecurityProviderConstants.*;
  * - Diffie-Hellman Key Agreement
  *
  * - HMAC-MD5, HMAC-SHA1, HMAC with SHA2 family and SHA3 family of digests
- *
- * - JCEKS KeyStore
  *
  * - DHKEM
  *
@@ -87,7 +81,7 @@ public final class SunJCE extends Provider {
     private static final long serialVersionUID = 6812507587804302833L;
 
     private static final String info = "SunJCE Provider " +
-    "(implements RSA, DES, Triple DES, AES, Blowfish, ARCFOUR, RC2, PBE, "
+    "(implements RSA, DES, Triple DES, AES, ARCFOUR, PBE, "
     + "Diffie-Hellman, HMAC, ChaCha20, DHKEM, ML-KEM, and HKDF)";
 
     /* Are we debugging? -- for developers */
@@ -157,7 +151,7 @@ public final class SunJCE extends Provider {
                 "com.sun.crypto.provider.RSACipher", null, attrs);
 
         // common block cipher modes, pads
-        final String BLOCK_MODES = "ECB|CBC|PCBC|CTR|CTS|CFB|OFB" +
+        final String BLOCK_MODES = "ECB|CBC|CTR|CTS|CFB|OFB" +
             "|CFB8|CFB16|CFB24|CFB32|CFB40|CFB48|CFB56|CFB64" +
             "|OFB8|OFB16|OFB24|OFB32|OFB40|OFB48|OFB56|OFB64";
         final String BLOCK_MODES128 = BLOCK_MODES +
@@ -173,11 +167,6 @@ public final class SunJCE extends Provider {
                 "com.sun.crypto.provider.DESCipher", null, attrs);
         psA("Cipher", "DESede", "com.sun.crypto.provider.DESedeCipher",
                 attrs);
-        ps("Cipher", "Blowfish",
-                "com.sun.crypto.provider.BlowfishCipher", null, attrs);
-
-        ps("Cipher", "RC2",
-                "com.sun.crypto.provider.RC2Cipher", null, attrs);
 
         attrs.clear();
         attrs.put("SupportedModes", BLOCK_MODES128);
@@ -281,13 +270,7 @@ public final class SunJCE extends Provider {
                 "com.sun.crypto.provider.GaloisCounterMode$AES256",
                 attrs);
 
-        attrs.clear();
-        attrs.put("SupportedModes", "CBC");
-        attrs.put("SupportedPaddings", "NOPADDING");
-        attrs.put("SupportedKeyFormats", "RAW");
-        ps("Cipher", "DESedeWrap",
-                "com.sun.crypto.provider.DESedeWrapCipher", null, attrs);
-
+        // used by SASL DIGEST-MD5 and Kerberos rc4-hmac
         attrs.clear();
         attrs.put("SupportedModes", "ECB");
         attrs.put("SupportedPaddings", "NOPADDING");
@@ -305,26 +288,8 @@ public final class SunJCE extends Provider {
                 attrs);
 
         // PBES1
-        psA("Cipher", "PBEWithMD5AndDES",
-                "com.sun.crypto.provider.PBEWithMD5AndDESCipher",
-                null);
-        ps("Cipher", "PBEWithMD5AndTripleDES",
-                "com.sun.crypto.provider.PBEWithMD5AndTripleDESCipher");
         psA("Cipher", "PBEWithSHA1AndDESede",
                 "com.sun.crypto.provider.PKCS12PBECipherCore$PBEWithSHA1AndDESede",
-                null);
-        psA("Cipher", "PBEWithSHA1AndRC2_40",
-                "com.sun.crypto.provider.PKCS12PBECipherCore$PBEWithSHA1AndRC2_40",
-                null);
-        psA("Cipher", "PBEWithSHA1AndRC2_128",
-                "com.sun.crypto.provider.PKCS12PBECipherCore$PBEWithSHA1AndRC2_128",
-                null);
-        psA("Cipher", "PBEWithSHA1AndRC4_40",
-                "com.sun.crypto.provider.PKCS12PBECipherCore$PBEWithSHA1AndRC4_40",
-                null);
-
-        psA("Cipher", "PBEWithSHA1AndRC4_128",
-                "com.sun.crypto.provider.PKCS12PBECipherCore$PBEWithSHA1AndRC4_128",
                 null);
 
         // PBES2
@@ -381,13 +346,9 @@ public final class SunJCE extends Provider {
         psA("KeyGenerator", "DESede",
                 "com.sun.crypto.provider.DESedeKeyGenerator",
                 null);
-        ps("KeyGenerator", "Blowfish",
-                "com.sun.crypto.provider.BlowfishKeyGenerator");
         psA("KeyGenerator", "AES",
                 "com.sun.crypto.provider.AESKeyGenerator",
                 null);
-        ps("KeyGenerator", "RC2",
-                "com.sun.crypto.provider.KeyGeneratorCore$RC2KeyGenerator");
         psA("KeyGenerator", "ARCFOUR",
                 "com.sun.crypto.provider.KeyGeneratorCore$ARCFOURKeyGenerator",
                 null);
@@ -473,32 +434,10 @@ public final class SunJCE extends Provider {
         psA("AlgorithmParameters", "DESede",
                 "com.sun.crypto.provider.DESedeParameters", null);
 
-        psA("AlgorithmParameters", "PBEWithMD5AndDES",
-                "com.sun.crypto.provider.PBEParameters",
-                null);
-
-        ps("AlgorithmParameters", "PBEWithMD5AndTripleDES",
-                "com.sun.crypto.provider.PBEParameters");
-
         psA("AlgorithmParameters", "PBEWithSHA1AndDESede",
                 "com.sun.crypto.provider.PBEParameters",
                 null);
 
-        psA("AlgorithmParameters", "PBEWithSHA1AndRC2_40",
-                "com.sun.crypto.provider.PBEParameters",
-                null);
-
-        psA("AlgorithmParameters", "PBEWithSHA1AndRC2_128",
-                "com.sun.crypto.provider.PBEParameters",
-                null);
-
-        psA("AlgorithmParameters", "PBEWithSHA1AndRC4_40",
-                "com.sun.crypto.provider.PBEParameters",
-                null);
-
-        psA("AlgorithmParameters", "PBEWithSHA1AndRC4_128",
-                "com.sun.crypto.provider.PBEParameters",
-                null);
 
         psA("AlgorithmParameters", "PBES2",
                 "com.sun.crypto.provider.PBES2Parameters$General",
@@ -546,6 +485,7 @@ public final class SunJCE extends Provider {
         ps("AlgorithmParameters", "PBEWithHmacSHA512/256AndAES_256",
                 "com.sun.crypto.provider.PBES2Parameters$HmacSHA512_256AndAES_256");
 
+        // the IV of the SunPKCS11 Blowfish ciphers
         ps("AlgorithmParameters", "Blowfish",
                 "com.sun.crypto.provider.BlowfishParameters");
 
@@ -554,9 +494,6 @@ public final class SunJCE extends Provider {
 
         ps("AlgorithmParameters", "GCM",
                 "sun.security.util.GCMParameters");
-
-        ps("AlgorithmParameters", "RC2",
-                "com.sun.crypto.provider.RC2Parameters");
 
         psA("AlgorithmParameters", "OAEP",
                 "com.sun.crypto.provider.OAEPParameters", null);
@@ -580,38 +517,10 @@ public final class SunJCE extends Provider {
         psA("SecretKeyFactory", "DESede",
                 "com.sun.crypto.provider.DESedeKeyFactory", null);
 
-        psA("SecretKeyFactory", "PBEWithMD5AndDES",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithMD5AndDES",
-                null);
-
-        /*
-         * Internal in-house crypto algorithm used for
-         * the JCEKS keystore type.  Since this was developed
-         * internally, there isn't an OID corresponding to this
-         * algorithm.
-         */
-        ps("SecretKeyFactory", "PBEWithMD5AndTripleDES",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithMD5AndTripleDES");
-
         psA("SecretKeyFactory", "PBEWithSHA1AndDESede",
                 "com.sun.crypto.provider.PBEKeyFactory$PBEWithSHA1AndDESede",
                 null);
 
-        psA("SecretKeyFactory", "PBEWithSHA1AndRC2_40",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithSHA1AndRC2_40",
-                null);
-
-        psA("SecretKeyFactory", "PBEWithSHA1AndRC2_128",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithSHA1AndRC2_128",
-                null);
-
-        psA("SecretKeyFactory", "PBEWithSHA1AndRC4_40",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithSHA1AndRC4_40",
-                null);
-
-        psA("SecretKeyFactory", "PBEWithSHA1AndRC4_128",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithSHA1AndRC4_128",
-                null);
 
         ps("SecretKeyFactory", "PBEWithHmacSHA1AndAES_128",
                 "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA1AndAES_128");
@@ -740,17 +649,6 @@ public final class SunJCE extends Provider {
         ps("Mac", "PBEWithHmacSHA512/256",
                 "com.sun.crypto.provider.PBMAC1Core$HmacSHA512_256", null, attrs);
 
-        ps("Mac", "SslMacMD5",
-                "com.sun.crypto.provider.SslMacCore$SslMacMD5", null, attrs);
-        ps("Mac", "SslMacSHA1",
-                "com.sun.crypto.provider.SslMacCore$SslMacSHA1", null, attrs);
-
-        /*
-         * KeyStore
-         */
-        ps("KeyStore", "JCEKS",
-                "com.sun.crypto.provider.JceKeyStore");
-
         /*
          * KEMs
          */
@@ -785,8 +683,6 @@ public final class SunJCE extends Provider {
          * because PKCS11/SunPKCS11 does not yet have TLS1.2
          * mechanisms, and it will cause calls to come here.
          */
-        ps("KeyGenerator", "SunTlsPrf",
-                "com.sun.crypto.provider.TlsPrfGenerator$V10");
         ps("KeyGenerator", "SunTls12Prf",
                 "com.sun.crypto.provider.TlsPrfGenerator$V12");
 
@@ -798,10 +694,6 @@ public final class SunJCE extends Provider {
         ps("KeyGenerator", "SunTlsKeyMaterial",
                 "com.sun.crypto.provider.TlsKeyMaterialGenerator",
                 List.of("SunTls12KeyMaterial"), null);
-
-        ps("KeyGenerator", "SunTlsRsaPremasterSecret",
-                "com.sun.crypto.provider.TlsRsaPremasterSecretGenerator",
-                List.of("SunTls12RsaPremasterSecret"), null);
     }
 
     // Return the instance of this class or create one if needed.
