@@ -29,7 +29,9 @@ The native ARM qualification source and fixed campaign are in
 ARM performance remains unqualified. No application or x86 speedup is claimed
 by this qualification package; current author measurements require their own
 completed evidence. The shared thresholds require the planned ARM early-exit
-and boundary checks before merge review can be completed.
+and boundary checks before merge review can be completed. The qualification
+screen includes 64/128 KiB requests with short matching prefixes and retains
+GC and compilation evidence to distinguish setup costs from caller/GC effects.
 
 ---------
 - [ ] I confirm that I make this contribution in accordance with the [OpenJDK Interim AI Policy](https://openjdk.org/legal/ai).

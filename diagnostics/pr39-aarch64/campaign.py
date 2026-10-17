@@ -186,8 +186,7 @@ def measure(root, evidence):
                    "-rf", "json", "-rff", str(prefix) + ".json"]
         for key, value in case["params"].items():
             command += ["-p", key + "=" + value]
-        if case["benchmark"].startswith(CHARS):
-            command += ["-prof", "gc"]
+        command += ["-prof", "gc"]
         with (evidence / "commands.jsonl").open("a") as output:
             output.write(json.dumps({"case": case, "name": name, "block": block, "label": label,
                                      "command": command, "time_ns": time.time_ns()}) + "\n")

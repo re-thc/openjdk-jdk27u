@@ -138,6 +138,48 @@ Native accepted sequences differ from Java's seed, backward extension and
 rejected candidates, so this is not a Java extension-call trace or evidence of
 Java overhead. The corpus and frame are not transferred or fetched by the campaign.
 
+### Setup, code generation and GC assessment
+
+The current ARM stub enters a frame and sets `doing_unsafe_access` before
+comparing data. For a request of at least 64 bytes, its first data iteration
+loads 64 bytes from each input and reduces the XOR vectors before locating the
+first differing word. A mismatch after only a few bytes still pays that setup.
+The unsafe-access flag and mapped-fault continuation are correctness requirements;
+they cannot simply be removed to reduce overhead.
+
+The [upstream zstd v1.5.7 count routine](https://github.com/facebook/zstd/blob/v1.5.7/lib/compress/zstd_compress_internal.h)
+first compares one machine word and can return its first difference before
+entering its word loop. This is a representative source comparison, not a
+disassembly or identification of the supplied native binary. It explains why
+a large requested range alone is insufficient to select a profitable kernel.
+The actual common-prefix distribution and the caller's known seed bytes matter.
+
+The PR already checks the first byte and first word in segment mismatch. Its
+native C2 intrinsic also has a guarded first-word precheck. Those paths already
+avoid the stub on a first-word difference. Heap `ArraysSupport` C2 calls on ARM
+still call the stub after the public caller's first-element check, without the
+native path's first-word C2 precheck. The scope for avoiding setup is therefore
+specific to the caller and tier. Accepted native matches with median length 10
+do not by themselves prove that an additional first-8-byte check helps Java;
+rejected candidates and seed-relative extension positions remain unmeasured.
+
+The leaf itself allocates no objects and makes no GC transition. Chunk loops,
+session checks, reachability fences and surrounding caller allocation can still
+affect compilation, polling and GC behavior. Source inspection therefore supports
+a setup/code-generation hypothesis, but cannot distinguish it conclusively from
+caller or GC costs. Every planned JMH fork retains GC allocation/count/time
+metrics alongside compilation/intrinsic logs, using the same profiler on both
+images and without adding samples. CharBuffer staging is expected to allocate;
+unexpected allocation or GC activity in mismatch rows needs investigation when
+interpreting their result. Raw GC evidence must accompany any causal claim.
+
+A possible heap C2 precheck would need ordinary nodes, a valid element scale
+and at least one readable word, with loads below the existing array/range/null
+guards and unchanged exception order. Empty/negative ranges and raw intrinsic
+callers must remain valid. There is no new assembly or implementation change in
+this package: current native and end-to-end evidence is insufficient to choose
+that fix. The fixed large-request early-exit screen is the next decision gate.
+
 Main rows cover heap/native/mixed in both orders, ordinary direct and mapped
 segments, ByteBuffer mismatch/equals/compareTo, char/int/long views, equal and
 first/first-word/middle/last differences, alignment and 8, 63/64/65,
@@ -152,8 +194,8 @@ per image per block, one thread pinned to the same allowed CPU, G1, 256 MiB heap
 two 250 ms warmups and three 250 ms measured iterations. C2 uses `-Xbatch`, no
 tiering, and threshold 1000; C1 stops at level 1; interpreter rows use `-Xint`.
 JMH 1.37 and its fixed dependencies are checksum verified; the shared source,
-generated classes and dependencies are hashed. Compilation/intrinsic logs and
-raw JMH JSON are retained. CharBuffer rows also retain GC allocation metrics.
+generated classes and dependencies are hashed. Compilation/intrinsic logs,
+raw JMH JSON and GC profiler metrics are retained for every row.
 
 Gates are decided before sampling:
 
