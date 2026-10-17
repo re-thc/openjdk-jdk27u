@@ -91,6 +91,6 @@ public class CharBufferPutString {
 
     @Benchmark
     public CharBuffer append() {
-        return buffer.clear().append(text);
+        return buffer.clear().append(text, 0, text.length());
     }
 }

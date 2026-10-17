@@ -68,8 +68,10 @@ force push, or modification of concurrent author work.
 
 ## Launch and budget
 
-The existing native workflow `pr18-arm-validation.yml` establishes the supported
-runner, `ubuntu-26.04-arm`. This package uses it with the repository's normal
+The repository's current [main.yml](../../.github/workflows/main.yml) selects
+`ubuntu-26.04-arm` in both `build-linux-aarch64` and `test-linux-aarch64`.
+The successful native ARM jobs in run 39013245609 provide executed CI evidence
+for that configuration. This package uses the same runner with the repository's normal
 BootJDK and JTReg actions and native `bin/configure-dev` profile. GCC/G++ 16 and
 the system GNU linker build both releases and candidate fastdebug on the same
 machine. `CONFIGURE_DEV_NO_MOLD=1` selects the profile's supported GNU-linker
@@ -107,11 +109,64 @@ trigger, or start an alternative campaign automatically.
 The complete reservation is at most **225 runner-minutes**: JTReg preparation
 15 minutes plus one native job 210 minutes, including dependency preparation,
 two release builds, candidate fastdebug, correctness, measurement and retention.
-The matched builds have a 100 minute step cap. Correctness has a 60 minute driver
-limit and 62 minute step cap. Measurement, including JVM startup and warmup, has
+The native job's complete step caps sum to **204 minutes**, leaving six minutes
+for runner setup and post steps within its 210-minute cap:
+
+| Work | Step caps, minutes |
+|---|---:|
+| Paths, checkout, driver tests, BootJDK, JTReg, packages, source checks | 25 |
+| Three matched builds | 80 |
+| Common fixtures and JMH compilation | 8 |
+| Correctness, including archiving | 52 |
+| Fixed timing screen | 30 |
+| Evidence upload, including incomplete raw jtreg work | 8 |
+| Final scope receipt | 1 |
+
+Correctness has a **50 minute driver limit**, leaving two minutes for bounded
+cancellation handling within its 52-minute step cap. Commands are not admitted
+after expiry, and an expired result verification, archive, final probe or pass
+receipt serialization cannot publish a passing marker. Measurement, including JVM startup and warmup, has
 a **29 minute driver limit and 30 minute step cap**. An exhausted cap leaves the
 campaign incomplete. There is one campaign and no automatic timing retry,
 replacement host, or additional samples. No other CI is launched by this package.
+
+Each managed command owns its session/process group. SIGTERM, SIGINT and SIGHUP cause
+bounded cleanup: TERM with up to two seconds to exit, then KILL with up to two
+seconds to reap the direct child. Descendants in the owned group are signaled
+even if its leader already exited; a signal during Popen is deferred until child
+ownership is recorded. Repeated cancellation does not interrupt cleanup. The
+wrapper exits on cancellation without admitting another command. The CLI
+stage handlers also interrupt receipt publication; the final workflow scope
+requires successful step outcomes as well as both pass receipts. Python-only
+regression tests exercise direct timeout, wrapper termination with a TERM-ignoring
+child/grandchild, and the spawn-return race. No handler can execute after SIGKILL;
+runner teardown remains responsible for that case.
+
+### Disk admission and build retention
+
+The proposed native runner has 4 CPUs, 16 GiB RAM and a nominal 14 GB SSD; actual
+available storage is checked rather than inferred from that specification.
+Source preflight records total/free bytes and requires space for two measured
+source checkouts, a **5 GiB active build allowance**, **2 GiB retained-output
+allowance**, a **512 MiB ccache cap**, and **2 GiB safety reserve** before making
+the two worktrees. It checks actual free space again before each build and polls
+the 2 GiB low-water mark during configure/make, terminating the owned group if
+the reserve is breached. Capacity failure stops the campaign with a disk receipt;
+it never counts as a timing result or triggers a different runner automatically.
+
+Two preexisting local x86 build directories occupied 3832 MiB and 6328 MiB,
+including large native object directories. These are sizing observations, not
+native ARM footprint measurements or a guarantee of fit. All three native builds
+use `--with-native-debug-symbols=none`; fastdebug assertions and IR facilities
+remain enabled. After identity/spec/config/image evidence is retained, the base
+keeps its completed image only. Candidate release/fastdebug keep the completed
+JDK/test images and test configuration, but discard `hotspot` object output and
+`support/native`; `test-only` consumes the completed images without a C++ rebuild.
+Pruning refuses an image symlink that resolves outside the completed images,
+so retained executables cannot silently depend on deleted object output.
+Before/after byte counts and available space are retained for every build. This
+avoids retaining three full sets of object files at once. Admission allowances
+are conservative planning gates, not a claim that this host certainly fits or fails.
 
 ## Correctness gates
 
@@ -217,13 +272,19 @@ callers must remain valid. There is no new assembly or implementation change in
 this package: current native and end-to-end evidence is insufficient to choose
 that fix. The fixed large-request early-exit screen is the next decision gate.
 
+Main rows include twelve C1 segment cases: HEAP, HEAP_NATIVE and NATIVE_HEAP at
+64 and 128 bytes, both equal and differing in the first word. These cover the
+caller/tier affected by `9fedf7ac9`. The fixed total is maintained by reducing
+redundant C2 storage/difference and alignment combinations; no samples are added.
 Main rows cover heap/native/mixed in both orders, ordinary direct and mapped
 segments, ByteBuffer mismatch/equals/compareTo, char/int/long views, equal and
-first/first-word/middle/last differences, alignment and 8, 63/64/65,
+first/first-word/middle/last differences, misaligned inputs and 8, 63/64/65,
 127/128/129, 65535/65536/65537 and 1 MiB boundaries. Representative C1 and
 interpreter rows check their separate performance paths. HashCode rows cover
 3/4/1024 elements. CharBuffer put/append rows cover both string coders,
 native/swapped order, heap/direct views, both staging thresholds and 1025 chars.
+All six append rows call `append(text, 0, text.length())` to exercise the changed
+CharSequence helper; the put rows cover the String path.
 These are microbenchmarks; they do not establish an application speedup.
 
 Each row has two matched blocks in **A/B then B/A** order: one fresh JMH fork
@@ -232,9 +293,26 @@ two 250 ms warmups and three 250 ms measured iterations. C2 uses `-Xbatch`, no
 tiering, and threshold 1000; C1 stops at level 1; interpreter rows use `-Xint`.
 JMH 1.37 and its fixed dependencies are checksum verified; the shared source,
 generated classes and dependencies are hashed. Compilation/intrinsic logs,
-raw JMH JSON and GC profiler metrics are retained for every row.
+LogCompilation XML, raw JMH JSON and GC profiler metrics are retained for every
+row. Each fork must have finite nonnegative `gc.alloc.rate` evidence and valid
+`gc.count` samples. Missing/disabled or failed allocation profiling is reported
+as unavailable, never as zero allocation. JMH legitimately omits `gc.time` when
+no count/time delta occurs and `gc.alloc.rate.norm` when allocation is exactly
+zero; those omissions are accepted. Positive allocation requires valid normalized
+evidence. Optional metrics may have fewer observations when zero deltas omit them.
 
-Gates are decided before sampling:
+Requested flags alone do not establish the installed compilation tier. The
+driver inspects retained nmethod records for the benchmark or its generated JMH
+worker, requires C2 or level-1 C1 as requested, and rejects compiled benchmark
+code for interpreter rows. It saves the actual compiler/level/stamp records.
+Before attributing measured time to a tier, review installation stamps against
+the measured iteration boundaries and inspect deoptimization in the retained
+XML/console logs. An nmethod installed sometime during a fork is not proof that
+all its measured iterations ran in that tier. The timing receipt explicitly
+retains this review requirement.
+
+These are deterministic screening gates for the observed matrix, not statistical
+confidence bounds or proof of no regression. Gates are decided before sampling:
 
 - A material loss is candidate time exceeding base by **both 5% and 1 ns/op**.
   A loss in both order blocks is a regression. A loss in only one block is
@@ -242,8 +320,10 @@ Gates are decided before sampling:
   gains cannot hide a short early-exit loss.
 - An iteration spread above 15% within a fork or a median spread above 10%
   between forks of the same image is inconclusive. The scalar control and
-  opposite-byte-order element-loop control must be within 5% across images
+  benchmark-local opposite-byte-order get-loop control must be within 5% across images
   in each order block and within 10% for each image across a stage's endpoints.
+  The latter loop calls only position/remaining/get; it does not call the changed
+  IntBuffer.mismatch implementation or inherit its new ForceInline annotation.
 - The native equal 4 KiB segment row must also show at least 5% lower candidate
   time in both blocks to demonstrate the intended native scan benefit.
 - Missing or malformed results, unstable controls, failed correctness, budget
@@ -254,15 +334,17 @@ Gates are decided before sampling:
 All commands, sample arrays, per-row decisions, failures, source and image
 identities, build logs and jtreg work/results are retained for 90 days in one
 GitHub Actions artifact. `correctness-pass.json` and `performance-pass.json`
-must both exist; a green subset is insufficient. A passing campaign qualifies
-only the recorded Linux ARM CPU and fixed workload set. macOS performance and
+must both exist; a green subset is insufficient. A passing timing receipt records
+only that this fixed observed matrix passed its deterministic screen. Tier/code
+and raw evidence review is still needed for a native verdict. macOS performance and
 other ARM microarchitectures remain outside this campaign.
 
 ## Local review checks
 
-Run `python3 diagnostics/pr39-aarch64/test_campaign.py` to check sampling,
-regression/noise classification, missing-result rejection and required jtreg ids.
-It launches no JVM or CI job. Local fixture validation is correctness-only;
+Run `python3 -m unittest discover -s diagnostics/pr39-aarch64 -p 'test_*.py'`
+to check sampling, deadline admission/receipts, process cancellation, disk gates,
+GC evidence, actual-tier parsing, regression/noise classification and jtreg ids.
+These tests launch only owned Python subprocesses, no JVM or CI job. Local fixture validation is correctness-only;
 native measurements require the explicit native runner checks.
 
 `PR_DESCRIPTION.md` is a concise draft for a later description update. Its

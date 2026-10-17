@@ -17,10 +17,16 @@ import tarfile
 import time
 import urllib.request
 
-from campaign import BASE, HEAD, CANDIDATE, TREE, MODES, run, save
+from campaign import BASE, HEAD, CANDIDATE, TREE, MODES, CommandSignal, Deadline, cancellation_signals, run, save
 
 REPO = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
+CORRECTNESS_LIMIT = 50 * 60
+GIB = 1 << 30
+ACTIVE_BUILD_ALLOWANCE = 5 * GIB
+RETAINED_BUILD_ALLOWANCE = 2 * GIB
+DISK_RESERVE = 2 * GIB
+CCACHE_ALLOWANCE = GIB // 2
 DEPS = {
     "org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar": "896f27e49105b35ea1964319c83d12082e7a79ef",
     "org/openjdk/jmh/jmh-generator-annprocess/1.37/jmh-generator-annprocess-1.37.jar": "da93888682df163144edf9b13d2b78e54166063a",
@@ -31,6 +37,34 @@ DEPS = {
 
 def git(*args):
     return subprocess.check_output(["git", "-C", str(REPO), *args], text=True).strip()
+
+
+def tree_bytes(path):
+    return sum(p.stat().st_size for p in path.rglob("*") if p.is_file() and not p.is_symlink())
+
+
+def capacity(path, evidence, label, required, **details):
+    usage = shutil.disk_usage(path)
+    record = {"path": str(path), "total_bytes": usage.total, "free_bytes": usage.free,
+              "required_free_bytes": required, "admitted": usage.free >= required, **details}
+    save(evidence / ("disk-" + label + ".json"), record)
+    if not record["admitted"]:
+        raise RuntimeError(f"Disk admission {label}: {usage.free} bytes free, {required} required; no further work admitted")
+
+
+def prune_build(output, baseline):
+    # Tests run from completed JDK/test images with test-only, without rebuilding C++.
+    images = (output / "images").resolve()
+    for path in images.rglob("*"):
+        if path.is_symlink() and not path.resolve().is_relative_to(images):
+            raise RuntimeError(f"Image link depends on external build output; refusing pruning: {path}")
+    paths = ([p for p in output.iterdir() if p.name != "images"] if baseline else
+             [output / "hotspot", output / "support/native"])
+    for path in paths:
+        if path.is_dir() and not path.is_symlink():
+            shutil.rmtree(path)
+        elif path.exists() or path.is_symlink():
+            path.unlink()
 
 
 def sources(root, evidence):
@@ -54,6 +88,12 @@ def sources(root, evidence):
     if parents != [BASE, HEAD]:
         raise RuntimeError(f"Unexpected candidate parents: {parents}")
     root.mkdir(parents=True, exist_ok=True)
+    tracked_bytes = sum((REPO / p).stat().st_size for p in git("ls-files", "-z").split("\0") if p and (REPO / p).is_file())
+    required = (2 * tracked_bytes + ACTIVE_BUILD_ALLOWANCE + RETAINED_BUILD_ALLOWANCE
+                + CCACHE_ALLOWANCE + DISK_RESERVE)
+    capacity(root, evidence, "campaign-admission", required, extra_checkout_bytes=2 * tracked_bytes,
+             active_build_allowance=ACTIVE_BUILD_ALLOWANCE, retained_build_allowance=RETAINED_BUILD_ALLOWANCE,
+             ccache_allowance=CCACHE_ALLOWANCE, safety_reserve=DISK_RESERVE)
     for label, sha in (("base", BASE), ("candidate", CANDIDATE)):
         git("worktree", "add", "--detach", str(root / label), sha)
     save(evidence / "source-identity.json", {
@@ -76,20 +116,24 @@ def sources(root, evidence):
 
 
 def build(root, evidence):
-    os.environ.update(CC="gcc-16", CXX="g++-16", CONFIGURE_DEV_NO_MOLD="1")
+    os.environ.update(CC="gcc-16", CXX="g++-16", CONFIGURE_DEV_NO_MOLD="1",
+                      CCACHE_DIR=str(root / "ccache"), CCACHE_MAXSIZE="512M")
     for label, level in (("base", "release"), ("candidate", "release"), ("candidate", "fastdebug")):
         source = root / label
         conf = "qual-" + level
         tag = label + "-" + level
+        capacity(root, evidence, tag + "-admission", ACTIVE_BUILD_ALLOWANCE + DISK_RESERVE + CCACHE_ALLOWANCE)
+        def guard():
+            capacity(root, evidence, tag + "-live", DISK_RESERVE)
         options = ["bash", "bin/configure-dev", "--with-conf-name=" + conf,
                    "--with-debug-level=" + level, "--with-version-opt=pr39-qual", "--with-version-build=1",
                    "--with-source-date=2026-10-17T00:00:00Z",
                    "--with-boot-jdk=" + os.environ["BOOT_JDK"], "--with-jtreg=" + os.environ["JTREG"],
-                   "--with-zlib=system", "--with-jmod-compress=zip-1", "--with-native-debug-symbols=internal"]
-        run(options, evidence / (tag + "-configure.log"), 600, cwd=source)
+                   "--with-zlib=system", "--with-jmod-compress=zip-1", "--with-native-debug-symbols=none"]
+        run(options, evidence / (tag + "-configure.log"), 600, cwd=source, disk_guard=guard)
         targets = ["images"] + (["test-image"] if label == "candidate" else [])
         run(["make", "CONF=" + conf, "JOBS=" + str(os.cpu_count()), *targets],
-            evidence / (tag + "-build.log"), 3600, cwd=source)
+            evidence / (tag + "-build.log"), 3600, cwd=source, disk_guard=guard)
         output = source / "build" / conf
         shutil.copy2(output / "spec.gmk", evidence / (tag + "-spec.gmk"))
         shutil.copy2(output / "configure.log", evidence / (tag + "-configure-full.log"))
@@ -101,6 +145,11 @@ def build(root, evidence):
         save(evidence / (tag + "-image-sha256.json"), hashes)
         run([str(image / "bin/java"), "-XshowSettings:vm", "-version"],
             evidence / (tag + "-version.log"), 30)
+        before = tree_bytes(output)
+        prune_build(output, baseline=label == "base")
+        save(evidence / (tag + "-footprint.json"), {"before_pruning_bytes": before,
+             "retained_bytes": tree_bytes(output), "native_debug_symbols": "none"})
+        capacity(root, evidence, tag + "-after-pruning", DISK_RESERVE)
 
 
 def compile_fixtures(root, evidence):
@@ -139,6 +188,9 @@ def compile_fixtures(root, evidence):
 
 
 def correctness(root, evidence):
+    deadline = Deadline(CORRECTNESS_LIMIT, "Correctness")
+    pass_path = evidence / "correctness-pass.json"
+    pass_path.unlink(missing_ok=True)
     candidate = root / "candidate"
     hotspot = ["compiler/intrinsics/NativeVectorizedMismatchTest.java#" + name
                for name in ("ir", "ir-serial", "ideal")]
@@ -160,9 +212,9 @@ def correctness(root, evidence):
               ("TestNativeMismatch.", "TestMappedNativeMismatch.", "TestHandshake.", "TestLongMismatch.",
                "BufferMismatchBoundaryTest.", "DirectMismatchReachability."))]
     groups += [("release", "jdk-" + gc.lower(), gc, ["test/jdk/" + p for p in safety]) for gc in ("Serial", "Z")]
-    deadline = time.monotonic() + 60 * 60
     statuses = []
     for level, name, gc, tests in groups:
+        deadline.remaining(minimum=1)
         # Serial graph tests select their own collector. Do not inject a conflicting GC.
         options = "JOBS=2;TIMEOUT_FACTOR=4;KEYWORDS=!manual"
         if gc:
@@ -173,18 +225,29 @@ def correctness(root, evidence):
             if path.exists():
                 shutil.rmtree(path)
         passed = False
+        interrupted = False
         try:
-            run(command, evidence / (name + ".log"), max(1, deadline - time.monotonic()), cwd=candidate)
+            run(command, evidence / (name + ".log"), deadline.remaining(minimum=1), cwd=candidate)
+            deadline.remaining()
             verify_jtreg(candidate / "build" / ("qual-" + level) / "test-support", tests)
+            deadline.remaining()
             passed = True
+        except (CommandSignal, KeyboardInterrupt):
+            interrupted = True
+            raise
         finally:
             statuses.append({"group": name, "passed": passed, "tests": tests, "options": options})
             save(evidence / "correctness-status.json", statuses)
-            with tarfile.open(evidence / (name + "-jtreg.tar.gz"), "w:gz") as archive:
-                for directory in ("test-results", "test-support"):
-                    path = candidate / "build" / ("qual-" + level) / directory
-                    if path.exists():
-                        archive.add(path, arcname=directory)
+            if not interrupted:
+                deadline.remaining()
+                with tarfile.open(evidence / (name + "-jtreg.tar.gz"), "w:gz") as archive:
+                    for directory in ("test-results", "test-support"):
+                        deadline.remaining()
+                        path = candidate / "build" / ("qual-" + level) / directory
+                        if path.exists():
+                            archive.add(path, arcname=directory)
+                        deadline.remaining()
+                deadline.remaining()
     # Fresh VMs check the unprofiled public entry before FixtureCheck or JMH warmup.
     for gc in ("Serial", "G1", "Z"):
         for mode in ("c2", "c1", "int"):
@@ -194,8 +257,10 @@ def correctness(root, evidence):
                                "-XX:+Use" + gc + "GC", "--enable-native-access=ALL-UNNAMED", *MODES[mode],
                                "-cp", str(root / "classes"), "ColdMismatch", operation, str(size), str(at)]
                     run(command, evidence / f"cold-{gc}-{mode}-{operation}-{size}.log",
-                        min(30, max(1, deadline - time.monotonic())))
-    save(evidence / "correctness-pass.json", {"status": "pass", "groups": statuses, "fresh_vm_probes": 108})
+                        deadline.remaining(cap=30, minimum=1))
+                    deadline.remaining()
+    deadline.publish(pass_path, {"status": "pass", "groups": statuses, "fresh_vm_probes": 108,
+                                "elapsed_seconds": time.monotonic() - deadline.start})
 
 
 def verify_jtreg(work, tests):
@@ -238,4 +303,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    with cancellation_signals():
+        main()

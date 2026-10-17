@@ -8,10 +8,14 @@
 import json
 from pathlib import Path
 import re
+import shutil
 import tempfile
 import unittest
+from unittest import mock
 
-from campaign import array, plan, samples, verdict, MEASUREMENT_LIMIT
+import campaign
+import prepare
+from campaign import array, memory, plan, samples, verdict, MEASUREMENT_LIMIT, Deadline, ProfilingUnavailable
 from prepare import verify_jtreg
 
 
@@ -25,6 +29,10 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(text.count("github.event_name == 'workflow_dispatch'"), 2)
         job_header = text.split("  qualification:\n", 1)[1].split("    steps:\n", 1)[0]
         self.assertNotRegex(job_header, r"\$\{\{\s*runner\.")
+        caps = [int(x) for x in re.findall(r"(?m)^        timeout-minutes: (\d+)$", text.split("  qualification:\n", 1)[1])]
+        self.assertEqual(sum(caps), 204)
+        self.assertLessEqual(sum(caps), 210 - 6)
+        self.assertRegex(text, r"Retain raw results[^\n]*\n        if: always\(\)\n        timeout-minutes: 8")
 
     def test_plan_is_fixed_and_unique(self):
         cases = plan()
@@ -38,6 +46,10 @@ class CampaignTests(unittest.TestCase):
                                  (131072, 25), (131072, 82), (131072, 1267)):
             self.assertIn(array(size, difference), cases["screen"])
         self.assertLess(MEASUREMENT_LIMIT, 30 * 60)
+        for storage in ("HEAP", "HEAP_NATIVE", "NATIVE_HEAP"):
+            for size in (64, 128):
+                for difference in ("MATCH", "FIRST_WORD"):
+                    self.assertIn(memory(size, storage, difference, mode="c1"), cases["main"])
 
     def test_balanced_consistent_loss_is_a_regression(self):
         observations = [{"base": [10, 10, 10], "candidate": [12, 12, 12]}] * 2
@@ -64,7 +76,8 @@ class CampaignTests(unittest.TestCase):
         case = array(8, 7)
         result = {"benchmark": case["benchmark"], "params": case["params"],
                   "forks": 1, "threads": 1, "mode": "avgt",
-                  "primaryMetric": {"scoreUnit": "ns/op", "rawData": [[10, 10, 10]]}}
+                  "primaryMetric": {"scoreUnit": "ns/op", "rawData": [[10, 10, 10]]},
+                  "secondaryMetrics": self.gc_metrics()}
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "jmh.json"
             path.write_text(json.dumps([result]))
@@ -74,6 +87,134 @@ class CampaignTests(unittest.TestCase):
                 path.write_text(json.dumps([result]))
                 with self.assertRaises(ValueError):
                     samples(path, case)
+
+    @staticmethod
+    def gc_metrics():
+        return {"gc.alloc.rate": {"score": 0, "scoreUnit": "MB/sec", "rawData": [[0, 0, 0]]},
+                "gc.count": {"score": 0, "scoreUnit": "counts", "rawData": [[0, 0, 0]]}}
+
+    def test_gc_profiling_distinguishes_zero_from_unavailable(self):
+        campaign.validate_gc(self.gc_metrics(), "zero-without-optional-metrics")
+        changed = self.gc_metrics()
+        changed["gc.count"].update(score=1, rawData=[[0, 1, 0]])
+        campaign.validate_gc(changed, "collection-without-time-change")
+        for label in ("gc.alloc.rate", "gc.count"):
+            changed = self.gc_metrics()
+            del changed[label]
+            with self.assertRaises(ProfilingUnavailable):
+                campaign.validate_gc(changed, "unsupported")
+            for invalid in (float("nan"), float("inf"), -1):
+                changed = self.gc_metrics()
+                changed[label]["rawData"][0][1] = invalid
+                with self.assertRaises(ProfilingUnavailable):
+                    campaign.validate_gc(changed, "invalid")
+        changed = self.gc_metrics()
+        changed["gc.count"]["rawData"][0][1] = 0.5
+        with self.assertRaises(ProfilingUnavailable):
+            campaign.validate_gc(changed, "fractional-count")
+        changed = self.gc_metrics()
+        changed["gc.alloc.rate"].update(score=1, rawData=[[0, 1, 2]])
+        with self.assertRaises(ProfilingUnavailable):
+            campaign.validate_gc(changed, "missing-positive-normalization")
+        changed["gc.alloc.rate.norm"] = {"score": 2, "scoreUnit": "B/op", "rawData": [[2, 2]]}
+        changed["gc.time"] = {"score": 1, "scoreUnit": "ms", "rawData": [[1]]}
+        campaign.validate_gc(changed, "valid-optional-partial-observations")
+
+    def test_expired_correctness_admits_zero_work_and_no_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            times = iter([0, prepare.CORRECTNESS_LIMIT + 1])
+            with mock.patch("campaign.time.monotonic", side_effect=lambda: next(times, prepare.CORRECTNESS_LIMIT + 1)), \
+                 mock.patch("prepare.run") as execute:
+                with self.assertRaises(TimeoutError):
+                    prepare.correctness(root, root)
+                execute.assert_not_called()
+            self.assertFalse((root / "correctness-pass.json").exists())
+
+    def test_correctness_stops_after_group_or_probe_overruns(self):
+        for expire_call in (1, 5, 112):
+            with self.subTest(expire_call=expire_call), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                clock, calls = [0], []
+                def execute(*args, **kwargs):
+                    calls.append(args)
+                    if len(calls) == expire_call:
+                        clock[0] = prepare.CORRECTNESS_LIMIT + 1
+                with mock.patch("campaign.time.monotonic", side_effect=lambda: clock[0]), \
+                     mock.patch("prepare.run", side_effect=execute), mock.patch("prepare.verify_jtreg"):
+                    with self.assertRaises(TimeoutError):
+                        prepare.correctness(root, root)
+                self.assertEqual(len(calls), expire_call)
+                self.assertFalse((root / "correctness-pass.json").exists())
+
+    def test_pass_receipt_is_removed_if_serialization_expires(self):
+        for name in ("correctness-pass.json", "performance-pass.json"):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
+                clock = [0]
+                original_save = campaign.save
+                def late_save(path, value):
+                    original_save(path, value)
+                    clock[0] = 2
+                with mock.patch("campaign.time.monotonic", side_effect=lambda: clock[0]):
+                    deadline = Deadline(1, "fixture")
+                    with mock.patch("campaign.save", side_effect=late_save), self.assertRaises(TimeoutError):
+                        deadline.publish(Path(directory) / name, {"status": "pass"})
+                self.assertEqual(list(Path(directory).iterdir()), [])
+
+    def test_pass_receipt_is_removed_if_deadline_crosses_during_rename(self):
+        with tempfile.TemporaryDirectory() as directory, \
+             mock.patch("campaign.time.monotonic", side_effect=[0, 0, 0, 2]):
+            deadline = Deadline(1, "fixture")
+            with self.assertRaises(TimeoutError):
+                deadline.publish(Path(directory) / "correctness-pass.json", {"status": "pass"})
+            self.assertEqual(list(Path(directory).iterdir()), [])
+
+    def test_installed_tier_is_read_from_nmethods_not_requested_flags(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefix = Path(directory) / "fork"
+            log = Path(directory) / "fork-compilation-123.xml"
+            log.write_text("<hotspot_log><nmethod compiler='c1' level='1' stamp='0.4' "
+                           "method='org.openjdk.bench.java.util.ArraysMismatchEarlyExit mismatch ()I'/></hotspot_log>")
+            with self.assertRaises(ValueError):
+                campaign.installed_tier(prefix, array(8, 7))
+            campaign.installed_tier(prefix, array(8, 7, mode="c1"))
+            evidence = json.loads((Path(directory) / "fork-installed-code.json").read_text())
+            self.assertEqual(evidence["installed_nmethods"][0]["compiler"], "c1")
+            log.write_text("<hotspot_log/>")
+            campaign.installed_tier(prefix, array(8, 7, mode="int"))
+            with self.assertRaises(ValueError):
+                campaign.installed_tier(prefix, array(8, 7))
+
+    def test_disk_admission_and_pruning_preserve_images(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            usage = shutil._ntuple_diskusage(100, 60, 40)
+            with mock.patch("prepare.shutil.disk_usage", return_value=usage), self.assertRaises(RuntimeError):
+                prepare.capacity(root, root, "fixture", 41)
+            self.assertFalse(json.loads((root / "disk-fixture.json").read_text())["admitted"])
+            for name in ("hotspot/object.o", "support/native/lib.o", "support/test/helper.jar", "images/jdk/bin/java", "images/test/native.so", "spec.gmk"):
+                path = root / "output" / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("fixture")
+            prepare.prune_build(root / "output", baseline=False)
+            self.assertFalse((root / "output/hotspot").exists())
+            self.assertFalse((root / "output/support/native").exists())
+            self.assertTrue((root / "output/support/test/helper.jar").exists())
+            self.assertTrue((root / "output/images/test/native.so").exists())
+            prepare.prune_build(root / "output", baseline=True)
+            self.assertEqual([p.name for p in (root / "output").iterdir()], ["images"])
+
+    def test_pruning_rejects_an_image_link_to_build_objects(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            (output / "hotspot").mkdir()
+            library = output / "hotspot/libfixture.so"
+            library.write_text("owned object")
+            (output / "images/jdk").mkdir(parents=True)
+            (output / "images/jdk/libfixture.so").symlink_to(library)
+            with self.assertRaises(RuntimeError):
+                prepare.prune_build(output, baseline=False)
+            self.assertTrue(library.exists())
 
     def test_missing_skipped_and_failed_jtreg_results_cannot_pass(self):
         with tempfile.TemporaryDirectory() as directory:

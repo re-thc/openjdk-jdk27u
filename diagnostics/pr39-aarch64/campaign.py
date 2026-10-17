@@ -7,7 +7,7 @@
 """One fixed, paired JMH campaign. No timing retries or adaptive sampling."""
 
 import argparse
-import hashlib
+from contextlib import contextmanager
 import json
 import math
 import os
@@ -17,6 +17,7 @@ import signal
 import statistics
 import subprocess
 import time
+import xml.etree.ElementTree as ET
 
 BASE = "89885a6288e7aaabd01678a704a586272c0f96e3"
 HEAD = "9fedf7ac9040bf1d46e383201524f1ca7a13a29e"
@@ -26,7 +27,9 @@ ARRAY = "org.openjdk.bench.java.util.ArraysMismatchEarlyExit"
 MEMORY = "org.openjdk.bench.java.nio.MemoryMismatch"
 HASH = "org.openjdk.bench.java.nio.BufferHashCode"
 CHARS = "org.openjdk.bench.java.nio.CharBufferPutString"
-MEASUREMENT_LIMIT = 29 * 60  # includes JVM startup, warmup, cold probes and analysis
+MEASUREMENT_LIMIT = 29 * 60  # includes JVM startup, warmup and analysis
+CLEANUP_TERM_SECONDS = 2
+CLEANUP_KILL_SECONDS = 2
 MODES = {"c2": ["-Xbatch", "-XX:-TieredCompilation", "-XX:CompileThreshold=1000"],
          "c1": ["-Xbatch", "-XX:TieredStopAtLevel=1"], "int": ["-Xint"]}
 
@@ -58,15 +61,16 @@ def plan():
     main = []
     for storage in ("HEAP", "NATIVE", "HEAP_NATIVE", "NATIVE_HEAP", "DIRECT", "MAPPED"):
         main += [memory(size, storage) for size in (64, 128, 65537)]
-        main += [memory(4096, storage, difference) for difference in ("MIDDLE", "LAST")]
+        main += [memory(4096, storage, "MIDDLE" if storage == "NATIVE" else "LAST")]
+    main.remove(memory(64, "HEAP"))
     for storage in ("NATIVE", "DIRECT", "HEAP_NATIVE", "NATIVE_HEAP"):
         main += [memory(128, storage, difference) for difference in ("FIRST", "FIRST_WORD")]
     main += [memory(size) for size in (8, 63, 65, 127, 129, 4096, 65535, 65536, 1048576)]
-    main += [memory(128, alignment=0), array(128, 7, offset=7)]
     for method in ("charMismatch", "intMismatch", "longMismatch"):
         for storage in ("NATIVE", "DIRECT", "HEAP_NATIVE"):
             main += [memory(128, storage, difference, method)
-                     for difference in (("LAST",) if storage == "DIRECT" else ("MATCH", "LAST"))]
+                     for difference in (("LAST",) if storage == "DIRECT" else
+                                        ("MATCH",) if storage == "HEAP_NATIVE" else ("MATCH", "LAST"))]
     for method in ("bufferMismatch", "bufferEquals", "bufferCompare"):
         main += [memory(128, "DIRECT", difference, method) for difference in ("MATCH", "FIRST_WORD")]
     main += [row(HASH + ".hash", size=size, kind=kind)
@@ -80,6 +84,9 @@ def plan():
         main += [array(128, at, mode=mode) for at in (-1, 7)]
         main += [memory(128, "NATIVE", difference, mode=mode) for difference in ("MATCH", "FIRST_WORD")]
         main += [memory(65537, "DIRECT", "MATCH", "bufferMismatch", mode)]
+    for storage in ("HEAP", "HEAP_NATIVE", "NATIVE_HEAP"):
+        main += [memory(size, storage, difference, mode="c1") for size in (64, 128)
+                 for difference in ("MATCH", "FIRST_WORD")]
     return {"screen": screen, "main": main}
 
 
@@ -87,25 +94,180 @@ def save(path, value):
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
 
 
-def run(command, log, timeout, cpu=None, cwd=None):
-    """Bound the whole process group, including a timed-out JMH fork."""
-    def prepare():
-        os.setsid()
-        if cpu is not None:
-            os.sched_setaffinity(0, {cpu})
+class Deadline:
+    def __init__(self, seconds, label):
+        self.start = time.monotonic()
+        self.end = self.start + seconds
+        self.label = label
+
+    def remaining(self, cap=None, minimum=0):
+        remaining = self.end - time.monotonic()
+        if remaining <= minimum:
+            raise TimeoutError(self.label + " deadline reached")
+        return remaining if cap is None else min(cap, remaining)
+
+    def publish(self, path, value):
+        """Late serialization or rename must not leave a passing marker."""
+        pending = path.with_name(path.name + ".pending")
+        try:
+            self.remaining()
+            save(pending, value)
+            self.remaining()
+            pending.replace(path)
+            self.remaining()
+        except BaseException:
+            path.unlink(missing_ok=True)
+            raise
+        finally:
+            pending.unlink(missing_ok=True)
+
+
+class CommandSignal(SystemExit):
+    def __init__(self, signum):
+        self.signum = signum
+        super().__init__(128 + signum)
+
+
+@contextmanager
+def cancellation_signals():
+    """Cover non-command work, including atomic receipt publication."""
+    previous = {}
+    def interrupted(signum, frame):
+        raise CommandSignal(signum)
+    try:
+        for signum in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
+            previous[signum] = signal.signal(signum, interrupted)
+        yield
+    finally:
+        for signum, handler in previous.items():
+            signal.signal(signum, handler)
+
+
+def stop_owned_group(process, output):
+    """TERM then KILL, including descendants after the leader exits."""
+    if process.pid == os.getpgrp():
+        raise RuntimeError("Refusing to signal the wrapper's process group")
+
+    def send(signum):
+        try:
+            os.killpg(process.pid, signum)
+        except ProcessLookupError:
+            pass
+
+    send(signal.SIGTERM)
+    try:
+        process.wait(timeout=CLEANUP_TERM_SECONDS)
+    except subprocess.TimeoutExpired:
+        output.write("Owned process group exceeded TERM grace; sending KILL\n")
+        output.flush()
+    finally:
+        send(signal.SIGKILL)
+    try:
+        process.wait(timeout=CLEANUP_KILL_SECONDS)
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError("Owned child not reaped within cleanup bound") from error
+
+
+def run(command, log, timeout, cpu=None, cwd=None, disk_guard=None):
+    """Own the group through timeout, cancellation and the Popen return race."""
+    if timeout <= 0:
+        raise TimeoutError("No time remains to start a command")
+    process = None
+    received_signal = None
+    stopping = False
+
+    def interrupted(signum, frame):
+        nonlocal received_signal
+        received_signal = signum
+        # Popen may have spawned but not returned: record ownership before raising.
+        if process is not None and not stopping:
+            raise CommandSignal(signum)
+
+    def affinity():
+        os.sched_setaffinity(0, {cpu})
+
     with log.open("w") as output:
         output.write(json.dumps(command) + "\n")
         output.flush()
-        process = subprocess.Popen(command, stdout=output, stderr=subprocess.STDOUT,
-                                   preexec_fn=prepare, cwd=cwd)
+        previous = {}
         try:
-            status = process.wait(timeout=timeout)
-        except BaseException:
-            os.killpg(process.pid, signal.SIGKILL)
-            process.wait()
-            raise
+            for signum in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
+                previous[signum] = signal.signal(signum, interrupted)
+            if received_signal is not None:
+                raise CommandSignal(received_signal)
+            if disk_guard:
+                disk_guard()
+            if received_signal is not None:
+                raise CommandSignal(received_signal)
+            process = subprocess.Popen(command, stdout=output, stderr=subprocess.STDOUT,
+                                       start_new_session=True,
+                                       preexec_fn=affinity if cpu is not None else None, cwd=cwd)
+            if received_signal is not None:
+                raise CommandSignal(received_signal)
+            if disk_guard is None:
+                status = process.wait(timeout=timeout)
+            else:
+                end = time.monotonic() + timeout
+                while True:
+                    disk_guard()
+                    remaining = end - time.monotonic()
+                    if remaining <= 0:
+                        raise subprocess.TimeoutExpired(command, timeout)
+                    try:
+                        status = process.wait(timeout=min(2, remaining))
+                        break
+                    except subprocess.TimeoutExpired:
+                        if time.monotonic() >= end:
+                            raise
+        finally:
+            stopping = True
+            cleaned = False
+            try:
+                if process is not None:
+                    stop_owned_group(process, output)
+                cleaned = True
+            finally:
+                for signum, handler in previous.items():
+                    signal.signal(signum, handler)
+                if received_signal is not None:
+                    output.write(f"Wrapper signal {received_signal}; owned group cleanup {'completed' if cleaned else 'failed'}\n")
+                    output.flush()
+                    raise CommandSignal(received_signal)
     if status:
         raise RuntimeError(f"exit {status}: {log}")
+
+
+class ProfilingUnavailable(ValueError):
+    pass
+
+
+def validate_gc(metrics, path):
+    def metric(name, unit):
+        item = metrics.get(name)
+        if item is None:
+            raise ProfilingUnavailable(f"Missing {name}: profiler unsupported or disabled in {path}")
+        data = item.get("rawData", [])
+        values = [item.get("score")] + (data[0] if len(data) == 1 else [])
+        if (item.get("scoreUnit") != unit or len(data) != 1 or len(data[0]) != 3
+                or not all(isinstance(x, (int, float)) and math.isfinite(x) and x >= 0 for x in values)):
+            raise ProfilingUnavailable(f"Invalid {name}: profiling evidence unavailable in {path}")
+        if name == "gc.count" and any(x != int(x) for x in data[0]):
+            raise ProfilingUnavailable(f"Invalid collection count in {path}")
+        return item
+
+    rate = metric("gc.alloc.rate", "MB/sec")
+    metric("gc.count", "counts")
+    # JMH omits these when allocation is exactly zero or collection time unchanged.
+    for name, unit in (("gc.alloc.rate.norm", "B/op"), ("gc.time", "ms")):
+        item = metrics.get(name)
+        if item is None:
+            if name == "gc.alloc.rate.norm" and any(x > 0 for x in rate["rawData"][0]):
+                raise ProfilingUnavailable(f"Positive allocation without normalized evidence in {path}")
+            continue
+        # Optional metrics can have fewer observations when omitted for zero deltas.
+        score = item.get("score")
+        if item.get("scoreUnit") != unit or not isinstance(score, (int, float)) or not math.isfinite(score) or score < 0:
+            raise ProfilingUnavailable(f"Invalid optional metric {name} in {path}")
 
 
 def samples(path, case):
@@ -123,7 +285,37 @@ def samples(path, case):
     values = data[0]
     if not all(math.isfinite(x) and x > 0 for x in values):
         raise ValueError(f"Invalid samples: {path}")
+    validate_gc(result.get("secondaryMetrics", {}), path)
     return values
+
+
+def installed_tier(prefix, case):
+    paths = list(prefix.parent.glob(prefix.name + "-compilation-*.xml"))
+    if not paths:
+        raise ValueError(f"Missing installed-code log for {prefix}")
+    klass, _, method = case["benchmark"].rpartition(".")
+    worker = klass.rsplit(".", 1)[-1] + "_" + method + "_jmhTest"
+    records = []
+    for path in paths:
+        for node in ET.parse(path).iter("nmethod"):
+            spec = node.get("method", "").split()
+            if len(spec) < 2:
+                continue
+            owner, name = spec[0].replace("/", "."), spec[1]
+            if ((owner == klass and name == method) or
+                    (owner.rsplit(".", 1)[-1] == worker and name == method + "_avgt_jmhStub")):
+                records.append(dict(node.attrib))
+    expected = {"c2": "c2", "c1": "c1", "int": None}[case["mode"]]
+    if expected is None:
+        valid = not records
+    else:
+        valid = any(n.get("compiler") == expected and
+                    (expected != "c1" or n.get("level") == "1") for n in records)
+    if not valid:
+        raise ValueError(f"Installed benchmark tier disagrees with {case['mode']}: {prefix}")
+    save(prefix.with_name(prefix.name + "-installed-code.json"), {
+        "requested_mode": case["mode"], "installed_nmethods": records,
+        "review": "Check installation stamps, measured-iteration boundaries and deoptimization before tier attribution"})
 
 
 def verdict(observations, control=False):
@@ -151,7 +343,8 @@ def measure(root, evidence):
     identity = json.loads((evidence / "source-identity.json").read_text())
     if (identity["base"], identity["head"], identity["candidate"], identity["candidate_tree"]) != (BASE, HEAD, CANDIDATE, TREE):
         raise RuntimeError("Source identity does not match the reviewed campaign")
-    deadline = time.monotonic() + MEASUREMENT_LIMIT
+    deadline = Deadline(MEASUREMENT_LIMIT, "Measurement")
+    (evidence / "performance-pass.json").unlink(missing_ok=True)
     evidence.mkdir(parents=True, exist_ok=True)
     cases = plan()
     save(evidence / "plan.json", cases)
@@ -171,13 +364,12 @@ def measure(root, evidence):
     summary = []
 
     def invoke(case, name, block, label):
-        remaining = deadline - time.monotonic()
-        if remaining < 10:
-            raise TimeoutError("Fixed 29 minute campaign limit reached")
+        deadline.remaining(minimum=10)
         prefix = evidence / f"{name}-{block}-{label}"
         flags = ["-Xms256m", "-Xmx256m", "-XX:+UseG1GC", "--enable-native-access=ALL-UNNAMED",
                  "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED", "-XX:+PrintCompilation",
-                 "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintIntrinsics"] + MODES[case["mode"]]
+                 "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintIntrinsics", "-XX:+LogCompilation",
+                 "-XX:LogFile=" + str(prefix) + "-compilation-%p.xml"] + MODES[case["mode"]]
         command = [str(java["candidate"]), "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                    "-cp", classpath, "org.openjdk.jmh.Main", "^" + case["benchmark"] + "$",
                    "-jvm", str(java[label]), "-jvmArgs", " ".join(flags),
@@ -190,8 +382,12 @@ def measure(root, evidence):
         with (evidence / "commands.jsonl").open("a") as output:
             output.write(json.dumps({"case": case, "name": name, "block": block, "label": label,
                                      "command": command, "time_ns": time.time_ns()}) + "\n")
-        run(command, Path(str(prefix) + ".log"), min(90, remaining), cpu)
-        return samples(Path(str(prefix) + ".json"), case)
+        run(command, Path(str(prefix) + ".log"), deadline.remaining(cap=90, minimum=10), cpu)
+        deadline.remaining()
+        values = samples(Path(str(prefix) + ".json"), case)
+        installed_tier(prefix, case)
+        deadline.remaining()
+        return values
 
     def pair(case, name, control=False):
         observations = []
@@ -226,9 +422,10 @@ def measure(root, evidence):
     benefit = [x for x in summary if x["case"] == memory(4096)]
     if not benefit or not all(r <= 0.95 for r in benefit[0]["candidate_over_base"]):
         raise RuntimeError("No repeatable >=5% native 4 KiB equal-scan benefit; inconclusive")
-    save(evidence / "performance-pass.json", {
-        "status": "pass", "elapsed_seconds": MEASUREMENT_LIMIT - (deadline - time.monotonic()),
-        "scope": "Fixed microbenchmark matrix on the recorded native Linux ARM CPU only"})
+    deadline.publish(evidence / "performance-pass.json", {
+        "status": "pass", "elapsed_seconds": time.monotonic() - deadline.start,
+        "scope": "Deterministic screen of the fixed observed matrix; no statistical confidence claim",
+        "tier_attribution": "Review installed nmethods and measurement boundaries in retained logs before attributing results to a tier"})
 
 
 def main():
@@ -251,4 +448,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    with cancellation_signals():
+        main()

@@ -43,28 +43,33 @@ jobs:
       github.event.inputs.reviewed_commit == github.sha
     steps:
       - name: Define qualification directories
+        timeout-minutes: 1
         shell: bash
         run: |
           printf 'QUAL_ROOT=%s/pr39-work\nQUAL_EVIDENCE=%s/pr39-evidence\n' \
             "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 3
         with:
           persist-credentials: false
 
       - name: Check the fixed plan and driver gates
+        timeout-minutes: 2
         run: |
-          python3 diagnostics/pr39-aarch64/test_campaign.py
+          python3 -m unittest discover -s diagnostics/pr39-aarch64 -p 'test_*.py'
           mkdir -p "$QUAL_EVIDENCE"
           python3 diagnostics/pr39-aarch64/campaign.py plan > "$QUAL_EVIDENCE/planned-rows.json"
 
       - name: Get the common BootJDK
+        timeout-minutes: 5
         id: bootjdk
         uses: ./.github/actions/get-bootjdk
         with:
           platform: linux-aarch64
 
       - name: Get JTReg
+        timeout-minutes: 2
         id: jtreg
         uses: ./.github/actions/get-jtreg
 
@@ -77,10 +82,11 @@ jobs:
           test "$(g++-16 -dumpversion)" = 16
 
       - name: Pin the source trees and reject concurrent author changes
+        timeout-minutes: 2
         run: python3 diagnostics/pr39-aarch64/prepare.py sources --root "$QUAL_ROOT" --evidence "$QUAL_EVIDENCE"
 
       - name: Build matched release images and candidate fastdebug
-        timeout-minutes: 100
+        timeout-minutes: 80
         env:
           BOOT_JDK: ${{ steps.bootjdk.outputs.path }}
           JTREG: ${{ steps.jtreg.outputs.path }}
@@ -91,31 +97,43 @@ jobs:
         run: python3 diagnostics/pr39-aarch64/prepare.py compile --root "$QUAL_ROOT" --evidence "$QUAL_EVIDENCE"
 
       - name: Targeted native correctness and collector safety gates
-        timeout-minutes: 62
+        id: correctness
+        timeout-minutes: 52
         run: python3 diagnostics/pr39-aarch64/prepare.py correctness --root "$QUAL_ROOT" --evidence "$QUAL_EVIDENCE"
 
       - name: One fixed balanced performance campaign
+        id: measurement
         timeout-minutes: 30
         run: python3 diagnostics/pr39-aarch64/campaign.py measure --root "$QUAL_ROOT" --evidence "$QUAL_EVIDENCE"
 
       - name: Retain raw results and all incomplete or failed gates
         if: always()
+        timeout-minutes: 8
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pr39-native-aarch64-${{ github.run_id }}
-          path: ${{ env.QUAL_EVIDENCE }}
+          path: |
+            ${{ env.QUAL_EVIDENCE }}
+            ${{ env.QUAL_ROOT }}/candidate/build/qual-release/test-results
+            ${{ env.QUAL_ROOT }}/candidate/build/qual-release/test-support
+            ${{ env.QUAL_ROOT }}/candidate/build/qual-fastdebug/test-results
+            ${{ env.QUAL_ROOT }}/candidate/build/qual-fastdebug/test-support
           if-no-files-found: error
           retention-days: 90
 
       - name: Record the qualification scope
         if: always()
+        timeout-minutes: 1
         shell: bash
+        env:
+          CORRECTNESS_OUTCOME: ${{ steps.correctness.outcome }}
+          MEASUREMENT_OUTCOME: ${{ steps.measurement.outcome }}
         run: |
           python3 - <<'PY'
           import json, os, pathlib
           root = pathlib.Path(os.environ['QUAL_EVIDENCE'])
-          passed = all((root / f'{gate}-pass.json').is_file() for gate in ('correctness', 'performance'))
-          text = 'Fixed native ARM campaign passed.' if passed else 'ARM qualification remains incomplete. Inspect retained evidence; do not rerun timings automatically.'
+          passed = all((root / f'{gate}-pass.json').is_file() for gate in ('correctness', 'performance')) and all(os.environ.get(key) == 'success' for key in ('CORRECTNESS_OUTCOME', 'MEASUREMENT_OUTCOME'))
+          text = 'Correctness and fixed timing screen completed; review installed code before tier attribution or a merge verdict.' if passed else 'ARM qualification remains incomplete. Inspect retained evidence; do not rerun timings automatically.'
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as output:
               output.write(text + '\n')
           PY
