@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 public class ScannerCampaign {
     record Row(String window, long ops, long ns, long bytes, long checksum) { }
     record Run(List<Row> rows, long ready, long total) { }
+    record Bounds(double lower, double upper) { }
 
     public static void main(String[] args) throws Exception {
         if (args.length != 6) throw new IllegalArgumentException("stage baseJdk candidateJdk outputDir collector platform");
@@ -39,7 +40,7 @@ public class ScannerCampaign {
         try (var raw = new PrintWriter(Files.newBufferedWriter(output.resolve("raw.csv")));
              var summary = new PrintWriter(Files.newBufferedWriter(output.resolve("summary.csv")))) {
             raw.println("platform,gc,stage,mode,pair,image,order,window,ops,ns,bytes,checksum,ready_ns,total_ns");
-            summary.println("platform,gc,stage,mode,window,metric,pairs,paired_median,bootstrap_upper95");
+            summary.println("platform,gc,stage,mode,window,metric,pairs,paired_median,bootstrap_lower95,bootstrap_upper95,protected,losses,ties,sign_p,no_regression_screen");
             for (String mode : modes) {
                 Map<String, List<double[]>> ratios = new LinkedHashMap<>();
                 for (int pair = -warmups; pair < pairs; pair++) {
@@ -68,6 +69,7 @@ public class ScannerCampaign {
                             command.add(mode);
                         }
                         Path errors = output.resolve(mode + "-" + pair + "-" + image + ".stderr");
+                        Path stdout = output.resolve(mode + "-" + pair + "-" + image + ".stdout");
                         ProcessBuilder builder = new ProcessBuilder(command).redirectError(errors.toFile());
                         for (String name : List.of("JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "_JAVA_OPTIONS")) builder.environment().remove(name);
                         Files.writeString(output.resolve(mode + "-" + pair + "-" + image + ".command"),
@@ -77,10 +79,15 @@ public class ScannerCampaign {
                         var captured = new FutureTask<Run>(() -> {
                             long ready = -1;
                             List<Row> rows = new ArrayList<>();
-                            try (var lines = new BufferedReader(new InputStreamReader(child.getInputStream()))) {
+                            try (var lines = new BufferedReader(new InputStreamReader(child.getInputStream()));
+                                 var transcript = Files.newBufferedWriter(stdout)) {
                                 for (String line; (line = lines.readLine()) != null;) {
+                                    long observed = System.nanoTime();
+                                    transcript.write(line);
+                                    transcript.newLine();
+                                    transcript.flush();
                                     if (line.equals("READY")) {
-                                        ready = System.nanoTime() - start;
+                                        ready = observed - start;
                                         child.getOutputStream().write(1);
                                         child.getOutputStream().flush();
                                     }
@@ -160,14 +167,56 @@ public class ScannerCampaign {
                         int index = metric;
                         double[] values = entry.getValue().stream().mapToDouble(row -> row[index]).toArray();
                         if (Arrays.stream(values).anyMatch(value -> !Double.isFinite(value))) continue;
+                        Bounds bounds = bounds(values);
+                        boolean protectedCell = protectedMetric(stage, mode, entry.getKey(), metric);
+                        int losses = (int) Arrays.stream(values).filter(value -> value > 1).count();
+                        int ties = (int) Arrays.stream(values).filter(value -> value == 1).count();
+                        double signP = signP(losses, values.length - ties);
+                        String screen = !protectedCell ? "DESCRIPTIVE" : regressionScreen(values, bounds, signP);
+                        // Allocation counters carry no accepted increase budget, including isolated increases.
+                        if (protectedCell && metric == 1 && losses > 0 && screen.equals("NO_MEASURED_REGRESSION"))
+                            screen = "INCONCLUSIVE";
                         summary.println(String.join(",", platform, gc, stage, mode, entry.getKey(), metrics[metric], "" + values.length,
-                                "" + median(values), "" + upper95(values)));
+                                "" + median(values), "" + bounds.lower, "" + bounds.upper, "" + protectedCell,
+                                metric < 4 ? "" + losses : "", metric < 4 ? "" + ties : "",
+                                metric < 4 ? "" + signP : "", screen));
                     }
                 }
                 summary.flush();
             }
             if (raw.checkError() || summary.checkError()) throw new IllegalStateException("result write failed");
         }
+    }
+
+    static boolean protectedMetric(String stage, String mode, String window, int metric) {
+        if (stage.equals("allocation")) return metric == 1 && !mode.equals("empty");
+        if (stage.equals("cold")) return mode.equals("empty") ? metric == 2 : metric == 0 || metric == 3;
+        if (stage.equals("legacy")) return metric == 0 || metric == 1;
+        if (metric > 1) return false;
+        return switch (mode) {
+            case "integer", "double" -> window.equals("2") || window.equals("4");
+            case "scan-int" -> window.equals("1") || window.equals("3");
+            default -> window.equals("2");
+        };
+    }
+
+    static String regressionScreen(double[] values, Bounds bounds, double signP) {
+        double estimate = median(values);
+        if (bounds.lower > 1 || signP <= 0.05) return "HOLD";
+        // Sparse non-tied losses are uncertainty, even if ties pin the median interval at1.
+        if (Arrays.stream(values).anyMatch(value -> value > 1)
+                && Arrays.stream(values).noneMatch(value -> value < 1)) return "INCONCLUSIVE";
+        return estimate <= 1 && bounds.upper <= 1 ? "NO_MEASURED_REGRESSION" : "INCONCLUSIVE";
+    }
+
+    // Exact one-sided sign test under P(loss)=1/2; ties are omitted, not counted as wins.
+    static double signP(int losses, int nonTies) {
+        double term = Math.scalb(1.0, -nonTies), probability = 0;
+        for (int k = 0; k <= nonTies; k++) {
+            if (k >= losses) probability += term;
+            term *= (nonTies - k) / (double) (k + 1);
+        }
+        return probability;
     }
 
     static void validate(String stage, String mode, Run run) {
@@ -216,7 +265,7 @@ public class ScannerCampaign {
         return copy.length % 2 == 0 ? (copy[middle - 1] + copy[middle]) / 2 : copy[middle];
     }
 
-    static double upper95(double[] values) {
+    static Bounds bounds(double[] values) {
         Random random = new Random(89885);
         double[] estimates = new double[10_000], sample = new double[values.length];
         for (int i = 0; i < estimates.length; i++) {
@@ -224,6 +273,6 @@ public class ScannerCampaign {
             estimates[i] = median(sample);
         }
         Arrays.sort(estimates);
-        return estimates[9_499];
+        return new Bounds(estimates[499], estimates[9_499]);
     }
 }

@@ -42,7 +42,8 @@ first use, allocation and protected transient/steady performance on the suitable
 available Linux x64 host, using the repository's GCC16 release/server profile
 and Serial/G1/ZGC. It ends with one worthwhile/not-worthwhile/incomplete report.
 It needs the already installed GCC16, mold, JDK27 boot JDK, jtreg8.3, native
-dependency sysroot, GNU build utilities and a quiet resource window. It needs
+dependency sysroot, GNU build utilities, installed Python3, Bash5.1 or newer,
+readable Linux procfs and a quiet resource window. It needs
 neither additional native machines nor JMH nor new infrastructure.
 
 If Stage A is worthwhile, **Stage B** is supported-platform correctness through
@@ -132,11 +133,18 @@ environment variables are cleared. There are no compile directives or Xbatch.
 | `phases` | 8 paired VMs | Mixed/localized/invalid/provider/text protection and fixed progress windows |
 
 Raw CSV preserves every retained image result, pair/order, counts, elapsed
-nanoseconds, current-thread allocated bytes and protocol checksum. Warmup
-processes still retain command/stderr files. Each summary gives paired median
-ratios and a one-sided 95% percentile bootstrap upper bound (10,000 resamples,
-seed 89885), plus median saved ns/op. These are fixed engineering gates on a
-small host sample, not population guarantees. Do not pool cells across
+nanoseconds, current-thread allocated bytes and protocol checksum. Every child,
+including excluded warmup and interrupted/invalid children, also retains its
+command, stderr and line-flushed stdout transcript. Already captured partial
+windows remain available when a later window or resource check aborts that child;
+output still in flight at termination may be missing and is marked incomplete.
+No sample or losing pair is deleted, replaced or selectively retried.
+Each summary gives paired median ratios, one-sided 95% percentile bootstrap
+lower/upper bounds (10,000 resamples, seed89885), exact directional sign-test
+counts/p-value, protection status and a no-regression screen, plus median saved
+ns/op. The bounds are two one-sided diagnostics, not a simultaneous confidence
+guarantee across the matrix. These are fixed engineering decisions on a small
+host sample, not population guarantees. Do not pool cells across
 collectors, phases or workloads. Retain raw values, medians and IQRs in the
 decision report; inspect pair drift and overlapping/unstable distributions.
 The cold child waits for a controller acknowledgement after READY, so the
@@ -180,22 +188,51 @@ or native HOST performance claim follows from Linux fallback.
 
 ## Frozen gates, ceilings and final decision
 
-Ratios are candidate/baseline. Apply each applicable gate to every protected
-cell; the known +8.5% short-double signal fails if reproduced. No extra forks,
-adaptive warmup, selected reruns, favorable-window substitution or tuning are
-allowed in this pass.
+Ratios are candidate/baseline. A positive percentage regression has no accepted
+budget: the former transient+5%/upper+8%, steady+3%/upper+5% and allocation
+allowances are removed. Text gains cannot compensate for a protected numeric,
+readiness, total-process or allocation loss. Apply the following rules
+independently to each protected metric/collector/workload/window, preserving
+historical short and long workloads as separate cells. No extra forks, adaptive
+warmup, selected reruns, favorable-window substitution or tuning are allowed.
+
+1. **HOLD takes precedence.** A consistent-loss signal is either bootstrap
+   lower95>1 or a one-sided exact sign-test p<=0.05 for losses. The sign test
+   compares each paired ratio with exactly1: >1 is loss, <1 improvement; exact
+   ties are omitted from its denominator, never counted as improvements. With
+   L losses among N non-tied pairs, p=sum(combination(N,k)/2^N, k=L..N); N=0
+   gives p=1. HOLD has no minimum effect size and does not require the full
+   sample median to exceed1. Seven losses out of eight non-tied pairs give
+   p=0.03515625; eight identical+1.9% or repeated+4% legacy losses HOLD.
+   Fifteen ties plus five losses out of20 also HOLD (p=0.03125), even if ties
+   keep the median and its interval at1. HOLD prevents an integration
+   recommendation; it is a conservative screen, not a universal causal claim.
+2. **Uncertainty remains INCONCLUSIVE.** If HOLD is absent, median>1 or
+   upper95>1 cannot establish no regression and cannot pass using a percentage
+   tolerance. Sparse non-tied losses with no improvements also remain
+   inconclusive when the sign test lacks power, even if ties pin the interval
+   at1. Allocation additionally requires every paired ratio<=1; an isolated
+   increase without a consistent-loss signal remains inconclusive. Missing
+   samples, order/drift confounding, wide/unstable results, observer/resource
+   faults or incomplete correctness likewise prevent qualification.
+3. **Bounded no-measured-regression evidence** requires median<=1 and
+   upper95<=1, no HOLD signal and no unresolved directional/measurement issue.
+   This strict zero-bound criterion can make noisy, genuinely neutral latency
+   inconclusive. It is not proof of exact equivalence or universal zero cost.
+   A non-significant loss test alone is insufficient. The summary's
+   NO_MEASURED_REGRESSION screen checks this rule, not the benefit requirements
+   or full campaign completeness.
 
 | Gate | Required result |
 | --- | --- |
 | Correctness/protocol/route parity | Zero unexpected failures; expected baseline feature-test failure is excluded by test selection |
 | G1 first line, default CDS | First-op ratio upper95 <=0.90 and median paired savings >=1ms |
-| Other text first use, every GC | Median <=1.00, upper95 <=1.05; first-line savings reported for each GC |
-| Empty READY, every GC | Median <=1.03, upper95 <=1.05; no JVM-readiness speedup claim |
-| Cold int/double and eager HOST-line, every GC | First-op and total median <=1.05, upper95 <=1.10 |
-| Protected transient latency (including every legacy short case) | Median <=1.05 and upper95 <=1.08 |
-| Protected steady latency (including every legacy long case) | Median <=1.03 and upper95 <=1.05 |
-| Protected transient / steady allocation | Every paired ratio <=1.02 / <=1.01, respectively |
-| First-line instrumented allocation, every GC | Every paired ratio <=0.80; first-int allocation <=1.01 |
+| All nonempty cold workloads, every GC | No-regression rules above for first-op and process-total latency, including text, boolean, int/double and eager HOST-line |
+| Empty READY, every GC | Same no-regression rules; no JVM-readiness speedup claim |
+| Protected transient latency | Same no-regression rules for every legacy short case and the explicitly protected phase windows |
+| Protected steady latency | Same no-regression rules for every legacy long case and the explicitly protected phase windows |
+| All protected allocation | Same no-regression rules and every paired ratio<=1, separately for transient and steady cells |
+| First-line instrumented allocation, every GC | Every paired ratio<=0.80; first-int allocation requires every ratio<=1 |
 
 `large-line` uses the transient latency/allocation gates. Text phase allocations
 are also protected by the transient no-regression gate. Allocation counts only
@@ -208,26 +245,69 @@ Warmup/bridge excursions must be disclosed; an unexplained repeatable large
 excursion prevents a blanket neutrality claim even if protected gates pass.
 
 Ceilings: one active Stage A host, one build at a time, four compiler jobs, two
-jtreg workers, one benchmark child plus a 256MiB controller. Reserve at most
-12GiB resident memory and 25GiB new disk space; stop on resource pressure rather
-than enlarging the reservation. The script enforces six hours overall,
+jtreg workers, one benchmark child plus a 256MiB controller and the RSS observer.
+The operational RSS stop threshold is12GiB (12582912KiB); new disk budget is
+25GiB. The checked-in `watch-memory.py` starts before builds or JVM work. It
+uses installed Python3/procfs without subprocesses or installations. Its first
+successful sample must create `memory-ready` within5s before any stage starts.
+Every nominal1s it records summed resident pages for the controller descendants,
+the active isolated stage group (including reparented members) and the outer
+timeout. `memory-members.csv` identifies every counted PID/PPID/PGID and RSS;
+`memory.csv` records timestamp, sum, observed peak, count and active PGID. Both
+CSV streams flush each sample. Shared resident pages can be counted in more
+than one process. This is sampled summed RSS, not unique physical memory,
+not a hard allocation/cgroup cap and not a guarantee of unobserved peak usage.
+
+At any sample>=12GiB, the observer flushes that sample, attempts to append the
+exact reason and active PGID to `resource-stop.txt` within5s, then sends SIGUSR1
+to the controller even if report persistence fails. A sampling deadline signals
+the controller before exception cleanup, which might retry stalled I/O; reason
+persistence is best effort in that fault path and missing output is incomplete.
+The controller exits125 through its existing TERM10s/KILL2s verified active-group
+cleanup and requests observer shutdown with SIGUSR2 and bounded exit/KILL
+verification. Unexpected observer exit (including0) or required KILL prevents a
+successful result. Monitoring stays active through stage cleanup when the
+observer is healthy; shutdown is requested only after the active group stops.
+No further stage starts; classify the campaign INCOMPLETE/resource stop, never a product
+regression or a pass. RSS can overshoot between samples and during cleanup;
+do not increase the threshold or resume in a new directory to bypass it.
+
+Procfs/read/write failures, a sample or intersample gap taking>5s, or stale
+observation at cleanup also signal a resource fault. An observer that needs
+SIGKILL or exits abnormally leaves the campaign incomplete even when its
+eventual termination is verified.
+Every long-lived build/test/JVM command, including javac, CDS and HOST checks,
+uses the tracked stage wrapper. Its interruptible `wait -n -p` observes both
+stage and observer: observer exit, even exit0, aborts dependent work. Lost
+observation cannot silently produce a pass. If termination cannot be verified,
+report the exact PID/PGID and uncertain status and stop. The observer adds
+common sampling work to both images; preserve its log and disclose that setup.
+The observer pins itself to the lowest other allowed CPU when one exists,
+otherwise shares the single allowed CPU. `memory-placement.txt` records both
+CPU choices and co-location; an affinity failure aborts before stages start.
+
+The script enforces six hours overall,
 10min/configure, 90min/build command, 45min/correctness, 10min/workload smoke and
 90min/all performance; disk is checked between builds and at completion.
 The script tracks each isolated stage process group and uses an interruptible
 wait plus termination/kill cleanup, so a global timeout also stops an active
-inner stage; allow the outer 15s kill margin. Monitor the reservation while
-running; no cgroup/OS reconfiguration is needed.
+inner stage; allow the outer15s kill margin, which includes bounded observer
+cleanup. No cgroup/OS reconfiguration is needed. Preserve all CSVs, transcripts,
+resource reasons and incomplete output on every exit.
 Each measurement child has a 120s deadline plus bounded termination/reader
 cleanup (at most 20s); failed cleanup aborts rather than launching another child.
 Timeouts preserve partial artifacts and mean incomplete, never pass.
 
 Stop dependent work immediately on a correctness, preflight, CDS, protocol or
 resource fault. After the fixed performance campaign, apply all gates once.
-If a point estimate exceeds a limit, report **not worthwhile for integration**
-and the exact cell; do not retune this candidate in the same pass. If point
-estimates pass but bounds/variance cannot establish a gate, report
-**incomplete/inconclusive**. If all gates pass, report **worthwhile on this
-Linux x64 profile**, with Stage B supported-platform correctness still pending.
+Any consistent protected loss yields **HOLD / not qualified for integration**
+with the exact cell and signal, including small losses below the former budgets.
+Do not retune or accept a trade-off in this pass. Absent HOLD, any unresolved
+no-regression or benefit gate yields **incomplete/inconclusive**. Only complete
+correctness, no-measured-regression evidence for every protected cell and the
+stated first-line benefit allow **worthwhile on this Linux x64 profile**, with
+Stage B supported-platform correctness still pending. A favorable long run
+never clears a short-run HOLD. No trade-off has been approved by the user.
 Do not convert untested platforms into failures or imply native performance.
 
 The single final report must contain pinned source/image/harness identities,
