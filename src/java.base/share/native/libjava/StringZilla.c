@@ -31,6 +31,9 @@
 JNIEXPORT jint JNICALL
 Java_java_lang_StringZilla_initialize(JNIEnv* env, jclass ignored) {
     jint capabilities = StringZilla_initialize();
+#if defined(_MSC_VER) && !defined(__clang__)
+    capabilities |= JVM_STRINGZILLA_MSVC;
+#endif
     return capabilities | (JVM_StringZillaEnabled(env, ignored) ? JVM_STRINGZILLA_ENABLED : 0);
 }
 

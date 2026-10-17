@@ -68,6 +68,9 @@ public class TestStringZillaDispatch {
         var backendField = bridge.getDeclaredField("BACKEND");
         backendField.setAccessible(true);
         int backend = backendField.getInt(null);
+        var configurationField = bridge.getDeclaredField("CONFIGURATION");
+        configurationField.setAccessible(true);
+        boolean msvcSerial = backend == 0 && (configurationField.getInt(null) & 16) != 0;
         Class<?> helper = Class.forName("java.lang.StringZillaDispatchHelper");
         Method tier = helper.getMethod("tier");
         Method latin = helper.getMethod("latin", int.class, int.class);
@@ -76,6 +79,7 @@ public class TestStringZillaDispatch {
         Method search = helper.getMethod("search", String.class, String.class, int.class);
         Method intrinsic = bridge.getDeclaredMethod("compilerTier");
         if (args.length != 0) {
+            checkNarrowCandidates(search);
             checkShortAndMixed(search);
             return;
         }
@@ -94,8 +98,16 @@ public class TestStringZillaDispatch {
             }
             boolean serialC2 = backend == 0 && expectedTier == 4;
             boolean avx2C2 = backend == 1 && expectedTier == 4;
+            boolean msvcC1 = msvcSerial && expectedTier == 1;
+            boolean msvcC2 = msvcSerial && expectedTier == 4;
             boolean scalarC1 = (backend == 0 || backend == 1) && expectedTier == 1;
             boolean scalarC2 = (backend == 0 || backend == 1) && expectedTier == 4;
+            boolean neonC1 = backend == 4 && expectedTier == 1;
+            boolean neonC2 = backend == 4 && expectedTier == 4;
+            boolean longLatinC1 = (backend == 0 || backend == 4) && expectedTier == 1;
+            boolean longLatinC2 = serialC2 || neonC2;
+            boolean shortUTF16C2 = scalarC2 || neonC2;
+            boolean longUTF16C1 = scalarC1 || neonC1;
             if ((boolean)latinFilter.invoke(null) != serialC2) {
                 throw new AssertionError("Latin-1 filter routing at compilation level " + level);
             }
@@ -107,35 +119,50 @@ public class TestStringZillaDispatch {
             check(latin, 258, 256, !scalarC2);
             check(latin, 259, 256, !serialC2);
             check(latin, 260, 256, !serialC2);
-            check(latin, 258, 257, !scalarC1 && !scalarC2);
-            check(latin, 259, 257, !scalarC1 && !scalarC2);
-            check(latin, 260, 257, !scalarC2);
-            check(latin, 261, 257, !scalarC2);
-            check(latin, 271, 257, !scalarC2);
-            check(latin, 272, 257, !avx2C2);
-            check(latin, 273, 257, !avx2C2);
-            check(latin, 288, 257, !avx2C2);
+            check(latin, 257, 257, !longLatinC1 && !longLatinC2);
+            check(latin, 258, 257, !longLatinC1 && !longLatinC2);
+            check(latin, 259, 257, !longLatinC1 && !longLatinC2);
+            check(latin, 260, 257, !longLatinC2);
+            check(latin, 261, 257, !longLatinC2);
+            check(latin, 271, 257, !longLatinC2);
+            check(latin, 272, 257, !neonC2);
+            check(latin, 273, 257, true);
+            check(latin, 288, 257, true);
             check(latin, 289, 257, true);
             check(latin, 290, 257, true);
+            check(latin, 319, 257, true);
+            check(latin, 320, 257, true);
+            check(latin, 321, 257, true);
+            check(latin, 322, 257, true);
             check(latin, 770, 257, true);
-            check(utf16, 128, 4, !scalarC2);
-            check(utf16, 255, 4, !scalarC2);
-            check(utf16, 256, 4, !scalarC2);
-            check(utf16, 511, 32, !scalarC2);
-            check(utf16, 512, 32, true);
-            check(utf16, 128, 33, !scalarC2);
-            check(utf16, 129, 128, !scalarC2);
-            check(utf16, 130, 129, !scalarC1 && !scalarC2);
-            check(utf16, 135, 129, !scalarC1 && !scalarC2);
-            check(utf16, 136, 129, !scalarC2);
-            check(utf16, 137, 129, !scalarC2);
-            check(utf16, 143, 129, !scalarC2);
+            check(utf16, 128, 4, !shortUTF16C2 && !msvcC1);
+            check(utf16, 255, 4, !shortUTF16C2 && !msvcC1);
+            check(utf16, 256, 4, !shortUTF16C2 && !msvcC1);
+            check(utf16, 511, 32, !shortUTF16C2);
+            check(utf16, 512, 8, !msvcC1 && !msvcC2 && !neonC2);
+            check(utf16, 1023, 8, !msvcC1 && !msvcC2 && !neonC2);
+            check(utf16, 1024, 8, !msvcC1 && !msvcC2);
+            check(utf16, 1025, 8, !msvcC1 && !msvcC2);
+            check(utf16, 512, 9, !msvcC2);
+            check(utf16, 512, 32, !msvcC2);
+            check(utf16, 512, 128, !msvcC2);
+            check(utf16, 512, 129, true);
+            check(utf16, 128, 33, !shortUTF16C2);
+            check(utf16, 129, 128, !shortUTF16C2);
+            check(utf16, 129, 129, !longUTF16C1 && !shortUTF16C2);
+            check(utf16, 130, 129, !longUTF16C1 && !shortUTF16C2);
+            check(utf16, 135, 129, !longUTF16C1 && !shortUTF16C2);
+            check(utf16, 136, 129, !shortUTF16C2);
+            check(utf16, 137, 129, !shortUTF16C2);
+            check(utf16, 142, 129, !shortUTF16C2);
+            check(utf16, 143, 129, !shortUTF16C2);
             check(utf16, 144, 129, !avx2C2);
             check(utf16, 145, 129, true);
             check(utf16, 146, 129, true);
             check(utf16, 512, 385, true);
-            check(utf16, 4096, 4, true);
+            check(utf16, 4096, 4, !msvcC1 && !msvcC2);
             checkBoundaries(search);
+            checkNarrowCandidates(search);
             checkFilteredBlocks(search);
             checkShortAndMixed(search);
         }
@@ -202,7 +229,7 @@ public class TestStringZillaDispatch {
                 }
             }
         }
-        for (int count : new int[]{4, 8, 9, 63, 64, 65, 128, 129, 130}) {
+        for (int count : new int[]{4, 8, 9, 23, 24, 25, 31, 32, 33, 47, 48, 49, 63, 64, 65, 66, 127, 128, 129, 130}) {
             String needle = "b" + "a".repeat(count - 2) + "c";
             int[] lengths = count == 4 ? new int[]{15, 16, 17, 127, 128, 129, 4096}
                                        : new int[]{127, 256, 4096, 4097};
@@ -237,10 +264,24 @@ public class TestStringZillaDispatch {
         }
     }
 
+    private static void checkNarrowCandidates(Method search) throws Exception {
+        for (int count : new int[]{257, 258, 511}) {
+            String repeated = "a".repeat(count);
+            String prefix = "b" + repeated.substring(1);
+            String suffix = repeated.substring(2) + "ba";
+            for (int from : new int[]{0, 1, Integer.MAX_VALUE}) {
+                checkReverse(search, repeated + "a", suffix, from, -1);
+                checkReverse(search, prefix + "a", prefix, from, 0);
+                checkReverse(search, suffix + "a", suffix, from, 0);
+                checkReverse(search, "a" + suffix, suffix, from, from < 1 ? -1 : 1);
+            }
+        }
+    }
+
     private static void checkBoundaries(Method search) throws Exception {
         for (int length : new int[]{127, 128, 129, 255, 256, 257, 258, 259, 260, 261,
                                   271, 272, 273, 288, 289, 290, 511, 512, 513, 1023, 1024, 1025, 4096}) {
-            for (int count : new int[]{1, 2, 4, 16, 31, 32, 33, 64, 128, 129, 255, 256, 257, 258, 385}) {
+            for (int count : new int[]{1, 2, 4, 8, 9, 16, 31, 32, 33, 64, 128, 129, 255, 256, 257, 258, 385}) {
                 if (count >= length) continue;
                 for (int base : new int[]{'a', 0x0401}) {
                     String repeated = String.valueOf((char)base);

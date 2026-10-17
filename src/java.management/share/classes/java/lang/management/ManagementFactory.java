@@ -46,7 +46,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -467,11 +466,13 @@ public class ManagementFactory {
     public static synchronized MBeanServer getPlatformMBeanServer() {
         if (platformMBeanServer == null) {
             platformMBeanServer = MBeanServerFactory.createMBeanServer();
-            platformComponents()
-                    .stream()
-                    .filter(PlatformComponent::shouldRegister)
-                    .flatMap(pc -> pc.nameToMBeanMap().entrySet().stream())
-                    .forEach(entry -> addMXBean(platformMBeanServer, entry.getKey(), entry.getValue()));
+            for (PlatformComponent<?> pc : platformComponents()) {
+                if (pc.shouldRegister()) {
+                    for (Map.Entry<String, ?> entry : pc.nameToMBeanMap().entrySet()) {
+                        addMXBean(platformMBeanServer, entry.getKey(), entry.getValue());
+                    }
+                }
+            }
         }
         return platformMBeanServer;
     }
@@ -706,9 +707,11 @@ public class ManagementFactory {
                     + " is not a platform management interface");
         }
 
-        return platformComponents().stream()
-                .flatMap(p -> p.getMBeans(mxbeanInterface).stream())
-                .collect(Collectors.toList());
+        List<T> result = new ArrayList<>();
+        for (PlatformComponent<?> p : platformComponents()) {
+            result.addAll(p.getMBeans(mxbeanInterface));
+        }
+        return result;
     }
 
     /**
@@ -938,16 +941,12 @@ public class ManagementFactory {
         static PlatformComponent<?> findFirst(Class<?> mbeanIntf)
         {
             String name = mbeanIntf.getName();
-            Optional<PlatformComponent<?>> op = getMap().values()
-                .stream()
-                .filter(pc -> pc.mbeanInterfaceNames().contains(name))
-                .findFirst();
-
-            if (op.isPresent()) {
-                return op.get();
-            } else {
-                return null;
+            for (PlatformComponent<?> pc : getMap().values()) {
+                if (pc.mbeanInterfaceNames().contains(name)) {
+                    return pc;
+                }
             }
+            return null;
         }
 
         // Finds a PlatformComponent whose mbeanInterface name list contains
@@ -955,19 +954,16 @@ public class ManagementFactory {
         static PlatformComponent<?> findSingleton(Class<?> mbeanIntf)
         {
             String name = mbeanIntf.getName();
-            Optional<PlatformComponent<?>> op = getMap().values()
-                .stream()
-                .filter(pc -> pc.mbeanInterfaceNames().contains(name))
-                .reduce((p1, p2) -> {
-                    if (p2 != null) {
+            PlatformComponent<?> singleton = null;
+            for (PlatformComponent<?> pc : getMap().values()) {
+                if (pc.mbeanInterfaceNames().contains(name)) {
+                    if (singleton != null) {
                         throw new IllegalArgumentException(mbeanIntf.getName() +
                             " can have more than one instance");
-                    } else {
-                        return p1;
                     }
-                });
-
-            PlatformComponent<?> singleton = op.isPresent() ? op.get() : null;
+                    singleton = pc;
+                }
+            }
             if (singleton == null) {
                 throw new IllegalArgumentException(mbeanIntf.getName() +
                     " is not a platform management interface");

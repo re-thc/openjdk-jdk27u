@@ -38,7 +38,6 @@
 package compiler.cpuflags;
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.cli.predicate.NotPredicate;
 import static jdk.test.lib.cli.CommandLineOptionTest.*;
 
@@ -56,7 +55,7 @@ public class TestAESIntrinsicsOnUnsupportedConfig extends AESIntrinsicsBase {
 
     /**
      * Test checks following situation: <br/>
-     * UseAESIntrinsics flag is set to true, TestAESMain is executed <br/>
+     * UseAESIntrinsics flag is set to true, AESWorkload is executed <br/>
      * Expected result: UseAESIntrinsics flag is set to false <br/>
      * UseAES flag is set to false <br/>
      * Output shouldn't contain intrinsics usage <br/>
@@ -64,9 +63,8 @@ public class TestAESIntrinsicsOnUnsupportedConfig extends AESIntrinsicsBase {
      * @throws Throwable
      */
     private void testUseAESIntrinsics() throws Throwable {
-        OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
-                AESIntrinsicsBase.prepareArguments(prepareBooleanFlag(
-                        AESIntrinsicsBase.USE_AES_INTRINSICS, true)));
+        OutputAnalyzer outputAnalyzer = runWorkload(
+                prepareBooleanFlag(AESIntrinsicsBase.USE_AES_INTRINSICS, true));
         final String errorMessage = "Case testUseAESIntrinsics failed";
         verifyOutput(new String[] {INTRINSICS_NOT_AVAILABLE_MSG},
                 new String[] {AESIntrinsicsBase.CIPHER_INTRINSIC,
@@ -80,7 +78,7 @@ public class TestAESIntrinsicsOnUnsupportedConfig extends AESIntrinsicsBase {
 
     /**
      * Test checks following situation: <br/>
-     * UseAES flag is set to true, TestAESMain is executed <br/>
+     * UseAES flag is set to true, AESWorkload is executed <br/>
      * Expected result: UseAES flag is set to false <br/>
      * UseAES flag is set to false <br/>
      * Output shouldn't contain intrinsics usage <br/>
@@ -88,9 +86,8 @@ public class TestAESIntrinsicsOnUnsupportedConfig extends AESIntrinsicsBase {
      * @throws Throwable
      */
     private void testUseAES() throws Throwable {
-        OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
-                AESIntrinsicsBase.prepareArguments(prepareBooleanFlag
-                        (AESIntrinsicsBase.USE_AES, true)));
+        OutputAnalyzer outputAnalyzer = runWorkload(
+                prepareBooleanFlag(AESIntrinsicsBase.USE_AES, true));
         final String errorMessage = "Case testUseAES failed";
         verifyOutput(new String[] {AES_NOT_AVAILABLE_MSG},
                 new String[] {AESIntrinsicsBase.CIPHER_INTRINSIC,

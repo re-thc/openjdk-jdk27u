@@ -75,6 +75,9 @@ public class BasicImageReader implements AutoCloseable {
     private final ByteOrder byteOrder;
     private final String name;
     private final ByteBuffer memoryMap;
+    // Never repositioned or limited, for absolute integer reads.
+    // Null unless the entire image is mapped.
+    private final ByteBuffer memoryInts;
     private final FileChannel channel;
     private final ImageHeader header;
     private final long indexSize;
@@ -164,6 +167,15 @@ public class BasicImageReader implements AutoCloseable {
         }
 
         memoryMap = map.asReadOnlyBuffer();
+        if (MAP_ALL) {
+            // Reading the header has limited the buffer, which a duplicate must not be.
+            ByteBuffer ints = memoryMap.duplicate();
+            ints.clear();
+            ints.order(byteOrder);
+            memoryInts = ints;
+        } else {
+            memoryInts = null;
+        }
 
         // Interpret the image index
         if (memoryMap.capacity() < indexSize) {
@@ -491,6 +503,27 @@ public class BasicImageReader implements AutoCloseable {
         }
 
         return null;
+    }
+
+    /**
+     * Reads uncompressed, fully mapped content as integers, or returns null
+     * when the general resource-reading path is required.
+     */
+    IntBuffer getContentInts(ImageLocation loc) {
+        if (memoryInts == null || loc.getCompressedSize() != 0) {
+            return null;
+        }
+        long offset = loc.getContentOffset() + indexSize;
+        long size = loc.getUncompressedSize();
+        if (offset < 0 || size < 0 || offset + size > memoryInts.capacity()) {
+            return null;
+        }
+        int[] ints = new int[(int) (size / Integer.BYTES)];
+        int position = (int) offset;
+        for (int i = 0; i < ints.length; i++, position += Integer.BYTES) {
+            ints[i] = memoryInts.getInt(position);
+        }
+        return IntBuffer.wrap(ints);
     }
 
     public InputStream getResourceStream(ImageLocation loc) {

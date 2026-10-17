@@ -40,6 +40,8 @@ import static java.util.Objects.requireNonNull;
 
 public final class SplitConstantPool implements ConstantPoolBuilder {
 
+    private static final int INITIAL_CAPACITY = 64;
+
     private final ClassReaderImpl parent;
     private final int parentSize, parentBsmSize;
 
@@ -53,7 +55,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     public SplitConstantPool() {
         this.size = 1;
         this.bsmSize = 0;
-        this.myEntries = new PoolEntry[1024];
+        this.myEntries = new PoolEntry[INITIAL_CAPACITY];
         this.myBsmEntries = new BootstrapMethodEntryImpl[8];
         this.parent = null;
         this.parentSize = 0;
@@ -179,7 +181,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         int parentSize = this.parentSize;
         var map = this.map;
         if (map == null) {
-            this.map = map = new EntryMap(Math.max(size, 1024), .75f);
+            this.map = map = new EntryMap(Math.max(size, INITIAL_CAPACITY), .75f);
 
             // Doing a full scan here yields fall-off-the-cliff performance results,
             // especially if we only need a few entries that are already
