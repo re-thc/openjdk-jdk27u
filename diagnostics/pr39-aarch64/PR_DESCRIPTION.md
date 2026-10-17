@@ -2,71 +2,63 @@ Use bounded mismatch stubs for native segments and buffers on x86-64 and AArch64
 
 Native, direct and mapped `MemorySegment` and NIO comparisons can use the
 vectorized mismatch stub from C2 and the interpreter. AArch64 gains an Advanced
-SIMD stub, enabled by default through interpreter, C1 and C2, including heap
-arrays that previously used the Java loop.
+SIMD stub, enabled through interpreter, C1 and C2, including heap arrays that
+previously used the Java loop.
 
 Native C2 leaves are selected for 128 B through 64 KiB. On AArch64, heap calls
-below 128 B retain Java; guarded C2 loads check the first two heap words or the
-first sixteen native/mixed words before stub entry. AArch64 C2 heap vector work
-is capped at 2 KiB; an equal heap prefix on a larger request calls the existing
-Java implementation with all original arguments. Native and mixed C2 calls
-retain their full-range stub within the existing 64 KiB bound, with no
-post-stub Java rescan. AArch64 C1 uses a leaf only for
-constant valid ranges of at most 64 KiB. Short native C2 scans keep the Java loop.
-Prefix loads with ambiguous heap/native aliases use compiler ordering barriers
-so preceding and following plain heap accesses keep their required order.
-Scoped native and mixed
-scans use bounded chunks with Java safepoint polls between them; heap segment
-scans retain the scoped boundary. The interpreter entry bounds its leaf work,
-counts invocations once, and defers profiling, safepoints and JVMTI events to
-the ordinary entry. Mapped faults in the stub deliver `InternalError` and NIO
-comparisons keep direct-buffer owners reachable.
+below 128 B retain Java. Guarded C2 loads check two heap words or sixteen
+native/mixed words before stub entry. Heap vector work is capped at 2 KiB;
+an equal prefix on a larger request calls the existing Java implementation
+with all original arguments. Native/mixed calls retain their full guarded
+stub range. C1 admits constant valid ranges of at most 64 KiB. Compiler ordering
+barriers preserve plain heap access order around ambiguous unsafe prefix loads.
 
-Related changes fix empty x86 stub ranges, out-of-range reads at low segment
-mismatch thresholds, and wide-string terminator bounds. CharBuffer views stage
-long string writes through a bounded array; buffer hashCode combines four
-elements with the same specified result. There are no public API changes or
-new production libraries. Existing legal notices and recovery ancestry are retained.
+Scoped comparisons retain bounded chunks and Java safepoint polls. The
+interpreter bounds leaf work, counts once, and defers profiling, safepoints
+and JVMTI events to the ordinary entry. Mapped faults deliver `InternalError`;
+NIO comparisons retain direct-buffer owners. Related changes fix empty x86
+stub ranges, low-threshold segment reads and string terminator bounds.
+CharBuffer views stage long string writes through a bounded array, and buffer
+hashCode combines four elements with the specified result. There are no public
+API changes or new production libraries. Legal notices and recovery ancestry
+are retained.
 
-Validation: [CI run 39027042938](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39027042938)
-passed all 57 jobs at `9fedf7ac9`, including native Linux ARM64 and macOS ARM64
-builds and tier1. The separate [native AArch64 qualification](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39033175975)
-built matched baseline/candidate release images and candidate fastdebug on
-Neoverse-N2. All 34 required jtreg records and 108 fresh-VM probes passed across
-Serial, G1 and ZGC.
+**Native ARM performance qualification failed; this PR remains draft and is
+not ready to merge.** [Run 39045104945](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39045104945)
+built matched master/repaired-merge releases and candidate fastdebug on native
+Neoverse-N2. All **38 targeted jtreg records** and **108 fresh-VM probes** passed
+across selected Serial, G1, ZGC and interpreter/C1/C2 paths, including bounds,
+mapped faults, polling, alias ordering, reachability, NIO/typed views, hashCode,
+CharBuffer and interpreter events.
 
-**The native ARM performance gate failed; this PR is not ready to merge.**
-The original source's fixed 34-row screen found 21 regressions and 8 inconclusive rows with stable
-controls. Heap byte-array early mismatches regressed about 21–23% for 8-byte
-requests and 44–47% for 128-byte requests; native short-prefix and equal 64 KiB
-heap scans also regressed. The screen stopped before the 98 main timing rows.
-The retained compilation logs show C2 code, a measurement-iteration-1 worker
-recompilation limitation, and no later target deoptimization; all measured
-forks recorded zero collections. Full results, machine/source identities and
-attribution limits are in `diagnostics/pr39-aarch64/RESULTS.md`. No application
-or x86 speedup is claimed by this qualification. The historical x86 measurements
-against `e206bae32` remain separate from this incremental current-master ARM
-comparison.
+The stable 4 KiB native equality gate passed at 54–55% lower time in both
+orders. Prior native/mixed prefix regressions and equal 64 KiB heap now pass.
+The full fixed screen still found **25 regressions, 10 passes and no
+inconclusive rows**, with all four controls passing. Short heap callers outline
+public `Arrays.mismatch` where the baseline inlines Java, including cases that
+return from the short Java fallback or scalar prefix before NEON. Larger heap
+prefixes 25/82 also regress; both images already call different helper levels.
+The **97 main performance rows did not run**, leaving their buffer, hashCode,
+CharBuffer and C1/interpreter timing coverage incomplete. No samples or gates
+were changed and no timing retry ran.
 
-A same-method store/compare test exposed an alias-ordering defect in our first
-repair `a5fbfd`, executed on native x86 (including a VM with ARM compiler policy
-enabled). It was not an execution of original `9fedf7a`; the added heap prefix
-was ours. Repair `93926e` adds the established compiler-only ordering barriers,
-and both corrected local VMs pass the store/compare checks. Original native
-prefix code has a similar source-level hazard, without an executed original-head
-reproduction in these checks.
+Actual timed C2 bytes, raw samples, compilation/GC caveats, exact source/machine
+identities and the remaining code-generation blocker are retained in
+`diagnostics/pr39-aarch64/RESULTS-39045104945.md` and its linked data. The NEON
+body was not printed; no isolated stub cost or application/x86 speedup is
+claimed. The baseline is actual master `89885a6`, versus repaired merge
+`a7ca575` (tree `9587ce8f`), with repair parent `93926e`. Historical x86 results
+against `e206bae32` remain separate.
 
-The subsequent AArch64 repair and regression tests are available for review,
-with every screening row audited in `diagnostics/pr39-aarch64/REPAIR.md` and its
-linked data. The heap-only 2 KiB cutoff preserves a vector opportunity through
-the observed byte-1,267 case; it is not a measured optimum. The future plan moves
-the existing native equal 4 KiB benefit gate before the remaining timing rows.
-The pending campaign pins repaired source `93926e` merged against actual
-master `89885a6`, with a 130 runner-minute upper bound and the original fixed
-rows, forks and gates. The repaired source still needs native ARM build,
-correctness and matched performance validation. Relevant instruction bytes
-must be reviewed before instruction-level attribution; missing bytes limit
-conclusions to end-to-end call paths. No further CI or benchmark has launched.
+A same-method store/compare test reproduced an alias-ordering wrong result in
+our first repair `a5fbfd`, on native x86 including a VM with ARM compiler policy.
+That was not an execution of original author `9fedf7a`. Corrected repair
+`93926e` passes the local and native ARM store-ordering checks; exact source-hash
+provenance is retained in `diagnostics/pr39-aarch64/REPAIR.md`.
+[Author CI 39027042938](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39027042938)
+passed 57/57 jobs at `9fedf7a`, including Linux/macOS ARM64 builds and tier1;
+it predates this repair. Further heap work and reviewed native qualification
+are required before merge.
 
 ---------
 - [ ] I confirm that I make this contribution in accordance with the [OpenJDK Interim AI Policy](https://openjdk.org/legal/ai).

@@ -2,12 +2,15 @@
 
 The source repair addresses the distinct paths exposed by native run
 [39033175975](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39033175975).
-It has not been benchmarked or executed on native ARM. The original failed
-screen and its unchanged samples remain in [RESULTS.md](RESULTS.md).
+The exact repaired merge has now passed native ARM targeted correctness and
+failed its fixed performance screen: **38 jtreg records and 108 cold probes
+pass; 25 regressions, 10 passes, no inconclusive rows, four passing controls**.
+See [the current verdict](RESULTS-39045104945.md). The original failed screen
+and its unchanged samples remain in [RESULTS.md](RESULTS.md).
 [The per-row causal audit](causal-audit-39033175975.json) covers all 34 screening
 rows, all paired final-worker/helper compilations and their variability gates.
 
-## What the retained evidence establishes
+## What the original retained evidence established
 
 All 152 measured forks had installed C2 benchmark code and zero collections.
 The final normal JMH workers compiled during measurement iteration 1 and had
@@ -61,8 +64,9 @@ The prefix ordering correction below also applies to x86 native/mixed calls.
   entry can still select its existing bounded intrinsic until compilation.
 - Native and mixed C2 calls keep the existing 128 B–64 KiB selection and send
   the full original length to the stub. They do not use the heap cap or generate
-  a post-stub Java rescan. Native equality was not measured, so the demonstrated
-  heap loss does not justify changing the native bulk policy.
+  a post-stub Java rescan. Native equality had not been measured when this
+  repair was selected; the completed campaign now confirms the 4 KiB benefit. The demonstrated heap
+  loss did not justify changing the native bulk policy.
 - Nullable array bases with unrestricted long offsets can become raw unsafe
   addresses. Their prefix loads need an all-memory dependency on ordinary heap
   stores through other aliases. `has_wide_mem` selects the established
@@ -88,10 +92,11 @@ NaN/signed-zero handling remain in their existing Java callers.
 Keeping a vector path does not prove that its old advantage survives the new
 guards or register/code-layout effects. Native 128 B equality repeats its scalar
 prefix in the stub, and a large equal heap scan repeats up to 2 KiB in Java. These
-costs, the changed inlining decisions, and the cap all require native validation.
-The native equal 4 KiB path retains a single full-range stub after its scalar
-prefix. Its intended benefit still needs to pass the native gate before any
-expanded timing; preserving the path does not demonstrate that benefit.
+costs, the changed inlining decisions, and the cap required native validation.
+That validation now retains the 4 KiB native equality benefit and passes equal
+64 KiB heap, while exposing stable heap early/prefix regressions. The scalar
+prefilter alone did not preserve short caller inlining. No optimal cutoff or
+completed main-matrix performance qualification follows.
 
 ## Regression checks
 
@@ -131,9 +136,11 @@ The heap prefix was introduced by our repair. Original `9fedf7a` has the same
 unbarriered native first-word pattern, supporting a native/mixed hazard by
 source analysis, but these executions do **not** reproduce that original
 commit. Both corrected VMs pass all twelve store/compare graph and runtime
-probes, including following stores. These are shared-compiler correctness
-checks, not native ARM execution or performance results. The validation record
-retains both outcomes, exact source hashes, VM identities and graph hashes.
+probes, including following stores. Those executions are shared-compiler
+correctness checks. The subsequent native ARM campaign separately passes the
+new store-ordering tests; the local wrong-result checks remain distinct from
+native performance evidence. The validation record retains both outcomes,
+exact source hashes, VM identities and graph hashes.
 
 Successful and failed Ideal children now write named raw graph captures before
 verification. `prepare.py` uses the supported `JTREG RETAIN=all` option, includes
@@ -157,36 +164,51 @@ identifies source hashes, overrides and evidence.
 This local build uses the author-based review branch; it does not establish
 the repaired merge result against current master.
 
-Future protocol source fixes warmup at three iterations, retaining the same
-three measured iterations, 132 rows, 560 forks, controls and 29-minute driver cap.
+The executed repaired protocol fixes warmup at three iterations, retaining
+the same three measured iterations, 132 rows, 560 forks, controls and
+29-minute driver cap.
 The existing native equal 4 KiB row moves to screen position zero, making the
-future split 35 screening and 97 main rows. Its original stability and paired
+repaired split 35 screening and 97 main rows. Its original stability and paired
 5% benefit requirements stop the campaign before all other rows on failure;
 it is neither duplicated nor retried. Historical 34/98 results remain unchanged.
 It requests code dumps for the exact benchmark, generated worker and hot
 callees found in retained compilation XML, and records compilation/invalidation
 lines with iteration brackets. It validates installed tiers using the worker's
-full package name. This may move
-the observed normal-worker recompilation into warmup, but stability still needs
-to pass the original gates; no retry or additional sample is permitted.
+full package name. All 156 final normal workers in the completed repaired
+screen installed during warmup 3, with no later worker invalidation. Standalone fallback
+invalidations remain explicitly recorded in the current audit. The unchanged
+gates still failed; no retry or additional sample ran.
 
-## Remaining native evidence and execution boundary
+## Native verdict and remaining blocker
 
-Before merging, the exact repaired source must pass the native correctness
-matrix and stable matched measurements, with actual timed ARM nmethod bytes
-and final tier/deoptimization boundaries retained. That is the missing evidence
-for recovery and instruction-level attribution. No native application speedup
-or optimal threshold is claimed here.
+The exact repaired merge passed all targeted native correctness requirements,
+including actual ARM store-ordering/dispatch graphs, large polling, mapped
+faults and reachability. Ten raw Ideal captures and actual timed C2 nmethod
+bytes are retained. The first native 4 KiB equality benefit gate passed, and
+prior native/mixed prefix regressions and equal 64 KiB heap now pass.
 
-The completed runs consumed 95 of 225 reserved runner-minutes; 130 remain.
-[CAMPAIGN.md](CAMPAIGN.md) identifies repair `93926e`, its merge against pinned
-master, all image/toolchain receipts and a 5+125-minute job envelope. The author
-and master concurrency guards remain separate from repaired-source identity.
-The corrected source must pass correctness and the existing 4 KiB equality
-benefit gate before later timing. Native instruction attribution still needs
-actual relevant bytes; missing bytes limit any conclusion to the measured
-end-to-end call path. No further CI or benchmark launch is authorized or has
-occurred. Publishing this source does not start a workflow or spend the balance.
+The full fixed screen still failed: 25 heap regressions, 10 passes and no
+inconclusive rows with stable controls. Short BYTE/BOOLEAN/CHAR/SHORT/FLOAT/
+DOUBLE callers reject public Arrays as already compiled into a big method;
+the baseline inlines Java. Eight-byte requests use the outlined Java fallback,
+and early larger requests return through scalar prefix loads before stub entry.
+Large heap differences 25/82 reach the bounded stub; both images already call
+helpers at different levels, so those losses are not simply an added call.
+A coherent change must preserve short caller inlining, reduce modest-prefix
+setup, and retain bounded large-work/polling/alias guarantees. The existing
+captures do not establish which prospective change recovers performance.
+
+[The current verdict](RESULTS-39045104945.md) and [code audit](causal-audit-39045104945.json)
+retain all samples and compilation/GC caveats. No NEON-body bytes were printed;
+helper traps late in console measurement brackets remain visible. No isolated
+stub cost, native application speedup or optimal threshold is claimed.
+
+The 97 main rows were not admitted. Usage is 158 of 225 reserved runner-minutes;
+the 67-minute balance does not authorize a retry. [CAMPAIGN.md](CAMPAIGN.md)
+preserves the approved 5+125-minute envelope and separate author/master/repair
+guards. Upload and cleanup completed. No production/test changes were added
+after measurement; further implementation and native qualification require
+separate review. The PR remains draft and performance-unqualified.
 
 ## Incorporation of encoder and decoder findings
 

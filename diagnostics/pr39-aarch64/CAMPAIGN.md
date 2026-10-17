@@ -1,9 +1,19 @@
-# Pending native validation of repair 93926e
+# Executed native protocol for repair 93926e
 
-This is the complete proposal for independent launch review. **No dispatch is
-authorized or has occurred.** Publishing the review branch starts no workflow.
-The historical failed screen remains unchanged; this proposal cannot convert
-its results into repaired-source evidence.
+This exact bounded plan was independently reviewed and explicitly approved,
+then launched **once** at `b394c38d0065ed5e2703cc26e6c217477699bb97` in
+[run 39045104945](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39045104945).
+Targeted correctness passed; the fixed screen failed with 25 regressions,
+10 passes and zero inconclusive rows. Four controls passed; 97 main rows were
+not admitted. [The final verdict](RESULTS-39045104945.md) records actual identities,
+raw evidence and limits. The text below preserves the approved protocol,
+including its fixed admission gates. It does not authorize a new launch.
+
+Actual usage was **63 additional runner-minutes**, aggregate **158 of 225**;
+**67 remain without launch authorization**. Builds took 29m29s, correctness
+22m55s and actual timing 7m25s. Upload and cleanup completed. The actual host
+matched the historical hardware/image/toolchain identified below; its run and
+image receipts are retained independently. No retries or extra samples ran.
 
 ## Exact sources
 
@@ -54,8 +64,9 @@ Both measured releases use one identically compiled, hashed JMH harness.
 The prior host was four Neoverse-N2 r0p0 cores, Ubuntu 26.04.1 image
 `ubuntu26-arm64/20261012.150.1`, GCC 16.0.1 Ubuntu package
 `16-20260322-1ubuntu1` (trunk r16-8246-g569ace1fa50), GNU ld 2.46.
-These are historical identities, **not a claim about the next runner**. Actual
-identities must be read from the new run and reported. Each measurement fork
+These were historical planning identities; the completed run independently
+recorded the same CPU, image and toolchain. Its actual runner was
+`GitHub Actions 1000017639`. Each measurement fork
 is pinned to the same allowed CPU on that host. Native ARM correctness and
 performance cannot be inferred from the local x86 policy checks.
 
@@ -81,10 +92,11 @@ The native steps sum to **119**, leaving **6 minutes reserve**:
 
 Historical actual stages were JTReg 40s, native preparation 1m15s, all three
 fresh builds 30m38s, fixture checks 2s, correctness 21m54s, 152 screening forks
-6m35s and upload 6s. The proposed build step has 4m22s margin; its shared driver
-has 3m22s. Correctness's driver has 6m06s margin before the added repair tests.
-The JTReg cache-miss build, new ARM test durations, additional instruction
-printing and full 560-fork matrix are unmeasured. Scaling the old screen and
+6m35s and upload 6s. At review, the approved build step had 4m22s margin; its
+shared driver had 3m22s. Correctness's driver had 6m06s before the added repair
+tests. The JTReg cache-miss build, new ARM test durations and additional code
+printing were unmeasured at approval; actual completion is reported above.
+The full 560-fork matrix remains unmeasured. Scaling the old screen and
 adding the fixed third warmup suggests roughly 26m35s timing, leaving about
 2m25s inside the driver cap; that estimate is **not evidence of completion**.
 
@@ -186,11 +198,14 @@ merge; they do not authorize another run.
 
 ## Launch boundary
 
-Only `.github/workflows/pr39-aarch64-qualification.yml` may be proposed for a
-separately approved exact commit. It is manual-only, first-attempt-only, exact
-review branch and `reviewed_commit == github.sha`; source guards run again.
+The approved launch used only `.github/workflows/pr39-aarch64-qualification.yml`
+at exact commit `b394c38d0065ed5e2703cc26e6c217477699bb97`. No further launch is
+authorized by this protocol or the unused balance. The workflow is manual-only,
+first-attempt-only, exact review branch and `reviewed_commit == github.sha`; source guards run again.
 The workflow requires no default-branch edits to publish the source. If GitHub
 does not expose branch-only dispatch or permission is absent, report that
 specific blocker. Do not add automatic triggers, move it to master, launch
-ordinary tier1, rerun a job or substitute another campaign. This plan changes
-only qualification tooling and documentation beyond repaired source `93926e`.
+ordinary tier1, rerun a job or substitute another campaign. The executed
+qualification commit changes only tooling and documentation beyond repaired
+source `93926e`. The final report also leaves its production
+and test trees unchanged.
