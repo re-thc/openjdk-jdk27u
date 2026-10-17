@@ -1,202 +1,212 @@
 # Adjacent integer threshold qualification
 
-This directory preserves the evidence for the narrow C2 guard fix and supplies
-one bounded qualification plan. The strengthened compiler/test source commit is
-`57f567fcb9ad7dddbd7fb2b2d9b443309681fc0f`. Publication of these files does not authorize
-running that plan. No benchmark, CI, dependency installation, or new VM build
-campaign was launched to prepare this handoff.
+The reviewed compiler and regression source is fixed at
+`57f567fcb9ad7dddbd7fb2b2d9b443309681fc0f`. Baseline is
+`2c3ecf578a57f2eb4d5ed30d395e537764e0fa99`, including the same GCC prerequisite.
+Later commits in this branch supply evidence and the workflow below; they do
+not change the compiler. Publication does **not** authorize executing the
+qualification campaign. No fresh JDK build, Java workload, benchmark or CI job
+was run while preparing this workflow.
 
-The fix recognizes `x <= c` and `x < c+1` only in `IfNode::search_identical`'s
-existing bounded dominator search. The comparison domains and left input must
-match, and the bound must not wrap. `same_condition`, CastII propagation,
-RangeCheck equivalence, counted-loop exits, and opaque guard shapes retain their
-existing behavior. This keeps the change separate from the vector-check lead.
+The fix recognizes equivalent `x <= c` / `x < c+1` tests inside the existing
+bounded `IfNode::search_identical` search. Domains and input values must match,
+and the constant must not wrap. `same_condition`, CastII, RangeCheck equivalence,
+loop exits and opaque shapes keep their existing behavior.
 
-## Existing evidence and strengthened tests
+## Existing evidence
 
-Read [EVIDENCE.md](EVIDENCE.md) first. The address-free
-[evidence-original.json](evidence-original.json) identifies the exact original
-C2 compilations, IR phase, guard instructions, trap, and code sizes.
-[evidence-strengthening.json](evidence-strengthening.json) records the added
-canonical `IfFalse` and long mixed-domain cases against the saved VMs.
+[EVIDENCE.md](EVIDENCE.md), [evidence-original.json](evidence-original.json) and
+[evidence-strengthening.json](evidence-strengthening.json) preserve exact source
+identities, compile IDs, graph scopes, original guard instructions and test
+results. On the original candidate VM, the minimal direct method fell from
+160 to 112 main-code bytes, eliminating the second guard/trap. The strengthened
+Java class passed 30 methods / 28 IR rules against that saved VM; the baseline
+failed all 23 positive IR cases and passed the five negative cases. Semantics
+passed on both.
 
-The scalar predicate was extracted without changing its expressions into
-`src/hotspot/share/opto/constantThreshold.hpp`. The new native tests directly
-call that production predicate, avoiding Java endpoint conditions that fold
-before reaching the graph helper. All four native test bodies / 26 assertions
-ran through a local standalone shim. Removing each signed/unsigned endpoint
-exclusion for each width makes exactly one assertion fail. This establishes
-predicate coverage, not GoogleTest registration or VM linkage.
+The four native predicate test bodies / 26 assertions ran through a standalone
+shim, and four endpoint mutants were rejected. This is not a standard GTest
+result. The final extraction source has not yet been rebuilt. The complete
+workflow now supplies the normal GTest dependency and integration needed to
+close that gap; these existing results are not substituted for that run.
 
-The existing candidate VM passed all 30 Java test methods / 28 IR rules; the
-saved baseline failed all 23 positive IR methods and passed the five negative
-cases. Both executed the semantic checks successfully. The changed C2 source
-passed `-fsyntax-only` using its saved GCC16.2 compilation flags.
+## One normal-checkout command
 
-**Still pending:** a VM built with the scalar extraction and normal filtered
-GoogleTest execution. The saved VM is the original `6bb477a6d0e0b18ee59c2c956f54ca0b27ffad5e`
-implementation, not a newly built extraction. GoogleTest is neither configured
-(`GTEST_FRAMEWORK_SRC` is empty) nor installed in this environment. No substitute
-is claimed to validate the normal harness. Once the framework is supplied and
-development build execution is authorized, use the existing configuration and
-run the four `opto.constant_threshold_*` tests, followed by the one Java IR class.
-With a matching GTest-enabled existing configuration, the filtered command is:
+Use Linux x86-64, Python 3.12+, curl, Git, GNU make, a supported GCC toolchain,
+and the normal JDK OS development prerequisites described in
+[building.md](../building.md). Supply only a supported boot JDK 26/27 and host
+build tools; prebuilt candidate/baseline images, JMH, GTest, codec classes and
+corpora are not required. A checkout of this review branch contains both fixed
+source commits. A shallow checkout must first obtain those commits normally.
 
 ```sh
-make CONF=threshold-fastdebug test-only TEST='gtest:opto.constant_threshold_*'
+# Print every command and bound. Runs no command and creates no work directory.
+python3 -B doc/c2-constant-threshold/qualify.py \
+  --boot-jdk "$JAVA_HOME" --output /scratch/threshold-qualification \
+  > /scratch/threshold-plan.json
+
+# Only after the complete plan receives execution approval:
+python3 -B doc/c2-constant-threshold/qualify.py \
+  --boot-jdk "$JAVA_HOME" --output /scratch/threshold-qualification --execute
 ```
 
-See the repository's [gtest test syntax](../testing.md#gtest).
-Do not use this handoff as permission to install the framework or start builds.
+The output directory must be new and outside the checkout. Run both commands
+with the same arguments/environment. If the host requires a compiler/sysroot
+configuration, pass each normal configure argument with `--configure-arg=...`;
+the runner applies it identically to all builds. Supply each non-system
+compiler, linker, autoconf or sysroot root with `--input-root /absolute/root` so
+its complete content is hashed. Do not include mutable caches in those roots.
+For example, `--configure-arg=--with-toolchain-path=/tools/gcc/bin` together with
+`--input-root /tools/gcc`. Host OS development packages remain ordinary JDK
+build prerequisites; the runner does not install or upgrade them.
+`JAVA_TOOL_OPTIONS`, `JDK_JAVA_OPTIONS` and `_JAVA_OPTIONS` must be unset.
 
-## Required future inputs
+[dependencies.json](dependencies.json) pins eight HTTPS downloads by length and
+SHA256. They include GoogleTest 1.14.0 at its exact upstream commit, JMH 1.37 and
+its three runtime/processor dependencies, the jtreg archive, Jupiter 5.11.4's
+standalone platform and reference zstd 1.5.7 source. GTest/JMH versions follow
+`make/conf/jib-profiles.js` / `make/devkit/createJMHBundle.sh`; JUnit follows the
+pinned codec build. GoogleTest is fetched and unpacked privately as a normal
+build dependency, with no shared installation. The jtreg mirror archive is
+named 8.2.1+1, but its actual jar manifest says **8.2.1-dev+0, 2026-10-05**; the
+exact archive hash is pinned and its 8.2.1 version meets this tree's configured
+minimum. It is not represented as Oracle's official 8.2.1+1 binary.
 
-Use one Linux x86-64 machine and a matched **release** VM pair. Existing
-fastdebug codegen evidence is diagnostic evidence, not a release throughput
-result. Supply the pair; this runner never creates it. Baseline source is
-`2c3ecf578a57f2eb4d5ed30d395e537764e0fa99` (fork head plus the common GCC repair).
-Candidate source is `57f567fcb9ad7dddbd7fb2b2d9b443309681fc0f`, with that same repair.
-The later documentation-only tip does not change compiler/test sources.
-Both need identical compiler, boot JDK and normalized configure arguments.
-Normalize only build-root/conf-name paths, not optimization or JVM feature flags.
+The pinned codec checkout is
+[`re-thc/jzstd@6abf77e2f63b68cc9269d5823e206235ab254c04`](https://github.com/re-thc/jzstd/tree/6abf77e2f63b68cc9269d5823e206235ab254c04).
+The runner compiles unchanged production/test sources and existing Java drivers
+once with the baseline release javac, then uses identical class files on both
+VMs. No codec source overlay, Gradle/plugin installation or new benchmark class
+is involved. The reference zstd executable is built privately from its pinned
+source for existing interoperability checks.
 
-Each VM's `build_manifest` is existing build provenance with these fields:
+## Preparation, validation and measurement
 
-```json
-{
-  "source_commit": "EXACT_40_DIGIT_SOURCE_SHA",
-  "common_prerequisite": "2c3ecf578a57f2eb4d5ed30d395e537764e0fa99",
-  "debug_level": "release",
-  "compiler": "EXACT_COMPILER_VERSION",
-  "boot_jdk": "PINNED_BOOT_JDK_IDENTITY",
-  "normalized_configure_arguments": ["EXACT_MATCHED_BUILD_ARGUMENTS"],
-  "libjvm_sha256": "SHA256_OF_THIS_VM"
-}
-```
+The plan emits 109 commands plus final input verification, sequentially. It
+stops at the first failure; it never retries or raises a limit automatically.
 
-Also supply:
+| Stage | Actual work | Bounds and required evidence |
+|---|---|---|
+| Preparation | Host preflight; eight pinned downloads; local extraction; pinned codec clone | Hash/length checks before unpacking; supported boot JDK and source commit availability |
+| Builds | Baseline/candidate **release** pair and baseline/candidate **fastdebug** pair, ordinary `configure` + `make images` | Four jobs; 75 min cap per image build; same toolchain/boot JDK/configuration within each pair; exact source pin/configure/spec/release records |
+| Standard compiler tests | Candidate `make test-image-hotspot-gtest`, then `make test-only TEST='gtest:opto.constant_threshold_*'`; Java IR class, StressIGVN/VerifyIterativeGVN, same nearby regressions listed in EVIDENCE.md | All four registered native tests must pass; IR/stress/nearby exit zero; normal GTest library/linking/harness, no shim |
+| Artifact preparation | Normal baseline `make build-microbenchmark`; verify selected six benchmark names; compile unchanged jzstd; prepare existing corpora/reference frames | Shared benchmark jar and codec classes, generated once; source/file provenance saved |
+| Codec correctness | Both release VMs run existing functional JUnit tests, 54-frame guarded-destination driver, and source-corpus encoder check-only at levels 1/3/9 | 918 destination checks per VM; allocating/direct output and guard bytes; zero skipped/failed functional tests; byte-identical encoded frames between VMs; reference zstd decodes to the exact source corpus |
+| Codec applicability/code size | Existing rolling decode driver on both release and fastdebug pairs; targeted PrintIdeal/PrintOptoAssembly/LogCompilation/CITime | Exact descriptor, regular C2 compile IDs and inlined bytecode scope; original guard retained, matching redundant mask guard/trap present in baseline and absent in candidate; main-code and total nmethod sizes separately |
+| Measurement | Four existing non-codec throughput controls and two compiler controls; three alternating fresh pairs each | 36 JMH launcher commands, one fork each; **30 min separate measurement ceiling**; per-command 35 s throughput / 45 s compiler caps |
+| Postprocessing/finalization | Paired ratios, matching C2 code sizes/compiler timers, then complete input drift verification | Included in the overall budget, with 10 min reserved at the end; any incomplete verification prevents completion |
 
-- The existing, unchanged jzstd source checkout, compiled codec/driver artifacts,
-  exact rolling-decoder driver arguments and method JVM descriptor.
-- The existing encoder/decoder correctness corpus and driver. A corpus manifest
-  is a JSON array of `{"path": "...", "sha256": "..."}` entries. Its actual
-  coverage must be listed; do not add fixtures, fabricate success markers or
-  silently substitute a round-trip smoke test.
-- A prebuilt JMH benchmark jar containing the existing controls listed below.
-  No new benchmark classes or downloaded dependencies are part of this plan.
+The unchanged functional suite excludes `GoalGateTest` and `ReferenceParityTest`,
+which contain existing size/throughput goals beyond this compiler screen. The
+remaining tests include malformed frames, dictionaries, streaming, boundaries,
+sequence/bit handling and CLI interoperability. This is an explicitly selected
+functional suite, not a claim that every codec gate ran. Any skipped test is an
+incomplete result. The full correctness commands and JUnit reports are retained.
 
-Hash every codec classpath entry and the JMH jar. For a directory,
-`qualify.digest` hashes sorted relative file names, a zero byte, and each file's
-binary SHA-256 digest. An existing build record must connect the codec artifact
-to its source pin. Independently check that the unchanged correctness command
-actually consumes the exact manifest set. The runner checks declared hashes and
-success markers; those checks cannot establish source provenance or corpus
-consumption by themselves. These two checks are technical preflight review work.
+Corpus construction reuses the existing `scripts/jdk27/run.py` source corpus:
+sorted 37 production Java files plus one newline each, 764896 bytes, SHA256
+`dddfad1293504a9bd47b89e491c29e74833e16fc39a4fe752f88091dbc5678b9`.
+The 54-case generator is the existing `check_overlays.py` matrix: random,
+periodic and source data at sizes 0, 7, 257, 131071, 131073, 300000, levels 1/3/9.
+The runner calls the unchanged `DecodeOverlayCheck` directly and supplies its
+entire tab manifest. It does not execute that script's source-overlay stage.
+Each row has exact source/frame hashes, and918 expected checks establish that
+the driver consumed all 54 rows. All generated inputs/classpaths are frozen.
 
-These inputs are **not available here**: no matched release pair, jzstd driver /
-corpus, or configured/prebuilt JMH jar. The example preflight fails accordingly;
-there has been no codec or non-codec performance execution.
+The guard check uses javap to identify the `sliceWidth<=63` branch at source
+line 245 and the specific `Bits.mask64(sliceWidth)` call at 249. It verifies the
+nested `BlockDecoder$EntropyState` descriptor, actual inline scopes, shared
+comparison value, final CmpI/If nodes and unstable-if trap, using exact regular
+C2 compilation IDs. Unrelated `mask64(available)` and four component-width calls
+are excluded by their bytecode locations. Missing scope/graph/compilation means
+**not applicable or incomplete**, not successful guard removal. Fastdebug
+provides decisive graph evidence; release provides matching production code-size
+evidence. Driver diagnostic rates are discarded and are not codec throughput
+measurements. A missing codec compiler timer also stops validation.
 
-## Executable plan
-
-Copy [qualification.example.json](qualification.example.json) outside the
-repository and replace every placeholder with the existing inputs above.
-Keep the original guard driver's inlining/training flags and unchanged
-arguments. The print directive must select `BlockDecoder::decodeSequencesRolling`;
-`guard_method` pins its full owner, name and descriptor. Shared heap, code cache
-and processor options belong to the plan, not per-driver overrides.
-
-```sh
-# Safe default: print the exact 40 commands; execute none.
-python3 doc/c2-constant-threshold/qualify.py /qualified/config.json > /qualified/plan.json
-
-# Read-only input checks; no Java or qualification command is launched.
-python3 doc/c2-constant-threshold/qualify.py /qualified/config.json --check
-
-# ONLY after separate qualification execution authorization:
-python3 doc/c2-constant-threshold/qualify.py /qualified/config.json \
-  --execute --output /qualified/new-private-results
-```
-
-No shell is used for workload arguments. The result directory must be new.
-`JAVA_TOOL_OPTIONS`, `JDK_JAVA_OPTIONS` and `_JAVA_OPTIONS` must be unset. Input
-hashes, commands and results remain private; the script never pushes or uploads.
-The JMH options are checked against the
-[OpenJDK JMH command-line implementation](https://github.com/openjdk/jmh/blob/master/jmh-core/src/main/java/org/openjdk/jmh/runner/options/CommandLineOptions.java).
-
-## Sequence and gates
-
-| Stage | Fixed workload | Commands / bounds | Required evidence |
-|---|---|---|---|
-| Codec code shape | Existing rolling-decoder driver, same classpath and corpus | One per VM; 90 seconds each | C2 compile IDs for the exact method/descriptor, printed assembly and inline scope identifying the slice-width guard |
-| Codec correctness | Existing complete encoder/decoder corpus command | One per VM; 180 seconds each | Exit zero, actual existing complete-success marker, unchanged input hashes and declared coverage |
-| Non-codec throughput | Four existing controls below | Three paired fresh forks; 24 commands; each has 3x1s warmup + 5x1s measurement, 35s wall timeout | Per-fork JMH JSON and paired candidate/baseline throughput ratios |
-| Compiler cost | Existing SimpleRepeatCompilation baseline and repeat-C2 controls | Three paired fresh forks per control; 12 commands; 45s wall timeout each | One single-shot invocation, no warmup iterations/forks, accepted RepeatCompilation=500, actual target C2 compilation, JMH timing and C2 CITime |
-
-The four throughput controls are:
+The throughput controls remain:
 
 1. `org.openjdk.bench.vm.compiler.UnsignedComparison.intConDirect`
 2. `org.openjdk.bench.vm.compiler.UnsignedComparison.longConDirect`
 3. `org.openjdk.bench.vm.compiler.IfMinMax.testReductionInt`
-4. `org.openjdk.bench.java.util.HashMapBench.put`, only `size=16384,mapType=HASH_MAP`
+4. `org.openjdk.bench.java.util.HashMapBench.put`, size=16384 / mapType=HASH_MAP
 
-Compiler controls are
-`org.openjdk.bench.vm.compiler.overhead.SimpleRepeatCompilation.mixHashCode_baseline`
-and `mixHashCode_repeat_c2`. Warmup is zero because it would hide the first
-invocation's repeat-compilation cost. The selected C2 repeat target is
-`SimpleRepeatCompilation.mixHashCode`, not just the benchmark wrapper.
+Each fresh fork uses three 1 s warmup iterations and five 1 s measurements.
+Compiler controls remain
+`SimpleRepeatCompilation.mixHashCode_baseline` and `mixHashCode_repeat_c2`,
+with zero warmup and one single-shot invocation. The repeat control must accept
+RepeatCompilation=500 and compile the actual `mixHashCode` target with C2.
+Paired order is A/B, B/A, A/B. C2 nmethod comparisons exclude C1/OSR and retain
+compile IDs. Missing/changed target sets and missing/zero compiler timers are
+incomplete evidence. Total nmethod bytes include metadata and must not be
+confused with main-instruction bytes.
 
-The pair order alternates A/B, B/A, A/B. Do not average unrelated cases. Capture
-`LogCompilation` for each non-codec fork. `compilation-metrics.json` compares the
-latest regular C2 nmethod for identical benchmark or generated JMH-stub signatures
-and includes compile IDs. These are **total nmethod bytes**, including metadata,
-not the main-instruction byte count reported for the minimal probe. OSR and C1
-entries are excluded. Missing common C2 targets or changed compilation sets
-require investigation; do not treat missing evidence as zero code growth.
+Investigate median throughput loss over 3%, compiler cost increase over 5%, or
+code size increase over 3%; inspect every pair and changed compilation set.
+These thresholds are a small investigation screen, not significance tests.
+Flags prevent an unexplained GO. Completion never produces an automatic GO.
 
-For the codec method, inspect the original slice-width branch and its inlined
-mask guard using the matching inline/bytecode scope, separately for baseline and
-candidate. The candidate must remove that redundant guard/trap while preserving
-the first guard and semantics. A global count of `cmp 64` is insufficient: the
-four component-width guards are separate. Save the exact selected compile IDs.
-The script requires a C2 compilation of the pinned method and leaves this
-specific branch review to the reviewer.
+## One overall resource budget
 
-Stop on a crash, semantic mismatch, missing target compilation, incomplete corpus,
-input drift or resource limit. Flag throughput median loss over 3%, compiler-time
-increase over 5%, code-size increase over 3%, or changed compilation sets. These
-are investigation thresholds for a small screen, not significance tests or a
-claim that smaller effects are absent. Examine all three paired results and
-per-fork logs; do not automatically retry, extend the matrix, or select a better
-looking subset. Flags or missing evidence prevent a qualification GO until
-explained and reviewed.
+**Seven hours wall time from execution start through preparation, preflight,
+builds, measurements, postprocessing and final verification.** Expected elapsed
+time on a suitable four-core host is roughly 4–6 hours, dominated by four full
+builds; the 75 min per-build caps and overall deadline are limits, not guarantees
+that an unusually slow host completes. There is no hidden preparation campaign.
+The 30-minute measurement allowance is inside those seven hours. Ten minutes
+are reserved for final input verification; no new main-stage command may use
+that reserve. Every subprocess is also capped individually.
 
-## Resource budget and interpretation
+Reserve 70 GiB free private scratch and about 12 GiB available RAM for normal
+four-job builds / the existing functional suite. Builds are sequential; four
+jobs and the configure resource inputs are fixed. The functional test JVM uses
+at most 4 GiB Java heap; JMH measured forks use 512 MiB, launcher 256 MiB, reserved code
+cache 128 MiB, active processor count 4. Typical measurement RSS is around 1.5–2 GiB;
+this is a planning estimate, not an OS-enforced RSS ceiling. An upper planning
+CPU budget is 28 core-hours at four active CPUs, subject to normal build-tool
+threading. The runner stops below 2 GiB remaining disk space. Outer logs/results
+have a polled 1 GiB stop threshold with possible final-write overshoot; intermediate
+build products remain covered by the free-space check and 70 GiB scratch reserve.
 
-The runner issues exactly 40 commands sequentially, with one JMH measured fork
-at a time. Fork heap is 512 MiB, JMH launcher heap 256 MiB, reserved code cache
-128 MiB, and active processor count four. Plan for roughly 1.5–2 GiB peak RSS
-with these controls; this is a planning bound, not an OS-enforced RSS ceiling.
-The existing corpus must fit 64 MiB encoded and its declared decoded bound of
-at most 512 MiB. If the unchanged corpus does not fit, stop and revise the plan
-before execution; do not truncate or expand it.
+SIGINT, SIGTERM, timeouts and errors clean up only the command's own process
+group, including make descendants and JMH forks: SIGTERM, up to 3 s, then SIGKILL
+and reap, up to 2 s. Final drift verification runs on success and failure, with a
+120 s cap following cancellation/error and the remaining reserved budget on
+success. A second interrupt cannot bypass that cleanup. These steps stay within
+the seven-hour overall deadline, with a final 5 s cleanup reserve; abrupt SIGKILL
+of the runner cannot be handled. Incomplete final verification is recorded as a
+failure. Logs and build directories remain private for inspection.
 
-Expected runtime is 12–22 minutes after inputs exist. Global execution stops at
-30 minutes, plus at most about six seconds for process-group cleanup. Upper CPU
-planning budget is two core-hours at four active processors. The 512 MiB output
-value is a polled stop threshold with possible final-write/polling overshoot;
-reserve 1 GiB local result space. Typical logs should be well below 100 MiB.
-Every timeout/error cleans up only its own process group, including JMH forks.
-No limit is automatically raised. No further build time is included in this
-budget: supplied release VMs and GoogleTest integration are prerequisites.
-If matched release artifacts must be produced, budget that separately at up to
-roughly two hours on four CPUs and 12 GiB scratch for the pair. A first GTest
-framework/test build can take tens of minutes even when existing HotSpot
-objects are reused; do not assume the filtered test command supplies its
-missing framework. Those are preparation estimates, not authorized work or
-performance results.
+Input manifests cover every file/mode/symlink and resolved symlink file content
+in all four JDK images, the boot JDK, downloaded archives, unpacked test/JMH
+inputs, codec classes and corpora, native reference executable and benchmark
+jar. Git source pins and every tracked source file are recorded separately.
+Builds disable the optional javac server to avoid asynchronous daemon shutdown
+conflicting with strict descendant cleanup. Actual configure commands, spec
+files, source revisions, tool executable hashes,
+selected build environment and extra toolchain/sysroot roots are saved. Images/configuration are frozen immediately after their builds; runtime
+freezing cannot replace an earlier manifest. Extracted zstd source files are
+frozen before the reference build, with generated build products allowed as
+additional files. Directory symlinks include target content; cycles fail closed.
+Inputs are checked before measurements and again after all postprocessing. No output
+is uploaded, pushed or hosted by the runner.
 
-A GO from this plan means the narrow guard change passes unchanged codec
-correctness, targeted codegen review and these bounded non-codec controls. It
-**does not measure codec throughput or explain the Java/native encoder/decoder
-gap**. The four component-width guards remain a separate propagation lead.
+## Runner validation and interpretation
+
+```sh
+# Temporary Python data and harmless child processes only; no VM/benchmark run.
+python3 -B -m unittest discover -s doc/c2-constant-threshold \
+  -p 'test_qualify.py' -v
+```
+
+Ten harness tests currently pass, covering the complete plan/pins, full-image
+support-file drift, safe extraction, exact bytecode/graph scope discrimination,
+timeouts and repeated-SIGTERM descendant cleanup with final drift verification. All
+eight actual dependency downloads were fetched normally and their declared
+lengths/SHA256 verified; archive layouts were inspected. Standard GTest and all
+future build/codec/measurement stages remain unexecuted pending plan approval.
+
+A completed and reviewed screen would establish bounded correctness, exact
+codec guard applicability and these non-codec controls. It would **not explain
+the entire encoder/decoder native gap or establish codec throughput improvement**.
+The four component-width guards remain a separate propagation lead.

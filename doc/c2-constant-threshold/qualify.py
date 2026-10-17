@@ -21,176 +21,263 @@
 # questions.
 #
 
-"""Bounded future qualification. Default: print commands; never build or install."""
+"""Prepare and qualify the fixed source pair. Default is a non-executing plan."""
 import argparse
 import hashlib
 import json
-import math
 import os
 from pathlib import Path
+import platform
+import random
 import re
-import shlex
+import shutil
 import signal
-import statistics
 import subprocess
+import sys
+import tarfile
 import time
+import zipfile
+import xml.etree.ElementTree as ET
 
+sys.dont_write_bytecode = True
+import screen
+
+HERE = Path(__file__).resolve().parent
 BASELINE = '2c3ecf578a57f2eb4d5ed30d395e537764e0fa99'
-CONTROLS = [
-    ('org.openjdk.bench.vm.compiler.UnsignedComparison.intConDirect', []),
-    ('org.openjdk.bench.vm.compiler.UnsignedComparison.longConDirect', []),
-    ('org.openjdk.bench.vm.compiler.IfMinMax.testReductionInt', []),
-    ('org.openjdk.bench.java.util.HashMapBench.put', ['size=16384', 'mapType=HASH_MAP']),
+CANDIDATE = '57f567fcb9ad7dddbd7fb2b2d9b443309681fc0f'
+CODEC = '6abf77e2f63b68cc9269d5823e206235ab254c04'
+CODEC_URL = 'https://github.com/re-thc/jzstd.git'
+CORPUS_HASH = 'dddfad1293504a9bd47b89e491c29e74833e16fc39a4fe752f88091dbc5678b9'
+METHOD = 'dev.jzstd.internal.BlockDecoder decodeSequencesRolling ([BIILdev/jzstd/internal/BlockDecoder$EntropyState;Ldev/jzstd/internal/Workspace;II)I'
+TARGET = 'dev.jzstd.internal.BlockDecoder::decodeSequencesRolling'
+IR_TEST = 'test/hotspot/jtreg/compiler/c2/irTests/TestIfConstantThreshold.java'
+OVERALL_SECONDS = 7 * 3600
+MEASUREMENT_SECONDS = 30 * 60
+FINAL_SECONDS = 10 * 60
+MAX_LOG_BYTES = 1024 * 1024 * 1024
+MIN_DISK_BYTES = 70 * 1024**3
+VARIANTS = [('baseline-release', BASELINE, 'release'), ('candidate-release', CANDIDATE, 'release'),
+            ('baseline-fastdebug', BASELINE, 'fastdebug'), ('candidate-fastdebug', CANDIDATE, 'fastdebug')]
+FUNCTIONAL_EXCLUSIONS = '.*(?:GoalGateTest|ReferenceParityTest)'
+RELATED = [
+    'compiler/c2/TestDeadLoopSplitIfLoop.java', 'compiler/c2/TestFoldCompares.java',
+    'compiler/c2/TestFoldCompares2.java', 'compiler/c2/TestFoldIfRemovesTopNode.java',
+    'compiler/c2/TestIfWithDeadRegion.java', 'compiler/c2/irTests/CmpUWithZero.java',
+    'compiler/c2/irTests/TestBackToBackIfs.java', 'compiler/c2/irTests/TestUnsignedComparison.java',
+    'compiler/igvn/TestFoldComparesCleanup.java', 'compiler/integerArithmetic/TestIntegerComparison.java',
+    'compiler/loopopts/PeelingZeroTripCount.java', 'compiler/loopopts/TestCountedLoopCastIV.java',
+    'compiler/loopopts/TestCountedLoopZeroIter.java', 'compiler/loopopts/TestLostDependencyOnZeroTripGuard.java',
+    'compiler/loopopts/TestNotifyOpaqueZeroTripGuardToCmpI.java',
+    'compiler/loopopts/TestOpaqueZeroTripGuardPostLoopRemoval.java',
+    'compiler/loopopts/TestZeroTripGuardShared.java', 'compiler/rangechecks/TestFoldCompares.java',
+    'compiler/uncommontrap/FoldedIfNonDomMidIf.java',
 ]
-COMPILER_CONTROLS = [
-    'org.openjdk.bench.vm.compiler.overhead.SimpleRepeatCompilation.mixHashCode_baseline',
-    'org.openjdk.bench.vm.compiler.overhead.SimpleRepeatCompilation.mixHashCode_repeat_c2',
-]
-COMMON = ['-Xms512m', '-Xmx512m', '-XX:ReservedCodeCacheSize=128m', '-XX:ActiveProcessorCount=4']
-MAX_SECONDS = 1800
-MAX_OUTPUT_BYTES = 512 * 1024 * 1024
 
 
-def digest(path):
+def write_json(path, value):
     path = Path(path)
-    if path.is_file():
-        h = hashlib.sha256()
-        with path.open('rb') as stream:
-            for chunk in iter(lambda: stream.read(1024 * 1024), b''):
-                h.update(chunk)
-        return h.hexdigest()
-    if path.is_dir():
-        h = hashlib.sha256()
-        for item in sorted(p for p in path.rglob('*') if p.is_file()):
-            h.update(str(item.relative_to(path)).encode() + b'\0')
-            h.update(bytes.fromhex(digest(item)))
-        return h.hexdigest()
-    raise ValueError(f'Missing input: {path}')
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp = path.with_name(path.name + '.tmp')
+    temp.write_text(json.dumps(value, indent=2, sort_keys=True) + '\n')
+    temp.replace(path)
 
 
-def validate(config):
-    errors = []
-    for key in ('JAVA_TOOL_OPTIONS', 'JDK_JAVA_OPTIONS', '_JAVA_OPTIONS'):
-        if os.environ.get(key):
-            errors.append(key + ' must be unset so inherited options cannot change the paired VMs')
-    manifests = {}
-    expected = {'baseline': BASELINE, 'candidate': config['candidate_source_commit']}
+def sha256(path):
+    h = hashlib.sha256()
+    with Path(path).open('rb') as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def file_manifest(path):
+    """Hash every entry and symlink target content, including directory symlinks."""
+    path = Path(path)
+    if not path.exists() and not path.is_symlink():
+        raise ValueError('Missing input: ' + str(path))
+    rows = []
+    def visit(item, relative, ancestors):
+        row = dict(path=relative, mode=item.lstat().st_mode & 0o7777)
+        if item.is_symlink():
+            row['symlink'] = os.readlink(item)
+            if item.exists():
+                row['target_mode'] = item.stat().st_mode & 0o7777
+        if item.is_dir():
+            row['kind'] = 'directory'
+            resolved = item.resolve()
+            if resolved in ancestors:
+                raise ValueError('Directory symlink cycle: ' + str(item))
+            rows.append(row)
+            for child in sorted(item.iterdir()):
+                visit(child, child.name if relative == '.' else relative + '/' + child.name,
+                      ancestors | {resolved})
+        elif item.is_file():
+            row.update(bytes=item.stat().st_size, sha256=sha256(item), kind='file')
+            rows.append(row)
+        elif item.is_symlink():
+            row['kind'] = 'broken-symlink'
+            rows.append(row)
+        else:
+            raise ValueError('Unsupported input entry: ' + str(item))
+    visit(path, '.', set())
+    return rows
+
+
+def capture_source(path):
+    head = subprocess.check_output(['git', '-C', str(path), 'rev-parse', 'HEAD'], text=True).strip()
+    if subprocess.check_output(['git', '-C', str(path), 'status', '--porcelain', '--untracked-files=no'], text=True):
+        raise ValueError('Tracked source changed: ' + str(path))
+    names = subprocess.check_output(['git', '-C', str(path), 'ls-files', '-z']).decode().split('\0')
+    rows = []
+    for name in sorted(n for n in names if n):
+        rows.append(dict(path=name, files=file_manifest(path / name)))
+    return dict(head=head, tracked_files=rows)
+
+
+def freeze(state, path, kind='files'):
+    path = Path(os.path.abspath(path))
+    record = dict(path=str(path), kind=kind,
+                  contents=capture_source(path) if kind == 'source' else file_manifest(path))
+    target = state / (hashlib.sha256(str(path).encode()).hexdigest() + '.json')
+    if target.exists() and json.loads(target.read_text()) != record:
+        raise ValueError('Cannot replace frozen input after drift: ' + str(path))
+    write_json(target, record)
+
+
+def verify_frozen(state):
+    failures = []
+    records = sorted(state.glob('*.json'))
+    if not records:
+        raise ValueError('No input manifests were produced')
+    for record in records:
+        row = json.loads(record.read_text())
+        path = Path(row['path'])
+        try:
+            now = capture_source(path) if row['kind'] == 'source' else file_manifest(path)
+            if row['kind'] == 'source-snapshot':
+                names = {x['path'] for x in row['contents']}
+                now = [x for x in now if x['path'] in names]
+            if row['contents'] != now:
+                failures.append(str(path))
+        except (OSError, subprocess.SubprocessError, ValueError) as exc:
+            failures.append(str(path) + ': ' + str(exc))
+    if failures:
+        raise ValueError('Input drift: ' + '; '.join(failures))
+    return len(records)
+
+
+def dependencies():
+    return json.loads((HERE / 'dependencies.json').read_text())['downloads']
+
+
+def internal(argv):
+    return [sys.executable, str(HERE / 'qualify.py'), '--internal'] + list(map(str, argv))
+
+
+def build_plan(args):
+    root = args.output.resolve()
+    checkout = args.checkout.resolve()
+    boot = args.boot_jdk.resolve()
+    deps = root / 'deps'
+    logs = root / 'logs'
+    results = root / 'results'
+    state = root / 'input-manifests'
+    steps = []
+    def add(stage, name, argv, timeout, cwd=None, expected=0):
+        steps.append(dict(stage=stage, name=name, argv=list(map(str, argv)), timeout_seconds=timeout,
+                          cwd=str(cwd or root), expected_exit=expected))
+    add('prepare', 'host-preflight', internal(['host', checkout, boot, root, *args.input_root]), 120)
+    for row in dependencies():
+        dest = deps / row['name']
+        add('prepare', 'fetch-' + row['name'], ['curl', '--fail', '--location', '--retry', '0',
+            '--connect-timeout', '20', '--max-time', '180', '--output', dest, row['url']], 185)
+        add('prepare', 'verify-' + row['name'], internal(['download', dest, row['sha256'], row['bytes']]), 30)
+    add('prepare', 'unpack-dependencies', internal(['unpack', root]), 120)
+    add('prepare', 'codec-clone', ['git', 'clone', '--no-checkout', '--filter=blob:none', CODEC_URL, root / 'codec'], 180)
+    add('prepare', 'codec-pin', ['git', 'checkout', '--detach', CODEC], 180, root / 'codec')
+    # Four ordinary configurations: matched release measurements and matched debug graph evidence.
+    common = ['--with-boot-jdk=' + str(boot), '--with-jobs=4', '--with-num-cores=4', '--with-memory-size=8192',
+              '--with-jvm-variants=server', '--disable-javac-server', '--disable-precompiled-headers', '--with-native-debug-symbols=none',
+              '--with-freetype=bundled', '--with-jtreg=' + str(deps / 'jtreg'),
+              '--with-jmh=' + str(deps / 'jmh'), '--with-gtest=' + str(deps / 'gtest')] + args.configure_arg
+    for name, source, debug in VARIANTS:
+        tree = root / name
+        add('build', name + '-clone', ['git', 'clone', '--shared', '--no-checkout', checkout, tree], 120)
+        add('build', name + '-pin', ['git', 'checkout', '--detach', source], 120, tree)
+        add('build', name + '-configure', ['bash', 'configure', '--with-conf-name=qualified',
+            '--with-debug-level=' + debug] + common, 300, tree)
+        add('build', name + '-images', ['make', 'CONF=qualified', 'JOBS=4', 'images'], 4500, tree)
+        add('build', name + '-provenance', internal(['image', root, name, source, debug]), 180)
+    cand = root / 'candidate-fastdebug'
+    base = root / 'baseline-release'
+    image = lambda name: root / name / 'build/qualified/images/jdk'
+    add('validate', 'gtest-build', ['make', 'CONF=qualified', 'JOBS=4', 'test-image-hotspot-gtest'], 600, cand)
+    add('validate', 'gtest', ['make', 'CONF=qualified', 'test-only', 'TEST=gtest:opto.constant_threshold_*'], 120, cand)
+    add('validate', 'gtest-evidence', internal(['gtest', root]), 30)
+    jtreg = [str(image('candidate-fastdebug') / 'bin/java'), '-Xmx512m', '-jar', str(deps / 'jtreg/lib/jtreg.jar'),
+             '-jdk:' + str(image('candidate-fastdebug')), '-timeoutFactor:4', '-agentvm', '-conc:1']
+    add('validate', 'threshold-ir', jtreg + ['-w:' + str(results / 'ir-work'), '-r:' + str(results / 'ir-report'), IR_TEST], 300, cand)
+    add('validate', 'threshold-stress', jtreg + ['-javaoption:-XX:+UnlockDiagnosticVMOptions',
+        '-javaoption:-XX:+StressIGVN', '-javaoption:-XX:StressSeed=8275202', '-javaoption:-XX:VerifyIterativeGVN=1110',
+        '-w:' + str(results / 'stress-work'), '-r:' + str(results / 'stress-report'), IR_TEST], 300, cand)
+    add('validate', 'nearby-regressions', jtreg + ['-w:' + str(results / 'related-work'),
+        '-r:' + str(results / 'related-report')] + ['test/hotspot/jtreg/' + x for x in RELATED], 600, cand)
+    add('validate', 'jmh-build', ['make', 'CONF=qualified', 'JOBS=4', 'build-microbenchmark'], 600, base)
+    add('validate', 'jmh-list', [image('baseline-release') / 'bin/java', '-Xmx256m', '-jar',
+        base / 'build/qualified/images/test/micro/benchmarks.jar', '-l'], 30)
+    add('validate', 'jmh-list-evidence', internal(['jmh-list', root]), 30)
+    add('validate', 'codec-source-and-corpus', internal(['codec-inputs', root]), 120)
+    add('validate', 'reference-zstd-build', ['make', '-j4', 'zstd'], 180, deps / 'zstd')
+    add('validate', 'codec-javac', [image('baseline-release') / 'bin/javac', '--add-modules', 'jdk.incubator.vector',
+        '-encoding', 'UTF-8', '-cp', deps / 'junit-platform-console-standalone-1.11.4.jar', '-d', root / 'codec-classes',
+        '@' + str(root / 'codec-sources.args')], 120)
+    for cls in ('Bits', 'BlockDecoder'):
+        add('validate', 'javap-' + cls, [image('baseline-release') / 'bin/javap', '-c', '-p', '-l', '-s',
+            '-cp', root / 'codec-classes', 'dev.jzstd.internal.' + cls], 30)
+    add('validate', 'prepare-reference-frames', internal(['frames', root]), 180)
     for side in ('baseline', 'candidate'):
-        vm = config['vms'][side]
-        jdk = Path(vm['jdk'])
-        try:
-            manifest = json.loads(Path(vm['build_manifest']).read_text())
-            manifests[side] = manifest
-            if manifest['source_commit'] != expected[side] or not re.fullmatch(r'[0-9a-f]{40}', expected[side]):
-                raise ValueError('source commit does not match the reviewed pin')
-            if manifest['debug_level'] != 'release':
-                raise ValueError('matched release VMs required; fastdebug evidence is not a throughput result')
-            if manifest['common_prerequisite'] != BASELINE:
-                raise ValueError('missing common GCC prerequisite identity')
-            if digest(jdk / 'lib/server/libjvm.so') != manifest['libjvm_sha256']:
-                raise ValueError('libjvm hash mismatch')
-            if not os.access(jdk / 'bin/java', os.X_OK):
-                raise ValueError('java launcher missing or not executable')
-        except (OSError, KeyError, ValueError) as exc:
-            errors.append(f'{side} VM: {exc}')
-    if len(manifests) == 2:
-        for key in ('compiler', 'normalized_configure_arguments', 'boot_jdk'):
-            if manifests['baseline'].get(key) != manifests['candidate'].get(key) or not manifests['baseline'].get(key):
-                errors.append(f'Builds need identical, nonempty {key}')
-    try:
-        head = subprocess.check_output(['git', '-C', config['codec_repo'], 'rev-parse', 'HEAD'],
-                                       text=True, stderr=subprocess.DEVNULL).strip()
-        if head != config['codec_source_commit']:
-            raise ValueError('codec source SHA mismatch')
-        if subprocess.check_output(['git', '-C', config['codec_repo'], 'status', '--porcelain'], text=True).strip():
-            raise ValueError('codec checkout must be clean')
-    except (OSError, subprocess.CalledProcessError, ValueError) as exc:
-        errors.append(f'Unchanged codec source: {exc}')
-    for item in config['pinned_inputs']:
-        try:
-            if digest(item['path']) != item['sha256']:
-                raise ValueError('SHA-256 mismatch')
-        except (OSError, ValueError) as exc:
-            errors.append(f"Pinned input {item['path']}: {exc}")
-    pinned = {Path(item['path']).resolve() for item in config['pinned_inputs']}
-    required = [config['jmh_jar']] + config['codec_classpath'].split(os.pathsep)
-    for path in required:
-        if Path(path).resolve() not in pinned:
-            errors.append(f'Classpath/JMH input is not pinned: {path}')
-    try:
-        corpus = json.loads(Path(config['corpus_manifest']).read_text())
-        if not corpus or not config['corpus_coverage'] or 'REPLACE' in str(config['corpus_coverage']):
-            raise ValueError('existing corpus and its actual coverage must be explicit')
-        if sum(Path(item['path']).stat().st_size for item in corpus) > 64 * 1024 * 1024:
-            raise ValueError('existing encoded corpus exceeds 64 MiB plan limit')
-        if not 0 < config['corpus_max_decoded_bytes'] <= 512 * 1024 * 1024:
-            raise ValueError('decoded corpus must fit the declared 512 MiB limit')
-        for item in corpus:
-            if digest(item['path']) != item['sha256']:
-                raise ValueError(f"corpus hash mismatch: {item['path']}")
-    except (OSError, KeyError, ValueError) as exc:
-        errors.append(f'Existing correctness corpus: {exc}')
-    for key in ('guard_main_args', 'correctness_main_args'):
-        if not config[key] or any('REPLACE' in str(x) for x in config[key]):
-            errors.append(f'{key}: supply the existing driver command, without rewriting Java')
-    if not config.get('correctness_success_regex') or 'REPLACE' in config['correctness_success_regex']:
-        errors.append('Specify the existing corpus driver success marker; exit zero alone can hide skipped work')
-    if not any('decodeSequencesRolling' in arg for arg in config['guard_vm_args']):
-        errors.append('Guard VM arguments must print the existing decodeSequencesRolling compilation')
-    if not config.get('guard_method') or 'REPLACE' in config['guard_method']:
-        errors.append('Pin the exact existing codec guard owner/name/JVM descriptor')
-    for key in ('guard_vm_args', 'correctness_vm_args'):
-        if any(arg.startswith(('-Xmx', '-Xms', '-XX:ReservedCodeCacheSize', '-XX:ActiveProcessorCount',
-                               '-XX:MaxRAM', '-XX:InitialRAM', '-XX:MaxHeapSize', '-XX:InitialHeapSize')) for arg in config[key]):
-            errors.append(key + ': memory/processor bounds belong to the shared plan, not per-driver overrides')
-    if errors:
-        raise ValueError('\n'.join(errors))
-    return manifests
-
-
-def commands(config, output):
-    result = []
-    def add(kind, case, side, pair, argv, timeout, score=None):
-        result.append(dict(kind=kind, case=case, side=side, pair=pair, argv=argv,
-                           timeout_seconds=timeout, result=str(score) if score else None))
-    for kind in ('guard', 'correctness'):
-        for side in ('baseline', 'candidate'):
-            java = str(Path(config['vms'][side]['jdk']) / 'bin/java')
-            vm_args = list(config[kind + '_vm_args'])
-            if kind == 'guard':
-                vm_args += ['-XX:+UnlockDiagnosticVMOptions', '-XX:+LogCompilation',
-                            '-XX:LogFile=' + str(output / f'guard-{side}-%p.xml')]
-            argv = [java] + COMMON + vm_args + ['-cp', config['codec_classpath']] + config[kind + '_main_args']
-            add(kind, 'existing-jzstd', side, 0, argv, 90 if kind == 'guard' else 180)
-    cases = [('throughput', name, params) for name, params in CONTROLS]
-    cases += [('compiler', name, []) for name in COMPILER_CONTROLS]
-    for kind, name, params in cases:
-        # Three fresh paired forks. Alternate order to expose drift.
-        for pair, order in enumerate((('baseline', 'candidate'), ('candidate', 'baseline'), ('baseline', 'candidate'))):
-            for side in order:
-                java = str(Path(config['vms'][side]['jdk']) / 'bin/java')
-                stem = f'{kind}-{name.rsplit(".", 1)[-1]}-{pair}-{side}'
-                log = output / (stem + '-compile-%p.xml')
-                score = output / (stem + '.json')
-                child_flags = COMMON + ['-XX:+UnlockDiagnosticVMOptions', '-XX:+LogCompilation', '-XX:LogFile=' + str(log)]
-                if kind == 'compiler':
-                    child_flags += ['-XX:+CITime']
-                argv = [java, '-Xmx256m', '-jar', config['jmh_jar'], '^' + re.escape(name) + '$',
-                        '-jvm', java, '-f', '1', '-wf', '0', '-t', '1', '-foe', 'true',
-                        '-rf', 'json', '-rff', str(score), '-jvmArgsAppend', shlex.join(child_flags)]
-                if kind == 'throughput':
-                    argv += ['-bm', 'thrpt', '-tu', 's', '-wi', '3', '-w', '1s', '-i', '5', '-r', '1s']
-                else:
-                    # Zero warmup is essential: RepeatCompilation cost occurs on first invocation.
-                    argv += ['-bm', 'ss', '-tu', 'ms', '-wi', '0', '-i', '1']
-                for value in params:
-                    argv += ['-p', value]
-                add(kind, name, side, pair, argv, 35 if kind == 'throughput' else 45, score)
-    return result
-
-
-def output_size(output):
-    return sum(p.stat().st_size for p in output.rglob('*') if p.is_file())
+        jdk = image(side + '-release')
+        java = [str(jdk / 'bin/java')] + screen.COMMON + ['--add-modules', 'jdk.incubator.vector']
+        junit = java[:1] + ['-Xms512m', '-Xmx4g', '-XX:ActiveProcessorCount=4', '--add-modules', 'jdk.incubator.vector',
+                 '-jar', str(deps / 'junit-platform-console-standalone-1.11.4.jar'), 'execute',
+                 '--class-path', str(root / 'codec-classes'), '--scan-class-path', '--include-package', 'dev.jzstd',
+                 '--exclude-classname', FUNCTIONAL_EXCLUSIONS, '--fail-if-no-tests', '--details', 'summary',
+                 '--reports-dir', str(results / ('junit-' + side))]
+        add('validate', 'codec-functional-' + side, junit, 600, root / 'codec')
+        add('validate', 'codec-destinations-' + side, java + ['-cp', str(root / 'codec-classes'),
+            'DecodeOverlayCheck', str(root / 'corpus/manifest.tsv')], 90)
+        for level in (1, 3, 9):
+            add('validate', 'codec-encode-' + side + '-' + str(level), java + ['-Dprobe.checkOnly=true', '-cp',
+                str(root / 'codec-classes'), 'CodecProbe', 'encode', str(root / 'corpus/source.bin'), str(level),
+                str(results / f'{side}-l{level}.zst')], 60)
+        for debug in ('release', 'fastdebug'):
+            log = results / f'guard-{side}-{debug}.xml'
+            flags = ['-Xbatch', '-XX:-TieredCompilation', '-XX:-UseOnStackReplacement', '-XX:+UnlockDiagnosticVMOptions',
+                     '-XX:+LogCompilation', '-XX:LogFile=' + str(log), '-XX:+CITime',
+                     '-XX:CompileCommand=inline,dev.jzstd.internal.Bits::mask64',
+                     '-XX:CompileCommand=print,' + TARGET, '-XX:CompileCommand=PrintOptoAssembly,' + TARGET]
+            if debug == 'fastdebug':
+                flags += ['-XX:CompileCommand=PrintIdeal,' + TARGET]
+            # Existing driver's bounded 2s warmup + five700ms windows. Rates are discarded.
+            add('validate', 'guard-' + side + '-' + debug,
+                [str(image(side + '-' + debug) / 'bin/java')] + screen.COMMON + ['--add-modules', 'jdk.incubator.vector'] +
+                flags + ['-cp', str(root / 'codec-classes'), 'CodecProbe', 'decode', str(root / 'corpus/source.bin'),
+                         '1', str(root / 'corpus/source-native-l1.zst')], 90)
+    add('validate', 'codec-evidence', internal(['codec-evidence', root]), 120)
+    add('validate', 'freeze-measurement-inputs', internal(['freeze-runtime', root]), 180)
+    add('validate', 'pre-measurement-drift', internal(['verify', root]), 300)
+    config = dict(vms={side:dict(jdk=str(image(side + '-release'))) for side in ('baseline', 'candidate')},
+                  jmh_jar=str(base / 'build/qualified/images/test/micro/benchmarks.jar'))
+    for item in screen.commands(config, results):
+        stem = Path(item['result']).stem
+        add('measure', stem, item['argv'], item['timeout_seconds'])
+        steps[-1]['screen_record'] = item
+    add('postprocess', 'paired-results', internal(['summarize', root]), 120)
+    return dict(schema=2, execute=False, baseline=BASELINE, candidate=CANDIDATE, codec=CODEC,
+                overall_seconds=OVERALL_SECONDS, measurement_seconds=MEASUREMENT_SECONDS,
+                finalization_reserve_seconds=FINAL_SECONDS, build_jobs=4, min_disk_bytes=MIN_DISK_BYTES,
+                peak_rss_planning_gib=12, max_log_bytes=MAX_LOG_BYTES, commands=steps,
+                final_step=internal(['verify', root]))
 
 
 def group_exists(pid):
@@ -201,197 +288,425 @@ def group_exists(pid):
         return False
 
 
-def clean_group(process):
-    # Own only the process group created for this command, including JMH forks.
-    if group_exists(process.pid):
-        try:
-            os.killpg(process.pid, signal.SIGTERM)
-        except ProcessLookupError:
-            pass
-        limit = time.monotonic() + 3
-        while group_exists(process.pid) and time.monotonic() < limit:
-            process.poll()
-            time.sleep(0.05)
+def cleanup(process):
+    # Repeated cancellation must not interrupt TERM/KILL/reap for this owned group.
+    handlers = {sig:signal.signal(sig, signal.SIG_IGN) for sig in (signal.SIGINT, signal.SIGTERM)}
+    try:
         if group_exists(process.pid):
             try:
-                os.killpg(process.pid, signal.SIGKILL)
+                os.killpg(process.pid, signal.SIGTERM)
             except ProcessLookupError:
                 pass
-    try:
-        process.wait(timeout=3)
-    except subprocess.TimeoutExpired:
-        pass
-
-
-def run_one(item, output, deadline):
-    label = f"{item['kind']}-{item['case'].rsplit('.', 1)[-1]}-{item['pair']}-{item['side']}"
-    start = time.monotonic()
-    timeout = min(item['timeout_seconds'], deadline - start)
-    if timeout <= 0:
-        raise RuntimeError('Global 30-minute budget exhausted; no automatic continuation')
-    if output_size(output) >= MAX_OUTPUT_BYTES:
-        raise RuntimeError('Output budget already exhausted; no command launched')
-    process = None
-    failure = None
-    try:
-        with (output / (label + '.log')).open('wb') as stream:
-            process = subprocess.Popen(item['argv'], stdout=stream, stderr=subprocess.STDOUT, start_new_session=True)
-            while process.poll() is None:
-                if time.monotonic() - start > timeout:
-                    failure = 'command/global timeout'
-                elif output_size(output) > MAX_OUTPUT_BYTES:
-                    failure = '512 MiB output stop threshold exceeded'
-                if failure:
-                    break
-                time.sleep(0.2)
-            if process.poll() is not None and group_exists(process.pid):
-                failure = 'launcher exited with child processes remaining'
+            until = time.monotonic() + 3
+            while group_exists(process.pid) and time.monotonic() < until:
+                process.poll()
+                time.sleep(.05)
+            if group_exists(process.pid):
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+        process.wait(timeout=2)
     finally:
-        # Also cover Ctrl-C, output/stat errors, and an exited launcher with live forks.
+        for sig, handler in handlers.items():
+            signal.signal(sig, handler)
+
+
+def log_size(root):
+    return sum(p.stat().st_size for name in ('logs', 'results') for p in (root / name).rglob('*') if p.is_file())
+
+
+def run_one(item, root, deadline, env=None, enforce_resources=True):
+    started = time.monotonic()
+    end = min(deadline, started + item['timeout_seconds'])
+    if end <= started:
+        raise RuntimeError('Campaign/stage deadline exhausted: ' + item['name'])
+    process = None
+    try:
+        with (root / 'logs' / (item['name'] + '.log')).open('wb') as stream:
+            process = subprocess.Popen(item['argv'], cwd=item['cwd'], env=env,
+                                       stdout=stream, stderr=subprocess.STDOUT, start_new_session=True)
+            last_poll = 0
+            while process.poll() is None:
+                now = time.monotonic()
+                if now >= end:
+                    raise RuntimeError('Timeout: ' + item['name'])
+                if enforce_resources and now - last_poll > 2:
+                    if log_size(root) > MAX_LOG_BYTES:
+                        raise RuntimeError('1GiB log stop threshold exceeded')
+                    if shutil.disk_usage(root).free < 2 * 1024**3:
+                        raise RuntimeError('Less than2GiB disk free; stop')
+                    last_poll = now
+                time.sleep(.1)
+            if process.returncode != item.get('expected_exit', 0):
+                raise RuntimeError(f"{item['name']}: exit{process.returncode}; see private log")
+            if group_exists(process.pid):
+                raise RuntimeError('Launcher exited with children remaining: ' + item['name'])
+            if time.monotonic() > end or (enforce_resources and log_size(root) > MAX_LOG_BYTES):
+                raise RuntimeError('Final command write/time exceeded budget: ' + item['name'])
+    finally:
         if process is not None:
-            clean_group(process)
-    # A fast final write can exceed the threshold between polls.
-    if output_size(output) > MAX_OUTPUT_BYTES:
-        failure = '512 MiB output stop threshold exceeded'
-    if time.monotonic() - start > timeout:
-        failure = failure or 'command/global timeout'
-    record = dict(item, returncode=process.returncode, elapsed_seconds=time.monotonic() - start, failure=failure)
-    if failure or process.returncode:
-        raise RuntimeError(json.dumps(record))
-    return record
+            cleanup(process)
+    return dict(item, elapsed_seconds=time.monotonic() - started, returncode=process.returncode)
 
 
-def summarize(records, output):
-    groups = {}
-    for item in records:
-        if not item['result']:
-            continue
-        data = json.loads(Path(item['result']).read_text())
-        if len(data) != 1 or data[0]['benchmark'] != item['case']:
-            raise ValueError('Expected exactly the selected JMH result')
-        metric = data[0]['primaryMetric']
-        groups.setdefault((item['kind'], item['case']), {}).setdefault(item['pair'], {})[item['side']] = metric
-    report = []
-    for (kind, case), pairs in groups.items():
-        ratios = []
-        for sides in pairs.values():
-            a, b = sides['baseline'], sides['candidate']
-            if a['scoreUnit'] != b['scoreUnit'] or any(not math.isfinite(x['score']) or x['score'] <= 0 for x in (a, b)):
-                raise ValueError('Invalid paired score/unit')
-            ratios.append(b['score'] / a['score'])
-        median = statistics.median(ratios)
-        flag = median < 0.97 if kind == 'throughput' else median > 1.05
-        report.append(dict(kind=kind, case=case, paired_candidate_over_baseline=ratios,
-                           median_ratio=median, investigate=flag))
-    (output / 'ratios.json').write_text(json.dumps(report, indent=2) + '\n')
-    return report
+class Cancelled(BaseException):
+    pass
 
 
-def compilation_metrics(records, output):
-    metrics = []
-    for item in records:
-        if not item['result']:
-            continue
-        stem = Path(item['result']).stem
-        logs = list(output.glob(stem + '-compile-*.xml'))
-        if len(logs) != 1:
-            raise ValueError(f'Expected one fresh-fork compilation log: {stem}')
-        text = logs[0].read_text(errors='replace')
-        owner, method = item['case'].rsplit('.', 1)
-        package, simple = owner.rsplit('.', 1)
-        prefixes = (owner + ' ' + method + ' ',
-                    package + '.jmh_generated.' + simple + '_' + method + '_jmhTest ')
-        if item['kind'] == 'compiler':
-            prefixes += (owner + ' mixHashCode ',)
-        selected = {}
-        for tag in re.findall(r'<nmethod\b[^>]*>', text):
-            attrs = dict(re.findall(r"([\w_]+)='([^']*)'", tag))
-            signature = attrs.get('method', '')
-            if attrs.get('compiler') == 'c2' and attrs.get('compile_kind') != 'osr' and signature.startswith(prefixes):
-                selected[signature] = dict(compile_id=attrs['compile_id'], nmethod_total_bytes=int(attrs['size']))
-        human_log = (output / (stem + '.log')).read_text(errors='replace')
-        c2_time = re.findall(r'C2 Compile Time:\s+([0-9.]+) s', human_log)
-        if item['case'].endswith('mixHashCode_repeat_c2'):
-            if not any(key.startswith(owner + ' mixHashCode ') for key in selected):
-                raise ValueError('RepeatCompilation target mixHashCode did not compile with C2')
-            accepted = any('CompileCommand:' in line and 'RepeatCompilation' in line and
-                           'mixHashCode' in line and re.search(r'\b500\b', line)
-                           for line in human_log.splitlines())
-            if not accepted:
-                raise ValueError('No accepted RepeatCompilation=500 directive in fork output')
-        if item['kind'] == 'compiler' and not c2_time:
-            raise ValueError('CITime C2 timer missing from compiler control: ' + stem)
-        metrics.append(dict(kind=item['kind'], case=item['case'], side=item['side'], pair=item['pair'],
-                            c2_seconds=float(c2_time[-1]) if c2_time else None, regular_c2_nmethods=selected))
-    comparisons = []
-    for item in metrics:
-        if item['side'] != 'baseline':
-            continue
-        other = next(m for m in metrics if (m['case'], m['pair'], m['side']) ==
-                     (item['case'], item['pair'], 'candidate'))
-        a, b = item['regular_c2_nmethods'], other['regular_c2_nmethods']
-        common = sorted(set(a) & set(b))
-        ratios = {name: b[name]['nmethod_total_bytes'] / a[name]['nmethod_total_bytes'] for name in common}
-        cost = (other['c2_seconds'] / item['c2_seconds']
-                if item['c2_seconds'] and other['c2_seconds'] is not None else None)
-        comparisons.append(dict(case=item['case'], pair=item['pair'],
-                                matching_regular_c2_nmethod_ratios=ratios,
-                                c2_time_ratio=cost,
-                                compilation_set_changed=set(a) != set(b),
-                                incomplete_code_size_control=item['kind'] == 'throughput' and not common,
-                                incomplete_compiler_cost=item['kind'] == 'compiler' and cost is None,
-                                investigate=(set(a) != set(b) or (item['kind'] == 'throughput' and not common) or
-                                             (item['kind'] == 'compiler' and cost is None) or
-                                             any(r > 1.03 for r in ratios.values()) or
-                                             (cost is not None and cost > 1.05))))
-    (output / 'compilation-metrics.json').write_text(json.dumps(dict(runs=metrics, comparisons=comparisons), indent=2) + '\n')
+def execute(args, plan):
+    started = time.monotonic()
+    end = started + OVERALL_SECONDS
+    main_end = end - FINAL_SECONDS
+    root = args.output.resolve()
+    root.mkdir(parents=True, exist_ok=False)
+    for sub in ('deps', 'logs', 'results', 'input-manifests'):
+        (root / sub).mkdir()
+    write_json(root / 'plan.json', plan)
+    records, failure, final_failure = [], None, None
+    old_handlers = {}
+    def cancel(signum, _frame):
+        raise Cancelled('Cancelled by signal' + str(signum))
+    for signum in (signal.SIGINT, signal.SIGTERM):
+        old_handlers[signum] = signal.signal(signum, cancel)
+    env = os.environ.copy()
+    env['PYTHONDONTWRITEBYTECODE'] = '1'
+    env['PATH'] = str(root / 'deps/zstd/programs') + os.pathsep + env['PATH']
+    measurement_start = None
+    try:
+        for item in plan['commands']:
+            deadline = main_end
+            if item['stage'] == 'measure':
+                if measurement_start is None:
+                    measurement_start = time.monotonic()
+                deadline = min(deadline, measurement_start + MEASUREMENT_SECONDS)
+            if item['stage'] == 'postprocess' and measurement_start is not None:
+                # Postprocessing belongs to overall budget, outside measurement allowance.
+                pass
+            print(item['stage'] + ': ' + item['name'], flush=True)
+            record = run_one(item, root, deadline, env)
+            records.append(record)
+            write_json(root / 'runs.json', records)
+    except BaseException as exc:
+        failure = type(exc).__name__ + ': ' + str(exc)
+    finally:
+        # A second TERM must not bypass descendant cleanup or the bounded final drift check.
+        for signum in old_handlers:
+            signal.signal(signum, signal.SIG_IGN)
+        try:
+            item = dict(name='final-input-drift', argv=internal(['verify', root]), cwd=str(root),
+                        timeout_seconds=120 if failure else FINAL_SECONDS - 10)
+            record = run_one(item, root, end - 5, env, enforce_resources=False)
+            write_json(root / 'final-verification.json', record)
+        except BaseException as exc:
+            final_failure = type(exc).__name__ + ': ' + str(exc)
+        write_json(root / 'outcome.json', dict(completed=failure is None and final_failure is None,
+            failure=failure, final_verification_failure=final_failure, elapsed_seconds=time.monotonic() - started,
+            measurement_elapsed_seconds=(sum(r['elapsed_seconds'] for r in records if r['stage'] == 'measure')),
+            interpretation='Investigation screen only; review flags and exact codec guard evidence. No codec throughput or full-gap claim.'))
+        for signum, handler in old_handlers.items():
+            signal.signal(signum, handler)
+    if failure or final_failure:
+        raise RuntimeError(str(failure or final_failure))
+    print('Completed bounded workflow. Review private reports; flags prevent an unexplained GO.')
+
+
+def extract_archive(archive, destination):
+    destination.mkdir(parents=True, exist_ok=True)
+    if archive.suffix == '.zip':
+        with zipfile.ZipFile(archive) as source:
+            for entry in source.infolist():
+                target = (destination / entry.filename).resolve()
+                if not target.is_relative_to(destination.resolve()):
+                    raise ValueError('Archive path escapes destination')
+            source.extractall(destination)
+            for entry in source.infolist():
+                mode = entry.external_attr >> 16
+                if mode and not entry.is_dir():
+                    (destination / entry.filename).chmod(mode & 0o777)
+    else:
+        with tarfile.open(archive) as source:
+            source.extractall(destination, filter='data')
+
+
+def host_preflight(checkout, boot, root, extras):
+    if platform.system() != 'Linux' or platform.machine() != 'x86_64':
+        raise ValueError('This reviewed plan is Linux x86-64 only')
+    if not sys.version_info >= (3, 12):
+        raise ValueError('Python3.12+ required for safe archive extraction')
+    for name in ('JAVA_TOOL_OPTIONS', 'JDK_JAVA_OPTIONS', '_JAVA_OPTIONS'):
+        if os.environ.get(name):
+            raise ValueError(name + ' must be unset')
+    if shutil.disk_usage(root).free < MIN_DISK_BYTES:
+        raise ValueError('Need70GiB free scratch for four builds, dependencies and results')
+    if not (boot / 'bin/java').is_file() or not (boot / 'bin/javac').is_file():
+        raise ValueError('Supply a normal supported boot JDK26/27 via --boot-jdk')
+    release = (boot / 'release').read_text()
+    if not re.search(r'JAVA_VERSION="(?:26|27)(?:[.\-+"e])', release):
+        raise ValueError('Boot JDK must match repository boot requirement26/27')
+    for source in (BASELINE, CANDIDATE):
+        subprocess.run(['git', '-C', str(checkout), 'cat-file', '-e', source + '^{commit}'], check=True)
+    tools = {}
+    for name in ('git', 'make', 'gcc', 'g++', 'as', 'ld', 'ar', 'objdump', 'autoconf', 'bash', 'curl', 'python3'):
+        binary = shutil.which(name)
+        if binary is None:
+            raise ValueError('Normal JDK build prerequisite missing: ' + name)
+        tools[name] = binary
+        freeze(root / 'input-manifests', binary)
+    freeze(root / 'input-manifests', boot)
+    for path in sorted(HERE.iterdir()):
+        if path.is_file():
+            freeze(root / 'input-manifests', path)
+    for path in extras:
+        freeze(root / 'input-manifests', Path(path))
+    write_json(root / 'host-inputs.json', dict(platform=platform.platform(), machine=platform.machine(),
+        boot_release=release, executable_paths=tools, path=os.environ.get('PATH'),
+        build_environment={k:v for k,v in os.environ.items() if k in (
+            'CC', 'CXX', 'LD', 'AR', 'AS', 'NM', 'AUTOCONF', 'AUTOM4TE', 'M4', 'AUTOM4TE_CFG',
+            'autom4te_perllibdir', 'AC_MACRODIR', 'trailer_m4', 'CONFIG_SITE', 'CFLAGS', 'CXXFLAGS', 'LDFLAGS')},
+        note='Private host metadata. Normal OS development headers/libraries remain host prerequisites; --input-root hashes non-system toolchain/sysroot roots.'))
+
+
+def unpack(root):
+    deps = root / 'deps'
+    for name, subdir in (('gtest.tar.gz', 'gtest'), ('zstd.tar.gz', 'zstd')):
+        temp = deps / (subdir + '-unpacked')
+        extract_archive(deps / name, temp)
+        children = list(temp.iterdir())
+        if len(children) != 1 or not children[0].is_dir():
+            raise ValueError('Unexpected archive layout: ' + name)
+        children[0].rename(deps / subdir)
+        temp.rmdir()
+    extract_archive(deps / 'jtreg.zip', deps)
+    (deps / 'jmh').mkdir()
+    for row in dependencies():
+        if row['name'].startswith(('jmh-', 'jopt-', 'commons-math')):
+            shutil.copy2(deps / row['name'], deps / 'jmh' / row['name'])
+    freeze(root / 'input-manifests', deps / 'zstd', 'source-snapshot')
+    for name in ('gtest', 'jtreg', 'jmh'):
+        freeze(root / 'input-manifests', deps / name)
+
+
+def image_provenance(root, name, source, debug):
+    tree = root / name
+    spec = tree / 'build/qualified/spec.gmk'
+    contents = spec.read_text()
+    if not re.search(r'^DEBUG_LEVEL\s*:?=\s*' + debug + r'\s*$', contents, re.M):
+        raise ValueError('Configured debug level does not match plan: ' + name)
+    source_record = capture_source(tree)
+    if source_record['head'] != source:
+        raise ValueError('Source pin mismatch: ' + name)
+    freeze(root / 'input-manifests', tree, 'source')
+    configure = tree / 'build/qualified/configure.log'
+    spec_fields = [line for line in contents.splitlines() if re.match(
+        r'^(CC|CXX|LD|AR|AS|NM|STRIP|OBJCOPY|COMPILER_VERSION|BOOT_JDK|JVM_VARIANTS|JVM_FEATURES|DEBUG_LEVEL|JVM_CFLAGS|JVM_LDFLAGS|EXTRA_CFLAGS|EXTRA_CXXFLAGS|EXTRA_LDFLAGS)\b', line)]
+    image = tree / 'build/qualified/images/jdk'
+    for path in (image, spec, configure):
+        freeze(root / 'input-manifests', path)
+    plan = json.loads((root / 'plan.json').read_text())
+    configured = next(x['argv'] for x in plan['commands'] if x['name'] == name + '-configure')
+    normalized = [x.replace(str(tree), '$SOURCE') for x in configured]
+    write_json(root / 'results' / (name + '-build.json'), dict(source_commit=source,
+        common_prerequisite=BASELINE, debug_level=debug, image=str(image),
+        release=(image / 'release').read_text(), normalized_configure_arguments=normalized,
+        spec_sha256=sha256(spec), configure_log_sha256=sha256(configure), spec_fields=spec_fields,
+        libjvm_sha256=sha256(image / 'lib/server/libjvm.so')))
+    # Keep actual complete config/spec alongside the private source/image manifest.
+    shutil.copy2(spec, root / 'results' / (name + '-spec.gmk'))
+    shutil.copy2(configure, root / 'results' / (name + '-configure.log'))
+
+
+def codec_inputs(root):
+    codec = root / 'codec'
+    record = capture_source(codec)
+    if record['head'] != CODEC:
+        raise ValueError('Codec source pin mismatch')
+    freeze(root / 'input-manifests', codec, 'source')
+    sources = sorted((codec / 'src/main/java').rglob('*.java'))
+    corpus = b''.join(p.read_bytes() + b'\n' for p in sources)
+    if len(sources) != 37 or len(corpus) != 764896 or hashlib.sha256(corpus).hexdigest() != CORPUS_HASH:
+        raise ValueError('Pinned production source corpus changed')
+    (root / 'corpus').mkdir()
+    (root / 'corpus/source.bin').write_bytes(corpus)
+    (root / 'codec-classes').mkdir()
+    java = sources + sorted((codec / 'src/test/java').rglob('*.java')) + [
+        codec / 'scripts/jdk27/CodecProbe.java', codec / 'scripts/jdk27/DecodeOverlayCheck.java']
+    # javac argument files use double quotes; no shell interpolation occurs.
+    def quote(path):
+        return '"' + str(path).replace('\\', '\\\\').replace('"', '\\"') + '"'
+    (root / 'codec-sources.args').write_text('\n'.join(quote(p) for p in java) + '\n')
+    write_json(root / 'results/codec-source-provenance.json', dict(commit=CODEC,
+        sources=[dict(path=str(p.relative_to(codec)), sha256=sha256(p)) for p in java],
+        source_corpus=dict(files=len(sources), bytes=len(corpus), sha256=CORPUS_HASH),
+        existing_generator='scripts/jdk27/run.py; sorted production files plus newline',
+        existing_destinations='scripts/jdk27/check_overlays.py; same54-case generator, no overlays',
+        functional_exclusions=['GoalGateTest', 'ReferenceParityTest'],
+        exclusion_reason='Existing ratio/throughput gates are outside this compiler correctness screen; remaining functional tests are unchanged.'))
+
+
+def reference_frames(root):
+    zstd = root / 'deps/zstd/programs/zstd'
+    corpus = root / 'corpus'
+    original = (corpus / 'source.bin').read_bytes()
+    # Exact existing check_overlays.py generator,54 cases; no new data patterns or levels.
+    random_bytes = random.Random(27).randbytes(300000)
+    rows, cases = [], []
+    for size in (0, 7, 257, 131071, 131073, 300000):
+        inputs = dict(random=random_bytes[:size], periodic=(random_bytes[:256] * 1172)[:size], source=original[:size])
+        for name, data in inputs.items():
+            source = corpus / f'{name}-{size}.bin'
+            source.write_bytes(data)
+            for level in (1, 3, 9):
+                frame = corpus / f'{name}-{size}.l{level}.zst'
+                subprocess.run([str(zstd), '-q', '-f', '--no-check', f'-{level}', str(source), '-o', str(frame)], check=True)
+                rows.append(f'{source}\t{frame}')
+                cases.append(dict(source=str(source), frame=str(frame), level=level, bytes=len(data),
+                                  source_sha256=sha256(source), frame_sha256=sha256(frame)))
+    for level in (1, 3, 9):
+        subprocess.run([str(zstd), '-q', '-f', '--no-check', f'-{level}', str(corpus / 'source.bin'),
+                        '-o', str(corpus / f'source-native-l{level}.zst')], check=True)
+    (corpus / 'manifest.tsv').write_text('\n'.join(rows) + '\n')
+    write_json(root / 'results/corpus-cases.json', cases)
+    freeze(root / 'input-manifests', corpus)
+    freeze(root / 'input-manifests', zstd)
+    freeze(root / 'input-manifests', root / 'codec-classes')
+    freeze(root / 'input-manifests', root / 'codec-sources.args')
+
+
+def check_gtest(root):
+    text = (root / 'logs/gtest.log').read_text(errors='replace')
+    names = ('signed_int', 'unsigned_int', 'signed_long', 'unsigned_long')
+    for name in names:
+        if not re.search(r'\[\s*OK\s*\]\s+opto\.constant_threshold_' + name + r'\b', text):
+            raise ValueError('Standard GTest harness did not pass opto.constant_threshold_' + name)
+    write_json(root / 'results/gtest.json', dict(harness='normal make test-only gtest', passed=list(names),
+                                                log_sha256=sha256(root / 'logs/gtest.log')))
+
+
+def codec_evidence(root):
+    from guard_evidence import evaluate
+    report = evaluate(root, METHOD)
+    for side in ('baseline', 'candidate'):
+        log = (root / 'logs' / ('codec-destinations-' + side + '.log')).read_text()
+        if 'decode overlay checks: 918 passed' not in log:
+            raise ValueError('Existing54-frame /918 destination checks incomplete: ' + side)
+        for level in (1, 3, 9):
+            frame = root / 'results' / f'{side}-l{level}.zst'
+            text = (root / 'logs' / f'codec-encode-{side}-{level}.log').read_text()
+            if f'checked encode L{level} input=764896 frame=' not in text:
+                raise ValueError('Check-only encoder driver did not consume source corpus')
+            if side == 'candidate' and sha256(frame) != sha256(root / 'results' / f'baseline-l{level}.zst'):
+                raise ValueError('VMs produced different frames at identical codec source/defaults')
+            decoded = root / 'results' / f'{side}-l{level}.decoded'
+            subprocess.run([str(root / 'deps/zstd/programs/zstd'), '-q', '-d', '-f', str(frame), '-o', str(decoded)], check=True)
+            if sha256(decoded) != CORPUS_HASH:
+                raise ValueError('Native decoder disagrees with encoder source corpus')
+        reports = sorted((root / 'results' / ('junit-' + side)).glob('TEST-*.xml'))
+        if not reports:
+            raise ValueError('JUnit produced no functional reports')
+        counts = dict(tests=0, failures=0, errors=0, skipped=0)
+        for path in reports:
+            tree = ET.parse(path).getroot()
+            for key in counts:
+                counts[key] += int(tree.get(key, '0'))
+        if counts['tests'] < 30 or counts['failures'] or counts['errors'] or counts['skipped']:
+            raise ValueError('Functional suite incomplete or skipped: ' + str(counts))
+        report[side]['functional_junit'] = counts
+    write_json(root / 'results/codec-qualification.json', report)
+
+
+def freeze_runtime(root):
+    state = root / 'input-manifests'
+    for name, _, _ in VARIANTS:
+        freeze(state, root / name / 'build/qualified/images/jdk')
+        freeze(state, root / name / 'build/qualified/spec.gmk')
+        freeze(state, root / name / 'build/qualified/configure.log')
+    freeze(state, root / 'candidate-fastdebug/build/qualified/images/test/hotspot/gtest')
+    freeze(state, root / 'baseline-release/build/qualified/images/test/micro/benchmarks.jar')
+    for row in dependencies():
+        freeze(state, root / 'deps' / row['name'])
+    for debug in ('release', 'fastdebug'):
+        a = json.loads((root / 'results' / ('baseline-' + debug + '-build.json')).read_text())
+        b = json.loads((root / 'results' / ('candidate-' + debug + '-build.json')).read_text())
+        if a['normalized_configure_arguments'] != b['normalized_configure_arguments']:
+            raise ValueError('Build configurations differ in matched ' + debug + ' pair')
+
+
+def summarize(root):
+    records = [r['screen_record'] for r in json.loads((root / 'runs.json').read_text()) if 'screen_record' in r]
+    if len(records) != 36:
+        raise ValueError('The fixed36-run screen is incomplete')
+    ratios = screen.summarize(records, root / 'results')
+    screen.compilation_metrics(records, root / 'results', root / 'logs')
+    sizes = json.loads((root / 'results/compilation-metrics.json').read_text())
+    codec = json.loads((root / 'results/codec-qualification.json').read_text())
+    investigate = any(x['investigate'] for x in ratios + sizes['comparisons'] + codec['code_size_comparisons'])
+    write_json(root / 'results/review.json', dict(investigation_required=investigate,
+        automatic_go=False, reason='Three pairs are an investigation screen, not a significance test. Review all flags and codec guard scopes.',
+        codec_throughput_measured=False, explains_full_native_gap=False))
+
+
+def internal_main(words):
+    action, *words = words
+    if action == 'host':
+        checkout, boot, root, *extras = map(Path, words)
+        host_preflight(checkout, boot, root, extras)
+    elif action == 'download':
+        path, expected, size = words
+        if Path(path).stat().st_size != int(size) or sha256(path) != expected:
+            raise ValueError('Pinned dependency hash/length mismatch: ' + path)
+    elif action == 'unpack':
+        unpack(Path(words[0]))
+    elif action == 'image':
+        image_provenance(Path(words[0]), *words[1:])
+    elif action == 'jmh-list':
+        root = Path(words[0])
+        found = set((root / 'logs/jmh-list.log').read_text().splitlines())
+        expected = {name for name, _ in screen.CONTROLS} | set(screen.COMPILER_CONTROLS)
+        if not expected <= found:
+            raise ValueError('Missing JMH controls: ' + str(expected - found))
+    elif action == 'codec-inputs':
+        codec_inputs(Path(words[0]))
+    elif action == 'frames':
+        reference_frames(Path(words[0]))
+    elif action == 'gtest':
+        check_gtest(Path(words[0]))
+    elif action == 'codec-evidence':
+        codec_evidence(Path(words[0]))
+    elif action == 'freeze-runtime':
+        freeze_runtime(Path(words[0]))
+    elif action == 'verify':
+        count = verify_frozen(Path(words[0]) / 'input-manifests')
+        print('Verified unchanged input manifests:', count)
+    elif action == 'summarize':
+        summarize(Path(words[0]))
+    else:
+        raise ValueError('Unknown internal action: ' + action)
 
 
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == '--internal':
+        internal_main(sys.argv[2:])
+        return
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('config', type=Path)
-    parser.add_argument('--output', type=Path, default=Path('qualification-private-results'))
-    mode = parser.add_mutually_exclusive_group()
-    mode.add_argument('--check', action='store_true', help='Check supplied inputs only; run no Java/benchmarks')
-    mode.add_argument('--execute', action='store_true', help='Run the bounded plan only after separate execution authorization')
+    parser.add_argument('--checkout', type=Path, default=HERE.parents[1])
+    parser.add_argument('--boot-jdk', type=Path, required=True, help='Normal JDK26/27 build prerequisite; no prebuilt candidate required')
+    parser.add_argument('--output', type=Path, required=True, help='New private work/results directory; reserve70GiB')
+    parser.add_argument('--configure-arg', action='append', default=[], help='Same extra configure argument for every build; use = syntax')
+    parser.add_argument('--input-root', type=Path, action='append', default=[], help='Hash an external non-system compiler/sysroot/tool root')
+    parser.add_argument('--execute', action='store_true', help='Only after review/authorization: prepare, build and run the complete bounded workflow')
     args = parser.parse_args()
-    config = json.loads(args.config.read_text())
-    plan = commands(config, args.output.resolve())
-    if not args.check and not args.execute:
-        print(json.dumps(dict(executed=False, global_budget_seconds=MAX_SECONDS,
-                              max_output_bytes=MAX_OUTPUT_BYTES, commands=plan), indent=2))
-        return
-    manifests = validate(config)
-    if args.check:
-        print('Input preflight passed. No qualification command executed.')
-        return
-    args.output.mkdir(parents=True, exist_ok=False)
-    (args.output / 'inputs.json').write_text(json.dumps(dict(config=config, manifests=manifests), indent=2) + '\n')
-    deadline = time.monotonic() + MAX_SECONDS
-    records = []
-    for item in plan:
-        record = run_one(item, args.output, deadline)
-        records.append(record)
-        (args.output / 'runs.json').write_text(json.dumps(records, indent=2) + '\n')
-        if item['kind'] == 'guard':
-            logs = list(args.output.glob('guard-' + item['side'] + '-*.xml'))
-            if len(logs) != 1:
-                raise ValueError('Expected one codec guard compilation log')
-            tags = [dict(re.findall(r"([\w_]+)='([^']*)'", tag))
-                    for tag in re.findall(r'<nmethod\b[^>]*>', logs[0].read_text(errors='replace'))]
-            selected = [tag for tag in tags if tag.get('compiler') == 'c2' and tag.get('method') == config['guard_method']]
-            if not selected:
-                raise ValueError('No C2 compilation of the exact codec method/descriptor; do not infer guard removal')
-            (args.output / ('guard-' + item['side'] + '-compilations.json')).write_text(
-                json.dumps([dict(compile_id=tag['compile_id'], method=tag['method'],
-                                 compile_kind=tag.get('compile_kind', 'regular')) for tag in selected], indent=2) + '\n')
-        if item['kind'] == 'correctness':
-            label = f"correctness-existing-jzstd-0-{item['side']}.log"
-            if not re.search(config['correctness_success_regex'], (args.output / label).read_text(errors='replace')):
-                raise ValueError('Existing corpus success marker missing')
-    summarize(records, args.output)
-    compilation_metrics(records, args.output)
-    print('Bounded runs completed. Review targeted guard, matching C2 code sizes and compiler logs before any GO claim.')
+    protected = ('--with-conf-name', '--with-debug-level', '--with-boot-jdk', '--with-jobs', '--with-num-cores',
+                 '--with-memory-size', '--with-gtest', '--without-gtest', '--with-jmh', '--with-jtreg')
+    if any(x.startswith(protected) for x in args.configure_arg):
+        parser.error('Extra configure arguments cannot override pinned inputs or paired resource/debug settings')
+    if args.output.resolve().is_relative_to(args.checkout.resolve()):
+        parser.error('Private output must be outside the source checkout')
+    plan = build_plan(args)
+    if not args.execute:
+        print(json.dumps(plan, indent=2))
+    else:
+        execute(args, plan)
 
 
 if __name__ == '__main__':
