@@ -1,0 +1,17 @@
+[package]
+name = "jdk-instant-speedate"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["staticlib"]
+path = "src/lib.rs"
+
+[dependencies]
+speedate = "=0.18.0"
+
+[profile.release]
+panic = "unwind"
+lto = "thin"
+codegen-units = 1
