@@ -1,7 +1,9 @@
 # Staged memory qualification from source
 
-This entire source bundle is committed for review. The new orchestrator and
-analysis have received syntax/source review only: **they have not been run**.
+This entire source bundle is committed for review. The full campaign and analysis remain **unexecuted**. Ten offline Python guard
+regressions pass with fake children, clocks, disks and signals; they launch no
+subprocesses or JVMs. Java EOF/repetition coverage is source-only and has not
+been compiled or run under this continuation's no-build restriction.
 No new build, correctness, memory, performance or ASan runtime pass follows from
 this preparation. Existing executed results remain in
 [the current validation record](../../../../doc/memory-overhead-validation.md).
@@ -43,6 +45,7 @@ The saved activation script selects compatible tools already installed.
 source /workspace/toolchains/activate.sh
 python3 test/manual/jvm-memory/qualification/run.py \
   --execute --output /workspace/memory-decision-new \
+  --outer-owner-reference APPROVED_JOB_OWNER_WITH_DESCENDANT_DEADLINE \
   --boot /workspace/toolchains/jdk27 \
   --jtreg /workspace/toolchains/jtreg83 \
   --gtest /workspace/jvm-memory-integration/build/dependencies/googletest \
@@ -59,9 +62,11 @@ Installed OS headers/runtime dependencies remain required by ordinary configure;
 missing ones stop the build rather than triggering installation. The four JMH
 jars and GoogleTest/GoogleMock source tree are normal managed dependencies,
 already present. JMH uses its repository-pinned 1.37 annotation processor.
-Only five self-contained benchmark sources are compiled (four unchanged repository
-benchmarks and committed VerifiedJavac, a source adaptation of repository Javac
-that throws if compilation returns false rather than timing failed work), so a headless image
+Only five self-contained benchmark sources are compiled (two unchanged repository
+benchmarks plus committed VerifiedJavac and VerifiedFileChannelRead/Write).
+The adapters reject failed compilation or zero-byte I/O instead of timing invalid
+work. FileChannelStateRegression is compiled alongside them and must pass before
+any performance sampling, so a headless image
 need not build unrelated desktop benchmarks. `bin/configure-dev` sets x86-64-v3
 on this platform; the CPU must support that repository profile. Native profile
 verification is executed before correctness workloads.
@@ -101,9 +106,19 @@ ceiling, four build jobs, <=256 MiB workload heaps, fixed <=192 Java workers and
 and bounded collector/compiler pools; root thread-count guard is enforced, but
 this is not complete kernel thread-event tracing of short-lived fork threads.
 Build/tool JVMs use their normal supported memory settings inside the cgroup.
-Output <=48 MiB per invocation and <=4 GiB top-level campaign log files; nested
-jtreg/build outputs also consume disk and are stopped by the 1 GiB free-storage
-guard. Require **12 GiB free storage at admission**; current workspace has only
+Output <=48 MiB per invocation and <=4 GiB top-level campaign log files.
+All writing commands, including builds and jtreg, have storage admission and
+post-exit checks; untimed writers also poll every second, even after stdout
+closes. Each measured command instead reserves 256 MiB above the 1 GiB floor
+before its process clock, with no filesystem-capacity probes inside that
+interval, then checks after exit. This policy relies on these fixed bounded
+writers: one-million-byte I/O files, capped stdout/stderr, 32-MiB GC-log rotation,
+small fixed compiler outputs, and an inherited zero core-dump limit. Any GC-log
+rotation invalidates complete pause evidence. This is not a guarantee against
+unrelated writers exhausting a shared filesystem. Receipts record the policy,
+free bytes and poll count. The output, repository and default temporary
+filesystems are checked. Nested build/jtreg outputs still consume storage and
+remain subject to the untimed monitor and deadline. Require **12 GiB free storage at admission**; current workspace has only
 about 1.9 GiB. Before conditional debug/ASan builds, require another 12 GiB free; insufficient
 capacity records HOLD_DEBUG_STORAGE with the completed release results intact.
 No automatic deletion/provisioning is performed. Stop before
@@ -113,7 +128,7 @@ unavailable. No additional performance host is a prerequisite.
 ## Results and interpretation
 
 `freeze.json`, expanded `commands.json`, per-image manifests/specifications,
-class hashes, native XML, old-header preprocessing/object/link proof, JTRs,
+class hashes, explicit `coverage.json`, native XML, old-header preprocessing/object/link proof, JTRs,
 absolute NMT snapshots, acknowledged-phase smaps, JMH JSON, raw GC logs,
 `samples.json`, `statistics.json` and `decision.json` remain in the new output.
 Commands/identity/deadline failures and partial results are preserved. No
@@ -132,7 +147,17 @@ historical. Code-cache used, committed, reserved and address reuse are separate.
 C2 helper-entry/peak memory remains unmeasured, without a C2 memory claim.
 
 Five steady-state JMH workloads protect allocation, verified javac, thread start/join,
-and heap-buffer file reads/writes. Three fixed-work process-latency fixtures
+and verified heap-buffer file reads/writes. Read clears the buffer before every
+read and after EOF, rewinds the file, and requires exactly one transferred byte
+with the expected contents. Write also restores full buffer capacity and rejects
+zero/partial transfer. Its iteration starts with a truncated bounded file.
+Both emit operation/byte/rewind counters in iteration teardown, outside timing.
+The harness requires twelve positive operation==byte receipts per fork; a
+nonzero JMH score or passing B/B control alone is not a work-validity oracle.
+The functional regression uses file sizes one and three over two iterations,
+forces EOF/wraps repeatedly, and verifies exact bytes, contents and reset counts.
+These are qualification adapters; the unrelated upstream micro sources are not
+silently presented as repaired or independently validated. Three fixed-work process-latency fixtures
 protect 192-thread churn and platform/virtual scalar/scatter-gather I/O with
 exact checksums. Process startup is separately measured by `java -version` and
 compiling/running committed `Hello.java`, with a warm filesystem cache. Fixed
@@ -171,7 +196,8 @@ HOLD, regardless of favorable point estimates. Report all slower cases.
 Owned work: source review of this new harness, freeze/launch preparation, normal
 checkouts/builds, analysis and honest report after campaign authorization. The
 only immediate external dependencies are execution authorization and sufficient
-working storage; installed compatible tools already cover the required local
+working storage, plus an existing outer job owner with a hard descendant cleanup
+deadline for uncatchable controller death; installed compatible tools already cover the required local
 CPU architecture. Removing reproducible old build outputs requires an agreed
 storage policy; preserving raw evidence is mandatory. No native hardware,
 application-suite purchase, PMU tool or hosted runner is required for the local
@@ -179,3 +205,38 @@ staged decision. Other-platform correctness can use normal repository CI only
 after separately approved PR integration. Other-architecture performance needs
 native hardware only if that distinct claim is requested. No CI is launched,
 no PR is created, and nothing is merged by this harness.
+
+## Cancellation, source regressions and CI receipts
+
+SIGTERM, SIGHUP and SIGINT only latch the first cancellation request; handlers do
+not raise in the middle of Popen or cleanup. Safe points before/after launch and
+in the supervision loop initiate bounded owned-descendant cleanup. Signals during
+cleanup do not interrupt it. Cancellation is recorded and cannot become a GO.
+Ownership uses subreaping and PID/start-time revalidation; reused PIDs are not
+signalled. Signals and cleanup consume the same invocation/global budget.
+
+The controller alone does **not** contain SIGKILL, interpreter death, or a native
+launch that never returns. The recorded `--outer-owner-reference` is an owner
+attestation, not runtime verification of that boundary. Run only under an
+approved pre-existing job/cgroup owner that can kill all descendants, including
+new sessions, at its hard deadline; ordinary `timeout` of just the controller
+process group is insufficient. No owner, cgroup or runner is provisioned here.
+
+`test_guards.py` contains ten fake-clock/disk/child/signal regressions, including
+build/jtreg writers with closed stdout, timed probe exclusion, cancellation during
+launch/cleanup, repeated signals and PID reuse. It launches no child processes
+or JVMs. Source-repair validation used
+`PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_guards` in this directory:
+10 tests passed, including both build and jtreg closed-stdout cases. The future campaign runs these offline checks before any builds.
+The Java state regression must execute after source compilation; a Java source
+review is not claimed as a runtime positive-byte pass.
+
+For later integration, tier1 does run GTestWrapper, but its default invocation
+can skip Array without NMT, and NMTGtests selects `NMT*:os*`, not `Array.*`.
+Require an explicit `Array.c_heap_allocation_size_vm` receipt with
+`-XX:NativeMemoryTracking=summary`, one executed case and zero skips/failures;
+also retain the explicit ParkEvent native-filter receipt. Compiler/stringopts
+and the three NIO channel test selections need their own exact-ID JTRs and image
+identities. `coverage.json` indexes these receipts from this Linux-only local
+campaign. A generic green tier1 job cannot replace them. These requirements do
+not add other platforms or enlarge the proposed campaign.

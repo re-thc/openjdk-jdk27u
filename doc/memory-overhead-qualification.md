@@ -6,8 +6,9 @@ ownership and statistical analysis are committed in
 That README contains the exact invocation, identities, staged order, supported
 repository profile, installed inputs, resource ceilings, acceptance and stop
 conditions. Review and reproduction use Git; no private local-file handoff,
-saved binary, consumed approval or stopped observer is required. The new
-orchestrator is source/syntax-reviewed and has not been executed.
+saved binary, consumed approval or stopped observer is required. The full campaign
+remains unexecuted; source-regression validation is reported in the
+harness README without being relabeled as JVM qualification.
 
 ## Exact-head reconciliation
 
@@ -64,3 +65,17 @@ normal builds, measurement and analysis remain owned work.
 
 This source-planning continuation launched no builds, tests, benchmarks, observer,
 CI, installation or PR. No new performance or broader-platform pass is claimed.
+
+The source repair adds all-writer storage guards, verified positive-byte file
+I/O with EOF/repetition regression coverage, and cooperative catchable signal
+cancellation. Timed commands reserve bounded write space before timing rather
+than adding filesystem probes inside measured intervals. Uncatchable controller
+death requires an existing outer descendant owner/deadline; the controller does
+not claim to supply that containment. Tier1's GTestWrapper is not an explicit
+NMT-enabled Array receipt; compiler/stringopts and NIO selections also retain
+exact-ID receipts. The first qualification claim remains Linux-limited.
+
+Validation of this source repair: ten offline mocked Python guard regressions
+pass. The Java positive-byte EOF/repetition regression is committed but remains
+uncompiled/unexecuted. No build, JVM workload, benchmark, CI or workspace cleanup
+was performed for this repair.

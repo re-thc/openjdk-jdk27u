@@ -12,18 +12,22 @@ import math
 import os
 from pathlib import Path
 import re
+import resource
 import selectors
 import shlex
 import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 import xml.etree.ElementTree as ET
 
 from process_cleanup import (ChildScope, LinuxProcesses, cleanup_errors,
                              enable_subreaper, require_no_children)
 from nmt_other import check_accounting, parse_other_snapshot
+from storage_guard import StorageGuard
+from cancellation import Cancellation
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[3]
@@ -33,12 +37,10 @@ GCS = ['Serial', 'G1', 'Z']
 METHODS = ['org.openjdk.bench.vm.gc.Alloc.testSmallObject',
            'org.openjdk.bench.memory.VerifiedJavac.testCompile',
            'org.openjdk.bench.java.lang.ThreadStartJoin.test',
-           'org.openjdk.bench.java.io.FileChannelRead.test',
-           'org.openjdk.bench.java.io.FileChannelWrite.test']
+           'org.openjdk.bench.memory.VerifiedFileChannelRead.test',
+           'org.openjdk.bench.memory.VerifiedFileChannelWrite.test']
 SOURCES = ['org/openjdk/bench/vm/gc/Alloc.java',
-           'org/openjdk/bench/java/lang/ThreadStartJoin.java',
-           'org/openjdk/bench/java/io/FileChannelRead.java',
-           'org/openjdk/bench/java/io/FileChannelWrite.java']
+           'org/openjdk/bench/java/lang/ThreadStartJoin.java']
 TESTS = ['test/hotspot/jtreg/gc/TestCodeCacheUnload.java#serial',
          'test/hotspot/jtreg/gc/TestCodeCacheUnload.java#g1',
          'test/hotspot/jtreg/gc/TestCodeCacheUnload.java#z',
@@ -76,11 +78,14 @@ def need(condition, message):
 
 
 class Campaign:
-    def __init__(self, args):
+    def __init__(self, args, cancellation):
+        self.cancel = cancellation
+        self.cancel.check()
         self.a = args
         self.out = args.output.resolve()
         need(not self.out.exists(), 'Refuse an existing output/attempt directory')
-        need(sys.platform == 'linux', 'This launcher implements Linux ownership only')
+        need(sys.platform == 'linux' and os.uname().machine=='x86_64',
+             'This frozen qualification is Linux x64 only')
         need(set(range(4)) <= os.sched_getaffinity(0), 'CPUs 0-3 unavailable')
         need(shutil.disk_usage(self.out.parent).free >= 12 * 1024**3,
              'Need 12 GiB free storage; no automatic deletion or installation')
@@ -94,8 +99,10 @@ class Campaign:
         self.deadline = self.start + 36000
         self.records = []
         self.samples = []
+        self.coverage = []
         self.hello_sha = None
         self.number = 0
+        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))  # Job-local; prevent unbounded crash core files.
         self.env = os.environ.copy()
         for key in ['JAVA_TOOL_OPTIONS', '_JAVA_OPTIONS', 'JDK_JAVA_OPTIONS',
                     'JDK_JAVAC_OPTIONS', 'JTREG_JAVA_OPTIONS', 'TEST_VM_FLAGLESS']:
@@ -136,8 +143,12 @@ class Campaign:
             'stage_order': ['release-builds', 'correctness-benefit', 'performance',
                             'fastdebug-asan', 'analysis'],
             'max_seconds': 36000, 'max_output_bytes': 4 * 1024**3,
-            'max_workload_threads': 256, 'minimum_free_gib':12, 'bootstrap': None, 'pause_metric':'per-fork p99; paired log-ratio/delta t intervals',
+            'max_workload_threads': 256, 'minimum_free_gib':12,
+            'storage_guard':'all writers admit/poll/finish; measured admit+256MiB and finish, no timed disk probes', 'bootstrap': None, 'pause_metric':'per-fork p99; paired log-ratio/delta t intervals',
             'confidence': 'paired log Student-t, df=7, Bonferroni 72 intervals',
+            'cancellation':'cooperative SIGTERM/SIGHUP/SIGINT; first request preserved during cleanup',
+            'outer_owner_reference':self.a.outer_owner_reference,
+            'uncatchable_controller_death_contained_here':False, 'inherited_core_limit_bytes':0,
             'new_launcher_runtime_qualified': False})
 
     @staticmethod
@@ -148,17 +159,22 @@ class Campaign:
             return None
 
     def begin(self, name, seconds):
+        self.cancel.check()
         self.stage = name
         self.stage_end = min(self.deadline - 60, time.monotonic() + seconds)
 
     def run(self, label, command, seconds=60, cwd=None, expected=0,
-            lines=None, workload=False, extra_env=None):
+            lines=None, workload=False, measured=False, extra_env=None):
         """Own every command, including Git/build/jcmd; no shell command expansion."""
+        self.cancel.check()
         require_no_children(self.backend) if not getattr(self, 'nested', False) else None
         self.number += 1
         prefix = self.out / ('%04d-%s' % (self.number, label))
         previous_end = self.invocation_end
         end = min(self.deadline - 30, self.stage_end, previous_end - 2, time.monotonic() + seconds)
+        need(not measured or workload, "Measured storage policy requires a bounded workload")
+        storage = StorageGuard([self.out, REPO, Path(tempfile.gettempdir())], measured=measured)
+        storage.admit()  # Before the process clock and any subprocess/log creation.
         self.invocation_end = end
         need(end - time.monotonic() >= 3, 'Deadline/cleanup reserve exhausted')
         scope = ChildScope(self.backend)
@@ -166,7 +182,7 @@ class Campaign:
         selector = selectors.DefaultSelector()
         row = {'label': label, 'stage': self.stage, 'argv': list(map(str, command)),
                'cwd': str(cwd or REPO), 'expected_exit': expected,
-               'extra_environment': extra_env or {},
+               'extra_environment': extra_env or {}, 'measured': measured,
                'context_before': self.context('/sys/fs/cgroup/cpu.stat')}
         env = self.env.copy()
         env.update(extra_env or {})
@@ -177,18 +193,21 @@ class Campaign:
         guard_at = start
         try:
             with Path(str(prefix)+'.stdout').open('wb') as log, Path(str(prefix)+'.stderr').open('wb') as err:
+                self.cancel.check()
                 proc = subprocess.Popen(list(map(str, command)), cwd=cwd or REPO,
                     env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                     stderr=err, start_new_session=True)
+                self.cancel.check()  # A launch-time request is handled after proc assignment.
                 os.set_blocking(proc.stdout.fileno(), False)
                 selector.register(proc.stdout, selectors.EVENT_READ)
-                while selector.get_map():
+                while selector.get_map() or proc.poll() is None:
+                    self.cancel.check()
                     need(time.monotonic() < end - 2, 'Invocation/deadline exceeded')
                     need(Path(str(prefix)+'.stderr').stat().st_size + len(text) < 48 * 1024**2,
                          'Invocation output cap')
+                    storage.poll()  # All writers; timed commands reserve space instead of probing here.
                     if workload and proc.poll() is None and time.monotonic()>=guard_at:
                         guard_at=time.monotonic()+1
-                        need(shutil.disk_usage(self.out).free>1024**3,'Working storage reserve below 1 GiB')
                         try:
                             stat = Path('/proc/%d/status' % proc.pid).read_text()
                             need(int(re.search(r'^Threads:\s+(\d+)', stat, re.M)[1]) <= 256,
@@ -224,6 +243,10 @@ class Campaign:
             selector.close()
             self.invocation_end = previous_end
             row['cleanup'] = scope.close(proc, end)
+            try:
+                row['storage'] = storage.finish()  # After process timing and cleanup.
+            except Exception as exc:
+                failure = (failure + '; ' if failure else '') + repr(exc)
             row['wall_seconds'] = time.monotonic() - start
             row['context_after'] = self.context('/sys/fs/cgroup/cpu.stat')
             if proc is not None:
@@ -232,6 +255,9 @@ class Campaign:
                     if stream:
                         stream.close()
             errors = cleanup_errors(row['cleanup'])
+            if self.cancel.signum is not None:
+                failure = (failure + '; ' if failure else '') + self.cancel.message()
+            row['cancellation_signal'] = self.cancel.signum
             row['error'] = failure or ('; '.join(errors) if errors else None)
             row['stdout'] = str(Path(str(prefix)+'.stdout'))
             row['stderr'] = str(Path(str(prefix)+'.stderr'))
@@ -299,8 +325,14 @@ class Campaign:
                 workload=True, extra_env=env)
             need(not Path(native_row['stderr']).read_text(), 'Unexpected native-test stderr')
             tree = ET.parse(xml)
-            need(len(tree.findall('.//testcase')) == 1 and not tree.findall('.//skipped')
-                 and not tree.findall('.//failure'), 'Empty/skipped/failed native case')
+            cases=tree.findall('.//testcase')
+            need(len(cases)==1 and cases[0].get('status')=='run' and cases[0].get('result')=='completed'
+                 and not tree.findall('.//skipped') and not tree.findall('.//failure')
+                 and not tree.findall('.//error') and tree.getroot().get('errors','0')=='0',
+                 'Empty/skipped/failed native case')
+            self.coverage.append({'kind':'gtest','case':suite,'configuration':conf,
+                'executed':1,'skipped':0,'failures':0,'nmt':'summary','xml':str(xml),'xml_sha256':sha(xml)})
+            save(self.out/'coverage.json',self.coverage)
 
     def old_control(self, image):
         """Independent inline negative control; never overwrite fixed objects."""
@@ -377,6 +409,9 @@ class Campaign:
             need(len(results) == 1, 'Absent/ambiguous jtreg result')
             status = re.search(r'^execStatus=(.*)$', results[0].read_text(), re.M)
             need(status and status[1].startswith('Passed.'), 'Skipped/failed jtreg case')
+            self.coverage.append({'kind':'jtreg','test_id':test,'configuration':name,
+                'status':status[1],'jtr':str(results[0]),'jtr_sha256':sha(results[0])})
+            save(self.out/'coverage.json',self.coverage)
 
     def compile_sources(self):
         classes = self.out / 'classes'
@@ -393,9 +428,17 @@ class Campaign:
         cp = os.pathsep.join(map(str,jars))
         micro = self.out/'micro'
         micro.mkdir()
+        benchmark_sources=[self.out/'C/test/micro'/p for p in SOURCES]
+        benchmark_sources += [HERE/name for name in ['VerifiedJavac.java',
+            'VerifiedFileChannelRead.java','VerifiedFileChannelWrite.java','FileChannelStateRegression.java']]
         self.run('compile-jmh', [self.a.boot/'bin/javac','-J-Xmx256m','-cp',cp,
                  '-processorpath',cp,'-processor','org.openjdk.jmh.generators.BenchmarkProcessor',
-                 '-d',micro,'-s',self.out/'generated'] + [self.out/'C/test/micro'/p for p in SOURCES]+[HERE/'VerifiedJavac.java'], 180)
+                 '-d',micro,'-s',self.out/'generated'] + benchmark_sources, 180)
+        regression_cp=os.pathsep.join([str(micro),cp])
+        regression,_=self.run('file-io-state-regression',[self.a.boot/'bin/java','-Xmx256m',
+             '-cp',regression_cp,'org.openjdk.bench.memory.FileChannelStateRegression'])
+        need('FILE_IO_STATE_OK sizes=1,3 iterations=2 positive_bytes=true' in regression,
+             'Missing positive-byte EOF/iteration regression receipt')
         save(self.out/'class-hashes.json', {str(p.relative_to(self.out)):sha(p)
              for folder in [classes,micro] for p in folder.rglob('*') if p.is_file()})
         return os.pathsep.join([str(micro),cp])
@@ -406,7 +449,7 @@ class Campaign:
             flags[0] = '-Xms32m'
         flags += ['-XX:+Use' + gc + 'GC','-XX:NativeMemoryTracking=' + nmt]
         if log:
-            flags += ['-Xlog:gc*=info,safepoint=info:file=' + str(log) + ':uptimemillis,level,tags']
+            flags += ['-Xlog:gc*=info,safepoint=info:file=' + str(log) + ':uptimemillis,level,tags:filecount=1,filesize=32m']
         return flags
 
     def memory(self, images):
@@ -525,12 +568,18 @@ class Campaign:
                                     '-Djdk.virtualThreadScheduler.parallelism=4',
                                     '-Djdk.virtualThreadScheduler.maxPoolSize=4',
                                     '-cp',self.out/'classes']+main
-                            text,row=self.run(label,['taskset','-c','0-3']+cmd,workload=True)
+                            text,row=self.run(label,['taskset','-c','0-3']+cmd,workload=True,measured=True)
                             need(not Path(row['stderr']).read_text(), 'Unexpected timing workload stderr')
                             if method in METHODS:
                                 need(not Path(row['stderr']).read_text(), 'Unexpected JMH coordinator stderr')
                                 data=json.loads(result.read_text())
                                 need(len(data)==1 and data[0]['benchmark']==method,'Wrong JMH selection')
+                                if 'VerifiedFileChannel' in method:
+                                    kind='READ' if 'Read' in method else 'WRITE'
+                                    receipts=re.findall(r'^QUAL_IO_'+kind+r' operations=(\d+) bytes=(\d+) rewinds=(\d+)$',text,re.M)
+                                    need(len(receipts)==12 and all(int(o)>0 and int(o)==int(b) for o,b,_ in receipts),
+                                         'I/O benchmark did not prove positive bytes/work in every iteration')
+                                    need(data[0].get('params',{}).get('fileSize')=='1000000','Wrong I/O file size')
                                 pm=data[0]['primaryMetric'];score=pm['score']
                                 unit=pm['scoreUnit']
                                 need(math.isfinite(score) and score>0,'Invalid score')
@@ -541,6 +590,8 @@ class Campaign:
                                 need(('QDONE\tthreadwork\t1536' in text) if method=='threadwork' else
                                     ('checksum=1627136' in text),'Fixed-work semantics missing')
                                 value=row['process_wall_seconds']
+                            need(not list(self.out.glob(gc_log.name+'.*')),
+                                 'GC log rotated; complete pause data unavailable')
                             pauses=[float(x) for x in re.findall(r'\[gc(?:,[a-z]+)*\s*\].*?GC\(\d+\).*?Pause[^\n]*? ([0-9.]+)ms\s*$',
                                       gc_log.read_text(),re.M)]
                             self.samples.append({'gc':gc,'method':method,'pair':pair,
@@ -560,7 +611,7 @@ class Campaign:
                                 cmd=[images[tag]/'bin/javac','-J-Xms32m','-J-Xmx256m',
                                      '-J-XX:ActiveProcessorCount=4','-J-XX:+Use'+gc+'GC',
                                      '-proc:none','-d',folder,HERE/'Hello.java']
-                            _,row=self.run(label,['taskset','-c','0-3']+cmd,workload=True)
+                            _,row=self.run(label,['taskset','-c','0-3']+cmd,workload=True,measured=True)
                             if mode=='javac':
                                 need(not Path(row['stderr']).read_text(), 'Unexpected startup javac stderr')
                                 text,hello_row=self.run(label+'-semantic',[images[tag]/'bin/java','-Xmx256m',
@@ -579,6 +630,7 @@ class Campaign:
         self.begin('release-builds',6600)
         from analyze import critical
         need(abs(critical(7,.05)-2.3646242516)<1e-8,'Student-t numerical preflight failed')
+        self.run('offline-guard-regressions',[sys.executable,'-m','unittest','-v','test_guards'],120,HERE)
         self.checkout()
         images={tag:self.build(tag) for tag in ['B','C']}
         self.begin('correctness-benefit',5400)
@@ -629,17 +681,23 @@ def main():
     p.add_argument('--jmh',type=Path,required=True)
     p.add_argument('--asan-runtime',type=Path,required=True)
     p.add_argument('--configure-option',action='append',default=[])
+    p.add_argument('--outer-owner-reference',required=True,
+                   help='Approved outer job/cgroup owner and descendant deadline; recorded, not verified here')
     p.add_argument('--stop-after',choices=['benefit','performance','all'],default='all')
     args=p.parse_args()
+    need(args.outer_owner_reference.strip(), 'Outer job owner reference must not be empty')
     if not args.execute:
         p.error('No execution authorized; review Git sources and obtain campaign approval first')
     campaign=None
+    cancellation=Cancellation()
+    cancellation.install()
     try:
-        campaign=Campaign(args)
+        campaign=Campaign(args,cancellation)
         result=campaign.all()
     except BaseException as exc:
         result={'decision':'HOLD','error':repr(exc)}
         if campaign is None:
+            cancellation.restore()
             raise
     finally:
         if campaign:
@@ -652,11 +710,21 @@ def main():
                 result={'decision':'HOLD','cleanup_error':repr(exc),'final_cleanup':cleanup}
             if time.monotonic()>=campaign.deadline:
                 result={'decision':'HOLD','error':'Global closure deadline exceeded'}
+            if cancellation.signum is not None:
+                result={'decision':'CANCELLED','signal':cancellation.signum,'detail':cancellation.message(),
+                        'preceding_result':result}
             save(campaign.out/'decision.json',result)
+            if cancellation.signum is not None and result.get('decision')!='CANCELLED':
+                result={'decision':'CANCELLED','signal':cancellation.signum,'detail':cancellation.message(),
+                        'preceding_result':result}
+                save(campaign.out/'decision.json',result)
             if time.monotonic()>=campaign.deadline:
                 result={'decision':'HOLD','error':'Report closure crossed global deadline'}
                 save(campaign.out/'decision.json',result)
+        cancellation.restore()
     print(json.dumps(result,indent=2))
+    if cancellation.signum is not None:
+        return 128+cancellation.signum
     return 0 if result['decision']=='LOCAL_GO_FOR_REVIEW' else 2
 
 
