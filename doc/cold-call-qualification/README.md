@@ -1,5 +1,15 @@
 # Cold-call spill review: source repair and one bounded continuation
 
+**Current status: the completed qualification of candidate
+`75ee82dff6f86e41aad8cedfe947a90a2b9296df` is NO-GO.** The build-blocked stage
+and bounded continuation described below are historical. The inherited runner
+and `SOURCE-MANIFEST.json` still pin that old candidate and preserve the expired
+original allowance; they must not be used to validate or relabel the Phi repair.
+The separate [future validation plan](FUTURE-VALIDATION-PLAN.json) binds the new
+production revision explicitly. It is source-only, leaves execution on hold,
+and supplies no new budget or deadline. Existing evidence and gates remain
+unchanged.
+
 Publication supplies source and instructions only. **No build, Java compilation,
 test, code capture, timing retry, installation, CI, PR or default change is
 authorized by publishing this branch.** Execute the proposal below only after a

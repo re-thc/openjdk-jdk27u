@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "status": "SOURCE_ONLY_RUNTIME_HOLD",
+  "execution_approved": false,
+  "source_repository": "https://github.com/re-thc/openjdk-jdk27u",
+  "production_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+  "candidate_release_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+  "candidate_fastdebug_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+  "regression_tests_revision": "b7534f5ccac7847a22ba7b63a6ea18beb71580e2",
+  "control_release_revision": "01903ba375f94c0ab7f9193d3e36bd30fe663d7e",
+  "codec_repository": "https://github.com/re-thc/jzstd",
+  "codec_revision": "7a6b345d0df3d8571a30f4a9c974dfaa3a10d9b6",
+  "source_file_sha256": {
+    "src/hotspot/share/opto/coldCallSpill.hpp": "ad9b9dee87710a9581376db06dfd485f59d7f1925d58b872cf47c89fea510d6a",
+    "src/hotspot/share/opto/reg_split.cpp": "b0f6e66a00cc070681470d026b345eacdeb153095346e15bc15fe0105659e145",
+    "test/hotspot/jtreg/compiler/regalloc/TestColdCallSpillPlacement.java": "49d92bb3f1dc47a541d44726a147010f507ef5d2da1b56f29f0e54c1444a371b",
+    "test/hotspot/jtreg/compiler/regalloc/libColdCallSpillPolicy.cpp": "c0bd4d511b2be5625535a73860d4ec5d59aee1bc2c186ed414b6ae55fa7c2077",
+    "test/hotspot/jtreg/compiler/regalloc/TestColdCallDerivedPointers.java": "1af7f90c9a7810d33a55f2d53deda7e63d93c18f1b51a64daf8379883f22af89"
+  },
+  "historical_qualification": {
+    "candidate_revision": "75ee82dff6f86e41aad8cedfe947a90a2b9296df",
+    "qualification_source_revision": "fe251213db5e6621a78ed4a64cb4430a4fff3fc5",
+    "verdict": "NO-GO",
+    "campaign_receipt_sha256": "fc4418a7ba49289cb3abd39740d8a61ab1c659c087bf96470d9efa3ee62020ca",
+    "original_immutable_deadline_utc": "2026-10-17T14:31:01.403725Z",
+    "allowance_reusable": false,
+    "evidence_or_gate_changes": false
+  },
+  "inherited_runner": {
+    "path": "doc/cold-call-qualification/scripts/jdk27/cold-call/qualification_campaign.py",
+    "pinned_candidate_revision": "75ee82dff6f86e41aad8cedfe947a90a2b9296df",
+    "can_validate_this_repair": false,
+    "instruction": "Preserve this historical runner and SOURCE-MANIFEST.json. Do not execute it as validation of the Phi repair or relabel any old image."
+  },
+  "future_runner_requirements": [
+    "An independently reviewed and newly frozen runner/config must bind both candidate image source revisions exactly to production_revision above, and the control/codec to the exact revisions above.",
+    "Reject the historical candidate revision, a floating branch name, or any candidate image lacking exact-source provenance. Build all compared images anew; never reuse the old candidate image for this repair.",
+    "Keep the existing workload matrix, matched toolchain/configuration, correctness/resource/code-quality protections and acceptance gates; do not reinterpret the previous NO-GO.",
+    "No invocation is approved by this plan. Any future build, test, capture, benchmark or CI action requires separate explicit execution authorization and its own stated scope, budget and immutable deadline. The expired original allowance is not reset or extended."
+  ],
+  "structural_activation_requirements": [
+    "TestColdCallSpillPolicy must reject the original impossible fixture and accept the revised weighted two-join model without changing production costs.",
+    "The dedicated TestColdCallSpillPlacement fixture must identify exactly three deferred LoadL roots in distinct ranges, with no count-only or incidental-Phi fallback.",
+    "Each root must reach two distinct Phis in the same two join blocks via complete exact-node UP/deferred input records. Both Phis must report pressure_down=1.",
+    "Each of the six Phis must have CCHRP keep=1 in its own join block. Definition, Phi and boundary constraint totals must agree per range.",
+    "All positive and negative trace-oracle cases, generic correctness, GC/deoptimization, throwing-call, fixed-mask, oop and derived-pointer tests must pass.",
+    "Trace activation alone is insufficient: follow the three retained decoder packed values through final allocation and audit all 19 hot-cycle stores plus replacement reloads under the unchanged qualification gates."
+  ],
+  "validation_performed": [
+    "Independent source reviews",
+    "git diff --check",
+    "Static fixture/source identity checks"
+  ],
+  "validation_not_performed": [
+    "JDK build",
+    "Java compilation or execution",
+    "Native test or workload execution",
+    "Code capture",
+    "Benchmarking",
+    "CI"
+  ],
+  "future_execution_budget_seconds": null,
+  "future_execution_deadline_utc": null
+}
