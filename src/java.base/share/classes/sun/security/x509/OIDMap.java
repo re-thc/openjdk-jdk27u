@@ -27,6 +27,7 @@ package sun.security.x509;
 
 import java.util.*;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 
 import java.security.cert.CertificateException;
 
@@ -198,6 +199,68 @@ public class OIDMap {
         }
 
         /**
+         * Create an extension with the constructor of the class that takes
+         * the criticality and the value.  The extensions of the JDK are
+         * created directly, because reflection takes a long time the first
+         * time it creates an object of a class.  Return null for any other
+         * class.
+         */
+        Extension newExtension(Boolean critical, Object value)
+                throws IOException, CertificateException {
+            return switch (className) {
+                case "sun.security.x509.SubjectKeyIdentifierExtension" ->
+                        new SubjectKeyIdentifierExtension(critical, value);
+                case "sun.security.x509.KeyUsageExtension" ->
+                        new KeyUsageExtension(critical, value);
+                case "sun.security.x509.PrivateKeyUsageExtension" ->
+                        new PrivateKeyUsageExtension(critical, value);
+                case "sun.security.x509.SubjectAlternativeNameExtension" ->
+                        new SubjectAlternativeNameExtension(critical, value);
+                case "sun.security.x509.IssuerAlternativeNameExtension" ->
+                        new IssuerAlternativeNameExtension(critical, value);
+                case "sun.security.x509.BasicConstraintsExtension" ->
+                        new BasicConstraintsExtension(critical, value);
+                case "sun.security.x509.CRLNumberExtension" ->
+                        new CRLNumberExtension(critical, value);
+                case "sun.security.x509.CRLReasonCodeExtension" ->
+                        new CRLReasonCodeExtension(critical, value);
+                case "sun.security.x509.NameConstraintsExtension" ->
+                        new NameConstraintsExtension(critical, value);
+                case "sun.security.x509.PolicyMappingsExtension" ->
+                        new PolicyMappingsExtension(critical, value);
+                case "sun.security.x509.AuthorityKeyIdentifierExtension" ->
+                        new AuthorityKeyIdentifierExtension(critical, value);
+                case "sun.security.x509.PolicyConstraintsExtension" ->
+                        new PolicyConstraintsExtension(critical, value);
+                case "sun.security.x509.NetscapeCertTypeExtension" ->
+                        new NetscapeCertTypeExtension(critical, value);
+                case "sun.security.x509.CertificatePoliciesExtension" ->
+                        new CertificatePoliciesExtension(critical, value);
+                case "sun.security.x509.ExtendedKeyUsageExtension" ->
+                        new ExtendedKeyUsageExtension(critical, value);
+                case "sun.security.x509.InhibitAnyPolicyExtension" ->
+                        new InhibitAnyPolicyExtension(critical, value);
+                case "sun.security.x509.CRLDistributionPointsExtension" ->
+                        new CRLDistributionPointsExtension(critical, value);
+                case "sun.security.x509.CertificateIssuerExtension" ->
+                        new CertificateIssuerExtension(critical, value);
+                case "sun.security.x509.SubjectInfoAccessExtension" ->
+                        new SubjectInfoAccessExtension(critical, value);
+                case "sun.security.x509.AuthorityInfoAccessExtension" ->
+                        new AuthorityInfoAccessExtension(critical, value);
+                case "sun.security.x509.IssuingDistributionPointExtension" ->
+                        new IssuingDistributionPointExtension(critical, value);
+                case "sun.security.x509.DeltaCRLIndicatorExtension" ->
+                        new DeltaCRLIndicatorExtension(critical, value);
+                case "sun.security.x509.FreshestCRLExtension" ->
+                        new FreshestCRLExtension(critical, value);
+                case "sun.security.x509.OCSPNoCheckExtension" ->
+                        new OCSPNoCheckExtension(critical, value);
+                default -> null;
+            };
+        }
+
+        /**
          * Return the Class object associated with this attribute.
          */
         Class<?> getClazz() throws CertificateException {
@@ -239,6 +302,27 @@ public class OIDMap {
         }
         if (nameMap.put(name, info) != null) {
             throw new CertificateException("Name already exists: " + name);
+        }
+    }
+
+    /**
+     * Create the extension that is registered for the OID of the given
+     * extension, if it is one that the JDK creates directly, or return null.
+     * An exception that the constructor throws is the cause of the
+     * InvocationTargetException, as it is for a constructor called by
+     * reflection.
+     */
+    static Extension newExtension(Extension ext)
+            throws InvocationTargetException {
+        OIDInfo info = oidMap.get(ext.getExtensionId());
+        if (info == null) {
+            return null;
+        }
+        try {
+            return info.newExtension(Boolean.valueOf(ext.isCritical()),
+                    ext.getExtensionValue());
+        } catch (Throwable t) {
+            throw new InvocationTargetException(t);
         }
     }
 

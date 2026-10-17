@@ -363,8 +363,10 @@ enum SSLCipher {
     // authentication tags.
     final int tagSize = 16;
 
-    // runtime availability
-    private final boolean isAvailable;
+    // Runtime availability, which is not looked up until it is asked for.
+    // Most of the ciphers are not used, and each lookup goes through the
+    // providers.
+    private volatile Boolean isAvailable;
 
     private final Map.Entry<ReadCipherGenerator,
             ProtocolVersion[]>[] readCipherGenerators;
@@ -452,13 +454,6 @@ enum SSLCipher {
         this.expandedKeySize = expandedKeySize;
         this.exportable = exportable;
 
-        // availability of this bulk cipher
-        //
-        // AES/256 is unavailable when the default JCE policy jurisdiction files
-        // are installed because of key length restrictions.
-        this.isAvailable = allowed && isUnlimited(keySize, transformation) &&
-                isTransformationAvailable(transformation);
-
         this.readCipherGenerators = readCipherGenerators;
         this.writeCipherGenerators = writeCipherGenerators;
     }
@@ -535,7 +530,15 @@ enum SSLCipher {
      * Test if this bulk cipher is available. For use by CipherSuite.
      */
     boolean isAvailable() {
-        return this.isAvailable;
+        Boolean available = isAvailable;
+        if (available == null) {
+            // AES/256 is unavailable when the default JCE policy jurisdiction
+            // files are installed because of key length restrictions.
+            available = allowed && isUnlimited(keySize, transformation) &&
+                    isTransformationAvailable(transformation);
+            isAvailable = available;
+        }
+        return available;
     }
 
     private static boolean isUnlimited(int keySize, String transformation) {

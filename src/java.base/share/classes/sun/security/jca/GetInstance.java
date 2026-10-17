@@ -139,13 +139,27 @@ public class GetInstance {
 
     public static Instance getInstance(String type, Class<?> clazz,
             String algorithm) throws NoSuchAlgorithmException {
+        Instance instance = getInstanceOrNull(type, clazz, algorithm);
+        if (instance == null) {
+            throw new NoSuchAlgorithmException
+                    (algorithm + " " + type + " not available");
+        }
+        return instance;
+    }
+
+    /**
+     * Like getInstance, but return null if no service is advertised. A service
+     * that cannot be constructed still participates in normal failover, and
+     * its failure is thrown if no implementation can be constructed.
+     */
+    public static Instance getInstanceOrNull(String type, Class<?> clazz,
+            String algorithm) throws NoSuchAlgorithmException {
         // in the almost all cases, the first service will work
         // avoid taking long path if so
         ProviderList list = Providers.getProviderList();
         Service firstService = list.getService(type, algorithm);
         if (firstService == null) {
-            throw new NoSuchAlgorithmException
-                    (algorithm + " " + type + " not available");
+            return null;
         }
         NoSuchAlgorithmException failure;
         try {

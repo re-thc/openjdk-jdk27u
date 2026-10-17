@@ -387,6 +387,17 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 
         if (protocols != null && (!protocols.isEmpty())) {
             for (CipherSuite suite : allowedCipherSuites) {
+                // Check the constraints, which go by name, first: whether a
+                // suite is available looks up its cipher in the providers,
+                // which is not needed for a suite that is disabled, unless
+                // it is logged as unavailable rather than as disabled.
+                boolean permitted = SSLAlgorithmConstraints.DEFAULT.permits(
+                        EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
+                        suite.name, null);
+                if (!permitted && disabledSuites == null) {
+                    continue;
+                }
+
                 if (!suite.isAvailable()) {
                     if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.SSLCTX)) {
@@ -401,9 +412,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                         continue;
                     }
 
-                    if (SSLAlgorithmConstraints.DEFAULT.permits(
-                            EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
-                            suite.name, null)) {
+                    if (permitted) {
                         suites.add(suite);
                     } else if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.SSLCTX)) {

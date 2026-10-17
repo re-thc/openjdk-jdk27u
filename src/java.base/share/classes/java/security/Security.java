@@ -25,6 +25,8 @@
 
 package java.security;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,6 +51,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import jdk.internal.access.JavaSecurityPropertiesAccess;
+import jdk.internal.access.JavaSecurityAlgorithmParametersAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.event.EventHelper;
 import jdk.internal.event.SecurityPropertyModificationEvent;
@@ -115,6 +118,11 @@ public final class Security {
 
         private static final List<Path> activePaths = new ArrayList<>();
 
+        // The master file is read with java.io, so that the first use of the
+        // security properties does not initialize the NIO file system. Its
+        // Path is only made if the file includes another one, see loadInclude.
+        private static File masterFile;
+
         static void loadAll() {
             // first load the master properties file to
             // determine the value of OVERRIDE_SEC_PROP
@@ -136,9 +144,22 @@ public final class Security {
         }
 
         private static void loadMaster() {
-            try {
-                loadFromPath(Path.of(StaticProperty.javaHome(), "conf",
-                        "security", "java.security"), LoadingMode.APPEND);
+            File file = new File(StaticProperty.javaHome(),
+                    "conf/security/java.security");
+            try (InputStream is = new FileInputStream(file)) {
+                masterFile = file;
+                try {
+                    debugLoad(true, file);
+                    props.load(is);
+                    debugLoad(false, file);
+                } finally {
+                    if (masterFile == null) {
+                        // loadInclude made the Path of the file
+                        activePaths.removeLast();
+                        currentPath = null;
+                    }
+                    masterFile = null;
+                }
             } catch (IOException e) {
                 throw new InternalError("Error loading java.security file", e);
             }
@@ -246,6 +267,12 @@ public final class Security {
                                 " (expanded to '" + expPropFile + "')"));
             }
             try {
+                if (masterFile != null) {
+                    Path master = masterFile.toPath();
+                    currentPath = Files.isRegularFile(master) ? master : null;
+                    activePaths.add(master);
+                    masterFile = null;
+                }
                 Path path = Path.of(expPropFile);
                 if (!path.isAbsolute()) {
                     if (currentPath == null) {
@@ -324,17 +351,30 @@ public final class Security {
 
     static {
         initialize();
-        // Set up JavaSecurityPropertiesAccess in SharedSecrets
-        SharedSecrets.setJavaSecurityPropertiesAccess(new JavaSecurityPropertiesAccess() {
-            @Override
-            public Properties getInitialProperties() {
-                return initialSecurityProperties;
-            }
-            @Override
-            public Properties getCurrentProperties() {
-                return props;
-            }
-        });
+        // Reuse one stateless accessor for both secrets. In particular, the
+        // optional factory needs no AlgorithmParameters class initializer.
+        var access = new SecurityAccess();
+        SharedSecrets.setJavaSecurityPropertiesAccess(access);
+        SharedSecrets.setJavaSecurityAlgorithmParametersAccess(access);
+    }
+
+    private static class SecurityAccess implements JavaSecurityPropertiesAccess,
+            JavaSecurityAlgorithmParametersAccess {
+        @Override
+        public Properties getInitialProperties() {
+            return initialSecurityProperties;
+        }
+
+        @Override
+        public Properties getCurrentProperties() {
+            return props;
+        }
+
+        @Override
+        public AlgorithmParameters getInstanceOrNull(String algorithm)
+                throws NoSuchAlgorithmException {
+            return AlgorithmParameters.getInstanceOrNull(algorithm);
+        }
     }
 
     private static void initialize() {
@@ -759,6 +799,13 @@ public final class Security {
         }
     }
 
+    // Preserve SPI-class initialization and normal provider selection, but
+    // distinguish an unadvertised algorithm from a construction failure.
+    static GetInstance.Instance getImplOrNull(String algorithm, String type)
+            throws NoSuchAlgorithmException {
+        return GetInstance.getInstanceOrNull(type, getSpiClass(type), algorithm);
+    }
+
     /*
      * Returns an array of objects: the first object in the array is
      * an instance of an implementation of the requested algorithm
@@ -1024,6 +1071,7 @@ public final class Security {
 
         HashSet<String> result = new HashSet<>();
         Provider[] providers = Security.getProviders();
+        String prefix = serviceName.toUpperCase(Locale.ENGLISH);
 
         for (int i = 0; i < providers.length; i++) {
             // Check the keys for each provider.
@@ -1031,8 +1079,7 @@ public final class Security {
                                                 e.hasMoreElements(); ) {
                 String currentKey =
                         ((String)e.nextElement()).toUpperCase(Locale.ENGLISH);
-                if (currentKey.startsWith(
-                        serviceName.toUpperCase(Locale.ENGLISH))) {
+                if (currentKey.startsWith(prefix)) {
                     // We should skip the currentKey if it contains a
                     // whitespace. The reason is: such an entry in the
                     // provider property contains attributes for the
