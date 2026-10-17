@@ -37,7 +37,9 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Method;
 import java.nio.ByteOrder;
+import java.util.regex.Pattern;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.whitebox.WhiteBox;
 
 public class TestUnknownCallSiteFrequency {
@@ -54,8 +56,20 @@ public class TestUnknownCallSiteFrequency {
         TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:CompileThreshold=10000",
                                   "-XX:MaxTrivialSize=6", "-XX:MaxInlineSize=35",
                                   "-XX:+UnlockDiagnosticVMOptions", "-XX:MinInlineFrequencyRatio=0.0085",
-                                  // Keep the known-zero branch in the graph for its negative control.
+                                  // Print only this root's inline tree, so another caller cannot
+                                  // accidentally satisfy the zero-count rejection-reason check.
+                                  "-XX:-PrintInlining",
+                                  "-XX:CompileCommand=option,compiler.inlining.TestUnknownCallSiteFrequency::knownZero,PrintInlining",
+                                  // Keep the known-zero branch in the graph for the reason check.
                                   "-XX:PerMethodTrapLimit=0");
+
+        // A surviving call alone is insufficient: is_not_reached also rejects
+        // this never-taken, non-start block. Require the earlier frequency veto
+        // itself, so changing the count guard from >= 0 to > 0 fails this test.
+        OutputAnalyzer output = new OutputAnalyzer(TestFramework.getLastTestVMOutput());
+        String zeroRead = Pattern.quote(TestUnknownCallSiteFrequency.class.getName() + "::zeroRead (9 bytes)");
+        output.shouldMatch(zeroRead + " +failed to inline: low call site frequency");
+        output.shouldNotMatch(zeroRead + " +failed to inline: call site not reached");
     }
 
     // Each word wrapper has 9 or 10 bytecodes, exceeding MaxTrivialSize=6.
@@ -174,21 +188,28 @@ public class TestUnknownCallSiteFrequency {
         public int read(byte[] a) { return a[0] + 2; }
     }
 
+    // This checks an absent receiver-profile MDO, not populated but immature
+    // receiver data. A separate precondition-checked case for recorded immature
+    // receivers is still missing; this test does not qualify removal of the
+    // maturity gate in ciMethod::call_profile_at_bci.
     @Test
     @IR(counts = {IRNode.DYNAMIC_CALL_OF_METHOD, "read", "1"})
-    public static int unknownType(Reader reader, byte[] a) {
+    public static int absentReceiverProfile(Reader reader, byte[] a) {
         return reader.read(a);
     }
 
-    @Run(test = "unknownType")
+    @Run(test = "absentReceiverProfile")
     @Warmup(1)
-    public static void runUnknownType(RunInfo info) {
+    public static void runAbsentReceiverProfile(RunInfo info) throws Exception {
         byte[] a = new byte[32];
-        // Both implementations are loaded. A single observed receiver in an
-        // immature MDO must not become a trusted monomorphic type profile.
-        Asserts.assertEQ(unknownType(FIRST, a), 1);
-        if (!info.isWarmUp()) {
-            Asserts.assertEQ(unknownType(SECOND, a), 2);
+        // Both implementations are loaded. Assert the narrower precondition
+        // instead of assuming a populated immature profile from one invocation.
+        Asserts.assertEQ(absentReceiverProfile(FIRST, a), 1);
+        if (info.isWarmUp()) {
+            Asserts.assertEQ(WhiteBox.getWhiteBox().getMethodData(
+                    method("absentReceiverProfile", Reader.class, byte[].class)), 0L);
+        } else {
+            Asserts.assertEQ(absentReceiverProfile(SECOND, a), 2);
         }
     }
 
