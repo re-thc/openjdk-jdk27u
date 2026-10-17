@@ -395,6 +395,9 @@ public final class Instant
      * @throws DateTimeParseException if the text cannot be parsed
      */
     public static Instant parse(final CharSequence text) {
+        if (InstantParserConfig.ENABLED && text instanceof String string) {
+            return InstantParser.parse(string);
+        }
         return DateTimeFormatter.ISO_INSTANT.parse(text, Instant::from);
     }
 

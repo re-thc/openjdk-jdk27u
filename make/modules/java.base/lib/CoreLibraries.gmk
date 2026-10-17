@@ -74,6 +74,50 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
 TARGETS += $(BUILD_LIBJAVA)
 
 ################################################################################
+## Optional, image-owned speedate parser. Cargo never fetches during make.
+################################################################################
+
+ifeq ($(ENABLE_INSTANT_SPEEDATE), true)
+  SPEEDATE_SRC := $(TOPDIR)/src/java.base/share/native/libinstant
+  SPEEDATE_OUT := $(SUPPORT_OUTPUTDIR)/native/java.base/libinstant-rust
+  ifeq ($(call isTargetOs, windows), true)
+    SPEEDATE_ARCHIVE := $(SPEEDATE_OUT)/$(SPEEDATE_RUST_TARGET)/release/jdk_instant_speedate.lib
+  else
+    SPEEDATE_ARCHIVE := $(SPEEDATE_OUT)/$(SPEEDATE_RUST_TARGET)/release/libjdk_instant_speedate.a
+  endif
+  SPEEDATE_BUILD_CONFIG := $(CARGO_EXECUTABLE) $(RUSTC_EXECUTABLE) $(SPEEDATE_RUST_TARGET) \
+      $(SPEEDATE_RUST_CPU) $(FIXPATH)
+  SPEEDATE_CONFIG_FILE := $(call DependOnVariable, SPEEDATE_BUILD_CONFIG, \
+      $(SPEEDATE_OUT)/build-config.vardeps)
+
+  $(SPEEDATE_ARCHIVE): $(SPEEDATE_SRC)/rust/Cargo.toml \
+      $(SPEEDATE_SRC)/rust/Cargo.lock $(SPEEDATE_SRC)/rust/src/lib.rs \
+      $(SPEEDATE_CONFIG_FILE) $(SPEC)
+	$(call MakeDir, $(@D))
+	$(call ExecuteWithLog, $(SPEEDATE_OUT)/cargo, \
+	    env -u CARGO_ENCODED_RUSTFLAGS $(FIXPATH) RUSTC="$(RUSTC_EXECUTABLE)" \
+	        RUSTFLAGS="-C target-cpu=$(SPEEDATE_RUST_CPU) -C panic=unwind" \
+	        CARGO_BUILD_JOBS=2 "$(CARGO_EXECUTABLE)" build --frozen --release \
+	        --manifest-path $(SPEEDATE_SRC)/rust/Cargo.toml \
+	        --target $(SPEEDATE_RUST_TARGET) --target-dir $(SPEEDATE_OUT))
+	$(TOUCH) $@
+
+  $(eval $(call SetupJdkLibrary, BUILD_LIBINSTANT, \
+      NAME := instant, \
+      OPTIMIZATION := HIGH, \
+      EXTRA_LINK_DEPS := $(SPEEDATE_ARCHIVE) $(SPEEDATE_SRC)/exports.map $(SPEEDATE_SRC)/exports.list, \
+      LIBS := $(SPEEDATE_ARCHIVE), \
+      LIBS_linux := $(LIBDL) $(LIBPTHREAD) $(LIBM), \
+      LIBS_macosx := -liconv -framework Security, \
+      LIBS_windows := advapi32.lib bcrypt.lib ntdll.lib userenv.lib ws2_32.lib, \
+      LDFLAGS_linux := -Wl$(COMMA)--version-script=$(SPEEDATE_SRC)/exports.map, \
+      LDFLAGS_macosx := -Wl$(COMMA)-exported_symbols_list$(COMMA)$(SPEEDATE_SRC)/exports.list, \
+  ))
+
+  TARGETS += $(BUILD_LIBINSTANT)
+endif
+
+################################################################################
 ## Build libzip
 ################################################################################
 
