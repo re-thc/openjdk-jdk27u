@@ -703,6 +703,9 @@ public class RustRegexTest {
                 a = Pattern.compile(expression).matcher(input); b.reset(input);
                 a.region(0, input.length()); b.region(0, input.length());
                 equal(a, b, a.lookingAt(), b.lookingAt(), true);
+                a = Pattern.compile(expression).matcher(input); b.reset(input);
+                a.region(0, input.length()); b.region(0, input.length());
+                equal(a, b, a.matches(), b.matches(), true);
             }
         }
     }
