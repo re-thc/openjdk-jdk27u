@@ -29,6 +29,7 @@
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
+#include "opto/constantThreshold.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/predicates_enums.hpp"
@@ -1979,14 +1980,12 @@ static bool equivalent_integer_tests(const Node* iff, const Node* dom) {
     }
     if ((cmp_op == Op_CmpI || cmp_op == Op_CmpU) &&
         le_bound->Opcode() == Op_ConI && lt_bound->Opcode() == Op_ConI) {
-      jint c = le_bound->get_int();
-      if (c != (cmp_op == Op_CmpI ? max_jint : -1) && java_add(c, 1) == lt_bound->get_int()) {
+      if (is_adjacent_constant_threshold(le_bound->get_int(), lt_bound->get_int(), cmp_op == Op_CmpU)) {
         return true;
       }
     } else if ((cmp_op == Op_CmpL || cmp_op == Op_CmpUL) &&
                le_bound->Opcode() == Op_ConL && lt_bound->Opcode() == Op_ConL) {
-      jlong c = le_bound->get_long();
-      if (c != (cmp_op == Op_CmpL ? max_jlong : -1) && java_add(c, (jlong)1) == lt_bound->get_long()) {
+      if (is_adjacent_constant_threshold(le_bound->get_long(), lt_bound->get_long(), cmp_op == Op_CmpUL)) {
         return true;
       }
     }

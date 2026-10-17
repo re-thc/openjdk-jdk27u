@@ -89,6 +89,25 @@ public class TestIfConstantThreshold {
         return value;
     }
 
+    // <= is already canonical. Reaching mask64 follows the first IfFalse;
+    // the equivalent <64 test is then false as well.
+    @Test
+    @IR(counts = {IRNode.CMP_I, "1", IRNode.IF, "<= 1"})
+    public static long testIfFalse(int bits, long value) {
+        if (bits <= 63) return Long.MIN_VALUE;
+        return value & mask64(bits);
+    }
+
+    // Negative signed longs pass the first guard but can take the unsigned
+    // branch. Both comparison domains must survive.
+    @Test
+    @IR(counts = {IRNode.CMP_L, "1", IRNode.CMP_UL, ">= 1"})
+    public static long testLongDifferentDomain(long bits, long value) {
+        if (bits > 63L) return Long.MIN_VALUE;
+        if (Long.compareUnsigned(bits, 64L) >= 0) return value + 7;
+        return value - 11;
+    }
+
     // Neither projection of this diamond dominates the second test. Keep both
     // comparisons; fold_compares' no-Phi shape cannot apply either.
     @Test
@@ -309,7 +328,7 @@ public class TestIfConstantThreshold {
 
     @Run(test = {
         "testMask", "testSwapped", "testTrap", "testReverse",
-        "testInterveningDiamond",
+        "testInterveningDiamond", "testIfFalse",
         "testMerged", "testDifferentThreshold", "testDifferentValue", "testDifferentDomain",
         "testIntEndpoints", "testIntNegative", "testIntZero",
         "testIntMin", "testIntMax", "testUnsignedIntMask",
@@ -323,6 +342,7 @@ public class TestIfConstantThreshold {
                 Asserts.assertEQ(testMask(x, value), masked);
                 Asserts.assertEQ(testSwapped(x, value), masked);
                 Asserts.assertEQ(testReverse(x, value), masked);
+                Asserts.assertEQ(testIfFalse(x, value), x <= 63 ? Long.MIN_VALUE : value);
                 long expected = x > 63 ? Long.MIN_VALUE :
                         (value < 0 ? value + 17 : value - 19) & ((1L << x) - 1);
                 Asserts.assertEQ(testInterveningDiamond(x, value), expected);
@@ -351,7 +371,7 @@ public class TestIfConstantThreshold {
     }
 
     @Run(test = {
-        "testLongMask", "testLongEndpoints", "testLongNegative",
+        "testLongMask", "testLongEndpoints", "testLongNegative", "testLongDifferentDomain",
         "testLongZero", "testLongMin", "testLongMax",
         "testUnsignedLongMask", "testUnsignedLongSign", "testUnsignedLongMax", "testUnsignedLongSwapped"
     })
@@ -362,6 +382,8 @@ public class TestIfConstantThreshold {
                 Asserts.assertEQ(testLongMask(x, value), masked);
             }
             Asserts.assertEQ(testLongEndpoints(x), 21);
+            Asserts.assertEQ(testLongDifferentDomain(x, VALUE),
+                             x > 63 ? Long.MIN_VALUE : x < 0 ? VALUE + 7 : VALUE - 11);
             Asserts.assertEQ(testUnsignedLongSwapped(x, VALUE),
                              x < 0 || x > 63 ? Long.MIN_VALUE : VALUE - 11);
             Asserts.assertEQ(testLongNegative(x, VALUE), (x > -2L) ? Long.MIN_VALUE : VALUE - 11);
