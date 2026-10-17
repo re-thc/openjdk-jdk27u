@@ -16,9 +16,10 @@ explicit new approval are required before dispatch.
 
 - Author concurrency guard: `9fedf7ac9040bf1d46e383201524f1ca7a13a29e`.
 - Actual master/base: `89885a6288e7aaabd01678a704a586272c0f96e3`.
-- Repair: `7f0bf03bd947a95c551da4fa0352257738e5f281`.
-- Measurement candidate: `c47db0c467240bb016416672f91f8a24c8006cb4`, tree
-  `5027a19d5b9d868a00fa37dabd04d104f3cbae07`.
+- Qualification source with strengthened graph gate: `c66dcec4f9b96341582ca1822af433159b99ec72`.
+- Production Java source remains `7f0bf03bd947a95c551da4fa0352257738e5f281`.
+- Unexecuted candidate snapshot: `e04f1e3c3a6817d911ff9bafbdf0e4c26bd3d808`, tree
+  `9b00af7e39ea6d91fb9c3b0c737594e046db97f8`.
 - Ordered parents: master, then repair. Verified merge input
   `e206bae32b2a6cc1fa9464ad34d75f2df4b347e9` is not the measurement baseline.
 

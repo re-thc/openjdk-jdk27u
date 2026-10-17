@@ -65,8 +65,9 @@ tier1. It predates our repair. This targeted campaign did not repeat tier1.
 
 The approved campaign launched once at `b394c38`, attempt 1. Upload, all post
 steps and runner orphan-process cleanup completed. The author branch, master
-and PR draft state remain unchanged. Only the review branch gains this report;
-no production or test source changed after measurement.
+and PR draft state remain unchanged. The measured `93926` snapshot is retained
+without relabelling; subsequent unexecuted Java and test changes are identified
+separately above.
 
 Rounded usage is **33 + 62 + 63 = 158 of 225 runner-minutes**. The repaired
 campaign stayed below its additional 130-minute cap and used 7m25s of actual
