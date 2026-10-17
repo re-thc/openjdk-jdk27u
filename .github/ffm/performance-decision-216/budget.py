@@ -27,3 +27,33 @@ def campaign_deadline(record, now):
 def overall_budget_passed(record, end):
     validate_budget(record)
     return type(end) is int and record["start_monotonic_ns"] <= end <= record["overall_deadline_ns"]
+
+
+def final_budget_observation(record, collector_status, returncode, returned_ns,
+                             cleanup_observed_ns, cleanup_complete):
+    """Owner observation after collector return and final owned-child cleanup.
+
+    The observation closes the attempt endpoint; persisting this audit record
+    cannot turn the collector's earlier pre-seal estimate into authoritative data.
+    """
+    validate_budget(record)
+    if (type(returncode) is not int or type(returned_ns) is not int
+            or type(cleanup_observed_ns) is not int or type(cleanup_complete) is not bool
+            or not record["start_monotonic_ns"] <= returned_ns <= cleanup_observed_ns):
+        raise ValueError("ordered process-return and final-cleanup observations required")
+    in_budget = overall_budget_passed(record, cleanup_observed_ns)
+    status = collector_status
+    if returncode != 0:
+        status = "STOPPED_EXECUTION_FAILURE"
+    if not cleanup_complete:
+        status = "STOPPED_CLEANUP_INCOMPLETE"
+    if not in_budget:
+        status = "STOPPED_OVERALL_BUDGET"
+    return dict(status=status, collector_status=collector_status, process_return_code=returncode,
+                process_return_monotonic_ns=returned_ns,
+                final_cleanup_observed_monotonic_ns=cleanup_observed_ns,
+                final_cleanup_complete=cleanup_complete,
+                overall_deadline_ns=record["overall_deadline_ns"],
+                overall_budget_passed=in_budget and cleanup_complete,
+                terminal_observation_passed=in_budget and cleanup_complete and returncode == 0,
+                authoritative_process_return_and_cleanup=True, shipping_qualified=False)

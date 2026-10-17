@@ -1,36 +1,38 @@
 {
   "status": "PASS_OFFLINE_ONLY",
   "command": "python3 -m unittest -q test_decision test_child_collector test_campaign test_inputs test_baseline_replay test_budget",
-  "tests": 53,
+  "tests": 60,
   "failures": 0,
   "errors": 0,
-  "log_sha256": "99dc2a20e2ec70569b221e13df2ac8bd3d28a86ee4288d9cc0dd9d9740a0773f",
+  "log_sha256": "0ce65d2b129bb877781d9c61f1419746cf5f47fd95cc74687aa9f985fa222dab",
   "runbook_python_blocks_syntax_checked": 3,
   "tested_python_sha256": {
     "accounting_contract.py": "b442f6dd6e62c5f9439199292d674b6dc1c1aa6abddf5e4c73f3d36fd15a7399",
     "baseline_replay.py": "fe6ce5a398af2c748b484a1c91f7c2a8c7f8f3c7cbdb1b5feee6f6a37ca072bd",
-    "budget.py": "43ccffa2f43b58fb8125b7c0d776d2d341bcef6e4b5d3c0c99b26d29726a42a2",
+    "budget.py": "2f07266152a8f01efcd8ef3f92659e809bf1277e61a3a7bde3db12bc40186160",
     "child_collector.py": "6e68284c843dac54d90769b919d6f6485c1d3ccc9a577302a6f1e16da8b052d2",
     "decision.py": "ab22acf71a038586d64fe1f657f7761bc4c8c7bf2a9113042f90c66daea595ab",
     "inputs.py": "3a72ac8fa34ff6de0101f90a07eb9b8eb7808b78e7fd22fbac20932e09cb40ac",
-    "measure_once.py": "631b8d18afd4d30ed0d7a6b98b2b606eac86940ef871c148ad016f2d31d4d3d6",
+    "measure_once.py": "6cf1041cba4d44cb8016b737dcfaf63f17efd4f774f8d78ea50f9235b6052334",
+    "observe_return.py": "6ae0fe991c7d9c5e65df743eccb2987e2fc49d13d217bae45f0adb624e4d93c8",
     "test_baseline_replay.py": "6de041b2ee0388ab4e9bac1de41dbc62d8dab24616510d88350bb46446de58fd",
     "test_budget.py": "b4866b61a3c9c7a9f3c1d2197510ed5fe94cac1e7306d1d05ebaeea9ab861345",
-    "test_campaign.py": "554cb120fe9e05f1e629505bf1b5f22516233f8c494f88536902dc4a3f8dc40f",
+    "test_campaign.py": "43af962c8a22fd674de352d6374970b9d8df7af97105c10c6790c33f0ba57a84",
     "test_child_collector.py": "03179bde60345127cce46f6162e305c83cb4132cd6fef58b3f0c9d846a876cea",
     "test_decision.py": "e42d2fd1049d09f551c2c3891cce2c42868df0416dd6ea498fc3faf60bba4757",
     "test_inputs.py": "06bbd33bc98857daf4774eee2795f120837de42a4c209ef848add3db5dd236f8"
   },
-  "source_only_reviews": [
-    "luna_cold_path",
-    "luna_controls",
-    "luna_platform_safety"
-  ],
   "JVM_or_native_child_execution": false,
   "timing_forks": 0,
   "host_admission_established": false,
   "execution_bindings_present": false,
   "launch_approval_present": false,
   "historical_results_or_gates_modified": false,
-  "shipping_qualified": false
+  "shipping_qualified": false,
+  "prior_plan_source_only_reviews": [
+    "luna_cold_path",
+    "luna_controls",
+    "luna_platform_safety"
+  ],
+  "reporting_repair": "Collector pre-seal estimate is provisional; owner observes actual return and final child cleanup against unchanged overall deadline. Synthetic tests cover late final writing and cleanup."
 }

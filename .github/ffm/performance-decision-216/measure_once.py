@@ -36,6 +36,19 @@ def write_report(out, report):
     temporary.replace(out / "status.json")
 
 
+def write_pre_seal_report(out, report, attempt_budget, clock=time.monotonic_ns,
+                          writer=write_report):
+    """This process cannot observe its own final write/print/return completion."""
+    checked = clock()
+    report.pop("overall_budget_passed", None)
+    report.update(pre_seal_budget_checked_monotonic_ns=checked,
+                  pre_seal_budget_passed=overall_budget_passed(attempt_budget, checked),
+                  budget_check_provisional=True, terminal_observation_required=True)
+    if not report["pre_seal_budget_passed"]:
+        report["status"] = "STOPPED_OVERALL_BUDGET"
+    writer(out, report)
+
+
 def collect_stages(out, bindings, schedule, deadline, collect=collect_child,
                    telemetry=snapshot, clock=time.monotonic_ns):
     """Stages are a frozen prefix; any invalid row stops without retry or assessment."""
@@ -172,12 +185,10 @@ def main():
         except Exception as failure:
             report.update(status="HELD_INPUT_MUTATION", frozen_inputs_unchanged=False,
                           input_error=type(failure).__name__ + ": " + str(failure))
-        report["overall_budget_passed"] = overall_budget_passed(attempt_budget, time.monotonic_ns())
-        if not report["overall_budget_passed"]:
-            report["status"] = "STOPPED_OVERALL_BUDGET"
-        write_report(out, report)
+        write_pre_seal_report(out, report, attempt_budget)
     print(json.dumps({k: report[k] for k in ["status", "shipping_qualified", "persisted_rows",
-                                           "launch_intents", "witnessed_launches", "terminal_receipts"]}))
+                                           "launch_intents", "witnessed_launches", "terminal_receipts",
+                                           "terminal_observation_required"]}))
 
 
 if __name__ == "__main__":

@@ -45,10 +45,10 @@ Run collector and Java children inside the same native Linux VM. Individual `wai
 
 ## Files and offline checks
 
-`decision.py` contains the frozen proposal, schedule validator, workload commands, assessor and stage decisions. `child_collector.py` records individual-child usage plus launch/terminal receipts. `measure_once.py` implements one-shot staged collection. `inputs.py` checks complete frozen inputs and the separate reviewed launch receipt. It never creates approval. Its module documentation defines receipt schemas.
+`decision.py` contains the frozen proposal, schedule validator, workload commands, assessor and stage decisions. `child_collector.py` records individual-child usage plus launch/terminal receipts. `measure_once.py` implements one-shot staged collection and reports its final budget estimate as provisional/pre-seal. `observe_return.py` supplies the authoritative process-return/final-cleanup observation against the original deadline; overrun, failed return or incomplete cleanup overrides acceptance. `inputs.py` checks complete frozen inputs and the separate reviewed launch receipt. It never creates approval. Its module documentation defines receipt schemas.
 
 ```sh
 python3 -m unittest -q test_decision test_child_collector test_campaign test_inputs test_baseline_replay test_budget
 ```
 
-Do not invoke `measure_once.py` until the parent execution gate is satisfied and real `EXECUTION_BINDINGS.json`, evidence receipts and `LAUNCH_REVIEW.json` exist. A second invocation cannot overwrite or resume `run/`. Preserve raw stdout/stderr, attempt/launch/terminal journals, every row, snapshot, report and original control disposition. No campaign data or machinery is added to the product PR.
+Do not invoke `observe_return.py` until the parent execution gate is satisfied and real `EXECUTION_BINDINGS.json`, evidence receipts and `LAUNCH_REVIEW.json` exist. It launches the collector once; a second invocation cannot overwrite or resume `run/`. Collector output alone is provisional until the terminal observation succeeds. Preserve raw stdout/stderr, attempt/launch/terminal journals, every row, snapshot, report and original control disposition. No campaign data or machinery is added to the product PR.
