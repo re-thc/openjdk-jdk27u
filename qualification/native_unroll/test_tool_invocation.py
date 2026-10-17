@@ -30,7 +30,7 @@ def main():
         assert json.loads(subprocess.check_output([str(cpp.resolve())],text=True))['driver']=='clang'
         cases.append('old resolve behavior independently reproduces lost C++ driver name')
         identity=invocation_record(cpp)
-        assert identity['invocation']==str(cpp) and identity['resolved']==str(driver) and identity['executable']==record(driver)
+        assert identity['invocation']==str(cpp) and identity['resolved']==str(driver.resolve()) and identity['executable']==record(driver)
         assert identity['symlinks'][str(cpp)]=='clang'
         cases.append('canonical executable identity and symbolic invocation provenance remain separate')
         alternate=tools/'alternate';alternate.write_bytes(driver.read_bytes());alternate.chmod(0o755)
@@ -43,7 +43,7 @@ def main():
         cases.append('executable permission changes are part of tool identity')
         driver.chmod(0o755)
         wrapper=tools/'g++-wrapper';wrapper.write_text('#!/bin/sh\nexec "'+str(cpp)+'" "$@"\n');wrapper.chmod(0o755)
-        assert invocation_path(wrapper)==wrapper and invocation_record(wrapper)['resolved']==str(wrapper)
+        assert invocation_path(wrapper)==wrapper and invocation_record(wrapper)['resolved']==str(wrapper.resolve())
         assert json.loads(subprocess.check_output([str(wrapper),'a b'],text=True))['driver']=='clang++'
         cases.append('selected wrapper is recorded and executed without unwrapping it')
         alias=root/'tool-alias';alias.symlink_to(tools,target_is_directory=True)

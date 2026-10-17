@@ -121,6 +121,7 @@ All Unix configure input/tool/SDK paths must be whitespace-free.
 ## Source-only regression checks
 
 ```bash
+PYTHONDONTWRITEBYTECODE=1 python3 qualification/native_unroll/test_fixture_tmpdir.py --out /tmp/vector-symlink-tmpdir-offline
 PYTHONDONTWRITEBYTECODE=1 python3 qualification/native_unroll/test_tool_invocation.py --out /tmp/vector-invocation-offline
 PYTHONDONTWRITEBYTECODE=1 python3 qualification/native_unroll/test_native_source.py --out /tmp/vector-source-offline
 PYTHONDONTWRITEBYTECODE=1 python3 qualification/native_unroll/test_jtreg83_bundle.py --out /tmp/vector-harness-offline

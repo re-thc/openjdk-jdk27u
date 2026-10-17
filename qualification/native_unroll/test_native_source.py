@@ -115,7 +115,7 @@ def main():
 
         reports=t/'focused-fixture';reports.mkdir()
         def report_text(name):
-            text='test result: Passed.\n-DShouldDoIRVerification=true\n'
+            text='test result: Passed.\n-DShouldDoIRVerification=true -XX:UseSVE=0\n'
             if name=='TestFloatRoundTripReduction':
                 for mode,level in [('semantics',0),('semantics',1),('semantics',4),('cold',0)]:
                     text+=f'ROUNDTRIP_REDUCTION_PASS mode={mode} required={level} actual={level} after={level}\n'
@@ -131,6 +131,28 @@ def main():
         for name,method in [('TestFloatRoundTripReduction','carried128'),('TestFloatRoundTripReductionEdges','reversed')]:
             f=reports/(name+'.jtr');f.write_text(report_text(name)+f'Disabling IR matching for rule 1 of 2 in {method}:')
             rejected('focused skipped positive '+method,lambda:focused.verify_reports(reports,True));f.write_text(report_text(name))
+        for test,method,rule in [('TestZeroSeedFPReductionIR','float64',2),('TestZeroSeedFPReductionIR','float128',2),
+                                  ('TestZeroSeedFPReductionIR','double128',2),('TestZeroSeedFPReductionStrictIR','strictFloat',5),
+                                  ('TestZeroSeedFPReductionStrictIR','strictDouble',6)]:
+            f=reports/(test+'.jtr');f.write_text(report_text(test)+f'Disabling IR matching for rule {rule} of 6 in {method}:')
+            rejected('focused zero-seed essential skip '+method+str(rule),lambda:focused.verify_reports(reports,True))
+            f.write_text(report_text(test))
+        f=reports/'TestZeroSeedFPReductionIR.jtr'
+        f.write_text(report_text(f.stem)+'Disabling IR matching for rule 3 of 3 in float64: SVE-only')
+        focused.verify_reports(reports,True);cases.append('legitimate SVE-only rule disable does not invalidate NEON matching')
+        f.write_text(report_text(f.stem))
+        for test,rule in [('TestZeroSeedFPReductionIR',2),('TestZeroSeedFPReductionStrictIR',5)]:
+            f=reports/(test+'.jtr');f.write_text(report_text(test)+f'Skip Rule {rule}: unsupported node')
+            rejected('unsupported required zero-seed rule '+test,lambda:focused.verify_reports(reports,True))
+            f.write_text(report_text(test))
+        f=reports/'TestZeroSeedFPReductionStrictIR.jtr'
+        f.write_text(report_text(f.stem)+'Disabling IR matching for rule 4 of 6 in strictFloat: x64-only\nSkip Rule 1: SVE-only node')
+        focused.verify_reports(reports,True);cases.append('foreign x64 disable and SVE-only skip IDs are permitted')
+        f.write_text(report_text(f.stem).replace('-XX:UseSVE=0',''))
+        rejected('required NEON command flag absent',lambda:focused.verify_reports(reports,True))
+        f.write_text(report_text(f.stem)+'-DVerifyIR=false')
+        rejected('contradictory candidate IR disable flag rejected',lambda:focused.verify_reports(reports,True))
+        f.write_text(report_text(f.stem))
         f=reports/'TestZeroSeedFPReductionStrictIR.jtr';f.write_text(report_text(f.stem)+'IR verification disabled')
         rejected('focused disabled strict IR rejected',lambda:focused.verify_reports(reports,True));f.unlink()
         rejected('focused missing report rejected',lambda:focused.verify_reports(reports,True))
@@ -267,10 +289,10 @@ def main():
         with mock.patch.object(n.subprocess,'check_output',side_effect=xcrun), \
              mock.patch.object(n.shutil,'which',return_value=str(tools/'gmake')),mock.patch.object(n,'git',return_value=''):
             c=n.Campaign(src,t/'unused-output',jar.parent.parent,boot,'mac','focused')
-            assert c.tools['clang']==(tools/'clang').resolve() and c.tools['make']==tools/'gmake' and c.tools['clang++']==tools/'clang++'
+            assert c.tools['clang']==tools/'clang' and c.tools['make']==tools/'gmake' and c.tools['clang++']==tools/'clang++'
             assert c.env['SDKROOT']==str(sdk) and '--with-sysroot='+str(sdk) in c.configure_arguments('fastdebug')
             c.invariant();cases.append('Mac preserves clang++ and gmake symlink invocation names with independently bound SDK')
-            assert c.env['CXX']==str(tools/'clang++') and c.tool_invocations['clang++']['resolved']==str(tools/'clang')
+            assert c.env['CXX']==str(tools/'clang++') and c.tool_invocations['clang++']['resolved']==str((tools/'clang').resolve())
             (tools/'clang-alternate').write_text((tools/'clang').read_text())
             (tools/'clang++').unlink();(tools/'clang++').symlink_to('clang-alternate')
             rejected('same-byte clang++ symlink retarget stops next stage',c.invariant)

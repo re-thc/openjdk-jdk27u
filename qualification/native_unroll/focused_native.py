@@ -10,7 +10,31 @@ SEMANTICS=['TestFloatRoundTripReduction','TestFloatRoundTripReductionEdges','Tes
 IR=['TestZeroSeedFPReductionIR','TestZeroSeedFPReductionStrictIR']
 
 
-def verify_reports(work,candidate):
+def verify_neon_rules(text,test):
+    # A successful enabled framework run is silent on matching success. Guard
+    # applicability for the essential rules, not absence of all disable notices:
+    # SVE-only rules are legitimately disabled on NEON.
+    required={'TestFloatRoundTripReduction':{'carried128':[1]},
+              'TestFloatRoundTripReductionEdges':{'reversed':[1]},
+              'TestZeroSeedFPReductionIR':{'float64':[1,2],'float128':[1,2],'double128':[1,2],
+                  'carriedFloat128':[1],'carriedDouble128':[1],
+                  'independentFloat128':[1],'independentDouble128':[1],
+                  'strictFloat':[1],'strictDouble':[1]},
+              'TestZeroSeedFPReductionStrictIR':{'strictFloat':[5,6],'strictDouble':[5,6]}}
+    required_ids={rule for rules in required.get(test,{}).values() for rule in rules}
+    # The framework's unsupported-node notice omits the method name. An ID
+    # overlapping a required rule is ambiguous and cannot certify coverage.
+    for skipped in re.findall(r'\bSkip Rule (\d+):',text):
+        require(int(skipped) not in required_ids,
+                'Unattributed unsupported-node Skip Rule overlaps required NEON rule: '+test+'/'+skipped)
+    for method,rules in required.get(test,{}).items():
+        for rule in rules:
+            require(not re.search(r'Disabling IR matching for rule '+str(rule)+r' of \d+ in '+method+':',text),
+                    'Required NEON matcher/IR assertion skipped: '+test+'/'+method+'/'+str(rule))
+
+
+
+def verify_reports(work,candidate,neon=True):
     chosen=SEMANTICS+(IR if candidate else [])
     reports={p.stem:p for p in Path(work).rglob('*.jtr')}
     require(set(reports)==set(chosen),'Missing/extra focused report')
@@ -20,9 +44,11 @@ def verify_reports(work,candidate):
         if candidate and test!='TestZeroSeedFPReduction':
             require('-DShouldDoIRVerification=true' in text and 'IR verification disabled' not in text,
                     'Candidate IR did not execute: '+test)
-            positive={'TestFloatRoundTripReduction':'carried128','TestFloatRoundTripReductionEdges':'reversed'}.get(test)
-            require(not positive or not re.search(r'Disabling IR matching for rule 1 of \d+ in '+positive+':',text),
-                    'Required NEON matcher assertion skipped: '+test)
+            require('-DVerifyIR=false' not in text and '-DShouldDoIRVerification=false' not in text,
+                    'Contradictory candidate IR command: '+test)
+            if neon:
+                require('-XX:UseSVE=0' in text,'NEON test VM command missing: '+test)
+                verify_neon_rules(text,test)
     verify_control_reports(reports)
     return {name:record(path) for name,path in reports.items()}
 
@@ -50,7 +76,7 @@ def run(c,control,candidate):
             if options:argv+=['-javaoptions:'+' '.join(options)]
             argv+=[c.root/('test/hotspot/jtreg/compiler/vectorapi/'+test+'.java') for test in chosen]
             c.run(name,argv)
-            result['configurations'].append(dict(role=role,sve=sve,reports=verify_reports(work,role=='candidate')))
+            result['configurations'].append(dict(role=role,sve=sve,reports=verify_reports(work,role=='candidate',sve=='0')))
             (out/'gate.json').write_text(json.dumps(result,indent=2)+'\n')
     c.invariant();result['passed']=True
     (out/'gate.json').write_text(json.dumps(result,indent=2)+'\n')

@@ -141,7 +141,20 @@ and a fresh `vector-mac-focused-v3` output only after approval for a new focused
 execution. Do not reuse the failed v2 worktree or images. No desktop/Metal build
 profile change is included; that is a separate investigation.
 
-## Ready-to-send local agent prompt
+## Reported v3 completion
+
+The user reports both builds and all 11 focused tests passed on the exact
+307315e89de source. See [MAC-FOCUSED-V3-REVIEW.md](MAC-FOCUSED-V3-REVIEW.md)
+for the source audit, evidence limits and smallest existing text excerpts.
+Do not rerun merely to obtain a success message: matching success is silent.
+The offline fixtures now support symlinked macOS TMPDIR paths without requiring
+an environment change. This remains correctness evidence, not performance recovery.
+
+## Original execution handoff (retained for reference)
+
+The v3 run is now reported complete. This historical handoff does not request a
+repeat; audit the existing outputs described above first. Any later execution
+needs its own approved scope and a new output name.
 
 Replace `REVIEW_COMMIT_FROM_HANDOFF` with the exact 40-character commit in the
 publication handoff before sending; it must equal the fetched branch head. This
