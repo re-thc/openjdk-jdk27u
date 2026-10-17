@@ -34,6 +34,8 @@ NIO carrier pin/unpin overhead and contention, ParkEvent cache-line placement,
 earlier code coldness/unloading/recompilation behavior, C2 scratch lifetime and
 rollback cost, and AOT snapshot correctness with the smaller native allocation.
 The requested universal/no-more-than-minor speed-regression bound is unresolved.
+The proposed single integration-decision milestone, including resource and
+platform dependencies, is in `memory-overhead-qualification.md`; it has not run.
 
 ## Provenance and integration review
 
@@ -56,9 +58,11 @@ omit the out-of-scope Shenandoah invocation and replace unsupported
 StressVerifyMeetJoin/IgnoreUnrecognizedVMOptions coverage with a supported,
 WhiteBox-confirmed C2 semantic regression; no stress coverage is implied.
 
-All 15 open fork PRs were refreshed with exact heads and fully paginated file
-inventories; none shares the selected changes' paths. The head/count inventory
-is in `memory-overhead-pr-audit.json`. PR44's monitor/GC correctness consolidation
+The 2026-10-16 audit recorded 15 open fork PRs with exact heads and fully paginated
+file inventories; none shared the selected changes' paths. PR44 was subsequently
+updated to 259d487b6512f4bdd663d52ad082065dbc6c8c80 (41 files), still without
+path overlap. This is a dated snapshot, not a claim about every current PR.
+The head/count inventory is in `memory-overhead-pr-audit.json`. PR44's monitor/GC correctness consolidation
 is separate and is not duplicated. PR9 Method/stubs, PR31 parser tables and
 PR23 generated classes remain outside this work. Shared compiler/runtime effects
 still need integrated tests; path independence alone does not prove compatibility.

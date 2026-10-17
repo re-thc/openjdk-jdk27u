@@ -36,7 +36,8 @@ source workflow; no system installation was needed. Header reads restore ASan
 poisoning before assertions. ASan-instrumented test compilation passes; no
 ASan-enabled JVM image is available for runtime verification. Historical
 memory results remain tied to their original images. Source review confirms
-upstream ancestry and no path overlap with the 15 open fork PRs, including PR44.
+upstream ancestry and no path overlap in the dated 15-PR audit, including the
+subsequently refreshed PR44 head.
 [Current validation](memory-overhead-validation.md) records image identities,
 commands and limits.
 
