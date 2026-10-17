@@ -1,13 +1,16 @@
 # PR43 source and qualification review
 
-The product source remains `bf4d2615bf435e8889ef95e48220938505905bbb` on
-`codex/aarch64-consolidated-compiler-fixes`. The paired prerequisite-only baseline
+PR43's draft head is `456afea88231bc9ebf17dfa48811db90a8bae8b8` on
+`codex/aarch64-consolidated-compiler-fixes`. Its only change from the reported
+native candidate `bf4d2615bf435e8889ef95e48220938505905bbb` is the UBFX test's
+compilation assertion repair. Compiler/runtime sources are unchanged.
+The paired prerequisite-only baseline
 is `9711df62d0d019e6670f83832b09bd5dcf797dcb`, with the same C1 fix in both arms.
 PR43 is open and draft. This review and its tooling fixes belong to the separate
-`codex/pr43-macos-qualification` branch. The proposed replacement PR body is in
-[PR_DESCRIPTION.md](PR_DESCRIPTION.md); it has not been published to PR43.
+`codex/pr43-macos-qualification` branch. The concise description in
+[PR_DESCRIPTION.md](PR_DESCRIPTION.md) is now published to PR43.
 This branch also contains the separate, cherry-pickable test-only repair
-`d46869ad8a53cd815ba18eedc06900e1be9451be`, described in
+`d46869ad8a53cd815ba18eedc06900e1be9451be`, applied to PR43 as `456afea88231bc9ebf17dfa48811db90a8bae8b8` and described in
 [UBFX_ASSERTIONS.md](UBFX_ASSERTIONS.md). It changes no compiler/runtime source.
 
 ## Evidence and recommendation

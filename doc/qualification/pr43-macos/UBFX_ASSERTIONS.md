@@ -1,7 +1,8 @@
 # UBFX compilation-assertion repair
 
-Test-only commit: `d46869ad8a53cd815ba18eedc06900e1be9451be`. It can be
-cherry-picked independently of the qualification documentation and tooling.
+Test-only review commit: `d46869ad8a53cd815ba18eedc06900e1be9451be`, now applied
+directly to PR43 as `456afea88231bc9ebf17dfa48811db90a8bae8b8`. No qualification
+documentation or tooling was added to the product PR.
 Compiler/runtime sources remain identical to candidate
 `bf4d2615bf435e8889ef95e48220938505905bbb`.
 

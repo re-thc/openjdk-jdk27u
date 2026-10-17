@@ -8,7 +8,7 @@ product source or merge it.
 
 The [source and qualification review](REVIEW.md) reconciles the reported native
 Mac result and remaining review scope. [PR_DESCRIPTION.md](PR_DESCRIPTION.md)
-contains a proposed replacement PR body; publication to PR43 is separate.
+contains the concise body now published to PR43.
 The [UBFX assertion repair](UBFX_ASSERTIONS.md) documents the focused portable
 fixture and its separate test-source identity.
 
@@ -115,11 +115,11 @@ avoid that ambiguity.
 
 | Role | Immutable source commit |
 | --- | --- |
-| Candidate | `bf4d2615bf435e8889ef95e48220938505905bbb` |
+| Native candidate image source | `bf4d2615bf435e8889ef95e48220938505905bbb` |
 | Baseline: original base plus C1 prerequisite only | `9711df62d0d019e6670f83832b09bd5dcf797dcb` |
 | Original plain base, recorded but not an extra default build | `758f41576fc79d35a62a3896dbe5ab97c448c436` |
 | C1 upstream donor | `abf881b0108610051fb36636a5f8ce44e8076ddb` |
-| Repaired test sources, used identically in both arms | `d46869ad8a53cd815ba18eedc06900e1be9451be` |
+| Current PR43 head and repaired test sources, used identically in both arms | `456afea88231bc9ebf17dfa48811db90a8bae8b8` |
 
 The runner creates detached worktrees for candidate and baseline, then builds
 **fastdebug and release for both**, matching the already supplied Mac-agent
