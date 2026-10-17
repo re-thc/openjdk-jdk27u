@@ -9,6 +9,8 @@ Both results remain separate and unchanged. See [RUNNER-REPAIR.md](RUNNER-REPAIR
 original lifecycle repair and [POST-BUILD-DRAIN.md](POST-BUILD-DRAIN.md) for the
 bounded build-only drain fix and retained-baseline verification. This source
 repair does not itself authorize another campaign or resume timing.
+The explicit [retained-baseline continuation](CONTINUATION.md) prepares the
+candidate-only build and unchanged full matrix; it remains unreleased.
 
 ## Frozen inputs and existing evidence
 

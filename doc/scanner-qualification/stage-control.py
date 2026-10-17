@@ -92,6 +92,11 @@ def serve_checkpoint(directory, scope):
 
 
 def stage(directory, owner_path, duration, command, build=False):
+    continuation = None
+    if os.environ.get("SCANNER_CONTINUATION_BINDING"):
+        from continuation import load, remaining
+        continuation = load(Path(os.environ["SCANNER_CONTINUATION_BINDING"]), os.environ["SCANNER_CONTINUATION_SHA"])
+        remaining(continuation)
     owner = read_identity(owner_path)
     root = read_process(os.getpid())
     observer_output = owner_path.parent
@@ -121,7 +126,9 @@ def stage(directory, owner_path, duration, command, build=False):
         if stopping or time.monotonic() >= deadline:
             raise Uncertain("stage launch handshake did not complete")
         time.sleep(.05)
-    healthy(observer, snapshot(), json.loads((observer_output / "memory-ready").read_text()), time.monotonic())
+    launch_processes = snapshot()
+    require_live(owner, launch_processes)
+    healthy(observer, launch_processes, json.loads((observer_output / "memory-ready").read_text()), time.monotonic())
     environment = dict(os.environ, SCANNER_STAGE_CONTROL=str(directory))
     cleanup_at = None
     drain_at = None
@@ -131,6 +138,10 @@ def stage(directory, owner_path, duration, command, build=False):
     survivors = False
     child = None
     try:
+        if continuation is not None:
+            remaining(continuation)
+        if stopping:
+            raise Uncertain("stage stopped before payload launch")
         child = subprocess.Popen(["timeout", "--signal=TERM", "--kill-after=12s", duration, *command], env=environment)
         direct = read_process(child.pid)
         if direct.ppid != root.pid or direct.uid != root.uid:
@@ -142,6 +153,8 @@ def stage(directory, owner_path, duration, command, build=False):
             processes = snapshot()
             record(directory / "processes.jsonl", scope, processes, seen)
             require_live(owner, processes)
+            if continuation is not None:
+                remaining(continuation)
             healthy(observer, processes, json.loads((observer_output / "memory-ready").read_text()), time.monotonic())
             no_children = reap_children(directory, root, scope, child)
             if no_children and child.returncode is None:
@@ -355,6 +368,10 @@ def stop_observer(output, pid):
 
 def main(args):
     action = args[0]
+    if action == "continuation-budget":
+        from continuation import load, remaining
+        remaining(load(Path(args[1]), args[2]))
+        return 0
     if action == "owner":
         owner = read_process(int(args[1]))
         require_live(owner.identity, {owner.pid: owner})

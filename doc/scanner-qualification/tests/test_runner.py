@@ -4,6 +4,7 @@ Run from any checkout: python3 -m unittest discover -s
 doc/scanner-qualification/tests -v
 """
 from dataclasses import asdict, replace
+import hashlib
 import importlib.util
 import json
 import os
@@ -19,6 +20,8 @@ PACKET = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PACKET))
 import runner_process as proc
 import image_manifest
+import continuation
+remaining_budget = continuation.remaining
 
 spec = importlib.util.spec_from_file_location("stage_control", PACKET / "stage-control.py")
 control = importlib.util.module_from_spec(spec)
@@ -493,9 +496,26 @@ class BuildDrain(Offline):
         proc.atomic_json(directory / "observer.json", {"identity": asdict(observer.identity)})
         proc.atomic_json(directory / "memory-ready", {"identity": asdict(observer.identity), "monotonic": 10})
         server = replace(WORKER, pid=201, ppid=100, pgid=201, sid=201, birth=21)
-        current = processes(OWNER, ROOT, observer, replace(WORKER, state="Z", rss=0), server)
+        current = processes(OWNER, ROOT, observer)
+        snapshots = [0]
         clock, trace, handlers = [10.], [], {}
         child = SimpleNamespace(pid=200, returncode=None)
+
+        def launch(*_, **__):
+            trace.append(("launch", clock[0]))
+            current.update(processes(replace(WORKER, state="Z", rss=0), server))
+            return child
+
+        def handler(number, callback):
+            handlers[number] = callback
+            if case == "stopped-before-launch" and number == signal.SIGINT:
+                handlers[signal.SIGTERM]()
+
+        def observe():
+            snapshots[0] += 1
+            if case == "owner-lost-before-launch" and snapshots[0] == 2:
+                del current[OWNER.pid]
+            return dict(current)
 
         def waitid(*_):
             children = [item for item in current.values() if item.ppid == ROOT.pid]
@@ -538,13 +558,13 @@ class BuildDrain(Offline):
         caught = None
         result = None
         with patch.object(control, "read_process", side_effect=lambda pid: current[pid]), \
-                patch.object(control, "snapshot", side_effect=lambda: dict(current)), \
+                patch.object(control, "snapshot", side_effect=observe), \
                 patch.object(control.os, "getpid", return_value=ROOT.pid), \
                 patch.object(control.os, "waitid", side_effect=waitid), \
                 patch.object(control.os, "waitpid", side_effect=waitpid), \
                 patch.object(control.ctypes, "CDLL", return_value=SimpleNamespace(prctl=lambda *_: 0)), \
-                patch.object(control.subprocess, "Popen", return_value=child), \
-                patch.object(control.signal, "signal", side_effect=lambda number, handler: handlers.update({number: handler})), \
+                patch.object(control.subprocess, "Popen", side_effect=launch), \
+                patch.object(control.signal, "signal", side_effect=handler), \
                 patch.object(control.signal, "alarm"), patch.object(control, "signal_owned", side_effect=send), \
                 patch.object(control.time, "sleep", side_effect=sleep), \
                 patch.object(control.time, "monotonic", side_effect=lambda: clock[0]), \
@@ -566,7 +586,7 @@ class BuildDrain(Offline):
         self.assertIsNone(footer["cleanup_started_monotonic"])
         self.assertGreaterEqual(footer["drain_verified_monotonic"] - footer["drain_started_monotonic"], 5)
         self.assertLessEqual(now, 16)
-        self.assertEqual([event[:2] for event in trace], [("reap", 200), ("reap", 201)])
+        self.assertEqual([event[:2] for event in trace if event[0] != "launch"], [("reap", 200), ("reap", 201)])
 
     def test_persistent_worker_fails_and_gets_full_term_kill_budget(self):
         result, footer, trace, now, caught = self.exercise("persistent")
@@ -622,6 +642,36 @@ class BuildDrain(Offline):
                 self.assertIsNone(footer["drain_started_monotonic"])
                 self.assertLess(now, 11)
                 self.assertEqual([event[2] for event in trace if event[0] == "signal"], [signal.SIGTERM])
+
+    def test_absolute_continuation_deadline_stops_an_active_stage_without_clean_footer(self):
+        def budget(_):
+            if control.time.monotonic() >= 12:
+                raise proc.Uncertain("offline original deadline expired")
+        with patch.dict(os.environ, {"SCANNER_CONTINUATION_BINDING": "offline", "SCANNER_CONTINUATION_SHA": "pin"}), \
+                patch.object(continuation, "load", return_value={}), patch.object(continuation, "remaining", side_effect=budget):
+            result, footer, trace, now, caught = self.exercise("normal")
+        self.assertIsInstance(caught, proc.Uncertain)
+        self.assertIsNone(result)
+        self.assertIsNone(footer)
+        self.assertLess(now, 13)
+        self.assertTrue(any(event[0] == "signal" and event[2] == signal.SIGKILL for event in trace))
+
+    def test_expiry_or_stop_after_handshake_cannot_launch_payload(self):
+        with patch.dict(os.environ, {"SCANNER_CONTINUATION_BINDING": "offline", "SCANNER_CONTINUATION_SHA": "pin"}), \
+                patch.object(continuation, "load", return_value={}), \
+                patch.object(continuation, "remaining", side_effect=[100, proc.Uncertain("offline expiry before Popen")]):
+            result, footer, trace, _, caught = self.exercise("expired-before-launch")
+        self.assertIsInstance(caught, proc.Uncertain)
+        self.assertIsNone(footer)
+        self.assertFalse(any(event[0] == "launch" for event in trace))
+        result, footer, trace, _, caught = self.exercise("owner-lost-before-launch")
+        self.assertIsInstance(caught, proc.Uncertain)
+        self.assertIsNone(footer)
+        self.assertFalse(any(event[0] == "launch" for event in trace))
+        result, footer, trace, _, caught = self.exercise("stopped-before-launch")
+        self.assertIsInstance(caught, proc.Uncertain)
+        self.assertIsNone(footer)
+        self.assertFalse(any(event[0] == "launch" for event in trace))
 
 
 class RetainedImage(Offline):
@@ -706,6 +756,226 @@ class RetainedImage(Offline):
             image_manifest.catalog(image)
 
 
+class Continuation(Offline):
+    image = RetainedImage.image
+
+    def setUp(self):
+        super().setUp()
+        self.retained = self.directory / "retained"
+        self.base = self.image("retained/base/build/scanner/images/jdk")
+        self.manifest = self.directory / "manifest.json"
+        image_manifest.record(self.base, self.manifest)
+        self.toolchains = self.directory / "toolchains"
+        self.toolchains.mkdir()
+        self.spec = self.retained / "base/build/scanner/spec.gmk"
+        values = dict.fromkeys(continuation.PROFILE_KEYS, "")
+        values.update(OPENJDK_TARGET_OS="linux", OPENJDK_TARGET_CPU="x86_64", OPENJDK_TARGET_CPU_BITS="64",
+                      COMPILE_TYPE="native", DEBUG_LEVEL="release", JVM_VARIANTS="server", TOOLCHAIN_TYPE="gcc",
+                      JVM_FEATURES_server="cds serialgc g1gc zgc", BOOT_JDK=str(self.toolchains / "jdk27"),
+                      CFLAGS_JVM="-O3 -fdebug-prefix-map=" + str(self.retained / "base") + "/=source/",
+                      LDFLAGS_JDKLIB="-Wl,-z,now")
+        self.spec.write_text("".join(f"{key} := {value}\n" for key, value in values.items()))
+        for number in range(1, 5):
+            (self.retained / "stages" / str(number)).mkdir(parents=True)
+        self.footer = self.retained / "stages/4/complete.json"
+        self.footer.write_text(json.dumps({"clean": True, "command_status": 0, "stopped": False,
+                                           "survivors": True, "members": [asdict(WORKER.identity)]}))
+        required = ["base/build/scanner/configure.log", "base/build/scanner/spec.gmk", "base/build/scanner/build.log",
+                    "base-release.txt", "identity.txt", "launch-identity.json", "stages/4/complete.json"]
+        for name in required:
+            path = self.retained / name
+            if not path.exists():
+                path.write_text("offline provenance\n")
+        for name in ("owner.json", "observer.json"):
+            (self.retained / name).write_text(json.dumps({"identity": asdict(OWNER.identity)}))
+        self.provenance = self.directory / "provenance.json"
+        provenance = {"baseline_commit": continuation.BASE, "prior_campaign_status": 125, "measurements": 0,
+                      "retained_attempt": str(self.retained), "image_manifest_sha256": continuation.sha(self.manifest),
+                      "provenance_file_sha256": {name: continuation.sha(self.retained / name) for name in required}}
+        self.provenance.write_text(json.dumps(provenance))
+        self.binding = {"format": 1, "retained": str(self.retained), "base_jdk": str(self.base),
+                        "manifest": str(self.manifest), "manifest_sha256": continuation.sha(self.manifest),
+                        "provenance": str(self.provenance), "provenance_sha256": continuation.sha(self.provenance),
+                        "toolchains": str(self.toolchains), "profile": continuation.profile(self.spec),
+                        "packet": continuation.packet_inputs(), "inputs": {"synthetic": "bytes"},
+                        "environment": {key: os.environ.get(key) for key in continuation.BUILD_ENV},
+                        "claim": str(continuation.claim_path(self.retained, provenance)),
+                        "custody_files": {name: continuation.sha(self.retained / name) for name in ("owner.json", "observer.json")},
+                        "boot_id": "offline-boot", "deadline_monotonic": 1000., "deadline_utc": 2000.}
+        for name, value in (("remaining", 100), ("inputs", self.binding["inputs"]), ("baseline_source", None)):
+            mock = patch.object(continuation, name, return_value=value)
+            mock.start()
+            self.addCleanup(mock.stop)
+        self.output = self.directory / "new"
+        self.output.mkdir()
+        self.witness = self.directory / "binding.json"
+        self.witness.write_text(json.dumps(self.binding))
+        self.digest = continuation.sha(self.witness)
+        self.candidate = "a" * 40
+
+    def test_bind_selects_exact_retained_image_and_new_candidate_then_spends_claim(self):
+        old = {path: path.read_bytes() for path in self.retained.rglob("*") if path.is_file()}
+        with patch.object(continuation, "snapshot", return_value={}), patch("sys.stdout") as stdout:
+            continuation.main(["bind", str(self.witness), self.digest, str(self.toolchains), str(self.output), self.candidate])
+        record = json.loads((self.output / "continuation.json").read_text())
+        self.assertEqual(record["base_jdk"], str(self.base))
+        self.assertEqual(record["candidate_jdk"], str(proc.image_paths(self.output)["candidate"]))
+        self.assertEqual(record["candidate"], self.candidate)
+        self.assertEqual(record["binding_sha256"], self.digest)
+        self.assertEqual({path: path.read_bytes() for path in old}, old)
+        self.assertTrue(Path(self.binding["claim"]).is_dir())
+        self.assertFalse((self.output / "base").exists())
+
+    def test_wrong_image_changed_manifest_or_missing_witness_never_claim(self):
+        for case in ("image", "manifest", "missing"):
+            with self.subTest(case=case):
+                binding = dict(self.binding)
+                if case == "image":
+                    binding["base_jdk"] = str(self.directory / "other-jdk")
+                elif case == "manifest":
+                    self.manifest.write_text(self.manifest.read_text() + " ")
+                else:
+                    self.provenance.unlink()
+                with self.assertRaises((proc.Uncertain, FileNotFoundError)):
+                    continuation.verify(binding, self.toolchains)
+                self.assertFalse(Path(self.binding["claim"]).exists())
+                if case == "manifest":
+                    self.manifest.write_text(self.manifest.read_text()[:-1])
+
+    def test_changed_binding_or_toolchain_and_packet_fail_closed(self):
+        self.witness.write_text(self.witness.read_text() + " ")
+        with self.assertRaises(proc.Uncertain):
+            continuation.load(self.witness, self.digest)
+        for key in ("inputs", "packet", "environment", "claim"):
+            with self.subTest(key=key):
+                binding = dict(self.binding)
+                binding[key] = {"changed": "value"} if key != "claim" else str(self.directory / "new-claim")
+                with self.assertRaises(proc.Uncertain):
+                    continuation.verify(binding, self.toolchains)
+
+    def test_untracked_configure_make_compiler_and_loader_overrides_are_rejected(self):
+        for name in continuation.BUILD_ENV:
+            with self.subTest(name=name), patch.dict(os.environ, {name: "/untracked/input"}), self.assertRaises(proc.Uncertain):
+                continuation.verify(self.binding, self.toolchains)
+            self.assertFalse(Path(self.binding["claim"]).exists())
+
+    def test_original_live_birth_blocks_but_reused_pid_is_never_owned(self):
+        with patch.object(continuation, "snapshot", return_value=processes(WORKER)), self.assertRaises(proc.Uncertain):
+            continuation.quiescent(self.binding)
+        with patch.object(continuation, "snapshot", return_value=processes(replace(WORKER, birth=900))):
+            continuation.quiescent(self.binding)
+
+    def test_duplicate_or_partially_written_claim_stays_spent_for_other_output(self):
+        continuation.claim(self.binding, self.digest, self.output, self.candidate)
+        other = self.directory / "other-output"
+        other.mkdir()
+        with self.assertRaises(FileExistsError):
+            continuation.claim(self.binding, "b" * 64, other, "c" * 40)
+        (Path(self.binding["claim"]) / "claim.json").unlink()  # Crash after exclusive mkdir is still spent.
+        with self.assertRaises(FileExistsError):
+            continuation.claim(self.binding, self.digest, other, self.candidate)
+        self.assertFalse((other / "continuation.json").exists())
+
+    def test_output_overlap_is_rejected_before_creating_any_evidence(self):
+        before = {path: path.read_bytes() for path in self.retained.rglob("*") if path.is_file()}
+        for target in (self.retained / "new", self.toolchains / "new", Path(self.binding["claim"])):
+            with self.subTest(target=target), self.assertRaises(proc.Uncertain):
+                continuation.proposed_output(self.binding, target, self.toolchains, self.witness)
+            self.assertFalse(target.exists())
+        self.assertEqual({path: path.read_bytes() for path in before}, before)
+        target = self.directory / "fresh"
+        self.assertEqual(continuation.proposed_output(self.binding, target, self.toolchains, self.witness), target)
+        self.assertFalse(target.exists())
+
+    def candidate_stage(self):
+        continuation.claim(self.binding, self.digest, self.output, self.candidate)
+        image = self.image("new/candidate/build/scanner/images/jdk")
+        spec = self.output / "candidate/build/scanner/spec.gmk"
+        spec.write_text(self.spec.read_text().replace(str(self.retained / "base"), str(self.output / "candidate")))
+        stage = self.output / "stages/5"
+        stage.mkdir(parents=True)
+        (stage / "identity.json").write_text(json.dumps({"kind": "build"}))
+        footer = {"clean": True, "command_status": 0, "stopped": False, "survivors": False, "drain_deadline_missed": False}
+        (stage / "complete.json").write_text(json.dumps(footer))
+        return stage, footer
+
+    def candidate_git(self, checkout, *args):
+        return "\n".join([self.candidate, *continuation.CANDIDATE_TREES]) if args[0] == "rev-parse" else ""
+
+    def test_candidate_profile_is_checked_before_make_with_only_checkout_prefix_normalized(self):
+        stage, _ = self.candidate_stage()
+        with patch.object(continuation, "git", side_effect=self.candidate_git):
+            continuation.candidate_gate(self.binding, self.output, None)
+            path = self.output / "candidate/build/scanner/spec.gmk"
+            original = path.read_text()
+            for before, after in (("-O3", "-O2"), ("-Wl,-z,now", "-Wl,-z,lazy")):
+                path.write_text(original.replace(before, after))
+                with self.assertRaises(proc.Uncertain):
+                    continuation.candidate_gate(self.binding, self.output, None)
+        self.assertTrue(Path(self.binding["claim"]).exists())
+
+    def test_interrupted_build_and_clean_custody_with_persistent_child_never_reach_matrix(self):
+        stage, footer = self.candidate_stage()
+        for change in (None, {"command_status": 124}, {"stopped": True}, {"survivors": True}, {"drain_deadline_missed": True}):
+            with self.subTest(change=change), patch.object(continuation, "git", side_effect=self.candidate_git):
+                path = stage / "complete.json"
+                if change is None:
+                    path.unlink()
+                else:
+                    path.write_text(json.dumps(dict(footer, **change)))
+                matrix = []
+                with self.assertRaises((proc.Uncertain, FileNotFoundError)):
+                    continuation.candidate_gate(self.binding, self.output, stage)
+                    matrix.append("matrix")
+                self.assertEqual(matrix, [])
+                self.assertTrue(Path(self.binding["claim"]).exists())
+        (stage / "complete.json").write_text(json.dumps(footer))
+        with patch.object(continuation, "git", side_effect=self.candidate_git):
+            continuation.candidate_gate(self.binding, self.output, stage)
+
+    def test_deadline_expiry_during_verification_does_not_claim(self):
+        continuation.remaining.side_effect = [100, proc.Uncertain("expired during verification")]
+        with self.assertRaises(proc.Uncertain):
+            continuation.verify(self.binding, self.toolchains)
+        self.assertFalse(Path(self.binding["claim"]).exists())
+
+    def test_deadline_requires_original_boot_and_both_absolute_clocks(self):
+        self.assertEqual(remaining_budget(self.binding, now=900, wall=1900, boot="offline-boot"), 100)
+        for changes in ({"now": 1000}, {"wall": 2000}, {"boot": "different"}):
+            with self.subTest(changes=changes), self.assertRaises(proc.Uncertain):
+                remaining_budget(self.binding, **dict({"now": 900, "wall": 1900, "boot": "offline-boot"}, **changes))
+        for value in (float("nan"), float("inf"), "1000"):
+            with self.assertRaises(proc.Uncertain):
+                remaining_budget(dict(self.binding, deadline_monotonic=value), now=900, wall=1900, boot="offline-boot")
+
+    def test_fingerprint_covers_external_resolved_content_and_directory_links(self):
+        root = self.directory / "compiler"
+        root.mkdir()
+        target = self.directory / "native.so"
+        target.write_bytes(b"library-one")
+        (root / "native.so").symlink_to(target)
+        (root / "recursive").symlink_to(".")
+        before = continuation.fingerprint(root)
+        target.write_bytes(b"library-two")
+        self.assertNotEqual(continuation.fingerprint(root), before)
+        with patch.object(Path, "iterdir", side_effect=PermissionError("offline unreadable input")), self.assertRaises(PermissionError):
+            continuation.fingerprint(root)
+
+    def test_native_startup_objects_and_linker_scripts_are_required_and_pinned(self):
+        native = self.directory / "native"
+        native.mkdir()
+        for name in ("Scrt1.o", "crti.o", "crtn.o", "libc_nonshared.a", "libc.so", "libm.so", "libc.so.6"):
+            (native / name).write_bytes(b"offline native input")
+        selected = continuation.native_link_inputs(native)
+        self.assertIn(native / "libc.so.6", selected)
+        before = {str(path): continuation.fingerprint(path) for path in selected}
+        (native / "crti.o").write_bytes(b"changed native object")
+        self.assertNotEqual({str(path): continuation.fingerprint(path) for path in selected}, before)
+        (native / "libc_nonshared.a").unlink()
+        with self.assertRaises(proc.Uncertain):
+            continuation.native_link_inputs(native)
+
+
 class ImagesAndSource(Offline):
     def test_images_use_current_output_normal_image_and_require_all_files(self):
         images = proc.image_paths(self.directory)
@@ -738,6 +1008,26 @@ class ImagesAndSource(Offline):
         self.assertIn('"$BASE_JDK" "$CANDIDATE_JDK"', source)
         self.assertLess(source.index('check-image "$image"'), source.index('sha256sum "$image/lib/modules"'))
         self.assertIn('if [[ $checkout == base ]]; then image=$BASE_JDK; else image=$CANDIDATE_JDK; fi', source)
+
+    def test_continuation_shares_the_complete_frozen_matrix_and_skips_only_baseline_build(self):
+        source = (PACKET / "run-linux.sh").read_text()
+        matrix = source.split("export Q=", 1)[1].split("\ndisk_check", 1)[0]
+        self.assertEqual(hashlib.sha256(matrix.encode()).hexdigest(),
+                         "53336c91569f92c46b06a9abc36e14853f5b03b8ec361acbf09e25bc3de6ad87")
+        cds = source.split('# Both images must be ready before any required runtime observation starts.\n', 1)[1].split('export Q=', 1)[0]
+        self.assertEqual(hashlib.sha256(cds.encode()).hexdigest(),
+                         "f4ba6ca52fa25cba5bc77b7762a904d3c304de4138b070fc45ba77045249c8ca")
+        self.assertIn('if [[ $checkout == base && -n $BINDING ]]; then', source)
+        self.assertIn('if [[ -z $BINDING ]]; then bounded 5m git -C "$REPO" worktree add --detach "$OUT/base"', source)
+        self.assertLess(source.index('continuation.py" profile'), source.index('bounded_build 90m make'))
+        self.assertLess(source.index('continuation.py" gate'), source.index('export Q='))
+        self.assertLess(source.index('continuation.py" gate'), source.index('-Xlog:cds=info'))
+        self.assertLess(source.index('continuation.py" preflight'), source.index('mkdir "$3"'))
+        continuation_wrapper = source.split('if [[ ${1:-} == --continue ]]; then', 1)[1].split('\n    fi', 1)[0]
+        self.assertIn('continuation.py" remaining', continuation_wrapper)
+        self.assertIn('"${remaining}s"', continuation_wrapper)
+        self.assertNotIn('6h', continuation_wrapper)
+        self.assertIn('du -sm "$OUT" "$RETAINED"', source)
 
     def test_observer_import_has_no_process_or_signal_side_effects(self):
         observer_spec = importlib.util.spec_from_file_location("scanner_watch_memory", PACKET / "watch-memory.py")

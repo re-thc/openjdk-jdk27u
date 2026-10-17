@@ -29,8 +29,10 @@ five-second polling interval could elapse.
 Only the two explicit `make ... jdk images` calls opt in to `build-stage`.
 After authoritative command status0, the supervisor retains custody and allows
 up to **six seconds** for natural shutdown: the five-second polling period plus
-one second of scheduling/shutdown allowance. It sends no signal during this
-period. No wait is added when custody is already empty.
+one second of scheduling/shutdown allowance. This interval starts at the first
+validated post-command completion decision, after the separately bounded
+observation; it does not start at the instant make exits. It sends no signal
+during this period. No wait is added when custody is already empty.
 
 Success still requires both no live owned descendants and kernel `ECHILD`,
 verified within that deadline. A late empty observation cannot prove timely
@@ -112,8 +114,10 @@ and match the candidate's compiler, boot JDK, linker, sysroot and build profile.
 Run verification immediately before reuse and again after any copy; retain its
 result in the new continuation provenance. Route every baseline consumer through
 this one verified absolute image path. Do not invoke the ordinary full runner
-expecting reuse: that entry point intentionally builds both images. This repair
-provides artifact verification, not an implicit resume/restart command.
+expecting reuse: that mode intentionally builds both images. The later explicit
+[`--continue` mode](CONTINUATION.md) binds the retained artifact and builds only
+the candidate while sharing the full matrix. Neither mode is released by this
+source repair.
 
 Reuse saves only baseline configure/build work. None of the required six CDS
 mapping checks,57 jtreg case/collector executions, two HOST runs,34 smoke VMs or
