@@ -1,0 +1,111 @@
+{
+  "schema": 1,
+  "status": "DRAFT_NOT_AUTHORIZED_NOT_EXECUTED",
+  "platform": "native Linux aarch64",
+  "baseline": "02324e6bd026411407983df06284cd79460c33f6",
+  "candidate": "b67cf2421d5dca1df4d9759003e1983a1b810f86",
+  "comparison": "isolated patch relative to original source base; not current-master performance",
+  "labels": [
+    "base",
+    "control",
+    "template"
+  ],
+  "control_image": "base",
+  "cells": [
+    {
+      "id": "startup-empty",
+      "stage": "startup",
+      "tier": "tiered",
+      "shape": "empty"
+    },
+    {
+      "id": "startup-framework",
+      "stage": "startup",
+      "tier": "tiered",
+      "shape": "framework"
+    },
+    {
+      "id": "startup-i",
+      "stage": "startup",
+      "tier": "tiered",
+      "shape": "i"
+    },
+    {
+      "id": "c2-unbound",
+      "stage": "held-call-form",
+      "tier": "c2",
+      "shape": "unbound"
+    },
+    {
+      "id": "c2-bound",
+      "stage": "selected-counterparts",
+      "tier": "c2",
+      "shape": "bound"
+    },
+    {
+      "id": "c1-unbound",
+      "stage": "selected-counterparts",
+      "tier": "c1",
+      "shape": "unbound"
+    }
+  ],
+  "blocks": 12,
+  "stage_order": [
+    "startup",
+    "held-call-form",
+    "selected-counterparts"
+  ],
+  "stage_fork_limits": {
+    "startup": 108,
+    "held-call-form": 36,
+    "selected-counterparts": 72
+  },
+  "maximum_timing_forks": 216,
+  "maximum_campaign_seconds": 3600,
+  "maximum_fork_seconds": 180,
+  "maximum_untimed_diagnostic_forks": 8,
+  "common_flags": [
+    "-Xms128m",
+    "-Xmx128m",
+    "--enable-native-access=ALL-UNNAMED"
+  ],
+  "tiers": {
+    "tiered": [],
+    "c1": [
+      "-XX:TieredStopAtLevel=1"
+    ],
+    "c2": [
+      "-XX:-TieredCompilation",
+      "-Xbatch"
+    ]
+  },
+  "cds": "default",
+  "calls_per_batch": {
+    "c1": 100000,
+    "c2": 1000000
+  },
+  "warm_batches": 30,
+  "timed_batches": 10,
+  "schedule_seed": 20261014,
+  "bootstrap": {
+    "seed": 20261016,
+    "resamples": 10000,
+    "unit": "paired fork medians",
+    "reset_each_comparison": true,
+    "interval": "unadjusted percentile 95%"
+  },
+  "control_point_bounds": [
+    0.95,
+    1.05
+  ],
+  "control_whole_95CI_bounds": [
+    0.9,
+    1.1
+  ],
+  "slowdown": "HOLD on either comparator CI wholly below 1 OR slower than both labels in >=9/12 blocks; no acceptable-loss margin",
+  "retry_policy": "No retry, settings changes, exclusions, pooling, extensions or automatic replacement run",
+  "accounting": "individual direct-child wait4 rusage; collector and Java inside the same native Linux VM",
+  "host_cpu": "Bind once from verified actual affinity/cpuset before freezing execution inputs; no automatic reselection",
+  "prior_results": "All spent campaigns, failed controls and historical old-A C2 hold remain immutable",
+  "shipping_qualified": false
+}
