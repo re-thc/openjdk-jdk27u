@@ -302,6 +302,10 @@
   product(bool, UseFPUForSpilling, false,                                   \
           "Spill integer registers to FPU instead of stack when possible")  \
                                                                             \
+  product(bool, UseColdCallSpillDeferral, false, DIAGNOSTIC,                \
+          "Defer initial scalar definition spills with infrequent call "    \
+          "constraints (experimental)")                                     \
+                                                                            \
   develop_pd(intx, RegisterCostAreaRatio,                                   \
           "Spill selection in reg allocator: scale area by (X/64K) before " \
           "adding cost")                                                    \

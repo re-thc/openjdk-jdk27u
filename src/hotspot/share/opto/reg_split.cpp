@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/chaitin.hpp"
+#include "opto/coldCallSpill.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
 
@@ -534,6 +535,117 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
     }
   }
 
+  // This optional placement policy does not relax any mask.  In particular,
+  // debug values must still survive a Java call at its return PC.  Keep a wide
+  // scalar definition UP through profitable hot joins and pressure boundaries,
+  // rather than eagerly storing it merely because its block has high pressure.
+  // Ordinary operand/debug splits still enforce every constraint. Subsequent
+  // allocation attempts spill normally.
+  double* constraint_frequency = nullptr;
+  bool* has_call_debug_use = nullptr;
+  bool* scalar_lrg = nullptr;
+  VectorSet* deferred = nullptr;
+  if (UseColdCallSpillDeferral && _trip_cnt == 0) {
+    constraint_frequency = NEW_SPLIT_ARRAY(double, spill_cnt);
+    has_call_debug_use = NEW_SPLIT_ARRAY(bool, spill_cnt);
+    scalar_lrg = NEW_SPLIT_ARRAY(bool, spill_cnt);
+    deferred = new(split_arena) VectorSet(split_arena);
+    uint* last_constraint = NEW_SPLIT_ARRAY(uint, spill_cnt);
+    for (uint si = 0; si < spill_cnt; si++) {
+      constraint_frequency[si] = 0.0;
+      has_call_debug_use[si] = false;
+      scalar_lrg[si] = true;
+      last_constraint[si] = 0;
+    }
+
+    auto is_candidate = [&](uint lid) {
+      return lid != 0 && lid < maxlrg && lrgs(lid).alive() && lrgs(lid)._must_spill &&
+             !lrgs(lid)._direct_conflict && !lrgs(lid)._is_oop &&
+             !lrgs(lid)._was_spilled1 && !lrgs(lid)._was_spilled2 &&
+             !lrgs(lid).is_float_or_vector() && !lrgs(lid)._is_predicate &&
+             !lrgs(lid)._is_scalable && !lrgs(lid)._fat_proj &&
+             lrgs(lid).reg() >= LRG::SPILL_REG;
+    };
+    auto add_constraint = [&](uint lid, Node* node, Block* block) {
+      if (is_candidate(lid)) {
+        uint si = lrg2reach[lid];
+        ColdCallSpillPolicy::add_constraint(constraint_frequency[si], last_constraint[si],
+                                           node->_idx, block->_freq);
+      }
+    };
+    auto restricts_registers = [&](uint ireg, const RegMask& mask) {
+      if (ireg != Op_RegI && ireg != Op_RegL) {
+        return false;
+      }
+      // Subtraction can extend the scratch mask; reclaim it after this query.
+      ResourceMark mask_rm(C->regmask_arena());
+      RegMask missing(*Matcher::idealreg2regmask[ireg], C->regmask_arena());
+      return ColdCallSpillPolicy::restricts_registers(missing, mask);
+    };
+
+    // Reuse the pointer array; clear() returns BitBlocks to IndexSet's free list.
+    // Work includes live-out seeding and live-set iteration at every call, in
+    // addition to the node/input walk: this is not a linear-time graph scan.
+    IndexSet live;
+    live.initialize(maxlrg, split_arena);
+    for (uint bi = 0; bi < _cfg.number_of_blocks(); bi++) {
+      Block* block = _cfg.get_block(bi);
+      // Use liveness at each call, including calls in the middle of a block.
+      // Block live-out alone can miss a value consumed after such a call.
+      const IndexSet* live_out = _live->live(block);
+      IndexSetIterator live_out_it(live_out);
+      for (uint l = live_out_it.next(); l != 0; l = live_out_it.next()) {
+        live.insert(l);
+      }
+      for (uint ni = block->end_idx(); ni > 0; ni--) {
+        Node* node = block->get_node(ni);
+        uint lid = _lrg_map.find_id(node);
+        if (is_candidate(lid) && !node->is_Phi() &&
+            node->ideal_reg() != Op_RegI && node->ideal_reg() != Op_RegL) {
+          scalar_lrg[lrg2reach[lid]] = false;
+        }
+        if (is_candidate(lid) && restricts_registers(node->ideal_reg(), node->out_RegMask())) {
+          add_constraint(lid, node, block);
+        }
+        ColdCallSpillPolicy::visit_reverse_node(lid, node->is_MachCall(),
+            [&](uint def) { live.remove(def); },
+            [&]() {
+              // Include every crossed call, irrespective of return type or Java/
+              // runtime convention.  Summation also rejects a collection of calls
+              // which are individually cold but collectively frequent.
+              IndexSetIterator it(&live);
+              for (uint l = it.next(); l != 0; l = it.next()) {
+                add_constraint(l, node, block);
+              }
+            },
+            [&]() {
+              if (node->is_Phi()) {
+                return; // Phi inputs are uses on predecessor edges.
+              }
+              JVMState* jvms = node->jvms();
+              bool java_call = node->is_MachCallJava() &&
+                               !(node->is_MachCallStaticJava() &&
+                                 node->as_MachCallStaticJava()->uncommon_trap_request() != 0);
+              for (uint k = (node->Opcode() == Op_SCMemProj ? 0 : 1); k < node->req(); k++) {
+                Node* input = node->in(k);
+                lid = _lrg_map.find_id(input);
+                live.insert(lid);
+                // SCMemProj's edge zero keeps its defining instruction live, but is
+                // not a machine operand and has no input register mask.
+                if (node->is_Mach() && is_candidate(lid) &&
+                    restricts_registers(input->ideal_reg(), node->in_RegMask(k))) {
+                  add_constraint(lid, node, block);
+                  if (java_call && jvms != nullptr && jvms->debug_start() <= k && k < jvms->oopoff()) {
+                    has_call_debug_use[lrg2reach[lid]] = true;
+                  }
+                }
+              }
+            });
+      }
+      live.clear();
+    }
+  }
+
   // Create side arrays for propagating reaching defs info.
   // Each block needs a node pointer for each spilling live range for the
   // Def which is live into the block.  Phi nodes handle multiple input
@@ -618,6 +730,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       bool needs_phi = false;
       bool needs_split = false;
       bool has_phi = false;
+      ColdCallSpillPolicy::PhiCosts phi_costs;
       // Walk the predecessor blocks to check inputs for that live range
       // Grab predecessor block header
       n1 = b->pred(1);
@@ -628,6 +741,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       bool  *Utmp = UP[pidx];
       n1 = Ltmp[slidx];
       u1 = Utmp[slidx];
+      if (deferred != nullptr) {
+        phi_costs.add_input(n1 != nullptr, u1, n1 != nullptr && deferred->test(n1->_idx), pred->_freq);
+      }
       // Initialize node for saving type info
       n3 = n1;
       u3 = u1;
@@ -643,6 +759,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         Utmp = UP[pidx];
         n2 = Ltmp[slidx];
         u2 = Utmp[slidx];
+        if (deferred != nullptr) {
+          phi_costs.add_input(n2 != nullptr, u2, n2 != nullptr && deferred->test(n2->_idx), pred->_freq);
+        }
         // For each LRG, decide if a phi is necessary
         if( n1 != n2 ) {
           needs_phi = true;
@@ -707,14 +826,44 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         // PhiNodes should either force the LRG UP or DOWN depending
         // on its inputs and the register pressure in the Phi's block.
         UPblock[slidx] = true;  // Assume new DEF is UP
-        // If entering a high-pressure area with no immediate use,
-        // assume Phi is DOWN
-        if( is_high_pressure( b, &lrgs(lidx), b->end_idx()) && !prompt_use(b,lidx) )
+        // Decide before UP_entry, debug_defs and uses are rewritten. A PASS2
+        // override would disagree with the reaching definitions built here.
+        bool keep_deferred = deferred != nullptr &&
+                             ColdCallSpillPolicy::should_defer(has_call_debug_use[slidx], scalar_lrg[slidx],
+                                                              b->_freq, constraint_frequency[slidx]) &&
+                             phi_costs.should_keep_up(constraint_frequency[slidx]);
+        bool pressure_down = is_high_pressure(b, &lrgs(lidx), b->end_idx()) && !prompt_use(b, lidx);
+        // If entering a high-pressure area with no immediate use, assume Phi
+        // is DOWN unless doing so recreates stores on proven deferred hot inputs.
+        if( pressure_down && !keep_deferred )
           UPblock[slidx] = false;
         // If we are not split up/down and all inputs are down, then we
         // are down
         if( !needs_split && !u3 )
           UPblock[slidx] = false;
+        if (UPblock[slidx] && keep_deferred) {
+          // Track the reaching node, not an LRG-wide exemption: an LRG can
+          // contain multiple coalesced definitions (including two-address ops).
+          deferred->set(phi->_idx);
+#ifndef PRODUCT
+          if (trace_spilling()) {
+            tty->print_cr("CCPHI def=N%d L%u B%u freq=%.6g up_freq=%.6g down_freq=%.6g constraint_freq=%.6g inputs=%u pressure_down=%d",
+                          phi->_idx, lidx, b->_pre_order, b->_freq, phi_costs.up_frequency(),
+                          phi_costs.down_frequency(), constraint_frequency[slidx], b->num_preds() - 1, pressure_down);
+            // The regression test follows actual reaching definitions through
+            // successive joins; an unrelated Phi must not satisfy activation.
+            for (uint i = 1; i < b->num_preds(); i++) {
+              Block* input_block = _cfg.get_block_for_node(b->pred(i));
+              Node* input = Reaches[input_block->_pre_order][slidx];
+              assert(input != nullptr, "deferred Phi must have resolved inputs");
+              tty->print_cr("CCPHI_INPUT phi=N%d L%u B%u pred=B%u def=N%d up=%d deferred=%d freq=%.6g",
+                            phi->_idx, lidx, b->_pre_order, input_block->_pre_order, input->_idx,
+                            UP[input_block->_pre_order][slidx], deferred->test(input->_idx) != 0,
+                            input_block->_freq);
+            }
+          }
+#endif
+        }
       }  // end if phi is needed
 
       // Do not need a phi, so grab the reaching DEF
@@ -823,10 +972,23 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
           uint lidx = lidxs.at(slidx);
           // If live range is currently UP
           if( UPblock[slidx] ) {
+            // A hot join must not immediately undo its placement at the HRP
+            // boundary. Cold constraint blocks still spill normally, and fresh
+            // reloads/unrelated definitions never inherit this permission.
+            bool keep_deferred = deferred != nullptr && deferred->test(n1->_idx) &&
+                                 ColdCallSpillPolicy::should_defer(has_call_debug_use[slidx], scalar_lrg[slidx],
+                                                                  b->_freq, constraint_frequency[slidx]);
+#ifndef PRODUCT
+            if (deferred != nullptr && deferred->test(n1->_idx) &&
+                is_high_pressure(b, &lrgs(lidx), insidx) && !n1->rematerialize() && trace_spilling()) {
+              tty->print_cr("CCHRP def=N%d L%u B%u keep=%d freq=%.6g constraint_freq=%.6g",
+                            n1->_idx, lidx, b->_pre_order, keep_deferred, b->_freq, constraint_frequency[slidx]);
+            }
+#endif
             // set location to insert spills at
             // SPLIT DOWN HERE - NO CISC SPILL
             if( is_high_pressure( b, &lrgs(lidx), insidx ) &&
-                !n1->rematerialize() ) {
+                !n1->rematerialize() && !keep_deferred ) {
               // If there is already a valid stack definition available, use it
               if( debug_defs[slidx] != nullptr ) {
                 Reachblock[slidx] = debug_defs[slidx];
@@ -1202,13 +1364,30 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         bool defup = dmask.is_UP();
         uint ireg = n->ideal_reg();
         bool is_vect = RegMask::is_vector(ireg);
+        bool spill_for_pressure = !n->rematerialize() && defup &&
+                                  is_high_pressure(b, &deflrg, insidx) && !n->is_SpillCopy();
+        if (spill_for_pressure && (ireg == Op_RegI || ireg == Op_RegL) &&
+            !dmask.is_bound(ireg) && !dmask.is_misaligned_pair() &&
+            constraint_frequency != nullptr &&
+            ColdCallSpillPolicy::should_defer(has_call_debug_use[slidx], scalar_lrg[slidx],
+                                             b->_freq, constraint_frequency[slidx])) {
+          spill_for_pressure = false;
+          deferred->set(n->_idx);
+#ifndef PRODUCT
+          if (trace_spilling()) {
+            tty->print_cr("CCDEFER def=N%d L%u B%u freq=%.6g constraint_freq=%.6g loadL=%d",
+                          n->_idx, defidx, b->_pre_order, b->_freq, constraint_frequency[slidx],
+                          n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_LoadL);
+          }
+#endif
+        }
         // Only split at Def if this is a HRP block or bound (and spilled once)
         if( !n->rematerialize() &&
             (((dmask.is_bound(ireg) || (!is_vect && dmask.is_misaligned_pair())) &&
               (deflrg._direct_conflict || deflrg._must_spill)) ||
              // Check for LRG being up in a register and we are inside a high
              // pressure area.  Spill it down immediately.
-             (defup && is_high_pressure(b,&deflrg,insidx) && !n->is_SpillCopy())) ) {
+             spill_for_pressure) ) {
           assert( !n->rematerialize(), "" );
           // Do a split at the def site.
           maxlrg = split_DEF( n, b, insidx, maxlrg, Reachblock, debug_defs, splits, slidx );
