@@ -6,6 +6,7 @@
 
 """Verify fixed sampling and failure gates without launching a benchmark."""
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -20,6 +21,19 @@ from prepare import verify_jtreg
 
 
 class CampaignTests(unittest.TestCase):
+    def test_jmh_processor_path_names_every_pinned_jar(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            jars = [root / Path(path).name for path in prepare.DEPS]
+            for path in jars:
+                path.write_bytes(b"fixture")
+            cp = prepare.jmh_classpath(root)
+            self.assertEqual(cp.split(os.pathsep), list(map(str, jars)))
+            self.assertNotIn("*", cp)
+            jars[-1].unlink()
+            with self.assertRaises(RuntimeError):
+                prepare.jmh_classpath(root)
+
     def test_review_publication_has_no_automatic_campaign_trigger(self):
         workflow = Path(__file__).resolve().parents[2] / ".github/workflows/pr39-aarch64-qualification.yml"
         text = workflow.read_text()
@@ -30,8 +44,9 @@ class CampaignTests(unittest.TestCase):
         job_header = text.split("  qualification:\n", 1)[1].split("    steps:\n", 1)[0]
         self.assertNotRegex(job_header, r"\$\{\{\s*runner\.")
         caps = [int(x) for x in re.findall(r"(?m)^        timeout-minutes: (\d+)$", text.split("  qualification:\n", 1)[1])]
-        self.assertEqual(sum(caps), 204)
-        self.assertLessEqual(sum(caps), 210 - 6)
+        self.assertEqual(sum(caps), 174)
+        self.assertLessEqual(sum(caps), 180 - 6)
+        self.assertLessEqual(33 + 10 + 180, 225)
         self.assertRegex(text, r"Retain raw results[^\n]*\n        if: always\(\)\n        timeout-minutes: 8")
 
     def test_plan_is_fixed_and_unique(self):

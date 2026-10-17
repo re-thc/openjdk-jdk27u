@@ -1,9 +1,52 @@
 # PR39 native AArch64 qualification
 
-Status: source package for isolated Git review; publication has no automatic CI trigger.
-No native campaign has been launched.
+Status: one approved native campaign ran at `9fc46a1776b82bbe74193bba629ab4ec8c13a739`
+and stopped during harness compilation, before correctness or measurement.
+The processor-path repair is prepared for review; no repeat dispatch has occurred.
 Production code is unchanged from PR39 head `9fedf7ac9040bf1d46e383201524f1ca7a13a29e`.
 There is no native ARM performance verdict yet.
+
+## Native campaign result
+
+[Run 39030274620](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39030274620),
+attempt 1, was explicitly dispatched at 2026-10-17 11:51:19 UTC after source
+review. Base release, candidate release and candidate fastdebug all built and
+passed the development-profile smoke checks for Serial, G1 and ZGC. The run
+then failed in `compile-fixtures.log` with
+`Annotation processor 'org.openjdk.jmh.generators.BenchmarkProcessor' not found`.
+The pinned JMH JAR hashes were correct, but javac did not expand the wildcard
+used as its processor path. The repaired source supplies each pinned JAR explicitly
+to both the compiler classpath and processor path. Real local JMH 1.37 annotation
+processing now generates all 14 benchmark entries and the fixtures pass using
+dependencies with exactly the native run's hashes. This is source/fixture
+validation, not a local timing run or an ARM qualification result.
+
+The targeted correctness campaign and every performance row were skipped.
+No nmethod/tier, GC comparison, control stability or performance attribution can
+be inferred from this attempt. The native builds and profile smoke checks alone
+do not qualify the mismatch implementation. No production code was changed.
+
+| Collected identity | Observed value |
+|---|---|
+| CPU | 4 native AArch64 Neoverse-N2 r0p0 CPUs; ASIMD and SVE/SVE2 reported |
+| Runner image | `ubuntu-26.04-arm`, `20261012.150.1` |
+| Compiler | GCC `16.0.1 20260322`, Ubuntu `16-20260322-1ubuntu1`, experimental trunk `r16-8246-g569ace1fa50` |
+| Linker | GNU ld 2.46 |
+| Disk admission | 105.061 GiB free; 10.789 GiB required; observed filesystem 144.26 GiB |
+| Build outputs before/after pruning | Base 1,191,165,503 / 452,288,583 B; candidate release 1,551,665,127 / 1,265,060,852 B; fastdebug 2,849,543,225 / 2,466,429,755 B |
+
+Source, exact image-file hashes, compiler/configuration logs, CPU information,
+disk receipts and the harness error are retained in
+[artifact 12101125600](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39030274620/artifacts/12101125600)
+(141,392 bytes; SHA256
+`882a880592b69f2dacd39867a5b956b361819e24f16ed30194222f5de8f0c372`).
+The downloaded artifact matches that digest. Both jobs completed cleanup.
+The two jobs consumed about 32.45 runner-minutes, conservatively charged as 33;
+actual measurement time was zero. The one approved attempt has ended. The
+repaired workflow proposes at most 190 additional runner-minutes, giving an
+aggregate maximum of 223 within the original 225-minute reservation. Further
+execution needs independent review of this source and continuation proposal;
+this fix does not authorize another dispatch or an automatic timing retry.
 
 ## Sources and existing evidence
 
@@ -106,17 +149,20 @@ assumed. If GitHub does not expose this dispatch, report that launch blocker;
 do not launch a generic sanity workflow, install this on master, add a push
 trigger, or start an alternative campaign automatically.
 
-The complete reservation is at most **225 runner-minutes**: JTReg preparation
-15 minutes plus one native job 210 minutes, including dependency preparation,
-two release builds, candidate fastdebug, correctness, measurement and retention.
-The native job's complete step caps sum to **204 minutes**, leaving six minutes
-for runner setup and post steps within its 210-minute cap:
+The original reservation is **225 runner-minutes**. The completed attempt is
+charged 33; the unlaunched continuation proposal reserves at most **190**:
+JTReg preparation 10 minutes plus one native job 180 minutes, including
+dependency preparation, matched builds, correctness, measurement and retention.
+The aggregate maximum is 223, leaving two minutes within the original reservation.
+This budget proposal requires independent review; no continuation has been started.
+The proposed native step caps sum to **174 minutes**, leaving six minutes
+for runner setup and post steps within the 180-minute job cap:
 
 | Work | Step caps, minutes |
 |---|---:|
-| Paths, checkout, driver tests, BootJDK, JTReg, packages, source checks | 25 |
-| Three matched builds | 80 |
-| Common fixtures and JMH compilation | 8 |
+| Paths, checkout, driver tests, BootJDK, JTReg, packages, source checks | 22 |
+| Three matched builds | 55 |
+| Common fixtures and JMH compilation | 6 |
 | Correctness, including archiving | 52 |
 | Fixed timing screen | 30 |
 | Evidence upload, including incomplete raw jtreg work | 8 |
@@ -144,8 +190,9 @@ runner teardown remains responsible for that case.
 
 ### Disk admission and build retention
 
-The proposed native runner has 4 CPUs, 16 GiB RAM and a nominal 14 GB SSD; actual
-available storage is checked rather than inferred from that specification.
+The planning specification was 4 CPUs, 16 GiB RAM and a nominal 14 GB SSD.
+The observed run had the larger filesystem recorded above; future available
+storage is still checked rather than inferred from a nominal specification.
 Source preflight records total/free bytes and requires space for two measured
 source checkouts, a **5 GiB active build allowance**, **2 GiB retained-output
 allowance**, a **512 MiB ccache cap**, and **2 GiB safety reserve** before making

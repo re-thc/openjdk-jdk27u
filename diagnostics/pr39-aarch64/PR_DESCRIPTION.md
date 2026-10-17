@@ -25,7 +25,11 @@ tier1. Head `9fedf7ac9` additionally caches segment bases and addresses before
 the prechecks; [its CI run](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39027042938)
 requires a completed result before merge.
 The native ARM qualification source and fixed campaign are in
-`diagnostics/pr39-aarch64/README.md`. The campaign has not been launched and
+`diagnostics/pr39-aarch64/README.md`. [Run 39030274620](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39030274620)
+built matched base/candidate release images and candidate fastdebug on native
+Neoverse-N2, with development-profile smoke checks passing. It stopped at JMH
+processor discovery, before the targeted correctness and timing gates. The
+harness processor-path fix is prepared for review; it has not been rerun on ARM.
 ARM performance remains unqualified. No application or x86 speedup is claimed
 by this qualification package; current author measurements require their own
 completed evidence. The shared thresholds require the planned ARM early-exit

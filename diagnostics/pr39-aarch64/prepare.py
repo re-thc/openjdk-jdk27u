@@ -67,6 +67,15 @@ def prune_build(output, baseline):
             path.unlink()
 
 
+def jmh_classpath(directory):
+    # javac's processor path does not expand the launcher's JAR wildcard syntax.
+    jars = [directory / Path(path).name for path in DEPS]
+    missing = [str(path) for path in jars if not path.is_file()]
+    if missing:
+        raise RuntimeError("Missing pinned JMH JARs: " + ", ".join(missing))
+    return os.pathsep.join(map(str, jars))
+
+
 def sources(root, evidence):
     if platform.system() != "Linux" or platform.machine() != "aarch64":
         raise RuntimeError("Native Linux AArch64 runner required")
@@ -169,7 +178,7 @@ def compile_fixtures(root, evidence):
                      ("MemoryMismatch", "BufferHashCode", "CharBufferPutString")]
     java_sources += [HERE / "FixtureCheck.java", HERE / "ColdMismatch.java"]
     java = root / "candidate/build/qual-release/images/jdk/bin"
-    cp = str(deps / "*")
+    cp = jmh_classpath(deps)
     run([str(java / "javac"), "-cp", cp, "-processorpath", cp,
          "-processor", "org.openjdk.jmh.generators.BenchmarkProcessor",
          "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED", "-d", str(classes),
