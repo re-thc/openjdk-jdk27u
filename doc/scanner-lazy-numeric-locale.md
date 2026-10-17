@@ -2,6 +2,8 @@
 
 Source baseline: `89885a6288e7aaabd01678a704a586272c0f96e3`.
 Implementation: `b2adcf68944f1251cf1b7b09e9cc5c1d58e37153`.
+Reviewed source/test head: `c5f0e0b4918007062a500594a9640c4ecffa8e9c`.
+This is a source-review milestone; integration qualification remains incomplete.
 
 Text and boolean scanning do not need numerical locale symbols. This change
 captures the selected locale and provider preference immediately, then defers
@@ -82,9 +84,27 @@ Repeat with Serial/ZGC as needed; CDS-off is a separate diagnostic.
 
 ## Qualification limits
 
-Existing local qualification passed all eight Scanner jtreg tests on Linux x64
-with G1, Serial and ZGC. Default-CDS first text use and thread allocation
-improved; sufficiently warmed numeric construction remained near baseline.
-Linux AArch64, macOS arm64 and Windows x64 execution remains unverified.
-Native HOST settings changes were source-reviewed; only Linux HOST fallback
-was exercised. No cross-platform performance guarantee is implied.
+On Linux x64, the original eight Scanner jtreg tests passed on the baseline with
+the default collector and on the candidate with G1, Serial and ZGC. At the reviewed head, the full ten-test suite
+passed with G1; the two additional tests passed separately with Serial and ZGC.
+This is not a fresh full ten-test run with each collector. The non-DecimalFormat
+test also passed on the baseline. The new class-initialization guard failed on
+the baseline as intended: it asserts the candidate's lazy behavior, rather than
+compatibility. Its CDS-off child VMs expose initialization order; they are not
+the source of the default-CDS timing measurements.
+
+The measured images contain the same production source tree as the reviewed
+head, but were built before its test-only commits. They must not be described
+as fresh builds of that exact head. Default-CDS first text use and instrumented
+thread allocation improved on the one measured Linux x64 host. Long numeric
+construction checks were within 1% of baseline, but the shorter 10k-warmup /
+20k-measurement checks showed double construction about 8.5% slower and integer
+token scanning about 4% slower. These remain unresolved protected signals;
+longer warmup does not supersede them. There is no demonstrated JVM-readiness
+gain or general numeric-neutrality result.
+
+Linux AArch64, macOS arm64 and Windows x64 execution remains unverified. Native
+HOST settings behavior was source-reviewed; only Linux HOST fallback was
+exercised. No cross-platform, native-memory or universal throughput claim is
+supported. The next bounded decision is specified in
+[the qualification milestone](scanner-qualification/README.md).
