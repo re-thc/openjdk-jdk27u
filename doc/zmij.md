@@ -112,3 +112,7 @@ actual C1 levels 1/2/3 and C2 level 4, native on/off and JNI routes, explicit
 inlining directives, compilation order and initialization behavior. Its
 unrelated-holder, overload and loader fixtures check that the C1 exception
 is limited to the two bootstrap precision factories.
+
+`TestZmijSplitFallback` compares precision metadata with the allocating Java
+splitter and checks that a null holder preserves the original native dispatch
+and fallback exception behavior, including zero and subnormal boundaries.
