@@ -8,6 +8,7 @@ from pathlib import Path
 import struct
 import sys
 import tempfile
+import time
 from types import SimpleNamespace
 import unittest
 from unittest import mock
@@ -131,6 +132,44 @@ class Contract(unittest.TestCase):
 
 
 class Orchestration(unittest.TestCase):
+    def test_full_boot_runtime_library_mutations_invalidate_snapshot(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);boot=root/'boot';tool=root/'inert-tool';tool.write_bytes(b'inert tool')
+            names=['bin/java','bin/javac','lib/modules','release','lib/server/libjvm.dylib',
+                'lib/libjli.dylib','lib/libnet.dylib']
+            for name in names:
+                path=boot/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(b'initial bytes')
+            with mock.patch.object(c,'tools_for',return_value=({'make':tool},None)),mock.patch.object(c.shutil,'which',return_value=str(tool)):
+                captured=c.snapshot_tools('mac',boot)
+                self.assertEqual(captured['boot_payload'],payload_manifest(boot))
+                s=c.Session.__new__(c.Session);s.p=dict(boot=str(boot),tools=captured);s.verify_boot()
+                for name in names[4:]:
+                    with self.subTest(library=name):
+                        path=boot/name;original=path.read_bytes();before=path.stat()
+                        path.write_bytes(b'mutated bytes');os.utime(path,ns=(before.st_atime_ns,before.st_mtime_ns))
+                        self.assertNotEqual(c.snapshot_tools('mac',boot),captured)
+                        with self.assertRaisesRegex(RuntimeError,'Boot JDK payload changed'):s.verify_boot()
+                        path.write_bytes(original);s.verify_boot()
+
+    def test_prepare_command_rechecks_boot_before_and_after_without_execution(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);boot=root/'boot';boot.mkdir();library=boot/'libjvm';library.write_bytes(b'initial')
+            s=c.Session.__new__(c.Session);s.p=dict(boot=str(boot),tools=dict(boot_payload=payload_manifest(boot)),platform='mac')
+            s.stage='prepare';s.end=time.monotonic()+60;s.manifest=None;s.commands=[];s.stage_dir=root;s.env={}
+            library.write_bytes(b'mutated')
+            with mock.patch.object(c.subprocess,'Popen') as popen:
+                with self.assertRaisesRegex(RuntimeError,'Boot JDK payload changed'):s.run('before',['inert'])
+                popen.assert_not_called()
+            library.write_bytes(b'initial')
+            def changed_during_command(timeout):library.write_bytes(b'mutated');return 0
+            child=SimpleNamespace(wait=changed_during_command,pid=12345)
+            with mock.patch.object(c.subprocess,'Popen',return_value=child) as popen, \
+                 mock.patch.object(c,'cleanup_command',return_value=dict(remaining_process_group=False)) as cleanup, \
+                 mock.patch.object(c.signal,'setitimer',return_value=(0,0)):
+                with self.assertRaisesRegex(RuntimeError,'Boot JDK payload changed'):s.run('after',['inert'])
+                self.assertEqual(popen.call_count,1);cleanup.assert_called_once()
+            self.assertNotEqual(s.commands[0]['status'],'passed')
+
     def test_product_object_refs_have_common_configure_and_different_module_sources(self):
         identities={role:c.source_identity(c.ROOT,ref) for role,ref in k.REFS.items()}
         self.assertEqual(len({r['configure_blob'] for r in identities.values()}),1)

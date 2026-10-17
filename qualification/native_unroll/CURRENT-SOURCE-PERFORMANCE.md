@@ -26,7 +26,11 @@ effect, including Java identity paths, rather than an isolated classifier cost.
 
 The exact harness commit and executed bytes are independent of product refs.
 Planning binds both roots, product trees, tool invocation names/canonical
-identities, boot image, jtreg, decoder, host/PATH and Linux CPU affinity.
+identities, complete boot payload, jtreg, decoder, host/PATH and Linux CPU affinity.
+The boot manifest includes runtime libraries such as libjvm/libjli, file bytes,
+entry modes and symlink targets. Recheck it at stage boundaries and before and
+after every preparation command, so a changed boot library between image builds
+stops preparation. These file checks are included in the existing shared cap.
 Preparation binds configuration specs and complete image payloads, and compiles
 one shared kernel/controller/WhiteBox class set once. WhiteBox source is master;
 all processes consume the same class bytes. Stage boundaries recheck complete

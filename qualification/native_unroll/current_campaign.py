@@ -48,7 +48,8 @@ def snapshot_tools(platform,boot):
         path=shutil.which(name);require(path,'Missing build tool: '+name);tools[name]=invocation_path(path)
     tools['python']=invocation_path(sys.executable)
     for n in ['bin/java','bin/javac','lib/modules','release']:tools['boot/'+n]=Path(boot)/n
-    return dict(paths={n:str(p) for n,p in tools.items()},identities=invocation_records(tools),sdk=sdk)
+    return dict(paths={n:str(p) for n,p in tools.items()},identities=invocation_records(tools),sdk=sdk,
+                boot_payload=payload_manifest(Path(boot)))
 
 def source_identity(repo,ref):
     return dict(head=git(repo,'rev-parse',ref),trees={n:git(repo,'rev-parse',ref+':'+n) for n in ['src','test','make','bin']},
@@ -133,8 +134,11 @@ class Session:
         if p['platform']=='linux':require(sorted(os.sched_getaffinity(0))==p['affinity'],'Host CPU affinity changed')
     def save(self):
         (self.stage_dir/'commands.json').write_text(json.dumps(self.commands,indent=2)+'\n')
+    def verify_boot(self):
+        require(payload_manifest(Path(self.p['boot']))==self.p['tools']['boot_payload'],'Boot JDK payload changed')
     def run(self,name,argv,cwd=None,maximum=180):
         require(time.monotonic()<self.end,'Stage wall budget exhausted')
+        if self.stage=='prepare':self.verify_boot()
         # Per-process metadata checks are cheap; full bytes are checked at stage boundaries.
         if self.manifest:self.verify_inputs(False)
         log=self.stage_dir/(name+'.out');row=dict(name=name,argv=list(map(str,argv)),status='started');self.commands.append(row);self.save()
@@ -143,6 +147,7 @@ class Session:
             try:
                 row['exit_status']=child.wait(timeout=min(maximum,self.end-time.monotonic()))
                 require(row['exit_status']==0,'Command failed: '+name)
+                if self.stage=='prepare':self.verify_boot()
                 row['status']='passed'
             finally:
                 # A deadline interrupt must still allow bounded group cleanup and evidence capture.
