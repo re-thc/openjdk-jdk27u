@@ -7,10 +7,13 @@ Adler32 uses the same zlib-ng backend through three distinct call paths:
   Adler32 entry, which calls the `ZIP_Adler32` leaf.
 - With `-XX:-UseAdler32Intrinsics`, the native invocation uses the JNI function.
 
-Apple AArch64 C1 declines direct-buffer Adler32 intrinsification at all lengths.
-With Adler intrinsics enabled, the interpreter-entry hop is inferred from
-entry selection and call evidence. A compiler decline or zero JNI-function
-hits alone does not establish that intermediate hop.
+Apple AArch64 C1 uses the same runtime-leaf lowering as other AArch64 CPUs.
+`call_runtime` selects the C argument convention; `LIR_OpRTCall` is marked as a
+call, and linear scan creates clobber intervals for all 32 FP registers from
+`FrameMap`. The allocator therefore treats every FP register as clobbered at the call. The C function must still obey the platform ABI for
+reserved registers and stack alignment; this is not a custom register convention.
+The `ZIP_Adler32` leaf calls zlib-ng without entering Java or safepointing.
+
 Disabling `UseZipIntrinsics` does not select an Adler32 call path.
 
 A compiler log that reports a native-method decline does not establish the
@@ -29,8 +32,9 @@ The tests in `test/hotspot/jtreg/compiler/intrinsics/zip/` cover:
 - `TestC1DirectAdler32CallShape`: a public direct-buffer update in the C1
   compilation holding floating-point values. Its Apple-specific configuration
   forces wrapper inlining with `C1MaxInlineSize=300` and `C1InlineStackLimit=100`.
-  It checks the compilation log for a direct `invokestatic` declined as a native
-  method and rejects intrinsified, outlined or method-handle call shapes. Parser
+  It requires a direct `invokestatic` intrinsic in the Adler-enabled C1 FP
+  compilation and a native-method decline in the Adler-disabled JNI control.
+  Outlined, wrong-route and method-handle call shapes fail. Parser
   fixtures run independently on all platforms.
 
 The call-shape configuration is separate from the default-policy correctness
