@@ -30,10 +30,6 @@
  * @run driver/timeout=60 FourByteHeaderZGCMediumRemsetParser
  */
 
-/*
- * Offline input verification only. This entry point never calls the runtime
- * driver's main method, Fixture.run, ProcessTools, WhiteBox or a child JVM.
- */
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -99,8 +95,7 @@ public class FourByteHeaderZGCMediumRemsetParser {
         require(input.text.endsWith("\n") && !input.text.contains("\r"),
                 "Input must use LF endings with a final LF");
 
-        // Synthetic CORRELATED lines are captured, never presented as runtime
-        // path evidence. An unrelated exception remains a harness failure.
+        // Suppress the oracle's correlation output for synthetic inputs.
         AssertionError failure = null;
         PrintStream previous = System.out;
         ByteArrayOutputStream captured = new ByteArrayOutputStream();

@@ -100,7 +100,7 @@ public class ExitAfterContendedInflation {
     static final long JOIN_MILLIS = TimeUnit.SECONDS.toMillis(60);
 
     // A plain field in the same eight bytes as a four-byte header, written
-    // while the lock is held, like the Memoizer field of the original failure.
+    // while the lock is held.
     static final class Holder {
         boolean inCall;
         Object a;
@@ -184,7 +184,6 @@ public class ExitAfterContendedInflation {
         }
     }
 
-    // Compiles m at level (0 keeps it interpreted) unless it already is.
     static void compile(Method m, int level) {
         if (level == 0 || WB.getMethodCompilationLevel(m) == level) {
             return;
@@ -215,8 +214,7 @@ public class ExitAfterContendedInflation {
         }
     }
 
-    // Stops the contender and waits a bounded time for it. If it does not
-    // stop, that is reported without hiding an exception already in flight.
+    // Preserve an owner exception if contender teardown also fails.
     static void stopContender(Thread contender, Throwable inFlight) throws InterruptedException {
         done = true;
         contender.join(JOIN_MILLIS);

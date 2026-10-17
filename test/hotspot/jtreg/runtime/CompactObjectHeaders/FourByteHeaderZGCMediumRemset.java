@@ -90,8 +90,7 @@ public class FourByteHeaderZGCMediumRemset {
                 "-XX:ZTenuringThreshold=15",
                 "-XX:+ZVerifyForwarding",
                 "-XX:+ZVerifyRemembered",
-                // Returning from these frames removes all Token temporaries
-                // before either collection under test.
+                // Keep allocation and inspection temporaries out of the collection frames.
                 "-XX:CompileCommand=dontinline," + fixture + "::allocateFixture",
                 "-XX:CompileCommand=dontinline," + fixture + "::installYoungTokens",
                 "-XX:CompileCommand=dontinline," + fixture + "::inspectAfterMajor",
@@ -134,9 +133,7 @@ public class FourByteHeaderZGCMediumRemset {
         private static final int SCALE = U.arrayIndexScale(Object[].class);
         private static final int LENGTH = (SOURCE_SIZE - BASE) / SCALE;
 
-        // Tokens have no strong roots except their owner's element slots.
-        // Do not use WeakReference handles: young Reference referents are
-        // traced strongly by this generational ZGC implementation.
+        // During collections, Tokens are rooted only through the old owners.
         private static Object[][] owners;
         private static volatile Object[][] fillers;
         private static volatile Object[] youngFillers;
@@ -154,7 +151,7 @@ public class FourByteHeaderZGCMediumRemset {
             allocateFixture();
             WB.fullGC(); // The one permitted setup major, before hashing/children.
             expectCounts(1, 0);
-            installYoungTokens(); // Explicit dontinline: no Token escapes this frame.
+            installYoungTokens();
             expectCounts(1, 0);
 
             System.out.println(PREFIX + "ARM major=1 minor=0 base=" + BASE
@@ -171,16 +168,12 @@ public class FourByteHeaderZGCMediumRemset {
             } finally {
                 interval(-1.0);
             }
-            // Counter guards catch completed extras. The parent parser also
-            // rejects every extra start through EOF, including an in-flight
-            // timer major racing the disarm.
             expectCounts(2, 0);
             System.out.println(PREFIX + "MAJOR_DONE major=2 minor=0");
-            inspectAfterMajor(); // Explicit dontinline: all Token locals die on return.
+            inspectAfterMajor();
             expectCounts(2, 0);
             youngFillers = null;
 
-            // No Token is passed to, returned to, or loaded by this method.
             System.out.println(PREFIX + "YOUNG major=2 minor=0");
             WB.youngGC();
             expectCounts(2, 1);
@@ -245,9 +238,7 @@ public class FourByteHeaderZGCMediumRemset {
         }
 
         private static void retainYoungFillers(int token) {
-            // Bursts consume/refill the Token thread's TLAB; one large
-            // outside-TLAB filler would not establish spacing. Admit only
-            // the measured multi-page layout after the timer major.
+            // Consume the Token thread's TLAB so Tokens span multiple small pages.
             for (int j = 0; j < YOUNG_FILLERS_PER_TOKEN; j++) {
                 youngFillers[token * YOUNG_FILLERS_PER_TOKEN + j] = new byte[1024];
             }

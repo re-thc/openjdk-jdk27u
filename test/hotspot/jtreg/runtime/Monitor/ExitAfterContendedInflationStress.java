@@ -133,8 +133,7 @@ public class ExitAfterContendedInflationStress {
         }
     }
 
-    // Stops the contenders and waits a bounded time for them. Contenders that
-    // do not stop are reported without hiding an exception already in flight.
+    // Preserve an owner exception if contender teardown also fails.
     static void stopContenders(Thread[] contenders, Throwable inFlight) throws InterruptedException {
         stop = true;
         long deadline = System.nanoTime() + JOIN_NANOS;
@@ -204,7 +203,7 @@ public class ExitAfterContendedInflationStress {
         for (long n : entered) {
             total += n;
         }
-        // The race needs contended exits; a run without them tests nothing.
+        // Reject runs where contenders never acquire a published object.
         if (iterations == 0 || total == 0) {
             throw new RuntimeException("No contended work: iterations=" + iterations + " contended entries=" + total);
         }
