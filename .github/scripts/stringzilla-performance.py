@@ -282,7 +282,7 @@ def run(args):
     classes.mkdir()
     javac = args.original / "bin" / ("javac.exe" if os.name == "nt" else "javac")
     sources = [args.fork_source / "test/micro/org/openjdk/bench/java/lang" / (name + ".java")
-               for name in ("StringZillaSearch", "StringZillaLongNeedle")]
+               for name in ("StringZillaSearch", "StringZillaLongNeedle", "StringZillaTailSearch")]
     command([javac, "-cp", jars[0], "-processorpath", os.pathsep.join(str(x) for x in jars[:2]),
              "-processor", "org.openjdk.jmh.generators.BenchmarkProcessor", "-d", classes, *sources])
     classpath = os.pathsep.join(str(x) for x in [classes, jars[0], *jars[2:]])

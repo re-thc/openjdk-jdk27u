@@ -1,40 +1,18 @@
 # Measurement evidence
 
-The [current report](../BENCHMARKS.md) identifies the measured source, baseline,
-dispatch rules and validation scope. Each dataset pins its own source and images;
-historical receipts do not qualify later revisions.
+The current [benchmark report](../BENCHMARKS.md) identifies qualification sources,
+complete original/enabled/disabled images, toolchains and coverage.
 
-## Current complete-image qualification
+Preceding evidence is preserved at immutable commits:
 
-| Evidence | Contents |
+| Evidence | Scope |
 | --- | --- |
-| [All comparisons](NATIVE_IMAGE_BENCHMARKS.md) | Every matched original/enabled/disabled triplet, both speedup ratios and every higher enabled mean |
-| [Raw records](native-image-results.json) | JMH fork samples, confidence half-widths, source/image/harness hashes, compiler settings, CPU, JVM arguments and backend attestations |
-| [Native validation](native-sanitizer-validation.json) | Executed kernel backends, sanitizer results and MSVC baseline-instruction checks, with exact source scope |
-| [Workload manifest](../native-cases.tsv) | Inputs and applicable backends/tiers |
+| [Component qualification](https://github.com/re-thc/openjdk-jdk27u/blob/3953372a1d6556c2ea3617a9433feee4f1139bd2/doc/stringzilla/measurements/adbea61/README.md) | 769 triplets / 2,307 records on serial, AVX2, AVX-512, native ARM64 and MSVC; all original/enabled/disabled means, errors and raw samples |
+| [Initial native qualification](https://github.com/re-thc/openjdk-jdk27u/blob/23801203d0374b27415af992cbd31382dae2ac2a/doc/stringzilla/measurements/native-image-candidates/DA3AE24_BENCHMARKS.md) | 405 matched triplets on four native backends, with [raw records](https://github.com/re-thc/openjdk-jdk27u/blob/23801203d0374b27415af992cbd31382dae2ac2a/doc/stringzilla/measurements/native-image-candidates/da3ae24-results.json) |
+| [Previous complete-image report](https://github.com/re-thc/openjdk-jdk27u/blob/da3ae24b030d8c9c0694bbb5b33412f76c27780c/doc/stringzilla/BENCHMARKS.md) | The 99-workload x64 campaign and mixed fallback/prefix supplements, with build and test receipts |
+| [Earlier campaign index](https://github.com/re-thc/openjdk-jdk27u/blob/da3ae24b030d8c9c0694bbb5b33412f76c27780c/doc/stringzilla/measurements/README.md) | Earlier candidate and patched-class experiments; their methods and limitations remain attached to those results |
+| [Serial equality investigation](https://github.com/re-thc/openjdk-jdk27u/blob/404e6d0033b72513a8ebd0fad8e6be7de1ee71d6/doc/stringzilla/measurements/serial-equality-investigation/README.md) | GCC/Clang x64/ARM64 raw samples and assembly; the optional word-loop change was rejected because its gains did not hold across toolchains |
 
-Enabled and disabled use the same complete fork distribution. Original controls
-use complete source-built baseline distributions. No current control uses patched
-classes or substituted native objects. The manual
-[StringZilla performance workflow](../../../.github/workflows/stringzilla-performance.yml)
-builds matched images and runs correctness checks before timing.
-
-## Previous complete-image evidence
-
-| Snapshot | Evidence |
-| --- | --- |
-| `da3ae24b030d` native qualification | [405 triplets](native-image-candidates/DA3AE24_BENCHMARKS.md) and [all raw records](native-image-candidates/da3ae24-results.json), retaining every measured loss |
-| `90e763c6758` broad qualification | [99-workload report](../PREVIOUS_BENCHMARKS.md), [606 triplets](COMPLETE_IMAGE_BENCHMARKS.md) and [raw records](complete-image-results.json) |
-| `90e763c6758` mixed fallback supplement | [45 triplets](MIXED_FALLBACK_BENCHMARKS.md) and [raw records](mixed-fallback-results.json) |
-| `90e763c6758` mixed prefix supplement | [45 triplets](MIXED_PREFIX_BENCHMARKS.md) and [raw records](mixed-prefix-results.json) |
-| `90e763c6758` native batch supplement | [Nine triplets](NATIVE_BATCH_BENCHMARKS.md) and [raw records](native-batch-results.json) |
-| `90e763c6758` correctness | [Local validation](complete-image-validation.json) and [57-job CI receipt](complete-image-ci.json) |
-
-Earlier candidate experiments and patched-class controls remain available in the
-[immutable historical index](https://github.com/re-thc/openjdk-jdk27u/blob/da3ae24b030d8c9c0694bbb5b33412f76c27780c/doc/stringzilla/measurements/README.md).
-Their original tables and raw records, including all losses, are preserved there.
-They are excluded from current performance claims.
-
-The separate [serial equality investigation](https://github.com/re-thc/openjdk-jdk27u/blob/404e6d0033b72513a8ebd0fad8e6be7de1ee71d6/doc/stringzilla/measurements/serial-equality-investigation/README.md)
-retains compiler output, sanitizer checks and all measurements of rejected word-load
-variants. Those variants are not shipped.
+Historical results qualify their recorded revisions and image configurations.
+The current report uses its own matched controls; speedups between two enabled
+candidate revisions are not presented as gains over original Java.
