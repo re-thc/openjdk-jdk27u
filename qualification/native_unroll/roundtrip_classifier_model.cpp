@@ -20,7 +20,7 @@
 
 using uint = unsigned int;
 struct Metrics {
-  uint64_t helper = 0, slots = 0, reads = 0, uses = 0, bits = 0;
+  uint64_t prechecks = 0, helper = 0, slots = 0, reads = 0, uses = 0, bits = 0;
 } metrics;
 #define assert(condition, ...) do { if (!(condition)) throw std::runtime_error(#condition); } while (false)
 struct StackObj {};
@@ -145,6 +145,8 @@ public:
   explicit Matcher(Compile* compile) : C(compile) { C->owner = this; }
   void record(Node* n) { collect_float_roundtrip_add(n); }
   void prepare() { prepare_float_roundtrip_accumulations(); }
+  bool allocated() const { return _float_roundtrip_adds != nullptr || _float_roundtrip_accumulations != nullptr; }
+  uint registered() const { return _float_roundtrip_adds == nullptr ? 0 : _float_roundtrip_adds->size(); }
   void clear() { clear_float_roundtrip_accumulations(); }
   void early_return(const std::function<void()>& body) {
     FloatRoundTripClassificationMark cleanup(this);
@@ -208,6 +210,8 @@ struct Graph {
     for (Node* n : order) {
       for (uint i = 0; i < registrations; ++i) matcher.record(n);
     }
+    metrics.prechecks = metrics.helper;
+    metrics.helper = 0;
     matcher.prepare();
     compile.swapped = true;
     compile.current_nodes = 0; // The real matcher resets these counters here.
@@ -221,10 +225,42 @@ struct Graph {
 
 int main() {
   uint cases = 0;
+  { // Plain scalar FP additions must not allocate classifier phase structures.
+    Graph g;
+    for (uint i = 0; i < 4096; ++i) {
+      Node* n = g.node(Op_AddF, 3);
+      g.edge(n, 1, g.node(Op_Other, 0)); g.edge(n, 2, g.node(Op_Other, 0));
+      g.adds.push_back(n);
+    }
+    g.classify();
+    assert(!g.matcher.allocated() && g.matcher.registered() == 0 && g.admitted() == 0);
+    assert(metrics.prechecks == 4096 && metrics.helper == 0 && metrics.slots == 0); ++cases;
+  }
+  { // A large unrelated FP graph must not change an eligible cycle's members.
+    Graph g; g.cycle(8);
+    for (uint i = 0; i < 4096; ++i) {
+      Node* n = g.node(Op_AddF, 3);
+      g.edge(n, 1, g.node(Op_Other, 0)); g.edge(n, 2, g.node(Op_Other, 0));
+      g.adds.push_back(n);
+    }
+    g.classify();
+    assert(g.matcher.registered() == 8 && g.admitted() == 8);
+    assert(metrics.prechecks == g.adds.size() && metrics.helper == 16); ++cases;
+  }
+  for (uint exclusion = 0; exclusion < 3; ++exclusion) {
+    Graph g; g.cycle(8);
+    for (Node* r : g.reductions) {
+      if (exclusion == 0) r->strict = true;
+      if (exclusion == 1) r->inputs.resize(4); // Predicated reduction.
+      if (exclusion == 2) g.edge(g.node(Op_Other, 1), 0, r); // Shared reduction.
+    }
+    g.classify();
+    assert(!g.matcher.allocated() && g.admitted() == 0 && metrics.helper == 0); ++cases;
+  }
   for (uint length : {1u, 8u, 32u, 64u, 256u, 1024u, 4096u, 16384u}) {
     Graph g; g.cycle(length); g.classify();
     assert(g.admitted() == length);
-    assert(metrics.helper <= 2 * length);
+    assert(metrics.helper <= 2 * length && metrics.prechecks == length);
     assert(metrics.slots < 100 * g.nodes.size());
     uint64_t before = metrics.helper;
     for (uint repeat = 0; repeat < 8; ++repeat) {
@@ -232,14 +268,14 @@ int main() {
       assert(g.admitted() == length);
     }
     assert(metrics.helper == before && g.compile.count_reads == 0);
-    std::cout << "COST length=" << length << " helper_visits=" << metrics.helper
+    std::cout << "COST length=" << length << " structural_prechecks=" << metrics.prechecks << " preparation_visits=" << metrics.helper
               << " slot_work=" << metrics.slots << " graph_nodes=" << g.nodes.size() << '\n';
     g.matcher.clear(); assert(g.admitted() == 0); ++cases;
     Graph rejected; Node* tail = rejected.node(Op_Other, 0);
     for (uint i = 0; i < length; ++i) tail = rejected.add(tail);
     rejected.classify(); assert(rejected.admitted() == 0);
     assert(metrics.helper == length && metrics.slots < 100 * rejected.nodes.size());
-    std::cout << "REJECTED_COST length=" << length << " helper_visits=" << metrics.helper << '\n';
+    std::cout << "REJECTED_COST length=" << length << " structural_prechecks=" << metrics.prechecks << " preparation_visits=" << metrics.helper << '\n';
     ++cases;
   }
   for (uint order = 0; order < 40; ++order) {
@@ -337,7 +373,7 @@ int main() {
     assert(g.admitted() == 8 && metrics.helper == 16);
     assert(metrics.slots < 64ull * (g.index_span() + g.adds.size()));
     std::cout << "SPARSE_COST span=" << g.index_span() << " registered=" << g.adds.size()
-              << " helper_visits=" << metrics.helper << " slot_work=" << metrics.slots << '\n';
+              << " structural_prechecks=" << metrics.prechecks << " preparation_visits=" << metrics.helper << " slot_work=" << metrics.slots << '\n';
     ++cases;
   }
   { // Sparse rejected paths remain memoized; their index span still has a cost.
