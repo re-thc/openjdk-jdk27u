@@ -1,0 +1,82 @@
+{
+  "jmhVersion": "1.37",
+  "benchmark": "org.openjdk.bench.java.util.regex.RustRegexLifetime.lifetime",
+  "mode": "ss",
+  "threads": 1,
+  "forks": 0,
+  "jvm": "/fixture/jdk/bin/java",
+  "jvmArgs": [
+    "-XX:ActiveProcessorCount=1",
+    "-XX:+UseSerialGC",
+    "-XX:-UsePerfData",
+    "-Xrs",
+    "-Xshare:off",
+    "-Xms32m",
+    "-Xmx128m",
+    "-Djmh.blackhole.mode=FULL_DONTINLINE",
+    "--add-opens=java.base/java.util.regex=ALL-UNNAMED",
+    "-Dbench.rust.regex.checkBackend=true",
+    "-Dbench.rust.regex.expectedNative=true",
+    "-XX:-TieredCompilation",
+    "-XX:CICompilerCount=1",
+    "-Xbatch",
+    "-XX:CompileThreshold=1000",
+    "--add-opens=java.base/java.util.regex=ALL-UNNAMED"
+  ],
+  "jdkVersion": "27.0.2-internal",
+  "vmName": "OpenJDK 64-Bit Server VM",
+  "vmVersion": "27.0.2-internal-fixture",
+  "warmupIterations": 10,
+  "warmupTime": "single-shot",
+  "warmupBatchSize": 1,
+  "measurementIterations": 20,
+  "measurementTime": "single-shot",
+  "measurementBatchSize": 1,
+  "params": {
+    "length": "16",
+    "expression": "email",
+    "calls": "1",
+    "scenario": "miss",
+    "threads": "1",
+    "reuse": "cold"
+  },
+  "primaryMetric": {
+    "score": 10.0,
+    "scoreError": 0.0,
+    "scoreConfidence": [
+      10.0,
+      10.0
+    ],
+    "scorePercentiles": {
+      "0.0": 10.0,
+      "50.0": 10.0,
+      "100.0": 10.0
+    },
+    "scoreUnit": "us/op",
+    "rawData": [
+      [
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0
+      ]
+    ]
+  },
+  "secondaryMetrics": {}
+}

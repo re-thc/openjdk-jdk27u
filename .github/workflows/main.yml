@@ -304,11 +304,9 @@ jobs:
           root = Path(os.environ['RUNNER_TEMP']) / 'regex-results' / 'benchmarks'
           if not (root / 'results.jsonl').exists():
               raise SystemExit(0)
-          print(json.dumps({'record': 'runtime', 'metadata': json.loads((root / 'metadata.json').read_text())}))
-          summarize = runpy.run_path('make/scripts/benchmark-rust-regex.py')['paired_summaries']
-          rows = [json.loads(line) for line in (root / 'results.jsonl').read_text().splitlines()]
-          for summary in summarize(rows):
-              print(json.dumps(summary))
+          summarize = runpy.run_path('make/scripts/benchmark-rust-regex.py')['session_summaries']
+          for summary in summarize(root):
+              print(json.dumps(summary, allow_nan=False))
           PY
 
       - name: 'Upload qualification results'

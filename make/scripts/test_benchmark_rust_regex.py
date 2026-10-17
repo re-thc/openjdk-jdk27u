@@ -17,6 +17,7 @@
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
 """Pure planning/input tests. These tests never launch Java or a benchmark."""
+import copy
 import importlib.util
 import contextlib
 import io
@@ -32,6 +33,62 @@ spec = importlib.util.spec_from_file_location(
     'regex_bench', Path(__file__).with_name('benchmark-rust-regex.py'))
 bench = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bench)
+
+
+# Synthetic JMH 1.37 avgt/ss fixtures: schema and sample counts match the
+# producer, but their paths and numbers are fictional, never benchmark evidence.
+DATA = Path(__file__).parent / 'tests/data'
+META_ID = 'a' * 64
+COMMAND_ID = 'b' * 64
+
+
+def result_fixture(benchmark='RustRegexNative.match', params=None, score=10.0,
+                   java='/fixture/jdk/bin/java', jvm_args=None, suite='qualification'):
+    params = params or {'length': '16', 'regexType': 'prefix', 'scenario': 'miss', 'operation': 'find'}
+    cold = benchmark.startswith('RustRegexLifetime.') and params.get('reuse') == 'cold'
+    row = json.loads((DATA / ('rust-regex-jmh-ss.json' if cold else 'rust-regex-jmh-avgt.json')).read_text())
+    row.update(benchmark='org.openjdk.bench.java.util.regex.' + benchmark, params=dict(params), jvm=str(java))
+    if jvm_args is not None:
+        row['jvmArgs'] = list(jvm_args)
+    if not cold:
+        row['warmupTime'] = row['measurementTime'] = '200 ms' if suite == 'qualification' else '300 ms'
+    metric = row['primaryMetric']
+    metric.update(score=score, scoreUnit='us/op' if benchmark.startswith('RustRegexLifetime.') else 'ns/op',
+                  scoreConfidence=[score, score], rawData=[[score] * (20 if cold else 3)],
+                  scorePercentiles={'0.0': score, '50.0': score, '100.0': score})
+    return row
+
+
+def command_fixtures(command):
+    parameters = [command[i + 1] for i, value in enumerate(command) if value == '-p']
+    axes = dict(parameter.split('=', 1) for parameter in parameters)
+    benchmark = command[command.index('org.openjdk.jmh.Main') + 1].removesuffix('$')
+    prefix, method = benchmark.rsplit('.', 1)
+    methods = method[1:-1].split('|') if method.startswith('(') else [method]
+    suite = 'qualification' if '-w' not in command or command[command.index('-w') + 1] == '200ms' else 'review'
+    return [result_fixture(prefix + '.' + name, dict(zip(axes, values)), java=command[0],
+                           jvm_args=command[1:command.index('-cp')], suite=suite)
+            for name in methods for values in itertools.product(*(value.split(',') for value in axes.values()))]
+
+
+def summary_fixture():
+    policy = {'java': '/fixture/jdk/bin/java', 'reference': '/fixture/upstream/bin/java',
+              'jni': True, 'pairs': 1, 'tiers': ['C1'], 'suite': 'qualification', 'classpath': '/fixture/classes'}
+    case = next(case for case in bench.experiments_for('qualification', ['C1']) if case[0] == 'anchored-prefix')
+    suite, tier, benchmark, parameters = case
+    rows = []
+    axes = dict(parameter.split('=', 1) for parameter in parameters)
+    for control, score in [('original', 20.0), ('disabled', 30.0), ('native', 10.0), ('jni', 15.0)]:
+        for method in ('matches', 'lookingAt'):
+            for values in itertools.product(*(value.split(',') for value in axes.values())):
+                params = dict(zip(axes, values))
+                result = result_fixture('RustRegexState.' + method, params, score,
+                                        java=bench.controls_for(policy)[control],
+                                        jvm_args=bench.jvm_arguments(control, tier, parameters))
+                rows.append({'suite': suite, 'tier': tier, 'pair': 0, 'control': control,
+                             'enabled': {'native': True, 'disabled': False}.get(control),
+                             'metadata_sha256': META_ID, 'command_sha256': COMMAND_ID, 'result': result})
+    return rows, policy
 
 
 class BenchmarkInputs(unittest.TestCase):
@@ -100,42 +157,36 @@ class BenchmarkInputs(unittest.TestCase):
                              if case[0].startswith('anchored-ssn-') and case[1] == 'C1'), 108)
         self.assertTrue(all(bench.worker_count(case[3]) in (1, 4) for case in qualification))
 
-    def test_summary_keeps_methods_controls_and_units_separate(self):
-        rows = []
-        for method in ('matches', 'lookingAt'):
-            for control, score in [('original', 20), ('disabled', 30), ('native', 10), ('jni', 15)]:
-                rows.append({'suite': 'anchored', 'tier': 'C1', 'pair': 0, 'control': control,
-                             'result': {'benchmark': 'RustRegexState.' + method, 'params': {'length': '16'},
-                                        'primaryMetric': {'score': score, 'scoreUnit': 'ns/op',
-                                                          'rawData': [[score]]}}})
-        summaries = list(bench.paired_summaries(rows))
-        self.assertEqual(len(summaries), 2)
+    def test_summary_keeps_methods_and_all_four_controls_separate(self):
+        rows, policy = summary_fixture()
+        summaries = bench.paired_summaries(rows, policy, META_ID)
+        self.assertEqual(len(summaries), 32)
+        self.assertEqual({row['benchmark'].rsplit('.', 1)[1] for row in summaries}, {'matches', 'lookingAt'})
         for summary in summaries:
             self.assertEqual(set(summary['processes']), {'original', 'disabled', 'native', 'jni'})
             self.assertEqual(summary['pairedRatios']['original/native'], [{'pair': 0, 'ratio': 2}])
             self.assertEqual(summary['pairedRatios']['disabled/native'], [{'pair': 0, 'ratio': 3}])
-        with self.assertRaisesRegex(ValueError, 'duplicate process'):
-            list(bench.paired_summaries(rows + [rows[0]]))
+        with self.assertRaises(ValueError):
+            bench.paired_summaries(rows + [rows[0]], policy, META_ID)
         rows[0]['result']['primaryMetric']['scoreUnit'] = 'us/op'
-        separated = list(bench.paired_summaries(rows))
-        self.assertEqual(len(separated), 3)
-        self.assertTrue(all(not summary['pairedRatios']['original/native'] for summary in separated
-                            if summary['benchmark'].endswith('.matches')))
+        with self.assertRaisesRegex(ValueError, 'scoreUnit'):
+            bench.paired_summaries(rows, policy, META_ID)
 
     def test_duplicate_rows_cannot_replace_a_missing_case(self):
-        good = [{'benchmark': 'org.openjdk.bench.java.util.regex.RustRegexNative.match',
-                 'params': {'length': size}, 'primaryMetric': {'score': 1.0}} for size in ['4', '8']]
-        bench.validate_rows('RustRegexNative.match', ['length=4,8'], good)
+        params = ['length=4,8', 'regexType=prefix', 'scenario=miss', 'operation=find']
+        good = [result_fixture(params={'length': size, 'regexType': 'prefix', 'scenario': 'miss', 'operation': 'find'})
+                for size in ['4', '8']]
+        bench.validate_rows('RustRegexNative.match', params, good)
         with self.assertRaises(ValueError):
-            bench.validate_rows('RustRegexNative.match', ['length=4,8'], [good[0], good[0]])
+            bench.validate_rows('RustRegexNative.match', params, [good[0], good[0]])
         with self.assertRaises(ValueError):
-            bench.validate_rows('RustRegexNative.match', ['length=4,8'], good[:1])
+            bench.validate_rows('RustRegexNative.match', params, good[:1])
 
     def test_nonfinite_measurement_cannot_pass_as_a_complete_row(self):
-        row = {'benchmark': 'org.openjdk.bench.java.util.regex.RustRegexNative.match',
-               'params': {'length': '4'}, 'primaryMetric': {'score': float('nan')}}
+        row = result_fixture()
+        row['primaryMetric']['score'] = float('nan')
         with self.assertRaises(ValueError):
-            bench.validate_rows('RustRegexNative.match', ['length=4'], [row])
+            bench.validate_rows('RustRegexNative.match', [key + '=' + value for key, value in row['params'].items()], [row])
 
     def test_original_and_jni_controls_are_distinct_without_running_java(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -157,11 +208,7 @@ class BenchmarkInputs(unittest.TestCase):
                 commands.append(command)
                 if command[-1] == '-version':
                     return bench.subprocess.CompletedProcess(command, 0, stderr='fixture version')
-                parameters = [command[i + 1] for i, value in enumerate(command) if value == '-p']
-                axes = dict(parameter.split('=', 1) for parameter in parameters)
-                rows = [{'benchmark': 'org.openjdk.bench.java.util.regex.RustRegexNative.match',
-                         'params': dict(zip(axes, values)), 'primaryMetric': {'score': 1.0}}
-                        for values in itertools.product(*(value.split(',') for value in axes.values()))]
+                rows = command_fixtures(command)
                 Path(command[command.index('-rff') + 1]).write_text(json.dumps(rows))
                 return bench.subprocess.CompletedProcess(command, 0)
 
@@ -179,6 +226,131 @@ class BenchmarkInputs(unittest.TestCase):
                                          for option in command))
             self.assertTrue(any('-XX:-UseRustRegex' in command for command in commands))
             self.assertTrue(any('-XX:-UseRustRegexIntrinsics' in command for command in commands))
+
+
+class ResultContract(unittest.TestCase):
+    def setUp(self):
+        self.row = result_fixture()
+        self.params = [key + '=' + value for key, value in self.row['params'].items()]
+
+    def rejected(self, row):
+        with self.assertRaises(ValueError):
+            bench.validate_rows('RustRegexNative.match', self.params, [row])
+
+    def test_realistic_average_and_single_shot_rows(self):
+        bench.validate_rows('RustRegexNative.match', self.params, [self.row])
+        params = {'length': '16', 'expression': 'email', 'calls': '1', 'scenario': 'miss',
+                  'threads': '1', 'reuse': 'cold'}
+        row = result_fixture('RustRegexLifetime.lifetime', params)
+        bench.validate_rows('RustRegexLifetime.lifetime', [k + '=' + v for k, v in params.items()], [row])
+        row['primaryMetric']['rawData'][0].pop()
+        with self.assertRaises(ValueError):
+            bench.validate_rows('RustRegexLifetime.lifetime', [k + '=' + v for k, v in params.items()], [row])
+
+    def test_every_required_jmh_metadata_field_is_required(self):
+        for field in ['jmhVersion', 'benchmark', 'mode', 'threads', 'forks', 'jvm', 'jvmArgs',
+                      'jdkVersion', 'vmName', 'vmVersion', 'warmupIterations', 'warmupTime',
+                      'warmupBatchSize', 'measurementIterations', 'measurementTime',
+                      'measurementBatchSize', 'params', 'primaryMetric', 'secondaryMetrics']:
+            with self.subTest(field=field):
+                row = copy.deepcopy(self.row)
+                del row[field]
+                self.rejected(row)
+
+    def test_missing_or_wrong_primary_fields_are_rejected(self):
+        for field in ['score', 'scoreUnit', 'rawData']:
+            with self.subTest(field=field):
+                row = copy.deepcopy(self.row)
+                del row['primaryMetric'][field]
+                self.rejected(row)
+        for metric in [{'score': 1.0}, None, [], 'metric']:
+            with self.subTest(metric=metric):
+                row = copy.deepcopy(self.row)
+                row['primaryMetric'] = metric
+                self.rejected(row)
+        for unit in ['us/op', 'ops/s', '', None, ['ns/op']]:
+            with self.subTest(unit=unit):
+                row = copy.deepcopy(self.row)
+                row['primaryMetric']['scoreUnit'] = unit
+                self.rejected(row)
+
+    def test_raw_samples_require_one_complete_finite_numeric_series(self):
+        for raw in [None, [], [[]], [10, 10, 10], [[10]], [[10, 10]], [[10] * 4],
+                    [[10] * 3, [10] * 3], {'0': [10] * 3}, [[True, 10, 10]],
+                    [['10', 10, 10]], [[None, 10, 10]], [[-1, 10, 10]],
+                    [[float('nan'), 10, 10]], [[float('inf'), 10, 10]],
+                    [[float('-inf'), 10, 10]], [[10 ** 400, 10, 10]]]:
+            with self.subTest(raw=raw):
+                row = copy.deepcopy(self.row)
+                row['primaryMetric']['rawData'] = raw
+                self.rejected(row)
+
+    def test_incompatible_jmh_metadata_is_rejected(self):
+        for field, value in [('jmhVersion', '1.36'), ('mode', 'thrpt'), ('mode', 'ss'),
+                             ('threads', 2), ('threads', True), ('forks', 1), ('forks', False),
+                             ('warmupIterations', 1), ('warmupTime', '1 s'), ('warmupBatchSize', 2),
+                             ('measurementIterations', 2), ('measurementTime', '1 s'),
+                             ('measurementBatchSize', 2), ('jvm', ''), ('jvmArgs', None),
+                             ('jvmArgs', ['']), ('jvmArgs', [1]), ('vmName', None),
+                             ('secondaryMetrics', []), ('benchmark', 'other.RustRegexNative.match')]:
+            with self.subTest(field=field, value=value):
+                row = copy.deepcopy(self.row)
+                row[field] = value
+                self.rejected(row)
+        for score in [True, '10', None, 0, -1, float('nan'), float('inf'), 10 ** 400]:
+            with self.subTest(score=score):
+                row = copy.deepcopy(self.row)
+                row['primaryMetric']['score'] = score
+                self.rejected(row)
+
+    def test_actual_jvm_metadata_must_match_the_selected_policy(self):
+        arguments = self.row['jvmArgs']
+        bench.validate_rows('RustRegexNative.match', self.params, [self.row],
+                            java=self.row['jvm'], jvm_args=arguments)
+        extra = copy.deepcopy(self.row)
+        extra['jvmArgs'].append('--add-opens=java.base/java.util.regex=ALL-UNNAMED')
+        bench.validate_rows('RustRegexNative.match', self.params, [extra], jvm_args=arguments)
+        with self.assertRaises(ValueError):
+            bench.validate_rows('RustRegexNative.match', self.params, [self.row], java='/fixture/other/bin/java')
+        extra['jvmArgs'].append('-XX:-UseRustRegex')
+        with self.assertRaises(ValueError):
+            bench.validate_rows('RustRegexNative.match', self.params, [extra], jvm_args=arguments)
+
+    def test_invalid_result_containers_are_rejected(self):
+        for rows in [[], None, {}, 'rows', [None], [[]], [1]]:
+            with self.subTest(rows=rows), self.assertRaises(ValueError):
+                bench.validate_rows('RustRegexNative.match', self.params, rows)
+
+    def test_summary_uses_the_same_contract_before_emitting_any_summary(self):
+        for field in ['scoreUnit', 'rawData']:
+            rows, policy = summary_fixture()
+            del rows[-1]['result']['primaryMetric'][field]
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                bench.paired_summaries(rows, policy, META_ID)
+        rows, policy = summary_fixture()
+        rows[-1]['enabled'] = 0
+        with self.assertRaises(ValueError):
+            bench.paired_summaries(rows, policy, META_ID)
+        rows, policy = summary_fixture()
+        rows[-1]['pair'] = True
+        with self.assertRaises(ValueError):
+            bench.paired_summaries(rows, policy, META_ID)
+
+    def test_ratio_overflow_is_rejected(self):
+        rows, policy = summary_fixture()
+        for row in rows:
+            score = 1e-308 if row['control'] == 'native' else 1e308
+            row['result']['primaryMetric']['score'] = score
+            row['result']['primaryMetric']['rawData'] = [[score] * 3]
+        with self.assertRaisesRegex(ValueError, 'paired ratio'):
+            bench.paired_summaries(rows, policy, META_ID)
+
+    def test_nonstandard_or_duplicate_json_fields_are_rejected(self):
+        for text in ['{"score":1,"score":2}', '{"rawData":[[NaN]]}',
+                     '{"score":Infinity}', '{"score":1e999}']:
+            with self.subTest(text=text), self.assertRaises(ValueError):
+                bench.strict_json(text)
+        self.assertEqual(bench.strict_json('{"scoreError":"NaN"}'), {'scoreError': 'NaN'})
 
 
 class BenchmarkFailures(unittest.TestCase):
@@ -202,11 +374,7 @@ class BenchmarkFailures(unittest.TestCase):
         self.commands.append(command)
         if command[-1] == '-version':
             return bench.subprocess.CompletedProcess(command, 0, stderr='fixture version')
-        params = [command[i + 1] for i, value in enumerate(command) if value == '-p']
-        axes = dict(parameter.split('=', 1) for parameter in params)
-        rows = [{'benchmark': 'org.openjdk.bench.java.util.regex.RustRegexNative.match',
-                 'params': dict(zip(axes, values)), 'primaryMetric': {'score': 1.0}}
-                for values in itertools.product(*(value.split(',') for value in axes.values()))]
+        rows = command_fixtures(command)
         Path(command[command.index('-rff') + 1]).write_text(json.dumps(rows))
         return bench.subprocess.CompletedProcess(command, 0)
 
@@ -261,10 +429,176 @@ class BenchmarkFailures(unittest.TestCase):
         with self.assertRaises(KeyboardInterrupt):
             self.run_main(tool)
         before = len([command for command in self.commands if '-rff' in command])
-        with self.assertRaises(SystemExit):
+        with self.assertRaisesRegex(ValueError, 'unrecorded prior attempt'):
             self.run_main(resume=True)
         self.assertEqual(before, len([command for command in self.commands if '-rff' in command]))
         self.assertTrue((self.output / 'failure.json').is_file())
+
+    def test_incomplete_primary_output_is_terminal_at_ingestion(self):
+        for field in ['scoreUnit', 'rawData']:
+            output = self.output.with_name('out-' + field)
+            argv = list(self.argv)
+            argv[argv.index('--output') + 1] = str(output)
+            def tool(command, **kwargs):
+                result = self.fake_java(command, **kwargs)
+                if '-rff' in command:
+                    path = Path(command[command.index('-rff') + 1])
+                    rows = json.loads(path.read_text())
+                    del rows[0]['primaryMetric'][field]
+                    path.write_text(json.dumps(rows))
+                return result
+            with self.subTest(field=field), patch('sys.argv', argv), \
+                    patch.object(bench.subprocess, 'run', side_effect=tool), \
+                    contextlib.redirect_stdout(io.StringIO()), self.assertRaises(ValueError):
+                bench.main()
+            self.assertTrue((output / 'failure.json').is_file())
+            self.assertFalse((output / 'results.jsonl').exists())
+
+    def test_resume_rejects_incomplete_metrics_even_if_raw_file_and_records_agree(self):
+        self.run_main()
+        rows_file = self.output / 'results.jsonl'
+        rows = bench.read_records(rows_file)
+        target = rows[0]
+        tag = bench.attempt_tag(target['suite'], target['tier'], target['pair'], target['control'])
+        raw_file = self.output / (tag + '.json')
+        raw = json.loads(raw_file.read_text())
+        del raw[0]['primaryMetric']['rawData']
+        del target['result']['primaryMetric']['rawData']
+        raw_file.write_text(json.dumps(raw))
+        rows_file.write_text(''.join(json.dumps(row) + '\n' for row in rows))
+        before = len(self.commands)
+        with self.assertRaises(ValueError):
+            self.run_main(resume=True)
+        self.assertEqual(len(self.commands), before)
+        with self.assertRaises(ValueError):
+            bench.session_summaries(self.output)
+
+    def test_resume_requires_missing_original_metadata_without_regenerating_it(self):
+        self.run_main()
+        metadata = self.output / 'metadata.json'
+        metadata.unlink()
+        Path(self.argv[self.argv.index('--java') + 1]).write_text('changed executable at the same path')
+        (self.output.parent / 'classes/Bench.class').write_bytes(b'changed class at the same path')
+        before = len(self.commands)
+        with self.assertRaisesRegex(ValueError, 'original verified metadata'):
+            self.run_main(resume=True)
+        self.assertEqual(len(self.commands), before)
+        self.assertFalse(metadata.exists())
+        self.assertTrue((self.output / 'failure.json').is_file())
+
+    def test_resume_rejects_changed_jdk_contents_at_stable_path(self):
+        self.run_main()
+        metadata = (self.output / 'metadata.json').read_bytes()
+        before = len([command for command in self.commands if '-rff' in command])
+        Path(self.argv[self.argv.index('--java') + 1]).write_text('changed fixture executable')
+        with self.assertRaisesRegex(ValueError, 'resume input contents differ'):
+            self.run_main(resume=True)
+        self.assertEqual(before, len([command for command in self.commands if '-rff' in command]))
+        self.assertEqual(metadata, (self.output / 'metadata.json').read_bytes())
+
+    def test_resume_rejects_changed_classpath_contents_at_stable_path(self):
+        self.run_main()
+        metadata = (self.output / 'metadata.json').read_bytes()
+        before = len([command for command in self.commands if '-rff' in command])
+        (self.output.parent / 'classes/Bench.class').write_bytes(b'changed class fixture')
+        with self.assertRaisesRegex(ValueError, 'resume input contents differ'):
+            self.run_main(resume=True)
+        self.assertEqual(before, len([command for command in self.commands if '-rff' in command]))
+        self.assertEqual(metadata, (self.output / 'metadata.json').read_bytes())
+
+    def test_resume_requires_every_original_command_receipt(self):
+        self.run_main()
+        receipt = sorted(self.output.glob('*-command.json'))[-1]
+        receipt.unlink()
+        before = len(self.commands)
+        with self.assertRaisesRegex(ValueError, 'command receipt'):
+            self.run_main(resume=True)
+        self.assertEqual(len(self.commands), before)
+        self.assertFalse(receipt.exists())
+
+    def test_resume_rejects_mismatched_command_receipt(self):
+        self.run_main()
+        receipt = sorted(self.output.glob('*-command.json'))[-1]
+        command = json.loads(receipt.read_text())
+        command.append('-changed-fixture-option')
+        receipt.write_text(json.dumps(command))
+        before = len(self.commands)
+        with self.assertRaisesRegex(ValueError, 'command receipt'):
+            self.run_main(resume=True)
+        self.assertEqual(len(self.commands), before)
+        self.assertEqual(command, json.loads(receipt.read_text()))
+
+    def test_command_content_hash_cannot_be_bypassed_by_equivalent_json(self):
+        self.run_main()
+        receipt = sorted(self.output.glob('*-command.json'))[-1]
+        receipt.write_text(json.dumps(json.loads(receipt.read_text()), separators=(',', ':')))
+        with self.assertRaisesRegex(ValueError, 'command identity'):
+            self.run_main(resume=True)
+
+    def test_metadata_cannot_be_replaced_at_the_same_path(self):
+        self.run_main()
+        path = self.output / 'metadata.json'
+        metadata = json.loads(path.read_text())
+        metadata['classpath_sha256'] = {}
+        path.write_text(json.dumps(metadata))
+        with self.assertRaisesRegex(ValueError, 'original verified metadata'):
+            self.run_main(resume=True)
+        self.assertEqual(metadata, json.loads(path.read_text()))
+
+    def test_resume_rejects_changed_native_library_contents_at_stable_path(self):
+        library = Path(self.argv[self.argv.index('--java') + 1]).parent.parent / 'lib/server/libjvm.so'
+        library.parent.mkdir(parents=True)
+        library.write_bytes(b'native fixture; never loaded')
+        self.run_main()
+        library.write_bytes(b'changed native fixture')
+        before = len([command for command in self.commands if '-rff' in command])
+        with self.assertRaisesRegex(ValueError, 'resume input contents differ'):
+            self.run_main(resume=True)
+        self.assertEqual(before, len([command for command in self.commands if '-rff' in command]))
+
+    def test_missing_metadata_seal_cannot_be_regenerated(self):
+        self.run_main()
+        path = self.output / 'clock.json'
+        clock = json.loads(path.read_text())
+        del clock['metadata_sha256']
+        path.write_text(json.dumps(clock))
+        before = len(self.commands)
+        with self.assertRaisesRegex(ValueError, 'original verified metadata'):
+            self.run_main(resume=True)
+        self.assertEqual(before, len(self.commands))
+        self.assertNotIn('metadata_sha256', json.loads(path.read_text()))
+
+    def test_frozen_summary_rejects_changed_execution_policy(self):
+        self.run_main()
+        path = self.output / 'clock.json'
+        clock = json.loads(path.read_text())
+        clock['policy']['pairs'] = 9
+        path.write_text(json.dumps(clock))
+        with self.assertRaisesRegex(ValueError, 'execution policy identity'):
+            bench.session_summaries(self.output)
+
+    def test_complete_valid_resume_and_summary_do_not_repeat_measurements(self):
+        self.run_main()
+        original = {path.name: path.read_bytes() for path in self.output.iterdir() if path.is_file()}
+        before = len([command for command in self.commands if '-rff' in command])
+        self.run_main(resume=True)
+        self.assertEqual(before, len([command for command in self.commands if '-rff' in command]))
+        self.assertEqual(original, {path.name: path.read_bytes() for path in self.output.iterdir() if path.is_file()})
+        with patch.object(bench.subprocess, 'run') as run:
+            summaries = bench.session_summaries(self.output)
+            run.assert_not_called()
+        self.assertTrue(summaries[0]['completeCampaign'])
+        self.assertEqual(summaries[0]['completedProcesses'], 4)
+
+    def test_frozen_summary_is_portable_without_access_to_original_jdk_paths(self):
+        import shutil
+        self.run_main()
+        moved = self.output.with_name('archived-results')
+        shutil.move(str(self.output), moved)
+        with patch.object(bench.subprocess, 'run') as run:
+            summaries = bench.session_summaries(moved)
+            run.assert_not_called()
+        self.assertTrue(summaries[0]['completeCampaign'])
 
 
 if __name__ == '__main__':

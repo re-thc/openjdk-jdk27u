@@ -203,15 +203,38 @@ their observed routes in separate diagnostics, and do not present all
 native-enabled rows as native-engine throughput. Fresh first-observation costs
 remain separate from repeated warmed Matcher use.
 
-The runner binds runtime/configuration/classpath inputs, verifies the full
-parameter/method Cartesian product, and preserves terminal failures. Its total
-monotonic budget includes resume gaps; failed sessions cannot be resumed. Malformed or absent JMH output is terminal;
-unrecorded prior attempts cannot be rerun on resume, and records must exactly
-match their validated raw result files. A
-version probe is an accounted child JVM, not a free measurement. Backend and hit
-count validation occurs in untimed lifetime trial setup, never inside the timed
-method or after per-iteration cold-cache clearing. New lifetime timings therefore
-must not be silently spliced into older in-method-check result sets.
+The runner binds runtime/configuration/classpath contents and the execution
+policy, verifies the full parameter/method Cartesian product, and preserves
+terminal failures. Its JMH 1.37 result contract requires the requested mode,
+thread/fork counts, warmup/measurement iterations, batch sizes and windows, plus
+nonempty JVM/version metadata and the expected JVM arguments. Primary metrics
+must contain a positive finite score, the declared `ns/op` unit (`us/op` for
+lifetimes), and one finite nonnegative raw series with exactly three measured
+iterations, or twenty for cold single-shot lifetimes. Missing fields, wrong
+units, truncated/empty sample arrays, duplicate JSON keys and nonstandard numeric
+constants fail before ingestion. The checked-in synthetic avgt/ss fixtures are
+schema tests with fictional numbers, never timing evidence.
+
+Resume and CI summaries use the same complete-process validation. The session
+receipt seals the original metadata by SHA256; the metadata also binds the
+execution policy. Every result record binds that metadata and its command
+receipt by content hash. Resume requires both original receipts, checks all
+completed raw files/records/commands before starting a child, and rehashes the
+current JDK, native libraries, configuration, runner and classpath before skipping
+measurements. Missing provenance is never regenerated; changed contents at the
+same paths, malformed outputs and unrecorded attempts stop the session. Old
+results without these receipts remain historical evidence and cannot be promoted
+to qualified results by filling fields retrospectively. Frozen summaries can be
+read after archival without launching or accessing the original JDK.
+
+The total monotonic budget includes resume gaps. Summaries reject inconsistent
+inputs and nonfinite derived ratios, and report completed/expected process counts
+and campaign completeness. A valid partial report does not pass final acceptance.
+JMH JVM metadata describes settings; actual execution tiers and native entry
+routes still need the independent proofs below. A version probe is an accounted
+child JVM. Backend and hit count validation occurs in untimed lifetime trial
+setup, never inside the timed method or after per-iteration cold-cache clearing.
+New lifetime timings must not be spliced into older in-method-check result sets.
 
 ## Separate route, component, cold and GC diagnostics
 
@@ -272,6 +295,42 @@ GC logs. Keep GC allocation profilers and heavy route/compiler instrumentation
 separate from scored throughput. Do not claim a hard latency bound from observed
 maxima, or relative Java latency without a matching Java control.
 
+## Staged validation with reusable checkpoints
+
+Proceed through normal repository builds and correctness before spending time on
+performance. These stages are independently useful admission points; a monolithic
+18-hour run or a 32-GiB free-space reservation is not a technical prerequisite for
+an ordinary build. This source-only continuation authorizes none of these runtime
+commands; a later execution scope can cover one or more stages.
+
+1. Configure and build the candidate release image and native test libraries with
+   the normal commands above. Record source/toolchain hashes, elapsed time, peak
+   owned RSS and writable-space growth. Keep the build logs and image manifest.
+   Use observed growth and actual free headroom to admit the next stage.
+2. Run the release correctness inventory and Rust tests/lints, then build the
+   fastdebug image and repeat the required correctness/mode matrix. Stop on a
+   failure and repair it before performance collection. Identical, hash-verified
+   build outputs can be reused across stages; a source or toolchain change
+   invalidates affected qualification evidence.
+3. After correctness passes, build the same-base original-Java control and run
+   the shared qualification preparation command. Freeze all input identities.
+   Collect the full paired performance and fresh-process/memory/GC campaign.
+   If smaller batches aid supervision, `--suite qualification` can run once per
+   interpreter/C1/C2 tier into separate output directories, with the same frozen
+   controls, pairs and worker policy. C2 retains the lifetime cohorts. Account for
+   all planned cases across those batches, including all 108 protected C1 anchors;
+   stage boundaries do not permit omitted losses, sizes, controls or tiers.
+4. Only complete evidence passes final acceptance: release and fastdebug
+   correctness, all planned semantics and performance cases, actual-route proof,
+   startup/memory and matched Java latency controls, and latest-head platform CI
+   after the combined PR #5 update is separately authorized. The focused CI review
+   subset and preliminary builds cannot substitute for that final gate.
+
+Retain source/image/command manifests and failures at each boundary. Re-estimate
+later-stage capacity from measurements, without deleting pinned evidence or
+relaxing final acceptance. A declared deadline/resource breach ends that attempt;
+checkpoint and obtain a revised execution scope rather than dropping cases.
+
 ## Proposed bounded execution and publication boundary
 
 Source publication does not authorize the following runtime campaign. One future
@@ -287,8 +346,10 @@ ordinary command separately:
 | Separate engine/adapter/allocation and leaf/GC diagnostics | 30 minutes |
 | Analysis, integrity checks and checkpoints | 30 minutes |
 
-Mandatory total ceiling: **18 hours**, including preparation, validation, gaps and
-cleanup. An independently approved unchanged historical reproduction study may
+Conservative proposed whole-campaign ceiling: **18 hours**, including preparation,
+validation, gaps and cleanup. This is an admission/bounding choice, not a measured
+elapsed-time requirement. The phase allocations above are planning ceilings, not
+benchmark observations or proven minimum durations. An independently approved unchanged historical reproduction study may
 use its existing 115-minute/58-JVM ceiling; if explicitly included, the combined
 ceiling is **20 hours**. Historical/private images are optional diagnostic context
 and are not prerequisites for reproducing this branch or substitutes for its
@@ -300,8 +361,11 @@ one fixed CPU for single-worker cohorts or four fixed CPUs for the separately
 declared four-worker cohorts, with matched heap/GC/options across controls. Proposed maximum
 aggregate owned RSS is 8 GiB for builds/tests and 2 GiB for measurements; at most
 128 owned processes/512 threads in builds, 16/128 in tests and 4/64 in scored runs.
-Reserve 32 GiB of additional writable capacity, including at most 4 GiB of result
-artifacts. Per-process address-space ceilings are 8 GiB for build/test tooling
+A conservative proposed admission reservation is **32 GiB of additional writable
+capacity**, including an output ceiling of 4 GiB. No measurement establishes
+32 GiB as a minimum necessary capacity. A staged build can instead establish
+actual peak growth and support a smaller, measured reservation, while retaining
+the same source, evidence and final acceptance gates. Per-process address-space ceilings are 8 GiB for build/test tooling
 and 4 GiB for scored JVMs; cap open files at 1,024, disable core files, and cap
 individual build files at 4 GiB and individual diagnostic logs at 512 MiB.
 Existing evidence and pinned images must be retained. CPU affinity and

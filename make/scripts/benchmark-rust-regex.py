@@ -38,6 +38,8 @@ from pathlib import Path
 import subprocess
 import time
 
+SUITES = ('short', 'tiny', 'plans', 'lifetime', 'review', 'all', 'qualification')
+
 
 def classpath_files(classpath):
     files = set()
@@ -124,60 +126,311 @@ def expected_rows(benchmark, params):
     return count
 
 
-def validate_rows(benchmark, params, rows):
+def digest_file(path):
+    digest = hashlib.sha256()
+    with path.open('rb') as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def attempt_tag(suite, tier, pair, control):
+    label = {'native': 'on', 'disabled': 'off'}.get(control, control)
+    return f'{suite}-{tier}-{pair}-{label}'
+
+
+def benchmark_command(policy, control, tier, benchmark, params, result):
+    iterations = ['-wi', '2', '-w', '200ms' if policy['suite'] == 'qualification' else '300ms',
+                  '-i', '3', '-r', '200ms' if policy['suite'] == 'qualification' else '300ms']
+    if benchmark.startswith('RustRegexLifetime.'):
+        iterations = ['-bm', 'ss', '-wi', '10', '-i', '20', '-bs', '1'] if 'reuse=cold' in params \
+            else iterations + ['-bm', 'avgt']
+    command = [controls_for(policy)[control]] + jvm_arguments(control, tier, params)
+    command += ['-cp', policy['classpath'], 'org.openjdk.jmh.Main', benchmark] + iterations
+    command += ['-f', '0', '-t', '1', '-foe', 'true', '-rf', 'json', '-rff', str(result)]
+    for parameter in params:
+        command += ['-p', parameter]
+    return command
+
+
+def strict_json(text):
+    def object_fields(items):
+        result = {}
+        for key, value in items:
+            if key in result:
+                raise ValueError('duplicate JSON field: ' + key)
+            result[key] = value
+        return result
+
+    def finite_float(value):
+        number = float(value)
+        if not math.isfinite(number):
+            raise ValueError('nonfinite JSON number')
+        return number
+
+    def invalid_constant(value):
+        raise ValueError('nonstandard JSON constant: ' + value)
+
+    return json.loads(text, object_pairs_hook=object_fields, parse_float=finite_float,
+                      parse_constant=invalid_constant)
+
+
+def read_records(path):
+    return [strict_json(line) for line in path.read_text().splitlines()]
+
+
+def finite_number(value, *, positive=False):
+    if type(value) not in (int, float):
+        return False
+    try:
+        return math.isfinite(value) and (value > 0 if positive else value >= 0)
+    except OverflowError:
+        return False
+
+
+def is_sha256(value):
+    return isinstance(value, str) and len(value) == 64 and all(ch in '0123456789abcdef' for ch in value)
+
+
+def result_protocol(benchmark, params, suite):
+    name = benchmark.split('.')[-2]
+    cold = name == 'RustRegexLifetime' and 'reuse=cold' in params
+    window = '200 ms' if suite == 'qualification' else '300 ms'
+    return {'jmhVersion': '1.37', 'mode': 'ss' if cold else 'avgt',
+            'threads': 1, 'forks': 0,
+            'warmupIterations': 10 if cold else 2,
+            'warmupTime': 'single-shot' if cold else window, 'warmupBatchSize': 1,
+            'measurementIterations': 20 if cold else 3,
+            'measurementTime': 'single-shot' if cold else window, 'measurementBatchSize': 1}
+
+
+def jvm_arguments(control, tier, params):
+    arguments = [f'-XX:ActiveProcessorCount={worker_count(params)}', '-XX:+UseSerialGC',
+                 '-XX:-UsePerfData', '-Xrs', '-Xshare:off', '-Xms32m', '-Xmx128m',
+                 '-Djmh.blackhole.mode=FULL_DONTINLINE',
+                 '--add-opens=java.base/java.util.regex=ALL-UNNAMED']
+    if any(parameter.startswith('reuse=') for parameter in params):
+        arguments += ['-Dbench.rust.regex.checkBackend=true',
+                      f'-Dbench.rust.regex.expectedNative={str(control in ("native", "jni")).lower()}']
+    arguments += {'interpreter': ['-Xint'],
+                  'C1': ['-XX:TieredStopAtLevel=1', '-XX:CICompilerCount=1', '-Xbatch'],
+                  'C2': ['-XX:-TieredCompilation', '-XX:CICompilerCount=1', '-Xbatch',
+                         '-XX:CompileThreshold=1000']}[tier]
+    if control == 'disabled':
+        arguments.append('-XX:-UseRustRegex')
+    elif control == 'jni':
+        arguments.append('-XX:-UseRustRegexIntrinsics')
+    return arguments
+
+
+def validate_rows(benchmark, params, rows, *, suite='qualification', java=None, jvm_args=None):
+    if not isinstance(rows, list) or not rows:
+        raise ValueError('JMH output must be a nonempty result array')
     axes = dict(parameter.split('=', 1) for parameter in params)
     prefix, method = benchmark.rsplit('.', 1)
+    prefix = 'org.openjdk.bench.java.util.regex.' + prefix
     method = method.removesuffix('$')
     methods = method[1:-1].split('|') if method.startswith('(') else [method]
     keys = sorted(axes)
-    expected = {(name, values) for name in methods
+    expected = {(prefix + '.' + name, values) for name in methods
                 for values in itertools.product(*(axes[key].split(',') for key in keys))}
+    protocol = result_protocol(benchmark, params, suite)
+    unit = 'us/op' if prefix.endswith('.RustRegexLifetime') else 'ns/op'
     actual = []
     for row in rows:
-        score = row['primaryMetric']['score']
-        if type(score) not in (int, float) or not math.isfinite(score) or score <= 0:
+        if not isinstance(row, dict):
+            raise ValueError('JMH result must be an object')
+        for key, value in protocol.items():
+            if type(row.get(key)) is not type(value) or row[key] != value:
+                raise ValueError('unexpected JMH metadata: ' + key)
+        for key in ('jvm', 'jdkVersion', 'vmName', 'vmVersion'):
+            if not isinstance(row.get(key), str) or not row[key].strip():
+                raise ValueError('missing or invalid JMH metadata: ' + key)
+        arguments = row.get('jvmArgs')
+        if not isinstance(arguments, list) or any(not isinstance(arg, str) or not arg for arg in arguments):
+            raise ValueError('missing or invalid JMH metadata: jvmArgs')
+        if java is not None and Path(row['jvm']).resolve() != Path(java).resolve():
+            raise ValueError('JMH JVM does not match the selected control')
+        if jvm_args is not None:
+            # JMH 1.37 includes @Fork jvmArgsAppend in this descriptive field
+            # even with -f 0. These benchmarks append only this module opening.
+            suffix = arguments[len(jvm_args):]
+            if arguments[:len(jvm_args)] != jvm_args or any(
+                    arg != '--add-opens=java.base/java.util.regex=ALL-UNNAMED' for arg in suffix):
+                raise ValueError('JMH JVM arguments do not match the selected policy')
+        if not isinstance(row.get('secondaryMetrics'), dict):
+            raise ValueError('missing or invalid JMH secondaryMetrics')
+        metric = row.get('primaryMetric')
+        if not isinstance(metric, dict):
+            raise ValueError('missing or invalid primary metric')
+        score = metric.get('score')
+        if not finite_number(score, positive=True):
             raise ValueError('invalid primary measurement')
-        name = row['benchmark'].rsplit('.', 1)[-1]
-        full_name = row['benchmark']
-        if (full_name != prefix + '.' + name and not full_name.endswith('.' + prefix + '.' + name)) \
-                or set(row['params']) != set(keys):
+        if metric.get('scoreUnit') != unit:
+            raise ValueError('unexpected or missing primary scoreUnit')
+        samples = metric.get('rawData')
+        # Each invocation is one non-forked JVM, with the exact requested
+        # number of measurement iterations. Never count inner samples as JVMs.
+        if not isinstance(samples, list) or len(samples) != 1 or not isinstance(samples[0], list) \
+                or len(samples[0]) != protocol['measurementIterations']:
+            raise ValueError('missing, empty or incomplete primary rawData')
+        if any(not finite_number(sample) for sample in samples[0]):
+            raise ValueError('nonfinite or invalid primary rawData sample')
+        if not isinstance(row.get('params'), dict) or set(row['params']) != set(keys) \
+                or any(not isinstance(value, str) for value in row['params'].values()) \
+                or not isinstance(row.get('benchmark'), str):
             raise ValueError('unexpected benchmark or parameter axes')
-        actual.append((name, tuple(row['params'][key] for key in keys)))
+        actual.append((row['benchmark'], tuple(row['params'][key] for key in keys)))
     if len(actual) != len(expected) or set(actual) != expected:
         raise ValueError('missing, duplicate or unexpected benchmark cases')
 
 
-def paired_summaries(rows):
-    """Keep methods, units and all four controls separate in CI/local reports."""
-    cases = collections.defaultdict(lambda: collections.defaultdict(dict))
+def controls_for(policy):
+    if policy.get('suite') not in SUITES or not isinstance(policy.get('tiers'), list) \
+            or not policy['tiers'] or any(tier not in ('interpreter', 'C1', 'C2') for tier in policy['tiers']) \
+            or len(set(policy['tiers'])) != len(policy['tiers']):
+        raise ValueError('invalid result experiment policy')
+    if type(policy.get('pairs')) is not int or policy['pairs'] < 1 or type(policy.get('jni')) is not bool \
+            or not isinstance(policy.get('java'), str) or not policy['java'] \
+            or policy.get('reference') is not None and (
+                not isinstance(policy['reference'], str) or not policy['reference']):
+        raise ValueError('invalid result control/pair policy')
+    controls = {'disabled': policy['java'], 'native': policy['java']}
+    if policy.get('reference'):
+        controls = {'original': policy['reference'], **controls}
+    if policy.get('jni'):
+        controls['jni'] = policy['java']
+    return controls
+
+
+def policy_identity(policy):
+    return hashlib.sha256(json.dumps(policy, sort_keys=True, allow_nan=False).encode()).hexdigest()
+
+
+def validate_records(rows, policy, metadata_sha256):
+    """Validate every stored process before any resume or paired summary."""
+    if not is_sha256(metadata_sha256):
+        raise ValueError('missing verified metadata identity')
+    controls = controls_for(policy)
+    plan = {(suite, tier): (benchmark, params)
+            for suite, tier, benchmark, params in experiments_for(policy['suite'], policy['tiers'])}
+    if not plan:
+        raise ValueError('no experiments for the selected suite and tiers')
+    groups = collections.defaultdict(list)
     for row in rows:
-        result = row['result']
-        metric = result['primaryMetric']
-        key = (row['suite'], row['tier'], result['benchmark'], metric['scoreUnit'],
-               tuple(sorted(result['params'].items())))
-        control = row.get('control') or ('native' if row['enabled'] else 'disabled')
-        if control not in ('original', 'disabled', 'native', 'jni'):
-            raise ValueError('unexpected result control')
-        pair = row['pair']
-        if pair in cases[key][control]:
-            raise ValueError('duplicate process for paired summary')
-        score = metric['score']
-        if type(score) not in (int, float) or not math.isfinite(score) or score <= 0:
-            raise ValueError('invalid primary measurement')
-        cases[key][control][pair] = {'pair': pair, 'score': score,
-                                     'samples': metric['rawData']}
+        if not isinstance(row, dict):
+            raise ValueError('stored record must be an object')
+        if row.get('metadata_sha256') != metadata_sha256:
+            raise ValueError('stored record metadata identity differs')
+        if not is_sha256(row.get('command_sha256')):
+            raise ValueError('stored record has no valid command identity')
+        control = row.get('control')
+        pair = row.get('pair')
+        if control not in controls or type(pair) is not int or not 0 <= pair < policy['pairs']:
+            raise ValueError('stored record is outside the control/pair policy')
+        enabled = {'native': True, 'disabled': False}.get(control)
+        if type(row.get('enabled')) is not type(enabled) or row.get('enabled') != enabled:
+            raise ValueError('stored enabled metadata disagrees with control')
+        key = (row['suite'], row['tier'])
+        if key not in plan:
+            raise ValueError('stored record is outside the experiment policy')
+        groups[(*key, pair, control)].append(row['result'])
+    for (suite, tier, _, control), results in groups.items():
+        benchmark, params = plan[(suite, tier)]
+        validate_rows(benchmark, params, results, suite=policy['suite'], java=controls[control],
+                      jvm_args=jvm_arguments(control, tier, params))
+    return dict(groups)
+
+
+def frozen_metadata(output, clock):
+    expected = clock.get('metadata_sha256')
+    path = output / 'metadata.json'
+    if not is_sha256(expected) or not path.is_file() \
+            or digest_file(path) != expected:
+        raise ValueError('original verified metadata is missing or changed')
+    metadata = strict_json(path.read_text())
+    if metadata.get('execution_policy_sha256') != policy_identity(clock['policy']):
+        raise ValueError('original execution policy identity differs')
+    return metadata
+
+
+def load_completed(output, policy, metadata_sha256):
+    records = output / 'results.jsonl'
+    rows = read_records(records) if records.exists() else []
+    groups = validate_records(rows, policy, metadata_sha256)
+    plan = {(suite, tier): (benchmark, params)
+            for suite, tier, benchmark, params in experiments_for(policy['suite'], policy['tiers'])}
+    hashes = {}
+    for (suite, tier, pair, control), results in groups.items():
+        tag = attempt_tag(suite, tier, pair, control)
+        result = output / (tag + '.json')
+        command_file = output / (tag + '-command.json')
+        benchmark, params = plan[(suite, tier)]
+        original_result = Path(policy['output']) / (tag + '.json')
+        expected = benchmark_command(policy, control, tier, benchmark, params, original_result)
+        if not command_file.is_file() or strict_json(command_file.read_text()) != expected:
+            raise ValueError('original command receipt is missing or mismatched: ' + tag)
+        hashes[(suite, tier, pair, control)] = digest_file(command_file)
+        stored = strict_json(result.read_text())
+        validate_rows(benchmark, params, stored, suite=policy['suite'], java=controls_for(policy)[control],
+                      jvm_args=jvm_arguments(control, tier, params))
+        if results != stored:
+            raise ValueError('stored records differ from validated result for ' + tag)
+    for row in rows:
+        key = (row['suite'], row['tier'], row['pair'], row['control'])
+        if row['command_sha256'] != hashes[key]:
+            raise ValueError('stored record command identity differs')
+    completed_tags = {attempt_tag(*key) for key in groups}
+    known_files = {tag + suffix for tag in completed_tags for suffix in ('.json', '-command.json', '.log')}
+    known_files.update(('metadata.json', 'clock.json', 'failure.json'))
+    for path in output.iterdir():
+        if path.suffix in ('.json', '.log') and path.name not in known_files:
+            raise ValueError('unrecorded prior attempt cannot be rerun: ' + path.name)
+    return rows, groups
+
+
+def session_summaries(output):
+    clock = strict_json((output / 'clock.json').read_text())
+    metadata = frozen_metadata(output, clock)
+    rows, groups = load_completed(output, clock['policy'], clock['metadata_sha256'])
+    expected = len(experiments_for(clock['policy']['suite'], clock['policy']['tiers'])) \
+        * clock['policy']['pairs'] * len(controls_for(clock['policy']))
+    summaries = paired_summaries(rows, clock['policy'], clock['metadata_sha256'])
+    return [{'record': 'runtime', 'metadata': metadata, 'suite': clock['policy']['suite'],
+             'tiers': clock['policy']['tiers'], 'pairs': clock['policy']['pairs'],
+             'controls': list(controls_for(clock['policy'])), 'completedProcesses': len(groups),
+             'expectedProcesses': expected, 'completeCampaign': len(groups) == expected}] + summaries
+
+
+def paired_summaries(rows, policy, metadata_sha256):
+    """Require the ingestion contract before reporting complete process groups."""
+    groups = validate_records(rows, policy, metadata_sha256)
+    cases = collections.defaultdict(lambda: collections.defaultdict(dict))
+    for (suite, tier, pair, control), results in groups.items():
+        for result in results:
+            metric = result['primaryMetric']
+            key = (suite, tier, result['benchmark'], metric['scoreUnit'],
+                   tuple(sorted(result['params'].items())))
+            cases[key][control][pair] = {'pair': pair, 'score': metric['score'],
+                                         'samples': metric['rawData']}
+    summaries = []
     for (suite, tier, benchmark, unit, params), controls in sorted(cases.items()):
         ratios = {}
         for control in ('original', 'disabled', 'jni'):
             common = controls.get(control, {}).keys() & controls.get('native', {}).keys()
-            ratios[control + '/native'] = [
-                {'pair': pair, 'ratio': controls[control][pair]['score'] / controls['native'][pair]['score']}
-                for pair in sorted(common)]
-        yield {'record': 'paired-summary', 'suite': suite, 'tier': tier,
-               'benchmark': benchmark, 'unit': unit, 'params': dict(params),
-               'processes': {control: list(sorted(pairs.values(), key=lambda row: row['pair']))
-                             for control, pairs in controls.items()},
-               'pairedRatios': ratios}
+            paired = []
+            for pair in sorted(common):
+                ratio = controls[control][pair]['score'] / controls['native'][pair]['score']
+                if not math.isfinite(ratio) or ratio <= 0:
+                    raise ValueError('nonfinite or invalid paired ratio')
+                paired.append({'pair': pair, 'ratio': ratio})
+            ratios[control + '/native'] = paired
+        summaries.append({'record': 'paired-summary', 'suite': suite, 'tier': tier,
+                          'benchmark': benchmark, 'unit': unit, 'params': dict(params),
+                          'processes': {control: sorted(pairs.values(), key=lambda row: row['pair'])
+                                        for control, pairs in controls.items()},
+                          'pairedRatios': ratios})
+    return summaries
 
 
 def experiments_for(suite, tiers):
@@ -259,15 +512,18 @@ def main():
                         help='Total seconds, including hashing and gaps across resume')
     parser.add_argument('--tiers', nargs='+', choices=['interpreter', 'C1', 'C2'],
                         default=['interpreter', 'C1', 'C2'])
-    parser.add_argument('--suite', choices=['short', 'tiny', 'plans', 'lifetime', 'review', 'all',
-                                           'qualification'], default='all')
+    parser.add_argument('--suite', choices=SUITES, default='all')
     args = parser.parse_args()
+    args.output = args.output.resolve()
     if len(set(args.tiers)) != len(args.tiers):
         parser.error('--tiers must be distinct')
     if args.pairs < 1:
         parser.error('--pairs must be positive')
     if args.process_timeout < 1 or args.time_budget < 1:
         parser.error('timeouts must be positive')
+    experiments = experiments_for(args.suite, args.tiers)
+    if not experiments:
+        parser.error('no experiments for the selected suite and tiers')
     if args.cpus and (min(args.cpus) < 0 or len(set(args.cpus)) != len(args.cpus)):
         parser.error('--cpus must contain distinct nonnegative CPU indices')
     records = args.output / 'results.jsonl'
@@ -286,16 +542,21 @@ def main():
     if failure.exists():
         parser.error('a failed attempt cannot be resumed or replaced in this output directory')
     clock_file = args.output / 'clock.json'
+    metadata_file = args.output / 'metadata.json'
+    if args.resume and not clock_file.is_file():
+        failure.write_text(json.dumps({'error': 'original session receipt is missing'}) + '\n')
+        raise ValueError('original session receipt is missing')
     boot_file = Path('/proc/sys/kernel/random/boot_id')
     boot = boot_file.read_text().strip() if boot_file.is_file() else None
     policy = {'java': java, 'reference': reference, 'jni': args.include_jni,
               'pairs': args.pairs, 'tiers': args.tiers, 'suite': args.suite,
+              'output': str(args.output),
               'classpath': args.classpath, 'process_timeout': args.process_timeout,
               'time_budget': args.time_budget, 'worker_cpus': available_cpus}
     if clock_file.exists():
         if not args.resume:
             parser.error('an attempt already exists; choose a new output directory')
-        clock = json.loads(clock_file.read_text())
+        clock = strict_json(clock_file.read_text())
         if boot is None or clock['boot'] != boot or clock['policy'] != policy:
             parser.error('resume host or execution policy differs')
     else:
@@ -304,6 +565,15 @@ def main():
         clock = {'started': time.monotonic(), 'boot': boot, 'policy': policy}
         with clock_file.open('x') as destination:
             destination.write(json.dumps(clock, indent=2) + '\n')
+    completed = {}
+    original_metadata = None
+    if args.resume:
+        try:
+            original_metadata = frozen_metadata(args.output, clock)
+            _, completed = load_completed(args.output, policy, clock['metadata_sha256'])
+        except (KeyError, ValueError, TypeError, OSError) as error:
+            failure.write_text(json.dumps({'error': str(error)}) + '\n')
+            raise
     if time.monotonic() < clock['started']:
         parser.error('monotonic clock changed')
     deadline = clock['started'] + args.time_budget
@@ -320,13 +590,6 @@ def main():
             failure.write_text(json.dumps({'command': command, 'error': str(error)}) + '\n')
             raise
 
-    def digest(path):
-        sha = hashlib.sha256()
-        with path.open('rb') as source:
-            for chunk in iter(lambda: source.read(1024 * 1024), b''):
-                sha.update(chunk)
-        return sha.hexdigest()
-
     def runtime_metadata(executable):
         home = Path(executable).parent.parent
         binaries = [Path(executable), home / 'lib/modules']
@@ -334,8 +597,8 @@ def main():
             binaries.extend(p for p in sorted((home / directory).rglob('*'))
                             if p.is_file() and p.suffix.lower() in ('.so', '.dylib', '.dll'))
         configuration = [home / 'release'] + [p for p in sorted((home / 'conf').rglob('*')) if p.is_file()]
-        return {'binary_sha256': {str(p): digest(p) for p in binaries if p.is_file()},
-                'configuration_sha256': {str(p): digest(p) for p in configuration if p.is_file()},
+        return {'binary_sha256': {str(p): digest_file(p) for p in binaries if p.is_file()},
+                'configuration_sha256': {str(p): digest_file(p) for p in configuration if p.is_file()},
                 'version': run([executable, '-version'], capture_output=True, text=True).stderr}
 
     try:
@@ -344,92 +607,42 @@ def main():
         parser.error(str(error))
     host = '-'.join((platform.system(), platform.release(), platform.machine()))
     metadata = {'java': java, 'platform': host, 'worker_cpus': available_cpus, **runtime_metadata(java),
-                'runner_sha256': digest(Path(__file__)),
-                'classpath_sha256': {str(p): digest(p) for p in benchmark_files}}
+                'execution_policy_sha256': policy_identity(policy),
+                'runner_sha256': digest_file(Path(__file__)),
+                'classpath_sha256': {str(p): digest_file(p) for p in benchmark_files}}
     if reference:
         metadata['reference'] = {'java': reference, **runtime_metadata(reference)}
-    metadata_file = args.output / 'metadata.json'
-    if args.resume and metadata_file.exists() and json.loads(metadata_file.read_text()) != metadata:
-        parser.error('resume runtime differs')
-    metadata_file.write_text(json.dumps(metadata, indent=2) + '\n')
-    controls = {'disabled': java, 'native': java}
-    if reference:
-        controls = {'original': reference, **controls}
-    if args.include_jni:
-        controls['jni'] = java
-    tiers = {'interpreter': ['-Xint'],
-             'C1': ['-XX:TieredStopAtLevel=1', '-XX:CICompilerCount=1', '-Xbatch'],
-             'C2': ['-XX:-TieredCompilation', '-XX:CICompilerCount=1', '-Xbatch',
-                    '-XX:CompileThreshold=1000']}
-    experiments = experiments_for(args.suite, args.tiers)
-    completed = {}
-    try:
-        if records.exists():
-            expected = {(suite, tier, pair, control) for suite, tier, _, _ in experiments
-                        for pair in range(args.pairs) for control in controls}
-            for line in records.read_text().splitlines():
-                row = json.loads(line)
-                control = row.get('control') or ('native' if row['enabled'] else 'disabled')
-                key = (row['suite'], row['tier'], row['pair'], control)
-                if key not in expected or row['enabled'] != {'native': True, 'disabled': False}.get(control):
-                    raise ValueError('stored record is outside the selected control/experiment policy')
-                completed.setdefault(key, []).append(row['result'])
-    except (KeyError, ValueError, TypeError, OSError) as error:
-        failure.write_text(json.dumps({'error': str(error), 'input': str(records)}) + '\n')
-        raise
+    if args.resume:
+        if original_metadata != metadata:
+            failure.write_text(json.dumps({'error': 'resume input contents differ'}) + '\n')
+            raise ValueError('resume input contents differ; original metadata retained')
+    else:
+        with metadata_file.open('x') as destination:
+            destination.write(json.dumps(metadata, indent=2) + '\n')
+        clock['metadata_sha256'] = digest_file(metadata_file)
+        clock_file.write_text(json.dumps(clock, indent=2) + '\n')
+    controls = controls_for(policy)
     for suite, tier, benchmark, params in experiments:
-        family = suite.split('-')[0]
         for pair in range(args.pairs):
             for control in control_order(controls, pair):
                 enabled = {'native': True, 'disabled': False}.get(control)
-                label = {'native': 'on', 'disabled': 'off'}.get(control, control)
-                tag = f'{suite}-{tier}-{pair}-' + label
+                tag = attempt_tag(suite, tier, pair, control)
                 result = args.output / (tag + '.json')
                 workers = worker_count(params)
                 if available_cpus is not None and len(available_cpus) < workers:
                     parser.error('requested worker CPUs are unavailable')
                 cpus = available_cpus[:workers] if available_cpus is not None else None
-                active = len(cpus) if cpus is not None else workers
-                command = [controls[control], f'-XX:ActiveProcessorCount={active}', '-XX:+UseSerialGC',
-                           '-XX:-UsePerfData', '-Xrs', '-Xshare:off', '-Xms32m', '-Xmx128m',
-                           '-Djmh.blackhole.mode=FULL_DONTINLINE',
-                           '--add-opens=java.base/java.util.regex=ALL-UNNAMED']
-                if family == 'lifetime':
-                    command += ['-Dbench.rust.regex.checkBackend=true',
-                                f'-Dbench.rust.regex.expectedNative={str(control in ("native", "jni")).lower()}']
-                command += tiers[tier]
-                if control == 'disabled':
-                    command.append('-XX:-UseRustRegex')
-                elif control == 'jni':
-                    command.append('-XX:-UseRustRegexIntrinsics')
-                window = '200ms' if args.suite == 'qualification' else '300ms'
-                iterations = ['-wi', '2', '-w', window, '-i', '3', '-r', window]
-                if family == 'lifetime':
-                    if 'reuse=cold' in params:
-                        iterations = ['-bm', 'ss', '-wi', '10', '-i', '20', '-bs', '1']
-                    else:
-                        iterations += ['-bm', 'avgt']
-                command += ['-cp', args.classpath, 'org.openjdk.jmh.Main', benchmark] + iterations
-                command += ['-f', '0', '-t', '1', '-foe', 'true', '-rf', 'json', '-rff', str(result)]
-                for param in params:
-                    command += ['-p', param]
+                vm_args = jvm_arguments(control, tier, params)
+                command = benchmark_command(policy, control, tier, benchmark, params, result)
                 command_file = args.output / (tag + '-command.json')
-                if args.resume and command_file.exists() and json.loads(command_file.read_text()) != command:
-                    parser.error('resume command differs for ' + tag)
                 if (suite, tier, pair, control) in completed:
-                    try:
-                        stored = json.loads(result.read_text())
-                        validate_rows(benchmark, params, stored)
-                        if completed[(suite, tier, pair, control)] != stored:
-                            raise ValueError('stored records differ from validated result for ' + tag)
-                    except (KeyError, ValueError, TypeError, OSError) as error:
-                        failure.write_text(json.dumps({'tag': tag, 'error': str(error)}) + '\n')
-                        raise
                     continue
-                if result.exists() or (args.output / (tag + '.log')).exists():
+                if result.exists() or command_file.exists() or (args.output / (tag + '.log')).exists():
                     failure.write_text(json.dumps({'tag': tag, 'error': 'unrecorded prior attempt'}) + '\n')
-                    parser.error('unrecorded prior attempt cannot be rerun: ' + tag)
-                command_file.write_text(json.dumps(command, indent=2) + '\n')
+                    raise ValueError('unrecorded prior attempt cannot be rerun: ' + tag)
+                with command_file.open('x') as destination:
+                    destination.write(json.dumps(command, indent=2) + '\n')
+                command_sha256 = digest_file(command_file)
                 print('Running ' + tag, flush=True)
 
                 def pin_cpu():
@@ -441,15 +654,21 @@ def main():
                     run(command, stdout=log, stderr=subprocess.STDOUT,
                         preexec_fn=pin_cpu if cpus is not None else None)
                 try:
-                    rows = json.loads(result.read_text())
-                    validate_rows(benchmark, params, rows)
+                    if digest_file(command_file) != command_sha256:
+                        raise ValueError('command receipt changed during attempt')
+                    frozen_metadata(args.output, clock)
+                    rows = strict_json(result.read_text())
+                    validate_rows(benchmark, params, rows, suite=args.suite,
+                                  java=controls[control], jvm_args=vm_args)
                 except (KeyError, ValueError, TypeError, OSError) as error:
                     failure.write_text(json.dumps({'tag': tag, 'error': str(error)}) + '\n')
                     raise
                 with records.open('a') as out:
                     for row in rows:
                         out.write(json.dumps({'suite': suite, 'tier': tier, 'pair': pair,
-                                              'enabled': enabled, 'control': control, 'result': row}) + '\n')
+                                              'enabled': enabled, 'control': control,
+                                              'metadata_sha256': clock['metadata_sha256'],
+                                              'command_sha256': command_sha256, 'result': row}, allow_nan=False) + '\n')
                 print(f'Finished {tag}: {len(rows)} cases', flush=True)
 
 
