@@ -38,6 +38,13 @@ libraries are omitted from its link inputs. Fatal-error prompts use standard
 error and read a response only from an attached console. Callers without a
 console, including services and JNI applications, return immediately.
 
+On macOS, the instrumentation agent uses its JDK libraries, iconv and zlib.
+Kerberos configuration retains Foundation collections, Kerberos credentials
+and SystemConfiguration services. Foundation's OS-transitive graphics mappings
+are separate from compilation of excluded JDK desktop code. The shared
+`splashscreen.h` contains declarations, not splash implementations; native
+symbol and compiler-input checks establish which code is present.
+
 ## Build and validation
 
 Use GNU make, the normal platform toolchain and a supported boot JDK. Choose
@@ -59,6 +66,8 @@ done
 To exercise the development wrapper, use `bash bin/configure-dev` with the
 same arguments. On Linux it expects mold unless `CONFIGURE_DEV_NO_MOLD=1` is
 set. Use `gmake` where that is the GNU make command.
+Configure-generating tests locate Autoconf on PATH when a cached configure run
+recorded no executable; a valid configured Autoconf path is still honored.
 
 Reconfiguration rejects output directories from a desktop build or a different
 collector set. Use a new `--with-conf-name`, or `make CONF="$conf" dist-clean`
@@ -79,17 +88,29 @@ source generation and product compilation, compiled descriptor semantics,
 direct-target rejection, stale outputs and configure/make overrides. It covers
 open modules, static/transitive requires, Unicode-escaped braces, qualified
 exports/opens, Windows path conversion and the portable console helper.
+It also checks launcher archive diagnostics, valid jar launch and native
+instrumentation. On macOS it checks direct framework links and native Kerberos
+configuration initialization; an unconfigured Kerberos store is allowed.
 
-Validated on Linux x64 on 2026-10-17: release with GCC 16.2 and clean fastdebug
-with GCC 14.2 completed these builds, make regressions and profile checks.
+Validated on Linux x64 on 2026-10-17: release with GCC 16.2 and fastdebug with
+GCC 14.2 passed incremental image builds, make regressions and profile checks.
 Each had 56 product javac lists covering 11,198 Java inputs, 1,405 product native
 compilation records with matching objects, and 56 image jmods. No excluded
 product source or object was found. The profile reports 1,418 native records
-including 13 ADLC host objects;
-fastdebug's compilation database also includes its precompiled-header command.
-All collector, compiler, server-tool and runtime smokes described above passed.
+including 13 ADLC host objects. Fastdebug's compilation database also includes
+its precompiled-header command. Linux collector, compiler, server-tool and
+runtime smokes passed.
 
-Native Linux AArch64, macOS AArch64 and Windows x64 validation remains required.
+Native macOS AArch64 validation at `5b3534b7` recorded successful release and
+fastdebug builds, profile checks and 29 runtime smokes per image under Command
+Line Tools, with no Metal discovery or artifacts. Each image had 56 modules/
+jmods, 11,196 Java inputs and 1,366 product native commands with matching objects.
+The release formal make suite passed; fastdebug's formal suite failed at
+Autoconf discovery. Its test-discovery fix and the subsequent launcher/framework
+changes require targeted native confirmation; the earlier passed runtime scope
+remains applicable to the unchanged code.
+
+Native Linux AArch64 and Windows x64 validation remains required.
 For macOS, configure with existing Command Line Tools selected through a
 process-local `DEVELOPER_DIR`, verify no Metal discovery, inspect `otool -L`
 for `libjli.dylib` and `libjvm.dylib`, and exercise console launch, JNI invocation,
