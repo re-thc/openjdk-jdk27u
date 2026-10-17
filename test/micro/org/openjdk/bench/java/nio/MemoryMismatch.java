@@ -82,7 +82,7 @@ public class MemoryMismatch {
     @Param({"1"})
     public int alignment;
 
-    /** Byte position of the only difference: none, 0, 7 (end of the first word), middle, last. */
+    /** Named position of the only difference, or an exact decimal byte position. */
     @Param({"MATCH", "FIRST", "FIRST_WORD", "MIDDLE", "LAST"})
     public String difference;
 
@@ -166,7 +166,11 @@ public class MemoryMismatch {
             case "FIRST_WORD" -> Math.min(7, size - 1);
             case "MIDDLE" -> size / 2;
             case "LAST" -> size - 1;
-            default -> throw new IllegalArgumentException(difference);
+            default -> {
+                int at = Integer.parseInt(difference);
+                if (at < 0 || at >= size) throw new IllegalArgumentException(difference);
+                yield at;
+            }
         };
         srcArray = new byte[size];
         Arrays.fill(srcArray, (byte) 42);
@@ -257,7 +261,7 @@ public class MemoryMismatch {
         return srcInts.mismatch(swappedInts);
     }
 
-    /** Control: heap array mismatch, independent of the storage parameter. */
+    /** Heap array mismatch, independent of storage; AArch64 also gains a stub here. */
     @Benchmark
     public int arrayMismatch() {
         return Arrays.mismatch(srcArray, dstArray);
