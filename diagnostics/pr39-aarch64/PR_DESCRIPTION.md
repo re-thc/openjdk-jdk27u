@@ -7,10 +7,14 @@ arrays that previously used the Java loop.
 
 Native C2 leaves are selected for 128 B through 64 KiB. On AArch64, heap calls
 below 128 B retain Java; guarded C2 loads check the first two heap words or the
-first sixteen native/mixed words before stub entry. AArch64 C2 vector work is
-capped at 2 KiB; an equal prefix on a larger request calls the existing Java
-implementation with all original arguments. AArch64 C1 uses a leaf only for
+first sixteen native/mixed words before stub entry. AArch64 C2 heap vector work
+is capped at 2 KiB; an equal heap prefix on a larger request calls the existing
+Java implementation with all original arguments. Native and mixed C2 calls
+retain their full-range stub within the existing 64 KiB bound, with no
+post-stub Java rescan. AArch64 C1 uses a leaf only for
 constant valid ranges of at most 64 KiB. Short native C2 scans keep the Java loop.
+Prefix loads with ambiguous heap/native aliases use compiler ordering barriers
+so preceding and following plain heap accesses keep their required order.
 Scoped native and mixed
 scans use bounded chunks with Java safepoint polls between them; heap segment
 scans retain the scoped boundary. The interpreter entry bounds its leaf work,
@@ -46,8 +50,10 @@ comparison.
 
 The subsequent AArch64 repair and regression tests are available for review,
 with every screening row audited in `diagnostics/pr39-aarch64/REPAIR.md` and its
-linked data. The 2 KiB cutoff preserves a vector opportunity through the observed
-byte-1,267 case; it is not a measured optimum. The repaired source still needs
+linked data. The heap-only 2 KiB cutoff preserves a vector opportunity through
+the observed byte-1,267 case; it is not a measured optimum. The future plan moves
+the existing native equal 4 KiB benefit gate before the remaining timing rows.
+The repaired source still needs
 native ARM build, correctness and matched performance validation, with actual
 instruction bytes retained. No further CI or benchmark has been launched.
 

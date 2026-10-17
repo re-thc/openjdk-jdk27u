@@ -51,7 +51,9 @@ class CampaignTests(unittest.TestCase):
 
     def test_plan_is_fixed_and_unique(self):
         cases = plan()
-        self.assertEqual({k: len(v) for k, v in cases.items()}, {"screen": 34, "main": 98})
+        self.assertEqual({k: len(v) for k, v in cases.items()}, {"screen": 35, "main": 97})
+        self.assertEqual(cases["screen"][0], memory(4096))
+        self.assertNotIn(memory(4096), cases["main"])
         rows = [json.dumps(row, sort_keys=True) for group in cases.values() for row in group]
         self.assertEqual(len(rows), len(set(rows)))
         for size in (8, 128):
@@ -65,6 +67,49 @@ class CampaignTests(unittest.TestCase):
             for size in (64, 128):
                 for difference in ("MATCH", "FIRST_WORD"):
                     self.assertIn(memory(size, storage, difference, mode="c1"), cases["main"])
+
+    def test_native_benefit_gate_prevents_all_later_rows(self):
+        for candidate_samples, passes in ((([96] * 3, [96] * 3), False),
+                                          (([94] * 3, [96] * 3), False),
+                                          (([90, 90, 120], [90] * 3), False),
+                                          (([107] * 3, [107] * 3), False),
+                                          (([95] * 3, [95] * 3), True)):
+            with self.subTest(candidate_samples=candidate_samples), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                campaign.save(root / "correctness-pass.json", {"status": "pass"})
+                campaign.save(root / "source-identity.json", {
+                    "base": campaign.BASE, "head": campaign.HEAD,
+                    "candidate": campaign.CANDIDATE, "candidate_tree": campaign.TREE})
+
+                def observations(path, case):
+                    if case != memory(4096) or path.stem.endswith("-base"):
+                        return [100] * 3
+                    block = int(path.stem.rsplit("-", 2)[1])
+                    return candidate_samples[block]
+
+                def execute_next(command, log, *args):
+                    if log.name.startswith("screen-001-"):
+                        raise RuntimeError("next fixed row admitted")
+
+                with mock.patch("campaign.platform.system", return_value="Linux"), \
+                     mock.patch("campaign.platform.machine", return_value="aarch64"), \
+                     mock.patch("campaign.os.sched_getaffinity", return_value={0}, create=True), \
+                     mock.patch("campaign.subprocess.check_output", return_value="{}"), \
+                     mock.patch("campaign.run", side_effect=execute_next) as execute, \
+                     mock.patch("campaign.samples", side_effect=observations), \
+                     mock.patch("campaign.installed_tier"), mock.patch("builtins.print"):
+                    message = "next fixed row admitted" if passes else "stop before later rows, no retry"
+                    with self.assertRaisesRegex(RuntimeError, message):
+                        campaign.measure(root, root)
+                commands = [json.loads(line) for line in (root / "commands.jsonl").read_text().splitlines()]
+                # Two leading controls and one paired benefit case, four forks each.
+                self.assertEqual(execute.call_count, 13 if passes else 12)
+                self.assertEqual([c["name"] for c in commands],
+                                 ["screen-control-before-0"] * 4 +
+                                 ["screen-control-before-1"] * 4 + ["screen-000"] * 4 +
+                                 (["screen-001"] if passes else []))
+                self.assertTrue(all(c["case"] == memory(4096) for c in commands[8:12]))
+                self.assertFalse((root / "performance-pass.json").exists())
 
     def test_code_capture_targets_the_benchmark_and_its_generated_worker(self):
         for benchmark, worker in (
@@ -283,6 +328,23 @@ class CampaignTests(unittest.TestCase):
                 verify_jtreg(root, [test])
             (root / "ideal.jtr").write_text(
                 "test=compiler/intrinsics/NativeVectorizedMismatchTest.java\\#ideal\nexecStatus=Passed. Execution successful\n")
+            verify_jtreg(root, [test])
+
+    def test_same_compilation_store_ordering_must_execute(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            relative = "compiler/intrinsics/AArch64VectorizedMismatchDispatchTest.java"
+            test = "test/hotspot/jtreg/" + relative
+            for name in ("ir", "ideal"):
+                (root / (name + ".jtr")).write_text(
+                    "test=" + relative + "\\#" + name + "\nexecStatus=Passed. Execution successful\n")
+            with self.assertRaises(RuntimeError):
+                verify_jtreg(root, [test])
+            result = root / "store-ordering.jtr"
+            result.write_text("test=" + relative + "\\#store-ordering\nexecStatus=Not run. requires false\n")
+            with self.assertRaises(RuntimeError):
+                verify_jtreg(root, [test])
+            result.write_text("test=" + relative + "\\#store-ordering\nexecStatus=Passed. Execution successful\n")
             verify_jtreg(root, [test])
 
 

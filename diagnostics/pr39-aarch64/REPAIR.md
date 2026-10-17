@@ -38,7 +38,8 @@ inconclusive rows are not relabelled, and no sample has been deleted or added.
 
 The changes are confined to AArch64 compiler admission and the existing C2
 intrinsic expansion. No comparison library or handwritten assembly is added.
-The x86 compiler policy and the interpreter implementation remain unchanged.
+The x86 dispatch policy and the interpreter implementation remain unchanged.
+The prefix ordering correction below also applies to x86 native/mixed calls.
 
 - C2 heap calls now use the same 128 B minimum selection as native calls. A
   valid constant element scale is required; short, empty, negative or unsupported
@@ -47,17 +48,28 @@ The x86 compiler policy and the interpreter implementation remain unchanged.
   heap words or sixteen native/mixed words in address order. A merged XOR and
   trailing/leading-zero count returns the first differing element. This covers
   every observed early losing position without entering the vector stub.
-- Every AArch64 C2 stub call receives at most `2048 >> scale` elements. The
+- Each AArch64 C2 heap stub call receives at most `2048 >> scale` elements. The
   smallest power-of-two prefix above the observed beneficial byte-1,267 case
   keeps that vector opportunity and the equal heap 128 B path. This is a
   conservative fallback boundary, not a measured optimum.
-- If a larger input has an equal vector prefix, a real Java call invokes the
+- If a larger heap input has an equal vector prefix, a real Java call invokes the
   existing `ArraysSupport.vectorizedMismatch` with **all original arguments**.
   It deliberately rescans the prefix. This preserves original indices, negative
   `~tail` values and deoptimization reconstruction, and avoids a duplicate word
   loop or forced caller inlining. The additional call merges both memory and IO.
   A compiled callee executes its existing Java word loop; a cold interpreter
   entry can still select its existing bounded intrinsic until compilation.
+- Native and mixed C2 calls keep the existing 128 B–64 KiB selection and send
+  the full original length to the stub. They do not use the heap cap or generate
+  a post-stub Java rescan. Native equality was not measured, so the demonstrated
+  heap loss does not justify changing the native bulk policy.
+- Nullable array bases with unrestricted long offsets can become raw unsafe
+  addresses. Their prefix loads need an all-memory dependency on ordinary heap
+  stores through other aliases. `has_wide_mem` selects the established
+  `MemBarCPUOrder` pattern: one after range guards before prefix loads, and one
+  after all normal exits merge. These are compiler ordering barriers; the loads
+  remain plain, unordered and pinned. Proven narrow heap and native addresses
+  do not gain those barriers.
 - AArch64 C1 admits a leaf only for a constant valid scale and a constant
   nonnegative length at most `65536 >> scale`. Unknown and larger ranges use
   Java. This closes the new unbounded heap-leaf path without changing LIR or
@@ -75,22 +87,22 @@ NaN/signed-zero handling remain in their existing Java callers.
 
 Keeping a vector path does not prove that its old advantage survives the new
 guards or register/code-layout effects. Native 128 B equality repeats its scalar
-prefix in the stub, and a large equal scan repeats up to 2 KiB in Java. These
+prefix in the stub, and a large equal heap scan repeats up to 2 KiB in Java. These
 costs, the changed inlining decisions, and the cap all require native validation.
-In particular, no measured native-equal loss justifies the native cap directly:
-a native equal 4 KiB comparison now checks 128 scalar bytes, up to 2 KiB in the
-stub, then the original 4 KiB in Java. This conservative shared-stub fallback
-may fail the still-unmeasured native 4 KiB benefit gate. It is a reviewable policy
-choice, not an evidenced native bulk-speed repair.
+The native equal 4 KiB path retains a single full-range stub after its scalar
+prefix. Its intended benefit still needs to pass the native gate before any
+expanded timing; preserving the path does not demonstrate that benefit.
 
 ## Regression checks
 
 `AArch64VectorizedMismatchDispatchTest` checks heap/native/both mixed orders,
 scales 0–3, all prefix/chunk boundaries, mismatch indices and tails, alignments,
 primitive arrays, NaN payloads, signed zero and exception ordering. IR and debug
-checks follow actual leaf and fallback argument edges: at most 2 KiB in the
-leaf, original full-range Java arguments, and a polling Java callee when loop
-polling is enabled. Existing `NativeVectorizedMismatchTest` retains its x86
+checks follow actual leaf and fallback argument edges: at most 2 KiB for heap,
+original full-range heap Java arguments, full native/mixed leaf lengths and no
+post-stub native Java rescan, and a polling Java callee when loop polling is
+enabled. Native and both mixed orders have 4 KiB constant graph checks for
+scales 0–3. Existing `NativeVectorizedMismatchTest` retains its x86
 contract and checks ARM prefix guards, load pinning, branch admission and
 per-chunk polling. A continuing chunk cycle must cross an explicit poll or
 the exact normal Java mismatch call; C2 treats that call as a guaranteed
@@ -98,21 +110,39 @@ safepoint, and the callee's return polls. Arbitrary calls and off-cycle calls
 cannot satisfy the check. `TestBoundedVectorizedMismatch` checks 17 C1 admission cases
 and their level-1 semantic results.
 
+Store/compare tests keep nullable compared arrays, unrestricted long offsets and
+a separate writer parameter in the same C2 compilation. Graph checks follow
+memory edges from the ordinary heap store into the raw prefix loads and from
+the exit barrier into following stores; shared control or barrier counts alone
+do not prove ordering. Runtime cases exercise aliases of either compared array
+and an unrelated writer, rather than mutating only outside the compiled scanner.
+
+The published `a5fbfd7125b` VM reproduced a wrong result in this test on native
+x86: `heapStore0` with the ARM policy enabled, and `mixedStore0` with the ordinary
+x86 policy, returned index 0 after the same-method store made the inputs equal
+(expected -1). Its raw loads consumed the initial memory parameter, while only
+the later leaf consumed the heap store's memory slice. Both corrected VMs pass
+all twelve store/compare graph and runtime probes, including following stores.
+This is an executed shared-compiler correctness reproduction, not native ARM
+execution or a performance result. The validation record retains both outcomes
+and their VM/graph hashes.
+
 Successful and failed Ideal children now write named raw graph captures before
 verification. `prepare.py` uses the supported `JTREG RETAIN=all` option, includes
-the new tests, and requires both ARM dispatch `ir` and `ideal` IDs to execute.
+the new tests, and requires ARM dispatch `ir`, `ideal` and `store-ordering` IDs
+to execute.
 This closes the successful-capture gap without relaxing a correctness gate.
 
 Local checks include a complete GCC16.2 fastdebug x86 JDK build with Serial,
-G1 and ZGC; Java 27 compilation of all three tests; 82 valid/invalid native
-graph-verifier fixtures; and 25 Python campaign tests. An isolated copy of that
-host VM enables only the new ARM compiler-policy branches while retaining x86
+G1 and ZGC, rebuilt HotSpot for this correction, Java 27 compilation of all three
+tests, 107 native graph-verifier mutations, and 27 Python campaign tests. An
+isolated copy of that host VM enables only the new ARM compiler-policy branches while retaining x86
 code generation and its existing mismatch stub. Its C1 admission/semantics,
-C2 dispatch/framework semantics, eight bounded constant-range graphs and the
+C2 dispatch/framework semantics, twenty constant-range graphs and the
 separately compiled polling Java fallback pass. The policy VM also passes all
 146 variable/constant/chunk graphs, including default and Serial loop settings.
-These are shared compiler-logic
-checks, **not an AArch64 build, emulated performance result or native qualification**.
+These are shared compiler-logic checks, **not an AArch64 build, emulated
+performance result or native qualification**.
 The ordinary host VM also passes the existing native graph suite with the
 current PR's generated Java classes. [The local validation record](repair-validation.json)
 identifies source hashes, overrides and evidence.
@@ -121,6 +151,10 @@ the repaired merge result against current master.
 
 Future protocol source fixes warmup at three iterations, retaining the same
 three measured iterations, 132 rows, 560 forks, controls and 29-minute driver cap.
+The existing native equal 4 KiB row moves to screen position zero, making the
+future split 35 screening and 97 main rows. Its original stability and paired
+5% benefit requirements stop the campaign before all other rows on failure;
+it is neither duplicated nor retried. Historical 34/98 results remain unchanged.
 It requests code dumps for the exact benchmark and generated-worker methods and
 validates installed tiers using the worker's full package name. This may move
 the observed normal-worker recompilation into warmup, but stability still needs

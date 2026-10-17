@@ -94,7 +94,7 @@ import jdk.test.whitebox.WhiteBox;
 public class NativeVectorizedMismatchTest {
     private static final int LIMIT = 65536;
     private static final int MINIMUM = 128;
-    private static final int AARCH64_PREFIX = 2048;
+    private static final int AARCH64_HEAP_PREFIX = 2048;
     private static final MemorySegment A = Arena.ofAuto().allocate(2 * LIMIT + 16);
     private static final MemorySegment B = Arena.ofAuto().allocate(2 * LIMIT + 16);
     private static final byte[] HEAP = new byte[2 * LIMIT + 16];
@@ -591,7 +591,7 @@ public class NativeVectorizedMismatchTest {
     private enum Kind {
         VARIABLE,   // guarded leaf with a Java fallback
         IN_RANGE,   // constant at the minimum: leaf only
-        AT_LIMIT,   // constant at the bound: AArch64 also has its full-range Java fallback
+        AT_LIMIT,   // constant at the native leaf bound
         ABOVE,      // constant above the bound: polling Java fallback only
         SHORT,      // constant below the minimum: bounded Java fallback only
         CHUNKED     // a Java loop over bounded leaves
@@ -938,7 +938,9 @@ public class NativeVectorizedMismatchTest {
                     if (scale == null || scale < 0 || scale > 3) {
                         throw new AssertionError("chunk leaf has an invalid scale: " + leaf);
                     }
-                    verifyAArch64Leaf(leaf, scale);
+                    if (!hasAArch64HeapBound(leaf, scale)) {
+                        verifyAArch64NativeChunk(leaf, scale);
+                    }
                 }
             }
         }
@@ -966,6 +968,51 @@ public class NativeVectorizedMismatchTest {
         // Projections of If(Bool(CmpU(AddI(length, -minimum), span))) for the in-range and
         // out-of-range sides.
         private List<Set<Integer>> lengthGuards(int scale) {
+            return lengthGuards(scale, null);
+        }
+
+        private record IntOffset(N base, int offset) {}
+
+        // IGVN may combine (x + a) - minimum into x + (a - minimum).
+        // Int addition wraps, as does the unsigned range guard being checked.
+        private IntOffset intOffset(N n) {
+            int offset = 0;
+            n = uncast(n);
+            while (n != null) {
+                if (n.name().equals("AddI")) {
+                    Integer a = intCon(input(n, 1)), b = intCon(input(n, 2));
+                    if (b != null) {
+                        offset += b;
+                        n = uncast(input(n, 1));
+                        continue;
+                    } else if (a != null) {
+                        offset += a;
+                        n = uncast(input(n, 2));
+                        continue;
+                    }
+                } else if (n.name().equals("SubI")) {
+                    Integer b = intCon(input(n, 2));
+                    if (b != null) {
+                        offset -= b;
+                        n = uncast(input(n, 1));
+                        continue;
+                    }
+                }
+                break;
+            }
+            return new IntOffset(n, offset);
+        }
+
+        private boolean adjustedLength(N adjusted, N length, int minimum) {
+            if (length == null) {
+                return adjusted != null && adjusted.name().equals("AddI") &&
+                       Integer.valueOf(-minimum).equals(intCon(input(adjusted, 2)));
+            }
+            IntOffset a = intOffset(adjusted), b = intOffset(length);
+            return a.base() != null && a.base() == b.base() && a.offset() - b.offset() == -minimum;
+        }
+
+        private List<Set<Integer>> lengthGuards(int scale, N length) {
             int minimum = MINIMUM >> scale, span = (LIMIT >> scale) - minimum;
             Set<Integer> inside = new HashSet<>(), outside = new HashSet<>();
             for (N iff : named("If")) {
@@ -976,8 +1023,7 @@ public class NativeVectorizedMismatchTest {
                 }
                 N adjusted = input(cmp, 1);
                 Integer bound = intCon(input(cmp, 2));
-                if (adjusted == null || !adjusted.name().equals("AddI") || bound == null ||
-                        !Integer.valueOf(-minimum).equals(intCon(input(adjusted, 2)))) {
+                if (bound == null || !adjustedLength(adjusted, length, minimum)) {
                     continue;
                 }
                 Boolean takenIsInside = switch (test(bool)) {
@@ -1047,69 +1093,40 @@ public class NativeVectorizedMismatchTest {
             return n;
         }
 
-        // Return the original length when a variable leaf count is min(length, cap).
-        // A constant leaf count must itself fit the cap.
-        private N verifyAArch64Leaf(N leaf, int scale) {
-            int cap = AARCH64_PREFIX >> scale;
-            if (!Integer.valueOf(scale).equals(intCon(input(leaf, 8)))) {
-                throw new AssertionError("wrong leaf scale: " + leaf);
-            }
+        // A small constant is safe for either storage kind. Larger heap ranges
+        // must pass a count capped by MinI; raw address types alone cannot identify
+        // native storage because nullable heap bases may also use raw addresses.
+        private boolean hasAArch64HeapBound(N leaf, int scale) {
+            int cap = AARCH64_HEAP_PREFIX >> scale;
             N count = uncast(input(leaf, 7));
             Integer constant = intCon(count);
             if (constant != null) {
-                if (constant < 0 || constant > cap) {
-                    throw new AssertionError("leaf exceeds its byte cap: " + count);
+                return constant >= 0 && constant <= cap;
+            }
+            return count != null && count.name().equals("MinI") &&
+                   (Integer.valueOf(cap).equals(intCon(input(count, 1))) ||
+                    Integer.valueOf(cap).equals(intCon(input(count, 2))));
+        }
+
+        private void verifyAArch64NativeChunk(N leaf, int scale) {
+            N count = uncast(input(leaf, 7));
+            Integer constant = intCon(count);
+            Set<Integer> inside;
+            if (constant != null) {
+                if (constant < (MINIMUM >> scale) || constant > (LIMIT >> scale)) {
+                    throw new AssertionError("native chunk leaf is outside its byte bounds: " + count);
                 }
-                return null;
+                inside = named("Start").stream().map(N::idx).collect(Collectors.toSet());
+            } else {
+                inside = lengthGuards(scale, count).get(0);
             }
-            if (count != null && count.name().equals("MinI")) {
-                for (int i = 1; i <= 2; i++) {
-                    if (Integer.valueOf(cap).equals(intCon(input(count, i)))) {
-                        return uncast(input(count, 3 - i));
-                    }
-                }
+            if (inside.isEmpty() || !dominatedBy(leaf, inside)) {
+                throw new AssertionError("full chunk leaf bypasses its original-length guard: " + leaf);
             }
-            throw new AssertionError("leaf length is not bounded by " + cap + ": " + count);
-        }
-
-        private boolean leafResult(N n, N leaf) {
-            n = uncast(n);
-            return n != null && n.name().equals("Proj") && input(n, 0) == leaf;
-        }
-
-        private Boolean negativeResult(N bool, N leaf) {
-            if (bool == null || !bool.name().equals("Bool")) {
-                return null;
+            long words = firstWordEqual(inside).stream().filter(n -> dominatedBy(leaf, Set.of(n))).count();
+            if (words < 16) {
+                throw new AssertionError("full chunk leaf lacks the native scalar prefix: " + leaf + "; words=" + words);
             }
-            N cmp = input(bool, 1);
-            if (cmp == null || !cmp.name().equals("CmpI") || !leafResult(input(cmp, 1), leaf) ||
-                    !Integer.valueOf(0).equals(intCon(input(cmp, 2)))) {
-                return null;
-            }
-            return switch (test(bool)) {
-                case "lt" -> true;
-                case "ge" -> false;
-                default -> null;
-            };
-        }
-
-        private Boolean abovePrefix(N bool, N length, int scale) {
-            if (bool == null || !bool.name().equals("Bool")) {
-                return null;
-            }
-            N cmp = input(bool, 1);
-            if (cmp == null || !cmp.name().equals("CmpI") || uncast(input(cmp, 1)) != length) {
-                return null;
-            }
-            Integer bound = intCon(input(cmp, 2));
-            int cap = AARCH64_PREFIX >> scale;
-            return switch (test(bool)) {
-                case "gt" -> Integer.valueOf(cap).equals(bound) ? true : null;
-                case "le" -> Integer.valueOf(cap).equals(bound) ? false : null;
-                case "ge" -> Integer.valueOf(cap + 1).equals(bound) ? true : null;
-                case "lt" -> Integer.valueOf(cap + 1).equals(bound) ? false : null;
-                default -> null;
-            };
         }
 
         private void verifyAArch64(Kind kind, int scale, Fallback expected,
@@ -1119,13 +1136,27 @@ public class NativeVectorizedMismatchTest {
                 throw new AssertionError("expected exactly one bounded leaf: " + leaves);
             }
             N leaf = leaves.getFirst();
-            N originalLength = verifyAArch64Leaf(leaf, scale);
+            if (!Integer.valueOf(scale).equals(intCon(input(leaf, 8)))) {
+                throw new AssertionError("wrong native leaf scale: " + leaf);
+            }
+            N originalLength = uncast(input(leaf, 7));
             boolean variable = kind == Kind.VARIABLE;
-            List<Set<Integer>> guards = variable ? lengthGuards(scale) : List.of(
+            if (variable) {
+                List<N> lengths = named("Parm").stream()
+                        .filter(n -> Pattern.compile("\\bParm\\d+: int\\b").matcher(n.spec()).find()).toList();
+                if (lengths.size() != 1 || originalLength != lengths.getFirst()) {
+                    throw new AssertionError("native leaf does not keep its original length parameter: " + originalLength);
+                }
+            }
+            if (!variable && !Integer.valueOf((kind == Kind.IN_RANGE ? MINIMUM : LIMIT) >> scale)
+                    .equals(intCon(originalLength))) {
+                throw new AssertionError("native leaf does not keep its full constant length: " + originalLength);
+            }
+            List<Set<Integer>> guards = variable ? lengthGuards(scale, originalLength) : List.of(
                     named("Start").stream().map(N::idx).collect(Collectors.toSet()), Set.of());
             Set<Integer> inside = guards.get(0), outside = guards.get(1);
             if (inside.isEmpty() || !dominatedBy(leaf, inside)) {
-                throw new AssertionError("leaf is reachable without its length guard: " + leaf);
+                throw new AssertionError("native leaf bypasses its original-length guard: " + leaf);
             }
             Set<Integer> equal = firstWordEqual(inside);
             if (equal.size() != 16) {
@@ -1136,49 +1167,19 @@ public class NativeVectorizedMismatchTest {
                     throw new AssertionError("leaf bypasses a scalar-prefix comparison: " + word);
                 }
             }
-            if (kind == Kind.IN_RANGE) {
-                if (!Integer.valueOf(MINIMUM >> scale).equals(intCon(input(leaf, 7))) ||
-                        !calls.isEmpty() || !safepoints.isEmpty() || !traps.isEmpty()) {
-                    throw new AssertionError("minimum range must use only its bounded leaf: " + leaf +
-                                             " calls=" + calls + " safepoints=" + safepoints + " traps=" + traps);
-                }
-                return;
-            }
-            List<N> bulk = calls.stream().filter(n -> dominatedBy(n, Set.of(leaf.idx()))).toList();
-            if (bulk.size() != 1) {
-                throw new AssertionError("missing full-range fallback after the bounded leaf: " + bulk);
-            }
-            N fullCall = bulk.getFirst();
-            if (!Integer.valueOf(scale).equals(intCon(input(fullCall, 12))) ||
-                    (variable ? originalLength == null || uncast(input(fullCall, 11)) != originalLength :
-                     !Integer.valueOf(LIMIT >> scale).equals(intCon(input(fullCall, 11))))) {
-                throw new AssertionError("Java fallback does not keep the original length and scale: " + fullCall);
-            }
-            Set<Integer> negativeGuards = new HashSet<>(), aboveGuards = new HashSet<>();
-            for (N iff : named("If")) {
-                Boolean negative = negativeResult(input(iff, 1), leaf);
-                if (negative != null) {
-                    negativeGuards.add(projection(iff, negative));
-                }
-                Boolean above = abovePrefix(input(iff, 1), originalLength, scale);
-                if (above != null) {
-                    aboveGuards.add(projection(iff, above));
-                }
-            }
-            if (negativeGuards.isEmpty() || !dominatedBy(fullCall, negativeGuards)) {
-                throw new AssertionError("Java fallback bypasses the negative-prefix-result condition: " + fullCall);
-            }
-            // The size comparison has folded true for a constant range at LIMIT.
-            if (variable && (aboveGuards.isEmpty() || !dominatedBy(fullCall, aboveGuards))) {
-                throw new AssertionError("Java fallback bypasses the above-prefix-length condition: " + fullCall);
-            }
-            List<N> outsideCalls = calls.stream().filter(n -> !bulk.contains(n)).toList();
             if (!variable) {
-                if (!outsideCalls.isEmpty() || !safepoints.isEmpty() || !traps.isEmpty()) {
-                    throw new AssertionError("unexpected fallback outside a constant range: " + calls);
+                if (!calls.isEmpty() || !safepoints.isEmpty() || !traps.isEmpty()) {
+                    throw new AssertionError("constant native range must use only its full leaf: calls=" + calls +
+                                             " safepoints=" + safepoints + " traps=" + traps);
                 }
                 return;
             }
+            for (N call : calls) {
+                if (dominatedBy(call, Set.of(leaf.idx()))) {
+                    throw new AssertionError("native leaf must not be followed by a Java re-scan: " + call);
+                }
+            }
+            List<N> outsideCalls = calls;
             boolean call = outsideCalls.size() == 1;
             boolean inlined = outsideCalls.isEmpty() && polls;
             if (outsideCalls.size() > 1 || call && polls || !call && !inlined ||

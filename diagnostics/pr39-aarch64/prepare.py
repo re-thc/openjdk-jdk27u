@@ -292,7 +292,7 @@ def verify_jtreg(work, tests):
     # These safety graph and event ids must execute, rather than being filtered by @requires.
     required = {
         "compiler/intrinsics/NativeVectorizedMismatchTest.java": ("ir", "ir-serial", "ideal"),
-        "compiler/intrinsics/AArch64VectorizedMismatchDispatchTest.java": ("ir", "ideal"),
+        "compiler/intrinsics/AArch64VectorizedMismatchDispatchTest.java": ("ir", "ideal", "store-ordering"),
         "compiler/intrinsics/InterpretedVectorizedMismatchTest.java": ("values", "no-intrinsics", "counted", "profiled"),
         "java/foreign/TestMappedNativeMismatch.java": ("default",),
     }

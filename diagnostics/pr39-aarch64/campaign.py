@@ -50,7 +50,8 @@ def memory(size, storage="NATIVE", difference="MATCH", method="segmentMismatch",
 
 
 def plan():
-    screen = [array(size, at) for size in (8, 128) for at in range(1, 8)]
+    screen = [memory(4096)]
+    screen += [array(size, at) for size in (8, 128) for at in range(1, 8)]
     screen += [array(64, 1, kind) for kind in
                ("BOOLEAN", "CHAR", "SHORT", "INT", "LONG", "FLOAT", "DOUBLE")]
     screen += [array(size, -1) for size in (8, 128, 65536)]
@@ -65,7 +66,7 @@ def plan():
     main.remove(memory(64, "HEAP"))
     for storage in ("NATIVE", "DIRECT", "HEAP_NATIVE", "NATIVE_HEAP"):
         main += [memory(128, storage, difference) for difference in ("FIRST", "FIRST_WORD")]
-    main += [memory(size) for size in (8, 63, 65, 127, 129, 4096, 65535, 65536, 1048576)]
+    main += [memory(size) for size in (8, 63, 65, 127, 129, 65535, 65536, 1048576)]
     for method in ("charMismatch", "intMismatch", "longMismatch"):
         for storage in ("NATIVE", "DIRECT", "HEAP_NATIVE"):
             main += [memory(128, storage, difference, method)
@@ -416,7 +417,12 @@ def measure(root, evidence):
                 raise RuntimeError("Unstable control: campaign inconclusive, no retry")
         for i, case in enumerate(rows):
             print(f"{stage} {i + 1}/{len(rows)} {case}", flush=True)
-            pair(case, f"{stage}-{i:03d}")
+            status = pair(case, f"{stage}-{i:03d}")
+            if stage == "screen" and i == 0:
+                # Admit the remaining fixed matrix only after the existing native
+                # equal-scan case passes stability and the benefit in both orders.
+                if status != "pass" or not all(r <= 0.95 for r in summary[-1]["candidate_over_base"]):
+                    raise RuntimeError("No stable paired >=5% native 4 KiB equal-scan benefit; stop before later rows, no retry")
         for i, case in enumerate(controls):
             pair(case, f"{stage}-control-after-{i}", True)
         # Compare controls across both ends as well as within each balanced pair.
@@ -429,9 +435,6 @@ def measure(root, evidence):
                     raise RuntimeError("Control drift: campaign inconclusive, no retry")
         if any(x["status"] != "pass" for x in summary[start:]):
             raise RuntimeError(f"{stage} gate failed: retain evidence; no extra samples")
-    benefit = [x for x in summary if x["case"] == memory(4096)]
-    if not benefit or not all(r <= 0.95 for r in benefit[0]["candidate_over_base"]):
-        raise RuntimeError("No repeatable >=5% native 4 KiB equal-scan benefit; inconclusive")
     deadline.publish(evidence / "performance-pass.json", {
         "status": "pass", "elapsed_seconds": time.monotonic() - deadline.start,
         "scope": "Deterministic screen of the fixed observed matrix; no statistical confidence claim",

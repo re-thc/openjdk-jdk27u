@@ -6780,6 +6780,7 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   bool native_access = a_native || b_native;
   const bool aarch64_mismatch = AARCH64_ONLY(true) NOT_AARCH64(false);
   const bool has_java_path = native_access || aarch64_mismatch;
+  const bool heap_fallback = aarch64_mismatch && !native_access;
   int intrinsic_limit = 0;
   if (has_java_path) {
     const TypeInt* scale_type = _gvn.type(scale)->is_int();
@@ -6796,6 +6797,8 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
 
   Node* obja_adr = make_unsafe_address(obja, aoffset);
   Node* objb_adr = make_unsafe_address(objb, boffset);
+  const bool needs_cpu_membar = has_java_path &&
+      (has_wide_mem(_gvn, obja_adr, obja) || has_wide_mem(_gvn, objb_adr, objb));
 
   // Partial inlining handling for inputs smaller than ArrayOperationPartialInlineSize bytes in size.
   //
@@ -6821,7 +6824,7 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
          PATH_LIMIT  = 6
   };
 
-  Node* exit_block = new RegionNode(has_java_path ? PATH_LIMIT : java_path);
+  Node* exit_block = new RegionNode(has_java_path ? (heap_fallback ? PATH_LIMIT : bulk_java_path) : java_path);
   Node* result_phi = new PhiNode(exit_block, TypeInt::INT);
   Node* memory_phi = new PhiNode(exit_block, Type::MEMORY, TypePtr::BOTTOM);
   Node* io_phi = has_java_path ? new PhiNode(exit_block, Type::ABIO) : nullptr;
@@ -6853,6 +6856,10 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
     // The range guard makes these pinned, unaligned prefix loads safe.
     // Avoid stub entry for early heap and native/scoped mismatches, retaining
     // the original Java arguments for deoptimization.
+    if (needs_cpu_membar) {
+      // Mixed unsafe addresses can alias any preceding heap store.
+      insert_mem_bar(Op_MemBarCPUOrder);
+    }
     int prefix_words = aarch64_mismatch ? (native_access ? 16 : 2) : 1;
     RegionNode* different_region = new RegionNode(1);
     PhiNode* different_word = new PhiNode(different_region, TypeLong::LONG);
@@ -6968,19 +6975,18 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   if (call_stub_path != nullptr) {
     set_control(call_stub_path);
 
-    // Limit new AArch64 leaf work even for heap arrays. An unequal prefix
-    // retains the vector result; equal large inputs call the existing Java
-    // implementation. Re-scan with the original arguments so deoptimization,
-    // indices and the negative tail result retain their original meaning.
-    int vector_limit = aarch64_mismatch ? (2 * K) >> scale_t->get_con() : 0;
-    Node* stub_length = aarch64_mismatch
+    // Bound the AArch64 heap prefix; native ranges retain their guarded 64 KiB
+    // stub. Equal large heap inputs rescan in Java with the original arguments,
+    // preserving deoptimization, indices and the negative tail result.
+    int vector_limit = heap_fallback ? (2 * K) >> scale_t->get_con() : 0;
+    Node* stub_length = heap_fallback
         ? _gvn.transform(new MinINode(length, intcon(vector_limit))) : length;
     Node* call = make_runtime_call(RC_LEAF,
                                    OptoRuntime::vectorizedMismatch_Type(),
                                    StubRoutines::vectorizedMismatch(), "vectorizedMismatch", TypePtr::BOTTOM,
                                    obja_adr, objb_adr, stub_length, scale);
     Node* stub_result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-    if (aarch64_mismatch) {
+    if (heap_fallback) {
       RegionNode* keep_stub_result = new RegionNode(1);
       record_for_igvn(keep_stub_result);
       Node* large_cmp = _gvn.transform(new CmpINode(length, intcon(vector_limit)));
@@ -7021,6 +7027,10 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   set_control(exit_block);
   set_all_memory(memory_phi);
   if (io_phi != nullptr) set_i_o(io_phi);
+  if (needs_cpu_membar) {
+    // Preserve ordering with subsequent heap accesses on every normal exit.
+    insert_mem_bar(Op_MemBarCPUOrder);
+  }
   set_result(result_phi);
 
   return true;

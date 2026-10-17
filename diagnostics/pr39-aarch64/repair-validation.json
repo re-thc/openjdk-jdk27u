@@ -1,24 +1,258 @@
 {
+  "alias_ordering_reproduction": {
+    "counterfact_driver": {
+      "bytes": 2589,
+      "path": "/workspace/scratch/pr39-run-order-counterfacts.py",
+      "sha256": "ea9f048853c467a75008030345840a844957758ed949a7ece3daeb6e89111f0c"
+    },
+    "fix": "has_wide_mem selects all-slice compiler-only MemBarCPUOrder before guarded prefixes and after all normal exits; loads remain unordered and pinned",
+    "native_arm_execution": false,
+    "old_graph_rejections": [
+      {
+        "bytes": 689,
+        "path": "/workspace/scratch/pr39-alias-order-validation/old-policy-graph-rejection.log",
+        "sha256": "454dcbc0a8a26a5753635fafb10711125e51e36566b2031a3416e5947dcb22d3"
+      },
+      {
+        "bytes": 692,
+        "path": "/workspace/scratch/pr39-alias-order-validation/old-x86-graph-rejection.log",
+        "sha256": "57778a7a0345c858e4b1dd382a680b85d0548fac734c683b35c206e32e194c3c"
+      }
+    ],
+    "old_source": "a5fbfd7125b6f0f5f571aa59a4104932834ecc64",
+    "old_vm_manifest": {
+      "bytes": 1928,
+      "path": "/workspace/scratch/pr39-repair-validation/manifest.json",
+      "sha256": "de328b9d22abaff59602433e1d6365356c408adb325e55d64f057fd9ec6a7a5a"
+    },
+    "outcomes": [
+      {
+        "driver_log": {
+          "path": "/workspace/scratch/pr39-alias-order-validation/old-policy-store/driver.log",
+          "sha256": "eed7b6ada25df56bf8709eb8ee2bcd33e93f2928a756ee4838e99f83df80b3ea"
+        },
+        "exit_code": 1,
+        "expected_outcome_observed": true,
+        "expected_pass": false,
+        "graph_capture": {
+          "path": "/workspace/scratch/pr39-alias-order-validation/old-policy-store/AArch64VectorizedMismatchDispatchTest-store-ideal.log",
+          "sha256": "a26c677ccdcf1489d16f25feb8b5bac0f1265cf07954ca1b697773f37f7853d2"
+        },
+        "libjvm": {
+          "path": "/workspace/scratch/pr39-repair-validation/policy-full-jdk/lib/server/libjvm.so",
+          "sha256": "7fba079f8f2308fb60c46d4dd34d30c88bef0b2d9731fc23af92ee7bf11a9ea2"
+        },
+        "name": "old-policy-store",
+        "target": "native x86 backend, compiler policy enabled",
+        "wrong_result": {
+          "actual": 0,
+          "condition": "same-method store makes compared bytes equal; following store writes value xor 1",
+          "expected": -1,
+          "method": "heapStore0"
+        }
+      },
+      {
+        "driver_log": {
+          "path": "/workspace/scratch/pr39-alias-order-validation/fixed-policy-store/driver.log",
+          "sha256": "32bf906c4fc2bf4ffdb016daf4bbfaadee767d3373a122302a32b686853152af"
+        },
+        "exit_code": 0,
+        "expected_outcome_observed": true,
+        "expected_pass": true,
+        "graph_capture": {
+          "path": "/workspace/scratch/pr39-alias-order-validation/fixed-policy-store/AArch64VectorizedMismatchDispatchTest-store-ideal.log",
+          "sha256": "a475a2135bd951ea2c400f19d99b87c8568a9ee4afda0dd84caed241306a2f6d"
+        },
+        "libjvm": {
+          "path": "/workspace/scratch/pr39-alias-order-validation/policy-full-jdk/lib/server/libjvm.so",
+          "sha256": "9931a7de0da6181d3204ceeb2b4eb74f290c93fed013b853d151774ce20c1354"
+        },
+        "name": "fixed-policy-store",
+        "target": "native x86 backend, compiler policy enabled"
+      },
+      {
+        "driver_log": {
+          "path": "/workspace/scratch/pr39-alias-order-validation/old-x86-store/driver.log",
+          "sha256": "309eaf3310330d79189be25dc68724b9f0f224a11f294403277c246402311516"
+        },
+        "exit_code": 1,
+        "expected_outcome_observed": true,
+        "expected_pass": false,
+        "graph_capture": {
+          "path": "/workspace/scratch/pr39-alias-order-validation/old-x86-store/AArch64VectorizedMismatchDispatchTest-store-ideal.log",
+          "sha256": "8d01b15ac1e91679882f429cb12814abf445eb6b1526ac15e8161c3e95d691d7"
+        },
+        "libjvm": {
+          "path": "/workspace/scratch/pr39-repair-validation/host-full-jdk/lib/server/libjvm.so",
+          "sha256": "4806615c2c511c9e8940871fb756ae1721b0bb8f51f6a287b2d0486d7f620b96"
+        },
+        "name": "old-x86-store",
+        "target": "native x86 backend",
+        "wrong_result": {
+          "actual": 0,
+          "condition": "same-method store makes compared bytes equal; following store writes value xor 1",
+          "expected": -1,
+          "method": "mixedStore0"
+        }
+      },
+      {
+        "driver_log": {
+          "path": "/workspace/scratch/pr39-alias-order-validation/fixed-x86-store/driver.log",
+          "sha256": "3c4ce4a9993386426029350c8bcc43eb7852661321a5a2df8c2d906d48b4e0b3"
+        },
+        "exit_code": 0,
+        "expected_outcome_observed": true,
+        "expected_pass": true,
+        "graph_capture": {
+          "path": "/workspace/scratch/pr39-alias-order-validation/fixed-x86-store/AArch64VectorizedMismatchDispatchTest-store-ideal.log",
+          "sha256": "cb69fb1fa05dd29283c87abfd1ec08c2f5db04f856f20aa19008a00f574ea2a0"
+        },
+        "libjvm": {
+          "path": "/workspace/scratch/pr39-alias-order-validation/host-full-jdk/lib/server/libjvm.so",
+          "sha256": "829db896172dbce9613a4f9a2b8e3b5b08d97dad0d5fec38c32c12635d056574"
+        },
+        "name": "fixed-x86-store",
+        "target": "native x86 backend"
+      }
+    ]
+  },
   "build": {
+    "base_full_jdk": "previously built from the same author-based review source; Java sources unchanged by this correction",
     "collectors": [
       "Serial",
       "G1",
       "Z"
     ],
-    "configure": {
-      "bytes": 18062,
-      "path": "/workspace/scratch/pr39-repair-host-configure.log",
-      "sha256": "206e893ca2bf645554d819720c38edaba75211659b61afcb06054eb55fbd0d95"
-    },
+    "corrected_hotspot": "passed",
     "debug_level": "fastdebug",
-    "hotspot": "passed",
-    "jdk": "passed",
-    "jdk_log": {
+    "full_jdk_log": {
       "bytes": 248,
       "path": "/workspace/scratch/pr39-repair-host-jdk-final-build.log",
       "sha256": "c444c866c9fe5a45b8aa9dc85e0f62e97fb91dd731fa22ba8f94f43cbd6edf36"
     },
+    "hotspot_log": {
+      "bytes": 207,
+      "path": "/workspace/scratch/pr39-alias-order-host-build.log",
+      "sha256": "ec4a44587524d6d2c63c60e5e02ebdfe91c955440bb918c3ac201129aad4d017"
+    },
     "profile": "bin/configure-dev"
+  },
+  "current_host_graph_replay": {
+    "bytes": 1066,
+    "path": "/workspace/scratch/pr39-alias-order-validation/host-graph-replay.log",
+    "sha256": "988e575ab702820c6f1483521e57b7b1f655a6929eb92ac6a06060b030e4e572"
+  },
+  "future_plan": {
+    "controls": 8,
+    "driver_limit_minutes": 29,
+    "first_row": "native equal 4096 bytes; stable >=5% benefit in both balanced orders required before any other row",
+    "main_rows": 97,
+    "measured_iterations": 3,
+    "screen_rows": 35,
+    "source_pins": "historical; intentionally reject repaired production sources until separately reviewed",
+    "total_forks": 560,
+    "total_rows": 132,
+    "warmup_iterations": 3
+  },
+  "graphs": {
+    "host_native_suite": 146,
+    "host_store_ordering": 12,
+    "policy_dispatch": {
+      "full_native_mixed": 16,
+      "heap_prefix": 4,
+      "polling_java_callee": 1,
+      "same_compilation_stores": 12,
+      "total": 33
+    },
+    "policy_native_suite": 146,
+    "policy_store_ordering": 12,
+    "raw_captures": [
+      {
+        "bytes": 706357,
+        "path": "/workspace/scratch/pr39-alias-order-validation/host-native-ideal/NativeVectorizedMismatchTest-chunk-default.log",
+        "sha256": "bb6e8e1e58508baf2e1e8768743abaa6dd8d15af4ccbd251466a8a3befdb26b7"
+      },
+      {
+        "bytes": 698312,
+        "path": "/workspace/scratch/pr39-alias-order-validation/host-native-ideal/NativeVectorizedMismatchTest-chunk-serial.log",
+        "sha256": "28d91463c0c433c27eefa25a08fc65b89f94945d35c0cfaf177914a639f7e039"
+      },
+      {
+        "bytes": 104123,
+        "path": "/workspace/scratch/pr39-alias-order-validation/host-native-ideal/NativeVectorizedMismatchTest-default-CALL.log",
+        "sha256": "31f9dd7f9050f6048309ce9b4d682a36c48105b5cea8a9307fc7a4484947ba53"
+      },
+      {
+        "bytes": 104123,
+        "path": "/workspace/scratch/pr39-alias-order-validation/host-native-ideal/NativeVectorizedMismatchTest-default-EITHER.log",
+        "sha256": "31f9dd7f9050f6048309ce9b4d682a36c48105b5cea8a9307fc7a4484947ba53"
+      },
+      {
+        "bytes": 609668,
+        "path": "/workspace/scratch/pr39-alias-order-validation/host-native-ideal/NativeVectorizedMismatchTest-default-INLINED.log",
+        "sha256": "d3c84b9ac02655e37658d150c54aae26daa3457e37420809427cdff2e803b24a"
+      },
+      {
+        "bytes": 104123,
+        "path": "/workspace/scratch/pr39-alias-order-validation/host-native-ideal/NativeVectorizedMismatchTest-no-partial-CALL.log",
+        "sha256": "31f9dd7f9050f6048309ce9b4d682a36c48105b5cea8a9307fc7a4484947ba53"
+      },
+      {
+        "bytes": 104123,
+        "path": "/workspace/scratch/pr39-alias-order-validation/host-native-ideal/NativeVectorizedMismatchTest-no-partial-EITHER.log",
+        "sha256": "31f9dd7f9050f6048309ce9b4d682a36c48105b5cea8a9307fc7a4484947ba53"
+      },
+      {
+        "bytes": 609668,
+        "path": "/workspace/scratch/pr39-alias-order-validation/host-native-ideal/NativeVectorizedMismatchTest-no-partial-INLINED.log",
+        "sha256": "d3c84b9ac02655e37658d150c54aae26daa3457e37420809427cdff2e803b24a"
+      },
+      {
+        "bytes": 1386064,
+        "path": "/workspace/scratch/pr39-alias-order-validation/policy-native-ideal/NativeVectorizedMismatchTest-chunk-default.log",
+        "sha256": "9c9f90e158290cdf3de0dd85c688bf5e83c4f1542db7e0f69909e2c9ef97f76d"
+      },
+      {
+        "bytes": 1373889,
+        "path": "/workspace/scratch/pr39-alias-order-validation/policy-native-ideal/NativeVectorizedMismatchTest-chunk-serial.log",
+        "sha256": "36568a3a5ae30a3bea23b9fb024d5a64918897015166d5b1885dda18819fe2b5"
+      },
+      {
+        "bytes": 454542,
+        "path": "/workspace/scratch/pr39-alias-order-validation/policy-native-ideal/NativeVectorizedMismatchTest-default-CALL.log",
+        "sha256": "f9d16eb4db829087b7a3f4cbe6f363830bb1b2a7cef5811cb3bdd274c2ebd68a"
+      },
+      {
+        "bytes": 454542,
+        "path": "/workspace/scratch/pr39-alias-order-validation/policy-native-ideal/NativeVectorizedMismatchTest-default-EITHER.log",
+        "sha256": "f9d16eb4db829087b7a3f4cbe6f363830bb1b2a7cef5811cb3bdd274c2ebd68a"
+      },
+      {
+        "bytes": 958136,
+        "path": "/workspace/scratch/pr39-alias-order-validation/policy-native-ideal/NativeVectorizedMismatchTest-default-INLINED.log",
+        "sha256": "0c0d82f85b1a2ba87842280278150613ed95d31bb893aef14c14940c44ebaa46"
+      },
+      {
+        "bytes": 454542,
+        "path": "/workspace/scratch/pr39-alias-order-validation/policy-native-ideal/NativeVectorizedMismatchTest-no-partial-CALL.log",
+        "sha256": "f9d16eb4db829087b7a3f4cbe6f363830bb1b2a7cef5811cb3bdd274c2ebd68a"
+      },
+      {
+        "bytes": 454542,
+        "path": "/workspace/scratch/pr39-alias-order-validation/policy-native-ideal/NativeVectorizedMismatchTest-no-partial-EITHER.log",
+        "sha256": "f9d16eb4db829087b7a3f4cbe6f363830bb1b2a7cef5811cb3bdd274c2ebd68a"
+      },
+      {
+        "bytes": 958136,
+        "path": "/workspace/scratch/pr39-alias-order-validation/policy-native-ideal/NativeVectorizedMismatchTest-no-partial-INLINED.log",
+        "sha256": "0c0d82f85b1a2ba87842280278150613ed95d31bb893aef14c14940c44ebaa46"
+      },
+      {
+        "bytes": 856265,
+        "path": "/workspace/scratch/pr39-alias-order-validation/policy-dispatch-ideal/AArch64VectorizedMismatchDispatchTest-ideal.log",
+        "sha256": "23725312927eb88fa3b04b0052b2581fd617382de3ebcbeeb73cc1f588fc4635"
+      }
+    ]
   },
   "historical_campaign": {
     "charged_runner_minutes": 95,
@@ -27,112 +261,36 @@
     "remaining_runner_minutes": 130,
     "repair_included": false
   },
-  "host_graph_replay": {
-    "all_captures_passed": true,
-    "captures": [
-      {
-        "case_group": "chunkCases",
-        "expected_fallback": "EITHER",
-        "graph_count": 4,
-        "passed": true,
-        "path": "/workspace/scratch/pr39-repair-validation/host-native-ideal/NativeVectorizedMismatchTest-chunk-default.log",
-        "sha256": "a5521c7da9e39585218b8ddab3280a796b74010ffb8253e3f1f23c2bc69aec98"
-      },
-      {
-        "case_group": "chunkCases",
-        "expected_fallback": "EITHER",
-        "graph_count": 4,
-        "passed": true,
-        "path": "/workspace/scratch/pr39-repair-validation/host-native-ideal/NativeVectorizedMismatchTest-chunk-serial.log",
-        "sha256": "2367f0d686a5499f0c1bbf37ca211df4e00509e3f62242a9a790b4a9a8f82698"
-      },
-      {
-        "case_group": "idealCases",
-        "expected_fallback": "CALL",
-        "graph_count": 23,
-        "passed": true,
-        "path": "/workspace/scratch/pr39-repair-validation/host-native-ideal/NativeVectorizedMismatchTest-default-CALL.log",
-        "sha256": "31f9dd7f9050f6048309ce9b4d682a36c48105b5cea8a9307fc7a4484947ba53"
-      },
-      {
-        "case_group": "idealCases",
-        "expected_fallback": "EITHER",
-        "graph_count": 23,
-        "passed": true,
-        "path": "/workspace/scratch/pr39-repair-validation/host-native-ideal/NativeVectorizedMismatchTest-default-EITHER.log",
-        "sha256": "31f9dd7f9050f6048309ce9b4d682a36c48105b5cea8a9307fc7a4484947ba53"
-      },
-      {
-        "case_group": "idealCases",
-        "expected_fallback": "INLINED",
-        "graph_count": 23,
-        "passed": true,
-        "path": "/workspace/scratch/pr39-repair-validation/host-native-ideal/NativeVectorizedMismatchTest-default-INLINED.log",
-        "sha256": "d3c84b9ac02655e37658d150c54aae26daa3457e37420809427cdff2e803b24a"
-      },
-      {
-        "case_group": "idealCases",
-        "expected_fallback": "CALL",
-        "graph_count": 23,
-        "passed": true,
-        "path": "/workspace/scratch/pr39-repair-validation/host-native-ideal/NativeVectorizedMismatchTest-no-partial-CALL.log",
-        "sha256": "31f9dd7f9050f6048309ce9b4d682a36c48105b5cea8a9307fc7a4484947ba53"
-      },
-      {
-        "case_group": "idealCases",
-        "expected_fallback": "EITHER",
-        "graph_count": 23,
-        "passed": true,
-        "path": "/workspace/scratch/pr39-repair-validation/host-native-ideal/NativeVectorizedMismatchTest-no-partial-EITHER.log",
-        "sha256": "31f9dd7f9050f6048309ce9b4d682a36c48105b5cea8a9307fc7a4484947ba53"
-      },
-      {
-        "case_group": "idealCases",
-        "expected_fallback": "INLINED",
-        "graph_count": 23,
-        "passed": true,
-        "path": "/workspace/scratch/pr39-repair-validation/host-native-ideal/NativeVectorizedMismatchTest-no-partial-INLINED.log",
-        "sha256": "d3c84b9ac02655e37658d150c54aae26daa3457e37420809427cdff2e803b24a"
-      }
-    ],
-    "exit_code": 0,
-    "log": "/workspace/scratch/pr39-host-native-capture-replay.log",
-    "native_test_source_sha256": "4ef80d678e142d76519c7136c5a872b1a7fd0349679f859f6f7af70c0361ce6a",
-    "os_arch_override": false,
-    "replay_source_sha256": "a945a28ae2c071381a706fff90a484d613a7b8a11dff3f509dfc5eb400f046fb",
-    "scope": "Replay existing complete-source x86 C2 graph captures only; no child generation, CI or timing",
-    "semantic_review": {
-      "address_bases": "Prefix AddP keeps the original oop base only when the original unsafe address has an oop pointer type; raw/null/unrestricted-offset addresses use top(). Original unsafe address and byte offset remain separate AddP inputs.",
-      "bounds": "ARM minimum128-byte control dominates both heap prefix words and all16 native/mixed words; actual leaf count is min(original element length,2048>>scale). Native admission maximum64KiB remains.",
-      "memory_io": "After the bounded leaf, sequential small-range/nonnegative-result branches join the post-leaf memory. The Java branch clones that state, captures normal control/reset memory/IO and exceptions, and joins all result paths through existing phis.",
-      "results_and_deoptimization": "Scalar index uses original byte offset; NEON addresses remain original, so positive index is unchanged. All Java fallback arguments remain original; negative complete/tail results are unshifted.",
-      "safepoints": "Exact normal Java mismatch call may replace explicit loop poll by C2 guaranteed-safepoint contract; C2/C1 returns and interpreter entry poll. Per-cycle verification still rejects bypasses and leaf-only cycles.",
-      "uniform_cap_limit": "Uniform native/mixed2KiB cap exceeds the specific observed heap-bulk regression evidence. Native4KiBequal becomes scalar128+NEON2KiB+fullJava4KiB; performance risk remains unqualified. A heap-onlycap would be narrower, while leaving nativebulk behavior unqualified. No native performance claim."
-    },
-    "source_sha256": {
-      "src/hotspot/share/c1/c1_GraphBuilder.cpp": "c2e874870da741369b7e5575a0c986f462700b0cdd4ccacc7c0a0e34529905c0",
-      "src/hotspot/share/opto/doCall.cpp": "b0dfc896c33daea593560e9bb02e25f8100b2b819c384745d4ff7e67f3bec95b",
-      "src/hotspot/share/opto/library_call.cpp": "1a093546cd0bdf48b1168281bdefa09b514c40c12f585a0850625cb39eea87c1",
-      "test/hotspot/jtreg/compiler/intrinsics/NativeVectorizedMismatchTest.java": "4ef80d678e142d76519c7136c5a872b1a7fd0349679f859f6f7af70c0361ce6a"
-    },
-    "total_graphs": 146,
-    "verifier_architecture": "x86_64"
+  "host": {
+    "architecture": "linux-x86_64",
+    "cpu": "AMD EPYC 9V74",
+    "toolchain": "g++-16 (Debian 16.2.0-3) 16.2.0; GNU linker; BootJDK 27+35-2325"
   },
   "limits": [
-    "Policy-only x86 checks do not validate AArch64 matcher rules, register allocation, signal handling or performance.",
-    "The 2 KiB cap is not an optimized or performance-qualified native threshold.",
-    "No native-equal ARM sample justifies the native/mixed cap directly; the 4 KiB benefit gate remains unmeasured.",
-    "Historical compilation XML identifies tiers and inlining but contains no timed ARM nmethod instruction bytes."
+    "Policy-only x86 checks do not validate AArch64 matcher rules, register allocation, mapped faults or performance.",
+    "Heap-only 2 KiB fallback retains an observed vector opportunity; its recovery and optimum remain unmeasured.",
+    "Native and mixed inputs retain their full original guarded 128 B\u201364 KiB leaves, including 4 KiB equality.",
+    "No timed ARM instruction bytes were retained in the historical experiment.",
+    "The exact repaired merge against current master still needs native qualification."
   ],
-  "native_graph_mutation_checks": {
-    "count": 82,
-    "note": "Parenthesized actual call arguments, bounded leaf length, original Java arguments, sequential guards, per-cycle explicit poll or exact Java safepoint; leaf-only, arbitrary-call and off-cycle bypasses rejected",
-    "result": "passed"
+  "native_graph_mutations": {
+    "count": 107,
+    "log": {
+      "bytes": 76,
+      "path": "/workspace/scratch/pr39-alias-order-validation/graph-mutations.log",
+      "sha256": "fa60356c9227d5230436225828b507d145cec916a4d24745360fd983d84860ed"
+    },
+    "source": {
+      "bytes": 10170,
+      "path": "/workspace/scratch/CheckNativeMismatchGraph.java",
+      "sha256": "ce1fa08f902b32a46b26299c4d0b9daa90dbd0a82afed9b50809c65d694f7431"
+    },
+    "status": "passed"
   },
-  "native_repair_qualification": "pending; no CI or benchmark launch authorized",
+  "native_repair_qualification": "pending; no CI or benchmark campaign launched or newly authorized",
   "policy_vm": {
-    "host_libjvm_sha256": "4806615c2c511c9e8940871fb756ae1721b0bb8f51f6a287b2d0486d7f620b96",
-    "policy_libjvm_sha256": "7fba079f8f2308fb60c46d4dd34d30c88bef0b2d9731fc23af92ee7bf11a9ea2",
+    "host_libjvm_sha256": "829db896172dbce9613a4f9a2b8e3b5b08d97dad0d5fec38c32c12635d056574",
+    "policy_libjvm_sha256": "9931a7de0da6181d3204ceeb2b4eb74f290c93fed013b853d151774ce20c1354",
     "scope": "Local x86 shared compiler graph-policy correctness only; not an AArch64 build or performance result",
     "units": {
       "c1_GraphBuilder": {
@@ -159,7 +317,7 @@
       },
       "library_call": {
         "compile": "passed",
-        "local_sha256": "f1bef911a686ec6d40616e84dcef8940e152b52dddaabb5203d19c87da57b214",
+        "local_sha256": "be396843c93748c6ad682d65bd7c8112f4d214b487a38ff8e95c48cacd8a39d9",
         "overrides": [
           [
             "const bool aarch64_mismatch = AARCH64_ONLY(true) NOT_AARCH64(false);",
@@ -170,121 +328,81 @@
             "if (true && !native_access)"
           ]
         ],
-        "production_sha256": "1a093546cd0bdf48b1168281bdefa09b514c40c12f585a0850625cb39eea87c1"
+        "production_sha256": "7f71fef63b1a3b27abef4572ee8f2edb1033c94a5b5d630ef99d195966eacf8b"
       }
     }
   },
   "policy_vm_setup": {
-    "bytes": 5119,
-    "path": "/workspace/scratch/pr39-policy-vm.py",
-    "sha256": "cb194eee0ee991712ac3911b738ee3fb307f9b10ab361cf8c76c8ff687ab0453"
+    "bytes": 5124,
+    "path": "/workspace/scratch/pr39-alias-order-policy-vm.py",
+    "sha256": "de3f064cbfedb53cc0d978d59bfbff0e11f6555b769f60a79d6a7f038422e001"
   },
-  "production_parent": "20054eaf75bcee6be4ded3ca291d15a7f3637aba",
+  "production_parent": "a5fbfd7125b6f0f5f571aa59a4104932834ecc64",
   "python_tests": {
-    "count": 25,
-    "result": "passed",
-    "scope": "plan, gates, tier identity, retention, cleanup; no JMH"
+    "count": 27,
+    "includes": "early native benefit rejection/admission and mandatory store-ordering jtreg id",
+    "status": "passed"
   },
-  "raw_graphs": [
-    {
-      "bytes": 197578,
-      "path": "/workspace/scratch/pr39-repair-validation/policy-dispatch-ideal/AArch64VectorizedMismatchDispatchTest-ideal.log",
-      "sha256": "bf69be56b4910b9a4914063976910ad95cefaa9284791762dffac10ac09b1e05"
-    },
-    {
-      "bytes": 1465048,
-      "path": "/workspace/scratch/pr39-repair-validation/policy-native-ideal/NativeVectorizedMismatchTest-chunk-default.log",
-      "sha256": "3183ba5574b7cb445145ea833256725295bdbefe3ec83375bf6b8e119186d215"
-    },
-    {
-      "bytes": 1450500,
-      "path": "/workspace/scratch/pr39-repair-validation/policy-native-ideal/NativeVectorizedMismatchTest-chunk-serial.log",
-      "sha256": "7921555d2ee5aa6df275d2308a42e41b3d017bcc6ee41a9da1ecf2a2eb2b5a59"
-    },
-    {
-      "bytes": 493223,
-      "path": "/workspace/scratch/pr39-repair-validation/policy-native-ideal/NativeVectorizedMismatchTest-default-CALL.log",
-      "sha256": "5d1c98cd4136e9c27d28d4a411ee32005b613ea776ab80bb10a9eda78510c203"
-    },
-    {
-      "bytes": 493223,
-      "path": "/workspace/scratch/pr39-repair-validation/policy-native-ideal/NativeVectorizedMismatchTest-default-EITHER.log",
-      "sha256": "5d1c98cd4136e9c27d28d4a411ee32005b613ea776ab80bb10a9eda78510c203"
-    },
-    {
-      "bytes": 995613,
-      "path": "/workspace/scratch/pr39-repair-validation/policy-native-ideal/NativeVectorizedMismatchTest-default-INLINED.log",
-      "sha256": "2043375ad77f222bb3dbed911bfad2cd97107cb4456f33d8bf181cfae2a08496"
-    },
-    {
-      "bytes": 493223,
-      "path": "/workspace/scratch/pr39-repair-validation/policy-native-ideal/NativeVectorizedMismatchTest-no-partial-CALL.log",
-      "sha256": "5d1c98cd4136e9c27d28d4a411ee32005b613ea776ab80bb10a9eda78510c203"
-    },
-    {
-      "bytes": 493223,
-      "path": "/workspace/scratch/pr39-repair-validation/policy-native-ideal/NativeVectorizedMismatchTest-no-partial-EITHER.log",
-      "sha256": "5d1c98cd4136e9c27d28d4a411ee32005b613ea776ab80bb10a9eda78510c203"
-    },
-    {
-      "bytes": 995613,
-      "path": "/workspace/scratch/pr39-repair-validation/policy-native-ideal/NativeVectorizedMismatchTest-no-partial-INLINED.log",
-      "sha256": "2043375ad77f222bb3dbed911bfad2cd97107cb4456f33d8bf181cfae2a08496"
-    }
-  ],
-  "scope": "Source and shared compiler-logic correctness checks on native x86; no repaired ARM build, ARM execution or performance claim",
+  "scope": "Local compiler correctness only on native x86; not an AArch64 build, emulation result or performance qualification",
   "source_sha256": {
     "src/hotspot/share/c1/c1_GraphBuilder.cpp": "c2e874870da741369b7e5575a0c986f462700b0cdd4ccacc7c0a0e34529905c0",
     "src/hotspot/share/opto/doCall.cpp": "b0dfc896c33daea593560e9bb02e25f8100b2b819c384745d4ff7e67f3bec95b",
-    "src/hotspot/share/opto/library_call.cpp": "1a093546cd0bdf48b1168281bdefa09b514c40c12f585a0850625cb39eea87c1",
+    "src/hotspot/share/opto/library_call.cpp": "7f71fef63b1a3b27abef4572ee8f2edb1033c94a5b5d630ef99d195966eacf8b",
     "test/hotspot/jtreg/compiler/c1/TestBoundedVectorizedMismatch.java": "97a31db67c49bedb26a413d9f4a19baf187980277c196a290a7923802fb9d71a",
-    "test/hotspot/jtreg/compiler/intrinsics/AArch64VectorizedMismatchDispatchTest.java": "d235b7f2d0415aa08ce6022c2d501faf75aa21fe233d7b50587d5add33b4730f",
-    "test/hotspot/jtreg/compiler/intrinsics/NativeVectorizedMismatchTest.java": "4ef80d678e142d76519c7136c5a872b1a7fd0349679f859f6f7af70c0361ce6a"
+    "test/hotspot/jtreg/compiler/intrinsics/AArch64VectorizedMismatchDispatchTest.java": "11d48cc9d0663d5df33c338c2dfa626249575af47e96c59d2bc968384c007e8a",
+    "test/hotspot/jtreg/compiler/intrinsics/NativeVectorizedMismatchTest.java": "ff24055329fba45a14bf0ad22c58eb97707c00c5b8c5f7431f700fa74866d4b2"
   },
-  "target": "linux-x86_64; AMD EPYC 9V74; local host, not the Neoverse-N2 campaign",
   "test_driver": {
-    "bytes": 4399,
-    "path": "/workspace/scratch/pr39-run-repair-tests.py",
-    "sha256": "f2958e9af52f9f42989a648f61a8058c288d3bc016f1d80d4eb74bef616b5430"
+    "bytes": 4404,
+    "path": "/workspace/scratch/pr39-run-alias-order-tests.py",
+    "sha256": "60da9b2a37b3dd6364aebf5ff0386bd77cd7f48902e56c6246836cb9a26f6bf2"
   },
   "tests": [
     {
       "driver_log": {
-        "bytes": 914,
-        "path": "/workspace/scratch/pr39-repair-validation/policy-c1-admission/driver.log",
-        "sha256": "4ac4fb34ef39a6a0df23604e6ac50113b640a580a407383be3e183e19b6ce45f"
+        "bytes": 41006,
+        "path": "/workspace/scratch/pr39-alias-order-validation/host-native-ideal/driver.log",
+        "sha256": "70e55086d7061f1ea1f81110ac458935bed5ff660b821938a56e3d0460bb49a8"
       },
       "exit_code": 0,
-      "name": "policy-c1-admission"
+      "name": "host-native-ideal"
     },
     {
       "driver_log": {
-        "bytes": 2553,
-        "path": "/workspace/scratch/pr39-repair-validation/policy-dispatch-ir/driver.log",
-        "sha256": "157405b9a290e8a9ca737ef2ec96dba4d9e775591dc384daf10dbe9dd1b780d7"
+        "bytes": 41040,
+        "path": "/workspace/scratch/pr39-alias-order-validation/policy-native-ideal/driver.log",
+        "sha256": "b6d47df4c085b1d6ac9bde3b8453ee384cb44d16fea995319c0952d7de155d47"
       },
+      "driver_only_property": "-Dos.arch=aarch64 selects the ARM verifier; backend remains x86",
       "exit_code": 0,
-      "name": "policy-dispatch-ir"
+      "name": "policy-native-ideal"
     },
     {
       "driver_log": {
-        "bytes": 3133,
-        "path": "/workspace/scratch/pr39-repair-validation/policy-dispatch-ideal/driver.log",
-        "sha256": "cf3504c9f0342cb825ad33987dd2441e85f7d1c3e68de29e10aa8bf7721ee694"
+        "bytes": 8574,
+        "path": "/workspace/scratch/pr39-alias-order-validation/policy-dispatch-ideal/driver.log",
+        "sha256": "90ed694c2dd177a78f2628f5e18e6ac05f9d603d14999b055c961dc3fd3a245a"
       },
       "exit_code": 0,
       "name": "policy-dispatch-ideal"
     },
     {
       "driver_log": {
-        "bytes": 40910,
-        "path": "/workspace/scratch/pr39-repair-validation/policy-native-ideal/driver.log",
-        "sha256": "af447dcbeabdf249abbc7e2e57384ad3aa31ad3dd50d5f010f4db30aae63b5b3"
+        "bytes": 2583,
+        "path": "/workspace/scratch/pr39-alias-order-validation/policy-dispatch-ir/driver.log",
+        "sha256": "530ac74ed81151c705d1c2f7e2385edb448386bcc1451e855039a1688e661780"
       },
-      "driver_only_property": "-Dos.arch=aarch64 selects the ARM verifier; VM/backend remain x86",
       "exit_code": 0,
-      "name": "policy-native-ideal"
+      "name": "policy-dispatch-ir"
+    },
+    {
+      "driver_log": {
+        "bytes": 924,
+        "path": "/workspace/scratch/pr39-alias-order-validation/policy-c1-admission/driver.log",
+        "sha256": "bcffa42f4f78c5a00d4165851f7299ab1d73b5b81382427f8f1617bd13a91a4c"
+      },
+      "exit_code": 0,
+      "name": "policy-c1-admission"
     }
-  ],
-  "toolchain": "g++-16 (Debian 16.2.0-3) 16.2.0; GNU linker; BootJDK 27+35-2325"
+  ]
 }

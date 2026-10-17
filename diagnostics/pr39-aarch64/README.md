@@ -3,8 +3,12 @@
 **The original native correctness campaign passed and its fixed performance
 screen failed. PR39 is not ready to merge.** This review branch now contains an
 AArch64 source repair: short heap calls retain Java, guarded scalar prefixes
-avoid early stub entry, C2 vector work is capped at 2 KiB before an original-argument
-Java fallback, and C1 leaf admission is bounded. See [the repair and its limits](REPAIR.md).
+avoid early stub entry, C2 heap vector work is capped at 2 KiB before an
+original-argument Java fallback, and C1 leaf admission is bounded. Native/mixed
+C2 calls retain their existing full-range stub within the 128 B–64 KiB guard.
+Ambiguous unsafe prefix loads use compiler ordering barriers around the
+comparison so ordinary heap stores cannot cross them.
+See [the repair and its limits](REPAIR.md).
 The repaired source has not run on native ARM or been benchmarked.
 
 [Run 39033175975](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39033175975)
@@ -224,8 +228,11 @@ kernel is changed by this qualification package.
 
 ## Fixed performance protocol
 
-`campaign.py plan` emits the entire matrix before measurements: **34 screening
-rows and 98 main rows**, plus eight predeclared control placements. There are
+`campaign.py plan` emits the entire future matrix before measurements: **35 screening
+rows and 97 main rows**, plus eight predeclared control placements. The existing
+native equal 4 KiB row moves from main to the start of the screen; its stability
+and paired 5% benefit gates must pass before any remaining screening or main row
+is admitted. Historical results retain their original 34/98 split. There are
 **560 JMH forks** in total. The main rows are fixed in advance and run only after
 the screen and its controls pass; screening never adds rows or samples.
 
@@ -285,7 +292,9 @@ interpreting their result. Raw GC evidence must accompany any causal claim.
 
 The repair uses ordinary C2 nodes below range guards, retains array guards and
 exception order, and calls the existing Java implementation with original
-arguments after an equal bounded vector prefix. Its new graph and semantic
+arguments after an equal bounded heap vector prefix. Native/mixed requests
+retain their full guarded stub length and have no post-stub Java rescan.
+Its new graph and semantic
 tests are described in [REPAIR.md](REPAIR.md). Preserving a vector opportunity
 does not prove its prior measured benefit survives the added dispatch.
 
@@ -348,8 +357,9 @@ confidence bounds or proof of no regression. Gates are decided before sampling:
   in each order block and within 10% for each image across a stage's endpoints.
   The latter loop calls only position/remaining/get; it does not call the changed
   IntBuffer.mismatch implementation or inherit its new ForceInline annotation.
-- The native equal 4 KiB segment row must also show at least 5% lower candidate
-  time in both blocks to demonstrate the intended native scan benefit.
+- The first screening row, native equal 4 KiB, must show at least 5% lower
+  candidate time in both blocks and pass the stability gates. Failure stops
+  before subsequent rows; the row is not repeated in main.
 - Missing or malformed results, unstable controls, failed correctness, budget
   exhaustion, and unmet benefit gates leave ARM unqualified. No samples are
   discarded and no timing is rerun. Stronger statistical or application claims

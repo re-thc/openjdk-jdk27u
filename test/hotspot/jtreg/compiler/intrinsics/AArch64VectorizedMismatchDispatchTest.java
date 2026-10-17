@@ -32,7 +32,7 @@
 
 /*
  * @test id=ideal
- * @summary Check the actual leaf length argument and polling Java fallback after the bounded AArch64 prefix
+ * @summary Check bounded heap prefixes, full native/mixed leaves and the polling Java fallback
  * @requires os.arch == "aarch64" & vm.debug == true & vm.compiler2.enabled & vm.opt.final.UseVectorizedMismatchIntrinsic == true
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.base/jdk.internal.util
@@ -41,10 +41,23 @@
  * @run driver compiler.intrinsics.AArch64VectorizedMismatchDispatchTest ideal
  */
 
+/*
+ * @test id=store-ordering
+ * @summary Raw mismatch prefix loads stay between preceding and following aliasing heap stores
+ * @requires vm.debug == true & vm.compiler2.enabled & vm.opt.final.UseVectorizedMismatchIntrinsic == true
+ * @requires os.simpleArch == "x64" | os.arch == "aarch64"
+ * @library /test/lib /
+ * @modules java.base/jdk.internal.misc java.base/jdk.internal.util
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run driver compiler.intrinsics.AArch64VectorizedMismatchDispatchTest store-ideal
+ */
+
 package compiler.intrinsics;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Run;
 import compiler.lib.ir_framework.RunInfo;
 import compiler.lib.ir_framework.Test;
@@ -68,6 +81,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.WhiteBox;
@@ -80,6 +94,7 @@ public class AArch64VectorizedMismatchDispatchTest {
     private static final long BASE = Unsafe.ARRAY_BYTE_BASE_OFFSET;
     private static final byte[] HA = new byte[CAPACITY];
     private static final byte[] HB = new byte[CAPACITY];
+    private static final byte[] OTHER = new byte[CAPACITY];
     private static final MemorySegment NA = Arena.ofAuto().allocate(CAPACITY);
     private static final MemorySegment NB = Arena.ofAuto().allocate(CAPACITY);
     private static final String LEAF = "CallLeaf.*vectorizedMismatch";
@@ -256,31 +271,238 @@ public class AArch64VectorizedMismatchDispatchTest {
     }
 
     @Test
-    @IR(counts = {LEAF, "1", JAVA_CALL, ">= 1"},
+    @IR(counts = {LEAF, "1"}, failOn = {JAVA_CALL, IRNode.SAFEPOINT},
         phase = CompilePhase.BEFORE_MATCHING)
     public static int nativeLarge0(long a, long b) {
         return ArraysSupport.vectorizedMismatch(null, a, null, b, LARGE >> 0, 0);
     }
 
     @Test
-    @IR(counts = {LEAF, "1", JAVA_CALL, ">= 1"},
+    @IR(counts = {LEAF, "1"}, failOn = {JAVA_CALL, IRNode.SAFEPOINT},
         phase = CompilePhase.BEFORE_MATCHING)
     public static int nativeLarge1(long a, long b) {
         return ArraysSupport.vectorizedMismatch(null, a, null, b, LARGE >> 1, 1);
     }
 
     @Test
-    @IR(counts = {LEAF, "1", JAVA_CALL, ">= 1"},
+    @IR(counts = {LEAF, "1"}, failOn = {JAVA_CALL, IRNode.SAFEPOINT},
         phase = CompilePhase.BEFORE_MATCHING)
     public static int nativeLarge2(long a, long b) {
         return ArraysSupport.vectorizedMismatch(null, a, null, b, LARGE >> 2, 2);
     }
 
     @Test
-    @IR(counts = {LEAF, "1", JAVA_CALL, ">= 1"},
+    @IR(counts = {LEAF, "1"}, failOn = {JAVA_CALL, IRNode.SAFEPOINT},
         phase = CompilePhase.BEFORE_MATCHING)
     public static int nativeLarge3(long a, long b) {
         return ArraysSupport.vectorizedMismatch(null, a, null, b, LARGE >> 3, 3);
+    }
+
+    @Test
+    @IR(counts = {LEAF, "1"}, failOn = {JAVA_CALL, IRNode.SAFEPOINT},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int native4K0(long a, long b) {
+        return ArraysSupport.vectorizedMismatch(null, a, null, b, 4096 >> 0, 0);
+    }
+
+    @Test
+    @IR(counts = {LEAF, "1"}, failOn = {JAVA_CALL, IRNode.SAFEPOINT},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int native4K1(long a, long b) {
+        return ArraysSupport.vectorizedMismatch(null, a, null, b, 4096 >> 1, 1);
+    }
+
+    @Test
+    @IR(counts = {LEAF, "1"}, failOn = {JAVA_CALL, IRNode.SAFEPOINT},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int native4K2(long a, long b) {
+        return ArraysSupport.vectorizedMismatch(null, a, null, b, 4096 >> 2, 2);
+    }
+
+    @Test
+    @IR(counts = {LEAF, "1"}, failOn = {JAVA_CALL, IRNode.SAFEPOINT},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int native4K3(long a, long b) {
+        return ArraysSupport.vectorizedMismatch(null, a, null, b, 4096 >> 3, 3);
+    }
+
+    @Test
+    @IR(counts = {LEAF, "1"}, failOn = {JAVA_CALL, IRNode.SAFEPOINT},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int mixed4K0(byte[] a, long ao, long b) {
+        return ArraysSupport.vectorizedMismatch(a, ao, null, b, 4096 >> 0, 0);
+    }
+
+    @Test
+    @IR(counts = {LEAF, "1"}, failOn = {JAVA_CALL, IRNode.SAFEPOINT},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int mixed4K1(byte[] a, long ao, long b) {
+        return ArraysSupport.vectorizedMismatch(a, ao, null, b, 4096 >> 1, 1);
+    }
+
+    @Test
+    @IR(counts = {LEAF, "1"}, failOn = {JAVA_CALL, IRNode.SAFEPOINT},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int mixed4K2(byte[] a, long ao, long b) {
+        return ArraysSupport.vectorizedMismatch(a, ao, null, b, 4096 >> 2, 2);
+    }
+
+    @Test
+    @IR(counts = {LEAF, "1"}, failOn = {JAVA_CALL, IRNode.SAFEPOINT},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int mixed4K3(byte[] a, long ao, long b) {
+        return ArraysSupport.vectorizedMismatch(a, ao, null, b, 4096 >> 3, 3);
+    }
+
+    @Test
+    @IR(counts = {LEAF, "1"}, failOn = {JAVA_CALL, IRNode.SAFEPOINT},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int reverse4K0(long a, byte[] b, long bo) {
+        return ArraysSupport.vectorizedMismatch(null, a, b, bo, 4096 >> 0, 0);
+    }
+
+    @Test
+    @IR(counts = {LEAF, "1"}, failOn = {JAVA_CALL, IRNode.SAFEPOINT},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int reverse4K1(long a, byte[] b, long bo) {
+        return ArraysSupport.vectorizedMismatch(null, a, b, bo, 4096 >> 1, 1);
+    }
+
+    @Test
+    @IR(counts = {LEAF, "1"}, failOn = {JAVA_CALL, IRNode.SAFEPOINT},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int reverse4K2(long a, byte[] b, long bo) {
+        return ArraysSupport.vectorizedMismatch(null, a, b, bo, 4096 >> 2, 2);
+    }
+
+    @Test
+    @IR(counts = {LEAF, "1"}, failOn = {JAVA_CALL, IRNode.SAFEPOINT},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int reverse4K3(long a, byte[] b, long bo) {
+        return ArraysSupport.vectorizedMismatch(null, a, b, bo, 4096 >> 3, 3);
+    }
+
+    // The writer is a separate parameter: the compiler cannot assume that it
+    // differs from a compared array. Nullable bases and unrestricted long
+    // offsets deliberately classify the prefix loads in the raw alias slice.
+    @Test
+    @IR(counts = {IRNode.STORE_B, "2", LEAF, "1"}, failOn = {JAVA_CALL},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int heapStore0(byte[] a, long ao, byte[] b, long bo, byte[] writer, int index, byte value) {
+        writer[index] = value;
+        int result = ArraysSupport.vectorizedMismatch(a, ao, b, bo, MINIMUM >> 0, 0);
+        writer[index] = (byte) (value ^ 1);
+        return result;
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B, "2", LEAF, "1"}, failOn = {JAVA_CALL},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int heapStore1(byte[] a, long ao, byte[] b, long bo, byte[] writer, int index, byte value) {
+        writer[index] = value;
+        int result = ArraysSupport.vectorizedMismatch(a, ao, b, bo, MINIMUM >> 1, 1);
+        writer[index] = (byte) (value ^ 1);
+        return result;
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B, "2", LEAF, "1"}, failOn = {JAVA_CALL},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int heapStore2(byte[] a, long ao, byte[] b, long bo, byte[] writer, int index, byte value) {
+        writer[index] = value;
+        int result = ArraysSupport.vectorizedMismatch(a, ao, b, bo, MINIMUM >> 2, 2);
+        writer[index] = (byte) (value ^ 1);
+        return result;
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B, "2", LEAF, "1"}, failOn = {JAVA_CALL},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int heapStore3(byte[] a, long ao, byte[] b, long bo, byte[] writer, int index, byte value) {
+        writer[index] = value;
+        int result = ArraysSupport.vectorizedMismatch(a, ao, b, bo, MINIMUM >> 3, 3);
+        writer[index] = (byte) (value ^ 1);
+        return result;
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B, "2", LEAF, "1"}, failOn = {JAVA_CALL},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int mixedStore0(byte[] a, long ao, long b, byte[] writer, int index, byte value) {
+        writer[index] = value;
+        int result = ArraysSupport.vectorizedMismatch(a, ao, null, b, MINIMUM >> 0, 0);
+        writer[index] = (byte) (value ^ 1);
+        return result;
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B, "2", LEAF, "1"}, failOn = {JAVA_CALL},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int mixedStore1(byte[] a, long ao, long b, byte[] writer, int index, byte value) {
+        writer[index] = value;
+        int result = ArraysSupport.vectorizedMismatch(a, ao, null, b, MINIMUM >> 1, 1);
+        writer[index] = (byte) (value ^ 1);
+        return result;
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B, "2", LEAF, "1"}, failOn = {JAVA_CALL},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int mixedStore2(byte[] a, long ao, long b, byte[] writer, int index, byte value) {
+        writer[index] = value;
+        int result = ArraysSupport.vectorizedMismatch(a, ao, null, b, MINIMUM >> 2, 2);
+        writer[index] = (byte) (value ^ 1);
+        return result;
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B, "2", LEAF, "1"}, failOn = {JAVA_CALL},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int mixedStore3(byte[] a, long ao, long b, byte[] writer, int index, byte value) {
+        writer[index] = value;
+        int result = ArraysSupport.vectorizedMismatch(a, ao, null, b, MINIMUM >> 3, 3);
+        writer[index] = (byte) (value ^ 1);
+        return result;
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B, "2", LEAF, "1"}, failOn = {JAVA_CALL},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int reverseStore0(long a, byte[] b, long bo, byte[] writer, int index, byte value) {
+        writer[index] = value;
+        int result = ArraysSupport.vectorizedMismatch(null, a, b, bo, MINIMUM >> 0, 0);
+        writer[index] = (byte) (value ^ 1);
+        return result;
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B, "2", LEAF, "1"}, failOn = {JAVA_CALL},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int reverseStore1(long a, byte[] b, long bo, byte[] writer, int index, byte value) {
+        writer[index] = value;
+        int result = ArraysSupport.vectorizedMismatch(null, a, b, bo, MINIMUM >> 1, 1);
+        writer[index] = (byte) (value ^ 1);
+        return result;
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B, "2", LEAF, "1"}, failOn = {JAVA_CALL},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int reverseStore2(long a, byte[] b, long bo, byte[] writer, int index, byte value) {
+        writer[index] = value;
+        int result = ArraysSupport.vectorizedMismatch(null, a, b, bo, MINIMUM >> 2, 2);
+        writer[index] = (byte) (value ^ 1);
+        return result;
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B, "2", LEAF, "1"}, failOn = {JAVA_CALL},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int reverseStore3(long a, byte[] b, long bo, byte[] writer, int index, byte value) {
+        writer[index] = value;
+        int result = ArraysSupport.vectorizedMismatch(null, a, b, bo, MINIMUM >> 3, 3);
+        writer[index] = (byte) (value ^ 1);
+        return result;
     }
 
     @Run(test = {"heap0", "heap1", "heap2", "heap3", "native0", "native1", "native2", "native3", "mixed0", "mixed1", "mixed2", "mixed3", "reverse0", "reverse1", "reverse2", "reverse3", "short0", "short1", "short2", "short3", "minimum"})
@@ -310,29 +532,79 @@ public class AArch64VectorizedMismatchDispatchTest {
 
     private static int warmups;
 
-    @Run(test = {"heapLarge0", "heapLarge1", "heapLarge2", "heapLarge3", "nativeLarge0", "nativeLarge1", "nativeLarge2", "nativeLarge3"})
+    private record ConstantCase(String storage, int scale, int bytes) {
+        String method() {
+            return storage + (bytes == LARGE ? "Large" : "4K") + scale;
+        }
+    }
+
+    private static final List<ConstantCase> CONSTANTS = constantCases();
+
+    private static List<ConstantCase> constantCases() {
+        List<ConstantCase> result = new ArrayList<>();
+        for (String storage : new String[] {"heap", "native"}) {
+            for (int scale = 0; scale <= 3; scale++) {
+                result.add(new ConstantCase(storage, scale, LARGE));
+            }
+        }
+        for (String storage : new String[] {"native", "mixed", "reverse"}) {
+            for (int scale = 0; scale <= 3; scale++) {
+                result.add(new ConstantCase(storage, scale, 4096));
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    @Run(test = {"heapLarge0", "heapLarge1", "heapLarge2", "heapLarge3", "nativeLarge0", "nativeLarge1", "nativeLarge2", "nativeLarge3", "native4K0", "native4K1", "native4K2", "native4K3", "mixed4K0", "mixed4K1", "mixed4K2", "mixed4K3", "reverse4K0", "reverse4K1", "reverse4K2", "reverse4K3"})
     @Warmup(30)
     public static void runLarge(RunInfo info) {
         if (info != null && info.isWarmUp()) {
-            for (int scale = 0; scale <= 3; scale++) {
-                large(false, scale, 1);
-                large(true, scale, 1);
+            for (ConstantCase c : CONSTANTS) {
+                constant(c, 1);
             }
         } else {
-            for (int scale = 0; scale <= 3; scale++) {
+            for (ConstantCase c : CONSTANTS) {
                 for (int offset : new int[] {0, 1, 7}) {
                     for (int difference : new int[] {-1, 0, 7, 8, 10, 25, 82, 127, 128, 1267,
-                                                       PREFIX - 1, PREFIX, PREFIX + 1, LARGE - 1}) {
+                                                       PREFIX - 1, PREFIX, PREFIX + 1, c.bytes() - 1}) {
+                        if (difference >= c.bytes()) {
+                            continue;
+                        }
                         setDifference(difference, offset, (byte) 1);
-                        checkRaw(large(false, scale, offset), LARGE >> scale, scale, difference,
-                                 "constant heap large");
-                        checkRaw(large(true, scale, offset), LARGE >> scale, scale, difference,
-                                 "constant native large");
+                        checkRaw(constant(c, offset), c.bytes() >> c.scale(), c.scale(), difference, c.method());
                         setDifference(difference, offset, (byte) 0);
                     }
                 }
             }
         }
+    }
+
+    private static int constant(ConstantCase c, int offset) {
+        if (c.bytes() == LARGE) {
+            return large(c.storage().equals("native"), c.scale(), offset);
+        }
+        long ao = BASE + offset, na = NA.address() + offset, nb = NB.address() + offset;
+        int storage = switch (c.storage()) {
+            case "native" -> 0;
+            case "mixed" -> 1;
+            case "reverse" -> 2;
+            default -> throw new AssertionError(c);
+        };
+        return switch (4 * storage + c.scale()) {
+            case 0 -> native4K0(na, nb);
+            case 1 -> native4K1(na, nb);
+            case 2 -> native4K2(na, nb);
+            case 3 -> native4K3(na, nb);
+            case 4 -> mixed4K0(HA, ao, nb);
+            case 5 -> mixed4K1(HA, ao, nb);
+            case 6 -> mixed4K2(HA, ao, nb);
+            case 7 -> mixed4K3(HA, ao, nb);
+            case 8 -> reverse4K0(na, HB, ao);
+            case 9 -> reverse4K1(na, HB, ao);
+            case 10 -> reverse4K2(na, HB, ao);
+            case 11 -> reverse4K3(na, HB, ao);
+            default -> throw new AssertionError(c);
+        };
     }
 
     private static int raw(int storage, int scale, int offset, int length) {
@@ -573,9 +845,115 @@ public class AArch64VectorizedMismatchDispatchTest {
         throw new AssertionError("missing " + type);
     }
 
+    private record StoreCase(String storage, int scale) {
+        String method() {
+            return storage + "Store" + scale;
+        }
+    }
+
+    private static final List<StoreCase> STORES = storeCases();
+    private static final int[] STORE_POSITIONS = {0, 1, 7, 8, 10, 25, 82, 127};
+
+    private static List<StoreCase> storeCases() {
+        List<StoreCase> result = new ArrayList<>();
+        for (String storage : new String[] {"heap", "mixed", "reverse"}) {
+            for (int scale = 0; scale <= 3; scale++) {
+                result.add(new StoreCase(storage, scale));
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    @Run(test = {"heapStore0", "heapStore1", "heapStore2", "heapStore3", "mixedStore0", "mixedStore1", "mixedStore2", "mixedStore3", "reverseStore0", "reverseStore1", "reverseStore2", "reverseStore3"})
+    @Warmup(2000)
+    public static void runStores(RunInfo info) {
+        if (info.isWarmUp()) {
+            int i = storeWarmups++;
+            for (StoreCase c : STORES) {
+                exerciseStore(c, i % 3, (i / 3) & 1, 1, STORE_POSITIONS[(i / 6) % STORE_POSITIONS.length]);
+            }
+        } else {
+            verifyStores();
+        }
+    }
+
+    private static int storeWarmups;
+
+    private static int store(StoreCase c, byte[] writer, int index, byte value, int offset) {
+        long ao = BASE + offset, na = NA.address() + offset, nb = NB.address() + offset;
+        int storage = switch (c.storage()) {
+            case "heap" -> 0;
+            case "mixed" -> 1;
+            case "reverse" -> 2;
+            default -> throw new AssertionError(c);
+        };
+        return switch (4 * storage + c.scale()) {
+            case 0 -> heapStore0(HA, ao, HB, ao, writer, index, value);
+            case 1 -> heapStore1(HA, ao, HB, ao, writer, index, value);
+            case 2 -> heapStore2(HA, ao, HB, ao, writer, index, value);
+            case 3 -> heapStore3(HA, ao, HB, ao, writer, index, value);
+            case 4 -> mixedStore0(HA, ao, nb, writer, index, value);
+            case 5 -> mixedStore1(HA, ao, nb, writer, index, value);
+            case 6 -> mixedStore2(HA, ao, nb, writer, index, value);
+            case 7 -> mixedStore3(HA, ao, nb, writer, index, value);
+            case 8 -> reverseStore0(na, HB, ao, writer, index, value);
+            case 9 -> reverseStore1(na, HB, ao, writer, index, value);
+            case 10 -> reverseStore2(na, HB, ao, writer, index, value);
+            case 11 -> reverseStore3(na, HB, ao, writer, index, value);
+            default -> throw new AssertionError(c);
+        };
+    }
+
+    private static void exerciseStore(StoreCase c, int alias, int value, int offset, int position) {
+        int index = offset + position;
+        HA[index] = HB[index] = OTHER[index] = 0;
+        NB.set(ValueLayout.JAVA_BYTE, index, (byte) 0);
+        NA.set(ValueLayout.JAVA_BYTE, index, (byte) 0);
+        byte[] writer = alias == 0 ? HA : alias == 1 ? HB : OTHER;
+        // Both introducing and clearing a difference must be seen by the loads
+        // in the very same compiled method as the store.
+        writer[index] = (byte) (1 - value);
+        int actual = store(c, writer, index, (byte) value, offset);
+        boolean compared = c.storage().equals("heap") && alias < 2 ||
+                           c.storage().equals("mixed") && alias == 0 ||
+                           c.storage().equals("reverse") && alias == 1;
+        int expectedDifference = compared && value != 0 ? position : -1;
+        checkRaw(actual, MINIMUM >> c.scale(), c.scale(), expectedDifference,
+                 c.method() + " writer=" + alias + " value=" + value + " offset=" + offset);
+        if (writer[index] != (byte) (value ^ 1)) {
+            throw new AssertionError(c.method() + ": missing trailing store for writer=" + alias +
+                                     " value=" + value + " offset=" + offset + " position=" + position);
+        }
+        HA[index] = HB[index] = OTHER[index] = 0;
+    }
+
+    private static void verifyStores(StoreCase c) {
+        for (int alias = 0; alias < 3; alias++) {
+            for (int value : new int[] {0, 1}) {
+                for (int offset : new int[] {0, 1, 7}) {
+                    for (int position : STORE_POSITIONS) {
+                        exerciseStore(c, alias, value, offset, position);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void verifyStores() {
+        for (StoreCase c : STORES) {
+            verifyStores(c);
+        }
+        // The writer's ordinary Java exceptions precede any unsafe access.
+        expect(NullPointerException.class, () -> heapStore0(null, 0, null, 0, null, 0, (byte) 1));
+        expect(ArrayIndexOutOfBoundsException.class,
+               () -> heapStore0(null, 0, null, 0, OTHER, -1, (byte) 1));
+        expect(ArrayIndexOutOfBoundsException.class,
+               () -> mixedStore0(null, 0, 0, OTHER, OTHER.length, (byte) 1));
+    }
+
     private static final String MARKER = "@@bounded-mismatch ";
 
-    private static void idealDriver() throws Exception {
+    private static void idealDriver(boolean storesOnly) throws Exception {
         String test = AArch64VectorizedMismatchDispatchTest.class.getName();
         List<String> flags = new ArrayList<>(List.of(
                 "-Xbootclasspath/a:.", "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
@@ -585,22 +963,26 @@ public class AArch64VectorizedMismatchDispatchTest {
                 "-XX:-TieredCompilation", "-XX:-BackgroundCompilation",
                 "-XX:CompileThreshold=100000000", "-XX:+UseCountedLoopSafepoints",
                 "-XX:LoopStripMiningIter=1000", "-XX:CompileCommand=quiet"));
-        List<String> methods = new ArrayList<>();
-        for (String storage : new String[] {"heap", "native"}) {
-            for (int scale = 0; scale <= 3; scale++) {
-                String name = storage + "Large" + scale;
-                methods.add(name);
-                flags.add("-XX:CompileCommand=compileonly," + test + "::" + name);
-                flags.add("-XX:CompileCommand=PrintIdealPhase," + test + "::" + name + ",BEFORE_MATCHING");
+        if (!storesOnly) {
+            for (ConstantCase c : CONSTANTS) {
+                flags.add("-XX:CompileCommand=compileonly," + test + "::" + c.method());
+                flags.add("-XX:CompileCommand=PrintIdealPhase," + test + "::" + c.method() + ",BEFORE_MATCHING");
             }
         }
-        String fallback = "jdk.internal.util.ArraysSupport::vectorizedMismatch";
-        flags.add("-XX:CompileCommand=compileonly," + fallback);
-        flags.add("-XX:CompileCommand=PrintIdealPhase," + fallback + ",BEFORE_MATCHING");
+        for (StoreCase c : STORES) {
+            flags.add("-XX:CompileCommand=compileonly," + test + "::" + c.method());
+            flags.add("-XX:CompileCommand=PrintIdealPhase," + test + "::" + c.method() + ",BEFORE_MATCHING");
+        }
+        if (!storesOnly) {
+            String fallback = "jdk.internal.util.ArraysSupport::vectorizedMismatch";
+            flags.add("-XX:CompileCommand=compileonly," + fallback);
+            flags.add("-XX:CompileCommand=PrintIdealPhase," + fallback + ",BEFORE_MATCHING");
+        }
         flags.add(test);
-        flags.add("ideal-child");
+        flags.add(storesOnly ? "store-ideal-child" : "ideal-child");
         OutputAnalyzer output = ProcessTools.executeProcess(ProcessTools.createLimitedTestJavaProcessBuilder(flags));
-        Path capture = Path.of("AArch64VectorizedMismatchDispatchTest-ideal.log").toAbsolutePath();
+        Path capture = Path.of("AArch64VectorizedMismatchDispatchTest-" +
+                               (storesOnly ? "store-ideal.log" : "ideal.log")).toAbsolutePath();
         Files.writeString(capture, output.getStdout() + "\n" + output.getStderr());
         System.out.println("Ideal graph capture: " + capture);
         output.shouldHaveExitValue(0);
@@ -618,14 +1000,32 @@ public class AArch64VectorizedMismatchDispatchTest {
                 dumps.get(current).add(line);
             }
         }
-        if (dumps.size() != methods.size() + 1) {
+        int expected = STORES.size() + (storesOnly ? 0 : CONSTANTS.size() + 1);
+        if (dumps.size() != expected) {
             throw new AssertionError("missing compilation graphs: " + dumps.keySet());
         }
-        for (String name : methods) {
-            new Graph(dumps.get(name)).verifyPrefix(name.charAt(name.length() - 1) - '0');
+        if (!storesOnly) {
+            for (ConstantCase c : CONSTANTS) {
+                Graph graph = new Graph(dumps.get(c.method()));
+                if (c.storage().equals("heap")) {
+                    graph.verifyPrefix(c.scale());
+                } else {
+                    graph.verifyFullRange(c.scale(), c.bytes());
+                }
+            }
         }
-        new Graph(dumps.get("fallback")).verifyPollingBody();
-        System.out.println("Verified eight bounded leaves with full-range Java fallbacks and the polling callee");
+        for (StoreCase c : STORES) {
+            boolean aarch64Policy = !storesOnly || Platform.isAArch64();
+            int expectedLoads = c.storage().equals("heap") ? (aarch64Policy ? 4 : 0)
+                                                           : (aarch64Policy ? 32 : 2);
+            new Graph(dumps.get(c.method())).verifyStoreOrdering(expectedLoads);
+        }
+        if (!storesOnly) {
+            new Graph(dumps.get("fallback")).verifyPollingBody();
+            System.out.println("Verified four bounded heap prefixes, sixteen full-range native/mixed leaves " +
+                               "and the polling Java callee");
+        }
+        System.out.println("Verified twelve same-method heap-store/raw-prefix memory-order graphs");
     }
 
     private static void compile(WhiteBox wb, Method method, String name) {
@@ -636,33 +1036,40 @@ public class AArch64VectorizedMismatchDispatchTest {
         }
     }
 
-    private static void idealChild() throws Exception {
+    private static void idealChild(boolean storesOnly) throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
-        // Above the interpreter leaf bound, this profiles the Java implementation itself.
-        for (int i = 0; i < 30; i++) {
-            int scale = i & 3;
-            ArraysSupport.vectorizedMismatch(HA, BASE + 1, HB, BASE + 1, (2 * LARGE) >> scale, scale);
-            ArraysSupport.vectorizedMismatch(null, NA.address() + 1, null, NB.address() + 1,
-                                             (2 * LARGE) >> scale, scale);
-        }
-        for (String storage : new String[] {"heap", "native"}) {
-            for (int scale = 0; scale <= 3; scale++) {
-                boolean nativeMemory = storage.equals("native");
+        if (!storesOnly) {
+            // Above the interpreter leaf bound, this profiles the Java implementation itself.
+            for (int i = 0; i < 30; i++) {
+                int scale = i & 3;
+                ArraysSupport.vectorizedMismatch(HA, BASE + 1, HB, BASE + 1, (2 * LARGE) >> scale, scale);
+                ArraysSupport.vectorizedMismatch(null, NA.address() + 1, null, NB.address() + 1,
+                                                 (2 * LARGE) >> scale, scale);
+            }
+            for (ConstantCase c : CONSTANTS) {
                 for (int i = 0; i < 30; i++) {
-                    large(nativeMemory, scale, 1);
+                    constant(c, 1);
                 }
-                String name = storage + "Large" + scale;
-                Method method = nativeMemory
-                        ? AArch64VectorizedMismatchDispatchTest.class.getDeclaredMethod(name, long.class, long.class)
-                        : AArch64VectorizedMismatchDispatchTest.class.getDeclaredMethod(
-                                name, byte[].class, long.class, byte[].class, long.class);
-                compile(wb, method, name);
-                checkRaw(large(nativeMemory, scale, 1), LARGE >> scale, scale, -1, name);
+                Method method = Arrays.stream(AArch64VectorizedMismatchDispatchTest.class.getDeclaredMethods())
+                        .filter(m -> m.getName().equals(c.method())).findFirst().orElseThrow();
+                compile(wb, method, c.method());
+                checkRaw(constant(c, 1), c.bytes() >> c.scale(), c.scale(), -1, c.method());
             }
         }
-        Method fallback = ArraysSupport.class.getDeclaredMethod("vectorizedMismatch",
-                Object.class, long.class, Object.class, long.class, int.class, int.class);
-        compile(wb, fallback, "fallback");
+        for (StoreCase c : STORES) {
+            for (int i = 0; i < 200; i++) {
+                exerciseStore(c, i % 3, (i / 3) & 1, 1, STORE_POSITIONS[(i / 6) % STORE_POSITIONS.length]);
+            }
+            Method method = Arrays.stream(AArch64VectorizedMismatchDispatchTest.class.getDeclaredMethods())
+                    .filter(m -> m.getName().equals(c.method())).findFirst().orElseThrow();
+            compile(wb, method, c.method());
+            verifyStores(c);
+        }
+        if (!storesOnly) {
+            Method fallback = ArraysSupport.class.getDeclaredMethod("vectorizedMismatch",
+                    Object.class, long.class, Object.class, long.class, int.class, int.class);
+            compile(wb, fallback, "fallback");
+        }
         System.out.println(MARKER + "end");
     }
 
@@ -742,6 +1149,173 @@ public class AArch64VectorizedMismatchDispatchTest {
             constantArgument(fallback.getFirst(), 12, scale);
         }
 
+        void verifyFullRange(int scale, int bytes) {
+            List<Node> leaves = named("CallLeaf").stream()
+                    .filter(n -> n.detail().contains("# vectorizedMismatch")).toList();
+            List<Node> fallback = named("CallStaticJava").stream()
+                    .filter(n -> n.detail().contains("ArraysSupport::vectorizedMismatch")).toList();
+            if (leaves.size() != 1 || !fallback.isEmpty() || !named("SafePoint").isEmpty()) {
+                throw new AssertionError("expected only the full-range native/mixed leaf: " +
+                                         leaves + "; fallbacks=" + fallback + "; polls=" + named("SafePoint"));
+            }
+            constantArgument(leaves.getFirst(), 7, bytes >> scale);
+            constantArgument(leaves.getFirst(), 8, scale);
+        }
+
+        // Follow memory edges only. A shared control ancestor cannot order a
+        // raw alias load after a store in the byte-array alias slice.
+        private List<Integer> memoryInputs(Node n) {
+            List<Integer> result = new ArrayList<>();
+            if (n.name().equals("MergeMem") || n.name().equals("Phi")) {
+                for (int i = 1; i < n.inputs().length; i++) {
+                    if (n.inputs()[i] >= 0) {
+                        result.add(n.inputs()[i]);
+                    }
+                }
+            } else {
+                int index = n.name().startsWith("MemBar") || n.name().startsWith("Call") ? 2 :
+                            n.name().startsWith("Store") || n.name().equals("ClearArray") ? 1 :
+                            n.name().equals("SCMemProj") || n.name().equals("Proj") &&
+                                    n.detail().contains("Memory:") ? 0 : -1;
+                Node previous = index < 0 ? null : input(n, index);
+                if (previous != null) {
+                    result.add(previous.id());
+                }
+            }
+            return result;
+        }
+
+        private boolean memoryDependsOn(Node memory, Node target) {
+            if (memory == null) {
+                return false;
+            }
+            ArrayDeque<Integer> work = new ArrayDeque<>(List.of(memory.id()));
+            Set<Integer> seen = new HashSet<>();
+            while (!work.isEmpty()) {
+                int id = work.pop();
+                if (id == target.id()) {
+                    return true;
+                }
+                if (seen.add(id)) {
+                    Node n = nodes.get(id);
+                    if (n == null) {
+                        throw new AssertionError("missing memory node " + id);
+                    }
+                    work.addAll(memoryInputs(n));
+                }
+            }
+            return false;
+        }
+
+        private boolean dependsOn(Node node, Node target) {
+            if (node == null) {
+                return false;
+            }
+            ArrayDeque<Integer> work = new ArrayDeque<>(List.of(node.id()));
+            Set<Integer> seen = new HashSet<>();
+            while (!work.isEmpty()) {
+                int id = work.pop();
+                if (id == target.id()) {
+                    return true;
+                }
+                if (seen.add(id)) {
+                    Node n = nodes.get(id);
+                    if (n == null) {
+                        throw new AssertionError("missing dependency node " + id);
+                    }
+                    // Start points back to Root, whose Return inputs contain
+                    // the whole graph. They are not execution predecessors.
+                    if (n.name().equals("Start") || n.name().equals("Root")) {
+                        continue;
+                    }
+                    for (int predecessor : n.inputs()) {
+                        if (predecessor >= 0) {
+                            work.add(predecessor);
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Every memory predecessor path must cross a trailing barrier. Finding
+        // one barrier on one branch alone would miss an unprotected early exit.
+        private boolean memoryDominatedBy(Node memory, Set<Integer> barriers) {
+            if (memory == null) {
+                return false;
+            }
+            ArrayDeque<Integer> work = new ArrayDeque<>(List.of(memory.id()));
+            Set<Integer> seen = new HashSet<>();
+            while (!work.isEmpty()) {
+                int id = work.pop();
+                if (barriers.contains(id) || !seen.add(id)) {
+                    continue;
+                }
+                Node n = nodes.get(id);
+                if (n == null) {
+                    throw new AssertionError("missing memory node " + id);
+                }
+                List<Integer> previous = memoryInputs(n);
+                if (previous.isEmpty()) {
+                    return false;
+                }
+                work.addAll(previous);
+            }
+            return true;
+        }
+
+        void verifyStoreOrdering(int expectedLoads) {
+            List<Node> stores = named("StoreB");
+            List<Node> loads = named("LoadL").stream()
+                    .filter(n -> n.detail().contains("idx=Raw")).toList();
+            List<Node> leaves = named("CallLeaf").stream()
+                    .filter(n -> n.detail().contains("# vectorizedMismatch")).toList();
+            boolean javaCall = named("CallStaticJava").stream()
+                    .anyMatch(n -> n.detail().contains("ArraysSupport::vectorizedMismatch"));
+            if (stores.size() != 2 || stores.stream().anyMatch(n -> n.detail().contains("idx=Raw")) ||
+                    loads.size() != expectedLoads || leaves.size() != 1 || javaCall) {
+                throw new AssertionError("expected two heap byte stores, one mismatch leaf and " + expectedLoads +
+                                         " raw prefix loads: stores=" + stores + "; loads=" + loads +
+                                         "; leaves=" + leaves + "; Java call=" + javaCall);
+            }
+            Node first = stores.get(0), last = stores.get(1);
+            if (memoryDependsOn(input(first, 1), last)) {
+                Node swap = first;
+                first = last;
+                last = swap;
+            }
+            if (!memoryDependsOn(input(last, 1), first)) {
+                throw new AssertionError("the two stores are not ordered: " + stores);
+            }
+            if (expectedLoads == 0) {
+                // The existing x86 heap path has no scalar prefix: its full-memory
+                // leaf orders both stores without needing new CPU-order barriers.
+                Node leaf = leaves.getFirst();
+                if (!memoryDependsOn(input(leaf, 2), first) ||
+                        !memoryDependsOn(input(last, 1), leaf)) {
+                    throw new AssertionError("the heap leaf is not between both stores");
+                }
+                return;
+            }
+            for (Node load : loads) {
+                if (!memoryDependsOn(input(load, 1), first)) {
+                    throw new AssertionError("raw prefix load can ignore the preceding heap store: " +
+                                             load + "; store=" + first);
+                }
+            }
+            Set<Integer> trailing = new HashSet<>();
+            for (Node barrier : named("MemBarCPUOrder")) {
+                Node control = input(barrier, 0);
+                if (loads.stream().allMatch(load -> dependsOn(control, load))) {
+                    trailing.add(barrier.id());
+                }
+            }
+            if (trailing.isEmpty() || !memoryDominatedBy(input(last, 1), trailing)) {
+                throw new AssertionError("following heap store can precede a raw prefix exit: " +
+                                         last + "; trailing barriers=" + trailing);
+            }
+        }
+
         private List<Integer> controls(Node node) {
             List<Integer> result = new ArrayList<>();
             if (REGIONS.contains(node.name())) {
@@ -792,10 +1366,13 @@ public class AArch64VectorizedMismatchDispatchTest {
             case "semantic" -> {
                 verifyAll();
                 runLarge(null);
+                verifyStores();
                 System.out.println("Bounded mismatch semantic fixtures passed");
             }
-            case "ideal" -> idealDriver();
-            case "ideal-child" -> idealChild();
+            case "ideal" -> idealDriver(false);
+            case "ideal-child" -> idealChild(false);
+            case "store-ideal" -> idealDriver(true);
+            case "store-ideal-child" -> idealChild(true);
             default -> TestFramework.runWithFlags(
                     "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                     "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
