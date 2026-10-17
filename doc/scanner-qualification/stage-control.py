@@ -25,6 +25,9 @@ class ControlDeadline(BaseException):
     """A hard control bound must bypass best-effort per-target error handling."""
 
 
+BUILD_DRAIN_SECONDS = 6  # javac's stop-file monitor polls every 5000ms.
+
+
 def io_deadline(*_):
     raise ControlDeadline("Scanner runner control I/O deadline")
 
@@ -88,7 +91,7 @@ def serve_checkpoint(directory, scope):
     atomic_json(directory / "checkpoint.reply", {"nonce": nonce, "ok": True})
 
 
-def stage(directory, owner_path, duration, command):
+def stage(directory, owner_path, duration, command, build=False):
     owner = read_identity(owner_path)
     root = read_process(os.getpid())
     observer_output = owner_path.parent
@@ -110,7 +113,8 @@ def stage(directory, owner_path, duration, command):
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
     scope, seen = Scope(root.identity), {}
-    atomic_json(directory / "identity.json", {"identity": asdict(root.identity), "owner": asdict(owner)})
+    atomic_json(directory / "identity.json", {"identity": asdict(root.identity), "owner": asdict(owner),
+                                               "kind": "build" if build else "stage"})
     deadline = time.monotonic() + 5
     while not (directory / "go").exists():
         require_live(owner, snapshot())
@@ -120,6 +124,8 @@ def stage(directory, owner_path, duration, command):
     healthy(observer, snapshot(), json.loads((observer_output / "memory-ready").read_text()), time.monotonic())
     environment = dict(os.environ, SCANNER_STAGE_CONTROL=str(directory))
     cleanup_at = None
+    drain_at = None
+    drain_missed = False
     sent = set()
     failure = None
     survivors = False
@@ -133,7 +139,6 @@ def stage(directory, owner_path, duration, command):
         atomic_json(directory / "payload.json", {"identity": asdict(direct.identity)})
         while True:
             signal.alarm(5)
-            now = time.monotonic()
             processes = snapshot()
             record(directory / "processes.jsonl", scope, processes, seen)
             require_live(owner, processes)
@@ -148,12 +153,34 @@ def stage(directory, owner_path, duration, command):
             if cleanup_at is None:
                 serve_checkpoint(directory, scope)
             if stopping or child.returncode is not None:
-                if cleanup_at is None:
-                    cleanup_at = now
+                now = time.monotonic()
                 live = scope.live(processes, {root.pid})
-                survivors |= child.returncode is not None and bool(live)
+                # A late empty observation cannot prove that custody drained
+                # within the grace. Once missed, the control remains failed.
+                if drain_at is not None and now > drain_at + BUILD_DRAIN_SECONDS:
+                    drain_missed = True
+                    survivors = True
                 if not live and no_children:
                     break
+                # Linux make only touches javac's stop file; its server checks
+                # that file every five seconds. A successful build keeps custody
+                # and observation during a bounded natural drain, without killing
+                # a normally shutting-down service or declaring it a leak.
+                if build and child.returncode == 0 and not stopping and cleanup_at is None:
+                    if drain_at is None:
+                        drain_at = now
+                    if now < drain_at + BUILD_DRAIN_SECONDS:
+                        signal.alarm(0)
+                        time.sleep(.1)
+                        continue
+                    drain_missed = True
+                    survivors = True
+                # Grace never applies to aborts, failed commands, measurements or
+                # stale/unknown observation. A persistent child still fails even
+                # when subsequent guarded TERM/KILL cleanup succeeds.
+                if cleanup_at is None:
+                    cleanup_at = now
+                survivors |= child.returncode is not None and bool(live)
                 number = signal.SIGTERM if now - cleanup_at < 10 else signal.SIGKILL
                 for identity in live:
                     if (identity, number) not in sent:
@@ -167,8 +194,9 @@ def stage(directory, owner_path, duration, command):
         failure = error
         # Fail closed and make a bounded best effort on identities already owned.
         # No clean footer is written on observation, I/O or custody failure.
-        until = time.monotonic() + 12
-        signal.alarm(12)
+        # Do not grant a second cleanup budget when escalation already expired.
+        until = cleanup_at + 12 if cleanup_at is not None else time.monotonic() + 12
+        signal.alarm(max(1, int(until - time.monotonic()) + 1))
         while time.monotonic() < until:
             try:
                 try:
@@ -196,7 +224,11 @@ def stage(directory, owner_path, duration, command):
     atomic_json(directory / "complete.json", {
         "identity": asdict(root.identity), "owner": asdict(owner), "clean": True,
         "members": [asdict(identity) for identity in scope.owned.values()],
-        "command_status": child.returncode, "stopped": stopping, "survivors": survivors})
+        "command_status": child.returncode, "stopped": stopping, "survivors": survivors,
+        "build_drain_seconds": BUILD_DRAIN_SECONDS if build else 0,
+        "drain_started_monotonic": drain_at, "drain_deadline_missed": drain_missed,
+        "drain_verified_monotonic": now if drain_at is not None else None,
+        "cleanup_started_monotonic": cleanup_at})
     return 125 if stopping or survivors else child.returncode
 
 
@@ -328,8 +360,8 @@ def main(args):
         require_live(owner.identity, {owner.pid: owner})
         atomic_json(Path(args[2]), {"identity": asdict(owner.identity)})
         return 0
-    if action == "stage":
-        return stage(Path(args[1]), Path(args[2]), args[3], args[4:])
+    if action in ("stage", "build-stage"):
+        return stage(Path(args[1]), Path(args[2]), args[3], args[4:], build=action == "build-stage")
     if action == "ready-stage":
         return await_ready(Path(args[1]), int(args[2]), True)
     if action == "ready-observer":
@@ -365,7 +397,7 @@ if __name__ == "__main__":
         signal.signal(signal.SIGALRM, io_deadline)
         # Helpers do no payload work. Their blocking I/O is bounded as well as
         # their poll loops. Bash waits interruptibly on them during owner faults.
-        limits = {"stop-stage": 13, "stop-observer": 3, "stage": 5}
+        limits = {"stop-stage": 13, "stop-observer": 3, "stage": 5, "build-stage": 5}
         signal.alarm(limits.get(sys.argv[1], 5))
         sys.exit(main(sys.argv[1:]))
     except (Exception, ControlDeadline) as error:

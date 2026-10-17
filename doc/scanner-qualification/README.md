@@ -1,11 +1,14 @@
 # Scanner: one bounded qualification decision
 
-Status: **not qualified**. The one authorized attempt at `cdaddc8592c` stopped
-before its first build because zombie-only cleanup was classified as uncertain;
-it produced no images, correctness results or measurements. Its retained output
-is separate from this local runner repair. See [RUNNER-REPAIR.md](RUNNER-REPAIR.md)
-for the cause, offline fixtures and the limits of this repair. No replacement
-campaign, build, benchmark, CI run or publication is authorized by this change.
+Status: **not qualified**. The `cdaddc8592c` attempt stopped before its first
+build because zombie-only cleanup was classified as uncertain. The corrected
+`e72c9c791f9` attempt built the baseline image successfully, then stopped125
+because an adopted child remained live at make exit, consistent with the build's
+asynchronous javac shutdown. Neither reached comparison tests or measurements.
+Both results remain separate and unchanged. See [RUNNER-REPAIR.md](RUNNER-REPAIR.md) for the
+original lifecycle repair and [POST-BUILD-DRAIN.md](POST-BUILD-DRAIN.md) for the
+bounded build-only drain fix and retained-baseline verification. This source
+repair does not itself authorize another campaign or resume timing.
 
 ## Frozen inputs and existing evidence
 
@@ -290,8 +293,13 @@ read failure or PID reuse is uncertain, and cannot permit another stage.
 The supervisor peeks actual kernel children without reaping (`waitid` WNOWAIT),
 records their Z0 identity, then reaps them. It publishes a clean custody record
 only after there are no live owned descendants **and** the kernel reports no
-children. Unexpected live survivors after command exit are stopped and make the
-stage incomplete. Each stage retains `identity.json`, `payload.json`,
+children. Successful make image-build stages alone allow a six-second observed
+natural drain for javac's asynchronous stop-file shutdown. They must prove empty
+custody within that deadline; expiry latches an incomplete result even if later
+cleanup succeeds. Other stages stay strict. Abort, fault or nonzero command exit
+bypasses the grace; guarded TERM10s/KILL2s cleanup keeps a separate deadline and
+cannot restart its budget. See [POST-BUILD-DRAIN.md](POST-BUILD-DRAIN.md).
+Each stage retains `identity.json`, `payload.json`,
 `processes.jsonl` and, only on verified drain, `complete.json`. Supervisor death
 without that record remains uncertain even if its known ledger is empty. Guarded
 cleanup of other known births continues when one target is uncertain; an

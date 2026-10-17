@@ -70,14 +70,14 @@ trap cleanup EXIT
 trap 'exit 124' TERM
 trap 'exit 130' INT
 trap 'exit 125' USR1
-bounded() {
-    local duration=$1 result finished
-    shift
+bounded_stage() {
+    local kind=$1 duration=$2 result finished
+    shift 2
     control health "$OUT" "$MONITOR_PID" || return 125
     STAGE_NUMBER=$((STAGE_NUMBER + 1))
     ACTIVE_STAGE="$OUT/stages/$STAGE_NUMBER"
     mkdir "$ACTIVE_STAGE"
-    setsid python3 "$CONTROL" stage "$ACTIVE_STAGE" "$OUT/owner.json" "$duration" "$@" &
+    setsid python3 "$CONTROL" "$kind" "$ACTIVE_STAGE" "$OUT/owner.json" "$duration" "$@" &
     ACTIVE_PID=$!
     printf '%s\n' "$ACTIVE_STAGE" > "$OUT/active-stage.tmp"
     mv "$OUT/active-stage.tmp" "$OUT/active-stage"
@@ -97,6 +97,8 @@ bounded() {
     mv "$OUT/active-stage.tmp" "$OUT/active-stage"
     return "$result"
 }
+bounded() { bounded_stage stage "$@"; }
+bounded_build() { bounded_stage build-stage "$@"; }
 [[ $(uname -m) == x86_64 && $(uname -s) == Linux ]]
 [[ $(git -C "$REPO" rev-parse "$CANDIDATE:src") == 4ac402957e32a6c54e566bdbee2d85f6e471b336 ]]
 [[ $(git -C "$REPO" rev-parse "$CANDIDATE:test") == 46360397de0a70009ef238781d3ea9e77c0565a9 ]]
@@ -134,7 +136,7 @@ for checkout in base candidate; do
             --x-includes="$TOOLCHAINS/sysroot/usr/include" --x-libraries="$TOOLCHAINS/sysroot/usr/lib/x86_64-linux-gnu" \
             --with-cups-include="$TOOLCHAINS/sysroot/usr/include" --with-fontconfig-include="$TOOLCHAINS/sysroot/usr/include" \
             --with-alsa-include="$TOOLCHAINS/sysroot/usr/include" --with-alsa-lib="$TOOLCHAINS/sysroot/usr/lib/x86_64-linux-gnu"
-        bounded 90m make CONF=scanner JOBS=4 jdk images
+        bounded_build 90m make CONF=scanner JOBS=4 jdk images
         popd > /dev/null
     if [[ $checkout == base ]]; then image=$BASE_JDK; else image=$CANDIDATE_JDK; fi
     control check-image "$image"

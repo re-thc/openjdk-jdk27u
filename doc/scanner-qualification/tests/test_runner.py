@@ -18,6 +18,7 @@ from unittest.mock import Mock, patch
 PACKET = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PACKET))
 import runner_process as proc
+import image_manifest
 
 spec = importlib.util.spec_from_file_location("stage_control", PACKET / "stage-control.py")
 control = importlib.util.module_from_spec(spec)
@@ -482,6 +483,229 @@ class Custody(Offline):
         self.assertNotIn("new-nonce", (self.directory / "checkpoint.reply").read_text())
 
 
+class BuildDrain(Offline):
+    def exercise(self, case, build=True):
+        directory = self.directory / case
+        directory.mkdir()
+        (directory / "go").touch()
+        proc.atomic_json(directory / "owner.json", {"identity": asdict(OWNER.identity)})
+        observer = replace(ROOT, pid=500, ppid=10, birth=50)
+        proc.atomic_json(directory / "observer.json", {"identity": asdict(observer.identity)})
+        proc.atomic_json(directory / "memory-ready", {"identity": asdict(observer.identity), "monotonic": 10})
+        server = replace(WORKER, pid=201, ppid=100, pgid=201, sid=201, birth=21)
+        current = processes(OWNER, ROOT, observer, replace(WORKER, state="Z", rss=0), server)
+        clock, trace, handlers = [10.], [], {}
+        child = SimpleNamespace(pid=200, returncode=None)
+
+        def waitid(*_):
+            children = [item for item in current.values() if item.ppid == ROOT.pid]
+            for item in children:
+                if item.state == "Z":
+                    return SimpleNamespace(si_pid=item.pid)
+            if children:
+                return None
+            raise ChildProcessError
+
+        def waitpid(pid, options):
+            self.assertEqual(options, 0)
+            self.assertEqual(current[pid].state, "Z")
+            trace.append(("reap", pid, clock[0]))
+            del current[pid]
+            return pid, 256 if case == "nonzero" and pid == 200 else 0
+
+        def send(identity, number):
+            item = current.get(identity.pid)
+            if item is None:
+                return "disappeared"
+            status = proc.match(identity, {item.pid: item})
+            if status != "live":
+                return status
+            trace.append(("signal", identity.pid, number, clock[0]))
+            if case != "unkillable" and (case != "persistent" or number == signal.SIGKILL):
+                current[identity.pid] = replace(item, state="Z", rss=0)
+            return "signaled"
+
+        def sleep(seconds):
+            clock[0] += 7 if case == "late-empty" else seconds
+            if case in ("normal", "strict", "late-empty") and clock[0] >= 15 and server.pid in current:
+                current[server.pid] = replace(server, state="Z", rss=0)
+            if case == "abort" and clock[0] >= 12:
+                handlers[signal.SIGTERM]()
+            if case == "observer-fault" and clock[0] >= 12:
+                current[observer.pid] = replace(observer, state="Z", rss=0)
+            proc.atomic_json(directory / "memory-ready", {"identity": asdict(observer.identity), "monotonic": clock[0]})
+
+        caught = None
+        result = None
+        with patch.object(control, "read_process", side_effect=lambda pid: current[pid]), \
+                patch.object(control, "snapshot", side_effect=lambda: dict(current)), \
+                patch.object(control.os, "getpid", return_value=ROOT.pid), \
+                patch.object(control.os, "waitid", side_effect=waitid), \
+                patch.object(control.os, "waitpid", side_effect=waitpid), \
+                patch.object(control.ctypes, "CDLL", return_value=SimpleNamespace(prctl=lambda *_: 0)), \
+                patch.object(control.subprocess, "Popen", return_value=child), \
+                patch.object(control.signal, "signal", side_effect=lambda number, handler: handlers.update({number: handler})), \
+                patch.object(control.signal, "alarm"), patch.object(control, "signal_owned", side_effect=send), \
+                patch.object(control.time, "sleep", side_effect=sleep), \
+                patch.object(control.time, "monotonic", side_effect=lambda: clock[0]), \
+                patch.object(control.sys, "stderr", new=Mock()):
+            try:
+                result = control.stage(directory, directory / "owner.json", "90m", ["offline-make"], build=build)
+            except proc.Uncertain as error:
+                caught = error
+        footer = json.loads((directory / "complete.json").read_text()) if (directory / "complete.json").exists() else None
+        return result, footer, trace, clock[0], caught
+
+    def test_normal_five_second_server_shutdown_drains_without_signal(self):
+        result, footer, trace, now, caught = self.exercise("normal")
+        self.assertIsNone(caught)
+        self.assertEqual(result, 0)
+        self.assertTrue(footer["clean"])
+        self.assertFalse(footer["survivors"])
+        self.assertFalse(footer["drain_deadline_missed"])
+        self.assertIsNone(footer["cleanup_started_monotonic"])
+        self.assertGreaterEqual(footer["drain_verified_monotonic"] - footer["drain_started_monotonic"], 5)
+        self.assertLessEqual(now, 16)
+        self.assertEqual([event[:2] for event in trace], [("reap", 200), ("reap", 201)])
+
+    def test_persistent_worker_fails_and_gets_full_term_kill_budget(self):
+        result, footer, trace, now, caught = self.exercise("persistent")
+        self.assertIsNone(caught)
+        self.assertEqual(result, 125)
+        self.assertTrue(footer["clean"])
+        self.assertTrue(footer["survivors"])
+        self.assertTrue(footer["drain_deadline_missed"])
+        signals = [event for event in trace if event[0] == "signal"]
+        self.assertEqual([(event[1], event[2]) for event in signals], [(201, signal.SIGTERM), (201, signal.SIGKILL)])
+        self.assertGreaterEqual(signals[0][3], 16)
+        self.assertGreaterEqual(signals[1][3] - signals[0][3], 10)
+        self.assertLess(now - signals[0][3], 12)
+
+    def test_unkillable_worker_never_gets_clean_footer_or_second_budget(self):
+        result, footer, trace, now, caught = self.exercise("unkillable")
+        self.assertIsInstance(caught, proc.Uncertain)
+        self.assertIsNone(footer)
+        self.assertIsNone(result)
+        self.assertLess(now, 28.3)  # 6s grace +12s cleanup, polling slop only.
+        self.assertEqual([event[2] for event in trace if event[0] == "signal"], [signal.SIGTERM, signal.SIGKILL])
+
+    def test_late_empty_observation_cannot_pass_expired_grace(self):
+        result, footer, trace, _, caught = self.exercise("late-empty")
+        self.assertIsNone(caught)
+        self.assertEqual(result, 125)
+        self.assertTrue(footer["drain_deadline_missed"])
+        self.assertFalse(any(event[0] == "signal" for event in trace))
+
+    def test_abort_during_grace_starts_cleanup_immediately(self):
+        result, footer, trace, now, caught = self.exercise("abort")
+        self.assertIsNone(caught)
+        self.assertEqual(result, 125)
+        self.assertTrue(footer["stopped"])
+        self.assertLess(footer["cleanup_started_monotonic"], 16)
+        self.assertLess(now, 13)
+        self.assertEqual([event[2] for event in trace if event[0] == "signal"], [signal.SIGTERM])
+
+    def test_observer_fault_during_grace_aborts_without_clean_footer(self):
+        result, footer, trace, now, caught = self.exercise("observer-fault")
+        self.assertIsInstance(caught, proc.Uncertain)
+        self.assertIsNone(footer)
+        self.assertIsNone(result)
+        self.assertLess(now, 13)
+        self.assertEqual([event[2] for event in trace if event[0] == "signal"], [signal.SIGKILL])
+
+    def test_nonzero_command_and_nonbuild_stage_never_use_build_grace(self):
+        for case, build in (("nonzero", True), ("strict", False)):
+            with self.subTest(case=case):
+                result, footer, trace, now, caught = self.exercise(case, build)
+                self.assertIsNone(caught)
+                self.assertEqual(result, 125)
+                self.assertIsNone(footer["drain_started_monotonic"])
+                self.assertLess(now, 11)
+                self.assertEqual([event[2] for event in trace if event[0] == "signal"], [signal.SIGTERM])
+
+
+class RetainedImage(Offline):
+    def image(self, label="image"):
+        image = self.directory / label
+        for relative in ("release", "lib/modules", "lib/server/libjvm.so", "bin/java",
+                         "lib/server/classes.jsa", "lib/libjli.so", "legal/license", "legal/other"):
+            path = image / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(("offline " + relative).encode())
+        (image / "bin/java").chmod(0o700)
+        (image / "legal/copy").symlink_to("license")
+        return image
+
+    def test_full_image_manifest_round_trip_and_no_overwrite(self):
+        image = self.image()
+        manifest = self.directory / "manifest.json"
+        data = image_manifest.record(image, manifest)
+        self.assertEqual(image_manifest.verify(image, manifest), image.resolve())
+        self.assertIn("lib/server/classes.jsa", data["entries"])
+        self.assertIn("lib/libjli.so", data["entries"])
+        self.assertEqual(data["entries"]["legal/copy"]["target"], "license")
+        before = manifest.read_bytes()
+        with self.assertRaises(FileExistsError):
+            image_manifest.record(image, manifest)
+        self.assertEqual(manifest.read_bytes(), before)
+
+    def test_cds_and_native_dependency_changes_fail_verification(self):
+        for index, relative in enumerate(("lib/server/classes.jsa", "lib/libjli.so")):
+            with self.subTest(relative=relative):
+                image = self.image(str(index))
+                manifest = self.directory / (str(index) + ".json")
+                image_manifest.record(image, manifest)
+                target = image / relative
+                target.write_bytes(b"X" * target.stat().st_size)  # Same-size change.
+                with self.assertRaises(proc.Uncertain):
+                    image_manifest.verify(image, manifest)
+
+    def test_missing_extra_type_mode_and_symlink_changes_fail(self):
+        for mutation in ("missing", "extra", "type", "mode", "symlink"):
+            with self.subTest(mutation=mutation):
+                image = self.image(mutation)
+                manifest = self.directory / (mutation + ".json")
+                image_manifest.record(image, manifest)
+                if mutation == "missing":
+                    (image / "legal/other").unlink()
+                elif mutation == "extra":
+                    (image / "legal/new").write_bytes(b"extra")
+                elif mutation == "type":
+                    (image / "legal/other").unlink()
+                    (image / "legal/other").mkdir()
+                elif mutation == "mode":
+                    (image / "bin/java").chmod(0o600)
+                else:
+                    (image / "legal/copy").unlink()
+                    (image / "legal/copy").symlink_to("other")
+                with self.assertRaises(proc.Uncertain):
+                    image_manifest.verify(image, manifest)
+
+    def test_external_or_broken_symlink_cannot_hide_unhashed_content(self):
+        image = self.image()
+        outside = self.directory / "outside"
+        outside.write_bytes(b"not part of this image")
+        link = image / "legal/external"
+        link.symlink_to(outside)
+        with self.assertRaises(proc.Uncertain):
+            image_manifest.catalog(image)
+        outside.unlink()
+        with self.assertRaises(FileNotFoundError):
+            image_manifest.catalog(image)
+
+    def test_unreadable_tree_and_manifest_inside_image_are_rejected(self):
+        image = self.image()
+        inside = image / "manifest.json"
+        with self.assertRaises(proc.Uncertain):
+            image_manifest.record(image, inside)
+        self.assertFalse(inside.exists())
+        def denied_walk(root, *, followlinks, onerror):
+            onerror(PermissionError("synthetic unreadable subtree"))
+            return iter(())
+        with patch.object(image_manifest.os, "walk", side_effect=denied_walk), self.assertRaises(PermissionError):
+            image_manifest.catalog(image)
+
+
 class ImagesAndSource(Offline):
     def test_images_use_current_output_normal_image_and_require_all_files(self):
         images = proc.image_paths(self.directory)
@@ -504,6 +728,8 @@ class ImagesAndSource(Offline):
     def test_every_runner_consumer_uses_shared_map_and_no_kill_zero(self):
         source = (PACKET / "run-linux.sh").read_text()
         self.assertIn('make CONF=scanner JOBS=4 jdk images', source)
+        self.assertIn('bounded_build 90m make CONF=scanner JOBS=4 jdk images', source)
+        self.assertEqual(source.count('bounded_build '), 1)
         self.assertNotIn('build/scanner/jdk', source)
         self.assertNotIn('build/scanner/images/jdk', source)  # Only Python map defines it.
         self.assertNotIn('kill -0', source)

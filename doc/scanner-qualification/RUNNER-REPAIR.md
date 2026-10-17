@@ -1,5 +1,10 @@
 # Local Scanner runner repair
 
+This document records the original `e72c9c791f9` repair milestone. The later
+authorized run exposed asynchronous post-build shutdown; see
+[POST-BUILD-DRAIN.md](POST-BUILD-DRAIN.md) for that result, the narrow subsequent
+source fix and verification of the already-built baseline without rebuilding.
+
 This change repairs runner lifecycle classification. It does not qualify the
 Scanner optimization and does not authorize another campaign. Production source,
 JDK regression tests, fixed sample counts, performance gates and the historical
@@ -40,8 +45,9 @@ Z0 children before actual-parent reaping and proves both no live owned members
 and kernel `ECHILD` before writing a clean custody footer. A vanished supervisor
 without that footer is uncertain; even a now-empty known ledger cannot exclude
 an unrecorded escaped descendant. Known verified targets still receive guarded
-cleanup attempts. Unexpected live survivors after command exit make the stage
-incomplete even when their termination succeeds.
+cleanup attempts. At that revision, any live survivor after command exit made
+the stage incomplete even when its termination succeeded. The subsequent
+build-only natural-drain rule is documented separately; other stages stay strict.
 
 The Bash runner uses this classification at observer readiness, pre-stage health,
 wait completion, stage TERM/KILL verification and observer shutdown. It waits
