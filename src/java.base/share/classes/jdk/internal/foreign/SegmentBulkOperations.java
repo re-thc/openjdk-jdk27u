@@ -262,9 +262,10 @@ public final class SegmentBulkOperations {
             return mismatch(src, srcFromOffset, dst, dstFromOffset, 0, (int) length, srcAndDstBytesDiffer);
         } else {
             long i;
-            if (SCOPED_MEMORY_ACCESS.getByte(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset) !=
-                    SCOPED_MEMORY_ACCESS.getByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset)) {
-                return 0;
+            final long s = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset, false);
+            final long d = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset, false);
+            if (s != d) {
+                return mismatch(s, d);
             }
             i = SCOPED_MEMORY_ACCESS.vectorizedMismatchLargeForBytes(src.sessionImpl(), dst.sessionImpl(),
                     src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset,
