@@ -1,8 +1,12 @@
-# Optional speedate support for Instant parsing
+# Experimental speedate integration for Instant parsing
 
 `--enable-instant-speedate` builds an image-owned native library for
-`Instant.parse`. The feature is disabled by default. It requires an installed
-Rust compiler version 1.88 or newer, Cargo, the target standard library, and
+`Instant.parse`. The current experimental draft is disabled by default while its
+default-enablement decision remains unfinished. The required final outcome is a
+beneficial default-on integration with an opt-out, or rejection of the integration.
+The [decision proposal](instant-speedate-decision.md) defines the prospective
+matched comparison. The native build requires an installed Rust compiler version
+1.88 or newer, Cargo, the target standard library, and
 the compiler's `COPYRIGHT-library.html` notices. The locked Cargo dependencies
 must be available before the JDK build; make invokes Cargo with `--frozen`.
 
@@ -26,8 +30,8 @@ bash bin/configure-dev --with-conf-name=instant-speedate --with-jobs=4 \
   --with-debug-level=release --disable-javac-server --enable-instant-speedate
 make CONF=instant-speedate JOBS=4 images
 make CONF=instant-speedate JOBS=1 run-test \
-  TEST='test/jdk/java/time/test/java/time/TestInstantSpeedate.java test/jdk/java/time/nonjunit/java/time/InstantSpeedateDisabled.java' \
-  'TEST_OPTS=JOBS=1;VM_OPTIONS=-XX:ActiveProcessorCount=2 -Xms64m -Xmx512m' \
+  TEST='test/jdk/java/time/test/java/time/TestInstantSpeedate.java test/jdk/java/time/nonjunit/java/time/InstantSpeedateDisabled.java test/jdk/java/time/nonjunit/java/time/InstantSpeedateUnavailable.java test/jdk/java/time/test/java/time/TestInstant.java test/jdk/java/time/tck/java/time/TCKInstant.java test/jdk/java/time/tck/java/time/format/TCKInstantPrinterParser.java' \
+  'TEST_OPTS=JOBS=1;VM_OPTIONS=-XX:ActiveProcessorCount=2 -Xms64m -Xmx512m -Xcheck:jni' \
   'JTREG=JOBS=1;MAX_MEM=512m;RETRY_COUNT=0'
 ```
 
