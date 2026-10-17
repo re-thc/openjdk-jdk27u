@@ -33,7 +33,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <wtypes.h>
+#ifndef HEADLESS
 #include <commctrl.h>
+#endif
 #include <assert.h>
 #include <ctype.h>
 
@@ -68,7 +70,7 @@ static jboolean GetJDKInstallRoot(char *path, jint pathsize);
  * and only if other flags do not prohibit this (e.g. OpenGL support requested).
  */
 #undef ENABLE_AWT_PRELOAD
-#ifndef JAVA_ARGS /* turn off AWT preloading for javac, jar, etc */
+#if !defined(JAVA_ARGS) && !defined(HEADLESS) /* no AWT preload for tools or server builds */
     /* CR6999872: fastdebug crashes if awt library is loaded before JVM is
      * initialized*/
     #if !defined(DEBUG)
@@ -725,6 +727,7 @@ JLI_ReportErrorMessage(const char* fmt, ...) {
     va_list vl;
     va_start(vl,fmt);
 
+#ifndef HEADLESS
     if (IsJavaw()) {
         char *message;
 
@@ -737,7 +740,9 @@ JLI_ReportErrorMessage(const char* fmt, ...) {
         MessageBox(NULL, message, "Java Virtual Machine Launcher",
             (MB_OK|MB_ICONSTOP|MB_APPLMODAL));
         JLI_MemFree(message);
-    } else {
+    } else
+#endif
+    {
         vfprintf(stderr, fmt, vl);
         fprintf(stderr, "\n");
     }
@@ -746,6 +751,7 @@ JLI_ReportErrorMessage(const char* fmt, ...) {
 
 JNIEXPORT void JNICALL
 JLI_ReportExceptionDescription(JNIEnv * env) {
+#ifndef HEADLESS
     if (IsJavaw()) {
        /*
         * This code should be replaced by code which opens a window with
@@ -753,7 +759,9 @@ JLI_ReportExceptionDescription(JNIEnv * env) {
         */
         MessageBox(NULL, "A Java Exception has occurred.", "Java Virtual Machine Launcher",
                (MB_OK|MB_ICONSTOP|MB_APPLMODAL));
-    } else {
+    } else
+#endif
+    {
         (*env)->ExceptionDescribe(env);
     }
 }
@@ -773,6 +781,7 @@ UnsetEnv(char *name)
 }
 
 /* --- Splash Screen shared library support --- */
+#ifndef HEADLESS
 
 static const char* SPLASHSCREEN_SO = "\\bin\\splashscreen.dll";
 
@@ -798,6 +807,8 @@ void* SplashProcAddress(const char* name) {
         return NULL;
     }
 }
+
+#endif
 
 /*
  * Signature adapter for _beginthreadex().
@@ -922,6 +933,7 @@ jclass FindBootStrapClass(JNIEnv *env, const char *classname)
 void
 InitLauncher(jboolean javaw)
 {
+#ifndef HEADLESS
     INITCOMMONCONTROLSEX icx;
 
     /*
@@ -932,6 +944,7 @@ InitLauncher(jboolean javaw)
     memset(&icx, 0, sizeof(INITCOMMONCONTROLSEX));
     icx.dwSize = sizeof(INITCOMMONCONTROLSEX);
     InitCommonControlsEx(&icx);
+#endif
     _isjavaw = javaw;
     JLI_SetTraceLauncher();
 }

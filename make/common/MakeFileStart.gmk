@@ -47,6 +47,26 @@ endif
 # We need spec.gmk to get $(TOPDIR)
 include $(SPEC)
 
+# Configure policy also applies to make command-line overrides. Keep cleaning
+# old configurations possible, including reconfigure and Init's target query.
+ifneq ($(NO_RECIPES), true)
+  ifneq ($(strip $(if $(MAKECMDGOALS), $(filter-out clean% dist-clean reconfigure, $(MAKECMDGOALS)), all)), )
+    ifneq ($(ENABLE_DESKTOP)+$(ENABLE_HEADLESS_ONLY), false+true)
+      $(error This fork requires ENABLE_DESKTOP=false and ENABLE_HEADLESS_ONLY=true)
+    endif
+    ifeq ($(SERVER_JVM_COLLECTORS), )
+      $(error Reconfigure to select the headless server build policy)
+    endif
+    # The build-managed host JDK deliberately uses a smaller collector subset.
+    # It still must not enable any collector excluded from the server product.
+    $(foreach v, $(JVM_VARIANTS), \
+        $(if $(strip $(filter-out $(SERVER_JVM_COLLECTORS), $(filter %gc, $(JVM_FEATURES_$v))) \
+            $(if $(filter true:buildjdk-spec.gmk, $(CREATING_BUILDJDK):$(notdir $(SPEC))), , \
+              $(filter-out $(filter %gc, $(JVM_FEATURES_$v)), $(SERVER_JVM_COLLECTORS)))), \
+          $(error This fork requires collectors $(SERVER_JVM_COLLECTORS) for JVM variant $(v))))
+  endif
+endif
+
 THIS_MAKEFILE := $(patsubst make/%,%,$(patsubst $(TOPDIR_ALT)/make/%,%,$(patsubst $(TOPDIR)/%,%,$(THIS_MAKEFILE_PATH))))
 
 ifeq ($(LOG_FLOW), true)
@@ -54,6 +74,15 @@ ifeq ($(LOG_FLOW), true)
 endif
 
 include $(TOPDIR)/make/common/MakeBase.gmk
+
+# Also protect direct invocations of per-module phase makefiles, bypassing
+# Main.gmk's filtered target sets.
+ifneq ($(MODULE), )
+  include $(TOPDIR)/make/common/Modules.gmk
+  ifneq ($(filter $(MODULE), $(MODULES_FILTER)), )
+    $(error Module $(MODULE) is excluded by this configuration)
+  endif
+endif
 
 TARGETS :=
 

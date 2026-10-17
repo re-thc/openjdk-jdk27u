@@ -40,18 +40,22 @@
 #include "manifest_info.h"
 
 /* Support Cocoa event loop on the main thread */
+#ifndef HEADLESS
 #include <Cocoa/Cocoa.h>
 #include <objc/objc-runtime.h>
 #include <objc/objc-auto.h>
+#endif
 
 #include <errno.h>
 #include <spawn.h>
 #include <unistd.h>
 
+#ifndef HEADLESS
 struct NSAppArgs {
     int argc;
     char **argv;
 };
+#endif
 
 #define JVM_DLL "libjvm.dylib"
 #define JAVA_DLL "libjava.dylib"
@@ -237,6 +241,7 @@ JLI_SetPreferredJVM(const char *prefJVM) {
     sPreferredJVMType = strdup(prefJVM);
 }
 
+#ifndef HEADLESS
 static BOOL awtLoaded = NO;
 static pthread_mutex_t awtLoaded_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t  awtLoaded_cv = PTHREAD_COND_INITIALIZER;
@@ -324,6 +329,8 @@ static void MacOSXStartup(int argc, char *argv[]) {
     ParkEventLoop();
 }
 
+#endif
+
 void
 CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char jdkroot[], jint so_jdkroot,
@@ -368,7 +375,9 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
      * thread. Spawn off a new thread to run main() and pass
      * this thread off to the Cocoa event loop.
      */
+#ifndef HEADLESS
     MacOSXStartup(argc, argv);
+#endif
 
     /*
      * we seem to have everything we need
@@ -593,6 +602,7 @@ SetExecname(char **argv)
 }
 
 /* --- Splash Screen shared library support --- */
+#ifndef HEADLESS
 
 static JavaVM* SetJavaVMValue()
 {
@@ -672,6 +682,8 @@ void* SplashProcAddress(const char* name) {
     }
 }
 
+#endif
+
 /*
  * Signature adapter for pthread_create().
  */
@@ -728,7 +740,9 @@ CallJavaMainInNewThread(jlong stack_size, void* args) {
 }
 
 static JavaVM* jvmInstance = NULL;
+#ifndef HEADLESS
 static jboolean sameThread = JNI_FALSE; /* start VM in current thread */
+#endif
 
 /*
  * Note there is a callback on this function from the splashscreen logic,
@@ -746,6 +760,7 @@ RegisterThread()
     // stubbed out for windows and *nixes.
 }
 
+#ifndef HEADLESS
 static void
 SetXDockArgForAWT(const char *arg)
 {
@@ -891,11 +906,16 @@ SetXStartOnFirstThreadArg()
     setenv(envVar, "1", 1);
 }
 
+#endif
+
 // MacOSX we may continue in the same thread
 int
 JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
                  int argc, char **argv,
                  int mode, char *what, int ret) {
+#ifdef HEADLESS
+    return ContinueInNewThread(ifn, threadStackSize, argc, argv, mode, what, ret);
+#else
     if (sameThread) {
         JLI_TraceLauncher("In same thread\n");
         // need to block this thread against the main thread
@@ -926,6 +946,7 @@ JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
     } else {
         return ContinueInNewThread(ifn, threadStackSize, argc, argv, mode, what, ret);
     }
+#endif
 }
 
 /*
@@ -934,14 +955,17 @@ JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
  */
 void PostJVMInit(JNIEnv *env, jclass mainClass, JavaVM *vm) {
     jvmInstance = vm;
+#ifndef HEADLESS
     SetMainClassForAWT(env, mainClass);
     CHECK_EXCEPTION_RETURN();
     ShowSplashScreen();
+#endif
 }
 
 jboolean
 ProcessPlatformOption(const char* arg)
 {
+#ifndef HEADLESS
     if (JLI_StrCmp(arg, "-XstartOnFirstThread") == 0) {
        SetXStartOnFirstThreadArg();
        return JNI_TRUE;
@@ -949,6 +973,7 @@ ProcessPlatformOption(const char* arg)
        SetXDockArgForAWT(arg);
        return JNI_TRUE;
     }
+#endif
     // arguments we know not
     return JNI_FALSE;
 }

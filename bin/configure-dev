@@ -29,16 +29,9 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
-options=(
-  --disable-desktop
-  --enable-headless-only
-  --enable-jvm-feature-serialgc
-  --enable-jvm-feature-g1gc
-  --enable-jvm-feature-zgc
-  --disable-jvm-feature-epsilongc
-  --disable-jvm-feature-parallelgc
-  --disable-jvm-feature-shenandoahgc
-)
+# Product policy is enforced by configure, including for callers of plain
+# configure. This wrapper only adds native CPU and development-tool defaults.
+options=()
 
 case "$(uname -s):$(uname -m)" in
   Linux:x86_64)

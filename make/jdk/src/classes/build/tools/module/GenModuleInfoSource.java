@@ -64,6 +64,7 @@ public class GenModuleInfoSource {
                     " -o <output file>\n" +
                     "  --source-file <module-info-java>\n" +
                     "  --modules <module-name>[,<module-name>...]\n" +
+                    "  --exclude-modules <module-name>[,<module-name>...]\n" +
                     "  <module-info.java.extra> ...\n";
 
     static boolean debug = false;
@@ -72,6 +73,7 @@ public class GenModuleInfoSource {
         Path outfile = null;
         Path moduleInfoJava = null;
         Set<String> modules = Collections.emptySet();
+        Set<String> excludedModules = Collections.emptySet();
         List<Path> extras = new ArrayList<>();
         // validate input arguments
         for (int i = 0; i < args.length; i++){
@@ -97,6 +99,10 @@ public class GenModuleInfoSource {
                                     .collect(toSet());
                     i++;
                     break;
+                case "--exclude-modules":
+                    excludedModules = Arrays.stream(arg.split(",")).collect(toSet());
+                    i++;
+                    break;
                 case "-v":
                     verbose = true;
                     break;
@@ -110,13 +116,14 @@ public class GenModuleInfoSource {
         }
 
         if (moduleInfoJava == null || outfile == null ||
-                modules.isEmpty() || extras.isEmpty()) {
+                modules.isEmpty()) {
             System.err.println(USAGE);
             System.exit(-1);
         }
 
         GenModuleInfoSource genModuleInfo =
             new GenModuleInfoSource(moduleInfoJava, extras, modules);
+        genModuleInfo.moduleInfo.excludeModules(excludedModules);
 
         // generate new module-info.java
         genModuleInfo.generate(outfile);
@@ -185,6 +192,20 @@ public class GenModuleInfoSource {
         final Map<String, Statement> opens = new HashMap<>();
         final Map<String, Statement> uses = new HashMap<>();
         final Map<String, Statement> provides = new HashMap<>();
+
+        void excludeModules(Set<String> excludedModules) {
+            for (Map<String, Statement> directives : List.of(exports, opens)) {
+                directives.values().removeIf(statement -> {
+                    if (statement.isUnqualified()) {
+                        return false;
+                    }
+                    statement.targets.removeAll(excludedModules);
+                    // An empty qualified directive must disappear, never become
+                    // an unqualified export/open to every module.
+                    return statement.targets.isEmpty();
+                });
+            }
+        }
 
         Statement getStatement(String directive, String name) {
             Objects.requireNonNull(name);
@@ -373,6 +394,14 @@ public class GenModuleInfoSource {
         private void parse(Path file) throws IOException {
             Parser parser = new Parser(file);
             parser.run();
+            // The preamble (imports and possibly parameterized annotations) is
+            // copied verbatim by generate(). Only parse the module body here.
+            while (parser.peekToken() != null && !parser.peekToken().equals("module")) {
+                parser.nextToken();
+            }
+            if (parser.peekToken() == null) {
+                throw parser.newError("missing module declaration");
+            }
             if (verbose) {
                 parser.dump();
             }

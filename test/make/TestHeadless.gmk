@@ -1,0 +1,102 @@
+
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include MakeFileStart.gmk
+include Modules.gmk
+include UtilsForTests.gmk
+
+ifeq ($(ENABLE_DESKTOP), false)
+  ALL_MODULES := $(call FindAllModules)
+  EXCLUDED := java.desktop java.datatransfer java.se jdk.accessibility jdk.editpad \
+      jdk.hotspot.agent jdk.jconsole jdk.jpackage jdk.unsupported.desktop
+  $(call AssertEquals, $(filter $(EXCLUDED), $(ALL_MODULES)), , Excluded modules in graph)
+  $(call AssertEquals, $(filter $(EXCLUDED), $(call FindImportedModules)), , Excluded imported modules)
+  REQUIRED := java.base java.compiler java.logging java.management java.sql jdk.attach \
+      jdk.compiler jdk.javadoc jdk.jdeps jdk.jdi jdk.jfr jdk.jlink jdk.jshell jdk.management.agent
+  $(call AssertEquals, $(filter-out $(ALL_MODULES), $(REQUIRED)), , Missing supported modules)
+  $(call AssertEquals, $(findstring *, $(call GetModuleSourcePathFlags)), , Wildcard module source path)
+  $(foreach m, $(EXCLUDED), \
+      $(call AssertEquals, $(findstring --module-source-path $(m)=, $(call GetModuleSourcePathFlags)), , Excluded source path))
+  ifeq ($(TEST_HEADLESS_IMPORTS), true)
+    $(call AssertEquals, $(call FindImportedModules), server.extra, Allowed imported module lost)
+  endif
+
+  # Exercise the actual launcher/library snippets for each target, with native
+  # compilation macros stubbed. Native compilation itself is checked after a build.
+  ifeq ($(TEST_HEADLESS_GRAPH), true)
+    MODULE := java.base
+    INCLUDE_GUARD_common/modules/LauncherCommon.gmk := true
+    SetupBuildLauncher = $(eval TEST_LAUNCHERS += $(strip $1))
+    SetupJdkExecutable =
+    SetupJdkLibrary =
+    include $(TOPDIR)/make/modules/java.base/Launcher.gmk
+    include $(TOPDIR)/make/modules/java.base/lib/CoreLibraries.gmk
+    $(call AssertEquals, $(filter javaw, $(TEST_LAUNCHERS)), , GUI Windows launcher)
+    $(call AssertEquals, $(filter java keytool, $(TEST_LAUNCHERS)), java keytool, Missing command-line launchers)
+    $(call AssertEquals, $(filter -DHEADLESS, $(LIBJLI_CFLAGS)), -DHEADLESS, Launcher desktop code enabled)
+    $(call AssertEquals, $(filter splashscreen_stubs.c, $(LIBJLI_EXCLUDE_FILES)), splashscreen_stubs.c, Splash sources enabled)
+    $(call AssertEquals, $(LIBJLI_LIBS_macosx) $(LIBJLI_LIBS_windows), , GUI launcher libraries)
+  endif
+endif
+
+verify-graph:
+	$(ECHO) "Headless graph passed: $(OPENJDK_TARGET_OS)/$(OPENJDK_TARGET_CPU)"
+
+matrix:
+	+$(MAKE) -I$(TOPDIR)/make/common/modules -f TestHeadless.gmk TEST_HEADLESS_GRAPH=true OPENJDK_TARGET_OS=linux OPENJDK_TARGET_OS_TYPE=unix OPENJDK_TARGET_CPU=x86_64 verify-graph
+	+$(MAKE) -I$(TOPDIR)/make/common/modules -f TestHeadless.gmk TEST_HEADLESS_GRAPH=true OPENJDK_TARGET_OS=linux OPENJDK_TARGET_OS_TYPE=unix OPENJDK_TARGET_CPU=aarch64 verify-graph
+	+$(MAKE) -I$(TOPDIR)/make/common/modules -f TestHeadless.gmk TEST_HEADLESS_GRAPH=true OPENJDK_TARGET_OS=macosx OPENJDK_TARGET_OS_TYPE=unix OPENJDK_TARGET_CPU=aarch64 verify-graph
+	+$(MAKE) -I$(TOPDIR)/make/common/modules -f TestHeadless.gmk TEST_HEADLESS_GRAPH=true OPENJDK_TARGET_OS=windows OPENJDK_TARGET_OS_TYPE=windows OPENJDK_TARGET_CPU=x86_64 verify-graph
+
+probes:
+	$(BASH) $(TOPDIR)/test/make/autoconf/test-headless.sh "$(AUTOCONF)" "$(TOPDIR)" "$(TEST_SUPPORT_DIR)/headless"
+
+direct-targets:
+	$(MKDIR) -p $(TEST_SUPPORT_DIR)/headless-stale/jdk/modules/java.desktop
+	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk java.desktop-java > $(TEST_SUPPORT_DIR)/headless-direct.log 2>&1; then exit 1; fi
+	$(GREP) -q 'excluded by this configuration' $(TEST_SUPPORT_DIR)/headless-direct.log
+	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/CompileJavaModules.gmk MODULE=java.desktop > $(TEST_SUPPORT_DIR)/headless-direct.log 2>&1; then exit 1; fi
+	$(GREP) -q 'excluded by this configuration' $(TEST_SUPPORT_DIR)/headless-direct.log
+	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/ModuleWrapper.gmk MODULE=java.desktop MAKEFILE_PREFIX=Lib > $(TEST_SUPPORT_DIR)/headless-direct.log 2>&1; then exit 1; fi
+	$(GREP) -q 'excluded by this configuration' $(TEST_SUPPORT_DIR)/headless-direct.log
+	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk JDK_OUTPUTDIR=$(TEST_SUPPORT_DIR)/headless-stale/jdk print-modules > $(TEST_SUPPORT_DIR)/headless-direct.log 2>&1; then exit 1; fi
+	$(GREP) -q 'Stale excluded module outputs' $(TEST_SUPPORT_DIR)/headless-direct.log
+	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk ENABLE_DESKTOP=true print-modules > $(TEST_SUPPORT_DIR)/headless-direct.log 2>&1; then exit 1; fi
+	$(GREP) -q 'This fork requires' $(TEST_SUPPORT_DIR)/headless-direct.log
+	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk JVM_FEATURES_server='g1gc serialgc zgc parallelgc' print-modules > $(TEST_SUPPORT_DIR)/headless-direct.log 2>&1; then exit 1; fi
+	$(GREP) -q 'This fork requires collectors' $(TEST_SUPPORT_DIR)/headless-direct.log
+	+$(MAKE) -n -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk ENABLE_DESKTOP=true OUTPUTDIR=$(TEST_SUPPORT_DIR)/headless-clean clean > $(TEST_SUPPORT_DIR)/headless-clean.log
+	+$(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk SPEC=$(dir $(SPEC))buildjdk-spec.gmk CREATING_BUILDJDK=true print-modules > $(TEST_SUPPORT_DIR)/headless-buildjdk.log
+
+imports:
+	$(MKDIR) -p $(TEST_SUPPORT_DIR)/headless-imports/java.desktop $(TEST_SUPPORT_DIR)/headless-imports/jdk.jconsole $(TEST_SUPPORT_DIR)/headless-imports/server.extra
+	+$(MAKE) -f TestHeadless.gmk TEST_HEADLESS_IMPORTS=true IMPORT_MODULES_CLASSES=$(TEST_SUPPORT_DIR)/headless-imports verify-graph
+
+module-info:
+	$(MKDIR) -p $(TEST_SUPPORT_DIR)/headless-module-info
+	$(FIXPATH) $(JAVAC) -d $(TEST_SUPPORT_DIR)/headless-module-info $(TOPDIR)/make/jdk/src/classes/build/tools/module/GenModuleInfoSource.java $(TOPDIR)/make/jdk/src/classes/build/tools/module/ModuleInfoExtraTest.java
+	$(CD) $(TEST_SUPPORT_DIR)/headless-module-info && $(FIXPATH) $(JAVA) -cp . build.tools.module.ModuleInfoExtraTest
+
+all: matrix probes direct-targets imports module-info
+.PHONY: verify-graph matrix probes direct-targets imports module-info
+include MakeFileEnd.gmk

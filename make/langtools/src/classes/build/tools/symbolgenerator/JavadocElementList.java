@@ -32,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
@@ -60,7 +61,7 @@ import javax.lang.model.element.ModuleElement;
 public class JavadocElementList {
 
     private static void help() {
-        System.err.println("java JavadocElementList <target-file> <module-source-path> <root-modules>");
+        System.err.println("java JavadocElementList <target-file> [--module-source-path <module>=<path>]... <root-modules>");
     }
 
     public static void main(String... args) throws IOException {
@@ -70,20 +71,23 @@ public class JavadocElementList {
         }
 
         JavaCompiler compiler = JavacTool.create();
-        List<String> options = List.of("-source", Source.DEFAULT.name,
+        int firstModule = 1;
+        List<String> options = new ArrayList<>(List.of("-source", Source.DEFAULT.name,
                                        "-target", Target.DEFAULT.name,
                                        "-proc:only",
-                                       "--system", "none",
-                                       "--module-source-path", args[1],
-                                       "--add-modules", Arrays.stream(args)
-                                                              .skip(2)
-                                                              .collect(Collectors.joining(",")));
+                                       "--system", "none"));
+        while (firstModule + 1 < args.length && args[firstModule].equals("--module-source-path")) {
+            options.add(args[firstModule++]);
+            options.add(args[firstModule++]);
+        }
+        options.add("--add-modules");
+        options.add(Arrays.stream(args).skip(firstModule).collect(Collectors.joining(",")));
         List<String> jlObjectList = List.of("java.lang.Object");
         JavacTaskImpl task = (JavacTaskImpl) compiler.getTask(null, null, null, options, jlObjectList, null);
         task.enter();
         Elements elements = task.getElements();
         Deque<String> todo = new ArrayDeque<>();
-        Arrays.stream(args).skip(2).forEach(todo::add);
+        Arrays.stream(args).skip(firstModule).forEach(todo::add);
 
         todo.add("java.base");
 

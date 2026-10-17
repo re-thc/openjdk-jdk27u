@@ -35,18 +35,24 @@
 ################################################################################
 AC_DEFUN_ONCE([LIB_SETUP_BUNDLED_LIBS],
 [
-  LIB_SETUP_LIBJPEG
-  LIB_SETUP_GIFLIB
-  LIB_SETUP_LIBPNG
   LIB_SETUP_ZLIB
-  LIB_SETUP_LCMS
-  LIB_SETUP_HARFBUZZ
+  # These libraries are used exclusively by java.desktop. Even explicit
+  # --with-*=system options must not trigger irrelevant dependency probes.
+  if test "x$ENABLE_DESKTOP" = xtrue; then
+    LIB_SETUP_LIBJPEG
+    LIB_SETUP_GIFLIB
+    LIB_SETUP_LIBPNG
+    LIB_SETUP_LCMS
+    LIB_SETUP_HARFBUZZ
+  fi
 ])
 
 ################################################################################
 # Setup libjpeg
+# Desktop helpers use AC_DEFUN: AC_DEFUN_ONCE would hoist their probes out of
+# the ENABLE_DESKTOP conditional in LIB_SETUP_BUNDLED_LIBS.
 ################################################################################
-AC_DEFUN_ONCE([LIB_SETUP_LIBJPEG],
+AC_DEFUN([LIB_SETUP_LIBJPEG],
 [
   AC_ARG_WITH(libjpeg, [AS_HELP_STRING([--with-libjpeg],
       [use libjpeg from build system or OpenJDK source (system, bundled) @<:@bundled@:>@])])
@@ -91,7 +97,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBJPEG],
 ################################################################################
 # Setup giflib
 ################################################################################
-AC_DEFUN_ONCE([LIB_SETUP_GIFLIB],
+AC_DEFUN([LIB_SETUP_GIFLIB],
 [
   AC_ARG_WITH(giflib, [AS_HELP_STRING([--with-giflib],
       [use giflib from build system or OpenJDK source (system, bundled) @<:@bundled@:>@])])
@@ -160,7 +166,7 @@ AC_DEFUN_ONCE([LIB_SETUP_GIFLIB],
 ################################################################################
 # Setup libpng
 ################################################################################
-AC_DEFUN_ONCE([LIB_SETUP_LIBPNG],
+AC_DEFUN([LIB_SETUP_LIBPNG],
 [
   AC_ARG_WITH(libpng, [AS_HELP_STRING([--with-libpng],
       [use libpng from build system or OpenJDK source (system, bundled) @<:@bundled@:>@])])
@@ -282,7 +288,7 @@ AC_DEFUN_ONCE([LIB_SETUP_ZLIB],
 ################################################################################
 # Setup lcms (Little CMS)
 ################################################################################
-AC_DEFUN_ONCE([LIB_SETUP_LCMS],
+AC_DEFUN([LIB_SETUP_LCMS],
 [
   AC_ARG_WITH(lcms, [AS_HELP_STRING([--with-lcms],
       [use lcms2 from build system or OpenJDK source (system, bundled) @<:@bundled@:>@])])
@@ -321,7 +327,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LCMS],
 ################################################################################
 # Setup harfbuzz
 ################################################################################
-AC_DEFUN_ONCE([LIB_SETUP_HARFBUZZ],
+AC_DEFUN([LIB_SETUP_HARFBUZZ],
 [
   AC_ARG_WITH(harfbuzz, [AS_HELP_STRING([--with-harfbuzz],
       [use harfbuzz from build system or OpenJDK source (system, bundled) @<:@bundled@:>@])])

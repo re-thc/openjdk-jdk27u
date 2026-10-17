@@ -160,11 +160,11 @@ FindModuleManDirsForDocs = \
     $(strip $(wildcard \
         $(foreach sub, $(MAN_DOCS_SUBDIRS), $(addsuffix /$(strip $1)/$(sub), $(TOP_SRC_DIRS)))))
 
-# Construct the complete module source path
-GetModuleSrcPath = \
-    $(call PathList, \
-        $(addsuffix /*, $(GENERATED_SRC_DIRS) $(IMPORT_MODULES_SRC)) \
-        $(foreach sub, $(SRC_SUBDIRS), $(addsuffix /*/$(sub), $(TOP_SRC_DIRS))))
+# Only expose included modules to javac/javadoc. -implicit:none alone does not
+# prevent javac from reading and attributing sources in other modules.
+GetModuleSourcePathFlags = \
+    $(foreach m, $(call FindAllModules), \
+        --module-source-path $(m)=$(call PathList, $(call FindModuleSrcDirs, $(m))))
 
 ################################################################################
 # Extract module dependencies from module-info.java files, both normal

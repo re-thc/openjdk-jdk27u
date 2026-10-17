@@ -53,6 +53,7 @@ public class ModuleInfoExtraTest {
         GenModuleInfoSource.verbose = verbose;
         ModuleInfoExtraTest test = new ModuleInfoExtraTest("m", "m1", "m2", "m3");
         test.testModuleInfo();
+        test.testExcludedModules();
         test.errorCases();
     }
 
@@ -92,6 +93,32 @@ public class ModuleInfoExtraTest {
     final Builder builder;
     ModuleInfoExtraTest(String name, String... modules) {
         this.builder = new Builder(name).modules(modules);
+    }
+
+    void testExcludedModules() throws IOException {
+        GenModuleInfoSource source = builder.sourceFile(new String[] {
+            "@Deprecated(since=\"27\", forRemoval=true)",
+            "module m {",
+            "    exports p to m1, m2;",
+            "    exports q to m1;",
+            "    exports publicapi;",
+            "    opens internal to m1;",
+            "    opens shared to m1, m2;",
+            "}"
+        }).build();
+        source.moduleInfo.excludeModules(Set.of("m1"));
+        if (!source.moduleInfo.exports.get("p").targets.equals(Set.of("m2")) ||
+            source.moduleInfo.exports.containsKey("q") ||
+            !source.moduleInfo.exports.get("publicapi").isUnqualified() ||
+            source.moduleInfo.opens.containsKey("internal") ||
+            !source.moduleInfo.opens.get("shared").targets.equals(Set.of("m2"))) {
+            throw new AssertionError("Incorrect export/open filtering");
+        }
+        Path output = DIR.resolve("filtered-module-info.java");
+        source.generate(output);
+        if (!Files.readString(output).contains("@Deprecated(since=\"27\", forRemoval=true)")) {
+            throw new AssertionError("Module annotation lost");
+        }
     }
 
 
