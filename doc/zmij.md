@@ -98,3 +98,7 @@ Tests cover raw-bit round trips, shortest significands, precision flags,
 signed zero, subnormals, Latin1/UTF16 offsets and guarded output bounds across
 execution tiers, JNI, SSE2 and opt-outs. WhiteBox verifies intrinsic controls
 and the C2-only float append choice.
+
+`TestZmijSplitFallback` compares precision metadata with the allocating Java
+splitter and checks that a null holder preserves the original native dispatch
+and fallback exception behavior, including zero and subnormal boundaries.
