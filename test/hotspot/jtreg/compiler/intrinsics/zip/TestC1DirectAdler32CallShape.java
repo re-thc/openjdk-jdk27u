@@ -167,6 +167,12 @@ public class TestC1DirectAdler32CallShape {
                 for (Node next = call.getNextSibling(); next != null; next = next.getNextSibling()) {
                     if (!(next instanceof Element e)) continue;
                     if (Set.of("call", "parse").contains(e.getTagName())) break;
+                    if (e.getTagName().equals("intrinsic")) {
+                        if (!e.getAttribute("id").equals("_updateByteBufferAdler32")) {
+                            throw new AssertionError("Unexpected Adler intrinsic ID");
+                        }
+                        intrinsic = true;
+                    }
                     if (e.getTagName().equals("inline_success") &&
                         e.getAttribute("reason").equals("intrinsic")) intrinsic = true;
                     if (e.getTagName().equals("inline_fail") &&
@@ -200,6 +206,8 @@ public class TestC1DirectAdler32CallShape {
         String leaf = good.replace("<inline_fail reason='native method'/>",
                 "<inline_success reason='intrinsic'/>");
         verifyLog(leaf, true);
+        verifyLog(good.replace("<inline_fail reason='native method'/>",
+                "<intrinsic id='_updateByteBufferAdler32'/>"), true);
         try {
             verifyLog(good, true);
             throw new IllegalStateException("Accepted native decline for intrinsic route");
@@ -210,6 +218,8 @@ public class TestC1DirectAdler32CallShape {
         } catch (AssertionError expected) { }
         for (String bad : new String[]{
                 leaf.replace("reason='intrinsic'", "reason='inline'"),
+                leaf.replace("<inline_success reason='intrinsic'/>",
+                        "<intrinsic id='_updateBytesAdler32'/>"),
                 leaf.replace("instr='invokestatic'", "instr='invokehandle'"),
                 leaf.replace("name='update'", "name='outlinedHelper'"),
                 leaf.replace("name='checksumWithFp'", "name='outlinedFpHelper'"),
@@ -226,6 +236,8 @@ public class TestC1DirectAdler32CallShape {
         }
         for (String bad : new String[]{
                 good.replace("<inline_fail reason='native method'/>", "<inline_success reason='intrinsic'/>"),
+                good.replace("<inline_fail reason='native method'/>",
+                        "<inline_fail reason='native method'/><intrinsic id='_updateByteBufferAdler32'/>"),
                 good.replace("instr='invokestatic'", "instr='invokehandle'"),
                 good.replace("name='update'", "name='outlinedHelper'"),
                 good.replace("success='1'", "success='0'"),
