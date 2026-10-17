@@ -352,6 +352,48 @@ class QualificationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             guard.bytecode_scopes(bits, decoder.replace('63', '62'))
 
+    def test_process_group_ignores_only_dead_members(self):
+        entry = mock.MagicMock()
+        entry.name = '123'
+        for state, expected in [('Z', False), ('X', False), ('x', False), ('S', True), ('R', True), ('D', True), ('T', True)]:
+            entry.__truediv__.return_value.read_text.return_value = '123 (worker ) name) ' + state + ' 1 77 77 0'
+            with mock.patch.object(q.os, 'killpg'), mock.patch.object(q.os, 'getpgid', return_value=77), mock.patch.object(Path, 'iterdir', return_value=[entry]):
+                self.assertEqual(q.group_exists(77), expected)
+        entry.__truediv__.return_value.read_text.side_effect = PermissionError('unreadable')
+        with mock.patch.object(q.os, 'killpg'), mock.patch.object(q.os, 'getpgid', return_value=77), mock.patch.object(Path, 'iterdir', return_value=[entry]):
+            self.assertTrue(q.group_exists(77))
+        with mock.patch.object(q.os, 'killpg'), mock.patch.object(Path, 'iterdir', return_value=[]):
+            self.assertTrue(q.group_exists(77))
+
+    def test_dead_adopted_grandchild_is_reaped_without_false_failure(self):
+        (self.root / 'logs').mkdir()
+        (self.root / 'results').mkdir()
+        pidfile = self.root / 'child.pid'
+        code = ("import os,subprocess,sys,time;from pathlib import Path;"
+                "p=subprocess.Popen([sys.executable,'-c','import os;os._exit(0)']);"
+                "Path(" + repr(str(pidfile)) + ").write_text(str(p.pid));"
+                "limit=time.monotonic()+2\n"
+                "while time.monotonic()<limit and Path('/proc/'+str(p.pid)+'/stat').read_text().split()[2]!='Z':time.sleep(.01)\nos._exit(0)\n")
+        item = dict(name='dead-grandchild', argv=[sys.executable, '-c', code], cwd=str(self.root), timeout_seconds=5)
+        q.run_one(item, self.root, time.monotonic()+10)
+        with self.assertRaises(ChildProcessError):
+            os.waitpid(int(pidfile.read_text()), os.WNOHANG)
+
+    def test_nonzero_launcher_status_is_preserved(self):
+        (self.root / 'logs').mkdir()
+        (self.root / 'results').mkdir()
+        item = dict(name='nonzero', argv=[sys.executable, '-c', 'import sys;sys.exit(7)'], cwd=str(self.root), timeout_seconds=5)
+        with self.assertRaisesRegex(RuntimeError, 'exit7'):
+            q.run_one(item, self.root, time.monotonic()+10)
+
+    def test_exited_launcher_with_live_child_still_fails(self):
+        (self.root / 'logs').mkdir()
+        (self.root / 'results').mkdir()
+        code = "import subprocess,sys;subprocess.Popen([sys.executable,'-c','import time;time.sleep(20)'])"
+        item = dict(name='live-grandchild', argv=[sys.executable, '-c', code], cwd=str(self.root), timeout_seconds=5)
+        with self.assertRaisesRegex(RuntimeError, 'Launcher exited with children remaining'):
+            q.run_one(item, self.root, time.monotonic()+10)
+
     def test_command_timeout_reaps_own_children(self):
         (self.root / 'logs').mkdir()
         (self.root / 'results').mkdir()

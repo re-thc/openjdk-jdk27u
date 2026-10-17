@@ -23,6 +23,7 @@
 
 """Prepare and qualify the fixed source pair. Default is a non-executing plan."""
 import argparse
+import ctypes
 import hashlib
 import json
 import os
@@ -292,17 +293,69 @@ def build_plan(args):
                 final_step=internal(['verify', root]))
 
 
+_subreaper_enabled = False
+
+
+def enable_child_subreaper():
+    global _subreaper_enabled
+    if not _subreaper_enabled:
+        # Adopt our orphaned grandchildren so cleanup can reap them, not PID1.
+        libc = ctypes.CDLL(None, use_errno=True)
+        if libc.prctl(36, 1, 0, 0, 0) != 0:  # PR_SET_CHILD_SUBREAPER
+            raise OSError(ctypes.get_errno(), 'Cannot enable child subreaper')
+        _subreaper_enabled = True
+
+
 def group_exists(pid):
+    """Whether this owned process group still has a live member; dead zombies cannot run."""
     try:
         os.killpg(pid, 0)
-        return True
     except ProcessLookupError:
         return False
+    observed_dead_member = False
+    try:
+        for entry in Path('/proc').iterdir():
+            if not entry.name.isdecimal():
+                continue
+            try:
+                if os.getpgid(int(entry.name)) != pid:
+                    continue
+                stat = (entry / 'stat').read_text()
+                fields = stat[stat.rfind(')') + 2:].split()
+                if int(fields[2]) == pid:
+                    if fields[0] not in ('Z', 'X', 'x'):
+                        return True
+                    observed_dead_member = True
+            except (FileNotFoundError, ProcessLookupError):
+                continue
+            except (OSError, ValueError, IndexError):
+                return True  # An unreadable member cannot establish successful cleanup.
+    except OSError:
+        return True
+    if not observed_dead_member:
+        try:
+            os.killpg(pid, 0)
+        except ProcessLookupError:
+            return False
+        return True  # A present group absent from the proc view is not proven dead.
+    return False
+
+
+def reap_group(pid):
+    # The Popen leader must already be reaped, preserving its actual exit status.
+    while True:
+        try:
+            reaped, _ = os.waitpid(-pid, os.WNOHANG)
+        except ChildProcessError:
+            return
+        if reaped == 0:
+            return
 
 
 def cleanup(process):
     # Repeated cancellation must not interrupt TERM/KILL/reap for this owned group.
     handlers = {sig:signal.signal(sig, signal.SIG_IGN) for sig in (signal.SIGINT, signal.SIGTERM)}
+    end = time.monotonic() + 5
     try:
         if group_exists(process.pid):
             try:
@@ -318,7 +371,14 @@ def cleanup(process):
                     os.killpg(process.pid, signal.SIGKILL)
                 except ProcessLookupError:
                     pass
-        process.wait(timeout=2)
+        process.wait(timeout=max(.01, end - time.monotonic()))
+        reap_group(process.pid)
+        while group_exists(process.pid) and time.monotonic() < end:
+            reap_group(process.pid)
+            time.sleep(.05)
+        reap_group(process.pid)
+        if group_exists(process.pid):
+            raise RuntimeError('Owned process group still has live members after cleanup: ' + str(process.pid))
     finally:
         for sig, handler in handlers.items():
             signal.signal(sig, handler)
@@ -350,6 +410,7 @@ def run_one(item, root, deadline, env=None, enforce_resources=True):
         if time.monotonic() >= end:
             raise RuntimeError('Command budget exhausted by storage preflight: ' + item['name'])
     try:
+        enable_child_subreaper()
         with (root / 'logs' / (item['name'] + '.log')).open('wb') as stream:
             process = subprocess.Popen(item['argv'], cwd=item['cwd'], env=env,
                                        stdout=stream, stderr=subprocess.STDOUT, start_new_session=True)

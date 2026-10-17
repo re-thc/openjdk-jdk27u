@@ -1,5 +1,25 @@
 # Preserved evidence
 
+## Upstream overlap
+
+The source audit preceded implementation. Upstream master
+`8610e806260f4eec6d98a5b418e4a1bc11a9a3cb` still requires shared comparison
+nodes for this elimination; its `idealize_test` does not normalize adjacent
+constants. The same upstream head was confirmed again on 2026-10-17.
+[PR 14586 / JDK-8275202](https://github.com/openjdk/jdk/pull/14586) is closed
+and unmerged. That proposal adds control-specific type propagation with a
+fixed-point loop optimization pass, including changes around Phi and CastII
+handling. It illustrates why broad propagation needs separate correctness and
+compiler-cost work. None of that implementation is imported here.
+
+This change instead proves exact adjacent-threshold equivalence inside the
+existing bounded search. It allocates no graph nodes, changes no comparison
+shape and adds no pass or fixed-point iteration. The two newer fork-master
+commits through `416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda` have no changed
+paths in common with this branch. Draft PR CI checks their merged result.
+
+## Original evidence archive
+
 The original raw evidence is frozen locally as `evidence-6bb477a/manifest.json`:
 39 files with byte counts and SHA-256 digests, including exact configure/build
 logs, jtreg summaries and named `.jtr` cases, both C2 compilation logs, both
@@ -24,9 +44,9 @@ and instruction offsets, with no process addresses or host configuration dump.
 The SOURCE string alone does not identify the candidate: it was built from the
 common prerequisite with an uncommitted C2 delta, then committed as `6bb477a...`.
 The saved ifnode.cpp bytes match that commit; the two binary hashes distinguish
-VMs. The baseline contains no threshold helper. The candidate binary remains
-byte-identical during the strengthening work. No claim is made that the scalar
-extraction in the follow-up source has been linked into that VM.
+VMs. The baseline contains no threshold helper. This candidate binary remained
+byte-identical during the original strengthening work and does not contain the
+scalar extraction. A later rebuilt VM is identified separately below.
 
 The common prerequisite is the exact four-line JDK-8391051 diagnostic scope from
 upstream `51bb52c5c0a5a764dd080dc23bed0829fd0ae638`, supplied in fork commit
@@ -39,8 +59,8 @@ that stale-binary observation is excluded from the current-source proof.
 ## Exact original commands
 
 Paths below use `REPO` and `TOOLS` for the original repository and installed
-toolchain root. The archived configure log records the expanded paths. No
-new configure/build command was run for the follow-up.
+toolchain root. The archived configure log records the expanded paths. The
+original strengthening stage reused those VMs; the later build is separate.
 
 ```sh
 . "$TOOLS/activate.sh"
@@ -177,7 +197,58 @@ through a temporary standalone shim, 4 bodies / 26 production-predicate checks.
 Each of four mutants removed only one signed/unsigned endpoint exclusion for
 one width; each produced exactly one assertion failure. No copied arithmetic
 predicate was substituted. Normal GoogleTest registration/linkage and a VM
-rebuilt with the extraction remain pending, as stated in README.
+rebuilt with the extraction were still pending at that historical stage.
+
+## Rebuilt final-source ordinary checks
+
+[evidence-final-correctness.json](evidence-final-correctness.json) closes the
+native integration and final-source gaps. The checkout was
+`b0f4348fafa97f412e5ff452a747f59518e1dce8`; every tracked `src` and `test`
+file equals the fixed compiler/regression pin
+`57f567fcb9ad7dddbd7fb2b2d9b443309681fc0f`. Working changes were confined to
+the qualification documentation and Python runner. The rebuilt fastdebug
+libjvm SHA-256 is
+`9b6ca63d0d2ad7f7972bba5b04140e17c1bf961e662d74abb7dbe43b980ea532`,
+with exploded-JDK SOURCE `.:git:b0f4348fafa9+`.
+
+The existing configuration was updated with the pinned GoogleTest source.
+`make CONF=threshold-fastdebug JOBS=4 ENABLE_JAVAC_SERVER=false images
+test-image-hotspot-gtest` compiled and linked the changed HotSpot source and
+the normal GTest library/launcher. Final image packaging then hit the local
+incremental-build allocation stop. That attempt is preserved as incomplete;
+it was not retried, its limit was not raised, and no existing build data was
+deleted. Runtime checks used the completed exploded JDK. Full-image completion
+is a separate PR CI result.
+
+| Rebuilt-VM check | Result |
+|---|---|
+| Normal `make test-only TEST='gtest:opto.constant_threshold_*'` | 4 native tests / 26 production-predicate assertions passed |
+| `TestIfConstantThreshold.java`, installed jtreg 8.3 | 30 semantic methods / 28 IR rules passed |
+| Same class with StressIGVN, seed 8275202, VerifyIterativeGVN=1110 | Semantics passed; IR matching disabled by the framework |
+| Same 19 nearby source files listed above, `-conc:1 -timeoutFactor:4` | 20 jtreg cases passed |
+| Original unchanged `ThresholdProbe` | `direct`: C2 compile26, cmp63/jg only, zero unstable-if traps, 112 main-code bytes; `normalized`: compile27, 112 bytes |
+| Python qualification harness | 24 tests passed |
+
+The new PrintIdeal scope for `testMask`, regular C2 compile1327, has one CmpI
+and one If. The canonical IfFalse case has one CmpI and a CMoveL; the mixed
+long-domain negative case retains CmpL and CmpUL, and the merged-diamond
+negative retains two CmpI nodes. The JSON retains exact compile IDs and
+address-free node/instruction extracts, source hashes and raw-log hashes.
+All raw logs, probe classes, configure records and stopped-build diagnostics
+are retained privately with a SHA-256 manifest.
+
+The ordinary build initially exposed a runner-supervision error: exited mold
+descendants remained as dead zombies under PID1, so a successful configure was
+mistaken for a live-child leak. Configure was not repeated. The runner now
+adopts and reaps its orphaned descendants, ignores only dead states, preserves
+the launcher's exit code and rejects live or unverifiable groups. Four new
+harness cases cover those distinctions. This changes no compiler source.
+
+The source-pinned four-build release/fastdebug codec A/B workflow and its
+separate bounded measurement stage remain unexecuted. These ordinary checks
+do not substitute for exact rolling-decoder guard applicability, unchanged
+codec interoperability/destination checks, or the matched compiler-cost and
+throughput-control screen.
 
 This is source/test and diagnostic codegen evidence. It is not codec throughput,
 a compiler-speed measurement, or evidence that the full Java/native gap is fixed.

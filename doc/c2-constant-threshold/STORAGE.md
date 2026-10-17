@@ -109,7 +109,10 @@ target is rejected before deletion. Descriptor-protected removal unlinks a
 disposable symlink rather than following it to another task's data. An interrupted
 prune stays marked incomplete, stops the campaign and counts as an active build;
 it cannot permit another full build to start. Failure/cancellation still runs
-the existing bounded final input check. Logs and all required inputs survive.
+the existing bounded final input check. The process-local Linux subreaper
+reaps adopted descendants only in the owned group after preserving its launcher
+status; dead zombies do not count as live workers, while unknown/live states
+remain failures. Logs and all required inputs survive.
 
 Existing build trees, prior evidence, source checkout, toolchains, caches and
 other tasks' data are never removal targets. There is no command for adopting

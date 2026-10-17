@@ -4,9 +4,9 @@ The reviewed compiler and regression source is fixed at
 `57f567fcb9ad7dddbd7fb2b2d9b443309681fc0f`. Baseline is
 `2c3ecf578a57f2eb4d5ed30d395e537764e0fa99`, including the same GCC prerequisite.
 Later commits in this branch supply evidence and the workflow below; they do
-not change the compiler. Publication does **not** authorize executing the
-qualification campaign. No fresh JDK build, Java workload, benchmark or CI job
-was run while preparing this workflow.
+not change the compiler. Final-source fastdebug compilation and ordinary
+correctness results are recorded in [EVIDENCE.md](EVIDENCE.md). The separately
+bounded matched-VM measured campaign remains unexecuted.
 
 The fix recognizes equivalent `x <= c` / `x < c+1` tests inside the existing
 bounded `IfNode::search_identical` search. Domains and input values must match,
@@ -24,11 +24,17 @@ Java class passed 30 methods / 28 IR rules against that saved VM; the baseline
 failed all 23 positive IR cases and passed the five negative cases. Semantics
 passed on both.
 
-The four native predicate test bodies / 26 assertions ran through a standalone
-shim, and four endpoint mutants were rejected. This is not a standard GTest
-result. The final extraction source has not yet been rebuilt. The complete
-workflow now supplies the normal GTest dependency and integration needed to
-close that gap; these existing results are not substituted for that run.
+The final scalar extraction has now been compiled into the fastdebug VM.
+All four native predicate test bodies / 26 assertions passed through the
+standard OpenJDK GTest harness. That rebuilt VM also passed the strengthened
+30-method / 28-rule Java class and StressIGVN/VerifyIterativeGVN semantic
+checks. Earlier standalone-shim and endpoint-mutation results remain historical
+evidence, separately identified in EVIDENCE.md. The rebuilt VM also passed the
+20 nearby jtreg cases and the original code-shape probe, retaining only the
+cmp63 guard in 112 main-code bytes. Exact new identities and extracts are in
+[evidence-final-correctness.json](evidence-final-correctness.json). Full local
+image packaging stopped at its storage bound after HotSpot/GTest compilation
+and linkage; runtime checks used the completed exploded JDK.
 
 ## One normal-checkout command
 
@@ -180,7 +186,10 @@ SIGINT, SIGTERM, timeouts and errors clean up only the command's own process
 group, including make descendants and JMH forks: SIGTERM, up to 3 s, then SIGKILL
 and reap, up to 2 s. Final drift verification runs on success and failure, with a
 120 s cap following cancellation/error and the remaining reserved budget on
-success. A second interrupt cannot bypass that cleanup. These steps stay within
+success. A second interrupt cannot bypass that cleanup. The Linux controller adopts
+and reaps orphaned descendants in its own process group, preserves the launcher
+exit status, and distinguishes dead zombies from live members. Unreadable or
+unseen groups fail closed, and live members are checked again after cleanup. These steps stay within
 the seven-hour overall deadline, with a final 5 s cleanup reserve; abrupt SIGKILL
 of the runner cannot be handled. Incomplete final verification is recorded as a
 failure. Logs, retained source/images, prune journals and remaining products
@@ -208,15 +217,15 @@ python3 -B -m unittest discover -s doc/c2-constant-threshold \
   -p 'test_qualify.py' -v
 ```
 
-Twenty harness tests currently pass, covering the complete plan/pins, full-image
+Twenty-four harness tests currently pass, covering the complete plan/pins, full-image
 support-file drift, safe extraction, exact bytecode/graph scope discrimination,
 timeouts and repeated-SIGTERM descendant cleanup with final drift verification.
 Lifecycle cases cover staged last consumers, required-artifact retention,
 missing-consumer/ownership refusals, image drift, symlink boundaries, unrelated
 data preservation and interrupted pruning before another build. All
 eight actual dependency downloads were fetched normally and their declared
-lengths/SHA256 verified; archive layouts were inspected. Standard GTest and all
-future build/codec/measurement stages remain unexecuted pending plan approval.
+lengths/SHA256 verified; archive layouts were inspected. The separate four-build
+matched-VM codec/measurement workflow remains unexecuted pending plan approval.
 
 A completed and reviewed screen would establish bounded correctness, exact
 codec guard applicability and these non-codec controls. It would **not explain
