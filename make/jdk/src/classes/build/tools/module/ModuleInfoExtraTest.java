@@ -29,6 +29,8 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
+import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleFinder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,6 +40,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.tools.ToolProvider;
 import build.tools.module.GenModuleInfoSource.Statement;
 
 /**
@@ -54,7 +57,132 @@ public class ModuleInfoExtraTest {
         ModuleInfoExtraTest test = new ModuleInfoExtraTest("m", "m1", "m2", "m3");
         test.testModuleInfo();
         test.testExcludedModules();
+        test.testSourceImports();
         test.errorCases();
+    }
+
+    void testSourceImports() throws IOException {
+        Path input = DIR.resolve("source-imports");
+        Path generated = DIR.resolve("generated-imports");
+        String requires = """
+                requires static java.sql;
+                requires transitive
+                    java.logging;
+                requires static /* keep both modifiers */ transitive java.xml;
+                requires transitive static java.naming;
+                """;
+        String open = """
+                /* imported descriptor */
+                @Deprecated(since="27", forRemoval=true)
+                open module server.open
+                {
+                %s
+                    exports openapi to java.desktop, client.keep;
+                } // trailing comment
+                """.formatted(requires);
+        String closed = """
+                module server.extra {
+                %s
+                    exports api;
+                    exports impl to java.desktop, client.keep;
+                    exports hidden to java.desktop;
+                    opens impl to java.desktop, client.keep;
+                    opens hidden to java.desktop;
+                    uses java.lang.Runnable;
+                    provides java.lang.Runnable with impl.Service;
+                }
+                """.formatted(requires);
+        Map<String, String> descriptors = Map.of("server.open", open,
+                "server.extra", closed, "client.keep", "module client.keep { }");
+        Set<String> allowed = Set.of("server.open", "server.extra", "client.keep");
+        for (var entry : descriptors.entrySet()) {
+            Path file = input.resolve(entry.getKey()).resolve("module-info.java");
+            Files.createDirectories(file.getParent());
+            Files.writeString(file, entry.getValue());
+            Path output = generated.resolve(entry.getKey()).resolve("module-info.java");
+            Files.createDirectories(output.getParent());
+            GenModuleInfoSource generator = new GenModuleInfoSource(file, List.of(), allowed);
+            generator.moduleInfo.excludeModules(Set.of("java.desktop"));
+            generator.generate(output);
+            if (entry.getKey().startsWith("server.")) {
+                String text = Files.readString(output);
+                if (!text.contains(requires) || text.contains("java.desktop")) {
+                    throw new AssertionError("Imported requires/qualified targets changed: " + text);
+                }
+            }
+        }
+        Map<String, String> classes = Map.of(
+                "server.open/openapi/Open.java", "package openapi; public class Open {}",
+                "server.extra/api/Api.java", "package api; public class Api {}",
+                "server.extra/impl/Service.java", "package impl; public class Service implements Runnable { public void run() {} }",
+                "server.extra/hidden/Hidden.java", "package hidden; public class Hidden {}");
+        for (var entry : classes.entrySet()) {
+            Path file = generated.resolve(entry.getKey());
+            Files.createDirectories(file.getParent());
+            Files.writeString(file, entry.getValue());
+            Path imported = input.resolve(entry.getKey());
+            Files.createDirectories(imported.getParent());
+            Files.writeString(imported, entry.getValue());
+        }
+        // If javac discovers this excluded imported source, compilation fails.
+        Path desktop = input.resolve("java.desktop");
+        Files.createDirectories(desktop);
+        Files.writeString(desktop.resolve("module-info.java"), "module java.desktop { }");
+        Files.writeString(desktop.resolve("MustNotCompile.java"), "excluded invalid Java source");
+        compileImports(generated, DIR.resolve("import-classes"));
+
+        // The platform-extra path must preserve open modules and complete
+        // multiline static/transitive requires too.
+        Path extra = input.resolve("extra");
+        Files.writeString(extra, "exports openapi to client.keep;");
+        Path original = input.resolve("server.open/module-info.java");
+        Files.writeString(original, open.replace("exports openapi to java.desktop, client.keep;", ""));
+        GenModuleInfoSource augmented = new GenModuleInfoSource(original, List.of(extra), allowed);
+        augmented.generate(generated.resolve("server.open/module-info.java"));
+        compileImports(generated, DIR.resolve("augmented-import-classes"));
+    }
+
+    void compileImports(Path source, Path output) throws IOException {
+        var compiler = ToolProvider.getSystemJavaCompiler();
+        try (var manager = compiler.getStandardFileManager(null, null, null);
+             var files = Files.walk(source)) {
+            var inputs = files.filter(p -> p.toString().endsWith(".java")).toList();
+            if (!compiler.getTask(null, manager, null, List.of("--module-source-path",
+                    source.toString(), "-d", output.toString(), "-Werror"), null,
+                    manager.getJavaFileObjectsFromPaths(inputs)).call()) {
+                throw new AssertionError("Imported source compilation failed");
+            }
+        }
+        var finder = ModuleFinder.of(output);
+        ModuleDescriptor open = finder.find("server.open").orElseThrow().descriptor();
+        ModuleDescriptor closed = finder.find("server.extra").orElseThrow().descriptor();
+        if (!open.isOpen() || closed.isOpen() || closed.exports().size() != 2 ||
+                closed.opens().size() != 1 || !closed.uses().contains("java.lang.Runnable") ||
+                closed.provides().size() != 1) {
+            throw new AssertionError("Imported descriptor semantics lost");
+        }
+        for (var descriptor : List.of(open, closed)) {
+            for (var requirement : descriptor.requires()) {
+                Set<ModuleDescriptor.Requires.Modifier> expected = switch (requirement.name()) {
+                    case "java.sql" -> Set.of(ModuleDescriptor.Requires.Modifier.STATIC);
+                    case "java.logging" -> Set.of(ModuleDescriptor.Requires.Modifier.TRANSITIVE);
+                    case "java.xml", "java.naming" -> Set.of(ModuleDescriptor.Requires.Modifier.STATIC,
+                            ModuleDescriptor.Requires.Modifier.TRANSITIVE);
+                    default -> requirement.modifiers();
+                };
+                if (!requirement.modifiers().equals(expected)) {
+                    throw new AssertionError("Requires modifiers lost: " + requirement);
+                }
+            }
+        }
+        for (var export : closed.exports()) {
+            if (export.source().equals("impl") && !export.targets().equals(Set.of("client.keep"))) {
+                throw new AssertionError("Qualified export broadened: " + export);
+            }
+        }
+        if (!closed.opens().iterator().next().targets().equals(Set.of("client.keep"))) {
+            throw new AssertionError("Qualified opens broadened");
+        }
     }
 
     String[] moduleInfo = new String[] {
@@ -191,22 +319,22 @@ public class ModuleInfoExtraTest {
             "   exports p1 to ",
             "           m1",
             "}"
-        },                      ".*, line .*, missing semicolon.*",
+        },                      ".*, line .*, compiler.err.expected.*",
         new String[] {
             "module x ",
             "   exports p1;"
-        },                      ".*, line .*, missing \\{.*",
+        },                      ".*, line .*, compiler.err.expected.*",
         new String[] {
             "module x {",
             "   requires m1;",
             "   requires",
             "}"
-        },                      ".*, line .*, <identifier> missing.*",
+        },                      ".*, line .*, compiler.err.expected.*",
         new String[] {
             "module x {",
             "   requires transitive m1",
             "}"
-        },                      ".*, line .*, missing semicolon.*",
+        },                      ".*, line .*, compiler.err.expected.*",
         new String[] {
             "module x {",
             "   exports p1 to m1;",

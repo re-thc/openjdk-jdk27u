@@ -56,6 +56,12 @@ ifeq ($(ENABLE_DESKTOP), false)
     $(call AssertEquals, $(filter -DHEADLESS, $(LIBJLI_CFLAGS)), -DHEADLESS, Launcher desktop code enabled)
     $(call AssertEquals, $(filter splashscreen_stubs.c, $(LIBJLI_EXCLUDE_FILES)), splashscreen_stubs.c, Splash sources enabled)
     $(call AssertEquals, $(LIBJLI_LIBS_macosx) $(LIBJLI_LIBS_windows), , GUI launcher libraries)
+    JVM_VARIANT := server
+    check-jvm-feature = $(if $(filter $1, $(JVM_FEATURES_server)),true,false)
+    include $(TOPDIR)/make/hotspot/lib/JvmFeatures.gmk
+    ifeq ($(OPENJDK_TARGET_OS), windows)
+      $(call AssertEquals, $(filter -DHEADLESS, $(JVM_CFLAGS_FEATURES)), -DHEADLESS, HotSpot desktop code enabled)
+    endif
   endif
 endif
 
@@ -85,6 +91,8 @@ direct-targets:
 	$(GREP) -q 'This fork requires' $(TEST_SUPPORT_DIR)/headless-direct.log
 	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk JVM_FEATURES_server='g1gc serialgc zgc parallelgc' print-modules > $(TEST_SUPPORT_DIR)/headless-direct.log 2>&1; then exit 1; fi
 	$(GREP) -q 'This fork requires collectors' $(TEST_SUPPORT_DIR)/headless-direct.log
+	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk SERVER_JVM_COLLECTORS='g1gc parallelgc serialgc zgc' JVM_FEATURES_server='g1gc parallelgc serialgc zgc' print-modules > $(TEST_SUPPORT_DIR)/headless-direct.log 2>&1; then exit 1; fi
+	$(GREP) -q 'This fork requires collectors' $(TEST_SUPPORT_DIR)/headless-direct.log
 	+$(MAKE) -n -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk ENABLE_DESKTOP=true OUTPUTDIR=$(TEST_SUPPORT_DIR)/headless-clean clean > $(TEST_SUPPORT_DIR)/headless-clean.log
 	+$(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk SPEC=$(dir $(SPEC))buildjdk-spec.gmk CREATING_BUILDJDK=true print-modules > $(TEST_SUPPORT_DIR)/headless-buildjdk.log
 
@@ -97,6 +105,33 @@ module-info:
 	$(FIXPATH) $(JAVAC) -d $(TEST_SUPPORT_DIR)/headless-module-info $(TOPDIR)/make/jdk/src/classes/build/tools/module/GenModuleInfoSource.java $(TOPDIR)/make/jdk/src/classes/build/tools/module/ModuleInfoExtraTest.java
 	$(CD) $(TEST_SUPPORT_DIR)/headless-module-info && $(FIXPATH) $(JAVA) -cp . build.tools.module.ModuleInfoExtraTest
 
-all: matrix probes direct-targets imports module-info
-.PHONY: verify-graph matrix probes direct-targets imports module-info
+# Exercise the actual imported-source generation and product javac recipes.
+# A separate module output root keeps fixture classes out of the target JDK.
+IMPORT_SOURCE_TEST := $(TEST_SUPPORT_DIR)/headless-module-info/gen-module-info-test/source-imports
+IMPORT_SUPPORT_TEST := $(TEST_SUPPORT_DIR)/headless-source-imports
+source-imports: module-info
+	+$(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/common/modules/GensrcModuleInfo.gmk MODULE=server.extra IMPORT_MODULES_SRC=$(IMPORT_SOURCE_TEST) SUPPORT_OUTPUTDIR=$(IMPORT_SUPPORT_TEST) all
+	+$(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/common/modules/GensrcModuleInfo.gmk MODULE=server.open IMPORT_MODULES_SRC=$(IMPORT_SOURCE_TEST) SUPPORT_OUTPUTDIR=$(IMPORT_SUPPORT_TEST) all
+	+$(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/CompileJavaModules.gmk MODULE=client.keep IMPORT_MODULES_SRC=$(IMPORT_SOURCE_TEST) SUPPORT_OUTPUTDIR=$(IMPORT_SUPPORT_TEST) client.keep_BIN=$(IMPORT_SUPPORT_TEST)/classes all
+	+$(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/CompileJavaModules.gmk MODULE=server.extra IMPORT_MODULES_SRC=$(IMPORT_SOURCE_TEST) SUPPORT_OUTPUTDIR=$(IMPORT_SUPPORT_TEST) server.extra_BIN=$(IMPORT_SUPPORT_TEST)/classes all
+	+$(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/CompileJavaModules.gmk MODULE=server.open IMPORT_MODULES_SRC=$(IMPORT_SOURCE_TEST) SUPPORT_OUTPUTDIR=$(IMPORT_SUPPORT_TEST) server.open_BIN=$(IMPORT_SUPPORT_TEST)/classes all
+	@test ! -e $(IMPORT_SUPPORT_TEST)/classes/java.desktop
+
+include NativeCompilation.gmk
+$(eval $(call SetupNativeCompilation, HEADLESS_MESSAGE_BOX_TEST, \
+    NAME := HeadlessMessageBoxTest, \
+    TYPE := EXECUTABLE, \
+    TARGET_TYPE := BUILD, \
+    LINK_TYPE := C++, \
+    SRC := $(TOPDIR)/test/make/native, \
+    CFLAGS := -I$(TOPDIR)/src/hotspot/os/windows, \
+    OBJECT_DIR := $(TEST_SUPPORT_DIR)/headless-native/objs, \
+    OUTPUT_DIR := $(TEST_SUPPORT_DIR)/headless-native, \
+))
+
+native-diagnostics: $(HEADLESS_MESSAGE_BOX_TEST)
+	$(TEST_SUPPORT_DIR)/headless-native/HeadlessMessageBoxTest$(EXECUTABLE_SUFFIX)
+
+all: matrix probes direct-targets imports source-imports native-diagnostics
+.PHONY: verify-graph matrix probes direct-targets imports module-info source-imports native-diagnostics
 include MakeFileEnd.gmk

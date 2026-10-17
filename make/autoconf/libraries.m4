@@ -154,11 +154,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
     BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lperfstat"
   fi
 
-  if test "x$OPENJDK_TARGET_OS" = xwindows; then
-    BASIC_JVM_LIBS="$BASIC_JVM_LIBS kernel32.lib user32.lib gdi32.lib winspool.lib \
-        comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib powrprof.lib uuid.lib \
-        ws2_32.lib winmm.lib version.lib psapi.lib"
-  fi
+  LIB_SETUP_WINDOWS_JVM_LIBS
   LIB_SETUP_JVM_LIBS(BUILD)
   LIB_SETUP_JVM_LIBS(TARGET)
 
@@ -169,6 +165,23 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   AC_SUBST(JVM_LIBS)
   AC_SUBST(OPENJDK_BUILD_JDKLIB_LIBS)
   AC_SUBST(OPENJDK_BUILD_JVM_LIBS)
+])
+
+################################################################################
+# Windows runtime dependencies, shared by target and build JDKs.
+################################################################################
+AC_DEFUN([LIB_SETUP_WINDOWS_JVM_LIBS],
+[
+  if test "x$OPENJDK_TARGET_OS" = xwindows; then
+    # user32 supplies service-session detection; winmm supplies timer resolution.
+    # Neither is used for UI/audio in the headless runtime.
+    BASIC_JVM_LIBS="$BASIC_JVM_LIBS kernel32.lib user32.lib \
+        advapi32.lib shell32.lib ole32.lib oleaut32.lib powrprof.lib uuid.lib \
+        ws2_32.lib winmm.lib version.lib psapi.lib"
+    if test "x$ENABLE_DESKTOP" = xtrue; then
+      BASIC_JVM_LIBS="$BASIC_JVM_LIBS gdi32.lib winspool.lib comdlg32.lib"
+    fi
+  fi
 ])
 
 ################################################################################

@@ -37,7 +37,7 @@ m4_include([util.m4])
 m4_include([jdk-options.m4])
 m4_include([jvm-features.m4])
 m4_include([toolchain.m4])
-m4_include([lib-bundled.m4])
+m4_include([libraries.m4])
 AC_DEFUN([UTIL_LOOKUP_PROGS], [:])
 AC_DEFUN([UTIL_REQUIRE_PROGS], [:])
 AC_DEFUN([UTIL_REQUIRE_TOOLCHAIN_PROGS], [:])
@@ -58,6 +58,8 @@ JVM_FEATURES_CALCULATE_ACTIVE([server])
 JVM_FEATURES_VERIFY([server])
 TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA
 LIB_SETUP_BUNDLED_LIBS
+LIB_SETUP_WINDOWS_JVM_LIBS
+AC_MSG_NOTICE([runtime libraries: $BASIC_JVM_LIBS])
 AC_OUTPUT
 M4
 "$autoconf" -I "$repo_root/make/autoconf" -o configure configure.ac
@@ -72,6 +74,13 @@ for target in linux:gcc macosx:clang windows:microsoft; do
   toolchain=${target#*:}
   run_configure
   grep -q 'zlib retained' result.log
+  if test "$target_os" = windows; then
+    grep -q 'user32.lib' result.log
+    grep -q 'winmm.lib' result.log
+    if grep -Eq 'gdi32[.]lib|winspool[.]lib|comdlg32[.]lib' result.log; then
+      echo 'Desktop JVM libraries retained' >&2; exit 1
+    fi
+  fi
   run_configure --disable-desktop --enable-headless-only \
       --with-jvm-features=g1gc,serialgc,zgc,-epsilongc,-parallelgc,-shenandoahgc
   echo "Configure policy/probes passed: $target"

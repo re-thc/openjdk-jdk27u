@@ -97,8 +97,14 @@ Each supported target needs a clean native release/fastdebug build and the
 profile check above. On macOS AArch64, also configure with Command Line Tools
 and no Metal toolchain, inspect `otool -L` for the resulting `libjli.dylib`,
 and exercise console launch, JNI invocation, signal handling and process exit.
-On Windows x64, inspect `dumpbin /imports` for `jli.dll`, verify console error
-reporting and JNI launch, and confirm that `javaw.exe` is absent. Linux AArch64
+On Windows x64, inspect `dumpbin /imports` for `jli.dll` and `jvm.dll`, verify console error
+reporting and JNI launch, and confirm that `javaw.exe` is absent. HotSpot reports
+fatal-error prompts through standard error and reads a response only from an
+attached console; services and JNI callers without a console return immediately.
+HotSpot still links `user32` for window-station visibility checks that preserve
+service logoff behavior, and `winmm` for timer-resolution APIs. These shared
+Windows libraries do not enable dialog or audio code. GDI, printing and common
+dialog libraries are omitted from its link inputs. Linux AArch64
 needs its own native collector/compiler smoke runs.
 
 Build time comparisons require matching hardware, compiler, debug level,
@@ -128,3 +134,13 @@ architectures. The nine excluded modules and five desktop generator packages
 were absent from the product/host-tool compilation inputs. No build-time or
 resource speedup is claimed. Native Linux AArch64, macOS AArch64 and Windows
 x64 builds remain to be run as described above.
+
+The follow-up descriptor/Windows-policy correction has passed standalone javac
+parsing and compilation tests for real imported modules, the initial focused
+make suite (including console-helper behavior and coordinated collector
+overrides), and the configure library/probe checks. Its final source-import
+make recipe and complete rebuilt image/profile check remain unverified: this VM
+exhausted process/thread resources with approximately 32,000 unreaped build
+subprocesses. Resume `make test-make-headless` and `make images compile-commands`
+followed by the profile check on a healthy executor. Native Windows and macOS
+validation remains required; the portable helper test does not replace it.

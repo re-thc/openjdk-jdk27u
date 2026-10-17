@@ -166,5 +166,10 @@ for command in "$build_dir"/support/native/java.base/libjli/java.{o,obj}.cmdline
   [[ -f $command ]] || continue
   grep -Eq -- '[-/]DHEADLESS' "$command" || { echo "Launcher lacks HEADLESS: $command" >&2; exit 1; }
 done
+# HotSpot's Windows diagnostics must also compile out the dialog path.
+for command in "$build_dir"/hotspot/variant-*/libjvm/objs/os_windows.obj.cmdline; do
+  [[ -f $command ]] || continue
+  grep -Eq -- '[-/]DHEADLESS' "$command" || { echo "HotSpot lacks HEADLESS: $command" >&2; exit 1; }
+done
 printf 'Compilation evidence passed: %s product javac lists, %s native compile records.\n' "$java_lists" "$native_commands"
 echo 'Development profile passed: Serial, G1, ZGC; no excluded collectors, desktop, audio or Metal compilation or outputs.'
