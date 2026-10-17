@@ -4,16 +4,15 @@ This fork builds a server JDK on Linux x64/AArch64, macOS AArch64 and
 Windows x64. Both plain `configure` and `bin/configure-dev` enforce:
 
 * Desktop disabled and headless enabled.
-* Exactly Serial, G1 and ZGC in every configured JVM variant.
+* Exactly Serial, G1 and ZGC in every configured target JVM variant.
 * No `java.desktop`, `java.datatransfer`, `java.se`, `jdk.accessibility`,
   `jdk.editpad`, `jdk.hotspot.agent`, `jdk.jconsole`, `jdk.jpackage` or
   `jdk.unsupported.desktop` product compilation.
 
 Incompatible desktop/headless or collector overrides in configure or make are
-errors. Collector
-policy is in `make/autoconf/jvm-features.m4`; the module exclusion set is in
-`make/common/Modules.gmk`. The development wrapper adds CPU, linker and ccache
-choices to the same product policy.
+errors. Collector policy is in `make/autoconf/jvm-features.m4`; the module
+exclusion set is in `make/common/Modules.gmk`. The development wrapper adds CPU,
+linker and ccache choices to the same product policy.
 
 The excluded modules depend on desktop APIs. In particular, the serviceability
 agent includes its GUI and requires `java.desktop`. Server diagnostics through
@@ -32,27 +31,39 @@ retained. The core launcher compiles out splash support, macOS Cocoa startup
 and dock integration, and Windows AWT preload/dialog initialization. The
 Windows `javaw` launcher is omitted. Normal console launchers remain.
 
-## Build and validate
+Windows HotSpot retains `user32` for window-station visibility checks that
+preserve service logoff behavior, and `winmm` for timer-resolution APIs. These
+uses do not enable dialog or audio code. GDI, printing and common-dialog
+libraries are omitted from its link inputs. Fatal-error prompts use standard
+error and read a response only from an attached console. Callers without a
+console, including services and JNI applications, return immediately.
 
-Use the normal platform toolchain and a supported boot JDK. Start with a new
-configuration directory. For example, on Linux:
+## Build and validation
+
+Use GNU make, the normal platform toolchain and a supported boot JDK. Choose
+unused configuration names for clean release and fastdebug builds. For example:
 
 ```sh
-bash configure --with-conf-name=server --with-boot-jdk="$BOOT_JDK" --with-jobs=4
-make CONF=server images compile-commands
-bash .github/scripts/check-dev-profile.sh build/server/images/jdk build/server/spec.gmk
-make CONF=server test-make-headless
+set -eu
+for level in release fastdebug; do
+  conf="server-$level"
+  bash configure --with-conf-name="$conf" --with-boot-jdk="$BOOT_JDK" \
+    --with-debug-level="$level" --with-jobs=4
+  make CONF="$conf" images compile-commands
+  make CONF="$conf" test-make-headless
+  bash .github/scripts/check-dev-profile.sh \
+    "build/$conf/images/jdk" "build/$conf/spec.gmk"
+done
 ```
 
 To exercise the development wrapper, use `bash bin/configure-dev` with the
 same arguments. On Linux it expects mold unless `CONFIGURE_DEV_NO_MOLD=1` is
-set. Add `--with-debug-level=fastdebug` for an assertion-enabled build.
+set. Use `gmake` where that is the GNU make command.
 
 Reconfiguration rejects output directories from a desktop build or a different
-collector set. Use a new `--with-conf-name`, or `make CONF=server dist-clean`
-before configuring that directory again. The build also rejects stale excluded
-module directories. `make CONF=server clean` clears that configuration's build
-outputs. No source deletion is part of this workflow.
+collector set. Use a new `--with-conf-name`, or `make CONF="$conf" dist-clean`
+before reusing a configuration. The build also rejects stale excluded module
+directories; `make CONF="$conf" clean` clears its build outputs.
 
 `check-dev-profile.sh` requires the build tree as well as its image. It checks
 actual product javac file lists, native compilation records, GC objects,
@@ -60,14 +71,36 @@ classes/generated outputs, jmods and image files. It runs allocation and GC,
 virtual-thread socket, crypto/TLS initialization, JMX, JFR and attach/jcmd
 smokes, C1/C2 arithmetic compilation, source-file launch, javac, javadoc, jar
 and jlink. It verifies that Epsilon, Parallel and Shenandoah cannot start.
-The existing platform CI development-profile step runs this stronger check.
 Native test bundles also omit tests for collectors absent from every configured
 JVM variant.
 
 `make:headless` exercises the four supported module/launcher graphs, imported
-modules, direct-target rejection, stale outputs, descriptor pruning and
-configure override/probe guards. Foreign platform tool lookups are stubbed to
-fail on desktop discovery; these tests do not substitute for native builds.
+source generation and product compilation, compiled descriptor semantics,
+direct-target rejection, stale outputs and configure/make overrides. It covers
+open modules, static/transitive requires, Unicode-escaped braces, qualified
+exports/opens, Windows path conversion and the portable console helper.
+
+Validated on Linux x64 on 2026-10-17: release with GCC 16.2 and clean fastdebug
+with GCC 14.2 completed these builds, make regressions and profile checks.
+Each had 56 product javac lists covering 11,198 Java inputs, 1,405 product native
+compilation records with matching objects, and 56 image jmods. No excluded
+product source or object was found. The profile reports 1,418 native records
+including 13 ADLC host objects;
+fastdebug's compilation database also includes its precompiled-header command.
+All collector, compiler, server-tool and runtime smokes described above passed.
+
+Native Linux AArch64, macOS AArch64 and Windows x64 validation remains required.
+For macOS, configure with existing Command Line Tools selected through a
+process-local `DEVELOPER_DIR`, verify no Metal discovery, inspect `otool -L`
+for `libjli.dylib` and `libjvm.dylib`, and exercise console launch, JNI invocation,
+signals and process exit. For Windows, inspect `dumpbin /imports` for `jli.dll`
+and `jvm.dll`, check console errors and JNI launch, and confirm `javaw.exe` is
+absent. Linux AArch64 needs native collector/compiler smokes. Foreign-platform
+graphs, stubbed probes and mocked console I/O do not replace these native checks.
+
+Excluded source/target counts establish removed compilation work. A build-time
+speedup requires measurements with matching hardware, compiler, debug level,
+cache state and build settings; no measured speedup is claimed here.
 
 ## Host tools and compatibility data
 
@@ -90,70 +123,3 @@ does not require a desktop JDK.
 with older Java releases, including historical desktop API signatures. These
 are generated from symbol data, not compilation of current desktop product
 sources. Their presence does not add desktop modules to the target runtime.
-
-## Native platform validation
-
-Each supported target needs a clean native release/fastdebug build and the
-profile check above. On macOS AArch64, also configure with Command Line Tools
-and no Metal toolchain, inspect `otool -L` for the resulting `libjli.dylib`,
-and exercise console launch, JNI invocation, signal handling and process exit.
-On Windows x64, inspect `dumpbin /imports` for `jli.dll` and `jvm.dll`, verify console error
-reporting and JNI launch, and confirm that `javaw.exe` is absent. HotSpot reports
-fatal-error prompts through standard error and reads a response only from an
-attached console; services and JNI callers without a console return immediately.
-HotSpot still links `user32` for window-station visibility checks that preserve
-service logoff behavior, and `winmm` for timer-resolution APIs. These shared
-Windows libraries do not enable dialog or audio code. GDI, printing and common
-dialog libraries are omitted from its link inputs. Linux AArch64
-needs its own native collector/compiler smoke runs.
-
-Build time comparisons require matching hardware, compiler, debug level,
-cache state and build settings. Excluded source/target counts establish removed
-work; they do not by themselves establish a measured speedup.
-
-## Validation snapshot: 2026-10-17
-
-On a Linux x64 VM, release with GCC 16.2 and a clean fastdebug build with
-GCC 14.2 both completed `images compile-commands` and the expanded profile
-check. Each had 56 runtime modules/jmods, 56 product javac input lists covering
-11,198 files, and 1,405 product native object commands with existing outputs.
-The native build also compiled 13 ADLC host-tool objects. Fastdebug's compilation
-database includes one additional precompiled-header command. No excluded
-product source appeared in these inputs or objects.
-
-Serial, G1, ZGC, C1, C2, source-file launching, virtual-thread sockets, TLS/crypto
-initialization, JMX, JFR, attach/jcmd, javac, javadoc, jar and jlink passed their
-smokes in both images. The release image also passed javac compatibility smokes
-for releases 8, 17 and 26, jdeps and JShell. The 49 retained API documentation
-modules and the test image built successfully. The focused make regression
-suite passed, including the four target graphs, host-build subset, imported
-modules, stale outputs, configure/make overrides and Windows path conversion.
-
-The preserved tree contains 120 excluded collector `.cpp` files across its
-architectures. The nine excluded modules and five desktop generator packages
-were absent from the product/host-tool compilation inputs. No build-time or
-resource speedup is claimed. Native Linux AArch64, macOS AArch64 and Windows
-x64 builds remain to be run as described above.
-
-The follow-up corrections were recovered from the published branch and validated
-on a fresh Linux x64 executor, preserving the exhausted executor and its logs.
-Release with GCC 16.2 and clean fastdebug with GCC 14.2 both passed
-`images compile-commands`, `test-make-headless` and the complete profile check.
-The make suite generated and compiled real imported sources with normal product
-warning-as-error settings and checked the resulting descriptor semantics. It
-also covered coordinated collector overrides, mandatory module filters, direct
-targets, stale outputs, configure probes and the portable console helper.
-Additional regressions cover empty and nonempty Unicode-escaped descriptors;
-the augmentation fixture no longer overwrites the open-module import input.
-
-Both configurations again had 56 product javac lists, 11,198 Java inputs, 1,405
-product native compilation records with matching objects, and 56 image jmods.
-The profile reports 1,418 native records including the 13 ADLC host objects;
-fastdebug's compilation database also contains its precompiled-header command.
-Serial/G1/ZGC, C1/C2 and all profile server/compiler/tool smokes passed.
-
-Native Linux AArch64, macOS AArch64 and Windows x64 validation of the final
-correction remains external, including macOS/Windows console, JNI, signal/exit
-and native dependency inspection. Automatic PR CI is triggered by ordinary
-pushes; no manual dispatch or rerun was requested. Foreign-platform graph tests
-and the portable console helper do not replace those native checks.
