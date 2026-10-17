@@ -21,10 +21,12 @@ public index. C2 keeps the remaining-range call's arguments for its existing
 fallback. Tail/NaN handling and the 2 KiB heap leaf cap remain intact. Only
 bulk helpers are marked `DontInline`; no inlining budget or force-inline
 policy changes. Existing first-element access/exception order is preserved. This follow-up has not run on native
-ARM. Local semantics pass in six modes, but the final x86 graph fixture still
-outlines all eight range wrappers. Double-range outlining also occurs in its
-baseline; the other seven have no baseline code-shape result. All 16 native
-cases remain mandatory before timing. Native recovery is unproven.
+ARM. Local semantics pass in six modes, but all eight public range wrappers
+still fail the size-based inlining gate. The compact source experiment does
+not fix long/float/double range boundaries and is not applied. Eight new Store
+graphs require inline prefix loads alongside both stores; all eight currently
+fail locally. Native recovery is unproven, and timing remains blocked by this
+source mechanism. All 16 public cases and eight Store graphs remain mandatory.
 
 Scoped comparisons retain bounded chunks and Java safepoint polls. The
 interpreter bounds leaf work, counts once, and defers profiling, safepoints
@@ -71,8 +73,8 @@ That was not an execution of original author `9fedf7a`. Corrected repair
 provenance is retained in `diagnostics/pr39-aarch64/REPAIR.md`.
 [Author CI 39027042938](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39027042938)
 passed 57/57 jobs at `9fedf7a`, including Linux/macOS ARM64 builds and tier1;
-it predates this repair. The follow-up caller repair and its focused qualification plan are ready for
-source review in `diagnostics/pr39-aarch64/HEAP-REPAIR.md`. Native qualification
+it predates this repair. The caller split and exact unresolved size decisions are documented in
+`diagnostics/pr39-aarch64/INLINE-REVIEW.md`. Native qualification
 and broader unrun performance coverage remain required before merge.
 
 ---------

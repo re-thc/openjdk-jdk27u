@@ -1,6 +1,5 @@
 {
-  "all8_store_paths_installed_c2": true,
-  "campaign_status": "proposal only; no launch authorization",
+  "campaign_status": "blocked by demonstrated public range call boundary; do not launch timing",
   "compiled_executable_source_matches_production": true,
   "compiled_java_patch_sha256": "2ebdd4aaaad81882e2a36bde240ead4aa8c08f3e9dbfa2c3c85861fbfce05911",
   "compiled_source_difference": "Only PlatformProps.TARGET_ARCH_IS_AARCH64 selects true in the isolated Java copy. No other source override.",
@@ -12,6 +11,7 @@
     "original_arguments": "The C2 intrinsic preserves the remaining-range call arguments. The Java helper keeps compared element count and restores positive public indices; no raw pointer crosses a call.",
     "suffix_intrinsic_first_total_bytes": 256
   },
+  "current_graph_review": "inline-boundary-review.json",
   "java_selection_override": "PlatformProps.TARGET_ARCH_IS_AARCH64 replaced by true in isolated Java patch only",
   "libjvm_sha256": "9931a7de0da6181d3204ceeb2b4eb74f290c93fed013b853d151774ce20c1354",
   "local_graph_exception": {
@@ -27,7 +27,7 @@
       "floatRange",
       "doubleRange"
     ],
-    "native_gate": "All16 native ARM cases remain mandatory before timing. The local failed graph fixture is retained and is not relabelled as a pass.",
+    "native_gate": "All16 public and8 Store/prefix native graphs remain mandatory. Existing local failures are blockers and are not excused by ISA differences.",
     "production_difference": "One comment changed; executable source and test are identical.",
     "result": "All8 range wrappers retain public Arrays.mismatch calls in this unsupported x86 fixture; all8 full-array wrappers inline."
   },
@@ -297,6 +297,12 @@
       "stamp": "4.242"
     }
   ],
+  "store_ordering_evidence": {
+    "inlined_prefix_graphs_passed": 0,
+    "installed_c2_is_ordering_proof": false,
+    "required": 8,
+    "result": "All8 current Store graphs contain two stores and a public range call, with no inlined prefix load. See inline-boundary-review.json."
+  },
   "test_sha256": "6fa5fbe9faa7bce2fa297c741358d1cd118369b542c1eba9d655b27af392143d",
   "tests": [
     {

@@ -1,4 +1,10 @@
-# Proposed focused native heap qualification
+# Blocked focused native heap qualification proposal
+
+**Blocked by the demonstrated public range call boundary.** See
+[the exact inlining and Store-graph review](INLINE-REVIEW.md). The compact
+source hypothesis fails three ranges; the production split fails eight ranges
+and all eight Store/prefix graphs locally. This matrix is retained as a fixed
+proposal, not a recommendation to launch native timing.
 
 **No launch is authorized or has occurred for this source.** The previous run
 approval is spent. The manual workflow is prepared for this exact source and
@@ -40,8 +46,9 @@ remain unmeasured. Timeout leaves qualification incomplete; no retry follows.
 
 Correctness must pass before any timing:
 
-- Candidate fastdebug: the new 16-case public call-boundary gate; existing
-  twelve store-ordering graphs; native/heap bounds and polling Ideal checks;
+- Candidate fastdebug: all 16 public call-boundary cases and eight new
+  inlined Store/prefix graphs; existing twelve store-ordering graphs;
+  native/heap bounds and polling Ideal checks;
   bounded C1 admission checks. **No range case has an exception to the gate.**
 - Candidate release with each of G1, Serial and ZGC: the new array semantics
   test and existing raw mismatch test. New semantics run interpreter, C1,

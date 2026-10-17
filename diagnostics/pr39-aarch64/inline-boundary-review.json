@@ -1,0 +1,1100 @@
+{
+  "status": "blocked: public range boundary remains; do not launch timing",
+  "production_source_commit": "7f0bf03bd947a95c551da4fa0352257738e5f281",
+  "production_source_sha256": "b3940e7dba5b6d3a7d527de2b015ebc6a8c35c3a8baa66aa55eae600ebf2cb09",
+  "test_sha256": "be9b7e6b90005e258fe9cf2e6c8b39fbb10fe4b743b6d48aeaf9f502ca7f2bf5",
+  "scope": "Static x86 code generation with ARM Java selection and the existing policy VM. No JDK/HotSpot build, native ARM execution, CI or timing.",
+  "raw_directory": "/workspace/scratch/pr39-inline-mechanism-20261017",
+  "rows": [
+    {
+      "kind": "byte",
+      "public_signature": "([BII[BII)I",
+      "public_inline_metric": 1008,
+      "public_main_code_upper_bound": 1112,
+      "public_compile_id": "437",
+      "support_inline_metrics_at_public_compile": {
+        "jdk/internal/util/ArraysSupport mismatch ([BI[BII)I": 512
+      },
+      "wrapper_compile_id": "441",
+      "failure": [
+        {
+          "callee": "java.util.Arrays mismatch ([BII[BII)I",
+          "reason": "already compiled into a big method"
+        }
+      ]
+    },
+    {
+      "kind": "boolean",
+      "public_signature": "([ZII[ZII)I",
+      "public_inline_metric": 1008,
+      "public_main_code_upper_bound": 1112,
+      "public_compile_id": "471",
+      "support_inline_metrics_at_public_compile": {
+        "jdk/internal/util/ArraysSupport mismatch ([ZI[ZII)I": 512
+      },
+      "wrapper_compile_id": "473",
+      "failure": [
+        {
+          "callee": "java.util.Arrays mismatch ([ZII[ZII)I",
+          "reason": "already compiled into a big method"
+        }
+      ]
+    },
+    {
+      "kind": "char",
+      "public_signature": "([CII[CII)I",
+      "public_inline_metric": 1016,
+      "public_main_code_upper_bound": 1120,
+      "public_compile_id": "501",
+      "support_inline_metrics_at_public_compile": {
+        "jdk/internal/util/ArraysSupport mismatch ([CI[CII)I": 528
+      },
+      "wrapper_compile_id": "503",
+      "failure": [
+        {
+          "callee": "java.util.Arrays mismatch ([CII[CII)I",
+          "reason": "already compiled into a big method"
+        }
+      ]
+    },
+    {
+      "kind": "short",
+      "public_signature": "([SII[SII)I",
+      "public_inline_metric": 1016,
+      "public_main_code_upper_bound": 1120,
+      "public_compile_id": "522",
+      "support_inline_metrics_at_public_compile": {
+        "jdk/internal/util/ArraysSupport mismatch ([SI[SII)I": 528
+      },
+      "wrapper_compile_id": "524",
+      "failure": [
+        {
+          "callee": "java.util.Arrays mismatch ([SII[SII)I",
+          "reason": "already compiled into a big method"
+        }
+      ]
+    },
+    {
+      "kind": "int",
+      "public_signature": "([III[III)I",
+      "public_inline_metric": 1016,
+      "public_main_code_upper_bound": 1120,
+      "public_compile_id": "540",
+      "support_inline_metrics_at_public_compile": {
+        "jdk/internal/util/ArraysSupport mismatch ([II[III)I": 528
+      },
+      "wrapper_compile_id": "543",
+      "failure": [
+        {
+          "callee": "java.util.Arrays mismatch ([III[III)I",
+          "reason": "already compiled into a big method"
+        }
+      ]
+    },
+    {
+      "kind": "long",
+      "public_signature": "([JII[JII)I",
+      "public_inline_metric": 1200,
+      "public_main_code_upper_bound": 1320,
+      "public_compile_id": "562",
+      "support_inline_metrics_at_public_compile": {
+        "jdk/internal/util/ArraysSupport mismatch ([JI[JII)I": 688
+      },
+      "wrapper_compile_id": "564",
+      "failure": [
+        {
+          "callee": "java.util.Arrays mismatch ([JII[JII)I",
+          "reason": "already compiled into a big method"
+        }
+      ]
+    },
+    {
+      "kind": "float",
+      "public_signature": "([FII[FII)I",
+      "public_inline_metric": 1216,
+      "public_main_code_upper_bound": 1328,
+      "public_compile_id": "588",
+      "support_inline_metrics_at_public_compile": {
+        "jdk/internal/util/ArraysSupport mismatch ([FI[FII)I": 720
+      },
+      "wrapper_compile_id": "590",
+      "failure": [
+        {
+          "callee": "java.util.Arrays mismatch ([FII[FII)I",
+          "reason": "already compiled into a big method"
+        }
+      ]
+    },
+    {
+      "kind": "double",
+      "public_signature": "([DII[DII)I",
+      "public_inline_metric": 1400,
+      "public_main_code_upper_bound": 1528,
+      "public_compile_id": "608",
+      "support_inline_metrics_at_public_compile": {
+        "jdk/internal/util/ArraysSupport mismatch ([DI[DII)I": 872
+      },
+      "wrapper_compile_id": "610",
+      "failure": [
+        {
+          "callee": "java.util.Arrays mismatch ([DII[DII)I",
+          "reason": "already compiled into a big method"
+        }
+      ]
+    }
+  ],
+  "current": {
+    "process": "80504",
+    "size_definition": "Exact cached ciMethod.inline_instructions_size from replay's final ciMethod field; -1 means not queried, 0 means no compiled size at that decision. Includes HotSpot's skipped-instruction subtraction.",
+    "log_sha256": "b128bed6bac6502eec3e7ea7f99a7983067748b37ad15bd182cb9932c568a478",
+    "xml_sha256": "e93c16e70f7948bcbf1589ce214dd12e027b50864dc8421b191fdb1e21a73ce0",
+    "methods": [
+      {
+        "method": "byteRange",
+        "compile_id": "441",
+        "task": {
+          "compile_id": "441",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest byteRange ([BII[BII)I",
+          "bytes": "12",
+          "count": "1408",
+          "iicount": "1408",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "2.282"
+        },
+        "inline_failures": [
+          {
+            "callee": "java.util.Arrays mismatch ([BII[BII)I",
+            "reason": "already compiled into a big method"
+          }
+        ],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatch ([BI[BII)I": -1,
+          "java/util/Arrays mismatch ([BII[BII)I": 1008
+        },
+        "java_call_targets": [
+          "java.util.Arrays::mismatch"
+        ],
+        "stores": 0,
+        "replay_sha256": "22124dfc2e9c93a07442c35089d921e75856e541a55953e2076c87c4c85d3e68",
+        "prefix_load_count": 0
+      },
+      {
+        "method": "byteFull",
+        "compile_id": "442",
+        "task": {
+          "compile_id": "442",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest byteFull ([B[B)I",
+          "bytes": "6",
+          "count": "1408",
+          "iicount": "1408",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "2.292"
+        },
+        "inline_failures": [],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatchPrefix (Ljava/lang/Object;JLjava/lang/Object;JII)I": 0,
+          "jdk/internal/util/ArraysSupport mismatchLarge ([BI[BII)I": -1,
+          "jdk/internal/util/ArraysSupport mismatch ([B[BI)I": 448,
+          "jdk/internal/util/ArraysSupport mismatch ([BI[BII)I": 0,
+          "java/util/Arrays mismatch ([B[B)I": 552
+        },
+        "java_call_targets": [],
+        "stores": 0,
+        "replay_sha256": "cb89554b9c5021057668ace17520b8d362202735b7a5819ac2913a8b8d618131",
+        "prefix_load_count": 2
+      },
+      {
+        "method": "byteStore",
+        "compile_id": "443",
+        "task": {
+          "compile_id": "443",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest byteStore ([BI[BIII)I",
+          "bytes": "34",
+          "count": "1408",
+          "iicount": "1408",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "2.314"
+        },
+        "inline_failures": [
+          {
+            "callee": "java.util.Arrays mismatch ([BII[BII)I",
+            "reason": "already compiled into a big method"
+          }
+        ],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatch ([BI[BII)I": -1,
+          "java/util/Arrays mismatch ([BII[BII)I": 1008
+        },
+        "java_call_targets": [
+          "java.util.Arrays::mismatch"
+        ],
+        "stores": 2,
+        "replay_sha256": "2bff7d0398a86811eeb47ee3396a1106f04acbef518d127b8161414384d26d83",
+        "prefix_load_count": 0
+      },
+      {
+        "method": "booleanRange",
+        "compile_id": "473",
+        "task": {
+          "compile_id": "473",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest booleanRange ([ZII[ZII)I",
+          "bytes": "12",
+          "count": "1409",
+          "iicount": "1409",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "2.750"
+        },
+        "inline_failures": [
+          {
+            "callee": "java.util.Arrays mismatch ([ZII[ZII)I",
+            "reason": "already compiled into a big method"
+          }
+        ],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatch ([ZI[ZII)I": -1,
+          "java/util/Arrays mismatch ([ZII[ZII)I": 1008
+        },
+        "java_call_targets": [
+          "java.util.Arrays::mismatch"
+        ],
+        "stores": 0,
+        "replay_sha256": "c84fef0b1c2afa5949308666b869a6a72578e60ea4bd713fe34124fd77bddaf0",
+        "prefix_load_count": 0
+      },
+      {
+        "method": "booleanFull",
+        "compile_id": "474",
+        "task": {
+          "compile_id": "474",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest booleanFull ([Z[Z)I",
+          "bytes": "6",
+          "count": "1409",
+          "iicount": "1409",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "2.759"
+        },
+        "inline_failures": [],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatchPrefix (Ljava/lang/Object;JLjava/lang/Object;JII)I": 352,
+          "jdk/internal/util/ArraysSupport mismatchLarge ([ZI[ZII)I": -1,
+          "jdk/internal/util/ArraysSupport mismatch ([Z[ZI)I": 448,
+          "jdk/internal/util/ArraysSupport mismatch ([ZI[ZII)I": 512,
+          "java/util/Arrays mismatch ([Z[Z)I": 552
+        },
+        "java_call_targets": [],
+        "stores": 0,
+        "replay_sha256": "57883281278c87af640c35a256cf2fd7dc4ebfe961e004920f949b79eaa6beae",
+        "prefix_load_count": 2
+      },
+      {
+        "method": "booleanStore",
+        "compile_id": "475",
+        "task": {
+          "compile_id": "475",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest booleanStore ([ZI[ZIII)I",
+          "bytes": "34",
+          "count": "1409",
+          "iicount": "1409",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "2.772"
+        },
+        "inline_failures": [
+          {
+            "callee": "java.util.Arrays mismatch ([ZII[ZII)I",
+            "reason": "already compiled into a big method"
+          }
+        ],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatch ([ZI[ZII)I": -1,
+          "java/util/Arrays mismatch ([ZII[ZII)I": 1008
+        },
+        "java_call_targets": [
+          "java.util.Arrays::mismatch"
+        ],
+        "stores": 2,
+        "replay_sha256": "3d19379ed9b77881fa46bd5f7b151859c3056e4c07fca28ba79b33586585bef3",
+        "prefix_load_count": 0
+      },
+      {
+        "method": "charRange",
+        "compile_id": "503",
+        "task": {
+          "compile_id": "503",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest charRange ([CII[CII)I",
+          "bytes": "12",
+          "count": "1409",
+          "iicount": "1409",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "3.385"
+        },
+        "inline_failures": [
+          {
+            "callee": "java.util.Arrays mismatch ([CII[CII)I",
+            "reason": "already compiled into a big method"
+          }
+        ],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatch ([CI[CII)I": -1,
+          "java/util/Arrays mismatch ([CII[CII)I": 1016
+        },
+        "java_call_targets": [
+          "java.util.Arrays::mismatch"
+        ],
+        "stores": 0,
+        "replay_sha256": "b29049ece57ad2a75c1002f6e6c760568a750258800ce8ce7d7183a5f64b1372",
+        "prefix_load_count": 0
+      },
+      {
+        "method": "charFull",
+        "compile_id": "504",
+        "task": {
+          "compile_id": "504",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest charFull ([C[C)I",
+          "bytes": "6",
+          "count": "1409",
+          "iicount": "1409",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "3.395"
+        },
+        "inline_failures": [],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatchPrefix (Ljava/lang/Object;JLjava/lang/Object;JII)I": 352,
+          "jdk/internal/util/ArraysSupport mismatchLarge ([CI[CII)I": -1,
+          "jdk/internal/util/ArraysSupport mismatch ([C[CI)I": 448,
+          "jdk/internal/util/ArraysSupport mismatch ([CI[CII)I": 528,
+          "java/util/Arrays mismatch ([C[C)I": 552
+        },
+        "java_call_targets": [],
+        "stores": 0,
+        "replay_sha256": "d0ef41f556cedcb4f2eba89975682affa4644fb1b45613d6f885764d8517a489",
+        "prefix_load_count": 2
+      },
+      {
+        "method": "charStore",
+        "compile_id": "505",
+        "task": {
+          "compile_id": "505",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest charStore ([CI[CIII)I",
+          "bytes": "34",
+          "count": "1409",
+          "iicount": "1409",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "3.408"
+        },
+        "inline_failures": [
+          {
+            "callee": "java.util.Arrays mismatch ([CII[CII)I",
+            "reason": "already compiled into a big method"
+          }
+        ],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatch ([CI[CII)I": -1,
+          "java/util/Arrays mismatch ([CII[CII)I": 1016
+        },
+        "java_call_targets": [
+          "java.util.Arrays::mismatch"
+        ],
+        "stores": 2,
+        "replay_sha256": "88c1857a815c2cc98501515389dd628ab1cbd862fba208156e4f9b4dce635876",
+        "prefix_load_count": 0
+      },
+      {
+        "method": "shortRange",
+        "compile_id": "524",
+        "task": {
+          "compile_id": "524",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest shortRange ([SII[SII)I",
+          "bytes": "12",
+          "count": "1409",
+          "iicount": "1409",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "3.655"
+        },
+        "inline_failures": [
+          {
+            "callee": "java.util.Arrays mismatch ([SII[SII)I",
+            "reason": "already compiled into a big method"
+          }
+        ],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatch ([SI[SII)I": -1,
+          "java/util/Arrays mismatch ([SII[SII)I": 1016
+        },
+        "java_call_targets": [
+          "java.util.Arrays::mismatch"
+        ],
+        "stores": 0,
+        "replay_sha256": "b74c4b5f303674eaa3f6a5a637dc03dd765dba14a0007d36118a116a0fadfef6",
+        "prefix_load_count": 0
+      },
+      {
+        "method": "shortFull",
+        "compile_id": "525",
+        "task": {
+          "compile_id": "525",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest shortFull ([S[S)I",
+          "bytes": "6",
+          "count": "1409",
+          "iicount": "1409",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "3.665"
+        },
+        "inline_failures": [],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatchPrefix (Ljava/lang/Object;JLjava/lang/Object;JII)I": 352,
+          "jdk/internal/util/ArraysSupport mismatchLarge ([SI[SII)I": -1,
+          "jdk/internal/util/ArraysSupport mismatch ([S[SI)I": 448,
+          "jdk/internal/util/ArraysSupport mismatch ([SI[SII)I": 528,
+          "java/util/Arrays mismatch ([S[S)I": 552
+        },
+        "java_call_targets": [],
+        "stores": 0,
+        "replay_sha256": "884ddcea52b77b49709567aff985720b45269f4544b906e9eb07b3b6cd43c259",
+        "prefix_load_count": 2
+      },
+      {
+        "method": "shortStore",
+        "compile_id": "526",
+        "task": {
+          "compile_id": "526",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest shortStore ([SI[SIII)I",
+          "bytes": "34",
+          "count": "1409",
+          "iicount": "1409",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "3.678"
+        },
+        "inline_failures": [
+          {
+            "callee": "java.util.Arrays mismatch ([SII[SII)I",
+            "reason": "already compiled into a big method"
+          }
+        ],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatch ([SI[SII)I": -1,
+          "java/util/Arrays mismatch ([SII[SII)I": 1016
+        },
+        "java_call_targets": [
+          "java.util.Arrays::mismatch"
+        ],
+        "stores": 2,
+        "replay_sha256": "7f6dda7f221e89a970d1de76a223b74738b0f534cd9d49467e8cc95586ee32af",
+        "prefix_load_count": 0
+      },
+      {
+        "method": "intRange",
+        "compile_id": "543",
+        "task": {
+          "compile_id": "543",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest intRange ([III[III)I",
+          "bytes": "12",
+          "count": "1409",
+          "iicount": "1409",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "3.879"
+        },
+        "inline_failures": [
+          {
+            "callee": "java.util.Arrays mismatch ([III[III)I",
+            "reason": "already compiled into a big method"
+          }
+        ],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatch ([II[III)I": -1,
+          "java/util/Arrays mismatch ([III[III)I": 1016
+        },
+        "java_call_targets": [
+          "java.util.Arrays::mismatch"
+        ],
+        "stores": 0,
+        "replay_sha256": "8d6ec09b994666141384371882559a5239bd949676145e709c11e14be81acddd",
+        "prefix_load_count": 0
+      },
+      {
+        "method": "intFull",
+        "compile_id": "544",
+        "task": {
+          "compile_id": "544",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest intFull ([I[I)I",
+          "bytes": "6",
+          "count": "1409",
+          "iicount": "1409",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "3.889"
+        },
+        "inline_failures": [],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatchPrefix (Ljava/lang/Object;JLjava/lang/Object;JII)I": 352,
+          "jdk/internal/util/ArraysSupport mismatchLarge ([II[III)I": -1,
+          "jdk/internal/util/ArraysSupport mismatch ([I[II)I": 448,
+          "jdk/internal/util/ArraysSupport mismatch ([II[III)I": 528,
+          "java/util/Arrays mismatch ([I[I)I": 544
+        },
+        "java_call_targets": [],
+        "stores": 0,
+        "replay_sha256": "602859ea5fbb126acb46a08e5e07147cd641b0c91ca6355926016b77cc411b51",
+        "prefix_load_count": 2
+      },
+      {
+        "method": "intStore",
+        "compile_id": "545",
+        "task": {
+          "compile_id": "545",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest intStore ([II[IIII)I",
+          "bytes": "34",
+          "count": "1409",
+          "iicount": "1409",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "3.901"
+        },
+        "inline_failures": [
+          {
+            "callee": "java.util.Arrays mismatch ([III[III)I",
+            "reason": "already compiled into a big method"
+          }
+        ],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatch ([II[III)I": -1,
+          "java/util/Arrays mismatch ([III[III)I": 1016
+        },
+        "java_call_targets": [
+          "java.util.Arrays::mismatch"
+        ],
+        "stores": 2,
+        "replay_sha256": "3005d2468055b278f3c6bc1c4090650365fbc3d16bcc87d7557c7a11452c86f6",
+        "prefix_load_count": 0
+      },
+      {
+        "method": "longRange",
+        "compile_id": "564",
+        "task": {
+          "compile_id": "564",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest longRange ([JII[JII)I",
+          "bytes": "12",
+          "count": "1409",
+          "iicount": "1409",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "4.116"
+        },
+        "inline_failures": [
+          {
+            "callee": "java.util.Arrays mismatch ([JII[JII)I",
+            "reason": "already compiled into a big method"
+          }
+        ],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatch ([JI[JII)I": -1,
+          "java/util/Arrays mismatch ([JII[JII)I": 1200
+        },
+        "java_call_targets": [
+          "java.util.Arrays::mismatch"
+        ],
+        "stores": 0,
+        "replay_sha256": "5fb25af806c78cc529a3c335a720b9681e5b10aa3455531d3e46a24e9046a4b2",
+        "prefix_load_count": 0
+      },
+      {
+        "method": "longFull",
+        "compile_id": "565",
+        "task": {
+          "compile_id": "565",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest longFull ([J[J)I",
+          "bytes": "6",
+          "count": "1409",
+          "iicount": "1409",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "4.126"
+        },
+        "inline_failures": [],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatchPrefix (Ljava/lang/Object;JLjava/lang/Object;JII)I": 392,
+          "jdk/internal/util/ArraysSupport mismatchLarge ([JI[JII)I": -1,
+          "jdk/internal/util/ArraysSupport mismatch ([J[JI)I": 592,
+          "jdk/internal/util/ArraysSupport mismatch ([JI[JII)I": 688,
+          "java/util/Arrays mismatch ([J[J)I": 704
+        },
+        "java_call_targets": [],
+        "stores": 0,
+        "replay_sha256": "5750fe7dab4f29c4bc3e01ec3e656cb90c2a64cf8cddca2a1c1a374f724c7911",
+        "prefix_load_count": 6
+      },
+      {
+        "method": "longStore",
+        "compile_id": "566",
+        "task": {
+          "compile_id": "566",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest longStore ([JI[JIII)I",
+          "bytes": "34",
+          "count": "1409",
+          "iicount": "1409",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "4.140"
+        },
+        "inline_failures": [
+          {
+            "callee": "java.util.Arrays mismatch ([JII[JII)I",
+            "reason": "already compiled into a big method"
+          }
+        ],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatch ([JI[JII)I": -1,
+          "java/util/Arrays mismatch ([JII[JII)I": 1200
+        },
+        "java_call_targets": [
+          "java.util.Arrays::mismatch"
+        ],
+        "stores": 2,
+        "replay_sha256": "7664cec31f5515ea7fbed01e22799ae2f2cb3737d555d6d742be4c7e96b843b0",
+        "prefix_load_count": 0
+      },
+      {
+        "method": "floatRange",
+        "compile_id": "590",
+        "task": {
+          "compile_id": "590",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest floatRange ([FII[FII)I",
+          "bytes": "12",
+          "count": "1409",
+          "iicount": "1409",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "4.367"
+        },
+        "inline_failures": [
+          {
+            "callee": "java.util.Arrays mismatch ([FII[FII)I",
+            "reason": "already compiled into a big method"
+          }
+        ],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatch ([FI[FII)I": -1,
+          "java/util/Arrays mismatch ([FII[FII)I": 1216
+        },
+        "java_call_targets": [
+          "java.util.Arrays::mismatch"
+        ],
+        "stores": 0,
+        "replay_sha256": "08d893127255eb7a630d7fc904f1a3d8013f36646fd221404a2edbb03f1a763b",
+        "prefix_load_count": 0
+      },
+      {
+        "method": "floatFull",
+        "compile_id": "591",
+        "task": {
+          "compile_id": "591",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest floatFull ([F[F)I",
+          "bytes": "6",
+          "count": "1409",
+          "iicount": "1409",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "4.377"
+        },
+        "inline_failures": [],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatchPrefixFloating (Ljava/lang/Object;JLjava/lang/Object;JII)I": 528,
+          "jdk/internal/util/ArraysSupport mismatchLarge ([FI[FIIZ)I": -1,
+          "jdk/internal/util/ArraysSupport mismatch ([F[FI)I": 616,
+          "jdk/internal/util/ArraysSupport mismatch ([FI[FII)I": 720,
+          "java/util/Arrays mismatch ([F[F)I": 712
+        },
+        "java_call_targets": [],
+        "stores": 0,
+        "replay_sha256": "c75fa8d7d490c9aed1ba3e42d35fb48a273b3c24ba30c661137e8d94629ca1f7",
+        "prefix_load_count": 4
+      },
+      {
+        "method": "floatStore",
+        "compile_id": "592",
+        "task": {
+          "compile_id": "592",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest floatStore ([FI[FIII)I",
+          "bytes": "34",
+          "count": "1409",
+          "iicount": "1409",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "4.391"
+        },
+        "inline_failures": [
+          {
+            "callee": "java.util.Arrays mismatch ([FII[FII)I",
+            "reason": "already compiled into a big method"
+          }
+        ],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatch ([FI[FII)I": -1,
+          "java/util/Arrays mismatch ([FII[FII)I": 1216
+        },
+        "java_call_targets": [
+          "java.util.Arrays::mismatch"
+        ],
+        "stores": 2,
+        "replay_sha256": "41736b720ddb7e73ee7ab68d40230bf7b2d2dd1205a37f4874fc9778fcd9868a",
+        "prefix_load_count": 0
+      },
+      {
+        "method": "doubleRange",
+        "compile_id": "610",
+        "task": {
+          "compile_id": "610",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest doubleRange ([DII[DII)I",
+          "bytes": "12",
+          "count": "1409",
+          "iicount": "1409",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "4.604"
+        },
+        "inline_failures": [
+          {
+            "callee": "java.util.Arrays mismatch ([DII[DII)I",
+            "reason": "already compiled into a big method"
+          }
+        ],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatch ([DI[DII)I": -1,
+          "java/util/Arrays mismatch ([DII[DII)I": 1400
+        },
+        "java_call_targets": [
+          "java.util.Arrays::mismatch"
+        ],
+        "stores": 0,
+        "replay_sha256": "f88ab715711935cfd1789a74309101a157c15303eb5ebce29624f0fa0afe0f4c",
+        "prefix_load_count": 0
+      },
+      {
+        "method": "doubleFull",
+        "compile_id": "611",
+        "task": {
+          "compile_id": "611",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest doubleFull ([D[D)I",
+          "bytes": "6",
+          "count": "1409",
+          "iicount": "1409",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "4.613"
+        },
+        "inline_failures": [],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatchPrefixDouble ([DI[DII)I": 696,
+          "jdk/internal/util/ArraysSupport mismatchLarge ([DI[DII)I": -1,
+          "jdk/internal/util/ArraysSupport mismatch ([D[DI)I": 640,
+          "jdk/internal/util/ArraysSupport mismatch ([DI[DII)I": 872,
+          "java/util/Arrays mismatch ([D[D)I": 736
+        },
+        "java_call_targets": [],
+        "stores": 0,
+        "replay_sha256": "761c9d81955e817aeb0a9ad42deb0aefbbea4d261aa2fceaf0ea7589bac9d1e1",
+        "prefix_load_count": 4
+      },
+      {
+        "method": "doubleStore",
+        "compile_id": "612",
+        "task": {
+          "compile_id": "612",
+          "method": "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest doubleStore ([DI[DIII)I",
+          "bytes": "34",
+          "count": "1409",
+          "iicount": "1409",
+          "decompiles": "1",
+          "blocking": "1",
+          "stamp": "4.627"
+        },
+        "inline_failures": [
+          {
+            "callee": "java.util.Arrays mismatch ([DII[DII)I",
+            "reason": "already compiled into a big method"
+          }
+        ],
+        "inline_instruction_bytes": {
+          "jdk/internal/util/ArraysSupport mismatch ([DI[DII)I": -1,
+          "java/util/Arrays mismatch ([DII[DII)I": 1400
+        },
+        "java_call_targets": [
+          "java.util.Arrays::mismatch"
+        ],
+        "stores": 2,
+        "replay_sha256": "3ad4eaf7435251143beb76f603668bf65b5c4f25a8e84e16e1b60c4f1162c19c",
+        "prefix_load_count": 0
+      }
+    ]
+  },
+  "native_previous_profile_countercheck": [
+    {
+      "image": "base",
+      "worker_task": {
+        "compile_id": "420",
+        "method": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit mismatch ()I",
+        "bytes": "461",
+        "count": "1408",
+        "iicount": "1408",
+        "blocking": "1",
+        "stamp": "0.694"
+      },
+      "callee": {
+        "id": "1326",
+        "holder": "1325",
+        "name": "mismatch",
+        "return": "1141",
+        "arguments": "1307 1141 1141 1307 1141 1141",
+        "flags": "9",
+        "bytes": "69",
+        "compile_id": "419",
+        "compiler": "c2",
+        "iicount": "1408",
+        "holder_name": "java.util.Arrays"
+      },
+      "call": {
+        "method": "1326",
+        "count": "1024",
+        "prof_factor": "1.000000",
+        "inline": "1"
+      },
+      "decision": "inline_success",
+      "reason": "inline (hot)"
+    },
+    {
+      "image": "base",
+      "worker_task": {
+        "compile_id": "420",
+        "method": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit mismatch ()I",
+        "bytes": "461",
+        "count": "1408",
+        "iicount": "1408",
+        "blocking": "1",
+        "stamp": "0.694"
+      },
+      "callee": {
+        "id": "1368",
+        "holder": "1350",
+        "name": "mismatch",
+        "return": "1141",
+        "arguments": "1307 1141 1307 1141 1141",
+        "flags": "9",
+        "bytes": "103",
+        "compile_id": "418",
+        "compiler": "c2",
+        "iicount": "2432",
+        "holder_name": "jdk.internal.util.ArraysSupport"
+      },
+      "call": {
+        "method": "1368",
+        "count": "1025",
+        "prof_factor": "1.000000",
+        "inline": "1"
+      },
+      "decision": "inline_success",
+      "reason": "inline (hot)"
+    },
+    {
+      "image": "candidate",
+      "worker_task": {
+        "compile_id": "420",
+        "method": "org.openjdk.bench.java.util.ArraysMismatchEarlyExit mismatch ()I",
+        "bytes": "461",
+        "count": "1408",
+        "iicount": "1408",
+        "blocking": "1",
+        "stamp": "0.694"
+      },
+      "callee": {
+        "id": "1326",
+        "holder": "1325",
+        "name": "mismatch",
+        "return": "1141",
+        "arguments": "1307 1141 1141 1307 1141 1141",
+        "flags": "9",
+        "bytes": "69",
+        "compile_id": "419",
+        "compiler": "c2",
+        "iicount": "1408",
+        "holder_name": "java.util.Arrays"
+      },
+      "call": {
+        "method": "1326",
+        "count": "1024",
+        "prof_factor": "1.000000",
+        "inline": "1"
+      },
+      "decision": "inline_fail",
+      "reason": "already compiled into a big method"
+    }
+  ],
+  "compact_experiment": {
+    "applied": false,
+    "source_sha256": "ad24f47b564f70c793cd9ae356658982d79ac3dce640423c0f4631635c8c6018",
+    "public_boundaries_inlined": 13,
+    "required": 16,
+    "failed": [
+      "longRange",
+      "floatRange",
+      "doubleRange"
+    ],
+    "range_inline_metrics": {
+      "byteRange": 992,
+      "booleanRange": 992,
+      "charRange": 992,
+      "shortRange": 992,
+      "intRange": 992,
+      "longRange": 1024,
+      "floatRange": 1128,
+      "doubleRange": 1200
+    },
+    "tradeoff": "One-word byte/boolean/char/short/int prefixes move differences after byte8 into a typed bulk call. Long/double keep the second-element check but still fail their range boundary. Float raw integer NaN checks retain both first elements but its range also fails.",
+    "raw_log_sha256": "1727a453ee9f1c317458c2a56d6ae4503c945aca05523020528f01dc38348a6e"
+  },
+  "raw_sha256": {
+    "final-gate/boundary.log": "b128bed6bac6502eec3e7ea7f99a7983067748b37ad15bd182cb9932c568a478",
+    "final-gate/boundary.xml": "e93c16e70f7948bcbf1589ce214dd12e027b50864dc8421b191fdb1e21a73ce0",
+    "final-gate/verify.log": "99f5e6e2ac356204fcf801cf4144dad4095203437dc8b1f2fbc8a23ca2be766e",
+    "final-gate/inspection.json": "12295ee8608dc97c7af16471d709198e52128abc1a090e4311b2e43873c3ea9c",
+    "native-profile-countercheck.json": "662f511aba7ba8d649bb7a74ef0ea9bd7acafac7b8182b829be0a037b038e065",
+    "final-gate/validation.json": "e375881061136740a6f760f72303fb7684109f3077ccc8e273e74a06be64af30",
+    "vm-flags.log": "fc4ea35af021cd99909b40ada0a2339ea3de48b8656078132a5ec736acb0f56d",
+    "final-gate/boundary-command.json": "3234f3e0d453edf3feb8cb6d2a9943b28715670c277f76e6c9886e3430985695"
+  },
+  "validation": {
+    "scope": "Fixed source/semantic and code-generation checks on existing x86 VM selecting the ARM Java branch. No timing, CI or JDK/HotSpot build.",
+    "records": [
+      {
+        "test": "boundary-child",
+        "exit_code": 0
+      },
+      {
+        "test": "boundary-verify",
+        "expected_exit_code": 1,
+        "exit_code": 1
+      },
+      {
+        "test": "interpreter",
+        "command": [
+          "/workspace/scratch/pr39-alias-order-validation/policy-full-jdk/bin/java",
+          "-Xint",
+          "--patch-module",
+          "java.base=/workspace/scratch/pr39-final-guard-validation-20261017/arm-selection-classes",
+          "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
+          "-cp",
+          "/workspace/scratch/pr39-inline-mechanism-20261017/final-gate/test-classes:/workspace/scratch/pr39-final-guard-validation-20261017/test-classes:/workspace/scratch/pr39-alias-order-validation/classes",
+          "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest",
+          "semantics"
+        ],
+        "exit_code": 0
+      },
+      {
+        "test": "c1",
+        "command": [
+          "/workspace/scratch/pr39-alias-order-validation/policy-full-jdk/bin/java",
+          "-XX:TieredStopAtLevel=1",
+          "--patch-module",
+          "java.base=/workspace/scratch/pr39-final-guard-validation-20261017/arm-selection-classes",
+          "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
+          "-cp",
+          "/workspace/scratch/pr39-inline-mechanism-20261017/final-gate/test-classes:/workspace/scratch/pr39-final-guard-validation-20261017/test-classes:/workspace/scratch/pr39-alias-order-validation/classes",
+          "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest",
+          "semantics"
+        ],
+        "exit_code": 0
+      },
+      {
+        "test": "c2-g1",
+        "command": [
+          "/workspace/scratch/pr39-alias-order-validation/policy-full-jdk/bin/java",
+          "-Xbatch",
+          "-XX:-TieredCompilation",
+          "-XX:CompileThreshold=1000",
+          "-XX:+UseG1GC",
+          "-XX:CompileCommand=dontinline,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::*Store",
+          "--patch-module",
+          "java.base=/workspace/scratch/pr39-final-guard-validation-20261017/arm-selection-classes",
+          "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
+          "-cp",
+          "/workspace/scratch/pr39-inline-mechanism-20261017/final-gate/test-classes:/workspace/scratch/pr39-final-guard-validation-20261017/test-classes:/workspace/scratch/pr39-alias-order-validation/classes",
+          "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest",
+          "semantics"
+        ],
+        "exit_code": 0
+      },
+      {
+        "test": "c2-serial",
+        "command": [
+          "/workspace/scratch/pr39-alias-order-validation/policy-full-jdk/bin/java",
+          "-Xbatch",
+          "-XX:-TieredCompilation",
+          "-XX:CompileThreshold=1000",
+          "-XX:+UseSerialGC",
+          "-XX:CompileCommand=dontinline,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::*Store",
+          "--patch-module",
+          "java.base=/workspace/scratch/pr39-final-guard-validation-20261017/arm-selection-classes",
+          "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
+          "-cp",
+          "/workspace/scratch/pr39-inline-mechanism-20261017/final-gate/test-classes:/workspace/scratch/pr39-final-guard-validation-20261017/test-classes:/workspace/scratch/pr39-alias-order-validation/classes",
+          "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest",
+          "semantics"
+        ],
+        "exit_code": 0
+      },
+      {
+        "test": "c2-z",
+        "command": [
+          "/workspace/scratch/pr39-alias-order-validation/policy-full-jdk/bin/java",
+          "-Xbatch",
+          "-XX:-TieredCompilation",
+          "-XX:CompileThreshold=1000",
+          "-XX:+UseZGC",
+          "-XX:CompileCommand=dontinline,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::*Store",
+          "--patch-module",
+          "java.base=/workspace/scratch/pr39-final-guard-validation-20261017/arm-selection-classes",
+          "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
+          "-cp",
+          "/workspace/scratch/pr39-inline-mechanism-20261017/final-gate/test-classes:/workspace/scratch/pr39-final-guard-validation-20261017/test-classes:/workspace/scratch/pr39-alias-order-validation/classes",
+          "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest",
+          "semantics"
+        ],
+        "exit_code": 0
+      },
+      {
+        "test": "c2-disabled",
+        "command": [
+          "/workspace/scratch/pr39-alias-order-validation/policy-full-jdk/bin/java",
+          "-Xbatch",
+          "-XX:-TieredCompilation",
+          "-XX:CompileThreshold=1000",
+          "-XX:-UseVectorizedMismatchIntrinsic",
+          "-XX:CompileCommand=dontinline,compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest::*Store",
+          "--patch-module",
+          "java.base=/workspace/scratch/pr39-final-guard-validation-20261017/arm-selection-classes",
+          "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
+          "-cp",
+          "/workspace/scratch/pr39-inline-mechanism-20261017/final-gate/test-classes:/workspace/scratch/pr39-final-guard-validation-20261017/test-classes:/workspace/scratch/pr39-alias-order-validation/classes",
+          "compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest",
+          "semantics"
+        ],
+        "exit_code": 0
+      }
+    ],
+    "production_source_sha256": "b3940e7dba5b6d3a7d527de2b015ebc6a8c35c3a8baa66aa55eae600ebf2cb09",
+    "test_sha256": "be9b7e6b90005e258fe9cf2e6c8b39fbb10fe4b743b6d48aeaf9f502ca7f2bf5",
+    "java_patch": "immutable ARM-selection classes from pr39-final-guard-validation-20261017",
+    "libjvm_sha256": "9931a7de0da6181d3204ceeb2b4eb74f290c93fed013b853d151774ce20c1354"
+  }
+}

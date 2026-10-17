@@ -47,11 +47,12 @@
     "control_endpoint_spread": 1.1,
     "first_row": "stable native4KiB equality benefit >=5% in both balanced orders before later rows",
     "native_public_inlining_cases_required": 16,
+    "native_store_prefix_cases_required": 8,
     "regression": "loss >5% AND >1ns in both orders",
     "within_fork_spread": 1.15
   },
   "limits": [
-    "Correctness before any timing. Every native inlining case, including doubleRange, must pass.",
+    "Correctness before any timing. All16 public inlining and8 Store/prefix cases must pass. Current local source gate fails; see INLINE-REVIEW.md.",
     "One fixed screen only; no main-stage expansion, retry, new samples, relaxed gates or substitute runner.",
     "The97 previously unrun main rows remain unqualified; passing this focused plan cannot promote PR39.",
     "Actual CPU/image/toolchain/file hashes must be recorded anew; use fresh matched builds, not prior image handoffs.",
@@ -528,7 +529,7 @@
     "src_tree": "0c44eeae21777bf7df2ef8f4fee495c398a144d3",
     "test_tree": "261938a91c3e50dd5e36d8eb2d6d7ad8edf38705"
   },
-  "status": "proposal; not launched or authorized",
+  "status": "blocked: public range inlining mechanism remains; not a launch recommendation",
   "total_forks": 184,
   "warmup_iterations": 3,
   "warmup_milliseconds": 250

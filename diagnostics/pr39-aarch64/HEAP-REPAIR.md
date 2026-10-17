@@ -1,9 +1,12 @@
-# Array caller repair for native review
+# Array caller split and unresolved inlining
 
 Source `7f0bf03bd947a95c551da4fa0352257738e5f281` separates the AArch64 primitive
-array caller from bulk dispatch. It addresses the call boundaries identified in
-[run 39045104945](RESULTS-39045104945.md); it has **not** been measured or executed
-on native ARM. The prior 25 regressions remain unchanged evidence.
+array caller from bulk dispatch. It has **not** resolved the public range call
+boundary identified in [run 39045104945](RESULTS-39045104945.md). The
+[exact inlining review](INLINE-REVIEW.md) retains the failed size decisions and
+rejects the compact source hypothesis as a complete repair. The source has
+not been measured or executed on native ARM. The prior 25 regressions remain
+unchanged evidence; no timing campaign should launch on this source evidence.
 
 The array overloads now select an architecture-specific Java path at build
 time. Sub-word inputs use their existing scalar comparisons. At most two
@@ -67,14 +70,19 @@ validation, not native ARM execution or emulated performance.
   failures are retained. A separate baseline counterfactual also outlines
   double range (public code 1608 bytes, wrapper 104 bytes); no corresponding
   baseline claim is made for the other seven ranges. This does not establish
-  ARM instruction size or validate recovery. **All 16 native cases must pass
-  before timing**, with no allowance for the local failures.
+  ARM instruction size or validate recovery. Exact replay records now show
+  public range sizes of 1008–1400 bytes and the same big-method rejection
+  recorded in the prior native byte case. This is a demonstrated unresolved
+  mechanism, not an ISA-based exception. **All 16 public and eight Store/prefix
+  native graphs must pass before timing.**
 - 33 qualification-driver tests pass, including fixed rows, shared deadlines,
   no-retry gates, required result IDs and process-group cleanup.
 
-The new native-only call-boundary test deliberately compiles callees before
-callers, retains raw Ideal output and checks ordinary inlining without a
-library force-inline directive. The local range-call results remain an unresolved code-generation risk for
-native review. No native recovery or
-application/x86 speedup is claimed. [The focused campaign](HEAP-CAMPAIGN.md)
-is prepared for independent review and separate launch approval.
+The native-only call-boundary test compiles callees before callers and retains
+Ideal output, compilation XML and replay records under ordinary inlining.
+Eight Store graphs now require the prefix loads in the same graph as both
+stores, with no hidden public/Support/prefix call. All eight currently fail:
+C2 installation alone was not an ordering proof. Six semantic modes pass with
+the revised direct-API Store wrappers. No native recovery or application/x86
+speedup is claimed. [The focused campaign](HEAP-CAMPAIGN.md) remains blocked by
+the public range mechanism.

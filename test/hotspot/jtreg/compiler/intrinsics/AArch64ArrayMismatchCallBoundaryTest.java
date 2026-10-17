@@ -138,56 +138,56 @@ public class AArch64ArrayMismatchCallBoundaryTest {
 
     public static int byteStore(byte[] a, int af, byte[] b, int bf, int length, int position) {
         b[bf + position] = 1;
-        int result = byteRange(a, af, af + length, b, bf, bf + length);
+        int result = Arrays.mismatch(a, af, af + length, b, bf, bf + length);
         b[bf + position] = 0;
         return result;
     }
 
     public static int booleanStore(boolean[] a, int af, boolean[] b, int bf, int length, int position) {
         b[bf + position] = true;
-        int result = booleanRange(a, af, af + length, b, bf, bf + length);
+        int result = Arrays.mismatch(a, af, af + length, b, bf, bf + length);
         b[bf + position] = false;
         return result;
     }
 
     public static int charStore(char[] a, int af, char[] b, int bf, int length, int position) {
         b[bf + position] = 1;
-        int result = charRange(a, af, af + length, b, bf, bf + length);
+        int result = Arrays.mismatch(a, af, af + length, b, bf, bf + length);
         b[bf + position] = 0;
         return result;
     }
 
     public static int shortStore(short[] a, int af, short[] b, int bf, int length, int position) {
         b[bf + position] = 1;
-        int result = shortRange(a, af, af + length, b, bf, bf + length);
+        int result = Arrays.mismatch(a, af, af + length, b, bf, bf + length);
         b[bf + position] = 0;
         return result;
     }
 
     public static int intStore(int[] a, int af, int[] b, int bf, int length, int position) {
         b[bf + position] = 1;
-        int result = intRange(a, af, af + length, b, bf, bf + length);
+        int result = Arrays.mismatch(a, af, af + length, b, bf, bf + length);
         b[bf + position] = 0;
         return result;
     }
 
     public static int longStore(long[] a, int af, long[] b, int bf, int length, int position) {
         b[bf + position] = 1;
-        int result = longRange(a, af, af + length, b, bf, bf + length);
+        int result = Arrays.mismatch(a, af, af + length, b, bf, bf + length);
         b[bf + position] = 0;
         return result;
     }
 
     public static int floatStore(float[] a, int af, float[] b, int bf, int length, int position) {
         b[bf + position] = 1;
-        int result = floatRange(a, af, af + length, b, bf, bf + length);
+        int result = Arrays.mismatch(a, af, af + length, b, bf, bf + length);
         b[bf + position] = 0;
         return result;
     }
 
     public static int doubleStore(double[] a, int af, double[] b, int bf, int length, int position) {
         b[bf + position] = 1;
-        int result = doubleRange(a, af, af + length, b, bf, bf + length);
+        int result = Arrays.mismatch(a, af, af + length, b, bf, bf + length);
         b[bf + position] = 0;
         return result;
     }
@@ -386,6 +386,10 @@ public class AArch64ArrayMismatchCallBoundaryTest {
                 check(full(kind, a, b), 1, "profile full");
                 value(kind, b, 1, false);
             }
+            for (int i = 0; i < 2000; i++) {
+                int length = i % 3 == 0 ? 8 : i % 3 == 1 ? 128 : 4096;
+                check(store(kind, a, 1, b, 1, length, 1), 1, "profile store");
+            }
             // Compile callees before callers, reproducing the early-mismatch inlining cliff.
             // A cold bulk exit may be an uncommon trap rather than a retained call.
             compile(wb, kind == 6
@@ -401,12 +405,15 @@ public class AArch64ArrayMismatchCallBoundaryTest {
                 wb.deoptimizeMethod(callee);
                 compile(wb, callee);
             }
-            for (String suffix : new String[] {"Range", "Full"}) {
+            for (String suffix : new String[] {"Range", "Full", "Store"}) {
                 String name = TYPES[kind].getName() + suffix;
                 Method method = suffix.equals("Range")
                         ? AArch64ArrayMismatchCallBoundaryTest.class.getMethod(name, array, int.class,
                                 int.class, array, int.class, int.class)
-                        : AArch64ArrayMismatchCallBoundaryTest.class.getMethod(name, array, array);
+                        : suffix.equals("Full")
+                            ? AArch64ArrayMismatchCallBoundaryTest.class.getMethod(name, array, array)
+                            : AArch64ArrayMismatchCallBoundaryTest.class.getMethod(name, array, int.class,
+                                    array, int.class, int.class, int.class);
                 wb.deoptimizeMethod(method);
                 System.out.println(MARKER + name);
                 System.out.flush();
@@ -431,7 +438,15 @@ public class AArch64ArrayMismatchCallBoundaryTest {
                 graphs.get(current).add(line);
             }
         }
-        if (graphs.size() != 16) throw new AssertionError("missing graphs " + graphs.keySet());
+        for (Class<?> type : TYPES) {
+            for (String suffix : new String[] {"Range", "Full", "Store"}) {
+                if (!graphs.containsKey(type.getName() + suffix)) {
+                    throw new AssertionError("missing graph " + type.getName() + suffix);
+                }
+            }
+        }
+        if (graphs.size() != 24) throw new AssertionError("unexpected graphs " + graphs.keySet());
+        List<String> failures = new ArrayList<>();
         for (var entry : graphs.entrySet()) {
             List<String> nodes = entry.getValue().stream()
                     .filter(s -> s.matches("\\s*o?\\d+\\s+\\w+\\s+===.*")).toList();
@@ -446,10 +461,20 @@ public class AArch64ArrayMismatchCallBoundaryTest {
                      s.contains("# Static  jdk.internal.util.ArraysSupport::vectorizedMismatch ")));
             boolean leaf = nodes.stream().anyMatch(s -> s.contains("CallLeaf") && s.contains("vectorizedMismatch"));
             if (nodes.isEmpty() || bulk > 1 || hiddenCall || leaf) {
-                throw new AssertionError(entry.getKey() + " must inline the early public path; any retained mismatch call must target bulk: " + nodes);
+                failures.add(entry.getKey() + ": hidden mismatch boundary, leaf call, or missing graph");
+            }
+            if (entry.getKey().endsWith("Store")) {
+                long stores = nodes.stream().filter(s -> s.matches("\\s*o?\\d+\\s+Store[B-CDFILS]\\s+===.*")).count();
+                boolean prefixLoad = nodes.stream().anyMatch(s ->
+                        s.matches("\\s*o?\\d+\\s+Load[LDF]\\s+===.*") &&
+                        (s.contains("ArraysSupport::mismatchPrefix") || s.contains("ArraysSupport::mismatch @")));
+                if (stores < 2 || !prefixLoad) {
+                    failures.add(entry.getKey() + ": prefix load must be inline with both stores");
+                }
             }
         }
-        System.out.println("Verified sixteen default-inlining public array call boundaries");
+        if (!failures.isEmpty()) throw new AssertionError(String.join("; ", failures));
+        System.out.println("Verified sixteen public boundaries and eight inlined store/prefix graphs");
     }
 
     public static void main(String[] args) throws Exception {
@@ -468,10 +493,14 @@ public class AArch64ArrayMismatchCallBoundaryTest {
                 "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
                 "-XX:-TieredCompilation", "-XX:-BackgroundCompilation",
                 "-XX:CompileThreshold=1000", "-XX:CompileCommand=quiet",
+                "-XX:+LogCompilation", "-XX:LogFile=AArch64ArrayMismatchCallBoundaryTest-compilation.xml",
+                "-XX:CompileCommand=DumpReplay,java.util.Arrays::mismatch",
+                "-XX:CompileCommand=DumpReplay,jdk.internal.util.ArraysSupport::mismatch",
                 "-XX:CompileCommand=dontinline," + test + "::*"));
         for (Class<?> type : TYPES) {
-            for (String suffix : new String[] {"Range", "Full"}) {
+            for (String suffix : new String[] {"Range", "Full", "Store"}) {
                 flags.add("-XX:CompileCommand=PrintIdealPhase," + test + "::" + type.getName() + suffix + ",BEFORE_MATCHING");
+                flags.add("-XX:CompileCommand=DumpReplay," + test + "::" + type.getName() + suffix);
             }
         }
         flags.add(test);

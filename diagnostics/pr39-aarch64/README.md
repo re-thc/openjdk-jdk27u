@@ -1,10 +1,13 @@
 # PR39 native AArch64 qualification
 
-The review branch now also contains the [follow-up heap caller repair](HEAP-REPAIR.md)
-at `7f0bf03bd947`. It is **not native-qualified**. Its [focused 67-minute
-campaign](HEAP-CAMPAIGN.md) is prepared for separate review and approval; no
-new workflow, JDK build or timing has launched. The executed results below
-belong to `93926` and remain unchanged.
+The Java array caller split at `7f0bf03bd947` remains blocked by the public
+range call boundary. [The exact review](INLINE-REVIEW.md) records 1008–1400-byte
+public methods rejected by the unchanged 1000-byte cutoff. A compact experiment
+still fails three ranges and is not applied. The strengthened Store gate also
+fails all eight local cases; C2 installation alone did not prove inline loads.
+The [67-minute matrix](HEAP-CAMPAIGN.md) remains a blocked proposal. No new
+workflow, JDK/HotSpot build, native run or timing has launched. The executed
+results below belong to `93926` and remain unchanged.
 
 **The repaired source passes targeted native correctness and fails the fixed
 performance screen. PR39 remains draft and is not ready to merge.**
