@@ -85,6 +85,11 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_fmaF,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_math_fmaD,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_ref_reference_get0,                               // implementation of java.lang.ref.Reference.get()
+#if defined(AMD64) || defined(AARCH64)
+    java_util_zip_Adler32_update,
+    java_util_zip_Adler32_updateBytes,
+    java_util_zip_Adler32_updateByteBuffer,
+#endif
     java_util_zip_CRC32_update,                                 // implementation of java.util.zip.CRC32.update()
     java_util_zip_CRC32_updateBytes,                            // implementation of java.util.zip.CRC32.updateBytes()
     java_util_zip_CRC32_updateByteBuffer,                       // implementation of java.util.zip.CRC32.updateByteBuffer()

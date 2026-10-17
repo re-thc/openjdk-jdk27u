@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,6 +45,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
+#include "runtime/zipRuntime.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_aarch64.inline.hpp"
 
@@ -251,11 +252,11 @@ static int fpu_reg_save_offsets[FrameMap::nof_fpu_regs];
 static int reg_save_size_in_words;
 static int frame_size_in_bytes = -1;
 
-static OopMap* generate_oop_map(StubAssembler* sasm, bool save_fpu_registers) {
+static OopMap* generate_oop_map(StubAssembler* sasm, bool save_fpu_registers, int stack_args = 0) {
   int frame_size_in_bytes = reg_save_frame_size * BytesPerWord;
   sasm->set_frame_size(frame_size_in_bytes / BytesPerWord);
   int frame_size_in_slots = frame_size_in_bytes / sizeof(jint);
-  OopMap* oop_map = new OopMap(frame_size_in_slots, 0);
+  OopMap* oop_map = new OopMap(frame_size_in_slots, stack_args);
 
   for (int i = 0; i < FrameMap::nof_caller_save_cpu_regs(); i++) {
     LIR_Opr opr = FrameMap::caller_save_cpu_reg_at(i);
@@ -283,7 +284,7 @@ static OopMap* generate_oop_map(StubAssembler* sasm, bool save_fpu_registers) {
 }
 
 static OopMap* save_live_registers(StubAssembler* sasm,
-                                   bool save_fpu_registers = true) {
+                                   bool save_fpu_registers = true, int stack_args = 0) {
   __ block_comment("save_live_registers");
 
   __ push(RegSet::range(r0, r29), sp);         // integer registers except lr & sp
@@ -298,7 +299,7 @@ static OopMap* save_live_registers(StubAssembler* sasm,
     __ add(sp, sp, -32 * wordSize);
   }
 
-  return generate_oop_map(sasm, save_fpu_registers);
+  return generate_oop_map(sasm, save_fpu_registers, stack_args);
 }
 
 static void restore_live_registers(StubAssembler* sasm, bool restore_fpu_registers = true) {
@@ -809,6 +810,22 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
 
         // r0,: new multi array
         __ verify_oop(r0);
+      }
+      break;
+
+    case StubId::c1_zip_process_id:
+      {
+        StubFrame f(sasm, "zip_process", dont_gc_arguments, requires_pop_epilogue_return);
+        OopMap* map = save_live_registers(sasm, true, 11 * VMRegImpl::slots_per_word);
+        const int oop_indices[] = {1, 3, 6};
+        for (int index : oop_indices) {
+          map->set_oop(VMRegImpl::stack2reg((sasm->frame_size() + index) * VMRegImpl::slots_per_word));
+        }
+        int call_offset = __ call_RT(noreg, noreg,
+            CAST_FROM_FN_PTR(address, ZipRuntime::process_c1), c_rarg0);
+        oop_maps = new OopMapSet();
+        oop_maps->add_gc_map(call_offset, map);
+        restore_live_registers_except_r0(sasm);
       }
       break;
 

@@ -36,11 +36,20 @@
  * @run main/othervm -Xint compiler.intrinsics.zip.TestFpRegsABI
  */
 
+/**
+ * @test id=avx2
+ * @summary Verify native checksum register preservation without AVX-512
+ * @requires os.simpleArch == "x64"
+ * @run main/othervm -XX:-TieredCompilation -Xbatch -XX:UseAVX=2 compiler.intrinsics.zip.TestFpRegsABI
+ * @run main/othervm -XX:TieredStopAtLevel=1 -Xbatch -XX:UseAVX=2 compiler.intrinsics.zip.TestFpRegsABI
+ */
+
 package compiler.intrinsics.zip;
 
-import java.util.zip.Checksum;
+import java.util.zip.Adler32;
 import java.util.zip.CRC32;
 import java.util.zip.CRC32C;
+import java.util.zip.Checksum;
 
 public class TestFpRegsABI {
     private static byte[] buf;
@@ -101,6 +110,21 @@ public class TestFpRegsABI {
             }
         }
 
+        public void runByte(byte[] buf, int value, long expectedValue) {
+            for (int i = 0; i < 20_000; i++) {
+                int before = calcValue(buf);
+                checksum.reset();
+                checksum.update(value);
+                if (checksum.getValue() != expectedValue) {
+                    throw new RuntimeException("Scalar checksum error");
+                }
+                int after = calcValue(buf);
+                if (before != after) {
+                    throw new RuntimeException("Floating-point value changed across scalar checksum");
+                }
+            }
+        }
+
         // If checksum intrinsic does not save fp registers as ABI requires,
         // the second call of calcValue might produce a wrong result.
         private void runIteration(byte[] buf, long expectedValue) {
@@ -154,6 +178,9 @@ public class TestFpRegsABI {
     }
 
     public static void main(final String[] argv) {
+        new TestIntrinsic(new Adler32()).run(buf, 0x00000000e4c9fe10L);
+        new TestIntrinsic(new Adler32()).runByte(buf, 0x93, 0x00940094L);
+        new RegressionTest(new Adler32()).run(buf, 0x00000000e4c9fe10L);
         new TestIntrinsic(new CRC32()).run(buf, 0x00000000b70b4c26L);
         new TestIntrinsic(new CRC32C()).run(buf, 0x000000002cdf6e8fL);
         new RegressionTest(new CRC32()).run(buf, 0x00000000b70b4c26L);

@@ -30,6 +30,7 @@
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/zipLibrary.hpp"
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
@@ -175,6 +176,42 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   return entry;
 }
 #endif  // __WIN64
+
+address TemplateInterpreterGenerator::generate_Adler32_entry(AbstractInterpreter::MethodKind kind) {
+  assert(UseAdler32Intrinsics, "Adler32 intrinsic must be enabled");
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
+
+  const Register adler = c_rarg0;
+  const Register buf = c_rarg1;
+  const Register len = c_rarg2;
+  if (kind == Interpreter::java_util_zip_Adler32_update) {
+    __ movl(buf, Address(rsp, wordSize));
+    __ movl(adler, Address(rsp, 2 * wordSize));
+    __ super_call_VM_leaf(ZipLibrary::adler32_byte_address(), adler, buf);
+  } else {
+    __ movptr(buf, Address(rsp, 3 * wordSize));
+    __ movl2ptr(len, Address(rsp, 2 * wordSize));
+    if (kind == Interpreter::java_util_zip_Adler32_updateBytes) {
+      __ addptr(buf, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+      __ movl(adler, Address(rsp, 4 * wordSize));
+    } else {
+      __ movl(adler, Address(rsp, 5 * wordSize));
+    }
+    __ addq(buf, len);
+    __ movl(len, Address(rsp, wordSize));
+    __ super_call_VM_leaf(ZipLibrary::adler32_address(), adler, buf, len);
+  }
+
+  __ pop(rdi);
+  __ mov(rsp, r13);
+  __ jmp(rdi);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}
+
 
 /**
  * Method entry for static native methods:

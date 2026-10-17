@@ -2570,7 +2570,10 @@ Node* GraphKit::make_runtime_call(int flags,
                                   Node* parm0, Node* parm1,
                                   Node* parm2, Node* parm3,
                                   Node* parm4, Node* parm5,
-                                  Node* parm6, Node* parm7) {
+                                  Node* parm6, Node* parm7,
+                                  Node* parm8, Node* parm9,
+                                  Node* parm10, Node* parm11,
+                                  Node* parm12, Node* parm13) {
   assert(call_addr != nullptr, "must not call null targets");
 
   // Slow-path call
@@ -2611,16 +2614,12 @@ Node* GraphKit::make_runtime_call(int flags,
     prev_mem = set_predefined_input_for_runtime_call(call, narrow_mem);
   }
 
-  // Hook each parm in order.  Stop looking at the first null.
-  if (parm0 != nullptr) { call->init_req(TypeFunc::Parms+0, parm0);
-  if (parm1 != nullptr) { call->init_req(TypeFunc::Parms+1, parm1);
-  if (parm2 != nullptr) { call->init_req(TypeFunc::Parms+2, parm2);
-  if (parm3 != nullptr) { call->init_req(TypeFunc::Parms+3, parm3);
-  if (parm4 != nullptr) { call->init_req(TypeFunc::Parms+4, parm4);
-  if (parm5 != nullptr) { call->init_req(TypeFunc::Parms+5, parm5);
-  if (parm6 != nullptr) { call->init_req(TypeFunc::Parms+6, parm6);
-  if (parm7 != nullptr) { call->init_req(TypeFunc::Parms+7, parm7);
-  /* close each nested if ===> */  } } } } } } } }
+  // Hook each parameter in order; the first null ends the list.
+  Node* parms[] = {parm0, parm1, parm2, parm3, parm4, parm5, parm6, parm7,
+                   parm8, parm9, parm10, parm11, parm12, parm13};
+  for (uint i = 0; i < ARRAY_SIZE(parms) && parms[i] != nullptr; i++) {
+    call->init_req(TypeFunc::Parms + i, parms[i]);
+  }
   assert(call->in(call->req()-1) != nullptr, "must initialize all parms");
 
   if (!is_leaf) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vframeArray.hpp"
+#include "runtime/zipRuntime.hpp"
 #include "utilities/macros.hpp"
 #include "vmreg_x86.inline.hpp"
 
@@ -288,7 +289,7 @@ enum reg_save_layout {
 // to simply save their current value.
 //
 static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
-                                bool save_fpu_registers = true) {
+                                bool save_fpu_registers = true, int stack_args = 0) {
 
   // In 64bit all the args are in regs so there are no additional stack slots
   num_rt_args = 0;
@@ -298,7 +299,7 @@ static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
 
   // record saved value locations in an OopMap
   // locations are offsets from sp after runtime call; num_rt_args is number of arguments in call, including thread
-  OopMap* map = new OopMap(frame_size_in_slots, 0);
+  OopMap* map = new OopMap(frame_size_in_slots, stack_args);
   map->set_callee_saved(VMRegImpl::stack2reg(rax_off + num_rt_args), rax->as_VMReg());
   map->set_callee_saved(VMRegImpl::stack2reg(rcx_off + num_rt_args), rcx->as_VMReg());
   map->set_callee_saved(VMRegImpl::stack2reg(rdx_off + num_rt_args), rdx->as_VMReg());
@@ -449,9 +450,9 @@ void C1_MacroAssembler::restore_live_registers_except_rax(bool restore_fpu_regis
 #define __ sasm->
 
 static OopMap* save_live_registers(StubAssembler* sasm, int num_rt_args,
-                                   bool save_fpu_registers = true) {
+                                   bool save_fpu_registers = true, int stack_args = 0) {
   __ save_live_registers_no_oop_map(save_fpu_registers);
-  return generate_oop_map(sasm, num_rt_args, save_fpu_registers);
+  return generate_oop_map(sasm, num_rt_args, save_fpu_registers, stack_args);
 }
 
 static void restore_live_registers(StubAssembler* sasm, bool restore_fpu_registers = true) {
@@ -948,6 +949,30 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
         __ verify_oop(rax);
       }
       break;
+
+#ifdef AMD64
+    case StubId::c1_zip_process_id:
+      {
+        __ set_info("zip_process", dont_gc_arguments);
+        __ enter();
+        __ mov(c_rarg1, c_rarg0);
+        OopMap* map = save_live_registers(sasm, 2, true, 11 * VMRegImpl::slots_per_word);
+        // Keep the caller's argument-block oops visible even if a debug
+        // VM entry triggers GC before the runtime creates its handles.
+        const int oop_indices[] = {1, 3, 6};
+        for (int index : oop_indices) {
+          map->set_oop(VMRegImpl::stack2reg((sasm->frame_size() + index) * VMRegImpl::slots_per_word));
+        }
+        int call_offset = __ call_RT(noreg, noreg,
+            CAST_FROM_FN_PTR(address, ZipRuntime::process_c1), c_rarg1);
+        oop_maps = new OopMapSet();
+        oop_maps->add_gc_map(call_offset, map);
+        restore_live_registers_except_rax(sasm);
+        __ leave();
+        __ ret(0);
+      }
+      break;
+#endif
 
     case StubId::c1_register_finalizer_id:
       {

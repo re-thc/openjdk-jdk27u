@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -78,9 +78,76 @@ TARGETS += $(BUILD_LIBJAVA)
 ################################################################################
 
 BUILD_LIBZIP_EXCLUDES :=
+LIBZIP_EXCLUDES += zlib-ng
+ifneq ($(filter x86_64 aarch64, $(OPENJDK_TARGET_CPU)), )
+  ifeq ($(call isTargetOs, linux macosx windows), true)
+    ZLIBNG_SRC := $(TOPDIR)/src/java.base/share/native/libzip/zlib-ng
+    ZLIBNG_OUT := $(SUPPORT_OUTPUTDIR)/native/zlib-ng$(if $(filter true, $(STATIC_LIBS)),-static)
+    ZLIBNG_LIB := $(ZLIBNG_OUT)/$(if $(filter windows, $(OPENJDK_TARGET_OS)),zlibstatic.lib,libz.a)
+    ZLIBNG_HOST := $(OPENJDK_TARGET_CPU)-$(if $(filter macosx, $(OPENJDK_TARGET_OS)),apple-darwin,unknown-linux-gnu)
+
+    $(ZLIBNG_LIB): $(call FindFiles, $(ZLIBNG_SRC)) $(SPEC) \
+        $(TOPDIR)/make/modules/java.base/lib/CoreLibraries.gmk \
+        $(TOPDIR)/make/scripts/zlib-ng-cmake-flags.sh
+	# Upstream makefiles do not track all configuration/header dependencies.
+	$(RM) -r $(ZLIBNG_OUT)
+	$(MKDIR) -p $(ZLIBNG_OUT)
+    ifeq ($(call isTargetOs, windows), true)
+	$(BASH) $(TOPDIR)/make/scripts/zlib-ng-cmake-flags.sh \
+	    $(ZLIBNG_OUT)/jdk-flags.cmake $(FIXPATH_BASE) \
+	    --cflags $(CFLAGS_JDKLIB) $(SYSROOT_CFLAGS) \
+	    --ldflags $(LDFLAGS_JDKEXE) $(SYSROOT_LDFLAGS)
+	MAKEFLAGS= MFLAGS= $(CMAKE) -C $(ZLIBNG_OUT)/jdk-flags.cmake -S $(ZLIBNG_SRC) -B $(ZLIBNG_OUT) -G "NMake Makefiles" \
+	    -DCMAKE_MAKE_PROGRAM="$(call FixPath, $(lastword $(NMAKE)))" \
+	    "-DCMAKE_C_COMPILER=$(subst $(SPACE),;,$(call FixPath, $(subst $(FIXPATH) ,,$(CC))))" \
+	    -DCMAKE_AR="$(call FixPath, $(lastword $(LIB)))" \
+	    -DCMAKE_LINKER="$(call FixPath, $(lastword $(LD)))" \
+	    -DCMAKE_BUILD_TYPE=Release -DCMAKE_TRY_COMPILE_CONFIGURATION=Release \
+	    -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF \
+	    -DZLIB_COMPAT=ON -DZLIB_SYMBOL_PREFIX=jdk_ng_ \
+	    > $(ZLIBNG_OUT)/configure-output.log 2>&1 || { \
+	      $(CAT) $(ZLIBNG_OUT)/configure-output.log; exit 1; \
+	    }
+	MAKEFLAGS= MFLAGS= $(CMAKE) --build $(ZLIBNG_OUT) --target zlib-ng
+    else
+	# Keep compiler environment assignments intact during configure probes.
+	$(PRINTF) '%s\n' '#!/bin/sh' 'exec env $(CC) "$$@"' > $(ZLIBNG_OUT)/cc
+	$(CHMOD) +x $(ZLIBNG_OUT)/cc
+	cd $(ZLIBNG_OUT) && CC="$(ZLIBNG_OUT)/cc" AR="$(AR)" \
+	    CFLAGS="$(CFLAGS_JDKLIB) $(SYSROOT_CFLAGS) -fPIC -Wno-undef" \
+	    LDFLAGS="$(LDFLAGS_JDKLIB) $(SYSROOT_LDFLAGS)" CHOST="$(ZLIBNG_HOST)" \
+	    $(BASH) $(ZLIBNG_SRC)/configure --static --zlib-compat --sprefix=jdk_ng_ \
+	    > configure-output.log 2>&1 || { \
+	      $(CAT) $(ZLIBNG_OUT)/configure-output.log $(ZLIBNG_OUT)/configure.log; \
+	      exit 1; \
+	    }
+	+$(MAKE) -C $(ZLIBNG_OUT) libz.a
+    endif
+
+    LIBZIP_ZLIBNG_CFLAGS := -DINCLUDE_ZLIBNG=1
+    LIBZIP_EXCLUDES += zlib
+    $(MODULE)_INCLUDED_LIBS += zlibng
+
+    ifeq ($(STATIC_LIBS), true)
+      ZLIBNG_STATIC_LIB := $(SUPPORT_OUTPUTDIR)/native/java.base/libzlibng/static/$(LIBRARY_PREFIX)zlibng$(STATIC_LIBRARY_SUFFIX)
+
+      $(ZLIBNG_STATIC_LIB): $(ZLIBNG_LIB)
+	$(call MakeDir, $(@D))
+	$(CP) $< $@
+	$(ECHO) > $@.lib-flags.txt
+
+      TARGETS += $(ZLIBNG_STATIC_LIB)
+    else
+      LIBZIP_ZLIBNG_LIBS := $(ZLIBNG_LIB)
+    endif
+  endif
+endif
+
 ifeq ($(USE_EXTERNAL_LIBZ), true)
   LIBZIP_EXCLUDES += zlib
 endif
+
+LIBZIP_LIBZ_LIBS := $(if $(ZLIBNG_LIB),,$(LIBZ_LIBS))
 
 ifeq ($(LIBZIP_CAN_USE_MMAP), true)
   BUILD_LIBZIP_MMAP := -DUSE_MMAP
@@ -90,14 +157,16 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBZIP, \
     NAME := zip, \
     OPTIMIZATION := LOW, \
     EXCLUDES := $(LIBZIP_EXCLUDES), \
-    CFLAGS := $(LIBZ_CFLAGS), \
+    CFLAGS := $(LIBZ_CFLAGS) $(LIBZIP_ZLIBNG_CFLAGS), \
     CFLAGS_unix := $(BUILD_LIBZIP_MMAP) -UDEBUG, \
     DISABLED_WARNINGS_gcc_zip_util.c := unused-function, \
     DISABLED_WARNINGS_clang := deprecated-non-prototype, \
     DISABLED_WARNINGS_clang_gzwrite.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_zip_util.c := unused-function, \
     JDK_LIBS := libjava libjvm, \
-    LIBS_unix := $(LIBZ_LIBS), \
+    LIBS := $(LIBZIP_ZLIBNG_LIBS), \
+    LIBS_unix := $(LIBZIP_LIBZ_LIBS), \
+    EXTRA_DEPS := $(ZLIBNG_LIB) $(ZLIBNG_STATIC_LIB), \
 ))
 
 TARGETS += $(BUILD_LIBZIP)
@@ -155,13 +224,12 @@ ifneq ($(USE_EXTERNAL_LIBZ), true)
       $(addprefix $(TOPDIR)/src/java.base/share/native/libzip/zlib/, \
           $(LIBJLI_EXTRA_FILE_LIST))
 
-  # Do not include these libz objects in the static libjli library.
-  # When statically linking the java launcher with all JDK and VM
-  # static libraries, we use the --whole-archive linker option.
-  # The duplicate objects in different static libraries cause linking
-  # errors due to duplicate symbols.
-  LIBJLI_STATIC_EXCLUDE_OBJS := \
-      $(subst .c,$(OBJ_SUFFIX),$(LIBJLI_EXTRA_FILE_LIST))
+  # Stock libzip supplies these symbols to the static launcher. With private
+  # zlib-ng symbols, libjli must retain its own inflate implementation.
+  ifeq ($(ZLIBNG_LIB), )
+    LIBJLI_STATIC_EXCLUDE_OBJS := \
+        $(subst .c,$(OBJ_SUFFIX),$(LIBJLI_EXTRA_FILE_LIST))
+  endif
 endif
 
 ifeq ($(call isTargetOs, aix), true)

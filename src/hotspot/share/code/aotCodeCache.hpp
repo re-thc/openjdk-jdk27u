@@ -300,6 +300,9 @@ public:
   do_var(bool,  UseSHA3Intrinsics) \
   do_var(bool,  UseSHA512Intrinsics) \
   do_var(bool,  UseVectorizedMismatchIntrinsic) \
+  do_var(bool,  UseAdler32Intrinsics) \
+  do_var(bool,  UseZipIntrinsics) \
+  do_fun(bool,  CRC32_zlib_ng, StubRoutines::use_zlib_ng_crc32()) \
   do_fun(int,   CompressedKlassPointers_shift,          CompressedKlassPointers::shift()) \
   do_fun(bool,  JavaAssertions_systemClassDefault,      JavaAssertions::systemClassDefault()) \
   do_fun(bool,  JavaAssertions_userClassDefault,        JavaAssertions::userClassDefault()) \

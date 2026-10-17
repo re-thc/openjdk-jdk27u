@@ -1991,7 +1991,8 @@ public:
 
   // CRC32 code for java.util.zip.CRC32::updateBytes() intrinsic.
   void update_byte_crc32(Register crc, Register val, Register table);
-  void kernel_crc32(Register crc, Register buf, Register len, Register table, Register tmp);
+  void kernel_crc32(Register crc, Register buf, Register len, Register table, Register tmp,
+                    int bulk_threshold = 0, Label* bulk_entry = nullptr);
 
   void kernel_crc32_avx512(Register crc, Register buf, Register len, Register table, Register tmp1, Register tmp2);
   void kernel_crc32_avx512_256B(Register crc, Register buf, Register len, Register key, Register pos,

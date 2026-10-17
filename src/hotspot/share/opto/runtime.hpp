@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,6 +193,8 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _updateBytesCRC32_Type;
   static const TypeFunc* _updateBytesCRC32C_Type;
   static const TypeFunc* _updateBytesAdler32_Type;
+  static const TypeFunc* _updateAdler32_Type;
+  static const TypeFunc* _zip_process_Type;
   static const TypeFunc* _osr_end_Type;
   static const TypeFunc* _register_finalizer_Type;
   static const TypeFunc* _vthread_transition_Type;
@@ -208,6 +210,12 @@ class OptoRuntime : public AllStatic {
   //
   // Implementation of runtime methods
   // =================================
+
+  // Process a ZIP stream with pinned heap arrays.
+  static jlong zip_process_C(jint inflate, jint input_len, jint output_len,
+      jint flush, jint params, oopDesc* receiver, jlong stream,
+      oopDesc* input, oopDesc* output, jlong input_offset, jlong output_offset,
+      JavaThread* current);
 
   // Allocate storage for a Java instance.
   static void new_instance_C(Klass* instance_klass, JavaThread* current);
@@ -289,6 +297,7 @@ private:
   static address multianewarray5_Java()                  { return _multianewarray5_Java; }
   static address multianewarrayN_Java()                  { return _multianewarrayN_Java; }
   static address complete_monitor_locking_Java()         { return _complete_monitor_locking_Java; }
+  static address zip_process_Java() { return _zip_process_Java; }
   static address monitor_notify_Java()                   { return _monitor_notify_Java; }
   static address monitor_notifyAll_Java()                { return _monitor_notifyAll_Java; }
 
@@ -701,6 +710,13 @@ private:
   static inline const TypeFunc* updateBytesCRC32C_Type() {
     assert(_updateBytesCRC32C_Type != nullptr, "should be initialized");
     return _updateBytesCRC32C_Type;
+  }
+
+  static const TypeFunc* zip_process_Type() { return _zip_process_Type; }
+
+  static inline const TypeFunc* updateAdler32_Type() {
+    assert(_updateAdler32_Type != nullptr, "should be initialized");
+    return _updateAdler32_Type;
   }
 
   /**
