@@ -48,14 +48,25 @@ or x86 speedup is claimed by this qualification. The historical x86 measurements
 against `e206bae32` remain separate from this incremental current-master ARM
 comparison.
 
+A same-method store/compare test exposed an alias-ordering defect in our first
+repair `a5fbfd`, executed on native x86 (including a VM with ARM compiler policy
+enabled). It was not an execution of original `9fedf7a`; the added heap prefix
+was ours. Repair `93926e` adds the established compiler-only ordering barriers,
+and both corrected local VMs pass the store/compare checks. Original native
+prefix code has a similar source-level hazard, without an executed original-head
+reproduction in these checks.
+
 The subsequent AArch64 repair and regression tests are available for review,
 with every screening row audited in `diagnostics/pr39-aarch64/REPAIR.md` and its
 linked data. The heap-only 2 KiB cutoff preserves a vector opportunity through
 the observed byte-1,267 case; it is not a measured optimum. The future plan moves
 the existing native equal 4 KiB benefit gate before the remaining timing rows.
-The repaired source still needs
-native ARM build, correctness and matched performance validation, with actual
-instruction bytes retained. No further CI or benchmark has been launched.
+The pending campaign pins repaired source `93926e` merged against actual
+master `89885a6`, with a 130 runner-minute upper bound and the original fixed
+rows, forks and gates. The repaired source still needs native ARM build,
+correctness and matched performance validation. Relevant instruction bytes
+must be reviewed before instruction-level attribution; missing bytes limit
+conclusions to end-to-end call paths. No further CI or benchmark has launched.
 
 ---------
 - [ ] I confirm that I make this contribution in accordance with the [OpenJDK Interim AI Policy](https://openjdk.org/legal/ai).

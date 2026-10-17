@@ -80,13 +80,14 @@ and GitHub's Git-commit API. It is deliberately distinguished from the branch he
 The workflow fetches these commits and makes normal detached source checkouts
 for three matched native builds.
 
-Before building, the driver verifies both remote branch tips, the merge parents,
-the candidate tree, and equality of review-branch production sources to the
-pinned author head.
-Those pins remain historical: the new repair intentionally fails that source
-guard. A later campaign requires an identified repair merge tree, reviewed pins
-and a separately approved budget. There is no rebase, force push, or modification
-of concurrent author work.
+The pending repaired-source campaign is separately specified in
+[CAMPAIGN.md](CAMPAIGN.md). It keeps the author-ref guard at `9fedf7ac9` and
+master at `89885a6288e`, verifies the review branch's `src` and `test` trees
+against repair `93926eadc57265249c5cfeef35a4975a551e827a`, and constructs the
+identified repaired merge `a7ca575cbf71a0ad451b5986f3b50132489b8c0f`, tree
+`9587ce8f3a1076fea952b85fd27590ea002213c6`. Its ordered parents are master
+then the repair. Any author/master/source drift stops the campaign. The
+historical merge above is used only to describe the completed experiment.
 
 ## Launch and budget
 
@@ -128,33 +129,32 @@ assumed. If GitHub does not expose this dispatch, report that launch blocker;
 do not launch a generic sanity workflow, install this on master, add a push
 trigger, or start an alternative campaign automatically.
 
-The original reservation is **225 runner-minutes**. The first preparation
-attempt was charged 33. The approved continuation reserved at most **190**:
-JTReg preparation 10 minutes plus one native job 180 minutes, including
-preparation, matched builds, correctness, measurement and retention. Its
-completed usage was 62 rounded runner-minutes, so aggregate charged usage is
-**95** and **130 remain**. The combined approved maximum was 223. No further
-dispatch or timing retry is authorized by this completed campaign.
-The approved native step caps sum to **174 minutes**, leaving six minutes
-for runner setup and post steps within the 180-minute job cap:
+The original reservation is **225 runner-minutes**; 95 have been charged and
+130 remain. The pending plan caps JTReg preparation at **5 minutes** and the
+native job at **125 minutes**, a total upper bound of **130 runner-minutes**.
+These caps are a review proposal, not launch authorization. Native step caps
+sum to **119 minutes**, leaving six for runner setup and post steps:
 
 | Work | Step caps, minutes |
 |---|---:|
-| Paths, checkout, driver tests, BootJDK, JTReg, packages, source checks | 22 |
-| Three matched builds | 55 |
-| Common fixtures and JMH compilation | 6 |
-| Correctness, including archiving | 52 |
-| Fixed timing screen | 30 |
-| Evidence upload, including incomplete raw jtreg work | 8 |
+| Paths, checkout, driver tests, BootJDK, JTReg, packages, source checks | 14 |
+| Three matched builds | 35 |
+| Common fixtures and JMH compilation | 3 |
+| Correctness, including archiving | 30 |
+| Fixed timing screen and admitted main rows | 30 |
+| Evidence upload, including incomplete raw jtreg work | 6 |
 | Final scope receipt | 1 |
 
-Correctness has a **50 minute driver limit**, leaving two minutes for bounded
-cancellation handling within its 52-minute step cap. Commands are not admitted
-after expiry, and an expired result verification, archive, final probe or pass
-receipt serialization cannot publish a passing marker. Measurement, including JVM startup and warmup, has
-a **29 minute driver limit and 30 minute step cap**. An exhausted cap leaves the
-campaign incomplete. There is one campaign and no automatic timing retry,
-replacement host, or additional samples. No other CI is launched by this package.
+The three builds share one **34-minute driver deadline**, correctness shares
+one **28-minute deadline**, and timing shares one **29-minute deadline**,
+including JVM startup, warmup and analysis. Step caps leave bounded cancellation
+room. The previous fresh native builds took 30m38s; correctness took 21m54s;
+fixtures took 2s; JTReg preparation took 40s; upload took 6s. Added repair tests,
+code printing, an uncached JTReg build and the full fixed timing matrix are
+unmeasured. These caps do not guarantee completion. Expiry stops admission and
+leaves the source unqualified; there is no timing retry, replacement host or
+sample expansion. The fixed 4 KiB equality benefit gate runs before all later
+timing rows. See [the complete source and execution plan](CAMPAIGN.md).
 
 Each managed command owns its session/process group. SIGTERM, SIGINT and SIGHUP cause
 bounded cleanup: TERM with up to two seconds to exit, then KILL with up to two
@@ -323,9 +323,17 @@ tiering, and threshold 1000; C1 stops at level 1; interpreter rows use `-Xint`.
 JMH 1.37 and its fixed dependencies are checksum verified; the shared source,
 generated classes and dependencies are hashed. Compilation/intrinsic logs,
 LogCompilation XML, raw JMH JSON and GC profiler metrics are retained for every
-row. Future source also requests exact benchmark and generated-worker code dumps
-with `CompileCommand=print`; raw instruction bytes are required for attribution
-when an assembler listing is unavailable. Neither this capture nor the extra
+row. The pending plan requests exact benchmark, generated-worker and retained hot
+callee code dumps with `CompileCommand=print`, including all eight array-range
+overloads, the original-argument ArraysSupport fallback, segment dispatch and
+both scoped large-byte helpers. Per-fork receipts record callee nmethods and
+all observed compilation/invalidation lines with console iteration brackets;
+XML installation stamps and raw bytes still require review. The exact targets
+and their retained-log provenance are recorded in
+[instruction-targets-39033175975.json](instruction-targets-39033175975.json).
+Raw instruction bytes are required for instruction attribution when an
+assembler listing is unavailable; absent helper/stub bytes limit conclusions
+to end-to-end call-path recovery. Neither this capture nor the extra
 warmup changes row counts, samples, loss/stability gates, or the 29-minute cap.
 Each fork must have finite nonnegative `gc.alloc.rate` evidence and valid
 `gc.count` samples. Missing/disabled or failed allocation profiling is reported

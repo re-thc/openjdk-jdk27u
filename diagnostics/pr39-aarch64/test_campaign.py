@@ -44,10 +44,49 @@ class CampaignTests(unittest.TestCase):
         job_header = text.split("  qualification:\n", 1)[1].split("    steps:\n", 1)[0]
         self.assertNotRegex(job_header, r"\$\{\{\s*runner\.")
         caps = [int(x) for x in re.findall(r"(?m)^        timeout-minutes: (\d+)$", text.split("  qualification:\n", 1)[1])]
-        self.assertEqual(sum(caps), 174)
-        self.assertLessEqual(sum(caps), 180 - 6)
-        self.assertLessEqual(33 + 10 + 180, 225)
-        self.assertRegex(text, r"Retain raw results[^\n]*\n        if: always\(\)\n        timeout-minutes: 8")
+        self.assertEqual(sum(caps), 119)
+        self.assertLessEqual(sum(caps), 125 - 6)
+        self.assertEqual([int(x) for x in re.findall(r"(?m)^    timeout-minutes: (\d+)$", text)], [5, 125])
+        self.assertLessEqual(95 + 5 + 125, 225)
+        self.assertEqual(prepare.BUILD_LIMIT, 34 * 60)
+        self.assertEqual(prepare.CORRECTNESS_LIMIT, 28 * 60)
+        self.assertRegex(text, r"Retain raw results[^\n]*\n        if: always\(\)\n        timeout-minutes: 6")
+
+    def test_repaired_merge_is_identified_before_checkout(self):
+        with mock.patch("prepare.git", return_value=campaign.TREE) as git, \
+             mock.patch("prepare.subprocess.check_output", return_value=campaign.CANDIDATE + "\n") as commit:
+            self.assertEqual(prepare.repaired_merge(), campaign.CANDIDATE)
+        git.assert_called_once_with("merge-tree", "--write-tree", "--merge-base=" + campaign.MERGE_BASE,
+                                    campaign.BASE, campaign.REPAIR)
+        self.assertEqual(commit.call_args.args[0][-5:], [campaign.TREE, "-p", campaign.BASE, "-p", campaign.REPAIR])
+        self.assertEqual(commit.call_args.kwargs["env"]["GIT_AUTHOR_DATE"], campaign.MERGE_DATE)
+        self.assertEqual(commit.call_args.kwargs["input"], campaign.MERGE_MESSAGE)
+        for tree, sha in (("wrong-tree", campaign.CANDIDATE), (campaign.TREE, "wrong-commit")):
+            with mock.patch("prepare.git", return_value=tree), \
+                 mock.patch("prepare.subprocess.check_output", return_value=sha), self.assertRaises(RuntimeError):
+                prepare.repaired_merge()
+
+    def test_author_master_and_repaired_source_drift_stop_before_worktrees(self):
+        for changed in ("author", "master", "src", "test"):
+            with self.subTest(changed=changed), tempfile.TemporaryDirectory() as directory:
+                def git(*args):
+                    if args[0] == "ls-remote":
+                        label = "master" if args[-1].endswith("/master") else "author"
+                        return ("changed" if label == changed else
+                                campaign.BASE if label == "master" else campaign.HEAD) + "\t" + args[-1]
+                    if args[0] == "fetch":
+                        return ""
+                    if args[0] == "rev-parse":
+                        if args[1] == campaign.CANDIDATE + "^{tree}":
+                            return campaign.TREE
+                        return "changed" if args[1] == "HEAD:" + changed else "same-tree"
+                    self.fail("Unexpected operation admitted after drift: " + str(args))
+                with mock.patch("prepare.platform.system", return_value="Linux"), \
+                     mock.patch("prepare.platform.machine", return_value="aarch64"), \
+                     mock.patch.dict(os.environ, {"GITHUB_RUN_ATTEMPT": "1"}), \
+                     mock.patch("prepare.git", side_effect=git), mock.patch("prepare.repaired_merge"), \
+                     self.assertRaises(RuntimeError):
+                    prepare.sources(Path(directory), Path(directory))
 
     def test_plan_is_fixed_and_unique(self):
         cases = plan()
@@ -78,7 +117,7 @@ class CampaignTests(unittest.TestCase):
                 root = Path(directory)
                 campaign.save(root / "correctness-pass.json", {"status": "pass"})
                 campaign.save(root / "source-identity.json", {
-                    "base": campaign.BASE, "head": campaign.HEAD,
+                    "base": campaign.BASE, "head": campaign.HEAD, "repair": campaign.REPAIR,
                     "candidate": campaign.CANDIDATE, "candidate_tree": campaign.TREE})
 
                 def observations(path, case):
@@ -97,7 +136,7 @@ class CampaignTests(unittest.TestCase):
                      mock.patch("campaign.subprocess.check_output", return_value="{}"), \
                      mock.patch("campaign.run", side_effect=execute_next) as execute, \
                      mock.patch("campaign.samples", side_effect=observations), \
-                     mock.patch("campaign.installed_tier"), mock.patch("builtins.print"):
+                     mock.patch("campaign.installed_tier"), mock.patch("campaign.compilation_windows"), mock.patch("builtins.print"):
                     message = "next fixed row admitted" if passes else "stop before later rows, no retry"
                     with self.assertRaisesRegex(RuntimeError, message):
                         campaign.measure(root, root)
@@ -121,6 +160,32 @@ class CampaignTests(unittest.TestCase):
                 klass, _, method = benchmark.rpartition(".")
                 self.assertEqual(campaign.benchmark_methods(campaign.row(benchmark)),
                                  ((klass, method), (worker, method + "_avgt_jmhStub")))
+
+    def test_callee_code_capture_uses_exact_retained_descriptors(self):
+        for kind, code in (("BYTE", "B"), ("BOOLEAN", "Z"), ("CHAR", "C"), ("SHORT", "S"),
+                           ("INT", "I"), ("LONG", "J"), ("FLOAT", "F"), ("DOUBLE", "D")):
+            targets = campaign.callee_methods(array(128, 7, kind))
+            self.assertIn(("java.util.Arrays", "mismatch", f"([{code}II[{code}II)I"), targets)
+            self.assertIn(("jdk.internal.util.ArraysSupport", "mismatch", f"([{code}I[{code}II)I"), targets)
+        targets = campaign.callee_methods(memory(4096))
+        self.assertEqual(len(targets), 5)
+        self.assertTrue(all("*" not in part for target in targets for part in target))
+        self.assertEqual(len(campaign.print_commands(memory(4096))), 7)
+
+    def test_timed_compilation_and_invalidation_are_recorded_without_resampling(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefix = Path(directory) / "fork"
+            prefix.with_suffix(".log").write_text(
+                "# Warmup Iteration   3: 100  1 b  java.util.Arrays::mismatch (10 bytes)\n"
+                "10.0 ns/op\nIteration   1: 200  2 b  jdk.internal.util.ArraysSupport::vectorizedMismatch (268 bytes)\n"
+                "201  3 b  unrelated.Helper::work (5 bytes)\n20.0 ns/op\n"
+                "202  2  jdk.internal.util.ArraysSupport::vectorizedMismatch (268 bytes) made not entrant\n"
+                "Iteration   2: 10.0 ns/op\nIteration   3: 10.0 ns/op\n")
+            campaign.compilation_windows(prefix, memory(4096))
+            record = json.loads(prefix.with_name("fork-compilation-windows.json").read_text())
+            self.assertEqual([event["compile_id"] for event in record["measurement_events"]], ["2", "3"])
+            self.assertEqual(record["events"][-1]["phase"], "between-iterations-or-post-measurement")
+            self.assertIn("made not entrant", record["events"][-1]["text"])
 
     def test_balanced_consistent_loss_is_a_regression(self):
         observations = [{"base": [10, 10, 10], "candidate": [12, 12, 12]}] * 2

@@ -24,7 +24,7 @@ concurrency:
 jobs:
   jtreg:
     runs-on: ubuntu-26.04
-    timeout-minutes: 10
+    timeout-minutes: 5
     if: >-
       github.run_attempt == 1 && github.event_name == 'workflow_dispatch' &&
       github.ref == 'refs/heads/codex/pr39-aarch64-qualification' &&
@@ -36,7 +36,7 @@ jobs:
   qualification:
     needs: jtreg
     runs-on: ubuntu-26.04-arm
-    timeout-minutes: 180
+    timeout-minutes: 125
     if: >-
       github.run_attempt == 1 && github.event_name == 'workflow_dispatch' &&
       github.ref == 'refs/heads/codex/pr39-aarch64-qualification' &&
@@ -50,31 +50,31 @@ jobs:
             "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        timeout-minutes: 3
+        timeout-minutes: 2
         with:
           persist-credentials: false
 
       - name: Check the fixed plan and driver gates
-        timeout-minutes: 2
+        timeout-minutes: 1
         run: |
           python3 -m unittest discover -s diagnostics/pr39-aarch64 -p 'test_*.py'
           mkdir -p "$QUAL_EVIDENCE"
           python3 diagnostics/pr39-aarch64/campaign.py plan > "$QUAL_EVIDENCE/planned-rows.json"
 
       - name: Get the common BootJDK
-        timeout-minutes: 4
+        timeout-minutes: 3
         id: bootjdk
         uses: ./.github/actions/get-bootjdk
         with:
           platform: linux-aarch64
 
       - name: Get JTReg
-        timeout-minutes: 2
+        timeout-minutes: 1
         id: jtreg
         uses: ./.github/actions/get-jtreg
 
       - name: Prepare the normal native build toolchain
-        timeout-minutes: 8
+        timeout-minutes: 4
         run: |
           sudo apt-get update
           sudo apt-get install --yes gcc-16 g++-16 ccache
@@ -86,19 +86,19 @@ jobs:
         run: python3 diagnostics/pr39-aarch64/prepare.py sources --root "$QUAL_ROOT" --evidence "$QUAL_EVIDENCE"
 
       - name: Build matched release images and candidate fastdebug
-        timeout-minutes: 55
+        timeout-minutes: 35
         env:
           BOOT_JDK: ${{ steps.bootjdk.outputs.path }}
           JTREG: ${{ steps.jtreg.outputs.path }}
         run: python3 diagnostics/pr39-aarch64/prepare.py build --root "$QUAL_ROOT" --evidence "$QUAL_EVIDENCE"
 
       - name: Compile one common JMH harness and check its fixtures on both images
-        timeout-minutes: 6
+        timeout-minutes: 3
         run: python3 diagnostics/pr39-aarch64/prepare.py compile --root "$QUAL_ROOT" --evidence "$QUAL_EVIDENCE"
 
       - name: Targeted native correctness and collector safety gates
         id: correctness
-        timeout-minutes: 52
+        timeout-minutes: 30
         run: python3 diagnostics/pr39-aarch64/prepare.py correctness --root "$QUAL_ROOT" --evidence "$QUAL_EVIDENCE"
 
       - name: One fixed balanced performance campaign
@@ -108,7 +108,7 @@ jobs:
 
       - name: Retain raw results and all incomplete or failed gates
         if: always()
-        timeout-minutes: 8
+        timeout-minutes: 6
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pr39-native-aarch64-${{ github.run_id }}

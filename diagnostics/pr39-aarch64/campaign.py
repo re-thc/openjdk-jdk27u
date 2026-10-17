@@ -13,6 +13,7 @@ import math
 import os
 from pathlib import Path
 import platform
+import re
 import signal
 import statistics
 import subprocess
@@ -21,8 +22,12 @@ import xml.etree.ElementTree as ET
 
 BASE = "89885a6288e7aaabd01678a704a586272c0f96e3"
 HEAD = "9fedf7ac9040bf1d46e383201524f1ca7a13a29e"
-CANDIDATE = "d234724f75df8ec94427ba168533a5fc89fae714"
-TREE = "b4693729ab5276f398ab6068b2377472284df285"
+REPAIR = "93926eadc57265249c5cfeef35a4975a551e827a"
+MERGE_BASE = "e206bae32b2a6cc1fa9464ad34d75f2df4b347e9"
+CANDIDATE = "a7ca575cbf71a0ad451b5986f3b50132489b8c0f"
+TREE = "9587ce8f3a1076fea952b85fd27590ea002213c6"
+MERGE_MESSAGE = "Merge repaired PR39 93926eadc572 into pinned master for native qualification\n"
+MERGE_DATE = "2026-10-17T00:00:00+00:00"
 ARRAY = "org.openjdk.bench.java.util.ArraysMismatchEarlyExit"
 MEMORY = "org.openjdk.bench.java.nio.MemoryMismatch"
 HASH = "org.openjdk.bench.java.nio.BufferHashCode"
@@ -297,12 +302,60 @@ def benchmark_methods(case):
     return ((klass, method), (worker, method + "_avgt_jmhStub"))
 
 
+def callee_methods(case):
+    # Descriptors come from the retained native screen's installed C2 records.
+    vector = ("jdk.internal.util.ArraysSupport", "vectorizedMismatch",
+              "(Ljava/lang/Object;JLjava/lang/Object;JII)I")
+    if case["benchmark"] == ARRAY + ".mismatch":
+        kind = {"BYTE": "B", "BOOLEAN": "Z", "CHAR": "C", "SHORT": "S",
+                "INT": "I", "LONG": "J", "FLOAT": "F", "DOUBLE": "D"}[case["params"]["kind"]]
+        return (vector, ("java.util.Arrays", "mismatch", f"([{kind}II[{kind}II)I"),
+                ("jdk.internal.util.ArraysSupport", "mismatch", f"([{kind}I[{kind}II)I"))
+    if case["benchmark"].startswith(MEMORY + "."):
+        scoped = "(Ljdk/internal/foreign/MemorySessionImpl;Ljdk/internal/foreign/MemorySessionImpl;Ljava/lang/Object;JLjava/lang/Object;JJ)J"
+        return (vector,
+                ("jdk.internal.foreign.AbstractMemorySegmentImpl", "mismatch", "(Ljava/lang/foreign/MemorySegment;)J"),
+                ("jdk.internal.foreign.SegmentBulkOperations", "mismatch",
+                 "(Ljdk/internal/foreign/AbstractMemorySegmentImpl;JJLjdk/internal/foreign/AbstractMemorySegmentImpl;JJ)J"),
+                ("jdk.internal.misc.ScopedMemoryAccess", "vectorizedMismatchLargeForBytes", scoped),
+                ("jdk.internal.misc.ScopedMemoryAccess", "vectorizedMismatchLargeForBytesInternal", scoped))
+    return ()
+
+
+def print_commands(case):
+    targets = [owner + "::" + method for owner, method in benchmark_methods(case)]
+    targets += [owner + "::" + method + "," + signature
+                for owner, method, signature in callee_methods(case)]
+    return ["-XX:CompileCommand=print," + target for target in targets]
+
+
+def compilation_windows(prefix, case):
+    phase, events, boundaries = "startup", [], []
+    for number, line in enumerate(prefix.with_suffix(".log").read_text().splitlines(), 1):
+        marker = re.search(r"(# Warmup Iteration|(?<!Warmup )\bIteration)\s+(\d+):", line)
+        if marker:
+            phase = ("warmup" if marker[1].startswith("#") else "measurement") + "-" + marker[2]
+            boundaries.append({"line": number, "phase": phase})
+        event = re.search(r"(?:^|:\s+)(\d+)\s+(\d+)\s+.*?([\w.$/]+)::([\w$<>]+)", line)
+        if event:
+            events.append({"line": number, "phase": phase, "uptime_ms": int(event[1]),
+                           "compile_id": event[2], "method": event[3] + "::" + event[4],
+                           "text": line.strip()})
+        if re.search(r"\b[0-9.]+ ns/op\s*$", line) or line.startswith(("Result ", "# Run complete")):
+            phase = "between-iterations-or-post-measurement"
+    save(prefix.with_name(prefix.name + "-compilation-windows.json"), {
+        "boundaries": boundaries, "events": events,
+        "measurement_events": [event for event in events if event["phase"].startswith("measurement-")],
+        "print_commands": print_commands(case),
+        "scope": "Console-order iteration brackets; review XML installation stamps, invalidations and raw code dumps before tier or instruction attribution. Missing helper/stub bytes limit conclusions to end-to-end call paths."})
+
+
 def installed_tier(prefix, case):
     paths = list(prefix.parent.glob(prefix.name + "-compilation-*.xml"))
     if not paths:
         raise ValueError(f"Missing installed-code log for {prefix}")
     targets = benchmark_methods(case)
-    records = []
+    records, callees = [], []
     for path in paths:
         for node in ET.parse(path).iter("nmethod"):
             spec = node.get("method", "").split()
@@ -311,6 +364,8 @@ def installed_tier(prefix, case):
             owner, name = spec[0].replace("/", "."), spec[1]
             if (owner, name) in targets:
                 records.append(dict(node.attrib))
+            if len(spec) >= 3 and (owner, name, spec[2]) in callee_methods(case):
+                callees.append(dict(node.attrib))
     expected = {"c2": "c2", "c1": "c1", "int": None}[case["mode"]]
     if expected is None:
         valid = not records
@@ -321,6 +376,7 @@ def installed_tier(prefix, case):
         raise ValueError(f"Installed benchmark tier disagrees with {case['mode']}: {prefix}")
     save(prefix.with_name(prefix.name + "-installed-code.json"), {
         "requested_mode": case["mode"], "installed_nmethods": records,
+        "callee_nmethods": callees,
         "review": "Check installation stamps, measured-iteration boundaries and deoptimization before tier attribution"})
 
 
@@ -347,7 +403,7 @@ def measure(root, evidence):
     if json.loads((evidence / "correctness-pass.json").read_text())["status"] != "pass":
         raise RuntimeError("Correctness gates must pass before timing")
     identity = json.loads((evidence / "source-identity.json").read_text())
-    if (identity["base"], identity["head"], identity["candidate"], identity["candidate_tree"]) != (BASE, HEAD, CANDIDATE, TREE):
+    if (identity["base"], identity["head"], identity["repair"], identity["candidate"], identity["candidate_tree"]) != (BASE, HEAD, REPAIR, CANDIDATE, TREE):
         raise RuntimeError("Source identity does not match the reviewed campaign")
     deadline = Deadline(MEASUREMENT_LIMIT, "Measurement")
     (evidence / "performance-pass.json").unlink(missing_ok=True)
@@ -376,8 +432,7 @@ def measure(root, evidence):
                  "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED", "-XX:+PrintCompilation",
                  "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintIntrinsics", "-XX:+LogCompilation",
                  "-XX:LogFile=" + str(prefix) + "-compilation-%p.xml"]
-        flags += ["-XX:CompileCommand=print," + klass + "::" + method
-                  for klass, method in benchmark_methods(case)]
+        flags += print_commands(case)
         flags += MODES[case["mode"]]
         # A third fixed warmup can absorb the observed normal-worker recompile.
         # Retain the stability gates and allow no retries or extra measured samples.
@@ -397,6 +452,7 @@ def measure(root, evidence):
         deadline.remaining()
         values = samples(Path(str(prefix) + ".json"), case)
         installed_tier(prefix, case)
+        compilation_windows(prefix, case)
         deadline.remaining()
         return values
 

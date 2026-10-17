@@ -117,15 +117,23 @@ the exit barrier into following stores; shared control or barrier counts alone
 do not prove ordering. Runtime cases exercise aliases of either compared array
 and an unrelated writer, rather than mutating only outside the compiled scanner.
 
-The published `a5fbfd7125b` VM reproduced a wrong result in this test on native
-x86: `heapStore0` with the ARM policy enabled, and `mixedStore0` with the ordinary
-x86 policy, returned index 0 after the same-method store made the inputs equal
-(expected -1). Its raw loads consumed the initial memory parameter, while only
-the later leaf consumed the heap store's memory slice. Both corrected VMs pass
-all twelve store/compare graph and runtime probes, including following stores.
-This is an executed shared-compiler correctness reproduction, not native ARM
-execution or a performance result. The validation record retains both outcomes
-and their VM/graph hashes.
+The wrong-result executions used **our first repair,
+`a5fbfd7125b6f0f5f571aa59a4104932834ecc64`**, not the author's original
+`9fedf7ac9040bf1d46e383201524f1ca7a13a29e`. All three production C++ source
+hashes in the VM manifest match `a5fbfd` and differ from `9fedf7a`; its recorded
+`production_head=20054e` was the checkout parent while those source edits were
+uncommitted. The source hashes identify the executed implementation.
+On native x86, `heapStore0` with our ARM policy enabled and `mixedStore0` with
+the ordinary x86 policy returned index 0 after the same-method store made the
+inputs equal (expected -1). Their raw loads consumed the initial memory
+parameter while only the later leaf consumed the heap store's memory slice.
+The heap prefix was introduced by our repair. Original `9fedf7a` has the same
+unbarriered native first-word pattern, supporting a native/mixed hazard by
+source analysis, but these executions do **not** reproduce that original
+commit. Both corrected VMs pass all twelve store/compare graph and runtime
+probes, including following stores. These are shared-compiler correctness
+checks, not native ARM execution or performance results. The validation record
+retains both outcomes, exact source hashes, VM identities and graph hashes.
 
 Successful and failed Ideal children now write named raw graph captures before
 verification. `prepare.py` uses the supported `JTREG RETAIN=all` option, includes
@@ -135,7 +143,7 @@ This closes the successful-capture gap without relaxing a correctness gate.
 
 Local checks include a complete GCC16.2 fastdebug x86 JDK build with Serial,
 G1 and ZGC, rebuilt HotSpot for this correction, Java 27 compilation of all three
-tests, 107 native graph-verifier mutations, and 27 Python campaign tests. An
+tests, 107 native graph-verifier mutations, and 31 Python campaign tests. An
 isolated copy of that host VM enables only the new ARM compiler-policy branches while retaining x86
 code generation and its existing mismatch stub. Its C1 admission/semantics,
 C2 dispatch/framework semantics, twenty constant-range graphs and the
@@ -155,8 +163,10 @@ The existing native equal 4 KiB row moves to screen position zero, making the
 future split 35 screening and 97 main rows. Its original stability and paired
 5% benefit requirements stop the campaign before all other rows on failure;
 it is neither duplicated nor retried. Historical 34/98 results remain unchanged.
-It requests code dumps for the exact benchmark and generated-worker methods and
-validates installed tiers using the worker's full package name. This may move
+It requests code dumps for the exact benchmark, generated worker and hot
+callees found in retained compilation XML, and records compilation/invalidation
+lines with iteration brackets. It validates installed tiers using the worker's
+full package name. This may move
 the observed normal-worker recompilation into warmup, but stability still needs
 to pass the original gates; no retry or additional sample is permitted.
 
@@ -169,11 +179,14 @@ for recovery and instruction-level attribution. No native application speedup
 or optimal threshold is claimed here.
 
 The completed runs consumed 95 of 225 reserved runner-minutes; 130 remain.
-No further CI or benchmark launch is authorized or has occurred. The retained
-workflow pins the historical measured source and intentionally rejects this
-branch's production edits. Any later campaign needs an identified repair merge
-tree, fresh reviewed source pins and caps within its separately approved budget.
-Publishing this repair does not start a workflow or spend that remaining budget.
+[CAMPAIGN.md](CAMPAIGN.md) identifies repair `93926e`, its merge against pinned
+master, all image/toolchain receipts and a 5+125-minute job envelope. The author
+and master concurrency guards remain separate from repaired-source identity.
+The corrected source must pass correctness and the existing 4 KiB equality
+benefit gate before later timing. Native instruction attribution still needs
+actual relevant bytes; missing bytes limit any conclusion to the measured
+end-to-end call path. No further CI or benchmark launch is authorized or has
+occurred. Publishing this source does not start a workflow or spend the balance.
 
 ## Incorporation of encoder and decoder findings
 

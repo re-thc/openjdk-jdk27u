@@ -17,11 +17,12 @@ import tarfile
 import time
 import urllib.request
 
-from campaign import BASE, HEAD, CANDIDATE, TREE, MODES, CommandSignal, Deadline, cancellation_signals, run, save
+from campaign import BASE, HEAD, REPAIR, MERGE_BASE, CANDIDATE, TREE, MERGE_MESSAGE, MERGE_DATE, MODES, CommandSignal, Deadline, cancellation_signals, run, save
 
 REPO = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
-CORRECTNESS_LIMIT = 50 * 60
+BUILD_LIMIT = 34 * 60
+CORRECTNESS_LIMIT = 28 * 60
 GIB = 1 << 30
 ACTIVE_BUILD_ALLOWANCE = 5 * GIB
 RETAINED_BUILD_ALLOWANCE = 2 * GIB
@@ -76,6 +77,23 @@ def jmh_classpath(directory):
     return os.pathsep.join(map(str, jars))
 
 
+def repaired_merge():
+    # An explicit merge base also works with the shallow source snapshots.
+    tree = git("merge-tree", "--write-tree", "--merge-base=" + MERGE_BASE, BASE, REPAIR)
+    if tree != TREE:
+        raise RuntimeError("Repaired candidate merge tree changed")
+    env = dict(os.environ, GIT_AUTHOR_NAME="Harry Chan", GIT_COMMITTER_NAME="Harry Chan",
+               GIT_AUTHOR_EMAIL="38070640+re-thc@users.noreply.github.com",
+               GIT_COMMITTER_EMAIL="38070640+re-thc@users.noreply.github.com",
+               GIT_AUTHOR_DATE=MERGE_DATE, GIT_COMMITTER_DATE=MERGE_DATE)
+    commit = subprocess.check_output(
+        ["git", "-C", str(REPO), "-c", "commit.gpgsign=false", "commit-tree", TREE,
+         "-p", BASE, "-p", REPAIR], input=MERGE_MESSAGE, text=True, env=env).strip()
+    if commit != CANDIDATE:
+        raise RuntimeError("Repaired candidate merge commit changed")
+    return commit
+
+
 def sources(root, evidence):
     if platform.system() != "Linux" or platform.machine() != "aarch64":
         raise RuntimeError("Native Linux AArch64 runner required")
@@ -85,16 +103,18 @@ def sources(root, evidence):
         actual = git("ls-remote", "origin", ref).split()[0]
         if actual != expected:
             raise RuntimeError(f"Concurrent source change at {ref}: {actual}; review new pins before launching")
-    git("fetch", "--no-tags", "--depth=1", "origin", BASE, HEAD, CANDIDATE)
+    git("fetch", "--no-tags", "--depth=1", "origin", BASE, HEAD, REPAIR, MERGE_BASE)
+    repaired_merge()
     if git("rev-parse", CANDIDATE + "^{tree}") != TREE:
         raise RuntimeError("Candidate merge tree changed")
-    if git("rev-parse", "HEAD:src") != git("rev-parse", HEAD + ":src"):
-        raise RuntimeError("Qualification branch has production edits outside the pinned candidate")
+    for directory in ("src", "test"):
+        if git("rev-parse", "HEAD:" + directory) != git("rev-parse", REPAIR + ":" + directory):
+            raise RuntimeError("Qualification branch differs from the repaired " + directory + " tree")
     parents = git("show", "-s", "--format=%P", CANDIDATE).split()
-    if parents != [BASE, HEAD]:
+    if parents != [BASE, REPAIR]:
         # --depth=1 can mark the commit as shallow: raw commit retains its parents.
         parents = [line.split()[1] for line in git("cat-file", "-p", CANDIDATE).splitlines() if line.startswith("parent ")]
-    if parents != [BASE, HEAD]:
+    if parents != [BASE, REPAIR]:
         raise RuntimeError(f"Unexpected candidate parents: {parents}")
     root.mkdir(parents=True, exist_ok=True)
     tracked_bytes = sum((REPO / p).stat().st_size for p in git("ls-files", "-z").split("\0") if p and (REPO / p).is_file())
@@ -109,7 +129,11 @@ def sources(root, evidence):
         "qualification_commit": git("rev-parse", "HEAD"),
         "qualification_tree": git("rev-parse", "HEAD^{tree}"),
         "base": BASE, "base_tree": git("rev-parse", BASE + "^{tree}"),
-        "head": HEAD, "candidate": CANDIDATE, "candidate_tree": TREE,
+        "head": HEAD, "author_tree": git("rev-parse", HEAD + "^{tree}"),
+        "repair": REPAIR, "repair_tree": git("rev-parse", REPAIR + "^{tree}"),
+        "repair_src_tree": git("rev-parse", REPAIR + ":src"),
+        "repair_test_tree": git("rev-parse", REPAIR + ":test"),
+        "merge_base": MERGE_BASE, "candidate": CANDIDATE, "candidate_tree": TREE,
         "candidate_parents": parents,
         "files": git("diff", "--name-status", BASE, CANDIDATE).splitlines()})
     (evidence / "production.patch").write_text(git("diff", BASE, CANDIDATE, "--", "src"))
@@ -125,8 +149,18 @@ def sources(root, evidence):
 
 
 def build(root, evidence):
+    deadline = Deadline(BUILD_LIMIT, "Matched builds")
     os.environ.update(CC="gcc-16", CXX="g++-16", CONFIGURE_DEV_NO_MOLD="1",
                       CCACHE_DIR=str(root / "ccache"), CCACHE_MAXSIZE="512M")
+    boot = Path(os.environ["BOOT_JDK"])
+    tools = {name: Path(shutil.which(name)).resolve() for name in ("gcc-16", "g++-16", "ld")}
+    tools.update({"boot-java": boot / "bin/java", "boot-release": boot / "release",
+                  "boot-libjvm": boot / "lib/server/libjvm.so",
+                  "jtreg": Path(os.environ["JTREG"]) / "lib/jtreg.jar"})
+    save(evidence / "common-build-tools.json", {
+        name: {"path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+        for name, path in tools.items()})
+    run([str(boot / "bin/java"), "-version"], evidence / "boot-jdk-version.log", deadline.remaining(cap=30))
     for label, level in (("base", "release"), ("candidate", "release"), ("candidate", "fastdebug")):
         source = root / label
         conf = "qual-" + level
@@ -139,26 +173,27 @@ def build(root, evidence):
                    "--with-source-date=2026-10-17T00:00:00Z",
                    "--with-boot-jdk=" + os.environ["BOOT_JDK"], "--with-jtreg=" + os.environ["JTREG"],
                    "--with-zlib=system", "--with-jmod-compress=zip-1", "--with-native-debug-symbols=none"]
-        run(options, evidence / (tag + "-configure.log"), 600, cwd=source, disk_guard=guard)
+        run(options, evidence / (tag + "-configure.log"), deadline.remaining(cap=600), cwd=source, disk_guard=guard)
         targets = ["images"] + (["test-image"] if label == "candidate" else [])
         run(["make", "CONF=" + conf, "JOBS=" + str(os.cpu_count()), *targets],
-            evidence / (tag + "-build.log"), 3600, cwd=source, disk_guard=guard)
+            evidence / (tag + "-build.log"), deadline.remaining(), cwd=source, disk_guard=guard)
         output = source / "build" / conf
         shutil.copy2(output / "spec.gmk", evidence / (tag + "-spec.gmk"))
         shutil.copy2(output / "configure.log", evidence / (tag + "-configure-full.log"))
         image = output / "images/jdk"
         run(["bash", ".github/scripts/check-dev-profile.sh", str(image), str(output / "spec.gmk")],
-            evidence / (tag + "-profile.log"), 120, cwd=source)
+            evidence / (tag + "-profile.log"), deadline.remaining(cap=120), cwd=source)
         hashes = {str(p.relative_to(image)): hashlib.sha256(p.read_bytes()).hexdigest()
                   for p in sorted(image.rglob("*")) if p.is_file()}
         save(evidence / (tag + "-image-sha256.json"), hashes)
         run([str(image / "bin/java"), "-XshowSettings:vm", "-version"],
-            evidence / (tag + "-version.log"), 30)
+            evidence / (tag + "-version.log"), deadline.remaining(cap=30))
         before = tree_bytes(output)
         prune_build(output, baseline=label == "base")
         save(evidence / (tag + "-footprint.json"), {"before_pruning_bytes": before,
              "retained_bytes": tree_bytes(output), "native_debug_symbols": "none"})
         capacity(root, evidence, tag + "-after-pruning", DISK_RESERVE)
+        deadline.remaining()
 
 
 def compile_fixtures(root, evidence):

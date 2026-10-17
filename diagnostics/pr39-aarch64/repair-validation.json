@@ -114,7 +114,31 @@
         "name": "fixed-x86-store",
         "target": "native x86 backend"
       }
-    ]
+    ],
+    "source_provenance": {
+      "attribution": "The heap prefix was introduced by our a5fbfd repair; all executed failures use a5fbfd production sources. Original9fed native/mixed first-word prefix has a similar unbarriered source pattern; that is source analysis, not an executed original-head reproduction.",
+      "executed_production_source": "a5fbfd7125b6f0f5f571aa59a4104932834ecc64",
+      "manifest_interpretation": "All three production source hashes match a5fbfd, whose edits were uncommitted when the manifest recorded its checkout parent. The forced-policy VM additionally applies its listed architecture-branch overrides.",
+      "original_author_head_executed": false,
+      "source_sha256_by_commit": {
+        "93926eadc57265249c5cfeef35a4975a551e827a": {
+          "src/hotspot/share/c1/c1_GraphBuilder.cpp": "c2e874870da741369b7e5575a0c986f462700b0cdd4ccacc7c0a0e34529905c0",
+          "src/hotspot/share/opto/doCall.cpp": "b0dfc896c33daea593560e9bb02e25f8100b2b819c384745d4ff7e67f3bec95b",
+          "src/hotspot/share/opto/library_call.cpp": "7f71fef63b1a3b27abef4572ee8f2edb1033c94a5b5d630ef99d195966eacf8b"
+        },
+        "9fedf7ac9040bf1d46e383201524f1ca7a13a29e": {
+          "src/hotspot/share/c1/c1_GraphBuilder.cpp": "4e8cf240e94cc05cef24ada8cfa97e4b53632cf02e83d80eb7888d706af78d12",
+          "src/hotspot/share/opto/doCall.cpp": "3b983ac2495c385a1269068f05b90d8c45532d3aba5fd93a1e51978f48e86a94",
+          "src/hotspot/share/opto/library_call.cpp": "3657778ffe27f4323b2d34e0c7459487544c4d5d040acc9a7fcc94824b3b77d6"
+        },
+        "a5fbfd7125b6f0f5f571aa59a4104932834ecc64": {
+          "src/hotspot/share/c1/c1_GraphBuilder.cpp": "c2e874870da741369b7e5575a0c986f462700b0cdd4ccacc7c0a0e34529905c0",
+          "src/hotspot/share/opto/doCall.cpp": "b0dfc896c33daea593560e9bb02e25f8100b2b819c384745d4ff7e67f3bec95b",
+          "src/hotspot/share/opto/library_call.cpp": "1a093546cd0bdf48b1168281bdefa09b514c40c12f585a0850625cb39eea87c1"
+        }
+      },
+      "stale_manifest_checkout_parent": "20054eaf75bcee6be4ded3ca291d15a7f3637aba"
+    }
   },
   "build": {
     "base_full_jdk": "previously built from the same author-based review source; Java sources unchanged by this correction",
@@ -143,13 +167,33 @@
     "sha256": "988e575ab702820c6f1483521e57b7b1f655a6929eb92ac6a06060b030e4e572"
   },
   "future_plan": {
+    "authorization": "pending independent launch review; no dispatch",
+    "build_driver_minutes": 34,
     "controls": 8,
+    "correctness_driver_minutes": 28,
     "driver_limit_minutes": 29,
     "first_row": "native equal 4096 bytes; stable >=5% benefit in both balanced orders required before any other row",
+    "job_caps_minutes": {
+      "jtreg": 5,
+      "native": 125,
+      "total": 130
+    },
     "main_rows": 97,
     "measured_iterations": 3,
+    "native_reserve_minutes": 6,
+    "native_step_caps_minutes": 119,
     "screen_rows": 35,
-    "source_pins": "historical; intentionally reject repaired production sources until separately reviewed",
+    "source_pins": {
+      "author_guard": "9fedf7ac9040bf1d46e383201524f1ca7a13a29e",
+      "base": "89885a6288e7aaabd01678a704a586272c0f96e3",
+      "candidate": "a7ca575cbf71a0ad451b5986f3b50132489b8c0f",
+      "candidate_parents": [
+        "89885a6288e7aaabd01678a704a586272c0f96e3",
+        "93926eadc57265249c5cfeef35a4975a551e827a"
+      ],
+      "candidate_tree": "9587ce8f3a1076fea952b85fd27590ea002213c6",
+      "repair": "93926eadc57265249c5cfeef35a4975a551e827a"
+    },
     "total_forks": 560,
     "total_rows": 132,
     "warmup_iterations": 3
@@ -288,6 +332,45 @@
     "status": "passed"
   },
   "native_repair_qualification": "pending; no CI or benchmark campaign launched or newly authorized",
+  "plan_validation": {
+    "compile_command_parser": {
+      "log": "/workspace/scratch/pr39-code-capture-flags.log",
+      "log_sha256": "568b032b5249634d470e7be2cd2c48c2a67c9b4a8846d3f44655f622932bddd2",
+      "status": "pass",
+      "target": "Existing corrected local x86 fastdebug VM, -version only",
+      "unique_exact_print_flags": 25
+    },
+    "independent_plan_review": "Read-only review found no blocker in exact source identities, separate concurrency guards, budget, fixed sampling/gates, all21 callee descriptors or console parser replay.",
+    "production_and_test_diff_from_93926e": [],
+    "retained_console_parser_replay": {
+      "assertion": "Known final-worker compilations are recorded during measurement iteration1; no historical samples or raw files modified.",
+      "historical_rows": [
+        0,
+        30
+      ],
+      "proof": "/workspace/scratch/pr39-compilation-window-parser-proof.json",
+      "proof_sha256": "02afd0963439bb89a79e5729f9c5311787e45a1934c63cfcf90c81c7002637bf",
+      "status": "pass"
+    },
+    "scope": "Local source/tooling validation only. No native run, CI dispatch or performance measurement.",
+    "shallow_merge_reconstruction": {
+      "action": "Local shallow-object-store reconstruction only; no CI, build or benchmark",
+      "candidate": "a7ca575cbf71a0ad451b5986f3b50132489b8c0f",
+      "candidate_tree": "9587ce8f3a1076fea952b85fd27590ea002213c6",
+      "git": "git version 2.52.0",
+      "parents": [
+        "89885a6288e7aaabd01678a704a586272c0f96e3",
+        "93926eadc57265249c5cfeef35a4975a551e827a"
+      ],
+      "shallow_source_snapshots": [
+        "89885a6288e7aaabd01678a704a586272c0f96e3",
+        "9fedf7ac9040bf1d46e383201524f1ca7a13a29e",
+        "93926eadc57265249c5cfeef35a4975a551e827a",
+        "e206bae32b2a6cc1fa9464ad34d75f2df4b347e9"
+      ],
+      "status": "pass"
+    }
+  },
   "policy_vm": {
     "host_libjvm_sha256": "829db896172dbce9613a4f9a2b8e3b5b08d97dad0d5fec38c32c12635d056574",
     "policy_libjvm_sha256": "9931a7de0da6181d3204ceeb2b4eb74f290c93fed013b853d151774ce20c1354",
@@ -339,8 +422,8 @@
   },
   "production_parent": "a5fbfd7125b6f0f5f571aa59a4104932834ecc64",
   "python_tests": {
-    "count": 27,
-    "includes": "early native benefit rejection/admission and mandatory store-ordering jtreg id",
+    "count": 31,
+    "includes": "source/merge identity, author/master/repair drift, budget totals, exact callee capture, compilation windows, benefit rejection/admission and mandatory jtreg ids",
     "status": "passed"
   },
   "scope": "Local compiler correctness only on native x86; not an AArch64 build, emulation result or performance qualification",
