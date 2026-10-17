@@ -21,6 +21,11 @@ phase() {
   printf "%s\n" "$1" > "$ROOT/.qualification-phase.next"
   mv -f -- "$ROOT/.qualification-phase.next" "$ROOT/.qualification-phase"
 }
+jdk_image() {
+  printf '%s/%s/build/zip-qual/images/jdk\n' "$ROOT" "$1"
+}
+phase source-check
+python3 -E -B "${BASH_SOURCE[0]%/*}/test-image-layout.py"
 phase checkout
 B=89885a6288e7aaabd01678a704a586272c0f96e3
 git fetch origin master review/zipfile-compact-inflater-cache
@@ -45,15 +50,20 @@ for tree in base candidate; do
     --with-jobs=4 --with-memory-size=8192 --with-boot-jdk="$BOOT_JDK" \
     --with-jtreg="$JTREG_HOME" --with-zlib=system "${configure_options[@]}" \
     > "$ROOT/results/$tree-configure.log" 2>&1
-  timeout --kill-after=30s 90m make CONF=zip-qual JOBS=4 jdk \
+  timeout --kill-after=30s 90m make CONF=zip-qual JOBS=4 jdk-image \
     > "$ROOT/results/$tree-build.log" 2>&1
+  image=$(jdk_image "$tree")
+  test -x "$image/bin/java" || { echo "Missing packaged launcher: $image/bin/java" >&2; exit 1; }
+  for file in release lib/modules lib/server/libjvm.so lib/libzip.so include/jni.h include/linux/jni_md.h; do
+    test -f "$image/$file" || { echo "Missing packaged image file: $image/$file" >&2; exit 1; }
+  done
   cp build/zip-qual/spec.gmk "$ROOT/results/$tree-spec.gmk"
-  cp build/zip-qual/jdk/release "$ROOT/results/$tree-release"
-  sha256sum build/zip-qual/jdk/lib/modules build/zip-qual/jdk/lib/server/libjvm.so \
-    build/zip-qual/jdk/lib/libzip.so > "$ROOT/results/$tree-image-sha256.txt"
+  cp "$image/release" "$ROOT/results/$tree-release"
+  sha256sum "$image/lib/modules" "$image/lib/server/libjvm.so" \
+    "$image/lib/libzip.so" > "$ROOT/results/$tree-image-sha256.txt"
 done
-BASE_JDK="$ROOT/base/build/zip-qual/jdk"
-CANDIDATE_JDK="$ROOT/candidate/build/zip-qual/jdk"
+BASE_JDK=$(jdk_image base)
+CANDIDATE_JDK=$(jdk_image candidate)
 Q="$ROOT/candidate/doc/zipfile-inflater-cache"
 
 phase correctness
@@ -79,11 +89,11 @@ test/jdk/java/util/jar/JarFile/VerifySignedJar.java
 test/jdk/java/util/jar/JarFile/SignedJarFileGetInputStream.java
 test/jdk/java/util/jar/JarFile/SignedJarPendingBlock.java"
 for gc in Serial G1 Z; do
-  (cd "$ROOT/base" && timeout --kill-after=30s 30m make CONF=zip-qual JOBS=4 test \
+  (cd "$ROOT/base" && timeout --kill-after=30s 30m make CONF=zip-qual JOBS=4 test JDK_IMAGE_DIR="$BASE_JDK" \
     TEST="$consumer_tests" JTREG="JOBS=2;JAVA_OPTIONS=-XX:+Use${gc}GC -Xmx128m -Djava.io.tmpdir=$ROOT/tmp") \
     > "$ROOT/results/base-$gc-tests.log" 2>&1
   cp -a "$ROOT/base/build/zip-qual/test-results" "$ROOT/results/base-$gc-test-results"
-  (cd "$ROOT/candidate" && timeout --kill-after=30s 30m make CONF=zip-qual JOBS=4 test \
+  (cd "$ROOT/candidate" && timeout --kill-after=30s 30m make CONF=zip-qual JOBS=4 test JDK_IMAGE_DIR="$CANDIDATE_JDK" \
     TEST="$cache_tests $consumer_tests" JTREG="JOBS=2;JAVA_OPTIONS=-XX:+Use${gc}GC -Xmx128m -Djava.io.tmpdir=$ROOT/tmp") \
     > "$ROOT/results/candidate-$gc-tests.log" 2>&1
   cp -a "$ROOT/candidate/build/zip-qual/test-results" "$ROOT/results/candidate-$gc-test-results"
@@ -100,7 +110,7 @@ gcc -shared -fPIC -O2 -I"$CANDIDATE_JDK/include" -I"$CANDIDATE_JDK/include/linux
 "$BOOT_JDK/bin/java" -cp "$ROOT/workload.jar" ZipCacheQualification prepare "$ROOT/fixtures"
 for gc in Serial G1 Z; do
   for label in base candidate; do
-    image="$ROOT/$label/build/zip-qual/jdk"
+    image=$(jdk_image "$label")
     timeout --kill-after=5s 30s "$image/bin/java" -Xms128m -Xmx128m -XX:+Use${gc}GC -Djava.io.tmpdir="$ROOT/tmp" \
       -cp "$ROOT/workload.jar" ZipCacheQualification lifecycle "$ROOT/fixtures" \
       > "$ROOT/results/$label-$gc-lifecycle.log" 2>&1

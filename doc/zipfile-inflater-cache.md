@@ -18,9 +18,11 @@ startup, throughput neutrality and other platforms/backends were not validated.
 The [staged qualification plan](zipfile-inflater-cache/QUALIFICATION.md) first
 decides value with exact-head Linux profile builds, retained-container/native
 reuse checks and protected startup/throughput cases. Only a worthwhile Linux
-result proceeds to normal supported-platform PR correctness CI. Its harness
-sources and self-checks are prepared for review, not compiled or executed;
-other native performance campaigns are not prerequisites by assumption.
+result proceeds to normal supported-platform PR correctness CI. One attempt
+built the baseline exploded JDK, then stopped on a harness image-layout error
+before any comparison. The corrected packaged-image command path remains
+unexecuted; other native performance campaigns are not prerequisites by
+assumption.
 The full Linux sequence has a four-hour supervisor with owned-process cleanup.
 Proposed 2%/3% resolution checks do not authorize a slowdown: consistently slower
 results require explicit trade-off review. Qualification reports observed native
@@ -35,9 +37,10 @@ JTREG_HOME pointing to compatible installations:
 ```sh
 bash bin/configure-dev --with-conf-name=review \
   --with-boot-jdk="$BOOT_JDK" --with-jtreg="$JTREG_HOME"
-make CONF=review JOBS=4 jdk
+make CONF=review JOBS=4 jdk-image
+JDK="$(pwd)/build/review/images/jdk"
 for gc in Serial G1 Z; do
-  make CONF=review JOBS=4 test \
+  make CONF=review JOBS=4 test JDK_IMAGE_DIR="$JDK" \
     TEST="test/jdk/java/util/zip/ZipFile/InflaterCache.java" \
     JTREG="JOBS=2;JAVA_OPTIONS=-XX:+Use${gc}GC -Xmx128m"
 done
@@ -50,8 +53,9 @@ and close/cleaner races with one, two and 32 streams.
 ## Heap-container reproduction
 
 Build baseline `89885a6288e7aaabd01678a704a586272c0f96e3` and this revision with
-the same configuration. With JDK set to each built image in turn and OUT set to
-an absolute writable directory, run from the repository root:
+the same configuration and `jdk-image` target. Set JDK to each checkout's
+`build/review/images/jdk` in turn and OUT to an absolute writable directory,
+then run from the repository root:
 
 ```sh
 mkdir -p "$OUT/classes"

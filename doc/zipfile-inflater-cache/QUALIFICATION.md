@@ -1,8 +1,12 @@
 # Staged compact ZIP cache qualification
 
-Prepared instructions only: the qualification driver/runner have had source
-review but have not been compiled or executed. Compact-cache startup and
-throughput remain unmeasured. Default inflater eviction remains rejected.
+The first supervised attempt at `8b8fa6d106d937d5b55a2c3fbf699651b7c3faa1`
+completed the baseline native-profile exploded JDK build, then stopped when the
+harness expected its absent `lib/modules` file. Cleanup completed and all failed
+attempt evidence and the successful build were retained. No packaged image,
+candidate build, correctness, allocation or timing result came from that attempt.
+This corrected command path has not been executed. Compact-cache startup and
+throughput remain unmeasured; default inflater eviction remains rejected.
 
 ## Subject and existing evidence
 
@@ -63,6 +67,17 @@ B/C and the three product/test/probe blobs above. No existing build directory or
 private binary is copied. Source/tool/spec, module/native-library hashes and all
 outcomes stay in ROOT, without automatic publication.
 
+Both builds use `make CONF=zip-qual JOBS=4 jdk-image`, producing each checkout's
+`build/zip-qual/images/jdk`. One shell helper supplies this path to image-file
+checks, release metadata, module/native-library hashes, both explicit test
+`JDK_IMAGE_DIR` arguments, JNI headers and every lifecycle/allocation/performance
+JVM. Boot JDK compilation, archive packaging and fixture preparation remain
+separate setup tools. Build specs and jtreg reports stay in their normal
+`build/zip-qual` locations. `make jdk` only produces the exploded
+`build/zip-qual/jdk` layout and cannot satisfy the packaged `lib/modules` check.
+The failed attempt is terminal; do not copy it into a new run, relabel it as a
+packaged build or resume it under this correction.
+
 [supervise-linux.py](supervise-linux.py) starts one owned process tree and stops
 all work at four hours. It pins that tree to four available CPUs, gives it
 owned temporary/cache directories and disables core dumps. At completion, error,
@@ -100,16 +115,21 @@ Run the offline ownership regression with
 Its synthetic process records exercise the ownership function without starting
 the supervisor, reading real /proc records or signalling processes; this does
 not qualify the runtime campaign.
+The static layout regression is
+`python3 -E -B doc/zipfile-inflater-cache/test-image-layout.py`.
+It reads source only, rejects the original exploded-build/packaged-hash mismatch
+and checks every image consumer; the supervised sequence runs it before fetching
+or building. Neither offline check establishes that a packaged image exists.
 
 Use a quiet host; do not change governors, disable security or flush OS caches.
 Do not overlap other builds/checks with timing. Preserve every outcome; no
 threshold sweep or favorable reruns. New profile checks close the configuration
 gap instead of repeating the old generic-profile campaign. Stop on identity
 drift, missing tools, unsupported collector, build/test failure, content/provider
-mismatch, worker failure, lifecycle failure or exhausted budget. Driver fixes
-before the first timed process are owned work with new identities recorded;
-product changes or driver changes after timing stop this qualification. A
-baseline failure invalidates the comparison.
+mismatch, worker failure, lifecycle failure or exhausted budget. Any source or
+driver fix records a new reviewed head and requires separate authorization for
+another run; do not patch and resume a failed attempt. A baseline failure
+invalidates the comparison.
 
 ### Correctness, retained containers and native reuse
 
@@ -215,7 +235,8 @@ on that target. A general claim of universal throughput neutrality would require
 more evidence; omit it instead of making it an integration prerequisite.
 
 The owner owns checkouts, installed-tool discovery, builds/checks, bounded
-analysis and source repairs. Stage 1 currently depends only on permission to
-execute, not on other hosts. Stage 2 depends on later PR authorization and normal
-CI availability. Source/runner preparation is not completed runtime qualification;
-no builds, tests, benchmarks, installs, PRs or CI were launched while preparing it.
+analysis and source repairs. A fresh Stage 1 depends on review of this complete
+correction and separate execution authorization, not on other hosts. Stage 2
+depends on later PR authorization and normal CI availability. Source/runner
+repair is not completed runtime qualification; no campaign, install, PR or CI
+was launched while preparing this correction.
