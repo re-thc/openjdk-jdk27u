@@ -40,7 +40,9 @@ console, including services and JNI applications, return immediately.
 
 On macOS, the instrumentation agent uses its JDK libraries, iconv and zlib.
 Kerberos configuration retains Foundation collections, Kerberos credentials
-and SystemConfiguration services. Foundation's OS-transitive graphics mappings
+and SystemConfiguration services. Configuration-change notifications run on a
+private serial dispatch queue, independent of the launcher's main thread.
+Foundation's OS-transitive graphics mappings
 are separate from compilation of excluded JDK desktop code. The shared
 `splashscreen.h` contains declarations, not splash implementations; native
 symbol and compiler-input checks establish which code is present.
@@ -91,6 +93,11 @@ exports/opens, Windows path conversion and the portable console helper.
 It also checks launcher archive diagnostics, valid jar launch and native
 instrumentation. On macOS it checks direct framework links and native Kerberos
 configuration initialization; an unconfigured Kerberos store is allowed.
+The macOS notification regression interposes the dynamic-store observer to
+inject both watched keys through real native scheduling and the built image's
+callback. It checks automatic Java configuration refresh, unrelated keys,
+exception recovery and process exit without privileged system changes. It
+does not exercise the OS daemon's delivery of real configuration changes.
 
 Validated on Linux x64 on 2026-10-17: release with GCC 16.2 and fastdebug with
 GCC 14.2 passed incremental image builds, make regressions and profile checks.
@@ -107,7 +114,8 @@ Line Tools, with no Metal discovery or artifacts. Each image had 56 modules/
 jmods, 11,196 Java inputs and 1,366 product native commands with matching objects.
 The release formal make suite passed; fastdebug's formal suite failed at
 Autoconf discovery. Its test-discovery fix and the subsequent launcher/framework
-changes require targeted native confirmation; the earlier passed runtime scope
+and notification changes require targeted native confirmation, including the
+new callback-delivery regression; the earlier passed runtime scope
 remains applicable to the unchanged code.
 
 Native Linux AArch64 and Windows x64 validation remains required.

@@ -157,6 +157,31 @@ native-diagnostics: $(HEADLESS_MESSAGE_BOX_TEST)
 launcher-errors:
 	$(BASH) $(TOPDIR)/.github/scripts/check-headless-launcher.sh "$(IMAGES_OUTPUTDIR)/jdk"
 
+# Exercise the actual image callback with native macOS scheduling, without
+# privileged notifications or writes to the machine's Kerberos configuration.
+ifeq ($(call isBuildOs, macosx)+$(call isTargetOs, macosx), true+true)
+  KERBEROS_TEST_DIR := $(TEST_SUPPORT_DIR)/kerberos-notifications
+  $(eval $(call SetupNativeCompilation, KERBEROS_NOTIFICATION_TEST, \
+      NAME := KerberosNotifications, \
+      TYPE := LIBRARY, \
+      LINK_TYPE := C, \
+      SRC := $(TOPDIR)/test/make/macosx, \
+      CFLAGS := $(CFLAGS_JDKLIB) \
+          -I$(TOPDIR)/src/java.base/share/native/include \
+          -I$(TOPDIR)/src/java.base/unix/native/include, \
+      LDFLAGS := $(LDFLAGS_JDKLIB), \
+      LIBS := -framework CoreFoundation -framework SystemConfiguration, \
+      OBJECT_DIR := $(KERBEROS_TEST_DIR)/objs, \
+      OUTPUT_DIR := $(KERBEROS_TEST_DIR), \
+  ))
+
+  kerberos-notifications: $(KERBEROS_NOTIFICATION_TEST)
+	$(FIXPATH) $(JAVAC) -Xlint:all -Werror -d $(KERBEROS_TEST_DIR) $(TOPDIR)/test/make/macosx/KerberosNotifications.java
+	$(FIXPATH) $(JAVA) -cp $(KERBEROS_TEST_DIR) KerberosNotifications "$(IMAGES_OUTPUTDIR)/jdk" "$(KERBEROS_NOTIFICATION_TEST_TARGET)"
+
+  all: kerberos-notifications
+endif
+
 all: matrix probes direct-targets imports source-imports native-diagnostics launcher-errors
-.PHONY: verify-graph matrix probes direct-targets imports module-info source-imports native-diagnostics launcher-errors
+.PHONY: verify-graph matrix probes direct-targets imports module-info source-imports native-diagnostics launcher-errors kerberos-notifications
 include MakeFileEnd.gmk
