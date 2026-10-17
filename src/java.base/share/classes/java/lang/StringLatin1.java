@@ -615,7 +615,8 @@ final class StringLatin1 {
     static int lastIndexOf(byte[] src, int srcCount,
                            byte[] tgt, int tgtCount, int fromIndex) {
         int searchLength = fromIndex + tgtCount;
-        if (searchLength >= StringZilla.MIN_BYTES && StringZilla.ENABLED) {
+        if (searchLength >= StringZilla.MIN_INTERPRETER_REVERSE_BYTES && StringZilla.ENABLED
+                && (searchLength >= StringZilla.MIN_BYTES || StringZilla.compilerTier() == 0)) {
             if (tgtCount <= 8 && StringZilla.matches(src, fromIndex, tgt, tgtCount)) {
                 return fromIndex;
             }

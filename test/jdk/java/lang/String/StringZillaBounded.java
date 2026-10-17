@@ -98,7 +98,38 @@ public class StringZillaBounded {
         return target;
     }
 
+
+    private static void reverse(String value, String needle, int from, int expected) {
+        StringBuilder builder = new StringBuilder(value).append(needle);
+        StringBuffer buffer = new StringBuffer(value).append(needle);
+        builder.setLength(value.length());
+        buffer.setLength(value.length());
+        equal(value.lastIndexOf(needle, from), expected);
+        equal(builder.lastIndexOf(needle, from), expected);
+        equal(buffer.lastIndexOf(needle, from), expected);
+    }
+
+    private static void denseReverseOverlaps() {
+        for (int count : new int[]{257, 258, 511}) {
+            for (int span : new int[]{31, 32, 33, 63, 64, 65}) {
+                for (int mismatch : new int[]{1, count / 2, count - 2}) {
+                    char[] target = "a".repeat(count).toCharArray();
+                    target[mismatch] = 'b';
+                    String needle = new String(target);
+                    for (int position : new int[]{0, span / 2, span}) {
+                        String value = "a".repeat(position) + needle + "a".repeat(span - position);
+                        reverse(value, needle, span, position);
+                        reverse(value, needle, position, position);
+                        reverse(value, needle, position - 1, -1);
+                    }
+                    reverse("a".repeat(count + span), needle, span, -1);
+                }
+            }
+        }
+    }
+
     private static void overlaps() {
+        denseReverseOverlaps();
         for (String unit : new String[]{"a", "\u0401"}) {
             String first = unit.equals("a") ? "b" : "\u0402";
             for (int count : new int[]{128, 129, 130, 255, 256, 257, 258, 259, 511, 512, 513, 1024}) {

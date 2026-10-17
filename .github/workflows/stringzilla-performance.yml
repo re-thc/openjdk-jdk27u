@@ -1,0 +1,178 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+
+name: StringZilla native performance
+
+on:
+  push:
+    branches: [codex/stringzilla-intrinsics-5.2.0]
+    paths:
+      - .github/workflows/stringzilla-performance.yml
+      - .github/scripts/stringzilla-performance.py
+      - doc/stringzilla/native-cases.tsv
+      - src/**
+      - test/micro/org/openjdk/bench/java/lang/StringZilla*.java
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  measure:
+    name: ${{ matrix.backend }} complete images
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-26.04
+            platform: linux-x64
+            backend: avx2
+          - runner: ubuntu-26.04
+            platform: linux-x64
+            backend: serial
+          - runner: ubuntu-26.04-arm
+            platform: linux-aarch64
+            backend: neon
+          - runner: windows-2025
+            platform: windows-x64
+            backend: msvc
+    env:
+      MSYS2_PATH_TYPE: minimal
+      CHERE_INVOKING: 1
+      CONFIGURE_DEV_NO_MOLD: 1
+
+    steps:
+      - name: Checkout measured fork
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Checkout untouched original
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: e206bae32b2a6cc1fa9464ad34d75f2df4b347e9
+          path: baseline
+          persist-credentials: false
+
+      - name: Get MSYS2
+        if: runner.os == 'Windows'
+        uses: ./.github/actions/get-msys2
+        with:
+          architecture: x86.x64
+
+      - name: Get boot JDK
+        id: bootjdk
+        uses: ./.github/actions/get-bootjdk
+        with:
+          platform: ${{ matrix.platform }}
+
+      - name: Install GCC 16
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-16 g++-16
+          test "$(gcc-16 -dumpversion)" = 16
+          test "$(g++-16 -dumpversion)" = 16
+          gcc-16 --version
+          g++-16 --version
+
+      - name: Build matched complete Linux images
+        if: runner.os == 'Linux'
+        shell: bash
+        env:
+          BOOT_JDK: ${{ steps.bootjdk.outputs.path }}
+          CC: gcc-16
+          CXX: g++-16
+        run: |
+          mkdir -p perf-output perf-images
+          for control in original fork; do
+            if [[ $control == original ]]; then source_dir=baseline; else source_dir=.; fi
+            (
+              cd "$source_dir"
+              bash bin/configure-dev --with-conf-name=perf --with-debug-level=release \
+                --with-boot-jdk="$BOOT_JDK" --with-version-opt=stringzilla-benchmark \
+                --with-source-date=1792195200 --with-native-debug-symbols=none \
+                --with-jmod-compress=zip-1
+              make CONF=perf JOBS=2 images
+            )
+            cp "$source_dir/build/perf/spec.gmk" "perf-output/$control-spec.gmk"
+            cp -a "$source_dir/build/perf/images/jdk" "perf-images/$control"
+            bash .github/scripts/check-dev-profile.sh "perf-images/$control" "perf-output/$control-spec.gmk"
+            rm -rf "$source_dir/build/perf"
+          done
+
+      - name: Check MSVC 14.44 toolset
+        if: runner.os == 'Windows'
+        id: msvc-check
+        shell: bash
+        run: |
+          set +e
+          '/c/Program Files/Microsoft Visual Studio/18/Enterprise/vc/auxiliary/build/vcvars64.bat' -vcvars_ver=14.44
+          if [ $? -eq 0 ]; then
+            echo "installed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "installed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install MSVC 14.44 toolset
+        if: runner.os == 'Windows' && steps.msvc-check.outputs.installed != 'true'
+        shell: bash
+        run: |
+          '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe' \
+            modify --quiet --installPath 'C:\Program Files\Microsoft Visual Studio\18\Enterprise' \
+            --add Microsoft.VisualStudio.Component.VC.14.44.x86.x64
+
+      - name: Build matched complete MSVC images
+        if: runner.os == 'Windows'
+        shell: env /usr/bin/bash --login -eo pipefail {0}
+        env:
+          PATH: ''
+          BOOT_JDK: ${{ steps.bootjdk.outputs.path }}
+        run: |
+          mkdir -p perf-output perf-images
+          for control in original fork; do
+            if [[ $control == original ]]; then source_dir=baseline; else source_dir=.; fi
+            (
+              cd "$source_dir"
+              bash bin/configure-dev --with-conf-name=perf --with-debug-level=release \
+                --with-boot-jdk="$BOOT_JDK" --with-version-opt=stringzilla-benchmark \
+                --with-source-date=1792195200 --with-native-debug-symbols=none \
+                --with-toolchain-version=2026 --with-msvc-toolset-version=14.44 \
+                --with-jmod-compress=zip-1
+              make CONF=perf JOBS=2 images
+            )
+            spec="$source_dir/build/perf/spec.gmk"
+            test "$(awk '$1 == "TOOLCHAIN_TYPE" { print $3 }' "$spec")" = microsoft
+            test "$(awk '$1 == "TOOLCHAIN_VERSION" { print $3 }' "$spec")" = 2026
+            for compiler in CC CXX; do
+              version=$(awk -v key="${compiler}_VERSION_NUMBER" '$1 == key { print $3 }' "$spec")
+              [[ $version == 19.44.* ]]
+            done
+            cp "$spec" "perf-output/$control-spec.gmk"
+            cp -a "$source_dir/build/perf/images/jdk" "perf-images/$control"
+            bash .github/scripts/check-dev-profile.sh "perf-images/$control" "perf-output/$control-spec.gmk"
+            rm -rf "$source_dir/build/perf"
+          done
+
+      - name: Measure original, enabled and disabled
+        shell: ${{ runner.os == 'Windows' && 'pwsh' || 'bash' }}
+        run: >-
+          python .github/scripts/stringzilla-performance.py
+          --original perf-images/original --fork perf-images/fork
+          --original-source baseline --fork-source .
+          --output perf-output --backend ${{ matrix.backend }}
+
+      - name: Retain raw results and build provenance
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-native-${{ matrix.backend }}-${{ github.sha }}
+          path: perf-output
+          if-no-files-found: warn
+          retention-days: 30

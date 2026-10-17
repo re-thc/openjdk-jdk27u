@@ -1209,8 +1209,9 @@ final class StringUTF16 {
             fromIndex = candidateEnd - last;
         }
         int searchLength = fromIndex + tgtCount;
-        if (searchLength >= (StringZilla.MIN_BYTES >> 1) && StringZilla.ENABLED) {
-            // Probe before tier dispatch, keeping short interpreted ranges in Java.
+        if (searchLength >= (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1) && StringZilla.ENABLED
+                && (searchLength >= (StringZilla.MIN_BYTES >> 1) || StringZilla.compilerTier() == 0)) {
+            // Probe the rightmost candidate before selecting a search backend.
             if (tgtCount <= 8 && StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount)) {
                 return fromIndex;
             }
@@ -2172,9 +2173,10 @@ final class StringUTF16 {
             }
             return 0;
         }
-        if (fromIndex > 0 && fromIndex + tgtCount >= (StringZilla.MIN_BYTES >> 1)
-                && StringZilla.ENABLED) {
-            int searchLength = fromIndex + tgtCount;
+        int searchLength = fromIndex + tgtCount;
+        if (fromIndex > 0 && searchLength >= (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1)
+                && StringZilla.ENABLED
+                && (searchLength >= (StringZilla.MIN_BYTES >> 1) || StringZilla.compilerTier() == 0)) {
             if (tgtCount <= StringZilla.MAX_MIXED_NEEDLE) {
                 if (tgtCount <= 8 && StringZilla.matchesUTF16Latin1(src, fromIndex, tgt, tgtCount)) {
                     return fromIndex;
@@ -2195,7 +2197,8 @@ final class StringUTF16 {
                     } else if (tier == StringZilla.C2) {
                         return lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex);
                     }
-                } else if (tgtCount <= 2 * StringZilla.MAX_MIXED_NEEDLE) {
+                } else if (tgtCount <= 2 * StringZilla.MAX_MIXED_NEEDLE || tier == 0) {
+                    // Interpreted suffix loops allow longer needles without enlarging the native prefix.
                     if (tier == StringZilla.C2) {
                         // The range contains only the rightmost candidate.
                         int result = indexOfLatin1_0(src, searchLength, tgt, tgtCount, fromIndex);

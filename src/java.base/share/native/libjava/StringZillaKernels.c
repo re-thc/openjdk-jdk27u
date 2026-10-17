@@ -204,6 +204,28 @@ static sz_cptr_t rfind_utf16_serial(sz_cptr_t src, sz_size_t src_bytes,
 }
 
 #if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
+// A short candidate range does not need the long-needle suffix skip table.
+__attribute__((target("avx2,bmi,bmi2,lzcnt")))
+static sz_cptr_t rfind_latin1_haswell(sz_cptr_t src, sz_size_t src_bytes,
+                                    sz_cptr_t tgt, sz_size_t tgt_bytes) {
+    if (tgt_bytes > 256 && src_bytes - tgt_bytes < 64) {
+        sz_size_t candidates = src_bytes - tgt_bytes + 1;
+        sz_size_t middle = tgt_bytes / 2, last = tgt_bytes - 1;
+        while (candidates != 0) {
+            sz_cptr_t candidate = sz_rfind_byte_haswell(src, candidates, tgt);
+            if (candidate == NULL) return NULL;
+            if (candidate[middle] == tgt[middle] && candidate[last] == tgt[last] &&
+                    candidate[last - 1] == tgt[last - 1] &&
+                    sz_equal_haswell(candidate, tgt, tgt_bytes)) {
+                return candidate;
+            }
+            candidates = candidate - src;
+        }
+        return NULL;
+    }
+    return sz_rfind_haswell(src, src_bytes, tgt, tgt_bytes);
+}
+
 static sz_cptr_t rfind_utf16_haswell(sz_cptr_t src, sz_size_t src_bytes,
                                    sz_cptr_t tgt, sz_size_t tgt_bytes) {
     // Avoid long-needle preprocessing for a single aligned candidate batch.
@@ -217,7 +239,7 @@ static sz_cptr_t rfind_utf16_haswell(sz_cptr_t src, sz_size_t src_bytes,
 #endif
 
 /* Every published table is immutable; repeated initialization is harmless. */
-#define DEFINE_KERNELS(tag, forward, backward, backward_utf16, equality, aligned, caps) \
+#define DEFINE_KERNELS(tag, forward, backward, backward_latin1, backward_utf16, equality, aligned, caps) \
 static jint tag##_find_latin1(const char* s, jint n, const char* t, jint m) { \
     return search_impl(s, n, t, m, 0, JNI_FALSE, forward, aligned, equality); \
 } \
@@ -228,7 +250,7 @@ static jint tag##_find_mixed(const char* s, jint n, const char* t, jint m) { \
     return search_impl(s, n, t, m, 2, JNI_FALSE, forward, aligned, equality); \
 } \
 static jint tag##_rfind_latin1(const char* s, jint n, const char* t, jint m) { \
-    return search_impl(s, n, t, m, 0, JNI_TRUE, backward, aligned, equality); \
+    return search_impl(s, n, t, m, 0, JNI_TRUE, backward_latin1, aligned, equality); \
 } \
 static jint tag##_rfind_utf16(const char* s, jint n, const char* t, jint m) { \
     return search_impl(s, n, t, m, 1, JNI_TRUE, backward_utf16, aligned, equality); \
@@ -259,13 +281,13 @@ static const StringZillaKernels tag##_kernels = { \
     tag##_rfind_char_latin1, tag##_rfind_char_utf16, tag##_equal \
 };
 
-DEFINE_KERNELS(serial, sz_find_serial, sz_rfind_serial, rfind_utf16_serial, sz_equal_serial, search_utf16_default, JVM_STRINGZILLA_SERIAL)
+DEFINE_KERNELS(serial, sz_find_serial, sz_rfind_serial, sz_rfind_serial, rfind_utf16_serial, sz_equal_serial, search_utf16_default, JVM_STRINGZILLA_SERIAL)
 #if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
-DEFINE_KERNELS(haswell, sz_find_haswell, sz_rfind_haswell, rfind_utf16_haswell, sz_equal_haswell, search_utf16_haswell, JVM_STRINGZILLA_HASWELL)
-DEFINE_KERNELS(skylake, sz_find_skylake, sz_rfind_skylake, sz_rfind_skylake, sz_equal_skylake, search_utf16_haswell, JVM_STRINGZILLA_SKYLAKE)
+DEFINE_KERNELS(haswell, sz_find_haswell, sz_rfind_haswell, rfind_latin1_haswell, rfind_utf16_haswell, sz_equal_haswell, search_utf16_haswell, JVM_STRINGZILLA_HASWELL)
+DEFINE_KERNELS(skylake, sz_find_skylake, sz_rfind_skylake, sz_rfind_skylake, sz_rfind_skylake, sz_equal_skylake, search_utf16_haswell, JVM_STRINGZILLA_SKYLAKE)
 #endif
 #if (defined(__aarch64__) || defined(_M_ARM64)) && SZ_USE_NEON
-DEFINE_KERNELS(neon, sz_find_neon, sz_rfind_neon, sz_rfind_neon, sz_equal_neon, search_utf16_default, JVM_STRINGZILLA_NEON)
+DEFINE_KERNELS(neon, sz_find_neon, sz_rfind_neon, sz_rfind_neon, sz_rfind_neon, sz_equal_neon, search_utf16_default, JVM_STRINGZILLA_NEON)
 #endif
 #undef DEFINE_KERNELS
 

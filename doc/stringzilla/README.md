@@ -26,9 +26,10 @@ with release/acquire ordering by `System.registerNatives`; Java class
 initialization reads the selected configuration idempotently. Bootstrap equality has a
 VM-owned scalar fallback.
 
-Search dispatch starts at 256 source bytes. Short ranges and immediate matches
-retain inexpensive Java/platform paths, except the interpreter's whole-string
-forward intrinsics, which call the bounded kernels at every input size.
+Compiled search dispatch starts at 256 source bytes. Interpreted substring
+reverse searches use a separate 32-source-byte gate. Smaller ranges and short
+immediate matches retain Java/platform paths. The interpreter's whole-string
+forward intrinsics call the bounded kernels at every input size.
 Those entries resume Java before native bootstrap, for malformed UTF-16 arrays,
 for mixed needles over 64 code units and for ranges exceeding either native work limit.
 Interpreted mixed reverse searches with a single candidate and a needle of at
@@ -42,7 +43,7 @@ owns native argument setup and fallback, keeping them out of the inline scalar
 caller. Single-candidate mixed searches use a small backward verifier in compiled
 code. Its explicit range check remains intrinsic even when interpreter native
 returns leave the Java fallback unprofiled.
-Eligible short UTF-16 substring reverse matches are checked after the common
+Eligible short UTF-16 substring reverse matches are checked after the tier's
 source-size gate and before backend/tier dispatch, including C2 ranges that use
 the Java loop. The interpreter uses the existing bounded range-equality entry
 for this probe; compiled callers retain the inline code-unit comparison.
@@ -51,8 +52,9 @@ Smaller ranges retain the original scalar path.
 Same-coder substring reverse searches also use the selected kernel and compiling
 tier. The tier query folds to a constant in C1/C2; its Java body returns zero for
 interpreted callers. Initialization records the actual callback table's backend,
-including serial-only builds. The following rules apply after the common
-256-source-byte gate and before native argument setup. Length is the searched
+including serial-only builds. The following compiled rules apply after the
+256-source-byte gate and before native argument setup. The interpreter uses
+its separate 32-source-byte gate. Length is the searched
 prefix (`fromIndex + needleCount`), in code units, after API range normalization.
 
 | Backend and tier | Additional native eligibility |
@@ -63,11 +65,13 @@ prefix (`fromIndex + needleCount`), in code units, after API range normalization
 | Serial or AVX2 C1, UTF-16 | Needle up to 128 code units, or comparison work at least 1024 |
 | Serial C2, UTF-16 | Needle up to 128 code units with prefix at least 512, or longer needle with comparison work at least 2048 |
 | AVX2 C2, UTF-16 | Same as serial C2, plus a span of at least 16 code units for longer needles |
-| Interpreter, other backend/tier combinations, mixed-coder searches | Existing eligibility |
+| Other compiled backend/tier combinations, mixed-coder searches | Source-size eligibility |
 
-Span is `prefix - needleCount`. AVX2 requires at least 32 candidate bytes
-before its vector loop can run; the long-needle C2 guards avoid calling its
-serial tail for shorter spans. Interpreter and C1 retain their eligibility.
+Span is `prefix - needleCount`. For long Latin-1 needles with at most 64
+candidate positions, the AVX2 adapter uses upstream reverse byte search to
+locate candidate starts, rejects sampled interior/end mismatches, then calls
+upstream equality. This avoids repeated long-needle suffix-table setup and
+preserves overlapping candidates. Larger windows use upstream substring search.
 
 Comparison work is `(prefix - needleCount + 1) * needleCount`, in code units,
 computed with 64-bit arithmetic. It selects native verification only when a long
@@ -95,19 +99,19 @@ with at most 32 candidate positions, which reuse the aligned filter to avoid
 long-needle preprocessing. This does not change the tier-specific eligibility
 gates or bulk dispatch.
 
-For mixed reverse needles of 9–64 code units, compiled serial callers first
-verify the rightmost candidate backward in Java. A match returns immediately;
-a rejected candidate retains the native bulk search. Interpreter and vector
-backends keep their dispatch. Needles up to eight code units retain the shared
+For mixed reverse needles of 32–64 code units, serial C1 callers verify the
+rightmost candidate with a bounded single-candidate native call. Needles of
+9–31 code units and serial C2 callers retain the backward Java probe. A match returns immediately; a rejected
+candidate retains the native bulk search. Vector backends keep their dispatch. Needles up to eight code units retain the shared
 short immediate-match probe.
 
 For mixed needles longer than 64 code units, the interpreter and C1 use bounded
 UTF-16 character search to locate the last possible trailing character, then
 Java verifies that candidate and any earlier candidates. An oversized native
 window resumes the original Java search. A single possible start bypasses
-that filter. For 65–128-code-unit immediate candidates, these tiers compare
-the remaining suffix backward in Java, then verify the 64-code-unit prefix with
-the bounded mixed kernel. A rejection resumes the character filter at the
+that filter. For immediate candidates longer than 64 code units, the interpreter
+compares the remaining suffix backward in Java, then verifies the 64-code-unit
+prefix with the bounded mixed kernel. C1 uses this route through 128 code units. A rejection resumes the character filter at the
 preceding start.
 
 C2 uses the existing JDK character-search intrinsic to skip empty
@@ -115,8 +119,8 @@ C2 uses the existing JDK character-search intrinsic to skip empty
 immediate candidates, it reuses the existing mixed-coder forward-search
 intrinsic over a range containing exactly that one candidate. A rejection
 resumes reverse search at the preceding start. This verification reads at most
-256 source bytes. Immediate candidates longer than 128 code units retain the
-original Java loop in every tier. The native widening cap stays at 64.
+256 source bytes. Compiled immediate candidates longer than 128 code units
+retain the original Java loop. The native widening cap stays at 64.
 
 Individual intrinsics can be disabled with
 `-XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=...`: search bridges use
@@ -202,10 +206,13 @@ list short reverse-search improvements, but those kernels were already present
 in the previous 5.2.0 pin. The search and comparison headers are unchanged;
 within the vendored dependency closure, only `types.h` changes, adding alignment
 sanitizer annotations. The upgrade alone does not change search performance.
-One [tracked patch](../../src/java.base/share/native/libjava/stringzilla/patches/0001-preserve-reverse-search-overlaps.patch)
-preserves overlapping suffix candidates after a rejected long-needle prefix in
-reverse search and skips impossible prefixes using the upstream byte-search
-primitive. The other 27 files are unmodified.
+Two tracked patches apply to the pinned release. The
+[reverse-search patch](../../src/java.base/share/native/libjava/stringzilla/patches/0001-preserve-reverse-search-overlaps.patch)
+preserves overlapping suffix candidates after a rejected long-needle prefix and
+skips impossible prefixes using the upstream byte-search primitive. The
+[MSVC serial patch](../../src/java.base/share/native/libjava/stringzilla/patches/0002-msvc-baseline-bit-operations.patch)
+uses baseline bit scans and portable population counts, preserving zero-input
+results without requiring BMI1, LZCNT or POPCNT. The other 26 files are unmodified.
 [UPSTREAM.json](../../src/java.base/share/native/libjava/stringzilla/UPSTREAM.json)
 records upstream, patch and patched-file SHA-256 hashes;
 [the shipped notice](../../src/java.base/share/legal/stringzilla.md)

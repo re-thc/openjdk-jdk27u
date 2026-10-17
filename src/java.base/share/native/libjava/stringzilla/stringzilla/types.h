@@ -2,6 +2,7 @@
  *  @brief Shared definitions for the StringZilla library.
  *  @file include/stringzilla/types.h
  *  @author Ash Vardanian
+ *  Local changes (re-thc, 2026): baseline-safe MSVC serial bit operations.
  *
  *  Includes the following types:
  *
@@ -1586,12 +1587,33 @@ SZ_HELPER_AUTO int sz_u32_popcount(sz_u32_t x) {
     return (((x + (x >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 }
 #else
-SZ_HELPER_AUTO int sz_u64_ctz(sz_u64_t x) { return (int)_tzcnt_u64(x); }
-SZ_HELPER_AUTO int sz_u64_clz(sz_u64_t x) { return (int)_lzcnt_u64(x); }
-SZ_HELPER_AUTO int sz_u64_popcount(sz_u64_t x) { return (int)__popcnt64(x); }
-SZ_HELPER_AUTO int sz_u32_ctz(sz_u32_t x) { return (int)_tzcnt_u32(x); }
-SZ_HELPER_AUTO int sz_u32_clz(sz_u32_t x) { return (int)_lzcnt_u32(x); }
-SZ_HELPER_AUTO int sz_u32_popcount(sz_u32_t x) { return (int)__popcnt(x); }
+// Serial kernels must also run without BMI1, LZCNT or POPCNT.
+SZ_HELPER_AUTO int sz_u64_ctz(sz_u64_t x) {
+    unsigned long index;
+    return _BitScanForward64(&index, x) ? (int)index : 64;
+}
+SZ_HELPER_AUTO int sz_u64_clz(sz_u64_t x) {
+    unsigned long index;
+    return _BitScanReverse64(&index, x) ? 63 - (int)index : 64;
+}
+SZ_HELPER_AUTO int sz_u64_popcount(sz_u64_t x) {
+    x = x - ((x >> 1) & 0x5555555555555555ull);
+    x = (x & 0x3333333333333333ull) + ((x >> 2) & 0x3333333333333333ull);
+    return (int)((((x + (x >> 4)) & 0x0F0F0F0F0F0F0F0Full) * 0x0101010101010101ull) >> 56);
+}
+SZ_HELPER_AUTO int sz_u32_ctz(sz_u32_t x) {
+    unsigned long index;
+    return _BitScanForward(&index, x) ? (int)index : 32;
+}
+SZ_HELPER_AUTO int sz_u32_clz(sz_u32_t x) {
+    unsigned long index;
+    return _BitScanReverse(&index, x) ? 31 - (int)index : 32;
+}
+SZ_HELPER_AUTO int sz_u32_popcount(sz_u32_t x) {
+    x = x - ((x >> 1) & 0x55555555u);
+    x = (x & 0x33333333u) + ((x >> 2) & 0x33333333u);
+    return (int)((((x + (x >> 4)) & 0x0F0F0F0Fu) * 0x01010101u) >> 24);
+}
 #endif
 /*
  *  Force the byteswap functions to be intrinsics, because when `/Oi-` is given,

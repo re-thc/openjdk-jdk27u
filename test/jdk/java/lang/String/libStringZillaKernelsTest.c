@@ -67,6 +67,31 @@ static int can_execute(jint capabilities) {
 #define CHECK(condition) do { if (!(condition)) return __LINE__; } while (0)
 
 static jint check_kernels(void) {
+    // MSVC's serial helpers must not depend on optional bit-manipulation ISAs.
+    for (int bit = 0; bit < 64; bit++) {
+        sz_u64_t value = (sz_u64_t)1 << bit;
+        CHECK(sz_u64_ctz(value) == bit);
+        CHECK(sz_u64_clz(value) == 63 - bit);
+        CHECK(sz_u64_popcount(value) == 1);
+    }
+    for (int bit = 0; bit < 32; bit++) {
+        sz_u32_t value = (sz_u32_t)1 << bit;
+        CHECK(sz_u32_ctz(value) == bit);
+        CHECK(sz_u32_clz(value) == 31 - bit);
+        CHECK(sz_u32_popcount(value) == 1);
+    }
+    CHECK(sz_u64_popcount(0) == 0);
+    CHECK(sz_u64_popcount(0xFFFFFFFFFFFFFFFFull) == 64);
+    CHECK(sz_u64_popcount(0x0123456789ABCDEFull) == 32);
+    CHECK(sz_u32_popcount(0) == 0);
+    CHECK(sz_u32_popcount(0xFFFFFFFFu) == 32);
+    CHECK(sz_u32_popcount(0x01234567u) == 12);
+#if defined(_MSC_VER) && defined(_M_X64)
+    CHECK(sz_u64_ctz(0) == 64);
+    CHECK(sz_u64_clz(0) == 64);
+    CHECK(sz_u32_ctz(0) == 32);
+    CHECK(sz_u32_clz(0) == 32);
+#endif
     const jint counts[] = {0, 1, 63, 64};
     const jint invalid_counts[] = {-1, INT_MIN, 65, 128, 4096, INT_MAX};
     jchar source[256];
@@ -175,6 +200,33 @@ static jint check_kernels(void) {
                     overlap_utf16_source[pos] = 0x0401;
                     CHECK(kernels->rfindUTF16((const char*)overlap_utf16_source, size * 2,
                                              (const char*)overlap_utf16_target, count * 2) == -1);
+                }
+            }
+        }
+
+        // Dense first-byte candidates exercise long-needle short-range filtering.
+        const jint dense_counts[] = {257, 258, 511, 512};
+        const jint dense_spans[] = {0, 1, 2, 15, 16, 17, 30, 31, 32, 33, 62, 63, 64, 65, 96};
+        char dense_source[640], dense_target[520];
+        for (unsigned int n = 0; n < sizeof(dense_counts) / sizeof(dense_counts[0]); n++) {
+            jint count = dense_counts[n];
+            const jint markers[] = {1, count / 2, count - 2, count - 1};
+            for (unsigned int m = 0; m < sizeof(markers) / sizeof(markers[0]); m++) {
+                for (jint offset = 0; offset < 8; offset++) {
+                    char* text = dense_source + offset;
+                    char* target = dense_target + ((offset + 3) & 7);
+                    memset(target, 'a', count);
+                    target[markers[m]] = 'b';
+                    for (unsigned int r = 0; r < sizeof(dense_spans) / sizeof(dense_spans[0]); r++) {
+                        jint span = dense_spans[r];
+                        const jint positions[] = {-1, 0, span / 2, span};
+                        for (unsigned int i = 0; i < sizeof(positions) / sizeof(positions[0]); i++) {
+                            jint position = positions[i];
+                            memset(text, 'a', count + span);
+                            if (position >= 0) memcpy(text + position, target, count);
+                            CHECK(kernels->rfindLatin1(text, count + span, target, count) == position);
+                        }
+                    }
                 }
             }
         }

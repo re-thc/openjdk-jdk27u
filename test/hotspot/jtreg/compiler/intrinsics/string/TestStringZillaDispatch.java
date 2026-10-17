@@ -34,6 +34,27 @@
  * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestStringZillaDispatch
  * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseStringZillaIntrinsics TestStringZillaDispatch
  * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:DisableIntrinsic=_stringzillaCompilerTier TestStringZillaDispatch
+ * @run main/othervm -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestStringZillaDispatch interpreted
+ * @run main/othervm -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseStringZillaIntrinsics TestStringZillaDispatch interpreted
+ * @run main/othervm -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:DisableIntrinsic=_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaRfindUTF16Latin1 TestStringZillaDispatch interpreted
+ */
+
+
+/*
+ * @test id=limitedAVX
+ * @summary Reverse-search boundaries in serial and AVX2 dispatch
+ * @requires vm.compiler1.enabled & vm.compiler2.enabled
+ * @requires (os.arch == "amd64" | os.arch == "x86_64")
+ * @library /test/lib
+ * @modules java.base/java.lang:open
+ * @compile/module=java.base java/lang/StringZillaDispatchHelper.java
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=0 TestStringZillaDispatch
+ * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=2 TestStringZillaDispatch
+ * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=0 -XX:DisableIntrinsic=_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaRfindUTF16Latin1 TestStringZillaDispatch
+ * @run main/othervm -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=0 TestStringZillaDispatch interpreted
+ * @run main/othervm -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=2 TestStringZillaDispatch interpreted
  */
 
 import java.lang.reflect.Method;
@@ -54,6 +75,10 @@ public class TestStringZillaDispatch {
         Method utf16 = helper.getMethod("utf16", int.class, int.class);
         Method search = helper.getMethod("search", String.class, String.class, int.class);
         Method intrinsic = bridge.getDeclaredMethod("compilerTier");
+        if (args.length != 0) {
+            checkShortAndMixed(search);
+            return;
+        }
         for (int level : new int[]{1, 4}) {
             for (Method method : new Method[]{tier, latin, latinFilter, utf16, search}) {
                 WB.deoptimizeMethod(method);
@@ -112,6 +137,7 @@ public class TestStringZillaDispatch {
             check(utf16, 4096, 4, true);
             checkBoundaries(search);
             checkFilteredBlocks(search);
+            checkShortAndMixed(search);
         }
     }
 
@@ -140,6 +166,73 @@ public class TestStringZillaDispatch {
                         throw new AssertionError("Filtered block/capacity: " + position + "/" + count);
                     }
                 }
+            }
+        }
+    }
+
+    private static void checkReverse(Method search, String value, String needle,
+                                     int from, int expected) throws Exception {
+        StringBuilder builder = new StringBuilder(value).append(needle);
+        StringBuffer buffer = new StringBuffer(value).append(needle);
+        builder.setLength(value.length());
+        buffer.setLength(value.length());
+        if ((int)search.invoke(null, value, needle, from) != expected
+                || builder.lastIndexOf(needle, from) != expected
+                || buffer.lastIndexOf(needle, from) != expected) {
+            throw new AssertionError("Reverse boundary: length=" + value.length()
+                    + " count=" + needle.length() + " from=" + from + " expected=" + expected);
+        }
+    }
+
+    private static void checkShortAndMixed(Method search) throws Exception {
+        for (String unit : new String[]{"a", "\u0401"}) {
+            String needle = unit.equals("a") ? "baac" : "\u0402\u0401\u0401\u0403";
+            int[] lengths = unit.equals("a") ? new int[]{4, 31, 32, 33, 255, 256, 257}
+                                            : new int[]{4, 15, 16, 17, 127, 128, 129};
+            for (int length : lengths) {
+                for (int position : new int[]{0, 1, length - needle.length()}) {
+                    if (position + needle.length() > length) continue;
+                    String value = unit.repeat(position) + needle
+                            + unit.repeat(length - position - needle.length());
+                    for (int from : new int[]{-1, 0, position - 1, position,
+                                             length - needle.length(), Integer.MAX_VALUE}) {
+                        checkReverse(search, value, needle, from, from < position ? -1 : position);
+                        checkReverse(search, unit.repeat(length), needle, from, -1);
+                    }
+                }
+            }
+        }
+        for (int count : new int[]{4, 8, 9, 63, 64, 65, 128, 129, 130}) {
+            String needle = "b" + "a".repeat(count - 2) + "c";
+            int[] lengths = count == 4 ? new int[]{15, 16, 17, 127, 128, 129, 4096}
+                                       : new int[]{127, 256, 4096, 4097};
+            for (int length : lengths) {
+                for (int position : new int[]{1, 17, length - count}) {
+                    if (position < 1 || position + count > length) continue;
+                    String value = "\u0100" + "x".repeat(position - 1) + needle
+                            + "x".repeat(length - position - count);
+                    for (int from : new int[]{0, position - 1, position, length - count,
+                                             Integer.MAX_VALUE}) {
+                        checkReverse(search, value, needle, from, from < position ? -1 : position);
+                    }
+                }
+                checkReverse(search, "\u0100" + "x".repeat(length - 1), needle, length - count, -1);
+                if (length < 17 + count * 2) continue;
+                // The rightmost probe rejects a near-match and keeps searching.
+                for (int mismatch : new int[]{0, 1, count / 2, count - 2}) {
+                    char[] changed = needle.toCharArray();
+                    changed[mismatch] = 'z';
+                    String value = "\u0100" + "x".repeat(16) + needle
+                            + "x".repeat(length - 17 - count * 2) + new String(changed);
+                    checkReverse(search, value, needle, length - count, 17);
+                    checkReverse(search, value, needle, 16, -1);
+                }
+            }
+            if (count >= 128) {
+                String repeated = "b" + "a".repeat(count - 1);
+                String value = "\u0100" + "x".repeat(16) + repeated + "a".repeat(33);
+                checkReverse(search, value, repeated, Integer.MAX_VALUE, 17);
+                checkReverse(search, value, repeated, 16, -1);
             }
         }
     }

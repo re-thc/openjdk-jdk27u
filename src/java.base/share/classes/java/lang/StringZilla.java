@@ -44,6 +44,7 @@ final class StringZilla {
     static final int C2 = 4;
     // Keep small inputs on the existing Java / platform intrinsic paths.
     static final int MIN_BYTES = 256;
+    static final int MIN_INTERPRETER_REVERSE_BYTES = 32;
     // Match the independent native bounds. Exceeding either resumes Java code.
     static final int MAX_BYTES = 64 * 1024;
     static final int MAX_WORK = 4 * 1024 * 1024;
@@ -95,6 +96,20 @@ final class StringZilla {
 
     @ForceInline
     static boolean matchesUTF16Latin1Reverse(byte[] src, int offset, byte[] tgt, int count) {
+        if (count >= 32 && compilerTier() == C1) {
+            return matchesUTF16Latin1C1(src, offset, tgt, count);
+        }
+        return matchesUTF16Latin1JavaReverse(src, offset, tgt, count);
+    }
+
+    @DontInline
+    private static boolean matchesUTF16Latin1C1(byte[] src, int offset, byte[] tgt, int count) {
+        int result = rfindUTF16Latin1(src, offset << 1, count << 1, tgt, count);
+        return result == FALLBACK ? matchesUTF16Latin1JavaReverse(src, offset, tgt, count) : result == 0;
+    }
+
+    @ForceInline
+    private static boolean matchesUTF16Latin1JavaReverse(byte[] src, int offset, byte[] tgt, int count) {
         for (int i = count - 1; i >= 0; i--) {
             if (StringUTF16.getChar(src, offset + i) != (tgt[i] & 0xff)) {
                 return false;

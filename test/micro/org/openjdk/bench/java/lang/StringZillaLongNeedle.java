@@ -41,7 +41,8 @@ public class StringZillaLongNeedle {
     public int length;
     @Param({"64", "256"})
     public int needleLength;
-    @Param({"NEAR_END", "NEAR_START", "CROSSED", "MISS", "END", "OVERLAP", "OVERLAP_LATIN1"})
+    @Param({"NEAR_END", "NEAR_START", "CROSSED", "MISS", "END", "OVERLAP", "OVERLAP_LATIN1",
+            "DENSE_MISS_LATIN1", "DENSE_START_LATIN1", "DENSE_END_LATIN1"})
     public String shape;
 
     private String value;
@@ -49,16 +50,18 @@ public class StringZillaLongNeedle {
 
     @Setup
     public void setup() {
-        if (shape.equals("OVERLAP_LATIN1")) {
+        if (shape.endsWith("_LATIN1")) {
             char[] target = new char[needleLength];
             Arrays.fill(target, 'a');
-            target[0] = 'b';
+            target[shape.equals("OVERLAP_LATIN1") ? 0 : needleLength - 2] = 'b';
             needle = new String(target);
             char[] chars = new char[length + needleLength + 1];
             Arrays.fill(chars, 'a');
-            System.arraycopy(target, 0, chars, 0, target.length);
+            int expected = shape.equals("DENSE_MISS_LATIN1") ? -1
+                    : shape.equals("DENSE_END_LATIN1") ? length + 1 : 0;
+            if (expected >= 0) System.arraycopy(target, 0, chars, expected, target.length);
             value = new String(chars);
-            validate(0);
+            validate(expected);
             return;
         }
         char[] target = new char[needleLength];
