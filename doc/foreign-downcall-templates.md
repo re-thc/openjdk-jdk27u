@@ -23,6 +23,11 @@ the same point. The build cache binds source, target, compiler and execution JDK
 identities and validates complete assets before installation and reuse. It
 archives class bytes and ABI metadata, never native addresses.
 
+Matched construction still decodes and checksums the bundle. First use can
+initialize `CRC32` and `ZipUtils` and request `libzip` through the boot loader;
+whether the library is already loaded depends on earlier process activity.
+Those costs remain part of startup qualification.
+
 ## Build and tests
 
 Use the ordinary dependencies in [building.md](building.md), an installed Boot
@@ -80,9 +85,11 @@ one platform-restricted `critical/TestStressAllowHeap` description. jtreg emitte
 a post-run result-cache worker exception; all 118 retained test result files
 report successful execution, but cache consistency was not established.
 
-Fastdebug validation is in progress. Native Linux AArch64, cross-build execution,
-and unsupported-target/build-host validation remain unverified. Source review
-and synthetic ABI byte comparisons do not replace those checks.
+Fastdebug build and tests are blocked by host process exhaustion: even a serial
+build could not start the Boot JDK's Reference Handler thread. Native Linux
+AArch64, cross-build execution, and unsupported-target/build-host validation
+remain unverified. Source review and synthetic ABI byte comparisons do not
+replace those checks.
 
 No qualified speedup or regression-free performance result is claimed. The
 earlier handwritten adapter, which is excluded from this change, has an
