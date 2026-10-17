@@ -42,12 +42,12 @@ def descendants(table, parent):
 class LinuxProcesses:
     def __init__(self):
         self.parent = os.getpid()
-        if not (hasattr(os, 'pidfd_open') and hasattr(os, 'P_PIDFD')
-                and hasattr(signal, 'pidfd_send_signal')):
-            raise RuntimeError('Cleanup requires pidfd_open, P_PIDFD and pidfd_send_signal; no numeric fallback')
 
     def verify_support(self):
         """Admission-only syscall check on self, before launching any children."""
+        if not (hasattr(os, 'pidfd_open') and hasattr(os, 'P_PIDFD')
+                and hasattr(signal, 'pidfd_send_signal')):
+            raise RuntimeError('Cleanup requires pidfd_open, P_PIDFD and pidfd_send_signal; no numeric fallback')
         fd = os.pidfd_open(self.parent, 0)
         try:
             signal.pidfd_send_signal(fd, 0, None, 0)  # Permission/support check, no signal delivered.

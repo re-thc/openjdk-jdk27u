@@ -1,11 +1,12 @@
 # Copyright (c) 2026, Harry Chan. SPDX-License-Identifier: GPL-2.0-only
 """Narrow preparation continuation, never a measurement retry or fresh budget.
 
-The failed baseline-build custody result remains immutable. Reuse certifies the
-retained image now, not retrospectively, and requires successful make plus full
-terminal cleanup. All correctness and measurements remain to be executed once.
+The failed baseline-build result remains immutable. Original boot modules and
+native compiler bytes were not recorded: retained-baseline reuse is forbidden.
+Only explicit new matched builds may continue, under the fixed original UTC cap.
 """
 import argparse
+from contextlib import contextmanager
 import hashlib
 import json
 import math
@@ -13,17 +14,39 @@ from pathlib import Path
 import subprocess
 import time
 
-from image_manifest import record, verify
+from deadline import UTC_CUTOFF, ORIGINAL_UTC_CUTOFF, utc
+from process_cleanup import ChildScope, LinuxProcesses, cleanup_errors, enable_subreaper, require_no_children
 
 BASE = '89885a6288e7aaabd01678a704a586272c0f96e3'
 CANDIDATE = 'f03c433e6846632173209a2d85ca471c6ae6aa22'
 ORIGINAL_HARNESS = 'a30e3351ac2e8bb2fc353ce29006ee36ca205b9b'
 FAILURE = 'Launcher exited with live descendants; cleaned result remains inconclusive'
+_check = lambda: None
+_records = None
+_limit = None
+
+
+@contextmanager
+def verification(check, records=None, deadline=None):
+    global _check, _records, _limit
+    previous = _check, _records, _limit
+    _check, _records, _limit = check, records, deadline
+    try:
+        check()
+        yield
+    finally:
+        _check, _records, _limit = previous
 
 
 def sha(path):
+    _check()
+    digest = hashlib.sha256()
     with Path(path).open('rb') as stream:
-        return hashlib.file_digest(stream, 'sha256').hexdigest()
+        while block := stream.read(1024 * 1024):
+            _check()
+            digest.update(block)
+    _check()
+    return digest.hexdigest()
 
 
 def need(value, message):
@@ -31,12 +54,38 @@ def need(value, message):
         raise RuntimeError(message)
 
 
-def boot():
-    return sha('/proc/sys/kernel/random/boot_id')
-
-
 def git(directory, *args):
-    return subprocess.check_output(['git', '-C', str(directory), *args], text=True, timeout=10).strip()
+    _check()
+    backend = LinuxProcesses(); backend.verify_support(); enable_subreaper(); require_no_children(backend)
+    scope = ChildScope(backend)
+    end = min(time.monotonic() + 10, _limit if _limit is not None else float('inf'))
+    proc = None
+    failure = None
+    try:
+        proc = subprocess.Popen(['git', '-C', str(directory), *args], text=True,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
+        while True:
+            _check()
+            need(time.monotonic() < end - 2, 'Git verification deadline')
+            try:
+                stdout, stderr = proc.communicate(timeout=.05)
+                break
+            except subprocess.TimeoutExpired:
+                continue
+        need(proc.returncode == 0 and len(stdout) + len(stderr) < 1024**2,
+             'Git verification failed or exceeded output cap')
+        return stdout.strip()
+    except BaseException as exc:
+        failure = exc
+        raise
+    finally:
+        receipt = scope.close(proc, end)
+        if _records is not None:
+            _records.append({'argv': ['git', '-C', str(directory), *args], 'cleanup': receipt})
+        if proc is not None:
+            proc.stdout.close(); proc.stderr.close()
+        errors = cleanup_errors(receipt) if failure is None else receipt['errors']
+        need(receipt['complete'] and not errors, 'Git verification cleanup failed: ' + repr(receipt))
 
 
 def original_arguments(argv):
@@ -65,7 +114,11 @@ def check_original(previous, owner, release):
     need(release['output'] == str(previous) and release['owner_output'] == str(owner), 'Release paths differ')
     need(release['hard_deadline_monotonic'] == release['start_monotonic'] + 36000,
          'Original deadline is not one ten-hour release')
-    need(time.monotonic() < release['hard_deadline_monotonic'] - 60, 'Original deadline exhausted')
+    original_utc = utc(release['hard_deadline_utc'])
+    need(UTC_CUTOFF <= original_utc < UTC_CUTOFF + 1
+         and abs(original_utc - utc(release['released_at_utc']) - 36000) < .001,
+         'Original UTC evidence differs from the fixed approved cutoff')
+    need(time.time() < UTC_CUTOFF - 60, 'Original fixed UTC deadline exhausted')
     need(outer['cleanup']['complete'] and outer['final_child_audit']
          and not outer['cleanup']['remaining'] and not outer['errors'], 'Original outer cleanup uncertain')
     need(outer['status'] == 'INNER_FAILED' and terminal['supervisor_exit'] == 2
@@ -75,7 +128,7 @@ def check_original(previous, owner, release):
     need(rows and rows[-1]['label'] == 'build-B-release', 'Work continued beyond baseline build')
     build = rows[-1]
     need(build['exit'] == 0 and build['error'] == FAILURE and build['cleanup']['complete']
-         and not build['cleanup']['remaining'] and not build['cleanup']['errors'], 'Baseline make not reusable')
+         and not build['cleanup']['remaining'] and not build['cleanup']['errors'], 'Original preparation receipt invalid')
     need(all(not row['measured'] for row in rows), 'Cannot continue consumed measurements')
     need(all(row['error'] is None for row in rows[:-1]), 'Earlier failed gate')
     for name in ['samples.json', 'statistics.json', 'coverage.json']:
@@ -98,49 +151,22 @@ def check_original(previous, owner, release):
     return freeze, outer, build
 
 
-def prepare(previous, owner, release_file, destination):
-    previous, owner = previous.resolve(strict=True), owner.resolve(strict=True)
-    release_file = release_file.resolve(strict=True)
-    release = json.loads(release_file.read_text())
-    freeze, outer, build = check_original(previous, owner, release)
-    destination.mkdir()  # Never replace a trusted witness.
-    image = previous / 'B/build/B-release/images/jdk'
-    manifest = destination / 'baseline-image.json'
-    record(image, manifest)
-    verify(image, manifest)
-    files = [previous / n for n in ['freeze.json', 'commands.json', 'decision.json']]
-    files += [owner / n for n in ['owner.json', 'terminal.json']]
-    files += [release_file, manifest, previous / 'B/build/B-release/spec.gmk',
-              previous / 'B/build/B-release/configure.log', previous / 'B/build/B-release/build.log']
-    proof = {'format': 1, 'kind': 'baseline-preparation-continuation',
-             'original_harness': ORIGINAL_HARNESS, 'baseline': BASE, 'candidate': CANDIDATE,
-             'previous': str(previous), 'previous_owner': str(owner),
-             'release_file': str(release_file), 'release': release,
-             'boot_sha256': boot(), 'image': str(image), 'image_manifest': str(manifest),
-             'provenance_sha256': {str(p): sha(p) for p in files},
-             'arguments': original_arguments(outer['argv']),
-             'protocol': {k: freeze[k] for k in ['methods', 'sources', 'tests', 'flags',
-                                               'pairs', 'order', 'confidence', 'pause_metric']},
-             'release_stage_deadline_monotonic': release['start_monotonic'] + 6600,
-             'captured_monotonic': time.monotonic(),
-             'image_manifest_scope': 'first full witness captured after terminal cleanup; not a historical build-time hash',
-             'original_outcome': 'HOLD preserved; successful make reused as preparation, not a qualification pass',
-             'measurements_started': False}
-    p = destination / 'continuation.json'
-    with p.open('x') as stream:
-        json.dump(proof, stream, indent=2, allow_nan=False); stream.write('\n')
-    return p
+def load(path, expected_sha256, matched_rebuild=False, check=lambda: None, records=None, deadline=None):
+    with verification(check, records, deadline):
+        return _load(path, expected_sha256, matched_rebuild)
 
 
-def load(path, expected_sha256):
+def _load(path, expected_sha256, matched_rebuild):
+    need(matched_rebuild, 'Retained baseline lacks original boot modules/native compiler hashes; matched rebuild required')
     path = Path(path).resolve(strict=True)
     need(len(expected_sha256) == 64 and sha(path) == expected_sha256, 'Continuation witness hash differs')
     proof = json.loads(path.read_text())
-    need(proof.get('format') == 1 and proof.get('kind') == 'baseline-preparation-continuation', 'Unknown witness')
+    need(proof.get('format') in (1, 2) and proof.get('kind') == 'baseline-preparation-continuation', 'Unknown witness')
     need(proof['baseline'] == BASE and proof['candidate'] == CANDIDATE, 'Production identity differs')
     need(proof['original_harness'] == ORIGINAL_HARNESS and proof['measurements_started'] is False,
          'Not a preparation-only witness')
-    need(proof['boot_sha256'] == boot(), 'Continuation moved to a different boot/monotonic clock')
+    # Capture-time boot hashes cannot prove which boot ran the original build.
+    # Historical monotonic values remain provenance only, never timer authority.
     for name, expected in proof['provenance_sha256'].items():
         need(sha(name) == expected, 'Retained provenance changed: ' + name)
     release = json.loads(Path(proof['release_file']).read_text())
@@ -148,7 +174,9 @@ def load(path, expected_sha256):
     need(proof['release_stage_deadline_monotonic'] == release['start_monotonic'] + 6600,
          'Release preparation stage budget changed')
     check_original(Path(proof['previous']), Path(proof['previous_owner']), release)
-    verify(Path(proof['image']), Path(proof['image_manifest']))
+    proof['reuse_baseline'] = False
+    proof['clock_policy'] = 'fixed original UTC; original boot identity not recorded'
+    proof['fixed_utc_cutoff'] = ORIGINAL_UTC_CUTOFF
     return proof
 
 
@@ -181,11 +209,5 @@ def verify_claim(path, digest, owner_receipt, output):
 
 
 if __name__ == '__main__':
-    p = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
-    p.add_argument('previous', type=Path)
-    p.add_argument('owner', type=Path)
-    p.add_argument('release', type=Path)
-    p.add_argument('destination', type=Path)
-    a = p.parse_args()
-    witness = prepare(a.previous, a.owner, a.release, a.destination)
-    print(json.dumps({'continuation': str(witness), 'sha256': sha(witness)}))
+    raise SystemExit('No new witness can recover missing original compiler/boot-module hashes. '
+                     'Use the reviewed supervised --matched-rebuild continuation; do not reuse the baseline.')

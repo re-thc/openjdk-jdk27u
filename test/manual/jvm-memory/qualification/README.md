@@ -4,8 +4,10 @@ This entire source bundle is committed for review. The full qualification and an
 completed baseline make but stopped at the asynchronous-child ownership gate;
 its original HOLD and complete cleanup receipts are preserved locally.
 The complete restricted [preparation continuation](CONTINUATION.md) preserves
-the original deadline and verified baseline without repeating measurements.
-Fifty-three offline Python guard/owner/continuation
+the original fixed UTC cutoff without repeating measurements. Historical
+compiler/boot-module hashes are missing, so retained-baseline reuse is rejected;
+only an explicitly released matched rebuild of both images is supported.
+Seventy-one offline Python guard/owner/continuation/deadline
 regressions pass with fake children, clocks, disks and signals; they launch no
 subprocesses or JVMs. Java EOF/repetition coverage is source-only and has not
 been compiled or run under this continuation's no-build restriction.
@@ -53,6 +55,9 @@ source /workspace/toolchains/activate.sh
 python3 test/manual/jvm-memory/qualification/supervise.py \
   --execute --owner-output /workspace/memory-owner-new -- \
   --output /workspace/memory-decision-new \
+  --toolchain-input-root /workspace/toolchains/gcc16 \
+  --toolchain-input-root /workspace/toolchains/gcc16-root \
+  --toolchain-input-root /workspace/toolchains/mold \
   --boot /workspace/toolchains/jdk27 \
   --jtreg /workspace/toolchains/jtreg83 \
   --gtest /workspace/jvm-memory-integration/build/dependencies/googletest \
@@ -95,8 +100,8 @@ choices for this invocation**, not resumable attempts. Default `all` carries the
 single authorization through the staged decision without small approval gates.
 An intentionally early stop reports pending stages and is not a full pass.
 A new output directory is mandatory; no overwrite or favorable timing retry.
-The separately authorized restricted preparation continuation uses a trusted
-full baseline witness and original absolute deadline; it never reopens the
+The restricted continuation verifies original receipts under owned cleanup,
+requires explicit matched rebuild and uses the fixed original UTC cutoff; it never reopens the
 terminal output or resumes consumed measurements. See [CONTINUATION.md](CONTINUATION.md).
 
 ## Frozen sources and bounds
@@ -289,7 +294,7 @@ The supervisor cannot promise real-time exit of an uninterruptible kernel task.
 Successful cleanup is asserted only after the audit proves it; otherwise
 remaining identities/errors are retained. No cgroup/security changes occur.
 
-`test_guards.py` contains seventeen fake-clock/disk/child/signal regressions, including
+`test_guards.py` contains eighteen fake-clock/disk/child/signal regressions, including
 build/jtreg writers with closed stdout, timed probe exclusion, cancellation during
 launch/cleanup, repeated signals and PID reuse. It launches no child processes
 or JVMs.
@@ -299,8 +304,8 @@ adoption, inner failure, cancellation during launch/receipt closure, partial
 launch, fixed/exhausted deadlines, hidden children/final audit, unrelated tasks,
 fork/exec failure and the held-pidfd root boundary. Native fork/exec and signal
 operations are mocked; no native child/JVM is launched. Validation used
-`PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_guards test_supervisor test_continuation`
-in this directory: **53 tests passed**. The future campaign runs all three suites
+`PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_guards test_supervisor test_continuation test_deadline`
+in this directory: **71 tests passed**. The future campaign runs all four suites
 before any builds. This does not certify native supervisor execution or kernel
 containment; the full campaign remains unexecuted.
 The Java state regression must execute after source compilation; a Java source

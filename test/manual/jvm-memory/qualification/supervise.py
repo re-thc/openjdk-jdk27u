@@ -6,15 +6,16 @@ No campaign starts without --execute. The separate supervisor covers inner
 controller death while it survives; its own uncatchable death is not contained.
 """
 import argparse
-import hashlib
+from contextlib import ExitStack
 import json
 import os
 from pathlib import Path
 import signal
 import sys
+import time
 
 from cancellation import Cancellation
-from continuation import load as load_continuation, claim
+from deadline import UTC_CUTOFF, ORIGINAL_UTC_CUTOFF
 from process_cleanup import (ChildScope, LinuxProcesses, cleanup_errors,
                              enable_subreaper, require_no_children)
 
@@ -78,7 +79,8 @@ class Supervisor:
     """Lifecycle policy; injectable native boundary for deterministic offline tests."""
     def __init__(self, backend, cancellation, launch, record,
                  seconds=MAX_SECONDS, cleanup_seconds=CLEANUP_SECONDS,
-                 report_seconds=REPORT_SECONDS, absolute_deadline=None):
+                 report_seconds=REPORT_SECONDS, absolute_deadline=None,
+                 utc_cutoff=None, wall_now=None, admit=None):
         if not (0 < cleanup_seconds and 0 < report_seconds
                 and cleanup_seconds + report_seconds < seconds <= MAX_SECONDS):
             raise ValueError('Invalid supervisor deadline/reserves')
@@ -90,6 +92,9 @@ class Supervisor:
         self.cleanup_seconds = cleanup_seconds
         self.report_seconds = report_seconds
         self.absolute_deadline = absolute_deadline
+        self.utc_cutoff = utc_cutoff
+        self.wall_now = wall_now or time.time
+        self.admit = admit
 
     def run(self, argv):
         backend = self.backend
@@ -97,6 +102,8 @@ class Supervisor:
         deadline = start + self.seconds
         if self.absolute_deadline is not None:
             deadline = min(deadline, self.absolute_deadline)
+        if self.utc_cutoff is not None:
+            deadline = min(deadline, start + max(0, self.utc_cutoff - self.wall_now()))
         cleanup_end = deadline - self.report_seconds
         run_end = cleanup_end - self.cleanup_seconds
         row = {'status': 'RUNNING', 'argv': list(map(str, argv)),
@@ -107,28 +114,31 @@ class Supervisor:
                'supervisor_pid': backend.parent, 'controller_pid': None,
                'supervisor_uncatchable_death_contained': False,
                'trigger': None, 'errors': []}
+        row['fixed_utc_cutoff'] = ORIGINAL_UTC_CUTOFF if self.utc_cutoff is not None else None
+        def stopped():
+            if self.cancel.signum is not None:
+                row['trigger'] = 'cancellation'
+                return True
+            if backend.now() >= run_end or (self.utc_cutoff is not None and self.wall_now() >= self.utc_cutoff):
+                row['trigger'] = 'deadline'
+                return True
+            return False
         proc = None
         scope = None
         try:
             require_no_children(backend)
             scope = ChildScope(backend, protect_existing=False)
             self.record(row)
-            if self.cancel.signum is not None:
-                row['trigger'] = 'cancellation'
-            elif backend.now() >= run_end:
-                row['trigger'] = 'deadline'
-            else:
+            if not stopped() and self.admit is not None:
+                self.admit()
+            if not stopped():
                 proc = self.launch(argv)
                 row['controller_pid'] = proc.pid
                 # Handlers only latch: assignment completes even if a signal
                 # arrived inside fork/binding. Unknown partial births remain
                 # covered by scope.close(None, ...) if launch raised instead.
                 while True:
-                    if self.cancel.signum is not None:
-                        row['trigger'] = 'cancellation'
-                        break
-                    if backend.now() >= run_end:
-                        row['trigger'] = 'deadline'
+                    if stopped():
                         break
                     if proc.poll() is not None:
                         row['trigger'] = 'controller-exit'
@@ -140,6 +150,8 @@ class Supervisor:
         finally:
             if scope is not None:
                 try:
+                    if self.utc_cutoff is not None and self.wall_now() >= self.utc_cutoff:
+                        cleanup_end = min(cleanup_end, backend.now())
                     row['cleanup'] = scope.close(proc, cleanup_end, self.cleanup_seconds)
                     row['errors'].extend(cleanup_errors(row['cleanup']))
                 except BaseException as exc:
@@ -158,7 +170,8 @@ class Supervisor:
                     row['errors'].append('Controller pidfd close: ' + repr(exc))
             row['cancellation_signal'] = self.cancel.signum
             row['elapsed_seconds'] = backend.now() - start
-            row['deadline_exceeded'] = backend.now() >= deadline
+            row['deadline_exceeded'] = (backend.now() >= deadline or
+                                       self.utc_cutoff is not None and self.wall_now() >= self.utc_cutoff)
             if self.cancel.signum is not None:
                 row['status'] = 'CANCELLED'
             elif row['trigger'] == 'deadline' or row['deadline_exceeded']:
@@ -172,7 +185,8 @@ class Supervisor:
             # Closure can never turn an inner failure or cancellation into GO.
             self.record(row)
             late_signal = self.cancel.signum is not None and row['cancellation_signal'] is None
-            late_deadline = backend.now() >= deadline and not row['deadline_exceeded']
+            late_deadline = (backend.now() >= deadline or self.utc_cutoff is not None
+                             and self.wall_now() >= self.utc_cutoff) and not row['deadline_exceeded']
             if late_signal or late_deadline:
                 row['cancellation_signal'] = self.cancel.signum
                 row['deadline_exceeded'] = row['deadline_exceeded'] or late_deadline
@@ -194,6 +208,7 @@ def main():
     parser.add_argument('--owner-output', type=Path, required=True)
     parser.add_argument('--continuation', type=Path)
     parser.add_argument('--continuation-sha256')
+    parser.add_argument('--matched-rebuild', action='store_true')
     parser.add_argument('campaign_args', nargs=argparse.REMAINDER)
     args = parser.parse_args()
     if not args.execute:
@@ -203,7 +218,7 @@ def main():
         parser.error('Use -- followed by the documented campaign arguments')
     forwarded = forwarded[1:]
     if any(a.split('=', 1)[0] in ('--execute', '--outer-owner-reference',
-                               '--continuation', '--continuation-sha256') for a in forwarded):
+                               '--continuation', '--continuation-sha256', '--matched-rebuild') for a in forwarded):
         parser.error('Supervisor supplies execution and owner-reference arguments')
     owner = args.owner_output.resolve()
     if owner.exists():
@@ -213,37 +228,34 @@ def main():
     cancellation.install()
     previous_chld = signal.signal(signal.SIGCHLD, signal.SIG_DFL)
     try:
-        if len(list(Path('/proc/self/task').iterdir())) != 1:
-            raise RuntimeError('Outer fork owner must be single-threaded')
-        backend.verify_support()
-        enable_subreaper()
-        require_no_children(backend)
-        proof = None
-        if args.continuation is not None:
-            proof = load_continuation(args.continuation, args.continuation_sha256 or '')
-        elif args.continuation_sha256 is not None:
+        if args.continuation is None and (args.continuation_sha256 is not None or args.matched_rebuild):
             parser.error('Witness hash without continuation')
+        if args.continuation is not None and not args.matched_rebuild:
+            parser.error('Original toolchain bytes were not recorded; explicit --matched-rebuild required')
         owner.mkdir()
         receipt = owner / 'owner.json'
         argv = [sys.executable, str(HERE / 'run.py'), '--execute',
                 '--outer-owner-reference', str(receipt)] + forwarded
-        if proof is not None:
-            claim(args.continuation, args.continuation_sha256, receipt, argv)
+        if args.continuation is not None:
             argv += ['--continuation', str(args.continuation),
-                     '--continuation-sha256', args.continuation_sha256]
-        hashes = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in
-                  [Path(__file__), HERE / 'process_cleanup.py', HERE / 'cancellation.py',
-                   HERE / 'continuation.py', HERE / 'image_manifest.py']}
+                     '--continuation-sha256', args.continuation_sha256 or '', '--matched-rebuild']
         def record(row):
-            save(receipt, {**row, 'owner_source_sha256': hashes,
+            save(receipt, {**row, 'source_hash_receipt': 'owned controller freeze.json',
                            'continuation_sha256': args.continuation_sha256})
-        with (owner / 'controller.stdout').open('xb') as stdout, \
-             (owner / 'controller.stderr').open('xb') as stderr:
+        def admit():
+            if len(list(Path('/proc/self/task').iterdir())) != 1:
+                raise RuntimeError('Outer fork owner must be single-threaded')
+            backend.verify_support()
+            enable_subreaper()
+            require_no_children(backend)
+        with ExitStack() as logs:
             def launch(command):
+                stdout = logs.enter_context((owner / 'controller.stdout').open('xb'))
+                stderr = logs.enter_context((owner / 'controller.stderr').open('xb'))
                 return fork_controller(command, backend, stdout.fileno(), stderr.fileno())
             row = Supervisor(backend, cancellation, launch, record,
-                             absolute_deadline=proof['release']['hard_deadline_monotonic']
-                             if proof is not None else None).run(argv)
+                             utc_cutoff=UTC_CUTOFF if args.continuation is not None else None,
+                             admit=admit).run(argv)
         print(json.dumps({'status': row['status'], 'owner_receipt': str(receipt)}))
         return 0 if row['status'] == 'COMPLETED' else 2
     finally:

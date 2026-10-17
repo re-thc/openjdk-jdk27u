@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import patch
 
 import continuation
+from deadline import FixedCutoff, UTC_CUTOFF, utc
 import image_manifest
 import run as controller
 import supervise
@@ -122,7 +123,9 @@ class WitnessTests(unittest.TestCase):
             (self.previous / 'B/build/B-release' / name).write_text('preserved provenance')
         external = self.root / 'installed-input'; external.write_text('fixed')
         release = {'commit': continuation.ORIGINAL_HARNESS, 'start_monotonic': 0,
-                   'hard_deadline_monotonic': 36000, 'output': str(self.previous), 'owner_output': str(self.owner)}
+                   'hard_deadline_monotonic': 36000, 'output': str(self.previous), 'owner_output': str(self.owner),
+                   'released_at_utc': '2026-10-17T15:23:44+00:00',
+                   'hard_deadline_utc': '2026-10-18T01:23:44+00:00'}
         self.release = self.root / 'release.json'; self.write(self.release, release)
         self.write(self.previous / 'freeze.json', {'baseline': continuation.BASE,
                    'candidate': continuation.CANDIDATE, 'source_and_input_sha256': {str(external): continuation.sha(external)},
@@ -149,8 +152,10 @@ class WitnessTests(unittest.TestCase):
             if args == ('rev-parse', 'HEAD'):
                 return continuation.BASE if Path(directory).name == 'B' else continuation.CANDIDATE
             return ''
-        for name, value in [('git', fake_git), ('boot', lambda: 'same-boot')]:
+        for name, value in [('git', fake_git)]:
             patcher = patch.object(continuation, name, value); patcher.start(); self.addCleanup(patcher.stop)
+        wall_patch = patch.object(continuation.time, 'time', return_value=UTC_CUTOFF - 35000)
+        wall_patch.start(); self.addCleanup(wall_patch.stop)
         patcher = patch.object(continuation.time, 'monotonic', return_value=100)
         patcher.start(); self.addCleanup(patcher.stop)
         patcher = patch.object(continuation.subprocess, 'check_output', side_effect=AssertionError('No native child in offline tests'))
@@ -161,11 +166,34 @@ class WitnessTests(unittest.TestCase):
         path.write_text(json.dumps(value, allow_nan=False))
 
     def prepare(self):
-        return continuation.prepare(self.previous, self.owner, self.release, self.root / 'witness')
+        # Fixture for the already-retained legacy witness, not a runtime writer
+        # that can manufacture missing original boot/compiler evidence.
+        folder = self.root / 'witness'
+        continuation.check_original(self.previous, self.owner, json.loads(self.release.read_text()))
+        folder.mkdir()
+        manifest = folder / 'baseline-image.json'; image_manifest.record(self.image, manifest)
+        files = [self.previous / n for n in ['freeze.json','commands.json','decision.json']]
+        files += [self.owner / n for n in ['owner.json','terminal.json']]
+        files += [self.release, manifest]
+        files += [self.previous / 'B/build/B-release' / n for n in ['spec.gmk','configure.log','build.log']]
+        freeze = json.loads((self.previous / 'freeze.json').read_text())
+        owner = json.loads((self.owner / 'owner.json').read_text())
+        proof = {'format': 1, 'kind': 'baseline-preparation-continuation',
+                 'original_harness': continuation.ORIGINAL_HARNESS,
+                 'baseline': continuation.BASE, 'candidate': continuation.CANDIDATE,
+                 'previous': str(self.previous), 'previous_owner': str(self.owner),
+                 'release_file': str(self.release), 'release': json.loads(self.release.read_text()),
+                 'boot_sha256': 'capture-only-not-original', 'image': str(self.image),
+                 'image_manifest': str(manifest),
+                 'provenance_sha256': {str(p): continuation.sha(p) for p in files},
+                 'arguments': continuation.original_arguments(owner['argv']),
+                 'protocol': {k: freeze[k] for k in ['methods','sources','tests','flags','pairs','order','confidence','pause_metric']},
+                 'release_stage_deadline_monotonic': 6600, 'measurements_started': False}
+        p = folder / 'continuation.json'; self.write(p, proof); return p
 
     def test_complete_witness_roundtrip_preserves_terminal_and_clock(self):
         before = (self.previous / 'decision.json').read_bytes()
-        p = self.prepare(); proof = continuation.load(p, continuation.sha(p))
+        p = self.prepare(); proof = continuation.load(p, continuation.sha(p), matched_rebuild=True)
         self.assertEqual(proof['release']['hard_deadline_monotonic'], 36000)
         self.assertEqual(proof['release_stage_deadline_monotonic'], 6600)
         self.assertEqual((self.previous / 'decision.json').read_bytes(), before)
@@ -173,11 +201,12 @@ class WitnessTests(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             self.prepare()
 
-    def test_image_same_size_edit_is_rejected_before_reuse(self):
+    def test_old_image_is_not_reused_even_with_a_current_hash(self):
         p = self.prepare(); digest = continuation.sha(p)
         (self.image / 'lib/modules').write_text('other')
         with self.assertRaises(RuntimeError):
             continuation.load(p, digest)
+        self.assertFalse(continuation.load(p, digest, matched_rebuild=True)['reuse_baseline'])
 
     def test_added_entries_and_external_image_links_are_rejected(self):
         manifest = self.root / 'manifest.json'; image_manifest.record(self.image, manifest)
@@ -192,10 +221,10 @@ class WitnessTests(unittest.TestCase):
         p = self.prepare(); digest = continuation.sha(p)
         self.write(self.previous / 'decision.json', {'decision': 'LOCAL_GO_FOR_REVIEW'})
         with self.assertRaises(RuntimeError):
-            continuation.load(p, digest)
+            continuation.load(p, digest, matched_rebuild=True)
         p.write_text(p.read_text() + ' ')
         with self.assertRaises(RuntimeError):
-            continuation.load(p, digest)
+            continuation.load(p, digest, matched_rebuild=True)
 
     def test_measurements_or_candidate_build_forbid_continuation(self):
         self.write(self.previous / 'samples.json', [{'time_per_work': 1}])
@@ -206,17 +235,21 @@ class WitnessTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.prepare()
 
-    def test_expired_deadline_and_different_boot_forbid_continuation(self):
+    def test_expired_utc_rejects_and_boot_reset_never_grants_a_fresh_budget(self):
         p = self.prepare(); digest = continuation.sha(p)
-        with patch.object(continuation.time, 'monotonic', return_value=36001):
+        with patch.object(continuation.time, 'time', return_value=UTC_CUTOFF + 1):
             with self.assertRaises(RuntimeError):
-                continuation.load(p, digest)
-        with patch.object(continuation, 'boot', return_value='other-boot'):
-            with self.assertRaises(RuntimeError):
-                continuation.load(p, digest)
+                continuation.load(p, digest, matched_rebuild=True)
+        with patch.object(continuation.time, 'monotonic', return_value=1):
+            proof = continuation.load(p, digest, matched_rebuild=True)
+            self.assertFalse(proof['reuse_baseline'])
+            clock = FixedCutoff()
+            self.assertEqual(clock.deadline, 35001)
+        with self.assertRaises(RuntimeError):
+            continuation.load(p, digest)  # Original compiler history is missing.
 
     def test_changed_inputs_or_build_options_cannot_be_matched(self):
-        p = self.prepare(); proof = continuation.load(p, continuation.sha(p))
+        p = self.prepare(); proof = continuation.load(p, continuation.sha(p), matched_rebuild=True)
         args = SimpleNamespace(**proof['arguments'], stop_after='all')
         continuation.match_arguments(proof, args)
         args.configure_option = ['--disable-javac-server']
@@ -224,26 +257,33 @@ class WitnessTests(unittest.TestCase):
             continuation.match_arguments(proof, args)
         (self.root / 'installed-input').write_text('changed')
         with self.assertRaises(RuntimeError):
-            continuation.load(p, continuation.sha(p))
+            continuation.load(p, continuation.sha(p), matched_rebuild=True)
 
-    def test_reused_baseline_never_invokes_configure_or_build(self):
-        p = self.prepare(); proof = continuation.load(p, continuation.sha(p))
+    def test_matched_continuation_rebuilds_baseline_instead_of_reusing_it(self):
+        p = self.prepare(); proof = continuation.load(p, continuation.sha(p), matched_rebuild=True)
         campaign = object.__new__(controller.Campaign)
         campaign.out = self.root / 'new-output'; campaign.out.mkdir()
-        campaign.continuation = proof
-        campaign.a = SimpleNamespace(continuation=p, continuation_sha256=continuation.sha(p))
-        campaign.run = lambda *a, **k: self.fail('Baseline configure/build must not repeat')
+        campaign.continuation = proof; campaign.toolchain_inputs = None
+        campaign.a = SimpleNamespace(**proof['arguments'])
+        calls = []
+        campaign.run = lambda label, *a, **k: calls.append((label, k))
         campaign.image_receipt = lambda repo, conf, asan: self.image
         self.assertEqual(campaign.build('B'), self.image)
-        self.assertFalse(json.loads((campaign.out / 'baseline-reuse.json').read_text())['new_baseline_configure_or_build'])
+        self.assertEqual([x[0] for x in calls], ['configure-B-release', 'build-B-release'])
+        self.assertTrue(calls[-1][1]['build_stage'])
+        self.assertFalse((campaign.out / 'baseline-reuse.json').exists())
 
     def test_release_stage_cap_is_not_restarted(self):
         campaign = object.__new__(controller.Campaign)
-        campaign.cancel = Cancellation(); campaign.deadline = 36000
-        campaign.continuation = {'release_stage_deadline_monotonic': 6600}
-        with patch.object(controller.time, 'monotonic', return_value=5000):
+        release = json.loads(self.release.read_text())
+        campaign.cancel = Cancellation()
+        campaign.clock_guard = FixedCutoff(monotonic=lambda: 50,
+                                          wall=lambda: utc(release['released_at_utc']) + 5000)
+        campaign.deadline = campaign.clock_guard.deadline
+        campaign.continuation = {'release': release}
+        with patch.object(controller.time, 'monotonic', return_value=50):
             campaign.begin('release-builds', 6600)
-        self.assertEqual(campaign.stage_end, 6600)
+        self.assertEqual(campaign.stage_end, 1650)
 
     def test_claim_is_single_use_and_bound_to_owner_output(self):
         p = self.prepare(); digest = continuation.sha(p)

@@ -85,13 +85,15 @@ live-descendant-after-launcher control, with complete owned cleanup. That HOLD
 is preserved. Scanner db266200's reviewed six-second natural successful-build
 drain now accommodates bounded asynchronous javac shutdown while retaining
 strict measurement cleanup and command diagnostics before signalling. The
-complete restricted continuation verifies a full retained baseline witness,
-preserves both production identities and the original ten-hour absolute cap,
-and runs every unstarted gate without rebuilding B or repeating measurements.
+complete restricted continuation verifies original receipts inside the owned
+deadline loop and uses the fixed original UTC cutoff; missing original
+boot-module/native-compiler hashes prohibit baseline reuse. It requires an
+explicit normal matched rebuild of B/C with prospective full toolchain-byte
+custody, preserving production revisions, all gates and unconsumed measurements.
 It requires independent review before execution; see the harness
 [continuation contract](../test/manual/jvm-memory/qualification/CONTINUATION.md).
 
-Validation of the source repairs, supervisor and continuation: fifty-three offline mocked
+Validation of the source repairs, supervisor and continuation: seventy-one offline mocked
 Python regressions pass, including layered adoption, inner failure, cancellation
 during launch, fixed deadline exhaustion and final child audit. The supervisor
 and repaired continuation remain unexecuted. The Java

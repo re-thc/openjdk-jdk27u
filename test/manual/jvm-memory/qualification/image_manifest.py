@@ -23,12 +23,14 @@ def check_image(image):
             raise Uncertain('Incomplete normal JDK image: ' + name)
 
 
-def catalog(image):
+def catalog(image, check=lambda: None, require_jdk=True):
     image = image.resolve(strict=True)
-    check_image(image)
+    if require_jdk:
+        check_image(image)
     entries = {}
 
     def inspect(path):
+        check()
         before = path.lstat()
         item = {"mode": stat.S_IMODE(before.st_mode)}
         if stat.S_ISLNK(before.st_mode):
@@ -43,6 +45,7 @@ def catalog(image):
             digest = hashlib.sha256()
             with path.open("rb") as stream:
                 while block := stream.read(1024 * 1024):
+                    check()
                     digest.update(block)
             item.update(kind="file", bytes=before.st_size, sha256=digest.hexdigest())
         else:
@@ -54,6 +57,7 @@ def catalog(image):
                 after.st_ctime_ns, after.st_mode):
             raise Uncertain(f"image changed while recording: {path}")
         entries[path.relative_to(image).as_posix()] = item
+        check()
 
     inspect(image)
     def traversal_error(error):
@@ -65,26 +69,28 @@ def catalog(image):
     return {"format": 1, "entries": entries}
 
 
-def record(image, manifest):
+def record(image, manifest, check=lambda: None):
     # Refuse replacement of an established provenance witness.
     if manifest.resolve().is_relative_to(image.resolve()):
         raise Uncertain("image manifest must be stored outside the image")
-    data = catalog(image)
+    data = catalog(image, check)
     with manifest.open("x") as output:
         output.write(json.dumps(data, indent=2, sort_keys=True) + "\n")
     return data
 
 
-def verify(image, manifest):
+def verify(image, manifest, check=lambda: None):
+    check()
     expected = json.loads(manifest.read_text())
     if expected.get("format") != 1 or not isinstance(expected.get("entries"), dict):
         raise Uncertain("unsupported image manifest schema")
-    actual = catalog(image)
+    actual = catalog(image, check)
     old, new = expected["entries"], actual["entries"]
     missing, added = sorted(old.keys() - new.keys()), sorted(new.keys() - old.keys())
     changed = sorted(name for name in old.keys() & new.keys() if old[name] != new[name])
     if missing or added or changed:
         raise Uncertain(f"retained image differs: missing={missing}, added={added}, changed={changed}")
+    check()
     return image.resolve(strict=True)
 
 

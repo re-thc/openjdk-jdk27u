@@ -28,7 +28,9 @@ from process_cleanup import (ChildScope, LinuxProcesses, cleanup_errors,
 from nmt_other import check_accounting, parse_other_snapshot
 from storage_guard import StorageGuard
 from cancellation import Cancellation
-from continuation import load as load_continuation, match_arguments, verify_claim
+from continuation import load as load_continuation, match_arguments, verify_claim, claim, git as verification_git
+from deadline import FixedCutoff, UTC_CUTOFF, utc
+from toolchain_inputs import capture as capture_toolchain, verify as verify_toolchain, covers as toolchain_covers
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[3]
@@ -83,12 +85,34 @@ class Campaign:
         self.cancel = cancellation
         self.cancel.check()
         self.a = args
+        self.clock_guard = FixedCutoff() if args.continuation is not None else None
         self.continuation = None
+        self.toolchain_inputs = None
         if args.continuation is not None:
-            self.continuation = load_continuation(args.continuation, args.continuation_sha256 or '')
+            need(not args.continuation.with_name('continuation.claim.json').exists(),
+                 'This single-use continuation was already consumed')
+            verification_records = []
+            def check_verification():
+                self.cancel.check()
+                self.clock_guard.check_preparation()
+            try:
+                need(args.harness_commit is not None, 'Pin reviewed harness commit for matched continuation')
+                # These Git/hash operations execute only inside the already
+                # supervised controller, never before the outer scope/loop.
+                from continuation import verification
+                with verification(check_verification, verification_records, self.clock_guard.preparation_deadline):
+                    need(verification_git(REPO, 'rev-parse', 'HEAD') == args.harness_commit,
+                         'Reviewed harness HEAD differs')
+                self.continuation = load_continuation(
+                    args.continuation, args.continuation_sha256 or '',
+                    matched_rebuild=args.matched_rebuild, check=check_verification,
+                    records=verification_records, deadline=self.clock_guard.preparation_deadline)
+            finally:
+                save(Path(args.outer_owner_reference).parent / 'verification.json', {
+                    'git': verification_records, 'fixed_utc_cutoff': '2026-10-18T01:23:44Z',
+                    'original_boot_evidence': 'not recorded; no original monotonic epoch assumed',
+                    'effective_monotonic_deadline': self.clock_guard.deadline})
             match_arguments(self.continuation, args)
-            verify_claim(args.continuation, args.continuation_sha256,
-                         args.outer_owner_reference, args.output)
             need(self.continuation['protocol'] == {
                 'methods': METHODS, 'sources': SOURCES, 'tests': TESTS, 'flags': COMMON,
                 'pairs': 8, 'order': 'BC,BB; CB,BB; repeated four times',
@@ -97,6 +121,7 @@ class Campaign:
                 'Continuation changed fixed correctness/sampling/statistical protocol')
         else:
             need(args.continuation_sha256 is None, 'Witness hash without continuation')
+            need(not args.matched_rebuild, 'Matched rebuild needs original continuation evidence')
         self.out = args.output.resolve()
         need(not self.out.exists(), 'Refuse an existing output/attempt directory')
         need(sys.platform == 'linux' and os.uname().machine=='x86_64',
@@ -113,8 +138,7 @@ class Campaign:
         self.start = time.monotonic()
         self.deadline = self.start + 36000
         if self.continuation is not None:
-            self.start = self.continuation['release']['start_monotonic']
-            self.deadline = self.continuation['release']['hard_deadline_monotonic']
+            self.deadline = self.clock_guard.deadline
             need(time.monotonic() < self.deadline - 60, 'Original campaign deadline exhausted')
         self.records = []
         self.samples = []
@@ -134,6 +158,18 @@ class Campaign:
         self.stage_end = self.deadline
         self.invocation_end = self.deadline
         self.freeze()
+        # Every new pair needs prospective byte custody, including ordinary
+        # fresh entry points. No path/version-only fallback remains.
+        self.toolchain_inputs = capture_toolchain(args.boot, args.toolchain_input_root, self.check_budget)
+        save(self.out / 'matched-toolchain-inputs.json', self.toolchain_inputs)
+        frozen = json.loads((self.out / 'freeze.json').read_text())
+        frozen['matched_toolchain_inputs_sha256'] = sha(self.out / 'matched-toolchain-inputs.json')
+        save(self.out / 'freeze.json', frozen)
+        if self.continuation is not None:
+            claim(args.continuation, args.continuation_sha256,
+                  args.outer_owner_reference, [sys.executable] + sys.argv)
+            verify_claim(args.continuation, args.continuation_sha256,
+                         args.outer_owner_reference, args.output)
 
     def freeze(self):
         paths = list(HERE.glob('*.py')) + list(HERE.glob('*.java'))
@@ -178,6 +214,8 @@ class Campaign:
                 'witness_sha256': self.a.continuation_sha256,
                 'witness': str(self.a.continuation), 'provenance': self.continuation,
                 'remaining_stages': 'all; no previous correctness or samples consumed',
+                'baseline_reused': False, 'matched_rebuild': True,
+                'original_boot_evidence': None,
                 'hard_deadline_monotonic': self.deadline})
 
     @staticmethod
@@ -192,12 +230,33 @@ class Campaign:
         self.stage = name
         self.stage_end = min(self.deadline - 60, time.monotonic() + seconds)
         if name == 'release-builds' and self.continuation is not None:
-            self.stage_end = min(self.stage_end, self.continuation['release_stage_deadline_monotonic'])
+            self.stage_end = min(self.stage_end, self.clock_guard.stage_deadline(self.continuation['release']))
+
+    def check_budget(self):
+        self.cancel.check()
+        need(time.monotonic() < self.stage_end, 'Original stage deadline exhausted')
+        if getattr(self, 'clock_guard', None) is not None:
+            self.clock_guard.check()
+            if self.stage == 'prepare':
+                self.clock_guard.check_preparation()
+            if self.stage == 'release-builds':
+                need(time.time() < utc(self.continuation['release']['released_at_utc']) + 6600,
+                     'Original release-build UTC stage cap exhausted')
+
+    def verify_build_inputs(self, conf, phase):
+        verify_toolchain(self.toolchain_inputs, self.check_budget)
+        save(self.out / (conf + '-toolchain-' + phase + '.json'), {
+            'verified': True, 'phase': phase, 'configuration': conf,
+            'manifest_sha256': sha(self.out / 'matched-toolchain-inputs.json'),
+            'verified_monotonic': time.monotonic(),
+            'scope': 'prospective matched builds only; no retained-baseline identity claim'})
 
     def run(self, label, command, seconds=60, cwd=None, expected=0,
             lines=None, workload=False, measured=False, extra_env=None, build_stage=False):
         """Own every command, including Git/build/jcmd; no shell command expansion."""
-        self.cancel.check()
+        def check_limits():
+            self.check_budget()
+        check_limits()
         require_no_children(self.backend) if not getattr(self, 'nested', False) else None
         self.number += 1
         prefix = self.out / ('%04d-%s' % (self.number, label))
@@ -242,15 +301,15 @@ class Campaign:
                         lines(raw.decode('utf-8', 'strict'), proc, prefix)
         try:
             with Path(str(prefix)+'.stdout').open('wb') as log, Path(str(prefix)+'.stderr').open('wb') as err:
-                self.cancel.check()
+                check_limits()
                 proc = subprocess.Popen(list(map(str, command)), cwd=cwd or REPO,
                     env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                     stderr=err, start_new_session=True)
-                self.cancel.check()  # A launch-time request is handled after proc assignment.
+                check_limits()  # A launch-time request is handled after proc assignment.
                 os.set_blocking(proc.stdout.fileno(), False)
                 selector.register(proc.stdout, selectors.EVENT_READ)
                 while selector.get_map() or proc.poll() is None:
-                    self.cancel.check()
+                    check_limits()
                     need(time.monotonic() < end - 2, 'Invocation/deadline exceeded')
                     need(Path(str(prefix)+'.stderr').stat().st_size + len(text) < 48 * 1024**2,
                          'Invocation output cap')
@@ -258,7 +317,7 @@ class Campaign:
                     if build_stage and not drain_attempted and proc.poll() == 0:
                         drain_attempted = True
                         def check_drain():
-                            self.cancel.check()
+                            check_limits()
                             read_output(0)
                             storage.poll()
                             need(Path(str(prefix)+'.stderr').stat().st_size + len(text) < 48 * 1024**2,
@@ -281,7 +340,7 @@ class Campaign:
                 if build_stage and not drain_attempted and code == 0:
                     drain_attempted = True
                     def check_drain():
-                        self.cancel.check()
+                        check_limits()
                         read_output(0)
                         storage.poll()
                         need(Path(str(prefix)+'.stderr').stat().st_size + len(text) < 48 * 1024**2,
@@ -345,10 +404,7 @@ class Campaign:
         need(framework.strip()=='f8d7d77c06936315286eb55f8de22cd23c188571','Wrong pinned GoogleTest source')
         self.run('gtest-clean',['git','diff','--quiet','HEAD'],cwd=self.a.gtest)
         for tag, revision in [('B', BASE), ('C', CANDIDATE)]:
-            if tag == 'B' and self.continuation is not None:
-                (self.out / tag).symlink_to(Path(self.continuation['previous']) / 'B', target_is_directory=True)
-            else:
-                self.run('checkout-' + tag,
+            self.run('checkout-' + tag,
                      ['git', 'worktree', 'add', '--detach', self.out / tag, revision], 60)
             actual, _ = self.run('revision-' + tag, ['git', 'rev-parse', 'HEAD'], cwd=self.out/tag)
             need(actual.strip() == revision, 'Wrong checkout')
@@ -357,16 +413,8 @@ class Campaign:
     def build(self, tag, debug='release', asan=False):
         repo = self.out / tag
         conf = tag + '-' + debug + ('-asan' if asan else '')
-        if tag == 'B' and self.continuation is not None:
-            need(debug == 'release' and not asan, 'Only retained baseline release may be reused')
-            # Reverify the trusted full witness immediately before consumption.
-            load_continuation(self.a.continuation, self.a.continuation_sha256)
-            save(self.out / 'baseline-reuse.json', {
-                'image': self.continuation['image'], 'baseline': BASE,
-                'manifest': self.continuation['image_manifest'],
-                'original_outcome': 'HOLD unchanged; successful make is preparation only',
-                'new_baseline_configure_or_build': False})
-            return self.image_receipt(repo, conf, asan)
+        if self.toolchain_inputs is not None:
+            self.verify_build_inputs(conf, 'before')
         cmd = ['bash', 'bin/configure-dev', '--with-conf-name=' + conf,
                '--with-debug-level=' + debug, '--with-jobs=4', '--disable-precompiled-headers',
                '--with-source-date=2026-10-16T21:13:34Z', '--with-version-opt=memory-decision',
@@ -378,6 +426,8 @@ class Campaign:
         self.run('build-' + conf,
                  ['make', 'CONF=' + conf, 'JOBS=4', 'images', 'test-image-hotspot-gtest'],
                  4200 if debug == 'fastdebug' or asan else 3000, repo, build_stage=True)
+        if self.toolchain_inputs is not None:
+            self.verify_build_inputs(conf, 'after')
         return self.image_receipt(repo, conf, asan)
 
     def image_receipt(self, repo, conf, asan):
@@ -387,7 +437,7 @@ class Campaign:
         spec = repo / 'build' / conf / 'spec.gmk'
         configured = spec.read_text()
         if self.continuation is not None:
-            previous_spec = (Path(self.continuation['previous']) / 'B/build/B-release/spec.gmk').read_text()
+            previous_spec = (self.out / 'B/build/B-release/spec.gmk').read_text()
             for key in ['CC', 'CXX', 'CC_VERSION_NUMBER', 'CXX_VERSION_NUMBER',
                         'BOOT_JDK', 'JVM_FEATURES_server', 'ENABLE_DESKTOP', 'JVM_VARIANTS',
                         'ENABLE_JAVAC_SERVER']:
@@ -396,6 +446,9 @@ class Campaign:
                 current = re.findall(pattern, configured, re.M)
                 need(len(old) == len(current) == 1 and old == current,
                      'Retained baseline/candidate toolchain or profile differs: ' + key)
+                if key in ('CC', 'CXX'):
+                    need(toolchain_covers(self.toolchain_inputs, current[0].strip()),
+                         'Selected compiler is outside captured native input roots')
         features = re.findall(r'^JVM_FEATURES_server\s*:=\s*(.*)$', configured, re.M)
         need(len(features) == 1, 'Missing server feature receipt')
         need(sorted(x for x in features[0].split() if x.endswith('gc')) == ['g1gc','serialgc','zgc'],
@@ -726,7 +779,7 @@ class Campaign:
         from analyze import critical
         need(abs(critical(7,.05)-2.3646242516)<1e-8,'Student-t numerical preflight failed')
         self.run('offline-guard-regressions',[sys.executable,'-m','unittest','-v',
-                 'test_guards','test_supervisor','test_continuation'],120,HERE)
+                 'test_guards','test_supervisor','test_continuation','test_deadline'],120,HERE)
         self.checkout()
         images={tag:self.build(tag) for tag in ['B','C']}
         self.begin('correctness-benefit',5400)
@@ -773,6 +826,9 @@ def main():
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--continuation',type=Path)
     p.add_argument('--continuation-sha256')
+    p.add_argument('--matched-rebuild',action='store_true')
+    p.add_argument('--harness-commit')
+    p.add_argument('--toolchain-input-root',type=Path,action='append',default=[])
     p.add_argument('--boot',type=Path,required=True)
     p.add_argument('--jtreg',type=Path,required=True)
     p.add_argument('--gtest',type=Path,required=True)

@@ -1,138 +1,126 @@
-# Preparation repair and bounded continuation
+# Owned verification and fixed-cutoff matched rebuild
 
-The original terminal attempt remains HOLD. Its successful baseline `make`
-returned with a live child, which the old strict cleanup killed/reaped. Its
-candidate build, correctness, memory and performance stages never ran. Reusing
-the resulting baseline is preparation reuse, not a retrospective cleanup pass,
-a qualification result, or permission to restart timings.
+The original attempt remains HOLD, with complete owned cleanup. Its successful
+baseline make was rejected at the asynchronous-child control; candidate build,
+correctness and measurements never started. That original result and its
+forensic image/provenance witness remain unchanged.
 
-## Reviewed asynchronous-build policy
+## Successful-build shutdown policy
 
-This repair follows Scanner commit
-`db266200863da200d5bb11a80e8875643153db5e`. OpenJDK's make cleanup touches
-`server.port.stop` and returns without awaiting the javac server; the server
-checks that marker every 5000 ms. Immediate rejection of any live child after
-successful make can therefore reject ordinary asynchronous shutdown. The old
-receipt did not retain the child's command, so identifying that historical child
-as the javac server remains an inference.
+Scanner `db266200863da200d5bb11a80e8875643153db5e` supplies the narrow policy:
+make touches javac's stop file without awaiting its five-second polling cycle.
+Only successful explicit untimed image/gtest builds receive a six-second
+natural drain. No signals occur during it; child command/exec diagnostics,
+identity/custody, output, storage, cancellation and final kernel audit stay
+active. Persistent/late/uncertain survivors fail even if subsequent cleanup
+succeeds. Other commands and measurements retain strict cleanup. Javac-server
+configuration is unchanged and symmetric.
 
-Only the explicit untimed image/gtest **build calls** opt in to a six-second
-natural drain after authoritative exit zero. There are no signals during drain.
-Ownership snapshots, pidfd child confirmation/reaping, cancellation, output and
-storage guards remain active. The controller continues draining stdout so a
-shutdown message cannot block a child on a full pipe. Success requires empty
-owned custody and the kernel child audit within the original bounded window;
-an empty observation arriving late cannot pass.
+## Verification is part of the owned invocation
 
-Persistent/uncertain children, observation errors, cancellation and nonzero
-launcher status remain failures and enter the existing bounded cleanup. There
-is no repeated grace or cleanup budget. Configure, correctness, fixtures and
-measurements keep strict cleanup; timings receive no drain allowance. The outer
-supervisor also keeps strict cleanup. Descendant commands/executables, birth,
-UID and any diagnostic errors are retained before signalling, using a pinned
-procfs directory after kernel direct-child confirmation. Deeper children are
-eligible after adoption. PID/group numeric signalling remains absent.
+`supervise.py` establishes its ChildScope and deadlines before native admission
+and before forking the controller. It does not read/hash the continuation,
+invoke Git, verify images or claim a witness before this scope/loop exists.
+Log opening is inside its owned launch path. All continuation/source/input
+verification executes in the controller child while the independent supervisor
+continues enforcing the whole-invocation cutoff and cancellation.
 
-Disabling javac-server was evaluated as a supported alternative. It is not
-needed for this repair, which accommodates the normal bounded shutdown protocol
-without changing either build configuration. A future configuration change must
-apply symmetrically, requires its own provenance, and cannot silently reuse a
-baseline with a different setting. Continuation checks compiler paths/versions,
-boot JDK, features, desktop setting, JVM variants and javac-server setting
-against the retained baseline.
+Git checks also have local subreaper/pidfd cleanup, finite polling, cancellation
+and a per-command deadline clipped to the global bound. Partial launch,
+verification error and cancellation always enter owned cleanup. Git receipts
+are retained in `verification.json`; outer cleanup and final child audit apply
+even when controller construction/preflight fails. Hashing checks cancellation
+and deadline between chunks; catalogs check between entries/chunks. A stalled
+controller/native operation remains covered by the separate supervisor.
+Source hashes are recorded by the owned controller's freeze, not by unbounded
+hashing in the parent before its loop. `--harness-commit` is verified by an owned
+Git check before any build. Nothing weakens kernel-confirmed pidfd ownership.
 
-## Record a trusted local witness before review/release
+## Original boot evidence is absent: fixed UTC is the authority
 
-`image_manifest.py` adapts Scanner's complete retained-image catalog: every
-relative entry's kind, mode, regular-file size/SHA-256 and symlink target. It
-rejects external/broken links, special files, unreadable entries and files
-changing during capture. Verification rejects missing, added, replaced or
-same-size-modified entries. No VM/build/workload is launched.
+The first attempt recorded monotonic values but not its boot identity. A boot
+hash captured later cannot prove the original epoch. The implementation does
+not invent that missing provenance or use legacy monotonic values as authority.
+Capture-time boot fields in the retained legacy witness are forensic only.
 
-`continuation.py` is deliberately limited to the original a30e335 baseline-build
-ownership failure, successful make, complete inner/outer cleanup and final child
-audit. It rejects prior candidate builds, correctness/measurement receipts,
-changed inputs/source, a changed terminal result or an exhausted deadline.
-The original B/C production revisions stay
-`89885a6288e7aaabd01678a704a586272c0f96e3` and
-`f03c433e6846632173209a2d85ca471c6ae6aa22`.
+The continuation is hard bounded by **2026-10-18 01:23:44 UTC**, conservatively
+rounded down from the original fractional-second cutoff. At admission, remaining
+UTC time becomes a non-extendable local monotonic ceiling. Both clocks are
+checked: advancing UTC can stop sooner, and rolling UTC back cannot extend the
+initial monotonic bound. A reboot uses only remaining UTC, not a new ten hours or
+an old boot's monotonic epoch. Expired UTC skips admission/controller launch.
+The release-build stage also derives its original 110-minute limit from the
+original release UTC. Later fixed stage caps and all measurement gates remain.
 
-With the original source-based worktrees and receipts retained:
+## Retained baseline cannot satisfy toolchain byte provenance
 
-```sh
-PYTHONDONTWRITEBYTECODE=1 python3 test/manual/jvm-memory/qualification/continuation.py \
-  /path/to/original-output /path/to/original-owner \
-  /path/to/original-release.json /path/to/new-witness-directory
-```
+Original `freeze.json` includes boot `bin/java`, `bin/javac`, the ASan runtime and
+selected test inputs, but omits boot `lib/modules` and native compiler binaries.
+The retained configure/spec/build records give paths and versions, not original
+byte hashes. A current full-image/compiler hash cannot retroactively prove that
+baseline and a new candidate used identical boot/compiler bytes. Reuse is
+therefore **rejected**, including when the retained image's current hash verifies.
+The former witness writer is disabled; more post-hoc witnesses cannot repair
+that historical gap.
 
-The witness directory must be new. Keep the returned `continuation.json` path
-and SHA-256. It pins the original freeze, command/decision/owner/terminal
-receipts, release, baseline spec/configure/build logs, full image manifest,
-installed inputs and exact fixed protocol. The full image witness is **first
-captured after terminal cleanup**, not claimed as a historical build-time hash.
-Keep the witness/hash and all host data locally; publish only source/tests/docs.
-Neither witness recording nor verification authorizes campaign execution.
+The smallest supported path is an explicitly selected **normal matched rebuild
+of both B and C**, keeping production revisions and configure options unchanged:
+B=`89885a6288e7aaabd01678a704a586272c0f96e3`,
+C=`f03c433e6846632173209a2d85ca471c6ae6aa22`.
 
-## Complete remaining-stage entry point, only after independent review
+Before either build, capture the complete boot JDK (including modules and native
+libraries) and declared native compiler/linker roots. Roots must contain actual
+ELF GCC/G++, cc1/cc1plus and mold, not merely wrappers, version strings or package
+metadata. Verify the same catalog before/after each build; reject changed bytes,
+modes, links or entries. Both selected compiler paths must be covered. This is
+prospective custody for the two new builds, never a claim about the old baseline.
+System packages remain under the existing read-only/no-install environment
+policy. Toolchain catalogs and all host-specific receipts stay local.
 
-Use the already approved original release, new owner/output directories and the
-trusted witness/hash. Pass the same boot JDK, jtreg, GoogleTest, JMH, ASan runtime
-and configure options from the original owner argv:
+## Complete entry point after independent review and explicit release
+
+Use the preserved original terminal/protocol witness and its trusted SHA; no
+new reuse witness is required. New owner/output directories remain mandatory.
+For the installed GCC16/mold provider, the complete entry point is:
 
 ```sh
 source /workspace/toolchains/activate.sh
 export PYTHONDONTWRITEBYTECODE=1
 export TMPDIR=/path/to/retained-workspace-temp
 python3 test/manual/jvm-memory/qualification/supervise.py --execute \
-  --owner-output /path/to/new-continuation-owner \
-  --continuation /path/to/new-witness-directory/continuation.json \
-  --continuation-sha256 TRUSTED_WITNESS_SHA256 -- \
-  --output /path/to/new-continuation-output --stop-after all \
+  --owner-output /path/to/new-owner \
+  --continuation /path/to/retained/continuation.json \
+  --continuation-sha256 TRUSTED_SHA --matched-rebuild -- \
+  --output /path/to/new-output --stop-after all --harness-commit REVIEWED_HEAD \
+  --toolchain-input-root /workspace/toolchains/gcc16 \
+  --toolchain-input-root /workspace/toolchains/gcc16-root \
+  --toolchain-input-root /workspace/toolchains/mold \
   --boot ORIGINAL_BOOT --jtreg ORIGINAL_JTREG --gtest ORIGINAL_GTEST \
   --jmh ORIGINAL_JMH --asan-runtime ORIGINAL_ASAN_RUNTIME \
   --configure-option=ORIGINAL_CONFIGURE_OPTION
 ```
 
-Repeat the configure-option argument only for the original list, unchanged.
-The supervisor verifies the witness and uses its original absolute monotonic
-deadline, capped by its normal maximum; the inner controller inherits that same
-deadline. Review/repair elapsed time and previous preparation consume the
-original ten-hour cap. The original release-build stage cap is conservatively
-bounded by original release start plus 110 minutes. No stage receives a fresh
-budget. Different boot/monotonic-clock custody is rejected. Expiry stops the
-continuation; it does not request or create another budget.
+Pass every original configure-option unchanged. The original protocol/input
+records are verified, the single-use claim binds owner/output, both new source
+worktrees are created and both normal release builds run. No baseline symlink,
+copy/reuse or overwrite of the terminal output occurs. All profile/native/
+negative-control/jtreg, fixture/EOF, memory, fixed balanced performance/startup
+and conditional debug/ASan gates remain in the ordinary pipeline. No timing has
+been consumed or may be repeated/expanded. No fresh budget, merge or CI dispatch
+is implied. Twelve-GiB admission/debug storage gates and the runtime reserve
+remain unchanged; a matched rebuild requires additional storage and does not
+implicitly authorize deletion of retained outputs.
 
-Before the inner launch, the supervisor atomically creates a single-use
-`continuation.claim.json`, bound to the trusted witness hash, owner receipt and
-new output. A repeated claim is refused; the inner controller verifies the same
-claim. This prevents the same approved continuation from relaunching after
-consuming any stage. The witness and original terminal files are not rewritten.
+Owner COMPLETED/exit zero, full cleanup/final audit and inner LOCAL_GO_FOR_REVIEW
+remain jointly required. An uncatchably dead independent supervisor is still
+outside the user-space guarantee. Incomplete custody or expired bounds never
+become a pass.
 
-The new output links B to the verified retained worktree/image, without
-reconfiguring/rebuilding/copying it, and creates a **new C source worktree**.
-The original C worktree and all terminal attempt receipts remain unchanged.
-The full baseline witness is reverified immediately before reuse; a new
-baseline image/spec receipt and explicit `baseline-reuse.json` identify its
-provenance. All later baseline consumers use this one linked verified image.
-Candidate release build, both profile checks, exact native/negative-control and
-jtreg cases, fixture and EOF/repetition regression, NMT/memory benefit,
-unchanged fixed balanced samples/statistical gates, and conditional
-fastdebug/ASan all remain in the ordinary `all()` pipeline.
+## Source validation only
 
-No samples existed to reuse. Any failed/inconclusive remaining gate still stops;
-there is no adaptive sample expansion, repeated timing, fresh authorization
-budget or merge. Owner `COMPLETED`/exit zero, complete cleanup/final child audit
-and inner `LOCAL_GO_FOR_REVIEW` remain jointly required. Independent supervisor
-death remains outside the user-space containment guarantee.
-
-## Validation and execution status
-
-`PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_guards test_supervisor test_continuation`
-passes **53 offline tests**. The tests cover natural five-second shutdown with
-no signals, persistent and uninterruptible survivors, late observations,
-cancellation/observation errors, strict stages, final child audit, held pidfds,
-absolute/stage budget retention, full-image/provenance tampering, consumed-work
-rejection, baseline build reuse and JSON serialization/nonfinite rejection.
-Fake clocks/children/native boundaries launch no workload or VM. Source parses
-and whitespace checks also pass. This is source/preparation validation; the
-repaired continuation has not executed and awaits independent source review.
+`PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_guards test_supervisor test_continuation test_deadline`
+passes **71 offline tests**, including owned delayed/cancelled/failed preflight,
+partial Git launch, chunk cancellation/deadline, reboot/reset/rollback/expiry,
+serialization, historical-reuse rejection and prospective boot/native-byte drift.
+No matched rebuild or continuation was executed for this repair. Independent
+review and explicit execution release remain required.
