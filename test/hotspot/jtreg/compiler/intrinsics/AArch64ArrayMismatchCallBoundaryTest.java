@@ -1,0 +1,402 @@
+/*
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test id=semantics
+ * @summary Array mismatch keeps first-word, bulk, tail and floating-point semantics across dispatch boundaries
+ * @library /test/lib
+ * @modules java.base/jdk.internal.util
+ * @run main/othervm -Xint compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest semantics
+ * @run main/othervm -XX:TieredStopAtLevel=1 compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest semantics
+ * @run main/othervm -Xbatch -XX:-TieredCompilation compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest semantics
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:-UseVectorizedMismatchIntrinsic compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest semantics
+ */
+
+/*
+ * @test id=call-boundary
+ * @summary Precompiled early array mismatch remains inline while bulk-only work stays in a separate typed helper
+ * @requires os.arch == "aarch64" & vm.debug == true & vm.compiler2.enabled & vm.opt.final.UseVectorizedMismatchIntrinsic == true
+ * @library /test/lib
+ * @modules java.base/jdk.internal.util
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run driver compiler.intrinsics.AArch64ArrayMismatchCallBoundaryTest
+ */
+
+package compiler.intrinsics;
+
+import java.lang.reflect.Array;
+import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import jdk.internal.util.ArraysSupport;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.whitebox.WhiteBox;
+
+public class AArch64ArrayMismatchCallBoundaryTest {
+    private static final Class<?>[] TYPES = {
+        byte.class, boolean.class, char.class, short.class,
+        int.class, long.class, float.class, double.class
+    };
+    private static final int[] SCALES = {0, 0, 1, 1, 2, 3, 2, 3};
+    private static final int[] BYTES = {
+        0, 1, 7, 8, 9, 15, 16, 17, 25, 63, 64, 65, 82,
+        127, 128, 129, 255, 256, 257, 2047, 2048, 2049,
+        4096, 65535, 65536, 65537, 131072
+    };
+    private static final String MARKER = "ARRAY-CALL-BOUNDARY ";
+
+    public static int byteRange(byte[] a, int af, int at, byte[] b, int bf, int bt) {
+        return Arrays.mismatch(a, af, at, b, bf, bt);
+    }
+
+    public static int byteFull(byte[] a, byte[] b) {
+        return Arrays.mismatch(a, b);
+    }
+
+    public static int booleanRange(boolean[] a, int af, int at, boolean[] b, int bf, int bt) {
+        return Arrays.mismatch(a, af, at, b, bf, bt);
+    }
+
+    public static int booleanFull(boolean[] a, boolean[] b) {
+        return Arrays.mismatch(a, b);
+    }
+
+    public static int charRange(char[] a, int af, int at, char[] b, int bf, int bt) {
+        return Arrays.mismatch(a, af, at, b, bf, bt);
+    }
+
+    public static int charFull(char[] a, char[] b) {
+        return Arrays.mismatch(a, b);
+    }
+
+    public static int shortRange(short[] a, int af, int at, short[] b, int bf, int bt) {
+        return Arrays.mismatch(a, af, at, b, bf, bt);
+    }
+
+    public static int shortFull(short[] a, short[] b) {
+        return Arrays.mismatch(a, b);
+    }
+
+    public static int intRange(int[] a, int af, int at, int[] b, int bf, int bt) {
+        return Arrays.mismatch(a, af, at, b, bf, bt);
+    }
+
+    public static int intFull(int[] a, int[] b) {
+        return Arrays.mismatch(a, b);
+    }
+
+    public static int longRange(long[] a, int af, int at, long[] b, int bf, int bt) {
+        return Arrays.mismatch(a, af, at, b, bf, bt);
+    }
+
+    public static int longFull(long[] a, long[] b) {
+        return Arrays.mismatch(a, b);
+    }
+
+    public static int floatRange(float[] a, int af, int at, float[] b, int bf, int bt) {
+        return Arrays.mismatch(a, af, at, b, bf, bt);
+    }
+
+    public static int floatFull(float[] a, float[] b) {
+        return Arrays.mismatch(a, b);
+    }
+
+    public static int doubleRange(double[] a, int af, int at, double[] b, int bf, int bt) {
+        return Arrays.mismatch(a, af, at, b, bf, bt);
+    }
+
+    public static int doubleFull(double[] a, double[] b) {
+        return Arrays.mismatch(a, b);
+    }
+
+    private static int range(int kind, Object a, int af, int at, Object b, int bf, int bt) {
+        return switch (kind) {
+            case 0 -> byteRange((byte[]) a, af, at, (byte[]) b, bf, bt);
+            case 1 -> booleanRange((boolean[]) a, af, at, (boolean[]) b, bf, bt);
+            case 2 -> charRange((char[]) a, af, at, (char[]) b, bf, bt);
+            case 3 -> shortRange((short[]) a, af, at, (short[]) b, bf, bt);
+            case 4 -> intRange((int[]) a, af, at, (int[]) b, bf, bt);
+            case 5 -> longRange((long[]) a, af, at, (long[]) b, bf, bt);
+            case 6 -> floatRange((float[]) a, af, at, (float[]) b, bf, bt);
+            case 7 -> doubleRange((double[]) a, af, at, (double[]) b, bf, bt);
+            default -> throw new AssertionError(kind);
+        };
+    }
+
+    private static int full(int kind, Object a, Object b) {
+        return switch (kind) {
+            case 0 -> byteFull((byte[]) a, (byte[]) b);
+            case 1 -> booleanFull((boolean[]) a, (boolean[]) b);
+            case 2 -> charFull((char[]) a, (char[]) b);
+            case 3 -> shortFull((short[]) a, (short[]) b);
+            case 4 -> intFull((int[]) a, (int[]) b);
+            case 5 -> longFull((long[]) a, (long[]) b);
+            case 6 -> floatFull((float[]) a, (float[]) b);
+            case 7 -> doubleFull((double[]) a, (double[]) b);
+            default -> throw new AssertionError(kind);
+        };
+    }
+
+    private static void value(int kind, Object array, int index, boolean different) {
+        switch (kind) {
+            case 0 -> ((byte[]) array)[index] = (byte) (different ? 1 : 0);
+            case 1 -> ((boolean[]) array)[index] = different;
+            case 2 -> ((char[]) array)[index] = (char) (different ? 1 : 0);
+            case 3 -> ((short[]) array)[index] = (short) (different ? 1 : 0);
+            case 4 -> ((int[]) array)[index] = different ? 1 : 0;
+            case 5 -> ((long[]) array)[index] = different ? 1 : 0;
+            case 6 -> ((float[]) array)[index] = different ? 1 : 0;
+            case 7 -> ((double[]) array)[index] = different ? 1 : 0;
+            default -> throw new AssertionError(kind);
+        }
+    }
+
+    private static void check(int actual, int expected, String context) {
+        if (actual != expected) {
+            throw new AssertionError(context + ": " + actual + " != " + expected);
+        }
+    }
+
+    private static void semantics() {
+        for (int kind = 0; kind < TYPES.length; kind++) {
+            for (int bytes : BYTES) {
+                int length = bytes >> SCALES[kind];
+                for (int offset : new int[] {0, 1, 7}) {
+                    Object a = Array.newInstance(TYPES[kind], length + offset + 1);
+                    Object b = Array.newInstance(TYPES[kind], length + offset + 1);
+                    String context = TYPES[kind] + " length=" + length + " offset=" + offset;
+                    check(range(kind, a, offset, offset + length, b, offset, offset + length), -1, context);
+                    check(full(kind, a, b), -1, context);
+                    check(range(kind, a, offset, offset + length, b, offset, offset + length + 1), length, context);
+                    for (int position : new int[] {0, 1, 2, 3, 7, 8, 10, 15, 16, 17, 25, 63, 82,
+                                                   127, 128, 129, 1267, 2047, 2048, 2049, length / 2, length - 1}) {
+                        if (position < 0 || position >= length) continue;
+                        value(kind, b, offset + position, true);
+                        check(range(kind, a, offset, offset + length, b, offset, offset + length), position, context);
+                        check(full(kind, a, b), offset + position, context);
+                        value(kind, a, offset + position, true);
+                        check(range(kind, a, offset, offset + length, b, offset, offset + length), -1, context + " store");
+                        value(kind, a, offset + position, false);
+                        value(kind, b, offset + position, false);
+                    }
+                }
+            }
+        }
+        differentOffsets();
+        floatingPoint();
+        exceptions();
+        System.out.println("Array call-boundary semantics passed");
+    }
+
+    private static void differentOffsets() {
+        int length = 65537, af = 1, bf = 7;
+        for (int kind = 0; kind < TYPES.length; kind++) {
+            Object a = Array.newInstance(TYPES[kind], af + length + 1);
+            Object b = Array.newInstance(TYPES[kind], bf + length + 1);
+            value(kind, b, bf - 1, true);
+            value(kind, b, bf + length, true);
+            check(range(kind, a, af, af + length, b, bf, bf + length), -1, "different offsets equal");
+            for (int position : new int[] {0, 1, 7, 8, 15, 16, 25, 82, 127, 128, 1267, 2048, length - 1}) {
+                value(kind, b, bf + position, true);
+                check(range(kind, a, af, af + length, b, bf, bf + length), position, "different offsets mismatch");
+                value(kind, a, af + position, true);
+                check(range(kind, a, af, af + length, b, bf, bf + length), -1, "different offsets store");
+                value(kind, a, af + position, false);
+                value(kind, b, bf + position, false);
+            }
+        }
+    }
+
+    private static void floatingPoint() {
+        for (int position : new int[] {0, 1, 3, 4, 7, 8, 15, 16, 25, 31, 32, 82, 127, 128, 1267}) {
+            float[] fa = new float[2049], fb = new float[2049];
+            double[] da = new double[2049], db = new double[2049];
+            fa[position] = Float.intBitsToFloat(position % 2 == 0 ? 0xff800001 : 0x7fc00001);
+            fb[position] = Float.intBitsToFloat(position % 3 == 0 ? 0xffc00002 : 0x7f800002);
+            da[position] = Double.longBitsToDouble(position % 2 == 0 ? 0xfff0000000000001L : 0x7ff8000000000001L);
+            db[position] = Double.longBitsToDouble(position % 3 == 0 ? 0xfff8000000000002L : 0x7ff0000000000002L);
+            check(floatRange(fa, 0, fa.length, fb, 0, fb.length), -1, "float NaNs");
+            check(doubleRange(da, 0, da.length, db, 0, db.length), -1, "double NaNs");
+            fb[position + 1] = 1;
+            db[position + 1] = 1;
+            fb[2000] = 1;
+            db[2000] = 1;
+            check(floatRange(fa, 0, fa.length, fb, 0, fb.length), position + 1, "float after NaNs");
+            check(doubleRange(da, 0, da.length, db, 0, db.length), position + 1, "double after NaNs");
+            fb[position] = -0.0f;
+            fa[position] = 0.0f;
+            db[position] = -0.0;
+            da[position] = 0.0;
+            check(floatRange(fa, 0, fa.length, fb, 0, fb.length), position, "float signed zero");
+            check(doubleRange(da, 0, da.length, db, 0, db.length), position, "double signed zero");
+        }
+    }
+
+    private static void exceptions() {
+        byte[] a = new byte[256];
+        expect(NullPointerException.class, () -> byteRange(null, 1, 0, a, 0, 1));
+        expect(IllegalArgumentException.class, () -> byteRange(a, 1, 0, null, 0, 1));
+        expect(ArrayIndexOutOfBoundsException.class, () -> byteRange(a, -1, 128, a, 0, 129));
+        expect(ArrayIndexOutOfBoundsException.class, () -> byteRange(a, 0, 257, a, 0, 256));
+    }
+
+    private static void expect(Class<? extends Throwable> expected, Runnable action) {
+        try {
+            action.run();
+        } catch (Throwable actual) {
+            if (expected.isInstance(actual)) return;
+            throw new AssertionError("expected " + expected + ", got " + actual, actual);
+        }
+        throw new AssertionError("missing " + expected);
+    }
+
+    private static void compile(WhiteBox wb, Method method) {
+        if (!wb.enqueueMethodForCompilation(method, 4) || wb.getMethodCompilationLevel(method) != 4) {
+            throw new AssertionError("not C2 compiled: " + method);
+        }
+    }
+
+    private static void child() throws Exception {
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        for (int kind = 0; kind < TYPES.length; kind++) {
+            Class<?> array = Array.newInstance(TYPES[kind], 0).getClass();
+            Object a = Array.newInstance(TYPES[kind], 4097);
+            Object b = Array.newInstance(TYPES[kind], 4097);
+            Method support = ArraysSupport.class.getMethod("mismatch",
+                    array, int.class, array, int.class, int.class);
+            for (int i = 0; i < 2000; i++) {
+                int length = i % 3 == 0 ? 8 : i % 3 == 1 ? 128 : 4096;
+                value(kind, b, 2, true);
+                check((int) support.invoke(null, a, 1, b, 1, length), 1, "profile support");
+                check(range(kind, a, 1, 1 + length, b, 1, 1 + length), 1, "profile range");
+                value(kind, b, 2, false);
+                value(kind, b, 1, true);
+                check(full(kind, a, b), 1, "profile full");
+                value(kind, b, 1, false);
+            }
+            // Compile callees before callers, reproducing the early-mismatch inlining cliff.
+            // A cold bulk exit may be an uncommon trap rather than a retained call.
+            compile(wb, kind == 6
+                    ? ArraysSupport.class.getDeclaredMethod("mismatchLarge",
+                            array, int.class, array, int.class, int.class, boolean.class)
+                    : ArraysSupport.class.getDeclaredMethod("mismatchLarge",
+                            array, int.class, array, int.class, int.class));
+            for (Method callee : List.of(
+                    ArraysSupport.class.getMethod("mismatch", array, int.class, array, int.class, int.class),
+                    ArraysSupport.class.getMethod("mismatch", array, array, int.class),
+                    Arrays.class.getMethod("mismatch", array, int.class, int.class, array, int.class, int.class),
+                    Arrays.class.getMethod("mismatch", array, array))) {
+                wb.deoptimizeMethod(callee);
+                compile(wb, callee);
+            }
+            for (String suffix : new String[] {"Range", "Full"}) {
+                String name = TYPES[kind].getName() + suffix;
+                Method method = suffix.equals("Range")
+                        ? AArch64ArrayMismatchCallBoundaryTest.class.getMethod(name, array, int.class,
+                                int.class, array, int.class, int.class)
+                        : AArch64ArrayMismatchCallBoundaryTest.class.getMethod(name, array, array);
+                wb.deoptimizeMethod(method);
+                System.out.println(MARKER + name);
+                System.out.flush();
+                compile(wb, method);
+                System.out.println(MARKER + "end");
+            }
+        }
+        System.out.println(MARKER + "end");
+        semantics();
+    }
+
+    public static void verify(String text) {
+        Map<String, List<String>> graphs = new HashMap<>();
+        String current = null;
+        for (String line : text.lines().toList()) {
+            if (line.startsWith(MARKER)) {
+                current = line.substring(MARKER.length());
+                if (!current.equals("end") && graphs.put(current, new ArrayList<>()) != null) {
+                    throw new AssertionError("duplicate graph " + current);
+                }
+            } else if (current != null && !current.equals("end")) {
+                graphs.get(current).add(line);
+            }
+        }
+        if (graphs.size() != 16) throw new AssertionError("missing graphs " + graphs.keySet());
+        for (var entry : graphs.entrySet()) {
+            List<String> nodes = entry.getValue().stream()
+                    .filter(s -> s.matches("\\s*o?\\d+\\s+\\w+\\s+===.*")).toList();
+            long bulk = nodes.stream().filter(s -> s.contains("CallStaticJava") &&
+                    s.contains("# Static  jdk.internal.util.ArraysSupport::mismatchLarge ")).count();
+            boolean hiddenCall = nodes.stream().anyMatch(s -> s.contains("CallStaticJava") &&
+                    (s.contains("# Static  java.util.Arrays::mismatch ") ||
+                     s.contains("# Static  jdk.internal.util.ArraysSupport::mismatch ") ||
+                     s.contains("# Static  jdk.internal.util.ArraysSupport::mismatchPrefix ") ||
+                     s.contains("# Static  jdk.internal.util.ArraysSupport::mismatchPrefixFloating ") ||
+                     s.contains("# Static  jdk.internal.util.ArraysSupport::mismatchPrefixDouble ") ||
+                     s.contains("# Static  jdk.internal.util.ArraysSupport::vectorizedMismatch ")));
+            boolean leaf = nodes.stream().anyMatch(s -> s.contains("CallLeaf") && s.contains("vectorizedMismatch"));
+            if (nodes.isEmpty() || bulk > 1 || hiddenCall || leaf) {
+                throw new AssertionError(entry.getKey() + " must inline the early public path; any retained mismatch call must target bulk: " + nodes);
+            }
+        }
+        System.out.println("Verified sixteen default-inlining public array call boundaries");
+    }
+
+    public static void main(String[] args) throws Exception {
+        if (args.length != 0) {
+            switch (args[0]) {
+                case "semantics" -> semantics();
+                case "child" -> child();
+                case "verify" -> verify(Files.readString(Path.of(args[1])));
+                default -> throw new AssertionError(args[0]);
+            }
+            return;
+        }
+        String test = AArch64ArrayMismatchCallBoundaryTest.class.getName();
+        List<String> flags = new ArrayList<>(List.of(
+                "-Xbootclasspath/a:.", "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
+                "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
+                "-XX:-TieredCompilation", "-XX:-BackgroundCompilation",
+                "-XX:CompileThreshold=1000", "-XX:CompileCommand=quiet",
+                "-XX:CompileCommand=dontinline," + test + "::*"));
+        for (Class<?> type : TYPES) {
+            for (String suffix : new String[] {"Range", "Full"}) {
+                flags.add("-XX:CompileCommand=PrintIdealPhase," + test + "::" + type.getName() + suffix + ",BEFORE_MATCHING");
+            }
+        }
+        flags.add(test);
+        flags.add("child");
+        OutputAnalyzer output = ProcessTools.executeProcess(ProcessTools.createLimitedTestJavaProcessBuilder(flags));
+        String text = output.getStdout() + "\n" + output.getStderr();
+        Path capture = Path.of("AArch64ArrayMismatchCallBoundaryTest-ideal.log").toAbsolutePath();
+        Files.writeString(capture, text);
+        System.out.println("Array call-boundary graph capture: " + capture);
+        output.shouldHaveExitValue(0);
+        verify(text);
+    }
+}
