@@ -15,6 +15,8 @@ adjudicator are unrun as of 2026-10-17; no new outcome is claimed for them.
 Use [qualify.py](qualify.py) for the single future qualification batch, as shown
 in that plan. The individual build/test/measurement commands below are useful
 reproduction steps; they do not provide batch supervision or adjudication.
+Only the offline TestNG evidence-parser fixtures have run for the latest repair;
+the supervised campaign remains unexecuted.
 
 Loading is guarded until VM bootstrap completes. JNI uses bounded region copies
 into separate scratch buffers, without pinning arrays or retaining heap

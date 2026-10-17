@@ -221,7 +221,10 @@ Insufficient time is reported as a resource limit, not evidence against HexForma
    The original testOOME is unchanged. Its expected low-heap TestNG SkipException
    is accepted only for that method with its exception or OOME memory diagnostic;
    passed plus skipped must cover all 154 TestNG cases with zero failures. Counts
-   are recorded separately. Such skips are not promoted to full large-array
+   are recorded separately. Exactly one recognized summary must occur in the
+   HexFormatTest JTR for each baseline/candidate run. Missing, duplicate, malformed
+   or misplaced summaries are INCOMPLETE even if a generic JTR says Passed.
+   Such skips are not promoted to full large-array
    coverage, and the runner does not raise the heap to suppress them.
 4. Run Rust boundary tests, normal jlink images with/without the native library,
    and verify.sh. The six GC/compact configurations use explicit heap/processor/
@@ -321,6 +324,17 @@ reconfiguration, with the original measured path and retained path both recorded
 Exit statuses: 0 LOCAL_GO, 2 NO_GO_MEASURED, 3 INCONCLUSIVE_NOISE, 4 incomplete,
 64 invocation error, 124 watchdog force-exit. result.json is authoritative;
 missing emergency output is an uncertain interrupted outcome, never success.
+
+The pure parser has offline fixtures, runnable without a JVM or campaign:
+
+```sh
+python3 -B test/benchmarks/hex-simd/TestTestNGEvidence.py
+```
+
+All 10 fixture tests passed in this preparation repair; they cover summary
+cardinality/format, counts and permitted versus inconsistent skips. This is
+parser evidence only; the supervised build/correctness/timing batch remains
+unexecuted. No design, budget or product qualification claim changes.
 
 Stage 1 LOCAL_GO means exact-head Linux development-profile correctness and
 benefit support proposing opt-in integration. Other native performance hosts

@@ -339,6 +339,32 @@ def require(condition, message):
         raise Stop("EVIDENCE_OR_CORRECTNESS", message)
 
 
+def parse_hexformat_testng(records):
+    """Require one known summary in the expected JTR; no generic-Passed fallback."""
+    records = [(Path(path), text) for path, text in records]
+    hex_records = [(path, text) for path, text in records if path.name == "HexFormatTest.jtr"]
+    require(len(hex_records) == 1, "expected exactly one HexFormatTest JTR")
+    path, text = hex_records[0]
+    summaries = [(record, line) for record, contents in records for line in contents.splitlines()
+                 if re.match(r"^\s*Total tests run\b", line, re.I)]
+    require(len(summaries) == 1 and summaries[0][0] == path,
+            "expected exactly one HexFormatTest TestNG summary: " + str(path))
+    totals = re.fullmatch(r"Total tests run: ([0-9]+), Passes: ([0-9]+), Failures: ([0-9]+), Skips: ([0-9]+)",
+                          summaries[0][1])
+    require(totals is not None, "unrecognized TestNG summary format: " + str(path))
+    total, passed, failed, skipped = map(int, totals.groups())
+    require(total == 154 and failed == 0 and total == passed + skipped,
+            "TestNG failures/incomplete cases: " + str(path))
+    outcomes = re.findall(r"test HexFormatTest\.(\w+)\((?:(?!test HexFormatTest\.).)*?\):\s*(success|failure|skip\w*)",
+                          text, re.I | re.S)
+    skipped_methods = [method for method, outcome in outcomes if outcome.lower().startswith("skip")]
+    require(len(skipped_methods) == skipped and (not skipped or
+            (set(skipped_methods) == {"testOOME"} and
+             ("Insufficient Memory to test OOME" in text or "OOME: total mem:" in text))),
+            "unexpected TestNG skip: " + str(path))
+    return {"total": total, "passed": passed, "expected_low_heap_skips": skipped, "record": str(path)}
+
+
 def read_bench(path, kind, sizes, state):
     text = path.read_text()
     require(f"# nativeAvailable={str(state == 'enabled').lower()}" in text, "wrong availability: " + str(path))
@@ -638,24 +664,16 @@ class Campaign:
             self.run("jtreg-" + state, argv, cwd=self.sources[state])
             records = list(work.rglob("*.jtr"))
             require(len(records) == (2 if state == "candidate" else 1), "unexpected jtreg test count")
+            record_texts = []
             for path in records:
                 text = path.read_text()
+                record_texts.append((path, text))
                 require("test result: Passed." in text, "jtreg did not pass: " + str(path))
                 require(not BAD_JNI.search(text), "JNI warning in " + str(path))
                 for flag in ["-Xmx512m", "-XX:ActiveProcessorCount=2", "-XX:+UseG1GC"]:
                     require(flag in text, "missing child JVM flag " + flag)
-                totals = re.search(r"Total tests run: (\d+), Passes: (\d+), Failures: (\d+), Skips: (\d+)", text)
-                if totals:
-                    total, passed, failed, skipped = map(int, totals.groups())
-                    require(total == 154 and failed == 0 and total == passed + skipped, "TestNG failures/incomplete cases")
-                    outcomes = re.findall(r"test HexFormatTest\.(\w+)\((?:(?!test HexFormatTest\.).)*?\):\s*(success|failure|skip\w*)",
-                                          text, re.I | re.S)
-                    skipped_methods = [method for method, outcome in outcomes if outcome.lower().startswith("skip")]
-                    require(not skipped or (len(skipped_methods) == skipped and set(skipped_methods) == {"testOOME"}
-                            and ("Insufficient Memory to test OOME" in text or "OOME: total mem:" in text)),
-                            "unexpected TestNG skip")
-                    self.manifest["testng"].append({"state": state, "total": total, "passed": passed,
-                                                     "expected_low_heap_skips": skipped, "record": str(path)})
+            summary = parse_hexformat_testng(record_texts)
+            self.manifest["testng"].append({"state": state, **summary})
             for gc in ["Serial", "G1", "Z"]:
                 self.run("profile-" + state + "-" + gc, [self.jdks[state] / "bin/java", *self.java_opts(gc),
                           self.sources["candidate"] / ".github/scripts/DevProfileSmoke.java"])
