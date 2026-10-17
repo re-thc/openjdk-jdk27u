@@ -65,6 +65,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p native-validation
+          git fetch --no-tags --depth=1 origin "$PRODUCTION_SOURCE"
           test "$(uname -m)" = '${{ matrix.machine }}'
           git diff --exit-code "$PRODUCTION_SOURCE" HEAD -- src make test
           test "$(git hash-object src/java.base/share/native/libjava/StringZillaKernels.c)" = 993fd1957118b4d45dee801a1977c15c3d982570
@@ -204,6 +205,8 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path msvc-validation -Force | Out-Null
+          git fetch --no-tags --depth=1 origin $env:PRODUCTION_SOURCE
+          if ($LASTEXITCODE -ne 0) { throw 'Production commit fetch failed' }
           git diff --exit-code $env:PRODUCTION_SOURCE HEAD -- src make test
           if ($LASTEXITCODE -ne 0) { throw 'Qualification source differs from measured production' }
           $helperBlob = git hash-object .github/scripts/stringzilla-performance.py
