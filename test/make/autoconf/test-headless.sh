@@ -25,9 +25,11 @@
 # Exercise the real policy/probe macros without needing foreign platform SDKs.
 # Tool/library lookup stubs fail if any desktop discovery is attempted.
 set -euo pipefail
-autoconf=$1
+configured_autoconf=$1
 repo_root=$2
 work=$3
+. "$repo_root/test/make/autoconf/autoconf-common.sh"
+find_autoconf "$configured_autoconf"
 mkdir -p "$work"
 work="$(cd "$work" && pwd)"
 cd "$work"
@@ -62,7 +64,7 @@ LIB_SETUP_WINDOWS_JVM_LIBS
 AC_MSG_NOTICE([runtime libraries: $BASIC_JVM_LIBS])
 AC_OUTPUT
 M4
-"$autoconf" -I "$repo_root/make/autoconf" -o configure configure.ac
+"$AUTOCONF" -I "$repo_root/make/autoconf" -o configure configure.ac
 
 run_configure() {
   env ECHO=echo AWK=awk TR=tr GREP=grep SED=sed SORT=sort OUTPUTDIR="$work/outputs" \
@@ -108,7 +110,7 @@ grep -q 'Incompatible existing build outputs' result.log
 rm outputs/spec.gmk
 # Probe guards themselves are checked independently of the product-policy rejection.
 sed '/^JDKOPT_SETUP_HEADLESS$/d' configure.ac > probes.ac
-"$autoconf" -I "$repo_root/make/autoconf" -o configure probes.ac
+"$AUTOCONF" -I "$repo_root/make/autoconf" -o configure probes.ac
 for target in linux:gcc macosx:clang windows:microsoft; do
   target_os=${target%:*}
   toolchain=${target#*:}

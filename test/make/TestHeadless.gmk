@@ -76,6 +76,7 @@ matrix:
 
 probes:
 	$(BASH) $(TOPDIR)/test/make/autoconf/test-headless.sh "$(AUTOCONF)" "$(TOPDIR)" "$(TEST_SUPPORT_DIR)/headless"
+	$(BASH) $(TOPDIR)/test/make/autoconf/test-autoconf-discovery.sh "$(AUTOCONF)" "$(TOPDIR)" "$(TEST_SUPPORT_DIR)/autoconf-discovery"
 
 direct-targets:
 	$(MKDIR) -p $(TEST_SUPPORT_DIR)/headless-stale/jdk/modules/java.desktop
