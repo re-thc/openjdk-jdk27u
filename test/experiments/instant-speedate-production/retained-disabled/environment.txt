@@ -1,0 +1,150 @@
+$ git rev-parse HEAD
+fdb9621ae74b4495cb23f7e66f30f9083a914b78
+
+$ git diff --stat
+ make/autoconf/libraries.m4                         |  2 +
+ make/autoconf/spec.gmk.template                    |  6 +++
+ make/modules/java.base/Copy.gmk                    | 13 +++++++
+ make/modules/java.base/gensrc/GensrcMisc.gmk       |  7 ++++
+ make/modules/java.base/lib/CoreLibraries.gmk       | 44 ++++++++++++++++++++++
+ src/java.base/share/classes/java/time/Instant.java |  6 +++
+ 6 files changed, 78 insertions(+)
+
+$ uname -a
+Linux de4a5e0ef4ae 6.18.44 #1 SMP Sat Sep 26 20:02:31 UTC 2026 x86_64 GNU/Linux
+
+$ lscpu
+Architecture:                            x86_64
+CPU op-mode(s):                          32-bit, 64-bit
+Address sizes:                           46 bits physical, 48 bits virtual
+Byte Order:                              Little Endian
+CPU(s):                                  5
+On-line CPU(s) list:                     0-4
+Vendor ID:                               AuthenticAMD
+Model name:                              AMD EPYC 9V74 80-Core Processor
+CPU family:                              25
+Model:                                   17
+Thread(s) per core:                      1
+Core(s) per socket:                      5
+Socket(s):                               1
+Stepping:                                1
+BogoMIPS:                                5192.24
+Flags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology nonstop_tsc cpuid extd_apicid tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx512_bf16 clzero xsaveerptr arat npt nrip_save tsc_scale vmcb_clean flushbyasid pausefilter pfthreshold v_vmsave_vmload avx512vbmi umip avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid fsrm arch_capabilities
+Hypervisor vendor:                       KVM
+Virtualization type:                     full
+L1d cache:                               96 KiB (3 instances)
+L1i cache:                               96 KiB (3 instances)
+L2 cache:                                3 MiB (3 instances)
+L3 cache:                                32 MiB (1 instance)
+NUMA node(s):                            1
+NUMA node0 CPU(s):                       0-4
+Vulnerability Gather data sampling:      Not affected
+Vulnerability Ghostwrite:                Not affected
+Vulnerability Indirect target selection: Not affected
+Vulnerability Itlb multihit:             Not affected
+Vulnerability L1tf:                      Not affected
+Vulnerability Mds:                       Not affected
+Vulnerability Meltdown:                  Not affected
+Vulnerability Mmio stale data:           Not affected
+Vulnerability Old microcode:             Not affected
+Vulnerability Reg file data sampling:    Not affected
+Vulnerability Retbleed:                  Not affected
+Vulnerability Spec rstack overflow:      Vulnerable
+Vulnerability Spec store bypass:         Vulnerable
+Vulnerability Spectre v1:                Vulnerable: __user pointer sanitization and usercopy barriers only; no swapgs barriers
+Vulnerability Spectre v2:                Vulnerable; STIBP: disabled; PBRSB-eIBRS: Not affected; BHI: Not affected
+Vulnerability Srbds:                     Not affected
+Vulnerability Tsa:                       Vulnerable
+Vulnerability Tsx async abort:           Not affected
+Vulnerability Vmscape:                   Not affected
+
+$ /workspace/toolchains/rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/rustc --version
+rustc 1.99.0 (b940084d7 2026-09-28)
+
+$ /workspace/toolchains/cargo/bin/cargo --version
+error: could not create home directory: '/home/agent/.rustup': Read-only file system (os error 30)
+
+$ /workspace/toolchains/gcc16/bin/gcc --version
+gcc-16 (Debian 16.2.0-3) 16.2.0
+Copyright (C) 2026 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+
+$ cat build/instant-speedate/images/jdk/release
+IMPLEMENTOR="N/A"
+JAVA_RUNTIME_VERSION="27.0.2-internal-adhoc.agent.openjdk-jdk27u"
+JAVA_VERSION="27.0.2"
+JAVA_VERSION_DATE="2027-01-19"
+LIBC="gnu"
+MODULES="java.base java.compiler java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.xml java.prefs java.scripting java.security.jgss java.smartcardio java.transaction.xa java.sql java.sql.rowset java.xml.crypto jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.httpserver jdk.incubator.vector jdk.internal.ed jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jshell jdk.jstatd jdk.localedata jdk.management jdk.management.agent jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.xml.dom"
+OS_ARCH="x86_64"
+OS_NAME="Linux"
+SOURCE=".:git:fdb9621ae74b+"
+
+$ cat /tmp/instant-baseline-source/build/qualification-baseline/images/jdk/release
+IMPLEMENTOR="N/A"
+JAVA_RUNTIME_VERSION="27.0.2-internal-adhoc.agent.openjdk-jdk27u"
+JAVA_VERSION="27.0.2"
+JAVA_VERSION_DATE="2027-01-19"
+LIBC="gnu"
+MODULES="java.base java.compiler java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.xml java.prefs java.scripting java.security.jgss java.smartcardio java.transaction.xa java.sql java.sql.rowset java.xml.crypto jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.httpserver jdk.incubator.vector jdk.internal.ed jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jshell jdk.jstatd jdk.localedata jdk.management jdk.management.agent jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.xml.dom"
+OS_ARCH="x86_64"
+OS_NAME="Linux"
+SOURCE=".:git:fdb9621ae74b"
+
+$ sha256sum build/instant-speedate/images/jdk/lib/libinstant.so build/instant-speedate/images/jdk/lib/modules /tmp/instant-baseline-source/build/qualification-baseline/images/jdk/lib/modules
+6a67eb10af08647bd598918b3bfeee8d8f49036f3a39414e5bcda7e7f0c19f5f  build/instant-speedate/images/jdk/lib/libinstant.so
+694c112e12bfa8ca62673d3670b4dd7818e92c766fc8264f2cbf1d7bffa65764  build/instant-speedate/images/jdk/lib/modules
+b40e907171268f487898618a8fa568838ceb0d101ad405cfe1ffd27ac7411e18  /tmp/instant-baseline-source/build/qualification-baseline/images/jdk/lib/modules
+
+$ nm -D --defined-only build/instant-speedate/images/jdk/lib/libinstant.so
+00000000000102a0 T Java_java_time_InstantParser_parse0
+
+$ readelf -W -l build/instant-speedate/images/jdk/lib/libinstant.so
+
+Elf file type is DYN (Shared object file)
+Entry point 0x0
+There are 11 program headers, starting at offset 64
+
+Program Headers:
+  Type           Offset   VirtAddr           PhysAddr           FileSiz  MemSiz   Flg Align
+  PHDR           0x000040 0x0000000000000040 0x0000000000000040 0x000268 0x000268 R   0x8
+  NOTE           0x0002a8 0x00000000000002a8 0x00000000000002a8 0x000024 0x000024 R   0x4
+  LOAD           0x000000 0x0000000000000000 0x0000000000000000 0x00f153 0x00f153 R   0x1000
+  LOAD           0x00f154 0x0000000000010154 0x0000000000010154 0x0389ac 0x0389ac R E 0x1000
+  LOAD           0x047b00 0x0000000000049b00 0x0000000000049b00 0x001ff8 0x002500 RW  0x1000
+  LOAD           0x049af8 0x000000000004caf8 0x000000000004caf8 0x000a00 0x000a5a RW  0x1000
+  TLS            0x047b00 0x0000000000049b00 0x0000000000049b00 0x000030 0x000050 R   0x8
+  DYNAMIC        0x049120 0x000000000004b120 0x000000000004b120 0x000230 0x000230 RW  0x8
+  GNU_EH_FRAME   0x008a04 0x0000000000008a04 0x0000000000008a04 0x000f2c 0x000f2c R   0x4
+  GNU_STACK      0x000000 0x0000000000000000 0x0000000000000000 0x000000 0x000000 RW  0x1
+  GNU_RELRO      0x047b00 0x0000000000049b00 0x0000000000049b00 0x001ff8 0x002500 R   0x1
+
+ Section to Segment mapping:
+  Segment Sections...
+   00     
+   01     .note.gnu.build-id 
+   02     .note.gnu.build-id .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rela.dyn .rela.plt .eh_frame .eh_frame_hdr .gcc_except_table .rodata .rodata.cst16 .rodata.cst32 .rodata.cst4 .rodata.cst8 .rodata.str1.1 
+   03     .fini .init .plt .plt.got .text 
+   04     .tdata .data.rel.ro .dynamic .fini_array .got.plt .init_array .got .relro_padding 
+   05     .data .bss 
+   06     .tdata .tbss 
+   07     .dynamic 
+   08     .eh_frame_hdr 
+   09     
+   10     .tdata .data.rel.ro .dynamic .fini_array .got.plt .init_array .got .relro_padding 
+
+$ ldd build/instant-speedate/images/jdk/lib/libinstant.so
+	linux-vdso.so.1 (0x00007f60cab60000)
+	libm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x00007f60ca9f7000)
+	libgcc_s.so.1 => /workspace/toolchains/gcc16-root/usr/lib/x86_64-linux-gnu/libgcc_s.so.1 (0x00007f60ca9c9000)
+	libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f60ca7d5000)
+	/lib64/ld-linux-x86-64.so.2 (0x00007f60cab62000)
+
+
+The initial version probe above omitted the installed activation environment. Corrected version probes (no installation):
+$ rustc --version
+rustc 1.99.0 (b940084d7 2026-09-28)
+$ cargo --version
+cargo 1.99.0 (5f94df478 2026-08-27)

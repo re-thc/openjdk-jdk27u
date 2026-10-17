@@ -69,6 +69,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 final class InstantParser {
     private static volatile boolean failed;
 
+    private static final class RuntimeConfig {
+        // Read only after VM boot. Later System.setProperty changes must not
+        // enable a route disabled at startup. No library is loaded here.
+        private static final boolean ENABLED =
+                !"false".equals(VM.getSavedProperty("jdk.time.instantSpeedate"));
+    }
+
     private static final class Library {
         private static final int LOADING = 1;
         private static final int READY = 2;
@@ -88,9 +95,7 @@ final class InstantParser {
             // on a library lock; they must be able to fall back without waiting.
             boolean loaded = false;
             try {
-                if (!"false".equals(VM.getSavedProperty("jdk.time.instantSpeedate"))) {
-                    loaded = BootLoader.getNativeLibraries().loadLibrary("instant") != null;
-                }
+                loaded = BootLoader.getNativeLibraries().loadLibrary("instant") != null;
             } catch (LinkageError ex) {
                 // Sticky unavailable state; original formatter remains usable.
             } finally {
@@ -126,10 +131,15 @@ final class InstantParser {
     }
 
     static Instant tryParse(String text) {
-        if (!eligible(text) || !VM.isBooted() || failed) {
+        // Keep the boot check before RuntimeConfig initialization. A disabled
+        // route must bypass input inspection and the loader state entirely.
+        if (!VM.isBooted()) {
             return null;
         }
         try {
+            if (!RuntimeConfig.ENABLED || failed || !eligible(text)) {
+                return null;
+            }
             // Preboot calls must not initialize this holder. Calls concurrent
             // with native loading use Java without waiting for the loader.
             if (!Library.available()) {

@@ -54,10 +54,14 @@ unbuilt and untested. Windows also requires x86-64-v3 hardware; there is no
 runtime ISA dispatch. The feature remains opt-in.
 
 [QUALIFICATION.md](QUALIFICATION.md) reconciles the evidence and defines one
-bounded integration decision. Successful fallback, complete configure-disabled
-images and a stability-gated comparison remain to be qualified. Runtime disabling
-preserves outcomes but is not a zero-cost switch: historical canonical overhead
-was about 6–11.5%. No fresh performance result is claimed for the published head.
+bounded staged proposal. Launch remains HOLD pending the focused comparison in
+[RUNTIME_DISABLED_AUDIT.md](RUNTIME_DISABLED_AUDIT.md). Historical canonical
+runtime-off losses were about6–11.5%; retained rounds/compiler evidence do not
+establish their precise cause. The source now checks the saved startup switch
+before input inspection/loader state, with an unexecuted focused regression test.
+The public wrapper and VM boot read remain; recovered performance is unmeasured.
+Successful fallback, full configure-disabled images and stable integrated
+performance still require qualification. No fresh speedup is claimed.
 
 ## Standalone regression and reproduction probe
 
