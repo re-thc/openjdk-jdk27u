@@ -44,7 +44,8 @@ import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
 
 public class TestBzhiIntMask {
-    private static final String BZHI = "\\bbzhiI_rReg_rReg\\b";
+    // ADLC also generates _0 for the commuted root AndI operand order.
+    private static final String BZHI = "\\bbzhiI_rReg_rReg(?:_0)?\\b";
     private static final long UINT_MASK = 0xffff_ffffL;
     private static final int SENTINEL = 0x1357_9bdf;
 

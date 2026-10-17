@@ -51,7 +51,7 @@ INPUT_EVIDENCE = "983ffb34bd9e1ded6a9cd7685577d6251796191b"
 PINS = {
     "src/hotspot/cpu/x86/x86.ad": "5f6bf6bf99b9109efd1d80e465b58eead798dd362d11ff22570996423889fe02",
     "test/hotspot/jtreg/compiler/intrinsics/bmi/TestBzhiIntMask.java":
-        "bfbdf36c09364f65cfb1127ab85a2a8d4285e3fed4a44827c15d7ff059760241",
+        "75ac257b53e874ff871ea372c82e2fd5ac7003f92319ba5cb046034c652ce81f",
     "test/micro/org/openjdk/bench/vm/compiler/VariableIntLowMask.java":
         "b7c4672b32db157a2978a67b400fd875ea924d11c7813761bf22f6e59ca47f88",
 }
@@ -119,7 +119,8 @@ def verify_sources(args):
         if (expected and heads[name] != expected) or git(root, "status", "--porcelain"):
             raise ValueError("Wrong revision or local changes: " + str(root))
     allowed = {"doc/compiler-decoder-int-lowmask.md", "doc/compiler-decoder-int-lowmask-validate.py",
-               "doc/compiler-decoder-int-lowmask-inputs.py"}
+               "doc/compiler-decoder-int-lowmask-inputs.py",
+               "test/hotspot/jtreg/compiler/intrinsics/bmi/TestBzhiIntMask.java"}
     if set(git(args.jdk_root, "diff", "--name-only", CANDIDATE, "HEAD").splitlines()) - allowed:
         raise ValueError("Candidate contains changes outside this preparation packet")
     for relative, expected in PINS.items():
