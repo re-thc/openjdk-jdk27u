@@ -147,7 +147,15 @@ python3 test/benchmarks/hex-simd/qualify.py --execute \
 Replace those installed-tool paths with the host's normal paths if different.
 Platform options cannot override the frozen profile, collector feature set,
 heap/build-job settings, source version, Boot JDK or jtreg selection. The runner
-uses the repository's normal bin/configure-dev for both detached worktrees,
+rejects with/without-jvm-features and with/without-jvm-variants overrides,
+including equal-value, split-value and Autoconf single-dash forms. Normal
+dependency/toolchain path options remain available. Post-configure validation
+requires the sole active and main JVM variant to be server, with compiler2 and
+cds present, alongside exactly the existing Serial/G1/ZGC collector multiset.
+Empty inactive variant declarations remain valid. All 15 offline profile/option
+fixtures passed, along with the retained-spec replay. No campaign retry, build
+or timing was performed. The runner uses the repository's normal bin/configure-dev
+for both detached worktrees,
 release builds, JOBS=2 and identical platform settings. If mold is absent, it
 sets the existing CONFIGURE_DEV_NO_MOLD switch for both. No compiler, toolchain,
 CI action, PR, push or merge is installed/created/dispatched by this runner.
@@ -215,7 +223,8 @@ Insufficient time is reported as a resource limit, not evidence against HexForma
    worktrees and normal release images. Preserve immutable spec snapshots and
    SHA-256 of the runner, lockfile, release, launcher, java.base.jmod, modules,
    libjvm and optional JNI library. Recheck frozen source heads/status afterward.
-2. Validate exactly Serial/G1/ZGC in the configured profile; run its source
+2. Validate the sole active/main server VM, C2, CDS and exactly Serial/G1/ZGC
+   in the configured profile; run its source
    smoke under those collectors. Inspect native exports/dependencies and verify
    every copied Rust runtime notice against that actual compiler's source
    notices, plus the pinned dependency MIT notice. No excluded collector or

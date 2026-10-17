@@ -366,18 +366,32 @@ def parse_hexformat_testng(records):
 
 
 def require_gc_profile(text):
-    """Validate configured variants; empty inactive declarations are normal."""
-    declarations = re.findall(r"^(JVM_VARIANTS|JVM_FEATURES_[A-Za-z0-9_]+)[ \t]*:=[ \t]*([^\r\n]*)$",
+    """Require the frozen server/C2/CDS/GC profile; ignore empty inactive rows."""
+    declarations = re.findall(r"^(JVM_VARIANTS|JVM_VARIANT_MAIN|JVM_FEATURES_[A-Za-z0-9_]+)[ \t]*:=[ \t]*([^\r\n]*)$",
                               text, re.M)
     settings = dict(declarations)
     require(len(settings) == len(declarations), "duplicate development profile declaration")
     variants = settings.get("JVM_VARIANTS", "").split()
-    require(variants and len(set(variants)) == len(variants), "missing/duplicate configured JVM variants")
-    for variant in variants:
-        features = settings.get("JVM_FEATURES_" + variant, "").split()
-        require(sorted(f for f in features if f.endswith("gc")) == ["g1gc", "serialgc", "zgc"],
-                "development collector profile differs for " + variant)
+    require(variants == ["server"], "qualification requires only the frozen server JVM variant")
+    require(settings.get("JVM_VARIANT_MAIN", "").strip() == "server", "qualification main JVM variant must be server")
+    features = settings.get("JVM_FEATURES_server", "").split()
+    require({"compiler2", "cds"} <= set(features), "qualification server profile requires compiler2 and cds")
+    require(sorted(f for f in features if f.endswith("gc")) == ["g1gc", "serialgc", "zgc"],
+            "development collector profile differs for server")
     return variants
+
+
+def validate_platform_options(options):
+    """Reject configure overrides of frozen settings, retaining dependency paths."""
+    forbidden = ("--with-conf-name", "--with-debug-level", "--with-jobs", "--with-memory-size", "--with-boot-jdk",
+                 "--with-jtreg", "--with-version-opt", "--enable-hex-simd", "--disable-hex-simd",
+                 "--enable-jvm-feature", "--disable-jvm-feature", "--with-jvm-features", "--without-jvm-features",
+                 "--with-jvm-variants", "--without-jvm-variants")
+    for option in options:
+        # Autoconf accepts single-dash spellings of these long options too.
+        normalized = "-" + option if option.startswith("-") and not option.startswith("--") else option
+        if normalized.startswith(forbidden):
+            raise ValueError("platform option overrides a frozen qualification setting: " + option)
 
 
 def read_bench(path, kind, sizes, state):
@@ -844,11 +858,10 @@ def main():
         if not re.fullmatch(r"[A-Za-z0-9_./@:+-]+", str(value)):
             parser.error("qualification paths must use shell-safe ASCII letters/digits and _./@:+-")
         setattr(args, attr, value)
-    forbidden = ("--with-conf-name", "--with-debug-level", "--with-jobs", "--with-memory-size", "--with-boot-jdk",
-                 "--with-jtreg", "--with-version-opt", "--enable-hex-simd", "--disable-hex-simd",
-                 "--enable-jvm-feature", "--disable-jvm-feature")
-    if any(option.startswith(forbidden) for option in args.platform_option):
-        parser.error("platform option overrides a frozen qualification setting")
+    try:
+        validate_platform_options(args.platform_option)
+    except ValueError as error:
+        parser.error(str(error))
     if args.output.exists():
         parser.error("--output must not exist; logs/worktrees are never overwritten")
     for executable in [args.boot_jdk / "bin/java", args.boot_jdk / "bin/javac", args.cargo, args.rustc]:
