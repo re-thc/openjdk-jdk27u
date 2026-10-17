@@ -1,0 +1,95 @@
+{
+  "baseline": {
+    "ir_log_sha256": "ca8692c520d504c21d81f5c0b771c6cbb47ba25a90ae1a3da89d01f70f3d07d3",
+    "assembly_log_sha256": "56079d4fb6fe35996a645316a032133e7247ab87636561913eb0f306c0f6dbc8",
+    "test_mask": {
+      "method": "compiler.c2.irTests.TestIfConstantThreshold testMask (IJ)J",
+      "compiler": "c2",
+      "compile_id": "1035",
+      "phase": "PrintIdeal",
+      "cmp_i": 2,
+      "if": 2,
+      "nodes": [
+        " 24  ConI  === 0  [[ 25 ]]  #int:63",
+        " 25  CmpI  === _ 10 24  [[ 26 ]]  !jvms: TestIfConstantThreshold::testMask @ bci:3 (line 64)",
+        " 26  Bool  === _ 25  [[ 27 ]] [le] !jvms: TestIfConstantThreshold::testMask @ bci:3 (line 64)",
+        " 27  If  === 5 26  [[ 28 29 ]] P=0.701395, C=5375.000000 !jvms: TestIfConstantThreshold::testMask @ bci:3 (line 64)",
+        " 28  IfTrue  === 27  [[ 46 ]] #1 !jvms: TestIfConstantThreshold::testMask @ bci:3 (line 64)",
+        " 29  IfFalse  === 27  [[ 15 ]] #0 !jvms: TestIfConstantThreshold::testMask @ bci:3 (line 64)",
+        " 43  ConI  === 0  [[ 44 ]]  #int:64",
+        " 44  CmpI  === _ 10 43  [[ 45 ]]  !jvms: TestIfConstantThreshold::mask64 @ bci:3 (line 58) TestIfConstantThreshold::testMask @ bci:12 (line 65)",
+        " 45  Bool  === _ 44  [[ 46 ]] [lt] !jvms: TestIfConstantThreshold::mask64 @ bci:3 (line 58) TestIfConstantThreshold::testMask @ bci:12 (line 65)",
+        " 46  If  === 28 45  [[ 47 48 ]] P=0.925942, C=15812.000000 !jvms: TestIfConstantThreshold::mask64 @ bci:3 (line 58) TestIfConstantThreshold::testMask @ bci:12 (line 65)",
+        " 47  IfTrue  === 46  [[ 52 ]] #1 !jvms: TestIfConstantThreshold::mask64 @ bci:3 (line 58) TestIfConstantThreshold::testMask @ bci:12 (line 65)",
+        " 48  IfFalse  === 46  [[ 52 ]] #0 !jvms: TestIfConstantThreshold::mask64 @ bci:3 (line 58) TestIfConstantThreshold::testMask @ bci:12 (line 65)"
+      ]
+    },
+    "direct": {
+      "method": "ThresholdProbe::direct(IJ)J",
+      "compiler": "c2",
+      "compile_id": "26",
+      "main_code_bytes": 160,
+      "trap_count": 1,
+      "opto_assembly": [
+        "01a     cmpl    RSI, #63",
+        "01d     jg,s   B5  P=0.007812 C=6784.000000",
+        "01f     cmpl    RSI, #64",
+        "022     jge,s   B6  P=0.000000 C=13463.000000",
+        "05f     call,static  wrapper for: uncommon_trap(reason='unstable_if' action='reinterpret')"
+      ]
+    },
+    "normalized": {
+      "method": "ThresholdProbe::normalized(IJ)J",
+      "compiler": "c2",
+      "compile_id": "27",
+      "main_code_bytes": 112,
+      "trap_count": 0,
+      "opto_assembly": [
+        "01a     cmpl    RSI, #64",
+        "01d     jge,s   B4  P=0.007812 C=6784.000000"
+      ]
+    }
+  },
+  "candidate": {
+    "ir_log_sha256": "bdaffe59dcf3f6851f2125ece2270881da22bcc77291c0bbd7a173c238bceab3",
+    "assembly_log_sha256": "264c70367a8327deb66bba77fbd072014224ea7de6a3b6331218c0c2665244bc",
+    "test_mask": {
+      "method": "compiler.c2.irTests.TestIfConstantThreshold testMask (IJ)J",
+      "compiler": "c2",
+      "compile_id": "1035",
+      "phase": "PrintIdeal",
+      "cmp_i": 1,
+      "if": 1,
+      "nodes": [
+        " 24  ConI  === 0  [[ 25 ]]  #int:63",
+        " 25  CmpI  === _ 10 24  [[ 26 ]]  !jvms: TestIfConstantThreshold::testMask @ bci:3 (line 64)",
+        " 26  Bool  === _ 25  [[ 27 ]] [le] !jvms: TestIfConstantThreshold::testMask @ bci:3 (line 64)",
+        " 27  If  === 5 26  [[ 28 29 ]] P=0.701395, C=5375.000000 !jvms: TestIfConstantThreshold::testMask @ bci:3 (line 64)",
+        " 28  IfTrue  === 27  [[ 15 ]] #1 !jvms: TestIfConstantThreshold::testMask @ bci:3 (line 64)",
+        " 29  IfFalse  === 27  [[ 15 ]] #0 !jvms: TestIfConstantThreshold::testMask @ bci:3 (line 64)"
+      ]
+    },
+    "direct": {
+      "method": "ThresholdProbe::direct(IJ)J",
+      "compiler": "c2",
+      "compile_id": "23",
+      "main_code_bytes": 112,
+      "trap_count": 0,
+      "opto_assembly": [
+        "01a     cmpl    RSI, #63",
+        "01d     jg,s   B4  P=0.007812 C=6784.000000"
+      ]
+    },
+    "normalized": {
+      "method": "ThresholdProbe::normalized(IJ)J",
+      "compiler": "c2",
+      "compile_id": "24",
+      "main_code_bytes": 112,
+      "trap_count": 0,
+      "opto_assembly": [
+        "01a     cmpl    RSI, #64",
+        "01d     jge,s   B4  P=0.007812 C=6784.000000"
+      ]
+    }
+  }
+}

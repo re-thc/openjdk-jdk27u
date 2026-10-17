@@ -1,0 +1,54 @@
+{
+  "candidate_source_commit": "57f567fcb9ad7dddbd7fb2b2d9b443309681fc0f",
+  "vms": {
+    "baseline": {
+      "jdk": "/qualified/baseline-release",
+      "build_manifest": "/qualified/baseline-build.json"
+    },
+    "candidate": {
+      "jdk": "/qualified/candidate-release",
+      "build_manifest": "/qualified/candidate-build.json"
+    }
+  },
+  "jmh_jar": "/qualified/existing-benchmarks.jar",
+  "codec_repo": "/qualified/existing-jzstd-checkout",
+  "codec_source_commit": "REPLACE_WITH_EXISTING_CODEC_SHA",
+  "codec_classpath": "/qualified/existing-jzstd.jar:/qualified/existing-codec-tests.jar",
+  "pinned_inputs": [
+    {
+      "path": "/qualified/existing-benchmarks.jar",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    {
+      "path": "/qualified/existing-jzstd.jar",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    {
+      "path": "/qualified/existing-codec-tests.jar",
+      "sha256": "REPLACE_WITH_SHA256"
+    }
+  ],
+  "corpus_manifest": "/qualified/existing-corpus-manifest.json",
+  "corpus_coverage": [
+    "REPLACE_WITH_ACTUAL_EXISTING_ENCODER_AND_DECODER_CASES"
+  ],
+  "corpus_max_decoded_bytes": 536870912,
+  "guard_vm_args": [
+    "-Xbatch",
+    "-XX:-TieredCompilation",
+    "-XX:CompileCommand=print,*BlockDecoder::decodeSequencesRolling"
+  ],
+  "guard_main_args": [
+    "REPLACE_WITH_EXISTING_GUARD_DRIVER_AND_ITS_UNCHANGED_ARGUMENTS"
+  ],
+  "correctness_vm_args": [
+    "-ea",
+    "-Xbatch",
+    "-XX:-TieredCompilation"
+  ],
+  "correctness_main_args": [
+    "REPLACE_WITH_EXISTING_CORPUS_DRIVER_AND_ITS_UNCHANGED_ARGUMENTS"
+  ],
+  "correctness_success_regex": "REPLACE_WITH_EXISTING_COMPLETE_CORPUS_SUCCESS_MARKER",
+  "guard_method": "REPLACE_WITH_EXISTING_FULL_CLASS decodeSequencesRolling (EXISTING_DESCRIPTOR)"
+}
