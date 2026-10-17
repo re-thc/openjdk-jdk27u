@@ -82,7 +82,7 @@ public class MemoryMismatch {
     @Param({"1"})
     public int alignment;
 
-    /** Byte position of the only difference: none, 0, 7 (end of the first word), middle, last. */
+    /** Named position of the only difference, or an exact decimal byte position. */
     @Param({"MATCH", "FIRST", "FIRST_WORD", "MIDDLE", "LAST"})
     public String difference;
 
@@ -166,7 +166,11 @@ public class MemoryMismatch {
             case "FIRST_WORD" -> Math.min(7, size - 1);
             case "MIDDLE" -> size / 2;
             case "LAST" -> size - 1;
-            default -> throw new IllegalArgumentException(difference);
+            default -> {
+                int at = Integer.parseInt(difference);
+                if (at < 0 || at >= size) throw new IllegalArgumentException(difference);
+                yield at;
+            }
         };
         srcArray = new byte[size];
         Arrays.fill(srcArray, (byte) 42);
@@ -186,7 +190,8 @@ public class MemoryMismatch {
         dstLongs = dst.asLongBuffer();
         if (segmentMismatch() != index || bufferMismatch() != index || arrayMismatch() != index ||
                 charMismatch() != typed(index, Character.BYTES) || intMismatch() != typed(index, Integer.BYTES) ||
-                longMismatch() != typed(index, Long.BYTES) || bufferEquals() != (index < 0)) {
+                longMismatch() != typed(index, Long.BYTES) ||
+                intMismatchOppositeOrder() != typed(index, Integer.BYTES) || bufferEquals() != (index < 0)) {
             throw new AssertionError("Mismatch fixture disagrees with public API");
         }
     }
@@ -251,13 +256,20 @@ public class MemoryMismatch {
         return srcLongs.mismatch(dstLongs);
     }
 
-    /** Control: opposite byte orders use the element loop on every storage. */
+    /** Control kept local: the public mismatch method changes its inlining policy. */
     @Benchmark
     public int intMismatchOppositeOrder() {
-        return srcInts.mismatch(swappedInts);
+        int aPosition = srcInts.position(), bPosition = swappedInts.position();
+        int length = Math.min(srcInts.remaining(), swappedInts.remaining());
+        for (int i = 0; i < length; i++) {
+            if (srcInts.get(aPosition + i) != swappedInts.get(bPosition + i)) {
+                return i;
+            }
+        }
+        return srcInts.remaining() == swappedInts.remaining() ? -1 : length;
     }
 
-    /** Control: heap array mismatch, independent of the storage parameter. */
+    /** Heap array mismatch, independent of storage; AArch64 also gains a stub here. */
     @Benchmark
     public int arrayMismatch() {
         return Arrays.mismatch(srcArray, dstArray);
