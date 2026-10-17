@@ -1,8 +1,11 @@
 # Scanner: one bounded qualification decision
 
-Status: source-prepared and independently source-reviewed; **not executed**.
-Neither compilation nor runtime behavior of this packet has been verified in
-the source-planning continuation. Publication of source is not qualification.
+Status: **not qualified**. The one authorized attempt at `cdaddc8592c` stopped
+before its first build because zombie-only cleanup was classified as uncertain;
+it produced no images, correctness results or measurements. Its retained output
+is separate from this local runner repair. See [RUNNER-REPAIR.md](RUNNER-REPAIR.md)
+for the cause, offline fixtures and the limits of this repair. No replacement
+campaign, build, benchmark, CI run or publication is authorized by this change.
 
 ## Frozen inputs and existing evidence
 
@@ -43,7 +46,7 @@ available Linux x64 host, using the repository's GCC16 release/server profile
 and Serial/G1/ZGC. It ends with one worthwhile/not-worthwhile/incomplete report.
 It needs the already installed GCC16, mold, JDK27 boot JDK, jtreg8.3, native
 dependency sysroot, GNU build utilities, installed Python3, Bash5.1 or newer,
-readable Linux procfs and a quiet resource window. It needs
+readable Linux procfs, Python pidfd support, kernel pidfds/subreaping and a quiet resource window. It needs
 neither additional native machines nor JMH nor new infrastructure.
 
 If Stage A is worthwhile, **Stage B** is supported-platform correctness through
@@ -75,7 +78,7 @@ continuation is distinct from missing hardware.
 
 ## Stage A commands
 
-Do not run during the source-planning continuation. At the execution milestone,
+Do not run during the source-planning continuation. At a separately authorized execution milestone,
 use a clean checkout of the approved review head. Set `TOOLCHAINS` to the existing
 installation root containing `activate.sh`, `gcc16`, `mold`, `sysroot`, `jdk27`,
 and `jtreg83`; these are inputs, not installation instructions. Choose paths
@@ -93,7 +96,10 @@ TOOLCHAINS=/path/to/existing/toolchains \
 Use a new output directory; its parent must exist. Source worktrees are detached
 at the two pinned revisions. Both normal `images/jdk` release images are built
 with matching flags and four jobs, including `--with-jvm-features=-shenandoahgc`.
-No exploded image is substituted. Each image's release file, configure log,
+No exploded image is substituted. One map of the current output's base/candidate
+image paths feeds hashing, CDS, jtreg, HOST, smoke and measurement commands.
+Required `release`, `lib/modules`, `lib/server/libjvm.so` and executable `bin/java`
+are checked before dependent commands. Each image's release file, configure log,
 module/VM hashes, CDS mapping logs and source identity are retained. Default CDS
 must map for each collector at the measured heap settings. The existing logs
 need no repeated class-count census, CDS-off performance campaign or inlining
@@ -249,54 +255,73 @@ jtreg workers, one benchmark child plus a 256MiB controller and the RSS observer
 The operational RSS stop threshold is12GiB (12582912KiB); new disk budget is
 25GiB. The checked-in `watch-memory.py` starts before builds or JVM work. It
 uses installed Python3/procfs without subprocesses or installations. Its first
-successful sample must create `memory-ready` within5s before any stage starts.
+successful sample must publish a birth/UID-bound healthy heartbeat within5s
+before any stage starts. It rejects a sample>=12GiB before publishing readiness.
 Every nominal1s it records summed resident pages for the controller descendants,
-the active isolated stage group (including reparented members) and the outer
-timeout. `memory-members.csv` identifies every counted PID/PPID/PGID and RSS;
-`memory.csv` records timestamp, sum, observed peak, count and active PGID. Both
-CSV streams flush each sample. Shared resident pages can be counted in more
-than one process. This is sampled summed RSS, not unique physical memory,
+their retained birth ledger and the outer timeout. `memory-members.csv` retains
+PID, birth, UID, PPID, PGID, SID, kernel state, classification and RSS, including
+observed zero-RSS zombies. `memory.csv` records timestamp, sum, observed peak,
+count and active stage. Both streams flush each sample; readiness/heartbeat is
+published only after successful flushes. Shared resident pages can be counted
+more than once. This is sampled summed RSS, not unique physical memory,
 not a hard allocation/cgroup cap and not a guarantee of unobserved peak usage.
 
-At any sample>=12GiB, the observer flushes that sample, attempts to append the
-exact reason and active PGID to `resource-stop.txt` within5s, then sends SIGUSR1
-to the controller even if report persistence fails. A sampling deadline signals
-the controller before exception cleanup, which might retry stalled I/O; reason
-persistence is best effort in that fault path and missing output is incomplete.
-The controller exits125 through its existing TERM10s/KILL2s verified active-group
-cleanup and requests observer shutdown with SIGUSR2 and bounded exit/KILL
-verification. Unexpected observer exit (including0) or required KILL prevents a
-successful result. Monitoring stays active through stage cleanup when the
-observer is healthy; shutdown is requested only after the active group stops.
-No further stage starts; classify the campaign INCOMPLETE/resource stop, never a product
-regression or a pass. RSS can overshoot between samples and during cleanup;
-do not increase the threshold or resume in a new directory to bypass it.
+At any sample>=12GiB, the observer retains that sample, attempts to append the
+reason to `resource-stop.txt` within5s, then signals the controller through a
+previously validated pidfd, even if report persistence fails. A sampling deadline
+signals before exception cleanup, which might retry stalled I/O. Missing fault
+output is incomplete. Procfs/read/write failures, sample/intersample gaps>5s,
+stale observation and unexpected observer termination also prevent a pass.
+The observer stays active through stage cleanup. A stale/malformed heartbeat
+makes the result incomplete while an independently verified live observer is
+still stopped. Planned observer shutdown uses SIGUSR2, bounded wait and guarded
+SIGKILL if necessary; required SIGKILL or abnormal exit is incomplete.
 
-Procfs/read/write failures, a sample or intersample gap taking>5s, or stale
-observation at cleanup also signal a resource fault. An observer that needs
-SIGKILL or exits abnormally leaves the campaign incomplete even when its
-eventual termination is verified.
 Every long-lived build/test/JVM command, including javac, CDS and HOST checks,
-uses the tracked stage wrapper. Its interruptible `wait -n -p` observes both
-stage and observer: observer exit, even exit0, aborts dependent work. Lost
-observation cannot silently produce a pass. If termination cannot be verified,
-report the exact PID/PGID and uncertain status and stop. The observer adds
-common sampling work to both images; preserve its log and disclose that setup.
+uses a registered isolated stage supervisor. It becomes a Linux **per-process**
+subreaper before launching work, retaining orphan/escaped descendants in its
+custody. No OS-wide configuration changes. PID/birth/UID establish identity;
+PPID lineage establishes ownership and the ledger preserves it through adoption
+and session/group changes. All explicit cleanup signals use validated pidfds;
+there is no numeric-PID/group kill fallback. R/S/D/T/t/I/W/P are live even at
+zero RSS. Only observed Z with zero RSS is terminal; contradictory/unknown state,
+read failure or PID reuse is uncertain, and cannot permit another stage.
+
+The supervisor peeks actual kernel children without reaping (`waitid` WNOWAIT),
+records their Z0 identity, then reaps them. It publishes a clean custody record
+only after there are no live owned descendants **and** the kernel reports no
+children. Unexpected live survivors after command exit are stopped and make the
+stage incomplete. Each stage retains `identity.json`, `payload.json`,
+`processes.jsonl` and, only on verified drain, `complete.json`. Supervisor death
+without that record remains uncertain even if its known ledger is empty. Guarded
+cleanup of other known births continues when one target is uncertain; an
+incomplete ledger can never prove absence of an unrecorded escaped descendant.
+
+Bash interruptibly waits both stage and observer, and interruptibly waits its
+short control helpers. I/O alarms bound helper/supervisor observation as well
+as polling deadlines. On abort the stage gets TERM10s/KILL2s cleanup, followed
+by observer shutdown; the outer six-hour timeout has a final15s kill margin.
+A hard timeout, uninterruptible kernel I/O or unverified termination is incomplete,
+never successful cleanup. Bash waits its own verified-terminal supervisor and
+observer children; a separate helper cannot reap them. The supervisor reaps
+only its own/adopted children. No further stage starts after a fault.
+
 The observer pins itself to the lowest other allowed CPU when one exists,
 otherwise shares the single allowed CPU. `memory-placement.txt` records both
-CPU choices and co-location; an affinity failure aborts before stages start.
+choices. Affinity failure stops before payloads. The controller/supervisor and
+observer add common work to both images; preserve and disclose those logs.
 
-The script enforces six hours overall,
-10min/configure, 90min/build command, 45min/correctness, 10min/workload smoke and
-90min/all performance; disk is checked between builds and at completion.
-The script tracks each isolated stage process group and uses an interruptible
-wait plus termination/kill cleanup, so a global timeout also stops an active
-inner stage; allow the outer15s kill margin, which includes bounded observer
-cleanup. No cgroup/OS reconfiguration is needed. Preserve all CSVs, transcripts,
-resource reasons and incomplete output on every exit.
-Each measurement child has a 120s deadline plus bounded termination/reader
-cleanup (at most 20s); failed cleanup aborts rather than launching another child.
-Timeouts preserve partial artifacts and mean incomplete, never pass.
+The script enforces six hours overall, 10min/configure, 90min/build command,
+45min/correctness, 10min/workload smoke and90min/all performance. Disk is checked
+between builds and at completion. Preserve all CSVs, transcripts, resource
+reasons and incomplete output on every exit. Each measurement child has a120s
+deadline plus bounded Java reader/child cleanup. Before launching a measurement
+child and after its lifetime, Java asks the stage supervisor to verify that only
+the waiting campaign's ancestor chain remains live. These checks are outside
+the measured child lifetime and catch a survivor even after its direct parent
+has exited. A failed/stale checkpoint stops the campaign before another child.
+Other-platform/manual invocations lack this Linux custody mechanism and require
+their own runner qualification. Timeouts mean incomplete, never pass.
 
 Stop dependent work immediately on a correctness, preflight, CDS, protocol or
 resource fault. After the fixed performance campaign, apply all gates once.

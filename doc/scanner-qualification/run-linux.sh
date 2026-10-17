@@ -22,56 +22,48 @@ source "$TOOLCHAINS/activate.sh"
 export BOOT_JDK="$TOOLCHAINS/jdk27" JTREG="$TOOLCHAINS/jtreg83"
 export JAVA_HOME="$BOOT_JDK" JTREG_JAVA="$BOOT_JDK/bin/java" JTREG_HOME="$JTREG"
 export OUT BOOT_JDK JTREG
-ACTIVE_PGID=
+CONTROL="$REPO/doc/scanner-qualification/stage-control.py"
+ACTIVE_PID=
+ACTIVE_STAGE=
 MONITOR_PID=
-stop_group() {
-    if [[ -n $ACTIVE_PGID ]]; then
-        kill -TERM -- "-$ACTIVE_PGID" 2>/dev/null || true
-        for attempt in {1..10}; do
-            if ! kill -0 -- "-$ACTIVE_PGID" 2>/dev/null; then break; fi
-            sleep 1
-        done
-        kill -KILL -- "-$ACTIVE_PGID" 2>/dev/null || true
-        for attempt in {1..20}; do
-            if ! kill -0 -- "-$ACTIVE_PGID" 2>/dev/null; then return 0; fi
-            sleep 0.1
-        done
-        echo "termination uncertain for process group $ACTIVE_PGID; aborting" >&2
-        return 1
+STAGE_NUMBER=0
+CONTROL_PIDS=()
+control() {
+    # Bash's wait is interruptible by TERM/USR1; foreground Python I/O is not.
+    python3 "$CONTROL" "$@" &
+    local helper=$!
+    CONTROL_PIDS+=("$helper")
+    wait "$helper"
+}
+stop_stage() {
+    if [[ -n $ACTIVE_PID ]]; then
+        local status=0
+        control stop-stage "$ACTIVE_STAGE" "$ACTIVE_PID" || status=125
+        if control terminal-stage "$ACTIVE_STAGE" "$ACTIVE_PID"; then
+            # wait-n may have returned the observer instead of this owned child.
+            wait "$ACTIVE_PID" 2>/dev/null || true
+        else
+            status=125
+        fi
+        return "$status"
     fi
-    return 0
 }
 cleanup() {
-    local status=$? monitor_was_dead=0 monitor_forced=0
-    trap - EXIT TERM INT
-    trap '' USR1
-    if ! stop_group; then status=125; fi
+    local status=$?
+    trap - EXIT
+    trap '' TERM INT USR1
+    if ! stop_stage; then status=125; fi
     if [[ -n $MONITOR_PID ]]; then
-        if ! kill -0 "$MONITOR_PID" 2>/dev/null || ! kill -USR2 "$MONITOR_PID" 2>/dev/null; then
-            monitor_was_dead=1
-            status=125
-        fi
-    fi
-    if (( monitor_was_dead )); then echo 'RSS observer was already gone before planned cleanup; observation is incomplete' >&2; fi
-    if [[ -n $MONITOR_PID ]]; then
-        for attempt in {1..20}; do
-            if ! kill -0 "$MONITOR_PID" 2>/dev/null; then break; fi
-            sleep 0.1
-        done
-        if kill -0 "$MONITOR_PID" 2>/dev/null; then
-            monitor_forced=1
-            status=125
-            kill -KILL "$MONITOR_PID" 2>/dev/null || true
-            sleep 0.1
-        fi
-        if kill -0 "$MONITOR_PID" 2>/dev/null; then
-            echo "termination uncertain for RSS observer pid $MONITOR_PID; aborting" >&2
-            status=125
-        else
+        if ! control stop-observer "$OUT" "$MONITOR_PID"; then status=125; fi
+        # Only Bash can reap this direct child. Never wait on an unverified live
+        # observer: the outer timeout remains the final bound on uncertainty.
+        if control terminal-observer "$OUT" "$MONITOR_PID"; then
             if wait "$MONITOR_PID" 2>/dev/null; then :; else status=125; fi
+        else
+            status=125
         fi
-        if (( monitor_forced )); then echo 'RSS observer required SIGKILL; observation is incomplete' >&2; fi
     fi
+    for helper in "${CONTROL_PIDS[@]}"; do wait "$helper" 2>/dev/null || true; done
     exit "$status"
 }
 trap cleanup EXIT
@@ -81,25 +73,28 @@ trap 'exit 125' USR1
 bounded() {
     local duration=$1 result finished
     shift
-    if ! kill -0 "$MONITOR_PID" 2>/dev/null; then
-        echo 'RSS observer is not running; aborting' >&2
-        return 125
-    fi
-    setsid timeout --signal=TERM --kill-after=15s "$duration" "$@" &
-    ACTIVE_PGID=$!
-    printf '%s\n' "$ACTIVE_PGID" > "$OUT/active-pgid.tmp"
-    mv "$OUT/active-pgid.tmp" "$OUT/active-pgid"
-    if wait -n -p finished "$ACTIVE_PGID" "$MONITOR_PID"; then result=0; else result=$?; fi
-    if [[ ${finished:-} != "$ACTIVE_PGID" ]] || ! kill -0 "$MONITOR_PID" 2>/dev/null; then
-        # Stop work before any diagnostic I/O, which may itself be failing.
-        stop_group || return 125
+    control health "$OUT" "$MONITOR_PID" || return 125
+    STAGE_NUMBER=$((STAGE_NUMBER + 1))
+    ACTIVE_STAGE="$OUT/stages/$STAGE_NUMBER"
+    mkdir "$ACTIVE_STAGE"
+    setsid python3 "$CONTROL" stage "$ACTIVE_STAGE" "$OUT/owner.json" "$duration" "$@" &
+    ACTIVE_PID=$!
+    printf '%s\n' "$ACTIVE_STAGE" > "$OUT/active-stage.tmp"
+    mv "$OUT/active-stage.tmp" "$OUT/active-stage"
+    control ready-stage "$ACTIVE_STAGE" "$ACTIVE_PID" || return 125
+    control health "$OUT" "$MONITOR_PID" || return 125
+    touch "$ACTIVE_STAGE/go"
+    if wait -n -p finished "$ACTIVE_PID" "$MONITOR_PID"; then result=0; else result=$?; fi
+    if [[ ${finished:-} != "$ACTIVE_PID" ]] || ! control health "$OUT" "$MONITOR_PID"; then
+        stop_stage || return 125
         echo 'RSS observation ended unexpectedly; aborting' >&2
         return 125
     fi
-    stop_group || return 125
-    ACTIVE_PGID=
-    printf '0\n' > "$OUT/active-pgid.tmp"
-    mv "$OUT/active-pgid.tmp" "$OUT/active-pgid"
+    stop_stage || return 125
+    ACTIVE_PID=
+    ACTIVE_STAGE=
+    printf '\n' > "$OUT/active-stage.tmp"
+    mv "$OUT/active-stage.tmp" "$OUT/active-stage"
     return "$result"
 }
 [[ $(uname -m) == x86_64 && $(uname -s) == Linux ]]
@@ -110,15 +105,16 @@ git -C "$REPO" diff --exit-code "$CANDIDATE" -- doc/scanner-qualification
 PERF_CPU=${PERF_CPU:-$(awk '/Cpus_allowed_list:/ {split($2, cpu, /[-,]/); print cpu[1]}' /proc/self/status)}
 [[ $PERF_CPU =~ ^[0-9]+$ ]]
 export PERF_CPU
-printf '0\n' > "$OUT/active-pgid"
-python3 "$REPO/doc/scanner-qualification/watch-memory.py" "$$" "$OUT" > "$OUT/memory-monitor.stdout" 2> "$OUT/memory-monitor.stderr" &
+mkdir "$OUT/stages"
+printf '\n' > "$OUT/active-stage"
+control owner "$$" "$OUT/owner.json"
+python3 "$REPO/doc/scanner-qualification/watch-memory.py" "$OUT/owner.json" "$OUT" > "$OUT/memory-monitor.stdout" 2> "$OUT/memory-monitor.stderr" &
 MONITOR_PID=$!
-for attempt in {1..50}; do
-    if [[ -e $OUT/memory-ready ]]; then break; fi
-    kill -0 "$MONITOR_PID" 2>/dev/null || { echo 'RSS observer failed to start' >&2; exit 125; }
-    sleep 0.1
-done
-[[ -e $OUT/memory-ready ]] || { echo 'RSS observer readiness deadline' >&2; exit 125; }
+control ready-observer "$OUT" "$MONITOR_PID"
+control images "$OUT" > "$OUT/image-paths.txt"
+mapfile -t JDK_IMAGES < "$OUT/image-paths.txt"
+[[ ${#JDK_IMAGES[@]} == 2 ]]
+export BASE_JDK="${JDK_IMAGES[0]}" CANDIDATE_JDK="${JDK_IMAGES[1]}"
 printf 'baseline=%s\ncandidate=%s\n' "$BASE" "$CANDIDATE" > "$OUT/identity.txt"
 uname -a >> "$OUT/identity.txt"
 cat /etc/os-release >> "$OUT/identity.txt"
@@ -140,7 +136,8 @@ for checkout in base candidate; do
             --with-alsa-include="$TOOLCHAINS/sysroot/usr/include" --with-alsa-lib="$TOOLCHAINS/sysroot/usr/lib/x86_64-linux-gnu"
         bounded 90m make CONF=scanner JOBS=4 jdk images
         popd > /dev/null
-    image="$OUT/$checkout/build/scanner/images/jdk"
+    if [[ $checkout == base ]]; then image=$BASE_JDK; else image=$CANDIDATE_JDK; fi
+    control check-image "$image"
     cp "$image/release" "$OUT/$checkout-release.txt"
     cp "$OUT/$checkout/build/scanner/configure.log" "$OUT/$checkout-configure.log"
     sha256sum "$image/lib/modules" "$image/lib/server/libjvm.so" >> "$OUT/identity.txt"
@@ -150,13 +147,12 @@ for checkout in base candidate; do
     done
     [[ $(du -sm "$OUT" | cut -f1) -le 25600 ]]
 done
-export BASE_JDK="$OUT/base/build/scanner/images/jdk" CANDIDATE_JDK="$OUT/candidate/build/scanner/images/jdk"
 export Q="$OUT/candidate/doc/scanner-qualification"
 mkdir "$OUT/classes" "$OUT/modules"
 bounded 5m "$BOOT_JDK/bin/javac" -d "$OUT/modules" --module-source-path "$OUT/candidate/test/jdk/java/util/Scanner/locale" -m provider
 bounded 5m "$BOOT_JDK/bin/javac" --module-path "$OUT/modules" --add-modules provider \
     --add-exports java.base/sun.util.locale.provider=ALL-UNNAMED -d "$OUT/classes" "$Q"/*.java
-sha256sum "$Q"/*.java "$Q/run-linux.sh" "$Q/watch-memory.py" > "$OUT/harness-sha256.txt"
+sha256sum "$Q"/*.java "$Q"/*.sh "$Q"/*.py > "$OUT/harness-sha256.txt"
 bounded 45m bash -c '
     set -euo pipefail
     cd "$OUT/candidate/test/jdk/java/util/Scanner"
@@ -172,7 +168,8 @@ bounded 45m bash -c '
 '
 # Untimed current-settings HOST route/output parity, not mutable-setting timing.
 for checkout in base candidate; do
-    bounded 1m "$OUT/$checkout/build/scanner/images/jdk/bin/java" \
+    if [[ $checkout == base ]]; then image=$BASE_JDK; else image=$CANDIDATE_JDK; fi
+    bounded 1m "$image/bin/java" \
         --add-exports java.base/sun.util.locale.provider=ALL-UNNAMED -Djava.locale.providers=HOST,CLDR \
         -cp "$OUT/classes" ScannerHost > "$OUT/$checkout-host.txt"
 done

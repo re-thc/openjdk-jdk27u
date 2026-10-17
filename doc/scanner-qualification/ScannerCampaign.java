@@ -5,6 +5,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -46,6 +47,7 @@ public class ScannerCampaign {
                 for (int pair = -warmups; pair < pairs; pair++) {
                     Run[] runs = new Run[2];
                     for (int order = 0; order < 2; order++) {
+                        stageCheckpoint(); // Outside every measured child lifetime.
                         int image = Math.floorMod(pair + order, 2);
                         List<String> command = new ArrayList<>();
                         boolean windows = System.getProperty("os.name").startsWith("Windows");
@@ -144,6 +146,10 @@ public class ScannerCampaign {
                             reader.join(5_000);
                             if (child.isAlive() || closer.isAlive() || reader.isAlive())
                                 throw new IllegalStateException("bounded child cleanup failed; stop campaign");
+                            // A reparented descendant can outlive an exited direct
+                            // child. The Linux subreaper must verify custody before
+                            // this controller is allowed to launch another child.
+                            stageCheckpoint();
                         }
                     }
                     if (pair < 0) continue;
@@ -186,6 +192,29 @@ public class ScannerCampaign {
             }
             if (raw.checkError() || summary.checkError()) throw new IllegalStateException("result write failed");
         }
+    }
+
+    static void stageCheckpoint() throws Exception {
+        String control = System.getenv("SCANNER_STAGE_CONTROL");
+        if (control == null) return; // Other platforms need their own runner custody.
+        Path directory = Path.of(control);
+        String stat = Files.readString(Path.of("/proc/self/stat"));
+        String birth = stat.substring(stat.lastIndexOf(')') + 1).trim().split("\\s+")[19];
+        String nonce = ProcessHandle.current().pid() + "-" + System.nanoTime();
+        Path temporary = directory.resolve("checkpoint.request.tmp");
+        Files.writeString(temporary, nonce + " " + ProcessHandle.current().pid() + " " + birth + " "
+                + Files.getAttribute(Path.of("/proc/self"), "unix:uid") + "\n");
+        Files.move(temporary, directory.resolve("checkpoint.request"), StandardCopyOption.ATOMIC_MOVE);
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        while (System.nanoTime() < deadline) {
+            Path reply = directory.resolve("checkpoint.reply");
+            if (Files.exists(reply)) {
+                String response = Files.readString(reply);
+                if (response.contains("\"nonce\": \"" + nonce + "\"") && response.contains("\"ok\": true")) return;
+            }
+            Thread.sleep(10);
+        }
+        throw new IllegalStateException("stage custody checkpoint deadline; stop campaign");
     }
 
     static boolean protectedMetric(String stage, String mode, String window, int metric) {
