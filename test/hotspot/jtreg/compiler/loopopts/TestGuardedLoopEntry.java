@@ -62,7 +62,7 @@ public class TestGuardedLoopEntry {
     @Test
     @IR(counts = {IRNode.CAST_II, ">=1"}, phase = CompilePhase.AFTER_CLOOPS)
     @IR(counts = {IRNode.COUNTED_LOOP, "1", IRNode.SAFEPOINT, "0"},
-        phase = CompilePhase.AFTER_LOOP_OPTS)
+        phase = CompilePhase.BEFORE_MATCHING)
     static int guardedRotate(int[] rep, int idx) {
         if (idx < 0 || idx > 2) {
             throw new IllegalArgumentException();
@@ -79,7 +79,7 @@ public class TestGuardedLoopEntry {
     @Test
     @IR(counts = {IRNode.CAST_II, ">=1"}, phase = CompilePhase.AFTER_CLOOPS)
     @IR(counts = {IRNode.COUNTED_LOOP, "1", IRNode.SAFEPOINT, "0"},
-        phase = CompilePhase.AFTER_LOOP_OPTS)
+        phase = CompilePhase.BEFORE_MATCHING)
     static int acceptedPolarity(int[] rep, int idx) {
         if (idx >= 0 && idx <= 2) {
             int offset = rep[idx];
@@ -191,7 +191,7 @@ public class TestGuardedLoopEntry {
     @Test
     @IR(counts = {IRNode.CAST_II, ">=1"}, phase = CompilePhase.AFTER_CLOOPS)
     @IR(counts = {IRNode.COUNTED_LOOP, "1", IRNode.SAFEPOINT, "0"},
-        phase = CompilePhase.AFTER_LOOP_OPTS)
+        phase = CompilePhase.BEFORE_MATCHING)
     static long guardedArithmetic(int start) {
         if (start < 0 || start > 2) {
             throw new IllegalArgumentException();
@@ -206,7 +206,7 @@ public class TestGuardedLoopEntry {
     @Test
     @IR(counts = {IRNode.CAST_II, ">=1"}, phase = CompilePhase.AFTER_CLOOPS)
     @IR(counts = {IRNode.COUNTED_LOOP, "1", IRNode.SAFEPOINT, "0"},
-        phase = CompilePhase.AFTER_LOOP_OPTS)
+        phase = CompilePhase.BEFORE_MATCHING)
     static long unsignedArithmetic(int start) {
         if (Integer.compareUnsigned(start, 2) > 0) {
             throw new IllegalArgumentException();
@@ -342,7 +342,7 @@ public class TestGuardedLoopEntry {
     // No array check or secondary induction variable obscures this fallback.
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "1", IRNode.SAFEPOINT, "1"},
-        phase = CompilePhase.AFTER_LOOP_OPTS)
+        phase = CompilePhase.BEFORE_MATCHING)
     static long unsignedNegativeDescending(int start) {
         if (Integer.compareUnsigned(start, Integer.MIN_VALUE + 5) > 0) {
             throw new IllegalArgumentException();
@@ -357,7 +357,7 @@ public class TestGuardedLoopEntry {
     // The loop is on the rejected projection of the small-interval test.
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "1", IRNode.SAFEPOINT, "1"},
-        phase = CompilePhase.AFTER_LOOP_OPTS)
+        phase = CompilePhase.BEFORE_MATCHING)
     static long rejectedProjectionDescending(int start) {
         if (start >= 0 && start <= 2) {
             return -1;
@@ -393,13 +393,123 @@ public class TestGuardedLoopEntry {
         }
     }
 
+    @Test
+    static long positiveStride(int start) {
+        if (start < 0 || start > 7) {
+            throw new IllegalArgumentException();
+        }
+        long hash = 0;
+        for (int k = start; k < 12; k += 2) {
+            hash = 31 * hash + k;
+        }
+        return hash;
+    }
+
+    @Test
+    static long guardedDoWhile(int start, boolean negativeEntry) {
+        if (negativeEntry) {
+            // A negative entry still executes the do-while body once. Keep
+            // this fallback separate from the nonnegative guarded entry.
+            if (start < -2 || start > 0) {
+                throw new IllegalArgumentException();
+            }
+            long hash = 1;
+            int k = start;
+            do {
+                hash = 31 * hash + k;
+                k--;
+            } while (k > 0);
+            return hash;
+        }
+        if (start < 0 || start > 7) {
+            throw new IllegalArgumentException();
+        }
+        long hash = 1;
+        int k = start;
+        do {
+            hash = 31 * hash + k;
+            k--;
+        } while (k > 0);
+        return hash;
+    }
+
+    @Test
+    static long nestedBounds(int outer, int inner) {
+        if (outer < 0 || outer > 7) {
+            throw new IllegalArgumentException();
+        }
+        long hash = 0;
+        for (int i = outer; i > 0; i--) {
+            // This guard must not throw when the outer loop has zero trips.
+            if (inner < 0 || inner > 5) {
+                throw new IllegalArgumentException();
+            }
+            for (int j = inner; j > 0; j--) {
+                hash = 31 * hash + (17 * i + j);
+            }
+        }
+        return hash;
+    }
+
+    @Test
+    static long largerBound(int start) {
+        if (start < 0 || start > 4095) {
+            throw new IllegalArgumentException();
+        }
+        long hash = 0;
+        for (int k = start; k > 0; k--) {
+            hash = 31 * hash + k;
+        }
+        return hash;
+    }
+
+    @Run(test = {"positiveStride", "guardedDoWhile", "nestedBounds", "largerBound"})
+    static void runAdditionalShapes(RunInfo info) {
+        // Warm a few bounded entries, not the large range's upper endpoint.
+        checkAdditionalShape(0, 0, 0);
+        checkAdditionalShape(0, 3, 0);
+        checkAdditionalShape(0, 7, 0);
+        checkAdditionalShape(1, 0, 0);
+        checkAdditionalShape(1, 1, 0);
+        checkAdditionalShape(1, 7, 0);
+        checkAdditionalShape(1, -2, 1);
+        checkAdditionalShape(1, -1, 1);
+        checkAdditionalShape(1, 0, 1);
+        checkAdditionalShape(2, 0, 6);
+        checkAdditionalShape(2, 2, 3);
+        checkAdditionalShape(2, 1, 0);
+        checkAdditionalShape(3, 0, 0);
+        checkAdditionalShape(3, 2, 0);
+        checkAdditionalShape(3, 127, 0);
+        if (info.isWarmUp()) {
+            return;
+        }
+        for (int start : new int[] {Integer.MIN_VALUE, -1, 0, 1, 2, 3, 7, 8, Integer.MAX_VALUE}) {
+            checkAdditionalShape(0, start, 0);
+        }
+        for (int start : new int[] {Integer.MIN_VALUE, -3, -2, -1, 0, 1, 2, 7, 8, Integer.MAX_VALUE}) {
+            checkAdditionalShape(1, start, 0);
+            checkAdditionalShape(1, start, 1);
+        }
+        int[] outers = {Integer.MIN_VALUE, -1, 0, 1, 2, 7, 8, Integer.MAX_VALUE};
+        int[] inners = {Integer.MIN_VALUE, -1, 0, 1, 2, 5, 6, Integer.MAX_VALUE};
+        for (int outer : outers) {
+            for (int inner : inners) {
+                checkAdditionalShape(2, outer, inner);
+            }
+        }
+        for (int start : new int[] {Integer.MIN_VALUE, -1, 0, 1, 2, 127, 4095, 4096, Integer.MAX_VALUE}) {
+            checkAdditionalShape(3, start, 0);
+        }
+    }
+
     // Repeat-offset resolution, including the no-op idx=0 case. Only the
     // corruption exception class is replaced; integer wrap and array-access
     // ordering are retained. Do not prevalidate or pad the three-word state.
     @Test
     @IR(counts = {IRNode.CAST_II, ">=1"}, phase = CompilePhase.AFTER_CLOOPS)
     @IR(counts = {IRNode.COUNTED_LOOP, "1", IRNode.SAFEPOINT, "0"},
-        phase = CompilePhase.AFTER_LOOP_OPTS)
+        phase = CompilePhase.BEFORE_MATCHING)
     static int repeatStandalone(int[] rep, int offsetValue, int literalLength) {
         if (offsetValue > 3) {
             int offset = offsetValue - 3;
@@ -479,7 +589,7 @@ public class TestGuardedLoopEntry {
     @IR(counts = {IRNode.CAST_II, ">=1"}, phase = CompilePhase.AFTER_CLOOPS)
     @IR(counts = {IRNode.COUNTED_LOOP, "1", IRNode.SAFEPOINT, "0",
                   IRNode.STATIC_CALL_OF_METHOD, "repeatInline", "0"},
-        phase = CompilePhase.AFTER_LOOP_OPTS)
+        phase = CompilePhase.BEFORE_MATCHING)
     static int repeatHotInline(int[] rep, int offsetValue, int literalLength) {
         return repeatInline(rep, offsetValue, literalLength);
     }
@@ -680,6 +790,82 @@ public class TestGuardedLoopEntry {
             hash = 31 * hash + k;
         }
         return new Outcome(hash, null);
+    }
+
+    private static void checkAdditionalShape(int kind, int start, int other) {
+        Outcome actual;
+        try {
+            long value = switch (kind) {
+                case 0 -> positiveStride(start);
+                case 1 -> guardedDoWhile(start, other != 0);
+                case 2 -> nestedBounds(start, other);
+                case 3 -> largerBound(start);
+                default -> throw new AssertionError(kind);
+            };
+            actual = new Outcome(value, null);
+        } catch (RuntimeException e) {
+            actual = exceptionOutcome(e);
+        }
+        Outcome expected = additionalShapeReference(kind, start, other);
+        verify("additional shape " + kind + ": " + start + ", " + other,
+               actual, expected, null, null);
+    }
+
+    // Interpret a fixed trip count and reconstruct each value in long rather
+    // than repeating the target's int-IV updates or do-while structure.
+    @DontCompile
+    private static Outcome additionalShapeReference(int kind, int start, int other) {
+        try {
+            long hash = 0;
+            switch (kind) {
+                case 0:
+                    if (start < 0 || start > 7) {
+                        throw new IllegalArgumentException();
+                    }
+                    long trips = (13L - start) / 2;
+                    for (long n = 0; n < trips; n++) {
+                        hash = 31 * hash + (start + 2 * n);
+                    }
+                    break;
+                case 1:
+                    if (other != 0 ? start < -2 || start > 0 : start < 0 || start > 7) {
+                        throw new IllegalArgumentException();
+                    }
+                    hash = 1;
+                    long doTrips = start > 0 ? start : 1;
+                    for (long n = 0; n < doTrips; n++) {
+                        hash = 31 * hash + (start - n);
+                    }
+                    break;
+                case 2:
+                    if (start < 0 || start > 7) {
+                        throw new IllegalArgumentException();
+                    }
+                    // The inner check is reached only after an outer trip.
+                    if (start > 0 && (other < 0 || other > 5)) {
+                        throw new IllegalArgumentException();
+                    }
+                    for (long n = 0; n < start; n++) {
+                        for (long m = 0; m < other; m++) {
+                            hash = 31 * hash + (17 * (start - n) + other - m);
+                        }
+                    }
+                    break;
+                case 3:
+                    if (start < 0 || start > 4095) {
+                        throw new IllegalArgumentException();
+                    }
+                    for (long n = 0; n < start; n++) {
+                        hash = 31 * hash + (start - n);
+                    }
+                    break;
+                default:
+                    throw new AssertionError(kind);
+            }
+            return new Outcome(hash, null);
+        } catch (RuntimeException e) {
+            return exceptionOutcome(e);
+        }
     }
 
     private static void checkRotate(int kind, int[] initial, int idx, int other, boolean edge) {
