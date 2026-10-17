@@ -4636,6 +4636,32 @@ instruct vmask_lasttrue_sve(iRegINoSp dst, pReg src, pReg ptmp) %{
 
 // tolong
 
+// Pack a raw 0/-1 byte mask directly. Keep the 8-lane normalization path,
+// where materializing the lane weights would cost more than scalar packing.
+instruct vstoremask_tolongB16_neon(iRegLNoSp dst, vReg src, immI_1 size, vReg tmp) %{
+  predicate(UseSVE == 0 &&
+            Matcher::vector_length_in_bytes(n->in(1)->in(1)) == 16 &&
+            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
+  match(Set dst (VectorMaskToLong (VectorStoreMask src size)));
+  effect(TEMP tmp);
+  format %{ "vstoremask_tolongB16_neon $dst, $src\t# KILL $tmp" %}
+  ins_encode %{
+    assert(Matcher::vector_length_in_bytes(this, $src) == 16, "must be 16 bytes");
+    // Lane i selects bit (i & 7). Use the result register for the four
+    // immediate moves, rather than requiring another general register.
+    __ mov($dst$$Register, 0x8040201008040201ULL);
+    __ dup($tmp$$FloatRegister, __ T2D, $dst$$Register);
+    __ andr($tmp$$FloatRegister, __ T16B, $src$$FloatRegister, $tmp$$FloatRegister);
+    // The selected bits are disjoint, so pairwise sums cannot carry.
+    // After three reductions, byte 0 holds lanes 0..7 and byte 1 lanes 8..15.
+    __ addpv($tmp$$FloatRegister, __ T16B, $tmp$$FloatRegister, $tmp$$FloatRegister);
+    __ addpv($tmp$$FloatRegister, __ T16B, $tmp$$FloatRegister, $tmp$$FloatRegister);
+    __ addpv($tmp$$FloatRegister, __ T16B, $tmp$$FloatRegister, $tmp$$FloatRegister);
+    __ umov($dst$$Register, $tmp$$FloatRegister, __ H, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct vmask_tolong_neon(iRegLNoSp dst, vReg src) %{
   predicate(UseSVE == 0);
   match(Set dst (VectorMaskToLong src));
