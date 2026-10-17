@@ -151,10 +151,11 @@ public class TestLongBitfieldExtract {
     public static void run(RunInfo info) {
         check(RANDOM.nextLong(), RANDOM.nextInt());
         if (!info.isWarmUp()) {
-            Asserts.assertTrue(info.isTestC2Compiled("extract32"), "extract32 must be C2 compiled");
-            Asserts.assertTrue(info.isTestC2Compiled("extract40"), "extract40 must be C2 compiled");
-            Asserts.assertTrue(info.isTestC2Compiled("extractNegative"), "extractNegative must be C2 compiled");
-            Asserts.assertTrue(info.isTestC2Compiled("extractWide"), "extractWide must be C2 compiled");
+            // Honor supported framework modes such as ExcludeRandom.
+            TestFramework.assertCompiledByC2(info.getTest("extract32"));
+            TestFramework.assertCompiledByC2(info.getTest("extract40"));
+            TestFramework.assertCompiledByC2(info.getTest("extractNegative"));
+            TestFramework.assertCompiledByC2(info.getTest("extractWide"));
             for (long x : new long[] {0, -1, Long.MIN_VALUE, Long.MAX_VALUE}) {
                 check(x, 0);
             }
