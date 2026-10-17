@@ -68,6 +68,7 @@ inline bool match_F_SN(u2 flags) {
 bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
+  case vmIntrinsics::_stringzillaCompilerTier:
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
 #endif
@@ -122,6 +123,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
 bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
+  case vmIntrinsics::_stringzillaCompilerTier:
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
 #endif
@@ -229,6 +231,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     case vmIntrinsics::_compareToLU:
     case vmIntrinsics::_compareToUL:
     case vmIntrinsics::_equalsL:
+    case vmIntrinsics::_equalsLChecked:
     case vmIntrinsics::_equalsC:
     case vmIntrinsics::_vectorizedHashCode:
     case vmIntrinsics::_getCharStringU:
@@ -531,6 +534,20 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
     if (!UseCRC32CIntrinsics) return true;
     break;
+  case vmIntrinsics::_stringzillaCompilerTier:
+  case vmIntrinsics::_stringzillaEqualsRange:
+  case vmIntrinsics::_stringzillaFindUTF16Latin1:
+  case vmIntrinsics::_stringzillaRfindUTF16Latin1:
+  case vmIntrinsics::_stringzillaFindCharLatin1:
+  case vmIntrinsics::_stringzillaFindCharUTF16:
+  case vmIntrinsics::_stringzillaRfindCharLatin1:
+  case vmIntrinsics::_stringzillaRfindCharUTF16:
+  case vmIntrinsics::_stringzillaFindLatin1:
+  case vmIntrinsics::_stringzillaFindUTF16:
+  case vmIntrinsics::_stringzillaRfindLatin1:
+  case vmIntrinsics::_stringzillaRfindUTF16:
+    if (!UseStringZillaIntrinsics) return true;
+    break;
   case vmIntrinsics::_vectorizedMismatch:
     if (!UseVectorizedMismatchIntrinsic) return true;
     break;
@@ -569,6 +586,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     if (!SpecialStringIndexOf) return true;
     break;
   case vmIntrinsics::_equalsL:
+  case vmIntrinsics::_equalsLChecked:
     if (!SpecialStringEquals) return true;
     break;
   case vmIntrinsics::_vectorizedHashCode:
@@ -723,7 +741,9 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
     b = vm_intrinsic_control_words[as_int(id)] = !disabled_by_jvm_flags(id);
   }
 
-  return !b;
+  // The checked wrapper is a C2 alias of the existing equality operation.
+  // Disabling _equalsL must also disable that alias.
+  return !b || (id == _equalsLChecked && is_disabled_by_flags(_equalsL));
 }
 
 // These are for forming case labels:

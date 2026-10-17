@@ -90,6 +90,35 @@ JVM_InternString(JNIEnv *env, jstring str);
 JNIEXPORT jboolean JNICALL
 JVM_AOTEndRecording(JNIEnv *env);
 
+JNIEXPORT jboolean JNICALL
+JVM_StringZillaEnabled(JNIEnv* env, jclass ignored);
+
+/* Bounds shared by the VM adapters and the independent libjava kernels. */
+enum {
+    JVM_STRINGZILLA_FALLBACK = -2,
+    JVM_STRINGZILLA_MAX_BYTES = 64 * 1024,
+    JVM_STRINGZILLA_MAX_WORK = 4 * 1024 * 1024
+};
+
+JNIEXPORT jint JNICALL
+JVM_StringZillaCapabilities(void);
+
+JNIEXPORT void JNICALL
+JVM_RegisterStringZillaKernels(const void* kernels);
+
+JNIEXPORT jint JNICALL
+JVM_StringZillaChar(JNIEnv* env, jclass ignored, jbyteArray src, jint offset,
+                   jint length, jint ch, jboolean utf16, jboolean reverse);
+
+JNIEXPORT jint JNICALL
+JVM_StringZillaSearch(JNIEnv* env, jclass ignored, jbyteArray src, jint offset,
+                     jint length, jbyteArray tgt, jint tgt_length, jint encoding,
+                     jboolean reverse);
+
+JNIEXPORT jint JNICALL
+JVM_StringZillaEqualsRange(JNIEnv* env, jclass ignored, jbyteArray src, jint offset,
+                          jint length, jbyteArray tgt, jint tgt_offset);
+
 JNIEXPORT jlong JNICALL
 JVM_CurrentTimeMillis(JNIEnv *env, jclass ignored);
 
