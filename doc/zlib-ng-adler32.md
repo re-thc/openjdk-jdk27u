@@ -54,10 +54,3 @@ hotspot_jtreg:compiler/intrinsics/zip/TestZlibNGAdler32.java"
 Run against release and fastdebug configurations as needed. The Apple call-shape
 case requires native macOS AArch64 with C1 enabled; its parser tests are portable.
 The test declarations include Adler-enabled and disabled checked-JNI cases.
-
-## Bounded comparison proposal
-
-The [public C1 study](../test/micro/org/openjdk/bench/java/util/zip/adler-study/README.md)
-defines a finite four-arm comparison, pinned dependency setup, exact C1 checks,
-prospective numeric gates and a 15-minute comparison cap. Its default command
-creates a plan only; no timing approval is embedded in the source.
