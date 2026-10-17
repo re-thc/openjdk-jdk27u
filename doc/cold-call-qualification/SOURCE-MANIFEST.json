@@ -1,0 +1,56 @@
+{
+  "scope": "Source-only reproduction package. No raw host configuration/logs/captures, binaries or image content. No execution result.",
+  "base": "01903ba375f94c0ab7f9193d3e36bd30fe663d7e",
+  "candidate": "75ee82dff6f86e41aad8cedfe947a90a2b9296df",
+  "codec": "7a6b345d0df3d8571a30f4a9c974dfaa3a10d9b6",
+  "source_provenance": "Existing qualification sources from re-thc/jzstd local source commit 18ad0e5dedeb5aef7bab69d2045de5eb594a683e; bytes are included here, so that commit need not be fetched.",
+  "adaptations": [
+    "Runner base/candidate refs, 14400-second total, build caps 2700/2700/3600, builds-phase 9540",
+    "One two-test handshake invocation within existing 900-second safety budget",
+    "qualify_decoder.py includes only unchanged frozen frame preparation; historical custom-VM capture route excluded",
+    "Portable placeholder host-config example; no host snapshot",
+    "Manual review pointer names the bundled PROTOCOL.md"
+  ],
+  "files": [
+    {
+      "path": "scripts/jdk27/CodecProbe.java",
+      "sha256": "8fa4e5896385a2a6ca367b1b6a5f6cefb53e1ee61bc8fa3df976c9743ed350ca",
+      "bytes": 4267
+    },
+    {
+      "path": "scripts/jdk27/cold-call/DecoderQualification.java",
+      "sha256": "456224f98e86abb79dcb5af13d2b2bdb64eba7f8f7de0cf585129cbd07cf4fb2",
+      "bytes": 3668
+    },
+    {
+      "path": "scripts/jdk27/cold-call/capture_timed_profile.py",
+      "sha256": "330a6a7c7e0423d250c40da6e1b98167e26f1316b34e64a7f319b170bfe56ef7",
+      "bytes": 5856
+    },
+    {
+      "path": "scripts/jdk27/cold-call/decode_capture.py",
+      "sha256": "07de3a657cd3330af8db696702863741dd1c4957bcb355db0427bd3f0922d87c",
+      "bytes": 2531
+    },
+    {
+      "path": "scripts/jdk27/cold-call/qualification-host.example.json",
+      "sha256": "a7229c6316666c9c1bb9c8265b86c3046b91ba57b9a56b8c82b7740b5a2cce4b",
+      "bytes": 543
+    },
+    {
+      "path": "scripts/jdk27/cold-call/qualification_campaign.py",
+      "sha256": "23f1e6c455466d5c18e87d89c09c8080fff2e52bb79b68e76c6237593102e5f9",
+      "bytes": 29415
+    },
+    {
+      "path": "scripts/jdk27/cold-call/qualify_decoder.py",
+      "sha256": "304e725eb9904ece664016de6187cb37e7303b0ae39e14be67b474b1e07a3ee6",
+      "bytes": 3414
+    },
+    {
+      "path": "scripts/jdk27/native-probe.c",
+      "sha256": "287d1d55f77966b0d4fe39f8b281446ae5ec792e5808fed7bbe9c8edc05fbd94",
+      "bytes": 2850
+    }
+  ]
+}
