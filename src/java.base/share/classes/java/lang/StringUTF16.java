@@ -1219,7 +1219,9 @@ final class StringUTF16 {
                 }
             } else {
                 // Probe the rightmost candidate before selecting a search backend.
-                if (tgtCount <= 8 && StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount)) {
+                if ((tgtCount <= 8 || (StringZilla.MSVC_SERIAL && tgtCount <= 128
+                        && StringZilla.compilerTier() == StringZilla.C1))
+                        && StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount)) {
                     return fromIndex;
                 }
                 if (StringZilla.useReverseUTF16(searchLength, tgtCount)) {
@@ -1282,7 +1284,13 @@ final class StringUTF16 {
         if (indexOfChar0(src, getChar(tgt, last), last, from + count) < 0) {
             return -1;
         }
-        return lastIndexOfJavaFiltered(src, tgt, count, from);
+        return StringZilla.MSVC_SERIAL ? lastIndexOfJavaC2(src, tgt, count, from)
+                                      : lastIndexOfJavaFiltered(src, tgt, count, from);
+    }
+
+    @DontInline
+    private static int lastIndexOfJavaC2(byte[] src, byte[] tgt, int count, int from) {
+        return lastIndexOfJava(src, tgt, count, from);
     }
 
     // Filter compiled fallback candidates before comparing their interiors.

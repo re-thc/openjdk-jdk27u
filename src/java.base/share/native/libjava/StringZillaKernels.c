@@ -237,6 +237,14 @@ static sz_cptr_t rfind_latin1_haswell(sz_cptr_t src, sz_size_t src_bytes,
     return sz_rfind_haswell(src, src_bytes, tgt, tgt_bytes);
 }
 
+static sz_cptr_t rfind_latin1_skylake(sz_cptr_t src, sz_size_t src_bytes,
+                                    sz_cptr_t tgt, sz_size_t tgt_bytes) {
+    if (tgt_bytes > 256 && src_bytes - tgt_bytes < 64) {
+        return rfind_latin1_haswell(src, src_bytes, tgt, tgt_bytes);
+    }
+    return sz_rfind_skylake(src, src_bytes, tgt, tgt_bytes);
+}
+
 static sz_cptr_t rfind_utf16_haswell(sz_cptr_t src, sz_size_t src_bytes,
                                    sz_cptr_t tgt, sz_size_t tgt_bytes) {
     // Avoid long-needle preprocessing for a single aligned candidate batch.
@@ -295,7 +303,7 @@ static const StringZillaKernels tag##_kernels = { \
 DEFINE_KERNELS(serial, sz_find_serial, sz_rfind_serial, sz_rfind_serial, rfind_utf16_serial, sz_equal_serial, search_utf16_default, JVM_STRINGZILLA_SERIAL)
 #if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
 DEFINE_KERNELS(haswell, sz_find_haswell, sz_rfind_haswell, rfind_latin1_haswell, rfind_utf16_haswell, sz_equal_haswell, search_utf16_haswell, JVM_STRINGZILLA_HASWELL)
-DEFINE_KERNELS(skylake, sz_find_skylake, sz_rfind_skylake, sz_rfind_skylake, sz_rfind_skylake, sz_equal_skylake, search_utf16_haswell, JVM_STRINGZILLA_SKYLAKE)
+DEFINE_KERNELS(skylake, sz_find_skylake, sz_rfind_skylake, rfind_latin1_skylake, sz_rfind_skylake, sz_equal_skylake, search_utf16_haswell, JVM_STRINGZILLA_SKYLAKE)
 #endif
 #if (defined(__aarch64__) || defined(_M_ARM64)) && SZ_USE_NEON
 DEFINE_KERNELS(neon, sz_find_neon, sz_rfind_neon, sz_rfind_neon, sz_rfind_neon, sz_equal_neon, search_utf16_default, JVM_STRINGZILLA_NEON)

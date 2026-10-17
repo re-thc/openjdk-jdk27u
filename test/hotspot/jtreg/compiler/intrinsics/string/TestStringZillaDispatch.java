@@ -98,7 +98,6 @@ public class TestStringZillaDispatch {
             }
             boolean serialC2 = backend == 0 && expectedTier == 4;
             boolean avx2C2 = backend == 1 && expectedTier == 4;
-            boolean msvcC1 = msvcSerial && expectedTier == 1;
             boolean msvcC2 = msvcSerial && expectedTier == 4;
             boolean scalarC1 = (backend == 0 || backend == 1) && expectedTier == 1;
             boolean scalarC2 = (backend == 0 || backend == 1) && expectedTier == 4;
@@ -135,14 +134,14 @@ public class TestStringZillaDispatch {
             check(latin, 321, 257, true);
             check(latin, 322, 257, true);
             check(latin, 770, 257, true);
-            check(utf16, 128, 4, !shortUTF16C2 && !msvcC1);
-            check(utf16, 255, 4, !shortUTF16C2 && !msvcC1);
-            check(utf16, 256, 4, !shortUTF16C2 && !msvcC1);
+            check(utf16, 128, 4, !shortUTF16C2);
+            check(utf16, 255, 4, !shortUTF16C2);
+            check(utf16, 256, 4, !shortUTF16C2);
             check(utf16, 511, 32, !shortUTF16C2);
-            check(utf16, 512, 8, !msvcC1 && !msvcC2 && !neonC2);
-            check(utf16, 1023, 8, !msvcC1 && !msvcC2 && !neonC2);
-            check(utf16, 1024, 8, !msvcC1 && !msvcC2);
-            check(utf16, 1025, 8, !msvcC1 && !msvcC2);
+            check(utf16, 512, 8, !msvcC2 && !neonC2);
+            check(utf16, 1023, 8, !msvcC2 && !neonC2);
+            check(utf16, 1024, 8, !msvcC2);
+            check(utf16, 1025, 8, !msvcC2);
             check(utf16, 512, 9, !msvcC2);
             check(utf16, 512, 32, !msvcC2);
             check(utf16, 512, 128, !msvcC2);
@@ -160,7 +159,7 @@ public class TestStringZillaDispatch {
             check(utf16, 145, 129, true);
             check(utf16, 146, 129, true);
             check(utf16, 512, 385, true);
-            check(utf16, 4096, 4, !msvcC1 && !msvcC2);
+            check(utf16, 4096, 4, !msvcC2);
             checkBoundaries(search);
             checkNarrowCandidates(search);
             checkFilteredBlocks(search);

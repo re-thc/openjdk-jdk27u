@@ -41,6 +41,7 @@ final class StringZilla {
     private static final int BACKEND = CONFIGURATION & BACKEND_MASK;
     private static final int SERIAL = 0;
     private static final int HASWELL = 1;
+    private static final int SKYLAKE = 2;
     private static final int NEON = 4;
     static final boolean MSVC_SERIAL = (CONFIGURATION & MSVC_BIT) != 0 && BACKEND == SERIAL;
     static final int C1 = 1;
@@ -112,6 +113,10 @@ final class StringZilla {
         if (BACKEND == SERIAL) {
             return compilerTier() != 0;
         }
+        if (BACKEND == SKYLAKE) {
+            int tier = compilerTier();
+            return (tier == C1 && count <= 24) || (tier == C2 && count <= 48);
+        }
         if (BACKEND == HASWELL || BACKEND == NEON) {
             int tier = compilerTier();
             return (tier == C1 && count <= 24)
@@ -123,7 +128,8 @@ final class StringZilla {
     @ForceInline
     static boolean matchesUTF16Latin1Reverse(byte[] src, int offset, byte[] tgt, int count) {
         int tier = compilerTier();
-        if ((count >= 32 && tier == C1) || (count > 32 && tier == C2 && BACKEND == NEON)) {
+        if ((count >= (MSVC_SERIAL ? 64 : 32) && tier == C1)
+                || (count > 32 && tier == C2 && BACKEND == NEON)) {
             int last = count - 1;
             return StringUTF16.getChar(src, offset + last) == (tgt[last] & 0xff)
                     && matchesUTF16Latin1Native(src, offset, tgt, count);
@@ -297,7 +303,7 @@ final class StringZilla {
         if (tier == 0) {
             return true;
         }
-        if (MSVC_SERIAL && ((tier == C1 && count <= 8) || (tier == C2 && count <= 128))) {
+        if (MSVC_SERIAL && tier == C2 && count <= 128) {
             return false;
         }
         if (BACKEND == NEON) {
@@ -333,6 +339,19 @@ final class StringZilla {
     // Isolate C1's native address setup from the surrounding scalar loop.
     @DontInline
     static int rfindUTF16C1(byte[] src, int length, byte[] tgt, int count) {
+        if (MSVC_SERIAL && count <= 128) {
+            int last = count - 1;
+            char lastChar = StringUTF16.getChar(tgt, last);
+            if (StringUTF16.getChar(src, length - 1) != lastChar) {
+                int candidate = rfindCharUTF16(src, last << 1, (length - last) << 1, lastChar);
+                if (candidate != FALLBACK) {
+                    if (candidate < 0) {
+                        return -1;
+                    }
+                    length = (candidate >> 1) + count;
+                }
+            }
+        }
         return rfindUTF16(src, 0, length << 1, tgt, count << 1);
     }
 
