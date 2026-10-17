@@ -169,9 +169,15 @@ by at most **5%**. Separate method-set/compile-count changes from per-method
 cost and inspect outliers; RSS cannot substitute for arena evidence. Missing
 or noisy evidence is inconclusive, not a zero-overhead claim.
 
-The runner emits `execution-complete-review-required`, not an automatic GO.
-The owner must finish the bounded static analysis of produced code/resource
-evidence, then report GO / NO-GO / INCONCLUSIVE against these frozen gates.
+The portable runner pauses before timing for an evidence-bound review after
+safety and all six captures. It automatically runs the four diagnostics after
+valid main completion, then pauses for a final evidence-bound GO / NO-GO /
+INCONCLUSIVE review. The two waits share twenty minutes inside the fixed original
+UTC deadline. Completeness and numerical gates cannot be overridden by review.
+Resource protection compares on/off, off/base and on/base explicitly; missing or
+nonfinite evidence cannot pass. The owner must finish the bounded static analysis
+of produced code/resource evidence against these frozen gates. No automatic GO
+is inferred from execution completion.
 A safety failure is NO-GO. Missing activation or unstable compilation invalidates
 the timing claim. A small/uncertain gain or protection regression does not
 justify advancing this as a codec-performance PR; retain the branch and report

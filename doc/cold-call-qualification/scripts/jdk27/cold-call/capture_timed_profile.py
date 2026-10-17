@@ -12,21 +12,19 @@ import re
 import time
 import xml.etree.ElementTree as ET
 
-from qualification_campaign import Campaign, COMMON, METHOD, PLAN, TARGET, dump, require, sha
+from qualification_campaign import Campaign, COMMON, DEADLINE_UTC, METHOD, TARGET, dump, require, sha, utc_now
 from decode_capture import extract
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("campaign", type=Path)
-    args = parser.parse_args()
-    root = args.campaign.resolve()
+def run_diagnostics(root, clock=None):
+    root = root.resolve()
     original = json.loads((root / "campaign.json").read_text())
     require(original["status"] == "execution-complete-review-required", "Main execution did not complete validly")
+    require(original["outer_clock"]["deadline_utc"] == DEADLINE_UTC, "Parent immutable deadline differs")
+    require(utc_now().isoformat() >= original["outer_clock"]["observed_utc"], "UTC moved backwards since parent")
     # Add3 minutes to the main35-minute measurement caps:38<approved45.
-    PLAN["phase_seconds"]["capture"] = 180
-    campaign = Campaign(original["config"], root / "source-profile-diagnostics")
-    campaign.started -= time.time() - (root / "source-clean.log").stat().st_mtime
+    campaign = Campaign(original["config"], root / "source-profile-diagnostics", clock=clock,
+                        phase_caps={"capture": 180})
     campaign.start_phase("capture")
     campaign.state.update(scope="Four fixed diagnostics; rates excluded from paired ensemble",
                           main_manifest_sha256=sha(root / "campaign.json"))
@@ -86,10 +84,18 @@ def main():
                 campaign.save()
         campaign.state["status"] = "profile-capture-complete-review-required"
         campaign.save()
+        return campaign.state
     except BaseException as error:
         campaign.state.update(status="stopped-no-retry", failure=str(error))
         campaign.save()
         raise
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("campaign", type=Path)
+    args = parser.parse_args()
+    run_diagnostics(args.campaign)
 
 
 if __name__ == "__main__":

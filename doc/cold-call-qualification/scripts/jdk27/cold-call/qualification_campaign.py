@@ -5,16 +5,23 @@ Uses existing GNU timeout, installed tools and ordinary detached Git worktrees.
 No downloads, remote Git operations, installations, retries, overlays or CI.
 """
 import argparse
+import copy
 import ctypes
+from datetime import datetime, timezone
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import platform
 import random
 import re
+import select
+import shutil
+import signal
 import statistics
 import subprocess
+import sys
 import time
 import xml.etree.ElementTree as ET
 
@@ -22,6 +29,22 @@ from decode_capture import extract
 
 ROOT = Path(__file__).resolve().parents[3]
 HERE = Path(__file__).resolve().parent
+ORIGINAL_STARTED_UTC = "2026-10-17T10:31:01.403725+00:00"
+DEADLINE_UTC = "2026-10-17T14:31:01.403725+00:00"
+CLEANUP_GRACE_SECONDS = 10
+REVIEW_SECONDS = 1200
+EXPECTED_FEATURES = frozenset("cds compiler1 compiler2 epsilongc g1gc jfr jni-check jvmti "
+                              "management parallelgc serialgc services shenandoahgc vm-structs zgc".split())
+REVIEW_CHECKS = {
+    "pre-timing": ("all_15_safety_selectors_passed", "six_final_normal_c2_captures_valid",
+                   "returning_call_bci684_retained", "enabled_selects_disabled_does_not",
+                   "base_default_off_code_and_allocation_equivalence_explained",
+                   "complete_hot_and_cold_transport_ledger_reviewed", "full_provenance_verified"),
+    "final": ("all_pre_timing_gates_remain_valid", "four_source_profile_diagnostics_match",
+              "primary_gain_and_paired_interval_pass", "aa_and_off_base_controls_pass",
+              "secondary_and_encoder_protection_pass", "resource_and_method_set_protection_pass",
+              "no_protected_interval_demonstrates_slowdown", "inverse_rate_gap_and_limits_reported"),
+}
 BASE = "01903ba375f94c0ab7f9193d3e36bd30fe663d7e"
 CANDIDATE = "75ee82dff6f86e41aad8cedfe947a90a2b9296df"
 CODEC = "7a6b345d0df3d8571a30f4a9c974dfaa3a10d9b6"
@@ -46,7 +69,11 @@ PLAN = dict(candidate=CANDIDATE, base=BASE, codec=CODEC, total_seconds=14400, jo
 
 
 def sha(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for block in iter(lambda: stream.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
 
 
 def require(condition, message):
@@ -58,35 +85,121 @@ def dump(path, data):
     path.write_text(json.dumps(data, indent=2) + "\n")
 
 
+def utc_now():
+    return datetime.now(timezone.utc)
+
+
+class ContinuationClock:
+    """The one approved continuation; no deadline/config/CLI override exists."""
+    def __init__(self):
+        self.deadline_utc = datetime.fromisoformat(DEADLINE_UTC)
+        now_mono = time.monotonic()
+        remaining = (self.deadline_utc - utc_now()).total_seconds()
+        self.deadline_monotonic = now_mono + remaining
+        self.started_monotonic = self.deadline_monotonic - PLAN["total_seconds"]
+        self.require_open()
+
+    def remaining(self):
+        return min(self.deadline_monotonic - time.monotonic(),
+                   (self.deadline_utc - utc_now()).total_seconds()) - CLEANUP_GRACE_SECONDS
+
+    def require_open(self):
+        require(self.remaining() > 1, "Original immutable UTC deadline exhausted: " + DEADLINE_UTC)
+
+    def record(self):
+        return dict(original_started_utc=ORIGINAL_STARTED_UTC, deadline_utc=DEADLINE_UTC,
+                    deadline_monotonic=self.deadline_monotonic,
+                    started_monotonic=self.started_monotonic,
+                    observed_utc=utc_now().isoformat(), remaining_seconds=self.remaining(),
+                    cleanup_grace_seconds=CLEANUP_GRACE_SECONDS)
+
+
+def inventory(directory, clock=None):
+    rows = []
+    for path in sorted(Path(directory).rglob("*")):
+        if clock is not None:
+            clock.require_open()
+        name = str(path.relative_to(directory))
+        if path.is_symlink():
+            require(path.exists(), "Broken provenance symlink: " + str(path))
+            rows.append(dict(path=name, symlink=os.readlink(path)))
+        elif path.is_file():
+            rows.append(dict(path=name, bytes=path.stat().st_size, sha256=sha(path)))
+    require(rows, "Empty provenance tree: " + str(directory))
+    return rows
+
+
+def spec_values(path):
+    keys = {"CC_VERSION_NUMBER", "CXX_VERSION_NUMBER", "CC", "CXX", "BOOT_JDK", "TOOLCHAIN_TYPE",
+            "WARNINGS_AS_ERRORS", "JVM_VARIANTS", "JVM_FEATURES_server", "DEBUG_LEVEL", "CFLAGS_CCACHE"}
+    result = {}
+    for line in Path(path).read_text().splitlines():
+        if ":=" in line:
+            key, value = line.split(":=", 1)
+            if key.strip() in keys:
+                result[key.strip()] = value.strip()
+    return result
+
+
+def validate_review(review, request_hash, stage):
+    require(type(review.get("schema")) is int and review["schema"] == 1 and review.get("stage") == stage,
+            "Wrong review schema/stage")
+    require(review.get("request_sha256") == request_hash, "Review does not bind current evidence")
+    require(isinstance(review.get("reviewer"), str) and review["reviewer"].strip(), "Missing reviewer")
+    require(isinstance(review.get("notes"), str) and review["notes"].strip(), "Missing review explanation")
+    checks = review.get("checks", {})
+    require(set(checks) == set(REVIEW_CHECKS[stage]) and all(type(v) is bool for v in checks.values()),
+            "Missing, extra or nonboolean review checks")
+    decision = review.get("decision")
+    choices = ("CONTINUE_FIXED_ENSEMBLE", "STOP") if stage == "pre-timing" else ("GO", "NO-GO", "INCONCLUSIVE")
+    require(decision in choices, "Invalid review decision")
+    if decision in ("CONTINUE_FIXED_ENSEMBLE", "GO"):
+        require(all(checks.values()), "An affirmative decision requires every gate")
+    return decision
+
+
 class Campaign:
-    def __init__(self, config, output):
-        self.config = config
+    def __init__(self, config, output, clock=None, phase_caps=None):
+        self.clock = clock if clock is not None else ContinuationClock()
+        self.clock.require_open()
+        self.config = copy.deepcopy(config)
         self.output = output.resolve()
         # A failed or partial run cannot be resumed or silently overwritten.
         self.output.mkdir(parents=True, exist_ok=False)
-        self.started = time.monotonic()
-        self.phase_started = self.started
+        self.started = self.clock.started_monotonic
+        self.phase_started = time.monotonic()
+        self.phase_caps = dict(PLAN["phase_seconds"])
+        if phase_caps:
+            self.phase_caps.update(phase_caps)
         self.phase = "prepare"
         self.records = []
+        self.review_elapsed = 0.0
+        self.active = None
         self.env = os.environ.copy()
         for key in ("JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "_JAVA_OPTIONS", "MAKEFLAGS",
                     "JAVA_HOME", "CLASSPATH", "CC", "CXX", "CFLAGS", "CXXFLAGS", "LDFLAGS"):
             self.env.pop(key, None)
-        self.env.update(config["environment"], LC_ALL="C.UTF-8", TZ="UTC")
-        self.state = dict(plan=PLAN, config=config, status="running", records=self.records)
+        boot_bin = str(Path(self.config["boot_jdk"]) / "bin")
+        paths = self.config["environment"]["PATH"].split(os.pathsep)
+        self.config["environment"]["PATH"] = os.pathsep.join([boot_bin, *[p for p in paths if p != boot_bin]])
+        self.env.update(self.config["environment"], LC_ALL="C.UTF-8", TZ="UTC")
+        self.state = dict(plan=copy.deepcopy(PLAN), config=self.config, status="running", records=self.records,
+                          phase_caps=self.phase_caps, outer_clock=self.clock.record(), measurement_started=False)
         self.save()
 
     def save(self):
+        self.state["outer_clock"] = self.clock.record()
         dump(self.output / "campaign.json", self.state)
 
     def start_phase(self, phase):
+        self.clock.require_open()
         self.phase = phase
         self.phase_started = time.monotonic()
 
     def run(self, name, command, cwd=ROOT, cap=180):
         require(not any(r["name"] == name for r in self.records), "No command retries: " + name)
-        remaining = min(PLAN["total_seconds"] - (time.monotonic() - self.started),
-                        PLAN["phase_seconds"][self.phase] - (time.monotonic() - self.phase_started), cap)
+        remaining = min(self.clock.remaining(),
+                        self.phase_caps[self.phase] - (time.monotonic() - self.phase_started), cap)
         require(remaining > 1, "Frozen time budget exhausted")
         command = list(map(str, command))
         log = self.output / (name + ".log")
@@ -100,9 +213,32 @@ class Campaign:
         with log.open("w") as stream:
             process = subprocess.Popen(["timeout", "--kill-after=10s", str(int(remaining)) + "s",
                                         *command], cwd=cwd, env=self.env, stdout=stream,
-                                       stderr=subprocess.STDOUT)
-            _, status, usage = os.wait4(process.pid, 0)
-            process.returncode = os.waitstatus_to_exitcode(status)
+                                        stderr=subprocess.STDOUT, start_new_session=True)
+            self.active = process
+            try:
+                _, status, usage = os.wait4(process.pid, 0)
+                process.returncode = os.waitstatus_to_exitcode(status)
+            except BaseException:
+                # This session belongs only to this command. Never touch PID 1,
+                # unrelated workers, cgroups or a previous host's processes.
+                cleanup_deadline = time.monotonic() + CLEANUP_GRACE_SECONDS
+                try:
+                    os.killpg(process.pid, signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
+                try:
+                    process.wait(timeout=max(0.001, cleanup_deadline - time.monotonic() - 1))
+                except subprocess.TimeoutExpired:
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    process.wait(timeout=max(0.001, cleanup_deadline - time.monotonic()))
+                row.update(status="interrupted", log_sha256=sha(log))
+                self.save()
+                raise
+            finally:
+                self.active = None
         row.update(status="finished", exit_code=process.returncode,
                    wall_seconds=time.monotonic() - start, peak_rss_kib=usage.ru_maxrss,
                    cpu_seconds=usage.ru_utime + usage.ru_stime, log_sha256=sha(log))
@@ -121,7 +257,16 @@ class Campaign:
     def build(self):
         c = self.config
         source = Path(c["jdk_source"]).resolve()
-        self.run("source-clean", ["git", "diff", "--exit-code"], cwd=source)
+        require(not self.run("source-clean", ["git", "status", "--porcelain"], cwd=source).strip(),
+                "JDK bundle checkout must be committed and clean")
+        source_head = self.run("source-head", ["git", "rev-parse", "HEAD"], cwd=source).strip()
+        manifest = source / "doc/cold-call-qualification/SOURCE-MANIFEST.json"
+        bundle = json.loads(manifest.read_text())
+        require((bundle["base"], bundle["candidate"], bundle["codec"]) == (BASE, CANDIDATE, CODEC),
+                "Source bundle has different fixed revisions")
+        for item in bundle["files"]:
+            require(sha(ROOT / item["path"]) == item["sha256"], "Copied source differs: " + item["path"])
+        self.state["bundle"] = dict(jdk_commit=source_head, manifest_sha256=sha(manifest))
         self.state["runner_commit"] = self.run("runner-head", ["git", "rev-parse", "HEAD"]).strip()
         clean = self.run("runner-clean", ["git", "status", "--porcelain"])
         require(not clean.strip(), "Runner checkout must be committed and clean")
@@ -162,6 +307,173 @@ class Campaign:
                 spec_sha256=sha(tree / "build/qualification/spec.gmk"),
                 release=(image / "release").read_text())
         self.save()
+
+    def verify_images(self):
+        images, specs = {}, {}
+        for kind in PLAN["builds"]:
+            self.clock.require_open()
+            tree, image = self.worktrees[kind], self.images[kind]
+            require(not self.run(kind + "-source-clean", ["git", "status", "--porcelain"], cwd=tree).strip(),
+                    "Build source/index changed: " + kind)
+            spec_path = tree / "build/qualification/spec.gmk"
+            spec = spec_values(spec_path)
+            require(spec["CC_VERSION_NUMBER"] == spec["CXX_VERSION_NUMBER"] == "16.2.0",
+                    "Actual build compiler must remain GCC/G++ 16.2.0")
+            require(spec["TOOLCHAIN_TYPE"] == "gcc" and spec["CC"] == self.config["cc"] and
+                    spec["CXX"] == self.config["cxx"], "Configured and native-test compilers differ")
+            require(spec["WARNINGS_AS_ERRORS"] == "true" and spec["JVM_VARIANTS"] == "server",
+                    "Ordinary server/warnings policy changed")
+            require(spec["BOOT_JDK"] == self.config["boot_jdk"], "Actual boot JDK changed")
+            require(spec["DEBUG_LEVEL"] == ("fastdebug" if kind.endswith("fastdebug") else "release"),
+                    "Unexpected image debug level")
+            require(frozenset(spec["JVM_FEATURES_server"].split()) == EXPECTED_FEATURES,
+                    "Restricted or different ordinary server VM features")
+            require(not spec.get("CFLAGS_CCACHE", ""), "Unexpected compiler cache")
+            rows = inventory(image, self.clock)
+            manifest = self.output / (kind + "-full-image.json")
+            dump(manifest, rows)
+            shutil.copyfile(spec_path, self.output / (kind + "-spec.gmk"))
+            specs[kind] = spec
+            images[kind] = dict(source=self.state["images"][kind]["commit"], path=str(image), spec=spec,
+                spec_sha256=sha(spec_path), entries=len(rows), full_image_manifest_sha256=sha(manifest),
+                release=(image / "release").read_text(), libjvm_sha256=sha(image / "lib/server/libjvm.so"))
+        require(specs["base-release"] == specs["candidate-release"], "Release specifications differ")
+        repair_hashes = {sha(self.worktrees[k] / "src/hotspot/share/runtime/javaThread.inline.hpp")
+                         for k in PLAN["builds"]}
+        require(repair_hashes == {"3ac2155d4523db34c42ee1a6e014d8ac5297d4842cb2284eb6d6c62969af097f"},
+                "Exact common GCC prerequisite source differs")
+        dump(self.output / "full-image-provenance.json", images)
+        tools = {key: dict(path=self.config[key], sha256=sha(self.config[key])) for key in ("cc", "cxx", "junit")}
+        boot = Path(self.config["boot_jdk"])
+        tools["boot_jdk"] = dict(release=(boot / "release").read_text(), java_sha256=sha(boot / "bin/java"))
+        require(re.search(r'JAVA_VERSION="27(?:[.+-][^"]*)?"', tools["boot_jdk"]["release"]),
+                "Boot JDK major changed")
+        jtreg_version = self.run("installed-jtreg-version", [Path(self.config["jtreg"]) / "bin/jtreg", "-version"])
+        require(re.search(r"jtreg(?:\s+version)?\s+8\.3(?:\D|$)", jtreg_version, re.I), "Installed jtreg is not 8.3")
+        tools["jtreg_version"] = jtreg_version
+        tools["jtreg_launcher_sha256"] = sha(Path(self.config["jtreg"]) / "bin/jtreg")
+        dump(self.output / "installed-tool-provenance.json", tools)
+        self.state["image_provenance_sha256"] = sha(self.output / "full-image-provenance.json")
+        self.save()
+
+    def verify_prepared(self):
+        classes = inventory(self.classes, self.clock)
+        require(all(p["path"].endswith(".class") for p in classes), "Unexpected compiled-class product")
+        dump(self.output / "full-compiled-classes.json", classes)
+        dump(self.output / "full-production-sources.json", inventory(ROOT / "src/main/java", self.clock))
+        frames = json.loads((self.prepared / "frames.json").read_text())
+        require(frames["native_version"] == "1.5.7" and len(frames["rows"]) == 57, "Wrong frame set")
+        for row in frames["rows"]:
+            require(sha(self.corpora / row["source"]) == row["source_sha256"] and
+                    sha(self.corpora / row["frame"]) == row["frame_sha256"], "Prepared frame identity changed")
+        self.state["full_provenance"] = dict(images_sha256=self.state["image_provenance_sha256"],
+            classes_sha256=sha(self.output / "full-compiled-classes.json"),
+            production_sources_sha256=sha(self.output / "full-production-sources.json"),
+            source_factory_sha256=sha(ROOT / "src/test/java/dev/jzstd/ComprehensiveRoundTripTest.java"),
+            frames_sha256=sha(self.prepared / "frames.json"), native_probe_sha256=sha(self.native),
+            helper_library_sha256=sha(self.native_dir / "libColdCallSpillPolicy.so"),
+            tools_sha256=sha(self.output / "installed-tool-provenance.json"))
+        self.save()
+
+    def verify_frozen(self):
+        if "diagnostic_manifest_sha256" in self.state:
+            self.verify_diagnostics()
+        p = self.state["full_provenance"]
+        for name, key in (("full-image-provenance.json", "images_sha256"),
+                          ("full-compiled-classes.json", "classes_sha256"),
+                          ("full-production-sources.json", "production_sources_sha256"),
+                          ("installed-tool-provenance.json", "tools_sha256")):
+            require(sha(self.output / name) == p[key], "Sealed provenance inventory changed: " + name)
+        source_manifest = Path(self.config["jdk_source"]) / "doc/cold-call-qualification/SOURCE-MANIFEST.json"
+        require(sha(source_manifest) == self.state["bundle"]["manifest_sha256"], "Source bundle manifest changed")
+        for item in json.loads(source_manifest.read_text())["files"]:
+            require(sha(ROOT / item["path"]) == item["sha256"], "Copied qualification source changed")
+        supplied = self.state["supplied_config"]
+        require(sha(supplied["path"]) == supplied["sha256"], "Supplied host configuration changed")
+        image_provenance = json.loads((self.output / "full-image-provenance.json").read_text())
+        for row in self.records:
+            require(row["status"] == "finished" and row["exit_code"] == 0 and
+                    sha(self.output / (row["name"] + ".log")) == row["log_sha256"],
+                    "Command evidence changed or incomplete: " + row["name"])
+        for kind, image in self.images.items():
+            manifest = self.output / (kind + "-full-image.json")
+            frozen = image_provenance[kind]
+            require(sha(manifest) == frozen["full_image_manifest_sha256"] and
+                    sha(self.worktrees[kind] / "build/qualification/spec.gmk") == frozen["spec_sha256"] and
+                    sha(self.output / (kind + "-spec.gmk")) == frozen["spec_sha256"],
+                    "Image inventory or generated spec changed: " + kind)
+            require(inventory(image, self.clock) == json.loads(manifest.read_text()),
+                    "Image changed after provenance: " + kind)
+        require(inventory(self.classes, self.clock) == json.loads((self.output / "full-compiled-classes.json").read_text()),
+                "Prepared classes changed")
+        require(inventory(ROOT / "src/main/java", self.clock) ==
+                json.loads((self.output / "full-production-sources.json").read_text()), "Production source changed")
+        require(sha(self.prepared / "frames.json") == p["frames_sha256"] and
+                sha(ROOT / "src/test/java/dev/jzstd/ComprehensiveRoundTripTest.java") == p["source_factory_sha256"] and
+                sha(self.native) == p["native_probe_sha256"] and
+                sha(self.native_dir / "libColdCallSpillPolicy.so") == p["helper_library_sha256"],
+                "Prepared manifest/native code changed")
+        for name, item in self.state["inputs"].items():
+            require(sha(self.corpora / name) == item["sha256"], "Frozen input changed: " + name)
+        tools = json.loads((self.output / "installed-tool-provenance.json").read_text())
+        for key in ("cc", "cxx", "junit"):
+            require(sha(self.config[key]) == tools[key]["sha256"], "Installed tool changed: " + key)
+        boot = Path(self.config["boot_jdk"])
+        require((boot / "release").read_text() == tools["boot_jdk"]["release"] and
+                sha(boot / "bin/java") == tools["boot_jdk"]["java_sha256"] and
+                sha(Path(self.config["jtreg"]) / "bin/jtreg") == tools["jtreg_launcher_sha256"],
+                "Installed boot JDK/jtreg launcher changed")
+
+    def review_gate(self, stage):
+        self.clock.require_open()
+        self.verify_frozen()
+        if stage == "pre-timing":
+            require(len(self.state.get("decoder_proofs", {})) == 6, "Missing six pre-timing captures")
+            require(len([r for r in self.records if r["name"].endswith(("-focused", "-existing"))]) == 5 and
+                    any(r["name"] == "candidate-fastdebug-handshake-prerequisite" for r in self.records),
+                    "Missing fixed safety invocations")
+        else:
+            self.require_complete()
+        request = self.output / (stage + "-review-request.json")
+        self.save()
+        dump(request, dict(stage=stage, deadline_utc=DEADLINE_UTC, manifest_sha256=sha(self.output / "campaign.json"),
+                           evidence=self.state, checks=REVIEW_CHECKS[stage]))
+        request_hash = sha(request)
+        template = self.output / (stage + "-review.template.json")
+        dump(template, dict(schema=1, stage=stage, request_sha256=request_hash, reviewer="", notes="",
+                            checks={key: False for key in REVIEW_CHECKS[stage]},
+                            decision="STOP" if stage == "pre-timing" else "INCONCLUSIVE"))
+        self.state["status"] = "awaiting-" + stage + "-review"
+        self.save()
+        print("Review " + str(request) + ". Copy/edit " + str(template) +
+              "; submit the completed review JSON path on stdin. Deadline remains " + DEADLINE_UTC, flush=True)
+        wait = min(REVIEW_SECONDS - self.review_elapsed, self.clock.remaining() - 180)
+        require(wait > 0, "No review/cleanup budget remains")
+        began = time.monotonic()
+        ready, _, _ = select.select([sys.stdin], [], [], wait)
+        self.review_elapsed += time.monotonic() - began
+        require(ready, "Review deadline exhausted")
+        # select+readline could block forever on a partial pipe write. Read only
+        # currently available bytes and fail closed unless a full line arrived.
+        data = os.read(sys.stdin.fileno(), 65536)
+        require(data.endswith(b"\n") and data.count(b"\n") == 1, "Incomplete review submission")
+        submitted = data.decode("utf-8").strip()
+        require(submitted, "Review EOF/empty submission; stop")
+        review_path = Path(submitted).resolve()
+        require(review_path.is_file(), "Review must be a regular JSON file")
+        review = json.loads(review_path.read_text())
+        decision = validate_review(review, request_hash, stage)
+        if stage == "final" and decision == "GO":
+            require(all(self.state["automatic_gates"].values()), "Numerical/completeness gates reject GO")
+        self.clock.require_open()
+        self.verify_frozen()
+        destination = self.output / (stage + "-accepted-review.json")
+        dump(destination, review)
+        self.state.setdefault("reviews", {})[stage] = dict(decision=decision, sha256=sha(destination),
+            request_sha256=request_hash, wait_seconds=self.review_elapsed)
+        self.save()
+        require(decision != "STOP", "Owner stopped before timing")
+        return decision
 
     def prepare(self):
         self.start_phase("prepare")
@@ -305,6 +617,10 @@ class Campaign:
                 self.decoder_proof(stem, log, cell, debug, assembly=True)
 
     def timing(self):
+        require(self.state.get("reviews", {}).get("pre-timing", {}).get("decision") == "CONTINUE_FIXED_ENSEMBLE",
+                "Accepted evidence-bound pre-timing review required")
+        require("timing" not in self.state, "Timing cannot be repeated or resumed")
+        self.state["measurement_started"] = True
         self.start_phase("timing")
         rows = []
         self.state["timing"] = rows
@@ -400,10 +716,103 @@ class Campaign:
                 peaks = [int(x) for x in re.findall(r"c2 .*Arena usage com/sun/tools/javac.*?: Total Usage: (\d+)", log)]
                 require(peaks, "Missing per-task javac arena peaks")
                 self.records[-1]["javac_peak_arena_chunk_capacity_bytes"] = max(peaks)
+                citime = re.findall(r"Total compilation time\s*:\s*([\d.]+)\s*s", log)
+                require(len(citime) == 1, "Missing/ambiguous javac CITime")
+                self.records[-1]["javac_citime_seconds"] = float(citime[0])
                 products = {str(p.relative_to(classes)): sha(p) for p in classes.rglob("*.class")}
                 require(products and (reference_classes is None or products == reference_classes), "javac class output changed")
                 reference_classes = products
+                self.records[-1]["emitted_classes_sha256"] = hashlib.sha256(
+                    json.dumps(products, sort_keys=True).encode()).hexdigest()
                 self.save()
+
+    def require_complete(self):
+        require(len(self.state.get("timing", [])) == 81, "Fixed 81-process timing ensemble incomplete")
+        require(len([r for r in self.records if r["name"].startswith("timing-")]) == 81,
+                "Timing process count changed")
+        require(len([r for r in self.records if r["name"].startswith("resource-")]) == 18,
+                "Fixed 18-resource ensemble incomplete")
+        self.verify_diagnostics()
+        self.state["automatic_gates"] = self.numerical_gates()
+        self.save()
+
+    def verify_diagnostics(self):
+        diagnostic = self.output / "source-profile-diagnostics/campaign.json"
+        require(sha(diagnostic) == self.state["diagnostic_manifest_sha256"], "Diagnostic manifest changed")
+        parent = self.output / "diagnostic-parent.json"
+        parent_hash = self.state["diagnostic_parent_snapshot_sha256"]
+        require(sha(parent) == parent_hash, "Diagnostic parent snapshot changed")
+        proof = json.loads(diagnostic.read_text())
+        require(proof["main_manifest_sha256"] == parent_hash, "Diagnostics belong to a different parent")
+        names = {"release-off", "release-on", "fastdebug-off", "fastdebug-on"}
+        require(proof["status"] == "profile-capture-complete-review-required" and set(proof["proofs"]) == names and
+                all(p["diagnostic_rates_excluded"] is True for p in proof["proofs"].values()),
+                "Four fixed profile diagnostics incomplete")
+        require(proof["outer_clock"]["deadline_utc"] == DEADLINE_UTC, "Diagnostic deadline changed")
+        require(len(proof["records"]) == 8 and {r["name"] for r in proof["records"]} ==
+                names | {name + "-objdump" for name in names}, "Diagnostic command count/cells changed")
+        for row in proof["records"]:
+            require(row["status"] == "finished" and row["exit_code"] == 0 and
+                    sha(diagnostic.parent / (row["name"] + ".log")) == row["log_sha256"],
+                    "Diagnostic evidence incomplete/changed")
+
+    def numerical_gates(self):
+        comparisons = self.state["comparisons"]
+        primary = comparisons["decode-source"]
+        gates = dict(primary_gain=primary["on_over_off"] >= 1.03 and
+                     primary["on_over_off_paired_bootstrap_95_interval"][0] > 1.0,
+                     aa_control=0.98 <= primary["control_over_off"] <= 1.02 and
+                     primary["control_over_off_paired_bootstrap_95_interval"][0] <= 1.0 <=
+                     primary["control_over_off_paired_bootstrap_95_interval"][1],
+                     off_base=all(c["off_over_base"] >= 0.99 for c in comparisons.values()),
+                     protected_medians=all(c["on_over_off"] >= 0.98 for name, c in comparisons.items()
+                                           if name != "decode-source"),
+                     protected_intervals=all(c[metric][1] >= 1.0 for c in comparisons.values()
+                         for metric in ("on_over_off_paired_bootstrap_95_interval",
+                                        "off_over_base_paired_bootstrap_95_interval")))
+        cells = {}
+        for cell in ("base", "off", "on"):
+            parsers = [r for r in self.records if r["name"].startswith("resource-parser-") and r["name"].endswith("-" + cell)]
+            javacs = [r for r in self.records if r["name"].startswith("resource-javac-") and r["name"].endswith("-" + cell)]
+            require(len(parsers) == len(javacs) == 3, "Resource cell missing")
+            metrics = {}
+            for key in ("final_parser_compile_seconds", "parser_peak_arena_chunk_capacity_bytes"):
+                metrics[key] = statistics.median(r[key] for r in parsers)
+            for key in ("wall_seconds", "peak_rss_kib", "javac_citime_seconds", "javac_peak_arena_chunk_capacity_bytes"):
+                metrics[key] = statistics.median(r[key] for r in javacs)
+            require(all(math.isfinite(v) and v >= 0 for v in metrics.values()), "Invalid resource metric")
+            cells[cell] = metrics
+        for numerator, denominator in (("on", "off"), ("off", "base"), ("on", "base")):
+            a, b = cells[numerator], cells[denominator]
+            label = numerator + "_over_" + denominator
+            gates[label + "_parser_time"] = a["final_parser_compile_seconds"] <= b["final_parser_compile_seconds"] + max(
+                0.05 * b["final_parser_compile_seconds"], 0.010)
+            key = "parser_peak_arena_chunk_capacity_bytes"
+            gates[label + "_parser_arena"] = a[key] <= b[key] + max(0.05 * b[key], 1 << 20)
+            for key in ("wall_seconds", "peak_rss_kib", "javac_citime_seconds", "javac_peak_arena_chunk_capacity_bytes"):
+                gates[label + "_javac_" + key] = a[key] <= 1.05 * b[key]
+        protected_sets, allocation, failures, class_hashes = [], [], [], set()
+        for repeat in range(3):
+            jobs = {cell: next(r for r in self.records if r["name"] == f"resource-javac-{repeat}-{cell}")
+                    for cell in ("base", "off", "on")}
+            methods = {cell: {n["method"] for n in row["jit_nmethods"] if n.get("compiler") == "c2"}
+                       for cell, row in jobs.items()}
+            protected_sets.append(bool(methods["base"]) and all(methods["base"] <= methods[c] for c in ("off", "on")))
+            for cell, row in jobs.items():
+                failures.append(sum(len(t["failures"]) for t in row["jit_tasks"]))
+                class_hashes.add(row["emitted_classes_sha256"])
+            attempts = {}
+            for cell in ("base", "off", "on"):
+                proof = self.state["decoder_proofs"][f"resource-parser-{repeat}-{cell}"]
+                final_id = proof["nmethods"][-1]["compile_id"]
+                task = next(t for t in proof["tasks"] if t["compile_id"] == final_id)
+                require(task["regalloc"], "Missing final-parser allocation accounting")
+                attempts[cell] = sum(int(n.get("attempts", "1")) for n in task["regalloc"])
+            allocation.append(attempts["off"] <= attempts["base"] and attempts["on"] <= attempts["off"])
+        gates.update(protected_c2_methods=all(protected_sets), no_compilation_failures=not any(failures),
+                     no_extra_target_attempts=all(allocation), identical_javac_classes=len(class_hashes) == 1)
+        self.state["resource_medians"] = cells
+        return gates
 
     def summarize(self):
         rows = self.state["timing"]
@@ -451,22 +860,48 @@ def main():
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     if args.action == "plan":
-        print(json.dumps(dict(plan=PLAN, config=json.loads(args.config.read_text())), indent=2))
+        print(json.dumps(dict(plan=PLAN, config=json.loads(args.config.read_text()),
+                              original_started_utc=ORIGINAL_STARTED_UTC, deadline_utc=DEADLINE_UTC,
+                              remaining_seconds=(datetime.fromisoformat(DEADLINE_UTC) - utc_now()).total_seconds(),
+                              execution="run is inert after expiry; no deadline override"), indent=2))
         return
     require(args.output is not None, "run requires a new --output directory")
     campaign = Campaign(json.loads(args.config.read_text()), args.output)
+    campaign.state["supplied_config"] = dict(path=str(args.config.resolve()), sha256=sha(args.config))
+    campaign.save()
+    previous_term = signal.getsignal(signal.SIGTERM)
+    def interrupted(signum, frame):
+        raise InterruptedError("Owner received termination signal")
+    signal.signal(signal.SIGTERM, interrupted)
     try:
         campaign.build()
+        campaign.verify_images()
         campaign.prepare()
+        campaign.verify_prepared()
         campaign.safety()
         campaign.capture()
+        campaign.review_gate("pre-timing")
         campaign.timing()
         campaign.resources()
         campaign.summarize()
+        from capture_timed_profile import run_diagnostics
+        parent = campaign.output / "diagnostic-parent.json"
+        shutil.copyfile(campaign.output / "campaign.json", parent)
+        run_diagnostics(campaign.output, clock=campaign.clock)
+        campaign.state["diagnostic_parent_snapshot_sha256"] = sha(parent)
+        campaign.state["diagnostic_manifest_sha256"] = sha(campaign.output / "source-profile-diagnostics/campaign.json")
+        decision = campaign.review_gate("final")
+        campaign.state.update(status="complete-owner-verdict", verdict=decision,
+                              review_seconds=campaign.review_elapsed,
+                              cleanup="All direct command children reaped; no active command remains",
+                              publication="None; no automatic CI/PR/default change")
+        campaign.save()
     except BaseException as error:
         campaign.state.update(status="stopped-no-retry", failure=str(error))
         campaign.save()
         raise
+    finally:
+        signal.signal(signal.SIGTERM, previous_term)
 
 
 if __name__ == "__main__":

@@ -81,7 +81,7 @@ qualification workloads, adapted only for the repaired revisions, tighter caps,
 two prerequisite tests and a preparation-only frame helper. It includes no
 captured output, host configuration, binary or private artifact dependency.
 [SOURCE-MANIFEST.json](SOURCE-MANIFEST.json) records its source hashes and
-provenance. The full production codec and corpus factory remain pinned to
+provenance. The portable runner also includes its offline Python tests. The full production codec and corpus factory remain pinned to
 `re-thc/jzstd` commit `7a6b345d0df3d8571a30f4a9c974dfaa3a10d9b6`.
 
 With ordinary Git checkouts available, prepare a clean source checkout:
@@ -115,6 +115,11 @@ available; a missing prerequisite stops instead of downloading it. Set the JDK
 source location to the published review checkout, which must contain both exact
 build commits. Do not use a host snapshot from another run as implicit setup.
 
+The runner prepends the configured boot JDK's `bin` directory to the effective
+PATH, including when jtreg launches Java. It records both the supplied config
+hash and effective configuration; no old host path or temporary owner script is
+required.
+
 Clear inherited `JAVA_TOOL_OPTIONS`, `JDK_JAVA_OPTIONS`, `_JAVA_OPTIONS`,
 `MAKEFLAGS`, `JAVA_HOME`, `CLASSPATH`, `CC`, `CXX`, `CFLAGS`, `CXXFLAGS`, and
 `LDFLAGS`; the runner does this before applying the frozen environment. Its GCC
@@ -124,17 +129,27 @@ new seed, longer warmup or workload replacement is allowed.
 
 ## One proposed continuation: four hours total, no retries
 
-This is one new, separately approved continuation at repaired revisions, not a
-resume of the invalid exact-revision attempt. Its **14,400-second total**
-includes new worktree checkout/configuration, all three builds, preparation,
-tests, captures, measurements, review and cleanup. Do not add a two-hour
-prerequisite run or a second campaign before/after it. The owner starts and
-maintains an outer four-hour budget before the runner, recording elapsed and
-remaining time through diagnostics, manual review and cleanup. The runner uses
-internal monotonic command caps; the separate diagnostic helper reconstructs
-elapsed wall time from the original log mtime. Manual review is owner-managed.
-The owner enforces the remaining outer budget across these mechanisms and stops
-owned work at expiry. The global cap wins; local maxima are not entitlements.
+This is the **same already-started approved continuation**, including an
+approved fresh-environment preparation repair. Its original start is
+**2026-10-17T10:31:01.403725+00:00** and its immutable deadline is
+**2026-10-17T14:31:01.403725+00:00**. Source publication, a new checkout, a
+new process or a replacement host never starts a new four-hour allowance.
+`plan` is inert after expiry; `run` refuses expiry before creating output or
+launching any command. No CLI/config/environment deadline override exists.
+
+The task-specific clock maps the fixed UTC deadline to the current boot's
+monotonic clock once, and uses the smaller UTC/monotonic remainder thereafter.
+The unified runner shares that clock through builds, provenance, both review
+gates and the four diagnostics. It never consumes old-host monotonic values or
+reconstructs elapsed time from log mtimes. Trusted, correctly synchronized UTC
+on a fresh host is a prerequisite; standalone diagnostics reject an observation
+older than their parent. Every command's existing GNU timeout is bounded by
+this remainder and its stage cap, reserving ten seconds inside the original
+allowance for termination cleanup. Expiry, EOF, a stale review or any failed gate
+stops; no partial-directory resume or automatic retry exists.
+
+All preparation, manual review and cleanup remain inside the same original
+14,400 seconds. The following stage limits are maxima, not new entitlements:
 
 | Stage | Maximum |
 | --- | ---: |
@@ -158,26 +173,59 @@ extra repetitions. A fixed termination grace of at most ten seconds is for
 cleanup only, never new measurements. No PMU, JFR, affinity/governor mutation,
 remote execution, CI, PR, merge or default change is included.
 
-After explicit approval, run once from the prepared, committed clean codec
-checkout, using an entirely new output path:
+After the approved fresh host passes independent review, run once from the
+prepared, committed clean codec checkout, using an entirely new output path:
 
 ```sh
 python3 scripts/jdk27/cold-call/qualification_campaign.py plan \
   --config "$FROZEN_HOST_CONFIG"
 python3 scripts/jdk27/cold-call/qualification_campaign.py run \
   --config "$FROZEN_HOST_CONFIG" --output "$NEW_OUTPUT"
-# Only after execution-complete-review-required, regardless of gain or loss:
-python3 scripts/jdk27/cold-call/capture_timed_profile.py "$NEW_OUTPUT"
 ```
 
-`plan` is inert. Do not run `run` or the diagnostic script in this publication
-phase. The existing command-boundary budget uses installed GNU `timeout`; no
-new generic deadline infrastructure is introduced. Each command runs once.
+This single `run` performs all three fresh builds, full provenance, preparation,
+15 safety selectors and six captures. Before **any** timing it writes
+`pre-timing-review-request.json` and `pre-timing-review.template.json`, then
+waits on stdin. Review the requested code/activation/transport evidence, copy the
+template to a separate local JSON, fill its reviewer/notes and every boolean
+check, and select `CONTINUE_FIXED_ENSEMBLE` only when they pass. Submit the
+completed JSON's path on stdin. EOF, STOP, missing/false checks, a mismatched
+request hash or expiry stops. No prewritten approval token bypasses evidence.
+Full image/class/input/log identities are rechecked after the review.
+
+After the unchanged 81-process ensemble and 18 separate resource cases, the
+same runner automatically runs the four fixed diagnostic captures once,
+regardless of gain or loss. Do not invoke the diagnostic script again. It then
+writes the corresponding `final-review-request.json` and template, waiting for
+an evidence-bound `GO`, `NO-GO` or `INCONCLUSIVE` review JSON path. Both review
+waits share a total twenty-minute maximum. GO additionally requires complete
+counts/diagnostics and the executable frozen numerical/resource gates; a human
+review cannot override a failed automatic gate. The owner must still review
+all-path transport, method-set/code/profile equivalence and the declared limits.
+A completed review records `complete-owner-verdict`; no PR, CI, merge or default
+change follows automatically. Pending review never counts as qualification.
+
+The runner inventories every regular file/symlink in all three images and all
+compiled classes, hashes the production sources/factory, validates all 57 frame
+rows and timed inputs, preserves generated specs and installed tool identities,
+and rejects changed provenance before/after review. All such records remain in
+`NEW_OUTPUT`, outside the source checkout; none is included in publication.
+No binary, raw-log, host-data or private-artifact handoff is part of setup.
+
+Offline checks are standard-library only and launch no build, Java, Git or
+benchmark subprocess:
+
+```sh
+python3 -B -m unittest discover \
+  -s "$JDK_SOURCE/doc/cold-call-qualification/scripts/jdk27/cold-call" \
+  -p 'test_qualification_campaign.py' -v
+```
+
+`plan` remains inert. Publication authorizes no campaign on the unhealthy host.
 Nonzero exit, timeout, missing marker, identity/profile mismatch, skipped test,
-semantic mismatch or exhausted cap stops and retains the complete evidence.
-No compiler substitution, warning fallback, partial-directory resume, sample
-replacement/expansion, seed retry or timing continuation after a failed gate.
-No new execution permission is implied by a successful source publication.
+semantic mismatch or exhausted cap stops and retains evidence. No compiler
+substitution, warning fallback, seed retry or sample replacement/expansion is
+included. Existing stopped-attempt evidence stays on its original host.
 
 ## Required evidence and unchanged decision gates
 
