@@ -997,6 +997,10 @@ public:
     return true;
   }
 
+  static bool supports_fast_invokeinterface_object_checks() {
+    return true;
+  }
+
   // x86_64 supports secondary supers table
   constexpr static bool supports_secondary_supers_table() {
     return true;

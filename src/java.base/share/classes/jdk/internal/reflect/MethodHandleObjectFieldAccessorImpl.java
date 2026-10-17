@@ -31,24 +31,18 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 class MethodHandleObjectFieldAccessorImpl extends MethodHandleFieldAccessorImpl {
-    static FieldAccessorImpl fieldAccessor(Field field, MethodHandle getter, MethodHandle setter, boolean isReadOnly) {
+    static FieldAccessorImpl fieldAccessor(Field field, MethodHandle getter, boolean isReadOnly) {
         boolean isStatic = Modifier.isStatic(field.getModifiers());
         if (isStatic) {
             getter = getter.asType(MethodType.methodType(Object.class));
-            if (setter != null) {
-                setter = setter.asType(MethodType.methodType(void.class, Object.class));
-            }
         } else {
             getter = getter.asType(MethodType.methodType(Object.class, Object.class));
-            if (setter != null) {
-                setter = setter.asType(MethodType.methodType(void.class, Object.class, Object.class));
-            }
         }
-        return new MethodHandleObjectFieldAccessorImpl(field, getter, setter, isReadOnly, isStatic);
+        return new MethodHandleObjectFieldAccessorImpl(field, getter, isReadOnly, isStatic);
     }
 
-    MethodHandleObjectFieldAccessorImpl(Field field, MethodHandle getter, MethodHandle setter, boolean isReadOnly, boolean isStatic) {
-        super(field, getter, setter, isReadOnly, isStatic);
+    MethodHandleObjectFieldAccessorImpl(Field field, MethodHandle getter, boolean isReadOnly, boolean isStatic) {
+        super(field, getter, isReadOnly, isStatic);
     }
 
     @Override
@@ -102,6 +96,7 @@ class MethodHandleObjectFieldAccessorImpl extends MethodHandleFieldAccessorImpl 
         if (isReadOnly()) {
             throwFinalFieldIllegalAccessException(value);
         }
+        MethodHandle setter = setter();
         try {
             if (isStatic()) {
                 setter.invokeExact(value);

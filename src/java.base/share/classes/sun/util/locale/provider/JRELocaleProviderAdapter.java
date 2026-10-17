@@ -32,8 +32,10 @@ import java.text.spi.DateFormatSymbolsProvider;
 import java.text.spi.DecimalFormatSymbolsProvider;
 import java.text.spi.NumberFormatProvider;
 import java.time.format.DateTimeFormatterPatternProvider;
+import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -405,10 +407,77 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     }
 
     protected Set<String> createLanguageTagSet(String category) {
+        return new LanguageTagSet(this, category);
+    }
+
+    /**
+     * {@return the language tags of the locales of java.base}
+     */
+    protected Set<String> createBaseLanguageTagSet(String category) {
+        // The space makes a category without tags give no tags, as when joined
+        // with those of jdk.localedata, and not one empty tag. LocaleData
+        // takes an empty set to mean that no locale is to be weeded out.
+        return Set.of((BaseLocaleDataMetaInfo.getSupportedLocaleString(category) + " ")
+                .split("\s+"));
+    }
+
+    /**
+     * {@return the language tags of the locales of java.base and jdk.localedata}
+     */
+    protected Set<String> createAllLanguageTagSet(String category) {
         String supportedLocaleString = createSupportedLocaleString(category);
         return supportedLocaleString != null ?
             Set.of(supportedLocaleString.split("\s+")) :
             Collections.emptySet();
+    }
+
+    /**
+     * The language tags of the locales of a category. Those of java.base are
+     * known right away, but looking up those of jdk.localedata is slow and not
+     * needed for the locales of java.base, which most programs only use. So it
+     * is done when a tag that is not of java.base is asked for, or when all
+     * tags are.
+     */
+    private static final class LanguageTagSet extends AbstractSet<String> {
+        private final JRELocaleProviderAdapter adapter;
+        private final String category;
+        private final Set<String> baseTags;
+        private volatile Set<String> allTags;
+
+        LanguageTagSet(JRELocaleProviderAdapter adapter, String category) {
+            this.adapter = adapter;
+            this.category = category;
+            this.baseTags = adapter.createBaseLanguageTagSet(category);
+        }
+
+        private Set<String> all() {
+            Set<String> tags = allTags;
+            if (tags == null) {
+                // Racing threads create equal sets
+                allTags = tags = adapter.createAllLanguageTagSet(category);
+            }
+            return tags;
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            return baseTags.contains(o) || all().contains(o);
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return baseTags.isEmpty() && all().isEmpty();
+        }
+
+        @Override
+        public int size() {
+            return all().size();
+        }
+
+        @Override
+        public Iterator<String> iterator() {
+            return all().iterator();
+        }
     }
 
     private static String createSupportedLocaleString(String category) {

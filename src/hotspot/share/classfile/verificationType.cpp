@@ -158,11 +158,7 @@ VerificationType VerificationType::get_component(ClassVerifier *context) const {
     case T_ARRAY:
     case T_OBJECT: {
       guarantee(ss.is_reference(), "unchecked verifier input?");
-      Symbol* component = ss.as_symbol();
-      // Create another symbol to save as signature stream unreferences this symbol.
-      Symbol* component_copy = context->create_temporary_symbol(component);
-      assert(component_copy == component, "symbols don't match");
-      return VerificationType::reference_type(component_copy);
+      return VerificationType::reference_type(context->create_temporary_symbol(&ss));
    }
    default:
      // Met an invalid type signature, e.g. [X

@@ -1606,6 +1606,21 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
   }
 }
 
+// Scale index and return the remaining address shift. Avoid mul for
+// sizes 2^k and 3 * 2^k (including 24-byte entries); otherwise clobber tmp.
+int InterpreterMacroAssembler::scale_resolved_entry_index(Register index, Register tmp, int entry_size) {
+  int pow2_size = entry_size;
+  if (entry_size % 3 == 0 && is_power_of_2(entry_size / 3)) {
+    add(index, index, index, LSL, 1); // index * 3
+    pow2_size = entry_size / 3;
+  } else if (!is_power_of_2(entry_size)) {
+    mov(tmp, entry_size);
+    mul(index, index, tmp);
+    return 0;
+  }
+  return log2i_exact(pow2_size);
+}
+
 void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Register index) {
   // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
   get_cache_index_at_bcp(index, 1, sizeof(u4));
@@ -1620,17 +1635,11 @@ void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Registe
 void InterpreterMacroAssembler::load_field_entry(Register cache, Register index, int bcp_offset) {
   // Get index out of bytecode pointer
   get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
-  // Take shortcut if the size is a power of 2
-  if (is_power_of_2(sizeof(ResolvedFieldEntry))) {
-    lsl(index, index, log2i_exact(sizeof(ResolvedFieldEntry))); // Scale index by power of 2
-  } else {
-    mov(cache, sizeof(ResolvedFieldEntry));
-    mul(index, index, cache); // Scale the index to be the entry index * sizeof(ResolvedFieldEntry)
-  }
+  int shift = scale_resolved_entry_index(index, cache, sizeof(ResolvedFieldEntry));
   // Get address of field entries array
   ldr(cache, Address(rcpool, ConstantPoolCache::field_entries_offset()));
   add(cache, cache, Array<ResolvedFieldEntry>::base_offset_in_bytes());
-  lea(cache, Address(cache, index));
+  add(cache, cache, index, LSL, shift);
   // Prevents stale data from being read after the bytecode is patched to the fast bytecode
   membar(MacroAssembler::LoadLoad);
 }
@@ -1638,13 +1647,12 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
 void InterpreterMacroAssembler::load_method_entry(Register cache, Register index, int bcp_offset) {
   // Get index out of bytecode pointer
   get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
-  mov(cache, sizeof(ResolvedMethodEntry));
-  mul(index, index, cache); // Scale the index to be the entry index * sizeof(ResolvedMethodEntry)
+  int shift = scale_resolved_entry_index(index, cache, sizeof(ResolvedMethodEntry));
 
   // Get address of field entries array
   ldr(cache, Address(rcpool, ConstantPoolCache::method_entries_offset()));
   add(cache, cache, Array<ResolvedMethodEntry>::base_offset_in_bytes());
-  lea(cache, Address(cache, index));
+  add(cache, cache, index, LSL, shift);
 }
 
 #ifdef ASSERT
