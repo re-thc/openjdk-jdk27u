@@ -346,6 +346,10 @@ public class AArch64ArrayMismatchCallBoundaryTest {
         expect(IllegalArgumentException.class, () -> byteRange(a, 1, 0, null, 0, 1));
         expect(ArrayIndexOutOfBoundsException.class, () -> byteRange(a, -1, 128, a, 0, 129));
         expect(ArrayIndexOutOfBoundsException.class, () -> byteRange(a, 0, 257, a, 0, 256));
+        expect(NullPointerException.class, () -> ArraysSupport.mismatch((byte[]) null, 0, a, 0, 16));
+        expect(NullPointerException.class, () -> ArraysSupport.mismatch(a, 0, (byte[]) null, 0, 16));
+        expect(ArrayIndexOutOfBoundsException.class, () -> ArraysSupport.mismatch(a, -1, (byte[]) null, 0, 16));
+        expect(NullPointerException.class, () -> ArraysSupport.mismatch((float[]) null, 0, new float[16], 0, 16));
     }
 
     private static void expect(Class<? extends Throwable> expected, Runnable action) {

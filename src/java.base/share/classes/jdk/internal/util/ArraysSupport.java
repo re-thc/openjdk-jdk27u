@@ -426,13 +426,13 @@ public class ArraysSupport {
         return result;
     }
 
-    // The caller has at least one word, and limits this comparison to two.
+    // The caller has at least one word; compare at most the first two words.
     private static int mismatchPrefix(Object a, long aOffset, Object b, long bOffset,
                                       int length, int log2ArrayIndexScale) {
         long diff = U.getLongUnaligned(a, aOffset) ^ U.getLongUnaligned(b, bOffset);
         int index = 0;
         if (diff == 0) {
-            index = length - (8 >> log2ArrayIndexScale);
+            index = Math.min(length - (8 >> log2ArrayIndexScale), 8 >> log2ArrayIndexScale);
             if (index == 0) return -1;
             long offset = (long) index << log2ArrayIndexScale;
             diff = U.getLongUnaligned(a, aOffset + offset) ^ U.getLongUnaligned(b, bOffset + offset);
@@ -449,7 +449,7 @@ public class ArraysSupport {
         long bv = U.getLongUnaligned(b, bOffset);
         int index = 0;
         if (av == bv) {
-            index = length - (8 >> log2ArrayIndexScale);
+            index = Math.min(length - (8 >> log2ArrayIndexScale), 8 >> log2ArrayIndexScale);
             if (index == 0) return -1;
             long offset = (long) index << log2ArrayIndexScale;
             av = U.getLongUnaligned(a, aOffset + offset);
@@ -473,10 +473,9 @@ public class ArraysSupport {
 
     private static int mismatchPrefixDouble(double[] a, int aFromIndex,
                                             double[] b, int bFromIndex, int length) {
-        for (int i = 0; i < length; i++) {
-            if (Double.doubleToLongBits(a[aFromIndex + i]) != Double.doubleToLongBits(b[bFromIndex + i])) return i;
-        }
-        return -1;
+        if (Double.doubleToLongBits(a[aFromIndex]) != Double.doubleToLongBits(b[bFromIndex])) return 0;
+        if (length == 1) return -1;
+        return Double.doubleToLongBits(a[aFromIndex + 1]) != Double.doubleToLongBits(b[bFromIndex + 1]) ? 1 : -1;
     }
 
     // Keep bulk admission, stub selection and tail/NaN handling out of the
@@ -919,13 +918,13 @@ public class ArraysSupport {
                 }
                 return -1;
             }
-            int prefixLength = Math.min(length, 16 >> LOG2_ARRAY_BOOLEAN_INDEX_SCALE);
+            if (a[aFromIndex] != b[bFromIndex]) return 0;
             long aOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_BOOLEAN_INDEX_SCALE);
             long bOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_BOOLEAN_INDEX_SCALE);
             int i = mismatchPrefix(a, aOffset, b, bOffset,
-                    prefixLength, LOG2_ARRAY_BOOLEAN_INDEX_SCALE);
+                    length, LOG2_ARRAY_BOOLEAN_INDEX_SCALE);
             if (i >= 0) return i;
-            if (i < 0 && length == prefixLength) return -1;
+            if (i < 0 && length <= (16 >> LOG2_ARRAY_BOOLEAN_INDEX_SCALE)) return -1;
             return mismatchLarge(a, aFromIndex, b, bFromIndex, length);
         }
 
@@ -1024,13 +1023,13 @@ public class ArraysSupport {
                 }
                 return -1;
             }
-            int prefixLength = Math.min(length, 16 >> LOG2_ARRAY_BYTE_INDEX_SCALE);
+            if (a[aFromIndex] != b[bFromIndex]) return 0;
             long aOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_BYTE_INDEX_SCALE);
             long bOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_BYTE_INDEX_SCALE);
             int i = mismatchPrefix(a, aOffset, b, bOffset,
-                    prefixLength, LOG2_ARRAY_BYTE_INDEX_SCALE);
+                    length, LOG2_ARRAY_BYTE_INDEX_SCALE);
             if (i >= 0) return i;
-            if (i < 0 && length == prefixLength) return -1;
+            if (i < 0 && length <= (16 >> LOG2_ARRAY_BYTE_INDEX_SCALE)) return -1;
             return mismatchLarge(a, aFromIndex, b, bFromIndex, length);
         }
 
@@ -1097,13 +1096,13 @@ public class ArraysSupport {
                 }
                 return -1;
             }
-            int prefixLength = Math.min(length, 16 >> LOG2_ARRAY_CHAR_INDEX_SCALE);
+            if (a[aFromIndex] != b[bFromIndex]) return 0;
             long aOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
             long bOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
             int i = mismatchPrefix(a, aOffset, b, bOffset,
-                    prefixLength, LOG2_ARRAY_CHAR_INDEX_SCALE);
+                    length, LOG2_ARRAY_CHAR_INDEX_SCALE);
             if (i >= 0) return i;
-            if (i < 0 && length == prefixLength) return -1;
+            if (i < 0 && length <= (16 >> LOG2_ARRAY_CHAR_INDEX_SCALE)) return -1;
             return mismatchLarge(a, aFromIndex, b, bFromIndex, length);
         }
 
@@ -1164,13 +1163,13 @@ public class ArraysSupport {
                 }
                 return -1;
             }
-            int prefixLength = Math.min(length, 16 >> LOG2_ARRAY_SHORT_INDEX_SCALE);
+            if (a[aFromIndex] != b[bFromIndex]) return 0;
             long aOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
             long bOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
             int i = mismatchPrefix(a, aOffset, b, bOffset,
-                    prefixLength, LOG2_ARRAY_SHORT_INDEX_SCALE);
+                    length, LOG2_ARRAY_SHORT_INDEX_SCALE);
             if (i >= 0) return i;
-            if (i < 0 && length == prefixLength) return -1;
+            if (i < 0 && length <= (16 >> LOG2_ARRAY_SHORT_INDEX_SCALE)) return -1;
             return mismatchLarge(a, aFromIndex, b, bFromIndex, length);
         }
 
@@ -1231,13 +1230,13 @@ public class ArraysSupport {
                 }
                 return -1;
             }
-            int prefixLength = Math.min(length, 16 >> LOG2_ARRAY_INT_INDEX_SCALE);
+            if (a[aFromIndex] != b[bFromIndex]) return 0;
             long aOffset = Unsafe.ARRAY_INT_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
             long bOffset = Unsafe.ARRAY_INT_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
             int i = mismatchPrefix(a, aOffset, b, bOffset,
-                    prefixLength, LOG2_ARRAY_INT_INDEX_SCALE);
+                    length, LOG2_ARRAY_INT_INDEX_SCALE);
             if (i >= 0) return i;
-            if (i < 0 && length == prefixLength) return -1;
+            if (i < 0 && length <= (16 >> LOG2_ARRAY_INT_INDEX_SCALE)) return -1;
             return mismatchLarge(a, aFromIndex, b, bFromIndex, length);
         }
 
@@ -1281,13 +1280,18 @@ public class ArraysSupport {
                 }
                 return -1;
             }
-            int prefixLength = Math.min(length, 16 >> LOG2_ARRAY_FLOAT_INDEX_SCALE);
+            float firstA = a[aFromIndex];
+            float firstB = b[bFromIndex];
+            if (Float.floatToRawIntBits(firstA) != Float.floatToRawIntBits(firstB)) {
+                if (!Float.isNaN(firstA) || !Float.isNaN(firstB)) return 0;
+                return mismatchLarge(a, aFromIndex, b, bFromIndex, length, false);
+            }
             long aOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
             long bOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
             int i = mismatchPrefixFloating(a, aOffset, b, bOffset,
-                    prefixLength, LOG2_ARRAY_FLOAT_INDEX_SCALE);
+                    length, LOG2_ARRAY_FLOAT_INDEX_SCALE);
             if (i >= 0) return i;
-            if (i == -1 && length == prefixLength) return -1;
+            if (i == -1 && length <= (16 >> LOG2_ARRAY_FLOAT_INDEX_SCALE)) return -1;
             return mismatchLarge(a, aFromIndex, b, bFromIndex, length, i == -1);
         }
 
@@ -1355,13 +1359,13 @@ public class ArraysSupport {
                 }
                 return -1;
             }
-            int prefixLength = Math.min(length, 16 >> LOG2_ARRAY_LONG_INDEX_SCALE);
+            if (a[aFromIndex] != b[bFromIndex]) return 0;
             long aOffset = Unsafe.ARRAY_LONG_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_LONG_INDEX_SCALE);
             long bOffset = Unsafe.ARRAY_LONG_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_LONG_INDEX_SCALE);
             int i = mismatchPrefix(a, aOffset, b, bOffset,
-                    prefixLength, LOG2_ARRAY_LONG_INDEX_SCALE);
+                    length, LOG2_ARRAY_LONG_INDEX_SCALE);
             if (i >= 0) return i;
-            if (i < 0 && length == prefixLength) return -1;
+            if (i < 0 && length <= (16 >> LOG2_ARRAY_LONG_INDEX_SCALE)) return -1;
             return mismatchLarge(a, aFromIndex, b, bFromIndex, length);
         }
 
@@ -1398,10 +1402,9 @@ public class ArraysSupport {
                 }
                 return -1;
             }
-            int prefixLength = Math.min(length, 16 >> LOG2_ARRAY_DOUBLE_INDEX_SCALE);
-            int i = mismatchPrefixDouble(a, aFromIndex, b, bFromIndex, prefixLength);
+            int i = mismatchPrefixDouble(a, aFromIndex, b, bFromIndex, length);
             if (i >= 0) return i;
-            if (i == -1 && length == prefixLength) return -1;
+            if (i == -1 && length <= (16 >> LOG2_ARRAY_DOUBLE_INDEX_SCALE)) return -1;
             return mismatchLarge(a, aFromIndex, b, bFromIndex, length);
         }
 
