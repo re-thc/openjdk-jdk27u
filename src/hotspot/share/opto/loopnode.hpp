@@ -2180,6 +2180,10 @@ class CountedLoopConverter {
   // Helpers for filtered type
   const TypeInt* filtered_type_from_dominators(Node* val, Node* val_ctrl);
 
+  // Direct guard facts for an int induction variable's entry value. Unlike
+  // filtered_type(), this does not combine facts from different Phi inputs.
+  const TypeInt* filtered_loop_entry_type(Node* init, Node* entry_ctrl) const;
+
   void insert_loop_limit_check_predicate(const ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* bol) const;
   void insert_stride_overflow_limit_check() const;
   void insert_init_trip_limit_check() const;

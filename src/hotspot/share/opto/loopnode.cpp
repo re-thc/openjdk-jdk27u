@@ -2697,6 +2697,29 @@ IdealLoopTree* CountedLoopConverter::convert() {
 
   Node* init_control = _head->in(LoopNode::EntryControl);
   Node* entry_control = init_control;
+
+  if (_iv_bt == T_INT) {
+    Node* init = phi->in(LoopNode::EntryControl);
+    if (!init->is_Con()) {
+      const TypeInt* init_t = igvn->type(init)->isa_int();
+      const TypeInt* guarded_t = init_t != nullptr ? filtered_loop_entry_type(init, init_control) : nullptr;
+      // Limit this refinement to guards proving a bounded nonnegative entry.
+      // A zero-trip test alone should not add a cast to every counted loop.
+      if (guarded_t != nullptr && guarded_t->_lo >= 0 && guarded_t->_hi < max_jint) {
+        const TypeInt* narrowed_t = init_t->filter(guarded_t)->isa_int();
+        if (narrowed_t != nullptr && !Type::equals(narrowed_t, init_t)) {
+          // Preserve the entry bounds before strip mining introduces an outer
+          // Phi. The conjunction of guards, including the zero-trip test, is
+          // valid here. Pin the cast below all of them at the original entry.
+          Node* cast = new CastIINode(init_control, init, narrowed_t,
+              ConstraintCastNode::DependencyType::NonFloatingNonNarrowing);
+          _phase->register_new_node(cast, init_control);
+          igvn->replace_input_of(phi, LoopNode::EntryControl, cast);
+        }
+      }
+    }
+  }
+
   bool strip_mine_loop = _iv_bt == T_INT &&
                          _loop->_child == nullptr &&
                          _structure.sfpt() != nullptr &&
@@ -3818,6 +3841,83 @@ Node *OuterStripMinedLoopEndNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (remove_dead_region(phase, can_reshape))  return this;
 
   return nullptr;
+}
+
+// Retain only direct, same-value facts proved by guards dominating this entry.
+// In particular, fold_compares can turn 0 <= init && init <= c into CmpU. Its
+// unsigned upper bound describes a contiguous signed interval only when c is
+// nonnegative. Do not infer wrapped intervals or invert arithmetic expressions.
+const TypeInt* CountedLoopConverter::filtered_loop_entry_type(Node* init, Node* entry_ctrl) const {
+  const TypeInt* result = nullptr;
+  Node* pred = entry_ctrl;
+  uint if_count = 0;
+  // Limit total work as well as the number of tests. There can be many other
+  // CFG nodes between tests. Start has no immediate-dominator table entry.
+  for (uint depth = 0; depth < 64 && if_count < 10; depth++) {
+    if (pred == nullptr || pred == _phase->C->top() || pred == _phase->C->start() ||
+        pred == _phase->C->root() || !pred->is_CFG()) {
+      break;
+    }
+    if (pred->in(0) == nullptr || _phase->igvn().type_or_null(pred) == Type::TOP) {
+      return nullptr;
+    }
+    if (pred->Opcode() == Op_IfTrue || pred->Opcode() == Op_IfFalse) {
+      if_count++;
+      Node* iff = pred->in(0);
+      if (!iff->is_If() || iff->in(0) == nullptr) {
+        return nullptr;
+      }
+      Node* test = iff->in(1);
+      if (test != nullptr && test->is_Bool()) {
+        BoolNode* bol = test->as_Bool();
+        Node* cmp = bol->in(1);
+        if (cmp != nullptr && (cmp->Opcode() == Op_CmpI || cmp->Opcode() == Op_CmpU) &&
+            cmp->in(1) == init && cmp->in(2) != nullptr && cmp->in(2)->is_ConI()) {
+          jint bound = cmp->in(2)->get_int();
+          BoolTest::mask mask = pred->Opcode() == Op_IfTrue ? bol->_test._test : bol->_test.negate();
+          const TypeInt* guarded_t = nullptr;
+          if (bound >= 0) {
+            if (cmp->Opcode() == Op_CmpI) {
+              // Restrict even signed comparisons to a direct nonnegative
+              // constant. In particular, do not interpret a disjoint != range.
+              switch (mask) {
+                case BoolTest::lt:
+                  guarded_t = TypeInt::make(min_jint, bound - 1, Type::WidenMin);
+                  break;
+                case BoolTest::le:
+                  guarded_t = TypeInt::make(min_jint, bound, Type::WidenMin);
+                  break;
+                case BoolTest::gt:
+                  if (bound < max_jint) {
+                    guarded_t = TypeInt::make(bound + 1, max_jint, Type::WidenMin);
+                  }
+                  break;
+                case BoolTest::ge:
+                  guarded_t = TypeInt::make(bound, max_jint, Type::WidenMin);
+                  break;
+                default:
+                  break;
+              }
+            } else if (mask == BoolTest::lt && bound > 0) {
+              guarded_t = TypeInt::make(0, bound - 1, Type::WidenMin);
+            } else if (mask == BoolTest::le) {
+              guarded_t = TypeInt::make(0, bound, Type::WidenMin);
+            }
+          }
+          if (guarded_t != nullptr) {
+            const Type* intersection = result == nullptr ? guarded_t : result->join(guarded_t);
+            result = intersection->isa_int();
+            if (result == nullptr) {
+              // Contradictory guards on a dying path do not justify a cast.
+              return nullptr;
+            }
+          }
+        }
+      }
+    }
+    pred = _phase->idom(pred);
+  }
+  return result;
 }
 
 //------------------------------filtered_type--------------------------------
