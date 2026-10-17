@@ -308,7 +308,9 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
       return false;
     }
 
-    if (MinInlineFrequencyRatio > 0) {
+    // An immature or missing caller profile reports -1, not a cold call site.
+    // Keep using mature profiles for frequency objections, including zero counts.
+    if (MinInlineFrequencyRatio > 0 && profile.count() >= 0) {
       int call_site_count  = caller_method->scale_count(profile.count());
       int invoke_count     = caller_method->interpreter_invocation_count();
       assert(invoke_count != 0, "require invocation count greater than zero");
