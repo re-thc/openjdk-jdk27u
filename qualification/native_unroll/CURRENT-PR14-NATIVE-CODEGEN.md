@@ -24,7 +24,7 @@ Do not use x86 emulation. Supply installed native boot JDK27, jtreg8.3, Python3.
 and the normal OpenJDK build dependencies. macOS needs Xcode/SDK and GNU make4+;
 Linux uses GCC16/g++16 and mold for the repository profile. No tool installation
 or endpoint substitution is part of the task. Use whitespace-free paths and a
-fresh output directory. Stop on any failure, absent prerequisite, source mismatch,
+fresh output directory and adequate space for a full native JDK build. Stop on any failure, absent prerequisite, source mismatch,
 four-hour overall budget or non-quiescent process cleanup; do not retry or expand
 scope. The local agent should supervise child process groups within that budget.
 
@@ -75,6 +75,16 @@ case "$(uname -s):$(uname -m)" in
 esac
 # Preserve invocation names, particularly clang++; never realpath/resolve these.
 printf 'CC=%s\nCXX=%s\nMAKE=%s\n' "$CC" "$CXX" "$MAKE" > "$OUT/tool-invocations.txt"
+python3 - <<'PYCODE'
+import hashlib,json,os
+from pathlib import Path
+rows={}
+for name in ['CC','CXX','MAKE']:
+    p=Path(os.environ[name])
+    with p.open('rb') as f:digest=hashlib.file_digest(f,'sha256').hexdigest()
+    rows[name]=dict(invocation=str(p),resolved=str(p.resolve()),sha256=digest)
+(Path(os.environ['OUT'])/'tool-identities.json').write_text(json.dumps(rows,indent=2)+'\n')
+PYCODE
 "$MAKE" --version > "$OUT/make-version.txt"
 "$BOOT_JDK/bin/java" -jar "$JTREG/lib/jtreg.jar" -version > "$OUT/jtreg-version.txt" 2>&1
 ```
@@ -140,8 +150,11 @@ for mode in chains osr; do
     > "$OUT/$mode.log" 2>&1
 done
 python3 - <<'PY'
-import json,os,re
+import json,os,re,subprocess
 from pathlib import Path
+repo=Path(os.environ['REPO'])
+assert subprocess.check_output(['git','-C',str(repo),'rev-parse','HEAD'],text=True).strip()=='6b99b2d237904f78fa1b6933c56b2202d8323d83'
+assert not subprocess.check_output(['git','-C',str(repo),'status','--porcelain'],text=True).strip()
 out=Path(os.environ['OUT'])
 chain=(out/'chains.log').read_text();osr=(out/'osr.log').read_text()
 assert 'ROUNDTRIP_CHAIN_PASS' in chain and 'actual=4' in chain
