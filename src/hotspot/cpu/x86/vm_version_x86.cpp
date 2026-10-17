@@ -2073,6 +2073,14 @@ void VM_Version::initialize() {
                                      g.generate_getCPUIDBrandString());
   get_processor_features();
 
+#ifdef AMD64
+  if (UseSIMDUTFIntrinsics && FLAG_IS_DEFAULT(SIMDUTFMinLength)) {
+    // The measured x86-64 crossover is lower than the portable default.
+    // Operation floors protect compiler-enabled VMs from higher call overhead.
+    FLAG_SET_DEFAULT(SIMDUTFMinLength, 32);
+  }
+#endif
+
   Assembler::precompute_instructions();
 
   if (VM_Version::supports_hv()) { // Supports hypervisor

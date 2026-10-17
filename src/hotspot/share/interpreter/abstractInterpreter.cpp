@@ -122,6 +122,20 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
 
     switch (iid) {
 #ifndef ZERO
+      case vmIntrinsics::_simdutf_process: return jdk_internal_util_SimdUTF_process;
+#if defined(AMD64) || defined(AARCH64)
+      case vmIntrinsics::_simdutf_utf16CopyThreshold:
+        return jdk_internal_util_SimdUTF_utf16CopyThreshold;
+      case vmIntrinsics::_simdutf_base64EncoderThreshold:
+        return jdk_internal_util_SimdUTF_base64EncoderThreshold;
+      case vmIntrinsics::_simdutf_useLatin1Decoding:
+        return jdk_internal_util_SimdUTF_useLatin1Decoding;
+      case vmIntrinsics::_simdutf_utf8PrefixThreshold:
+        return jdk_internal_util_SimdUTF_utf8PrefixThreshold;
+      case vmIntrinsics::_simdutf_utf8StringSupplementaryThreshold:
+        return jdk_internal_util_SimdUTF_utf8StringSupplementaryThreshold;
+#endif
+      case vmIntrinsics::_countPositives: return java_lang_StringCoding_countPositives;
       // Use optimized stub code for CRC32 native methods.
       case vmIntrinsics::_updateCRC32:       return java_util_zip_CRC32_update;
       case vmIntrinsics::_updateBytesCRC32:  return java_util_zip_CRC32_updateBytes;
@@ -212,6 +226,14 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case java_lang_math_fmaD        : return vmIntrinsics::_fmaD;
   case java_lang_math_fmaF        : return vmIntrinsics::_fmaF;
   case java_lang_ref_reference_get0: return vmIntrinsics::_Reference_get0;
+  case jdk_internal_util_SimdUTF_process: return vmIntrinsics::_simdutf_process;
+  case jdk_internal_util_SimdUTF_utf16CopyThreshold: return vmIntrinsics::_simdutf_utf16CopyThreshold;
+  case jdk_internal_util_SimdUTF_base64EncoderThreshold: return vmIntrinsics::_simdutf_base64EncoderThreshold;
+  case jdk_internal_util_SimdUTF_useLatin1Decoding: return vmIntrinsics::_simdutf_useLatin1Decoding;
+  case jdk_internal_util_SimdUTF_utf8PrefixThreshold: return vmIntrinsics::_simdutf_utf8PrefixThreshold;
+  case jdk_internal_util_SimdUTF_utf8StringSupplementaryThreshold:
+    return vmIntrinsics::_simdutf_utf8StringSupplementaryThreshold;
+  case java_lang_StringCoding_countPositives: return vmIntrinsics::_countPositives;
   case java_util_zip_CRC32_update : return vmIntrinsics::_updateCRC32;
   case java_util_zip_CRC32_updateBytes
                                   : return vmIntrinsics::_updateBytesCRC32;
@@ -318,6 +340,18 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_math_fmaF    : tty->print("java_lang_math_fmaF"    ); break;
     case java_lang_math_sqrt    : tty->print("java_lang_math_sqrt"    ); break;
     case java_lang_math_sqrt_strict           : tty->print("java_lang_math_sqrt_strict"); break;
+    case jdk_internal_util_SimdUTF_process: tty->print("jdk_internal_util_SimdUTF_process"); break;
+    case jdk_internal_util_SimdUTF_utf16CopyThreshold:
+      tty->print("jdk_internal_util_SimdUTF_utf16CopyThreshold"); break;
+    case jdk_internal_util_SimdUTF_base64EncoderThreshold:
+      tty->print("jdk_internal_util_SimdUTF_base64EncoderThreshold"); break;
+    case jdk_internal_util_SimdUTF_useLatin1Decoding:
+      tty->print("jdk_internal_util_SimdUTF_useLatin1Decoding"); break;
+    case jdk_internal_util_SimdUTF_utf8PrefixThreshold:
+      tty->print("jdk_internal_util_SimdUTF_utf8PrefixThreshold"); break;
+    case jdk_internal_util_SimdUTF_utf8StringSupplementaryThreshold:
+      tty->print("jdk_internal_util_SimdUTF_utf8StringSupplementaryThreshold"); break;
+    case java_lang_StringCoding_countPositives: tty->print("java_lang_StringCoding_countPositives"); break;
     case java_util_zip_CRC32_update           : tty->print("java_util_zip_CRC32_update"); break;
     case java_util_zip_CRC32_updateBytes      : tty->print("java_util_zip_CRC32_updateBytes"); break;
     case java_util_zip_CRC32_updateByteBuffer : tty->print("java_util_zip_CRC32_updateByteBuffer"); break;

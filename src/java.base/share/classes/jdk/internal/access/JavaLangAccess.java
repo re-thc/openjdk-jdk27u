@@ -344,6 +344,12 @@ public interface JavaLangAccess {
     int countNonZeroAscii(String s);
 
     /**
+     * Validates a String for Unicode (0), ASCII (1), or Latin-1 (2) encoding.
+     * Returns 1 if representable, 0 if not, or -1 to request scalar validation.
+     */
+    int validateStringEncoding(String s, int kind);
+
+    /**
      * Constructs a new {@code String} with the supplied Latin1 bytes.
      * <p>
      * <b>WARNING: The caller of this method shall relinquish and transfer the
@@ -654,6 +660,16 @@ public interface JavaLangAccess {
      * Are the string bytes compatible with the given charset?
      */
     boolean bytesCompatible(String string, Charset charset, int srcIndex, int numChars);
+
+    /**
+     * Try a wide decode, returning null for fallback. The caller validates the
+     * source range and holds its memory session throughout the conversion.
+     */
+    String newStringFromSegment(MemorySegment segment, long offset, int length, Charset charset);
+
+    /** Try a wide encode, returning -1 before any writes if fallback is needed. */
+    int encodeToSegment(String string, MemorySegment segment, long offset,
+                        Charset charset, int srcIndex, int numChars);
 
     /**
      * Finish initialization of the StackTraceElement objects in a stack trace.

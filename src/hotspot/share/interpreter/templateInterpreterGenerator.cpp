@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "oops/methodData.hpp"
+#include "runtime/simdutfSupport.hpp"
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
@@ -206,6 +207,12 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_math_fmaF )
   method_entry(java_lang_math_fmaD )
   method_entry(java_lang_ref_reference_get0)
+  method_entry(java_lang_StringCoding_countPositives)
+  method_entry(jdk_internal_util_SimdUTF_utf16CopyThreshold)
+  method_entry(jdk_internal_util_SimdUTF_base64EncoderThreshold)
+  method_entry(jdk_internal_util_SimdUTF_useLatin1Decoding)
+  method_entry(jdk_internal_util_SimdUTF_utf8PrefixThreshold)
+  method_entry(jdk_internal_util_SimdUTF_utf8StringSupplementaryThreshold)
   AbstractInterpreter::initialize_method_handle_entries();
 
   method_entry(java_util_zip_CRC32C_updateBytes)
@@ -231,6 +238,7 @@ void TemplateInterpreterGenerator::generate_all() {
   native_method_entry(java_lang_Thread_currentThread)
   native_method_entry(java_lang_ref_reference_get0)
 
+  native_method_entry(jdk_internal_util_SimdUTF_process)
   native_method_entry(java_util_zip_CRC32_update)
   native_method_entry(java_util_zip_CRC32_updateBytes)
   native_method_entry(java_util_zip_CRC32_updateByteBuffer)
@@ -470,6 +478,28 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
                                            : entry_point = generate_math_entry(Interpreter::java_lang_math_sqrt); break;
   case Interpreter::java_lang_ref_reference_get0
                                            : entry_point = generate_Reference_get_entry(); break;
+  case Interpreter::java_lang_StringCoding_countPositives:
+    // Preserve normal profiling so compiled VMs can use the existing C1 and C2 paths.
+    entry_point = UseCompiler ? Interpreter::entry_for_kind(Interpreter::zerolocals)
+                              : generate_count_positives_entry();
+    break;
+  case Interpreter::jdk_internal_util_SimdUTF_utf16CopyThreshold:
+    entry_point = generate_simdutf_int_entry(SimdUTF::utf16_copy_threshold());
+    break;
+  case Interpreter::jdk_internal_util_SimdUTF_base64EncoderThreshold:
+    entry_point = generate_simdutf_int_entry(SimdUTF::base64_encoder_threshold(true));
+    break;
+  case Interpreter::jdk_internal_util_SimdUTF_useLatin1Decoding:
+    entry_point = generate_simdutf_int_entry(UseSIMDUTFIntrinsics ? 1 : 0);
+    break;
+  case Interpreter::jdk_internal_util_SimdUTF_utf8PrefixThreshold:
+    entry_point = generate_simdutf_int_entry(-1);
+    break;
+  case Interpreter::jdk_internal_util_SimdUTF_utf8StringSupplementaryThreshold:
+    entry_point = generate_simdutf_int_entry(0);
+    break;
+  case Interpreter::jdk_internal_util_SimdUTF_process
+                                           : entry_point = generate_simdutf_entry(); break;
   case Interpreter::java_util_zip_CRC32_update
                                            : entry_point = generate_CRC32_update_entry();  break;
   case Interpreter::java_util_zip_CRC32_updateBytes
@@ -492,3 +522,17 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   }
   return entry_point;
 }
+
+#if !defined(AMD64) && !defined(AARCH64)
+address TemplateInterpreterGenerator::generate_simdutf_int_entry(int) {
+  return nullptr;
+}
+
+address TemplateInterpreterGenerator::generate_simdutf_entry() {
+  return nullptr; // Other ports retain the JNI entry.
+}
+
+address TemplateInterpreterGenerator::generate_count_positives_entry() {
+  return nullptr;
+}
+#endif

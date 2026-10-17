@@ -27,6 +27,7 @@ package sun.nio.cs;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.SimdUTF;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -141,7 +142,14 @@ public class US_ASCII
 
         public boolean canEncode(CharSequence cs) {
             int length = cs.length();
-            for (int i = 0; i < length; i++) {
+            if (length > 0 && !canEncode(cs.charAt(0))) {
+                return false;
+            }
+            int valid = SimdUTF.isEligible(length) ? Unicode.validateEncoding(cs, 1) : -1;
+            if (valid >= 0) {
+                return valid != 0;
+            }
+            for (int i = 1; i < length; i++) {
                 if (!canEncode(cs.charAt(i))) {
                     return false;
                 }

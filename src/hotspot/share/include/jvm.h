@@ -335,6 +335,9 @@ JVM_GetNextThreadIdOffset(JNIEnv *env, jclass threadClass);
 JNIEXPORT void JNICALL
 JVM_RegisterContinuationMethods(JNIEnv *env, jclass cls);
 
+JNIEXPORT jint JNICALL
+JVM_RegisterSimdUTFMethods(JNIEnv *env, jclass cls);
+
 /*
  * java.lang.Package
  */

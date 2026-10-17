@@ -415,6 +415,24 @@ class methodHandle;
   do_intrinsic(_Preconditions_checkLongIndex, jdk_internal_util_Preconditions, checkIndex_name, Preconditions_checkLongIndex_signature, F_S)   \
    do_signature(Preconditions_checkLongIndex_signature,          "(JJLjava/util/function/BiFunction;)J")                \
                                                                                                                         \
+  do_class(jdk_internal_util_SimdUTF, "jdk/internal/util/SimdUTF")                                                      \
+  do_intrinsic(_simdutf_utf8StringSupplementaryThreshold, jdk_internal_util_SimdUTF, simdutf_utf8_string_threshold_name, void_int_signature, F_S) \
+   do_name(simdutf_utf8_string_threshold_name, "utf8StringSupplementaryThreshold")                                                            \
+  do_intrinsic(_simdutf_utf16CopyThreshold, jdk_internal_util_SimdUTF, simdutf_utf16_copy_threshold_name, void_int_signature, F_S) \
+   do_name(simdutf_utf16_copy_threshold_name, "utf16CopyThreshold")                                                       \
+  do_intrinsic(_simdutf_base64EncoderThreshold, jdk_internal_util_SimdUTF, simdutf_base64_encoder_threshold_name, void_int_signature, F_S) \
+   do_name(simdutf_base64_encoder_threshold_name, "base64EncoderThreshold")                                               \
+  do_intrinsic(_simdutf_useLatin1Decoding, jdk_internal_util_SimdUTF, simdutf_use_latin1_name, void_boolean_signature, F_S) \
+   do_name(simdutf_use_latin1_name, "useLatin1Decoding")                                                                 \
+  do_intrinsic(_simdutf_utf8PrefixThreshold, jdk_internal_util_SimdUTF, simdutf_utf8prefix_name, void_int_signature, F_S)  \
+   do_name(simdutf_utf8prefix_name, "utf8DecoderPrefixThreshold")                                                           \
+  do_intrinsic(_simdutf_process, jdk_internal_util_SimdUTF, simdutf_process_name, simdutf_process_signature, F_SN)      \
+   do_name(simdutf_process_name, "process0")                                                                             \
+   do_signature(simdutf_process_signature, "(Ljava/lang/Object;IILjava/lang/Object;III)I")                              \
+  do_intrinsic(_simdutf_decodeLatin1, jdk_internal_util_SimdUTF, simdutf_latin1_name, simdutf_latin1_signature, F_S)     \
+   do_name(simdutf_latin1_name, "decodeLatin1")                                                                          \
+   do_signature(simdutf_latin1_signature, "([BII[BII)I")                                                                 \
+                                                                                                                        \
   do_class(java_lang_StringCoding,        "java/lang/StringCoding")                                                     \
   do_intrinsic(_countPositives,     java_lang_StringCoding, countPositives_name, countPositives_signature, F_S)         \
    do_name(     countPositives_name,                       "countPositives0")                                           \

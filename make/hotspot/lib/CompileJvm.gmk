@@ -133,6 +133,8 @@ else ifeq ($(call And, $(call isTargetOs, linux) $(call isTargetCpu, aarch64)), 
   endif
 endif
 
+JVM_PRECOMPILED_HEADER_EXCLUDE += simdutf.cpp
+
 JVM_PRECOMPILED_HEADER := $(TOPDIR)/src/hotspot/share/precompiled/precompiled.hpp
 
 ifeq ($(call isTargetCpu, x86), true)
@@ -182,17 +184,25 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     LINK_TYPE := C++, \
     OUTPUT_DIR := $(JVM_LIB_OUTPUTDIR), \
     SRC := $(JVM_SRC_DIRS), \
+    EXTRA_FILES := $(TOPDIR)/src/utils/simdutf/simdutf.cpp, \
     EXCLUDES := $(JVM_EXCLUDES), \
     EXCLUDE_FILES := $(JVM_EXCLUDE_FILES), \
     EXCLUDE_PATTERNS := $(JVM_EXCLUDE_PATTERNS), \
     DEFAULT_CFLAGS := false, \
     CFLAGS := $(JVM_CFLAGS), \
     abstract_vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
+    simdutfSupport.cpp_CXXFLAGS := -I$(TOPDIR)/src/utils/simdutf, \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     whitebox.cpp_CXXFLAGS := $(CFLAGS_SHIP_DEBUGINFO), \
     $(call ExtendFlags, $(TOPDIR)/src/hotspot/share/gc/g1, \
         g1Numa.cpp, _CXXFLAGS, $(CFLAGS_CONVERSION_WARNINGS)), \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc), \
+    DISABLED_WARNINGS_gcc_simdutf.cpp := undef unused-function unused-const-variable unused-but-set-parameter, \
+    DISABLED_WARNINGS_gcc_simdutfSupport.cpp := undef, \
+    DISABLED_WARNINGS_clang_simdutf.cpp := undef unused-function unused-const-variable deprecated-declarations, \
+    DISABLED_WARNINGS_clang_simdutfSupport.cpp := undef deprecated-declarations, \
+    DISABLED_WARNINGS_microsoft_simdutf.cpp := 4530, \
+    DISABLED_WARNINGS_microsoft_simdutfSupport.cpp := 4530, \
     DISABLED_WARNINGS_gcc_ad_$(HOTSPOT_TARGET_CPU_ARCH).cpp := nonnull, \
     DISABLED_WARNINGS_gcc_bytecodeInterpreter.cpp := unused-label, \
     DISABLED_WARNINGS_gcc_c1_Runtime1_aarch64.cpp := unused-const-variable, \

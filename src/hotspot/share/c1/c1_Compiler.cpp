@@ -37,6 +37,7 @@
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_version.hpp"
@@ -109,6 +110,21 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 
 bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   switch (id) {
+  case vmIntrinsics::_simdutf_utf16CopyThreshold:
+  case vmIntrinsics::_simdutf_base64EncoderThreshold:
+  case vmIntrinsics::_simdutf_useLatin1Decoding:
+  case vmIntrinsics::_simdutf_utf8PrefixThreshold:
+#if defined(AMD64) || defined(AARCH64)
+    return true;
+#else
+    return false;
+#endif
+  case vmIntrinsics::_simdutf_decodeLatin1:
+#ifdef AARCH64
+    return FLAG_IS_DEFAULT(SIMDUTFMinLength);
+#else
+    return false;
+#endif
   case vmIntrinsics::_getObjectSize:
     // The fixed-layout intrinsic does not include hash expansion. The native
     // JVMTI implementation uses the current mark and also handles mirrors.
@@ -142,6 +158,7 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_float16ToFloat:
     if (!VM_Version::supports_float16()) return false;
     break;
+  case vmIntrinsics::_simdutf_process:
   case vmIntrinsics::_arraycopy:
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:
