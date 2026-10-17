@@ -24,7 +24,8 @@
 /*
  * @test id=fallback
  * @summary Verify exact downcall-template selection, fallback, class data, and scope handling
- * @compile --patch-module java.base=${test.src} -d ${test.classes} DowncallTemplateTest.java
+ * @modules java.base/jdk.internal.foreign.abi java.base/jdk.internal.misc
+ * @compile --patch-module java.base=${test.src} DowncallTemplateTest.java
  * @run main/othervm --patch-module java.base=${test.classes} jdk.internal.foreign.abi.DowncallTemplateTest default
  * @run main/othervm --patch-module java.base=${test.classes}
  *      -Djdk.internal.foreign.abi.Specializer.PERFORM_VERIFICATION=true
@@ -34,8 +35,26 @@
 /*
  * @test id=templates-required
  * @summary Require template payload coverage on supported native images
- * @compile --patch-module java.base=${test.src} -d ${test.classes} DowncallTemplateTest.java
+ * @modules java.base/jdk.internal.foreign.abi java.base/jdk.internal.misc
+ * @compile --patch-module java.base=${test.src} DowncallTemplateTest.java
  * @run main/othervm --patch-module java.base=${test.classes} jdk.internal.foreign.abi.DowncallTemplateTest required
+ */
+
+/*
+ * @test id=unsupported-first
+ * @summary Verify unsupported downcall shape initializes emitter constants only on fallback
+ * @modules java.base/jdk.internal.foreign.abi java.base/jdk.internal.misc
+ * @compile --patch-module java.base=${test.src} DowncallTemplateTest.java
+ * @run main/othervm --patch-module java.base=${test.classes}
+ *      jdk.internal.foreign.abi.DowncallTemplateTest unsupported-first
+ */
+
+/*
+ * @test id=upcall-first
+ * @summary Verify first upcall specialization initializes emitter constants
+ * @modules java.base/jdk.internal.foreign.abi java.base/jdk.internal.misc
+ * @compile --patch-module java.base=${test.src} DowncallTemplateTest.java
+ * @run main/othervm --patch-module java.base=${test.classes} jdk.internal.foreign.abi.DowncallTemplateTest upcall-first
  */
 
 package jdk.internal.foreign.abi;
@@ -64,6 +83,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jdk.internal.foreign.CABI;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.OperatingSystem;
 import jdk.internal.util.StaticProperty;
 
@@ -109,6 +129,11 @@ public class DowncallTemplateTest {
     }
 
     private static Recipe recipe(String platform) throws Throwable {
+        return recipe(platform, CARRIER_TYPE, DESCRIPTOR, false, LinkerOptions.empty());
+    }
+
+    private static Recipe recipe(String platform, MethodType carrierType, FunctionDescriptor descriptor,
+                                 boolean forUpcall, LinkerOptions options) throws Throwable {
         Object arranger;
         ABIDescriptor abi;
         if (platform.equals(X64)) {
@@ -129,7 +154,7 @@ public class DowncallTemplateTest {
                 : Class.forName("jdk.internal.foreign.abi.aarch64.CallArranger");
         Method getBindings = arrangerType.getMethod("getBindings", MethodType.class,
                 FunctionDescriptor.class, boolean.class, LinkerOptions.class);
-        Object bindings = getBindings.invoke(arranger, CARRIER_TYPE, DESCRIPTOR, false, LinkerOptions.empty());
+        Object bindings = getBindings.invoke(arranger, carrierType, descriptor, forUpcall, options);
         CallingSequence sequence = (CallingSequence) bindings.getClass().getMethod("callingSequence").invoke(bindings);
         return new Recipe(platform, abi, sequence);
     }
@@ -223,6 +248,14 @@ public class DowncallTemplateTest {
         return value + 17;
     }
 
+    public static int plusTwo(long address, int first, int second) {
+        return first + second + 9;
+    }
+
+    public static int unary(int value) {
+        return value + 9;
+    }
+
     public static int xor(long address, int value) {
         return value ^ 0x55;
     }
@@ -239,8 +272,55 @@ public class DowncallTemplateTest {
         return BindingSpecializer.specializeDowncall(target, recipe.sequence(), recipe.abi());
     }
 
+    private static Class<?> emissionConstantsClass() throws ClassNotFoundException {
+        return Class.forName(BindingSpecializer.class.getName() + "$EmissionConstants", false,
+                BindingSpecializer.class.getClassLoader());
+    }
+
     private static int invoke(MethodHandle handle, MemorySegment symbol, int value) throws Throwable {
         return (int) handle.invokeExact((SegmentAllocator) Arena.global(), symbol, value);
+    }
+
+    private static int invokeTwo(MethodHandle handle, MemorySegment symbol, int first, int second) throws Throwable {
+        return (int) handle.invokeExact((SegmentAllocator) Arena.global(), symbol, first, second);
+    }
+
+    private static String nativePlatformOrX64() {
+        String platform = DowncallTemplates.platform();
+        return platform.equals(X64) || platform.equals(AARCH64) ? platform : X64;
+    }
+
+    private static void checkUnsupportedFirst() throws Throwable {
+        FunctionDescriptor descriptor = FunctionDescriptor.of(ValueLayout.JAVA_INT,
+                ValueLayout.JAVA_INT, ValueLayout.JAVA_INT);
+        Recipe recipe = recipe(nativePlatformOrX64(), descriptor.toMethodType(), descriptor,
+                false, LinkerOptions.empty());
+        MethodHandle leaf = MethodHandles.lookup().findStatic(DowncallTemplateTest.class, "plusTwo",
+                MethodType.methodType(int.class, long.class, int.class, int.class));
+        Class<?> holder = emissionConstantsClass();
+        check(Unsafe.getUnsafe().shouldBeInitialized(holder),
+                "unsupported-shape emitter constants start uninitialized");
+        check(DowncallTemplates.lookup(DowncallTemplateVersion.ID, ClassFileFormatVersion.latest().major(),
+                true, recipe.abi(), recipe.sequence(), leaf.type(), callerType(recipe.sequence())) == null,
+                "two-argument shape does not select a template");
+        MethodHandle specialized = specialize(recipe, leaf);
+        check(!Unsafe.getUnsafe().shouldBeInitialized(holder),
+                "unsupported-shape fallback initializes emitter constants");
+        check(invokeTwo(specialized, MemorySegment.ofAddress(0x1234), 4, 7) == 20,
+                "unsupported-shape fallback invokes its leaf");
+    }
+
+    private static void checkUpcallFirst() throws Throwable {
+        FunctionDescriptor descriptor = FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.JAVA_INT);
+        MethodType targetType = MethodType.methodType(int.class, int.class);
+        Recipe recipe = recipe(nativePlatformOrX64(), targetType, descriptor, true, LinkerOptions.empty());
+        Class<?> holder = emissionConstantsClass();
+        check(Unsafe.getUnsafe().shouldBeInitialized(holder), "upcall emitter constants start uninitialized");
+        MethodHandle specialized = BindingSpecializer.specializeUpcall(targetType, recipe.sequence(), recipe.abi());
+        check(!Unsafe.getUnsafe().shouldBeInitialized(holder), "upcall specialization initializes emitter constants");
+        MethodHandle target = MethodHandles.lookup().findStatic(DowncallTemplateTest.class, "unary", targetType);
+        int result = (int) specialized.invokeExact(target, 7);
+        check(result == 16, "upcall specialization invokes its target");
     }
 
     private static void checkScopes(Recipe recipe, MethodHandle handle) throws Throwable {
@@ -353,6 +433,16 @@ public class DowncallTemplateTest {
     }
 
     public static void main(String[] args) throws Throwable {
+        if (args.length == 1 && args[0].equals("unsupported-first")) {
+            checkUnsupportedFirst();
+            System.out.println("DOWNCALL_TEMPLATE_UNSUPPORTED_FIRST_PASS");
+            return;
+        }
+        if (args.length == 1 && args[0].equals("upcall-first")) {
+            checkUpcallFirst();
+            System.out.println("DOWNCALL_TEMPLATE_UPCALL_FIRST_PASS");
+            return;
+        }
         if (args.length != 1 || !(args[0].equals("default") || args[0].equals("fallback")
                 || args[0].equals("required"))) {
             throw new AssertionError("Expected default, fallback, or required mode");
@@ -431,11 +521,6 @@ public class DowncallTemplateTest {
                         plus.type(), callerType(recipe.sequence())),
                         "unsupported platform rejected " + recipe.platform());
                 checkRejectedRecipes(recipe, entry, plus);
-                if (!forcedFallback) {
-                    check(Arrays.equals(template, emittedBytes(recipe, callerType(recipe.sequence()), plus)),
-                            "template equals production emitter for " + recipe.platform());
-                }
-
                 for (Linker.Option option : new Linker.Option[]{Linker.Option.critical(false),
                         Linker.Option.critical(true), Linker.Option.firstVariadicArg(0),
                         Linker.Option.firstVariadicArg(1)}) {
@@ -480,11 +565,25 @@ public class DowncallTemplateTest {
                         + (platforms.isEmpty() ? " (empty generated image metadata)" : ""));
 
         Recipe executionRecipe = currentRecipe == null ? x64 : currentRecipe;
-        if (selected != null) {
-            check(Arrays.equals(selected, emittedBytes(currentRecipe, callerType(currentRecipe.sequence()), plus)),
-                    "selected template equals normal specialization output");
-        }
+        Class<?> emissionConstants = emissionConstantsClass();
+        check(Unsafe.getUnsafe().shouldBeInitialized(emissionConstants),
+                "emission constants start uninitialized");
         MethodHandle specialized = specialize(executionRecipe, plus);
+        String initializationPath = selected != null ? "template hit"
+                : forcedFallback ? "forced verification fallback"
+                : currentRecipe == null ? "unsupported platform fallback" : "normal generation fallback";
+        check(Unsafe.getUnsafe().shouldBeInitialized(emissionConstants) == (selected != null),
+                initializationPath + (selected != null ? " leaves" : " initializes")
+                        + " fallback emission constants");
+        if (selected != null) {
+            check(Arrays.equals(selected, template), "selected bytes match validated bundle");
+        }
+        if (template != null && !forcedFallback) {
+            for (Recipe recipe : new Recipe[]{x64, aarch64}) {
+                check(Arrays.equals(template, emittedBytes(recipe, callerType(recipe.sequence()), plus)),
+                        "template equals production emitter for " + recipe.platform());
+            }
+        }
         MethodHandle independent = specialize(executionRecipe, leaf("xor"));
         MemorySegment symbol = MemorySegment.ofAddress(0x1234);
         for (int value : new int[]{Integer.MIN_VALUE, -7, 0, 1, Integer.MAX_VALUE}) {

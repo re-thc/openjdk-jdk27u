@@ -13,7 +13,10 @@ initialized or ABI storage tables are scanned. Potential matches still require
 the complete recipe and ABI/storage checks. A producer whose native byte order
 cannot generate the supported recipe emits empty metadata instead of failing
 the cross build. Missing, incompatible or corrupt template data uses the
-existing runtime emitter. There is no new production flag or public API.
+existing runtime emitter. Emission-only class and method descriptors initialize
+lazily when fallback generation or an upcall needs them; a template hit avoids
+constructing them. The outer specializer still freezes its configuration and
+classfile version at the same point. There is no new production flag or public API.
 
 Formatting and test hardening do not change the emitter, recipe, encoded bundle
 format or validation algorithm. Content-derived source/build IDs will refresh
@@ -23,10 +26,12 @@ an old ID to make a new image appear source-identical.
 These are source-level changes, not a qualified speedup. In particular, the
 earlier handwritten adapter has a control-passing retained C2 slowdown hold
 (baseline/candidate elapsed ratio 0.95767, 95% CI [0.87993, 0.99977]). Its cause
-is unresolved. The generated-adapter design avoids that helper's parameter-leaf
-disadvantage, but matching invocation bytes does not establish equal retained
-performance. Later template measurements failed unchanged controls. Neither
-this source repair nor its tests clears either limitation.
+is unresolved. The generated adapter binds its leaf through hidden-class class
+data. The earlier constant caller also inlined through to `linkToNative`, so
+the different helper shapes do not explain that timing result. Matching
+invocation bytes does not establish equal retained performance. Later template
+measurements failed unchanged controls. Neither this repair nor its tests
+clears either limitation.
 
 ## Build and test from source
 
@@ -38,8 +43,8 @@ No prebuilt experimental image or external BUILD_JDK is required: normal make
 creates the in-tree build JDK. Run the baseline first in the same checkout so
 the candidate can reuse the unchanged native objects.
 
-The following commands are instructions for a future authorized run. They have
-not been executed for this source revision. Use a new `FFM_RESULTS` directory
+The following commands describe matched-image reproduction. Local development
+builds and correctness tests do not qualify benchmark results. Use a new `FFM_RESULTS` directory
 and retain all logs and outputs; do not overwrite an earlier experiment.
 
 ```sh
@@ -62,21 +67,26 @@ make CONF=ffm-release JOBS="$FFM_JOBS" test \
     TEST="test/jdk/java/foreign/DowncallTemplateTest.java test/jdk/java/foreign/TestLinker.java test/jdk/java/foreign/callarranger"
 ```
 
-`DowncallTemplateTest` has separate `fallback` and `templates-required` test
-descriptions. The first runs optional default selection and forced verification
-fallback, allowing intentional empty-metadata images. The second runs explicit
+`DowncallTemplateTest` has separate `fallback`, `templates-required`,
+`unsupported-first` and `upcall-first` test descriptions. The first runs optional
+default selection and forced verification fallback, allowing intentional
+empty-metadata images. The second runs explicit
 `required` mode: on supported native Linux images, empty metadata, a missing or
 invalid bundle, nondefault specializer configuration, or null selection fails
 the test. Unsupported hosts explicitly report fallback. A supported-image
 qualification must pass the required description; fallback coverage alone
-cannot qualify template installation.
+cannot qualify template installation. The first-shape descriptions use fresh
+VMs to verify that unsupported downcalls and upcalls still initialize their
+emitter and invoke the correct target.
 
 The test compares bytes against both ABI emitters; checks identity, version,
 checksum, malformed headers and truncated header/payload rejection; rejects ABI
 and binding storage mismatches, capture state, options and unsupported recipes;
-and exercises heap-symbol, closed/wrong-thread scope rejection, throwing-leaf
-cleanup and concurrent independent specializations. Synthetic leaves avoid
-native calls, so this does not replace native ABI coverage. Record the source
+checks that a first template hit leaves emission constants uninitialized while
+normal or forced fallback initializes them; and exercises heap-symbol,
+closed/wrong-thread scope rejection, throwing-leaf cleanup and concurrent
+independent specializations. Synthetic leaves avoid native calls, so this does
+not replace native ABI coverage. Record the source
 commit/diff, configure arguments, toolchain and build-JDK identities, generated
 source binding, native-file hashes and extracted module differences. Unexpected
 native differences must be explained before timing. A clean candidate build
