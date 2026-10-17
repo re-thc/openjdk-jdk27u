@@ -7,11 +7,10 @@ import os
 from pathlib import Path
 import random
 import re
-import resource
-import signal
-import subprocess
 import time
 from audit import tree_digest
+from deadline import Budget
+from process_control import run
 
 if not __debug__:
     raise SystemExit("Run without -O/PYTHONOPTIMIZE; execution preconditions are required")
@@ -53,29 +52,6 @@ def cells():
     return out
 
 
-def child_limits():
-    resource.setrlimit(resource.RLIMIT_FSIZE, (256 << 20, 256 << 20))
-    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
-
-
-def run(command, log, timeout, env):
-    with log.open("w") as stream:
-        child = subprocess.Popen(command, stdout=stream, stderr=subprocess.STDOUT, env=env,
-                                 start_new_session=True, preexec_fn=child_limits)
-        try:
-            status = child.wait(timeout=timeout)
-        except subprocess.TimeoutExpired:
-            os.killpg(child.pid, signal.SIGTERM)
-            try:
-                child.wait(timeout=2)
-            except subprocess.TimeoutExpired:
-                os.killpg(child.pid, signal.SIGKILL)
-                child.wait()
-            raise
-        if status:
-            raise RuntimeError(f"Exit {status}; preserve {log}; stop, no retry")
-
-
 def main():
     stage_started = time.monotonic()
     p = argparse.ArgumentParser(description=__doc__)
@@ -85,6 +61,7 @@ def main():
     p.add_argument("--repo", type=Path, required=True)
     p.add_argument("--cpus", required=True, help="two allowed logical CPUs on distinct physical cores")
     p.add_argument("--gate", type=Path, help="reviewed gate.json; mandatory for executing timing")
+    p.add_argument("--campaign", type=Path, help="shared deadline; mandatory for execution")
     p.add_argument("--execute", action="store_true")
     a = p.parse_args()
     artifact = json.loads(a.artifact.read_text())
@@ -166,6 +143,9 @@ def main():
     if not a.execute:
         print(json.dumps(plan, indent=2))
         return
+    assert a.campaign, "execute through campaign.py; stages cannot start new clocks"
+    budget = Budget.load(a.campaign)
+    budget.remaining()
     assert set(cpu_values).issubset(os.sched_getaffinity(0)), "requested CPUs unavailable"
     cores = []
     for cpu in cpu_values:
@@ -184,6 +164,10 @@ def main():
         for kind in (("release", "debug") if a.stage == "diagnostics" else ("release",)):
             expected = audit["runtime_trees"][side + "_" + kind]
             assert tree_digest(Path(expected["path"])) == expected, "runtime class tree changed"
+            for part in ("bin", "lib", "conf"):
+                expected = audit["runtime_files"][side + "_" + kind][part]
+                assert tree_digest(Path(expected["path"])) == expected, f"runtime {part} changed"
+                budget.remaining()
     for file, expected in artifact["classpath_sha256"].items():
         assert digest(Path(file)) == expected, file
     if a.stage == "timing":
@@ -211,7 +195,7 @@ def main():
            ("_JAVA_OPTIONS", "JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "CLASSPATH")}
     deadline = stage_started + plan["wall_limit_minutes"] * 60
     for command in commands:
-        remaining = deadline - time.monotonic()
+        remaining = min(deadline - time.monotonic(), budget.remaining())
         assert remaining > 0, "stage wall limit reached; preserve incomplete pairs"
         run(command["argv"], out / (command["name"] + ".log"),
             min(command["timeout_seconds"], remaining), env)
@@ -222,6 +206,7 @@ def main():
         assert len(rejects[0]) == 32 and rejects[0] == rejects[1], "rejection classes differ or checks missing"
     (out / "receipt-manifest.json").write_text(json.dumps(receipt_manifest(out), indent=2) + "\n")
     assert time.monotonic() <= deadline, "stage budget exceeded during final validation; campaign incomplete"
+    budget.remaining()
     print(out / "plan.json")
 
 

@@ -4,12 +4,14 @@ import argparse
 import hashlib
 import html
 import json
+import os
 from pathlib import Path
 import re
 import shlex
 import subprocess
 import tarfile
 import xml.etree.ElementTree as ET
+from compiler_cost import existing_report
 
 if not __debug__:
     raise SystemExit("Run without -O/PYTHONOPTIMIZE; audit assertions are required")
@@ -37,13 +39,34 @@ def digest(path):
 
 
 def tree_digest(root):
+    if not root.is_dir():
+        raise ValueError(f"runtime directory missing: {root}")
     h = hashlib.sha256()
     count, size = 0, 0
-    for path in sorted(root.rglob("*")):
-        if path.is_file():
-            h.update(str(path.relative_to(root)).encode() + b"\0" + digest(path).encode() + b"\n")
-            count += 1
-            size += path.stat().st_size
+
+    def visit(directory, ancestors):
+        nonlocal count, size
+        stat = directory.stat()
+        identity = (stat.st_dev, stat.st_ino)
+        if identity in ancestors:
+            raise ValueError("runtime directory symlink cycle")
+        for path in sorted(directory.iterdir()):
+            relative = str(path.relative_to(root)).encode()
+            if path.is_symlink():
+                h.update(b"L\0" + relative + b"\0" + os.fsencode(os.readlink(path)) + b"\n")
+                if not path.exists():
+                    raise ValueError(f"dangling runtime symlink: {path}")
+            if path.is_dir():
+                visit(path, ancestors | {identity})
+            elif path.is_file():
+                h.update(b"F\0" + relative + b"\0" + str(path.stat().st_mode & 0o777).encode()
+                         + b"\0" + digest(path).encode() + b"\n")
+                count += 1
+                size += path.stat().st_size
+            else:
+                raise ValueError(f"unsupported runtime entry: {path}")
+
+    visit(root, set())
     return {"path": str(root), "sha256": h.hexdigest(), "files": count, "bytes": size}
 
 
@@ -195,6 +218,10 @@ def main():
         if kind == "debug" and side == "candidate":
             jdk = repo / "build/vector-bounds-debug/jdk"
         report.setdefault("runtime_trees", {})[side + "_" + kind] = tree_digest(jdk / "modules")
+        for required in ("libjli.so", "libjava.so", "libzip.so", "libnio.so", "server/libjvm.so"):
+            assert (jdk / "lib" / required).is_file(), f"required runtime library missing: {required}"
+        report.setdefault("runtime_files", {})[side + "_" + kind] = {
+            part: tree_digest(jdk / part) for part in ("bin", "lib", "conf")}
     assert report["runtime_trees"]["baseline_release"]["sha256"] == report["runtime_trees"]["candidate_release"]["sha256"]
     b = root / "baseline-debug-jdk/modules"
     c = repo / "build/vector-bounds-debug/jdk/modules"
@@ -205,6 +232,7 @@ def main():
     assert differences == {"removed": [], "changed": [],
                            "added": ["jdk.jlink/jdk/tools/jlink/internal/plugins/default_jli_trace.txt"]}
     report["debug_runtime_differences"] = differences
+    report["compiler_cost"] = existing_report(root)
     tools = [Path("/workspace/toolchains/gcc16/bin/g++"), Path("/workspace/toolchains/gcc16/bin/gcc"),
              Path("/workspace/toolchains/jdk27/release")]
     report["toolchain_hashes"] = {str(x): digest(x) for x in tools}

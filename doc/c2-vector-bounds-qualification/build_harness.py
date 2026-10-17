@@ -8,7 +8,9 @@ import subprocess
 import os
 import zipfile
 import time
-from matrix import run
+from process_control import run
+from deadline import Budget
+from audit import tree_digest
 
 if not __debug__:
     raise SystemExit("Run without -O/PYTHONOPTIMIZE; build preconditions are required")
@@ -28,6 +30,8 @@ def main():
     for name in ("codec", "jdk", "deps", "out"):
         p.add_argument("--" + name, required=True, type=Path)
     p.add_argument("--execute", action="store_true")
+    p.add_argument("--campaign", type=Path, help="shared campaign deadline required for execution")
+    p.add_argument("--audit", type=Path, help="complete existing-image identity required for execution")
     a = p.parse_args()
     codec, jdk, deps, out = (getattr(a, x).resolve() for x in ("codec", "jdk", "deps", "out"))
     harness = Path(__file__).with_name("BoundsQualification.java").resolve()
@@ -44,6 +48,15 @@ def main():
     if not a.execute:
         print(json.dumps({"codec_commit": CODEC, "required_existing_jars": DEPENDENCIES, "commands": commands}, indent=2))
         return
+    assert a.campaign, "execute through campaign.py; build cannot start a new campaign clock"
+    budget = Budget.load(a.campaign)
+    budget.remaining()
+    assert a.audit, "complete existing-image audit required before executing javac/jar"
+    audit = json.loads(a.audit.read_text())
+    assert jdk == Path(audit["paths"]["receipts"]) / "baseline-release-jdk", "build must use audited baseline JDK"
+    for expected in [audit["runtime_trees"]["baseline_release"], *audit["runtime_files"]["baseline_release"].values()]:
+        assert tree_digest(Path(expected["path"])) == expected, "baseline build-tool runtime changed"
+        budget.remaining()
     assert sources, "codec source checkout is required"
     assert subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=codec, text=True).strip() == CODEC
     assert not subprocess.check_output(["git", "status", "--porcelain"], cwd=codec), "codec checkout must be clean"
@@ -55,7 +68,7 @@ def main():
     env = {k: v for k, v in os.environ.items() if k not in
            ("_JAVA_OPTIONS", "JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "CLASSPATH")}
     for i, command in enumerate(commands):
-        remaining = started + 600 - time.monotonic()
+        remaining = min(started + 600 - time.monotonic(), budget.remaining())
         assert remaining > 0, "10-minute harness stage limit reached"
         run(command, out / f"build-{i}.log", min(180, remaining), env)
         assert sum(x.stat().st_size for x in out.rglob("*") if x.is_file()) < 2 << 30, "build disk limit reached"
@@ -72,6 +85,7 @@ def main():
                 "source_sha256": {str(x.relative_to(codec)): sha(x) for x in sources}}
     (out / "artifact.json").write_text(json.dumps(manifest, indent=2) + "\n")
     assert time.monotonic() - started <= 600, "build exceeded stage budget; keep receipts, do not use artifact"
+    budget.remaining()
     print(out / "artifact.json")
 
 

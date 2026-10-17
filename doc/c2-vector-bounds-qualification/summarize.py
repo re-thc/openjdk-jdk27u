@@ -10,6 +10,8 @@ import re
 import statistics
 import xml.etree.ElementTree as ET
 from matrix import verify_receipt
+from deadline import Budget
+from compiler_cost import parse_log, compiler_screen
 
 if not __debug__:
     raise SystemExit("Run without -O/PYTHONOPTIMIZE; analysis preconditions are required")
@@ -54,11 +56,17 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("results", type=Path)
     p.add_argument("--out", type=Path, required=True)
+    p.add_argument("--campaign", type=Path, help="shared deadline when part of a live campaign")
     a = p.parse_args()
+    budget = Budget.load(a.campaign) if a.campaign else None
+    if budget:
+        budget.remaining()
     verify_receipt(a.results / "receipt-manifest.json")
     plan = json.loads((a.results / "plan.json").read_text())
     rows, evidence = {}, {}
     for task in plan["timing_tasks"]:
+        if budget:
+            budget.remaining()
         data = json.loads((a.results / (task["name"] + ".json")).read_text())
         assert len(data) == 1
         assert data[0]["benchmark"] == "qualification.BoundsQualification." + task["method"]
@@ -69,6 +77,13 @@ def main():
         assert len(samples) == 5 and all(math.isfinite(v) and v > 0 for v in samples)
         row = rows.setdefault(task["cell"], {"method": task["method"], "params": task["params"], "pairs": {}})
         row["pairs"].setdefault(task["pair"], {})[task["side"]] = statistics.mean(samples)
+        logs = list(a.results.glob(task["name"] + "-*.xml"))
+        assert len(logs) == 1, "one matched product compilation log required per fork"
+        costs = parse_log(logs[0])
+        clock = re.search(r"qualification-iteration=6 uptime-ms=(\d+)",
+                          (a.results / (task["name"] + ".log")).read_text())
+        costs["measurement_start_seconds"] = int(clock[1]) / 1000 if clock else None
+        row.setdefault("compiler_cost_pairs", {}).setdefault(task["pair"], {})[task["side"]] = costs
         evidence[task["name"]] = c2_evidence(a.results, task)
     primary_by_pair = {}
     for row in rows.values():
@@ -94,11 +109,14 @@ def main():
                    "geomean_percent": 100 * math.expm1(statistics.mean(logs)),
                    "paired_bootstrap_95_percent": interval(logs), "two_sided_sign_flip_p": pvalue}
     report = {"cells": rows, "primary_codec_endpoint": primary, "c2_evidence": evidence,
+              "compiler_cost_screen": compiler_screen(rows),
               "limitations": ["Six fork pairs; bootstrap interval is descriptive and may be wide.",
                               "Secondary cell intervals are not multiplicity-adjusted gain claims.",
                               "Identical minimal compilation logging is enabled in timed forks.",
                               "No applicability evidence means no codec-gain attribution, regardless of scores."]}
     a.out.open("x").write(json.dumps(report, indent=2) + "\n")
+    if budget:
+        budget.remaining()
     print(a.out)
 
 

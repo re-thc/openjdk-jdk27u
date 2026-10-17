@@ -2,11 +2,14 @@
 
 This is an executable, bounded proposal. No new JDK build, Java compilation,
 benchmark, CI run or dependency installation was performed while preparing it.
-Only the archived receipts were analyzed, hashed and copied. The Java harness
+Only archived receipts and bounded Python supervision/parser tests were used. The Java harness
 has been source-reviewed but has **not** been compiled or executed.
 Offline Python tests validate the dry-run matrices, default optimization flags,
-paired scheduling, protected execution gates and rejection of stale/late/OSR-only
-C2 evidence. Run them with `python3 -m unittest discover -s doc/c2-vector-bounds-qualification -p test_tools.py`.
+paired scheduling, protected execution gates, complete runtime hashing, compiler
+cost parsing, and rejection of stale/late/OSR-only C2 evidence. Python-only
+subprocess tests exercise cancellation, parent death, and TERM-resistant
+descendants; these are supervision tests, not workload timing. Run all tests with
+`python3 -m unittest discover -s doc/c2-vector-bounds-qualification -p 'test_*.py'`.
 
 The correctness review is GO. Codec applicability and performance remain open.
 The actual codec source lacks the fixture's explicit unsigned guard. Its signed
@@ -28,11 +31,13 @@ match checks are redundant. The inductive cursor/overflow proof is separate work
 | Harness | this Git revision; JMH 1.37; one class/JAR set shared by both VMs |
 
 `audit.py` has already run against `/workspace/scratch/c2-vector-bounds`.
-Its final output is `/workspace/scratch/c2-vector-bounds/qualification-evidence-final`:
+Its repaired output is `/workspace/scratch/c2-vector-bounds/qualification-repair-evidence-final`;
+the earlier evidence directories remain intact:
 
 - `audit.json`: source pins, release/debug VM hashes, complete exploded runtime
-  module-tree digests, toolchain identities, flags actually recorded, normal C2
-  graph assertions, and limitations.
+  module-tree digests and complete `bin`, `lib`, and `conf` trees for each actual
+  release/debug JDK, toolchain identities, flags actually recorded, normal C2
+  graph assertions, compiler costs from existing logs, and limitations.
 - `manifest.json` and `text-receipts.tar.gz`: 67 archived text/class receipts,
   including original compiler source, commands, graphs, assembly, tests and
   pinned codec references. Symlinks are dereferenced into the archive.
@@ -40,10 +45,17 @@ Its final output is `/workspace/scratch/c2-vector-bounds/qualification-evidence-
   GitHub commit/tree/blob. Its SHA-256 is
   `09db7bd9ca026c4631d9d02326c97210ba8bde38aab694f2821e3fdaefb750a6`.
 
-The release module trees are identical. All common debug runtime files are
+The release module trees are identical. All common debug module files are
 identical; candidate additionally has the jlink `default_jli_trace.txt` tool
 resource. The audit records that difference explicitly. Both compiled regression
 test classes are archived individually; graph assertions are checked directly.
+Runtime trees bind the exact set of files, contents, modes and symlink targets,
+including followed directory symlinks. Missing roots, dangling links and cycles
+fail closed. This includes all launcher/JNI libraries, specifically `libjli`,
+`libjava`, `libzip`, `libnio` and `libjvm`, and all executables used by the build
+and forks. The build verifies its complete baseline image before javac/jar; each
+execution stage verifies the actual images before use. This
+adds identity coverage without rebuilding, modifying or transferring any image.
 
 Original files, native VMs, JDKs and jtreg directories remain untouched.
 Do not rebuild into them, strip them, chmod hardlinks, overwrite receipts, or
@@ -99,6 +111,29 @@ CastII below the intervening signed guard, preserving the dependency that the
 eliminated check carried. That establishes safety for the covered case. It does
 not establish absence of scheduling or loop-optimization regressions elsewhere.
 
+`compiler_cost.py` also extracts existing C2 task counts and elapsed wall times:
+
+| Existing product capture | Baseline OSR / normal | Candidate OSR / normal | Tasks/installations per side |
+| --- | ---: | ---: | ---: |
+| Default | 25 / 9 ms | 28 / 10 ms | 2 / 2 |
+| No unroll | 18 / 6 ms | 43 / 8 ms | 2 / 2 |
+
+Each product log has one normal and one OSR task, no failures, repeated same-entry
+compilations, runtime C2 traps or invalidations. The debug logs have 102 versus 104
+C2 tasks (97/99 normal, five OSR each), totaling 1222/1149 ms. Each has nine repeat
+tasks across eight library entry keys; none of the nine test methods repeats a
+same-entry C2 compilation. The test methods have 11 tasks each (including two OSR),
+totaling 209/213 ms. Debug exception tests also log 26/28 runtime C2 trap events.
+
+These are millisecond-rounded, single-capture **compiler-task wall times**, not
+CPU time or per-phase cost. Task completion can follow installation and assembly
+printing: candidate no-unroll OSR installs 11 ms after task start but finishes at
+43 ms. The report separates queue latency, start-to-install latency, task elapsed
+and post-install time; it classifies C2 by compiler thread, preserves failed or
+incomplete tasks, and keys repeat generations by method/signature/normal-or-OSR/BCI.
+It distinguishes nested runtime trap events from parse-time trap descriptions.
+No paired compiler-cost threshold is applied to these single archived captures.
+
 ## Scope and resource envelope after execution approval
 
 One serial timing lane, one JMH thread, two allowed logical CPUs on distinct
@@ -117,14 +152,33 @@ CI, merges or public push are part of this plan.
 | Matched timing | 55 minutes; ≤252 forks, ≤60 seconds each | incorrect output, crash, timeout, changed identity, incomplete pair or disk cap |
 | Offline analysis/receipt finalization | 3 minutes | incomplete/corrupt receipts |
 
-Total execution budget is 95 minutes, plus at most 5 seconds for timeout cleanup.
+There is one 95-minute deadline, with the last five seconds reserved **inside** it
+for cleanup and compact outcome recording. `campaign.py` starts a boot-bound
+monotonic deadline before checkout and keeps a supervisor alarm active through
+checkout, build, hashing, preflight, diagnostics, graph-review waiting, timing and
+summary. Graph review consumes time; it never pauses the clock. Every child gets
+the minimum of its command cap, stage remaining time and campaign work remaining.
+Helpers require the inherited deadline and cannot start a new campaign clock.
+If review or startup uses the remaining budget, stop incomplete; do not skip
+review/cells or extend time to make the separate stage maxima fit.
 Dependency staging is separate setup and must be resolved before the campaign.
 Stage budgets include their validation
 overhead; no automatic retries, larger heaps, extra cases or fallback builds.
 Every child inherits a 256 MiB per-file limit and disabled core dumps. Each run
 stage checks its 2 GiB receipt budget after each child; an in-flight child can
 overshoot that threshold, so reserve the larger aggregate envelope above.
-Whole process groups are terminated on timeout.
+The shared runner owns a persistent session/process-group anchor. It remains
+unreaped through TERM, bounded grace and unconditional KILL, even after the
+command leader exits. Its reserved PID and checked start identity prevent
+signalling a reused unrelated group. Cleanup runs in `finally` for success,
+failure, timeout, SIGINT/TERM/HUP cancellation and protocol failure. A lifeline
+pipe lets the anchor clean its own group if its parent dies. Workload signal
+dispositions and masks are restored; cleanup defers the campaign alarm until
+final reap. `/proc` scans have internal deadlines; incomplete verification blocks
+further work. Normal exits with no descendants avoid the grace wait. Nested
+stage anchors have the same lifeline behavior. This covers the normal Git,
+Python and JMH commands, whose workload descendants remain in their groups;
+intentionally daemonizing/`setsid` workloads need external cgroup supervision.
 Any incomplete campaign is reported as incomplete and retains its receipts.
 
 The scripts default to dry run. `--execute` is an operator switch after approval;
@@ -146,8 +200,9 @@ automatically:
 Place their correspondingly named JAR files in `TASK_DEPS`. The processor and
 runtime dependency choices follow JMH's [processor POM](https://github.com/openjdk/jmh/blob/1.37/jmh-generator-annprocess/pom.xml)
 and [runtime POM](https://github.com/openjdk/jmh/blob/1.37/jmh-core/pom.xml).
-Hashes enter `artifact.json`. Obtain a clean codec checkout at the exact SHA
-above through ordinary Git. Never build from the extracted reference directory.
+Hashes enter local `artifact.json`. The controller obtains a clean codec checkout
+at the exact SHA through ordinary Git and builds in that same local flow. There
+are no external artifact handoffs. Never build from the extracted reference directory.
 No Gradle wrapper or auto-downloading Java toolchain is used.
 
 Run all commands from this JDK checkout. Set the two physical CPUs from the
@@ -158,46 +213,32 @@ distinct package/core identities. These variables deliberately avoid HOME/PATH:
 TASK_REPO=/workspace/openjdk-jdk27u
 TASK_PLAN="$TASK_REPO/doc/c2-vector-bounds-qualification"
 TASK_RECEIPTS=/workspace/scratch/c2-vector-bounds
-TASK_AUDIT="$TASK_RECEIPTS/qualification-evidence-final/audit.json"
+TASK_AUDIT="$TASK_RECEIPTS/qualification-repair-evidence-final/audit.json"
 TASK_RUN=/workspace/scratch/c2-vector-bounds-qualification-run
-TASK_CODEC=/workspace/scratch/jzstd-6abf77e2
 TASK_DEPS=/workspace/toolchains/jmh-1.37
 TASK_CPUS=0,1  # replace with two allowed distinct physical cores
 ```
 
-Create `TASK_RUN` once as a new private directory. After the execution and
-dependency prerequisites are satisfied, build one immutable harness:
+Keep `TASK_RUN` absent; the controller creates it once. After execution approval
+and dependency setup, run the whole campaign with one command:
 
 ```bash
-mkdir "$TASK_RUN"
-git init "$TASK_CODEC"
-git -C "$TASK_CODEC" remote add origin https://github.com/re-thc/jzstd.git
-timeout 120 git -C "$TASK_CODEC" fetch --depth=1 origin 6abf77e2f63b68cc9269d5823e206235ab254c04
-git -C "$TASK_CODEC" checkout --detach FETCH_HEAD
-taskset --cpu-list "$TASK_CPUS" python3 "$TASK_PLAN/build_harness.py" \
-  --codec "$TASK_CODEC" --jdk "$TASK_RECEIPTS/baseline-release-jdk" \
-  --deps "$TASK_DEPS" --out "$TASK_RUN/harness" --execute
+python3 "$TASK_PLAN/campaign.py" \
+  --repo "$TASK_REPO" --receipts "$TASK_RECEIPTS" --audit "$TASK_AUDIT" \
+  --deps "$TASK_DEPS" --cpus "$TASK_CPUS" --out "$TASK_RUN" --execute
 ```
 
-The script verifies the clean codec Git SHA, compiles its production sources
+Omitting `--execute` prints the complete flow without creating directories or
+starting Git, Java or builds. The controller fetches/checks out into `TASK_RUN/codec`,
+then verifies the clean codec Git SHA, compiles its production sources
 unchanged, compiles the separate qualification class with JMH annotation
 processing, checks BenchmarkList/CompilerHints/generated classes, and writes
 `harness/artifact.json`. It records source, dependency, class-JAR and javac hashes.
-Use that exact artifact on all VMs.
-
-For each of the following invocations, omitting `--execute` prints JSON commands
-without starting Java. Run preflight once, then diagnostics:
-
-```bash
-python3 "$TASK_PLAN/matrix.py" preflight \
-  --artifact "$TASK_RUN/harness/artifact.json" --receipts "$TASK_RECEIPTS" \
-  --audit "$TASK_AUDIT" --repo "$TASK_REPO" --cpus "$TASK_CPUS" \
-  --corpus "$TASK_RUN/corpus" --out "$TASK_RUN/preflight" --execute
-python3 "$TASK_PLAN/matrix.py" diagnostics \
-  --artifact "$TASK_RUN/harness/artifact.json" --receipts "$TASK_RECEIPTS" \
-  --audit "$TASK_AUDIT" --repo "$TASK_REPO" --cpus "$TASK_CPUS" \
-  --corpus "$TASK_RUN/corpus" --out "$TASK_RUN/diagnostics" --execute
-```
+Use those same local classes on all VMs. It then runs preflight and diagnostics,
+prints the review-gate path, and waits under the same deadline. Review those logs
+while it waits and write `TASK_RUN/gate.json` as described below. The controller
+then runs timing and summary without another invocation or clock. Standalone
+stage execution without the inherited `--campaign` state is rejected.
 
 Preflight creates eight baseline-generated level-3 frames once: four deterministic
 corpora, at 64 KiB and 1 MiB, matching the codec's existing JMH corpus generator.
@@ -273,16 +314,10 @@ paths/digests `preflight_receipt_manifest`, `preflight_receipt_manifest_sha256`,
 `diagnostics_receipt_manifest`, `diagnostics_receipt_manifest_sha256`. Add review
 notes with compile IDs/BCIs/phase findings. The executor verifies identities and
 receipt digests; it cannot replace the graph review. Both stage manifests are
-created automatically. Do not put the new gate file inside a manifested stage.
-
-```bash
-python3 "$TASK_PLAN/matrix.py" timing \
-  --artifact "$TASK_RUN/harness/artifact.json" --receipts "$TASK_RECEIPTS" \
-  --audit "$TASK_AUDIT" --repo "$TASK_REPO" --cpus "$TASK_CPUS" \
-  --corpus "$TASK_RUN/corpus" --out "$TASK_RUN/timing" \
-  --gate "$TASK_RUN/gate.json" --execute
-python3 "$TASK_PLAN/summarize.py" "$TASK_RUN/timing" --out "$TASK_RUN/summary.json"
-```
+created automatically. Write the gate atomically after complete review; do not
+put it inside a manifested stage. The existing controller continues automatically.
+`outcome.json` records completed steps, errors and elapsed campaign time. A review
+timeout leaves the campaign incomplete, even if all earlier stages passed.
 
 The full matrix has 21 cells: eight direct-decode cases, four allocating decode
 cases at 1 MiB, two 64 KiB compression controls, two vectorCursor sizes and five
@@ -305,6 +340,29 @@ cases need manual caller review and remain inconclusive until that is supplied.
 An nmethod invalidated during warmup cannot satisfy this gate. Invalidations
 after measurement starts are conservatively flagged, including teardown; use
 their timestamps to distinguish those phases in the review.
+
+## Compiler-cost screen without additional workload
+
+The same already planned product forks supply compiler-cost data. `summarize.py`
+extracts whole-fork C2 count/total/max task wall time and comparable target costs,
+separating normal/OSR entry/BCI, repeat generations, queue latency, installation
+and completion. No additional VM or workload is scheduled. Debug graph/assembly
+captures remain descriptive; they are never pooled into this product screen.
+
+Predeclare an explanation/inconclusive gate when either condition holds in at
+least five of six matched pairs for a cell:
+
+- Total C2 task wall time increases by **both >20% and >50 ms**.
+- A comparable target entry's total task wall time increases by **both >25% and
+  >5 ms**, with equal entry/generation counts on each side.
+
+Unmatched entry/count changes make the target-cost comparison inconclusive,
+requiring explanation. A failed/incomplete task, missing compilation records,
+invalid clock, repeated target compilation overlapping measurement, or target
+runtime trap/invalidation after measurement starts blocks a GO until reviewed
+(separate teardown by timestamps). Unknown/inlined target costs remain unknown.
+These are quantitative instrumented-wall-time screens, not compiler CPU proof
+or a reason to add runs. Reports retain all costs/counts and instrumentation.
 
 ## Decision and report
 
@@ -337,6 +395,7 @@ as separate authorized work.
 Keep raw logs, native files and host details in private scratch storage. Source
 changes and any follow-up fixes use ordinary Git with Harry Chan's requested
 identity. This proposal changes only its documentation/harness files; it leaves
-`ifnode.cpp`, the GCC prerequisite, finite-threshold matching, and public branches
-untouched. Integrating the already published compiler commit still needs ordinary
+`ifnode.cpp`, the GCC prerequisite, finite-threshold matching, master and unrelated
+branches untouched. Approved publication updates only the isolated review branch.
+Integrating the already published compiler commit still needs ordinary
 shared-file coordination with the finite-threshold lead.

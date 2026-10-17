@@ -44,7 +44,8 @@ class OfflineToolsTest(unittest.TestCase):
             self.assertEqual(set(root.iterdir()), {artifact, gate}, "dry run must not create outputs")
 
     def test_optimized_python_cannot_disable_execution_gates(self):
-        for name in ("audit.py", "build_harness.py", "matrix.py", "summarize.py"):
+        for name in ("audit.py", "build_harness.py", "matrix.py", "summarize.py", "process_control.py",
+                     "deadline.py", "campaign.py", "compiler_cost.py"):
             result = subprocess.run([sys.executable, "-O", str(HERE / name)], capture_output=True, text=True)
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("without -O", result.stderr)
