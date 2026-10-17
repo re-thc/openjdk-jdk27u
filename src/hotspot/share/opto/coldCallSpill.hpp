@@ -26,7 +26,7 @@
 #define SHARE_OPTO_COLDCALLSPILL_HPP
 
 // Cost and reverse-liveness mechanics shared by Split and its native test.
-// This helper allocates nothing and does not relax allocation masks, ABI, or JVMState.
+// The caller owns mask scratch storage; persistent masks and JVMState are unchanged.
 class ColdCallSpillPolicy {
   ColdCallSpillPolicy() = delete;
 

@@ -573,16 +573,26 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       if (ireg != Op_RegI && ireg != Op_RegL) {
         return false;
       }
+      // Subtraction can extend the scratch mask; reclaim it after this query.
+      ResourceMark mask_rm(C->regmask_arena());
       RegMask missing(*Matcher::idealreg2regmask[ireg], C->regmask_arena());
       return ColdCallSpillPolicy::restricts_registers(missing, mask);
     };
 
-    ResourceMark mask_rm(C->regmask_arena());
+    // Reuse the pointer array; clear() returns BitBlocks to IndexSet's free list.
+    // Work includes live-out seeding and live-set iteration at every call, in
+    // addition to the node/input walk: this is not a linear-time graph scan.
+    IndexSet live;
+    live.initialize(maxlrg, split_arena);
     for (uint bi = 0; bi < _cfg.number_of_blocks(); bi++) {
       Block* block = _cfg.get_block(bi);
       // Use liveness at each call, including calls in the middle of a block.
       // Block live-out alone can miss a value consumed after such a call.
-      IndexSet live(_live->live(block));
+      const IndexSet* live_out = _live->live(block);
+      IndexSetIterator live_out_it(live_out);
+      for (uint l = live_out_it.next(); l != 0; l = live_out_it.next()) {
+        live.insert(l);
+      }
       for (uint ni = block->end_idx(); ni > 0; ni--) {
         Node* node = block->get_node(ni);
         uint lid = _lrg_map.find_id(node);
@@ -628,6 +638,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
               }
             });
       }
+      live.clear();
     }
   }
 

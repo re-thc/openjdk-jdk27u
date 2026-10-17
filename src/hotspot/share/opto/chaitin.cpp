@@ -1130,7 +1130,6 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           lrg_in.mask().dump();
           tty->print(" use=");
           rm_in.dump();
-          tty->cr();
         }
 #endif
         if (!after_aggressive && _cfg.get_block_for_node(n->in(k))->_freq > 1000 * block->_freq) {
@@ -1143,7 +1142,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         }
 #ifndef PRODUCT
         if (trace_spilling() && n->is_MachCall()) {
-          tty->print("CCMASK result call=N%d input=%u L%u mask=", n->_idx, k, vreg_in);
+          tty->print(" result=");
           lrg_in.mask().dump();
           tty->cr();
         }
