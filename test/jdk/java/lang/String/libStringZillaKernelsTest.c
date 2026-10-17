@@ -231,6 +231,32 @@ static jint check_kernels(void) {
             }
         }
 
+        // A rejected rightmost pivot must retain earlier overlapping matches.
+        const jint rejected_spans[] = {63, 64, 65, 96, 512, 1024};
+        char rejected_source[1552], rejected_target[520];
+        for (unsigned int n = 0; n < sizeof(dense_counts) / sizeof(dense_counts[0]); n++) {
+            jint count = dense_counts[n];
+            for (jint offset = 0; offset < 8; offset++) {
+                char* text = rejected_source + offset;
+                char* target = rejected_target + ((offset + 3) & 7);
+                memset(target, 'a', count);
+                target[count - 2] = 'b';
+                for (unsigned int s = 0; s < sizeof(rejected_spans) / sizeof(rejected_spans[0]); s++) {
+                    jint span = rejected_spans[s];
+                    memset(text, 'a', count + span);
+                    memcpy(text, target, count);
+                    text[span + count - 2] = 'b';
+                    if (span >= count) text[span] = 'c';
+                    CHECK(kernels->rfindLatin1(text, count + span, target, count) == 0);
+                    text[count - 2] = 'a';
+                    if (span >= count) text[span] = 'a';
+                    CHECK(kernels->rfindLatin1(text, count + span, target, count) == span);
+                    text[span + count / 2] = 'c';
+                    CHECK(kernels->rfindLatin1(text, count + span, target, count) == -1);
+                }
+            }
+        }
+
         // Long-needle verification must accept every byte-array alignment.
         sz_align_(64) char unaligned_source[576];
         sz_align_(64) char unaligned_target[320];

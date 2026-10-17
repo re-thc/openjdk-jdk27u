@@ -204,21 +204,26 @@ static sz_cptr_t rfind_utf16_serial(sz_cptr_t src, sz_size_t src_bytes,
 }
 
 #if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
-// A short candidate range does not need the long-needle suffix skip table.
+// Sample without scanning the needle before probing the search window.
+SZ_HELPER_INLINE sz_size_t reverse_latin1_pivot(sz_cptr_t tgt, sz_size_t middle, sz_size_t last) {
+    if (tgt[0] == tgt[middle]) {
+        return tgt[0] == tgt[last] ? last - 1 : last;
+    }
+    if (tgt[0] == tgt[last] ||
+            (tgt[middle] != tgt[last] && tgt[0] == tgt[last - 1])) {
+        return middle;
+    }
+    return 0;
+}
+
 __attribute__((target("avx2,bmi,bmi2,lzcnt")))
 static sz_cptr_t rfind_latin1_haswell(sz_cptr_t src, sz_size_t src_bytes,
                                     sz_cptr_t tgt, sz_size_t tgt_bytes) {
-    if (tgt_bytes > 256 && src_bytes - tgt_bytes < 64) {
-        sz_size_t candidates = src_bytes - tgt_bytes + 1;
+    if (tgt_bytes > 256) {
+        sz_size_t span = src_bytes - tgt_bytes;
+        sz_size_t candidates = span + 1;
         sz_size_t middle = tgt_bytes / 2, last = tgt_bytes - 1;
-        // A less frequent sample avoids enumerating repeated candidate prefixes.
-        sz_size_t pivot = 0;
-        if (tgt[0] == tgt[middle]) {
-            pivot = tgt[0] == tgt[last] ? last - 1 : last;
-        } else if (tgt[0] == tgt[last] ||
-                   (tgt[middle] != tgt[last] && tgt[0] == tgt[last - 1])) {
-            pivot = middle;
-        }
+        sz_size_t pivot = reverse_latin1_pivot(tgt, middle, last);
         while (candidates != 0) {
             // Shifting both ends by pivot keeps exactly the valid candidate
             // starts, including zero, and preserves reverse match order.
@@ -231,6 +236,12 @@ static sz_cptr_t rfind_latin1_haswell(sz_cptr_t src, sz_size_t src_bytes,
                 return candidate;
             }
             candidates = candidate - src;
+            if (span >= 64) {
+                // Only the first candidate is probed before the bulk search.
+                // Exclude it while retaining every earlier overlapping start.
+                return candidates == 0 ? NULL
+                        : sz_rfind_haswell(src, candidates + tgt_bytes - 1, tgt, tgt_bytes);
+            }
         }
         return NULL;
     }
@@ -239,8 +250,24 @@ static sz_cptr_t rfind_latin1_haswell(sz_cptr_t src, sz_size_t src_bytes,
 
 static sz_cptr_t rfind_latin1_skylake(sz_cptr_t src, sz_size_t src_bytes,
                                     sz_cptr_t tgt, sz_size_t tgt_bytes) {
-    if (tgt_bytes > 256 && src_bytes - tgt_bytes < 64) {
-        return rfind_latin1_haswell(src, src_bytes, tgt, tgt_bytes);
+    if (tgt_bytes > 256) {
+        if (src_bytes - tgt_bytes < 64) {
+            return rfind_latin1_haswell(src, src_bytes, tgt, tgt_bytes);
+        }
+        sz_size_t middle = tgt_bytes / 2, last = tgt_bytes - 1;
+        sz_size_t pivot = reverse_latin1_pivot(tgt, middle, last);
+        sz_size_t candidates = src_bytes - tgt_bytes + 1;
+        sz_cptr_t hit = sz_rfind_byte_skylake(src + pivot, candidates, tgt + pivot);
+        if (hit == NULL) return NULL;
+        sz_cptr_t candidate = hit - pivot;
+        if (candidate[0] == tgt[0] && candidate[middle] == tgt[middle] &&
+                candidate[last] == tgt[last] && candidate[last - 1] == tgt[last - 1] &&
+                sz_equal_skylake(candidate, tgt, tgt_bytes)) {
+            return candidate;
+        }
+        candidates = candidate - src;
+        return candidates == 0 ? NULL
+                : sz_rfind_skylake(src, candidates + tgt_bytes - 1, tgt, tgt_bytes);
     }
     return sz_rfind_skylake(src, src_bytes, tgt, tgt_bytes);
 }

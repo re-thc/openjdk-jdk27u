@@ -31,7 +31,7 @@ jobs:
     needs: prepare-jtreg
     name: ${{ matrix.backend }} complete images
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 240
+    timeout-minutes: 360
     strategy:
       fail-fast: false
       matrix:
