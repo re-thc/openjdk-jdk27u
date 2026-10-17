@@ -1,69 +1,38 @@
 # PR39 native AArch64 qualification
 
-Status: one approved native campaign ran at `9fc46a1776b82bbe74193bba629ab4ec8c13a739`
-and stopped during harness compilation, before correctness or measurement.
-The processor-path repair is prepared for review; no repeat dispatch has occurred.
-Production code is unchanged from PR39 head `9fedf7ac9040bf1d46e383201524f1ca7a13a29e`.
-There is no native ARM performance verdict yet.
+**Native correctness passed; the fixed performance screen failed. PR39 is not
+ready to merge.** Production code remains unchanged from author head
+`9fedf7ac9040bf1d46e383201524f1ca7a13a29e`.
 
-## Native campaign result
+[Run 39033175975](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39033175975)
+completed the single approved preparation-repair continuation at source
+`678938fb5e6dba44a4d7089b026effdfa266ec13`. All 34 required jtreg records and
+108 fresh-VM probes passed. Its 34-row performance screen found 21 regressions,
+8 inconclusive rows and 5 passes, with all four control placements passing.
+The 98 main rows were not admitted. No timing retry or extra sample was run.
 
-[Run 39030274620](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39030274620),
-attempt 1, was explicitly dispatched at 2026-10-17 11:51:19 UTC after source
-review. Base release, candidate release and candidate fastdebug all built and
-passed the development-profile smoke checks for Serial, G1 and ZGC. The run
-then failed in `compile-fixtures.log` with
-`Annotation processor 'org.openjdk.jmh.generators.BenchmarkProcessor' not found`.
-The pinned JMH JAR hashes were correct, but javac did not expand the wildcard
-used as its processor path. The repaired source supplies each pinned JAR explicitly
-to both the compiler classpath and processor path. Real local JMH 1.37 annotation
-processing now generates all 14 benchmark entries and the fixtures pass using
-dependencies with exactly the native run's hashes. This is source/fixture
-validation, not a local timing run or an ARM qualification result.
+See [the native verdict and attribution limits](RESULTS.md),
+[all observed samples and compilation/GC review](results-39033175975.json), and
+[raw evidence artifact 12102159804](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39033175975/artifacts/12102159804).
+The downloaded archive's SHA-256 is verified. Both jobs completed cleanup.
 
-The targeted correctness campaign and every performance row were skipped.
-No nmethod/tier, GC comparison, control stability or performance attribution can
-be inferred from this attempt. The native builds and profile smoke checks alone
-do not qualify the mismatch implementation. No production code was changed.
-
-| Collected identity | Observed value |
-|---|---|
-| CPU | 4 native AArch64 Neoverse-N2 r0p0 CPUs; ASIMD and SVE/SVE2 reported |
-| Runner image | `ubuntu-26.04-arm`, `20261012.150.1` |
-| Compiler | GCC `16.0.1 20260322`, Ubuntu `16-20260322-1ubuntu1`, experimental trunk `r16-8246-g569ace1fa50` |
-| Linker | GNU ld 2.46 |
-| Disk admission | 105.061 GiB free; 10.789 GiB required; observed filesystem 144.26 GiB |
-| Build outputs before/after pruning | Base 1,191,165,503 / 452,288,583 B; candidate release 1,551,665,127 / 1,265,060,852 B; fastdebug 2,849,543,225 / 2,466,429,755 B |
-
-Source, exact image-file hashes, compiler/configuration logs, CPU information,
-disk receipts and the harness error are retained in
-[artifact 12101125600](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39030274620/artifacts/12101125600)
-(141,392 bytes; SHA256
-`882a880592b69f2dacd39867a5b956b361819e24f16ed30194222f5de8f0c372`).
-The downloaded artifact matches that digest. Both jobs completed cleanup.
-The two jobs consumed about 32.45 runner-minutes, conservatively charged as 33;
-actual measurement time was zero. The one approved attempt has ended. The
-repaired workflow proposes at most 190 additional runner-minutes, giving an
-aggregate maximum of 223 within the original 225-minute reservation. Further
-execution needs independent review of this source and continuation proposal;
-this fix does not authorize another dispatch or an automatic timing retry.
+The prior [preparation attempt](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39030274620)
+stopped at JMH annotation-processor discovery before targeted correctness or
+timing. The continuation used an explicit pinned-JAR processor path and rebuilt
+all three matched images. Charged usage is 33 + 62 = **95 runner-minutes**, with
+**130 of the original 225 minutes remaining**. No further campaign has started.
 
 ## Sources and existing evidence
 
-The PR head and conversation were checked before editing and again before
-committing. During preparation the author advanced the head from `d4757b0fc`
-to `9fedf7ac9040bf1d46e383201524f1ca7a13a29e`, caching segment bases and
-addresses before prechecks to reduce C1 virtual calls. The qualification source
-incorporates that commit. The conversation had no comments, and the description
-still reported author measurements in progress. The author branch and description
-have not been modified.
+The author head, actual master ref and synthetic merge parents/tree were
+verified before launch and remained unchanged through the completed campaign.
+The package incorporates the author's `9fedf7ac9` segment-base/address caching
+change. The author branch and PR description remain untouched.
 
-[CI run 39013245609](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39013245609)
-completed successfully on `d4757b0fc`: 57/57 jobs, including native Linux AArch64 and macOS ARM64
-release/fastdebug builds and tier1. This is correctness evidence, not performance
-qualification. The author's newer [run 39027042938](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39027042938)
-is associated with `9fedf7ac9`; its result must be checked before merge. Ordinary
-tier1 will not be repeated by this workflow.
+[CI run 39027042938](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39027042938)
+completed successfully on `9fedf7ac9`: **57/57 jobs**, including native Linux
+AArch64 and macOS ARM64 release/fastdebug builds and tier1. This is correctness
+evidence. The targeted qualification workflow did not repeat ordinary tier1.
 
 The historical measurement baseline in the description resolves to
 `e206bae32b2a6cc1fa9464ad34d75f2df4b347e9`. It is the common ancestor of the
@@ -99,10 +68,8 @@ The candidate is the identified PR merge tree. Its exact ordered parents are:
 
 Its tree is `b4693729ab5276f398ab6068b2377472284df285`, verified with both Git
 and GitHub's Git-commit API. It is deliberately distinguished from the branch head.
-The workflow fetches these commits and makes normal detached source checkouts;
-it does not import previously built binaries. Existing ARM artifacts were listed
-and are unexpired, but no binary handoff is needed. A read of the ARM build log
-was denied by its artifact host; that read was not retried.
+The workflow fetches these commits and makes normal detached source checkouts
+for three matched native builds.
 
 Before building, the driver verifies both remote branch tips, the merge parents,
 the candidate tree, and that the qualification branch has no production edits.
@@ -130,8 +97,8 @@ on master, and no PR is opened for this review branch. The other workflows
 are reusable `workflow_call` definitions. The author's PR head and description
 are left untouched.
 
-After independent source review and explicit launch authorization, the launch
-action is a single dispatch of the exact reviewed commit:
+The completed continuation was explicitly authorized after independent source
+review. The dispatch route for an independently reviewed exact commit is:
 
 ```sh
 gh workflow run pr39-aarch64-qualification.yml \
@@ -140,22 +107,23 @@ gh workflow run pr39-aarch64-qualification.yml \
   -f reviewed_commit=<exact-reviewed-commit-sha>
 ```
 
-This command is documentation, not an action taken during publication. Both
-jobs require the dispatch event, the exact review branch, a `reviewed_commit`
-input matching `github.sha`, and attempt 1. A changed branch tip or a rerun
+Publishing the branch does not dispatch this command. The completed run above
+is the only continuation that was launched. Both jobs require the dispatch
+event, the exact review branch, a `reviewed_commit` input matching `github.sha`, and attempt 1. A changed branch tip or a rerun
 cannot execute the approved campaign. Source pins are checked again by the driver.
 Dispatch access and GitHub's availability of this branch-only workflow are not
 assumed. If GitHub does not expose this dispatch, report that launch blocker;
 do not launch a generic sanity workflow, install this on master, add a push
 trigger, or start an alternative campaign automatically.
 
-The original reservation is **225 runner-minutes**. The completed attempt is
-charged 33; the unlaunched continuation proposal reserves at most **190**:
+The original reservation is **225 runner-minutes**. The first preparation
+attempt was charged 33. The approved continuation reserved at most **190**:
 JTReg preparation 10 minutes plus one native job 180 minutes, including
-dependency preparation, matched builds, correctness, measurement and retention.
-The aggregate maximum is 223, leaving two minutes within the original reservation.
-This budget proposal requires independent review; no continuation has been started.
-The proposed native step caps sum to **174 minutes**, leaving six minutes
+preparation, matched builds, correctness, measurement and retention. Its
+completed usage was 62 rounded runner-minutes, so aggregate charged usage is
+**95** and **130 remain**. The combined approved maximum was 223. No further
+dispatch or timing retry is authorized by this completed campaign.
+The approved native step caps sum to **174 minutes**, leaving six minutes
 for runner setup and post steps within the 180-minute job cap:
 
 | Work | Step caps, minutes |
@@ -190,9 +158,9 @@ runner teardown remains responsible for that case.
 
 ### Disk admission and build retention
 
-The planning specification was 4 CPUs, 16 GiB RAM and a nominal 14 GB SSD.
-The observed run had the larger filesystem recorded above; future available
-storage is still checked rather than inferred from a nominal specification.
+The observed native runner had four CPUs, about 15.57 GiB RAM and a 144.26 GiB
+filesystem, with 105.062 GiB initially free. Future storage is still checked
+from actual available bytes.
 Source preflight records total/free bytes and requires space for two measured
 source checkouts, a **5 GiB active build allowance**, **2 GiB retained-output
 allowance**, a **512 MiB ccache cap**, and **2 GiB safety reserve** before making
@@ -201,11 +169,8 @@ the 2 GiB low-water mark during configure/make, terminating the owned group if
 the reserve is breached. Capacity failure stops the campaign with a disk receipt;
 it never counts as a timing result or triggers a different runner automatically.
 
-Two preexisting local x86 build directories occupied 3832 MiB and 6328 MiB,
-including large native object directories. These are sizing observations, not
-native ARM footprint measurements or a guarantee of fit. All three native builds
-use `--with-native-debug-symbols=none`; fastdebug assertions and IR facilities
-remain enabled. After identity/spec/config/image evidence is retained, the base
+All three native builds use `--with-native-debug-symbols=none`; fastdebug
+assertions and IR facilities remain enabled. After identity/spec/config/image evidence is retained, the base
 keeps its completed image only. Candidate release/fastdebug keep the completed
 JDK/test images and test configuration, but discard `hotspot` object output and
 `support/native`; `test-only` consumes the completed images without a C++ rebuild.

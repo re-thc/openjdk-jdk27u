@@ -19,23 +19,25 @@ long string writes through a bounded array; buffer hashCode combines four
 elements with the same specified result. There are no public API changes or
 new production libraries. Existing legal notices and recovery ancestry are retained.
 
-Validation: [CI run 39013245609](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39013245609)
-passed all 57 jobs at `d4757b0fc`, including native Linux ARM64 and macOS ARM64
-tier1. Head `9fedf7ac9` additionally caches segment bases and addresses before
-the prechecks; [its CI run](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39027042938)
-requires a completed result before merge.
-The native ARM qualification source and fixed campaign are in
-`diagnostics/pr39-aarch64/README.md`. [Run 39030274620](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39030274620)
-built matched base/candidate release images and candidate fastdebug on native
-Neoverse-N2, with development-profile smoke checks passing. It stopped at JMH
-processor discovery, before the targeted correctness and timing gates. The
-harness processor-path fix is prepared for review; it has not been rerun on ARM.
-ARM performance remains unqualified. No application or x86 speedup is claimed
-by this qualification package; current author measurements require their own
-completed evidence. The shared thresholds require the planned ARM early-exit
-and boundary checks before merge review can be completed. The qualification
-screen includes 64/128 KiB requests with short matching prefixes and retains
-GC and compilation evidence to distinguish setup costs from caller/GC effects.
+Validation: [CI run 39027042938](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39027042938)
+passed all 57 jobs at `9fedf7ac9`, including native Linux ARM64 and macOS ARM64
+builds and tier1. The separate [native AArch64 qualification](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39033175975)
+built matched baseline/candidate release images and candidate fastdebug on
+Neoverse-N2. All 34 required jtreg records and 108 fresh-VM probes passed across
+Serial, G1 and ZGC.
+
+**The native ARM performance gate failed; this PR is not ready to merge.**
+The fixed 34-row screen found 21 regressions and 8 inconclusive rows with stable
+controls. Heap byte-array early mismatches regressed about 21–23% for 8-byte
+requests and 44–47% for 128-byte requests; native short-prefix and equal 64 KiB
+heap scans also regressed. The screen stopped before the 98 main timing rows.
+The retained compilation logs show C2 code, a measurement-iteration-1 worker
+recompilation limitation, and no later target deoptimization; all measured
+forks recorded zero collections. Full results, machine/source identities and
+attribution limits are in `diagnostics/pr39-aarch64/RESULTS.md`. No application
+or x86 speedup is claimed by this qualification. The historical x86 measurements
+against `e206bae32` remain separate from this incremental current-master ARM
+comparison. No speculative production repair or threshold change was added.
 
 ---------
 - [ ] I confirm that I make this contribution in accordance with the [OpenJDK Interim AI Policy](https://openjdk.org/legal/ai).
