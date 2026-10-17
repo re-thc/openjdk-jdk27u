@@ -23,11 +23,11 @@
 # questions.
 #
 
-name: 'StringZilla portable serial equality experiment'
+name: 'StringZilla portable serial equality refinement'
 
 on:
   push:
-    branches: ['codex/stringzilla-serial-equality-da3ae24']
+    branches: ['codex/stringzilla-serial-equality-refinement-da3ae24']
 
 permissions:
   contents: read
@@ -69,7 +69,7 @@ jobs:
       - name: 'Checkout the isolated experiment'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 2
+          fetch-depth: 3
 
       - name: 'Record source and host'
         shell: bash

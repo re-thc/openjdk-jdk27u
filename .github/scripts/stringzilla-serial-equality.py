@@ -38,6 +38,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "serial-equality-output"
 BASE = "da3ae24b030d8c9c0694bbb5b33412f76c27780c"
+WORD_BASE = "93cd4e57e2f3828a583a0b6485ef208805622c24"
 VENDOR = "src/java.base/share/native/libjava/stringzilla"
 COMPARE = VENDOR + "/stringzilla/compare/serial.h"
 
@@ -81,7 +82,9 @@ DRIVER = r"""
 #include <time.h>
 
 int current_equal(const char*, const char*, int);
+int word_equal(const char*, const char*, int);
 int patched_equal(const char*, const char*, int);
+int probe_equal(const char*, const char*, int);
 typedef int (*equal_fn)(const char*, const char*, int);
 static volatile unsigned int sink;
 
@@ -110,7 +113,8 @@ int main(int argc, char** argv) {
     const int lengths[] = {0, 1, 7, 8, 15, 16, 23, 24, 25, 31, 32, 33, 63, 64, 65,
                            127, 128, 129, 255, 256, 257, 1024, 4096};
     const int offsets[][2] = {{0, 0}, {1, 1}, {1, 3}, {7, 0}};
-    const equal_fn functions[] = {current_equal, patched_equal};
+    const equal_fn functions[] = {current_equal, word_equal, patched_equal, probe_equal};
+    const char* names[] = {"current", "word", "patched", "probe"};
     int check_only = argc == 2 && strcmp(argv[1], "--check") == 0;
     unsigned int case_id = 0;
     if (!check_only) puts("case,length,source_offset,target_offset,mismatch,round,order,variant,iterations,elapsed_ns,ns_per_op");
@@ -133,7 +137,7 @@ int main(int argc, char** argv) {
                 if (duplicate) continue;
                 for (int i = 0; i < n; i++) a[i] = b[i] = (char)((i * 13 + 7) & 255);
                 if (mismatch >= 0) b[mismatch] ^= 1;
-                for (int variant = 0; variant < 2; variant++) {
+                for (int variant = 0; variant < 4; variant++) {
                     int actual = functions[variant](a, b, n);
                     if (actual != (mismatch < 0)) {
                         fprintf(stderr, "Bad result case=%u variant=%d n=%d mismatch=%d actual=%d\n",
@@ -142,16 +146,16 @@ int main(int argc, char** argv) {
                     }
                 }
                 if (!check_only) {
-                    unsigned int counts[2];
-                    for (int variant = 0; variant < 2; variant++)
+                    unsigned int counts[4];
+                    for (int variant = 0; variant < 4; variant++)
                         counts[variant] = calibrate(functions[variant], a, b, n);
-                    for (int round = 0; round < 10; round++) {
-                        for (int order = 0; order < 2; order++) {
-                            int variant = ((int)case_id + round + order) & 1;
+                    for (int round = 0; round < 12; round++) {
+                        for (int order = 0; order < 4; order++) {
+                            int variant = ((int)case_id + round + order) & 3;
                             uint64_t duration = elapsed(functions[variant], a, b, n, counts[variant]);
                             printf("%u,%d,%d,%d,%d,%d,%d,%s,%u,%llu,%.9f\n",
                                    case_id, n, a_offset, b_offset, mismatch, round, order,
-                                   variant == 0 ? "current" : "patched", counts[variant],
+                                   names[variant], counts[variant],
                                    (unsigned long long)duration, (double)duration / counts[variant]);
                         }
                     }
@@ -188,11 +192,26 @@ def main():
     current = subprocess.check_output(["git", "show", BASE + ":" + COMPARE], cwd=ROOT)
     if hashlib.sha256(current).hexdigest() != "ceb88e426198029f8464b1ccca6ae7e185af94a89b8726c620d883ad6c2a3164":
         raise SystemExit("Unexpected original serial equality source")
-    for variant in ("current", "patched"):
+    word_header = subprocess.check_output(["git", "show", WORD_BASE + ":" + COMPARE], cwd=ROOT)
+    if hashlib.sha256(word_header).hexdigest() != "8e18de2d906c45754e39e59421ccfc30d50caf7fb22c914a163415981827526d":
+        raise SystemExit("Unexpected first-candidate equality header")
+    indexed_header = (ROOT / COMPARE).read_text()
+    probe_header = indexed_header.replace(
+        "SZ_API_COMPTIME sz_bool_t sz_equal_serial(sz_cptr_t a, sz_cptr_t b, sz_size_t length) {\n",
+        "SZ_API_COMPTIME sz_bool_t sz_equal_serial(sz_cptr_t a, sz_cptr_t b, sz_size_t length) {\n"
+        "    if (length == 0) return sz_true_k;\n"
+        "    if (a[0] != b[0]) return sz_false_k;\n")
+    if probe_header == indexed_header:
+        raise SystemExit("First-byte probe variant was not generated")
+    for variant in ("current", "word", "patched", "probe"):
         destination = OUT / variant / "vendor"
         shutil.copytree(ROOT / VENDOR, destination, dirs_exist_ok=True)
         if variant == "current":
             (destination / "stringzilla/compare/serial.h").write_bytes(current)
+        elif variant == "word":
+            (destination / "stringzilla/compare/serial.h").write_bytes(word_header)
+        elif variant == "probe":
+            (destination / "stringzilla/compare/serial.h").write_text(probe_header)
     patch_stage = OUT / "patch-verification"
     (patch_stage / "stringzilla/compare").mkdir(parents=True, exist_ok=True)
     (patch_stage / "stringzilla/compare/serial.h").write_bytes(current)
@@ -215,8 +234,10 @@ def main():
         "production_base": BASE,
         "experiment_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
         "compiler": version, "cpu": allowed[0], "architecture": os.uname().machine,
-        "rounds": 10, "minimum_calibration_ns": 3000000,
+        "rounds": 12, "minimum_calibration_ns": 3000000,
         "original_header_sha256": hashlib.sha256(current).hexdigest(),
+        "word_header_sha256": hashlib.sha256(word_header).hexdigest(),
+        "probe_header_sha256": hashlib.sha256(probe_header.encode()).hexdigest(),
         "patched_header_sha256": hashlib.sha256((ROOT / COMPARE).read_bytes()).hexdigest(),
         "portable_loads": 0, "word_threshold": 24,
         "timing_flags": ["-std=c11", "-O3"],
@@ -234,7 +255,7 @@ def main():
     test_env = os.environ.copy()
     test_env["ASAN_OPTIONS"] = "abort_on_error=1:detect_leaks=1:strict_string_checks=1"
     test_env["UBSAN_OPTIONS"] = "halt_on_error=1:print_stacktrace=1"
-    for variant in ("current", "patched"):
+    for variant in ("current", "word", "patched", "probe"):
         include = ["-I" + str(OUT / variant / "vendor")]
         for mode, flags in (("optimized", ["-O3"]), ("sanitized", sanitizer)):
             obj = OUT / variant / (mode + ".o")
@@ -246,10 +267,10 @@ def main():
              OUT / variant / "native-contract"], variant + "-contract-build.log")
         run([OUT / variant / "native-contract"], variant + "-contract-run.log", test_env)
         print("NATIVE_EQUALITY_CONTRACT " + variant + " passed", flush=True)
-    run([args.compiler, "-std=c11", "-O3", OUT / "driver.c", OUT / "current/optimized.o",
-         OUT / "patched/optimized.o", "-o", OUT / "benchmark"], "benchmark-build.log")
-    run([args.compiler, "-std=c11", *sanitizer, OUT / "driver.c", OUT / "current/sanitized.o",
-         OUT / "patched/sanitized.o", "-o", OUT / "sanitized-fixtures"], "fixture-build.log")
+    run([args.compiler, "-std=c11", "-O3", OUT / "driver.c", OUT / "current/optimized.o", OUT / "word/optimized.o",
+         OUT / "patched/optimized.o", OUT / "probe/optimized.o", "-o", OUT / "benchmark"], "benchmark-build.log")
+    run([args.compiler, "-std=c11", *sanitizer, OUT / "driver.c", OUT / "current/sanitized.o", OUT / "word/sanitized.o",
+         OUT / "patched/sanitized.o", OUT / "probe/sanitized.o", "-o", OUT / "sanitized-fixtures"], "fixture-build.log")
     run([OUT / "sanitized-fixtures", "--check"], "fixture-sanitizer-run.log", test_env)
     print("NATIVE_EQUALITY_EXACT_ALLOCATIONS passed", flush=True)
     result = subprocess.run([str(OUT / "benchmark")], cwd=ROOT, text=True, capture_output=True)
@@ -261,26 +282,28 @@ def main():
     for row in csv.DictReader(io.StringIO(result.stdout)):
         key = (int(row["case"]), int(row["length"]), int(row["source_offset"]),
                int(row["target_offset"]), int(row["mismatch"]))
-        groups.setdefault(key, {"current": [], "patched": []})[row["variant"]].append(float(row["ns_per_op"]))
+        groups.setdefault(key, {"current": [], "word": [], "patched": [], "probe": []})[row["variant"]].append(float(row["ns_per_op"]))
     summary = []
-    slower = 0
-    print("NATIVE_EQUALITY_SUMMARY_HEADER case,length,source_offset,target_offset,mismatch,current_ns,patched_ns,current_over_patched,slower", flush=True)
+    slower = {"word": 0, "patched": 0, "probe": 0}
+    print("NATIVE_EQUALITY_SUMMARY_HEADER case,length,source_offset,target_offset,mismatch,current_ns,word_ns,indexed_ns,probe_ns,current_over_word,current_over_indexed,current_over_probe,word_slower,indexed_slower,probe_slower", flush=True)
     for key, samples in groups.items():
-        if len(samples["current"]) != 10 or len(samples["patched"]) != 10:
+        if any(len(values) != 12 for values in samples.values()):
             raise SystemExit("Incomplete paired samples")
-        old, new = statistics.mean(samples["current"]), statistics.mean(samples["patched"])
-        loss = new > old
-        slower += loss
+        means = {variant: statistics.mean(values) for variant, values in samples.items()}
         record = dict(zip(("case", "length", "source_offset", "target_offset", "mismatch"), key))
-        record.update(current_ns=old, patched_ns=new, current_over_patched=old / new, slower=loss,
-                      current_sd_ns=statistics.stdev(samples["current"]),
-                      patched_sd_ns=statistics.stdev(samples["patched"]))
+        record["means_ns"] = means
+        record["standard_deviations_ns"] = {variant: statistics.stdev(values) for variant, values in samples.items()}
+        record["higher_than_current"] = {variant: means[variant] > means["current"] for variant in slower}
+        for variant in slower:
+            slower[variant] += record["higher_than_current"][variant]
         summary.append(record)
-        print("NATIVE_EQUALITY_CASE " + ",".join(map(str, (*key, round(old, 6), round(new, 6),
-              round(old / new, 6), int(loss)))), flush=True)
+        values = (*key, *(round(means[variant], 6) for variant in ("current", "word", "patched", "probe")),
+                  *(round(means["current"] / means[variant], 6) for variant in slower),
+                  *(int(record["higher_than_current"][variant]) for variant in slower))
+        print("NATIVE_EQUALITY_CASE " + ",".join(map(str, values)), flush=True)
     (OUT / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
-    print("NATIVE_EQUALITY_TOTAL " + json.dumps({"cases": len(summary), "higher_patched_means": slower}), flush=True)
-    for variant in ("current", "patched"):
+    print("NATIVE_EQUALITY_TOTAL " + json.dumps({"cases": len(summary), "higher_means": slower}), flush=True)
+    for variant in ("current", "word", "patched", "probe"):
         lines = (OUT / variant / "optimized.s").read_text().splitlines()
         start = next((i for i, line in enumerate(lines) if line.startswith(variant + "_equal:")), None)
         if start is not None:
