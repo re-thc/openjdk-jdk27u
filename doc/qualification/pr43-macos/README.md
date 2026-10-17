@@ -12,8 +12,10 @@ contains the concise body now published to PR43.
 The [UBFX assertion repair](UBFX_ASSERTIONS.md) documents the focused portable
 fixture and its separate test-source identity.
 
-PR43 now also contains the [byte128 mask-packing prototype](MASK_TO_LONG.md) at
-`9fd8620e40573264ec1f601db67e7f93e05b4939`. The commands and manifest below
+PR43 now also contains the [byte128 mask-packing prototype](MASK_TO_LONG.md),
+with its final test correction at `3afce4988dc00fba614929d5f6f10c873afde87e`.
+The [focused Mac recipe](MASK_TO_LONG_MAC.md) covers only that new rule.
+The commands and manifest below
 retain the original five-test comparison; they do **not** qualify that new rule.
 No new native campaign is requested by this documentation update.
 
@@ -125,7 +127,7 @@ avoid that ambiguity.
 | Original plain base, recorded but not an extra default build | `758f41576fc79d35a62a3896dbe5ab97c448c436` |
 | C1 upstream donor | `abf881b0108610051fb36636a5f8ce44e8076ddb` |
 | Repaired historical test sources, used identically in both arms | `456afea88231bc9ebf17dfa48811db90a8bae8b8` |
-| Current PR43 head, including the separate mask-packing prototype | `9fd8620e40573264ec1f601db67e7f93e05b4939` |
+| Current PR43 head, including mask packing and post-exhaustion C2 checks | `3afce4988dc00fba614929d5f6f10c873afde87e` |
 
 The runner creates detached worktrees for candidate and baseline, then builds
 **fastdebug and release for both**, matching the already supplied Mac-agent

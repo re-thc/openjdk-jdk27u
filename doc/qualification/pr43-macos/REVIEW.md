@@ -1,10 +1,13 @@
 # PR43 source and qualification review
 
-PR43's draft head is `9fd8620e40573264ec1f601db67e7f93e05b4939` on
+PR43's draft head is `3afce4988dc00fba614929d5f6f10c873afde87e` on
 `codex/aarch64-consolidated-compiler-fixes`. It adds a narrow raw-byte128
 `VectorMask.toLong()` lowering after the UBFX test repair at
 `456afea88231bc9ebf17dfa48811db90a8bae8b8`. The new compiler rule and its local
-validation are described in [MASK_TO_LONG.md](MASK_TO_LONG.md); native matching,
+validation are described in [MASK_TO_LONG.md](MASK_TO_LONG.md). The follow-up
+test correction checks every C2 target again after exhaustive inputs and sets
+the NEON driver's MaxVectorSize to 16. The [focused Mac recipe](MASK_TO_LONG_MAC.md)
+pins this exact corrected source. Native matching,
 installed-code and pressure checks remain pending. The original native report
 belongs to `bf4d2615bf435e8889ef95e48220938505905bbb`.
 The paired prerequisite-only baseline

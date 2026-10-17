@@ -24,7 +24,9 @@ halfword puts lane 0 in bit 0 and clears every result bit above 15.
 
 The result GPR first materializes `0x8040201008040201`, then supplies DUP. One
 vector temporary holds weights and intermediate reductions. No additional
-general-register scratch is reserved by the rule.
+general-register scratch is reserved by the rule. All four constant MOVs and
+DUP are inside each fused Mach node, so C2 cannot hoist or share the weights
+independently. Four fused nodes in `block64` each materialize their own weights.
 
 | Raw comparison mask path | Instructions before allocation-related moves/spills |
 | --- | --- |
@@ -65,6 +67,17 @@ Local evidence is under `/tmp/pr43-maskpack-adlc` (exact commands, logs and
 generated output) and `/tmp/pr43-maskpack-jtreg` (JTR and summary). These are
 local validation records, not the missing paired Mac captures.
 
+The final product pin is `3afce4988dc00fba614929d5f6f10c873afde87e`. Its
+test-only follow-up checks all 16 C2 targets before **and after** exhaustive
+inputs, block edges and floating-point edges, and sets `UseSVE=0` plus
+`MaxVectorSize=16` through framework flags. Passing MaxVectorSize as a jtreg
+Java option instead would disable IR under the framework's whitelist rules.
+The corrected test passed with the same existing x86 JDK/harness, with JTR and
+summary under `/tmp/pr43-maskpack-final-jtreg`. Its source SHA256 is
+`0732c4deb5a5d830c80dd80711b22057523818296f323677282bbd546900a1f8`.
+Compiler and generated AD files are identical to the prototype commit above.
+The [focused Mac source recipe](MASK_TO_LONG_MAC.md) uses this corrected pin.
+
 ## Native gates still pending
 
 `TestByteMaskToLong` has 16 C2 probes, **32 NEON IR assertions** across Before
@@ -77,8 +90,11 @@ full-block zero/all/alternating/single-bit masks and floating-point edges.
 Positive cases do not use a `fromLong()` round trip.
 
 Ordinary PR CI is the authorized native execution path for this increment.
-Run `39077120882` was created automatically for the new head; the superseded
-run `39063175391` was automatically cancelled. No manual workflow, diagnostics,
+Run `39077120882` belongs to the initial prototype head, before the post-input
+assertion correction, and was automatically cancelled. Ordinary run
+[`39079268554`](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39079268554)
+belongs to the final corrected pin. Subsequent test commits trigger ordinary CI automatically.
+No manual workflow, diagnostics,
 JMH, provisioning or native campaign was launched. A green run alone does not
 prove every applicable IR rule ran or resolve installed-code/pressure checks.
 The SVE launcher requires actual SVE hardware; a Mac NEON pass cannot cover it.
