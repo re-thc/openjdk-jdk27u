@@ -37,10 +37,19 @@ BUILD_TOOLS_SRC_DIRS += \
     $(BUILDTOOLS_OUTPUTDIR)/interim_tzdb_classes \
     #
 
+ifeq ($(ENABLE_DESKTOP), false)
+  BUILD_TOOLS_JDK_EXCLUDES += build/tools/compilefontconfig \
+      build/tools/dtdbuilder build/tools/generatenimbus build/tools/icondata \
+      build/tools/x11wrappergen
+else
+  BUILD_TOOLS_JDK_JAVAC_FLAGS += --add-exports java.desktop/sun.awt=ALL-UNNAMED
+endif
+
 $(eval $(call SetupJavaCompilation, BUILD_TOOLS_JDK, \
     TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
     SRC := $(BUILD_TOOLS_SRC_DIRS), \
     EXCLUDES := \
+        $(BUILD_TOOLS_JDK_EXCLUDES) \
         build/tools/classlist \
         build/tools/deps \
         build/tools/docs \
@@ -49,7 +58,7 @@ $(eval $(call SetupJavaCompilation, BUILD_TOOLS_JDK, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes, \
     DISABLED_WARNINGS := dangling-doc-comments options, \
     JAVAC_FLAGS := \
-        --add-exports java.desktop/sun.awt=ALL-UNNAMED \
+        $(BUILD_TOOLS_JDK_JAVAC_FLAGS) \
         --add-exports java.base/sun.text=ALL-UNNAMED \
         --add-exports java.base/sun.security.util=ALL-UNNAMED \
         --add-exports jdk.internal.opt/jdk.internal.opt=jdk.compiler.interim \
@@ -58,6 +67,7 @@ $(eval $(call SetupJavaCompilation, BUILD_TOOLS_JDK, \
 
 TARGETS += $(BUILD_TOOLS_JDK)
 
+ifeq ($(ENABLE_DESKTOP), true)
 $(eval $(call SetupCopyFiles, COPY_NIMBUS_TEMPLATES, \
     SRC := $(TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus, \
     DEST := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes/build/tools/generatenimbus/resources, \
@@ -65,6 +75,7 @@ $(eval $(call SetupCopyFiles, COPY_NIMBUS_TEMPLATES, \
 ))
 
 TARGETS += $(COPY_NIMBUS_TEMPLATES)
+endif
 
 $(eval $(call SetupCopyFiles, COPY_CLDRCONVERTER_PROPERTIES, \
     SRC := $(TOPDIR)/make/jdk/src/classes/build/tools/cldrconverter, \

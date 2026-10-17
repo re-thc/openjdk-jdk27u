@@ -46,12 +46,15 @@ idea:
 compile-commands:
 	+$(MAKE) -f TestCompileCommands.gmk $(TEST_SUBTARGET)
 
+headless:
+	+$(MAKE) -f TestHeadless.gmk $(TEST_SUBTARGET)
+
 configure:
 	$(BASH) $(TOPDIR)/test/make/autoconf/test-configure.sh \
 	    "$(AUTOCONF)" "$(TOPDIR)" "$(TEST_SUPPORT_DIR)"
 
 TARGETS += make-base java-compilation copy-files execute fix-deps-file idea \
-    compile-commands configure
+    compile-commands configure headless
 
 # Prints targets to TARGETS_FILE which must be set when calling this target.
 print-targets:

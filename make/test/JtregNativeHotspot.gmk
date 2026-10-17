@@ -41,6 +41,15 @@ include TestFilesCompilation.gmk
 # This might have been added to by a custom extension.
 HOTSPOT_JTREG_NATIVE_SRC += $(TOPDIR)/test/hotspot/jtreg
 
+# Native test bundles must follow the configured collector set too. Derive
+# directory names from feature names rather than maintaining another GC list.
+DISABLED_GC_TEST_FEATURES := $(filter-out \
+    $(foreach v, $(JVM_VARIANTS), $(JVM_FEATURES_$v)), $(filter %gc, $(VALID_JVM_FEATURES)))
+DISABLED_GC_TEST_DIRS := $(foreach root, $(HOTSPOT_JTREG_NATIVE_SRC), \
+    $(addprefix $(root)/gc/, $(patsubst %gc,%, $(DISABLED_GC_TEST_FEATURES))))
+HOTSPOT_JTREG_EXCLUDE += $(notdir $(call FindFiles, $(DISABLED_GC_TEST_DIRS), \
+    lib*.c lib*.cpp lib*.m exe*.c exe*.cpp exe*.m))
+
 HOTSPOT_JTREG_OUTPUT_DIR := $(OUTPUTDIR)/support/test/hotspot/jtreg/native
 VM_TESTBASE_DIR := $(TOPDIR)/test/hotspot/jtreg/vmTestbase
 NSK_SHARE_DIR := $(VM_TESTBASE_DIR)/nsk/share

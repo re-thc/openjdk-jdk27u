@@ -67,15 +67,17 @@ MODULE_CLASSES_DIRS := $(call FindModuleSrcDirs, $(MODULE))
 MOD_FILES := $(wildcard $(foreach f, $(MOD_FILENAME), $(addsuffix /$(f), \
     $(MODULE_CLASSES_DIRS))))
 
-ifneq ($(MOD_FILES), )
-  # Only make this call if modification files are found for this module
+ifneq ($(strip $(MOD_FILES) $(MODULES_FILTER)), )
+  # Also remove qualified exports/opens to excluded modules, even when there
+  # are no platform-specific additions for this module.
   ALL_MODULES := $(call FindAllModules)
 
   $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/module-info.java: \
       $(firstword $(call FindAllModuleInfos, $(MODULE))) \
       $(BUILD_TOOLS_JDK) \
       $(MOD_FILES) \
-      $(call DependOnVariable, ALL_MODULES)
+      $(call DependOnVariable, ALL_MODULES) \
+      $(call DependOnVariable, MODULES_FILTER)
 		$(call MakeTargetDir)
 		$(RM) $@ $@.tmp
 		$(TOOL_GENMODULEINFOSOURCE) \
@@ -83,6 +85,7 @@ ifneq ($(MOD_FILES), )
 		    -o $@.tmp \
 		    --source-file $< \
 		    --modules $(call CommaList, $(ALL_MODULES)) \
+		    $(if $(MODULES_FILTER), --exclude-modules $(call CommaList, $(MODULES_FILTER))) \
 		    $(MOD_FILES)
 		$(MV) $@.tmp $@
 

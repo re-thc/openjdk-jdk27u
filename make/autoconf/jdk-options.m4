@@ -93,28 +93,32 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_OPEN_OR_CUSTOM],
       CHECKING_MSG: [if custom source is suppressed (openjdk-only)])
 ])
 
-AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
+AC_DEFUN_ONCE([JDKOPT_SETUP_HEADLESS],
 [
-  UTIL_ARG_ENABLE(NAME: desktop, DEFAULT: true,
+  UTIL_ARG_ENABLE(NAME: desktop, DEFAULT: false,
       RESULT: ENABLE_DESKTOP,
       DESC: [build desktop modules and tools],
       CHECKING_MSG: [if we should build desktop modules and tools])
   AC_SUBST(ENABLE_DESKTOP)
 
   # Should we build a JDK without a graphical UI?
-  UTIL_ARG_ENABLE(NAME: headless-only, DEFAULT: false,
+  UTIL_ARG_ENABLE(NAME: headless-only, DEFAULT: true,
       RESULT: ENABLE_HEADLESS_ONLY,
       DESC: [only build headless (no GUI) support],
       CHECKING_MSG: [if we should build headless-only (no GUI)])
   AC_SUBST(ENABLE_HEADLESS_ONLY)
 
-  # macOS/Windows desktop libraries do not support headless-only builds.
-  # With desktop modules omitted, there are no such libraries to build.
-  if test "x$ENABLE_HEADLESS_ONLY" = xtrue && test "x$ENABLE_DESKTOP" = xtrue; then
-    if test "x$OPENJDK_TARGET_OS" = xwindows || test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      AC_MSG_ERROR([headless-only is not supported on macOS and Windows])
-    fi
+  # This fork builds a server JDK. Keep the upstream desktop sources, but do
+  # not let configure overrides silently select a different product in CI.
+  if test "x$ENABLE_DESKTOP" != xfalse || test "x$ENABLE_HEADLESS_ONLY" != xtrue; then
+    AC_MSG_ERROR([This fork requires --disable-desktop --enable-headless-only])
   fi
+
+])
+
+AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
+[
+  JDKOPT_SETUP_HEADLESS
 
   # should we linktime gc unused code sections in the JDK build ?
   if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
