@@ -55,7 +55,7 @@ public class ChecksumPaths {
 
     @State(Scope.Thread)
     public static class BulkState extends ScalarState {
-        @Param({"0", "1", "64", "256", "1024", "4096", "65536", "1048576"})
+        @Param({"0", "1", "64", "256", "1024", "4095", "4096", "4097", "65536", "1048576"})
         public int size;
         byte[] data;
         ByteBuffer direct;
