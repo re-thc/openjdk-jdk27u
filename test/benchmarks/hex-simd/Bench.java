@@ -24,8 +24,14 @@ public class Bench {
         if (!MX.isThreadAllocatedMemorySupported())
             throw new IllegalStateException("Thread allocation accounting is unavailable");
         if (!MX.isThreadAllocatedMemoryEnabled()) MX.setThreadAllocatedMemoryEnabled(true);
-        if (MX.getThreadAllocatedBytes(TID) < 0)
+        allocatedBytes();
+    }
+
+    private static long allocatedBytes() {
+        long bytes = MX.getThreadAllocatedBytes(TID);
+        if (bytes < 0)
             throw new IllegalStateException("Thread allocation accounting returned no measurement");
+        return bytes;
     }
 
     private static boolean nativeAvailability() throws ReflectiveOperationException {
@@ -63,9 +69,10 @@ public class Bench {
         for (int sample = 0; sample < SAMPLES; sample++) {
             for (int j = 0; j < fs.length; j++) {
                 int k = sample % 2 == 0 ? j : fs.length - 1 - j;
-                long alloc = MX.getThreadAllocatedBytes(TID), time = 0, count = 0;
+                long alloc = allocatedBytes(), time = 0, count = 0;
                 do { time += run(fs[k], batch[k]); count += batch[k]; } while (time < SAMPLE_MS * 1_000_000L);
-                alloc = MX.getThreadAllocatedBytes(TID) - alloc;
+                alloc = allocatedBytes() - alloc;
+                if (alloc < 0) throw new IllegalStateException("Thread allocation counter went backwards");
                 System.out.printf(Locale.ROOT, "%d,%s,%d,%.3f,%.1f,%d%n", size, names[k], sample, (double)time/count, (double)alloc/count, count);
             }
         }

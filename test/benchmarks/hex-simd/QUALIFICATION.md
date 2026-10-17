@@ -108,372 +108,240 @@ acceptance of an explicitly maintained 0.9.0-dev pin and authorization for the
 later PR/CI stage are separate decisions. No pin update or default enablement
 is implied.
 
-## Resource ceiling and stop rules
+## Execute one complete Stage 1 batch
 
-One host at a time. At most two build jobs, two Cargo jobs, one measurement JVM,
-512 MiB measurement/test heaps, jtreg concurrency one, and a four-thread first-use
-race. Use an 8 GiB process-tree RAM ceiling and 40 GiB new-disk ceiling. Prefer
-the existing job/container supervisor for those ceilings and two CPU equivalents;
-otherwise the owner supplies monitoring and terminates the process tree at the
-ceilings using installed OS tools. This supervision is owned execution work,
-not a request for another host. Make/JVM flags alone are not a native-memory cap.
+The published preparation commit before this runner repair was
+`ad9acad576a1ca92110dd55e6eb0ebad21499ed6`. It added unrun workload sources,
+not new evidence. The executable [qualify.py](qualify.py) now owns the whole
+batch: supervision, worktrees/builds, checks, all measurements, adjudication,
+disabled reconfiguration, process cleanup and the final result. It is Linux
+x64 only. Its source has been inspected; the runner and new workload sources
+remain unexecuted. No campaign outcome is claimed in this preparation commit.
 
-Stage 1 hard wall ceiling: six hours on the available host. Sub-budgets:
-90 minutes per clean JDK build (two), 45 minutes correctness/packaging, 50 minutes
-measurements, five minutes fresh-process checks, 25 minutes disabled-reconfigure
-cleanup, and remaining time for preparation and one final report. Terminate the
-entire process tree at each budget, including child compiler/JVM processes.
-If enforcement cannot be established, report the precise resource issue.
-There is no automatic retry, extra fork, extended warmup or retuning campaign.
-
-Stop the batch immediately on an identity mismatch, compile/link failure,
-wrong native availability/route, crash, hang, JNI warning, exception/output
-mismatch, lost source canary, missing notice/export/dependency, resource-limit
-breach or unexpected collector/profile. Keep the first error and command.
-Do not call infrastructure failure a performance rejection. Diagnose within the
-remaining budget, make a concrete source-only repair if appropriate and report
-qualification as incomplete for the changed artifact; do not recycle results
-from another binary. If the available-host decisive performance gate fails,
-recommend rejection or explicit deferral before proposing PR/CI integration.
-
-## Freeze source and build matched images
-
-The following commands are the future batch, not commands run in this
-continuation. Run Stage 1 in the repository's normal Linux shell, with installed
-BOOT_JDK and JTREG_HOME paths set. On the current Linux setup the existing
-`/workspace/toolchains/activate.sh` supplies compatible tool paths; it is not a
-portable prerequisite. Supply its usual platform configure options in
-`platform_options`, identically for both images. Do not add new optimizations.
+After execution is authorized, use the full source commit from the review
+handoff, not a moving branch name. Use installed compatible tools; the selected
+workspace's existing activation script is shown below, not an installation.
+The output directory must be fresh and preferably outside the source worktree.
+Paths must contain only ASCII letters/digits and `_./@:+-`, matching the shell
+launchers' space-free path contract.
 
 ```sh
-set -euo pipefail
-# Start from the reviewed branch containing this plan; freeze the full ID.
+source /workspace/toolchains/activate.sh
 : "${REVIEWED_Q:?Set the full reviewed source commit from the handoff}"
-Q=$REVIEWED_Q
-test "$(git rev-parse HEAD)" = "$Q"
-B=89885a6288e7aaabd01678a704a586272c0f96e3
-QUAL_ROOT="$PWD/../hex-qualification-${Q:0:12}"
-mkdir -p "$QUAL_ROOT/logs"
-git status --porcelain > "$QUAL_ROOT/logs/source-status.txt"
-test ! -s "$QUAL_ROOT/logs/source-status.txt"
-git worktree add --detach "$QUAL_ROOT/candidate" "$Q"
-git worktree add --detach "$QUAL_ROOT/baseline" "$B"
-printf '%s\n' "$Q" "$B" > "$QUAL_ROOT/logs/source-commits.txt"
-
-# Define this as a Bash array of the host's existing platform options.
-platform_options=()
-common=(--with-debug-level=release --with-jobs=2 --with-memory-size=8192
-  --with-version-opt=hex-qual --with-boot-jdk="$BOOT_JDK" --with-jtreg="$JTREG_HOME")
-# Set these to installed executable paths; prefer installed 1.85 for the
-# primary full build when settling MSRV on this host. Never add rustc arguments.
-QUAL_CARGO=${QUAL_CARGO:-$(command -v cargo)}
-QUAL_RUSTC=${QUAL_RUSTC:-$(command -v rustc)}
-
-cd "$QUAL_ROOT/candidate"
-"$QUAL_CARGO" fetch --locked --manifest-path src/java.base/share/native/libhexsimd/rust/Cargo.toml
-bash bin/configure-dev "${common[@]}" "${platform_options[@]}" \
-  --with-conf-name=hex-qual --enable-hex-simd CARGO="$QUAL_CARGO" RUSTC="$QUAL_RUSTC" \
-  > "$QUAL_ROOT/logs/configure-candidate.txt" 2>&1
-make CONF=hex-qual JOBS=2 images > "$QUAL_ROOT/logs/build-candidate.txt" 2>&1
-
-cd "$QUAL_ROOT/baseline"
-bash bin/configure-dev "${common[@]}" "${platform_options[@]}" \
-  --with-conf-name=hex-base > "$QUAL_ROOT/logs/configure-baseline.txt" 2>&1
-make CONF=hex-base JOBS=2 images > "$QUAL_ROOT/logs/build-baseline.txt" 2>&1
-
-BASE_JDK="$QUAL_ROOT/baseline/build/hex-base/images/jdk"
-CANDIDATE_JDK="$QUAL_ROOT/candidate/build/hex-qual/images/jdk"
-cd "$QUAL_ROOT/candidate"
-exp="$PWD/test/benchmarks/hex-simd"
-export JAVA_HOME="$CANDIDATE_JDK" HEX_SIMD_OUT="$QUAL_ROOT/harness"
-bash "$exp/build.sh" > "$QUAL_ROOT/logs/harness-build.txt" 2>&1
+python3 test/benchmarks/hex-simd/qualify.py --execute \
+  --revision "$REVIEWED_Q" \
+  --output "/workspace/hex-qualification-${REVIEWED_Q:0:12}" \
+  --boot-jdk /workspace/toolchains/jdk27 \
+  --jtreg /workspace/toolchains/jtreg83 \
+  --cargo "$(command -v cargo)" --rustc "$(command -v rustc)" \
+  --platform-option=--with-toolchain-path=/workspace/toolchains/gcc16/bin \
+  --platform-option=--with-extra-ldflags=-B/workspace/toolchains/mold/bin
 ```
 
-Record Q, B, dirty status, complete configure command/spec, compiler/linker/SDK
-versions, `rustc -vV`, `cargo --version`, lockfile, CPU/ISA, OS, resource limits,
-JDK `release`, VM version/flags and SHA-256 of java.base.jmod, lib/modules,
-libjvm and libhexsimd. Use Python hashlib on every platform if native hash tools
-differ. Preserve manifests/logs with the result; filenames alone are not identity.
-Record and remove unreviewed JAVA_TOOL_OPTIONS, JDK_JAVA_OPTIONS, _JAVA_OPTIONS,
-_JAVAC_OPTIONS, RUSTFLAGS and CARGO_ENCODED_RUSTFLAGS before the batch. Use the
-explicit chosen compiler paths for the version record too. Record any required
-normal runtime loader paths; do not change them between comparison images.
-Check the configured collector feature list is exactly g1gc/serialgc/zgc and run
-DevProfileSmoke.java directly with each of those flags. Do not use the broader
-check-dev-profile.sh here because its negative checks start excluded collectors.
-Inspect expected-only JNI exports and loader dependencies with `nm -D`/`ldd`
-(Linux), `nm -gU`/`otool -L` (macOS), or `dumpbin /exports` and `/dependents`
-(Windows). Check notices in the built jmod and image. Reject hardcoded system
-library assumptions if the actual target reports otherwise.
+Replace those installed-tool paths with the host's normal paths if different.
+Platform options cannot override the frozen profile, collector feature set,
+heap/build-job settings, source version, Boot JDK or jtreg selection. The runner
+uses the repository's normal bin/configure-dev for both detached worktrees,
+release builds, JOBS=2 and identical platform settings. If mold is absent, it
+sets the existing CONFIGURE_DEV_NO_MOLD switch for both. No compiler, toolchain,
+CI action, PR, push or merge is installed/created/dispatched by this runner.
+Normal `cargo fetch --locked` populates its owned Cargo cache; compilation and
+Rust tests use the frozen graph. Production classes come from full matched
+native JDK builds. Only the unchanged reference class is patched into steady
+comparison VMs; cold calls use neither that patch nor a helper pre-warm lookup.
 
-## Correctness, first-use and packaging gates
+## Actual resource and ownership enforcement
 
-```sh
-# Separate full baseline/candidate builds on this host, without binary handoffs.
-for checkout in candidate baseline; do
-  if [[ $checkout == candidate ]]; then jdk=$CANDIDATE_JDK; expect=true
-  else jdk=$BASE_JDK; expect=false; fi
-  (cd "$QUAL_ROOT/$checkout" && "$BOOT_JDK/bin/java" -jar "$JTREG_HOME/lib/jtreg.jar" \
-    -jdk:"$jdk" -conc:1 -w:"$QUAL_ROOT/jtreg-$checkout-work" \
-    -r:"$QUAL_ROOT/jtreg-$checkout-report" -vmoption:-Dhexsimd.expectNative=$expect \
-    test/jdk/java/util/HexFormat) > "$QUAL_ROOT/logs/jtreg-$checkout.txt" 2>&1
-  for gc in Serial G1 Z; do
-    "$jdk/bin/java" -Xms128m -Xmx512m -XX:ActiveProcessorCount=2 "-XX:+Use${gc}GC" \
-      "$QUAL_ROOT/candidate/.github/scripts/DevProfileSmoke.java" \
-      > "$QUAL_ROOT/logs/profile-$checkout-$gc.txt" 2>&1
-  done
- done
+The source implements these controls, rather than requiring an unspecified
+operator or external watchdog:
 
-cd "$QUAL_ROOT/candidate"
-RUSTC="$QUAL_RUSTC" "$QUAL_CARGO" test --frozen --release --jobs 2 \
-  --manifest-path src/java.base/share/native/libhexsimd/rust/Cargo.toml \
-  --target-dir "$QUAL_ROOT/rust-test" > "$QUAL_ROOT/logs/rust-test.txt" 2>&1
-"$CANDIDATE_JDK/bin/jlink" --module-path "$CANDIDATE_JDK/jmods" --add-modules java.base \
-  --output "$QUAL_ROOT/base-image"
-"$CANDIDATE_JDK/bin/jlink" --module-path "$CANDIDATE_JDK/jmods" --add-modules java.base \
-  --exclude-files '**/*hexsimd*' --output "$QUAL_ROOT/no-library-image"
-export HEX_SIMD_NO_LIBRARY_JDK="$QUAL_ROOT/no-library-image"
-bash "$exp/verify.sh" > "$QUAL_ROOT/logs/verify-matrix.txt" 2>&1
+* The monotonic total is six hours including setup, result writing and cleanup.
+  Work stops ten seconds before that deadline. A watchdog sends TERM, then KILL
+  after two seconds, and forces runner exit after five seconds or at the total
+  deadline. It writes a best-effort emergency result without letting a stuck
+  result filesystem disable the deadline.
+* The runner restricts its CPU affinity to two available CPU IDs before spawning
+  children. This mask is inherited by compilers/JVMs; make and Cargo each use two
+  jobs, jtreg concurrency is one, and timing has one JVM at a time. The first-use
+  race has four threads, within that same affinity.
+* Aggregate RSS of the runner and owned descendants is sampled every 250 ms;
+  exceeding 8 GiB terminates the batch. Shared pages can be counted more than
+  once, making this conservative. This is sampled enforcement, not a claim of
+  an unprivileged kernel memory quota or zero transient overshoot.
+* The fresh output tree and its own Git worktree metadata are limited to 40 GiB
+  of accounted bytes: max(logical size, allocated blocks), deduplicating hardlinks.
+  Cargo/ccache/temp outputs are redirected into that tree. Full scans run during
+  builds/tests and at closed measurement-phase boundaries. During the no-file-I/O
+  Java measurements, only logs, temporary files and root JSON records can grow;
+  those are checked without scanning two JDK source/build trees inside a timed
+  JVM. Perfdata is disabled and JVM error files go to the monitored log directory.
+  Disk checks run every five seconds and at command boundaries. Polling may
+  permit brief overshoot; peak observations and any breach are recorded.
+* Every subprocess starts in a new session. Linux child-subreaper mode adopts
+  daemonized grandchildren, including compiler servers. PID plus kernel start
+  time and pidfds identify owned processes; signals never use a process-name
+  match or a shared process group. Cleanup runs between commands and on failure,
+  interruption and normal completion. A surviving process is reported as cleanup
+  uncertain, never silently declared gone. Other tasks' processes are untouched.
 
-for gc in Serial G1 Z; do
-  for state in baseline disabled enabled absent; do
-    opts="-Xms128m -Xmx512m -XX:ActiveProcessorCount=2 -XX:+Use${gc}GC -Xcheck:jni"
-    case $state in
-      baseline) jdk=$BASE_JDK; opts+=" -Dhexsimd.expectNative=false" ;;
-      disabled) jdk=$CANDIDATE_JDK; opts+=" -Djdk.hexFormat.useNative=false -Dhexsimd.expectNative=false" ;;
-      enabled) jdk=$CANDIDATE_JDK; opts+=" -Dhexsimd.expectNative=true" ;;
-      absent) jdk=$HEX_SIMD_NO_LIBRARY_JDK; opts+=" -Dhexsimd.expectNative=false" ;;
-    esac
-    JAVA_HOME="$jdk" JAVA_OPTS="$opts" bash "$exp/run.sh" FirstUse race \
-      > "$QUAL_ROOT/logs/first-race-$state-$gc.txt" 2>&1
-  done
- done
-```
+The Linux/Python pidfd and subreaper facilities are checked before building.
+They are normal facilities on the selected host, not additional performance
+hardware. If unavailable, the runner records an environment prerequisite and
+stops before the campaign. No resume/retry or extra timing repetition is automatic.
 
-The full matrix must distinguish library availability, actual successful native
-decode for Latin1, compact-string-disabled/UTF16 fallback, late failed native
-chunks remaining private and exact Java diagnostic replay. Existing longer
-malformed-input coverage remains part of the suite. Check both java.base-only
-images' lib/modules hashes match while the native file is absent only from the
-excluded image. The public bulk test requests a 192 KiB stack; that is a platform
-hint, not proof that every VM allocates exactly that size. Retain actual VM
-minimum/rounding information when making a stack-size claim. Do not compare the
-java.base-only module hashes with the full JDK's module image.
-The standalone fixture already proved normalized path handling on the earlier
-Linux run; native Windows building is the outstanding stronger test, not another
-simulated-fixture repetition.
+Builds share the time before the final 105-minute reserve: approximately 4 h
+15 min combined, including preparation. There is no individual 90-minute build
+failure rule. A build/deadline/resource failure produces INCOMPLETE, not a
+measured product rejection. The throughput window is 75 minutes, bounded also
+by the global deadline and a 15-minute cleanup reserve. Its declared loops alone
+cost 2,754 seconds (45.9 minutes), before 72 timing JVM startups, calibration,
+GC and supervision overhead. Cold measurements use another 225 fresh JVMs;
+correctness/profile/race processes are separate and inside the same six hours.
+Before starting the throughput grid, the runner requires at least the declared
+loop floor plus ten minutes overhead and fifteen minutes cleanup to remain.
+Insufficient time is reported as a resource limit, not evidence against HexFormat.
 
-For an actual minimum-version result, choose installed 1.85 paths as QUAL_CARGO
-and QUAL_RUSTC before the normal full candidate build above. This exercises the
-real C link, image, native loading and correctness as well as Rust compilation.
-An isolated Rust unit/archive probe alone cannot establish minimum-toolchain
-JDK integration. If only the newer compatible compiler is installed, complete
-Stage 1 with it and report that exact version; the untested minimum remains a
-later support-claim check, not a blocker for the available-host benefit result.
-Do not build an extra compiler/JDK matrix or install tools within this batch to
-disguise that distinction.
+## Work owned by the executable
 
-## One steady-state measurement batch
+1. Verify the full reviewed checkout is clean, the baseline/pin/lock identities
+   match, and the host exposes x86-64-v3 flags. Record installed tool/OS/CPU
+   versions and actual affinity. Create fresh detached baseline/candidate
+   worktrees and normal release images. Preserve immutable spec snapshots and
+   SHA-256 of the runner, lockfile, release, launcher, java.base.jmod, modules,
+   libjvm and optional JNI library. Recheck frozen source heads/status afterward.
+2. Validate exactly Serial/G1/ZGC in the configured profile; run its source
+   smoke under those collectors. Inspect native exports/dependencies and verify
+   every copied Rust runtime notice against that actual compiler's source
+   notices, plus the pinned dependency MIT notice. No excluded collector or
+   HTTP client/server workload is started.
+3. Run baseline and candidate public HexFormat jtreg suites. Both the Boot-JDK
+   jtreg launcher and compilation/test child JVMs receive explicit Xms128m,
+   Xmx512m, ActiveProcessorCount=2, UseG1GC and JNI checking. Child settings are
+   passed via individual `-vmoption:` arguments and checked in the JTR records.
+   The original testOOME is unchanged. Its expected low-heap TestNG SkipException
+   is accepted only for that method with its exception or OOME memory diagnostic;
+   passed plus skipped must cover all 154 TestNG cases with zero failures. Counts
+   are recorded separately. Such skips are not promoted to full large-array
+   coverage, and the runner does not raise the heap to suppress them.
+4. Run Rust boundary tests, normal jlink images with/without the native library,
+   and verify.sh. The six GC/compact configurations use explicit heap/processor/
+   collector settings; disabled and absent cases explicitly use G1 with compact
+   strings on. Availability and successful native decode are distinct assertions.
+   UTF16, malformed diagnostics, private chunk writes, ranges, fallback and the
+   public bulk/GC/small-stack request remain covered. The 192 KiB Thread stack
+   argument is a platform hint, not a measured physical stack size.
+5. Run concurrent first-use checks for baseline/disabled/enabled/absent library
+   states under all three collectors. Run the complete cold and throughput grids
+   below. Logging-only cold checks require empty/tiny calls not to load hexsimd
+   and eligible calls to load it; logging is excluded from timing observations.
+6. Adjudicate complete evidence, then preserve the enabled image locally and
+   reconfigure the same output directory disabled with missing Cargo/Rust paths.
+   Rebuild normal images once. Verify native/debug files and owned notices are
+   removed, all unrelated legal files retain their hashes, and G1 correctness
+   falls back without the disabling property. Cleanup and final source identity
+   checks are mandatory even if the completed measurements show a loss.
 
-No concurrent build/test work. Heap 512 MiB, ActiveProcessorCount=2, default tiered
-compilation; no JNI checking or logging in throughput measurements. Bench warms
-availability before measurement; `*-native` continues to mean the selected
-public call, including Java fallback, not a claim about the actual route.
-Three independently started processes per cell; no extra repetitions on noise.
-Alternate the three states by round: baseline/disabled/enabled, then reverse,
-then baseline/disabled/enabled. Compare both reference/selected within each VM
-and the selected public calls across the matched baseline and candidate images.
+Any command failure, JNI warning, mismatch, unavailable accounting or malformed
+CSV stops with the exact command/logs and an incomplete/invalid result. Do not
+reinterpret that as a measured performance result. No general grep treats an
+expected testOOME skip as a process failure.
 
-```sh
-cd "$QUAL_ROOT/candidate"
-for round in 1 2 3; do
-  states='baseline disabled enabled'
-  if [[ $round == 2 ]]; then states='enabled disabled baseline'; fi
-  for gc in G1 Serial Z; do
-    for state in $states; do
-      if [[ $state == baseline ]]; then jdk=$BASE_JDK; native=false; disable=''
-      elif [[ $state == disabled ]]; then jdk=$CANDIDATE_JDK; native=false; disable='-Djdk.hexFormat.useNative=false'
-      else jdk=$CANDIDATE_JDK; native=true; disable=''; fi
-      opts="-Xms512m -Xmx512m -XX:ActiveProcessorCount=2 -XX:+Use${gc}GC $disable -Dhexsimd.expectNative=$native -Dhexsimd.warmupMs=1000 -Dhexsimd.sampleMs=100 -Dhexsimd.samples=5"
-      sizes='0 32 128 1024 4096 65536'
-      if [[ $gc == G1 ]]; then sizes='0 1 8 16 32 64 127 128 129 511 512 1023 1024 1025 4096 65536 1048576'; fi
-      JAVA_HOME="$jdk" JAVA_OPTS="$opts" bash "$exp/run.sh" Bench $sizes \
-        > "$QUAL_ROOT/logs/plain-$state-$gc-$round.csv"
-      JAVA_HOME="$jdk" JAVA_OPTS="$opts" bash "$exp/run.sh" Bench protected \
-        > "$QUAL_ROOT/logs/protected-$state-$gc-$round.csv"
-      if [[ $gc == G1 ]]; then
-        JAVA_HOME="$jdk" JAVA_OPTS="$opts -XX:-CompactStrings" bash "$exp/run.sh" Bench 32 128 1024 65536 \
-          > "$QUAL_ROOT/logs/plain-utf16-$state-$round.csv"
-        JAVA_HOME="$jdk" JAVA_OPTS="$opts -XX:-CompactStrings" bash "$exp/run.sh" Bench protected \
-          > "$QUAL_ROOT/logs/protected-utf16-$state-$round.csv"
-      fi
-    done
-  done
- done
-python3 "$exp/summarize.py" "$QUAL_ROOT"/logs/plain-*.csv "$QUAL_ROOT"/logs/protected-*.csv \
-  > "$QUAL_ROOT/logs/within-process-summary.txt"
-```
+## Fixed measurements and explicit acceptance
 
-`Protected` models SHA-256 plus 32-byte hex, colon-separated fingerprints,
-uppercase encode with an offset, decode with a substring copy, arbitrary
-CharSequence input creation/parsing, Appendable output, late invalid Latin1 and
-UTF16 diagnostics, and 100 tiny encodes plus one 64 KiB encode. Each timed call
-includes its conversion/allocation; mixed results all escape. The last model
-reports one 101-operation workload, not a single conversion or a UUID batch.
-Plain sizes and errors remain individually visible, so a mixed average cannot
-hide a regression. These are fixed workload models, not a claim to have measured
-the user's real application or I/O.
+Throughput has three independent forks per cell, in baseline/disabled/enabled
+order, then reversed, then the initial order. Each public operation receives
+1,000 ms warmup and five samples of at least 100 ms. Samples within one process
+are not independent forks. G1 measures 17 declared sizes including both cutoff
+neighbors and 1 MiB; Serial/Z measure six representative sizes. G1 additionally
+measures compact-string-disabled cases. All three states execute the protected
+models: digest-plus-hex, fingerprints, uppercase/ranges, substring input,
+CharSequence, Appendable, late invalid Latin1/UTF16, and the fixed 101-call mix.
+Every returned result escapes. Input conversion/allocation and native transition
+costs remain in the measured public/workload call. See the fixed arrays in
+qualify.py; there is no adaptive size/fork/warmup expansion.
 
-## Fresh-process cost, finite lifetime and cleanup
+Cold has five alternating rounds per collector/state/mode: empty, tiny, first
+eligible encode, first eligible decode, and bulk-session. The supervisor records
+wall time immediately around Popen/wait, excluding its own log/disk setup, plus
+FirstUse's public-call interval and result length. It is fresh-process timing
+with normal OS caches, not an evicted filesystem/page-cache experiment.
+**Bulk-session is exactly 128 encode/decode pairs: 8 MiB each direction.** It
+includes first loading/dispatch and all 256 call allocations. It is one observed
+session size. No measured amortization crossover, minimum profitable session
+length, or modeled break-even estimate is claimed. No sweep is hidden here.
 
-Use FirstUse directly, without run.sh/reference patch, for empty/tiny/encode/
-decode/bulk-session. For each collector, perform five rounds in the same
-alternating baseline/disabled/enabled order. Each cell is one fresh JVM.
+`adjudicate()` in qualify.py, not summarize.py, writes acceptance.json. It first
+requires all 72 throughput process cells, exactly five finite nonnegative timing/
+allocation observations per operation, and all 225 distinct cold records.
+Baseline/reference/selected operation sets and native availability/settings must
+match the declaration. It then applies these gates explicitly:
 
-Run the following collector under the five-minute phase supervisor:
+* Compare same selected public calls across baseline, disabled candidate and
+  enabled candidate separately in **every one of the three forks**. Report both
+  disabled/enabled and baseline/enabled speed ratios. Also compare the unchanged
+  reference across images, and carry its within-VM paired observations.
+* Mark INCONCLUSIVE_NOISE if disabled/baseline or unchanged-reference drift
+  exceeds max(10%, 5 ns/call) on valid steady cases; also if any decisive bulk
+  state spans over 2x within at least two forks. A reversed within-VM reference
+  benefit at a decisive size is another consistency failure. Cold disabled/
+  baseline wall drift beyond max(10%, 10 ms) is also inconclusive. Noise cannot
+  produce a GO even when another ratio looks favorable.
+* For encode 1,024 and decode 128, require at least 1.10x against **both** disabled
+  candidate and baseline in all three forks. At 4 KiB/64 KiB require encode at
+  least 1.20x and decode at least 2x under each collector. This is a retained-
+  cutoff gate on this host, not a portable crossover claim.
+* All valid plain/protected calls must not regress against either comparison
+  by more than max(5%, 5 ns/call); the 101-call model has a 5% limit. This includes
+  compact-string-disabled paths. Invalid diagnostic calls have the separate
+  max(25%, 1 microsecond) replay allowance and remain separately reported.
+* Java allocation medians in each fork must agree within 16 B/call across the
+  three states and versus that process's reference for valid calls. Every raw
+  sample must have available, finite, nonnegative accounting. Native memory is
+  not inferred from ThreadMXBean. Peak aggregate RSS is a resource observation,
+  not native bytes per operation.
+* Cold comparisons use the five-round median for each collector. Enabled empty/
+  tiny process wall must stay within max(5%, 10 ms) of both controls. First
+  eligible public-call overhead must be no more than +20 ms versus both. The
+  **fixed 128-pair session** process-wall median must beat both controls by at
+  least 10%. Raw cold observations and both intervals are retained; these gates
+  do not infer an amortization point from the one session size.
 
-```sh
-python3 - "$QUAL_ROOT" "$BASE_JDK" "$CANDIDATE_JDK" "$HEX_SIMD_OUT/classes" <<'PY'
-import csv, subprocess, sys, time
-from pathlib import Path
-root, baseline, candidate, classes = sys.argv[1:]
-with (Path(root) / 'logs/cold.csv').open('w', newline='') as output:
-    rows = csv.writer(output)
-    rows.writerow(['gc', 'state', 'round', 'mode', 'process_wall_ns', 'public_call_ns', 'result_length'])
-    for gc in ['G1', 'Serial', 'Z']:
-        for round in range(1, 6):
-            states = ['baseline', 'disabled', 'enabled']
-            if round % 2 == 0: states.reverse()
-            for state in states:
-                java = Path(baseline if state == 'baseline' else candidate) / 'bin/java'
-                if not java.is_file(): java = java.with_suffix('.exe')
-                opts = ['-Xms128m', '-Xmx128m', '-XX:ActiveProcessorCount=2', '-XX:+Use' + gc + 'GC']
-                if state == 'disabled': opts.append('-Djdk.hexFormat.useNative=false')
-                for mode in ['empty', 'tiny', 'encode', 'decode', 'bulk-session']:
-                    argv = [str(java), *opts, '-cp', classes, 'FirstUse', mode]
-                    start = time.perf_counter_ns()
-                    result = subprocess.run(argv, capture_output=True, text=True, timeout=10, check=True)
-                    wall = time.perf_counter_ns() - start
-                    (Path(root) / f'logs/cold-{state}-{gc}-{round}-{mode}.stderr').write_text(result.stderr)
-                    reported_mode, call_ns, length = result.stdout.strip().split(',')
-                    if reported_mode != mode: raise AssertionError(result.stdout)
-                    rows.writerow([gc, state, round, mode, wall, int(call_ns), int(length)])
-                    output.flush()
-PY
+A clean gate failure is NO_GO_MEASURED; report route-specific losses rather than
+hiding them in a mixed average. Noise takes precedence and yields INCONCLUSIVE.
+A missing/invalid/incomplete campaign never gets a GO. Operational failures,
+resource exhaustion and expected low-heap skips have distinct handling.
 
-for mode in empty tiny encode decode; do
-  "$CANDIDATE_JDK/bin/java" -Xms128m -Xmx128m -XX:ActiveProcessorCount=2 \
-    -XX:+UseG1GC -Xlog:library=debug -cp "$HEX_SIMD_OUT/classes" FirstUse "$mode" \
-    > "$QUAL_ROOT/logs/cold-library-$mode.txt" 2>&1
-done
-```
+## Deliverables and staged decision
 
-Use Python `time.perf_counter_ns()` around
-`subprocess.run(argv, capture_output=True, text=True, timeout=10, check=True)`;
-record platform, Q, image identity, GC, state, round, mode, process wall ns and
-FirstUse's reported public-call ns/result length to a CSV. Select java.exe on
-Windows. The JVM does no helper lookup in these modes. All preparation before
-the first call remains in process wall time. This is fresh-process cost with
-normal OS caches, not a claim about an evicted filesystem/page cache.
-Bulk-session includes first loading/dispatch and 128 calls in each direction
-(8 MiB each); its result escapes. Separately run one enabled empty/tiny/encode/
-decode with `-Xlog:library=debug` per host and retain the log: empty/tiny must not
-load hexsimd, eligible calls must load it. These four logging runs are correctness
-checks and are excluded from the timing CSV.
+The fresh output directory contains commands.json (actual argv/cwd/deadline and
+return codes), manifest.json (spec/artifact/tool/test/skip identities), complete
+stdout/stderr/JTR logs, cold.json, measurements.json, acceptance.json and final
+result.json. Enabled artifacts are retained at enabled-image after the disabled
+reconfiguration, with the original measured path and retained path both recorded.
+Exit statuses: 0 LOCAL_GO, 2 NO_GO_MEASURED, 3 INCONCLUSIVE_NOISE, 4 incomplete,
+64 invocation error, 124 watchdog force-exit. result.json is authoritative;
+missing emergency output is an uncertain interrupted outcome, never success.
 
-After measurements, retain the enabled image locally after recording hashes,
-then reconfigure the SAME candidate output directory:
+Stage 1 LOCAL_GO means exact-head Linux development-profile correctness and
+benefit support proposing opt-in integration. Other native performance hosts
+and an unavailable Rust 1.85 are not prerequisites for that useful result. The
+actual installed Rust version and untested MSRV remain explicit. The development
+pin's maintenance responsibility remains a review decision; default enablement
+and unrelated APIs/UUID are out of scope.
 
-```sh
-mv "$CANDIDATE_JDK" "$QUAL_ROOT/enabled-image"
-cd "$QUAL_ROOT/candidate"
-bash bin/configure-dev "${common[@]}" "${platform_options[@]}" \
-  --with-conf-name=hex-qual --disable-hex-simd CARGO=/missing/cargo RUSTC=/missing/rustc \
-  > "$QUAL_ROOT/logs/configure-disabled.txt" 2>&1
-make CONF=hex-qual JOBS=2 images > "$QUAL_ROOT/logs/build-disabled.txt" 2>&1
-JAVA_HOME="$CANDIDATE_JDK" \
-  JAVA_OPTS='-Xms256m -Xmx512m -XX:ActiveProcessorCount=2 -XX:+UseG1GC -Xcheck:jni -Dhexsimd.expectNative=false -Dhexsimd.expectDecodeNative=false' \
-  bash "$exp/run.sh" Correctness > "$QUAL_ROOT/logs/correctness-reconfigured.txt" 2>&1
-"$CANDIDATE_JDK/bin/jmod" list "$CANDIDATE_JDK/jmods/java.base.jmod" \
-  > "$QUAL_ROOT/logs/jmod-reconfigured.txt"
-```
+Stage 2 is separately approved PR integration and normal existing CI for Linux
+x64/AArch64, macOS ARM64 and Windows x64 **correctness/build** support. It must
+prepare the normal managed tool/cache setup, build the enabled option, assert
+native routing, and cover collectors/fallback/startup/packaging. Ordinary CI
+with hex-simd disabled is insufficient. Its preparation is owned integration
+work; this continuation creates no workflow, CI dispatch or PR. Settle minimum-
+version coverage before claiming it was tested. Platform correctness CI does
+not establish portable performance.
 
-Confirm the new image/jmod omits
-hexsimd and its owned notices/debug files, unrelated legal files remain, and
-one G1 Correctness run has `-Dhexsimd.expectNative=false
--Dhexsimd.expectDecodeNative=false` without the startup disabling property.
-This verifies enabled-to-disabled cleanup on a new artifact; it is not a repeat
-of the disabled-property control.
-
-## One result and decision
-
-Require all correctness/build/startup/packaging gates first. Report the three
-independent process medians and all five within-process observations, range and
-Java B/call for each cell; do not treat five correlated samples as independent
-forks or invent confidence intervals. Cross-image comparisons use the same
-public selected operation. Carry the within-VM reference pairs as a consistency
-check. Use these predeclared criteria, without adding measurements to rescue a
-failure:
-
-* Reject as inconclusive if disabled candidate versus baseline control drift
-  exceeds max(10%, 5 ns/call) for valid plain/protected cases, or observations
-  span over 2x within two of three forks at a decisive bulk size. Do not claim
-  a speedup when the baseline/control cannot be trusted.
-* At each retained native threshold (encode 1,024; decode 128), require at least
-  1.10x speedup (disabled ns / enabled ns) in all three process medians. For
-  steady 4 KiB and 64 KiB, require encode at least 1.20x and decode at least 2x
-  for each Stage 1 collector. Sampled threshold results do not define a universal
-  crossover.
-* Valid tiny/fallback/fingerprint/digest/Appendable/CharSequence workloads must
-  not regress against disabled candidate or baseline by more than max(5%, 5 ns)
-  per reported call. The 101-call mix must not regress by over 5%. Compact-string-
-  disabled paths are protected too. Treat borderline/noisy differences as
-  unresolved, not an exact overhead guarantee.
-* Invalid-input diagnostic work may regress by at most max(25%, 1 microsecond)
-  per call, preserving the exact exception. This separately budgeted error cost
-  acknowledges native validation followed by Java replay; do not hide it in a
-  success average. Java allocation for ordinary valid calls must match baseline
-  within 16 B/call measurement tolerance; explain every difference rather than
-  calling ThreadMXBean native-memory accounting. Record process peak RSS as a
-  footprint limit/observation, without labeling it allocation per call.
-* Empty/tiny process-wall medians may grow by at most max(5%, 10 ms), and must
-  not load the library. First eligible call median overhead must be at most
-  20 ms. The complete cold bulk-session process wall time must beat disabled
-  candidate AND baseline by at least 10% in the five-round median for each
-  collector. Report the first-use cost and measured amortization point as well
-  as steady throughput.
-  Never average cold use away to claim a lifetime win.
-
-Stage 1 ends with one of: reject this candidate, inconclusive with the named
-build/timing/resource issue, or "exact-head Linux profile correctness and benefit
-demonstrated; proceed to proposed PR integration." Report encode/decode outcomes
-separately. If one route loses, recommend dropping it; a win elsewhere cannot
-hide that loss. Keep default enablement and unrelated APIs/UUID out of scope.
-The useful available-host result does not wait for three more performance hosts
-or for a different installed Rust version.
-
-Stage 2, only after separate PR integration/CI authorization, uses the existing
-normal repository CI for supported-platform correctness: Linux x64/AArch64,
-macOS ARM64 and Windows x64. It must build the actual enabled option with the
-exact pin/frozen cache and notices, exercise Serial/G1/ZGC and compact-string
-modes, assert actual native decode separately from availability, check malformed
-input/fallback/startup races and enabled-to-disabled packaging. The commands in
-the correctness section and verify.sh are reusable; baseline/performance loops
-are not required on four CI hosts. Existing ordinary CI with hex-simd disabled
-alone cannot qualify the optional enabled integration. Prepare any missing
-normal managed tooling/cache setup in that separately approved integration;
-do not add a workflow or dispatch anything in this continuation. Record actual
-toolchain versions and settle untested MSRV before asserting its coverage.
-These CI results establish correctness/build support, not portable speedups.
-
-Stage 3 is optional, claim-specific native performance qualification. Only
-promise another architecture/OS crossover or speedup after measuring its real
-complete call path. A normal CI correctness pass is insufficient evidence for
-that claim; lack of a performance host does not erase a positive Stage 1 result
-or prevent proposing Stage 2. Maintain a clear per-target measured/unmeasured
-table. Completion of integration and its support claims requires Stage 2; a
-published review branch alone is not completion.
-
-A source repair or threshold change after frozen Q invalidates the relevant
-artifact's result. Report that artifact and a complete replacement batch, not a
-chain of tiny rerun approvals. All proposed execution remains unrun here.
+Stage 3 is optional, claim-specific performance on another native architecture/
+OS. Only those additional claims require suitable additional performance hosts.
+A lack of them does not erase a positive Stage 1 result or block proposing Stage
+2. A published source branch alone is not completed integration. Any source or
+threshold change after the frozen Q invalidates the relevant artifact's result;
+report that fact and a complete replacement batch, without automatic reruns or
+a chain of tiny approvals. All execution described here remains unrun.

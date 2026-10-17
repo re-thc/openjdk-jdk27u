@@ -10,8 +10,11 @@ These cutoffs are provisional Linux x64 choices. The published source review is
 a milestone; full integration qualification remains incomplete. See
 [QUALIFICATION.md](QUALIFICATION.md) for the exact evidence reconciliation and
 one bounded build/correctness/startup/workload decision batch. The new harness
-accounting guard and protected/first-use workload sources are uncompiled and
-unrun as of 2026-10-17; no new outcome is claimed for them.
+accounting guard, protected/first-use workload sources and executable supervisor/
+adjudicator are unrun as of 2026-10-17; no new outcome is claimed for them.
+Use [qualify.py](qualify.py) for the single future qualification batch, as shown
+in that plan. The individual build/test/measurement commands below are useful
+reproduction steps; they do not provide batch supervision or adjudication.
 
 Loading is guarded until VM bootstrap completes. JNI uses bounded region copies
 into separate scratch buffers, without pinning arrays or retaining heap

@@ -72,8 +72,9 @@ public class FirstUse {
         long start = System.nanoTime();
         Object result;
         if (args[0].equals("bulk-session")) {
-            // A finite process lifetime: 8 MiB in each direction, including
-            // first loading/dispatch and all 256 public-call allocations.
+            // One fixed session of 128 pairs, 8 MiB in each direction, including
+            // first loading/dispatch and all 256 public-call allocations. This
+            // single session size does not measure an amortization crossover.
             for (int i = 0; i < 128; i++) {
                 sessionSink = HexFormat.of().formatHex(bytes);
                 sessionSink = HexFormat.of().parseHex(text);
