@@ -25,6 +25,7 @@
 #include "jni.h"
 #include "../../../../../src/hotspot/share/opto/coldCallSpill.hpp"
 
+#include <limits>
 #include <set>
 #include <vector>
 
@@ -72,6 +73,137 @@ Java_compiler_regalloc_TestColdCallSpillPolicy_verify(JNIEnv* env, jclass) {
   CHECK(!ColdCallSpillPolicy::should_defer(true, true, 100.0, frequency));
   ColdCallSpillPolicy::add_constraint(frequency, last_node, 200, 100.0);
   CHECK(!ColdCallSpillPolicy::should_defer(true, true, 100.0, frequency));
+
+  // Model the two successive joins seen for llEntry, ofEntry and mlEntry
+  // (bytecode indices 360, 373 and 386) in the retained decoder trace. These
+  // are predecessor execution frequencies, not summed alternatives executed
+  // in one iteration. The first join must propagate an UP deferred value to
+  // the second join instead of materializing it on its hot incoming edges.
+  ColdCallSpillPolicy::PhiCosts packed_first[3];
+  ColdCallSpillPolicy::PhiCosts packed_second[3];
+  ColdCallSpillPolicy::PhiCosts packed_uncoordinated[3];
+  for (unsigned int range = 0; range < 3; range++) {
+    auto& first = packed_first[range];
+    first.add_input(true, true, true, 2140.33);  // B124: hot scalar definition
+    first.add_input(true, true, true, 1.82001);  // B121: cold UP sibling
+    first.add_input(true, false, false, 1.81997); // B119: returning call, DOWN
+    CHECK(first.up_frequency() == 2140.33 + 1.82001);
+    CHECK(first.down_frequency() == 1.81997);
+    CHECK(first.should_keep_up(1.82001));
+
+    auto& second = packed_second[range];
+    second.add_input(true, first.should_keep_up(1.82001), true, 2143.97); // B120
+    second.add_input(true, true, true, 4536.68); // B125: hot UP sibling
+    second.add_input(true, true, true, 0.13977); // B79: rare UP sibling
+    CHECK(second.up_frequency() == 2143.97 + 4536.68 + 0.13977);
+    CHECK(second.down_frequency() == 0.0);
+    CHECK(second.should_keep_up(1.82001));
+
+    // Repairing only the second join leaves the first hot DOWN input too
+    // expensive to reload. This must not pass as coordinated deferral.
+    auto& uncoordinated = packed_uncoordinated[range];
+    uncoordinated.add_input(true, false, false, 2143.97);
+    uncoordinated.add_input(true, true, true, 4536.68);
+    uncoordinated.add_input(true, true, true, 0.13977);
+    CHECK(!uncoordinated.should_keep_up(1.82001));
+  }
+
+  // Keeping an already-UP deferred input does not need a memory transfer.
+  // An empty join or all-DOWN inputs must not invent a register definition.
+  ColdCallSpillPolicy::PhiCosts empty;
+  CHECK(empty.up_frequency() == 0.0 && empty.down_frequency() == 0.0);
+  CHECK(!empty.should_keep_up(0.0));
+  ColdCallSpillPolicy::PhiCosts all_up;
+  all_up.add_input(true, true, true, 64.0);
+  all_up.add_input(true, true, true, 8.0);
+  CHECK(all_up.should_keep_up(0.0));
+  ColdCallSpillPolicy::PhiCosts all_down;
+  all_down.add_input(true, false, false, 64.0);
+  all_down.add_input(true, false, false, 8.0);
+  CHECK(!all_down.should_keep_up(0.0));
+
+  // Strict margin: load cost two, store cost one, and a hard constraint can
+  // need both. Equality is not a saving, even with complete provenance.
+  ColdCallSpillPolicy::PhiCosts equal_cost;
+  equal_cost.add_input(true, true, true, 110.0);
+  equal_cost.add_input(true, false, false, 4.0);
+  CHECK(!equal_cost.should_keep_up(1.0));
+  ColdCallSpillPolicy::PhiCosts saving;
+  saving.add_input(true, true, true, 111.0);
+  saving.add_input(true, false, false, 4.0);
+  CHECK(saving.should_keep_up(1.0));
+  ColdCallSpillPolicy::PhiCosts hot_down;
+  hot_down.add_input(true, true, true, 1.0);
+  hot_down.add_input(true, false, false, 64.0);
+  CHECK(!hot_down.should_keep_up(0.0));
+
+  // Individually cheap hard constraints can collectively defeat the margin.
+  ColdCallSpillPolicy::PhiCosts constrained;
+  constrained.add_input(true, true, true, 100.0);
+  CHECK(constrained.should_keep_up(1.0));
+  frequency = 0.0;
+  last_node = 0;
+  ColdCallSpillPolicy::add_constraint(frequency, last_node, 301, 1.0);
+  ColdCallSpillPolicy::add_constraint(frequency, last_node, 302, 2.5);
+  CHECK(!constrained.should_keep_up(frequency));
+
+  // RPO can encounter a loop header before its backedge state is known.
+  // Neither that unknown state nor a coalesced unmarked UP definition can
+  // acquire the provenance of another deferred input at the same join.
+  ColdCallSpillPolicy::PhiCosts unknown_backedge;
+  unknown_backedge.add_input(true, true, true, 64.0);
+  unknown_backedge.add_input(false, true, true, 0.0);
+  CHECK(!unknown_backedge.should_keep_up(0.0));
+  unknown_backedge.add_input(true, true, true, 128.0);
+  CHECK(!unknown_backedge.should_keep_up(0.0));
+  ColdCallSpillPolicy::PhiCosts unmarked;
+  unmarked.add_input(true, true, true, 64.0);
+  unmarked.add_input(true, true, false, 1.0);
+  CHECK(!unmarked.should_keep_up(0.0));
+
+  // Phi copies are inserted before the predecessor terminator. A branch
+  // probability cannot discount a load that executes for all successors.
+  ColdCallSpillPolicy::PhiCosts full_predecessor;
+  full_predecessor.add_input(true, true, true, 64.0);
+  full_predecessor.add_input(true, false, false, 100.0);
+  CHECK(!full_predecessor.should_keep_up(0.0));
+  ColdCallSpillPolicy::PhiCosts discounted_edge;
+  discounted_edge.add_input(true, true, true, 64.0);
+  discounted_edge.add_input(true, false, false, 0.1);
+  CHECK(discounted_edge.should_keep_up(0.0)); // Wrong cost input would reverse the decision.
+
+  // Invalid or overflowed profile data must retain ordinary spill placement.
+  const double invalid_frequencies[] = {
+    -1.0, std::numeric_limits<double>::infinity(),
+    -std::numeric_limits<double>::infinity(), std::numeric_limits<double>::quiet_NaN()
+  };
+  for (double invalid : invalid_frequencies) {
+    CHECK(!ColdCallSpillPolicy::should_defer(true, true, invalid, 1.0));
+    CHECK(!ColdCallSpillPolicy::should_defer(true, true, 64.0, invalid));
+    CHECK(!all_up.should_keep_up(invalid));
+    ColdCallSpillPolicy::PhiCosts invalid_up;
+    invalid_up.add_input(true, true, true, invalid);
+    CHECK(!invalid_up.should_keep_up(0.0));
+    ColdCallSpillPolicy::PhiCosts invalid_down;
+    invalid_down.add_input(true, true, true, 64.0);
+    invalid_down.add_input(true, false, false, invalid);
+    CHECK(!invalid_down.should_keep_up(0.0));
+  }
+  ColdCallSpillPolicy::PhiCosts zero;
+  zero.add_input(true, true, true, 0.0);
+  CHECK(!zero.should_keep_up(0.0));
+  CHECK(!ColdCallSpillPolicy::should_defer(true, true, 0.0, 0.0));
+  CHECK(ColdCallSpillPolicy::should_defer(true, true, 64.0, 0.0));
+  const double largest = std::numeric_limits<double>::max();
+  ColdCallSpillPolicy::PhiCosts overflow;
+  overflow.add_input(true, true, true, largest);
+  overflow.add_input(true, true, true, largest);
+  CHECK(!overflow.should_keep_up(0.0));
+  ColdCallSpillPolicy::PhiCosts overflow_cost;
+  overflow_cost.add_input(true, true, true, largest);
+  overflow_cost.add_input(true, false, false, largest);
+  CHECK(!overflow_cost.should_keep_up(0.0));
+  CHECK(!ColdCallSpillPolicy::should_defer(true, true, largest, largest));
 
   auto restricts = [](const Mask& use) {
     Mask missing = {15, false};

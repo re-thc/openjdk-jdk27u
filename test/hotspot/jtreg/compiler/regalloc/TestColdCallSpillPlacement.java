@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Check initial spill deferral selection and Java state across returning calls
+ * @summary Check definition/Phi spill deferral costs and Java state across returning calls
  * @requires vm.compiler2.enabled & (os.arch == "amd64")
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -52,7 +52,7 @@ import jdk.test.whitebox.WhiteBox;
 
 public class TestColdCallSpillPlacement {
     private static WhiteBox WB;
-    private static final int COLD = 0, HOT = 1, TWO = 2, MIXED = 3, VOID = 4, MAPS = 5, EXCEPTION = 6, ALIASES = 7;
+    private static final int COLD = 0, HOT = 1, TWO = 2, MIXED = 3, VOID = 4, MAPS = 5, EXCEPTION = 6, ALIASES = 7, JOINS = 8;
     private static final int GC = 1, DEOPT = 2, THROW = 4;
     private static final int ITERATIONS = 256;
     private static final int PROFILE_INVOCATIONS = 64;
@@ -125,7 +125,12 @@ public class TestColdCallSpillPlacement {
                         + a8 + a9 + a10 + a11 + a12 + a13 + a14 + a15;
             }
             if (kind == HOT || kind == MIXED) helperB(11);
-            if (kind == TWO) {
+            if (kind == JOINS) {
+                // Two successive returning-call joins keep all eight packed
+                // entries live. Their combined constraint cost remains cold.
+                if ((i & 63) == 0) helperA(7);
+                if ((i & 127) == 1) helperB(9);
+            } else if (kind == TWO) {
                 // Each site is below 10%, but together they exceed 10%.
                 if ((i & 15) == 0) helperA(7);
                 if ((i & 15) == 1) helperB(9);
@@ -156,6 +161,7 @@ public class TestColdCallSpillPlacement {
     private static int testInitializeCompiler() { return 42; }
 
     private static long testCold(long[] table, long seed, Box anchor) { return kernel(COLD, table, seed); }
+    private static long testJoins(long[] table, long seed, Box anchor) { return kernel(JOINS, table, seed); }
     private static long testHot(long[] table, long seed, Box anchor) { return kernel(HOT, table, seed); }
     private static long testTwo(long[] table, long seed, Box anchor) { return kernel(TWO, table, seed); }
     private static long testMixed(long[] table, long seed, Box anchor) { return kernel(MIXED, table, seed); }
@@ -196,6 +202,7 @@ public class TestColdCallSpillPlacement {
     private static long invoke(String name, long[] table, long seed, Box anchor) {
         return switch (name) {
             case "testCold" -> testCold(table, seed, anchor);
+            case "testJoins" -> testJoins(table, seed, anchor);
             case "testHot" -> testHot(table, seed, anchor);
             case "testTwo" -> testTwo(table, seed, anchor);
             case "testMixed" -> testMixed(table, seed, anchor);
@@ -229,7 +236,7 @@ public class TestColdCallSpillPlacement {
         for (int i = 0; i < table.length; i++) table[i] = random.nextLong();
         Box anchor = new Box(random.nextLong());
         Method kernel = TestColdCallSpillPlacement.class.getDeclaredMethod("kernel", int.class, long[].class, long.class);
-        String[] names = { "testCold", "testHot", "testTwo", "testMixed", "testVoid", "testMaps", "testException", "testAtomic", "testAliases" };
+        String[] names = { "testCold", "testJoins", "testHot", "testTwo", "testMixed", "testVoid", "testMaps", "testException", "testAtomic", "testAliases" };
         for (String name : names) {
             Method method = TestColdCallSpillPlacement.class.getDeclaredMethod(name, long[].class, long.class, Box.class);
             WB.setBooleanVMFlag("UseCompiler", false);
@@ -319,6 +326,75 @@ public class TestColdCallSpillPlacement {
         return ranges;
     }
 
+    private static double traceFrequency(String value) {
+        double frequency = Double.parseDouble(value);
+        if (!Double.isFinite(frequency) || frequency < 0.0) {
+            throw new AssertionError("Invalid spill-placement frequency: " + value);
+        }
+        return frequency;
+    }
+
+    private static boolean roundedEqual(double left, double right) {
+        // TraceSpilling prints six significant digits. The native policy test
+        // checks strict threshold equality using the unrounded production API.
+        return Math.abs(left - right) <= 1e-4 * Math.max(left, right);
+    }
+
+    private static boolean loggedAboveMargin(double left, double right) {
+        return left > right || (left > 0.0 && roundedEqual(left, right));
+    }
+
+    private static int checkPlacementTrace(String text) {
+        Pattern definition = Pattern.compile("CCDEFER def=N(\\d+) L(\\d+) B\\d+ freq=(\\S+) constraint_freq=(\\S+)");
+        Pattern phi = Pattern.compile("CCPHI def=N(\\d+) L(\\d+) B\\d+ freq=(\\S+) up_freq=(\\S+)"
+                + " down_freq=(\\S+) constraint_freq=(\\S+)");
+        Pattern boundary = Pattern.compile("CCHRP def=N(\\d+) L(\\d+) B\\d+ keep=([01]) freq=(\\S+) constraint_freq=(\\S+)");
+        Set<Integer> deferred = new HashSet<>();
+        Map<Integer, Integer> markedNodes = new HashMap<>();
+        int phiCount = 0;
+        for (String line : text.split("\\R")) {
+            if (line.startsWith("CCDEFER ")) {
+                Matcher matcher = definition.matcher(line);
+                if (!matcher.matches()) throw new AssertionError("Malformed definition trace: " + line);
+                int node = Integer.parseInt(matcher.group(1)), range = Integer.parseInt(matcher.group(2));
+                double frequency = traceFrequency(matcher.group(3));
+                double constraints = traceFrequency(matcher.group(4));
+                if (!loggedAboveMargin(frequency, 10.0 * constraints)) {
+                    throw new AssertionError("Definition did not meet the cold-constraint margin: " + line);
+                }
+                deferred.add(range);
+                markedNodes.put(node, range);
+            } else if (line.startsWith("CCPHI ")) {
+                Matcher matcher = phi.matcher(line);
+                if (!matcher.matches()) throw new AssertionError("Malformed Phi trace: " + line);
+                int node = Integer.parseInt(matcher.group(1)), range = Integer.parseInt(matcher.group(2));
+                double frequency = traceFrequency(matcher.group(3));
+                double up = traceFrequency(matcher.group(4)), down = traceFrequency(matcher.group(5));
+                double constraints = traceFrequency(matcher.group(6));
+                if (!deferred.contains(range) || !loggedAboveMargin(frequency, 10.0 * constraints)
+                        || !loggedAboveMargin(up, 10.0 * (2.0 * down + 3.0 * constraints))) {
+                    throw new AssertionError("Phi lost deferred provenance or weighted cost margin: " + line);
+                }
+                markedNodes.put(node, range);
+                phiCount++;
+            } else if (line.startsWith("CCHRP ")) {
+                Matcher matcher = boundary.matcher(line);
+                if (!matcher.matches()) throw new AssertionError("Malformed pressure-boundary trace: " + line);
+                int node = Integer.parseInt(matcher.group(1)), range = Integer.parseInt(matcher.group(2));
+                boolean keep = matcher.group(3).equals("1");
+                double frequency = traceFrequency(matcher.group(4));
+                double constraints = traceFrequency(matcher.group(5));
+                Integer markedRange = markedNodes.get(node);
+                if (markedRange == null || markedRange.intValue() != range
+                        || (keep && !loggedAboveMargin(frequency, 10.0 * constraints))
+                        || (!keep && frequency > 10.0 * constraints && !roundedEqual(frequency, 10.0 * constraints))) {
+                    throw new AssertionError("Pressure boundary lost provenance or cold-constraint decision: " + line);
+                }
+            }
+        }
+        return phiCount;
+    }
+
     private static void checkFixedShiftCounts(String text) {
         Set<Integer> counts = new HashSet<>();
         // Use actual matched input masks, avoiding assumptions about node IDs
@@ -371,18 +447,23 @@ public class TestColdCallSpillPlacement {
         OutputAnalyzer output = ProcessTools.executeTestJava(options.toArray(String[]::new));
         output.shouldHaveExitValue(0).shouldContain("CORRECTNESS_OK");
         String text = output.getOutput();
-        for (String name : new String[] { "testCold", "testHot", "testTwo", "testMixed", "testVoid", "testMaps", "testException", "testAtomic", "testAliases", "testFloating", "testOops" }) {
+        for (String name : new String[] { "testCold", "testJoins", "testHot", "testTwo", "testMixed", "testVoid", "testMaps", "testException", "testAtomic", "testAliases", "testFloating", "testOops" }) {
             int begin = text.indexOf("BEGIN_COMPILE " + name);
             int end = text.indexOf("END_COMPILE " + name, begin);
             if (begin < 0 || end < 0) throw new AssertionError("Missing compilation boundary: " + name);
             boolean deferred = text.substring(begin, end).contains("CCDEFER ");
             String compilation = text.substring(begin, end);
-            if (!Boolean.TRUE.equals(enabled) && deferred) throw new AssertionError("Disabled feature selected " + name);
+            boolean placement = deferred || compilation.contains("CCPHI ") || compilation.contains("CCHRP ");
+            if (!Boolean.TRUE.equals(enabled) && placement) throw new AssertionError("Disabled feature selected " + name);
+            int phiCount = debug ? checkPlacementTrace(compilation) : 0;
             if (selection) {
-                boolean expected = name.equals("testCold") || name.equals("testVoid") || name.equals("testMaps")
+                boolean expected = name.equals("testCold") || name.equals("testJoins") || name.equals("testVoid") || name.equals("testMaps")
                         || name.equals("testException") || name.equals("testAtomic") || name.equals("testAliases");
                 if (deferred != expected) throw new AssertionError("Unexpected selection for " + name + ": " + deferred);
                 if (name.equals("testAliases")) checkDuplicateDebugUses(compilation);
+                if (name.equals("testJoins") && !legacyShifts && phiCount == 0) {
+                    throw new AssertionError("Successive returning-call joins did not preserve any deferred Phi");
+                }
             }
             if (legacyShifts && name.equals("testCold")) checkFixedShiftCounts(compilation);
         }

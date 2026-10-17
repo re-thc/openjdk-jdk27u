@@ -25,12 +25,18 @@
 #ifndef SHARE_OPTO_COLDCALLSPILL_HPP
 #define SHARE_OPTO_COLDCALLSPILL_HPP
 
+#include <float.h>
+
 // Cost and reverse-liveness mechanics shared by Split and its native test.
 // The caller owns mask scratch storage; persistent masks and JVMState are unchanged.
 class ColdCallSpillPolicy {
   ColdCallSpillPolicy() = delete;
 
 public:
+  static bool valid_frequency(double frequency) {
+    return frequency >= 0.0 && frequency <= DBL_MAX;
+  }
+
   static void add_constraint(double& frequency, unsigned int& last_node,
                              unsigned int node, double node_frequency) {
     if (last_node != node) {
@@ -42,8 +48,43 @@ public:
   static bool should_defer(bool has_call_debug_use, bool scalar,
                            double definition_frequency, double constraint_frequency) {
     // A provisional placement margin, not permission to relax constraints.
-    return has_call_debug_use && scalar && definition_frequency > 10.0 * constraint_frequency;
+    return has_call_debug_use && scalar && valid_frequency(definition_frequency) &&
+           valid_frequency(constraint_frequency) && definition_frequency > 10.0 * constraint_frequency;
   }
+
+  // Phi copies execute in the predecessor block, not necessarily on a dedicated
+  // edge. Use that block's full, loop-scaled frequency. Unknown loop inputs and
+  // unrelated coalesced definitions must not acquire deferral provenance.
+  class PhiCosts {
+    double _up_frequency;
+    double _down_frequency;
+    bool _proven;
+
+  public:
+    PhiCosts() : _up_frequency(0.0), _down_frequency(0.0), _proven(true) {}
+
+    void add_input(bool known, bool up, bool deferred, double predecessor_frequency) {
+      _proven &= known && (!up || deferred) && valid_frequency(predecessor_frequency);
+      if (up) {
+        _up_frequency += predecessor_frequency;
+      } else {
+        _down_frequency += predecessor_frequency;
+      }
+    }
+
+    double up_frequency() const { return _up_frequency; }
+    double down_frequency() const { return _down_frequency; }
+
+    bool should_keep_up(double constraint_frequency) const {
+      // Match LRG's relative load/store costs (2/1), and reserve a store plus a
+      // reload for each hard constraint. This is a conservative placement cost,
+      // not an estimate of physical spill traffic or permission to relax masks.
+      double up_cost = 2.0 * _down_frequency + 3.0 * constraint_frequency;
+      return _proven && valid_frequency(_up_frequency) && valid_frequency(_down_frequency) &&
+             valid_frequency(constraint_frequency) && valid_frequency(up_cost) &&
+             _up_frequency > 10.0 * up_cost;
+    }
+  };
 
   template <typename Mask>
   static bool restricts_registers(Mask& missing_registers, const Mask& use_mask) {
