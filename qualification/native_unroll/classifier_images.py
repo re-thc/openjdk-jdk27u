@@ -30,7 +30,13 @@ def bare(value):
 
 
 def pins():
-    return json.loads(Path(__file__).with_name('classifier-provenance.json').read_text())
+    original=json.loads(Path(__file__).with_name('classifier-provenance.json').read_text())
+    current=Path(__file__).with_name('classifier-current-source.json')
+    if current.is_file():
+        revision=json.loads(current.read_text())
+        require(set(revision)=={'product_head','trees','product_patch_sha256'},'Unexpected source revision fields')
+        original.update(revision)
+    return original
 
 
 def git(root, *args):
