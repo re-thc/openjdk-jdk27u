@@ -11,6 +11,39 @@ performance qualification of this branch. In particular, do not reuse old green
 CI runs or historical JDK images as evidence for this source. The commands below
 are reproducible instructions, not a claim that they have been executed.
 
+## Setup failure and current readiness
+
+[Run 38877016730, job 116923096313](https://github.com/re-thc/openjdk-jdk27u/actions/runs/38877016730/job/116923096313)
+checked out merge `fb84d06d6fa6e115a5898600c89003fd7aab6335` (head
+`cefdcf2ae47bfdcf79a2873512d252e8ad3a8a3d`, base
+`758f41576fc79d35a62a3896dbe5ab97c448c436`). Bundles downloaded successfully;
+the first Maven request returned HTTP404 and curl exit 22 before javac. The
+coordinate was correct. The failed response did not preserve enough provenance
+to identify an origin/CDN/proxy cause. This was a preparation failure, with no
+regex correctness or performance observation from the failed job.
+
+The reviewed repair in `1338b21a761ff605c161e335d0dacfce4de4d0c2` already added
+checksum pins, bounded retry of HTTP404, HTTPS-only fallback and partial-file
+promotion. Those coordinates, pins and curl limits are preserved in the shared
+`make/scripts/prepare-rust-regex-benchmarks.py` entry point below. CI and local
+qualification now compile the same full source catalog. A failed preparation
+retains `preparation.json`; successful preparation binds source and classpath
+hashes. Extra JARs, corrupt cached inputs, incomplete compiler output and reuse
+of a prior preparation attempt fail before measurement. Local checked copies of
+the four JARs can be reused after hash verification.
+
+Run the source regression suite without network or Java processes:
+
+```sh
+python3 -B -m unittest discover -s make/scripts -p 'test_*rust_regex*.py' -v
+```
+
+Curl and javac are mocked in these tests; file hashing, fallback/error control
+flow, source selection, result validation and summaries are exercised. Passing
+these tests does not validate Java compilation, hosted dependency delivery or
+runtime behavior. The entire qualification below and latest-head PR CI are still
+required. CI's focused `review` matrix alone is not the complete campaign.
+
 ## Build inputs and images
 
 Use the normal [OpenJDK build requirements](building.md), a suitable boot JDK,
@@ -32,7 +65,7 @@ bash configure --with-conf-name=regex-review-fastdebug --with-jobs=4 \
   --with-native-debug-symbols=internal \
   --with-boot-jdk="$REGEX_BOOT_JDK" --with-jtreg="$REGEX_JTREG" \
   --disable-desktop --enable-headless-only
-make CONF=regex-review-fastdebug JOBS=4 images
+make CONF=regex-review-fastdebug JOBS=4 images test-image
 ```
 
 For a true original-Java control, create a separate worktree at upstream source
@@ -94,29 +127,33 @@ not a correctness test silently skipped from a correctness gate.
 
 ## JMH dependencies and compilation
 
-Use JMH 1.37, jopt-simple 5.0.4 and commons-math3 3.6.1. The exact four coordinates,
-SHA256 values and bounded HTTPS retry/fallback resolver are in
-`.github/workflows/main.yml`, step `Prepare focused benchmarks`. Reuse verified
-local copies or run that download block in a fresh temporary directory with its
-ten-minute outer limit. Do not execute unverified JARs or fall back after a
-checksum mismatch. Normal configured unauthenticated proxy routing may be needed;
-do not put credentials or proxy values into logs.
+Use JMH 1.37, jopt-simple 5.0.4 and commons-math3 3.6.1. The exact four
+coordinates and SHA256 pins are in `make/scripts/prepare-rust-regex-benchmarks.py`.
+This is the same resolver and complete source catalog used by the workflow's
+`Prepare focused benchmarks` step. It retains the reviewed two Maven Central
+hosts, two retries of all transfer errors, one-second delay, 30-second retry
+window, ten-second connect and twenty-second transfer caps. A checksum mismatch
+is terminal and never falls back. Normal configured unauthenticated proxy routing
+may be needed; do not put credentials or proxy values into logs.
 
-Let `REGEX_JMH_LIB` identify those four verified JARs. Compile repository benchmark
-sources once with the candidate JDK:
+Use a new output directory. Verified existing JARs may be copied to its `lib`
+subdirectory first; they are hashed again before compilation. No arbitrary JAR
+or classes directory can be mixed into the prepared inputs. This command invokes
+javac and requires compilation authorization; it does not run the benchmarks:
 
 ```sh
-mkdir -p build/regex-bench/classes build/regex-bench/generated
-build/regex-review-release/images/jdk/bin/javac \
-  -cp "$REGEX_JMH_LIB/*" \
-  -processorpath "$REGEX_JMH_LIB/jmh-generator-annprocess-1.37.jar:$REGEX_JMH_LIB/jmh-core-1.37.jar" \
-  -processor org.openjdk.jmh.generators.BenchmarkProcessor \
-  -d build/regex-bench/classes -s build/regex-bench/generated \
-  test/micro/org/openjdk/bench/java/util/regex/RustRegex*.java \
-  test/micro/org/openjdk/bench/java/util/regex/JavaFallbackCosts.java \
-  test/micro/org/openjdk/bench/java/util/regex/JavaDigitFallbackCosts.java \
-  test/micro/org/openjdk/bench/java/util/regex/JavaFallbackCandidates.java
+python3 make/scripts/prepare-rust-regex-benchmarks.py \
+  --java-home build/regex-review-release/images/jdk \
+  --output build/regex-bench --time-budget 600
+REGEX_JMH_LIB=build/regex-bench/lib
 ```
+
+The six helpers, every `RustRegex*` JMH class and the Java fallback benchmarks
+are compiled together with annotation processing where needed. The workflow
+leaves sixty seconds within its ten-minute step for source checks and cleanup,
+using a 540-second preparation deadline. Preparation errors, including compiler
+failure or missing generated JMH metadata/classes, produce a terminal receipt.
+The CI results artifact includes this receipt even if preparation fails.
 
 The state/lifetime benchmarks use public regex APIs and support the upstream
 control. `RustRegexCosts` is a candidate-only decomposition of the reported
@@ -148,7 +185,9 @@ Controls alternate forward/reverse order in fresh serial JVMs. Read the explicit
 `control` field: original, disabled, native and jni. The legacy `enabled` boolean
 is retained for native/disabled only; it is null for the other controls. Keep JVMs
 as statistical units, report all rows and paired uncertainty, and do not pool
-within-JVM iterations as independent samples. Two pairs can leave wide intervals;
+within-JVM iterations as independent samples. The shared CI/local summary
+keeps benchmark methods, score units, controls and paired JVM observations
+separate; its ratios use only matching pair identifiers. Two pairs can leave wide intervals;
 do not add favorable-only repetitions or claim that every case wins.
 
 Choose worker CPU indices available in the execution environment; the displayed
@@ -166,7 +205,9 @@ remain separate from repeated warmed Matcher use.
 
 The runner binds runtime/configuration/classpath inputs, verifies the full
 parameter/method Cartesian product, and preserves terminal failures. Its total
-monotonic budget includes resume gaps; failed sessions cannot be resumed. A
+monotonic budget includes resume gaps; failed sessions cannot be resumed. Malformed or absent JMH output is terminal;
+unrecorded prior attempts cannot be rerun on resume, and records must exactly
+match their validated raw result files. A
 version probe is an accounted child JVM, not a free measurement. Backend and hit
 count validation occurs in untimed lifetime trial setup, never inside the timed
 method or after per-iteration cold-cache clearing. New lifetime timings therefore
@@ -174,13 +215,9 @@ must not be silently spliced into older in-method-check result sets.
 
 ## Separate route, component, cold and GC diagnostics
 
-Build the repository helpers with the candidate JDK:
-
-```sh
-build/regex-review-release/images/jdk/bin/javac -d build/regex-bench/classes \
-  make/scripts/RustRegexRouteProbe.java make/scripts/RustRegexProbe.java \
-  make/scripts/RustRegexLatency.java make/scripts/RustRegexFirstUse.java
-```
+The preparation command above already compiles the repository route,
+continuation, stateful, first-use and latency helpers into the scored classpath.
+No private helper source or second ad hoc compilation is needed.
 
 For untimed native-route counters, use an installed GDB and
 `make/scripts/rust-regex-routes.gdb` with `RustRegexRouteProbe`. Use fresh JVMs

@@ -88,6 +88,40 @@ class BenchmarkInputs(unittest.TestCase):
         self.assertEqual(bench.expected_rows('RustRegexState.match$', params), 6)
         self.assertEqual(bench.expected_rows('RustRegexState.(matches|lookingAt)$', params), 12)
 
+    def test_complete_plans_preserve_review_and_qualification_counts(self):
+        tiers = ['interpreter', 'C1', 'C2']
+        review = bench.experiments_for('review', tiers)
+        qualification = bench.experiments_for('qualification', tiers)
+        self.assertEqual(len(review), 17)
+        self.assertEqual(sum(bench.expected_rows(case[2], case[3]) for case in review) * 4, 1392)
+        self.assertEqual(len(qualification), 109)
+        self.assertEqual(sum(bench.expected_rows(case[2], case[3]) for case in qualification) * 8, 27888)
+        self.assertEqual(sum(bench.expected_rows(case[2], case[3]) for case in qualification
+                             if case[0].startswith('anchored-ssn-') and case[1] == 'C1'), 108)
+        self.assertTrue(all(bench.worker_count(case[3]) in (1, 4) for case in qualification))
+
+    def test_summary_keeps_methods_controls_and_units_separate(self):
+        rows = []
+        for method in ('matches', 'lookingAt'):
+            for control, score in [('original', 20), ('disabled', 30), ('native', 10), ('jni', 15)]:
+                rows.append({'suite': 'anchored', 'tier': 'C1', 'pair': 0, 'control': control,
+                             'result': {'benchmark': 'RustRegexState.' + method, 'params': {'length': '16'},
+                                        'primaryMetric': {'score': score, 'scoreUnit': 'ns/op',
+                                                          'rawData': [[score]]}}})
+        summaries = list(bench.paired_summaries(rows))
+        self.assertEqual(len(summaries), 2)
+        for summary in summaries:
+            self.assertEqual(set(summary['processes']), {'original', 'disabled', 'native', 'jni'})
+            self.assertEqual(summary['pairedRatios']['original/native'], [{'pair': 0, 'ratio': 2}])
+            self.assertEqual(summary['pairedRatios']['disabled/native'], [{'pair': 0, 'ratio': 3}])
+        with self.assertRaisesRegex(ValueError, 'duplicate process'):
+            list(bench.paired_summaries(rows + [rows[0]]))
+        rows[0]['result']['primaryMetric']['scoreUnit'] = 'us/op'
+        separated = list(bench.paired_summaries(rows))
+        self.assertEqual(len(separated), 3)
+        self.assertTrue(all(not summary['pairedRatios']['original/native'] for summary in separated
+                            if summary['benchmark'].endswith('.matches')))
+
     def test_duplicate_rows_cannot_replace_a_missing_case(self):
         good = [{'benchmark': 'org.openjdk.bench.java.util.regex.RustRegexNative.match',
                  'params': {'length': size}, 'primaryMetric': {'score': 1.0}} for size in ['4', '8']]
@@ -145,6 +179,92 @@ class BenchmarkInputs(unittest.TestCase):
                                          for option in command))
             self.assertTrue(any('-XX:-UseRustRegex' in command for command in commands))
             self.assertTrue(any('-XX:-UseRustRegexIntrinsics' in command for command in commands))
+
+
+class BenchmarkFailures(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        root = Path(self.temporary.name)
+        java = root / 'jdk/bin/java'
+        java.parent.mkdir(parents=True)
+        java.write_text('fixture; never executed')
+        classes = root / 'classes'
+        classes.mkdir()
+        (classes / 'Bench.class').write_bytes(b'fixture; never loaded')
+        self.output = root / 'out'
+        self.argv = ['benchmark', '--java', str(java), '--classpath', str(classes),
+                     '--output', str(self.output), '--suite', 'tiny', '--tiers', 'C1',
+                     '--pairs', '1', '--time-budget', '60']
+        self.commands = []
+
+    def fake_java(self, command, **kwargs):
+        self.commands.append(command)
+        if command[-1] == '-version':
+            return bench.subprocess.CompletedProcess(command, 0, stderr='fixture version')
+        params = [command[i + 1] for i, value in enumerate(command) if value == '-p']
+        axes = dict(parameter.split('=', 1) for parameter in params)
+        rows = [{'benchmark': 'org.openjdk.bench.java.util.regex.RustRegexNative.match',
+                 'params': dict(zip(axes, values)), 'primaryMetric': {'score': 1.0}}
+                for values in itertools.product(*(value.split(',') for value in axes.values()))]
+        Path(command[command.index('-rff') + 1]).write_text(json.dumps(rows))
+        return bench.subprocess.CompletedProcess(command, 0)
+
+    def run_main(self, tool=None, resume=False):
+        with patch('sys.argv', self.argv + (['--resume'] if resume else [])), \
+                patch.object(bench.subprocess, 'run', side_effect=tool or self.fake_java), \
+                contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            bench.main()
+
+    def test_malformed_success_output_is_terminal(self):
+        def tool(command, **kwargs):
+            result = self.fake_java(command, **kwargs)
+            if '-rff' in command:
+                Path(command[command.index('-rff') + 1]).write_text('not JSON')
+            return result
+        with self.assertRaises(ValueError):
+            self.run_main(tool)
+        self.assertTrue((self.output / 'failure.json').is_file())
+        count = len(self.commands)
+        with self.assertRaises(SystemExit):
+            self.run_main(resume=True)
+        self.assertEqual(len(self.commands), count)
+
+    def test_success_without_result_file_is_terminal(self):
+        def tool(command, **kwargs):
+            result = self.fake_java(command, **kwargs)
+            if '-rff' in command:
+                Path(command[command.index('-rff') + 1]).unlink()
+            return result
+        with self.assertRaises(OSError):
+            self.run_main(tool)
+        self.assertTrue((self.output / 'failure.json').is_file())
+
+    def test_resume_rejects_changed_records_even_when_count_matches(self):
+        self.run_main()
+        path = self.output / 'results.jsonl'
+        rows = [json.loads(line) for line in path.read_text().splitlines()]
+        rows[0]['result']['primaryMetric']['score'] = 9000
+        path.write_text(''.join(json.dumps(row) + '\n' for row in rows))
+        before = len([command for command in self.commands if '-rff' in command])
+        with self.assertRaisesRegex(ValueError, 'stored records differ'):
+            self.run_main(resume=True)
+        self.assertEqual(before, len([command for command in self.commands if '-rff' in command]))
+        self.assertTrue((self.output / 'failure.json').is_file())
+
+    def test_unrecorded_attempt_cannot_be_replaced_on_resume(self):
+        def tool(command, **kwargs):
+            result = self.fake_java(command, **kwargs)
+            if '-rff' in command:
+                raise KeyboardInterrupt('fixture interruption after result write')
+            return result
+        with self.assertRaises(KeyboardInterrupt):
+            self.run_main(tool)
+        before = len([command for command in self.commands if '-rff' in command])
+        with self.assertRaises(SystemExit):
+            self.run_main(resume=True)
+        self.assertEqual(before, len([command for command in self.commands if '-rff' in command]))
+        self.assertTrue((self.output / 'failure.json').is_file())
 
 
 if __name__ == '__main__':

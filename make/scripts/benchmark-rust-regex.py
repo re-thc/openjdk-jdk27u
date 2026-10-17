@@ -27,6 +27,7 @@
 """Paired, serial JMH comparisons against the same JDK's Java-only backend."""
 
 import argparse
+import collections
 import hashlib
 import itertools
 import json
@@ -146,6 +147,97 @@ def validate_rows(benchmark, params, rows):
         raise ValueError('missing, duplicate or unexpected benchmark cases')
 
 
+def paired_summaries(rows):
+    """Keep methods, units and all four controls separate in CI/local reports."""
+    cases = collections.defaultdict(lambda: collections.defaultdict(dict))
+    for row in rows:
+        result = row['result']
+        metric = result['primaryMetric']
+        key = (row['suite'], row['tier'], result['benchmark'], metric['scoreUnit'],
+               tuple(sorted(result['params'].items())))
+        control = row.get('control') or ('native' if row['enabled'] else 'disabled')
+        if control not in ('original', 'disabled', 'native', 'jni'):
+            raise ValueError('unexpected result control')
+        pair = row['pair']
+        if pair in cases[key][control]:
+            raise ValueError('duplicate process for paired summary')
+        score = metric['score']
+        if type(score) not in (int, float) or not math.isfinite(score) or score <= 0:
+            raise ValueError('invalid primary measurement')
+        cases[key][control][pair] = {'pair': pair, 'score': score,
+                                     'samples': metric['rawData']}
+    for (suite, tier, benchmark, unit, params), controls in sorted(cases.items()):
+        ratios = {}
+        for control in ('original', 'disabled', 'jni'):
+            common = controls.get(control, {}).keys() & controls.get('native', {}).keys()
+            ratios[control + '/native'] = [
+                {'pair': pair, 'ratio': controls[control][pair]['score'] / controls['native'][pair]['score']}
+                for pair in sorted(common)]
+        yield {'record': 'paired-summary', 'suite': suite, 'tier': tier,
+               'benchmark': benchmark, 'unit': unit, 'params': dict(params),
+               'processes': {control: list(sorted(pairs.values(), key=lambda row: row['pair']))
+                             for control, pairs in controls.items()},
+               'pairedRatios': ratios}
+
+
+def experiments_for(suite, tiers):
+    experiments = []
+    for tier in tiers:
+        # Keep different regex shapes in separate JVMs, so one shape cannot
+        # make another shape's Java matcher type profiles megamorphic.
+        for shape in ['prefix', 'digits', 'ssn', 'alternation', 'email']:
+            experiments.append(('short-' + shape, tier, 'RustRegexNative.match',
+                                ['length=16,64,256,4096', 'regexType=' + shape,
+                                 'scenario=miss,hit', 'operation=find']))
+        for shape in ['prefix', 'digits']:
+            experiments.append(('tiny-' + shape, tier, 'RustRegexNative.match',
+                                ['length=4,8', 'regexType=' + shape,
+                                 'scenario=miss', 'operation=find']))
+    if 'C2' in tiers:
+        for expression in ['error', 'ssn', 'alternation', 'email']:
+            for reuse in ['shared', 'cold']:
+                for workers in [1, 4]:
+                    suffix = '-contended' if workers == 4 else ''
+                    experiments.append(('lifetime-' + expression + '-' + reuse + suffix, 'C2',
+                                        'RustRegexLifetime.lifetime',
+                                        ['length=16,4096', 'expression=' + expression,
+                                         'calls=1,8,9,10,16,32', 'scenario=miss,lastHit,alternating',
+                                         'threads=' + str(workers), 'reuse=' + reuse]))
+    if suite == 'review':
+        experiments = []
+        for tier in tiers:
+            for shape, lengths, scenarios in [
+                    ('prefix', '8,16,64,4096', 'miss,hit'),
+                    ('digits', '16,4096', 'miss,hit'),
+                    ('email', '16,32,64,4096', 'miss,hit')]:
+                experiments.append(('review-' + shape, tier, 'RustRegexNative.match',
+                                    ['length=' + lengths, 'regexType=' + shape,
+                                     'scenario=' + scenarios, 'operation=find']))
+        if 'C2' in tiers:
+            for expression in ['error', 'email']:
+                for reuse in ['shared', 'cold']:
+                    experiments.append(('lifetime-' + expression + '-' + reuse, 'C2',
+                                        'RustRegexLifetime.lifetime',
+                                        ['length=16,4096', 'expression=' + expression,
+                                         'calls=1,8,9,10,16,32',
+                                         'scenario=miss,lastHit,alternating', 'threads=1',
+                                         'reuse=' + reuse]))
+                    experiments.append(('lifetime-' + expression + '-' + reuse + '-contended', 'C2',
+                                        'RustRegexLifetime.lifetime',
+                                        ['length=16,4096', 'expression=' + expression,
+                                         'calls=1,8,9,10,16,32',
+                                         'scenario=miss,lastHit,alternating', 'threads=4',
+                                         'reuse=' + reuse]))
+    elif suite == 'qualification':
+        experiments += qualification_experiments(tiers)
+    if suite == 'plans':
+        experiments = [case for case in experiments
+                       if case[0] in ['short-prefix', 'short-digits', 'tiny-prefix', 'tiny-digits']]
+    elif suite not in ['all', 'review', 'qualification']:
+        experiments = [case for case in experiments if case[0].split('-')[0] == suite]
+    return experiments
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--java', required=True, type=Path)
@@ -170,6 +262,8 @@ def main():
     parser.add_argument('--suite', choices=['short', 'tiny', 'plans', 'lifetime', 'review', 'all',
                                            'qualification'], default='all')
     args = parser.parse_args()
+    if len(set(args.tiers)) != len(args.tiers):
+        parser.error('--tiers must be distinct')
     if args.pairs < 1:
         parser.error('--pairs must be positive')
     if args.process_timeout < 1 or args.time_budget < 1:
@@ -250,6 +344,7 @@ def main():
         parser.error(str(error))
     host = '-'.join((platform.system(), platform.release(), platform.machine()))
     metadata = {'java': java, 'platform': host, 'worker_cpus': available_cpus, **runtime_metadata(java),
+                'runner_sha256': digest(Path(__file__)),
                 'classpath_sha256': {str(p): digest(p) for p in benchmark_files}}
     if reference:
         metadata['reference'] = {'java': reference, **runtime_metadata(reference)}
@@ -266,69 +361,24 @@ def main():
              'C1': ['-XX:TieredStopAtLevel=1', '-XX:CICompilerCount=1', '-Xbatch'],
              'C2': ['-XX:-TieredCompilation', '-XX:CICompilerCount=1', '-Xbatch',
                     '-XX:CompileThreshold=1000']}
-    experiments = []
-    for tier in args.tiers:
-        # Keep different regex shapes in separate JVMs, so one shape cannot
-        # make another shape's Java matcher type profiles megamorphic.
-        for shape in ['prefix', 'digits', 'ssn', 'alternation', 'email']:
-            experiments.append(('short-' + shape, tier, 'RustRegexNative.match',
-                                ['length=16,64,256,4096', 'regexType=' + shape,
-                                 'scenario=miss,hit', 'operation=find']))
-        for shape in ['prefix', 'digits']:
-            experiments.append(('tiny-' + shape, tier, 'RustRegexNative.match',
-                                ['length=4,8', 'regexType=' + shape,
-                                 'scenario=miss', 'operation=find']))
-    if 'C2' in args.tiers:
-        for expression in ['error', 'ssn', 'alternation', 'email']:
-            for reuse in ['shared', 'cold']:
-                for workers in [1, 4]:
-                    suffix = '-contended' if workers == 4 else ''
-                    experiments.append(('lifetime-' + expression + '-' + reuse + suffix, 'C2',
-                                        'RustRegexLifetime.lifetime',
-                                        ['length=16,4096', 'expression=' + expression,
-                                         'calls=1,8,9,10,16,32', 'scenario=miss,lastHit,alternating',
-                                         'threads=' + str(workers), 'reuse=' + reuse]))
-    if args.suite == 'review':
-        experiments = []
-        for tier in args.tiers:
-            for shape, lengths, scenarios in [
-                    ('prefix', '8,16,64,4096', 'miss,hit'),
-                    ('digits', '16,4096', 'miss,hit'),
-                    ('email', '16,32,64,4096', 'miss,hit')]:
-                experiments.append(('review-' + shape, tier, 'RustRegexNative.match',
-                                    ['length=' + lengths, 'regexType=' + shape,
-                                     'scenario=' + scenarios, 'operation=find']))
-        if 'C2' in args.tiers:
-            for expression in ['error', 'email']:
-                for reuse in ['shared', 'cold']:
-                    experiments.append(('lifetime-' + expression + '-' + reuse, 'C2',
-                                        'RustRegexLifetime.lifetime',
-                                        ['length=16,4096', 'expression=' + expression,
-                                         'calls=1,8,9,10,16,32',
-                                         'scenario=miss,lastHit,alternating', 'threads=1',
-                                         'reuse=' + reuse]))
-                    experiments.append(('lifetime-' + expression + '-' + reuse + '-contended', 'C2',
-                                        'RustRegexLifetime.lifetime',
-                                        ['length=16,4096', 'expression=' + expression,
-                                         'calls=1,8,9,10,16,32',
-                                         'scenario=miss,lastHit,alternating', 'threads=4',
-                                         'reuse=' + reuse]))
-    elif args.suite == 'qualification':
-        experiments += qualification_experiments(args.tiers)
+    experiments = experiments_for(args.suite, args.tiers)
     completed = {}
-    if records.exists():
-        for line in records.read_text().splitlines():
-            row = json.loads(line)
-            control = row.get('control', 'native' if row['enabled'] else 'disabled')
-            key = (row['suite'], row['tier'], row['pair'], control)
-            completed[key] = completed.get(key, 0) + 1
+    try:
+        if records.exists():
+            expected = {(suite, tier, pair, control) for suite, tier, _, _ in experiments
+                        for pair in range(args.pairs) for control in controls}
+            for line in records.read_text().splitlines():
+                row = json.loads(line)
+                control = row.get('control') or ('native' if row['enabled'] else 'disabled')
+                key = (row['suite'], row['tier'], row['pair'], control)
+                if key not in expected or row['enabled'] != {'native': True, 'disabled': False}.get(control):
+                    raise ValueError('stored record is outside the selected control/experiment policy')
+                completed.setdefault(key, []).append(row['result'])
+    except (KeyError, ValueError, TypeError, OSError) as error:
+        failure.write_text(json.dumps({'error': str(error), 'input': str(records)}) + '\n')
+        raise
     for suite, tier, benchmark, params in experiments:
         family = suite.split('-')[0]
-        if args.suite == 'plans':
-            if suite not in ['short-prefix', 'short-digits', 'tiny-prefix', 'tiny-digits']:
-                continue
-        elif args.suite not in ['all', 'review', 'qualification'] and family != args.suite:
-            continue
         for pair in range(args.pairs):
             for control in control_order(controls, pair):
                 enabled = {'native': True, 'disabled': False}.get(control)
@@ -367,11 +417,18 @@ def main():
                 if args.resume and command_file.exists() and json.loads(command_file.read_text()) != command:
                     parser.error('resume command differs for ' + tag)
                 if (suite, tier, pair, control) in completed:
-                    stored = json.loads(result.read_text())
-                    validate_rows(benchmark, params, stored)
-                    if completed[(suite, tier, pair, control)] != len(stored):
-                        parser.error('incomplete stored records for ' + tag)
+                    try:
+                        stored = json.loads(result.read_text())
+                        validate_rows(benchmark, params, stored)
+                        if completed[(suite, tier, pair, control)] != stored:
+                            raise ValueError('stored records differ from validated result for ' + tag)
+                    except (KeyError, ValueError, TypeError, OSError) as error:
+                        failure.write_text(json.dumps({'tag': tag, 'error': str(error)}) + '\n')
+                        raise
                     continue
+                if result.exists() or (args.output / (tag + '.log')).exists():
+                    failure.write_text(json.dumps({'tag': tag, 'error': 'unrecorded prior attempt'}) + '\n')
+                    parser.error('unrecorded prior attempt cannot be rerun: ' + tag)
                 command_file.write_text(json.dumps(command, indent=2) + '\n')
                 print('Running ' + tag, flush=True)
 
@@ -383,10 +440,10 @@ def main():
                 with (args.output / (tag + '.log')).open('w') as log:
                     run(command, stdout=log, stderr=subprocess.STDOUT,
                         preexec_fn=pin_cpu if cpus is not None else None)
-                rows = json.loads(result.read_text())
                 try:
+                    rows = json.loads(result.read_text())
                     validate_rows(benchmark, params, rows)
-                except (KeyError, ValueError) as error:
+                except (KeyError, ValueError, TypeError, OSError) as error:
                     failure.write_text(json.dumps({'tag': tag, 'error': str(error)}) + '\n')
                     raise
                 with records.open('a') as out:
