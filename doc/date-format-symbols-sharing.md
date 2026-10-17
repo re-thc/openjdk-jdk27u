@@ -1,5 +1,10 @@
 # DateFormatSymbols array sharing
 
+This is a source-review candidate, not an integration-qualified change. The
+remaining work is the single bounded [qualification milestone](date-format-symbols-qualification.md),
+including the cost of clone synchronization. Its new fixture and driver are
+prepared source only; they have not been compiled or executed.
+
 The six symbol arrays from private locale templates are shared by ordinary
 `DateFormatSymbols` instances and their clones. Public getters and setters
 retain defensive copying. Subclass and deserialized arrays are copied when
@@ -10,7 +15,11 @@ and disables further sharing from that instance. Cloning and detachment use the
 same instance monitor; stream callbacks run after that monitor is released.
 This preserves serialization graph aliases without exposing a clone's arrays.
 
-## Build and correctness tests
+## Earlier full-profile reproduction
+
+For the proposed repository-profile qualification, use the linked milestone's
+`bin/configure-dev` commands. The following commands reproduce the earlier full
+upstream-profile context; they are not an extra stage of that milestone.
 
 Use an installed boot JDK, native toolchain and jtreg compatible with this tree,
 as described in [building.md](building.md) and [testing.md](testing.md). From the
@@ -53,11 +62,14 @@ without collecting timings. Compare baseline and candidate JDKs in fresh JVMs
 with identical options. The retained counts cover the six symbol arrays only;
 they exclude strings, instances, time zones and other cache storage.
 
-Existing Linux x64 validation passed 126 locale/formatter tests with one skip,
+Source-equivalent Linux x64 validation passed 126 locale/formatter tests with one skip,
 plus all three focused tests under each of Serial, G1 and ZGC. For 1,000 ordinary
 instances or clones, the six-field arrays fell from 6,000 arrays/46,000 reference
 slots to six arrays/46 slots. Allocation-only verification after the monitor
 repair retained the savings and unchanged instance sizes.
+The saved build used the repaired development tree, rather than a clean
+checkout of the later published commit. The qualification document records
+which evidence carries by source identity and which measurements remain open.
 
 Throughput is not established for the repaired clone path: the added monitor's
 cost is unmeasured. An earlier grouped run showed roughly 2.4% slower Serial
