@@ -1397,7 +1397,19 @@ ParseArguments(int *pargc, char ***pargv,
 
     *pmode = mode;
 
-#ifndef HEADLESS
+#ifdef HEADLESS
+    // Archive validation is required even without splash-screen processing.
+    if (mode == LM_JAR) {
+        manifest_info info;
+        int res = JLI_ParseManifest(*pwhat, &info);
+        JLI_FreeManifest();
+        if (res != 0) {
+            JLI_ReportErrorMessage(res == -1 ? JAR_ERROR2 : JAR_ERROR3, *pwhat);
+            *pret = 1;
+            return JNI_FALSE;
+        }
+    }
+#else
     if (!headless) {
         char *jar_path = NULL;
         if (mode == LM_JAR) {

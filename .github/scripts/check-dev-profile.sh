@@ -47,6 +47,7 @@ done < <(awk '/^JVM_FEATURES_[a-z]+ *:=/ { sub(/ *:= */, " "); print }' "$spec")
 java="$jdk/bin/java"
 [[ -x $java ]] || java="$java.exe"
 repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
+bash "$repo_root/.github/scripts/check-headless-launcher.sh" "$jdk"
 work=$(mktemp -d)
 log="$work/rejected.log"
 trap 'rm -rf "$work"' EXIT
