@@ -1,0 +1,13 @@
+id	benchmark	length	coder	position	needleLength	shape	backends	tiers
+latin-prefix-miss-575-511	StringZillaTailSearch.lastIndexOf	575	-	-	511	LATIN_PREFIX_MISS	serial,avx2,neon,msvc	interpreter,c1,c2
+utf16-prefix-miss-303-256	StringZillaTailSearch.lastIndexOf	303	-	-	256	UTF16_PREFIX_MISS	serial,avx2,neon,msvc	interpreter,c1,c2
+utf16-uniform-end-129-129	StringZillaTailSearch.lastIndexOf	129	-	-	129	UTF16_UNIFORM_END	serial,avx2,neon,msvc	interpreter,c1,c2
+utf16-uniform-end-130-129	StringZillaTailSearch.lastIndexOf	130	-	-	129	UTF16_UNIFORM_END	serial,avx2,neon,msvc	interpreter,c1,c2
+latin-end-32	StringZillaSearch.lastIndexOf	4096	LATIN1	END	32	-	serial,avx2,neon,msvc	interpreter,c1,c2
+latin-end-64	StringZillaSearch.lastIndexOf	4096	LATIN1	END	64	-	serial,avx2,neon,msvc	interpreter,c1,c2
+latin-miss-64	StringZillaSearch.lastIndexOf	4096	LATIN1	MISS	64	-	serial,avx2,neon,msvc	interpreter,c1,c2
+utf16-end-64	StringZillaSearch.lastIndexOf	4096	UTF16	END	64	-	serial,avx2,neon	interpreter,c1,c2
+msvc-interpreter-utf16-end-64	StringZillaSearch.lastIndexOf	4096	UTF16	END	64	-	msvc	interpreter
+utf16-miss-64	StringZillaSearch.lastIndexOf	4096	UTF16	MISS	64	-	serial,avx2,neon	interpreter,c1,c2
+msvc-interpreter-utf16-miss-64	StringZillaSearch.lastIndexOf	4096	UTF16	MISS	64	-	msvc	interpreter
+mixed-interpreter-end-64	StringZillaSearch.lastIndexOf	4096	MIXED	END	64	-	serial,avx2,neon,msvc	interpreter

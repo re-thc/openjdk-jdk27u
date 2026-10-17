@@ -1,0 +1,107 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+
+name: StringZilla final reverse-tail controls
+
+on:
+  push:
+    branches: [codex/stringzilla-final-artifacts]
+    paths: [.github/workflows/stringzilla-final-tails.yml]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: stringzilla-final-tails-controls
+  cancel-in-progress: false
+
+jobs:
+  measure:
+    name: ${{ matrix.backend }} reverse-tail controls
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-2025
+            backend: msvc
+    steps:
+      - name: Checkout evidence driver
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: driver
+          persist-credentials: false
+          sparse-checkout: |
+            .github/scripts
+            doc/stringzilla/tail-cases.tsv
+            test/micro/org/openjdk/bench/java/lang
+
+      - name: Checkout measured fork
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 2550a2100281b5a6d6aa7a9310a9e6b047937e2c
+          path: fork-source
+          persist-credentials: false
+
+      - name: Checkout untouched original
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
+          path: original-source
+          persist-credentials: false
+
+      - name: Check Python driver syntax
+        shell: python
+        run: |
+          import py_compile
+          py_compile.compile("driver/.github/scripts/stringzilla-final-artifacts.py", doraise=True)
+      - name: Check MSVC 14.44 toolset
+        if: runner.os == 'Windows'
+        id: msvc-check
+        shell: bash
+        run: |
+          set +e
+          '/c/Program Files/Microsoft Visual Studio/18/Enterprise/vc/auxiliary/build/vcvars64.bat' -vcvars_ver=14.44
+          if [ $? -eq 0 ]; then
+            echo "installed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "installed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install MSVC 14.44 toolset
+        if: runner.os == 'Windows' && steps.msvc-check.outputs.installed != 'true'
+        shell: bash
+        run: |
+          '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe' \
+            modify --quiet --installPath 'C:\Program Files\Microsoft Visual Studio\18\Enterprise' \
+            --add Microsoft.VisualStudio.Component.VC.14.44.x86.x64
+
+
+      - name: Restore verified complete image pair
+        shell: python
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          import subprocess
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-final-artifacts.py",
+                          "restore", "--backend", "${{ matrix.backend }}"], check=True)
+
+      - name: Measure original enabled and disabled reverse-tail controls
+        shell: python
+        run: |
+          import subprocess
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-final-artifacts.py",
+                          "measure-tail", "--backend", "${{ matrix.backend }}"], check=True)
+
+      - name: Retain raw controls and image provenance
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-final-tails-${{ matrix.backend }}-${{ github.sha }}
+          path: |
+            perf-output
+            perf-tail-output
+          if-no-files-found: error
+          retention-days: 30
