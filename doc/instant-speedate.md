@@ -53,4 +53,5 @@ native code does not retain Java memory. Rust unwinds are contained within Rust.
 This changes no public API, formatter pattern support, other date/time type or
 timezone database. Native performance, runtime-disabled overhead and platform
 qualification require their own evidence; enabling the feature is not a speedup
-guarantee.
+guarantee. An earlier candidate showed a runtime-disabled slowdown. Recovery from
+that regression has not been measured for this guard revision.
