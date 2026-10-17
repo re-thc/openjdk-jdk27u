@@ -47,7 +47,7 @@ include $(TOPDIR)/make/conf/build-module-sets.conf
 
 # Desktop APIs and their dependent modules are omitted before any build phase.
 ifeq ($(ENABLE_DESKTOP), false)
-  MODULES_FILTER += java.desktop java.datatransfer java.se \
+  override MODULES_FILTER += java.desktop java.datatransfer java.se \
       jdk.accessibility jdk.editpad jdk.hotspot.agent jdk.jconsole \
       jdk.jpackage jdk.unsupported.desktop
 endif

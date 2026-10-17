@@ -69,7 +69,7 @@ verify-graph:
 	$(ECHO) "Headless graph passed: $(OPENJDK_TARGET_OS)/$(OPENJDK_TARGET_CPU)"
 
 matrix:
-	+$(MAKE) -I$(TOPDIR)/make/common/modules -f TestHeadless.gmk TEST_HEADLESS_GRAPH=true OPENJDK_TARGET_OS=linux OPENJDK_TARGET_OS_TYPE=unix OPENJDK_TARGET_CPU=x86_64 verify-graph
+	+$(MAKE) -I$(TOPDIR)/make/common/modules -f TestHeadless.gmk TEST_HEADLESS_GRAPH=true MODULES_FILTER= OPENJDK_TARGET_OS=linux OPENJDK_TARGET_OS_TYPE=unix OPENJDK_TARGET_CPU=x86_64 verify-graph
 	+$(MAKE) -I$(TOPDIR)/make/common/modules -f TestHeadless.gmk TEST_HEADLESS_GRAPH=true OPENJDK_TARGET_OS=linux OPENJDK_TARGET_OS_TYPE=unix OPENJDK_TARGET_CPU=aarch64 verify-graph
 	+$(MAKE) -I$(TOPDIR)/make/common/modules -f TestHeadless.gmk TEST_HEADLESS_GRAPH=true OPENJDK_TARGET_OS=macosx OPENJDK_TARGET_OS_TYPE=unix OPENJDK_TARGET_CPU=aarch64 verify-graph
 	+$(MAKE) -I$(TOPDIR)/make/common/modules -f TestHeadless.gmk TEST_HEADLESS_GRAPH=true OPENJDK_TARGET_OS=windows OPENJDK_TARGET_OS_TYPE=windows OPENJDK_TARGET_CPU=x86_64 verify-graph
@@ -80,6 +80,8 @@ probes:
 direct-targets:
 	$(MKDIR) -p $(TEST_SUPPORT_DIR)/headless-stale/jdk/modules/java.desktop
 	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk java.desktop-java > $(TEST_SUPPORT_DIR)/headless-direct.log 2>&1; then exit 1; fi
+	$(GREP) -q 'excluded by this configuration' $(TEST_SUPPORT_DIR)/headless-direct.log
+	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk MODULES_FILTER= java.desktop-java > $(TEST_SUPPORT_DIR)/headless-direct.log 2>&1; then exit 1; fi
 	$(GREP) -q 'excluded by this configuration' $(TEST_SUPPORT_DIR)/headless-direct.log
 	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/CompileJavaModules.gmk MODULE=java.desktop > $(TEST_SUPPORT_DIR)/headless-direct.log 2>&1; then exit 1; fi
 	$(GREP) -q 'excluded by this configuration' $(TEST_SUPPORT_DIR)/headless-direct.log
