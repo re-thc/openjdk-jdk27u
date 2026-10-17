@@ -694,6 +694,9 @@ The make build uses Cargo `--frozen`, a separate output directory under
 the lockfile or fetch dependencies. To build without any network access,
 prepare the same Cargo cache first and run these commands offline. `CARGO`
 and `RUSTC` can be supplied to configure using the normal tool overrides.
+`RUSTC` must name a single executable without arguments; use a compiler wrapper
+executable if additional options are needed. Cargo receives that executable's
+native path, while configure retains its normal command wrapper for probes.
 Rust produces a position-independent static archive; the configured JDK C
 toolchain builds and links the JNI library, using the system dependencies
 reported by that Rust compiler. Rust panics abort and cannot unwind across
@@ -713,6 +716,14 @@ cargo test --frozen --release --jobs 2 \
     --manifest-path src/java.base/share/native/libhexsimd/rust/Cargo.toml \
     --target-dir build/hex-simd-rust-test
 ```
+
+The normal `test/jdk/java/util/HexFormat` jtreg suite includes bulk validation,
+JNI chunk boundaries and both compact-string modes. With an enabled image,
+pass `-vmoption:-Dhexsimd.expectNative=true` to require library availability;
+without that assertion the same tests also exercise fallback-only builds.
+The native decoder route is checked separately from availability. The build
+path fixtures can be run with `python3 test/make/hex-simd/TestRustPaths.py`;
+their simulated Windows conversion is not native Windows qualification.
 
 ## Build Tools Requirements
 
