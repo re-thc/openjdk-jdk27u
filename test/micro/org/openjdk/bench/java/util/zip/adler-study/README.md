@@ -11,8 +11,8 @@ at 4096 bytes while keeping the declared small, boundary and long costs bounded.
 
 Compare clean **release** images from baseline
 `3f71d03f3297f94e8c2cc34160262a880be337fc` and candidate
-`5944fe1cb7fc072a8a1b8207383d2f009f785338`. These are the already qualified source
-boundaries, not a claim that an arbitrary newer image has the same behavior.
+`5944fe1cb7fc072a8a1b8207383d2f009f785338`. These revisions identify the supplied successful correctness matrix, not
+performance qualification or the behavior of an arbitrary newer image.
 The candidate production delta must be only the C1 GraphBuilder change. Image
 `release` SOURCE must identify the clean selected revision. Java/javac/modules
 and native-library hashes bind the actual supplied full images. Preparation
