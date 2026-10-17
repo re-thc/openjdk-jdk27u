@@ -57,9 +57,9 @@ Default execution is one authorization through all conditional local stages,
 not a chain of tiny approvals. Intentional early-stop options end an invocation;
 they never resume consumed time. Global cap ten hours, four CPU equivalents,
 16 GiB existing memory ceiling and 12 GiB initial free working storage (another 12 GiB free is checked only
-before the conditional debug/ASan stage). Current
-free space is about 1.9 GiB; storage and initial execution authorization are the
-immediate external dependencies. No extra native host or unmanaged installation
+before the conditional debug/ASan stage). Check actual capacity at admission;
+reviewed source, execution authorization and managed test inputs remain
+prerequisites. No extra native host or unmanaged installation
 is mandatory for this first decision. Preparing/reviewing the owned launcher,
 normal builds, measurement and analysis remain owned work.
 
@@ -70,13 +70,21 @@ The source repair adds all-writer storage guards, verified positive-byte file
 I/O with EOF/repetition regression coverage, and cooperative catchable signal
 cancellation. Timed commands reserve bounded write space before timing rather
 than adding filesystem probes inside measured intervals. Uncatchable controller
-death requires an existing outer descendant owner/deadline; the controller does
-not claim to supply that containment. Tier1's GTestWrapper is not an explicit
+death is handled by the separate committed unprivileged `supervise.py` owner,
+using the repaired kernel-confirmed child pidfds and one monotonic deadline.
+It reserves 30 seconds for progressive adoption/cleanup and five for reporting
+inside ten hours; inner cleanup retains its two-second default. It does not
+guarantee descendant cleanup if the independent supervisor itself is uncatchably
+killed or cannot run. No privileged isolation is required for the live-owner
+failure model. Tier1's GTestWrapper is not an explicit
 NMT-enabled Array receipt; compiler/stringopts and NIO selections also retain
 exact-ID receipts. The first qualification claim remains Linux-limited.
 
-Validation of this source repair: seventeen offline mocked Python guard regressions
-pass. The Java positive-byte EOF/repetition regression is committed but remains
+Validation of the source repairs and supervisor: thirty-three offline mocked
+Python regressions pass, including layered adoption, inner failure, cancellation
+during launch, fixed deadline exhaustion and final child audit. The supervisor
+and full campaign remain unexecuted on native children/JVMs. The Java
+positive-byte EOF/repetition regression is committed but remains
 uncompiled/unexecuted. No build, JVM workload, benchmark, CI or workspace cleanup
 was performed for this repair.
 

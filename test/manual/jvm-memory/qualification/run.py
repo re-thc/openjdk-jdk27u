@@ -642,7 +642,8 @@ class Campaign:
         self.begin('release-builds',6600)
         from analyze import critical
         need(abs(critical(7,.05)-2.3646242516)<1e-8,'Student-t numerical preflight failed')
-        self.run('offline-guard-regressions',[sys.executable,'-m','unittest','-v','test_guards'],120,HERE)
+        self.run('offline-guard-regressions',[sys.executable,'-m','unittest','-v',
+                 'test_guards','test_supervisor'],120,HERE)
         self.checkout()
         images={tag:self.build(tag) for tag in ['B','C']}
         self.begin('correctness-benefit',5400)
@@ -684,7 +685,7 @@ class Campaign:
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__)
+    p=argparse.ArgumentParser(description=__doc__,allow_abbrev=False)
     p.add_argument('--execute',action='store_true',help='requires separate campaign authorization')
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--boot',type=Path,required=True)

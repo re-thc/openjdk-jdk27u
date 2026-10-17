@@ -1,6 +1,6 @@
 # Staged memory qualification from source
 
-This entire source bundle is committed for review. The full campaign and analysis remain **unexecuted**. Seventeen offline Python guard
+This entire source bundle is committed for review. The full campaign and analysis remain **unexecuted**. Thirty-three offline Python guard/owner
 regressions pass with fake children, clocks, disks and signals; they launch no
 subprocesses or JVMs. Java EOF/repetition coverage is source-only and has not
 been compiled or run under this continuation's no-build restriction.
@@ -37,15 +37,17 @@ One campaign on the available Linux x64 host makes the first useful decision:
 
 ## Exact invocation (proposal only)
 
-Use an empty new output directory on an adequately sized local workspace. No
-private artifact or downloaded binary is an input. Install nothing in this task.
-The saved activation script selects compatible tools already installed.
+Use new owner and campaign output directories on an adequately sized local
+workspace. No previous product image or private artifact is an input. Install
+nothing in this source-only task. The saved activation script selects compatible
+installed tools; standard pinned test dependencies are managed fetch inputs to
+acquire through normal repository/test handling when execution scope permits.
 
 ```sh
 source /workspace/toolchains/activate.sh
-python3 test/manual/jvm-memory/qualification/run.py \
-  --execute --output /workspace/memory-decision-new \
-  --outer-owner-reference APPROVED_JOB_OWNER_WITH_DESCENDANT_DEADLINE \
+python3 test/manual/jvm-memory/qualification/supervise.py \
+  --execute --owner-output /workspace/memory-owner-new -- \
+  --output /workspace/memory-decision-new \
   --boot /workspace/toolchains/jdk27 \
   --jtreg /workspace/toolchains/jtreg83 \
   --gtest /workspace/jvm-memory-integration/build/dependencies/googletest \
@@ -55,13 +57,25 @@ python3 test/manual/jvm-memory/qualification/run.py \
   --configure-option='--with-extra-ldflags=-B/workspace/toolchains/mold/bin'
 ```
 
+The supervisor supplies the inner `--execute` and `--outer-owner-reference`;
+do not pass those after `--`. It launches the committed `run.py` once, not an
+arbitrary command. The owner directory must also be new. Keep `owner.json` and
+`controller.stdout`/`controller.stderr` with the campaign results. Direct
+`run.py` invocation is for an independently approved equivalent owner, not a
+controller-only `timeout` or an invented reference string.
+
 The headless profile does not need the earlier desktop/sysroot configure flags.
 PCH is explicitly disabled in all configurations so the old-header control uses
 the separately selected inline header, not a precompiled copy.
 Installed OS headers/runtime dependencies remain required by ordinary configure;
 missing ones stop the build rather than triggering installation. The four JMH
-jars and GoogleTest/GoogleMock source tree are normal managed dependencies,
-already present. JMH uses its repository-pinned 1.37 annotation processor.
+jars and GoogleTest/GoogleMock source tree are normal managed dependencies;
+their example paths need not exist in a fresh saved environment. The execution
+owner fetches them and records identities; the user need not preinstall or
+transfer repository dependencies. GoogleTest is pinned to clean Git checkout
+`f8d7d77c06936315286eb55f8de22cd23c188571` (1.14.0). JMH uses its
+repository-pinned 1.37 annotation processor, with jopt-simple 5.0.4 and
+commons-math3 3.6.1.
 Only five self-contained benchmark sources are compiled (two unchanged repository
 benchmarks plus committed VerifiedJavac and VerifiedFileChannelRead/Write).
 The adapters reject failed compilation or zero-byte I/O instead of timing invalid
@@ -90,7 +104,11 @@ classes, image, approval, freeze or deadline is reused. Reusing a generic cleanu
 library does not launch its earlier observer. The parser is strict for this JDK's
 NMT grammar and fails closed on unfamiliar output.
 
-The hard campaign deadline is 10 hours including cleanup/report. Stage caps:
+The outer hard deadline is 10 hours from before controller launch, including
+cleanup/report. It stops waiting for the controller 35 seconds before that
+deadline, reserving 30 seconds for layered cleanup and five for the owner
+receipt. Inner stage/global ceilings remain subordinate to that one outer
+deadline; cancellation and cleanup never reset it. Stage caps:
 110 minutes for matched release source/build preparation, 90 for correctness and
 benefit, 240 for performance/startup, 140 for conditional fastdebug/ASan, leaving
 20 minutes global reserve. Release build cap 50 minutes each; debug/ASan build
@@ -118,8 +136,9 @@ rotation invalidates complete pause evidence. This is not a guarantee against
 unrelated writers exhausting a shared filesystem. Receipts record the policy,
 free bytes and poll count. The output, repository and default temporary
 filesystems are checked. Nested build/jtreg outputs still consume storage and
-remain subject to the untimed monitor and deadline. Require **12 GiB free storage at admission**; current workspace has only
-about 1.9 GiB. Before conditional debug/ASan builds, require another 12 GiB free; insufficient
+remain subject to the untimed monitor and deadline. Require **12 GiB free storage
+at admission**, checked on the actual execution workspace. Before conditional
+debug/ASan builds, require another 12 GiB free; insufficient
 capacity records HOLD_DEBUG_STORAGE with the completed release results intact.
 No automatic deletion/provisioning is performed. Stop before
 running if capacity, profile CPU support, subreaping or installed tools are
@@ -195,10 +214,11 @@ HOLD, regardless of favorable point estimates. Report all slower cases.
 
 Owned work: source review of this new harness, freeze/launch preparation, normal
 checkouts/builds, analysis and honest report after campaign authorization. The
-only immediate external dependencies are execution authorization and sufficient
-working storage, plus an existing outer job owner with a hard descendant cleanup
-deadline for uncatchable controller death; installed compatible tools already cover the required local
-CPU architecture. Removing reproducible old build outputs requires an agreed
+immediate prerequisites are reviewed source, execution authorization, sufficient
+working storage, normal managed test inputs and pidfd/subreaper admission.
+The committed unprivileged supervisor supplies the separate owner/deadline for
+inner-controller death while the supervisor survives; no privileged container
+or new cgroup is required for that failure model. Removing reproducible old build outputs requires an agreed
 storage policy; preserving raw evidence is mandatory. No native hardware,
 application-suite purchase, PMU tool or hosted runner is required for the local
 staged decision. Other-platform correctness can use normal repository CI only
@@ -222,19 +242,55 @@ The admission check verifies required pidfd syscalls on self before any child
 launch. Unsupported/denied APIs stop admission; nothing weakens the ownership
 check. Start values remain an additional filter, not the signalling identity. Signals and cleanup consume the same invocation/global budget.
 
-The controller alone does **not** contain SIGKILL, interpreter death, or a native
-launch that never returns. The recorded `--outer-owner-reference` is an owner
-attestation, not runtime verification of that boundary. Run only under an
-approved pre-existing job/cgroup owner that can kill all descendants, including
-new sessions, at its hard deadline; ordinary `timeout` of just the controller
-process group is insufficient. No owner, cgroup or runner is provisioned here.
+The controller alone does **not** contain its own SIGKILL, interpreter death, or
+a native launch that never returns. `supervise.py` is a separate single-threaded
+subreaper, outside the controller's session. It uses fork/exec without a blocking
+parent-side exec handshake, so inner launch progress/stdout and signal handlers
+do not drive its deadline. Catchable outer signals only latch the first request,
+then enter owned cleanup; cancellation during launch cannot interrupt root
+assignment. A partial launch with no returned root object still belongs to the
+pre-launch child scope. The supervisor monitors/reaps its root through a held
+pidfd and reuses the repaired cleanup primitives for all descendants.
+
+Only kernel-confirmed direct children are eligible for signalling. Killing the
+controller reparents its children to the outer subreaper; deeper layers become
+eligible as their own parents exit. Repeated scans/adoption and a final kernel
+child audit must complete within the fixed 30-second outer allowance. Inner
+command cleanup keeps its two-second default. There is no numeric PID/group
+fallback or repeated fresh cleanup budget. A live leftover, hidden child,
+ownership/read error or expired allowance remains HOLD/incomplete. Even
+controller exit zero requires cleanup and the final child audit.
+
+The owner receipt records the fixed deadline, source hashes, controller exit,
+cancellation, cleanup identities/errors and final audit. `COMPLETED` plus outer
+exit zero is required alongside inner `LOCAL_GO_FOR_REVIEW`; an inner failure,
+cancel, timeout or missing/incomplete owner receipt cannot become a local GO.
+The `--outer-owner-reference` names this receipt; the reference alone is not
+runtime proof of containment under another launcher.
+
+**If the independent supervisor itself is uncatchably killed, fails fatally or
+cannot run, this user-space mechanism cannot guarantee descendant cleanup.**
+Pidfds/subreaping do not cascade a kill when the owner dies. Protection against
+that additional failure needs an independent system/job boundary if required;
+it is not a privileged-isolation prerequisite for covering the inner controller.
+The supervisor cannot promise real-time exit of an uninterruptible kernel task.
+Successful cleanup is asserted only after the audit proves it; otherwise
+remaining identities/errors are retained. No cgroup/security changes occur.
 
 `test_guards.py` contains seventeen fake-clock/disk/child/signal regressions, including
 build/jtreg writers with closed stdout, timed probe exclusion, cancellation during
 launch/cleanup, repeated signals and PID reuse. It launches no child processes
-or JVMs. Source-repair validation used
-`PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_guards` in this directory:
-17 tests passed, including both build and jtreg closed-stdout cases. The future campaign runs these offline checks before any builds.
+or JVMs.
+
+`test_supervisor.py` adds sixteen deterministic offline tests for multi-layer
+adoption, inner failure, cancellation during launch/receipt closure, partial
+launch, fixed/exhausted deadlines, hidden children/final audit, unrelated tasks,
+fork/exec failure and the held-pidfd root boundary. Native fork/exec and signal
+operations are mocked; no native child/JVM is launched. Validation used
+`PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_guards test_supervisor`
+in this directory: **33 tests passed**. The future campaign runs both suites
+before any builds. This does not certify native supervisor execution or kernel
+containment; the full campaign remains unexecuted.
 The Java state regression must execute after source compilation; a Java source
 review is not claimed as a runtime positive-byte pass.
 

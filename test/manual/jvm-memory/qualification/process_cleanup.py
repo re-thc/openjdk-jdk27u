@@ -160,7 +160,7 @@ class ChildScope:
         return {pid: table[pid] for pid in descendants(table, self.backend.parent)
                 if pid not in protected}
 
-    def close(self, proc, hard_deadline):
+    def close(self, proc, hard_deadline, cleanup_seconds=CLEANUP_SECONDS):
         """Always called, even after exit 0. Never waits without a finite cap.
 
         A live leftover after the launcher has exited is inconclusive even if
@@ -169,7 +169,9 @@ class ChildScope:
         attempt, return unresolved identities and never claim successful cleanup.
         """
         backend = self.backend
-        end = min(hard_deadline, backend.now() + CLEANUP_SECONDS)
+        # The independent outer owner reserves a larger fixed window for
+        # successive adoption layers. Both callers retain one absolute cap.
+        end = min(hard_deadline, backend.now() + cleanup_seconds)
         seen = set()
         live_leftovers = set()
         errors = []
