@@ -1,12 +1,13 @@
 # Staged compact ZIP cache qualification
 
-The first supervised attempt at `8b8fa6d106d937d5b55a2c3fbf699651b7c3faa1`
-completed the baseline native-profile exploded JDK build, then stopped when the
-harness expected its absent `lib/modules` file. Cleanup completed and all failed
-attempt evidence and the successful build were retained. No packaged image,
-candidate build, correctness, allocation or timing result came from that attempt.
-This corrected command path has not been executed. Compact-cache startup and
-throughput remain unmeasured; default inflater eviction remains rejected.
+The attempt at `559703d10cbbaba18e59b8147a532eb81b1b77be` built both normal
+packaged images and passed six baseline Serial controls, then stopped before
+candidate tests on a multiline `TEST` serialization error. All evidence and
+images remain intact; no allocation or performance phase ran. The complete
+[retained-image continuation](CONTINUATION.md) is prepared for review and separate
+execution approval. It reuses those images without rebuilding. The fresh-build
+instructions below are a reproduction reference, not authorization to rerun.
+Compact-cache startup/throughput remain unmeasured; default eviction is rejected.
 
 ## Subject and existing evidence
 
@@ -133,12 +134,15 @@ invalidates the comparison.
 
 ### Correctness, retained containers and native reuse
 
-Run the original fifteen cache/ZIP tests plus six protected local JAR consumer
+Run fifteen local cache/ZIP tests plus six protected local JAR consumer
 tests on C; the six consumer tests also run on B as controls. Do not sweep the
 whole URLClassLoader directory, which includes unrelated HTTP-server tests.
+The corrected selection replaces HTTP-dependent DeleteTempJarTest with local
+EnumerateAfterClose; [CONTINUATION.md](CONTINUATION.md) explains this scope fix.
 
-The exact twenty-one candidate and six baseline test paths, per-stage timeouts
-and unique log labels are in run-linux.sh. It then compiles the Java workload,
+The exact twenty-one candidate and six baseline paths are in test-selections.sh;
+shared per-stage timeouts and unique log labels are in run-stages.sh. The sequence
+then compiles the Java workload,
 footprint agent and native allocator probe from this checkout, creates fixtures
 once, and runs lifecycle/container/native checks separately from timing. The
 allocation checker must pass before the uninstrumented runner starts.

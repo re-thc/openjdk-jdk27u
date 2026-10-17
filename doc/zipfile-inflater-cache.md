@@ -18,11 +18,12 @@ startup, throughput neutrality and other platforms/backends were not validated.
 The [staged qualification plan](zipfile-inflater-cache/QUALIFICATION.md) first
 decides value with exact-head Linux profile builds, retained-container/native
 reuse checks and protected startup/throughput cases. Only a worthwhile Linux
-result proceeds to normal supported-platform PR correctness CI. One attempt
-built the baseline exploded JDK, then stopped on a harness image-layout error
-before any comparison. The corrected packaged-image command path remains
-unexecuted; other native performance campaigns are not prerequisites by
-assumption.
+result proceeds to normal supported-platform PR correctness CI. The latest
+attempt built both packaged JDKs and passed six baseline Serial controls, then
+stopped before candidate tests on a harness test-selection error. The complete
+[retained-image continuation](zipfile-inflater-cache/CONTINUATION.md) is prepared
+for review and separate execution approval; it does not rebuild. Other native
+performance campaigns are not prerequisites by assumption.
 The full Linux sequence has a four-hour supervisor with owned-process cleanup.
 Proposed 2%/3% resolution checks do not authorize a slowdown: consistently slower
 results require explicit trade-off review. Qualification reports observed native

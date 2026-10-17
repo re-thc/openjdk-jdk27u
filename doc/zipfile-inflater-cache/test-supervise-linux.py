@@ -6,9 +6,11 @@ Extract only owned_processes from the supervisor AST. No top-level supervisor
 code, real /proc reads, process creation or signalling runs in these tests.
 """
 import ast
+import argparse
 from pathlib import Path
 from types import SimpleNamespace
 import unittest
+from unittest.mock import Mock, patch
 
 
 class OwnedProcessesTest(unittest.TestCase):
@@ -58,6 +60,37 @@ class OwnedProcessesTest(unittest.TestCase):
         fresh = {10: (1, 100, 2), 20: (10, 201, 3)}
         owned, _ = self.discover(snapshot, fresh)
         self.assertEqual(owned, {})
+
+    def test_continuation_cli_before_remainder(self):
+        nodes = []
+        for node in ast.parse(self.source).body:
+            if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name)
+                    and target.id in ('parser', 'args') for target in node.targets):
+                nodes.append(node)
+                if any(isinstance(target, ast.Name) and target.id == 'args' for target in node.targets):
+                    break
+            elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+                call = node.value.func
+                if isinstance(call, ast.Attribute) and isinstance(call.value, ast.Name) and call.value.id == 'parser':
+                    nodes.append(node)
+        namespace = dict(argparse=argparse, Path=Path)
+        with patch('sys.argv', ['supervise-linux.py', '--resume-from', '/preserved',
+                                '/fresh', 'a' * 40]):
+            exec(compile(ast.Module(body=nodes, type_ignores=[]), '<CLI fixture>', 'exec'), namespace)
+        self.assertEqual(namespace['args'].resume_from, Path('/preserved'))
+        self.assertEqual(namespace['args'].root, Path('/fresh'))
+        self.assertEqual(namespace['args'].configure_options, [])
+
+    def test_scratch_counts_both_roots(self):
+        function = next(node for node in ast.parse(self.source).body
+                        if isinstance(node, ast.FunctionDef) and node.name == 'disk_usage')
+        process = Mock()
+        process.check_output.return_value = '10 /fresh\n20 /preserved\n'
+        namespace = dict(subprocess=process, disk_roots=[Path('/fresh'), Path('/preserved')])
+        exec(compile(ast.Module(body=[function], type_ignores=[]), '<disk fixture>', 'exec'), namespace)
+        self.assertEqual(namespace['disk_usage'](3), 30)
+        process.check_output.assert_called_once_with(
+            ['du', '-sb', '--', '/fresh', '/preserved'], text=True, timeout=3)
 
     def test_parent_is_revalidated_after_reading_child(self):
         snapshot = {30: (20, 300, 1), 20: (10, 200, 2)}

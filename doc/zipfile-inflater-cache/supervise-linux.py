@@ -13,6 +13,7 @@ import sys
 import time
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--resume-from', type=Path, help='exact preserved terminal attempt; no rebuild')
 parser.add_argument('root', type=Path, help='new absolute workspace, without whitespace')
 parser.add_argument('candidate', help='full reviewed commit SHA')
 parser.add_argument('configure_options', nargs=argparse.REMAINDER)
@@ -20,6 +21,15 @@ args = parser.parse_args()
 root = args.root
 if not root.is_absolute() or any(character.isspace() for character in str(root)):
     raise SystemExit('Use a new absolute workspace without whitespace')
+disk_roots = [root]
+if args.resume_from is not None:
+    previous = args.resume_from
+    if not previous.is_absolute() or any(character.isspace() for character in str(previous)):
+        raise SystemExit('Use an absolute preserved attempt without whitespace')
+    previous = previous.resolve(strict=True)
+    if root.resolve() == previous or root.resolve() in previous.parents or previous in root.resolve().parents:
+        raise SystemExit('Fresh output and preserved attempt must be disjoint')
+    disk_roots.append(previous)
 if len(args.candidate) != 40 or any(c not in '0123456789abcdef' for c in args.candidate):
     raise SystemExit('Use the full reviewed commit SHA')
 if not hasattr(os, 'pidfd_open') or not hasattr(signal, 'pidfd_send_signal'):
@@ -115,8 +125,9 @@ def cleanup(child, deadline):
     return {str(pid): {'birth_ticks': info[1]} for pid, info in remaining.items()}
 
 def disk_usage(timeout):
-    return int(subprocess.check_output(['du', '-sb', '--', str(root)],
-                                      text=True, timeout=timeout).split()[0])
+    output = subprocess.check_output(['du', '-sb', '--', *map(str, disk_roots)],
+                                     text=True, timeout=timeout)
+    return sum(int(line.split()[0]) for line in output.splitlines())
 
 source = Path(__file__).resolve().parent
 repository = source.parent.parent
@@ -128,11 +139,22 @@ subprocess.run(['git', 'diff', '--quiet', 'HEAD', '--', 'doc/zipfile-inflater-ca
 options = args.configure_options
 if options[:1] == ['--']:
     options = options[1:]
+prior_elapsed_seconds = 0
+if args.resume_from is not None:
+    if options:
+        raise SystemExit('No configure options are accepted for retained images')
+    binding = json.loads((source / 'retained-builds.json').read_text())
+    prior_elapsed_seconds = binding['prior_elapsed_seconds']
+    if not 0 <= prior_elapsed_seconds < 14400:
+        raise SystemExit('Invalid charge against original four-hour allowance')
+work_seconds = 4 * 60 * 60 - prior_elapsed_seconds
+if work_seconds <= 0:
+    raise SystemExit('Original four-hour work budget exhausted')
 env = os.environ.copy()
 env.update(ZIP_QUAL_SUPERVISED='1', TMPDIR=str(root / 'tmp'),
            XDG_CACHE_HOME=str(root / 'cache'), CCACHE_DIR=str(root / 'cache' / 'ccache'))
 started = time.monotonic()
-deadline = started + 4 * 60 * 60
+deadline = started + work_seconds
 reason = 'completed'
 child = None
 remaining = {}
@@ -140,8 +162,10 @@ error = None
 postflight_disk_bytes = None
 try:
     with (root / 'supervisor.log').open('w') as output:
-        child = subprocess.Popen(['bash', str(source / 'run-linux.sh'), str(root),
-                                  args.candidate, *options], cwd=repository, env=env,
+        command = (['bash', str(source / 'continue-linux.sh'), str(root), args.candidate, str(previous)]
+                   if args.resume_from is not None else
+                   ['bash', str(source / 'run-linux.sh'), str(root), args.candidate, *options])
+        child = subprocess.Popen(command, cwd=repository, env=env,
                                  stdout=output, stderr=subprocess.STDOUT, start_new_session=True)
         next_disk_check = started
         timing_armed = False
@@ -198,7 +222,9 @@ finally:
                   elapsed_seconds=time.monotonic() - started, error=error,
                   remaining_owned_processes=remaining,
                   postflight_disk_bytes=postflight_disk_bytes,
-                  limits=dict(work_seconds=14400, cleanup_postflight_grace_seconds=30,
+                  limits=dict(work_seconds=work_seconds, original_work_seconds=14400,
+                              prior_elapsed_seconds=prior_elapsed_seconds,
+                              cleanup_postflight_grace_seconds=30,
                               cpus=4, aggregate_rss_stop_bytes=memory_limit,
                               sampled_scratch_apparent_stop_bytes=disk_limit))
     (root / 'supervisor-status.json').write_text(json.dumps(status, indent=2) + '\n')

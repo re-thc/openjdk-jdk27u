@@ -19,7 +19,7 @@ def check_plan(source):
         'image=$(jdk_image "$tree")',
         'BASE_JDK=$(jdk_image base)',
         'CANDIDATE_JDK=$(jdk_image candidate)',
-        'image=$(jdk_image "$label")',
+        'if [[ $label == base ]]; then image=$BASE_JDK; else image=$CANDIDATE_JDK; fi',
         'test -x "$image/bin/java"',
         'release lib/modules lib/server/libjvm.so lib/libzip.so include/jni.h include/linux/jni_md.h',
         'test -f "$image/$file"',
@@ -31,6 +31,9 @@ def check_plan(source):
         '-I"$CANDIDATE_JDK/include" -I"$CANDIDATE_JDK/include/linux"',
         '"$image/bin/java"',
         '--baseline "$BASE_JDK" --candidate "$CANDIDATE_JDK"',
+        'source "$Q/test-selections.sh"',
+        'TEST="$consumer_tests"',
+        'TEST="$candidate_tests"',
     )
     for command in required:
         if command not in commands:
@@ -41,7 +44,8 @@ def check_plan(source):
 
 class ImageLayoutTest(unittest.TestCase):
     directory = Path(__file__).resolve().parent
-    source = (directory / 'run-linux.sh').read_text()
+    source = ((directory / 'run-linux.sh').read_text()
+              + (directory / 'run-stages.sh').read_text())
 
     def test_complete_command_path(self):
         check_plan(self.source)
@@ -49,6 +53,14 @@ class ImageLayoutTest(unittest.TestCase):
     def test_static_check_precedes_build(self):
         self.assertLess(self.source.index('test-image-layout.py'),
                         self.source.index('90m make'))
+
+    def test_continuation_confines_shared_stage_cwd(self):
+        source = (self.directory / 'continue-linux.sh').read_text()
+        position = source.index('cd -- "$ROOT"')
+        self.assertLess(source.index('BOOT_JDK=$(cd -- "$BOOT_JDK" && pwd -P)'), position)
+        self.assertLess(source.index('JTREG_HOME=$(cd -- "$JTREG_HOME" && pwd -P)'), position)
+        self.assertLess(position, source.index('initial-provenance.json'))
+        self.assertLess(position, source.index('source "$Q/run-stages.sh"'))
 
     def test_original_build_hash_mismatch_is_rejected(self):
         # The failed attempt built an exploded JDK, then expected a jlink file.
