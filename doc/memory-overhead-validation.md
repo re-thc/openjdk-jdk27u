@@ -1,9 +1,16 @@
-# Current integration validation
+# JVM memory validation
 
-The release/server JDK and test image built successfully from source
-`770f5cd0ef89bceae11a5f66c014815bfa3b4b73`. The 13 jtreg results below retain that source and image identity. Subsequent
-changes repair only the two new native test sources and update documentation;
-production sources remain byte-identical to that commit.
+The JVM-only release/server JDK and test image built successfully from source
+`770f5cd0ef89bceae11a5f66c014815bfa3b4b73`. The 13 jtreg results below retain
+that source and image identity. The HotSpot and NIO production changes remain
+byte-identical to that commit; later JVM-only changes repair the two new native
+tests and update documentation.
+
+The combined memory-savings branch also includes the DateFormatSymbols changes
+described in [their reproduction and validation notes](date-format-symbols-sharing.md).
+Those changes were not in the earlier JVM-only image. The combined Java checks
+below do not constitute a fresh combined native-image build or multi-platform
+qualification.
 
 Environment: Linux x86-64, Intel Xeon Platinum 8573C, four-CPU cgroup quota,
 GCC/G++ 16.2.0, boot JDK 27+35-2325, Make 4.4.1, autoconf 2.72, mold and installed
@@ -176,3 +183,28 @@ performed. Historical NIO memory results do not become measurements of this
 rebased image merely because its functional tests pass. The separate observer
 fixture was neither compiled nor run. No dedicated Shenandoah or HTTP/2 test, hosted CI, provisioning or previously
 stopped probe was run.
+
+## Combined Java development checks
+
+At combined product source `34e34b7a31c233a19988228ddde5b89b4275a1b2`, the
+three candidate NIO classes and DateFormatSymbols compiled together as a
+`java.base` patch for the installed JDK 27+35-2325. With assertions enabled,
+four-CPU affinity and 256 MiB heaps, these ordinary Linux x64 functional checks
+passed:
+
+| Check | Result |
+| --- | --- |
+| `DateFormatSymbolsSharingTest` | Passed under G1 |
+| `DateFormatSymbolsSerializationAliasesTest` | Passed under G1 |
+| `DateFormatSymbolsConcurrentSerializationTest` | Passed under G1, including both controlled JDI schedules |
+| `TemporaryBufferCarrier platform` | Passed; 32 tasks, eight rounds, checksum 1,627,136 |
+| `TemporaryBufferCarrier virtual` | Passed; 32 tasks, eight rounds, checksum 1,627,136 |
+
+The three Formatter tests retain exact-ID jtreg results with no failures,
+errors or skips. Both NIO modes checked scalar/scatter-gather contents and sizes.
+Owned descendant cleanup and the final child audits completed.
+
+These checks exercise the combined Java changes on the installed native runtime.
+They do not rebuild the HotSpot changes or qualify a fresh combined JDK image.
+No allocation probe, benchmark or new measured memory/performance campaign ran;
+the DateFormatSymbols clone monitor's throughput cost remains unmeasured.
