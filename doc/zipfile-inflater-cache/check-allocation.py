@@ -41,15 +41,18 @@ for gc in ('Serial', 'G1', 'Z'):
             output = (root / f'{policy}-{gc}-native{width}.log').read_text()
             assert re.search(r'\bcreated=0\b', output), 'Native replacement churn'
             stages = {}
-            for stage, opened, requested, blocks in re.findall(
-                    r'^(\S+) open=(\d+) native-requested=(\d+) diagnostic-usable=\d+ allocations=(\d+)$',
+            for stage, opened, requested, blocks, calls in re.findall(
+                    r'^(\S+) open=(\d+) native-requested=(\d+) diagnostic-usable=\d+ allocations=(\d+) observed-zalloc-calls=(\d+)$',
                     output, re.MULTILINE):
-                stages[stage] = tuple(map(int, (opened, requested, blocks)))
+                stages[stage] = tuple(map(int, (opened, requested, blocks, calls)))
             assert set(stages) == {'unread', 'read', 'idle', 'repeated-idle', 'zip-closed'}
-            assert stages['zip-closed'] == (0, 0, 0), 'Native state survived close'
+            assert stages['zip-closed'][:3] == (0, 0, 0), 'Native state survived close'
+            assert stages['unread'][3] > 0, 'Missing cumulative allocation counter'
+            assert stages['read'][3] >= stages['unread'][3], 'Cumulative calls decreased'
             for stage in ('unread', 'read', 'idle', 'repeated-idle'):
                 assert stages[stage][0] == width, 'Inflater was discarded'
             assert stages['read'] == stages['idle'] == stages['repeated-idle']
+            assert stages['zip-closed'][3] == stages['repeated-idle'][3], 'Lost last-observed calls'
             samples[policy] = stages
         assert samples['base'] == samples['candidate'], 'Native retention changed'
         summary.append(dict(gc=gc, width=width, native=samples))

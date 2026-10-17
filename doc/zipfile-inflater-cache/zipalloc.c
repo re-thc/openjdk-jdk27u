@@ -35,6 +35,7 @@ typedef struct { size_t live, usable, count, calls; } Counter;
 typedef union { struct { size_t requested, usable; } n; max_align_t align; } Header;
 static voidpf counted_alloc(voidpf opaque, uInt count, uInt size) {
     Counter *c = opaque;
+    c->calls++;
     size_t bytes = (size_t) count * size;
     Header *h = calloc(1, sizeof(Header) + bytes);
     if (!h) return NULL;
@@ -43,7 +44,6 @@ static voidpf counted_alloc(voidpf opaque, uInt count, uInt size) {
     c->live += bytes;
     c->usable += h->n.usable;
     c->count++;
-    c->calls++;
     return h + 1;
 }
 static void counted_free(voidpf opaque, voidpf p) {

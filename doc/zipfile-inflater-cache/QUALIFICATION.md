@@ -40,58 +40,69 @@ resolves ordinary installed tool/dependency paths and runs the complete stage
 after execution is authorized. ROOT is a fresh absolute writable workspace;
 BOOT_JDK and JTREG_HOME name installed tools; C is the reviewed full commit SHA.
 
-Ceiling: four allocated CPUs, 16 GiB RAM, 30 GiB scratch, four hours wall time,
-two normal build images, JOBS=4 and two jtreg workers. Enforce the overall limit
-with the host's job deadline or GNU timeout around the command sequence; stop
-each build at 90 minutes and each correctness stage at 30 minutes. No concurrent
-build/check/timing work. Use a quiet host; do not change governors, disable
-security or flush OS caches. Preserve every outcome; no threshold sweep or
-favorable reruns. Fresh profile checks close a configuration gap rather than
-repeat the already completed generic-profile campaign.
+### One outer supervisor invocation
 
-Stop on identity drift, missing/incompatible tools, unsupported collector,
-build/test failure, bad content/provider count, worker failure, hang, lifecycle
-failure or exhausted budget. Do not install a replacement tool automatically.
-Source-only driver fixes are owned work before the first timed process, with
-their new identities recorded; a product change or a driver change after timing
-stops this qualification. A baseline failure invalidates the comparison.
-
-### Normal checkouts and builds
-
-These are commands for a future authorized run, not actions already taken.
-Pass any installed dependency-prefix configure options identically to both
-builds, preserving the profile's CPU and collector settings.
+From a clean checkout of the full reviewed C, with ROOT an absent absolute path
+without whitespace, run the entire sequence through the supervisor after the
+single bounded run is authorized:
 
 ```sh
-set -euo pipefail
-B=89885a6288e7aaabd01678a704a586272c0f96e3
-: "${C:?Set C to the full reviewed commit SHA}"
-git fetch origin master review/zipfile-compact-inflater-cache
-test "$(git rev-parse "$C^{commit}")" = "$C"
-git cat-file -e "$C:doc/zipfile-inflater-cache/run-qualification.py"
-test "$(git rev-parse "$C:src/java.base/share/classes/java/util/zip/ZipFile.java")" = 9943e4f9635c2480f58bdf7c0116432eee00ad51
-test "$(git rev-parse "$C:test/jdk/java/util/zip/ZipFile/InflaterCache.java")" = f79e29971e1c8b6dcedea8420a74ad80db914bd1
-test "$(git rev-parse "$C:doc/zipfile-inflater-cache/ZipCacheFootprint.java")" = e720f00727bb6c030896d6f914f94dad8d664a47
-git worktree add --detach "$ROOT/base" "$B"
-git worktree add --detach "$ROOT/candidate" "$C"
-mkdir -p "$ROOT/results" "$ROOT/classes"
-for tree in base candidate; do
-  cd "$ROOT/$tree"
-  bash bin/configure-dev --with-conf-name=zip-qual --with-debug-level=release \
-    --with-jobs=4 --with-memory-size=8192 --with-boot-jdk="$BOOT_JDK" \
-    --with-jtreg="$JTREG_HOME" --with-zlib=system \
-    > "$ROOT/results/$tree-configure.log" 2>&1
-  timeout --kill-after=30s 90m make CONF=zip-qual JOBS=4 jdk \
-    > "$ROOT/results/$tree-build.log" 2>&1
-done
-BASE_JDK="$ROOT/base/build/zip-qual/jdk"
-CANDIDATE_JDK="$ROOT/candidate/build/zip-qual/jdk"
-Q="$ROOT/candidate/doc/zipfile-inflater-cache"
+: "${C:?full reviewed commit SHA}" "${ROOT:?new absolute workspace}"
+: "${BOOT_JDK:?installed Boot JDK 27}" "${JTREG_HOME:?installed jtreg 8.3}"
+Q="$(git rev-parse --show-toplevel)/doc/zipfile-inflater-cache"
+python3 "$Q/supervise-linux.py" "$ROOT" "$C"
 ```
 
-Record source/tool/compiler/spec and image hashes, actual system zlib and VM
-layout flags locally. Verify release build, x86-64-v3 and exactly Serial/G1/ZGC
-in the configured JVM features. Do not copy old build directories into checkouts.
+Installed dependency-prefix configure arguments may follow C (after `--`); the
+same options are passed to both builds, and profile/collector/tuning overrides
+are rejected. The authoritative [run-linux.sh](run-linux.sh) contains the complete
+checkout, build, correctness, allocation and measurement sequence. Do not run
+its phases independently or bypass the outer supervisor. The wrapper verifies
+its own reviewed checkout and clean qualification sources; the sequence verifies
+B/C and the three product/test/probe blobs above. No existing build directory or
+private binary is copied. Source/tool/spec, module/native-library hashes and all
+outcomes stay in ROOT, without automatic publication.
+
+[supervise-linux.py](supervise-linux.py) starts one owned process tree and stops
+all work at four hours. It pins that tree to four available CPUs, gives it
+owned temporary/cache directories and disables core dumps. At completion, error,
+interruption or deadline it sends TERM, then KILL after ten seconds, to individual
+owned descendants, including orphaned jobs adopted through Linux subreaping.
+Each ancestry edge is checked against the parent's captured birth identity after
+reading its child, and PID handles verify leaf identities before signalling.
+This avoids killing reused/unrelated PIDs. Cleanup
+and the final disk check share at most thirty seconds of postflight grace beyond
+the work deadline. No broad pkill or machine-wide cleanup is used; logs and
+checkouts are retained. Remaining owned
+processes or uncertain cleanup are recorded as a non-pass in
+`supervisor-status.json`, not reported as successful termination.
+
+Ceilings: four CPUs, 16 GiB supervised-family aggregate RSS stop threshold,
+30 GiB scratch apparent bytes and four hours work plus the shared postflight
+grace. RSS is conservatively
+summed (shared pages can be counted twice) and sampled, not a kernel memory
+quota or a memory-saving result. Scratch usage uses `du -sb` apparent bytes,
+not allocated disk blocks, and is sampled outside timing; a 128 MiB
+log reserve is checked before timing and usage is checked again afterward. The
+shell publishes phases atomically and waits for the supervisor's acknowledgment
+before timing; that acknowledgment follows completion of any in-flight disk scan
+and the reserve check, so no recursive disk scan overlaps the timed sample.
+A strict instantaneous RAM/filesystem quota, if required, belongs to the managed
+host allocation. Two normal build images maximum, JOBS=4, two jtreg workers;
+configuration/build/correctness sublimits are 10/90/30 minutes. The existing
+30-minute timing deadline and per-process limits below remain inside the outer
+four-hour deadline. Linux /proc, Python 3.9+ pidfds and subreaper support are
+required; their absence stops before the sequence starts, without installation.
+
+Use a quiet host; do not change governors, disable security or flush OS caches.
+Do not overlap other builds/checks with timing. Preserve every outcome; no
+threshold sweep or favorable reruns. New profile checks close the configuration
+gap instead of repeating the old generic-profile campaign. Stop on identity
+drift, missing tools, unsupported collector, build/test failure, content/provider
+mismatch, worker failure, lifecycle failure or exhausted budget. Driver fixes
+before the first timed process are owned work with new identities recorded;
+product changes or driver changes after timing stop this qualification. A
+baseline failure invalidates the comparison.
 
 ### Correctness, retained containers and native reuse
 
@@ -99,88 +110,35 @@ Run the original fifteen cache/ZIP tests plus six protected local JAR consumer
 tests on C; the six consumer tests also run on B as controls. Do not sweep the
 whole URLClassLoader directory, which includes unrelated HTTP-server tests.
 
-```sh
-cache_tests="test/jdk/java/util/zip/InflaterClose.java
-test/jdk/java/util/zip/DeflaterDictionaryTests.java
-test/jdk/java/util/zip/InflaterInputStream/MarkReset.java
-test/jdk/java/util/zip/InflaterInputStream/TestAvailable.java
-test/jdk/java/util/zip/InflaterInputStream/UnexpectedEndOfZlibStream.java
-test/jdk/java/util/zip/ZipFile/DeleteTempJarTest.java
-test/jdk/java/util/zip/ZipFile/FinalizeInflater.java
-test/jdk/java/util/zip/ZipFile/InflaterCache.java
-test/jdk/java/util/zip/ZipFile/InvalidCompressedSizeTest.java
-test/jdk/java/util/zip/ZipFile/MultiThreadedReadTest.java
-test/jdk/java/util/zip/ZipFile/ReadAfterClose.java
-test/jdk/java/util/zip/ZipFile/ReleaseInflater.java
-test/jdk/java/util/zip/ZipFile/ShortRead.java
-test/jdk/java/util/zip/ZipFile/TestCleaner.java
-test/jdk/java/util/zip/ZipFile/ZipFileSharedSourceTest.java"
-consumer_tests="test/jdk/java/net/URLClassLoader/JarLoaderCloseTest.java
-test/jdk/java/util/ServiceLoader/basic/ServiceLoaderBasicTest.java
-test/jdk/java/util/jar/JarFile/mrjar/MultiReleaseJarAPI.java
-test/jdk/java/util/jar/JarFile/VerifySignedJar.java
-test/jdk/java/util/jar/JarFile/SignedJarFileGetInputStream.java
-test/jdk/java/util/jar/JarFile/SignedJarPendingBlock.java"
-for gc in Serial G1 Z; do
-  (cd "$ROOT/base" && timeout --kill-after=30s 30m make CONF=zip-qual JOBS=4 test \
-    TEST="$consumer_tests" JTREG="JOBS=2;JAVA_OPTIONS=-XX:+Use${gc}GC -Xmx128m") \
-    > "$ROOT/results/base-$gc-tests.log" 2>&1
-  cp -a "$ROOT/base/build/zip-qual/test-results" "$ROOT/results/base-$gc-test-results"
-  (cd "$ROOT/candidate" && timeout --kill-after=30s 30m make CONF=zip-qual JOBS=4 test \
-    TEST="$cache_tests $consumer_tests" JTREG="JOBS=2;JAVA_OPTIONS=-XX:+Use${gc}GC -Xmx128m") \
-    > "$ROOT/results/candidate-$gc-tests.log" 2>&1
-  cp -a "$ROOT/candidate/build/zip-qual/test-results" "$ROOT/results/candidate-$gc-test-results"
-done
-"$BOOT_JDK/bin/javac" -d "$ROOT/classes" "$Q/ZipCacheQualification.java" \
-  "$Q/ZipCacheFootprint.java" "$Q/ZipInflaterProbe.java"
-"$BOOT_JDK/bin/jar" --create --file "$ROOT/workload.jar" -C "$ROOT/classes" .
-printf 'Premain-Class: ZipCacheFootprint\n' > "$ROOT/agent.mf"
-"$BOOT_JDK/bin/jar" --create --file "$ROOT/footprint-agent.jar" \
-  --manifest "$ROOT/agent.mf" -C "$ROOT/classes" .
-gcc -shared -fPIC -O2 -I"$CANDIDATE_JDK/include" -I"$CANDIDATE_JDK/include/linux" \
-  "$Q/zipalloc.c" -o "$ROOT/libzipalloc.so" -ldl
-"$BOOT_JDK/bin/java" -cp "$ROOT/workload.jar" ZipCacheQualification prepare "$ROOT/fixtures"
-for gc in Serial G1 Z; do
-  for label in base candidate; do
-    image="$ROOT/$label/build/zip-qual/jdk"
-    timeout --kill-after=5s 30s "$image/bin/java" -Xms128m -Xmx128m -XX:+Use${gc}GC \
-      -cp "$ROOT/workload.jar" ZipCacheQualification lifecycle "$ROOT/fixtures" \
-      > "$ROOT/results/$label-$gc-lifecycle.log" 2>&1
-    timeout --kill-after=5s 30s "$image/bin/java" -Xms128m -Xmx128m -XX:+Use${gc}GC \
-      --add-opens java.base/java.util.zip=ALL-UNNAMED \
-      --add-opens java.base/java.util=ALL-UNNAMED -javaagent:"$ROOT/footprint-agent.jar" \
-      -cp "$ROOT/workload.jar" ZipCacheFootprint > "$ROOT/results/$label-$gc-footprint.log" 2>&1
-    "$image/bin/java" -Xms128m -Xmx128m -XX:+Use${gc}GC -XX:+PrintFlagsFinal -version \
-      > "$ROOT/results/$label-$gc-flags.log" 2>&1
-    for width in 1 32; do
-      LD_PRELOAD="$ROOT/libzipalloc.so" timeout --kill-after=5s 30s "$image/bin/java" \
-        -Xms128m -Xmx128m -XX:+Use${gc}GC --enable-native-access=ALL-UNNAMED \
-        --add-opens java.base/java.util.zip=ALL-UNNAMED -Dmeasure=true \
-        -Dallocator="$ROOT/libzipalloc.so" -cp "$ROOT/workload.jar" \
-        ZipInflaterProbe "$width" 65536 1024 8 > "$ROOT/results/$label-$gc-native$width.log" 2>&1
-    done
-  done
-done
-python3 -E "$Q/check-allocation.py" "$ROOT/results"
-```
+The exact twenty-one candidate and six baseline test paths, per-stage timeouts
+and unique log labels are in run-linux.sh. It then compiles the Java workload,
+footprint agent and native allocator probe from this checkout, creates fixtures
+once, and runs lifecycle/container/native checks separately from timing. The
+allocation checker must pass before the uninstrumented runner starts.
 
 The allocator helper requires Linux/glibc and dynamically linked plain zlib;
-it fails if interposition is absent. Requested client bytes exclude its metadata;
-diagnostic usable bytes are not savings. No instrumented time is reported or
-used for performance. Empty/singleton containers must disappear without resource
-growth; promoted containers, live native requests and identities must match B,
-with zero replacements and complete release at close. No native-byte generalization
-to another backend is needed for this heap-container change.
+it fails if interposition is absent. Requested live client bytes exclude its
+metadata. It also reports `observed-zalloc-calls`: cumulative allocator-callback
+calls for each tracked inflater, summed across those clients. The probe retains
+their last observed counters after end; zero live bytes at close does not reset
+the cumulative count. JNI z_stream allocation and diagnostic metadata allocation
+are outside this zalloc-call counter. Counters count callback attempts, including
+failed attempts; an allocation failure stops the run.
+
+Empty/singleton containers must disappear without resource growth; promoted
+containers, live native requests and identities must match B, with zero replacement
+inflaters. Read/idle/repeated-idle native bytes, blocks and cumulative calls must
+stay equal after the initial read: stable live bytes alone cannot rule out native
+allocation churn. The final retained counter must match the last live observation,
+and close must release every live client block. Counter comparisons and live-byte
+checks are separate. These are client-allocation/lifetime observations, not RSS,
+OS release or allocator-retained memory savings; diagnostic usable bytes are not
+savings either. No instrumented duration is reported or used for performance.
 
 ### Fixed representative startup and throughput
 
-Only after all prior gates pass, on the same quiet Linux host:
-
-```sh
-python3 "$Q/run-qualification.py" --baseline "$BASE_JDK" --candidate "$CANDIDATE_JDK" \
-  --workload-jar "$ROOT/workload.jar" --fixture "$ROOT/fixtures" \
-  --out "$ROOT/results/timing"
-```
+The supervised sequence invokes run-qualification.py only after all prior gates
+pass. Do not invoke it as a way to bypass the outer work/resource limits.
 
 Seven cases protect metadata-only opens, serial full/partial 4 KiB reads,
 four independent readers sharing one ZIP, repeated 32-stream bursts with serial
@@ -202,18 +160,30 @@ Batch/startup timeouts are 90/15 seconds and the whole runner has a 30-minute
 deadline. Output directories cannot be reused; observations and partial timeout
 output are preserved. Any failed/inconclusive gate exits nonzero.
 
-Proposed resolution gates, fixed before execution: every warm row's paired
-geometric elapsed-time ratio has a one-sided 95% upper bound <=1.02; startup
-<=1.03. The small-sample log-ratio t constants are 2.919986 for three pairs and
-2.015048 for six. These are explicit proposed budgets, not previously approved
-regressions, proof of exact zero cost or family-wise confidence. No pooled win
-hides a protected loss. Inconclusive spread is a non-pass, without more samples.
+The proposed 1.02 warm / 1.03 startup upper-ratio bounds describe measurement
+resolution checks; they are **not user approval to accept a 2% or 3% slowdown**.
+For each row the summary retains all paired ratios, sample count, geometric mean
+and lower/upper per-row one-sided 95% log-ratio t bounds (constants 2.919986 for
+three process pairs, 2.015048 for six). Small samples do not establish exact
+zero cost, normality or simultaneous/family-wise confidence. No pooled win may
+hide a protected loss; no samples are added to rescue uncertain results.
 
-Stage 1 ends with one recommendation. If builds, correctness, allocation/reuse
-or protected timings fail or remain inconclusive, preserve results and recommend
-against integration on that evidence; do not request three more performance
-hosts. If this modest deterministic heap saving survives the gates, recommend
-normal PR correctness review/CI, with Linux-only performance claims.
+A row is flagged for explicit trade-off review if all its independent paired
+ratios are slower than baseline, or its lower bound exceeds one. This observed
+consistency is a review flag, not a claim of statistical certainty. The runner
+exits 3 for such rows even when they meet the proposed resolution bounds. It
+exits 2 for unresolved/out-of-resolution bounds without a consistent-loss flag.
+It exits zero only for no detected consistent loss within the proposed resolution;
+that status is neither “regression-free” nor permission to accept a slowdown.
+Mixed signs and positive point estimates also remain visible for human review.
+
+Stage 1 ends with one evidence report. Failed correctness/allocation or unresolved
+timing does not proceed automatically. A consistent measured loss requires an
+explicit user trade-off decision, with its magnitude, uncertainty and modest heap
+saving presented together; do not accept it by citing 2%/3%. If Linux is worthwhile
+without accepting an unauthorized loss, recommend normal PR correctness review/CI
+with Linux-only performance evidence. Otherwise preserve the non-pass/review
+outcome, without requesting three more performance hosts or retuning the sample.
 
 ## Stage 2: normal supported-platform PR correctness, if worthwhile
 

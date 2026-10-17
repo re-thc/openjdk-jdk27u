@@ -95,7 +95,8 @@ for gc in ('Serial', 'G1', 'Z'):
                 raise RuntimeError('Missing startup success oracle')
             check_checksum('startup', int(match[1]))
             record(dict(gc=gc, kind='startup', case='startup', pair=pair,
-                             policy=policy, warmup=pair < 2, value_ns=elapsed))
+                             policy=policy, warmup=pair < 2, value_ns=elapsed,
+                             startup_kind='fresh-JVM/warm-filesystem'))
     (args.out / 'observations.json').write_text(json.dumps(rows, indent=2) + '\n')
 
 summary = []
@@ -110,15 +111,28 @@ for gc in ('Serial', 'G1', 'Z'):
             ratios.append(values['candidate'] / values['baseline'])
         logs = [math.log(value) for value in ratios]
         critical = 2.015048 if case == 'startup' else 2.919986
-        upper = math.exp(statistics.mean(logs)
-                         + critical * statistics.stdev(logs) / math.sqrt(len(logs)))
-        budget = 1.03 if case == 'startup' else 1.02
+        margin = critical * statistics.stdev(logs) / math.sqrt(len(logs))
+        lower = math.exp(statistics.mean(logs) - margin)
+        upper = math.exp(statistics.mean(logs) + margin)
+        resolution_bound = 1.03 if case == 'startup' else 1.02
+        # Consistency is a review flag, not a small-sample significance claim.
+        consistent_loss = all(value > 1 for value in ratios) or lower > 1
         summary.append(dict(gc=gc, case=case, paired_ratios=ratios,
+                            pair_count=len(ratios),
                             geometric_mean=math.exp(statistics.mean(logs)),
-                            per_row_one_sided_95_upper=upper, budget=budget,
-                            passes_resolution_gate=upper <= budget))
+                            per_row_one_sided_95_lower=lower,
+                            per_row_one_sided_95_upper=upper,
+                            proposed_resolution_bound=resolution_bound,
+                            within_resolution_bound=upper <= resolution_bound,
+                            requires_explicit_tradeoff_review=consistent_loss))
 (args.out / 'timing-summary.json').write_text(json.dumps(summary, indent=2) + '\n')
-passed = all(row['passes_resolution_gate'] for row in summary)
-print(json.dumps({'timing_gate_pass': passed,
-                  'note': 'Per-row small-sample bounds, not universal or family-wise neutrality.'}))
-raise SystemExit(0 if passed else 2)
+within_bounds = all(row['within_resolution_bound'] for row in summary)
+losses = [dict(gc=row['gc'], case=row['case']) for row in summary
+          if row['requires_explicit_tradeoff_review']]
+status = ('explicit-tradeoff-review-required' if losses else
+          'inconclusive-or-outside-resolution' if not within_bounds else
+          'no-consistent-loss-detected-at-proposed-resolution')
+print(json.dumps(dict(status=status, resolution_checks_pass=within_bounds,
+                      consistent_loss_rows=losses,
+                      note='Small samples; no regression-free claim or approval to accept a slowdown.')))
+raise SystemExit(3 if losses else 0 if within_bounds else 2)

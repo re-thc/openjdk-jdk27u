@@ -21,6 +21,11 @@ reuse checks and protected startup/throughput cases. Only a worthwhile Linux
 result proceeds to normal supported-platform PR correctness CI. Its harness
 sources and self-checks are prepared for review, not compiled or executed;
 other native performance campaigns are not prerequisites by assumption.
+The full Linux sequence has a four-hour supervisor with owned-process cleanup.
+Proposed 2%/3% resolution checks do not authorize a slowdown: consistently slower
+results require explicit trade-off review. Qualification reports observed native
+allocation calls separately from live client bytes, not RSS or allocator-retained
+savings; startup means a fresh JVM with warm filesystem caches.
 
 ## Build and regression
 

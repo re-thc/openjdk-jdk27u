@@ -29,6 +29,8 @@ import java.util.zip.*;
 
 public class ZipInflaterProbe {
     static final Field INF, ZSREF, ADDRESS;
+    // Preserve last observed per-client cumulative calls after native end.
+    static final Map<Inflater, Long> LAST_CALLS = new IdentityHashMap<>();
     static {
         try {
             INF = InflaterInputStream.class.getDeclaredField("inf");
@@ -101,7 +103,7 @@ public class ZipInflaterProbe {
         } finally { Files.delete(jar); }
     }
     static void report(String label, Inflater[] infs) throws Exception {
-        long open = 0, bytes = 0, usable = 0, allocations = 0;
+        long open = 0, bytes = 0, usable = 0, allocations = 0, calls = 0;
         for (var inf : infs) {
             long address = address(inf);
             if (address != 0) {
@@ -109,11 +111,13 @@ public class ZipInflaterProbe {
                 if (Boolean.getBoolean("measure")) {
                     long[] a = measure(address);
                     bytes += a[0]; usable += a[1]; allocations += a[2];
+                    LAST_CALLS.put(inf, a[3]);
                 }
             }
+            calls += LAST_CALLS.getOrDefault(inf, 0L);
         }
         if (Boolean.getBoolean("measure"))
-            System.out.printf("%s open=%d native-requested=%d diagnostic-usable=%d allocations=%d%n", label, open, bytes, usable, allocations);
+            System.out.printf("%s open=%d native-requested=%d diagnostic-usable=%d allocations=%d observed-zalloc-calls=%d%n", label, open, bytes, usable, allocations, calls);
         else
             System.out.printf("%s open=%d%n", label, open);
     }
