@@ -265,24 +265,27 @@ public final class SegmentBulkOperations {
         } else if (length < NATIVE_THRESHOLD_MISMATCH) {
             return mismatch(src, srcFromOffset, dst, dstFromOffset, 0, (int) length, srcAndDstBytesDiffer);
         } else {
+            // Read once: C1 calls these virtually, at every use.
+            final Object srcBase = src.unsafeGetBase();
+            final long srcAddress = src.unsafeGetOffset() + srcFromOffset;
+            final Object dstBase = dst.unsafeGetBase();
+            final long dstAddress = dst.unsafeGetOffset() + dstFromOffset;
             long i;
-            if (SCOPED_MEMORY_ACCESS.getByte(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset) !=
-                    SCOPED_MEMORY_ACCESS.getByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset)) {
+            if (SCOPED_MEMORY_ACCESS.getByte(src.sessionImpl(), srcBase, srcAddress) !=
+                    SCOPED_MEMORY_ACCESS.getByte(dst.sessionImpl(), dstBase, dstAddress)) {
                 return 0;
             }
             // A threshold below a word also brings shorter ranges here. The
             // first test is a constant, so this costs nothing by default.
             if (NATIVE_THRESHOLD_MISMATCH >= Long.BYTES || length >= Long.BYTES) {
-                final long s = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset, false);
-                final long d = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset, false);
+                final long s = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), srcBase, srcAddress, false);
+                final long d = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dstBase, dstAddress, false);
                 if (s != d) {
                     return mismatch(s, d);
                 }
             }
             i = SCOPED_MEMORY_ACCESS.vectorizedMismatchLargeForBytes(src.sessionImpl(), dst.sessionImpl(),
-                    src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset,
-                    dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset,
-                    length);
+                    srcBase, srcAddress, dstBase, dstAddress, length);
             if (i >= 0) {
                 return i;
             }
