@@ -3,9 +3,12 @@
 This local source candidate is based directly on fork
 `89885a6288e7aaabd01678a704a586272c0f96e3`. It is independent of the rejected
 unknown-frequency inlining policy and the separately scoped G1 polling work.
-No JDK/ADLC build, Java compilation, JVM execution, benchmark, publication or CI
-launch was performed. This is a reviewable implementation, not a validated
-performance result or an upstream-approved patch.
+Source is published on `review/decoder-int-lowmask`; the implementation and
+benchmark revision is `340ecf10da523566c71b0dad2f4b162a3adeada0`. No JDK/ADLC
+build, Java compilation, JVM execution, benchmark or CI launch was performed.
+This is a reviewable implementation, not a validated performance result or an
+upstream-approved patch. Later preparation commits do not change the matcher,
+14 semantic targets or three benchmark cases.
 
 ## Retained target evidence and upstream work
 
@@ -124,23 +127,11 @@ only for this scalar diagnostic micro. Compare each mode on matched images; do n
 substitute BMI2-off timing for the original BMI2-enabled baseline or claim that
 micro results establish codec benefit. The benchmark has not been compiled/run.
 
-## One compact validation, deferred until an execution slot is assigned
+## Deferred decoder-only validation
 
-No execution is requested in this source turn. First build matching x86 images
-from the unchanged base and this local commit using the same managed toolchain
-and configure options. Qualify ADLC generation and fastdebug semantics before
-timing. From the respective checkout, focused commands are:
-
-```sh
-make CONF="$JDK_CONF" hotspot
-make CONF="$JDK_CONF" test \
-  TEST=test/hotspot/jtreg/compiler/intrinsics/bmi/TestBzhiIntMask.java
-make CONF="$JDK_CONF" test TEST=test/hotspot/jtreg/compiler/intrinsics/bmi
-# Baseline, with only the new test copied there: semantic reference control.
-make CONF="$BASE_CONF" test \
-  TEST=test/hotspot/jtreg/compiler/intrinsics/bmi/TestBzhiIntMask.java \
-  JTREG='JAVA_OPTIONS=-DVerifyIR=false'
-```
+The execution packet below replaces the earlier generic commands. No execution
+is requested in this source turn. Qualify ADLC generation and semantics before
+timing; preserve default inlining, GC and allocation behavior.
 
 The decisive compact codec cell is source L1 decode on the same retained native
 frame and same classes/output reuse, with the original option vector:
@@ -150,28 +141,170 @@ frame and same classes/output reuse, with the original option vector:
 -cp <pinned-classes> CodecProbe decode <corpus> 1 <identical-native-frame>
 ```
 
-1. Verify source/image/frame hashes, CPU features and effective default BMI2.
-   Preserve current default inlining, GC and allocation behavior. If BMI2 is
-   unavailable or disabled under the original configuration, this matcher has
-   no applicability there. Reuse the frame; no encoder recovery probe is needed.
-2. Use one separate diagnostic process per image with normal profiling/inlining,
-   targeted `decodeSequencesRolling` Ideal/Mach output, final assembly and
-   compilation XML. Confirm both original tree coverages become this matcher,
-   count normalization remains, dst differs from both real inputs, flags and
-   saturation paths stay correct, and account for inserted copies/spills, code
-   size and compile cost. Do not infer savings from an instruction mnemonic or
-   a small isolated kernel alone. A covering failure is a localization result.
-3. Once correctness and actual target activation pass, use sequential ABBA then
-   BAAB fresh-process decode runs with identical flags/warmup on the same frame.
-   Keep diagnostic runs separate. Preserve every sample and pair direction.
-   Report the paired end-to-end result even if the code shape improves. A valid
-   no-benefit result rejects this as a codec performance lead.
-
-GC/allocation can be measured alternatives if variance remains; they are not
-assumed causes. Any JFR/GC/allocation diagnostics must remain separate from the
-timing cells and retain their actual observations. Do not switch to G1, force
-helper inlining or rewrite zero-width/saturation behavior to manufacture a win.
+Any later GC/allocation diagnostics require their own assignment and must remain
+separate from timing. Do not switch to G1, force helper inlining or rewrite
+zero-width/saturation behavior to manufacture a win.
 The existing runner also compiles probes and times encode cells, so do not use
 its whole matrix as this decoder-only validation. JMH runs, if later assigned,
 use existing managed dependencies and remain supporting evidence. No speedup,
 machine-code safety or final compiler-cost result is claimed by source review.
+
+## Execution packet from the source-only sweep
+
+Preparation is complete at the branch head carrying this packet. The product,
+semantic test and micro source are identical to `340ecf10da5`; the companion
+[driver](compiler-decoder-int-lowmask-validate.py) checks their full SHA256s.
+Use `git rev-parse HEAD` in the candidate checkout to freeze the preparation
+commit as well. The separate baseline checkout is
+`/workspace/executor-lowmask-base`, detached at
+`89885a6288e7aaabd01678a704a586272c0f96e3`. The candidate checkout is
+`/workspace/executor-bzhi-jdk`; the unmodified codec checkout is
+`/workspace/executor-jzstd` at `7a6b345d0df3d8571a30f4a9c974dfaa3a10d9b6`.
+
+The sweep found no local JDK build, JVM, benchmark or CI process. That observation
+retires the old *local* serial-slot wait; it does not establish availability in
+another campaign's environment or grant execution authority. The parent owns
+the cold-call campaign and resource scheduling. No process was stopped, and
+the shared checkout and its old build directories were not modified. GitHub
+reported zero Actions runs for this review branch. This lead is not waiting
+for CI or Mac hardware.
+
+The remaining non-CI blockers are explicit execution authority and the pinned
+input artifact. This workspace has no probe classes, corpus or native L1 frame
+from the retained target capture. The parent/evidence owner must supply the
+corpus and identical native frame with independently retained expected SHA256s,
+or explicitly authorize a replacement cell whose results will be labelled as
+new evidence. The different macOS measurement JSON is not a substitute for
+the missing target artifacts. The driver never generates a frame or runs an
+encoder. Probe classes are compiled once from the pinned sources only after
+execution is assigned. Existing managed GCC16, boot JDK27 and jtreg83 paths are
+present; no installation, dependency download or reuse of an unproven old image
+is part of this packet.
+
+Reserve one Linux x64 BMI2 host exclusively for this lead after the parent
+releases the cold-call slot: four CPU equivalents, a 16 GiB memory limit and
+24 GiB of free build/output disk, with a hard 120-minute overall ceiling.
+The inspected environment has a four-CPU cgroup quota, 16 GiB memory limit and
+approximately 27 GiB free disk after creating the baseline checkout. These
+are reservation limits, not predicted completion times. Build all four images
+sequentially, with four make jobs: matching baseline/candidate release images
+for final code and timing, and matching fastdebug images for ADLC/assertions
+and graph evidence. Build ceiling is 70 minutes; subsequent subprocess budgets
+are qualification 30, probe preparation two, diagnostics five and timing three.
+The remaining ten minutes cover manual review and read-only provenance checks.
+The parent must assign/enforce the overall 120-minute reservation. Stop
+inconclusive when a ceiling or prerequisite fails; do not add more cells.
+
+After that assignment, ordinary checkout-based build commands are:
+
+```sh
+timeout --kill-after=10s 70m bash -s > /workspace/executor-lowmask-build.log 2>&1 <<'BUILD'
+set -euo pipefail
+source /workspace/toolchains/activate.sh
+common=(
+  --with-jobs=4
+  --with-boot-jdk=/workspace/toolchains/jdk27
+  --with-jtreg=/workspace/toolchains/jtreg83
+  --with-freetype=system
+  --with-freetype-include=/workspace/toolchains/sysroot/usr/include/freetype2
+  --with-freetype-lib=/workspace/toolchains/sysroot/usr/lib/x86_64-linux-gnu
+  --with-toolchain-path=/workspace/toolchains/gcc16/bin
+  '--with-extra-ldflags=-fuse-ld=mold -B/workspace/toolchains/mold/bin'
+  --x-includes=/workspace/toolchains/sysroot/usr/include
+  --x-libraries=/workspace/toolchains/sysroot/usr/lib/x86_64-linux-gnu
+  --with-cups-include=/workspace/toolchains/sysroot/usr/include
+  --with-fontconfig-include=/workspace/toolchains/sysroot/usr/include
+  --with-alsa-include=/workspace/toolchains/sysroot/usr/include
+  --with-alsa-lib=/workspace/toolchains/sysroot/usr/lib/x86_64-linux-gnu
+)
+for root in /workspace/executor-lowmask-base /workspace/executor-bzhi-jdk; do
+  cd "$root"
+  test -z "$(git status --porcelain --untracked-files=no)"
+  for mode in release fastdebug; do
+    bash configure --with-conf-name="lowmask-$mode" --with-debug-level="$mode" "${common[@]}"
+    make CONF="lowmask-$mode" JOBS=4 images
+    git rev-parse HEAD > "build/lowmask-$mode/lowmask-source-head.txt"
+    sha256sum "build/lowmask-$mode/spec.gmk" \
+      "build/lowmask-$mode/jdk/bin/java" \
+      "build/lowmask-$mode/jdk/lib/server/libjvm.so" \
+      "build/lowmask-$mode/jdk/lib/modules" \
+      "build/lowmask-$mode/jdk/release" > "build/lowmask-$mode/lowmask-build-sha256.txt"
+  done
+done
+BUILD
+```
+
+The driver prints all later commands without creating output directories or
+starting subprocesses by default:
+
+```sh
+cd /workspace/executor-bzhi-jdk
+python3 doc/compiler-decoder-int-lowmask-validate.py
+```
+
+Once the parent supplies the corpus/frame at the driver's documented paths and
+their expected hashes, run one stage at a time. Set `CORPUS_SHA256` and
+`FRAME_SHA256` to those supplied values, not hashes first calculated from an
+unidentified replacement. Both variables are required by the following shell
+before any execution. Preserve the same output directory across stages:
+
+```sh
+set -euo pipefail
+: "${CORPUS_SHA256:?Expected corpus SHA256 from the evidence owner}"
+: "${FRAME_SHA256:?Expected frame SHA256 from the evidence owner}"
+driver=doc/compiler-decoder-int-lowmask-validate.py
+inputs=(--corpus-sha256 "$CORPUS_SHA256" --frame-sha256 "$FRAME_SHA256")
+python3 "$driver" --stage qualify --execute
+python3 "$driver" --stage prepare --execute
+python3 "$driver" --stage diagnose --execute "${inputs[@]}"
+```
+
+Review the activation and allocation criteria below before invoking timing:
+
+```sh
+python3 "$driver" --stage time --execute "${inputs[@]}"
+```
+
+Qualification runs the focused test on candidate fastdebug/release, the BMI
+suite on candidate fastdebug, and the focused semantic control on baseline
+fastdebug with IR verification disabled. This uses the candidate test tree
+directly with the selected image; no baseline source edit is needed. The driver
+rejects a focused run that does not report one passing test. It records exact
+commands, source heads, image and input hashes, logs and all five sample windows
+per timing process. Image provenance must name the checkout head and records
+the configure spec, JVM, launcher and module image. It rejects ambient Java
+options, tracked source changes,
+input mismatches, extra candidate source changes, existing stage output and
+nonzero exits. Produced class hashes and the exact class set must match a
+completed preparation from the same source
+heads; later stages also require completed prerequisites and unchanged recorded
+images/inputs. Subprocesses share each stage's fixed wall-time budget and their
+process group is killed on timeout. No test result is inferred from merely
+printing this plan.
+
+The diagnostic stage has four flag queries and four separate decode processes.
+Both release images capture actual final code and compilation XML; fastdebug
+adds `BEFORE_MATCHING`, `MATCHING`, `REGISTER_ALLOCATION` and `FINAL_CODE` output.
+An effective BMI2-off flag query stops the stage as inapplicable.
+Fastdebug graph/code is supporting evidence and cannot stand in for release
+allocation or timing. Before timing, this lead's owner must establish default
+BMI2 applicability, both original target coverages, safe destination allocation,
+retained wrapping/saturation semantics, copies/spills, code size and compilation
+cost from those captures. If readable release disassembly is unavailable, retain
+bytes and mark physical-code claims unverified; do not download a disassembler
+or claim activation from mnemonics alone. Failure to activate is a localization
+result, and failure of correctness stops qualification.
+
+Timing is exactly ABBA then BAAB, with the original SerialGC/vector/1 GiB option
+vector, two-second warmup and five 700 ms windows in each of eight fresh JVMs.
+No diagnostics enter those commands. The manifest retains all four adjacent
+pair ratios and their direction; it does not infer statistical significance.
+End-to-end no benefit rejects the codec performance lead even if the matcher
+selects better code. The three JMH cases and their four-batch setup checks remain
+uncompiled/unexecuted: no managed JMH bundle was identified in the checked
+toolchain/cache paths. If that supporting micro qualification is later assigned
+with a managed bundle, use
+`--with-jmh=<bundle>` and
+`make CONF=lowmask-release test TEST=micro:org.openjdk.bench.vm.compiler.VariableIntLowMask MICRO='FORK=1;WARMUP_ITER=1;WARMUP_TIME=1;ITER=1;TIME=1'`
+on matched images. It is outside this fixed decoder campaign and cannot replace
+codec activation or end-to-end evidence.
