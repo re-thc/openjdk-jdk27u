@@ -67,7 +67,7 @@ void Dictionary::Config::free_node(void* context, void* memory, Value const& val
   FreeHeap(memory);
 }
 
-const int _resize_load_trigger = 2;       // load factor that will trigger the resize
+const int _resize_load_trigger = 5;       // load factor that will trigger the resize
 
 int Dictionary::table_size() const {
   return 1 << _table->get_size_log2(Thread::current());
