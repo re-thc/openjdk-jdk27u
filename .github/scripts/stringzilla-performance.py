@@ -223,7 +223,7 @@ def main():
     parser.add_argument("--original-source", type=Path, required=True)
     parser.add_argument("--fork-source", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--backend", choices=("avx2", "serial", "neon", "msvc"), required=True)
+    parser.add_argument("--backend", choices=("avx2", "avx512", "serial", "neon", "msvc"), required=True)
     parser.add_argument("--manifest", type=Path, help="Use a focused workload manifest.")
     args = parser.parse_args()
     args.original, args.fork = args.original.resolve(), args.fork.resolve()
@@ -277,7 +277,8 @@ def run(args):
     arm = platform.machine().lower() in ("aarch64", "arm64")
     assert (args.backend == "neon") == arm
     assert (args.backend == "msvc") == (os.name == "nt")
-    backends = [(args.backend, [] if arm else ["-XX:UseAVX=" + ("0" if args.backend == "serial" else "2")])]
+    backends = [(args.backend, [] if arm else ["-XX:UseAVX=" +
+                ("0" if args.backend == "serial" else "3" if args.backend == "avx512" else "2")])]
     probe = args.output / "backend-probe"
     probe.mkdir()
     probe_source = probe / "BackendProbe.java"
@@ -294,7 +295,7 @@ def run(args):
 """)
     command([javac, "-d", probe, probe_source])
     attestation = {}
-    expected_backend = {"serial": 0, "msvc": 0, "avx2": 1, "neon": 4}[args.backend]
+    expected_backend = {"serial": 0, "msvc": 0, "avx2": 1, "avx512": 2, "neon": 4}[args.backend]
     for control in ("enabled", "disabled"):
         probe_flags = ["-XX:ActiveProcessorCount=1", "-XX:+UseSerialGC", "-Xshare:off", *backends[0][1], "-XX:" + ("+" if control == "enabled" else "-") + "UseStringZillaIntrinsics"]
         selected = command([java_paths[control], *probe_flags, "--add-opens=java.base/java.lang=ALL-UNNAMED",
@@ -320,7 +321,8 @@ def run(args):
     for backend, backend_flags in backends:
         for tier, tier_flags in (("interpreter", ["-Xint"]), ("c1", ["-XX:TieredStopAtLevel=1"]), ("c2", ["-XX:-TieredCompilation"])):
             for row in rows:
-                if backend not in row["backends"].split(",") or tier not in row["tiers"].split(","):
+                manifest_backend = "avx2" if backend == "avx512" else backend
+                if manifest_backend not in row["backends"].split(",") or tier not in row["tiers"].split(","):
                     continue
                 group = []
                 for offset in range(3):

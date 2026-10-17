@@ -1,0 +1,69 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+
+name: StringZilla AVX-512 existing-image qualification
+
+on:
+  push:
+    branches: [codex/stringzilla-avx512-artifact-qualification]
+    paths:
+      - .github/workflows/stringzilla-avx512-artifacts.yml
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: stringzilla-avx512-artifact-qualification
+  cancel-in-progress: false
+
+jobs:
+  qualify:
+    name: AVX-512 existing complete images
+    runs-on: ubuntu-26.04
+    timeout-minutes: 180
+    steps:
+      - name: Checkout measurement helpers
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: driver
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+
+      - name: Probe physical AVX-512 capability
+        id: cpu
+        run: python3 driver/.github/scripts/stringzilla-avx512-artifacts.py probe
+
+      - name: Checkout measured fork source
+        if: steps.cpu.outputs.available == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: adbea61e47c00f12cdd6458ed96777914ee22d99
+          path: fork-source
+          persist-credentials: false
+
+      - name: Checkout untouched original source
+        if: steps.cpu.outputs.available == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: e206bae32b2a6cc1fa9464ad34d75f2df4b347e9
+          path: original-source
+          persist-credentials: false
+
+      - name: Verify and measure existing image archives
+        if: steps.cpu.outputs.available == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 driver/.github/scripts/stringzilla-avx512-artifacts.py measure 2>&1 |
+            tee perf-output/experiment.log
+
+      - name: Retain capability receipt, raw results and provenance
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-avx512-existing-images-${{ github.sha }}
+          path: perf-output
+          if-no-files-found: error
+          retention-days: 30
