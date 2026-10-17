@@ -4,8 +4,9 @@
 Preparation and verification launch no JDK, compiler or workload. A later explicit
 runner invocation spends the claim; failures never restore it or reuse samples.
 """
-import hashlib
+import csv
 from datetime import datetime
+import hashlib
 import json
 import math
 import os
@@ -19,7 +20,7 @@ import sys
 import time
 
 import image_manifest
-from runner_process import Identity, Uncertain, check_image, image_paths, snapshot, state
+from runner_process import Identity, PidfdEvidence, Uncertain, check_image, image_paths, snapshot
 
 BASE = "89885a6288e7aaabd01678a704a586272c0f96e3"
 BASE_TREES = ("5b1009acd19e2b3c8c981b6f3b3180f8088dd2d9", "637cb780fb6375f39f53ab223f10df91f50175ed")
@@ -245,6 +246,65 @@ def load(path, digest):
     return binding
 
 
+def predecessor(binding):
+    """Validate the explicitly reviewed edge from the spent, failed attempt."""
+    edge = binding["predecessor"]
+    prior = load(Path(edge["binding"]), edge["binding_sha256"])
+    require("predecessor" not in prior, "only one explicitly reviewed successor is supported")
+    require(binding["claim"] == str(Path(prior["claim"]) / "successor"), "successor claim namespace changed")
+    for key in ("retained", "base_jdk", "manifest", "manifest_sha256", "provenance", "provenance_sha256",
+                "boot_id", "deadline_monotonic", "deadline_utc", "profile", "environment", "inputs",
+                "toolchains", "custody_files"):
+        require(binding[key] == prior[key], "successor changed baseline/original deadline")
+    record = pinned(Path(prior["claim"]) / "claim.json", edge["claim_sha256"])
+    failed = Path(edge["failed_output"])
+    require(record["binding_sha256"] == edge["binding_sha256"] and record["output"] == str(failed),
+            "predecessor claim/output mismatch")
+    analysis = pinned(failed / "analysis.json", edge["analysis_sha256"])
+    cleanup = pinned(failed / "cleanup.json", edge["cleanup_sha256"])
+    require(sha(failed / "cleanup.csv") == edge["cleanup_csv_sha256"], "predecessor identity census changed")
+    require(analysis["source_commit"] == record["candidate"] and analysis["binding_sha256"] == edge["binding_sha256"],
+            "predecessor analysis/source claim mismatch")
+    require(analysis["terminal_status"] == 125 and analysis["candidate_image_complete"] is False
+            and analysis["required_runtime_observations"] == dict.fromkeys(
+                ("cds", "jtreg_case_collector_executions", "host", "smoke", "workload_children"), 0),
+            "predecessor is not the unmeasured incomplete build")
+    require(not (failed / "stages/5/complete.json").exists()
+            and not image_paths(failed)["candidate"].exists(), "unexpected predecessor build completion")
+    require(cleanup["counts"]["live"] == 0 and cleanup["counts"]["error"] == 0
+            and not cleanup["unledgered_matching_workers"] and not cleanup["current_snapshot_errors"],
+            "predecessor has unresolved live/observation census")
+    # This records the limitation; it never supplies the missing old ECHILD proof.
+    require(edge["custody"] == "uncertain_missing_stage5_footer", "missing predecessor custody limitation")
+    return failed
+
+
+def prepare_successor(previous, previous_sha, failed, destination):
+    prior = load(previous.resolve(strict=True), previous_sha)
+    failed = failed.resolve(strict=True)
+    claim = Path(prior["claim"]) / "successor"
+    require(not claim.exists(), "successor already claimed")
+    edge = {"binding": str(previous.resolve(strict=True)), "binding_sha256": previous_sha,
+            "failed_output": str(failed), "claim_sha256": sha(Path(prior["claim"]) / "claim.json"),
+            "analysis_sha256": sha(failed / "analysis.json"), "cleanup_sha256": sha(failed / "cleanup.json"),
+            "cleanup_csv_sha256": sha(failed / "cleanup.csv"), "custody": "uncertain_missing_stage5_footer"}
+    binding = dict(prior, predecessor=edge, claim=str(claim))
+    predecessor(binding)
+    toolchains = Path(prior["toolchains"])
+    original(Path(prior["retained"]), Path(prior["manifest"]),
+             pinned(Path(prior["provenance"]), prior["provenance_sha256"]))
+    build_profile = profile(Path(prior["retained"]) / "base/build/scanner/spec.gmk")
+    require(build_profile == prior["profile"] and environment() == prior["environment"]
+            and inputs(toolchains, build_profile) == prior["inputs"], "original profile/environment/installed inputs changed")
+    binding.update(packet=packet_inputs())
+    require(not destination.resolve().is_relative_to(failed)
+            and not destination.resolve().is_relative_to(Path(prior["retained"]))
+            and not destination.resolve().is_relative_to(Path(prior["claim"])), "successor witness overlaps failed evidence/claim")
+    with destination.open("x") as stream:
+        stream.write(json.dumps(binding, sort_keys=True, indent=2) + "\n")
+    return binding
+
+
 def verify(binding, toolchains, timed=True):
     if timed:
         remaining(binding)
@@ -252,7 +312,10 @@ def verify(binding, toolchains, timed=True):
     require(toolchains.resolve(strict=True) == Path(binding["toolchains"]), "toolchain root changed")
     require(environment() == binding["environment"], "build environment changed")
     provenance = pinned(Path(binding["provenance"]), binding["provenance_sha256"])
-    require(str(claim_path(retained, provenance)) == binding["claim"], "claim namespace changed")
+    if "predecessor" in binding:
+        predecessor(binding)
+    else:
+        require(str(claim_path(retained, provenance)) == binding["claim"], "claim namespace changed")
     require(packet_inputs() == binding["packet"], "qualification packet changed")
     require(binding["manifest_sha256"] == provenance["image_manifest_sha256"], "manifest pin changed")
     image = original(retained, Path(binding["manifest"]), provenance)
@@ -272,19 +335,32 @@ def quiescent(binding):
         require(sha(retained / name) == digest, "old custody identity changed")
         identities.append(json.loads((retained / name).read_text())["identity"])
     current = snapshot()
-    for raw in identities:
-        identity = Identity(**raw)
-        item = current.get(identity.pid)
-        # A different birth is no longer the old attempt's process. Never signal
-        # it or adopt it merely because Linux reused the numeric PID.
-        require(item is None or item.identity != identity or state(item) != "live", "original worker still live")
+    if "predecessor" in binding:
+        failed = predecessor(binding)
+        with (failed / "cleanup.csv").open() as stream:
+            identities.extend({key: int(row[key]) for key in ("pid", "birth", "uid")} for row in csv.DictReader(stream))
+    with PidfdEvidence() as exits:
+        for raw in identities:
+            identity = Identity(**raw)
+            item = current.get(identity.pid)
+            # Different births are unrelated. No signals are sent by this census.
+            if item is not None and item.birth == identity.birth:
+                require(item.uid == identity.uid, "old birth changed UID")
+                require(exits.status(identity, item) != "live", "original worker still live")
+
+
+def preserved_outputs(binding):
+    paths = [Path(binding["retained"]).resolve(strict=True)]
+    if "predecessor" in binding:
+        paths.append(Path(binding["predecessor"]["failed_output"]).resolve(strict=True))
+    return paths
 
 
 def claim(binding, digest, output, candidate):
     remaining(binding)
     output = output.resolve(strict=True)
-    retained = Path(binding["retained"])
-    require(not output.is_relative_to(retained) and not retained.is_relative_to(output), "output overlaps old attempt")
+    for retained in preserved_outputs(binding):
+        require(not output.is_relative_to(retained) and not retained.is_relative_to(output), "output overlaps old attempt")
     require(not output.is_relative_to(Path(binding["toolchains"])), "output overlaps installed inputs")
     record = {"binding_sha256": digest, "candidate": candidate, "output": str(output),
               "base_jdk": binding["base_jdk"], "candidate_jdk": str(image_paths(output)["candidate"]),
@@ -304,9 +380,8 @@ def proposed_output(binding, output, toolchains, witness):
     require(not os.path.lexists(output), "continuation output already exists")
     target = output.resolve()
     target.parent.resolve(strict=True)
-    retained = Path(binding["retained"])
     require(toolchains.resolve(strict=True) == Path(binding["toolchains"]), "toolchain root changed")
-    for protected in (retained, Path(binding["toolchains"]), Path(binding["manifest"]),
+    for protected in (*preserved_outputs(binding), Path(binding["toolchains"]), Path(binding["manifest"]),
                       Path(binding["provenance"]), Path(binding["claim"]), witness.resolve(strict=True)):
         require(not target.is_relative_to(protected) and not protected.is_relative_to(target),
                 "proposed output overlaps retained inputs/witnesses")
@@ -330,13 +405,17 @@ def candidate_gate(binding, output, stage):
         require(json.loads((stage / "identity.json").read_text())["kind"] == "build", "not an image-build stage")
         footer = json.loads((stage / "complete.json").read_text())
         require(footer["clean"] is True and footer["command_status"] == 0 and footer["stopped"] is False
-                and footer["survivors"] is False and footer["drain_deadline_missed"] is False,
+                and footer["survivors"] is False and footer["drain_deadline_missed"] is False and footer["timed_out"] is False,
                 "candidate build did not complete successfully")
         check_image(Path(record["candidate_jdk"]))
     return record
 
 
 def main(args):
+    if args[0] == "prepare-successor" and len(args) == 5:
+        prepare_successor(Path(args[1]), args[2], Path(args[3]), Path(args[4]))
+        print(sha(Path(args[4])))
+        return
     if args[0] == "prepare" and len(args) == 7:
         prepare(Path(args[1]), Path(args[2]), Path(args[3]), args[4], Path(args[5]), Path(args[6]))
         print(sha(Path(args[6])))
@@ -368,7 +447,7 @@ def main(args):
         candidate_gate(binding, Path(args[3]), Path(args[4]))
         verify(binding, Path(binding["toolchains"]))
     else:
-        raise ValueError("usage: continuation.py prepare <retained> <manifest> <provenance> <provenance-sha> <toolchains> <new-binding>; remaining <binding> <sha>; bind <binding> <sha> <toolchains> <new-output> <candidate>; profile <binding> <sha> <output>; gate <binding> <sha> <output> <build-stage>")
+        raise ValueError("usage: continuation.py prepare <retained> <manifest> <provenance> <provenance-sha> <toolchains> <new-binding>; prepare-successor <spent-binding> <sha> <failed-output> <new-binding>; remaining <binding> <sha>; bind <binding> <sha> <toolchains> <new-output> <candidate>; profile <binding> <sha> <output>; gate <binding> <sha> <output> <build-stage>")
 
 
 if __name__ == "__main__":

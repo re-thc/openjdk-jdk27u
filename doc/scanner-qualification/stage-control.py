@@ -11,12 +11,13 @@ from dataclasses import asdict
 import json
 import os
 from pathlib import Path
+import re
 import signal
 import subprocess
 import sys
 import time
 
-from runner_process import (Identity, Scope, Uncertain, atomic_json, check_image,
+from runner_process import (Identity, PidfdEvidence, Scope, Uncertain, atomic_json, check_image,
                             checkpoint, healthy, image_paths, match, read_identity,
                             read_process, require_live, signal_owned, snapshot, stop_known)
 
@@ -36,8 +37,9 @@ def target_state(identity):
     try:
         process = read_process(identity.pid)
     except (FileNotFoundError, ProcessLookupError):
-        return "disappeared"
-    return match(identity, {process.pid: process})
+        process = None
+    with PidfdEvidence() as exits:
+        return exits.status(identity, process)
 
 
 def record(path, scope, processes, seen):
@@ -47,6 +49,8 @@ def record(path, scope, processes, seen):
             row = {"identity": asdict(scope.owned[pid]), "status": status}
             if pid in processes:
                 row["observed"] = asdict(processes[pid])
+            if scope.exits is not None and scope.owned[pid] in scope.exits.proofs:
+                row["exit_witness"] = scope.exits.proofs[scope.owned[pid]]
             if seen.get(pid) != row:
                 output.write(json.dumps(row, sort_keys=True) + "\n")
                 seen[pid] = row
@@ -92,6 +96,18 @@ def serve_checkpoint(directory, scope):
 
 
 def stage(directory, owner_path, duration, command, build=False):
+    with PidfdEvidence() as exits:
+        return run_stage(directory, owner_path, duration, command, build, exits)
+
+
+def build_seconds(duration):
+    value = re.fullmatch(r"([1-9][0-9]*)([smh])", duration)
+    if value is None:
+        raise ValueError("build duration must be positive seconds/minutes/hours")
+    return int(value[1]) * {"s": 1, "m": 60, "h": 3600}[value[2]]
+
+
+def run_stage(directory, owner_path, duration, command, build, exits):
     continuation = None
     if os.environ.get("SCANNER_CONTINUATION_BINDING"):
         from continuation import load, remaining
@@ -117,9 +133,9 @@ def stage(directory, owner_path, duration, command, build=False):
 
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
-    scope, seen = Scope(root.identity), {}
+    scope, seen = Scope(root.identity, exits=exits), {}
     atomic_json(directory / "identity.json", {"identity": asdict(root.identity), "owner": asdict(owner),
-                                               "kind": "build" if build else "stage"})
+                                               "kind": "build" if build else "stage", "command": command})
     deadline = time.monotonic() + 5
     while not (directory / "go").exists():
         require_live(owner, snapshot())
@@ -137,12 +153,17 @@ def stage(directory, owner_path, duration, command, build=False):
     failure = None
     survivors = False
     child = None
+    command_deadline = None
+    timed_out = False
     try:
         if continuation is not None:
             remaining(continuation)
         if stopping:
             raise Uncertain("stage stopped before payload launch")
-        child = subprocess.Popen(["timeout", "--signal=TERM", "--kill-after=12s", duration, *command], env=environment)
+        if build:
+            command_deadline = time.monotonic() + build_seconds(duration)
+        payload = command if build else ["timeout", "--signal=TERM", "--kill-after=12s", duration, *command]
+        child = subprocess.Popen(payload, env=environment)
         direct = read_process(child.pid)
         if direct.ppid != root.pid or direct.uid != root.uid:
             raise Uncertain("payload identity is not an owned direct child")
@@ -156,7 +177,11 @@ def stage(directory, owner_path, duration, command, build=False):
             if continuation is not None:
                 remaining(continuation)
             healthy(observer, processes, json.loads((observer_output / "memory-ready").read_text()), time.monotonic())
+            was_running = child.returncode is None
             no_children = reap_children(directory, root, scope, child)
+            if build and was_running and time.monotonic() >= command_deadline:
+                timed_out = True
+                stopping = True
             if no_children and child.returncode is None:
                 raise Uncertain("payload wait status lost")
             # A child may have exited since the evidence snapshot. Reaping is
@@ -197,7 +222,7 @@ def stage(directory, owner_path, duration, command, build=False):
                 number = signal.SIGTERM if now - cleanup_at < 10 else signal.SIGKILL
                 for identity in live:
                     if (identity, number) not in sent:
-                        signal_owned(identity, number)
+                        scope.signal(identity, number)
                         sent.add((identity, number))
                 if now - cleanup_at >= 12:
                     raise Uncertain(f"stage descendants still live/undrained: {live}")
@@ -218,7 +243,7 @@ def stage(directory, owner_path, duration, command, build=False):
                     print(f"uncertain fault observation: {admission_error}", file=sys.stderr)
                 errors = stop_known([identity for identity in scope.owned.values()
                                      if identity != root.identity], signal.SIGKILL,
-                                    send=signal_owned)
+                                    send=scope.signal)
                 for detail in errors:
                     print(f"uncertain fault target: {detail}", file=sys.stderr)
                 if reap_children(directory, root, scope, child):
@@ -234,15 +259,17 @@ def stage(directory, owner_path, duration, command, build=False):
         if failure is not None:
             print(f"stage custody incomplete: {failure}", file=sys.stderr)
     signal.alarm(5)
+    exits.close()  # Resource failure cannot leave a success footer behind.
     atomic_json(directory / "complete.json", {
         "identity": asdict(root.identity), "owner": asdict(owner), "clean": True,
         "members": [asdict(identity) for identity in scope.owned.values()],
         "command_status": child.returncode, "stopped": stopping, "survivors": survivors,
+        "timed_out": timed_out, "command_deadline_monotonic": command_deadline,
         "build_drain_seconds": BUILD_DRAIN_SECONDS if build else 0,
         "drain_started_monotonic": drain_at, "drain_deadline_missed": drain_missed,
         "drain_verified_monotonic": now if drain_at is not None else None,
         "cleanup_started_monotonic": cleanup_at})
-    return 125 if stopping or survivors else child.returncode
+    return 124 if timed_out else 125 if stopping or survivors else child.returncode
 
 
 def failed_custody(directory, root):
@@ -329,12 +356,12 @@ def stop_stage(directory, pid):
         token = json.loads((directory / "identity.json").read_text())
         if complete["owner"] != token["owner"]:
             raise Uncertain("stage completion owner differs from registered owner")
-        scope = Scope(identity, tuple(Identity(**item) for item in complete["members"]))
-        processes = snapshot()
-        # Retain Z0/disappearance classification after the supervisor itself exits.
-        record(directory / "processes.jsonl", scope, processes, {})
-        if scope.live(processes):
-            raise Uncertain("live owned workers after stage completion")
+        with PidfdEvidence() as exits:
+            scope = Scope(identity, tuple(Identity(**item) for item in complete["members"]), exits=exits)
+            processes = snapshot()
+            record(directory / "processes.jsonl", scope, processes, {})
+            if scope.live(processes):
+                raise Uncertain("live owned workers after stage completion")
     except Exception:
         failed_custody(directory, identity)
     return 0

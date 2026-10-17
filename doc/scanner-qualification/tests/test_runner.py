@@ -19,6 +19,7 @@ from unittest.mock import Mock, patch
 PACKET = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PACKET))
 import runner_process as proc
+snapshot_backend = proc.snapshot  # Used only with an explicit synthetic proc root.
 import image_manifest
 import continuation
 remaining_budget = continuation.remaining
@@ -44,15 +45,29 @@ class Offline(unittest.TestCase):
             guard = patch(name, side_effect=AssertionError("real backend forbidden: " + name))
             guard.start()
             self.addCleanup(guard.stop)
-        guard = patch.object(control, "snapshot", side_effect=AssertionError("real procfs forbidden"))
-        guard.start()
-        self.addCleanup(guard.stop)
+        for module in (control,continuation,proc):
+            guard = patch.object(module, "snapshot", side_effect=AssertionError("real procfs forbidden"))
+            guard.start()
+            self.addCleanup(guard.stop)
         def target(pid):
             observed = control.snapshot()
             if pid not in observed:
                 raise FileNotFoundError("synthetic disappearance")
             return observed[pid]
         guard = patch.object(control, "read_process", side_effect=target)
+        guard.start()
+        self.addCleanup(guard.stop)
+        def evidence():
+            def poll(pid):
+                try:
+                    item = control.read_process(pid)
+                except (FileNotFoundError, ProcessLookupError, KeyError):
+                    return True
+                return item.state in ("X", "Z") and item.rss == 0
+            return proc.PidfdEvidence(open_fd=lambda pid, flags: pid,
+                    read=lambda pid: control.read_process(pid), poll=poll, close=lambda fd: None,
+                    send=lambda pid, number, *_: control.signal_owned(control.read_process(pid).identity, number))
+        guard = patch.object(control, "PidfdEvidence", side_effect=evidence)
         guard.start()
         self.addCleanup(guard.stop)
         self.temporary = tempfile.TemporaryDirectory(prefix="scanner-offline-")
@@ -88,7 +103,8 @@ class Classification(Offline):
                     with self.assertRaises((proc.Uncertain, PermissionError)):
                         proc.signal_owned(WORKER.identity, signal.SIGTERM, read, open_fd, send, close)
                 else:
-                    result = proc.signal_owned(WORKER.identity, signal.SIGTERM, read, open_fd, send, close)
+                    result = proc.signal_owned(WORKER.identity, signal.SIGTERM, read, open_fd, send, close,
+                                               poll=lambda _: name in {"zombie", "disappeared"})
                     self.assertEqual(result, {"live": "signaled", "zombie": "zombie", "disappeared": "disappeared"}[name])
                     states = scope.observe(processes(ROOT, *(proc.Process(**row) for row in rows)))
                     self.assertEqual(states[200], "live" if name == "live" else name)
@@ -170,10 +186,10 @@ class Classification(Offline):
     def test_snapshot_disappearance_vs_observer_error(self):
         (self.directory / "200").mkdir()
         with patch.object(proc, "read_process", side_effect=FileNotFoundError):
-            self.assertEqual(proc.snapshot(self.directory), {})
+            self.assertEqual(snapshot_backend(self.directory), {})
         for error in (PermissionError("fixture"), ValueError("malformed stat")):
             with patch.object(proc, "read_process", side_effect=error), self.assertRaises(type(error)):
-                proc.snapshot(self.directory)
+                snapshot_backend(self.directory)
 
     def test_checkpoint_after_exited_parent_and_escaped_child(self):
         campaign = replace(WORKER, pid=300, ppid=100, birth=30)
@@ -188,6 +204,297 @@ class Classification(Offline):
         proc.checkpoint(scope, processes(ROOT, campaign, replace(escaped, state="Z", rss=0)), campaign.identity)
         with self.assertRaises(proc.Uncertain):
             proc.checkpoint(scope, processes(ROOT, replace(campaign, birth=31)), campaign.identity)
+
+
+class PidfdExit(Offline):
+    def evidence(self, current, ready, trace):
+        def read(pid):
+            if pid not in current:
+                raise FileNotFoundError("offline disappearance")
+            return current[pid]
+        def opened(pid, flags):
+            self.assertEqual(flags, 0)
+            trace.append(("open", pid))
+            return pid + 1000
+        return proc.PidfdEvidence(open_fd=opened, read=read,
+                poll=lambda fd: fd - 1000 in ready, close=lambda fd:trace.append(("close", fd)),
+                send=lambda fd, number, *_:trace.append(("signal", fd, number)))
+
+    def test_final_stat_fields_are_one_buffer_and_raw_exit_is_not_liveness(self):
+        entry=self.directory / "200"
+        entry.mkdir()
+        def raw(state, ppid, pgid, sid, rss):
+            fields=["0"]*22
+            fields[0:4]=[state,str(ppid),str(pgid),str(sid)]
+            fields[19],fields[21]="20",str(rss)
+            return b"200 (offline name) "+" ".join(fields).encode()
+        with patch.object(Path,"read_bytes",side_effect=[raw("S",100,200,100,2),raw("X",0,-1,-1,0)]):
+            item=proc.read_process(200,self.directory)
+        self.assertEqual((item.state,item.ppid,item.pgid,item.sid,item.birth,item.rss),("X",0,-1,-1,20,0))
+        with self.assertRaises(proc.Uncertain): proc.state(item)
+
+    def test_owned_exit_requires_positive_held_proof_and_preserves_raw_fields(self):
+        current=processes(ROOT,WORKER); ready=set(); trace=[]
+        with self.evidence(current,ready,trace) as exits:
+            scope=proc.Scope(ROOT.identity,exits=exits)
+            scope.observe(current)
+            current[200]=replace(WORKER,state="X",rss=0,ppid=0,pgid=-1,sid=-1)
+            with self.assertRaises(proc.Uncertain): scope.observe(current)
+            ready.add(200)
+            self.assertEqual(scope.observe(current)[200],"exited")
+            self.assertEqual(scope.exits.proofs[WORKER.identity]["source"],"held_pidfd_exit")
+            control.record(self.directory/"exit.jsonl",scope,current,{})
+            row=next(json.loads(line) for line in (self.directory/"exit.jsonl").read_text().splitlines()
+                     if json.loads(line)["identity"]["pid"]==200)
+            self.assertEqual(row["observed"]["state"],"X")
+            self.assertEqual(row["status"],"exited")
+            self.assertEqual(row["exit_witness"]["identity"],asdict(WORKER.identity))
+            del current[200]
+            control.record(self.directory/"gone.jsonl",scope,current,{})
+            gone=next(json.loads(line) for line in (self.directory/"gone.jsonl").read_text().splitlines()
+                      if json.loads(line)["identity"]["pid"]==200)
+            self.assertNotIn("observed",gone)
+            self.assertIn("exit_witness",gone)
+            self.assertEqual(scope.live(current,{100}),[])
+        self.assertEqual(trace.count(("open",200)),1)
+        self.assertEqual(trace.count(("close",1200)),1)
+
+    def test_unrelated_x_is_not_admitted_and_unknown_descendant_still_fails(self):
+        foreign=replace(WORKER,pid=999,state="X",rss=0,ppid=0,pgid=-1,sid=-1)
+        current=processes(ROOT,foreign); trace=[]
+        with self.evidence(current,set(),trace) as exits:
+            scope=proc.Scope(ROOT.identity,exits=exits)
+            self.assertEqual(scope.observe(current),{100:"live"})
+            self.assertNotIn(999,scope.owned)
+            self.assertNotIn(("open",999),trace)
+            current[200]=replace(WORKER,state="X",rss=0)
+            with self.assertRaises(proc.Uncertain): scope.observe(current)
+            self.assertNotIn(200,scope.owned)
+            self.assertNotIn(("open",200),trace)
+
+    def test_poll_errors_unknown_state_and_identity_mismatch_never_allow_exit(self):
+        for change in (replace(WORKER,state="?",rss=0),replace(WORKER,state="X",rss=1),
+                       replace(WORKER,birth=21),replace(WORKER,uid=1001)):
+            current=processes(WORKER); trace=[]
+            with self.evidence(current,set(),trace) as exits:
+                self.assertEqual(exits.status(WORKER.identity,WORKER),"live")
+                current[200]=change
+                with self.assertRaises(proc.Uncertain): exits.status(WORKER.identity,change)
+            self.assertFalse(any(row[0]=="signal" for row in trace))
+        current=processes(WORKER); trace=[]
+        with self.evidence(current,set(),trace) as exits:
+            exits.status(WORKER.identity,WORKER)
+            exits.poll=Mock(side_effect=PermissionError("offline poll failure"))
+            with self.assertRaises(PermissionError): exits.status(WORKER.identity,WORKER)
+        self.assertEqual(trace.count(("close",1200)),1)
+
+    def test_pidfd_poll_masks_are_positive_exit_only(self):
+        for events, expected in (([],False),([(7,proc.select.POLLIN)],True),([(7,proc.select.POLLHUP)],True)):
+            poller=SimpleNamespace(register=Mock(),poll=Mock(return_value=events))
+            with patch.object(proc.select,"poll",return_value=poller): self.assertEqual(proc.pidfd_exited(7),expected)
+            poller.register.assert_called_once_with(7,proc.select.POLLIN)
+        for events in ([(7,proc.select.POLLERR)],[(7,proc.select.POLLNVAL)],[(8,proc.select.POLLIN)],[(7,0)]):
+            with patch.object(proc.select,"poll",return_value=SimpleNamespace(register=Mock(),poll=Mock(return_value=events))), \
+                    self.assertRaises(proc.Uncertain): proc.pidfd_exited(7)
+
+    def test_missing_proc_or_zombie_leader_needs_process_exit_proof(self):
+        current=processes(WORKER); trace=[]; ready=set()
+        with self.evidence(current,ready,trace) as exits:
+            exits.status(WORKER.identity,WORKER)
+            with self.assertRaises(proc.Uncertain): exits.status(WORKER.identity,replace(WORKER,state="Z",rss=0))
+            del current[200]
+            with self.assertRaises(proc.Uncertain): exits.status(WORKER.identity,None)
+            ready.add(200)
+            self.assertEqual(exits.status(WORKER.identity,None),"disappeared")
+            self.assertEqual(exits.signal(WORKER.identity,signal.SIGKILL),"exited")
+        self.assertFalse(any(row[0]=="signal" for row in trace))
+
+    def test_admission_revalidates_birth_and_releases_on_error(self):
+        trace=[]
+        exits=self.evidence(processes(replace(WORKER,birth=21)),set(),trace)
+        with self.assertRaises(proc.Uncertain): exits.status(WORKER.identity,WORKER)
+        self.assertEqual(trace,[("open",200),("close",1200)])
+        self.assertFalse(exits.handles)
+        trace=[]
+        with self.evidence({},set(),trace) as exits:
+            with self.assertRaises(proc.Uncertain): exits.status(WORKER.identity,None)
+        self.assertEqual(trace,[("open",200),("close",1200)])
+
+    def test_fresh_admission_state_cannot_be_hidden_by_stale_live_sample(self):
+        for item in (replace(WORKER,state="?",rss=0),replace(WORKER,rss=-1)):
+            trace=[]
+            with self.evidence(processes(item),{200},trace) as exits:
+                with self.assertRaises(proc.Uncertain): exits.status(WORKER.identity,WORKER)
+                self.assertFalse(exits.proofs)
+            self.assertEqual(trace,[("open",200),("close",1200)])
+        for state in ("X","Z"):
+            current=processes(replace(WORKER,state=state,rss=0)); trace=[]; ready=set()
+            with self.evidence(current,ready,trace) as exits:
+                with self.assertRaises(proc.Uncertain): exits.status(WORKER.identity,WORKER)
+                with self.assertRaises(proc.Uncertain): exits.status(WORKER.identity,WORKER)
+                self.assertIn(WORKER.identity,exits.handles)
+                self.assertEqual(exits.signal(WORKER.identity,signal.SIGKILL),"signaled")
+                ready.add(200)
+                self.assertEqual(exits.status(WORKER.identity,WORKER),"exited")
+            self.assertEqual(trace.count(("close",1200)),1)
+
+    def test_exited_parent_stale_row_cannot_admit_new_child(self):
+        current=processes(ROOT,WORKER); trace=[]; ready=set()
+        with self.evidence(current,ready,trace) as exits:
+            scope=proc.Scope(ROOT.identity,exits=exits)
+            scope.observe(current)
+            ready.add(200)
+            child=replace(WORKER,pid=300,ppid=200,birth=30)
+            for item in (child,replace(child,state="X",rss=0),replace(child,uid=1001),replace(child,birth=1)):
+                current[300]=item
+                self.assertEqual(scope.observe(current)[200],"exited")
+                self.assertNotIn(300,scope.owned)
+            self.assertNotIn(("open",300),trace)
+            self.assertFalse(any(row[0]=="signal" for row in trace))
+
+    def test_parent_terminal_admission_uncertainty_is_sticky_across_stale_rows(self):
+        current=processes(ROOT,replace(WORKER,state="X",rss=0)); trace=[]
+        with self.evidence(current,set(),trace) as exits:
+            scope=proc.Scope(ROOT.identity,[WORKER.identity],exits=exits)
+            child=replace(WORKER,pid=300,ppid=200,birth=30)
+            stale=processes(ROOT,WORKER,child)
+            for _ in range(2):
+                with self.assertRaises(proc.Uncertain): scope.observe(stale)
+                self.assertNotIn(300,scope.owned)
+            self.assertNotIn(("open",300),trace)
+
+    def test_terminal_handles_close_early_and_held_signal_never_retargets_reused_pid(self):
+        current=processes(ROOT); ready=set(); trace=[]
+        with self.evidence(current,ready,trace) as exits:
+            scope=proc.Scope(ROOT.identity,exits=exits)
+            for number in range(64):
+                item=replace(WORKER,pid=200+number,birth=20+number)
+                current[item.pid]=item
+                scope.observe(current)
+                self.assertLessEqual(len(exits.handles),2)
+                ready.add(item.pid)
+                current[item.pid]=replace(item,state="X",rss=0,ppid=0,pgid=-1,sid=-1)
+                scope.observe(current)
+                del current[item.pid]
+            self.assertEqual(len(exits.handles),1)
+            current[200]=replace(WORKER,birth=900)
+            with self.assertRaises(proc.Uncertain): scope.observe(current)
+            self.assertEqual(exits.signal(WORKER.identity,signal.SIGKILL),"exited")
+            self.assertEqual(len([row for row in trace if row==("open",200)]),1)
+        self.assertFalse(exits.handles)
+        self.assertFalse(any(row[0]=="signal" for row in trace))
+
+    def test_signal_uses_held_handle_during_unknown_exit_and_fresh_lookup_stays_strict(self):
+        current=processes(WORKER); trace=[]
+        with self.evidence(current,set(),trace) as exits:
+            exits.status(WORKER.identity,WORKER)
+            current[200]=replace(WORKER,state="X",rss=0,ppid=0,pgid=-1,sid=-1)
+            self.assertEqual(exits.signal(WORKER.identity,signal.SIGKILL),"signaled")
+            self.assertIn(("signal",1200,signal.SIGKILL),trace)
+            self.assertEqual(trace.count(("open",200)),1)
+        for ready in (False,True):
+            sends=[]; closes=[]
+            item=replace(WORKER,state="X",rss=0,ppid=0,pgid=-1,sid=-1)
+            action=lambda:proc.signal_owned(WORKER.identity,signal.SIGKILL,read=lambda _:item,
+                    open_fd=lambda *_:7,send=lambda *args:sends.append(args),close=closes.append,poll=lambda _:ready)
+            if ready: self.assertEqual(action(),"exited")
+            else:
+                with self.assertRaises(proc.Uncertain): action()
+            self.assertEqual(sends,[])
+            self.assertEqual(closes,[7])
+        with self.assertRaises(proc.Uncertain):
+            proc.signal_owned(WORKER.identity,signal.SIGKILL,read=lambda _:replace(item,birth=900),
+                    open_fd=lambda *_:7,send=lambda *_:self.fail("unrelated signal"),close=lambda _:None,poll=lambda _:True)
+
+    def test_fresh_zombie_or_missing_proc_nonready_is_uncertain(self):
+        for missing in (False,True):
+            trace=[]
+            def read(_):
+                if missing: raise FileNotFoundError("offline exit gap")
+                return replace(WORKER,state="Z",rss=0)
+            with self.assertRaises(proc.Uncertain):
+                proc.signal_owned(WORKER.identity,signal.SIGKILL,read=read,open_fd=lambda *_:7,
+                        send=lambda *_:self.fail("uncertain fallback signal"),close=trace.append,poll=lambda _:False)
+            self.assertEqual(trace,[7])
+
+    def test_close_failure_attempts_all_owned_descriptors_once(self):
+        current=processes(ROOT,WORKER); trace=[]
+        exits=self.evidence(current,set(),trace)
+        exits.status(ROOT.identity,ROOT); exits.status(WORKER.identity,WORKER)
+        def close(fd):
+            trace.append(("close",fd))
+            if fd==1100: raise OSError("offline close error")
+        exits.close_fd=close
+        with self.assertRaises(proc.Uncertain): exits.close()
+        self.assertEqual([row for row in trace if row[0]=="close"],[("close",1100),("close",1200)])
+        self.assertFalse(exits.handles)
+
+    def test_checkpoint_rejects_a_requester_with_positive_exit_proof(self):
+        current=processes(ROOT,WORKER); ready=set(); trace=[]
+        with self.evidence(current,ready,trace) as exits:
+            scope=proc.Scope(ROOT.identity,exits=exits)
+            scope.observe(current)
+            ready.add(200)  # The old S row is stale; the kernel handle proves exit.
+            with self.assertRaises(proc.Uncertain): proc.checkpoint(scope,current,WORKER.identity)
+
+    def exercise_rss_observer(self, exited_rss=None):
+        observer_spec=importlib.util.spec_from_file_location("offline_watch_exit",PACKET/"watch-memory.py")
+        watch=importlib.util.module_from_spec(observer_spec); observer_spec.loader.exec_module(watch)
+        from contextlib import ExitStack
+        outer=replace(OWNER,pid=1,ppid=0,birth=0,rss=20)
+        observer=replace(ROOT,pid=500,ppid=10,birth=50,rss=30)
+        worker=replace(WORKER,ppid=10)
+        foreign=replace(WORKER,pid=999,ppid=0,state="X",rss=0,pgid=-1,sid=-1)
+        current=processes(OWNER,outer,observer,worker,foreign)
+        clock=[10.]; sleeps=[0]; ready=set(); trace=[]; handlers={}
+        self.token("owner.json",OWNER.identity)
+        (self.directory/"active-stage").write_text("\n")
+        def sleep(_):
+            sleeps[0]+=1; clock[0]+=1
+            if sleeps[0]==1:
+                current[200]=(replace(worker,state="X",rss=0,ppid=0,pgid=-1,sid=-1)
+                              if exited_rss is None else replace(worker,rss=exited_rss))
+                ready.add(200)
+            else: handlers[signal.SIGUSR2]()
+        with self.evidence(current,ready,trace) as exits, ExitStack() as cleanup, \
+                patch.object(watch,"read_process",side_effect=lambda pid:current[pid]), \
+                patch.object(watch,"snapshot",side_effect=lambda:dict(current)), \
+                patch.object(watch.os,"getpid",return_value=500),patch.object(watch.os,"getppid",return_value=10), \
+                patch.object(watch.os,"pidfd_open",return_value=99),patch.object(watch.os,"close"), \
+                patch.object(watch.os,"sched_getaffinity",return_value={0,1}),patch.object(watch.os,"sched_setaffinity"), \
+                patch.object(watch.signal,"signal",side_effect=lambda number,handler:handlers.update({number:handler})), \
+                patch.object(watch.signal,"alarm"),patch.object(watch.time,"monotonic",side_effect=lambda:clock[0]), \
+                patch.object(watch.signal,"pidfd_send_signal") as notify, \
+                patch.object(watch.time,"monotonic_ns",side_effect=lambda:int(clock[0]*1e9)), \
+                patch.object(watch.time,"sleep",side_effect=sleep),patch.dict(os.environ,{"PERF_CPU":"0"}), \
+                patch.object(watch.sys,"argv",["watch-memory.py",str(self.directory/"owner.json"),str(self.directory)]):
+            if exited_rss is None:
+                with self.assertRaises(SystemExit) as result: watch.observe(exits,cleanup)
+                self.assertEqual(result.exception.code,0)
+            else:
+                self.assertEqual(watch.observe(exits,cleanup),125)
+                notify.assert_called_once_with(99,signal.SIGUSR1,None,0)
+        import csv
+        with (self.directory/"memory-members.csv").open() as stream: rows=list(csv.DictReader(stream))
+        owned=[row for row in rows if row["pid"]=="200"]
+        self.assertEqual([row["classification"] for row in owned],["live","exited"])
+        self.assertEqual(owned[-1]["state"],"X" if exited_rss is None else "S")
+        self.assertFalse(any(row["pid"]=="999" for row in rows))
+        proof=json.loads((self.directory/"memory-exits.jsonl").read_text())
+        self.assertEqual(proof["identity"],asdict(worker.identity))
+        self.assertEqual(proof["source"],"held_pidfd_exit")
+
+    def test_rss_observer_logs_owned_x_exit_and_ignores_unrelated_raw_x(self):
+        self.exercise_rss_observer()
+
+    def test_exit_after_rss_read_cannot_erase_over_limit_sample_or_publish_health(self):
+        self.exercise_rss_observer(12*1024*1024)
+        import csv
+        with (self.directory/"memory.csv").open() as stream: rows=list(csv.DictReader(stream))
+        self.assertGreaterEqual(int(rows[-1]["rss_kib"]),12*1024*1024)
+        self.assertEqual(rows[-1]["rss_kib"],rows[-1]["observed_peak_kib"])
+        self.assertEqual(json.loads((self.directory/"memory-ready").read_text())["monotonic"],10.)
+        self.assertIn("reached stop limit",(self.directory/"resource-stop.txt").read_text())
 
 
 class Observer(Offline):
@@ -279,9 +586,13 @@ class Observer(Offline):
         proc.atomic_json(self.directory / "memory-ready", {"identity": asdict(ROOT.identity), "monotonic": 10})
         terminal = replace(ROOT, state="Z", rss=0)
         trace = []
-        with patch.object(control, "snapshot", side_effect=[processes(ROOT), processes(ROOT), processes(terminal)]), \
+        current = [ROOT]
+        def send(*args):
+            trace.append(args)
+            current[0] = terminal
+        with patch.object(control, "snapshot", side_effect=lambda: processes(current[0])), \
                 patch.object(control.time, "monotonic", return_value=10), \
-                patch.object(control, "signal_owned", side_effect=lambda *args: trace.append(args)):
+                patch.object(control, "signal_owned", side_effect=send):
             self.assertEqual(control.stop_observer(self.directory, 100), 0)
         self.assertEqual(trace, [(ROOT.identity, signal.SIGUSR2)])
 
@@ -291,9 +602,13 @@ class Observer(Offline):
             (self.directory / "memory-ready").write_text(text)
             terminal = replace(ROOT, state="Z", rss=0)
             trace = []
-            with patch.object(control, "snapshot", side_effect=[processes(ROOT), processes(ROOT), processes(terminal)]), \
+            current = [ROOT]
+            def send(*args):
+                trace.append(args)
+                current[0] = terminal
+            with patch.object(control, "snapshot", side_effect=lambda: processes(current[0])), \
                     patch.object(control.time, "monotonic", return_value=10), \
-                    patch.object(control, "signal_owned", side_effect=lambda *args: trace.append(args)):
+                    patch.object(control, "signal_owned", side_effect=send):
                 with self.assertRaises(proc.Uncertain):
                     control.stop_observer(self.directory, 100)
             self.assertEqual(trace, [(ROOT.identity, signal.SIGUSR2)])
@@ -301,9 +616,13 @@ class Observer(Offline):
     def test_foreign_snapshot_error_still_stops_readable_owned_observer(self):
         self.token("observer.json")
         trace = []
+        current = [ROOT]
+        def send(*args):
+            trace.append(args)
+            current[0] = replace(ROOT, state="Z", rss=0)
         with patch.object(control, "snapshot", side_effect=PermissionError("foreign entry")), \
-                patch.object(control, "read_process", side_effect=[ROOT, replace(ROOT, state="Z", rss=0)]), \
-                patch.object(control, "signal_owned", side_effect=lambda *args: trace.append(args)), \
+                patch.object(control, "read_process", side_effect=lambda _:current[0]), \
+                patch.object(control, "signal_owned", side_effect=send), \
                 patch.object(control.time, "monotonic", return_value=10), self.assertRaises(proc.Uncertain):
             control.stop_observer(self.directory, 100)
         self.assertEqual(trace, [(ROOT.identity, signal.SIGUSR2)])
@@ -398,9 +717,11 @@ class Custody(Offline):
 
     def test_validated_supervisor_receives_only_term_then_terminal_check(self):
         self.complete([ROOT.identity])
-        zombie = processes(replace(ROOT, state="Z", rss=0))
-        with patch.object(control, "snapshot", side_effect=[processes(ROOT), zombie, zombie]), \
-                patch.object(control, "signal_owned") as signals:
+        current = [ROOT]
+        def send(*_):
+            current[0] = replace(ROOT, state="Z", rss=0)
+        with patch.object(control, "snapshot", side_effect=lambda:processes(current[0])), \
+                patch.object(control, "signal_owned", side_effect=send) as signals:
             self.assertEqual(control.stop_stage(self.directory, 100), 0)
         signals.assert_called_once_with(ROOT.identity, signal.SIGTERM)
 
@@ -487,7 +808,7 @@ class Custody(Offline):
 
 
 class BuildDrain(Offline):
-    def exercise(self, case, build=True):
+    def exercise(self, case, build=True, duration="90m"):
         directory = self.directory / case
         directory.mkdir()
         (directory / "go").touch()
@@ -501,9 +822,12 @@ class BuildDrain(Offline):
         clock, trace, handlers = [10.], [], {}
         child = SimpleNamespace(pid=200, returncode=None)
 
-        def launch(*_, **__):
-            trace.append(("launch", clock[0]))
-            current.update(processes(replace(WORKER, state="Z", rss=0), server))
+        def launch(command, **__):
+            trace.append(("launch", clock[0], command))
+            running = case in ("timeout-exit0", "exit-race")
+            current.update(processes(replace(WORKER, state="S" if running else "Z", rss=1024 if running else 0)))
+            if case != "nonzero-empty":
+                current[server.pid] = replace(server, ppid=200) if case == "exit-race" else server
             return child
 
         def handler(number, callback):
@@ -531,7 +855,7 @@ class BuildDrain(Offline):
             self.assertEqual(current[pid].state, "Z")
             trace.append(("reap", pid, clock[0]))
             del current[pid]
-            return pid, 256 if case == "nonzero" and pid == 200 else 0
+            return pid, 256 if case.startswith("nonzero") and pid == 200 else 0
 
         def send(identity, number):
             item = current.get(identity.pid)
@@ -553,6 +877,11 @@ class BuildDrain(Offline):
                 handlers[signal.SIGTERM]()
             if case == "observer-fault" and clock[0] >= 12:
                 current[observer.pid] = replace(observer, state="Z", rss=0)
+            if case == "exit-race":
+                if clock[0] >= 12:
+                    current[server.pid] = replace(server, state="X", rss=0, ppid=0, pgid=-1, sid=-1)
+                if clock[0] >= 13 and 200 in current:
+                    current[200] = replace(WORKER, state="Z", rss=0)
             proc.atomic_json(directory / "memory-ready", {"identity": asdict(observer.identity), "monotonic": clock[0]})
 
         caught = None
@@ -570,7 +899,7 @@ class BuildDrain(Offline):
                 patch.object(control.time, "monotonic", side_effect=lambda: clock[0]), \
                 patch.object(control.sys, "stderr", new=Mock()):
             try:
-                result = control.stage(directory, directory / "owner.json", "90m", ["offline-make"], build=build)
+                result = control.stage(directory, directory / "owner.json", duration, ["offline-make"], build=build)
             except proc.Uncertain as error:
                 caught = error
         footer = json.loads((directory / "complete.json").read_text()) if (directory / "complete.json").exists() else None
@@ -664,14 +993,50 @@ class BuildDrain(Offline):
         self.assertIsInstance(caught, proc.Uncertain)
         self.assertIsNone(footer)
         self.assertFalse(any(event[0] == "launch" for event in trace))
-        result, footer, trace, _, caught = self.exercise("owner-lost-before-launch")
-        self.assertIsInstance(caught, proc.Uncertain)
-        self.assertIsNone(footer)
-        self.assertFalse(any(event[0] == "launch" for event in trace))
-        result, footer, trace, _, caught = self.exercise("stopped-before-launch")
-        self.assertIsInstance(caught, proc.Uncertain)
-        self.assertIsNone(footer)
-        self.assertFalse(any(event[0] == "launch" for event in trace))
+        for case in ("owner-lost-before-launch", "stopped-before-launch"):
+            result, footer, trace, _, caught = self.exercise(case)
+            self.assertIsInstance(caught, proc.Uncertain)
+            self.assertIsNone(footer)
+            self.assertFalse(any(event[0] == "launch" for event in trace))
+
+    def test_direct_make_preserves_success_failure_and_runtime_command_shape(self):
+        result, footer, trace, _, caught = self.exercise("normal")
+        self.assertIsNone(caught)
+        self.assertEqual(result, 0)
+        self.assertEqual(next(event[2] for event in trace if event[0] == "launch"), ["offline-make"])
+        self.assertEqual(footer["command_deadline_monotonic"], 5410)
+        self.assertFalse(footer["timed_out"])
+        result, footer, trace, _, caught = self.exercise("nonzero-empty")
+        self.assertEqual(result, 1)
+        self.assertEqual(footer["command_status"], 1)
+        self.assertIsNone(footer["drain_started_monotonic"])
+        _, footer, trace, _, _ = self.exercise("strict", build=False)
+        self.assertEqual(next(event[2] for event in trace if event[0] == "launch"),
+                         ["timeout", "--signal=TERM", "--kill-after=12s", "90m", "offline-make"])
+        self.assertIsNone(footer["command_deadline_monotonic"])
+
+    def test_direct_make_timeout_latches_even_when_wait_status_is_later_zero(self):
+        result, footer, trace, now, caught = self.exercise("timeout-exit0", duration="2s")
+        self.assertIsNone(caught)
+        self.assertEqual(result, 124)
+        self.assertTrue(footer["timed_out"])
+        self.assertTrue(footer["stopped"])
+        self.assertEqual(footer["command_status"], 0)
+        self.assertIsNone(footer["drain_started_monotonic"])
+        self.assertLess(now, 13)
+        self.assertTrue(any(event[0] == "signal" for event in trace))
+
+    def test_owned_grandchild_exit_race_preserves_raw_observation_and_kernel_drain(self):
+        result, footer, trace, _, caught = self.exercise("exit-race")
+        self.assertIsNone(caught)
+        self.assertEqual(result, 0)
+        self.assertTrue(footer["clean"])
+        self.assertFalse(any(event[0] == "signal" for event in trace))
+        rows=[json.loads(line) for line in (self.directory / "exit-race/processes.jsonl").read_text().splitlines()]
+        exited=[row for row in rows if row.get("observed",{}).get("state")=="X"]
+        self.assertTrue(exited)
+        self.assertEqual(exited[0]["status"], "exited")
+        self.assertEqual(exited[0]["exit_witness"]["source"], "held_pidfd_exit")
 
 
 class RetainedImage(Offline):
@@ -806,6 +1171,11 @@ class Continuation(Offline):
             mock = patch.object(continuation, name, return_value=value)
             mock.start()
             self.addCleanup(mock.stop)
+        mock = patch.object(continuation,"PidfdEvidence",side_effect=lambda:proc.PidfdEvidence(
+            open_fd=lambda pid,flags:pid,read=lambda pid:continuation.snapshot()[pid],
+            poll=lambda fd:continuation.snapshot()[fd].state in ("X","Z"),close=lambda _:None,
+            send=lambda *_:self.fail("continuation census must not signal")))
+        mock.start(); self.addCleanup(mock.stop)
         self.output = self.directory / "new"
         self.output.mkdir()
         self.witness = self.directory / "binding.json"
@@ -876,6 +1246,107 @@ class Continuation(Offline):
             continuation.claim(self.binding, self.digest, other, self.candidate)
         self.assertFalse((other / "continuation.json").exists())
 
+    def failed_predecessor(self):
+        continuation.claim(self.binding,self.digest,self.output,self.candidate)
+        (self.output/"analysis.json").write_text(json.dumps({"terminal_status":125,"candidate_image_complete":False,
+            "source_commit":self.candidate,"binding_sha256":self.digest,
+            "required_runtime_observations":{"cds":0,"jtreg_case_collector_executions":0,"host":0,"smoke":0,"workload_children":0}}))
+        (self.output/"cleanup.json").write_text(json.dumps({"counts":{"live":0,"error":0},
+            "unledgered_matching_workers":[],"current_snapshot_errors":[]}))
+        (self.output/"cleanup.csv").write_text("pid,birth,uid\n200,20,1000\n")
+        return self.directory/"successor.json"
+
+    def test_successor_preparation_preserves_deadline_evidence_and_spent_parent(self):
+        destination=self.failed_predecessor()
+        before={path:path.read_bytes() for root in (self.retained,self.output,Path(self.binding["claim"]))
+                for path in root.rglob("*") if path.is_file()}
+        binding=continuation.prepare_successor(self.witness,self.digest,self.output,destination)
+        self.assertEqual(binding["claim"],str(Path(self.binding["claim"])/"successor"))
+        for key in ("deadline_monotonic","deadline_utc","boot_id","base_jdk","manifest_sha256","provenance_sha256"):
+            self.assertEqual(binding[key],self.binding[key])
+        self.assertEqual(binding["packet"],continuation.packet_inputs())
+        self.assertEqual(binding["predecessor"]["custody"],"uncertain_missing_stage5_footer")
+        self.assertFalse(Path(binding["claim"]).exists())
+        self.assertEqual({path:path.read_bytes() for path in before},before)
+        self.assertEqual(continuation.verify(binding,self.toolchains),self.base)
+        other=self.directory/"successor-output"; other.mkdir()
+        continuation.claim(binding,continuation.sha(destination),other,self.candidate)
+        with self.assertRaises(proc.Uncertain):
+            continuation.prepare_successor(self.witness,self.digest,self.output,self.directory/"renamed.json")
+        self.assertEqual({path:path.read_bytes() for path in before},before)
+
+    def test_successor_rejects_runtime_observations_completion_or_unresolved_census(self):
+        destination=self.failed_predecessor()
+        analysis_path=self.output/"analysis.json"; cleanup_path=self.output/"cleanup.json"
+        analysis=json.loads(analysis_path.read_text()); cleanup=json.loads(cleanup_path.read_text())
+        changes=[(analysis_path,dict(analysis,terminal_status=0)),
+                 (analysis_path,dict(analysis,candidate_image_complete=True)),
+                 (analysis_path,dict(analysis,source_commit="b"*40)),
+                 (analysis_path,dict(analysis,binding_sha256="b"*64)),
+                 (analysis_path,dict(analysis,required_runtime_observations={})),
+                 (analysis_path,dict(analysis,required_runtime_observations={"workload":1})),
+                 (cleanup_path,dict(cleanup,counts={"live":1,"error":0})),
+                 (cleanup_path,dict(cleanup,counts={"live":0,"error":1})),
+                 (cleanup_path,dict(cleanup,unledgered_matching_workers=[200]))]
+        for path,value in changes:
+            with self.subTest(value=value):
+                path.write_text(json.dumps(value))
+                with self.assertRaises(proc.Uncertain):
+                    continuation.prepare_successor(self.witness,self.digest,self.output,destination)
+                self.assertFalse(destination.exists())
+                analysis_path.write_text(json.dumps(analysis)); cleanup_path.write_text(json.dumps(cleanup))
+        footer=self.output/"stages/5/complete.json"; footer.parent.mkdir(parents=True); footer.write_text("{}")
+        with self.assertRaises(proc.Uncertain): continuation.prepare_successor(self.witness,self.digest,self.output,destination)
+        footer.unlink()
+        proc.image_paths(self.output)["candidate"].mkdir(parents=True)
+        with self.assertRaises(proc.Uncertain): continuation.prepare_successor(self.witness,self.digest,self.output,destination)
+
+    def test_successor_pins_parent_claim_census_and_original_window(self):
+        destination=self.failed_predecessor()
+        binding=continuation.prepare_successor(self.witness,self.digest,self.output,destination)
+        for key,value in (("claim",str(self.directory/"another-claim")),("deadline_monotonic",1001.),
+                          ("deadline_utc",2001.),("boot_id","new-boot"),("base_jdk","other-image"),
+                          ("inputs",{}),("environment",{}),("profile",{}),("toolchains","/other"),("custody_files",{})):
+            with self.subTest(key=key),self.assertRaises(proc.Uncertain):
+                continuation.predecessor(dict(binding,**{key:value}))
+        for path in (self.output/"cleanup.csv",self.output/"analysis.json",Path(self.binding["claim"])/"claim.json"):
+            original=path.read_bytes(); path.write_bytes(original+b" ")
+            with self.assertRaises(proc.Uncertain): continuation.predecessor(binding)
+            path.write_bytes(original)
+        with patch.object(continuation,"snapshot",return_value=processes(WORKER)),self.assertRaises(proc.Uncertain):
+            continuation.quiescent(binding)
+        with patch.object(continuation,"snapshot",return_value=processes(replace(WORKER,birth=900))):
+            continuation.quiescent(binding)
+        with patch.object(continuation,"snapshot",return_value=processes(replace(WORKER,uid=1001))),self.assertRaises(proc.Uncertain):
+            continuation.quiescent(binding)
+        with self.assertRaises(FileExistsError):
+            continuation.prepare_successor(self.witness,self.digest,self.output,destination)
+
+    def test_successor_cannot_refresh_changed_toolchain_profile_or_environment(self):
+        destination=self.failed_predecessor()
+        for name,value in (("inputs",{"changed":"bytes"}),("profile",dict(self.binding["profile"],CFLAGS_JVM="-O2")),
+                           ("environment",{"changed":"value"})):
+            with self.subTest(name=name),patch.object(continuation,name,return_value=value),self.assertRaises(proc.Uncertain):
+                continuation.prepare_successor(self.witness,self.digest,self.output,destination)
+            self.assertFalse(destination.exists())
+
+    def test_successor_output_cannot_overlap_failed_evidence_and_disk_counts_it(self):
+        destination=self.failed_predecessor()
+        binding=continuation.prepare_successor(self.witness,self.digest,self.output,destination)
+        before={path:path.read_bytes() for path in self.output.rglob("*") if path.is_file()}
+        self.assertEqual(continuation.preserved_outputs(binding),[self.retained,self.output])
+        target=self.output/"nested-new-output"
+        with self.assertRaises(proc.Uncertain): continuation.proposed_output(binding,target,self.toolchains,destination)
+        self.assertFalse(target.exists())
+        target.mkdir()  # claim independently rejects a caller bypassing preflight.
+        with self.assertRaises(proc.Uncertain): continuation.claim(binding,continuation.sha(destination),target,self.candidate)
+        self.assertFalse(Path(binding["claim"]).exists())
+        self.assertEqual({path:path.read_bytes() for path in before},before)
+        source=(PACKET/"run-linux.sh").read_text()
+        disk=source.split("disk_check() {",1)[1].split("\n}",1)[0]
+        self.assertIn('paths+=("$FAILED_PREDECESSOR")',disk)
+        self.assertIn('du -sm "${paths[@]}"',disk)
+
     def test_output_overlap_is_rejected_before_creating_any_evidence(self):
         before = {path: path.read_bytes() for path in self.retained.rglob("*") if path.is_file()}
         for target in (self.retained / "new", self.toolchains / "new", Path(self.binding["claim"])):
@@ -895,7 +1366,7 @@ class Continuation(Offline):
         stage = self.output / "stages/5"
         stage.mkdir(parents=True)
         (stage / "identity.json").write_text(json.dumps({"kind": "build"}))
-        footer = {"clean": True, "command_status": 0, "stopped": False, "survivors": False, "drain_deadline_missed": False}
+        footer = {"clean": True, "command_status": 0, "stopped": False, "survivors": False, "drain_deadline_missed": False, "timed_out": False}
         (stage / "complete.json").write_text(json.dumps(footer))
         return stage, footer
 
@@ -916,7 +1387,7 @@ class Continuation(Offline):
 
     def test_interrupted_build_and_clean_custody_with_persistent_child_never_reach_matrix(self):
         stage, footer = self.candidate_stage()
-        for change in (None, {"command_status": 124}, {"stopped": True}, {"survivors": True}, {"drain_deadline_missed": True}):
+        for change in (None, {"command_status": 124}, {"stopped": True}, {"survivors": True}, {"drain_deadline_missed": True}, {"timed_out": True}):
             with self.subTest(change=change), patch.object(continuation, "git", side_effect=self.candidate_git):
                 path = stage / "complete.json"
                 if change is None:
@@ -1027,7 +1498,8 @@ class ImagesAndSource(Offline):
         self.assertIn('continuation.py" remaining', continuation_wrapper)
         self.assertIn('"${remaining}s"', continuation_wrapper)
         self.assertNotIn('6h', continuation_wrapper)
-        self.assertIn('du -sm "$OUT" "$RETAINED"', source)
+        self.assertIn('paths+=("$RETAINED")', source)
+        self.assertIn('paths+=("$FAILED_PREDECESSOR")', source)
 
     def test_observer_import_has_no_process_or_signal_side_effects(self):
         observer_spec = importlib.util.spec_from_file_location("scanner_watch_memory", PACKET / "watch-memory.py")

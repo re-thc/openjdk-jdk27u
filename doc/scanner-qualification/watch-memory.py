@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """Source-prepared Stage A RSS observer; uses only installed Python/procfs."""
 import csv
+from contextlib import ExitStack
 from dataclasses import asdict
+import json
 import os
 from pathlib import Path
 import signal
 import sys
 import time
 
-from runner_process import (Scope, Uncertain, atomic_json, fresh_sample, match,
+from runner_process import (PidfdEvidence, Scope, Uncertain, atomic_json, fresh_sample,
                             publish_sample, read_identity, read_process, report_fault,
                             require_live, snapshot, timeout_fault)
 
@@ -18,6 +20,12 @@ SAMPLE_DEADLINE_SECONDS = 5
 
 
 def main():
+    with ExitStack() as cleanup:
+        exits = cleanup.enter_context(PidfdEvidence())
+        return observe(exits, cleanup)
+
+
+def observe(exits, cleanup):
     # Readiness setup itself must not block indefinitely before the normal
     # sample/fault handlers and retained owner pidfd have been established.
     def startup_timeout(*_):
@@ -34,10 +42,11 @@ def main():
     # Retain a pidfd before work: fault notification performs no procfs/report I/O
     # and cannot accidentally signal a reused numeric owner PID.
     owner_fd = os.pidfd_open(owner.pid, 0)
+    cleanup.callback(os.close, owner_fd)
     require_live(owner, snapshot())
     outer_initial = read_process(owner_initial.ppid)
     observer = read_process(os.getpid()).identity
-    scope = Scope(owner)
+    scope = Scope(owner, exits=exits)
     atomic_json(output / "observer.json", {"identity": asdict(observer), "owner": asdict(owner)})
     last_sample = None
 
@@ -93,13 +102,15 @@ def main():
             f"measurement_cpu={measurement_cpu}\nobserver_cpu={observer_cpu}\n"
             f"colocated={observer_cpu == measurement_cpu}\ninitial_allowed_cpus={sorted(allowed)}\n")
         with (output / "memory.csv").open("x", newline="") as totals, \
-                (output / "memory-members.csv").open("x", newline="") as members:
+                (output / "memory-members.csv").open("x", newline="") as members, \
+                (output / "memory-exits.jsonl").open("x") as exit_log:
             total_writer = csv.writer(totals)
             member_writer = csv.writer(members)
             total_writer.writerow(["monotonic_ns", "rss_kib", "observed_peak_kib", "processes", "active_stage"])
             member_writer.writerow(["monotonic_ns", "pid", "birth", "uid", "ppid", "pgid", "sid", "state", "classification", "rss_kib"])
             peak = 0
             previous = None
+            logged_exits = set()
             while True:
                 started = time.monotonic()
                 if previous is not None and started - previous > SAMPLE_DEADLINE_SECONDS:
@@ -111,23 +122,33 @@ def main():
                 processes = snapshot()
                 require_live(owner, processes)
                 states = scope.observe(processes)
+                if states[owner.pid] != "live":
+                    raise Uncertain("RSS owner has exited")
                 selected = {pid for pid, status in states.items() if status != "disappeared"}
                 # Stage subreaping keeps escaped/orphan workers in controller
                 # ancestry; its retained birth ledger covers later metadata changes.
                 # Include the outer timeout without selecting unrelated siblings.
-                if match(outer_initial.identity, processes) != "disappeared":
+                outer_state = exits.status(outer_initial.identity, processes.get(outer_initial.pid))
+                if outer_state != "disappeared":
                     selected.add(outer_initial.pid)
                 rss = 0
                 for pid in sorted(selected):
                     item = processes[pid]
+                    classification = states.get(pid, outer_state)
+                    # Exit after the proc read must not erase an observed peak.
                     rss += item.rss
                     member_writer.writerow([stamp, pid, item.birth, item.uid, item.ppid, item.pgid,
-                                            item.sid, item.state, match(item.identity, processes), item.rss])
+                                            item.sid, item.state, classification, item.rss])
+                for identity, proof in exits.proofs.items():
+                    if identity not in logged_exits:
+                        exit_log.write(json.dumps({"monotonic_ns": stamp, **proof}) + "\n")
+                        logged_exits.add(identity)
                 peak = max(peak, rss)
                 total_writer.writerow([stamp, rss, peak, len(selected), active])
                 def flush():
                     members.flush()
                     totals.flush()
+                    exit_log.flush()
 
                 publish_sample(observer, rss, LIMIT_KIB, time.monotonic(), flush,
                                lambda data: atomic_json(output / "memory-ready", data))

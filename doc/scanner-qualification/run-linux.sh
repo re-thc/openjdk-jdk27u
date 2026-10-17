@@ -16,6 +16,7 @@ shift
 BINDING=
 BINDING_SHA=
 RETAINED=
+FAILED_PREDECESSOR=
 if [[ ${1:-} == --continue ]]; then
     BINDING=$(realpath "$2")
     BINDING_SHA=$3
@@ -124,11 +125,10 @@ bounded() { bounded_stage stage "$@"; }
 bounded_build() { bounded_stage build-stage "$@"; }
 disk_check() {
     local used
-    if [[ -n $RETAINED ]]; then
-        used=$(du -sm "$OUT" "$RETAINED" | awk '{sum += $1} END {print sum}')
-    else
-        used=$(du -sm "$OUT" | cut -f1)
-    fi
+    local -a paths=("$OUT")
+    if [[ -n $RETAINED ]]; then paths+=("$RETAINED"); fi
+    if [[ -n $FAILED_PREDECESSOR ]]; then paths+=("$FAILED_PREDECESSOR"); fi
+    used=$(du -sm "${paths[@]}" | awk '{sum += $1} END {print sum}')
     [[ $used -le 25600 ]]
 }
 [[ $(uname -m) == x86_64 && $(uname -s) == Linux ]]
@@ -152,6 +152,7 @@ if [[ -n $BINDING ]]; then
     bounded 3m python3 "$PACKET/continuation.py" bind "$BINDING" "$BINDING_SHA" \
         "$TOOLCHAINS" "$OUT" "$CANDIDATE" > "$OUT/image-paths.txt"
     RETAINED=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["retained"])' "$BINDING")
+    FAILED_PREDECESSOR=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("predecessor", {}).get("failed_output", ""))' "$BINDING")
     export SCANNER_CONTINUATION_BINDING="$BINDING" SCANNER_CONTINUATION_SHA="$BINDING_SHA"
     disk_check
 fi

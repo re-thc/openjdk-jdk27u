@@ -1,12 +1,13 @@
 """Linux-only process identities for the Scanner runner (no import-time I/O).
 
-RSS is evidence, never a liveness test. Only an observed Z with zero RSS is
-terminal; unreadable/contradictory state and PID reuse fail closed.
+RSS is evidence, never a liveness test. Production custody requires positive
+process-pidfd exit proof; unreadable/contradictory state and PID reuse fail closed.
 """
 from dataclasses import asdict, dataclass
 import json
 import os
 from pathlib import Path
+import select
 import signal
 import time
 
@@ -73,7 +74,9 @@ def read_process(pid, proc=Path("/proc")):
     result = Process(pid, int(again[1]), int(again[2]), int(again[3]),
                      int(again[19]), uid, again[0].decode("ascii"),
                      int(again[21]) * os.sysconf("SC_PAGE_SIZE") // 1024)
-    state(result)
+    # One final stat buffer supplies all process fields. Even that buffer is
+    # not an atomic kernel snapshot: task exit can yield X/0/0/-1/-1. Keep raw
+    # observations here; only validated ownership may supply terminal evidence.
     return result
 
 
@@ -90,17 +93,147 @@ def snapshot(proc=Path("/proc")):
     return result
 
 
+def pidfd_exited(fd):
+    poller = select.poll()
+    poller.register(fd, select.POLLIN)
+    events = poller.poll(0)
+    if not events:
+        return False
+    if any(number != fd or mask & (select.POLLERR | select.POLLNVAL)
+           or not mask & (select.POLLIN | select.POLLHUP) for number, mask in events):
+        raise Uncertain(f"invalid pidfd poll result: {events}")
+    return True
+
+
+class PidfdEvidence:
+    """Retain birth-validated process pidfds; cache exit proof and release FDs."""
+    def __init__(self, open_fd=None, read=None, poll=None, close=None, send=None):
+        self.open_fd = open_fd or os.pidfd_open
+        self.read = read or read_process
+        self.poll = poll or pidfd_exited
+        self.close_fd = close or os.close
+        self.send_fd = send or signal.pidfd_send_signal
+        self.handles, self.proofs = {}, {}
+        self.pending_exit = set()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        self.close()
+
+    def close(self):
+        errors = []
+        for identity, fd in list(self.handles.items()):
+            try:
+                self.close_fd(fd)
+            except Exception as error:
+                errors.append(str(error))
+            del self.handles[identity]
+        if errors:
+            raise Uncertain(f"pidfd close failed: {errors}")
+
+    def bind(self, identity):
+        if identity in self.handles or identity in self.proofs:
+            return
+        try:
+            fd = self.open_fd(identity.pid, 0)  # Process/thread-group pidfd.
+        except ProcessLookupError:
+            self.proofs[identity] = {"source": "pidfd_open_ESRCH", "identity": asdict(identity)}
+            return
+        retained = False
+        try:
+            try:
+                current = self.read(identity.pid)
+            except (FileNotFoundError, ProcessLookupError):
+                if not self.poll(fd):
+                    raise Uncertain(f"missing proc entry without pidfd exit: {identity}")
+                self.proofs[identity] = {"source": "pidfd_exit_after_open", "identity": asdict(identity)}
+                return
+            if current.identity != identity:
+                raise Uncertain(f"pidfd admission identity changed: {identity}, {current}")
+            raw = "exit-candidate" if current.state == "X" and current.rss == 0 else state(current)
+            self.handles[identity] = fd
+            retained = True
+            if raw in ("exit-candidate", "zombie"):
+                self.pending_exit.add(identity)
+                if not self.poll(fd):
+                    # Keep the validated handle for fault cleanup, but do not
+                    # let an older live sample hide this uncertain fresh read.
+                    raise Uncertain(f"terminal-looking admission without pidfd exit: {identity}, {current}")
+                self.proofs[identity] = {"source": "pidfd_exit_while_binding", "identity": asdict(identity)}
+                del self.handles[identity]
+                self.close_fd(fd)
+        finally:
+            if not retained:
+                self.close_fd(fd)
+
+    def status(self, identity, process):
+        if process is not None and process.identity != identity:
+            raise Uncertain(f"PID reused or UID changed: expected={identity}, observed={process}")
+        # Never turn an unsupported/negative/contradictory sample into a valid
+        # process simply because a descriptor was readable. X0 alone is not exit.
+        raw = None
+        if process is not None:
+            if process.state == "X" and process.rss == 0:
+                raw = "exit-candidate"
+            else:
+                raw = state(process)
+        self.bind(identity)
+        if identity not in self.proofs and self.poll(self.handles[identity]):
+            fd = self.handles.pop(identity)
+            self.proofs[identity] = {"source": "held_pidfd_exit", "identity": asdict(identity)}
+            self.close_fd(fd)
+        if identity in self.proofs:
+            return "disappeared" if process is None else "zombie" if raw == "zombie" else "exited"
+        if process is None or raw in ("exit-candidate", "zombie") or identity in self.pending_exit:
+            # A zombie group leader can still have running threads. A nonready
+            # process pidfd cannot certify that the whole group has exited.
+            self.pending_exit.add(identity)
+            raise Uncertain(f"terminal-looking proc entry without pidfd exit: {identity}, {process}")
+        return raw
+
+    def signal(self, identity, number):
+        # An admitted kernel handle, rather than a fresh numeric-PID lookup,
+        # remains safe even when procfs fields are unavailable during exit.
+        self.bind(identity)
+        if identity in self.proofs:
+            return "exited"
+        fd = self.handles[identity]
+        if self.poll(fd):
+            self.proofs[identity] = {"source": "held_pidfd_exit", "identity": asdict(identity)}
+            del self.handles[identity]
+            self.close_fd(fd)
+            return "exited"
+        try:
+            self.send_fd(fd, number, None, 0)
+        except ProcessLookupError:
+            # Do not fabricate a poll witness. A later observation must still
+            # establish exit and actual-parent wait/ECHILD must drain custody.
+            return "disappeared"
+        return "signaled"
+
+
 class Scope:
     """Birth ledger: ancestry establishes ownership; later adoption/setsid retains it."""
-    def __init__(self, root, members=()):
+    def __init__(self, root, members=(), exits=None):
         self.root = root
         self.owned = {item.pid: item for item in (root, *members)}
+        self.exits = exits
+
+    def status(self, identity, processes):
+        if self.exits is not None:
+            return self.exits.status(identity, processes.get(identity.pid))
+        return match(identity, processes)
+
+    def signal(self, identity, number):
+        return self.exits.signal(identity, number) if self.exits is not None else signal_owned(identity, number)
 
     def observe(self, processes):
         errors = []
         for identity in self.owned.values():
             try:
-                match(identity, processes)
+                self.status(identity, processes)
             except Uncertain as error:
                 errors.append(str(error))
         changed = True
@@ -112,6 +245,12 @@ class Scope:
                     continue
                 if process.pid in self.owned:
                     continue
+                try:
+                    if self.status(parent.identity, processes) != "live":
+                        continue
+                except Uncertain as error:
+                    errors.append(str(error))
+                    continue
                 if process.birth < parent.birth or process.uid != self.root.uid:
                     errors.append(f"unverified descendant: {process}")
                     continue
@@ -120,11 +259,13 @@ class Scope:
                 except Uncertain as error:
                     errors.append(str(error))
                     continue
+                # Poll the held parent's identity after the child snapshot.
+                # A stale parent row after exit cannot establish new ownership.
                 self.owned[process.pid] = process.identity
                 changed = True
         if errors:
             raise Uncertain("; ".join(dict.fromkeys(errors)))
-        return {pid: match(identity, processes) for pid, identity in self.owned.items()}
+        return {pid: self.status(identity, processes) for pid, identity in self.owned.items()}
 
     def live(self, processes, exclude=()):
         states = self.observe(processes)
@@ -177,12 +318,13 @@ def timeout_fault(notify, reason):
     raise TimeoutError(reason)
 
 
-def signal_owned(identity, number, read=None, open_fd=None, send=None, close=None):
+def signal_owned(identity, number, read=None, open_fd=None, send=None, close=None, poll=None):
     """Open first, revalidate birth, then signal that kernel identity exclusively."""
     read = read or read_process
     open_fd = open_fd or os.pidfd_open
     send = send or signal.pidfd_send_signal
     close = close or os.close
+    poll = poll or pidfd_exited
     try:
         fd = open_fd(identity.pid, 0)
     except ProcessLookupError:
@@ -191,10 +333,16 @@ def signal_owned(identity, number, read=None, open_fd=None, send=None, close=Non
         try:
             process = read(identity.pid)
         except (FileNotFoundError, ProcessLookupError):
-            return "disappeared"
-        status = match(identity, {process.pid: process})
-        if status != "live":
-            return status
+            if poll(fd):
+                return "disappeared"
+            raise Uncertain(f"missing proc entry without pidfd exit: {identity}")
+        if process.identity != identity:
+            raise Uncertain(f"PID reused or UID changed: expected={identity}, observed={process}")
+        status = "exit-candidate" if process.state == "X" and process.rss == 0 else state(process)
+        if status in ("exit-candidate", "zombie"):
+            if poll(fd):
+                return "zombie" if status == "zombie" else "exited"
+            raise Uncertain(f"terminal-looking proc entry without pidfd exit: {identity}, {process}")
         try:
             send(fd, number, None, 0)
         except ProcessLookupError:
@@ -232,7 +380,8 @@ def check_image(image):
 def checkpoint(scope, processes, requester):
     """Only the waiting campaign and its ancestor chain may remain live."""
     scope.observe(processes)
-    require_live(requester, processes)
+    if scope.status(requester, processes) != "live":
+        raise Uncertain("checkpoint requester is no longer live")
     allowed, current = {scope.root.pid}, requester.pid
     while current != scope.root.pid:
         if current in allowed or current not in scope.owned:

@@ -5,7 +5,9 @@ both images. Its explicit `--continue` mode reuses only the verified normal
 baseline image from the failed e72c9c7 attempt, creates a fresh candidate worktree
 and image, then executes the same full matrix. No old observation or report is
 imported, pooled, replaced or retried. The original attempt stays exit125 with
-zero workload measurements.
+zero workload measurements. Its first continuation (`fcb8f9a60e0`) also stopped125
+before any runtime observation; that claim stays spent. See
+[EXIT-RACE-REPAIR.md](EXIT-RACE-REPAIR.md) for the preserved failure and repair.
 
 ## Prepare the binding without building or launching Java
 
@@ -61,6 +63,33 @@ Make/configure overrides such as `MAKEFLAGS`, `MAKEOVERRIDES`, `SPEC`,
 
 ## Later authorized execution needs one command
 
+### Preparing an explicitly reviewed successor after the failed build
+
+The old binding cannot be run again. The file-only `prepare-successor` operation
+pins the spent binding/claim and failed analysis/census, refreshes the repaired
+packet, rejects changed installed-input fingerprints and preserves the exact baseline,
+boot and both original absolute deadlines. It accepts only the recorded125
+failure with zero runtime observations, no candidate image/footer, and an empty
+live/error census. It records the missing old custody footer as uncertain;
+it cannot manufacture ECHILD or a successful old make status.
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 "$packet/continuation.py" prepare-successor \
+  /path/to/spent/continuation-binding.json REVIEWED_SPENT_BINDING_SHA256 \
+  /path/to/preserved/failed-continuation /path/to/new/successor-binding.json
+```
+
+Preparation never spends a claim or launches a build/JVM. The fixed child
+claim directory `successor` beneath the spent claim cannot be reset by changing
+a binding filename, output path or candidate SHA. Existing evidence/claims are
+never edited. Later binding revalidates the pins and recenses all old cleanup
+identities without sending signals. A different PID birth is unrelated.
+The successor binding SHA, complete repaired commit and the custody limitation
+must be reviewed together before separate execution approval. This is a fresh
+candidate build only; partial build output and old measurements are unusable.
+
+### Executing only after separate approval
+
 After explicit campaign release, use the approved checkout and the reviewed
 binding SHA, with a new output path whose parent exists:
 
@@ -91,7 +120,7 @@ is no boot-JDK, exploded-image or rebuilt-baseline fallback.
 
 Only candidate configure/make remains. Its source and normalized spec must
 match before make, and its build must return success with clean custody,
-`stopped=false`, `survivors=false` and no missed drain deadline. Missing footer,
+`stopped=false`, `survivors=false`, `timed_out=false` and no missed drain deadline. Missing footer,
 exit125 or persistent child ends the attempt. The build's six-second natural
 drain begins at the first validated post-completion decision after bounded
 observation. Baseline image/input verification runs again after candidate build.
@@ -124,6 +153,6 @@ flag mismatches, unreadable inputs, duplicate/partially written claims, original
 live workers/PID reuse, deadline expiry during verification and an active stage,
 interrupted candidate builds and clean custody with a persistent-child failure.
 The full matrix's text is independently pinned in the source tests.
-All62 offline tests, Bash syntax and whitespace checks pass. These fixtures
+All87 offline tests, Bash syntax and whitespace checks pass. These fixtures
 exercise file/control decisions and the injected supervisor loop; they do not
 constitute a live continuation run or runtime qualification.

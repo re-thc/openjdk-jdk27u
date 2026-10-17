@@ -5,12 +5,18 @@ build because zombie-only cleanup was classified as uncertain. The corrected
 `e72c9c791f9` attempt built the baseline image successfully, then stopped125
 because an adopted child remained live at make exit, consistent with the build's
 asynchronous javac shutdown. Neither reached comparison tests or measurements.
-Both results remain separate and unchanged. See [RUNNER-REPAIR.md](RUNNER-REPAIR.md) for the
+The authorized `fcb8f9a60e0` continuation then stopped125 during candidate
+compilation on an owned process's X/0/0/-1/-1 exit observation. Its candidate
+image is absent; make status and final custody are unproven. It produced zero
+runtime observations. All failed results remain separate and unchanged.
+See [EXIT-RACE-REPAIR.md](EXIT-RACE-REPAIR.md) for this failure and the offline
+repair, [RUNNER-REPAIR.md](RUNNER-REPAIR.md) for the
 original lifecycle repair and [POST-BUILD-DRAIN.md](POST-BUILD-DRAIN.md) for the
 bounded build-only drain fix and retained-baseline verification. This source
 repair does not itself authorize another campaign or resume timing.
 The explicit [retained-baseline continuation](CONTINUATION.md) prepares the
-candidate-only build and unchanged full matrix; it remains unreleased.
+candidate-only build and unchanged full matrix. The original claim is spent;
+the explicit successor proposal needs separate execution approval.
 
 ## Frozen inputs and existing evidence
 
@@ -265,9 +271,12 @@ before any stage starts. It rejects a sample>=12GiB before publishing readiness.
 Every nominal1s it records summed resident pages for the controller descendants,
 their retained birth ledger and the outer timeout. `memory-members.csv` retains
 PID, birth, UID, PPID, PGID, SID, kernel state, classification and RSS, including
-observed zero-RSS zombies. `memory.csv` records timestamp, sum, observed peak,
-count and active stage. Both streams flush each sample; readiness/heartbeat is
-published only after successful flushes. Shared resident pages can be counted
+observed zero-RSS zombies and owned X exit rows with positive kernel proof.
+`memory-exits.jsonl` retains the corresponding identity and exit witness.
+`memory.csv` records timestamp, sum, observed peak,
+count and active stage. All three streams flush each sample; readiness/heartbeat is
+published only after successful flushes. Positive sampled RSS is retained even
+when a subsequent pidfd poll proves exit. Shared resident pages can be counted
 more than once. This is sampled summed RSS, not unique physical memory,
 not a hard allocation/cgroup cap and not a guarantee of unobserved peak usage.
 
@@ -289,8 +298,11 @@ custody. No OS-wide configuration changes. PID/birth/UID establish identity;
 PPID lineage establishes ownership and the ledger preserves it through adoption
 and session/group changes. All explicit cleanup signals use validated pidfds;
 there is no numeric-PID/group kill fallback. R/S/D/T/t/I/W/P are live even at
-zero RSS. Only observed Z with zero RSS is terminal; contradictory/unknown state,
-read failure or PID reuse is uncertain, and cannot permit another stage.
+zero RSS. Owned X0/Z0 requires positive process-pidfd exit evidence; a zombie
+leader may retain live threads. Unsupported state, negative RSS, failed poll,
+nonready terminal-looking observations and PID reuse remain uncertain.
+Unrelated raw exit rows are never selected by their state alone. Fresh parent
+exit checks prevent stale parent rows from admitting unrelated new identities.
 
 The supervisor peeks actual kernel children without reaping (`waitid` WNOWAIT),
 records their Z0 identity, then reaps them. It publishes a clean custody record
@@ -301,6 +313,10 @@ custody within that deadline; expiry latches an incomplete result even if later
 cleanup succeeds. Other stages stay strict. Abort, fault or nonzero command exit
 bypasses the grace; guarded TERM10s/KILL2s cleanup keeps a separate deadline and
 cannot restart its budget. See [POST-BUILD-DRAIN.md](POST-BUILD-DRAIN.md).
+Normal image builds launch make directly under the subreaper. One monotonic
+90-minute command deadline replaces their nested GNU timeout; reaching it
+latches124 even if make later returns0. The actual wait status stays recorded.
+Nonbuild stage commands and their GNU timeout wrappers are unchanged.
 Each stage retains `identity.json`, `payload.json`,
 `processes.jsonl` and, only on verified drain, `complete.json`. Supervisor death
 without that record remains uncertain even if its known ledger is empty. Guarded
