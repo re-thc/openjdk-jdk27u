@@ -60,8 +60,23 @@ At the two historical source sites (lines 291 and 293), `Bits.mask`'s saturated
 `bits >= 32` behavior remained as `CmpLTMask` feeding an `AndI` between the
 `LShiftI` and final `AddI(-1)`. That tree is outside this generic wrapped-mask
 rule. The dump confirms untimed decoder correctness for that eager configuration;
-it does not establish activation under the default profile. Default-profile
-activation remains a prerequisite to any decoder benefit claim.
+it did not establish inactivity under the default profile.
+
+Later ordinary-tiered controls performed 200 untimed, byte-verified decodes of
+the same Git reference frame, with default inlining and the Serial/1 GiB fixture.
+Both OSR and regular C2 compilations select `bzhiI_rReg_rReg_0` twice, at the
+actual state-update sites on source lines 291 and 293. The never-observed
+saturation arms become `unstable_if/reinterpret` traps during parsing, before a
+merging Phi can form. The retained `<32` guards expose the generic wrapped-mask
+tree. Count Phis still have type [0,255], so this rule conservatively keeps its
+normalization. Ordered-guard range refinement belongs with the separate
+integer-guard work; no guard, CastII or range-propagation change is included here.
+
+A separate local saturated-byte matcher was investigated for the full eager
+tree. It cannot match these observed ordinary-profile nmethods because that
+tree is absent. It is outside PR #50. Default-profile activation of PR #50 is
+therefore established for this reference fixture; throughput benefit, release
+allocation/cost qualification and original-capture identity remain unverified.
 
 The candidate build uses the existing managed GCC16, boot JDK27 and jtreg83:
 
