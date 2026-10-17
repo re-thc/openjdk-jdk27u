@@ -41,6 +41,10 @@ HAPPY = (
     '1900-01-01T01:01:01.123Z', '2400-02-29T12:34:56.12345Z')
 LOOP_CALL = 'Instant.parse(values[i%values.length])'
 DIRECT_CALL = 'DateTimeFormatter.ISO_INSTANT.parse(values[i%values.length],Instant::from)'
+# Descriptive calibration from two fork medians, not a confidence interval or
+# statistical proof of equivalence. Candidate improvement/loss gates are separate.
+CALIBRATION_RATIO_BAND = (0.97, 1.03)
+CALIBRATION_MAX_FORK_SPREAD = 0.03
 BAD_JVM = re.compile(r'(?m)^(?:Exception in thread "[^"]*" |Caused by: )?'
                      r'(?:java\.lang\.)?AssertionError(?:[:\s]|$)|'
                      r'WARNING in native method|FATAL ERROR in native method|'
@@ -492,14 +496,20 @@ class Comparison:
                 elif any(positive) or not all(negative):
                     verdict, reason = 'INCONCLUSIVE', 'loss directions disagree or exact equality is unresolved'
             elif policy == 'unchanged':
-                if any(abs(ratio - 1) > 0.03 for ratio in ratios):
-                    verdict, reason = 'INCONCLUSIVE', 'unchanged control shifts by more than3%'
-                elif all(positive):
-                    verdict, reason = 'INCONCLUSIVE', 'unchanged control consistently loses, even below3%'
-                elif any(positive) or not all(negative):
-                    verdict, reason = 'INCONCLUSIVE', 'unchanged control signs disagree/equality unresolved'
+                if not all(CALIBRATION_RATIO_BAND[0] <= ratio <= CALIBRATION_RATIO_BAND[1]
+                           for ratio in ratios):
+                    verdict, reason = 'INCONCLUSIVE', 'unchanged control lies outside the symmetric0.97–1.03 band'
+                elif max(ratios) > min(ratios) + CALIBRATION_MAX_FORK_SPREAD:
+                    verdict, reason = 'INCONCLUSIVE', 'unchanged control fork ratios span more than3 percentage points'
+                else:
+                    reason = 'within symmetric calibration band and fork spread; no statistical equivalence claim'
             entry = dict(name=label, compact=compact, numerator=list(numerator), denominator=list(denominator),
                          ratios=ratios, verdict=verdict, reason=reason)
+            if policy == 'unchanged':
+                entry['calibration'] = dict(forks=2, ratio_band=list(CALIBRATION_RATIO_BAND),
+                    max_fork_spread=CALIBRATION_MAX_FORK_SPREAD,
+                    observed_fork_spread=max(ratios) - min(ratios),
+                    interpretation='predeclared engineering screen; no confidence interval')
             self.comparisons.append(entry)
             if verdict in self.findings:
                 self.finding(verdict, f'{label}/CompactStrings={compact}: {reason}; ratios={ratios}')

@@ -198,6 +198,10 @@ It records264million timing+warmup calls and132million diagnostic calls, not a
 broad qualification. It requires exact checksums, C2 normal-entry evidence,
 stability and no contradictory unchanged controls; the detailed discrimination
 rules are in RUNTIME_DISABLED_AUDIT.md. Startup checks/oracles are separate.
+Unchanged-work calibration requires both fork ratios in0.97–1.03 with a maximum
+spread of0.03, symmetrically permitting equality and small shifts either way.
+This two-fork engineering screen is not statistical proof of equivalence.
+It does not relax any candidate slowdown/gain rule or the movement envelope.
 A strict PASS plus unchanged fingerprinted evidence is required before full.
 
 The full controller retains five routes/both storage modes through100308-case

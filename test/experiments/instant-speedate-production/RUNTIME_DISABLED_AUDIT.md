@@ -191,7 +191,8 @@ with these predeclared controls, not a search over warmup lengths or tiny repeat
   effects. Residual public-only loss requires inspection of the corresponding
   C2 caller/callee boundaries and layout, not another guard guessed from timings.
 * Both corrected forks losing against the configure-off public route is HOLD,
-  even below3%. Disagreement, unstable unchanged controls, absent compile proof,
+  even below3%. Candidate improvement that disagrees between forks, unstable
+  unchanged controls, absent compile proof,
   or shifts inside unresolved noise are INCONCLUSIVE/HOLD; no GO. Source-level
   guard removal alone cannot release this gate. Keep every established failure
   or HOLD even if a later check times out. Correctness/safety failure is NO-GO.
@@ -201,9 +202,19 @@ with these predeclared controls, not a search over warmup lengths or tiny repeat
   confidence interval; it prevents declaring tiny changes inside observed control
   movement a causal success without adding samples.
   The normalized public change `(new-public/old-public)/(new-direct/old-direct)`
-  must be<1 in both forks. Each unchanged-control ratio must be<1 and within3%;
-  consistent positive loss, opposite signs or exact equality do not pass as
-  resolved noise. All normal-entry C2 loop compilations being invalidated or
+  must be<1 in both forks. Unchanged-work calibration is symmetric around equality:
+  both fork ratios must lie within the inclusive0.97–1.03 band, and their maximum
+  minus minimum must be<=0.03 (three percentage points). Equality, small shifts in
+  either direction and opposite signs can pass this calibration screen; no
+  improvement is required. Outside the band or excessive inter-fork spread is
+  INCONCLUSIVE, without extra samples. With two forks this is a predeclared
+  descriptive engineering screen, not statistical proof of equivalence or an
+  estimated confidence interval/noise floor. It applies only to the three
+  unchanged-work control comparisons. Candidate rules remain separate: strict
+  gains in both forks, normalized gain and control-movement envelope still apply;
+  consistently slower corrected public calls remain HOLD even below3%.
+  No historical result is reclassified by this prospective clarification.
+  All normal-entry C2 loop compilations being invalidated or
   deoptimized is INCONCLUSIVE, as is interleaved/truncated reporting. Separate
   compiler JVMs cannot prove timing-fork generated-code identity or exclude
   compilation smaller than the millisecond counter's resolution.
