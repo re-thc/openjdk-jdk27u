@@ -40,13 +40,33 @@ bash configure --with-conf-name=ffm-release --with-debug-level=release \
     --with-boot-jdk="$FFM_BOOT_JDK" --with-jtreg="$FFM_JTREG"
 make CONF=ffm-release JOBS="$FFM_JOBS" images
 make CONF=ffm-release JOBS="$FFM_JOBS" test \
-    TEST="test/jdk/java/foreign/DowncallTemplateTest.java test/jdk/java/foreign/TestLinker.java test/jdk/java/foreign/callarranger"
+    TEST="test/jdk/java/foreign/DowncallTemplateTest.java test/jdk/java/foreign/TestIntrinsics.java test/jdk/java/foreign/TestLinker.java test/jdk/java/foreign/callarranger"
 make CONF=ffm-release JOBS="$FFM_JOBS" test TEST=test/jdk/java/foreign
 ```
 
 Repeat with a separate `--with-conf-name=ffm-fastdebug` and
 `--with-debug-level=fastdebug` for debug validation. Use the same installed
 toolchain and native test libraries for a matched baseline/candidate comparison.
+
+For AArch64 template validation on an Apple Silicon Mac, run these commands in
+a native `linux/arm64` Docker environment. The Boot JDK must itself be a Linux
+AArch64 JDK; builds and tests then use the Linux ABI. Record the image identity
+and confirm both the Docker engine and container are ARM64. Use an init process
+that reaps children, such as Docker's `--init`, and preserve the checkout, build
+outputs and results in a persistent Linux volume.
+
+In each build's `DowncallTemplateTest_templates-required.jtr`, require successful
+execution and `DOWNCALL_TEMPLATE_PASS checks=... selected=true
+platform=linux-aarch64` on one output line. This proves that generated data is
+installed and selected for the current ABI; the same test checks both ABI
+entries, emitter byte equality and first-hit lazy initialization. `TestIntrinsics`
+separately invokes real native scalar functions through bound and unbound
+handles. Neither test is a benchmark or proof of a compiled execution tier.
+
+Native macOS AArch64 retains runtime generation. Its required-mode test can pass
+with `DOWNCALL_TEMPLATE_REQUIRED_MODE_UNSUPPORTED_HOST_FALLBACK` and
+`selected=false platform=unsupported`; that is fallback coverage, not Linux
+AArch64 template qualification.
 
 `DowncallTemplateTest` has four descriptions. `fallback` checks optional default
 selection and forced-verification fallback. `templates-required` fails if a
