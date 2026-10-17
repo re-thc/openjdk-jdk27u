@@ -188,6 +188,10 @@ public class CallingSequence {
         return linkerOptions.capturedCallStateMask();
     }
 
+    boolean hasEmptyLinkerOptions() {
+        return linkerOptions.equals(LinkerOptions.empty());
+    }
+
     public boolean needsTransition() {
         return !linkerOptions.isCritical();
     }
