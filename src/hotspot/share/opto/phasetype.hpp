@@ -86,6 +86,8 @@
   flags(AFTER_LOOP_PEELING,             "After Loop Peeling") \
   flags(BEFORE_LOOP_UNSWITCHING,        "Before Loop Unswitching") \
   flags(AFTER_LOOP_UNSWITCHING,         "After Loop Unswitching") \
+  flags(BEFORE_SCALAR_ALIAS_VERSIONING, "Before Scalar Alias Versioning") \
+  flags(AFTER_SCALAR_ALIAS_VERSIONING,  "After Scalar Alias Versioning") \
   flags(BEFORE_LOOP_MULTIVERSIONING,    "Before Loop Multiversioning") \
   flags(AFTER_LOOP_MULTIVERSIONING,     "After Loop Multiversioning") \
   flags(BEFORE_RANGE_CHECK_ELIMINATION, "Before Range Check Elimination") \

@@ -3584,6 +3584,8 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
     } else if (policy_unswitching(phase)) {
       phase->do_unswitching(this, old_new);
       return false; // need to recalculate idom data
+    } else if (phase->try_scalar_alias_versioning(this, old_new)) {
+      return false; // both versions need fresh loop membership/idom data
     } else if (phase->duplicate_loop_backedge(this, old_new)) {
       return false;
     } else if (_head->is_LongCountedLoop()) {

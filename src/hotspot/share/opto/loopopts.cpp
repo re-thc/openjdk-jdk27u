@@ -22,6 +22,7 @@
  *
  */
 
+#include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "memory/allocation.inline.hpp"
@@ -1344,7 +1345,140 @@ bool PhaseIdealLoop::identical_backtoback_ifs(Node *n) {
 }
 
 
-bool PhaseIdealLoop::can_split_if(Node* n_ctrl) {
+// A fully constant condition only routes incoming paths. It need not move the
+// other values computed below those paths. This is deliberately separate from
+// merge_point_safe(): that check also protects splits which clone narrowing
+// operations into predecessors, where their original type may be invalid.
+bool PhaseIdealLoop::can_route_constant_phi_if(IfNode* iff) {
+  Node* region = iff->in(0);
+  if (iff->Opcode() != Op_If || !region->is_Region() || region->is_Loop() ||
+      region->req() < 3 || region->req() > 9 || iff->outcnt() != 2 ||
+      !iff->in(1)->is_Bool()) {
+    return false;
+  }
+  BoolNode* bol = iff->in(1)->as_Bool();
+  Node* cmp = bol->in(1);
+  if (bol->outcnt() != 1 || cmp->Opcode() != Op_CmpI || cmp->outcnt() != 1 ||
+      !cmp->in(1)->is_Phi() || cmp->in(1)->in(0) != region ||
+      cmp->in(2)->Opcode() != Op_ConI ||
+      (bol->_test._test != BoolTest::eq && bol->_test._test != BoolTest::ne)) {
+    return false;
+  }
+
+  // CmpI equality of exact integer constants needs neither temporary nodes
+  // nor range arithmetic. An unknown incoming condition is not a route.
+  Node* phi = cmp->in(1);
+  if (phi->req() != region->req()) {
+    return false;
+  }
+  bool has_true = false;
+  bool has_false = false;
+  for (uint i = 1; i < region->req(); i++) {
+    if (phi->in(i) == nullptr || phi->in(i)->Opcode() != Op_ConI) {
+      return false;
+    }
+    bool equal = phi->in(i)->get_int() == cmp->in(2)->get_int();
+    bool outcome = bol->_test._test == BoolTest::eq ? equal : !equal;
+    if (outcome) {
+      has_true = true;
+    } else {
+      has_false = true;
+    }
+  }
+  if (!has_true || !has_false) {
+    return false;
+  }
+
+  // At most one rejection event per fully constant, both-arm candidate visit.
+  // Do not log ordinary comparisons or partially constant conditions.
+  auto reject = [&](const char* reason, Node* user, Node* ctrl) -> bool {
+    if (C->log() != nullptr) {
+      Node* explicit_ctrl = user != nullptr && user->req() > 0 ? user->in(0) : nullptr;
+      C->log()->elem("constant_phi_routing_reject if='%u' region='%u' user='%u' control='%u' "
+                     "explicit_control='%u' reason='%s'",
+                     iff->_idx, region->_idx, user == nullptr ? 0u : user->_idx,
+                     ctrl == nullptr ? 0u : ctrl->_idx,
+                     explicit_ctrl == nullptr ? 0u : explicit_ctrl->_idx, reason);
+    }
+    return false;
+  };
+
+  IfProjNode* true_proj = iff->true_proj();
+  IfProjNode* false_proj = iff->false_proj();
+  if (true_proj == nullptr || false_proj == nullptr) {
+    return reject("cast_control", iff, region);
+  }
+  uint dom_work = 4096;
+  auto original_arm = [&](Node* ctrl) -> Node* {
+    while (ctrl != true_proj && ctrl != false_proj) {
+      if (ctrl == nullptr || ctrl == C->root() || dom_work == 0) {
+        return nullptr;
+      }
+      --dom_work;
+      ctrl = idom(ctrl);
+    }
+    return ctrl;
+  };
+
+  uint uses_left = 1024;
+  for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
+    Node* p = region->fast_out(i);
+    if (uses_left == 0) {
+      return reject("work_limit", p, nullptr);
+    }
+    --uses_left;
+    if (p == region || p == iff) {
+      continue;
+    }
+    // No pinned computation or side effect between the merge and its test.
+    if (!p->is_Phi() || p->req() != region->req()) {
+      return reject("non_phi_region_use", p, has_node(p) ? ctrl_or_self(p) : nullptr);
+    }
+    for (DUIterator_Fast jmax, j = p->fast_outs(jmax); j < jmax; j++) {
+      Node* use = p->fast_out(j);
+      if (uses_left == 0) {
+        return reject("work_limit", use, nullptr);
+      }
+      --uses_left;
+      if (use == cmp) {
+        continue;
+      }
+      if (!has_node(use)) {
+        if (use->outcnt() != 0) {
+          return reject("unknown_live_user", use, nullptr);
+        }
+        continue;
+      }
+      // do_split_if() must not need split_up() for any of these users. This
+      // rules out local narrowing nodes and any local data DAG containing one.
+      if (at_relevant_ctrl(use, region, iff)) {
+        return reject("local_user", use, ctrl_or_self(use));
+      }
+      if (use->is_CastII() || use->Opcode() == Op_ConvI2L) {
+        Node* ctrl = get_ctrl(use);
+        Node* arm = original_arm(ctrl);
+        if (arm == nullptr || ctrl == arm) {
+          return reject(dom_work == 0 ? "work_limit" : "cast_control", use, ctrl);
+        }
+        Node* explicit_ctrl = use->in(0);
+        // A descendant CastII keeps its exact original proof. Reject casts
+        // on the If projection itself: replacing that projection would also
+        // change their explicit control and may require dependent-node pinning.
+        if ((use->is_CastII() && explicit_ctrl == nullptr) ||
+            (explicit_ctrl != nullptr &&
+             (explicit_ctrl == arm || original_arm(explicit_ctrl) != arm))) {
+          return reject(dom_work == 0 ? "work_limit" : "cast_control", use, ctrl);
+        }
+      }
+    }
+  }
+  return true;
+}
+
+bool PhaseIdealLoop::can_split_if(Node* n_ctrl, IfNode* routing_if, bool* constant_phi_routing) {
+  if (constant_phi_routing != nullptr) {
+    *constant_phi_routing = false;
+  }
   if (must_throttle_split_if()) {
     return false;
   }
@@ -1385,7 +1519,12 @@ bool PhaseIdealLoop::can_split_if(Node* n_ctrl) {
 
   // Check for safety of the merge point.
   if (!merge_point_safe(n_ctrl)) {
-    return false;
+    if (routing_if == nullptr || routing_if->in(0) != n_ctrl || !can_route_constant_phi_if(routing_if)) {
+      return false;
+    }
+    if (constant_phi_routing != nullptr) {
+      *constant_phi_routing = true;
+    }
   }
 
   return true;
@@ -1424,10 +1563,6 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
       return;
     }
 
-    if (!can_split_if(n_ctrl)) {
-      return;
-    }
-
     if (n->outcnt() != 1) {
       return; // Multiple bool's from 1 compare?
     }
@@ -1462,6 +1597,35 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
       return;  // some other kind of node, such as an Allocate
     }
 
+    bool constant_phi_routing = false;
+    if (!can_split_if(n_ctrl, iff->isa_If(), &constant_phi_routing)) {
+      return;
+    }
+
+#ifdef ASSERT
+    // The snapshots must not create a ResourceMark across graph mutation:
+    // registration can grow analysis structures whose lifetime is the phase.
+    // These stack-owned arrays allocate nothing until an accepted route adds
+    // a protected node, and free only their own CHeap storage on exit.
+    GrowableArrayCHeap<Node*, mtCompiler> protected_nodes(0);
+    GrowableArrayCHeap<Node*, mtCompiler> protected_controls(0);
+    GrowableArrayCHeap<const Type*, mtCompiler> protected_types(0);
+    if (constant_phi_routing) {
+      for (DUIterator_Fast imax, i = n_ctrl->fast_outs(imax); i < imax; i++) {
+        Node* p = n_ctrl->fast_out(i);
+        if (!p->is_Phi()) continue;
+        for (DUIterator_Fast jmax, j = p->fast_outs(jmax); j < jmax; j++) {
+          Node* use = p->fast_out(j);
+          if (has_node(use) && (use->is_CastII() || use->Opcode() == Op_ConvI2L)) {
+            protected_nodes.append(use);
+            protected_controls.append(use->in(0));
+            protected_types.append(use->bottom_type());
+          }
+        }
+      }
+    }
+#endif
+
     // When is split-if profitable?  Every 'win' on means some control flow
     // goes dead, so it's almost always a win.
     int policy = 0;
@@ -1494,6 +1658,15 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
     }
 #endif
     do_split_if(iff);
+#ifdef ASSERT
+    for (int i = 0; i < protected_nodes.length(); i++) {
+      assert(protected_nodes.at(i)->in(0) == protected_controls.at(i), "retain original cast control");
+      assert(protected_nodes.at(i)->bottom_type() == protected_types.at(i), "retain original cast type");
+    }
+#endif
+    if (constant_phi_routing && C->log() != nullptr) {
+      C->log()->elem("constant_phi_routing if='%u' region='%u'", iff->_idx, n_ctrl->_idx);
+    }
     C->print_method(PHASE_AFTER_SPLIT_IF, 4, iff);
     return;
   }

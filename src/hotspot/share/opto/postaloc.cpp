@@ -608,7 +608,7 @@ class SpillCopyRetention : public StackObj {
         }
         Node* n = block->get_node(j);
         uint lid = _ra._lrg_map.live_range_id(n);
-        const RegMask& allocation = lid == 0 ? RegMask::Empty : _ra.lrgs(lid).mask();
+        const RegMask& allocation = lid == 0 ? RegMask::EMPTY : _ra.lrgs(lid).mask();
         if (RetentionPolicy::interval_barrier(n->is_MachSafePoint(),
                                               n->is_Mach() && n->as_Mach()->has_call(), allocation, home)) {
           return false; // Includes endpoint calls and both halves of stack definitions.
@@ -789,7 +789,7 @@ public:
         }
         found |= _entries.at(i)->_node == entry;
       }
-      if (!found && _entries.length() < RetentionPolicy::MaxEntries) {
+      if (!found && static_cast<uint>(_entries.length()) < RetentionPolicy::MaxEntries) {
         const LRG& source_lrg = _ra.lrgs(source_lid);
         _entries.append(new (&_entry_arena) InvariantSpillEntry(entry, source_lid, entry->bottom_type(),
                                                              source_lrg._is_oop, source_lrg.mask()));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,16 @@
  *
  */
 
+#include "compiler/compileLog.hpp"
 #include "memory/allocation.inline.hpp"
+#include "oops/arrayOop.hpp"
+#include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/loopnode.hpp"
+#include "opto/memnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
@@ -378,6 +382,245 @@ class OriginalLoop : public StackObj {
     _phase->dominated_by(loop_selector.false_path_loop_proj(), unswitch_candidate_clone);
   }
 };
+
+// Promote one constant-index int[] load, guarded against a single otherwise
+// ambiguous int[] writer. The proof is local to the original (fast) version;
+// it does not create a global alias slice or teach other loads to ignore stores.
+// Unlike static scalar LICM, this transformation pays for an identity check and
+// an unchanged fallback loop. No alias-triggered uncommon trap is introduced.
+bool PhaseIdealLoop::try_scalar_alias_versioning(IdealLoopTree* loop, Node_List& old_new) {
+  constexpr uint MaxBodyNodes = 1024;
+  constexpr uint MaxCandidates = 8;
+  constexpr uint MaxMemoryNodes = 256;
+  constexpr uint MaxDominatorSteps = 4096;
+  LoopNode* head = loop->_head->as_Loop();
+  if (!LoopScalarAliasVersioning || !LoopMultiversioning || !LoopUnswitching ||
+      head->Opcode() != Op_Loop || head->req() != 3 || !loop->is_innermost() ||
+      loop->_irreducible || head->has_scalar_alias_versioning() ||
+      head->unswitch_count() >= head->unswitch_max() || loop->_body.size() > MaxBodyNodes ||
+      has_control_dependencies_from_predicates(head)) {
+    return false;
+  }
+  Node* entry = head->in(LoopNode::EntryControl);
+  if (entry == nullptr || entry == C->top()) {
+    return false;
+  }
+  uint dominator_steps = 0;
+  auto dominates_entry = [&](Node* control) {
+    if (control == nullptr || !control->is_CFG() || control->in(0) == nullptr) {
+      return false;
+    }
+    Node* cursor = entry;
+    while (cursor != control) {
+      if (++dominator_steps > MaxDominatorSteps || cursor == C->root() ||
+          dom_depth(cursor) <= dom_depth(control)) {
+        return false;
+      }
+      Node* parent = idom(cursor);
+      if (parent == cursor) {
+        return false;
+      }
+      cursor = parent;
+    }
+    return true;
+  };
+
+  // All non-memory dependencies, including the original null/range-check
+  // control, must already dominate entry. Do not speculate a trapping read on a
+  // zero-trip path. Existing peeling/predication may make a later round eligible.
+  auto available_at_entry = [&](Node* n) {
+    return n != nullptr && has_node(n) && has_ctrl(n) &&
+           !loop->is_member(get_loop(get_ctrl(n))) && dominates_entry(get_ctrl(n));
+  };
+  auto int_array_base = [&](Node* n) {
+    const TypeAryPtr* t = _igvn.type(n)->isa_aryptr();
+    return t != nullptr && t->elem() == TypeInt::INT && available_at_entry(n);
+  };
+
+  uint candidates = 0;
+  for (uint i = 0; i < loop->_body.size() && candidates < MaxCandidates; i++) {
+    Node* n = loop->_body[i];
+    if (n->Opcode() != Op_LoadI || n->outcnt() == 0 || _igvn.type(n) == Type::TOP) {
+      continue;
+    }
+    LoadINode* load = static_cast<LoadINode*>(n);
+    if (load->in(0) == nullptr || !load->is_unordered() || !load->depends_only_on_test() ||
+        load->is_unsafe_access() || load->is_mismatched_access() || load->is_unaligned_access() ||
+        load->barrier_data() != 0 ||
+        !dominates_entry(load->in(0)) || !available_at_entry(load->in(MemNode::Address))) {
+      continue;
+    }
+    intptr_t offset = 0;
+    Node* read_base = AddPNode::Ideal_base_and_offset(load->in(MemNode::Address), &_igvn, offset);
+    if (read_base != nullptr) {
+      read_base = read_base->uncast();
+    }
+    if (read_base == nullptr || !int_array_base(read_base) ||
+        offset != arrayOopDesc::base_offset_in_bytes(T_INT)) {
+      continue;
+    }
+    Node* memory = load->in(MemNode::Memory);
+    if (memory == nullptr || !memory->is_Phi() || _igvn.type(memory) != Type::MEMORY ||
+        memory->in(0) != head || memory->req() != head->req()) {
+      continue;
+    }
+    PhiNode* memory_phi = memory->as_Phi();
+    Node* entry_memory = memory_phi->in(LoopNode::EntryControl);
+    if (!available_at_entry(entry_memory) || _igvn.type(entry_memory) != Type::MEMORY ||
+        memory_phi->in(LoopNode::LoopBackControl) == nullptr) {
+      continue;
+    }
+    candidates++;
+
+    // Walk the complete backedge memory closure, not just a hot CFG route.
+    // Polls do not modify array memory. Calls/barriers/arraycopies and unknown
+    // effects reaching the backedge are rejected, even when their code is cold.
+    Node* writer_base = nullptr;
+    const bool closure_is_independent = [&]() {
+      // Release the temporary node-ID bitmap/vectors before cloning. A mark
+      // spanning cloning would also invalidate persistent loop-analysis state.
+      ResourceMark proof_mark;
+      AccessAnalyzer analyzer(&_igvn, load);
+      Unique_Node_List work;
+      work.push(memory_phi->in(LoopNode::LoopBackControl));
+      bool valid = true;
+      uint memory_work = 0;
+      for (uint cursor = 0; cursor < work.size(); cursor++) {
+        if (++memory_work > MaxMemoryNodes) {
+          valid = false;
+          break;
+        }
+        Node* mem = work[cursor];
+        if (mem == memory_phi || mem == entry_memory) {
+          continue;
+        }
+        if (mem == nullptr || _igvn.type(mem) != Type::MEMORY || !has_node(mem) || !has_ctrl(mem) ||
+            !loop->is_member(get_loop(get_ctrl(mem)))) {
+          valid = false;
+          break;
+        }
+        if (mem->is_Phi()) {
+          Node* region = mem->in(0);
+          if (region == nullptr || region->is_Loop() || mem->req() != region->req()) {
+            valid = false;
+            break;
+          }
+          for (uint edge = 1; edge < mem->req(); edge++) {
+            if (++memory_work > MaxMemoryNodes || mem->in(edge) == nullptr) {
+              valid = false;
+              break;
+            }
+            work.push(mem->in(edge));
+          }
+          if (!valid) {
+            break;
+          }
+        } else if (mem->is_Store()) {
+          StoreNode* store = mem->as_Store();
+          if (!store->is_unordered() || store->is_unsafe_access() || store->is_mismatched_access() ||
+              store->is_unaligned_access() || store->barrier_data() != 0 ||
+              store->adr_type() == nullptr || store->adr_type()->isa_aryptr() == nullptr) {
+            valid = false;
+            break;
+          }
+          if (!analyzer.detect_access_independence(store).independent) {
+            // Ideal_base_and_offset deliberately fails for variable indices.
+            // A plain heap AddP chain still identifies the complete array object;
+            // comparing its oop base needs no scaled index or raw address.
+            Node* adr = store->in(MemNode::Address);
+            Node* base = adr->is_AddP() ? adr->in(AddPNode::Base) : nullptr;
+            Node* root = adr;
+            uint adds = 0;
+            while (base != nullptr && root->is_AddP() && root->in(AddPNode::Base) == base && adds++ < 3) {
+              root = root->in(AddPNode::Address);
+            }
+            if (base == nullptr || root != base) {
+              valid = false;
+              break;
+            }
+            base = base->uncast();
+            if (store->Opcode() != Op_StoreI || !int_array_base(base) || base == read_base ||
+                (writer_base != nullptr && base != writer_base)) {
+              valid = false;
+              break;
+            }
+            writer_base = base;
+          }
+          if (store->in(MemNode::Memory) == nullptr) {
+            valid = false;
+            break;
+          }
+          work.push(store->in(MemNode::Memory));
+        } else if (mem->is_MergeMem()) {
+          AccessAnalyzer::AccessIndependence result = analyzer.detect_access_independence(mem);
+          if (!result.independent || result.mem == nullptr || result.mem == mem) {
+            valid = false;
+            break;
+          }
+          work.push(result.mem);
+        } else {
+          valid = false;
+          break;
+        }
+      }
+      return valid;
+    }();
+    if (!closure_is_independent || writer_base == nullptr || !may_require_nodes(loop->est_loop_clone_sz(2) + 16)) {
+      continue;
+    }
+
+    // All gates above are read-only. Reuse the same complete exit/value/memory
+    // repair and predicate cloning as ordinary non-counted loop unswitching.
+    C->print_method(PHASE_BEFORE_SCALAR_ALIAS_VERSIONING, 2, head);
+    Node* cmp = new CmpPNode(read_base, writer_base);
+    register_new_node(cmp, entry);
+    Node* bol = new BoolNode(cmp, BoolTest::ne);
+    register_new_node(bol, entry);
+    const LoopSelector selector(loop, bol, PROB_LIKELY_MAG(3), COUNT_UNKNOWN);
+    OriginalLoop original(loop, old_new);
+    original.multiversion(selector);
+    LoopNode* slow_head = old_new[head->_idx]->as_Loop();
+    LoadNode* slow_load = old_new[load->_idx]->as_Load();
+    Node* fast_entry = head->in(LoopNode::EntryControl);
+    Node* fast_memory = memory_phi->in(LoopNode::EntryControl);
+    DEBUG_ONLY(Node* original_control = load->in(0);)
+    LoadINode* promoted = new LoadINode(fast_entry, fast_memory, load->in(MemNode::Address),
+                                       load->adr_type(), load->bottom_type()->is_int(),
+                                       MemNode::unordered, LoadNode::Pinned);
+    register_new_node(promoted, fast_entry);
+    _igvn.replace_node(load, promoted);
+    head->mark_scalar_alias_versioning();
+    slow_head->mark_scalar_alias_versioning();
+    increment_unswitch_counts(head, slow_head);
+    add_unswitched_loop_version_bodies_to_igvn(loop, old_new);
+#ifdef ASSERT
+    assert(is_dominator(selector.true_path_loop_proj(), fast_entry), "guard must dominate the promoted read");
+    assert(promoted->in(0) == fast_entry && promoted->in(MemNode::Memory) == fast_memory,
+           "fast read uses entry memory and remains outside the cycle");
+    assert(is_dominator(original_control, fast_entry), "original null/range checks must dominate the read");
+    assert(!loop->is_member(get_loop(fast_entry)), "read must not remain in fast cycle");
+    assert(slow_load->in(MemNode::Memory) == old_new[memory_phi->_idx], "retain fallback memory dependence");
+    assert(slow_load->in(MemNode::Memory)->in(0) == slow_head, "fallback read is still loop-carried");
+    for (uint j = 0; j < loop->_body.size(); j++) {
+      Node* poll = loop->_body[j];
+      if (poll->Opcode() == Op_SafePoint) {
+        assert(old_new[poll->_idx] != nullptr && old_new[poll->_idx]->Opcode() == Op_SafePoint,
+               "preserve both versions' ordinary safepoint polls");
+      }
+    }
+#endif
+    if (C->log() != nullptr) {
+      C->log()->elem("scalar_alias_versioning loop='%u' slow_loop='%u' guard='%u' read_base='%u' "
+                     "writer_base='%u' fast_load='%u' slow_load='%u' entry_memory='%u' memory_phi='%u'",
+                     head->_idx, slow_head->_idx, selector.selector()->_idx, read_base->_idx, writer_base->_idx,
+                     promoted->_idx, slow_load->_idx, fast_memory->_idx, memory_phi->_idx);
+    }
+    C->print_method(PHASE_AFTER_SCALAR_ALIAS_VERSIONING, 2, head);
+    C->set_major_progress();
+    return true;
+  }
+  return false;
+}
 
 // See comments below file header for more information about Loop Unswitching.
 void PhaseIdealLoop::do_unswitching(IdealLoopTree* loop, Node_List& old_new) {

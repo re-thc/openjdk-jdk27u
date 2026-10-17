@@ -98,6 +98,8 @@ public enum CompilePhase {
     AFTER_LOOP_PEELING(             "After Loop Peeling"),
     BEFORE_LOOP_UNSWITCHING(        "Before Loop Unswitching"),
     AFTER_LOOP_UNSWITCHING(         "After Loop Unswitching"),
+    BEFORE_SCALAR_ALIAS_VERSIONING( "Before Scalar Alias Versioning"),
+    AFTER_SCALAR_ALIAS_VERSIONING(  "After Scalar Alias Versioning"),
     BEFORE_RANGE_CHECK_ELIMINATION( "Before Range Check Elimination"),
     AFTER_RANGE_CHECK_ELIMINATION(  "After Range Check Elimination"),
     ITER_GVN_AFTER_ELIMINATION(     "Iter GVN after Eliminating Allocations and Locks"),

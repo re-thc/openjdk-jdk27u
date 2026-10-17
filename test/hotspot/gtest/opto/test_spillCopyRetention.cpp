@@ -54,7 +54,7 @@ TEST_VM(SpillCopyRetention, integer_and_fat_definitions_kill_gp_pairs) {
   ASSERT_FALSE(killed.member(0));
   RegMask live = slots(2, 3);
   live.insert(4);
-  Policy::transfer(live, killed, RegMask::Empty);
+  Policy::transfer(live, killed, RegMask::EMPTY);
   ASSERT_FALSE(live.member(2));
   ASSERT_FALSE(live.member(3));
   ASSERT_TRUE(live.member(4));
@@ -114,7 +114,7 @@ TEST_VM(SpillCopyRetention, phi_operands_are_predecessor_specific) {
   // The Phi's ordinary transfer kills its result. It must not add every input
   // to both predecessors, nor lose an input because that result aliases it.
   RegMask successor_live = slots(2, 3);
-  Policy::transfer(successor_live, slots(2, 3), RegMask::Empty);
+  Policy::transfer(successor_live, slots(2, 3), RegMask::EMPTY);
   ASSERT_TRUE(successor_live.is_empty());
   successor_live.or_with(left);
   ASSERT_TRUE(successor_live.member(2));
@@ -237,7 +237,7 @@ TEST_VM(SpillCopyRetention, selected_rejections_leave_state_unchanged) {
   RegMask alternate = slots(2, 3);
   Policy::Budget insufficient(75), unused(76);
   ASSERT_FALSE(Policy::recolor(seed, alternate, alternate, insufficient, 76));
-  ASSERT_FALSE(Policy::recolor(seed, alternate, RegMask::Empty, unused, 76));
+  ASSERT_FALSE(Policy::recolor(seed, alternate, RegMask::EMPTY, unused, 76));
   ASSERT_EQ(unused.left(), 76U);
   ASSERT_EQ(seed.reg(), 0);
   ASSERT_EQ(seed.mask_size(), 1);
@@ -293,8 +293,8 @@ TEST_VM(SpillCopyRetention, stack_home_and_endpoint_barriers) {
   RegMask home = slots(32, 33);
   ASSERT_TRUE(Policy::interval_barrier(false, false, slots(33, 34), home));
   ASSERT_FALSE(Policy::interval_barrier(false, false, slots(34, 35), home));
-  ASSERT_TRUE(Policy::interval_barrier(true, false, RegMask::Empty, home));
-  ASSERT_TRUE(Policy::interval_barrier(false, true, RegMask::Empty, home));
+  ASSERT_TRUE(Policy::interval_barrier(true, false, RegMask::EMPTY, home));
+  ASSERT_TRUE(Policy::interval_barrier(false, true, RegMask::EMPTY, home));
 }
 
 TEST_VM(SpillCopyRetention, budget_exhaustion_and_admission_limits) {

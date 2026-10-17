@@ -86,6 +86,7 @@ protected:
          MultiversionSlowLoop         = 2<<17,
          MultiversionDelayedSlowLoop  = 3<<17,
          MultiversionFlagsMask        = 3<<17,
+         HasScalarAliasVersioning     = 1<<19,
        };
   char _unswitch_count;
   enum { _unswitch_max=3 };
@@ -109,6 +110,7 @@ public:
   bool is_subword_loop() const { return _loop_flags & SubwordLoop; }
   bool is_loop_nest_inner_loop() const { return _loop_flags & LoopNestInnerLoop; }
   bool is_loop_nest_outer_loop() const { return _loop_flags & LoopNestLongOuterLoop; }
+  bool has_scalar_alias_versioning() const { return _loop_flags & HasScalarAliasVersioning; }
 
   void mark_partial_peel_failed() { _loop_flags |= PartialPeelFailed; }
   void mark_was_slp() { _loop_flags |= WasSlpAnalyzed; }
@@ -122,6 +124,7 @@ public:
   void mark_subword_loop() { _loop_flags |= SubwordLoop; }
   void mark_loop_nest_inner_loop() { _loop_flags |= LoopNestInnerLoop; }
   void mark_loop_nest_outer_loop() { _loop_flags |= LoopNestLongOuterLoop; }
+  void mark_scalar_alias_versioning() { _loop_flags |= HasScalarAliasVersioning; }
 
   int unswitch_max() { return _unswitch_max; }
   int unswitch_count() { return _unswitch_count; }
@@ -1662,6 +1665,7 @@ public:
   // insert a clone of the test that selects which version to
   // execute.
   void do_unswitching(IdealLoopTree* loop, Node_List& old_new);
+  bool try_scalar_alias_versioning(IdealLoopTree* loop, Node_List& old_new);
 
   IfNode* find_unswitch_candidate(const IdealLoopTree* loop) const;
 
@@ -1870,7 +1874,8 @@ private:
   Node* try_move_store_before_loop(Node* n, Node *n_ctrl);
   void try_move_store_after_loop(Node* n);
   bool identical_backtoback_ifs(Node *n);
-  bool can_split_if(Node *n_ctrl);
+  bool can_route_constant_phi_if(IfNode* iff);
+  bool can_split_if(Node* n_ctrl, IfNode* routing_if = nullptr, bool* constant_phi_routing = nullptr);
   bool cannot_split_division(const Node* n, const Node* region) const;
   static bool is_divisor_loop_phi(const Node* divisor, const Node* loop);
   bool loop_phi_backedge_type_contains_zero(const Node* phi_divisor, const Type* zero) const;
