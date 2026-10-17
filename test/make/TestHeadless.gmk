@@ -117,6 +117,7 @@ IMPORT_SOURCE_ARGS := IMPORT_MODULES_SRC=$(IMPORT_SOURCE_TEST) \
     SUPPORT_OUTPUTDIR=$(IMPORT_SUPPORT_TEST) TOP_SRC_DIRS= \
     MODULEPATH=$(call PathList, $(JDK_OUTPUTDIR)/modules $(IMPORT_SUPPORT_TEST)/classes)
 source-imports: module-info
+	$(MKDIR) -p $(IMPORT_SUPPORT_TEST)/javatmp
 	+$(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/common/modules/GensrcModuleInfo.gmk MODULE=server.extra $(IMPORT_SOURCE_ARGS) all
 	+$(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/common/modules/GensrcModuleInfo.gmk MODULE=server.open $(IMPORT_SOURCE_ARGS) all
 	+$(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/CompileJavaModules.gmk MODULE=client.keep $(IMPORT_SOURCE_ARGS) client.keep_BIN=$(IMPORT_SUPPORT_TEST)/classes all

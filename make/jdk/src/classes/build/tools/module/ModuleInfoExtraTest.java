@@ -153,10 +153,10 @@ public class ModuleInfoExtraTest {
             }
         }
         Map<String, String> classes = Map.of(
-                "server.open/openapi/Open.java", "package openapi; public class Open {}",
-                "server.extra/api/Api.java", "package api; public class Api {}",
-                "server.extra/impl/Service.java", "package impl; public class Service implements Runnable { public void run() {} }",
-                "server.extra/hidden/Hidden.java", "package hidden; public class Hidden {}");
+                "server.open/openapi/Open.java", "package openapi; public class Open { public Open() {} }",
+                "server.extra/api/Api.java", "package api; public class Api { public Api() {} }",
+                "server.extra/impl/Service.java", "package impl; public class Service implements Runnable { public Service() {} public void run() {} }",
+                "server.extra/hidden/Hidden.java", "package hidden; public class Hidden { public Hidden() {} }");
         for (var entry : classes.entrySet()) {
             Path file = generated.resolve(entry.getKey());
             Files.createDirectories(file.getParent());
