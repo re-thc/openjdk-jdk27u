@@ -1,0 +1,128 @@
+{
+  "schema": 1,
+  "scope": "Scheduler cleanup of one superseded zero-timing eligibility run; complete validated images retained",
+  "observed_at": "2026-10-18 23:13:55 UTC",
+  "original_run": {
+    "id": 39164738566,
+    "head": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+    "status": "completed",
+    "conclusion": "cancelled"
+  },
+  "zero_timing_proof": "7c9d98c5dd34c5eeb015e751811f273c2e1d4be4",
+  "controller": {
+    "run_id": 39175555361,
+    "head": "cb3558475396e170a71a600a362665d62e353654",
+    "branch": "codex/stringzilla-zero-timing-cleanup-39164738566",
+    "workflow_blob": "864131f3f01d25312d107fe4b9c536953abab1b5",
+    "group": "stringzilla-final-qualification",
+    "cancel_in_progress": true,
+    "token_permissions": "read-only",
+    "verification_job_completion_claimed": false
+  },
+  "scope_check": {
+    "original_only_active_in_matching_workflow": true,
+    "other_active_workflow_sources_checked": 17,
+    "other_run_ids": [
+      39175045333,
+      39174795656,
+      39174300598,
+      39173793271,
+      39173188120,
+      39170596871,
+      39170575679,
+      39168831364,
+      39167625294,
+      39167213034,
+      39166944542,
+      39165917913,
+      39165376586,
+      39163642399,
+      39170171988,
+      39169278668,
+      39163799490
+    ],
+    "all_three_eligible_minima_failed_before_restore_and_measurement": true,
+    "normal_groups_terminal_skipped": true,
+    "original_successful_timing_steps": 0,
+    "original_result_artifacts": 0,
+    "original_triplets_repeated_or_discarded": 0
+  },
+  "retained_producers": [
+    {
+      "backend": "serial",
+      "job_id": 117789053116,
+      "conclusion": "success",
+      "artifacts": [
+        {
+          "id": 12151758260,
+          "name": "stringzilla-final-pair-serial-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+          "digest": "sha256:4eb4aec81c2905af9ff8fe867d431b65c9b6cbf24821cbfbe4cf2aaefb334e36"
+        },
+        {
+          "id": 12152326660,
+          "name": "stringzilla-final-build-serial-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+          "digest": "sha256:d60cb49009db517b2306897d002130b110bfcb790c10c9b70197360e5866be9c"
+        }
+      ]
+    },
+    {
+      "backend": "avx2",
+      "job_id": 117789053163,
+      "conclusion": "success",
+      "artifacts": [
+        {
+          "id": 12151804060,
+          "name": "stringzilla-final-pair-avx2-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+          "digest": "sha256:6aa4e64d7515f97403162bde6c85ead38dfd2f4981818b04656f4ee6cefe401f"
+        },
+        {
+          "id": 12152835042,
+          "name": "stringzilla-final-build-avx2-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+          "digest": "sha256:29ae506c6ccb65a087f78e30fcf3a74adfce710e8201e274326655ade01bef56"
+        }
+      ]
+    },
+    {
+      "backend": "neon",
+      "job_id": 117789053159,
+      "conclusion": "success",
+      "artifacts": [
+        {
+          "id": 12151936751,
+          "name": "stringzilla-final-pair-neon-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+          "digest": "sha256:674d6a986ee2856c3975dab979546c0237ef595740e46cd43ea45669108b55f2"
+        },
+        {
+          "id": 12152650113,
+          "name": "stringzilla-final-build-neon-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+          "digest": "sha256:b28e9d1baa392ab865163bd788832b7e5f93994ca5a33de3d1fb9464a18da21d"
+        }
+      ]
+    },
+    {
+      "backend": "msvc",
+      "job_id": 117789053344,
+      "conclusion": "success",
+      "artifacts": [
+        {
+          "id": 12151927587,
+          "name": "stringzilla-final-pair-msvc-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+          "digest": "sha256:570a8456f7b230d49f8e2769b839c687f244bba756f129dc65f9840e39afe29a"
+        },
+        {
+          "id": 12151219729,
+          "name": "stringzilla-final-build-msvc-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+          "digest": "sha256:e6040cc6a244f91e1bc8d6dd9f619903787327bd8d0a40f6ede5416c030da948"
+        }
+      ]
+    }
+  ],
+  "recovery_run": {
+    "id": 39174300598,
+    "head": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+    "status": "queued",
+    "group": "stringzilla-final-recovery-916ba895"
+  },
+  "production_source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+  "new_builds": 0
+}
