@@ -1,0 +1,153 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+name: Measure a StringZilla backend and tier
+on:
+  workflow_call:
+    inputs:
+      source:
+        type: string
+        required: true
+      backend:
+        type: string
+        required: true
+      tier:
+        type: string
+        required: true
+      runner:
+        type: string
+        required: true
+      artifact-id:
+        type: string
+        required: true
+      artifact-digest:
+        type: string
+        required: true
+      original-image-hash:
+        type: string
+        required: true
+      fork-image-hash:
+        type: string
+        required: true
+      helper-hash:
+        type: string
+        required: true
+      parent-manifest-hash:
+        type: string
+        required: true
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  measure:
+    name: ${{ inputs.backend }}-${{ inputs.tier }} controls
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 360
+    env:
+      SOURCE: ${{ inputs.source }}
+      BACKEND: ${{ inputs.backend }}
+      TIER: ${{ inputs.tier }}
+      ARTIFACT_ID: ${{ inputs.artifact-id }}
+      ARTIFACT_DIGEST: ${{ inputs.artifact-digest }}
+      ORIGINAL_HASH: ${{ inputs.original-image-hash }}
+      FORK_HASH: ${{ inputs.fork-image-hash }}
+      HELPER_HASH: ${{ inputs.helper-hash }}
+      MANIFEST_HASH: ${{ inputs.parent-manifest-hash }}
+      GH_TOKEN: ${{ github.token }}
+      GIT_CONFIG_COUNT: 1
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
+    steps:
+      - name: Checkout candidate runtime and frozen harness
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source }}
+          persist-credentials: false
+      - name: Checkout baseline identity
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
+          path: baseline
+          persist-credentials: false
+      - name: Checkout pinned auxiliary driver
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Check physical CPU and compiled profile prerequisites
+        id: physical
+        shell: python
+        run: |
+          import os, py_compile, subprocess
+          path = "driver/.github/scripts/stringzilla-sharded.py"
+          py_compile.compile(path, doraise=True)
+          subprocess.run(["python", path, "physical", "--source", os.environ["SOURCE"],
+                          "--backend", os.environ["BACKEND"], "--tier", os.environ["TIER"]], check=True)
+      - name: Restore complete pair and project the fixed manifest
+        if: steps.physical.outputs.available == 'true'
+        shell: python
+        run: |
+          import os, subprocess
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-sharded.py", "restore",
+              "--source", os.environ["SOURCE"], "--backend", os.environ["BACKEND"], "--tier", os.environ["TIER"],
+              "--artifact-id", os.environ["ARTIFACT_ID"], "--artifact-digest", os.environ["ARTIFACT_DIGEST"],
+              "--original-hash", os.environ["ORIGINAL_HASH"], "--fork-hash", os.environ["FORK_HASH"],
+              "--helper-hash", os.environ["HELPER_HASH"], "--parent-manifest-hash", os.environ["MANIFEST_HASH"]], check=True)
+      - name: Attest actual runtime flags and backend on this host
+        if: steps.physical.outputs.available == 'true'
+        id: runtime
+        shell: python
+        run: |
+          import os, subprocess
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-sharded.py", "runtime",
+                          "--source", os.environ["SOURCE"], "--backend", os.environ["BACKEND"], "--tier", os.environ["TIER"]], check=True)
+      - name: Check MSVC 14.44 toolset
+        if: runner.os == 'Windows' && steps.runtime.outputs.available == 'true'
+        id: msvc
+        shell: bash
+        run: |
+          set +e
+          '/c/Program Files/Microsoft Visual Studio/18/Enterprise/vc/auxiliary/build/vcvars64.bat' -vcvars_ver=14.44
+          if [ $? -eq 0 ]; then echo "installed=true" >> "$GITHUB_OUTPUT"; else echo "installed=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Install MSVC 14.44 toolset
+        if: runner.os == 'Windows' && steps.runtime.outputs.available == 'true' && steps.msvc.outputs.installed != 'true'
+        shell: bash
+        run: |
+          '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe' \
+            modify --quiet --installPath 'C:\Program Files\Microsoft Visual Studio\18\Enterprise' \
+            --add Microsoft.VisualStudio.Component.VC.14.44.x86.x64
+      - name: Install compiler for actual AVX-512 native contract checks
+        if: inputs.backend == 'avx512' && steps.runtime.outputs.available == 'true'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-16
+          test "$(gcc-16 -dumpversion)" = 16
+      - name: Execute native AVX-512 contract on this physical host
+        if: inputs.backend == 'avx512' && steps.runtime.outputs.available == 'true'
+        shell: python
+        run: |
+          import os, subprocess
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-sharded.py", "native",
+                          "--source", os.environ["SOURCE"], "--backend", os.environ["BACKEND"]], check=True)
+          from pathlib import Path
+          assert "requested=2 selected=2 executable=1" in Path("perf-output/native-validation/run.log").read_text()
+      - name: Measure sequential original enabled and disabled triplets
+        if: steps.runtime.outputs.available == 'true'
+        shell: python
+        run: |
+          import os, subprocess
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-sharded.py", "measure",
+              "--source", os.environ["SOURCE"], "--backend", os.environ["BACKEND"], "--tier", os.environ["TIER"],
+              "--original-hash", os.environ["ORIGINAL_HASH"], "--fork-hash", os.environ["FORK_HASH"],
+              "--helper-hash", os.environ["HELPER_HASH"]], check=True)
+      - name: Retain every raw result and unsupported-host receipt
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-sharded-results-${{ inputs.backend }}-${{ inputs.tier }}-${{ github.sha }}-attempt${{ github.run_attempt }}
+          path: perf-output
+          if-no-files-found: error
+          retention-days: 30
