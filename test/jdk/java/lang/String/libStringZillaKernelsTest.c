@@ -371,9 +371,9 @@ static jint check_kernels(void) {
 
         // Common periodic pivots must retain misses and earlier matches when
         // the bounded serial adapter falls back to the upstream suffix search.
-        const jint periodic_counts[] = {512, 513};
-        const jint periodic_lengths[] = {4096, 4095};
-        const jint periodic_periods[] = {2, 3};
+        const jint periodic_counts[] = {512, 513, 513};
+        const jint periodic_lengths[] = {4096, 4095, 4096};
+        const jint periodic_periods[] = {2, 3, 3};
         char periodic_source[4104], periodic_target[520];
         for (unsigned int n = 0; n < sizeof(periodic_counts) / sizeof(periodic_counts[0]); n++) {
             jint count = periodic_counts[n], length = periodic_lengths[n];
@@ -394,8 +394,8 @@ static jint check_kernels(void) {
 
         // Swapping the code-unit bytes exercises either byte as the selected
         // contrast and creates odd byte candidates sharing the common values.
-        const jint periodic_utf16_counts[] = {256, 258};
-        const jint periodic_utf16_lengths[] = {2048, 2049};
+        const jint periodic_utf16_counts[] = {256, 258, 258};
+        const jint periodic_utf16_lengths[] = {2048, 2049, 2050};
         const jchar periodic_units[][3] = {{0x0401, 0x0104, 0x0204},
                                            {0x0104, 0x0401, 0x0402}};
         jchar periodic_utf16_source[2064], periodic_utf16_target[272];
@@ -423,6 +423,23 @@ static jint check_kernels(void) {
                     CHECK(kernels->rfindUTF16((const char*)text, length * 2,
                             (const char*)target, count * 2) == span * 2);
                 }
+            }
+        }
+
+        // A bounded UTF-16 byte probe may encounter an odd candidate first.
+        // Its bulk fallback must retain earlier aligned matches and let the
+        // existing adapter reject later byte-perfect odd occurrences.
+        jchar bounded_odd_source[520], bounded_odd_target[136];
+        const jchar bounded_odd_units[][2] = {{0x0401, 0x0104}, {0x0104, 0x0401}};
+        for (unsigned int order = 0; order < sizeof(bounded_odd_units) / sizeof(bounded_odd_units[0]); order++) {
+            for (jint offset = 0; offset < 8; offset++) {
+                jchar* text = bounded_odd_source + offset;
+                jchar* target = bounded_odd_target + ((offset + 3) & 7);
+                for (jint i = 0; i < 129; i++) target[i] = bounded_odd_units[order][1];
+                for (jint i = 0; i < 512; i++) text[i] = bounded_odd_units[order][0];
+                CHECK(kernels->rfindUTF16((const char*)text, 1024, (const char*)target, 258) == -1);
+                memcpy(text, target, 258);
+                CHECK(kernels->rfindUTF16((const char*)text, 1024, (const char*)target, 258) == 0);
             }
         }
 
