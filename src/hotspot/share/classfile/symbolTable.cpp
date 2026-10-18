@@ -511,6 +511,18 @@ public:
   }
 };
 
+class SymbolTableBatchLookup : public StackObj {
+  const char** _names;
+  const int* _lengths;
+  const unsigned int* _hashes;
+public:
+  SymbolTableBatchLookup(const char** names, const int* lengths, const unsigned int* hashes)
+    : _names(names), _lengths(lengths), _hashes(hashes) {}
+  SymbolTableLookup operator[](size_t i) {
+    return SymbolTableLookup(_names[i], _lengths[i], _hashes[i]);
+  }
+};
+
 void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHandle& cp,
                               int names_count, const char** names, int* lengths,
                               int* cp_indices) {
@@ -550,10 +562,7 @@ void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHa
   }
 
   // Look up the other names together, to overlap their cache misses.
-  SymbolTableLookup* lookups = NEW_RESOURCE_ARRAY_IN_THREAD(current, SymbolTableLookup, count);
-  for (int i = 0; i < count; i++) {
-    ::new (&lookups[i]) SymbolTableLookup(names[i], lengths[i], hashes[i]);
-  }
+  SymbolTableBatchLookup lookups(names, lengths, hashes);
   SymbolTableBatchFound found(syms);
   bool rehash_warning = false;
   _local_table->get_batch(current, lookups, count, found, &rehash_warning);

@@ -1109,7 +1109,7 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
 template <typename CONFIG, MemTag MT>
 template <typename LOOKUP_FUNC, typename FOUND_FUNC>
 inline void ConcurrentHashTable<CONFIG, MT>::
-  get_batch(Thread* thread, LOOKUP_FUNC* lookups, size_t count,
+  get_batch(Thread* thread, LOOKUP_FUNC& lookups, size_t count,
             FOUND_FUNC& found_f, bool* grow_hint)
 {
   const size_t group_size = 16;
