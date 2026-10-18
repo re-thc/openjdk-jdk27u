@@ -1439,6 +1439,23 @@ class GuardedCursorProof : public StackObj {
            _phase->igvn().type_or_null(n) != Type::TOP;
   }
 
+  bool dominates(Node* dominator, Node* n) {
+    // Use the same depth-aligned walk as PhaseIdealLoop::is_dominator, but
+    // charge every hop to this proof's shared budget. Phi arms can otherwise
+    // repeatedly traverse a long common dominator chain without using work.
+    uint depth = _phase->dom_depth(dominator);
+    while (_phase->dom_depth(n) >= depth) {
+      if (n == dominator) {
+        return true;
+      }
+      if (--_work < 0) {
+        return false;
+      }
+      n = _phase->idom(n);
+    }
+    return false;
+  }
+
   bool same_cursor(Node* n, int depth = 0) {
     if (--_work < 0 || depth > 8) {
       return false;
@@ -1520,7 +1537,7 @@ class GuardedCursorProof : public StackObj {
     if (step->is_Phi()) {
       Node* region = step->in(0);
       if (!live_control(region) || !region->is_Region() || region->is_Loop() ||
-          step->req() < 2 || region->req() != step->req() || !_phase->is_dominator(region, ctrl)) {
+          step->req() < 2 || region->req() != step->req() || !dominates(region, ctrl)) {
         return false;
       }
       for (uint i = 1; i < step->req(); i++) {
@@ -1581,7 +1598,7 @@ class GuardedCursorProof : public StackObj {
     if (update->is_Phi()) {
       Node* region = update->in(0);
       if (!live_control(region) || !region->is_Region() || region->is_Loop() ||
-          update->req() < 2 || region->req() != update->req() || !_phase->is_dominator(region, ctrl)) {
+          update->req() < 2 || region->req() != update->req() || !dominates(region, ctrl)) {
         return false;
       }
       for (uint i = 1; i < update->req(); i++) {
@@ -1615,11 +1632,12 @@ class GuardedCursorProof : public StackObj {
     Node* loop = _cursor->in(0);
     if (!live_control(loop) || !loop->is_Loop() || loop->req() != 3 || _cursor->req() != 3 ||
         !live_control(loop->in(LoopNode::EntryControl)) || !live_control(loop->in(LoopNode::LoopBackControl)) ||
-        !live_control(check->in(0)) || !_phase->is_dominator(loop, check->in(0))) {
+        !live_control(check->in(0))) {
       return false;
     }
     Node* init = value(_cursor->in(1));
     if (init == nullptr || init->Opcode() != Op_ConI || init->get_int() != 0 ||
+        !dominates(loop, check->in(0)) ||
         !checked_update(_cursor->in(2), loop->in(LoopNode::LoopBackControl), 0) ||
         _step == nullptr || _limit == nullptr || !checked_component(_step, check->in(0), 0)) {
       return false;
