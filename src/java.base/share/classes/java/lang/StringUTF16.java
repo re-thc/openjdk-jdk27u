@@ -1359,30 +1359,34 @@ final class StringUTF16 {
     }
 
     static int lastIndexOf(byte[] value, int ch, int fromIndex) {
-        int limit = Math.min(fromIndex, length(value) - 1);
-        if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT
-                && limit >= 0 && getChar(value, limit) == ch) {
-            return limit;
+        int length = value.length >> 1;
+        int limit = Math.min(fromIndex, length - 1);
+        int initialLimit = limit;
+        if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT && limit >= 0) {
+            if (getChar(value, limit) == ch) {
+                return limit;
+            }
+            int stop = limit >= 8 ? limit - 8 : -1;
+            for (limit--; limit > stop; limit--) {
+                if (getChar(value, limit) == ch) {
+                    return limit;
+                }
+            }
         }
-        if (length(value) >= (StringZilla.MIN_BYTES >> 1)
+        if (length >= (StringZilla.MIN_BYTES >> 1)
                 && fromIndex >= (StringZilla.MIN_BYTES >> 1) - 2
                 && StringZilla.ENABLED && Character.isValidCodePoint(ch)) {
-            int searchLength = Math.min(length(value), limit + (ch >= Character.MIN_SUPPLEMENTARY_CODE_POINT ? 2 : 1));
+            int searchLength = Math.min(length, initialLimit + (ch >= Character.MIN_SUPPLEMENTARY_CODE_POINT ? 2 : 1));
             if (searchLength >= (StringZilla.MIN_BYTES >> 1)
                     && StringZilla.useCharUTF16(searchLength, true)) {
-                int stop = limit - 8;
                 if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
-                    for (; limit > stop; limit--) {
-                        if (getChar(value, limit) == ch) {
-                            return limit;
-                        }
-                    }
                     searchLength = limit + 1;
                 } else {
+                    int stop = limit - 8;
                     char hi = Character.highSurrogate(ch);
                     char lo = Character.lowSurrogate(ch);
                     for (; limit > stop; limit--) {
-                        if (limit + 1 < length(value) && getChar(value, limit) == hi
+                        if (limit + 1 < length && getChar(value, limit) == hi
                                 && getChar(value, limit + 1) == lo) {
                             return limit;
                         }
@@ -1401,15 +1405,14 @@ final class StringUTF16 {
         if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
             // handle most cases here (ch is a BMP code point or a
             // negative value (invalid code point))
-            int i = Math.min(fromIndex, (value.length >> 1) - 1);
-            for (; i >= 0; i--) {
+            for (int i = limit; i >= 0; i--) {
                 if (getChar(value, i) == ch) {
                     return i;
                 }
             }
             return -1;
         } else {
-            return lastIndexOfSupplementary(value, ch, fromIndex);
+            return lastIndexOfSupplementary(value, ch, limit);
         }
     }
 

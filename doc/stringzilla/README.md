@@ -143,7 +143,8 @@ C1 UTF-16 forward substring searches use Java on serial backends; mixed forward
 search retains native eligibility for 64-code-unit needles. Bounded short
 immediate matches are checked before the native policy. C2 reverse UTF-16
 character searches use Java on serial backends. Other backend/tier choices retain their existing native eligibility. Reverse character
-searches check the rightmost code unit before native setup.
+searches check up to eight code units before feature, backend and tier selection.
+Native eligibility uses the original prefix length; bulk search skips the checked units.
 
 MSVC C1 UTF-16 character search requires 256 remaining code units. C2 reverse
 UTF-16 character search uses Java below 256 units on AVX2 and NEON; AVX-512

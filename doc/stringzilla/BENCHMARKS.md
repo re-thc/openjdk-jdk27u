@@ -4,6 +4,11 @@ Measurements compare an untouched complete original JDK, the complete fork with
 StringZilla enabled, and that same fork with `-XX:-UseStringZillaIntrinsics`.
 All controls use original baseline `416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda`,
 matched GCC/G++ 16 or MSVC 19.44 build profiles, source date and version options.
+Linux x64 uses `-m64 -march=x86-64-v3 -mtune=generic`, ARM64 uses
+`-march=armv8.2-a -mtune=generic`, and MSVC uses `-arch:AVX2`.
+“Serial” identifies the selected library kernel; compiler auto-vectorization can
+still use the profile's permitted instructions. These profiles do not qualify
+older CPU baselines.
 
 The [reproduction specification](native-cases.tsv) contains 249 manifest rows,
 219 distinct benchmark/parameter inputs and 1,635 backend/tier triplets across
@@ -29,6 +34,6 @@ those measurements do not qualify subsequent code.
 The [PR checks](https://github.com/re-thc/openjdk-jdk27u/pull/4/checks) build
 release/debug JDKs and run tier1 tests. Native qualification additionally checks
 vendoring, jtreg dispatch and bounds, and executable native kernels under
-ASan/UBSan/alignment sanitizers on Linux. Separate compilation traces establish
+ASan/UBSan/alignment sanitizers on Linux. Separate compilation traces check
 C1 wrapper inlining and inspect C2 narrow fallback code; their timings are
 diagnostic output, not benchmark evidence.

@@ -749,17 +749,20 @@ final class StringLatin1 {
         if (!canEncode(ch)) {
             return -1;
         }
-        int off  = Math.min(fromIndex, value.length - 1);
-        if (off >= 0 && value[off] == (byte)ch) {
-            return off;
-        }
-        if (off >= StringZilla.MIN_BYTES - 1 && StringZilla.ENABLED) {
-            int stop = off - 8;
-            for (; off > stop; off--) {
+        int off = Math.min(fromIndex, value.length - 1);
+        int initialLimit = off;
+        if (off >= 0) {
+            if (value[off] == (byte)ch) {
+                return off;
+            }
+            int stop = off >= 8 ? off - 8 : -1;
+            for (off--; off > stop; off--) {
                 if (value[off] == (byte)ch) {
                     return off;
                 }
             }
+        }
+        if (initialLimit >= StringZilla.MIN_BYTES - 1 && StringZilla.ENABLED) {
             int result = StringZilla.rfindCharLatin1(value, 0, off + 1, ch);
             if (result == StringZilla.FALLBACK) {
                 result = StringZilla.searchCharLarge(value, 0, off + 1, ch, false, true);
