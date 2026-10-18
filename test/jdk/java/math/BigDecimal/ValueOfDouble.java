@@ -63,11 +63,7 @@ public class ValueOfDouble {
     }
 
     private static void checkValue(double value) {
-        // Native shortest text can use 5.0E-324. Precision consumers retain
-        // the original two-digit selection, independently of text rendering.
-        String text = Math.abs(value) == Double.MIN_VALUE
-                ? (value < 0 ? "-4.9E-324" : "4.9E-324") : Double.toString(value);
-        BigDecimal expected = new BigDecimal(text);
+        BigDecimal expected = new BigDecimal(Double.toString(value));
         assertEquals(expected, BigDecimal.valueOf(value));
     }
 
