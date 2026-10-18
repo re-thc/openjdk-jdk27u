@@ -178,12 +178,12 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
 
   DEBUG_ONLY(const u1* const old_current = stream->current();)
 
-  // Release the batched Utf8 entries before loading superclasses.
-  ResourceMark rm(THREAD);
-  const char** names = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, const char*, length);
-  int* lengths = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, int, length);
-  int* indices = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, int, length);
+  const int batch_size = 16;
+  const char* names[batch_size];
+  int lengths[batch_size];
+  int indices[batch_size];
   int names_count = 0;
+  const constantPoolHandle cp_handle(THREAD, cp);
 
   // parsing  Index 0 is unused
   for (int index = 1; index < length; index++) {
@@ -341,6 +341,10 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
         names[names_count] = (const char*)utf8_buffer;
         lengths[names_count] = utf8_length;
         indices[names_count++] = index;
+        if (names_count == batch_size) {
+          SymbolTable::new_symbols(_loader_data, cp_handle, names_count, names, lengths, indices);
+          names_count = 0;
+        }
         break;
       }
       case JVM_CONSTANT_Module:
@@ -365,7 +369,7 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
   } // end of for
 
   SymbolTable::new_symbols(_loader_data,
-                           constantPoolHandle(THREAD, cp),
+                           cp_handle,
                            names_count,
                            names,
                            lengths,
