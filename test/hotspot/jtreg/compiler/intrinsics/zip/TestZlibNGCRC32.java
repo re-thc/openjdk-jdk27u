@@ -28,7 +28,7 @@
  * @run main/othervm -Xint compiler.intrinsics.zip.TestZlibNGCRC32
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 compiler.intrinsics.zip.TestZlibNGCRC32
  * @run main/othervm -Xbatch -XX:-TieredCompilation compiler.intrinsics.zip.TestZlibNGCRC32
- * @run main/othervm -Xcheck:jni -XX:+UnlockDiagnosticVMOptions -XX:-UseCRC32Intrinsics compiler.intrinsics.zip.TestZlibNGCRC32
+ * @run main/othervm -Xcheck:jni -XX:+UnlockDiagnosticVMOptions -XX:-UseCRC32Intrinsics compiler.intrinsics.zip.TestZlibNGCRC32 32
  */
 
 /**
@@ -76,6 +76,14 @@ public class TestZlibNGCRC32 {
     }
 
     public static void main(String[] args) {
+        // The compiled-path runs need repetition to exercise intrinsic lowering.
+        // The checked-JNI control disables intrinsics and only needs correctness
+        // coverage. Its critical-array checks copy the entire backing array,
+        // even for short updates, so repeating every case 5000 times is costly.
+        int repetitions = args.length == 0 ? 5000 : Integer.parseInt(args[0]);
+        if (repetitions <= 0) {
+            throw new IllegalArgumentException("Repetitions must be positive");
+        }
         byte[] data = new byte[1048576 + 31];
         new Random(17).nextBytes(data);
         ByteBuffer direct = ByteBuffer.allocateDirect(data.length);
@@ -85,7 +93,7 @@ public class TestZlibNGCRC32 {
             for (int len : new int[]{0, 1, 2, 15, 16, 31, 32, 63, 64, 65,
                                     255, 256, 1023, 1024, 65536, 1048576}) {
                 long expected = reference(data, off, len);
-                for (int repeat = 0; repeat < 5000; repeat++) {
+                for (int repeat = 0; repeat < repetitions; repeat++) {
                     seed(crc);
                     crc.update(data, off, len);
                     check(crc, expected);

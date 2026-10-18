@@ -62,6 +62,8 @@ Windows builds require CMake and the configured MSVC toolchain's NMake.
 Bulk throughput does not establish a benefit for tiny complete streams or for
 freshly allocated Deflaters. Compare fresh initialization/finish/end separately
 from reset/finish on reused streams, and record compressed sizes as well as time.
+The backend can change compressed bytes and increase output size. Measured bulk
+speedups coexist with tiny and fresh-stream slowdowns at the default level.
 A short `NO_FLUSH` write remains part of its enclosing stream; it does not select
 a different compression level or discard stream history. Default and explicit
 level 6 retain their requested level. The bundled backend keeps full native

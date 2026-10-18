@@ -10,7 +10,8 @@ Adler32 uses the same zlib-ng backend through three distinct call paths:
 Apple AArch64 C1 uses the same runtime-leaf lowering as other AArch64 CPUs.
 `call_runtime` selects the C argument convention; `LIR_OpRTCall` is marked as a
 call, and linear scan creates clobber intervals for all 32 FP registers from
-`FrameMap`. The allocator therefore treats every FP register as clobbered at the call. The C function must still obey the platform ABI for
+`FrameMap`. The allocator therefore treats every FP register as clobbered at the
+call. The C function must still obey the platform ABI for
 reserved registers and stack alignment; this is not a custom register convention.
 The `ZIP_Adler32` leaf calls zlib-ng without entering Java or safepointing.
 
