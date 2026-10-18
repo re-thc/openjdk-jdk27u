@@ -1,0 +1,597 @@
+{
+  "kind": "planned-workloads-and-source-model-proof",
+  "status": "not-run",
+  "jvm_execution_performed": false,
+  "frozen_source": "4592230b14fc2f4b537b162fd7f6b791e882b615",
+  "original_source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "primary_manifest_blob": "40edd81332eb43b4bb82f4aa71493fd01c419d3b",
+  "supersedes_supplement_blob": "1d31e4558f32cd3b8ef8ec8e6f031a9c18d323ab",
+  "producer_binding": "Require successful final complete-image receipts for frozen_source; no producer receipt is asserted by this plan.",
+  "primary_rows": 249,
+  "primary_distinct_inputs": 219,
+  "primary_triplets": 1635,
+  "supplement_rows": 5,
+  "supplement_triplets": 35,
+  "required_supplement_measurements": 105,
+  "combined_distinct_inputs": 222,
+  "combined_triplets": 1670,
+  "combined_measurements": 5010,
+  "controls": [
+    "original",
+    "enabled",
+    "disabled"
+  ],
+  "triplets_per_backend": {
+    "serial": 9,
+    "neon": 11,
+    "msvc": 9,
+    "avx2": 3,
+    "avx512": 3
+  },
+  "duplicates_with_primary": 0,
+  "old_three_rows_preserved": true,
+  "physical_key_fields": [
+    "backend",
+    "tier",
+    "benchmark",
+    "sorted params"
+  ],
+  "fixture_source": "test/micro/org/openjdk/bench/java/lang/StringZillaLongNeedle.java",
+  "fixture_proofs": [
+    {
+      "padding": 502,
+      "count": 9,
+      "endian": "little",
+      "actual_source_units": 512,
+      "source_bytes": 1024,
+      "target_bytes": 18,
+      "first": 502,
+      "last": 502,
+      "rightmost_start": 503,
+      "final_unit": "U+0004",
+      "needle_final_unit": "U+0401",
+      "char_filter_search_start": 8,
+      "char_filter_first_hit": 8,
+      "byte_occurrence_offsets": [
+        1004
+      ],
+      "filter_guard": true,
+      "filter_negative_return": false,
+      "native_eligible": true,
+      "native_work": 18432,
+      "max_native_work": 4194304,
+      "source_coder": "UTF16",
+      "needle_coder": "UTF16"
+    },
+    {
+      "padding": 502,
+      "count": 9,
+      "endian": "big",
+      "actual_source_units": 512,
+      "source_bytes": 1024,
+      "target_bytes": 18,
+      "first": 502,
+      "last": 502,
+      "rightmost_start": 503,
+      "final_unit": "U+0100",
+      "needle_final_unit": "U+0401",
+      "char_filter_search_start": 8,
+      "char_filter_first_hit": 8,
+      "byte_occurrence_offsets": [
+        1004
+      ],
+      "filter_guard": true,
+      "filter_negative_return": false,
+      "native_eligible": true,
+      "native_work": 18432,
+      "max_native_work": 4194304,
+      "source_coder": "UTF16",
+      "needle_coder": "UTF16"
+    },
+    {
+      "padding": 447,
+      "count": 64,
+      "endian": "little",
+      "actual_source_units": 512,
+      "source_bytes": 1024,
+      "target_bytes": 128,
+      "first": 447,
+      "last": 447,
+      "rightmost_start": 448,
+      "final_unit": "U+0004",
+      "needle_final_unit": "U+0401",
+      "char_filter_search_start": 63,
+      "char_filter_first_hit": 63,
+      "byte_occurrence_offsets": [
+        894
+      ],
+      "filter_guard": true,
+      "filter_negative_return": false,
+      "native_eligible": true,
+      "native_work": 131072,
+      "max_native_work": 4194304,
+      "source_coder": "UTF16",
+      "needle_coder": "UTF16"
+    },
+    {
+      "padding": 447,
+      "count": 64,
+      "endian": "big",
+      "actual_source_units": 512,
+      "source_bytes": 1024,
+      "target_bytes": 128,
+      "first": 447,
+      "last": 447,
+      "rightmost_start": 448,
+      "final_unit": "U+0100",
+      "needle_final_unit": "U+0401",
+      "char_filter_search_start": 63,
+      "char_filter_first_hit": 63,
+      "byte_occurrence_offsets": [
+        894
+      ],
+      "filter_guard": true,
+      "filter_negative_return": false,
+      "native_eligible": true,
+      "native_work": 131072,
+      "max_native_work": 4194304,
+      "source_coder": "UTF16",
+      "needle_coder": "UTF16"
+    }
+  ],
+  "workloads": [
+    {
+      "id": "supp-latin-single-end-257-257/serial/interpreter",
+      "case": "supp-latin-single-end-257-257",
+      "backend": "serial",
+      "tier": "interpreter",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "257",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-single-end-257-257/serial/c1",
+      "case": "supp-latin-single-end-257-257",
+      "backend": "serial",
+      "tier": "c1",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "257",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-single-end-257-257/serial/c2",
+      "case": "supp-latin-single-end-257-257",
+      "backend": "serial",
+      "tier": "c2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "257",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-single-end-257-257/neon/interpreter",
+      "case": "supp-latin-single-end-257-257",
+      "backend": "neon",
+      "tier": "interpreter",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "257",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-single-end-257-257/neon/c1",
+      "case": "supp-latin-single-end-257-257",
+      "backend": "neon",
+      "tier": "c1",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "257",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-single-end-257-257/neon/c2",
+      "case": "supp-latin-single-end-257-257",
+      "backend": "neon",
+      "tier": "c2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "257",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-single-end-257-257/msvc/interpreter",
+      "case": "supp-latin-single-end-257-257",
+      "backend": "msvc",
+      "tier": "interpreter",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "257",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-single-end-257-257/msvc/c1",
+      "case": "supp-latin-single-end-257-257",
+      "backend": "msvc",
+      "tier": "c1",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "257",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-single-end-257-257/msvc/c2",
+      "case": "supp-latin-single-end-257-257",
+      "backend": "msvc",
+      "tier": "c2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "257",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-single-miss-257-257/serial/interpreter",
+      "case": "supp-latin-single-miss-257-257",
+      "backend": "serial",
+      "tier": "interpreter",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "257",
+        "needleLength": "257",
+        "position": "MISS"
+      }
+    },
+    {
+      "id": "supp-latin-single-miss-257-257/serial/c1",
+      "case": "supp-latin-single-miss-257-257",
+      "backend": "serial",
+      "tier": "c1",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "257",
+        "needleLength": "257",
+        "position": "MISS"
+      }
+    },
+    {
+      "id": "supp-latin-single-miss-257-257/serial/c2",
+      "case": "supp-latin-single-miss-257-257",
+      "backend": "serial",
+      "tier": "c2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "257",
+        "needleLength": "257",
+        "position": "MISS"
+      }
+    },
+    {
+      "id": "supp-latin-single-miss-257-257/neon/interpreter",
+      "case": "supp-latin-single-miss-257-257",
+      "backend": "neon",
+      "tier": "interpreter",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "257",
+        "needleLength": "257",
+        "position": "MISS"
+      }
+    },
+    {
+      "id": "supp-latin-single-miss-257-257/neon/c1",
+      "case": "supp-latin-single-miss-257-257",
+      "backend": "neon",
+      "tier": "c1",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "257",
+        "needleLength": "257",
+        "position": "MISS"
+      }
+    },
+    {
+      "id": "supp-latin-single-miss-257-257/neon/c2",
+      "case": "supp-latin-single-miss-257-257",
+      "backend": "neon",
+      "tier": "c2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "257",
+        "needleLength": "257",
+        "position": "MISS"
+      }
+    },
+    {
+      "id": "supp-latin-single-miss-257-257/msvc/interpreter",
+      "case": "supp-latin-single-miss-257-257",
+      "backend": "msvc",
+      "tier": "interpreter",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "257",
+        "needleLength": "257",
+        "position": "MISS"
+      }
+    },
+    {
+      "id": "supp-latin-single-miss-257-257/msvc/c1",
+      "case": "supp-latin-single-miss-257-257",
+      "backend": "msvc",
+      "tier": "c1",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "257",
+        "needleLength": "257",
+        "position": "MISS"
+      }
+    },
+    {
+      "id": "supp-latin-single-miss-257-257/msvc/c2",
+      "case": "supp-latin-single-miss-257-257",
+      "backend": "msvc",
+      "tier": "c2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "257",
+        "needleLength": "257",
+        "position": "MISS"
+      }
+    },
+    {
+      "id": "supp-latin-two-end-258-257/serial/interpreter",
+      "case": "supp-latin-two-end-258-257",
+      "backend": "serial",
+      "tier": "interpreter",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "258",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-two-end-258-257/serial/c1",
+      "case": "supp-latin-two-end-258-257",
+      "backend": "serial",
+      "tier": "c1",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "258",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-two-end-258-257/serial/c2",
+      "case": "supp-latin-two-end-258-257",
+      "backend": "serial",
+      "tier": "c2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "258",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-two-end-258-257/avx2/interpreter",
+      "case": "supp-latin-two-end-258-257",
+      "backend": "avx2",
+      "tier": "interpreter",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "258",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-two-end-258-257/avx2/c1",
+      "case": "supp-latin-two-end-258-257",
+      "backend": "avx2",
+      "tier": "c1",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "258",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-two-end-258-257/avx2/c2",
+      "case": "supp-latin-two-end-258-257",
+      "backend": "avx2",
+      "tier": "c2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "258",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-two-end-258-257/avx512/interpreter",
+      "case": "supp-latin-two-end-258-257",
+      "backend": "avx512",
+      "tier": "interpreter",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "258",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-two-end-258-257/avx512/c1",
+      "case": "supp-latin-two-end-258-257",
+      "backend": "avx512",
+      "tier": "c1",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "258",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-two-end-258-257/avx512/c2",
+      "case": "supp-latin-two-end-258-257",
+      "backend": "avx512",
+      "tier": "c2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "258",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-two-end-258-257/neon/interpreter",
+      "case": "supp-latin-two-end-258-257",
+      "backend": "neon",
+      "tier": "interpreter",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "258",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-two-end-258-257/neon/c1",
+      "case": "supp-latin-two-end-258-257",
+      "backend": "neon",
+      "tier": "c1",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "258",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-two-end-258-257/neon/c2",
+      "case": "supp-latin-two-end-258-257",
+      "backend": "neon",
+      "tier": "c2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "258",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-two-end-258-257/msvc/interpreter",
+      "case": "supp-latin-two-end-258-257",
+      "backend": "msvc",
+      "tier": "interpreter",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "258",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-two-end-258-257/msvc/c1",
+      "case": "supp-latin-two-end-258-257",
+      "backend": "msvc",
+      "tier": "c1",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "258",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-latin-two-end-258-257/msvc/c2",
+      "case": "supp-latin-two-end-258-257",
+      "backend": "msvc",
+      "tier": "c2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "258",
+        "needleLength": "257",
+        "position": "END"
+      }
+    },
+    {
+      "id": "supp-neon-c2-utf16-positive-512-9/neon/c2",
+      "case": "supp-neon-c2-utf16-positive-512-9",
+      "backend": "neon",
+      "tier": "c2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+      "params": {
+        "length": "502",
+        "needleLength": "9",
+        "shape": "END"
+      }
+    },
+    {
+      "id": "supp-neon-c2-utf16-positive-512-64/neon/c2",
+      "case": "supp-neon-c2-utf16-positive-512-64",
+      "backend": "neon",
+      "tier": "c2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+      "params": {
+        "length": "447",
+        "needleLength": "64",
+        "shape": "END"
+      }
+    }
+  ]
+}

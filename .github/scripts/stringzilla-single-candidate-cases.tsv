@@ -1,0 +1,6 @@
+id	benchmark	length	coder	position	needleLength	shape	backends	tiers
+supp-latin-single-end-257-257	StringZillaSearch.lastIndexOf	257	LATIN1	END	257	-	serial,neon,msvc	interpreter,c1,c2
+supp-latin-single-miss-257-257	StringZillaSearch.lastIndexOf	257	LATIN1	MISS	257	-	serial,neon,msvc	interpreter,c1,c2
+supp-latin-two-end-258-257	StringZillaSearch.lastIndexOf	258	LATIN1	END	257	-	serial,avx2,neon,msvc	interpreter,c1,c2
+supp-neon-c2-utf16-positive-512-9	StringZillaLongNeedle.lastIndexOf	502	-	-	9	END	neon	c2
+supp-neon-c2-utf16-positive-512-64	StringZillaLongNeedle.lastIndexOf	447	-	-	64	END	neon	c2
