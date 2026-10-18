@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "scope": "Terminal missing-work proof: 12 normal backend/tier groups and SKY C1/C2 have no possible original timing winner; SKY interpreter remains excluded/live",
+  "scope": "Terminal missing-work proof: all15 backend/tier groups and1886triplets have zero original timings; all three immutable minimum eligible SKY workers failed selection before restore/measurement",
   "run_id": 39164738566,
   "head": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
   "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
-  "observed_at": "2026-10-18 22:37:06 UTC",
+  "observed_at": "2026-10-18 22:50:30 UTC",
   "failed_jobs": [
     {
       "job_id": 117802395745,
@@ -403,6 +403,171 @@
         "nonce": "187b33d216f448f4bba440f20c16cc01",
         "algorithm_sha256": "45bcc49090398e8b7cebb13402d3aba61bee3b74c3ce72bb5670cada4af54119"
       }
+    },
+    {
+      "job_id": 117802396183,
+      "decoded_log_sha256": "2efc2ba5e9f14ec8e212dde476018e7fc9f63074d1443c410771f2768c0a583f",
+      "marker_counts": {
+        "STRINGZILLA_RESULT": 0,
+        "STRINGZILLA_PROVENANCE": 0,
+        "STRINGZILLA_COMPLETE": 0,
+        "STRINGZILLA_SKY_ALLFOUR_SELECTION": 0
+      },
+      "relevant_errors": [
+        "    assert wait and time.monotonic() < deadline, \"Missing facts/publish completion after 30 minutes: no election\"",
+        "AssertionError: Missing facts/publish completion after 30 minutes: no election",
+        "##[error]Process completed with exit code 1."
+      ],
+      "identity": {
+        "id": 117802396183,
+        "run_id": 39164738566,
+        "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "run_attempt": 1,
+        "name": "avx512_controls (interpreter) / Final SKY interpreter slot 0 on ubuntu-22.04",
+        "created_at": "2026-10-18T22:03:04Z",
+        "started_at": "2026-10-18T22:19:05Z",
+        "completed_at": "2026-10-18T22:49:51Z",
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      "steps": [
+        {
+          "number": 1,
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 2,
+          "name": "Initialize containers",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 3,
+          "name": "Install only eligibility and artifact API dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 4,
+          "name": "Record native CPU and source eligibility without compiler images or timings",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 5,
+          "name": "Publish this slot's immutable eligibility fact",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 6,
+          "name": "Verify ALLFOUR facts then choose MIN eligible slot",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "number": 7,
+          "name": "Selected slot  CPU  installs native dependencies",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 8,
+          "name": "Checkout candidate runtime and frozen harness",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 9,
+          "name": "Checkout baseline identity",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 10,
+          "name": "Checkout pinned auxiliary driver",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 11,
+          "name": "Persist exact checkout ownership exceptions for container subprocesses",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 12,
+          "name": "Check physical CPU and compiled profile prerequisites",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 13,
+          "name": "Restore complete pair and project the fixed manifest",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 14,
+          "name": "Attest actual runtime flags and backend on this host",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 15,
+          "name": "Execute native AVX-512 contract on this physical host",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 16,
+          "name": "Measure final SKY interpreter original enabled and disabled controls",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 17,
+          "name": "Save the selected worker's complete election binding",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 18,
+          "name": "Retain the selected worker's raw results and receipts",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 19,
+          "name": "Retain every slot's eligibility and selection evidence",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 38,
+          "name": "Stop containers",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 39,
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "failed_minimum_eligible_fact": {
+        "slot": "0",
+        "available": true,
+        "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+        "tier": "interpreter",
+        "timed_records": 0,
+        "images_restored": false,
+        "nonce": "789aab9ea23844a3b7431d5f3c1b5114",
+        "algorithm_sha256": "45bcc49090398e8b7cebb13402d3aba61bee3b74c3ce72bb5670cada4af54119"
+      }
     }
   ],
   "normal_parent_skips": [
@@ -451,9 +616,7 @@
       "completed_at": "2026-10-18T22:35:40Z"
     }
   ],
-  "live_sky_groups_not_recovered": [
-    "interpreter"
-  ],
+  "live_sky_groups_not_recovered": [],
   "artifacts": [
     {
       "id": 12153695197,
@@ -571,6 +734,6 @@
     }
   ],
   "normal_result_artifacts": 0,
-  "missing_triplets": 1750,
-  "remaining_interpreter_sky_triplets": 136
+  "missing_triplets": 1886,
+  "remaining_interpreter_sky_triplets": 0
 }
