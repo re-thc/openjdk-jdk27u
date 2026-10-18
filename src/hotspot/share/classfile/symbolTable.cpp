@@ -511,6 +511,18 @@ public:
   }
 };
 
+class SymbolTableBatchLookup : public StackObj {
+  const char** _names;
+  const int* _lengths;
+  const unsigned int* _hashes;
+public:
+  SymbolTableBatchLookup(const char** names, const int* lengths, const unsigned int* hashes)
+    : _names(names), _lengths(lengths), _hashes(hashes) {}
+  SymbolTableLookup operator[](size_t i) {
+    return SymbolTableLookup(_names[i], _lengths[i], _hashes[i]);
+  }
+};
+
 void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHandle& cp,
                               int names_count, const char** names, int* lengths,
                               int* cp_indices) {
@@ -524,12 +536,24 @@ void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHa
   ResourceMark rm(current);
   unsigned int* hashes = NEW_RESOURCE_ARRAY_IN_THREAD(current, unsigned int, names_count);
   Symbol** syms = NEW_RESOURCE_ARRAY_IN_THREAD(current, Symbol*, names_count);
+  bool shared_first = _lookup_shared_first;
   for (int i = 0; i < names_count; i++) {
     assert(lengths[i] <= Symbol::max_length(), "must be - these come from the constant pool");
     hashes[i] = hash_symbol(names[i], lengths[i], _alt_hash);
     syms[i] = nullptr;
   }
-  lookup_shared(names_count, names, lengths, hashes, syms);
+  auto lookup_dynamic_batch = [&](int count) {
+    SymbolTableBatchLookup lookups(names, lengths, hashes);
+    SymbolTableBatchFound found(syms);
+    bool rehash_warning = false;
+    _local_table->get_batch(current, lookups, count, found, &rehash_warning);
+    update_needs_rehash(rehash_warning);
+  };
+  if (shared_first) {
+    lookup_shared(names_count, names, lengths, hashes, syms);
+  } else {
+    lookup_dynamic_batch(names_count);
+  }
 
   int count = 0;
   for (int i = 0; i < names_count; i++) {
@@ -549,21 +573,19 @@ void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHa
     return;
   }
 
-  // Look up the other names together, to overlap their cache misses.
-  SymbolTableLookup* lookups = NEW_RESOURCE_ARRAY_IN_THREAD(current, SymbolTableLookup, count);
-  for (int i = 0; i < count; i++) {
-    ::new (&lookups[i]) SymbolTableLookup(names[i], lengths[i], hashes[i]);
+  if (shared_first) {
+    _lookup_shared_first = false;
+    lookup_dynamic_batch(count);
+  } else {
+    lookup_shared(count, names, lengths, hashes, syms);
   }
-  SymbolTableBatchFound found(syms);
-  bool rehash_warning = false;
-  _local_table->get_batch(current, lookups, count, found, &rehash_warning);
-  update_needs_rehash(rehash_warning);
-
   for (int i = 0; i < count; i++) {
     Symbol* sym = syms[i];
     if (sym == nullptr) {
       assert(lookup_shared(names[i], lengths[i], hashes[i]) == nullptr, "must have checked already");
       sym = do_add_if_needed(names[i], lengths[i], hashes[i], is_permanent);
+    } else if (!shared_first) {
+      _lookup_shared_first = true;
     }
     assert(sym->refcount() != 0, "lookup should have incremented the count");
     cp->symbol_at_put(cp_indices[i], sym);

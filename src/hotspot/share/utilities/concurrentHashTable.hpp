@@ -469,8 +469,9 @@ class ConcurrentHashTable : public CHeapObj<MT> {
   // each item i that is found. The chains of a group of items are walked side
   // by side, prefetching the next bucket or node of each item before the
   // others are compared, so that their cache misses overlap.
+  // lookups[i] supplies the lookup for item i without requiring an array.
   template <typename LOOKUP_FUNC, typename FOUND_FUNC>
-  void get_batch(Thread* thread, LOOKUP_FUNC* lookups, size_t count,
+  void get_batch(Thread* thread, LOOKUP_FUNC& lookups, size_t count,
                  FOUND_FUNC& found_f, bool* grow_hint = nullptr);
 
   // Returns true true if the item was inserted, duplicates are found with
