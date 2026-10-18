@@ -42,10 +42,10 @@ On macOS, the instrumentation agent uses its JDK libraries, iconv and zlib.
 Kerberos configuration retains Foundation collections, Kerberos credentials
 and SystemConfiguration services. Configuration-change notifications run on a
 private serial dispatch queue, independent of the launcher's main thread.
-Foundation's OS-transitive graphics mappings
-are separate from compilation of excluded JDK desktop code. The shared
-`splashscreen.h` contains declarations, not splash implementations; native
-symbol and compiler-input checks establish which code is present.
+Foundation's OS-transitive graphics mappings are separate from compilation of
+excluded JDK desktop code. The shared `splashscreen.h` contains declarations,
+not splash implementations; native symbol and compiler-input checks establish
+which code is present.
 
 ## Build and validation
 
@@ -93,53 +93,43 @@ exports/opens, Windows path conversion and the portable console helper.
 It also checks launcher archive diagnostics, valid jar launch and native
 instrumentation. On macOS it checks direct framework links and native Kerberos
 configuration initialization; an unconfigured Kerberos store is allowed.
-It also runs the real prebuilt-test entry point through generated-spec discovery
-and child test execution, checking that the synthetic spec retains the headless
-module graph and rejects incompatible desktop and collector overrides.
+The prebuilt regression runs the real entry point through generated-spec
+discovery and child test execution, checking that the synthetic spec retains
+the headless module graph and rejects incompatible desktop and collector
+overrides.
 The macOS notification regression interposes the dynamic-store observer to
 inject both watched keys through real native scheduling and the built image's
 callback. It checks automatic Java configuration refresh, unrelated keys,
 exception recovery and process exit without privileged system changes. It
 does not exercise the OS daemon's delivery of real configuration changes.
 
-Validated on Linux x64 on 2026-10-17: release with GCC 16.2 and fastdebug with
-GCC 14.2 passed incremental image builds, make regressions and profile checks.
-Each had 56 product javac lists covering 11,198 Java inputs, 1,405 product native
-compilation records with matching objects, and 56 image jmods. No excluded
-product source or object was found. The profile reports 1,418 native records
-including 13 ADLC host objects. Fastdebug's compilation database also includes
-its precompiled-header command. Linux collector, compiler, server-tool and
-runtime smokes passed.
+At `1f9f7312aa3`, Linux x64 and AArch64 CI passed release and fastdebug builds,
+make suites and full profiles. Each profile recorded 56 product javac lists;
+native-record totals were 1,634 on x64 and 1,578 on AArch64, including host
+objects. Five prebuilt jtreg smokes passed locally across HotSpot command-line
+and GC selection, JDK, langtools and lib-test with CI's pinned Boot JDK 26 and
+jtreg 8.2.1. Complete tier1 CI remains pending.
 
-Native macOS AArch64 validation at `5b3534b7` recorded successful release and
-fastdebug builds, profile checks and 29 runtime smokes per image under Command
-Line Tools, with no Metal discovery or artifacts. Each image had 56 modules/
-jmods, 11,196 Java inputs and 1,366 product native commands with matching objects.
-At `f0824d88112`, both images rebuilt and passed compilation-database and full
-profile checks. Jar diagnostics, instrumentation, cached Autoconf discovery and
-direct library links passed: libinstrument had no frameworks, libosxkrb5 used
-Foundation/Kerberos/SystemConfiguration without Cocoa or ApplicationServices,
-and libjli used only libSystem. Both formal make suites stopped while compiling
-the notification test because an SDK header was unavailable. Its interposition
-records are now declared locally; native compilation and callback delivery
-remain unconfirmed, as do suite targets whose completion was not recorded.
-This test-only correction allows the retained product images to be reused.
+Native macOS AArch64 images built at `f0824d88112` passed compilation-database,
+profile and direct-link checks under Command Line Tools, without Metal
+discovery or artifacts. At `1f9f7312aa3`, both retained configurations passed
+`test-make-headless` with AUTOCONF unset. This included prebuilt-spec execution
+and override rejection, launcher/archive checks, and Kerberos callbacks on a
+real dispatch worker for both watched keys and refresh-exception recovery,
+without JNI warnings or exceptions. The image manifests remained byte-identical,
+and the intervening changes affected tests, documentation and the prebuilt
+runner spec, preserving product equivalence. No configure, rebuild or clean
+was needed. The callback regression does not exercise real configd delivery.
 
-Native Linux AArch64 CI at `334292638fd` passed release and fastdebug builds,
-make suites and full profiles; each profile reported 56 product javac lists and
-1,578 native records. The prebuilt runner's synthetic spec retains the same
-headless policy and pinned collector allowlist as configured builds. Its
-correction passed actual HotSpot, JDK, langtools and lib-test jtreg smokes on
-Linux x64; complete CI jtreg validation remains pending.
+The earlier Mac baseline at `5b3534b7` passed 29 runtime smokes per image,
+including console errors/exit, JNI invocation and signal handling. Those
+smokes, profiles and link inspections were not repeated for the latest
+make-suite confirmation.
 
-Native Windows x64 validation remains required.
-For macOS, configure with existing Command Line Tools selected through a
-process-local `DEVELOPER_DIR`, verify no Metal discovery, inspect `otool -L`
-for `libjli.dylib` and `libjvm.dylib`, and exercise console launch, JNI invocation,
-signals and process exit. For Windows, inspect `dumpbin /imports` for `jli.dll`
-and `jvm.dll`, check console errors and JNI launch, and confirm `javaw.exe` is
-absent. Linux AArch64 needs native collector/compiler smokes. Foreign-platform
-graphs, stubbed probes and mocked console I/O do not replace these native checks.
+Native Windows x64 validation remains required: inspect `dumpbin /imports` for
+`jli.dll` and `jvm.dll`, check console errors and JNI launch, and confirm
+`javaw.exe` is absent. JLI_Launch embedding remains unrun. Foreign-platform
+graphs, stubbed probes and mocked console I/O do not replace native checks.
 
 Excluded source/target counts establish removed compilation work. A build-time
 speedup requires measurements with matching hardware, compiler, debug level,
