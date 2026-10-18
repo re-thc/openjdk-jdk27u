@@ -504,17 +504,19 @@ Symbol* SymbolTable::lookup_only_unicode(const jchar* name, int utf16_length,
 
 class SymbolTableBatchFound : public StackObj {
   Symbol** _syms;
-  const int* _indices;
 public:
-  SymbolTableBatchFound(Symbol** syms, const int* indices) : _syms(syms), _indices(indices) {}
+  SymbolTableBatchFound(Symbol** syms) : _syms(syms) {}
   void operator()(size_t i, Symbol* value) {
-    _syms[_indices[i]] = value;
+    _syms[i] = value;
   }
 };
 
 void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHandle& cp,
                               int names_count, const char** names, int* lengths,
                               int* cp_indices) {
+  if (names_count == 0) {
+    return;
+  }
   // Note that is_permanent will be false for non-strong hidden classes.
   // even if their loader is the boot loader because they will have a different cld.
   bool is_permanent = loader_data->is_the_null_class_loader_data();
@@ -529,22 +531,35 @@ void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHa
   }
   lookup_shared(names_count, names, lengths, hashes, syms);
 
-  // Look up the other names together, to overlap their cache misses.
-  SymbolTableLookup* lookups = NEW_RESOURCE_ARRAY_IN_THREAD(current, SymbolTableLookup, names_count);
-  int* indices = NEW_RESOURCE_ARRAY_IN_THREAD(current, int, names_count);
   int count = 0;
   for (int i = 0; i < names_count; i++) {
-    if (syms[i] == nullptr) {
-      ::new (&lookups[count]) SymbolTableLookup(names[i], lengths[i], hashes[i]);
-      indices[count++] = i;
+    Symbol* sym = syms[i];
+    if (sym != nullptr) {
+      cp->symbol_at_put(cp_indices[i], sym);
+    } else {
+      names[count] = names[i];
+      lengths[count] = lengths[i];
+      cp_indices[count] = cp_indices[i];
+      hashes[count] = hashes[i];
+      syms[count] = nullptr;
+      count++;
     }
   }
-  SymbolTableBatchFound found(syms, indices);
+  if (count == 0) {
+    return;
+  }
+
+  // Look up the other names together, to overlap their cache misses.
+  SymbolTableLookup* lookups = NEW_RESOURCE_ARRAY_IN_THREAD(current, SymbolTableLookup, count);
+  for (int i = 0; i < count; i++) {
+    ::new (&lookups[i]) SymbolTableLookup(names[i], lengths[i], hashes[i]);
+  }
+  SymbolTableBatchFound found(syms);
   bool rehash_warning = false;
   _local_table->get_batch(current, lookups, count, found, &rehash_warning);
   update_needs_rehash(rehash_warning);
 
-  for (int i = 0; i < names_count; i++) {
+  for (int i = 0; i < count; i++) {
     Symbol* sym = syms[i];
     if (sym == nullptr) {
       assert(lookup_shared(names[i], lengths[i], hashes[i]) == nullptr, "must have checked already");

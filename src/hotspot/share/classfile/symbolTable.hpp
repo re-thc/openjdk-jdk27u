@@ -51,6 +51,7 @@ class SymbolTable : public AllStatic {
   friend class ClassFileParser;
   friend class SymbolTableConfig;
   friend class SymbolTableCreateEntry;
+  friend class SymbolTableTest;
 
  private:
   static volatile bool _has_work;
