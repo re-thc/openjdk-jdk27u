@@ -1,202 +1,111 @@
-# C2 cold-call spill deferral
+# C2 cold-call spill placement
 
-`UseColdCallSpillDeferral` defaults to enabled on Linux x64 and disabled on other
-platforms. `-XX:-UseColdCallSpillDeferral` restores ordinary placement without
-requiring diagnostic options. It defers eager pressure spills across rare
-returning calls. Pressure deferral
-changes the first Split allocation attempt only. The separate cold debug-home
-reuse described below can apply during later Split attempts. Ordinary splitting
-and allocator retry remain the fallback. The Linux x64 adoption evidence and
-its limits are recorded below; other platforms have not been performance-qualified.
+`UseColdCallSpillDeferral` defaults to enabled on Linux x64 and disabled on
+other platforms. `-XX:-UseColdCallSpillDeferral` restores ordinary placement
+without requiring diagnostic options. Ordinary splitting, hard constraints,
+coloring and allocator retry remain the fallback.
 
-## Placement contract
+## Pressure-deferral contract
 
-The policy records individual definitions whose pressure spills were deferred.
-It does not mark an entire coalesced live range: two-address updates can give a
-range several definitions, and every reaching definition needs its own proof.
-The whole range must retain the existing scalar, mask and conflict eligibility.
+Pressure deferral applies only on the first Split attempt. It records individual
+definitions, rather than marking an entire coalesced live range: every reaching
+definition needs its own proof, and the whole range must retain scalar, mask and
+conflict eligibility. Pointer/oop/derived, floating, vector and predicate
+definitions remain excluded.
 
-Deferral requires a call-debug use and a definition frequency greater than ten
-times the accumulated hard-constraint frequency. Reverse liveness removes the
-call result before visiting values live after the call, then processes call
-arguments and debug inputs. An argument/result is not treated as surviving a
-call merely because it occurs on that call node.
+A definition needs a call-debug use and frequency greater than ten times the
+accumulated hard-constraint frequency. Reverse liveness removes the call result
+before inspecting values live after the call, then processes arguments and
+debug inputs. A call input is not automatically a value surviving the call.
 
-At a Phi, every predecessor must be known, an UP input must exist, and every UP
-input must have deferral provenance. Costs use full predecessor frequencies:
-the existing Phi copy is placed before the predecessor terminator and need not
-execute on a dedicated edge. The additional guard is:
+A Phi needs known predecessors, at least one UP input, and deferral provenance
+for every UP input. Already-UP Phis need the same proof. Copy costs use the full
+predecessor-block frequencies because placement precedes the terminator, not
+necessarily a dedicated edge. The additional guard is:
 
 ```
 UP frequency > 10 * (2 * DOWN frequency + 3 * whole-range constraint frequency)
 ```
 
-The 2/1 load/store convention and store-plus-reload constraint reserve are
-conservative placement weights, not estimates of physical traffic. Unknown
-backedges, unmarked definitions, invalid profiles and overflow retain ordinary
-placement. Already-UP Phis need the same proof to carry provenance.
+The 2/1 load/store weights and store-plus-reload reserve are placement costs,
+not physical traffic estimates. Unknown backedges, unmarked definitions,
+invalid frequencies and overflow retain ordinary placement.
 
-PASS1 makes the decision before entry-state tracking, debug definitions and use
-rewriting. A pressure-boundary exemption requires a proven reaching node and
-the original hot-block guard. Hard spills and ordinary reloads do not inherit
-provenance. PASS2 remains responsible for all state-reconciliation copies; no
-CFG edge is split and no copy is moved by this policy.
+PASS1 decides before entry-state tracking, debug definitions and use rewriting.
+A pressure-boundary exemption needs a proven reaching definition and the
+original hot-block guard. Hard spills and fresh reloads acquire no provenance.
+PASS2 retains all state-reconciliation copies. Masks, CFG edges, physical
+interference, OopMaps and base/derived obligations remain enforced.
 
-## Preserved safety constraints
+## Cold debug-home contract
 
-Whole-range pressure-deferral inspection excludes pointer, oop, floating, vector and predicate
-definitions, including derived pointers represented with pointer register
-classes. Bound/misaligned definitions, operand constraints, call clobbers,
-debug-state materialization, OopMaps and base/derived pairs keep their ordinary
-handling. Physical interference and coloring remain enforced. There is no
-codec-name special case, global force-UP rule or exemption for a fresh reload.
+For a currently spilling input, an eligible `DebugUse` copy can forward its
+single call-debug edge to the allocator's cached same-value DOWN machine
+definition. The copy's live range must have one definition; the call must
+follow it in the same cold block, with exact value type and register class.
 
-The small shared policy header contains cost and reverse-liveness mechanics;
-mask scratch remains caller-owned and persistent register masks are unchanged.
-The separate scoped nonnull diagnostic in `javaThread.inline.hpp` is the common
-GCC16 build prerequisite; it preserves the unsafe-access handler and assertion
-without a global warning suppression.
+Only integer, long and zero-offset base-oop/narrow-oop Java-state values qualify.
+Arguments, constant-base inputs, monitor objects/boxes, derived/oop-map edges,
+bound call operands and locally bound homes retain ordinary handling. The home
+output, call input and every existing home use must retain an unbounded stack
+domain. No mask is widened and no coloring priority is changed.
 
-## Cold debug-home reuse
+The copy is removed before masks, liveness and interference are rebuilt.
+Extending the home at that point protects it against simultaneous call-debug
+values. This is an existing same-value definition, not a slot inferred from
+coloring. Phi reconciliation, two-address constraints and retries remain
+ordinary allocator work. Forwarded base-oop homes remain live for GC and
+Java-state reconstruction. Debug-home reuse can apply on later Split attempts.
 
-When a spilled input already has a cached DOWN definition, an eligible cold
-`DebugUse` copy can forward its single call-debug edge to that definition before
-liveness, masks and interference are rebuilt. Extending the home's lifetime at
-this point lets interference protect it against other values live at the call.
-Deleting a stack copy after coloring would not provide that protection.
+The independent scoped nonnull-diagnostic backport in `javaThread.inline.hpp`
+preserves its handler and assertion without suppressing warnings globally.
 
-This reuse requires exact value type and register class, one definition of the
-copy's live range, and a unique Java-state use in the same cold block after the
-copy. Only integer, long, base-oop and zero-offset narrow-oop values qualify.
-Arguments, monitor objects and boxes, derived/oop-map edges, bound call operands
-and locally bound homes retain ordinary handling. The home output, call input
-and every existing home use must retain an unbounded stack domain. No input or
-output mask is widened or narrowed, and no coloring priority is changed.
+## Regression coverage
 
-The cached definition is the allocator's existing same-value debug home, not a
-slot inferred from a previous coloring. Later Phi and two-address constraints
-still use the ordinary allocation, materialization and retry paths; local mask
-eligibility alone does not prove that the final allocation removes transport.
-Base-oop homes remain normal live debug inputs for GC and deoptimization.
+- `TestColdCallSpillPolicy` and its native helper check production costs, masks,
+  reverse liveness, invalid profiles and the two-join model.
+- `TestColdCallSpillPlacement` checks default/off/on behavior, Java state and
+  negative cases. Its structural oracle requires three packed roots, two proven
+  joins per root, pressure-forced DOWN decisions and boundary activation.
+- `TestColdCallDerivedPointers` checks actual moving oop/base/derived pairs.
+  It and the placement test require Serial GC, which their children select.
+- `TestColdCallDebugHome` requires G1 and checks default/off/on, GC,
+  deoptimization, compressed/uncompressed oops and frame pointers. Its fastdebug
+  oracle requires base-oop forwarding in compilation 2 at the unique machine
+  trap for the exercised BCI/reason, plus a WhiteBox trap-count increment.
+  Nonactivation or an ambiguous site fails.
 
-## Normal regression coverage
+## Bounded Linux x64 results
 
-- `TestColdCallSpillPolicy` and its native helper cover production policy costs,
-  masks, reverse liveness, invalid frequencies and the two-join model.
-- `TestColdCallSpillPlacement` checks Java state, activation and negative cases.
-  Its isolated trace fixture requires exactly three packed loads, two proven
-  joins per root, pressure-forced DOWN decisions and corresponding boundary
-  activation; incidental Phis or counts alone cannot satisfy the oracle.
-- `TestColdCallDerivedPointers` exercises oop/base/derived constraints and
-  returning-call correctness with GC and deoptimization.
-- `TestColdCallDebugHome` checks default/off/on behavior, Java scalar and oop
-  state through GC and deoptimization, compressed/uncompressed oops and frame
-  pointers. In fastdebug its positive case requires a base-oop forwarding trace
-  in the second C2 compilation at the unique inventoried `unstable_if` call for
-  the exercised BCI, with a corresponding WhiteBox trap-count increment. A
-  nonactivating or ambiguous fixture fails.
+Measurements used pinned `jzstd@7a6b345d0df3d8571a30f4a9c974dfaa3a10d9b6` on
+one AMD Linux x64 VM. Four independent balanced off/on pairs per case used six
+seconds of warmup and five 700 ms windows per fork; each fork contributes one
+median. All 72 forks across nine cases were retained. Normal tiered decoding
+had these median paired changes:
 
-Trace activation alone does not establish removal of physical stores, reloads,
-register transport or implicit frame work. The ordinary engineering comparison
-below accounts for these costs separately from the safety assertions.
-
-## Linux x64 engineering assessment, 2026-10-18
-
-The adoption decision is limited to Linux x64. Ordinary PR CI images from
-[`dc24f1ae917aaa6f62d325d65450ec3bb7e2f466`](https://github.com/re-thc/openjdk-jdk27u/commit/dc24f1ae917aaa6f62d325d65450ec3bb7e2f466)
-contain the same C2 and x86 implementation as the subsequent regression-only
-commits. Release and fastdebug images came from integration commit
-`dcc4a8257028d6107ccf34cef0e9a3fb112e9c24`, built with GCC
-`16.0.1 20260322 (experimental) [trunk r16-8246-g569ace1fa50]`.
-The codec was pinned to `re-thc/jzstd@7a6b345d0df3d8571a30f4a9c974dfaa3a10d9b6`.
-These reused images differ from the old sealed campaign's source/tool identities.
-
-Correctness passed for 57 fixed native-zstd-1.5.7 frames from 19 corpora at
-levels 1, 3 and 9, over 32 rounds, in release default/off/on and fastdebug/on
-with allocator, oop and GC verification. All four focused cold-call jtreg
-tests passed, including actual exercised-trap oop forwarding in compressed and
-uncompressed configurations. Nine existing allocator/spilling tests also passed
-with the option enabled. The updated default-mode focused tests passed on both
-retained release and fastdebug images with default-on emulated.
-
-Actual new-default execution was then validated with an ordinary local
-HotSpot-only build at `379b0eca902474dd082716c1de5498b9145e4534`, using the
-retained fastdebug configuration and GCC 16.2.0. The dependency-managed build
-completed all 1,218 objects and linked successfully. An isolated copy of the
-compatible CI fastdebug runtime received only the newly built `libjvm.so`, SHA256
-`2e830eba2fd47446798b59902a1f41d0c82f403dcfd85d7a2a0f9218ba7f323c`.
-The ordinary launcher loaded that exact library, verified through
-`/proc/self/maps`. With no feature option supplied, the value was `true` with
-`DEFAULT` origin and product metadata. Explicit off/on worked without diagnostic
-unlock. All 57 decoder frames passed 32 rounds in each mode with allocator,
-oop and GC verification, and all four focused jtreg tests passed on that image.
-Their default activation, exercised-trap forwarding, opt-out, GC and
-deoptimization assertions were unchanged. This validates the newly built VM;
-the reused Java/native JDK libraries were not rebuilt. Full PR CI remains a
-separate check. No additional throughput measurements were taken.
-
-The throughput plan was frozen before measurement: four independently started
-forks per option per case, alternating paired order, six seconds of warmup and
-five 700 ms windows per fork. Each fork contributes one median; all 72 forks
-are retained. The following are medians of the four paired percentage changes:
-
-| Workload | Enabled versus disabled |
+| Native-zstd frame | Enabled versus disabled |
 |---|---:|
-| Source, native level 1, normal tiered compilation | +3.6% |
-| Source, native level 3, normal tiered compilation | +3.0% |
-| JSON, native level 3, normal tiered compilation | +2.1% |
-| DNA, native level 3, normal tiered compilation | +11.9% |
-| Incompressible/raw control | +0.5% |
-| Zeros/RLE control | +1.0% |
-| Source, generic bit-reader control | +4.6% |
-| Ordinary source level-1 encoder control | +6.3% |
-| Source, native level 1, C2-only compilation | +2.4% |
+| Source, level 1 | +3.6% |
+| Source, level 3 | +3.0% |
+| JSON, level 3 | +2.1% |
+| DNA, level 3 | +11.9% |
 
-Every pair favored the enabled option, but four pairs on one cloud VM do not
-establish cross-machine confidence or general Java workload performance. Small
-control changes can include host variation. Accumulated MXBean compilation
-time during warmup was mixed: for source level 1, 572/562 ms disabled/enabled;
-JSON, 498/542 ms; DNA, 468/507 ms. DNA's normal decoder allocation needed two retry attempts
-instead of one and its compilation elapsed median rose from 12.5 to 14 ms.
-The normal decoder C2 code was installed before 0.72 seconds in all applicable
-forks and was not invalidated during the measured windows. Normal C2 decoder
-code-size medians fell from 7,652 to 6,896 bytes for tiered source level 1 and
-7,840 to 6,592 bytes for DNA. This is a throughput/code-size tradeoff with a
-small observed compilation cost, not a zero-cost transformation.
+C2-only source decoding gained 2.4%; raw/RLE, generic-reader and ordinary encoder
+controls had no observed regression. Four pairs on one host do not establish
+general Java performance or cross-machine confidence.
 
-Final-code comparisons used separate captures, excluded from the timing
-ensemble. For the source-trained normal tiered decoder, the union of call-free
-loop blocks containing the three packed loads had 56 stack reads and 30 writes
-disabled, versus 46 reads and 19 writes enabled. Main code fell from 7,584 to
-6,824 bytes and frame reservation from 272 to 256 bytes; register moves in that
-region increased from 19 to 24. Under mixed-corpus C2 training, release main
-code fell from 8,040 to 6,536 bytes, the corresponding stack accesses from
-56/29 to 44/20, and frame reservation from 256 to 240 bytes. The enabled
-captures had no exact-value hot stores of the three packed load roots; the
-disabled captures had one such store for each root. Cold Java-state
-materialization and stack-to-stack moves remain. There is no claim that every
-spill or compensating move disappeared.
+Separate source-trained tiered captures reduced main code from 7,584 to 6,824
+bytes, frame reservation from 272 to 256 bytes, and static stack reads/writes
+in the call-free packed-load loop region from 56/30 to 46/19. Register moves
+increased from 19 to 24, and cold materialization remains. DNA's normal-decoder
+compilation elapsed median rose from 12.5 to 14 ms with an extra allocator
+retry. The result supports a net transport/code/throughput improvement with a
+compilation tradeoff, rather than removal of every spill or compensating move.
 
-Neither the repaired images nor the earlier PR CI fastdebug image
-(`a4b06e65a0b2fde31e96e803ab718b7bf0a9ab71`, source `26a75f6`) emitted the six
-previously reported memory push/pop pairs under the matched mixed-corpus
-training. Their absence therefore cannot be attributed to the repair. The
-decision rests on exercised safety, lower net hot transport, smaller code and
-the bounded throughput comparison; it does not assert the historical exact
-six-copy or trace-chain oracle passed. Raw logs, commands, frame hashes,
-disassembly and all observations are retained outside product Git in
-`/workspace/pr51-real-decoder-engineering-20261018` on the validation executor.
-
-## Standalone experiment
-
-The one-off decoder workloads, campaign controllers, evidence analyzers and
-their protocols are retained at immutable Git commit
-[`26a75f6755204efee764452ad02a0fe3d273dffa`](https://github.com/re-thc/openjdk-jdk27u/tree/26a75f6755204efee764452ad02a0fe3d273dffa/doc/cold-call-qualification).
-They are deliberately outside the product change. Use that source snapshot for
-reproduction; no binary or patch handoff is required.
-
-The previous sealed cloud attempts are closed and cannot be relaunched. The
-historical mechanism result remains INCONCLUSIVE and the historical performance
-NO-GO remains unchanged. The separate ordinary engineering assessment above
-supports the narrower Linux x64 default; it does not retroactively pass the
-archived activation, exact-copy or no-replacement-traffic gates.
+Correctness passed for 57 fixed native-zstd-1.5.7 frames over 32 rounds, the four
+focused tests and nine existing allocator/spilling tests. A newly built
+current-source fastdebug VM also passed actual-default startup with DEFAULT
+origin/product metadata, opt-out without diagnostic unlock, and the focused
+GC/deoptimization controls. Full ordinary CI remains a separate check.
+The [pinned workload and probe sources](https://github.com/re-thc/openjdk-jdk27u/tree/26a75f6755204efee764452ad02a0fe3d273dffa/doc/cold-call-qualification)
+are retained outside the product change.
