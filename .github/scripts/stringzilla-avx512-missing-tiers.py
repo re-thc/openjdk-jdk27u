@@ -26,7 +26,7 @@ HELPER_HASH = "e07344dcabe1355c0352ad6e171aa4e53bfdf027492197bb65eb1f1d7c8cedea"
 MANIFEST_HASH = "9272cdc6717737bede09521cb304d20b92a5aef52b5b8b1b5fa501fb98133ef6"
 DRIVER_HASH = "2f4dd375b33250dc0a322ce8b142def923eb06a721e386254cf872378310b8d5"
 COUNTS = {"interpreter": 129, "c1": 120}
-JOB_NAME = "Missing SKY ABC interpreter and C1 controls"
+JOB_NAME = os.environ.get("SKY_WORKER_NAME", "")
 PINS = [
     {
         "label": "interpreter",
@@ -144,7 +144,7 @@ def container_provenance():
     provenance = {"image_reference": image_reference,
         "expected_image_id": "sha256:b9e485d4a3bc6efa60fc5150444a82f3d96991fdcec7caa1d0f3e7a0b5859321",
         "image_information_git_blob": "9652094fbc0721470dc3ecb94e7dc5c4aedf965e",
-        "host_runner_label": "ubuntu-24.04", "host_runner_os": os.environ["RUNNER_OS"],
+        "host_runner_label": os.environ["SKY_HOST_LABEL"], "host_runner_os": os.environ["RUNNER_OS"],
         "native_execution": True, "source": SOURCE, "uname": frozen.command(["uname", "-a"]),
         "os_release": release, "glibc": frozen.command(["ldd", "--version"]),
         "packages": frozen.command(["dpkg-query", "-W", "base-files", "libc6", "gcc-16", "python3", "git", "gh"]),
@@ -176,8 +176,89 @@ def failed_replay_proof():
     return receipt
 
 
+def election(folder, completed=False):
+    context = current()
+    assert context["attempt"] == 1, "No automatic timed reruns"
+    proof_bytes = (folder / "eligibility.json").read_bytes()
+    proof = json.loads(proof_bytes)
+    winner = json.loads((folder / "winner.json").read_text())
+    assert proof["source"] == SOURCE and proof["base"] == BASE and proof["backend"] == "avx512"
+    assert proof["run_id"] == context["run_id"] and proof["head"] == context["head"] and proof["attempt"] == 1
+    assert proof["available"] is True and proof["timed_records"] == 0 and proof["images_restored"] is False
+    assert len(proof["nonce"]) == 32 and all(ch in "0123456789abcdef" for ch in proof["nonce"])
+    assert proof["host_runner_label"] in ("ubuntu-22.04", "ubuntu-24.04", "ubuntu-26.04")
+    assert proof["job"]["name"].startswith("Missing SKY slot ")
+    assert proof["job"]["head_sha"] == context["head"] and proof["job"]["run_id"] == context["run_id"]
+    assert proof["host_runner_label"] in proof["job"]["labels"]
+    artifact = winner["artifact"]
+    name = "stringzilla-sky-election-" + str(context["run_id"]) + "-attempt1"
+    assert artifact["name"] == name and winner["proof_sha256"] == hashlib.sha256(proof_bytes).hexdigest()
+    artifacts = frozen.api("actions/runs/" + str(context["run_id"]) + "/artifacts?per_page=100")["artifacts"]
+    candidates = [item for item in artifacts if item["name"] == name and not item["expired"]]
+    assert len(candidates) == 1 and candidates[0]["id"] == artifact["id"] and candidates[0]["digest"] == artifact["digest"]
+    claim = folder / "claim.zip"
+    assert "sha256:" + sha(claim) == artifact["digest"] and sha(claim) == winner["claim_zip_sha256"]
+    with zipfile.ZipFile(claim) as bundle:
+        assert bundle.namelist() == ["eligibility.json"] and bundle.read("eligibility.json") == proof_bytes
+    verified = OUT / "verified-election.zip"
+    frozen.download(artifact["id"], artifact["digest"], context["run_id"], context["head"], verified)
+    assert sha(verified) == sha(claim)
+    verified.unlink()
+    selected = [job for job in jobs(context["run_id"]) if job["id"] == proof["job"]["id"]]
+    assert len(selected) == 1
+    job = selected[0]
+    assert job["name"] == proof["job"]["name"] and job["runner_id"] == proof["job"]["runner_id"]
+    assert job["run_attempt"] == 1 and job["head_sha"] == context["head"]
+    if completed:
+        assert job["status"] == "completed" and job["conclusion"] == "success"
+    else:
+        assert job["status"] == "in_progress" and job["name"] == JOB_NAME
+    return {"artifact": {"id": artifact["id"], "digest": artifact["digest"], "name": name},
+            "proof_sha256": hashlib.sha256(proof_bytes).hexdigest(), "nonce": proof["nonce"],
+            "job_id": job["id"], "job_name": job["name"], "runner_id": job["runner_id"],
+            "host_runner_label": proof["host_runner_label"], "slot": proof["slot"]}
+
+
+def unsupported_replay_proof():
+    run_id, head, job_id = 39143553914, "4ceded08e61c60d7887b3f62035758feeb28d1af", 117722684020
+    matching = [job for job in jobs(run_id) if job["id"] == job_id]
+    assert len(matching) == 1
+    job = matching[0]
+    assert job["head_sha"] == head and job["conclusion"] == "failure" and job["run_attempt"] == 1
+    steps = {step["name"]: step["conclusion"] for step in job["steps"]}
+    assert steps["Persist exact checkout ownership exceptions for container subprocess Git"] == "success"
+    assert steps["Restore archived complete pair and attest actual SKY runtime and native contracts"] == "skipped"
+    assert steps["Measure only six ABC triplets then missing interpreter and C1 projections"] == "skipped"
+    archive = OUT / "unsupported-replay.zip"
+    digest = "sha256:43d9f3236d952576748ec51f97e9ea75bf1c6d74e025ab9af2b79471c7264dc6"
+    metadata = frozen.download(12142608104, digest, run_id, head, archive)
+    assert metadata["name"] == "stringzilla-avx512-missing-" + head + "-attempt1"
+    with zipfile.ZipFile(archive) as bundle:
+        names = bundle.namelist()
+        expected = {"failed-replay-proof.json", "container-provenance.json", "old-skip-proof.json",
+                    "physical-host.json", "SKIPPED.json"}
+        expected.update("old-skips/" + pin["label"] + suffix for pin in PINS
+                        for suffix in (".zip", "-physical-host.json", "-SKIPPED.json"))
+        assert len(names) == 17 and set(names) == expected and not any("experiment.log" in name for name in names)
+        skipped = json.loads(bundle.read("SKIPPED.json"))
+        assert skipped == json.loads(bundle.read("physical-host.json"))
+        assert skipped["available"] is False and type(skipped["timed_records"]) is int and skipped["timed_records"] == 0
+        assert skipped["source"] == SOURCE and skipped["backend"] == "avx512"
+    receipt = {"run_id": run_id, "head": head, "job": job,
+        "artifact": {"id": metadata["id"], "digest": digest}, "files": sorted(names),
+        "receipt": skipped, "timed_records": 0}
+    write(OUT / "unsupported-replay-proof.json", receipt)
+    print("STRINGZILLA_MISSING_UNSUPPORTED_REPLAY " + json.dumps(receipt, separators=(",", ":")), flush=True)
+    return receipt
+
+
 def preflight():
+    election_folder = OUT / "election"
+    shutil.copytree(Path(os.environ["RUNNER_TEMP"]) / "stringzilla-sky-election", election_folder)
+    binding = election(election_folder)
+    write(OUT / "election-binding.json", binding)
     failed_replay_proof()
+    unsupported_replay_proof()
     try:
         inputs()
     except Exception as error:
@@ -272,6 +353,8 @@ def prepare():
         "helper_sha256": HELPER_HASH, "parent_manifest_sha256": MANIFEST_HASH,
         "driver_sha256": DRIVER_HASH, "old_skip_proof_sha256": sha(OUT / "old-skip-proof.json"),
         "failed_replay_proof_sha256": sha(OUT / "failed-replay-proof.json"),
+        "unsupported_replay_proof_sha256": sha(OUT / "unsupported-replay-proof.json"),
+        "election_binding": json.loads((OUT / "election-binding.json").read_text()),
         "requested_counts": COUNTS, "abc_triplets": 6, "runtime_sky_attested": True, "native_sky_contract_passed": True,
         "container_provenance_sha256": sha(OUT / "container-provenance.json"),
         "abc_wrapper_sha256": ABC_WRAPPER_HASH, "abc_helper_sha256": abc.EXTRA_HELPER_SHA,
@@ -363,15 +446,19 @@ def measure():
 def collection():
     inputs(baseline=False)
     context = current()
-    artifact_id = int(os.environ["MEASUREMENT_ARTIFACT_ID"])
-    digest = os.environ["MEASUREMENT_ARTIFACT_DIGEST"]
+    artifacts = frozen.api("actions/runs/" + str(context["run_id"]) + "/artifacts?per_page=100")["artifacts"]
+    candidates = [item for item in artifacts if item["name"] ==
+        "stringzilla-avx512-missing-" + context["head"] + "-attempt1" and not item["expired"]]
+    assert len(candidates) == 1, "Require exactly one elected worker's measurement artifact"
+    artifact_id, digest = candidates[0]["id"], candidates[0]["digest"]
     archive = OUT / "missing-results.zip"
     metadata = frozen.download(artifact_id, digest, context["run_id"], context["head"], archive)
     assert metadata["name"] == "stringzilla-avx512-missing-" + context["head"] + "-attempt1"
     folder = OUT / "collected"
     with zipfile.ZipFile(archive) as bundle:
         names = ["replay-preparation.json", "replay-complete.json", "old-skip-proof.json",
-                 "physical-host.json", "failed-replay-proof.json", "restore/pair-receipt.json", "restore/native-validation.json",
+                 "physical-host.json", "failed-replay-proof.json", "unsupported-replay-proof.json", "unsupported-replay.zip",
+                 "election/eligibility.json", "election/winner.json", "election/claim.zip", "election-binding.json", "restore/pair-receipt.json", "restore/native-validation.json",
                  "restore/native-validation/run.log", "container-provenance.json"]
         names += ["old-skips/" + pin["label"] + ".zip" for pin in PINS]
         names += [name for name in bundle.namelist() if name.startswith("abc/") and not name.endswith("/")]
@@ -391,17 +478,22 @@ def collection():
     replay = preparation["replay"]
     assert replay == complete["replay"]
     assert replay["run_id"] == context["run_id"] and replay["head"] == context["head"]
-    assert replay["attempt"] == 1 and replay["job_name"] == JOB_NAME
+    assert replay["attempt"] == 1
+    binding = election(folder / "election", completed=True)
+    assert binding == preparation["election_binding"] == json.loads((folder / "election-binding.json").read_text())
+    assert replay["job_id"] == binding["job_id"] and replay["job_name"] == binding["job_name"]
     matching = [job for job in jobs(context["run_id"]) if job["id"] == replay["job_id"]]
     assert len(matching) == 1 and matching[0]["conclusion"] == "success"
     job = matching[0]
-    assert job["name"] == JOB_NAME and job["run_attempt"] == 1
+    assert job["name"] == binding["job_name"] and job["run_attempt"] == 1
     assert next(step for step in job["steps"] if step["name"] ==
                 "Measure only six ABC triplets then missing interpreter and C1 projections")["conclusion"] == "success"
     assert json.loads((folder / "physical-host.json").read_text())["available"] is True
     assert preparation["runtime_sky_attested"] is True and preparation["native_sky_contract_passed"] is True
     assert json.loads((folder / "restore/native-validation.json").read_text())["passed"] is True
     assert "requested=2 selected=2 executable=1" in (folder / "restore/native-validation/run.log").read_text()
+    assert sha(folder / "unsupported-replay-proof.json") == preparation["unsupported_replay_proof_sha256"]
+    assert json.loads((folder / "unsupported-replay-proof.json").read_text()) == unsupported_replay_proof()
     assert sha(folder / "failed-replay-proof.json") == preparation["failed_replay_proof_sha256"]
     assert json.loads((folder / "failed-replay-proof.json").read_text()) == failed_replay_proof()
     assert sha(folder / "old-skip-proof.json") == preparation["old_skip_proof_sha256"]
@@ -429,7 +521,7 @@ def collection():
     container = json.loads((folder / "container-provenance.json").read_text())
     assert container["native_execution"] is True and container["source"] == SOURCE
     assert container["image_reference"] == "ubuntu@sha256:42527649dbc4f9197a6073f426f488cbff0e9cc9f2afce32d91c383e4875634a"
-    assert len(container["actual_root_files_sha256"]) == 3 and container["host_runner_label"] == "ubuntu-24.04"
+    assert len(container["actual_root_files_sha256"]) == 3 and container["host_runner_label"] == binding["host_runner_label"]
     abc.validate_inputs()
     abc_folder = folder / "abc"
     abc_text, abc_triplets = abc.projection("avx512")

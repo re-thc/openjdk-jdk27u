@@ -1,7 +1,7 @@
 # Copyright (c) 2026, re-thc. All rights reserved.
 # SPDX-License-Identifier: GPL-2.0-only
 # No JVM build: only six previously unmeasured ABC triplets and missing primary SKY tiers.
-name: StringZilla missing AVX-512 ABC interpreter and C1 coverage
+name: StringZilla eligible-worker missing AVX-512 coverage
 on:
   push:
     branches: [codex/stringzilla-avx512-missing-tiers]
@@ -20,35 +20,160 @@ env:
   GIT_CONFIG_VALUE_0: 'false'
 jobs:
   measure:
-    name: Missing SKY ABC interpreter and C1 controls
-    runs-on: ubuntu-24.04
+    name: Missing SKY slot ${{ matrix.slot }} on ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
     container:
       image: ubuntu@sha256:42527649dbc4f9197a6073f426f488cbff0e9cc9f2afce32d91c383e4875634a
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {slot: '0', runner: ubuntu-22.04}
+          - {slot: '1', runner: ubuntu-24.04}
+          - {slot: '2', runner: ubuntu-26.04}
+          - {slot: '3', runner: ubuntu-26.04}
     env:
       EXPECTED_CONTAINER_IMAGE: ubuntu@sha256:42527649dbc4f9197a6073f426f488cbff0e9cc9f2afce32d91c383e4875634a
+      SKY_WORKER_NAME: Missing SKY slot ${{ matrix.slot }} on ${{ matrix.runner }}
+      SKY_HOST_LABEL: ${{ matrix.runner }}
+      SKY_SLOT: ${{ matrix.slot }}
     timeout-minutes: 360
-    outputs:
-      artifact-id: ${{ steps.upload.outputs.artifact-id }}
-      artifact-digest: ${{ steps.upload.outputs.artifact-digest }}
     steps:
-      - name: Install native Ubuntu 26 runtime and validation dependencies before checkout
+      - name: Install only eligibility and artifact API dependencies
         shell: bash
         run: |
           apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3 python-is-python3 git gh gcc-16 tar unzip ca-certificates binutils
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3 python-is-python3 gh ca-certificates libstdc++6
+      - name: Record native CPU eligibility without images compiler or timings
+        id: eligibility
+        shell: python
+        run: |
+          import hashlib, json, os, platform, re, subprocess, uuid
+          from pathlib import Path
+          run_id, head, attempt = int(os.environ["GITHUB_RUN_ID"]), os.environ["GITHUB_SHA"], int(os.environ["GITHUB_RUN_ATTEMPT"])
+          assert attempt == 1, "No automatic timed retries"
+          assert os.environ["GITHUB_REPOSITORY"] == "re-thc/openjdk-jdk27u"
+          job_name = os.environ["SKY_WORKER_NAME"]
+          payload = subprocess.check_output(["gh", "api", "repos/re-thc/openjdk-jdk27u/actions/runs/" +
+              str(run_id) + "/jobs?per_page=100&filter=all"], text=True)
+          jobs = [job for job in json.loads(payload)["jobs"] if job["name"] == job_name and job["run_attempt"] == 1]
+          assert len(jobs) == 1 and jobs[0]["status"] == "in_progress" and jobs[0]["head_sha"] == head
+          cpu = min(os.sched_getaffinity(0))
+          fields = next({key.strip(): value.strip() for key, value in
+              (line.split(":", 1) for line in block.splitlines() if ":" in line)}
+              for block in Path("/proc/cpuinfo").read_text().strip().split("\n\n")
+              if re.search(r"(?m)^processor\s*:\s*" + str(cpu) + r"\s*$", block))
+          flags = set(fields.get("flags", "").split())
+          required = {"avx", "avx2", "bmi1", "bmi2", "f16c", "fma", "movbe", "popcnt",
+              "sse4_1", "sse4_2", "ssse3", "cx16", "avx512f", "avx512bw", "avx512vl"}
+          missing = sorted(required - flags)
+          if not flags.intersection({"abm", "lzcnt"}):
+              missing.append("lzcnt/abm")
+          available = platform.machine().lower() in ("amd64", "x86_64") and not missing
+          folder = Path(os.environ["RUNNER_TEMP"]) / "stringzilla-sky-election"
+          folder.mkdir()
+          proof = {"schema": "stringzilla-sky-eligibility-v1", "source": os.environ["SOURCE"],
+              "base": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda", "backend": "avx512",
+              "run_id": run_id, "head": head, "attempt": attempt, "slot": os.environ["SKY_SLOT"],
+              "host_runner_label": os.environ["SKY_HOST_LABEL"], "nonce": uuid.uuid4().hex,
+              "job": jobs[0], "available": available, "cpu": cpu, "fields": fields, "missing": missing,
+              "timed_records": 0, "images_restored": False, "affinity": sorted(os.sched_getaffinity(0))}
+          (folder / "eligibility.json").write_text(json.dumps(proof, indent=2) + "\n")
+          if not available:
+              (folder / "SKIPPED.json").write_text(json.dumps(proof, indent=2) + "\n")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as stream:
+              stream.write("available=" + str(available).lower() + "\n")
+              stream.write("folder=" + str(folder) + "\n")
+              stream.write("cpu_model=" + fields.get("model name", "unknown") + "\n")
+          print("STRINGZILLA_SKY_ELIGIBILITY " + json.dumps(proof, separators=(",", ":")), flush=True)
+      - name: Retain each immutable eligibility proof
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-sky-probe-${{ github.sha }}-${{ matrix.slot }}-attempt${{ github.run_attempt }}
+          path: ${{ steps.eligibility.outputs.folder }}/eligibility.json
+          overwrite: false
+          if-no-files-found: error
+          retention-days: 30
+      - name: Atomically claim the one immutable timing election on ${{ steps.eligibility.outputs.cpu_model }}
+        id: claim
+        if: steps.eligibility.outputs.available == 'true'
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-sky-election-${{ github.run_id }}-attempt${{ github.run_attempt }}
+          path: ${{ steps.eligibility.outputs.folder }}/eligibility.json
+          overwrite: false
+          if-no-files-found: error
+          retention-days: 30
+      - name: Verify claim ${{ steps.claim.outputs.artifact-id }} digest nonce and worker on ${{ steps.eligibility.outputs.cpu_model }}
+        id: elected
+        if: steps.claim.outcome == 'success'
+        env:
+          CLAIM_ARTIFACT_ID: ${{ steps.claim.outputs.artifact-id }}
+          CLAIM_ARTIFACT_DIGEST: ${{ steps.claim.outputs.artifact-digest }}
+        shell: python
+        run: |
+          import hashlib, http.client, json, os, subprocess, time, zipfile
+          from pathlib import Path
+          folder = Path(os.environ["RUNNER_TEMP"]) / "stringzilla-sky-election"
+          proof_bytes = (folder / "eligibility.json").read_bytes()
+          proof = json.loads(proof_bytes)
+          run_id, head = int(os.environ["GITHUB_RUN_ID"]), os.environ["GITHUB_SHA"]
+          assert proof["available"] is True and proof["timed_records"] == 0 and proof["images_restored"] is False
+          assert proof["run_id"] == run_id and proof["head"] == head and proof["attempt"] == 1
+          assert proof["job"]["name"] == os.environ["SKY_WORKER_NAME"] and proof["slot"] == os.environ["SKY_SLOT"]
+          artifact_id = int(os.environ["CLAIM_ARTIFACT_ID"])
+          digest = os.environ["CLAIM_ARTIFACT_DIGEST"].removeprefix("sha256:")
+          assert len(digest) == 64 and all(ch in "0123456789abcdef" for ch in digest)
+          name = "stringzilla-sky-election-" + str(run_id) + "-attempt1"
+          api = lambda path: json.loads(subprocess.check_output(["gh", "api", "repos/re-thc/openjdk-jdk27u/" + path], text=True))
+          metadata = api("actions/artifacts/" + str(artifact_id))
+          assert metadata["id"] == artifact_id and metadata["name"] == name and not metadata["expired"]
+          assert metadata["digest"] == "sha256:" + digest
+          assert metadata["workflow_run"]["id"] == run_id and metadata["workflow_run"]["head_sha"] == head
+          for trial in range(20):
+              matches = [item for item in api("actions/runs/" + str(run_id) + "/artifacts?per_page=100")["artifacts"]
+                         if item["name"] == name and not item["expired"]]
+              if matches:
+                  break
+              time.sleep(1)
+          assert len(matches) == 1 and matches[0]["id"] == artifact_id and matches[0]["digest"] == metadata["digest"]
+          archive = folder / "claim.zip"
+          with archive.open("wb") as stream:
+              subprocess.run(["gh", "api", "repos/re-thc/openjdk-jdk27u/actions/artifacts/" +
+                              str(artifact_id) + "/zip"], stdout=stream, check=True)
+          assert hashlib.sha256(archive.read_bytes()).hexdigest() == digest
+          with zipfile.ZipFile(archive) as bundle:
+              assert bundle.namelist() == ["eligibility.json"] and bundle.read("eligibility.json") == proof_bytes
+          jobs = api("actions/runs/" + str(run_id) + "/jobs?per_page=100&filter=all")["jobs"]
+          own = [job for job in jobs if job["id"] == proof["job"]["id"]]
+          assert len(own) == 1 and own[0]["status"] == "in_progress" and own[0]["name"] == proof["job"]["name"]
+          assert own[0]["runner_id"] == proof["job"]["runner_id"] and own[0]["head_sha"] == head
+          winner = {"artifact": metadata, "proof_sha256": hashlib.sha256(proof_bytes).hexdigest(),
+                    "claim_zip_sha256": digest}
+          (folder / "winner.json").write_text(json.dumps(winner, indent=2) + "\n")
+          print("STRINGZILLA_SKY_ELECTED " + json.dumps(winner, separators=(",", ":")), flush=True)
+      - name: Install native contract and checkout dependencies only on the elected worker
+        if: steps.elected.outcome == 'success'
+        shell: bash
+        run: |
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends git gcc-16 tar unzip binutils
           test "$(gcc-16 -dumpversion)" = 16
       - name: Checkout frozen source and benchmark helper
+        if: steps.elected.outcome == 'success'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: 4592230b14fc2f4b537b162fd7f6b791e882b615
           persist-credentials: false
       - name: Checkout original source identity
+        if: steps.elected.outcome == 'success'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
           path: baseline
           persist-credentials: false
       - name: Checkout original immutable restore driver and collector
+        if: steps.elected.outcome == 'success'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: 8dbbc5a78e113630a5f6e9fa15be19cddd8bc3b3
@@ -56,6 +181,7 @@ jobs:
           persist-credentials: false
           sparse-checkout: .github/scripts
       - name: Checkout exact frozen external ABC helper application and collector
+        if: steps.elected.outcome == 'success'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: bef5407df2d4da71cc1414da26a90a5d665f014b
@@ -63,6 +189,7 @@ jobs:
           persist-credentials: false
           sparse-checkout: .github/scripts
       - name: Checkout this isolated missing-tier replay
+        if: steps.elected.outcome == 'success'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
@@ -70,6 +197,7 @@ jobs:
           persist-credentials: false
           sparse-checkout: .github/scripts
       - name: Persist exact checkout ownership exceptions for container subprocess Git
+        if: steps.elected.outcome == 'success'
         shell: python
         run: |
           import json, os, subprocess
@@ -87,6 +215,7 @@ jobs:
               print(str(root) + ": " + result.stdout, end="", flush=True)
               result.check_returncode()
       - name: Verify all four original zero-timing ZIPs before checking this CPU
+        if: steps.elected.outcome == 'success'
         shell: python
         run: |
           import py_compile, subprocess, sys
@@ -95,31 +224,60 @@ jobs:
           py_compile.compile('producer/.github/scripts/stringzilla-sharded.py', doraise=True)
           subprocess.run([sys.executable, path, 'preflight'], check=True)
       - name: Restore archived complete pair and attest actual SKY runtime and native contracts
+        if: steps.elected.outcome == 'success'
         shell: python
         run: |
           import subprocess, sys
           subprocess.run([sys.executable, 'auxiliary/.github/scripts/stringzilla-avx512-missing-tiers.py', 'prepare'], check=True)
       - name: Measure only six ABC triplets then missing interpreter and C1 projections
+        if: steps.elected.outcome == 'success'
         shell: python
         run: |
           import subprocess, sys
           subprocess.run([sys.executable, 'auxiliary/.github/scripts/stringzilla-avx512-missing-tiers.py', 'measure'], check=True)
       - name: Preserve separate ABC and primary raw results and all original skip receipts
+        if: always() && steps.elected.outcome == 'success'
         id: upload
-        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: stringzilla-avx512-missing-${{ github.sha }}-attempt${{ github.run_attempt }}
           path: perf-output
           if-no-files-found: error
           retention-days: 30
+      - name: Retain zero-timing loser decisions without replacing the winner
+        if: always()
+        env:
+          CLAIM_OUTCOME: ${{ steps.claim.outcome }}
+          ELECTED_OUTCOME: ${{ steps.elected.outcome }}
+        shell: python
+        run: |
+          import json, os
+          from pathlib import Path
+          folder = Path(os.environ["RUNNER_TEMP"]) / "stringzilla-sky-election"
+          if folder.exists():
+              proof = json.loads((folder / "eligibility.json").read_text())
+              decision = {"run_id": proof["run_id"], "head": proof["head"], "job_id": proof["job"]["id"],
+                  "slot": proof["slot"], "available": proof["available"],
+                  "claim_outcome": os.environ["CLAIM_OUTCOME"], "elected_outcome": os.environ["ELECTED_OUTCOME"]}
+              if os.environ["ELECTED_OUTCOME"] != "success":
+                  decision.update(timed_records=0, images_restored=False, reason="not-elected")
+                  (folder / "SKIPPED.json").write_text(json.dumps(decision, indent=2) + "\n")
+              (folder / "decision.json").write_text(json.dumps(decision, indent=2) + "\n")
+              print("STRINGZILLA_SKY_ELECTION_DECISION " + json.dumps(decision, separators=(",", ":")), flush=True)
+      - name: Retain each worker election outcome
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-sky-probe-final-${{ github.sha }}-${{ matrix.slot }}-attempt${{ github.run_attempt }}
+          path: ${{ steps.eligibility.outputs.folder }}
+          overwrite: false
+          if-no-files-found: error
+          retention-days: 30
   collect:
+    if: ${{ !cancelled() }}
     needs: measure
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    env:
-      MEASUREMENT_ARTIFACT_ID: ${{ needs.measure.outputs.artifact-id }}
-      MEASUREMENT_ARTIFACT_DIGEST: ${{ needs.measure.outputs.artifact-digest }}
     steps:
       - name: Checkout frozen source and benchmark helper
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
