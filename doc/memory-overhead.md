@@ -34,6 +34,9 @@ NIO carrier pin/unpin overhead and contention, ParkEvent cache-line placement,
 earlier code coldness/unloading/recompilation behavior, C2 scratch lifetime and
 rollback cost, and AOT snapshot correctness with the smaller native allocation.
 The requested universal/no-more-than-minor speed-regression bound is unresolved.
+The [native combined decision protocol](memory-overhead-native-decision.md)
+defines a separate, not-yet-authorized Linux ARM64/macOS benefit-and-cost
+attempt using matched normal images, supported collectors and fixed controls.
 
 ## Provenance and integration review
 

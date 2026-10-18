@@ -65,3 +65,8 @@ formatter construction; a controlled follow-up did not establish a consistent
 loss after accounting for unchanged controls. Those historical results do not
 qualify the new clone monitor. Runtime qualification remains limited to Linux
 x64; Linux AArch64, macOS arm64 and Windows x64 have not been run.
+
+The [combined native decision protocol](memory-overhead-native-decision.md)
+adds a dedicated JMH clone/contention cost matrix, separate from this
+allocation-only probe. Its publication does not authorize execution or
+establish a performance bound.
