@@ -59,10 +59,47 @@ public class StringZillaTailSearch {
                 repeated = 'a';
                 mismatch = needleLength - 257;
                 break;
+            case "LATIN_HEAD_CANDIDATE_MISS":
+                if (length != 258 || needleLength != 257) {
+                    throw new IllegalArgumentException("Expected a 257-character needle in 258 characters");
+                }
+                repeated = 'a';
+                mismatch = 0;
+                break;
+            case "LATIN_FIRST_MISS":
+            case "LATIN_MIDDLE_MISS":
+            case "LATIN_FIFTH_FROM_END_MISS":
+            case "LATIN_NINTH_FROM_END_MISS":
+                repeated = 'a';
+                mismatch = switch (shape) {
+                    case "LATIN_FIRST_MISS" -> 0;
+                    case "LATIN_MIDDLE_MISS" -> needleLength / 2;
+                    case "LATIN_FIFTH_FROM_END_MISS" -> needleLength - 5;
+                    default -> needleLength - 9;
+                };
+                if (mismatch < 0 || mismatch >= needleLength - 1) {
+                    throw new IllegalArgumentException("Invalid last-character-preserving miss");
+                }
+                break;
             case "UTF16_PREFIX_MISS":
                 if (needleLength != 256) throw new IllegalArgumentException("Expected 256 code units");
                 repeated = '\u0404';
                 mismatch = 127;
+                break;
+            case "UTF16_FIRST_MISS":
+            case "UTF16_MIDDLE_MISS":
+            case "UTF16_FIFTH_FROM_END_MISS":
+            case "UTF16_NINTH_FROM_END_MISS":
+                repeated = '\u0401';
+                mismatch = switch (shape) {
+                    case "UTF16_FIRST_MISS" -> 0;
+                    case "UTF16_MIDDLE_MISS" -> needleLength / 2;
+                    case "UTF16_FIFTH_FROM_END_MISS" -> needleLength - 5;
+                    default -> needleLength - 9;
+                };
+                if (mismatch < 0 || mismatch >= needleLength - 1) {
+                    throw new IllegalArgumentException("Invalid last-character-preserving miss");
+                }
                 break;
             case "UTF16_UNIFORM_END":
                 repeated = '\u0101';
@@ -101,6 +138,11 @@ public class StringZillaTailSearch {
             target[mismatch] = marker;
         } else if (mismatch >= 0) {
             target[mismatch]++;
+        }
+        if (shape.equals("LATIN_HEAD_CANDIDATE_MISS")) {
+            // The rightmost head matches; the earlier candidate fails its head.
+            haystack[1] = 'b';
+            haystack[2] = 'c';
         }
         value = new String(haystack);
         needle = new String(target);

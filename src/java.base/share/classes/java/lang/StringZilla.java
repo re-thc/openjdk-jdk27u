@@ -50,6 +50,7 @@ final class StringZilla {
     static final int C2 = 4;
     // Keep small inputs on the existing Java / platform intrinsic paths.
     static final int MIN_BYTES = 256;
+    static final int REVERSE_CHAR_PROBE_LENGTH = 8;
     static final int MIN_INTERPRETER_REVERSE_BYTES = 32;
     // Match the independent native bounds. Exceeding either resumes Java code.
     static final int MAX_BYTES = 64 * 1024;
@@ -67,6 +68,17 @@ final class StringZilla {
             }
         }
         return true;
+    }
+
+    @ForceInline
+    static boolean matchesLatin1C2(byte[] src, int offset, byte[] tgt, int length) {
+        int prefix = length - 4;
+        for (int index = length - 1; index >= prefix; index--) {
+            if (src[offset + index] != tgt[index]) {
+                return false;
+            }
+        }
+        return ArraysSupport.mismatch(src, offset, tgt, 0, prefix) < 0;
     }
 
     @ForceInline
@@ -97,7 +109,7 @@ final class StringZilla {
 
     @ForceInline
     static boolean matchesUTF16C2(byte[] src, int offset, byte[] tgt, int length) {
-        if (!MSVC_SERIAL && BACKEND == SERIAL && length >= 32 && length <= 128) {
+        if (!MSVC_SERIAL && BACKEND == SERIAL && length >= 32 && length <= 256) {
             int prefix = length - 4;
             for (int index = length - 1; index >= prefix; index--) {
                 if (StringUTF16.getChar(src, offset + index) != StringUTF16.getChar(tgt, index)) {
@@ -139,7 +151,7 @@ final class StringZilla {
     static boolean useCharUTF16(int length, boolean reverse) {
         if (BACKEND != SERIAL) {
             return (BACKEND != HASWELL && BACKEND != NEON)
-                    || !reverse || length >= 256 || compilerTier() != C2;
+                    || !reverse || length >= (BACKEND == NEON ? 768 : 256) || compilerTier() != C2;
         }
         int tier = compilerTier();
         return !(reverse && tier == C2)
@@ -287,7 +299,7 @@ final class StringZilla {
         return result < 0 ? -1 : from + result;
     }
 
-    @ForceInline
+    @DontInline
     static int indexOfCharUTF16(byte[] src, int end, int ch, int from) {
         int result = findCharUTF16(src, from << 1, (end - from) << 1, ch);
         if (result == FALLBACK) {

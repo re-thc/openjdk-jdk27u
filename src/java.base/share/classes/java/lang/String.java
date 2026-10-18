@@ -2971,6 +2971,7 @@ public final class String
      *          character sequence represented by this object, or
      *          {@code -1} if the character does not occur.
      */
+    @ForceInline
     public int lastIndexOf(int ch) {
         return lastIndexOf(ch, length() - 1);
     }
@@ -3009,6 +3010,7 @@ public final class String
      *          than or equal to {@code fromIndex}, or {@code -1}
      *          if the character does not occur before that point.
      */
+    @ForceInline
     public int lastIndexOf(int ch, int fromIndex) {
         return isLatin1() ? StringLatin1.lastIndexOf(value, ch, fromIndex)
                           : StringUTF16.lastIndexOf(value, ch, fromIndex);
@@ -3158,6 +3160,7 @@ public final class String
      * @return  the index of the last occurrence of the specified substring,
      *          or {@code -1} if there is no such occurrence.
      */
+    @ForceInline
     public int lastIndexOf(String str) {
         return lastIndexOf(str, length());
     }
@@ -3179,6 +3182,7 @@ public final class String
      *          searching backward from the specified index,
      *          or {@code -1} if there is no such occurrence.
      */
+    @ForceInline
     public int lastIndexOf(String str, int fromIndex) {
         return lastIndexOf(value, coder(), length(), str, fromIndex);
     }
@@ -3215,13 +3219,14 @@ public final class String
             return fromIndex;
         }
         if (srcCoder == tgtCoder) {
-            int searchLength = fromIndex + tgtCount;
             if (srcCoder == LATIN1) {
-                return searchLength < StringZilla.MIN_INTERPRETER_REVERSE_BYTES
+                return srcCount < StringZilla.MIN_INTERPRETER_REVERSE_BYTES
+                        || fromIndex + tgtCount < StringZilla.MIN_INTERPRETER_REVERSE_BYTES
                         ? StringLatin1.lastIndexOfJava(src, tgt, tgtCount, fromIndex)
                         : StringLatin1.lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex, StringZilla.UNRESOLVED_TIER);
             }
-            return searchLength < (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1)
+            return srcCount < (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1)
+                    || fromIndex + tgtCount < (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1)
                     ? StringUTF16.lastIndexOfJava(src, tgt, tgtCount, fromIndex)
                     : StringUTF16.lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex, StringZilla.UNRESOLVED_TIER);
         }

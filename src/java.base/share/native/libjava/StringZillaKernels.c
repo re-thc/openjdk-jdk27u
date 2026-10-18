@@ -362,6 +362,16 @@ static sz_cptr_t rfind_latin1_serial(sz_cptr_t src, sz_size_t src_bytes,
     return rfind_serial_long(src, src_bytes, tgt, tgt_bytes, JNI_FALSE);
 }
 
+// Unit-presence queries use the upstream two-byte search; full short
+// needles resume the original aligned batches without re-entering the probe.
+static sz_cptr_t rfind_utf16_serial_short_bulk(sz_cptr_t src, sz_size_t src_bytes,
+                                             sz_cptr_t tgt, sz_size_t tgt_bytes) {
+    if (tgt_bytes == 2) return sz_rfind_serial(src, src_bytes, tgt, tgt_bytes);
+    int result = search_utf16_default((const jchar*)src, (int)(src_bytes / 2),
+                                     (const jchar*)tgt, (int)(tgt_bytes / 2), JNI_TRUE);
+    return result < 0 ? NULL : src + result;
+}
+
 static sz_cptr_t rfind_utf16_serial(sz_cptr_t src, sz_size_t src_bytes,
                                   sz_cptr_t tgt, sz_size_t tgt_bytes) {
     if (((src_bytes | tgt_bytes) & 1) != 0) {
@@ -373,6 +383,20 @@ static sz_cptr_t rfind_utf16_serial(sz_cptr_t src, sz_size_t src_bytes,
         if (src_bytes == tgt_bytes) return NULL;
         return rfind_after_mismatch_units(src, src_bytes, tgt, tgt_bytes, 2,
                                             sz_rfind_byte_serial, sz_equal_serial, sz_rfind_serial);
+    }
+    if (tgt_bytes > 64) {
+        const jchar* needle = (const jchar*)tgt;
+        const jchar* rightmost = (const jchar*)(src + src_bytes - tgt_bytes);
+        int count = (int)(tgt_bytes / 2);
+        if (rightmost[0] == needle[0] && rightmost[count - 1] == needle[count - 1] &&
+                rightmost[count - 2] == needle[count - 2]) {
+            if (matches_serial_candidate((sz_cptr_t)rightmost, tgt, tgt_bytes)) {
+                return (sz_cptr_t)rightmost;
+            }
+            if (src_bytes == tgt_bytes) return NULL;
+            return rfind_after_mismatch_units(src, src_bytes, tgt, tgt_bytes, 2,
+                    sz_rfind_byte_serial, sz_equal_serial, rfind_utf16_serial_short_bulk);
+        }
     }
     // Short UTF-16 byte-search shifts are ineffective. Keep the aligned filter;
     // search_impl has already checked the byte and candidate-work limits.
@@ -473,7 +497,8 @@ static sz_cptr_t rfind_latin1_skylake(sz_cptr_t src, sz_size_t src_bytes,
         }
         candidates = candidate - src;
         return candidates == 0 ? NULL
-                : sz_rfind_skylake(src, candidates + tgt_bytes - 1, tgt, tgt_bytes);
+                : rfind_after_mismatch_units(src, candidates + tgt_bytes, tgt, tgt_bytes, 1,
+                                               sz_rfind_byte_skylake, sz_equal_skylake, sz_rfind_skylake);
     }
     return sz_rfind_skylake(src, src_bytes, tgt, tgt_bytes);
 }

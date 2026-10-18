@@ -87,6 +87,7 @@ public class TestStringZillaDispatch {
             checkNarrowCandidates(search);
             checkShortAndMixed(search);
             checkIntermediateUTF16(search);
+            checkLongUTF16Filters(search);
             return;
         }
         for (int level : new int[]{1, 4}) {
@@ -173,6 +174,7 @@ public class TestStringZillaDispatch {
             checkFilteredBlocks(search);
             checkShortAndMixed(search);
             checkIntermediateUTF16(search);
+            checkLongUTF16Filters(search);
         }
     }
 
@@ -180,7 +182,8 @@ public class TestStringZillaDispatch {
                                              boolean msvcSerial, int tier) throws Exception {
         boolean serialC1 = backend == 0 && tier == 1;
         boolean serialC2 = backend == 0 && tier == 4;
-        boolean avx2OrNeonC2 = (backend == 1 || backend == 4) && tier == 4;
+        boolean avx2C2 = backend == 1 && tier == 4;
+        boolean neonC2 = backend == 4 && tier == 4;
         boolean msvcC1 = msvcSerial && tier == 1;
         for (int count : new int[]{1, 4, 8, 9, 31, 32, 63, 64, 65, 128, 129}) {
             for (boolean mixed : new boolean[]{false, true}) {
@@ -191,10 +194,11 @@ public class TestStringZillaDispatch {
                 }
             }
         }
-        for (int length : new int[]{0, 127, 128, 129, 255, 256, 257, 4096, 65536}) {
+        for (int length : new int[]{0, 127, 128, 129, 255, 256, 257, 767, 768, 769, 4096, 65536}) {
             boolean forwardNative = !msvcC1;
             boolean reverseNative = forwardNative && !serialC2
-                    && (!avx2OrNeonC2 || length >= 256);
+                    && (!avx2C2 || length >= 256)
+                    && (!neonC2 || length >= 768);
             if ((boolean)chars.invoke(null, length, false) != forwardNative
                     || (boolean)chars.invoke(null, length, true) != reverseNative) {
                 throw new AssertionError("UTF-16 character routing: tier=" + tier + " length=" + length);
@@ -357,6 +361,30 @@ public class TestStringZillaDispatch {
                 checkReverse(search, prefix + "a", prefix, from, 0);
                 checkReverse(search, suffix + "a", suffix, from, 0);
                 checkReverse(search, "a" + suffix, suffix, from, from < 1 ? -1 : 1);
+            }
+        }
+    }
+
+
+    private static void checkLongUTF16Filters(Method search) throws Exception {
+        int length = 2048;
+        for (int count : new int[]{129, 255, 256, 257}) {
+            String needle = "\u0402" + "\u0401".repeat(count - 2) + "\u0403";
+            String absent = "\u0401".repeat(length);
+            checkReverse(search, absent, needle, Integer.MAX_VALUE, -1);
+            for (int position : new int[]{0, 1, 255, 256, 257, 510, 511, 512, length - count}) {
+                String value = absent.substring(0, position) + needle
+                        + absent.substring(position + count);
+                for (int from : new int[]{position - 1, position, length - count, Integer.MAX_VALUE}) {
+                    checkReverse(search, value, needle, from, from < position ? -1 : position);
+                }
+            }
+            for (int mismatch : new int[]{0, count / 2, count - 9, count - 5, count - 1}) {
+                char[] changed = needle.toCharArray();
+                changed[mismatch] = '\u0404';
+                String value = needle + "\u0401".repeat(length - count * 2) + new String(changed);
+                checkReverse(search, value, needle, Integer.MAX_VALUE, 0);
+                checkReverse(search, new String(changed), needle, Integer.MAX_VALUE, -1);
             }
         }
     }

@@ -62,7 +62,11 @@ public class StringZillaSearch {
         char[] target = new char[needleLength];
         for (int i = 0; i < target.length; i++) target[i] = (char)(ch - i % 4);
         needle = new String(target);
-        if (position.equals("CROSSED") && coder.equals("UTF16")) {
+        if (position.equals("NINTH")) {
+            if (length < 9) throw new IllegalArgumentException("Ninth probe requires nine characters");
+            // The initial eight reverse character probes must all miss.
+            chars[length - 9] = (char)ch;
+        } else if (position.equals("CROSSED") && coder.equals("UTF16")) {
             // Every byte match is odd-aligned; no Java code-unit match exists.
             java.util.Arrays.fill(chars, (char)0x0401);
             ch = 0x0104;
@@ -79,6 +83,10 @@ public class StringZillaSearch {
         } else if (!position.equals("MISS") && needle.length() <= length) {
             int offset = position.equals("START") ? 0 : length - needle.length();
             needle.getChars(0, needle.length(), chars, offset);
+        }
+        if (position.equals("NINTH")
+                && scalarIndexOf(chars, new char[] {(char)ch}, true) != length - 9) {
+            throw new AssertionError("Invalid ninth reverse character fixture");
         }
         value = new String(chars);
         char[] equalityChars = chars.clone();

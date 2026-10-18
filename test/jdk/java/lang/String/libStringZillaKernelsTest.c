@@ -103,6 +103,17 @@ static sz_bool_t counted_unit_equal(sz_cptr_t text, sz_cptr_t needle, sz_size_t 
     return sz_equal_serial(text, needle, length);
 }
 
+static sz_cptr_t counted_short_unit_search(sz_cptr_t text, sz_size_t length,
+                                           sz_cptr_t needle, sz_size_t count) {
+    if (count == 2) {
+        unit_probe_calls++;
+    } else {
+        unit_bulk_calls++;
+        unit_bulk_length = length;
+    }
+    return rfind_utf16_serial_short_bulk(text, length, needle, count);
+}
+
 // Return the failing line rather than relying on assertions enabled by the build.
 #define CHECK(condition) do { if (!(condition)) return __LINE__; } while (0)
 
@@ -229,6 +240,80 @@ static jint check_kernels(void) {
         CHECK(unit_probe_calls == 3 && unit_verification_calls == 3 &&
                 unit_bulk_calls == 1 && unit_bulk_length == target_bytes);
     }
+    // Dense short serial filters keep the bounded unit-probe contract.
+    const jint dense_short_counts[] = {33, 64, 128};
+    const jchar dense_short_values[][5] = {
+        {0x0406, 0x0401, 0x0402, 0x0403, 0x0407},
+        {'a', 'b', 'c', 'd', 'x'}
+    };
+    jchar dense_short_source[544], dense_short_target[136];
+    for (unsigned int n = 0; n < sizeof(dense_short_counts) / sizeof(dense_short_counts[0]); n++) {
+        jint count = dense_short_counts[n], stride = count + 3, length = 4 * count + 9;
+        sz_size_t source_bytes = length * sizeof(jchar), target_bytes = count * sizeof(jchar);
+        for (jint order = 0; order < 4; order++) {
+            jchar values[5];
+            for (jint i = 0; i < 5; i++) {
+                jchar value = dense_short_values[order / 2][i];
+                values[i] = (order & 1) ? (jchar)((value << 8) | (value >> 8)) : value;
+            }
+            for (jint offset = 0; offset < 8; offset++) {
+                jchar* text = dense_short_source + offset;
+                jchar* target = dense_short_target + ((offset + 3) & 7);
+                for (jint i = 0; i < count; i++) target[i] = values[0];
+                target[count - 3] = values[1];
+                target[count - 4] = values[2];
+                target[count - 5] = values[3];
+                for (jint i = 0; i < length; i++) text[i] = values[4];
+                for (jint i = 0; i < 4; i++) {
+                    memcpy(text + i * stride, target, target_bytes);
+                }
+                CHECK(rfind_utf16_serial((const char*)text, source_bytes,
+                        (const char*)target, target_bytes) == (const char*)(text + 3 * stride));
+                text[3 * stride + count - 3] = values[4];
+                text[2 * stride + count - 4] = values[4];
+                text[stride + count - 5] = values[4];
+                unit_probe_calls = unit_verification_calls = unit_bulk_calls = 0;
+                unit_bulk_length = 0;
+                CHECK(!matches_bounded_candidate((const char*)(text + 3 * stride),
+                        (const char*)target, target_bytes, counted_unit_equal));
+                CHECK(rfind_after_mismatch_units((const char*)text, source_bytes,
+                        (const char*)target, target_bytes, 2, counted_unit_byte_search,
+                        counted_unit_equal, counted_short_unit_search) == (const char*)text);
+                CHECK(unit_probe_calls == 3 && unit_verification_calls == 3 &&
+                        unit_bulk_calls == 1 && unit_bulk_length == target_bytes);
+                CHECK(rfind_utf16_serial((const char*)text, source_bytes,
+                        (const char*)target, target_bytes) == (const char*)text);
+
+                // An odd unit hit retains the earlier aligned match for bulk search.
+                for (jint i = 0; i < length; i++) text[i] = values[4];
+                memcpy(text, target, target_bytes);
+                memcpy(text + 3 * stride, target, target_bytes);
+                text[3 * stride + count - 3] = values[4];
+                memcpy((char*)(text + 2 * stride + count - 3) + 1,
+                        target + count - 3, sizeof(jchar));
+                unit_probe_calls = unit_verification_calls = unit_bulk_calls = 0;
+                unit_bulk_length = 0;
+                CHECK(rfind_after_mismatch_units((const char*)text, source_bytes,
+                        (const char*)target, target_bytes, 2, counted_unit_byte_search,
+                        counted_unit_equal, counted_short_unit_search) == (const char*)text);
+                CHECK(unit_probe_calls == 1 && unit_verification_calls == 0 &&
+                        unit_bulk_calls == 1 && unit_bulk_length == 4 * stride + target_bytes);
+                CHECK(rfind_utf16_serial((const char*)text, source_bytes,
+                        (const char*)target, target_bytes) == (const char*)text);
+
+                // A partial final code unit cannot complete another candidate.
+                for (jint i = 0; i < length; i++) text[i] = values[4];
+                memcpy(text, target, target_bytes);
+                CHECK(rfind_utf16_serial_short_bulk((const char*)text, target_bytes + 1,
+                        (const char*)target, target_bytes) == (const char*)text);
+                for (jint i = 0; i < length; i++) text[i] = values[4];
+                memcpy(text + 1, target, target_bytes);
+                CHECK(rfind_utf16_serial_short_bulk((const char*)text, target_bytes + 1,
+                        (const char*)target, target_bytes) == NULL);
+            }
+        }
+    }
+
     const jint counts[] = {0, 1, 63, 64};
     const jint invalid_counts[] = {-1, INT_MIN, 65, 128, 4096, INT_MAX};
     jchar source[256];
