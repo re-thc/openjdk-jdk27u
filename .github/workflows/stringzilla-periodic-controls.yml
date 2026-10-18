@@ -1,0 +1,208 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+name: StringZilla ABC periodic controls
+on:
+  push:
+    branches: [codex/stringzilla-periodic-controls]
+    paths: [.github/workflows/stringzilla-periodic-controls.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: stringzilla-periodic-controls
+  cancel-in-progress: false
+jobs:
+  controls:
+    name: ${{ matrix.backend }} periodic controls
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {backend: serial, runner: ubuntu-26.04}
+          - {backend: avx2, runner: ubuntu-26.04}
+          - {backend: neon, runner: ubuntu-26.04-arm}
+          - {backend: msvc, runner: windows-2025}
+          - {backend: avx512, runner: ubuntu-26.04}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GIT_CONFIG_COUNT: 1
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
+    steps:
+      - name: Checkout exact measured runtime and frozen harness
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 4592230b14fc2f4b537b162fd7f6b791e882b615
+          persist-credentials: false
+      - name: Checkout original source identity
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
+          path: baseline
+          persist-credentials: false
+          sparse-checkout: README.md
+      - name: Checkout immutable producer restore driver and strict collector
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 8dbbc5a78e113630a5f6e9fa15be19cddd8bc3b3
+          path: producer
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Checkout this auxiliary periodic experiment
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: auxiliary
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Validate fixed inputs and physical CPU prerequisites
+        id: physical
+        shell: python
+        run: |
+          import py_compile, subprocess
+          script = "auxiliary/.github/scripts/stringzilla-periodic-controls.py"
+          py_compile.compile(script, doraise=True)
+          py_compile.compile("auxiliary/.github/scripts/stringzilla-performance-extra.py", doraise=True)
+          subprocess.run(["python", script, "physical", "--backend", "${{ matrix.backend }}"], check=True)
+      - name: Restore successful producer images and attest every tier and control
+        id: runtime
+        if: steps.physical.outputs.available == 'true'
+        shell: python
+        run: |
+          import subprocess
+          subprocess.run(["python", "auxiliary/.github/scripts/stringzilla-periodic-controls.py",
+                          "prepare", "--backend", "${{ matrix.backend }}"], check=True)
+      - name: Check MSVC 14.44 toolset
+        if: runner.os == 'Windows' && steps.runtime.outputs.available == 'true'
+        id: msvc
+        shell: bash
+        run: |
+          set +e
+          '/c/Program Files/Microsoft Visual Studio/18/Enterprise/vc/auxiliary/build/vcvars64.bat' -vcvars_ver=14.44
+          if [ $? -eq 0 ]; then echo "installed=true" >> "$GITHUB_OUTPUT"; else echo "installed=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Install MSVC 14.44 toolset
+        if: runner.os == 'Windows' && steps.runtime.outputs.available == 'true' && steps.msvc.outputs.installed != 'true'
+        shell: bash
+        run: |
+          '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe' \
+            modify --quiet --installPath 'C:\Program Files\Microsoft Visual Studio\18\Enterprise' \
+            --add Microsoft.VisualStudio.Component.VC.14.44.x86.x64
+      - name: Record C2 reverse-character inlining and actual inline-size flags
+        if: steps.runtime.outputs.available == 'true'
+        shell: python
+        run: |
+          import subprocess
+          subprocess.run(["python", "auxiliary/.github/scripts/stringzilla-periodic-controls.py",
+                          "character-c2", "--backend", "${{ matrix.backend }}"], check=True)
+      - name: Measure only periodic original enabled and disabled triplets
+        if: steps.runtime.outputs.available == 'true'
+        shell: python
+        run: |
+          import subprocess
+          subprocess.run(["python", "auxiliary/.github/scripts/stringzilla-periodic-controls.py",
+                          "measure", "--backend", "${{ matrix.backend }}"], check=True)
+      - name: Retain raw results and zero-timing unsupported-host receipts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-periodic-controls-${{ matrix.backend }}-${{ github.sha }}-attempt${{ github.run_attempt }}
+          path: perf-output
+          if-no-files-found: error
+          retention-days: 30
+
+  collect:
+    if: ${{ !cancelled() }}
+    needs: controls
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GIT_CONFIG_COUNT: 1
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
+    steps:
+      - name: Checkout exact measured runtime and frozen harness
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 4592230b14fc2f4b537b162fd7f6b791e882b615
+          persist-credentials: false
+          sparse-checkout: |
+            doc/stringzilla/native-cases.tsv
+            .github/scripts/stringzilla-performance.py
+      - name: Checkout original source identity
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
+          path: baseline
+          persist-credentials: false
+          sparse-checkout: README.md
+      - name: Checkout immutable producer restore driver and strict collector
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 8dbbc5a78e113630a5f6e9fa15be19cddd8bc3b3
+          path: producer
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Checkout this auxiliary periodic experiment
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: auxiliary
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Verify artifacts and reconstruct the exact periodic matrix
+        shell: python
+        run: |
+          import subprocess
+          subprocess.run(["python", "auxiliary/.github/scripts/stringzilla-periodic-controls.py", "collection"], check=True)
+      - name: Strictly validate all 30 disjoint triplets and retain every measured loss
+        shell: node {0}
+        run: |
+          const fs = require("fs");
+          const crypto = require("crypto");
+          const collectorSource = fs.readFileSync("auxiliary/.github/scripts/stringzilla-periodic-collector.js", "utf8");
+          if (crypto.createHash("sha256").update(collectorSource).digest("hex") !== "ad8109d2ee00b16111c70d56dca6dbcbab4a436d195f9dde3e38ce1c45b188c4") throw Error("Wrong periodic collector");
+          const collect = Function("return (" + collectorSource + ")")();
+          const input = JSON.parse(fs.readFileSync("perf-output/collection-input.json", "utf8"));
+          const expected = new Set(input.expected_physical_keys), seen = new Set(), all = [];
+          if (expected.size !== 30) throw Error("Unexpected periodic matrix");
+          const table = [
+            "| Backend | Tier | Case | Original ns/op | Enabled ns/op | Disabled ns/op | O/E | D/E | Higher enabled mean |",
+            "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |"
+          ];
+          for (const entry of input.entries) {
+            const result = collect(fs.readFileSync(entry.log_path, "utf8"), entry.backend, entry.job,
+              entry.manifest, entry.source, entry.base, entry.expected);
+            for (const group of result.groups) {
+              const enabled = group.controls.enabled;
+              const params = Object.fromEntries(Object.entries(enabled.params).sort(([a], [b]) => a.localeCompare(b)));
+              const key = JSON.stringify([entry.backend, group.tier, enabled.benchmark, params]);
+              if (!expected.has(key) || seen.has(key)) throw Error("Unexpected or duplicate physical configuration: " + key);
+              seen.add(key);
+              const higher = ["original", "disabled"].filter(control => group.comparisons[control].slower_mean)
+                .map(control => control + (group.comparisons[control].intervals_overlap ? "" : "!"));
+              const cells = ["original", "enabled", "disabled"].map(control =>
+                group.controls[control].score.toFixed(3) + " +/- " + group.controls[control].error.toFixed(3));
+              const ratios = ["original", "disabled"].map(control => group.comparisons[control].speedup.toFixed(3));
+              table.push("| " + [entry.backend, group.tier, group.case, ...cells, ...ratios, higher.join(", ") || "-"].join(" | ") + " |");
+            }
+            all.push(result);
+          }
+          if (seen.size !== expected.size || [...expected].some(key => !seen.has(key))) throw Error("Incomplete physical matrix");
+          fs.writeFileSync("perf-output/periodic.json", JSON.stringify({
+            source: "4592230b14fc2f4b537b162fd7f6b791e882b615", producer_run: 39121850979, triplets: seen.size, records: seen.size * 3, shards: all,
+            reverse_character_c2: input.reverse_character_c2
+          }, null, 2) + "\n");
+          fs.writeFileSync("perf-output/PERIODIC.md",
+            "All 30 periodic triplets retain matched complete images and every higher enabled mean. They are disjoint from the primary and preceding 35-control matrices. A ! marks nonoverlapping reported intervals.\n\n" +
+            table.join("\n") + "\n");
+          console.log("Qualified " + seen.size + " unique triplets across " + all.length + " backend/tier shards.");
+      - name: Retain complete periodic qualification
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-periodic-controls-qualification-${{ github.sha }}-attempt${{ github.run_attempt }}
+          path: perf-output
+          if-no-files-found: warn
+          retention-days: 30

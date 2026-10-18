@@ -1,0 +1,39 @@
+--- a/.github/scripts/stringzilla-performance.py
++++ b/.github/scripts/stringzilla-performance-extra.py
+@@ -239,6 +239,8 @@
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--backend", choices=("avx2", "avx512", "serial", "neon", "msvc"), required=True)
+     parser.add_argument("--manifest", type=Path, help="Use a focused workload manifest.")
++    parser.add_argument("--extra-benchmark-source", type=Path, action="append", default=[],
++                        help="Compile an additional application benchmark source.")
+     args = parser.parse_args()
+     args.original, args.fork = args.original.resolve(), args.fork.resolve()
+     args.original_source, args.fork_source = args.original_source.resolve(), args.fork_source.resolve()
+@@ -283,6 +285,11 @@
+     javac = args.original / "bin" / ("javac.exe" if os.name == "nt" else "javac")
+     sources = [args.fork_source / "test/micro/org/openjdk/bench/java/lang" / (name + ".java")
+                for name in ("StringZillaSearch", "StringZillaLongNeedle", "StringZillaTailSearch")]
++    extra_sources = [source.resolve() for source in args.extra_benchmark_source]
++    if len(set(extra_sources)) != len(extra_sources):
++        raise ValueError("Duplicate extra benchmark source")
++    extra_source_hashes = {source.as_posix(): sha(source) for source in extra_sources}
++    sources.extend(extra_sources)
+     command([javac, "-cp", jars[0], "-processorpath", os.pathsep.join(str(x) for x in jars[:2]),
+              "-processor", "org.openjdk.jmh.generators.BenchmarkProcessor", "-d", classes, *sources])
+     classpath = os.pathsep.join(str(x) for x in [classes, jars[0], *jars[2:]])
+@@ -322,6 +329,7 @@
+         "control_images": {"original": "original", "enabled": "fork", "disabled": "fork"},
+         "image_hashes": {name: {k: v for k, v in data.items() if k != "files"} for name, data in images.items()},
+         "harness_sha256": harness_hashes, "manifest_sha256": sha(manifest), "runner_sha256": sha(Path(__file__)),
++        "extra_benchmark_sources": extra_source_hashes,
+         "backend_controls": backends, "backend_attestation": attestation, "probe_sha256": probe_hashes, "msvc_stringzilla_backend": "serial" if os.name == "nt" else None,
+         "versions": {control: command([java, "-version"]) for control, java in java_paths.items()},
+         "method": {"forks": 2, "warmup": "3 x 500ms", "measurement": "5 x 500ms", "cds": "off", "gc": "Serial"},
+@@ -412,6 +420,7 @@
+         key: value for key, value in harness_hashes.items() if key.startswith("classes/")}
+     assert all(sha(p) == harness_hashes[p.name] for p in jars)
+     assert all(sha(probe / name) == digest for name, digest in probe_hashes.items())
++    assert all(sha(source) == extra_source_hashes[source.as_posix()] for source in extra_sources)
+     emit("COMPLETE", {"measurements": len(records), "triplets": len(records) // 3, "sources": provenance["sources"],
+                       "images_unchanged": True, "all_means_retained": True})
+ 
