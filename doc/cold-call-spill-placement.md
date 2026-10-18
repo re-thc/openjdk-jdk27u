@@ -116,7 +116,10 @@ levels 1, 3 and 9, over 32 rounds, in release default/off/on and fastdebug/on
 with allocator, oop and GC verification. All four focused cold-call jtreg
 tests passed, including actual exercised-trap oop forwarding in compressed and
 uncompressed configurations. Nine existing allocator/spilling tests also passed
-with the option enabled.
+with the option enabled. The updated default-mode focused tests passed on both
+retained release and fastdebug images with default-on emulated; actual
+no-argument startup on a binary containing the changed default is a separate
+automatic-CI check.
 
 The throughput plan was frozen before measurement: four independently started
 forks per option per case, alternating paired order, six seconds of warmup and
@@ -137,9 +140,9 @@ are retained. The following are medians of the four paired percentage changes:
 
 Every pair favored the enabled option, but four pairs on one cloud VM do not
 establish cross-machine confidence or general Java workload performance. Small
-control changes can include host variation. Compiler CPU time during warmup
-was mixed: for source level 1, 572/562 ms disabled/enabled; JSON, 498/542 ms;
-DNA, 468/507 ms. DNA's normal decoder allocation needed two retry attempts
+control changes can include host variation. Accumulated MXBean compilation
+time during warmup was mixed: for source level 1, 572/562 ms disabled/enabled;
+JSON, 498/542 ms; DNA, 468/507 ms. DNA's normal decoder allocation needed two retry attempts
 instead of one and its compilation elapsed median rose from 12.5 to 14 ms.
 The normal decoder C2 code was installed before 0.72 seconds in all applicable
 forks and was not invalidated during the measured windows. Normal C2 decoder
