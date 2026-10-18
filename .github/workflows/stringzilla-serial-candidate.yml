@@ -14,7 +14,7 @@ permissions:
 
 concurrency:
   group: stringzilla-msvc-serial-candidate
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   measure:
@@ -30,7 +30,7 @@ jobs:
       - name: Checkout complete candidate sources
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: 7e5f3c5721d1213cd956c9d754d52d716a9e80e0
+          ref: d06f7647c1b080c075f2d632fe7d9fae8479eb04
           persist-credentials: false
 
       - name: Checkout untouched original source identity
