@@ -2068,6 +2068,13 @@ public final class Matcher implements MatchResult {
             nativeEndInput = null;
             nativePendingLast = false;
         }
+        // Preserve CharSequence traversal without requesting a whole-input
+        // snapshot or promoting the shared Pattern, so a
+        // later reset to an immutable String can still use the native engine.
+        if (!(text instanceof String input)) {
+            if (javaMatchChoice == null) selectJavaMatch(true, mode);
+            return -2;
+        }
         if (engine.prefersJava(to - from)) {
             selectJavaMatch(false, mode);
             return -2;
@@ -2076,7 +2083,6 @@ public final class Matcher implements MatchResult {
             parentPattern.ensureJava();
             return -1;
         }
-        String input = text instanceof String s ? s : text.toString();
         int result = engine.match(input, groups, from, to, start, mode,
                 transparentBounds, anchoringBounds);
         if (result == 0 && mode != 0 && engine.hasShortFixedWidth())
