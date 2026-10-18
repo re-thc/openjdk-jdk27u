@@ -93,6 +93,9 @@ exports/opens, Windows path conversion and the portable console helper.
 It also checks launcher archive diagnostics, valid jar launch and native
 instrumentation. On macOS it checks direct framework links and native Kerberos
 configuration initialization; an unconfigured Kerberos store is allowed.
+It also runs the real prebuilt-test entry point through generated-spec discovery
+and child test execution, checking that the synthetic spec retains the headless
+module graph and rejects incompatible desktop and collector overrides.
 The macOS notification regression interposes the dynamic-store observer to
 inject both watched keys through real native scheduling and the built image's
 callback. It checks automatic Java configuration refresh, unrelated keys,
@@ -122,7 +125,14 @@ records are now declared locally; native compilation and callback delivery
 remain unconfirmed, as do suite targets whose completion was not recorded.
 This test-only correction allows the retained product images to be reused.
 
-Native Linux AArch64 and Windows x64 validation remains required.
+Native Linux AArch64 CI at `334292638fd` passed release and fastdebug builds,
+make suites and full profiles; each profile reported 56 product javac lists and
+1,578 native records. The prebuilt runner's synthetic spec retains the same
+headless policy and pinned collector allowlist as configured builds. Its
+correction passed actual HotSpot, JDK, langtools and lib-test jtreg smokes on
+Linux x64; complete CI jtreg validation remains pending.
+
+Native Windows x64 validation remains required.
 For macOS, configure with existing Command Line Tools selected through a
 process-local `DEVELOPER_DIR`, verify no Metal discovery, inspect `otool -L`
 for `libjli.dylib` and `libjvm.dylib`, and exercise console launch, JNI invocation,

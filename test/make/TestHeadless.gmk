@@ -157,6 +157,9 @@ native-diagnostics: $(HEADLESS_MESSAGE_BOX_TEST)
 launcher-errors:
 	$(BASH) $(TOPDIR)/.github/scripts/check-headless-launcher.sh "$(IMAGES_OUTPUTDIR)/jdk"
 
+prebuilt:
+	+$(BASH) $(TOPDIR)/test/make/prebuilt/test-prebuilt.sh "$(MAKE)" "$(TOPDIR)" "$(BOOT_JDK)" "$(IMAGES_OUTPUTDIR)/jdk" "$(TEST_SUPPORT_DIR)/prebuilt"
+
 # Exercise the actual image callback with native macOS scheduling, without
 # privileged notifications or writes to the machine's Kerberos configuration.
 ifeq ($(call isBuildOs, macosx)+$(call isTargetOs, macosx), true+true)
@@ -182,6 +185,6 @@ ifeq ($(call isBuildOs, macosx)+$(call isTargetOs, macosx), true+true)
   all: kerberos-notifications
 endif
 
-all: matrix probes direct-targets imports source-imports native-diagnostics launcher-errors
-.PHONY: verify-graph matrix probes direct-targets imports module-info source-imports native-diagnostics launcher-errors kerberos-notifications
+all: matrix probes direct-targets imports source-imports native-diagnostics launcher-errors prebuilt
+.PHONY: verify-graph matrix probes direct-targets imports module-info source-imports native-diagnostics launcher-errors kerberos-notifications prebuilt
 include MakeFileEnd.gmk
