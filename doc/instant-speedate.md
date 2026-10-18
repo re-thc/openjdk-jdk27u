@@ -4,8 +4,9 @@
 `Instant.parse`. The current experimental draft is disabled by default while its
 default-enablement decision remains unfinished. The required final outcome is a
 beneficial default-on integration with an opt-out, or rejection of the integration.
-The [decision proposal](instant-speedate-decision.md) defines the prospective
-matched comparison. The native build requires an installed Rust compiler version
+The [native decision instructions](instant-speedate-decision.md) provide normal
+Git, configure/make, jtreg and JMH commands for the prospective matched comparison.
+The native build requires an installed Rust compiler version
 1.88 or newer, Cargo, the target standard library, and
 the compiler's `COPYRIGHT-library.html` notices. The locked Cargo dependencies
 must be available before the JDK build; make invokes Cargo with `--frozen`.
