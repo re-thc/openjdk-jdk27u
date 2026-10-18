@@ -1,0 +1,2579 @@
+{
+  "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+  "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "cases": [
+    {
+      "id": "pilot-serial-interpreter",
+      "campaign": "pilot",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "serial",
+      "tier": "interpreter",
+      "workflow": {
+        "run_id": 39145136082,
+        "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+      },
+      "image_hashes": {
+        "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+        "fork": "bc1eb0494e08b9ec068f0b19f68ce9cd60508aecc81c23f900faccf9f794aa4e"
+      },
+      "producer": {
+        "artifact_id": 12145506718,
+        "digest": "sha256:f452b3221e10716664eb7aa0ceffc2dba78d621d222c78c4b6cb210bd49aaea0",
+        "artifact_name": "stringzilla-candidate-pilot-pair-serial-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444162,
+        "job_name": "serial_pair / serial validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444162,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "serial_pair / serial validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:44:14Z",
+          "completed_at": "2026-10-18T18:02:09Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12147253952,
+        "digest": "sha256:c27ecdca7f99c74360bf7b63ea904843907b6cb55e6989b68493ca5d445d416b",
+        "artifact_name": "stringzilla-candidate-pilot-results-serial-interpreter-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0-attempt1",
+        "job_id": 117748240409,
+        "job_name": "serial_controls (interpreter) / serial-interpreter controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117748240409,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "serial_controls (interpreter) / serial-interpreter controls",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T18:02:09Z",
+          "started_at": "2026-10-18T18:55:14Z",
+          "completed_at": "2026-10-18T19:13:24Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "stock",
+          "triplets": 30,
+          "manifest_sha256": "fea1b8503ff53e6ec35aefebedc9f7c3138468c974ab27bbbdd2c694ea4491f3",
+          "physical_keys": [
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"129\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"127\",\"needleLength\":\"65\",\"position\":\"END\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"127\",\"needleLength\":\"65\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"128\",\"needleLength\":\"65\",\"position\":\"END\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"128\",\"needleLength\":\"65\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"END\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"64\",\"position\":\"END\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"64\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"129\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"130\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"303\",\"needleLength\":\"256\",\"shape\":\"UTF16_PREFIX_MISS\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"575\",\"needleLength\":\"511\",\"shape\":\"LATIN_PREFIX_MISS\"}]"
+          ]
+        },
+        {
+          "phase": "periodic",
+          "triplets": 2,
+          "manifest_sha256": "8cf638200670921eb66bc8958113a635fc71afc8a492980bdf21391ccb24b98e",
+          "physical_keys": [
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_ABC_MISS\"}]",
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"4095\",\"needleLength\":\"513\",\"shape\":\"LATIN_PERIOD3_ABC_MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pilot-serial-c1",
+      "campaign": "pilot",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "serial",
+      "tier": "c1",
+      "workflow": {
+        "run_id": 39145136082,
+        "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+      },
+      "image_hashes": {
+        "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+        "fork": "bc1eb0494e08b9ec068f0b19f68ce9cd60508aecc81c23f900faccf9f794aa4e"
+      },
+      "producer": {
+        "artifact_id": 12145506718,
+        "digest": "sha256:f452b3221e10716664eb7aa0ceffc2dba78d621d222c78c4b6cb210bd49aaea0",
+        "artifact_name": "stringzilla-candidate-pilot-pair-serial-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444162,
+        "job_name": "serial_pair / serial validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444162,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "serial_pair / serial validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:44:14Z",
+          "completed_at": "2026-10-18T18:02:09Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12145924606,
+        "digest": "sha256:2a905ec054a624abf4bfab6136977de282beaa91d642df1a3601b9ee6f15675e",
+        "artifact_name": "stringzilla-candidate-pilot-results-serial-c1-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0-attempt1",
+        "job_id": 117748240305,
+        "job_name": "serial_controls (c1) / serial-c1 controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117748240305,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "serial_controls (c1) / serial-c1 controls",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T18:02:09Z",
+          "started_at": "2026-10-18T18:27:58Z",
+          "completed_at": "2026-10-18T18:46:10Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "stock",
+          "triplets": 30,
+          "manifest_sha256": "b080d5d8dcbbc8252f8b467039a9d4966920fe73ef9ddb6a4f874c600775a8c0",
+          "physical_keys": [
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"129\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"END\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"31\",\"position\":\"END\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"32\",\"position\":\"END\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"33\",\"position\":\"END\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"9\",\"position\":\"END\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"129\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"130\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]"
+          ]
+        },
+        {
+          "phase": "periodic",
+          "triplets": 2,
+          "manifest_sha256": "dd4c7e76d1b2a823cc9d125501eeb01034a71b893717757f987667eb6bafaa3a",
+          "physical_keys": [
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_ABC_MISS\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"4095\",\"needleLength\":\"513\",\"shape\":\"LATIN_PERIOD3_ABC_MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pilot-serial-c2",
+      "campaign": "pilot",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "serial",
+      "tier": "c2",
+      "workflow": {
+        "run_id": 39145136082,
+        "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+      },
+      "image_hashes": {
+        "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+        "fork": "bc1eb0494e08b9ec068f0b19f68ce9cd60508aecc81c23f900faccf9f794aa4e"
+      },
+      "producer": {
+        "artifact_id": 12145506718,
+        "digest": "sha256:f452b3221e10716664eb7aa0ceffc2dba78d621d222c78c4b6cb210bd49aaea0",
+        "artifact_name": "stringzilla-candidate-pilot-pair-serial-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444162,
+        "job_name": "serial_pair / serial validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444162,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "serial_pair / serial validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:44:14Z",
+          "completed_at": "2026-10-18T18:02:09Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12147469766,
+        "digest": "sha256:8d5d0b666707822f93c69dfad429370ff51a9106dc95d6fd3494c97dec1341ff",
+        "artifact_name": "stringzilla-candidate-pilot-results-serial-c2-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0-attempt1",
+        "job_id": 117748240397,
+        "job_name": "serial_controls (c2) / serial-c2 controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117748240397,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "serial_controls (c2) / serial-c2 controls",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T18:02:09Z",
+          "started_at": "2026-10-18T18:52:48Z",
+          "completed_at": "2026-10-18T19:30:25Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "stock",
+          "triplets": 50,
+          "manifest_sha256": "32eafe711d6d51c8fb40da4b56e3e09d98e7f84eacb3782343b463d03c03a815",
+          "physical_keys": [
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.equals\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"EQUAL\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.equals\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"EQUAL\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.equals\",{\"coder\":\"UTF16\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"EQUAL\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.equals\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"EQUAL\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"129\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"31\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"32\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"33\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"63\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"64\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"65\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"126\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"127\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"127\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"127\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"128\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"128\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"31\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"31\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"32\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"32\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"33\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"33\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"63\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"63\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"64\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"64\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"65\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"65\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"129\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"130\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]"
+          ]
+        },
+        {
+          "phase": "periodic",
+          "triplets": 2,
+          "manifest_sha256": "7227cb351975ed4e03fc4c94fc44d4a8f40488a49c52f659b48776758dbfd6cf",
+          "physical_keys": [
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_ABC_MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"4095\",\"needleLength\":\"513\",\"shape\":\"LATIN_PERIOD3_ABC_MISS\"}]"
+          ]
+        },
+        {
+          "phase": "utf16-probe",
+          "triplets": 20,
+          "manifest_sha256": "9c774b34236fac2380afc2842ff473dfb2de4fc50e2549b747fba69c9b820b05",
+          "physical_keys": [
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"127\",\"needleLength\":\"127\",\"shape\":\"NEAR_END_MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"127\",\"needleLength\":\"127\",\"shape\":\"PENULTIMATE_MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"128\",\"needleLength\":\"128\",\"shape\":\"NEAR_END_MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"128\",\"needleLength\":\"128\",\"shape\":\"PENULTIMATE_MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"129\",\"needleLength\":\"129\",\"shape\":\"NEAR_END_MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"129\",\"needleLength\":\"129\",\"shape\":\"PENULTIMATE_MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"31\",\"needleLength\":\"31\",\"shape\":\"NEAR_END_MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"31\",\"needleLength\":\"31\",\"shape\":\"PENULTIMATE_MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"32\",\"needleLength\":\"32\",\"shape\":\"NEAR_END_MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"32\",\"needleLength\":\"32\",\"shape\":\"PENULTIMATE_MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"33\",\"needleLength\":\"33\",\"shape\":\"NEAR_END_MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"33\",\"needleLength\":\"33\",\"shape\":\"PENULTIMATE_MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"4096\",\"needleLength\":\"64\",\"shape\":\"NEAR_END_MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"4096\",\"needleLength\":\"64\",\"shape\":\"PENULTIMATE_MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"63\",\"needleLength\":\"63\",\"shape\":\"NEAR_END_MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"63\",\"needleLength\":\"63\",\"shape\":\"PENULTIMATE_MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"64\",\"needleLength\":\"64\",\"shape\":\"NEAR_END_MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"64\",\"needleLength\":\"64\",\"shape\":\"PENULTIMATE_MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"65\",\"needleLength\":\"65\",\"shape\":\"NEAR_END_MISS\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"65\",\"needleLength\":\"65\",\"shape\":\"PENULTIMATE_MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pilot-avx2-interpreter",
+      "campaign": "pilot",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "avx2",
+      "tier": "interpreter",
+      "workflow": {
+        "run_id": 39145136082,
+        "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+      },
+      "image_hashes": {
+        "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+        "fork": "bc1eb0494e08b9ec068f0b19f68ce9cd60508aecc81c23f900faccf9f794aa4e"
+      },
+      "producer": {
+        "artifact_id": 12144279572,
+        "digest": "sha256:95f054971f775b13b52ece43e6c36297c9d89591713cff363fd8790b7c8a184d",
+        "artifact_name": "stringzilla-candidate-pilot-pair-avx2-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444034,
+        "job_name": "avx2_pair / avx2 validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444034,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "avx2_pair / avx2 validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:17:00Z",
+          "completed_at": "2026-10-18T17:34:55Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12146029577,
+        "digest": "sha256:457b8e65125656291a60c588069d246bd7d1eb1eb029e68e965720305f04b94b",
+        "artifact_name": "stringzilla-candidate-pilot-results-avx2-interpreter-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0-attempt1",
+        "job_id": 117742226316,
+        "job_name": "avx2_controls (interpreter) / avx2-interpreter controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117742226316,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "avx2_controls (interpreter) / avx2-interpreter controls",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T17:34:56Z",
+          "started_at": "2026-10-18T18:14:36Z",
+          "completed_at": "2026-10-18T18:33:29Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "stock",
+          "triplets": 30,
+          "manifest_sha256": "7d43319d38647aac023a3ae6b9408f64f53a1b854342da0dbae16b6fcf4d25a0",
+          "physical_keys": [
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"129\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"127\",\"needleLength\":\"65\",\"position\":\"END\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"127\",\"needleLength\":\"65\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"128\",\"needleLength\":\"65\",\"position\":\"END\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"128\",\"needleLength\":\"65\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"END\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"64\",\"position\":\"END\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"64\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"129\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"130\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"303\",\"needleLength\":\"256\",\"shape\":\"UTF16_PREFIX_MISS\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"575\",\"needleLength\":\"511\",\"shape\":\"LATIN_PREFIX_MISS\"}]"
+          ]
+        },
+        {
+          "phase": "periodic",
+          "triplets": 2,
+          "manifest_sha256": "58e26818a2a3d95ba2c4b37f80c52565ce8b759804cdb139701aada143f48099",
+          "physical_keys": [
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_ABC_MISS\"}]",
+            "[\"avx2\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"4095\",\"needleLength\":\"513\",\"shape\":\"LATIN_PERIOD3_ABC_MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pilot-avx2-c1",
+      "campaign": "pilot",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "avx2",
+      "tier": "c1",
+      "workflow": {
+        "run_id": 39145136082,
+        "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+      },
+      "image_hashes": {
+        "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+        "fork": "bc1eb0494e08b9ec068f0b19f68ce9cd60508aecc81c23f900faccf9f794aa4e"
+      },
+      "producer": {
+        "artifact_id": 12144279572,
+        "digest": "sha256:95f054971f775b13b52ece43e6c36297c9d89591713cff363fd8790b7c8a184d",
+        "artifact_name": "stringzilla-candidate-pilot-pair-avx2-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444034,
+        "job_name": "avx2_pair / avx2 validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444034,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "avx2_pair / avx2 validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:17:00Z",
+          "completed_at": "2026-10-18T17:34:55Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12146836333,
+        "digest": "sha256:ef3a264202457e591e2f73dceea7fa274fde2d47d0b8ebcfb91aa944a5bf1820",
+        "artifact_name": "stringzilla-candidate-pilot-results-avx2-c1-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0-attempt1",
+        "job_id": 117742226273,
+        "job_name": "avx2_controls (c1) / avx2-c1 controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117742226273,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "avx2_controls (c1) / avx2-c1 controls",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T17:34:56Z",
+          "started_at": "2026-10-18T18:14:40Z",
+          "completed_at": "2026-10-18T18:33:58Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "stock",
+          "triplets": 30,
+          "manifest_sha256": "6b79cb67427537b06d00e5ba6097edb0cf8eef82e033f84cb8eb73f2f20bd1e3",
+          "physical_keys": [
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"129\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"31\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"32\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"33\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"9\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"129\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"130\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]"
+          ]
+        },
+        {
+          "phase": "periodic",
+          "triplets": 2,
+          "manifest_sha256": "d22b89ebc4763d68dd920211a92a2c5c3d329fd6a3e45410ec81f89f234e97a8",
+          "physical_keys": [
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_ABC_MISS\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"4095\",\"needleLength\":\"513\",\"shape\":\"LATIN_PERIOD3_ABC_MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pilot-avx2-c2",
+      "campaign": "pilot",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "avx2",
+      "tier": "c2",
+      "workflow": {
+        "run_id": 39145136082,
+        "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+      },
+      "image_hashes": {
+        "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+        "fork": "bc1eb0494e08b9ec068f0b19f68ce9cd60508aecc81c23f900faccf9f794aa4e"
+      },
+      "producer": {
+        "artifact_id": 12144279572,
+        "digest": "sha256:95f054971f775b13b52ece43e6c36297c9d89591713cff363fd8790b7c8a184d",
+        "artifact_name": "stringzilla-candidate-pilot-pair-avx2-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444034,
+        "job_name": "avx2_pair / avx2 validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444034,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "avx2_pair / avx2 validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:17:00Z",
+          "completed_at": "2026-10-18T17:34:55Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12147226491,
+        "digest": "sha256:e48a33578c194ee9db42de8003aab3e7a0be92a55e7c1a3c6a15be0ae7239b74",
+        "artifact_name": "stringzilla-candidate-pilot-results-avx2-c2-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0-attempt1",
+        "job_id": 117742226332,
+        "job_name": "avx2_controls (c2) / avx2-c2 controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117742226332,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "avx2_controls (c2) / avx2-c2 controls",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T17:34:56Z",
+          "started_at": "2026-10-18T18:27:28Z",
+          "completed_at": "2026-10-18T18:52:57Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "stock",
+          "triplets": 42,
+          "manifest_sha256": "528b88541e444c8394c0ff72f052cc4bafc22c9db297883693fe18b7eb3cd264",
+          "physical_keys": [
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"14\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"15\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"16\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"30\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"31\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"32\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"129\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"15\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"17\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"32\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"33\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"47\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"47\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"48\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"48\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"49\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"49\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"126\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"127\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"127\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"129\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"130\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_MISS\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"2048\",\"needleLength\":\"256\",\"shape\":\"UTF16_PERIOD2_MISS\"}]"
+          ]
+        },
+        {
+          "phase": "periodic",
+          "triplets": 2,
+          "manifest_sha256": "fdbeb9bf5c434080f67b2d348c6bda82fc2bc4fbdac8af819de17d0d26aabd2d",
+          "physical_keys": [
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_ABC_MISS\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"4095\",\"needleLength\":\"513\",\"shape\":\"LATIN_PERIOD3_ABC_MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pilot-avx512-interpreter",
+      "campaign": "pilot",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "avx512",
+      "tier": "interpreter",
+      "workflow": {
+        "run_id": 39156708874,
+        "head": "7583b0ade72a6ee47fe66b5ed648f1ddea30a7f2"
+      },
+      "recovery77": true,
+      "origin_workflow": {
+        "run_id": 39145136082,
+        "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+      },
+      "zip_root": "stock-interpreter/",
+      "image_hashes": {
+        "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+        "fork": "bc1eb0494e08b9ec068f0b19f68ce9cd60508aecc81c23f900faccf9f794aa4e"
+      },
+      "producer": {
+        "artifact_id": 12144279572,
+        "digest": "sha256:95f054971f775b13b52ece43e6c36297c9d89591713cff363fd8790b7c8a184d",
+        "artifact_name": "stringzilla-candidate-pilot-pair-avx2-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444034,
+        "job_name": "avx2_pair / avx2 validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444034,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "avx2_pair / avx2 validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:17:00Z",
+          "completed_at": "2026-10-18T17:34:55Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12148683897,
+        "digest": "sha256:16c1f54180be569a13d33691a0fc29c832c63161df47e10e13ddaaba3d8f6649",
+        "artifact_name": "stringzilla-sky-current-missing-7583b0ade72a6ee47fe66b5ed648f1ddea30a7f2-attempt1",
+        "job_id": 117761327661,
+        "job_name": "Missing SKY slot 1 on ubuntu-24.04",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117761327661,
+          "run_id": 39156708874,
+          "head_sha": "7583b0ade72a6ee47fe66b5ed648f1ddea30a7f2",
+          "name": "Missing SKY slot 1 on ubuntu-24.04",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T18:59:56Z",
+          "started_at": "2026-10-18T19:00:00Z",
+          "completed_at": "2026-10-18T20:05:29Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "stock",
+          "triplets": 30,
+          "manifest_sha256": "7d43319d38647aac023a3ae6b9408f64f53a1b854342da0dbae16b6fcf4d25a0",
+          "physical_keys": [
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"129\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"127\",\"needleLength\":\"65\",\"position\":\"END\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"127\",\"needleLength\":\"65\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"128\",\"needleLength\":\"65\",\"position\":\"END\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"128\",\"needleLength\":\"65\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"END\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"64\",\"position\":\"END\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"64\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"129\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"130\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"303\",\"needleLength\":\"256\",\"shape\":\"UTF16_PREFIX_MISS\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"575\",\"needleLength\":\"511\",\"shape\":\"LATIN_PREFIX_MISS\"}]"
+          ]
+        },
+        {
+          "phase": "periodic",
+          "triplets": 2,
+          "manifest_sha256": "58e26818a2a3d95ba2c4b37f80c52565ce8b759804cdb139701aada143f48099",
+          "physical_keys": [
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_ABC_MISS\"}]",
+            "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"4095\",\"needleLength\":\"513\",\"shape\":\"LATIN_PERIOD3_ABC_MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pilot-avx512-c1",
+      "campaign": "pilot",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "avx512",
+      "tier": "c1",
+      "workflow": {
+        "run_id": 39145136082,
+        "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+      },
+      "image_hashes": {
+        "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+        "fork": "bc1eb0494e08b9ec068f0b19f68ce9cd60508aecc81c23f900faccf9f794aa4e"
+      },
+      "producer": {
+        "artifact_id": 12144279572,
+        "digest": "sha256:95f054971f775b13b52ece43e6c36297c9d89591713cff363fd8790b7c8a184d",
+        "artifact_name": "stringzilla-candidate-pilot-pair-avx2-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444034,
+        "job_name": "avx2_pair / avx2 validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444034,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "avx2_pair / avx2 validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:17:00Z",
+          "completed_at": "2026-10-18T17:34:55Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12146059391,
+        "digest": "sha256:c433863f5ff45d82ec113aaa691cade624686e6d9a482bfcb8212b99a9172ce2",
+        "artifact_name": "stringzilla-candidate-pilot-results-avx512-c1-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0-attempt1",
+        "job_id": 117742226206,
+        "job_name": "avx512_controls (c1) / avx512-c1 controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117742226206,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "avx512_controls (c1) / avx512-c1 controls",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T17:34:56Z",
+          "started_at": "2026-10-18T18:13:33Z",
+          "completed_at": "2026-10-18T18:32:44Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "stock",
+          "triplets": 30,
+          "manifest_sha256": "6b79cb67427537b06d00e5ba6097edb0cf8eef82e033f84cb8eb73f2f20bd1e3",
+          "physical_keys": [
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"129\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"31\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"32\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"33\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"9\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"129\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"130\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]"
+          ]
+        },
+        {
+          "phase": "periodic",
+          "triplets": 2,
+          "manifest_sha256": "d22b89ebc4763d68dd920211a92a2c5c3d329fd6a3e45410ec81f89f234e97a8",
+          "physical_keys": [
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_ABC_MISS\"}]",
+            "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"4095\",\"needleLength\":\"513\",\"shape\":\"LATIN_PERIOD3_ABC_MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pilot-avx512-c2",
+      "campaign": "pilot",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "avx512",
+      "tier": "c2",
+      "workflow": {
+        "run_id": 39156708874,
+        "head": "7583b0ade72a6ee47fe66b5ed648f1ddea30a7f2"
+      },
+      "recovery77": true,
+      "origin_workflow": {
+        "run_id": 39145136082,
+        "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+      },
+      "zip_root": "stock-c2/",
+      "image_hashes": {
+        "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+        "fork": "bc1eb0494e08b9ec068f0b19f68ce9cd60508aecc81c23f900faccf9f794aa4e"
+      },
+      "producer": {
+        "artifact_id": 12144279572,
+        "digest": "sha256:95f054971f775b13b52ece43e6c36297c9d89591713cff363fd8790b7c8a184d",
+        "artifact_name": "stringzilla-candidate-pilot-pair-avx2-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444034,
+        "job_name": "avx2_pair / avx2 validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444034,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "avx2_pair / avx2 validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:17:00Z",
+          "completed_at": "2026-10-18T17:34:55Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12148683897,
+        "digest": "sha256:16c1f54180be569a13d33691a0fc29c832c63161df47e10e13ddaaba3d8f6649",
+        "artifact_name": "stringzilla-sky-current-missing-7583b0ade72a6ee47fe66b5ed648f1ddea30a7f2-attempt1",
+        "job_id": 117761327661,
+        "job_name": "Missing SKY slot 1 on ubuntu-24.04",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117761327661,
+          "run_id": 39156708874,
+          "head_sha": "7583b0ade72a6ee47fe66b5ed648f1ddea30a7f2",
+          "name": "Missing SKY slot 1 on ubuntu-24.04",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T18:59:56Z",
+          "started_at": "2026-10-18T19:00:00Z",
+          "completed_at": "2026-10-18T20:05:29Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "stock",
+          "triplets": 42,
+          "manifest_sha256": "528b88541e444c8394c0ff72f052cc4bafc22c9db297883693fe18b7eb3cd264",
+          "physical_keys": [
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"14\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"15\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"16\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"30\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"31\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"32\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"129\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"15\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"17\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"32\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"33\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"47\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"47\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"48\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"48\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"49\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"49\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"126\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"127\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"127\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"129\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"130\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_MISS\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"2048\",\"needleLength\":\"256\",\"shape\":\"UTF16_PERIOD2_MISS\"}]"
+          ]
+        },
+        {
+          "phase": "periodic",
+          "triplets": 2,
+          "manifest_sha256": "fdbeb9bf5c434080f67b2d348c6bda82fc2bc4fbdac8af819de17d0d26aabd2d",
+          "physical_keys": [
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_ABC_MISS\"}]",
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"4095\",\"needleLength\":\"513\",\"shape\":\"LATIN_PERIOD3_ABC_MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pilot-neon-interpreter",
+      "campaign": "pilot",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "neon",
+      "tier": "interpreter",
+      "workflow": {
+        "run_id": 39145136082,
+        "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+      },
+      "image_hashes": {
+        "original": "93889021ff0fe5199e6dbae2f743fe0265c7ab0e2f7a72e1977fd9b9ca044e37",
+        "fork": "d11517847bc9068155b056e6a5fa4ab3f8ac38405e4797df092da6aa4067740a"
+      },
+      "producer": {
+        "artifact_id": 12145196750,
+        "digest": "sha256:cadca6cd0ea155af4e92c1efe55d9ac9c2a02cb84006a3357ac4cfe30af7480f",
+        "artifact_name": "stringzilla-candidate-pilot-pair-neon-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444047,
+        "job_name": "neon_pair / neon validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444047,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "neon_pair / neon validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:28:09Z",
+          "completed_at": "2026-10-18T17:42:56Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12146563590,
+        "digest": "sha256:965d91e3642062698121ea407269985bb841c0ca1496839fb7d3141b618817b8",
+        "artifact_name": "stringzilla-candidate-pilot-results-neon-interpreter-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0-attempt1",
+        "job_id": 117744021306,
+        "job_name": "neon_controls (interpreter) / neon-interpreter controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117744021306,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "neon_controls (interpreter) / neon-interpreter controls",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T17:42:56Z",
+          "started_at": "2026-10-18T18:28:17Z",
+          "completed_at": "2026-10-18T18:46:23Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "stock",
+          "triplets": 30,
+          "manifest_sha256": "1406a4a0b439fc394774d7042b8ae2ee746702d26c8bf444bb47a53178a3c104",
+          "physical_keys": [
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"129\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"127\",\"needleLength\":\"65\",\"position\":\"END\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"127\",\"needleLength\":\"65\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"128\",\"needleLength\":\"65\",\"position\":\"END\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"128\",\"needleLength\":\"65\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"END\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"64\",\"position\":\"END\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"64\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"129\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"130\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"303\",\"needleLength\":\"256\",\"shape\":\"UTF16_PREFIX_MISS\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"575\",\"needleLength\":\"511\",\"shape\":\"LATIN_PREFIX_MISS\"}]"
+          ]
+        },
+        {
+          "phase": "periodic",
+          "triplets": 2,
+          "manifest_sha256": "78e9325ee6db8e6ac2669c2d5e5c5cdc0d226eacc24b808293125fd5b5ecdeaa",
+          "physical_keys": [
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_ABC_MISS\"}]",
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"4095\",\"needleLength\":\"513\",\"shape\":\"LATIN_PERIOD3_ABC_MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pilot-neon-c1",
+      "campaign": "pilot",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "neon",
+      "tier": "c1",
+      "workflow": {
+        "run_id": 39145136082,
+        "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+      },
+      "image_hashes": {
+        "original": "93889021ff0fe5199e6dbae2f743fe0265c7ab0e2f7a72e1977fd9b9ca044e37",
+        "fork": "d11517847bc9068155b056e6a5fa4ab3f8ac38405e4797df092da6aa4067740a"
+      },
+      "producer": {
+        "artifact_id": 12145196750,
+        "digest": "sha256:cadca6cd0ea155af4e92c1efe55d9ac9c2a02cb84006a3357ac4cfe30af7480f",
+        "artifact_name": "stringzilla-candidate-pilot-pair-neon-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444047,
+        "job_name": "neon_pair / neon validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444047,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "neon_pair / neon validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:28:09Z",
+          "completed_at": "2026-10-18T17:42:56Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12146974595,
+        "digest": "sha256:3f420564412e9d68b3308ee95ea7a6d6fdf15b0cb44c6760c2aafe017f0c7dbe",
+        "artifact_name": "stringzilla-candidate-pilot-results-neon-c1-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0-attempt1",
+        "job_id": 117744021314,
+        "job_name": "neon_controls (c1) / neon-c1 controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117744021314,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "neon_controls (c1) / neon-c1 controls",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T17:42:56Z",
+          "started_at": "2026-10-18T18:45:19Z",
+          "completed_at": "2026-10-18T19:04:29Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "stock",
+          "triplets": 31,
+          "manifest_sha256": "05e82656177b0c691aa71ac22e3727deb948804b46302dbe83e9d59b14c3d428",
+          "physical_keys": [
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"129\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"31\",\"position\":\"END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"32\",\"position\":\"END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"33\",\"position\":\"END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"9\",\"position\":\"END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"127\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"129\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"130\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]"
+          ]
+        },
+        {
+          "phase": "periodic",
+          "triplets": 2,
+          "manifest_sha256": "048b3f3a20df743fcafbfce84aedd1adc4f71762c775dba3bf362735439bd761",
+          "physical_keys": [
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_ABC_MISS\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"4095\",\"needleLength\":\"513\",\"shape\":\"LATIN_PERIOD3_ABC_MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pilot-neon-c2",
+      "campaign": "pilot",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "neon",
+      "tier": "c2",
+      "workflow": {
+        "run_id": 39145136082,
+        "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+      },
+      "image_hashes": {
+        "original": "93889021ff0fe5199e6dbae2f743fe0265c7ab0e2f7a72e1977fd9b9ca044e37",
+        "fork": "d11517847bc9068155b056e6a5fa4ab3f8ac38405e4797df092da6aa4067740a"
+      },
+      "producer": {
+        "artifact_id": 12145196750,
+        "digest": "sha256:cadca6cd0ea155af4e92c1efe55d9ac9c2a02cb84006a3357ac4cfe30af7480f",
+        "artifact_name": "stringzilla-candidate-pilot-pair-neon-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444047,
+        "job_name": "neon_pair / neon validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444047,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "neon_pair / neon validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:28:09Z",
+          "completed_at": "2026-10-18T17:42:56Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12147651624,
+        "digest": "sha256:3d38f0deb8bda89ae0f0a4bd6f9447b715195efd21fc82037a07fde670d8acd7",
+        "artifact_name": "stringzilla-candidate-pilot-results-neon-c2-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0-attempt1",
+        "job_id": 117744021323,
+        "job_name": "neon_controls (c2) / neon-c2 controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117744021323,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "neon_controls (c2) / neon-c2 controls",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T17:42:56Z",
+          "started_at": "2026-10-18T18:43:25Z",
+          "completed_at": "2026-10-18T19:10:31Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "stock",
+          "triplets": 41,
+          "manifest_sha256": "8c41b9f66fa2923a1d09df464ae451d3745826fb8176052c529866e44663a41e",
+          "physical_keys": [
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"502\",\"needleLength\":\"9\",\"shape\":\"NEAR_END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"512\",\"needleLength\":\"64\",\"shape\":\"NEAR_END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"129\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"127\",\"position\":\"END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"128\",\"position\":\"END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"31\",\"position\":\"END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"31\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"32\",\"position\":\"END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"32\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"33\",\"position\":\"END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"9\",\"position\":\"END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"1023\",\"needleLength\":\"9\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"1024\",\"needleLength\":\"9\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"126\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"127\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"64\",\"position\":\"END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"511\",\"needleLength\":\"9\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"512\",\"needleLength\":\"9\",\"position\":\"END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"512\",\"needleLength\":\"9\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"513\",\"needleLength\":\"9\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"129\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"130\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]"
+          ]
+        },
+        {
+          "phase": "periodic",
+          "triplets": 2,
+          "manifest_sha256": "dfcbb2f983dad4f563c4b641b683444c5e9660029b4156a112440f3ba9d7a4ec",
+          "physical_keys": [
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_ABC_MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"4095\",\"needleLength\":\"513\",\"shape\":\"LATIN_PERIOD3_ABC_MISS\"}]"
+          ]
+        },
+        {
+          "phase": "utf16-probe",
+          "triplets": 4,
+          "manifest_sha256": "6ba7e69945e8a0be9d7f92ea29805a1a2f1e22a5de39c3f610aa9786dea83747",
+          "physical_keys": [
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"4096\",\"needleLength\":\"64\",\"shape\":\"NEAR_END_MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"4096\",\"needleLength\":\"64\",\"shape\":\"PENULTIMATE_MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"64\",\"needleLength\":\"64\",\"shape\":\"NEAR_END_MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"64\",\"needleLength\":\"64\",\"shape\":\"PENULTIMATE_MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pilot-msvc-interpreter",
+      "campaign": "pilot",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "msvc",
+      "tier": "interpreter",
+      "workflow": {
+        "run_id": 39145136082,
+        "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+      },
+      "image_hashes": {
+        "original": "97417c894aac491cf065347d490002f9638a1f6bf5633fbce4e6626d03d50202",
+        "fork": "889f3ffa57c02045d46158afbafc862f2a0fdc91452f812eb2316f9d3e0ced42"
+      },
+      "producer": {
+        "artifact_id": 12145286531,
+        "digest": "sha256:b4a435c46b18ca0085172e85c334f628a0f40d93516017978eae4576ae11c51c",
+        "artifact_name": "stringzilla-candidate-pilot-pair-msvc-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444153,
+        "job_name": "msvc_pair / msvc validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444153,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "msvc_pair / msvc validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:14:29Z",
+          "completed_at": "2026-10-18T17:46:10Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12145318663,
+        "digest": "sha256:2a18c06b9580f95dadf72fbdc8be25b36658a2dbda5022fdadef5daffa891cb4",
+        "artifact_name": "stringzilla-candidate-pilot-results-msvc-interpreter-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0-attempt1",
+        "job_id": 117744727861,
+        "job_name": "msvc_controls (interpreter) / msvc-interpreter controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117744727861,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "msvc_controls (interpreter) / msvc-interpreter controls",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T17:46:10Z",
+          "started_at": "2026-10-18T17:54:55Z",
+          "completed_at": "2026-10-18T18:15:01Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "stock",
+          "triplets": 30,
+          "manifest_sha256": "5b7a106497b40d871d531a83cb84430b90ccb49901c64f02986e1acf3fef4d55",
+          "physical_keys": [
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"129\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"127\",\"needleLength\":\"65\",\"position\":\"END\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"127\",\"needleLength\":\"65\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"128\",\"needleLength\":\"65\",\"position\":\"END\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"128\",\"needleLength\":\"65\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"END\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"64\",\"position\":\"END\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"64\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"129\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"130\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"303\",\"needleLength\":\"256\",\"shape\":\"UTF16_PREFIX_MISS\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"575\",\"needleLength\":\"511\",\"shape\":\"LATIN_PREFIX_MISS\"}]"
+          ]
+        },
+        {
+          "phase": "periodic",
+          "triplets": 2,
+          "manifest_sha256": "9ca12a0b784c9cab80c63dcaf3c0e91e3eb90753089efe21874bd5cafe9e0875",
+          "physical_keys": [
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_ABC_MISS\"}]",
+            "[\"msvc\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"4095\",\"needleLength\":\"513\",\"shape\":\"LATIN_PERIOD3_ABC_MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pilot-msvc-c1",
+      "campaign": "pilot",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "msvc",
+      "tier": "c1",
+      "workflow": {
+        "run_id": 39145136082,
+        "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+      },
+      "image_hashes": {
+        "original": "97417c894aac491cf065347d490002f9638a1f6bf5633fbce4e6626d03d50202",
+        "fork": "889f3ffa57c02045d46158afbafc862f2a0fdc91452f812eb2316f9d3e0ced42"
+      },
+      "producer": {
+        "artifact_id": 12145286531,
+        "digest": "sha256:b4a435c46b18ca0085172e85c334f628a0f40d93516017978eae4576ae11c51c",
+        "artifact_name": "stringzilla-candidate-pilot-pair-msvc-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444153,
+        "job_name": "msvc_pair / msvc validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444153,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "msvc_pair / msvc validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:14:29Z",
+          "completed_at": "2026-10-18T17:46:10Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12146137550,
+        "digest": "sha256:4b90a53f8555f6c00727ea79e6489ced541b80a77f9bcd5189090eea806f1ad7",
+        "artifact_name": "stringzilla-candidate-pilot-results-msvc-c1-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0-attempt1",
+        "job_id": 117744727856,
+        "job_name": "msvc_controls (c1) / msvc-c1 controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117744727856,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "msvc_controls (c1) / msvc-c1 controls",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T17:46:10Z",
+          "started_at": "2026-10-18T17:55:22Z",
+          "completed_at": "2026-10-18T18:21:09Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "stock",
+          "triplets": 35,
+          "manifest_sha256": "25b1ca0fcfecb33791afc37cf810be96570b1fd2be936f4f0e1006e0ab17092b",
+          "physical_keys": [
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"129\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"257\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"258\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"31\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"32\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"33\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"9\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"127\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"257\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"129\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"130\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]"
+          ]
+        },
+        {
+          "phase": "periodic",
+          "triplets": 2,
+          "manifest_sha256": "adef109d7512ec14849df3e9bd5f68ac28bdc6cbc97a37fd692567ee1a398e5e",
+          "physical_keys": [
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_ABC_MISS\"}]",
+            "[\"msvc\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"4095\",\"needleLength\":\"513\",\"shape\":\"LATIN_PERIOD3_ABC_MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pilot-msvc-c2",
+      "campaign": "pilot",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "msvc",
+      "tier": "c2",
+      "workflow": {
+        "run_id": 39145136082,
+        "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+      },
+      "image_hashes": {
+        "original": "97417c894aac491cf065347d490002f9638a1f6bf5633fbce4e6626d03d50202",
+        "fork": "889f3ffa57c02045d46158afbafc862f2a0fdc91452f812eb2316f9d3e0ced42"
+      },
+      "producer": {
+        "artifact_id": 12145286531,
+        "digest": "sha256:b4a435c46b18ca0085172e85c334f628a0f40d93516017978eae4576ae11c51c",
+        "artifact_name": "stringzilla-candidate-pilot-pair-msvc-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444153,
+        "job_name": "msvc_pair / msvc validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444153,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "msvc_pair / msvc validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:14:29Z",
+          "completed_at": "2026-10-18T17:46:10Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12146267731,
+        "digest": "sha256:75213da9a591c3fb9f49c5d615d0fe23509b9a02ab462af4277196fd32a6a175",
+        "artifact_name": "stringzilla-candidate-pilot-results-msvc-c2-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0-attempt1",
+        "job_id": 117744727914,
+        "job_name": "msvc_controls (c2) / msvc-c2 controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117744727914,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "msvc_controls (c2) / msvc-c2 controls",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T17:46:10Z",
+          "started_at": "2026-10-18T18:12:24Z",
+          "completed_at": "2026-10-18T18:40:16Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "stock",
+          "triplets": 29,
+          "manifest_sha256": "3c86192edd2a0340d2beff0f9ce87b79ebae5a9a95530c07fc6bbb9fd3b45594",
+          "physical_keys": [
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"129\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"31\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"32\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"33\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"63\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"64\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"65\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"126\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"127\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"64\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"129\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"130\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]"
+          ]
+        },
+        {
+          "phase": "periodic",
+          "triplets": 2,
+          "manifest_sha256": "5ed463f13eeb091284e69433459117debab38ab63349504585f1428e4734b998",
+          "physical_keys": [
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_ABC_MISS\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"4095\",\"needleLength\":\"513\",\"shape\":\"LATIN_PERIOD3_ABC_MISS\"}]"
+          ]
+        },
+        {
+          "phase": "utf16-probe",
+          "triplets": 4,
+          "manifest_sha256": "8c119dcc1fcba9b6945beb5d1d81be72291f1c72815d18094a5adfe71cdc5731",
+          "physical_keys": [
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"4096\",\"needleLength\":\"64\",\"shape\":\"NEAR_END_MISS\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"4096\",\"needleLength\":\"64\",\"shape\":\"PENULTIMATE_MISS\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"64\",\"needleLength\":\"64\",\"shape\":\"NEAR_END_MISS\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"64\",\"needleLength\":\"64\",\"shape\":\"PENULTIMATE_MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "supplement-serial-interpreter",
+      "campaign": "supplement",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "serial",
+      "tier": "interpreter",
+      "workflow": {
+        "run_id": 39152364859,
+        "head": "5eb741f73bc6cce9478793ba2101d719a40d3fc7"
+      },
+      "image_hashes": {
+        "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+        "fork": "bc1eb0494e08b9ec068f0b19f68ce9cd60508aecc81c23f900faccf9f794aa4e"
+      },
+      "producer": {
+        "artifact_id": 12145506718,
+        "digest": "sha256:f452b3221e10716664eb7aa0ceffc2dba78d621d222c78c4b6cb210bd49aaea0",
+        "artifact_name": "stringzilla-candidate-pilot-pair-serial-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444162,
+        "job_name": "serial_pair / serial validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444162,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "serial_pair / serial validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:44:14Z",
+          "completed_at": "2026-10-18T18:02:09Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12147109954,
+        "digest": "sha256:4dd2bf755d752bda8ca3fb767f7168ea682292f12ec1918e6065f66c0695087e",
+        "artifact_name": "stringzilla-candidate-losses-serial-interpreter-5eb741f73bc6cce9478793ba2101d719a40d3fc7-attempt1",
+        "job_id": 117751315791,
+        "job_name": "serial-interpreter missing controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117751315791,
+          "run_id": 39152364859,
+          "head_sha": "5eb741f73bc6cce9478793ba2101d719a40d3fc7",
+          "name": "serial-interpreter missing controls",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T18:15:32Z",
+          "started_at": "2026-10-18T19:09:39Z",
+          "completed_at": "2026-10-18T19:13:04Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "supplement",
+          "triplets": 1,
+          "manifest_sha256": "74bcab39c862a9588be77278aabb86e1a9b5e2ecc5fcab73dfeb0ac294fe1175",
+          "physical_keys": [
+            "[\"serial\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"15\",\"needleLength\":\"4\",\"position\":\"MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "supplement-serial-c1",
+      "campaign": "supplement",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "serial",
+      "tier": "c1",
+      "workflow": {
+        "run_id": 39152364859,
+        "head": "5eb741f73bc6cce9478793ba2101d719a40d3fc7"
+      },
+      "image_hashes": {
+        "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+        "fork": "bc1eb0494e08b9ec068f0b19f68ce9cd60508aecc81c23f900faccf9f794aa4e"
+      },
+      "producer": {
+        "artifact_id": 12145506718,
+        "digest": "sha256:f452b3221e10716664eb7aa0ceffc2dba78d621d222c78c4b6cb210bd49aaea0",
+        "artifact_name": "stringzilla-candidate-pilot-pair-serial-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444162,
+        "job_name": "serial_pair / serial validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444162,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "serial_pair / serial validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:44:14Z",
+          "completed_at": "2026-10-18T18:02:09Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12148492639,
+        "digest": "sha256:e5ac495c75e7534facd5a90ee3d818b1965c9e4d836c875bf9b7d712ddb98bb0",
+        "artifact_name": "stringzilla-candidate-losses-serial-c1-5eb741f73bc6cce9478793ba2101d719a40d3fc7-attempt2",
+        "job_id": 117770722427,
+        "job_name": "serial-c1 missing controls",
+        "attempt": 2,
+        "job_snapshot": {
+          "id": 117770722427,
+          "run_id": 39152364859,
+          "head_sha": "5eb741f73bc6cce9478793ba2101d719a40d3fc7",
+          "name": "serial-c1 missing controls",
+          "run_attempt": 2,
+          "created_at": "2026-10-18T19:40:52Z",
+          "started_at": "2026-10-18T19:41:06Z",
+          "completed_at": "2026-10-18T19:46:48Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "supplement",
+          "triplets": 7,
+          "manifest_sha256": "e015068b98cececd3653baba54e7957d93b0c3337702ed236fa97b9af7b9c93b",
+          "physical_keys": [
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.builderIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOf\",{\"coder\":\"LATIN1\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"START\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOf\",{\"coder\":\"MIXED\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"257\",\"needleLength\":\"257\",\"position\":\"END\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"127\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"serial\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"127\",\"needleLength\":\"4\",\"position\":\"MISS\"}]"
+          ]
+        }
+      ],
+      "zero_timing_prior_attempt": {
+        "run_id": 39152364859,
+        "head": "5eb741f73bc6cce9478793ba2101d719a40d3fc7",
+        "job_id": 117751315857,
+        "artifact_id": 12146739652,
+        "artifact_digest": "sha256:0c36c86bdd01aa0be77ffdf68d3c3b2caf1c1096ff5015bea44f0f9f169d073a",
+        "proof_blob": "f866345d3bb295d5782aecec9ec5fa1bc3fda961",
+        "classification": "Dependency SSL EOF before JMH compilation/fork; zero timing; only failed job retried."
+      }
+    },
+    {
+      "id": "supplement-serial-c2",
+      "campaign": "supplement",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "serial",
+      "tier": "c2",
+      "workflow": {
+        "run_id": 39152364859,
+        "head": "5eb741f73bc6cce9478793ba2101d719a40d3fc7"
+      },
+      "image_hashes": {
+        "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+        "fork": "bc1eb0494e08b9ec068f0b19f68ce9cd60508aecc81c23f900faccf9f794aa4e"
+      },
+      "producer": {
+        "artifact_id": 12145506718,
+        "digest": "sha256:f452b3221e10716664eb7aa0ceffc2dba78d621d222c78c4b6cb210bd49aaea0",
+        "artifact_name": "stringzilla-candidate-pilot-pair-serial-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444162,
+        "job_name": "serial_pair / serial validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444162,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "serial_pair / serial validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:44:14Z",
+          "completed_at": "2026-10-18T18:02:09Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12147500122,
+        "digest": "sha256:443e3922a7e16946a0cbb31c64cc7a99d99cdaf8c0d6c199253cffdba3ef62a8",
+        "artifact_name": "stringzilla-candidate-losses-serial-c2-5eb741f73bc6cce9478793ba2101d719a40d3fc7-attempt1",
+        "job_id": 117751315851,
+        "job_name": "serial-c2 missing controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117751315851,
+          "run_id": 39152364859,
+          "head_sha": "5eb741f73bc6cce9478793ba2101d719a40d3fc7",
+          "name": "serial-c2 missing controls",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T18:15:32Z",
+          "started_at": "2026-10-18T18:52:26Z",
+          "completed_at": "2026-10-18T18:58:00Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "supplement",
+          "triplets": 6,
+          "manifest_sha256": "f43f21809d2170b6beacc68c850c000e42cbca7c1211fe33d28224dffe0a8068",
+          "physical_keys": [
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOf\",{\"coder\":\"MIXED\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"START\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"257\",\"needleLength\":\"257\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"258\",\"needleLength\":\"257\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"63\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"64\",\"position\":\"END\"}]",
+            "[\"serial\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"127\",\"needleLength\":\"4\",\"position\":\"MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "supplement-avx2-c1",
+      "campaign": "supplement",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "avx2",
+      "tier": "c1",
+      "workflow": {
+        "run_id": 39152364859,
+        "head": "5eb741f73bc6cce9478793ba2101d719a40d3fc7"
+      },
+      "image_hashes": {
+        "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+        "fork": "bc1eb0494e08b9ec068f0b19f68ce9cd60508aecc81c23f900faccf9f794aa4e"
+      },
+      "producer": {
+        "artifact_id": 12144279572,
+        "digest": "sha256:95f054971f775b13b52ece43e6c36297c9d89591713cff363fd8790b7c8a184d",
+        "artifact_name": "stringzilla-candidate-pilot-pair-avx2-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444034,
+        "job_name": "avx2_pair / avx2 validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444034,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "avx2_pair / avx2 validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:17:00Z",
+          "completed_at": "2026-10-18T17:34:55Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12148402259,
+        "digest": "sha256:358a5fbb334440a8922f8ae912aa92dfe7b5b81c8a89584bdf611194819eb158",
+        "artifact_name": "stringzilla-candidate-losses-avx2-c1-5eb741f73bc6cce9478793ba2101d719a40d3fc7-attempt1",
+        "job_id": 117751315886,
+        "job_name": "avx2-c1 missing controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117751315886,
+          "run_id": 39152364859,
+          "head_sha": "5eb741f73bc6cce9478793ba2101d719a40d3fc7",
+          "name": "avx2-c1 missing controls",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T18:15:32Z",
+          "started_at": "2026-10-18T19:31:50Z",
+          "completed_at": null,
+          "status": "in_progress",
+          "conclusion": null
+        }
+      },
+      "phases": [
+        {
+          "phase": "supplement",
+          "triplets": 4,
+          "manifest_sha256": "2490fe4460e106c172487a0bcac5d9e64ff13166f3e9a165749bec19b054eb47",
+          "physical_keys": [
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"17\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"23\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"24\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"126\",\"needleLength\":\"4\",\"position\":\"END\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "supplement-avx2-c2",
+      "campaign": "supplement",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "avx2",
+      "tier": "c2",
+      "workflow": {
+        "run_id": 39152364859,
+        "head": "5eb741f73bc6cce9478793ba2101d719a40d3fc7"
+      },
+      "image_hashes": {
+        "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+        "fork": "bc1eb0494e08b9ec068f0b19f68ce9cd60508aecc81c23f900faccf9f794aa4e"
+      },
+      "producer": {
+        "artifact_id": 12144279572,
+        "digest": "sha256:95f054971f775b13b52ece43e6c36297c9d89591713cff363fd8790b7c8a184d",
+        "artifact_name": "stringzilla-candidate-pilot-pair-avx2-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444034,
+        "job_name": "avx2_pair / avx2 validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444034,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "avx2_pair / avx2 validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:17:00Z",
+          "completed_at": "2026-10-18T17:34:55Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12146008710,
+        "digest": "sha256:eb83a0e51f4f2bc75fb653202991100d60e08b87822371ea863c96dfb69e5ded",
+        "artifact_name": "stringzilla-candidate-losses-avx2-c2-5eb741f73bc6cce9478793ba2101d719a40d3fc7-attempt1",
+        "job_id": 117751315754,
+        "job_name": "avx2-c2 missing controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117751315754,
+          "run_id": 39152364859,
+          "head_sha": "5eb741f73bc6cce9478793ba2101d719a40d3fc7",
+          "name": "avx2-c2 missing controls",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T18:15:32Z",
+          "started_at": "2026-10-18T18:21:16Z",
+          "completed_at": "2026-10-18T18:25:50Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "supplement",
+          "triplets": 3,
+          "manifest_sha256": "08aefe07b2f32f49f9e3fe598bd894f22783a8383225150362101c6a6f3c13a5",
+          "physical_keys": [
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.equals\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"EQUAL\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"9\",\"position\":\"END\"}]",
+            "[\"avx2\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"129\",\"needleLength\":\"4\",\"position\":\"MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "supplement-avx512-c2",
+      "campaign": "supplement",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "avx512",
+      "tier": "c2",
+      "workflow": {
+        "run_id": 39156708874,
+        "head": "7583b0ade72a6ee47fe66b5ed648f1ddea30a7f2"
+      },
+      "recovery77": true,
+      "origin_workflow": {
+        "run_id": 39152364859,
+        "head": "5eb741f73bc6cce9478793ba2101d719a40d3fc7"
+      },
+      "zip_root": "s54-c2/",
+      "image_hashes": {
+        "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+        "fork": "bc1eb0494e08b9ec068f0b19f68ce9cd60508aecc81c23f900faccf9f794aa4e"
+      },
+      "producer": {
+        "artifact_id": 12144279572,
+        "digest": "sha256:95f054971f775b13b52ece43e6c36297c9d89591713cff363fd8790b7c8a184d",
+        "artifact_name": "stringzilla-candidate-pilot-pair-avx2-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444034,
+        "job_name": "avx2_pair / avx2 validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444034,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "avx2_pair / avx2 validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:17:00Z",
+          "completed_at": "2026-10-18T17:34:55Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12148683897,
+        "digest": "sha256:16c1f54180be569a13d33691a0fc29c832c63161df47e10e13ddaaba3d8f6649",
+        "artifact_name": "stringzilla-sky-current-missing-7583b0ade72a6ee47fe66b5ed648f1ddea30a7f2-attempt1",
+        "job_id": 117761327661,
+        "job_name": "Missing SKY slot 1 on ubuntu-24.04",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117761327661,
+          "run_id": 39156708874,
+          "head_sha": "7583b0ade72a6ee47fe66b5ed648f1ddea30a7f2",
+          "name": "Missing SKY slot 1 on ubuntu-24.04",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T18:59:56Z",
+          "started_at": "2026-10-18T19:00:00Z",
+          "completed_at": "2026-10-18T20:05:29Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "supplement",
+          "triplets": 1,
+          "manifest_sha256": "eed877de4ea926559aadd96c9f859ece003983c29582663f92598cde45b5b6d3",
+          "physical_keys": [
+            "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "supplement-neon-interpreter",
+      "campaign": "supplement",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "neon",
+      "tier": "interpreter",
+      "workflow": {
+        "run_id": 39152364859,
+        "head": "5eb741f73bc6cce9478793ba2101d719a40d3fc7"
+      },
+      "image_hashes": {
+        "original": "93889021ff0fe5199e6dbae2f743fe0265c7ab0e2f7a72e1977fd9b9ca044e37",
+        "fork": "d11517847bc9068155b056e6a5fa4ab3f8ac38405e4797df092da6aa4067740a"
+      },
+      "producer": {
+        "artifact_id": 12145196750,
+        "digest": "sha256:cadca6cd0ea155af4e92c1efe55d9ac9c2a02cb84006a3357ac4cfe30af7480f",
+        "artifact_name": "stringzilla-candidate-pilot-pair-neon-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444047,
+        "job_name": "neon_pair / neon validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444047,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "neon_pair / neon validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:28:09Z",
+          "completed_at": "2026-10-18T17:42:56Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12147401290,
+        "digest": "sha256:94dd7b3a8c0eff38a3c6ce72f4ea8c40774149859b98e2fbc6ced20fdffd9969",
+        "artifact_name": "stringzilla-candidate-losses-neon-interpreter-5eb741f73bc6cce9478793ba2101d719a40d3fc7-attempt1",
+        "job_id": 117751315765,
+        "job_name": "neon-interpreter missing controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117751315765,
+          "run_id": 39152364859,
+          "head_sha": "5eb741f73bc6cce9478793ba2101d719a40d3fc7",
+          "name": "neon-interpreter missing controls",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T18:15:32Z",
+          "started_at": "2026-10-18T18:58:05Z",
+          "completed_at": "2026-10-18T19:01:12Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "supplement",
+          "triplets": 1,
+          "manifest_sha256": "f18722e6c17e203fb60500abb6372c8a454071f7f224ea07302f1643df3fb32d",
+          "physical_keys": [
+            "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"65\",\"position\":\"MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "supplement-neon-c1",
+      "campaign": "supplement",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "neon",
+      "tier": "c1",
+      "workflow": {
+        "run_id": 39152364859,
+        "head": "5eb741f73bc6cce9478793ba2101d719a40d3fc7"
+      },
+      "image_hashes": {
+        "original": "93889021ff0fe5199e6dbae2f743fe0265c7ab0e2f7a72e1977fd9b9ca044e37",
+        "fork": "d11517847bc9068155b056e6a5fa4ab3f8ac38405e4797df092da6aa4067740a"
+      },
+      "producer": {
+        "artifact_id": 12145196750,
+        "digest": "sha256:cadca6cd0ea155af4e92c1efe55d9ac9c2a02cb84006a3357ac4cfe30af7480f",
+        "artifact_name": "stringzilla-candidate-pilot-pair-neon-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444047,
+        "job_name": "neon_pair / neon validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444047,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "neon_pair / neon validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:28:09Z",
+          "completed_at": "2026-10-18T17:42:56Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12147333156,
+        "digest": "sha256:07721d54b590685d99210c18f7eef666f52d7cb9b3a3d9721e52f00736850467",
+        "artifact_name": "stringzilla-candidate-losses-neon-c1-5eb741f73bc6cce9478793ba2101d719a40d3fc7-attempt1",
+        "job_id": 117751315838,
+        "job_name": "neon-c1 missing controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117751315838,
+          "run_id": 39152364859,
+          "head_sha": "5eb741f73bc6cce9478793ba2101d719a40d3fc7",
+          "name": "neon-c1 missing controls",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T18:15:32Z",
+          "started_at": "2026-10-18T19:15:31Z",
+          "completed_at": "2026-10-18T19:24:41Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "supplement",
+          "triplets": 14,
+          "manifest_sha256": "bc228649dfa3a68272ebb4b1ecc1b011ada961ffb3309441bb4ce011de176e11",
+          "physical_keys": [
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOf\",{\"coder\":\"MIXED\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"START\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"257\",\"needleLength\":\"257\",\"position\":\"END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"258\",\"needleLength\":\"257\",\"position\":\"END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"15\",\"position\":\"END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"16\",\"position\":\"END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"17\",\"position\":\"END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"23\",\"position\":\"END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"24\",\"position\":\"END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"25\",\"position\":\"END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"126\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"127\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+            "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"127\",\"needleLength\":\"4\",\"position\":\"MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "supplement-neon-c2",
+      "campaign": "supplement",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "neon",
+      "tier": "c2",
+      "workflow": {
+        "run_id": 39152364859,
+        "head": "5eb741f73bc6cce9478793ba2101d719a40d3fc7"
+      },
+      "image_hashes": {
+        "original": "93889021ff0fe5199e6dbae2f743fe0265c7ab0e2f7a72e1977fd9b9ca044e37",
+        "fork": "d11517847bc9068155b056e6a5fa4ab3f8ac38405e4797df092da6aa4067740a"
+      },
+      "producer": {
+        "artifact_id": 12145196750,
+        "digest": "sha256:cadca6cd0ea155af4e92c1efe55d9ac9c2a02cb84006a3357ac4cfe30af7480f",
+        "artifact_name": "stringzilla-candidate-pilot-pair-neon-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444047,
+        "job_name": "neon_pair / neon validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444047,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "neon_pair / neon validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:28:09Z",
+          "completed_at": "2026-10-18T17:42:56Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12147811952,
+        "digest": "sha256:937244928c45d81b49c116fec4d8c6766e7334b847490bb9e6082aea058bfd6d",
+        "artifact_name": "stringzilla-candidate-losses-neon-c2-5eb741f73bc6cce9478793ba2101d719a40d3fc7-attempt1",
+        "job_id": 117751315837,
+        "job_name": "neon-c2 missing controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117751315837,
+          "run_id": 39152364859,
+          "head_sha": "5eb741f73bc6cce9478793ba2101d719a40d3fc7",
+          "name": "neon-c2 missing controls",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T18:15:32Z",
+          "started_at": "2026-10-18T19:08:48Z",
+          "completed_at": "2026-10-18T19:16:04Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "supplement",
+          "triplets": 10,
+          "manifest_sha256": "db5be04ea589ce3336556444cc9d0f53b5aa94f497a8141adc8b4db9323c8a2d",
+          "physical_keys": [
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"502\",\"needleLength\":\"9\",\"shape\":\"END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.equals\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"EQUAL\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOf\",{\"coder\":\"MIXED\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"257\",\"needleLength\":\"257\",\"position\":\"END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"258\",\"needleLength\":\"257\",\"position\":\"END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"15\",\"position\":\"END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"16\",\"position\":\"END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"17\",\"position\":\"END\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"127\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+            "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"129\",\"needleLength\":\"4\",\"position\":\"MISS\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "supplement-msvc-c2",
+      "campaign": "supplement",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "msvc",
+      "tier": "c2",
+      "workflow": {
+        "run_id": 39152364859,
+        "head": "5eb741f73bc6cce9478793ba2101d719a40d3fc7"
+      },
+      "image_hashes": {
+        "original": "97417c894aac491cf065347d490002f9638a1f6bf5633fbce4e6626d03d50202",
+        "fork": "889f3ffa57c02045d46158afbafc862f2a0fdc91452f812eb2316f9d3e0ced42"
+      },
+      "producer": {
+        "artifact_id": 12145286531,
+        "digest": "sha256:b4a435c46b18ca0085172e85c334f628a0f40d93516017978eae4576ae11c51c",
+        "artifact_name": "stringzilla-candidate-pilot-pair-msvc-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444153,
+        "job_name": "msvc_pair / msvc validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444153,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "msvc_pair / msvc validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:14:29Z",
+          "completed_at": "2026-10-18T17:46:10Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12146915973,
+        "digest": "sha256:62d4223ff8acfb0e8c8a07a7b298816f576e710a154da697c08a8b26164c78b4",
+        "artifact_name": "stringzilla-candidate-losses-msvc-c2-5eb741f73bc6cce9478793ba2101d719a40d3fc7-attempt1",
+        "job_id": 117751315830,
+        "job_name": "msvc-c2 missing controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117751315830,
+          "run_id": 39152364859,
+          "head_sha": "5eb741f73bc6cce9478793ba2101d719a40d3fc7",
+          "name": "msvc-c2 missing controls",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T18:15:32Z",
+          "started_at": "2026-10-18T18:26:02Z",
+          "completed_at": "2026-10-18T18:34:40Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "supplement",
+          "triplets": 7,
+          "manifest_sha256": "f197476794856f1c945f2aaa0ca9ccb7cf4d79e8e1f686645ef7bba81352103d",
+          "physical_keys": [
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"258\",\"needleLength\":\"257\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"64\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"127\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"128\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"32\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"9\",\"position\":\"END\"}]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "neighbors-msvc-c2",
+      "campaign": "neighbors",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "backend": "msvc",
+      "tier": "c2",
+      "workflow": {
+        "run_id": 39156969698,
+        "head": "bedfa1d0a952fd088bb826995f95ae57a7b93287"
+      },
+      "image_hashes": {
+        "original": "97417c894aac491cf065347d490002f9638a1f6bf5633fbce4e6626d03d50202",
+        "fork": "889f3ffa57c02045d46158afbafc862f2a0fdc91452f812eb2316f9d3e0ced42"
+      },
+      "producer": {
+        "artifact_id": 12145286531,
+        "digest": "sha256:b4a435c46b18ca0085172e85c334f628a0f40d93516017978eae4576ae11c51c",
+        "artifact_name": "stringzilla-candidate-pilot-pair-msvc-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+        "job_id": 117733444153,
+        "job_name": "msvc_pair / msvc validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117733444153,
+          "run_id": 39145136082,
+          "head_sha": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+          "name": "msvc_pair / msvc validated pair",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T16:55:47Z",
+          "started_at": "2026-10-18T17:14:29Z",
+          "completed_at": "2026-10-18T17:46:10Z",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "workflow": {
+          "run_id": 39145136082,
+          "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+        }
+      },
+      "artifact": {
+        "artifact_id": 12147567052,
+        "digest": "sha256:3094b0a31d900ce9d1e60ad7f7ead5f2b68ff87ace1a3656d7ee9c57741ba22d",
+        "artifact_name": "stringzilla-candidate-msvc-utf-neighbors-msvc-c2-bedfa1d0a952fd088bb826995f95ae57a7b93287-attempt1",
+        "job_id": 117762075614,
+        "job_name": "msvc-c2 UTF neighbors",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117762075614,
+          "run_id": 39156969698,
+          "head_sha": "bedfa1d0a952fd088bb826995f95ae57a7b93287",
+          "name": "msvc-c2 UTF neighbors",
+          "run_attempt": 1,
+          "created_at": "2026-10-18T19:03:11Z",
+          "started_at": "2026-10-18T19:13:07Z",
+          "completed_at": "2026-10-18T19:20:16Z",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      "phases": [
+        {
+          "phase": "neighbors",
+          "triplets": 4,
+          "manifest_sha256": "7d611184420079f7b797abd6a4f91edfc7afc1e46e319e30bd9bd9998d983eda",
+          "physical_keys": [
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"128\",\"position\":\"MISS\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"130\",\"position\":\"END\"}]",
+            "[\"msvc\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"130\",\"position\":\"MISS\"}]"
+          ]
+        }
+      ]
+    }
+  ]
+}
