@@ -688,7 +688,7 @@ public final class String
     }
 
     private static String decode(Charset charset, byte[] bytes, int offset, int length) {
-        if (SimdUTF.isEligible(length)) {
+        if (SimdUTF.isEligible(length) && StringCodingWide.supportsCharset(charset)) {
             String wide = StringCodingWide.decode(charset, bytes, offset, length);
             if (wide != null) return wide;
         }
@@ -878,7 +878,7 @@ public final class String
             }
         }
 
-        if (SimdUTF.isEligible(len)) {
+        if (SimdUTF.isEligible(len) && StringCodingWide.supportsCharset(cs)) {
             String wide = StringCodingWide.decode(cs, src, 0, len);
             if (wide != null) return wide;
         }
@@ -959,7 +959,7 @@ public final class String
             Charset cs, byte coder, byte[] val, Class<E> exClass)
             throws E {
         int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
-        if (SimdUTF.isEligible(len)) {
+        if (wideEncodingCandidate(cs, len)) {
             byte[] wide = StringCodingWide.encode(cs, coder, val);
             if (wide != null) return wide;
         }
@@ -1014,6 +1014,12 @@ public final class String
             }
         }
         return trimArray(ba, bb.position());
+    }
+
+    @ForceInline
+    private static boolean wideEncodingCandidate(Charset charset, int len) {
+        return (SimdUTF.isEligible(len) || len == 1 && SimdUTF.isEnabled())
+                && StringCodingWide.supportsCharset(charset);
     }
 
     /**

@@ -32,6 +32,7 @@ import java.nio.charset.Charset;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.SimdUTF;
+import jdk.internal.vm.annotation.ForceInline;
 import sun.nio.cs.*;
 
 /** Valid-input specializations; null requests the existing charset fallback. */
@@ -43,8 +44,6 @@ final class StringCodingWide {
     private static final class SegmentLayouts {
         private static final ValueLayout.OfChar CHAR_BE = ValueLayout.JAVA_CHAR_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN);
         private static final ValueLayout.OfChar CHAR_LE = ValueLayout.JAVA_CHAR_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN);
-        private static final ValueLayout.OfInt INT_BE = ValueLayout.JAVA_INT_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN);
-        private static final ValueLayout.OfInt INT_LE = ValueLayout.JAVA_INT_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN);
     }
 
     private enum Kind {
@@ -70,6 +69,12 @@ final class StringCodingWide {
         }
     }
 
+    @ForceInline
+    static boolean supportsCharset(Charset cs) {
+        return kind(cs) != null;
+    }
+
+    @ForceInline
     private static Kind kind(Charset cs) {
         // These classes are extensible. Subclasses may supply different codecs.
         Class<?> type = cs.getClass();
@@ -86,8 +91,7 @@ final class StringCodingWide {
 
     private static int unit(byte[] src, MemorySegment segment, long offset, int width, boolean big) {
         if (src == null) {
-            return width == 2 ? segment.get(big ? SegmentLayouts.CHAR_BE : SegmentLayouts.CHAR_LE, offset)
-                    : segment.get(big ? SegmentLayouts.INT_BE : SegmentLayouts.INT_LE, offset);
+            return segment.get(big ? SegmentLayouts.CHAR_BE : SegmentLayouts.CHAR_LE, offset);
         }
         int off = (int)offset;
         if (width == 2) {
@@ -105,7 +109,10 @@ final class StringCodingWide {
     }
 
     static String decodeSegment(MemorySegment segment, long off, int len, Charset cs) {
-        if (segment.isMapped()) return null;
+        if (!SimdUTF.isEligible(len) || segment.isMapped()) return null;
+        Kind kind = kind(cs);
+        // Leave UTF-32 length discovery to the array decoder.
+        if (kind == null || kind.unit == 4) return null;
         return decode(cs, null, segment, off, len);
     }
 
@@ -174,11 +181,9 @@ final class StringCodingWide {
                     && Character.isHighSurrogate((char)unit(bytes, null, size - 2, 2, big))) {
                 size -= 2;
             }
-            int count = kind.unit == 2
-                    ? SimdUTF.decodeUTF16Bytes(bytes, 0, size, value, written, units - written, big)
-                    : SimdUTF.decodeUTF32Bytes(bytes, 0, size, value, written, units - written, big);
+            int count = SimdUTF.decodeUTF16Bytes(bytes, 0, size, value, written, units - written, big);
             if (count < 0) {
-                count = decodeTail(bytes, size, value, written, units - written, kind.unit, big);
+                count = decodeTail(bytes, size, value, written, units - written, big);
                 if (count < 0) return null;
             }
             consumed += size;
@@ -188,23 +193,19 @@ final class StringCodingWide {
     }
 
     private static int decodeTail(byte[] src, int len, byte[] dst, int dp, int capacity,
-                                  int width, boolean big) {
+                                  boolean big) {
         int written = 0;
-        for (int i = 0; i < len; i += width) {
-            int cp = unit(src, null, i, width, big);
-            if (width == 2 && Character.isSurrogate((char)cp)) {
+        for (int i = 0; i < len; i += 2) {
+            int cp = unit(src, null, i, 2, big);
+            if (Character.isSurrogate((char)cp)) {
                 if (!Character.isHighSurrogate((char)cp) || i + 2 >= len) return -1;
                 char low = (char)unit(src, null, i + 2, 2, big);
                 if (!Character.isLowSurrogate(low) || capacity - written < 2) return -1;
                 StringUTF16.putChar(dst, dp + written++, cp);
                 StringUTF16.putChar(dst, dp + written++, low);
                 i += 2;
-            } else if (width == 4 && cp >= 0x10000) {
-                if (!Character.isValidCodePoint(cp) || capacity - written < 2) return -1;
-                StringUTF16.putChar(dst, dp + written++, Character.highSurrogate(cp));
-                StringUTF16.putChar(dst, dp + written++, Character.lowSurrogate(cp));
             } else {
-                if (cp < 0 || capacity == written || cp >= 0xd800 && cp <= 0xdfff) return -1;
+                if (capacity == written) return -1;
                 StringUTF16.putChar(dst, dp + written++, cp);
             }
         }
@@ -302,10 +303,12 @@ final class StringCodingWide {
 
     static byte[] encode(Charset cs, byte coder, byte[] value) {
         int len = value.length >> coder;
-        if (!SimdUTF.isEligible(len)) return null;
+        if (!SimdUTF.isEligible(len) && (len != 1 || !SimdUTF.isEnabled())) return null;
         Kind kind = kind(cs);
         if (kind == null) return null;
-        int count = coder == String.UTF16 && kind.unit == 4
+        if (len == 1 && coder == String.UTF16
+                && Character.isSurrogate(StringUTF16.getChar(value, 0))) return null;
+        int count = coder == String.UTF16 && kind.unit == 4 && len > 1
                 ? StringUTF16.codePointCount(value, 0, len) : len;
         int prefix = kind.emitBOM ? kind.unit : 0;
         long capacity = (long)count * kind.unit + prefix;
@@ -314,6 +317,10 @@ final class StringCodingWide {
         if (prefix != 0) put(dst, 0, 0xfeff, kind.unit, kind.big);
         if (coder == String.LATIN1) {
             encodeLatin1(value, 0, len, dst, prefix, kind);
+            return dst;
+        }
+        if (len == 1) {
+            put(dst, prefix, StringUTF16.getChar(value, 0), kind.unit, kind.big);
             return dst;
         }
         int written = kind.unit == 2

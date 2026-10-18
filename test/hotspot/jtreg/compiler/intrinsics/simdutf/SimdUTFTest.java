@@ -306,6 +306,28 @@ public class SimdUTFTest {
                 }
             }
         }
+        int length = 1024;
+        for (int edge : new int[]{0, length - 1}) {
+            for (char surrogate : new char[]{'\ud800', '\udc00'}) {
+                char[] chars = new char[length + 6];
+                Arrays.fill(chars, '\u6f22');
+                chars[3 + edge] = surrogate;
+                byte[] bytes = new byte[chars.length * 2];
+                for (int i = 0; i < chars.length; i++) {
+                    putUnit(bytes, i * 2, chars[i], 2, ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
+                }
+                check(SimdUTF.countCodePoints(chars, 3, length) == -1, "invalid count edge in char storage");
+                check(SimdUTF.countCodePoints(bytes, 3, length) == -1, "invalid count edge in byte storage");
+                check(Character.codePointCount(chars, 3, length) == length, "isolated count edge fallback");
+                chars[3 + edge] = '\u6f22';
+                int pair = edge == 0 ? 3 : length + 1;
+                chars[pair] = '\ud83d';
+                chars[pair + 1] = '\ude03';
+                int count = SimdUTF.countCodePoints(chars, 3, length);
+                if (accelerationAvailable) check(count == length - 1, "valid count edge pair");
+                check(Character.codePointCount(chars, 3, length) == length - 1, "valid edge pair count");
+            }
+        }
     }
 
     private static void compactLatin1() {

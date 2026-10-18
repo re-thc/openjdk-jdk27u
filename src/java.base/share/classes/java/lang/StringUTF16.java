@@ -206,7 +206,7 @@ final class StringUTF16 {
 
     @ForceInline
     static char[] toChars(byte[] value) {
-        if (value.length == 2) {
+        if (value.length == 2 && SimdUTF.isEnabled()) {
             return new char[] { getChar(value, 0) };
         }
         char[] dst = new char[value.length >> 1];
